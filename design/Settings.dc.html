@@ -9,21 +9,21 @@
 <x-dc>
 <helmet>
 <style>
-button{cursor:pointer;background-image:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.12));box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-body{margin:0;background:#1b1c1f;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
-a{color:#7fb2ec}a:hover{color:#a9cbf3}
+button{cursor:pointer;background-image:none;box-shadow:none}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
 button,select,input,textarea{font-family:inherit}
-input[type=checkbox],input[type=radio],input[type=range]{accent-color:#e8b04b}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:#4fb3bf}
 </style>
 </helmet>
-<div style="width: 1000px; height: 740px; box-sizing: border-box; background-color: #26272b; border: 1px solid #111214; border-radius: 4px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #111214;">
+<div style="width: 1000px; height: 740px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
     <span style="font-size: 20px; font-weight: 600;">Settings</span>
     <div style="flex-grow: 1;"></div>
-    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
   <div style="flex-grow: 1; display: flex; min-height: 0;">
-    <div style="width: 230px; flex-shrink: 0; border-right: 1px solid #111214; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; background-color: #222326;">
+    <div style="width: 230px; flex-shrink: 0; border-right: 1px solid #2c3038; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; background-color: #1a1d22;">
       <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
         <button onClick="{{n.pick}}" style="{{n.style}}">{{n.name}}</button>
       </sc-for>
@@ -42,17 +42,17 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:#e8b04b}
         </div>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Don't cover the Windows taskbar (recommended)</label>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox"> Start in full screen (F11 switches any time)</label>
-        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">Layout <select style="height: 34px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; padding: 0 8px;"><option>Standard (ready-made)</option><option>Custom layout 1</option></select><button style="height: 34px; padding: 0 12px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; font-size: 13px;">Customize layout…</button></div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">Layout <select style="height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>Standard (ready-made)</option><option>Custom layout 1</option></select><button style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Customize layout…</button></div>
       </sc-if>
 
       <sc-if value="{{is.screens}}" hint-placeholder-val="{{false}}">
         <span style="font-size: 17px; font-weight: 600;">Screens &amp; displays</span>
         <span style="font-size: 13px; color: #a9abb0;">Set this once. Lumora remembers which physical screen is which for every event.</span>
         <sc-for list="{{screenRows}}" as="r" hint-placeholder-count="3">
-          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 4px; background-color: #3c3d42; border: 1px solid #111214;">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 6px; background-color: #2a2e36; border: 1px solid #2c3038;">
             <span style="width: 130px; font-size: 14px; font-weight: 600;">{{r.name}}</span>
-            <select style="flex-grow: 1; height: 34px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; padding: 0 8px;"><option>{{r.display}}</option></select>
-            <button style="height: 34px; padding: 0 12px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; font-size: 13px;">Identify</button>
+            <select style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>{{r.display}}</option></select>
+            <button style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Identify</button>
           </div>
         </sc-for>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Panic: Monitor dims instead of going black</label>
@@ -64,7 +64,7 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:#e8b04b}
         <sc-for list="{{qualityRows}}" as="q" hint-placeholder-count="4">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="width: 180px; font-size: 14px;">{{q.name}}</span>
-            <select style="flex-grow: 1; height: 34px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; padding: 0 8px;"><option>{{q.value}}</option></select>
+            <select style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>{{q.value}}</option></select>
           </div>
         </sc-for>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Use the graphics card for encoding (NVIDIA / AMD / Intel)</label>
@@ -75,7 +75,7 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:#e8b04b}
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> New phones/tablets must be approved on this computer</label>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Require a 6-digit PIN to connect</label>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Screens keep playing if a controller disconnects</label>
-        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">Network <select style="height: 34px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; padding: 0 8px;"><option>Lumora router (offline, recommended)</option><option>This PC's hotspot</option><option>Venue network</option></select></div>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">Network <select style="height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>Lumora router (offline, recommended)</option><option>This PC's hotspot</option><option>Venue network</option></select></div>
         <a href="Devices.dc.html" style="align-self: flex-start; font-size: 14px;">Manage connected devices →</a>
       </sc-if>
 
@@ -86,7 +86,7 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:#e8b04b}
         <sc-for list="{{recRows}}" as="q" hint-placeholder-count="3">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span style="width: 180px; font-size: 14px;">{{q.name}}</span>
-            <select style="flex-grow: 1; height: 34px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; padding: 0 8px;"><option>{{q.value}}</option></select>
+            <select style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>{{q.value}}</option></select>
           </div>
         </sc-for>
       </sc-if>
@@ -94,14 +94,14 @@ input[type=checkbox],input[type=radio],input[type=range]{accent-color:#e8b04b}
       <sc-if value="{{is.sync}}" hint-placeholder-val="{{false}}">
         <span style="font-size: 17px; font-weight: 600;">Account, sync &amp; updates</span>
         <span style="font-size: 13px; color: #a9abb0;">Everything works offline. When online, presets sync and updates install.</span>
-        <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 4px; background-color: #3c3d42; border: 1px solid #111214;">
-          <div style="width: 40px; height: 40px; border-radius: 4px; background-color: #2f4d6e; color: #e8b04b; display: flex; align-items: center; justify-content: center; font-weight: 700;">Y</div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 6px; background-color: #2a2e36; border: 1px solid #2c3038;">
+          <div style="width: 40px; height: 40px; border-radius: 6px; background-color: #1d3b40; color: #4fb3bf; display: flex; align-items: center; justify-content: center; font-weight: 700;">Y</div>
           <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 14px; font-weight: 600;">Signed in</span><span style="font-size: 12px; color: #8e9096;">Presets &amp; settings sync to your other computers</span></div>
           <span style="font-size: 12px; color: #6fe0a8;">Synced 2 min ago</span>
         </div>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Install updates automatically when online</label>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Never update during an event (wait until it ends)</label>
-        <div style="display: flex; gap: 8px;"><button style="height: 36px; padding: 0 14px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; font-size: 13px;">Export presets &amp; settings…</button><button style="height: 36px; padding: 0 14px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; font-size: 13px;">Import…</button></div>
+        <div style="display: flex; gap: 8px;"><button style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Export presets &amp; settings…</button><button style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Import…</button></div>
         <span style="font-family: Consolas, monospace; font-size: 12px; color: #8e9096;">Lumora 1.0.0 · up to date</span>
       </sc-if>
     </div>
@@ -116,14 +116,14 @@ class Component extends DCLogic {
     const NAV = [['mode', 'Mode & layout'], ['screens', 'Screens & displays'], ['quality', 'Video quality'], ['devices', 'Devices & security'], ['recording', 'Recording & export'], ['sync', 'Account, sync & updates']];
     const nav = NAV.map(([id, name]) => {
       const on = st.sec === id;
-      return { name, pick: () => this.setState({ sec: id }), style: `height: 38px; padding: 0 12px; border-radius: 4px; border: 0; background-color: ${on ? '#2f4d6e' : 'transparent'}; color: ${on ? '#ffffff' : '#d4d5d8'}; font-size: 13px; font-weight: ${on ? 600 : 400}; text-align: left;` };
+      return { name, pick: () => this.setState({ sec: id }), style: `height: 38px; padding: 0 12px; border-radius: 6px; border: 0; background-color: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#ffffff' : '#d4d5d8'}; font-size: 13px; font-weight: ${on ? 600 : 400}; text-align: left;` };
     });
     const modes = [
       ['simple', 'Simple mode', 'Big buttons, only the essentials: presets, preview/live, take, blank. Great for volunteers.'],
       ['advanced', 'Advanced mode', 'Everything: mixer, per-source colour and audio, green screen, cues, custom buttons, shortcuts.']
     ].map(([id, name, desc]) => {
       const on = st.mode === id;
-      return { name, desc, pick: () => this.setState({ mode: id }), style: `padding: 16px; border-radius: 4px; border: 2px solid ${on ? '#7fb2ec' : '#111214'}; background-color: ${on ? '#2f4d6e' : '#3c3d42'}; color: #e4e5e7; display: flex; flex-direction: column; gap: 6px; text-align: left;` };
+      return { name, desc, pick: () => this.setState({ mode: id }), style: `padding: 16px; border-radius: 6px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background-color: ${on ? '#1d3b40' : '#2a2e36'}; color: #e4e5e7; display: flex; flex-direction: column; gap: 6px; text-align: left;` };
     });
     return {
       nav, modes,

@@ -9,22 +9,23 @@
 <x-dc>
 <helmet>
 <style>
-button{cursor:pointer;background-image:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.12));box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
-body{margin:0;background:#1b1c1f;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
-a{color:#7fb2ec}a:hover{color:#a9cbf3}
+input[type=range],input[type=checkbox],input[type=radio]{accent-color:#4fb3bf}
+button{cursor:pointer;background-image:none;box-shadow:none}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
 button,select{font-family:inherit}
 </style>
 </helmet>
-<div style="width: 390px; height: 844px; box-sizing: border-box; background-color: #1b1c1f; display: flex; flex-direction: column; padding: 16px 14px 18px; gap: 12px; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden; position: relative;">
+<div style="width: 390px; height: 844px; box-sizing: border-box; background-color: #15171b; display: flex; flex-direction: column; padding: 16px 14px 18px; gap: 12px; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden; position: relative;">
   <div style="display: flex; align-items: center; gap: 8px;">
     <span style="font-size: 17px; font-weight: 600;">Lumora</span>
-    <span style="width: 8px; height: 8px; border-radius: 4px; background-color: #2c8a3e;"></span>
+    <span style="width: 8px; height: 8px; border-radius: 6px; background-color: #2f8f4e;"></span>
     <span style="font-size: 12px; color: #8e9096;">Connected</span>
     <div style="flex-grow: 1;"></div>
     <button onDoubleClick="{{togglePanic}}" style="{{panicStyle}}">{{panicText}}</button>
   </div>
 
-  <div style="display: flex; gap: 4px; padding: 3px; border-radius: 4px; background-color: #303135;">
+  <div style="display: flex; gap: 4px; padding: 3px; border-radius: 6px; background-color: #262a31;">
     <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
       <button onClick="{{t.pick}}" style="{{t.style}}">{{t.name}}</button>
     </sc-for>
@@ -42,12 +43,12 @@ button,select{font-family:inherit}
   </div>
 
   <div style="display: flex; gap: 6px; align-items: center;">
-    <button onClick="{{prevPreset}}" aria-label="Previous preset" style="width: 48px; height: 48px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; font-size: 18px;">‹</button>
-    <label style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; height: 48px; padding: 4px 12px; box-sizing: border-box; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; justify-content: center;">
+    <button onClick="{{prevPreset}}" aria-label="Previous preset" style="width: 48px; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 18px;">‹</button>
+    <label style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; height: 48px; padding: 4px 12px; box-sizing: border-box; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; justify-content: center;">
       <span style="font-size: 10px; color: #8e9096;">Preset</span>
       <select aria-label="Preset" style="background: transparent; border: 0; color: #ffffff; font-size: 15px; font-weight: 600; padding: 0; outline: none;"><option>{{presetName}}</option></select>
     </label>
-    <button onClick="{{nextPreset}}" aria-label="Next preset" style="width: 48px; height: 48px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; font-size: 18px;">›</button>
+    <button onClick="{{nextPreset}}" aria-label="Next preset" style="width: 48px; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 18px;">›</button>
   </div>
 
   <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
@@ -58,7 +59,7 @@ button,select{font-family:inherit}
 
   <div style="display: flex; gap: 8px;">
     <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
-      <button style="flex-grow: 1; height: 44px; border-radius: 4px; border: 1px solid #111214; background-color: #2f4d6e; color: #e6f0fb; font-size: 12px; font-weight: 600;">{{b}}</button>
+      <button style="flex-grow: 1; height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #1d3b40; color: #dff4f6; font-size: 12px; font-weight: 600;">{{b}}</button>
     </sc-for>
   </div>
 
@@ -66,16 +67,16 @@ button,select{font-family:inherit}
 
   <div style="display: flex; gap: 8px;">
     <button onClick="{{toggleBlank}}" style="{{blankStyle}}">{{blankText}}</button>
-    <button onClick="{{take}}" style="flex-grow: 1; height: 64px; border-radius: 4px; border: 0; background-color: #b8322a; color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 0.04em;">TAKE · Fade</button>
+    <button onClick="{{take}}" style="flex-grow: 1; height: 64px; border-radius: 6px; border: 0; background-color: #c7372f; color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 0.04em;">TAKE · Fade</button>
   </div>
-  <button onClick="{{toggleMore}}" style="height: 44px; border-radius: 4px; border: 1px solid #111214; background-color: #303135; color: #d4d5d8; font-size: 14px; font-weight: 600;">More controls</button>
+  <button onClick="{{toggleMore}}" style="height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #262a31; color: #d4d5d8; font-size: 14px; font-weight: 600;">More controls</button>
 
   <sc-if value="{{more}}" hint-placeholder-val="{{false}}">
-    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 14px 22px; border-radius: 18px 18px 0 0; background-color: #3c3d42; border-top: 1px solid #111214; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
-      <div style="display: flex; align-items: center;"><span style="font-size: 15px; font-weight: 600; flex-grow: 1;">More controls</span><button onClick="{{toggleMore}}" aria-label="Close" style="width: 36px; height: 36px; border-radius: 4px; border: 1px solid #111214; background-color: #2b2c30; color: #e4e5e7;">✕</button></div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 14px 22px; border-radius: 18px 18px 0 0; background-color: #2a2e36; border-top: 1px solid #2c3038; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
+      <div style="display: flex; align-items: center;"><span style="font-size: 15px; font-weight: 600; flex-grow: 1;">More controls</span><button onClick="{{toggleMore}}" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #1a1d22; color: #e4e5e7;">✕</button></div>
       <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
         <sc-for list="{{moreItems}}" as="m" hint-placeholder-count="8">
-          <button style="height: 48px; border-radius: 4px; border: 1px solid #111214; background-color: #2b2c30; color: #e4e5e7; font-size: 13px; font-weight: 600;">{{m}}</button>
+          <button style="height: 48px; border-radius: 6px; border: 1px solid #2c3038; background-color: #1a1d22; color: #e4e5e7; font-size: 13px; font-weight: 600;">{{m}}</button>
         </sc-for>
       </div>
     </div>
@@ -91,18 +92,18 @@ class Component extends DCLogic {
     const PRESETS = ['Opening', 'Welcome', 'Speaker', '12 Pesukim', 'Video break', 'Closing'];
     const tabs = [['live', 'Live'], ['back', 'Back'], ['monitor', 'Monitor']].map(([id, name]) => {
       const on = st.tab === id;
-      return { name, pick: () => this.setState({ tab: id }), style: `flex-grow: 1; height: 38px; border-radius: 4px; border: 0; background-color: ${on ? '#2f4d6e' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 14px; font-weight: 600;` };
+      return { name, pick: () => this.setState({ tab: id }), style: `flex-grow: 1; height: 38px; border-radius: 6px; border: 0; background-color: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 14px; font-weight: 600;` };
     });
     const sources = Object.entries(SRC).map(([id, [kind, name]]) => {
-      const border = st.pg === id ? '#b8322a' : st.pv === id ? '#3fbf5a' : '#111214';
-      return { kind, name, pick: () => this.setState({ pv: id }), style: `height: 64px; padding: 8px 10px; border-radius: 4px; border: 2px solid ${border}; background-color: #303135; color: #e4e5e7; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;` };
+      const border = st.pg === id ? '#c7372f' : st.pv === id ? '#3fbf5a' : '#2c3038';
+      return { kind, name, pick: () => this.setState({ pv: id }), style: `height: 64px; padding: 8px 10px; border-radius: 6px; border: 2px solid ${border}; background-color: #262a31; color: #e4e5e7; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;` };
     });
-    const mon = (id, color) => `height: 94px; border-radius: 4px; border: 2px solid ${color}; background-color: ${(SRC[id] || SRC.cam1)[2]}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;`;
+    const mon = (id, color) => `height: 94px; border-radius: 6px; border: 2px solid ${color}; background-color: ${(SRC[id] || SRC.cam1)[2]}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;`;
     return {
       tabs, sources,
       pvName: SRC[st.pv][1], pgName: st.blank || st.panic ? 'BLANK' : SRC[st.pg][1],
-      pvStyle: mon(st.pv, '#2c8a3e'),
-      pgStyle: st.blank || st.panic ? 'height: 94px; border-radius: 4px; border: 2px solid #b8322a; background: #000; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: #8e9096;' : mon(st.pg, '#b8322a'),
+      pvStyle: mon(st.pv, '#2f8f4e'),
+      pgStyle: st.blank || st.panic ? 'height: 94px; border-radius: 6px; border: 2px solid #c7372f; background: #000; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: #8e9096;' : mon(st.pg, '#c7372f'),
       presetName: PRESETS[st.preset],
       prevPreset: () => this.setState({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
       nextPreset: () => this.setState({ preset: (st.preset + 1) % PRESETS.length }),
@@ -110,10 +111,10 @@ class Component extends DCLogic {
       take: () => this.setState({ pg: st.pv, pv: st.pg }),
       toggleBlank: () => this.setState({ blank: !st.blank }),
       blankText: st.blank ? 'Unblank' : 'Blank',
-      blankStyle: `width: 110px; height: 64px; border-radius: 4px; border: 1px solid ${st.blank ? '#8e9096' : '#111214'}; background-color: ${st.blank ? '#e4e5e7' : '#3c3d42'}; color: ${st.blank ? '#1b1c1f' : '#e4e5e7'}; font-size: 16px; font-weight: 700;`,
+      blankStyle: `width: 110px; height: 64px; border-radius: 6px; border: 1px solid ${st.blank ? '#8e9096' : '#2c3038'}; background-color: ${st.blank ? '#e4e5e7' : '#2a2e36'}; color: ${st.blank ? '#15171b' : '#e4e5e7'}; font-size: 16px; font-weight: 700;`,
       togglePanic: () => this.setState({ panic: !st.panic }),
       panicText: st.panic ? 'Restore' : 'Panic',
-      panicStyle: `height: 34px; padding: 0 12px; border-radius: 4px; border: 1px solid #b8322a; background-color: ${st.panic ? '#b8322a' : '#2a1315'}; color: ${st.panic ? '#fff' : '#ff9a9d'}; font-size: 12px; font-weight: 700;`,
+      panicStyle: `height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #c7372f; background-color: ${st.panic ? '#c7372f' : '#3a1a18'}; color: ${st.panic ? '#fff' : '#ff9a9d'}; font-size: 12px; font-weight: 700;`,
       more: st.more,
       toggleMore: () => this.setState({ more: !st.more }),
       moreItems: ['Transitions', 'Audio mixer', 'Monitor message', 'Flash stage', 'Overlays', 'Timer', '12 Pesukim', 'Cues']
