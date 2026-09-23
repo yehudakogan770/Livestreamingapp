@@ -6,6 +6,8 @@
 > Where a page ran off the edge or was unclear, it is marked **❓ Unclear**.
 >
 > Note from the author: *"All images are what I envisioned it to look like — it does not have to match the images."*
+>
+> **Numbers are not final.** Counts in the notes and sketches (how many presets, cameras, videos, overlays, split screens, transitions, custom buttons, mixer sliders, etc.) were drawn on the spot and are **examples only**. The app should let the user **add as many as needed** (configurable, not fixed). What matters is the *kind* of control, not the exact number.
 
 **Working name:** not chosen yet (see §31).
 
@@ -406,9 +408,9 @@ Drawn right after *"on the phone it should be a more simple version — it shoul
 
 | # | Topic | What the notes say | Proposed resolution |
 |---|-------|--------------------|---------------------|
-| 1 | Number of presets on main screen | 12 (pen p1), 10 (pen p3 — likely phone), 14 (pencil), 20 (Add Preset popup) | Scrollable preset grid, default 14 visible; phone uses dropdown + next/prev |
+| 1 | Counts of presets / sources / transitions / buttons | Differ between sketches (e.g. 10/12/14/20 presets) | **Not a real conflict** — numbers are examples only. Everything is add-as-many-as-you-need; phone uses dropdown + next/prev |
 | 2 | Go Live popup timing | "can also be opened mid-event" vs. pencil "has to be set up before the event" | Screen assignment set up once before (saved in settings); popup can be reopened anytime |
-| 3 | Transitions | Fade 1–6 (pen) vs. Transition / Fade / Merge + 5 slots (pencil) | 8 customizable transition slots, defaults include Cut, Fade, Merge/Dissolve, Wipe, etc. |
+| 3 | Transitions | Fade 1–6 (pen) vs. Transition / Fade / Merge + more (pencil) | Customizable transition buttons (add as many as needed); built-in types include Cut, Fade, Merge/Dissolve, Wipe, etc. |
 | 4 | Blank Screen position | Under live screen (pen) vs. top tab row (pencil) | Both reachable; plus panic button on all pages |
 | 5 | Phone remote: website vs. app | "Website unless there's a simple way to make it a proper app" | Installable web app ("Add to Home Screen") — no app store needed |
 | 6 | "Each device is a WiFi extender" | Not possible on phones (see §37) | Dedicated offline travel router or PC hotspot |
