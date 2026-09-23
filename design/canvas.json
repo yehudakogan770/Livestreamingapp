@@ -256,6 +256,14 @@
       "w": 1440,
       "x": 6480,
       "y": 0
+    },
+    "LogoRound3.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "title": "Lumora logo — round 3 (Tally + Iris)",
+      "w": 1440,
+      "x": 8000,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -269,7 +277,7 @@
   "notes": {
     "row0": {
       "kind": "title1",
-      "maxW": 7920,
+      "maxW": 9440,
       "text": "Running the event",
       "w": 240,
       "x": 0,
@@ -356,7 +364,8 @@
     "Website.dc.html",
     "Scene.dc.html",
     "LogoOptions.dc.html",
-    "LogoRound2.dc.html"
+    "LogoRound2.dc.html",
+    "LogoRound3.dc.html"
   ],
   "pages": [],
   "title": "Lumora — System Design"
