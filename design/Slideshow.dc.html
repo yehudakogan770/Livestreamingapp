@@ -74,7 +74,7 @@ input[type=range]{accent-color:#4fb3bf}
           <div onClick="{{it.pick}}" style="{{it.row}}">
             <span style="width: 16px; flex-shrink: 0; color: #5a5c62; font-size: 11px; letter-spacing: -2px;">⋮⋮</span>
             <span style="width: 18px; font-family: Consolas, monospace; font-size: 11px; color: #8e9096; text-align: right;">{{it.num}}</span>
-            <div style="{{it.thumb}}">{{it.thumbLabel}}</div>
+            <div style="{{it.thumb}}"><dc-import name="Scene" kind="{{it.scene}}" hint-size="100%,100%"></dc-import><span style="position: absolute; right: 2px; bottom: 2px; min-width: 12px; height: 12px; padding: 0 2px; border-radius: 2px; background: rgba(10,11,13,0.75); font-size: 8px; line-height: 12px; text-align: center; color: #ffffff;">{{it.thumbLabel}}</span></div>
             <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;">
               <span style="{{it.titleStyle}}">{{it.title}}</span>
               <span style="font-size: 10px; color: #8e9096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{it.sub}}</span>
@@ -116,7 +116,8 @@ input[type=range]{accent-color:#4fb3bf}
       <div style="position: relative; width: 776px; height: 437px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: #0c0d10; border: 2px solid #2f8f4e; box-sizing: border-box; align-self: center;">
         <sc-if value="{{showSlideLayout}}" hint-placeholder-val="{{true}}">
           <div style="{{pvCam}}">
-            <span style="position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,0.55);">{{camName}} · live camera</span>
+            <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import></div>
+            <span style="position: absolute; left: 12px; bottom: 10px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.7); font-size: 11px; line-height: 18px; color: #ffffff;">{{camName}}</span>
           </div>
           <div style="{{pvSlide}}">
             <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255,255,255,0.6);">{{slideKicker}}</span>
@@ -125,8 +126,9 @@ input[type=range]{accent-color:#4fb3bf}
           </div>
         </sc-if>
         <sc-if value="{{showVideo}}" hint-placeholder-val="{{false}}">
-          <div style="position: absolute; inset: 0; background: #403143; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
-            <span style="font-size: 24px; font-weight: 600; color: rgba(255,255,255,0.85);">▶ {{videoName}}</span>
+          <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="tribute" hint-size="100%,100%"></dc-import></div>
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px; background: rgba(8,9,11,0.72); display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+            <span style="font-size: 16px; font-weight: 600; color: #ffffff;">{{videoName}}</span>
             <span style="font-size: 12px; color: rgba(255,255,255,0.6);">Plays full screen · slideshow continues when it ends</span>
           </div>
         </sc-if>
@@ -191,7 +193,7 @@ input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">BORDER &amp; BACKGROUND</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Border &amp; background</span>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;">
           <label style="display: flex; align-items: center; gap: 8px; flex-grow: 1;"><input type="checkbox" checked="{{border}}" onChange="{{toggleBorder}}"> Border around slide</label>
           <sc-for list="{{borderColors}}" as="c" hint-placeholder-count="4"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
@@ -290,7 +292,8 @@ class Component extends DCLogic {
         up: (e) => { if (e && e.stopPropagation) e.stopPropagation(); move(i, -1); },
         down: (e) => { if (e && e.stopPropagation) e.stopPropagation(); move(i, 1); },
         titleStyle: `font-size: 12px; font-weight: 600; color: ${vid ? '#8fd3db' : '#e4e5e7'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`,
-        thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; background: ${vid ? '#403143' : '#3f3b2a'}; border: 1px solid ${vid ? '#6a5470' : '#2c3038'}; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.65); box-sizing: border-box;`,
+        scene: vid ? 'tribute' : 'slides',
+        thumb: `position: relative; overflow: hidden; width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; background: ${vid ? '#403143' : '#3f3b2a'}; border: 1px solid ${vid ? '#6a5470' : '#2c3038'}; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.65); box-sizing: border-box;`,
         row: `height: 48px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; cursor: pointer; box-sizing: border-box; background: ${on ? '#243039' : (vid ? '#1e2127' : 'transparent')}; border: 1px ${vid ? 'dashed' : 'solid'} ${on ? '#4fb3bf' : (vid ? '#4fb3bf' : 'transparent')};`
       };
     });
@@ -311,7 +314,7 @@ class Component extends DCLogic {
         name, pick: () => set({ layout: id }),
         card: `display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'};`,
         cam: `position: absolute; ${g.cam} background: #34404c; display: ${g.camOn ? 'block' : 'none'};`,
-        slide: `position: absolute; ${g.slide} box-sizing: border-box; background: ${g.slideBg ? '#6b6346' : 'transparent'}; border: 1px ${g.slideBg ? 'solid' : 'dashed'} ${g.slideBg ? '#8a8260' : '#c9c3a6'}; ${id === 'behind' ? 'left: 20%; top: 30%; width: 60%; height: 40%;' : ''}`
+        slide: `position: absolute; ${g.slide} box-sizing: border-box; background: ${g.slideBg ? '#dcdfe5' : 'transparent'}; border: 1px ${g.slideBg ? 'solid' : 'dashed'} ${g.slideBg ? '#ffffff' : '#c9c3a6'}; ${id === 'behind' ? 'left: 20%; top: 30%; width: 60%; height: 40%;' : ''}`
       };
     });
 
@@ -319,7 +322,7 @@ class Component extends DCLogic {
     const isVideo = curItem.kind === 'video';
     const g = geo(st.layout, st.boxSize);
     const borderCss = st.border ? `border: 3px solid ${st.borderColor};` : 'border: 0;';
-    const slideBgCss = st.black ? '#000000' : (g.slideBg && st.bg !== 'remove' ? (st.bg === 'colour' ? '#1b2a4a' : '#3f3b2a') : 'rgba(0,0,0,0.25)');
+    const slideBgCss = st.black ? '#000000' : (g.slideBg && st.bg !== 'remove' ? (st.bg === 'colour' ? '#1b2a4a' : '#1d2433') : 'rgba(0,0,0,0.25)');
     const nextIdx = st.cur + 1 < st.items.length ? st.cur + 1 : (st.loop ? 0 : -1);
     const labelOf = (i) => { const it = st.items[i]; return it.kind === 'video' ? '▶ ' + it.title + ' (video)' : 'Slide ' + slideNums[i] + ' · ' + it.title; };
     let curSlideNum = slideNums[st.cur];

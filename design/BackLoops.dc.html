@@ -66,6 +66,7 @@ input[type=range]{accent-color:#4fb3bf}
         <sc-for list="{{loops}}" as="l" hint-placeholder-count="12">
           <button onClick="{{l.pick}}" style="{{l.card}}">
             <div style="{{l.thumb}}">
+              <div style="{{l.hue}}"><dc-import name="Scene" kind="{{l.scene}}" hint-size="100%,100%"></dc-import></div>
               <span style="{{l.liveTag}}">ON BACK</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -85,6 +86,7 @@ input[type=range]{accent-color:#4fb3bf}
         <span style="font-size: 12px; color: #8e9096;">{{selName}}</span>
       </div>
       <div style="{{preview}}">
+              <div style="{{selHue}}"><dc-import name="Scene" kind="{{selScene}}" hint-size="100%,100%"></dc-import></div>
         <div style="{{tintLayer}}"></div>
         <sc-if value="{{logoOn}}" hint-placeholder-val="{{true}}">
           <div style="{{logoBox}}">[Event logo]</div>
@@ -208,16 +210,19 @@ class Component extends DCLogic {
       ['confetti', 'Confetti', 'Festive', '#3f2f3f'], ['lights', 'Light beams', 'Energetic', '#2e2f48'],
       ['sparkle', 'Sparkle', 'Festive', '#3a3040'], ['silk', 'Silk', 'Elegant', '#3b2f2f']
     ];
+    const LM = { aurora: ['aurora', 0], particles: ['particles', 0], warm: ['warm', 0], bokeh: ['warm', 250], geo: ['particles', 120], waves: ['aurora', 40], stars: ['particles', 200], smoke: ['aurora', 180], confetti: ['particles', 290], lights: ['stage', 0], sparkle: ['warm', 300], silk: ['warm', 330] };
     const byId = {}; LOOPS.forEach((l) => { byId[l[0]] = l; });
     const shown = LOOPS.filter((l) => st.cat === 'all' || l[2].toLowerCase() === st.cat);
     const loops = shown.map(([id, name, cat, tone]) => {
       const on = st.sel === id; const isLive = st.live === id;
       return { name, cat, pick: () => set({ sel: id }),
         card: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: #e4e5e7; box-sizing: border-box;`,
-        thumb: `position: relative; width: 100%; height: 76px; border-radius: 4px; background: ${tone};`,
+        scene: LM[id][0], hue: `position: absolute; inset: 0; filter: hue-rotate(${LM[id][1]}deg);`,
+        thumb: `position: relative; overflow: hidden; width: 100%; height: 76px; border-radius: 4px; background: ${tone};`,
         liveTag: `position: absolute; left: 4px; top: 4px; height: 16px; padding: 0 5px; border-radius: 3px; background: #c7372f; color: #ffffff; font-size: 9px; font-weight: 600; display: ${isLive ? 'flex' : 'none'}; align-items: center;` };
     });
     const sel = byId[st.sel];
+    const selScene = LM[st.sel][0], selHue = `position: absolute; inset: 0; filter: hue-rotate(${LM[st.sel][1]}deg);`;
     const TINTS = [['none', 'No tint', '#343944'], ['teal', 'Teal', '#4fb3bf'], ['blue', 'Blue', '#4a6fd1'], ['purple', 'Purple', '#8a5cc7'], ['red', 'Red', '#c7372f'], ['green', 'Green', '#3fbf5a']];
     const tintCol = (TINTS.find((t) => t[0] === st.tint) || TINTS[0])[2];
     const tints = TINTS.map(([id, name, c]) => ({ name: name + ' tint', pick: () => set({ tint: id }),
@@ -237,7 +242,7 @@ class Component extends DCLogic {
     return {
       loopCount: String(LOOPS.length),
       cats: seg('cat', [['all', 'All'], ['calm', 'Calm'], ['energetic', 'Energetic'], ['elegant', 'Elegant'], ['festive', 'Festive']]),
-      loops, selName: sel[1] + ' · ' + sel[2],
+      loops, selScene, selHue, selName: sel[1] + ' · ' + sel[2],
       preview: `position: relative; width: 300px; height: 169px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: ${sel[3]}; border: 2px solid #2f8f4e; box-sizing: border-box; filter: brightness(${0.4 + bright * 0.8}) hue-rotate(${st.hue}deg) blur(${st.blur / 10}px);`,
       tintLayer: `position: absolute; inset: 0; background: ${tintCol}; opacity: ${st.tint === 'none' ? 0 : 0.25};`,
       logoOn: st.logo, toggleLogo: () => set({ logo: !st.logo }),

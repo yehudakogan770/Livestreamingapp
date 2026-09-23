@@ -93,7 +93,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
           <div style="width: 400px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
             <span style="{{k.h}}">Live thumbnail</span>
             <div style="width: 400px; height: 225px; border-radius: 6px; background-color: #34404c; border: 1px solid #2c3038; position: relative; display: flex; align-items: center; justify-content: center;">
-              <span style="font-size: 14px; color: rgba(255,255,255,0.55);">[Camera picture]</span>
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import></div>
               <span style="position: absolute; left: 10px; top: 10px; height: 20px; padding: 0 8px; border-radius: 4px; background-color: rgba(0,0,0,0.55); display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em;"><span style="width: 6px; height: 6px; border-radius: 3px; background-color: #3fbf5a;"></span>SIGNAL</span>
               <span style="position: absolute; right: 10px; bottom: 10px; font-family: Consolas, monospace; font-size: 11px; color: rgba(255,255,255,0.7);">{{camRes}}</span>
             </div>
@@ -154,7 +154,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
             </div>
             <div style="width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
               <span style="{{k.h}}">Live thumbnail</span>
-              <div style="height: 180px; border-radius: 6px; background-color: #27403f; border: 1px solid #2c3038; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,0.55);">[Wireless camera picture]</div>
+              <div style="position: relative; overflow: hidden; height: 180px; border-radius: 6px; border: 1px solid #2c3038;"><div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="side" hint-size="100%,100%"></dc-import></div></div>
               <span style="font-size: 11px; color: #8e9096;">Stays on the Lumora network — no internet needed.</span>
             </div>
           </div>
@@ -197,7 +197,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
               <sc-for list="{{phones}}" as="p" hint-placeholder-count="3">
                 <div style="display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 12px; border-radius: 6px; background-color: #262a31; border: 1px solid #2c3038;">
                   <input type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Add {{p.name}}">
-                  <div style="{{p.thumb}}"></div>
+                  <div style="{{p.thumb}}"><dc-import name="Scene" kind="crowd" hint-size="100%,100%"></dc-import></div>
                   <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
                     <span style="font-size: 13px; font-weight: 600;">{{p.name}}</span>
                     <span style="font-size: 11px; color: #8e9096;">{{p.meta}}</span>
@@ -259,7 +259,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
         <div style="display: flex; flex-direction: column; gap: 16px;">
           <div style="display: flex; align-items: center; gap: 8px;"><span style="{{k.h}}">Slides</span><div style="flex-grow: 1;"></div><button style="{{k.btnSm}}">+ Add images…</button><button style="{{k.btnSm}}">Add a folder…</button></div>
           <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;">
-            <sc-for list="{{slides}}" as="s" hint-placeholder-count="6"><div style="{{s.style}}"><span style="font-family: Consolas, monospace; font-size: 11px; color: rgba(255,255,255,0.6);">{{s.n}}</span></div></sc-for>
+            <sc-for list="{{slides}}" as="s" hint-placeholder-count="6"><div style="{{s.style}}"><div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="slides" hint-size="100%,100%"></dc-import></div><span style="font-family: Consolas, monospace; font-size: 11px; color: rgba(255,255,255,0.6);">{{s.n}}</span></div></sc-for>
           </div>
           <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
             <label style="{{k.field}}"><span style="{{k.lbl}}">Each slide</span><select aria-label="Seconds per slide" style="{{k.inp}}"><option>8 seconds</option><option>5 seconds</option><option>12 seconds</option><option>Manual (click next)</option></select></label>
@@ -316,7 +316,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
           </div>
           <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
             <sc-for list="{{loops}}" as="l" hint-placeholder-count="8">
-              <button onClick="{{l.pick}}" style="{{l.style}}"><div style="{{l.thumb}}"></div><span style="font-size: 12px; font-weight: 600; padding: 0 2px;">{{l.name}}</span></button>
+              <button onClick="{{l.pick}}" style="{{l.style}}"><div style="{{l.thumb}}"><div style="{{l.hue}}"><dc-import name="Scene" kind="{{l.scene}}" hint-size="100%,100%"></dc-import></div></div><span style="font-size: 12px; font-weight: 600; padding: 0 2px;">{{l.name}}</span></button>
             </sc-for>
           </div>
           <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
@@ -483,18 +483,19 @@ class Component extends DCLogic {
         style: `height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; border-bottom: 1px solid #2c3038; font-size: 13px; background-color: ${st.ndi === i ? '#243039' : '#262a31'}; color: ${st.ndi === i ? '#ffffff' : '#e4e5e7'};` })),
       pin: st.pin,
       newPin: () => this.setState({ pin: st.pin === '482 719' ? '905 362' : '482 719' }),
-      phones: phoneNames.map(([name, meta], i) => ({ name, meta, thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 4px; background-color: ${tones[i]};`, on: st.phones[i], toggle: () => { const p = st.phones.slice(); p[i] = !p[i]; this.setState({ phones: p }); } })),
+      phones: phoneNames.map(([name, meta], i) => ({ name, meta, thumb: `position: relative; overflow: hidden; width: 64px; height: 36px; flex-shrink: 0; border-radius: 4px; background-color: ${tones[i]};`, on: st.phones[i], toggle: () => { const p = st.phones.slice(); p[i] = !p[i]; this.setState({ phones: p }); } })),
       endSeg: [['hold', 'Hold last frame'], ['black', 'Go to black'], ['next', 'Next item']].map(([id, label]) => ({ label, pick: () => this.setState({ end: id }),
         style: `height: 32px; padding: 0 14px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${st.end === id ? '#243039' : '#2a2e36'}; color: ${st.end === id ? '#ffffff' : '#d4d5d8'};` })),
       fitSeg: seg(['Fit', 'Fill', 'Stretch'], st.fit, 'fit'),
       timerSeg: seg(['Count down', 'Count up', 'Clock'], st.timer, 'timer'),
-      slides: tones.slice(0, 6).map((c, i) => ({ n: i + 1, style: `height: 72px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038; display: flex; align-items: flex-end; padding: 4px 6px; box-sizing: border-box;` })),
+      slides: tones.slice(0, 6).map((c, i) => ({ n: i + 1, style: `position: relative; overflow: hidden; height: 72px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038; display: flex; align-items: flex-end; padding: 4px 6px; box-sizing: border-box;` })),
       swatches: swHex.map((hex) => ({ hex, pick: () => this.setState({ colour: hex }), style: `width: 44px; height: 44px; padding: 0; border-radius: 6px; background-color: ${hex}; border: 2px solid ${st.colour === hex ? '#4fb3bf' : '#2c3038'};` })),
       colour: st.colour,
       colourPreview: `height: 169px; border-radius: 6px; border: 1px solid #2c3038; background-color: ${st.colour};`,
       loops: loopNames.map((name, i) => ({ name, pick: () => this.setState({ loopPick: i }),
         style: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; text-align: left; border: 1px solid ${st.loopPick === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.loopPick === i ? '#243039' : '#262a31'}; color: #e4e5e7;`,
-        thumb: `height: 74px; border-radius: 4px; background-color: ${tones[i]};` })),
+        scene: ['aurora', 'particles', 'warm', 'aurora', 'particles', 'warm', 'aurora', 'particles'][i % 8], hue: `position: absolute; inset: 0; filter: hue-rotate(${[0, 0, 0, 160, 220, 300, 60, 120][i % 8]}deg);`,
+        thumb: `position: relative; overflow: hidden; height: 74px; border-radius: 4px; background-color: ${tones[i]};` })),
       layouts: layoutDefs.map(([name, [a, b]], i) => ({ name, pick: () => this.setState({ layout: i }),
         style: `display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; border: 1px solid ${st.layout === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.layout === i ? '#243039' : '#262a31'}; color: #e4e5e7;`,
         a: `position: absolute; ${a} border-radius: 2px; background-color: #34404c;`, b: `position: absolute; ${b} border-radius: 2px; background-color: #4fb3bf;` })),

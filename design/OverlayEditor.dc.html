@@ -85,7 +85,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
         <sc-for list="{{overlays}}" as="o" hint-placeholder-count="6">
           <div style="{{o.style}}">
             <button onClick="{{o.pick}}" style="flex-grow: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; padding: 0; text-align: left;">
-              <span style="{{o.thumb}}"></span>
+              <span style="{{o.thumb}}"><dc-import name="Scene" kind="{{o.scene}}" hint-size="100%,100%"></dc-import></span>
               <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
                 <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{o.name}}</span>
                 <span style="font-size: 11px; color: #8e9096;">{{o.kind}}</span>
@@ -127,7 +127,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #34404c; border: 2px solid #2f8f4e; border-radius: 4px; overflow: hidden; box-sizing: border-box;">
-        <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.35);">Camera 1 · [Stage wide]</span>
+        <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import></div>
         <sc-if value="{{showSafe}}" hint-placeholder-val="{{true}}">
           <div style="position: absolute; left: 5%; top: 5%; right: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.35); pointer-events: none;"></div>
           <div style="position: absolute; left: 10%; top: 10%; right: 10%; bottom: 10%; border: 1px dashed rgba(255,255,255,0.2); pointer-events: none;"></div>
@@ -293,7 +293,8 @@ class Component extends DCLogic {
       return {
         name: o.name, kind: o.kind,
         pick: () => set({ sel: i, sent: false }),
-        thumb: `width: 36px; height: 22px; flex-shrink: 0; border-radius: 3px; background: ${o.tone}; border: 1px solid #2c3038;`,
+        scene: /lower/i.test(o.name) ? 'lower' : /timer|score/i.test(o.name) ? 'timer' : /sponsor/i.test(o.name) ? 'sponsors' : /confetti/i.test(o.name) ? 'particles' : /camera/i.test(o.name) ? 'closeup' : 'overlay',
+        thumb: `position: relative; overflow: hidden; display: block; width: 36px; height: 22px; flex-shrink: 0; border-radius: 3px; background: ${o.tone}; border: 1px solid #2c3038;`,
         style: `height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background: ${on ? '#243039' : 'transparent'}; box-sizing: border-box;`,
         chans: [1, 2, 3, 4].map((n) => {
           const a = o.ch === n;

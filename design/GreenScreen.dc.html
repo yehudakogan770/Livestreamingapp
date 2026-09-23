@@ -121,10 +121,8 @@ input[type=range]{margin:0;height:18px}
         <sc-for list="{{canvasLayers}}" as="c" hint-placeholder-count="4">
           <div onClick="{{c.pick}}" style="{{c.box}}">
             <sc-if value="{{c.isBg}}" hint-placeholder-val="{{false}}">
-              <div style="position: absolute; left: 0; right: 0; top: 0; height: 68%; background-color: {{c.wall}};"></div>
-              <div style="position: absolute; left: 12%; top: 12%; width: 22%; height: 40%; border-radius: 4px; background-color: rgba(255,255,255,0.06);"></div>
-              <div style="position: absolute; right: 12%; top: 12%; width: 22%; height: 40%; border-radius: 4px; background-color: rgba(255,255,255,0.06);"></div>
-              <span style="position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,0.5);">{{c.label}}</span>
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import></div>
+              <span style="position: absolute; left: 12px; bottom: 10px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.7); font-size: 11px; line-height: 18px; color: #ffffff;">{{c.label}}</span>
             </sc-if>
             <sc-if value="{{c.isPerson}}" hint-placeholder-val="{{false}}">
               <div style="{{c.head}}"></div>
@@ -161,7 +159,7 @@ input[type=range]{margin:0;height:18px}
           <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Saved scenes</span>
           <div style="display: flex; gap: 8px;">
             <sc-for list="{{saved}}" as="s" hint-placeholder-count="4">
-              <div style="display: flex; flex-direction: column; gap: 4px; width: 120px;"><div style="{{s.thumb}}"></div><span style="font-size: 11px; color: #d4d5d8;">{{s.name}}</span></div>
+              <div style="display: flex; flex-direction: column; gap: 4px; width: 120px;"><div style="{{s.thumb}}"><dc-import name="Scene" kind="{{s.scene}}" hint-size="100%,100%"></dc-import></div><span style="font-size: 11px; color: #d4d5d8;">{{s.name}}</span></div>
             </sc-for>
           </div>
         </div>
@@ -325,7 +323,7 @@ class Component extends DCLogic {
       viewLabel: view === 'final' ? 'Final' : (view === 'matte' ? 'Matte view · white is kept' : 'Source view · camera as it comes in'),
       viewBadge: `height: 22px; padding: 0 8px; border-radius: 4px; display: flex; align-items: center; font-size: 11px; font-weight: 600; background-color: ${view === 'final' ? '#262a31' : '#243039'}; color: ${view === 'final' ? '#a9abb0' : '#ffffff'};`,
       layerCount: n,
-      saved: [['Studio desk', '#27403f'], ['Stage backdrop', '#3b3446'], ['Virtual set', '#2c3848'], ['[Your scene]', '#473a2c']].map(([name, c]) => ({ name, thumb: `height: 60px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038;` })),
+      saved: [['Studio desk', '#27403f', 'split'], ['Stage backdrop', '#3b3446', 'stage'], ['Virtual set', '#2c3848', 'side'], ['[Your scene]', '#473a2c', 'opening']].map(([name, c, scene]) => ({ name, scene, thumb: `position: relative; overflow: hidden; height: 60px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038;` })),
       keyer: sw(st.keyerOn, () => this.setState({ keyerOn: !st.keyerOn })),
       garbage: sw(st.garbageOn, () => this.setState({ garbageOn: !st.garbageOn })),
       viewSeg: [['final', 'Final', 'F'], ['matte', 'Matte', 'M'], ['source', 'Source', 'S']].map(([id, label, key]) => ({ label, key, pick: () => this.setState({ view: id }), style: segStyle(view === id) })),

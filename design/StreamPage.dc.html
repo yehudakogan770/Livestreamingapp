@@ -101,10 +101,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       <!-- Player + info -->
       <div style="width: 820px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px;">
         <div style="width: 820px; height: 461px; border-radius: 6px; background: #27303a; position: relative; overflow: hidden;">
-          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
-            <span style="font-size: 22px; font-weight: 600; color: rgba(255,255,255,0.75);">[Live stream]</span>
-            <span style="font-size: 13px; color: rgba(255,255,255,0.5);">16:9 player · 1920×1080</span>
-          </div>
+          <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import></div>
           <div style="position: absolute; left: 14px; top: 14px; display: flex; gap: 8px; align-items: center;">
             <span style="height: 24px; padding: 0 10px; border-radius: 4px; background: #c7372f; color: #ffffff; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #ffffff;"></span>LIVE</span>
             <span style="height: 24px; padding: 0 10px; border-radius: 4px; background: rgba(0,0,0,0.55); color: #ffffff; font-size: 12px; display: flex; align-items: center;">[viewer count] watching</span>
@@ -124,7 +121,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
 
         <div style="display: flex; gap: 16px;">
           <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
-            <span style="{{page.heading}}">ABOUT THIS EVENT</span>
+            <span style="{{page.heading}}">About this event</span>
             <span style="{{page.h2}}">[Event name]</span>
             <span style="{{page.body}}">[Short description of the event, written by the organiser. Who is speaking, what is happening, and anything viewers at home should know.]</span>
             <div style="display: flex; gap: 20px; margin-top: 4px;">
@@ -135,7 +132,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
             </div>
           </div>
           <div style="{{page.card230}}">
-            <span style="{{page.heading}}">ALSO STREAMING ON</span>
+            <span style="{{page.heading}}">Also streaming on</span>
             <span style="{{page.body}}">[Platform 1]</span>
             <span style="{{page.body}}">[Platform 2]</span>
             <span style="{{page.muted11}}">Recording available after the event: [yes / no]</span>
@@ -146,7 +143,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       <!-- Schedule -->
       <div style="{{page.sidebar}}">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="{{page.heading}}">RUN OF SHOW</span>
+          <span style="{{page.heading}}">Run of show</span>
           <span style="{{page.muted11}}">Times in [time zone]</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 4px;">

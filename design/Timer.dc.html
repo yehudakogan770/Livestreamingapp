@@ -64,6 +64,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       </div>
 
       <div style="{{stage}}">
+        <div style="position: absolute; inset: 0; opacity: 0.85;"><dc-import name="Scene" kind="{{bgScene}}" hint-size="100%,100%"></dc-import></div>
         <div style="{{glowLayer}}"></div>
         <sc-if value="{{notFinal}}" hint-placeholder-val="{{true}}">
           <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
@@ -148,7 +149,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
         <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Background</span>
         <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{bgs}}" as="b" hint-placeholder-count="8">
-            <button onClick="{{b.pick}}" aria-label="{{b.name}}" style="{{b.style}}"><span style="font-size: 9px; color: rgba(255,255,255,0.8);">{{b.name}}</span></button>
+            <button onClick="{{b.pick}}" aria-label="{{b.name}}" style="{{b.style}}"><span style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{b.scene}}" hint-size="100%,100%"></dc-import></span><span style="position: relative; font-size: 9px; color: #ffffff; text-shadow: 0 1px 2px #000;">{{b.name}}</span></button>
           </sc-for>
         </div>
       </div>
@@ -203,10 +204,12 @@ class Component extends DCLogic {
       style: `padding: 6px; display: flex; flex-direction: column; gap: 6px; border-radius: 6px; border: 2px solid ${st.style === id ? '#4fb3bf' : '#2c3038'}; background: #1e2127; color: #e4e5e7; align-items: stretch;`,
       swatch: `height: 44px; border-radius: 4px; background: ${s.bg}; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px ${s.accent}33;`
     }));
+    const BSC = { particles: 'particles', aurora: 'aurora', stars: 'particles', smoke: 'aurora', glow: 'warm', lights: 'stage', logo: 'eventlogo', color: 'black' };
     const bgs = Object.entries(BG).map(([id, [name, tone]]) => ({
+      scene: BSC[id],
       name,
       pick: () => set({ bg: id }),
-      style: `height: 50px; border-radius: 6px; border: 2px solid ${st.bg === id ? '#4fb3bf' : '#2c3038'}; background: ${tone}; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;`
+      style: `position: relative; overflow: hidden; padding: 0; height: 50px; border-radius: 6px; border: 2px solid ${st.bg === id ? '#4fb3bf' : '#2c3038'}; background: ${tone}; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;`
     }));
     const FX = [['pulse', 'Numbers pulse every second'], ['beat', 'Background moves to the music'], ['glow', 'Glow around numbers'], ['zoom10', 'Last 10 seconds: huge numbers zoom in'], ['shake', 'Camera-shake on each of the last 10 seconds'], ['tick', 'Tick sound in the last 10 seconds']];
     const effects = FX.map(([id, name]) => ({ name, on: !!st.fx[id], toggle: () => set({ fx: { ...st.fx, [id]: !st.fx[id] } }) }));
@@ -217,7 +220,7 @@ class Component extends DCLogic {
     const glow = st.fx.glow ? `0 0 40px ${sty.accent}66, 0 0 90px ${sty.accent}33` : 'none';
     const pct = Math.max(0, Math.min(100, (1 - st.secs / st.total) * 100));
     return {
-      styles, bgs, effects, modes,
+      styles, bgs, effects, modes, bgScene: BSC[st.bg],
       byTime: st.mode === 'time', byLength: st.mode === 'length',
       title: st.title, subtitle: st.subtitle,
       onTitle: (e) => set({ title: e.target.value }),

@@ -69,7 +69,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       </div>
       <div style="{{stage}}">
         <sc-if value="{{camBehind}}" hint-placeholder-val="{{true}}">
-          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 120px;"><span style="font-size: 22px; color: rgba(255,255,255,0.35);">Camera 1 · stage</span></div>
+          <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import></div>
         </sc-if>
         <div style="{{bar}}">
           <span dir="rtl" lang="he" style="{{textStyle}}">{{text}}</span>
