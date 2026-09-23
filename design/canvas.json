@@ -240,6 +240,14 @@
       "w": 1280,
       "x": 2720,
       "y": 7824
+    },
+    "LogoOptions.dc.html": {
+      "h": 1060,
+      "is_interactive": true,
+      "title": "Lumora logo options — pick one",
+      "w": 1440,
+      "x": 4960,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -251,16 +259,9 @@
     "view": "canvas"
   },
   "notes": {
-    "next": {
-      "fill": "orange",
-      "text": "Still to design:\n• Lumora logo options — for your approval",
-      "w": 420,
-      "x": 6880,
-      "y": 3960
-    },
     "row0": {
       "kind": "title1",
-      "maxW": 4760,
+      "maxW": 6400,
       "text": "Running the event",
       "w": 240,
       "x": 0,
@@ -345,7 +346,8 @@
     "StreamPage.dc.html",
     "Manual.dc.html",
     "Website.dc.html",
-    "Scene.dc.html"
+    "Scene.dc.html",
+    "LogoOptions.dc.html"
   ],
   "pages": [],
   "title": "Lumora — System Design"
