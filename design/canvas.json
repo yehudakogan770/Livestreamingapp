@@ -74,6 +74,14 @@
       "x": 4115,
       "y": -18
     },
+    "FontOptions.dc.html": {
+      "h": 1120,
+      "is_interactive": true,
+      "title": "Lumora font — pick one",
+      "w": 1440,
+      "x": 11040,
+      "y": 0
+    },
     "GoLive.dc.html": {
       "h": 760,
       "is_interactive": true,
@@ -273,12 +281,12 @@
       "x": 2720,
       "y": 7824
     },
-    "FontOptions.dc.html": {
-      "h": 1120,
+    "FontRound2.dc.html": {
+      "h": 1180,
       "is_interactive": true,
-      "title": "Lumora font — pick one",
+      "title": "Lumora font — round 2 (more character)",
       "w": 1440,
-      "x": 11040,
+      "x": 12560,
       "y": 0
     }
   },
@@ -293,7 +301,7 @@
   "notes": {
     "row0": {
       "kind": "title1",
-      "maxW": 12480,
+      "maxW": 14000,
       "text": "Running the event",
       "w": 240,
       "x": 0,
@@ -383,7 +391,8 @@
     "LogoRound2.dc.html",
     "LogoRound3.dc.html",
     "Brand.dc.html",
-    "FontOptions.dc.html"
+    "FontOptions.dc.html",
+    "FontRound2.dc.html"
   ],
   "pages": [],
   "title": "Lumora — System Design"
