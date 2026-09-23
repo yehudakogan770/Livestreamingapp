@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Library</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0c0e;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#e6e8eb}
+a{color:#f2b84b}a:hover{color:#ffd27a}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1160px; height: 780px; box-sizing: border-box; background: #121316; border: 1px solid #2a2e34; border-radius: 14px; display: flex; flex-direction: column; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #e6e8eb; overflow: hidden;">
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #23262b;">
+    <span style="font-family: Sora, sans-serif; font-size: 20px; font-weight: 600;">Library</span>
+    <label style="display: flex; align-items: center; gap: 8px; width: 360px; height: 36px; padding: 0 12px; margin-left: 16px; border-radius: 8px; background: #0b0c0e; border: 1px solid #262a2f; color: #8d949e;">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.4"></circle><path d="M9.2 9.2l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>
+      <input aria-label="Search library" placeholder="Search everything you've saved" style="flex-grow: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #e6e8eb; font-size: 13px;">
+    </label>
+    <div style="flex-grow: 1;"></div>
+    <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 13px;">Import…</button>
+    <button style="height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 13px;">Export / move to another PC…</button>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+  <div style="flex-grow: 1; display: flex; min-height: 0;">
+    <div style="width: 220px; flex-shrink: 0; border-right: 1px solid #23262b; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; background: #0f1012;">
+      <sc-for list="{{cats}}" as="c" hint-placeholder-count="10">
+        <button onClick="{{c.pick}}" style="{{c.style}}"><span>{{c.name}}</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7f8791;">{{c.n}}</span></button>
+      </sc-for>
+      <div style="flex-grow: 1;"></div>
+      <button style="height: 34px; border-radius: 7px; border: 1px dashed #3a3f46; background: transparent; color: #aab0b8; font-size: 12px;">+ New category</button>
+    </div>
+    <div style="flex-grow: 1; min-width: 0; padding: 18px 22px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 16px; font-weight: 600;">{{catName}}</span>
+        <span style="font-size: 13px; color: #8d949e;">Everything made for an event is saved here for later events.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+        <sc-for list="{{items}}" as="it" hint-placeholder-count="12">
+          <div style="border-radius: 10px; border: 1px solid #262a2f; background: #16181b; overflow: hidden; display: flex; flex-direction: column;">
+            <div style="{{it.thumb}}"><span style="font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: rgba(255,255,255,0.6);">{{it.kind}}</span></div>
+            <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 2px;">
+              <span style="font-size: 13px; font-weight: 600;">{{it.name}}</span>
+              <span style="font-size: 11px; color: #8d949e;">{{it.meta}}</span>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":780}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { cat: 'all' }; }
+  renderVals() {
+    const st = this.state;
+    const CATS = [['all', 'Everything', 64], ['presets', 'Presets', 14], ['events', 'Saved events', 6], ['videos', 'Videos', 12], ['loops', 'Back-screen loops', 9], ['overlays', 'Overlays', 8], ['text', 'Text & messages', 7], ['songs', 'Songs', 212], ['fonts', 'Fonts', 120], ['scenes', 'Green-screen scenes', 4]];
+    const ITEMS = [
+      ['presets', 'PRESET', 'Opening', 'Concert · 6 sources · 3 buttons', '#2d2618'],
+      ['presets', 'PRESET', '12 Pesukim', 'Built-in · edited 2 days ago', '#2d2618'],
+      ['events', 'EVENT', '[Past event]', 'Presets, text, cues — reusable', '#1f2733'],
+      ['videos', 'VIDEO', 'Opening.mp4', '1080p · 02:10', '#3b2e22'],
+      ['loops', 'LOOP', 'Aurora', 'Calm · follows music', '#1f3134'],
+      ['loops', 'LOOP', 'Particles', 'Energetic · 4K', '#232a3a'],
+      ['overlays', 'OVERLAY', 'Logo bug', 'Top-right · fades in', '#2a2230'],
+      ['overlays', 'OVERLAY', 'Lower third', 'Name + title', '#2a2230'],
+      ['text', 'MESSAGE', '5 minutes left', 'Monitor · saved', '#262626'],
+      ['songs', 'SONG', '[Song title]', 'Audio + notes for singer', '#1e2d26'],
+      ['scenes', 'SCENE', 'Studio desk', 'Green screen · 3 layers', '#1b3024'],
+      ['fonts', 'FONT', 'Frank Ruhl Libre', 'Hebrew + Latin', '#20232a']
+    ];
+    const cats = CATS.map(([id, name, n]) => {
+      const on = st.cat === id;
+      return { name, n, pick: () => this.setState({ cat: id }), style: `height: 36px; padding: 0 10px; border-radius: 7px; border: 0; background: ${on ? '#1e1a10' : 'transparent'}; color: ${on ? '#ffe3a6' : '#c6cad0'}; font-size: 13px; font-weight: ${on ? 600 : 400}; display: flex; align-items: center; justify-content: space-between; text-align: left;` };
+    });
+    const items = ITEMS.filter((i) => st.cat === 'all' || i[0] === st.cat).map(([, kind, name, meta, tone]) => ({ kind, name, meta, thumb: `height: 110px; background: ${tone}; display: flex; align-items: flex-end; padding: 8px 10px; box-sizing: border-box;` }));
+    return { cats, items, catName: CATS.find((c) => c[0] === st.cat)[1] };
+  }
+}
+</script>
+</body>
+</html>

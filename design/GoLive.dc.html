@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Go Live</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0c0e;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#e6e8eb}
+a{color:#f2b84b}a:hover{color:#ffd27a}
+button,select{font-family:inherit}
+input[type=checkbox]{accent-color:#f2b84b;width:18px;height:18px}
+</style>
+</helmet>
+<div style="width: 880px; height: 700px; box-sizing: border-box; background: #121316; border: 1px solid #2a2e34; border-radius: 14px; display: flex; flex-direction: column; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #e6e8eb; overflow: hidden;">
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #23262b;">
+    <span style="font-family: Sora, sans-serif; font-size: 20px; font-weight: 600;">Go Live</span>
+    <span style="font-size: 13px; color: #8d949e;">Controls for the live screens · can be reopened any time during the event</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 22px; padding: 22px 24px; overflow: hidden;">
+    <!-- Screens -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aab0b8;">1 · Select what you want opened</span>
+        <span style="font-size: 12px; color: #8d949e;">Screen assignments are remembered — set once, not every event.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+        <sc-for list="{{screens}}" as="s" hint-placeholder-count="3">
+          <label style="{{s.card}}">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <input type="checkbox" checked="{{s.on}}" onChange="{{s.toggle}}">
+              <span style="font-size: 15px; font-weight: 600;">{{s.name}}</span>
+            </div>
+            <div style="height: 86px; border-radius: 6px; background: #0b0c0e; border: 1px solid #262a2f; display: flex; align-items: center; justify-content: center; font-family: 'IBM Plex Mono', monospace; font-size: 28px; color: #3a3f46;">{{s.num}}</div>
+            <select aria-label="{{s.name}} display" style="height: 34px; border-radius: 7px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 13px; padding: 0 8px;">
+              <option>{{s.display}}</option>
+              <option>Display 2 · 1920×1080</option>
+              <option>Display 3 · 1920×1080</option>
+              <option>Display 4 · 1280×720</option>
+              <option>Second device (network)</option>
+            </select>
+            <span style="font-size: 12px; color: #8d949e;">{{s.note}}</span>
+          </label>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 12px;">Identify displays</button>
+        <button style="height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 12px;">Use a second device as an output…</button>
+      </div>
+    </div>
+
+    <!-- Stream -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aab0b8;">2 · Live stream</span>
+        <span style="font-size: 12px; color: #8d949e;">Needs internet. Everything else works offline.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{dests}}" as="d" hint-placeholder-count="4">
+          <label style="display: flex; align-items: center; gap: 12px; height: 48px; padding: 0 14px; border-radius: 9px; background: #17191c; border: 1px solid #262a2f;">
+            <input type="checkbox" checked="{{d.on}}" onChange="{{d.toggle}}">
+            <span style="font-size: 14px; font-weight: 600; flex-grow: 1;">{{d.name}}</span>
+            <span style="font-size: 12px; color: #8d949e;">{{d.meta}}</span>
+          </label>
+        </sc-for>
+      </div>
+      <button style="align-self: flex-start; height: 32px; padding: 0 12px; border-radius: 7px; border: 1px dashed #3a3f46; background: transparent; color: #aab0b8; font-size: 12px;">+ Add streaming site</button>
+    </div>
+
+    <!-- Recording -->
+    <div style="display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 10px; background: #17191c; border: 1px solid #262a2f;">
+      <input type="checkbox" checked="{{rec}}" onChange="{{toggleRec}}" aria-label="Record event">
+      <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+        <span style="font-size: 14px; font-weight: 600;">Record the full event (MP4)</span>
+        <span style="font-size: 12px; color: #8d949e;">Always on by default. After the event you choose to keep, export or delete it.</span>
+      </div>
+      <select aria-label="Recording quality" style="height: 34px; border-radius: 7px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 13px; padding: 0 8px;">
+        <option>1080p60 · High</option>
+        <option>4K30 · Maximum</option>
+        <option>720p30 · Small file</option>
+      </select>
+    </div>
+  </div>
+
+  <div style="height: 76px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #23262b; background: #0f1012;">
+    <span style="font-size: 13px; color: #aab0b8;">{{summary}}</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 9px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Close</a>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 26px; border-radius: 9px; background: #f2b84b; color: #1a1408; font-size: 15px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Go Live</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":880,"height":700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { on: { live: true, back: true, monitor: true }, dest: { yt: true, fb: true, page: true, rtmp: false }, rec: true };
+  }
+  renderVals() {
+    const st = this.state;
+    const screens = [
+      { id: 'live', name: 'Live Screen', num: '2', display: 'Display 2 · 1920×1080', note: 'Feeds the stream + recording' },
+      { id: 'back', name: 'Back Screen', num: '3', display: 'Display 3 · 1920×1080', note: 'Projector behind the stage' },
+      { id: 'monitor', name: 'Monitor', num: '4', display: 'Display 4 · 1280×720', note: 'Faces the people on stage' }
+    ].map((s) => {
+      const on = st.on[s.id];
+      return {
+        ...s, on,
+        toggle: () => this.setState({ on: { ...st.on, [s.id]: !on } }),
+        card: `display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 10px; background: ${on ? '#1a1812' : '#17191c'}; border: 1px solid ${on ? '#6a5a34' : '#262a2f'}; cursor: pointer;`
+      };
+    });
+    const dests = [
+      { id: 'yt', name: 'YouTube', meta: 'Key saved' },
+      { id: 'fb', name: 'Facebook', meta: 'Key saved' },
+      { id: 'page', name: 'Lumora event page', meta: 'Branded for this event' },
+      { id: 'rtmp', name: 'Custom (RTMP / SRT)', meta: 'Not set up' }
+    ].map((d) => ({ ...d, on: st.dest[d.id], toggle: () => this.setState({ dest: { ...st.dest, [d.id]: !st.dest[d.id] } }) }));
+    const nScreens = Object.values(st.on).filter(Boolean).length;
+    const nDest = Object.values(st.dest).filter(Boolean).length;
+    return {
+      screens, dests, rec: st.rec,
+      toggleRec: () => this.setState({ rec: !st.rec }),
+      summary: `${nScreens} screen${nScreens === 1 ? '' : 's'} · ${nDest ? nDest + ' stream destination' + (nDest === 1 ? '' : 's') : 'no stream'} · ${st.rec ? 'recording' : 'not recording'}`
+    };
+  }
+}
+</script>
+</body>
+</html>

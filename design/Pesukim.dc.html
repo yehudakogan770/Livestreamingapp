@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — 12 Pesukim</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0c0e;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#e6e8eb}
+a{color:#f2b84b}a:hover{color:#ffd27a}
+button,input,select,textarea{font-family:inherit}
+input[type=range],input[type=checkbox]{accent-color:#f2b84b}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #0b0c0e; display: flex; flex-direction: column; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #e6e8eb; overflow: hidden;">
+  <div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 20px; background: #111215; border-bottom: 1px solid #23262b;">
+    <a href="Main.dc.html" style="height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 13px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box;">‹ Main screen</a>
+    <span style="font-family: Sora, sans-serif; font-size: 18px; font-weight: 600;">12 Pesukim</span>
+    <span style="font-size: 12px; color: #8d949e;">Built-in preset · edits are saved for this event</span>
+    <div style="flex-grow: 1;"></div>
+    <span style="font-size: 12px; color: #8d949e;">Showing on</span>
+    <select aria-label="Screens" style="height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 13px;"><option>Live + Back screen</option><option>Live screen only</option><option>Back screen only</option></select>
+  </div>
+
+  <div style="flex-grow: 1; display: flex; min-height: 0;">
+    <!-- Slide list -->
+    <div style="width: 220px; flex-shrink: 0; background: #111215; border-right: 1px solid #23262b; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box;">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8d949e; padding: 0 4px 6px;">Slides</span>
+      <sc-for list="{{slides}}" as="s" hint-placeholder-count="12">
+        <button onClick="{{s.pick}}" style="{{s.style}}"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; width: 20px; color: #7f8791;">{{s.n}}</span><span style="flex-grow: 1;">{{s.label}}</span><span style="{{s.markStyle}}">{{s.mark}}</span></button>
+      </sc-for>
+    </div>
+
+    <!-- Center: preview + regular buttons -->
+    <div style="flex-grow: 1; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: #ff6b70;">PROGRAM</span>
+        <span style="font-size: 12px; color: #8d949e;">Slide {{cur}} of 12 · camera behind · text bar on the bottom</span>
+      </div>
+      <div style="{{stage}}">
+        <sc-if value="{{camBehind}}" hint-placeholder-val="{{true}}">
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding-bottom: 120px;"><span style="font-family: Sora, sans-serif; font-size: 22px; color: rgba(255,255,255,0.35);">Camera 1 · stage</span></div>
+        </sc-if>
+        <div style="{{bar}}">
+          <span dir="rtl" lang="he" style="{{textStyle}}">{{text}}</span>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8d949e;">Regular buttons</span>
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
+          <sc-for list="{{regular}}" as="r" hint-placeholder-count="10">
+            <button style="height: 46px; border-radius: 8px; border: 1px solid #2a2e34; background: #16181b; color: #d5d8dd; font-size: 13px; font-weight: 600;">{{r}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Custom controls -->
+    <div style="width: 340px; flex-shrink: 0; background: #111215; border-left: 1px solid #23262b; padding: 16px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box;">
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8d949e;">Custom controls</span>
+      <div style="display: flex; gap: 8px;">
+        <button onClick="{{prev}}" style="flex-grow: 1; height: 56px; border-radius: 10px; border: 1px solid #2a2e34; background: #17191c; color: #e6e8eb; font-size: 16px; font-weight: 700;">‹ Prev</button>
+        <button onClick="{{next}}" style="flex-grow: 1; height: 56px; border-radius: 10px; border: 0; background: #f2b84b; color: #1a1408; font-size: 16px; font-weight: 700;">Next ›</button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <label style="font-size: 13px; color: #aab0b8;" for="goto">Go to slide</label>
+        <input id="goto" value="{{gotoVal}}" onInput="{{onGoto}}" inputmode="numeric" style="width: 60px; height: 38px; text-align: center; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 15px; font-family: 'IBM Plex Mono', monospace;">
+        <button onClick="{{go}}" style="height: 38px; padding: 0 14px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #e6e8eb; font-size: 13px; font-weight: 600;">Go</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 13px; color: #aab0b8;">Background</span>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{bgs}}" as="b" hint-placeholder-count="4">
+            <button onClick="{{b.pick}}" aria-label="{{b.name}}" style="{{b.style}}"><span style="font-size: 10px; color: rgba(255,255,255,0.75);">{{b.name}}</span></button>
+          </sc-for>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d5d8dd;"><input type="checkbox" checked="{{camBehind}}" onChange="{{toggleCam}}"> Camera behind (instead of background)</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d5d8dd;"><input type="checkbox" checked="{{barColor}}" onChange="{{toggleBarColor}}"> Background colour on text bar</label>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 13px; color: #aab0b8;">Text</span>
+        <div style="display: flex; gap: 6px;">
+          <select aria-label="Font" style="flex-grow: 1; height: 34px; border-radius: 7px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 13px;"><option>Frank Ruhl Libre</option><option>David Libre</option><option>Heebo</option><option>+ Import font…</option></select>
+          <button aria-label="Bold" style="width: 34px; height: 34px; border-radius: 7px; border: 1px solid #2a2e34; background: #17191c; color: #e6e8eb; font-weight: 700;">B</button>
+          <button aria-label="Text colour" style="width: 34px; height: 34px; border-radius: 7px; border: 1px solid #2a2e34; background: #17191c; display: flex; align-items: center; justify-content: center;"><span style="width: 16px; height: 16px; border-radius: 4px; background: #ffe39e;"></span></button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #aab0b8;">Size<input type="range" min="24" max="72" value="{{size}}" onInput="{{onSize}}" style="flex-grow: 1;"></label>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1; min-height: 0;">
+        <span style="font-size: 13px; color: #aab0b8;">Words for slide {{cur}}</span>
+        <textarea dir="rtl" lang="he" aria-label="Words" style="flex-grow: 1; min-height: 80px; resize: none; padding: 10px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-family: 'Frank Ruhl Libre', serif; font-size: 17px;">{{text}}</textarea>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d5d8dd;"><input type="checkbox"> Play a video after this slide</label>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { cur: 1, gotoVal: '1', bg: 'navy', cam: true, barColor: true, size: 44 };
+  }
+  renderVals() {
+    const st = this.state;
+    const TEXT = {
+      1: 'תּוֹרָה צִוָּה לָנוּ מֹשֶׁה מוֹרָשָׁה קְהִלַּת יַעֲקֹב',
+      2: 'שְׁמַע יִשְׂרָאֵל ה׳ אֱלֹקֵינוּ ה׳ אֶחָד'
+    };
+    const setCur = (n) => this.setState({ cur: n, gotoVal: String(n) });
+    const slides = Array.from({ length: 12 }, (_, i) => {
+      const n = i + 1;
+      const on = n === st.cur;
+      const has = !!TEXT[n];
+      return {
+        n: String(n).padStart(2, '0'),
+        label: 'Pasuk ' + n,
+        mark: has ? 'Words ✓' : 'Add words',
+        markStyle: `font-size: 10px; color: ${has ? '#6fe0a8' : '#8d949e'};`,
+        pick: () => setCur(n),
+        style: `height: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid ${on ? '#f2b84b' : 'transparent'}; background: ${on ? '#2a2212' : 'transparent'}; color: ${on ? '#ffe3a6' : '#d5d8dd'}; font-size: 13px; font-weight: ${on ? 600 : 400}; display: flex; align-items: center; gap: 8px; text-align: left;`
+      };
+    });
+    const BG = { navy: '#15213a', gold: '#3a2d12', forest: '#12291f', black: '#050506' };
+    const bgs = [['navy', 'Night'], ['gold', 'Gold'], ['forest', 'Forest'], ['black', 'Black']].map(([id, name]) => ({
+      name,
+      pick: () => this.setState({ bg: id }),
+      style: `height: 48px; border-radius: 7px; border: 2px solid ${st.bg === id ? '#f2b84b' : '#2a2e34'}; background: ${BG[id]}; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;`
+    }));
+    return {
+      slides, bgs,
+      cur: st.cur,
+      gotoVal: st.gotoVal,
+      onGoto: (e) => this.setState({ gotoVal: e.target.value }),
+      go: () => { const n = parseInt(st.gotoVal, 10); if (n >= 1 && n <= 12) setCur(n); },
+      prev: () => setCur(Math.max(1, st.cur - 1)),
+      next: () => setCur(Math.min(12, st.cur + 1)),
+      camBehind: st.cam,
+      barColor: st.barColor,
+      toggleCam: () => this.setState({ cam: !st.cam }),
+      toggleBarColor: () => this.setState({ barColor: !st.barColor }),
+      size: st.size,
+      onSize: (e) => this.setState({ size: Number(e.target.value) }),
+      text: TEXT[st.cur] || '[Words for pasuk ' + st.cur + ']',
+      stage: `position: relative; width: 832px; height: 468px; border-radius: 8px; overflow: hidden; border: 2px solid #e5484d; box-sizing: border-box; background: ${st.cam ? '#26313d' : BG[st.bg]};`,
+      bar: `position: absolute; left: 0; right: 0; bottom: 0; min-height: 110px; padding: 18px 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: ${st.barColor ? 'rgba(8,10,16,0.82)' : 'transparent'}; border-top: ${st.barColor ? '2px solid #f2b84b' : '0'};`,
+      textStyle: `font-family: 'Frank Ruhl Libre', serif; font-weight: 700; font-size: ${Math.round(st.size * 0.72)}px; color: #ffe39e; text-align: center; line-height: 1.3;`,
+      regular: ['Camera 1', 'Camera 2', 'Camera 3', 'Vid 1', 'Vid 2', 'Vid 3', 'Vid 4', 'Overlay 1', 'Overlay 2', 'Split screen']
+    };
+  }
+}
+</script>
+</body>
+</html>

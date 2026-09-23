@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Connected devices</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0c0e;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#e6e8eb}
+a{color:#f2b84b}a:hover{color:#ffd27a}
+button,select{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1000px; height: 740px; box-sizing: border-box; background: #121316; border: 1px solid #2a2e34; border-radius: 14px; display: flex; flex-direction: column; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #e6e8eb; overflow: hidden;">
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #23262b;">
+    <span style="font-family: Sora, sans-serif; font-size: 20px; font-weight: 600;">Connected devices</span>
+    <span style="font-size: 13px; color: #8d949e;">Offline network · no internet needed</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <sc-if value="{{pending}}" hint-placeholder-val="{{true}}">
+    <div style="margin: 16px 24px 0; padding: 12px 16px; border-radius: 10px; background: #231d10; border: 1px solid #6a5a34; display: flex; align-items: center; gap: 12px;">
+      <span style="width: 10px; height: 10px; border-radius: 5px; background: #f2b84b;"></span>
+      <span style="font-size: 14px; flex-grow: 1;"><b>iPad</b> wants to connect as <b>Controller</b> · entered the correct PIN</span>
+      <button onClick="{{deny}}" style="height: 34px; padding: 0 14px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 13px;">Deny</button>
+      <button onClick="{{approve}}" style="height: 34px; padding: 0 16px; border-radius: 8px; border: 0; background: #f2b84b; color: #1a1408; font-size: 13px; font-weight: 700;">Approve</button>
+    </div>
+  </sc-if>
+
+  <div style="flex-grow: 1; display: flex; gap: 20px; padding: 18px 24px 24px; min-height: 0;">
+    <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 12px; background: #17191c; border: 1px solid #262a2f; box-sizing: border-box;">
+      <span style="font-size: 15px; font-weight: 600;">Connect a new device</span>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #aab0b8; line-height: 1.5;">
+        <span>1. Join Wi-Fi <b style="color: #e6e8eb;">Lumora-Stage</b></span>
+        <span>2. Scan the code (or open <span style="font-family: 'IBM Plex Mono', monospace; color: #e6e8eb;">lumora.local</span>)</span>
+        <span>3. Enter the PIN, then approve here</span>
+      </div>
+      <div style="align-self: center; width: 180px; height: 180px; border-radius: 10px; background: #f3f3f1; padding: 14px; box-sizing: border-box; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px;">
+        <sc-for list="{{qr}}" as="q" hint-placeholder-count="81"><span style="{{q}}"></span></sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+        <span style="font-size: 12px; color: #8d949e;">PIN</span>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 28px; font-weight: 600; letter-spacing: 0.12em;">482 913</span>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #aab0b8;">Join as
+        <select style="height: 36px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 13px; padding: 0 8px;"><option>Controller (full)</option><option>Controller (simple)</option><option>Camera</option><option>Output screen</option><option>Singer view (read-only)</option></select>
+      </label>
+    </div>
+
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: center; padding: 0 4px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8d949e;">
+        <span style="flex-grow: 1;">Device</span><span style="width: 130px;">Role</span><span style="width: 90px;">Signal</span><span style="width: 80px;"></span>
+      </div>
+      <sc-for list="{{devices}}" as="d" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; min-height: 56px; padding: 0 12px; border-radius: 10px; background: #17191c; border: 1px solid #262a2f;">
+          <div style="flex-grow: 1; display: flex; align-items: center; gap: 10px; min-width: 0;">
+            <span style="{{d.dot}}"></span>
+            <div style="display: flex; flex-direction: column; min-width: 0;"><span style="font-size: 14px; font-weight: 600;">{{d.name}}</span><span style="font-size: 12px; color: #8d949e;">{{d.meta}}</span></div>
+          </div>
+          <span style="width: 130px; font-size: 13px; color: #c6cad0;">{{d.role}}</span>
+          <span style="width: 90px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #6fe0a8;">{{d.signal}}</span>
+          <button style="width: 80px; height: 30px; border-radius: 7px; border: 1px solid #2a2e34; background: transparent; color: #aab0b8; font-size: 12px;">Remove</button>
+        </div>
+      </sc-for>
+      <div style="flex-grow: 1;"></div>
+      <div style="padding: 12px 14px; border-radius: 10px; background: #111e17; border: 1px solid #234a36; font-size: 13px; color: #a8e9c7; line-height: 1.5;">If a phone or tablet drops, it reconnects by itself and catches up. The screens never depend on it — the show keeps running.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":740}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { pending: true, approved: false }; }
+  renderVals() {
+    const st = this.state;
+    const dot = (c) => `width: 10px; height: 10px; border-radius: 5px; background: ${c}; flex-shrink: 0;`;
+    const devices = [
+      { name: 'Control PC 2', meta: 'Second control window', role: 'Controller (full)', signal: 'Wired', dot: dot('#30a46c') },
+      { name: 'iPhone', meta: 'Battery 81%', role: 'Controller (simple)', signal: '12 ms', dot: dot('#30a46c') },
+      { name: 'Phone cam — Crowd', meta: '1080p30 · Battery 64%', role: 'Camera', signal: '18 ms', dot: dot('#30a46c') },
+      { name: 'Laptop by the door', meta: 'Showing Back Screen copy', role: 'Output screen', signal: '9 ms', dot: dot('#30a46c') }
+    ];
+    if (st.approved) devices.push({ name: 'iPad', meta: 'Just connected', role: 'Controller (full)', signal: '14 ms', dot: dot('#f2b84b') });
+    const pattern = '111101111100101001101111011000100001010110101011010101000011011100111101101111110';
+    const qr = pattern.split('').map((b) => `display: block; aspect-ratio: 1; background: ${b === '1' ? '#141413' : 'transparent'}; border-radius: 1px;`);
+    return {
+      devices, qr,
+      pending: st.pending,
+      approve: () => this.setState({ pending: false, approved: true }),
+      deny: () => this.setState({ pending: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

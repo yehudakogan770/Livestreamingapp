@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Event finished</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0c0e;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#e6e8eb}
+a{color:#f2b84b}a:hover{color:#ffd27a}
+button,select{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 760px; height: 560px; box-sizing: border-box; background: #121316; border: 1px solid #2a2e34; border-radius: 14px; display: flex; flex-direction: column; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #e6e8eb; overflow: hidden;">
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #23262b;">
+    <span style="font-family: Sora, sans-serif; font-size: 20px; font-weight: 600;">Event finished</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+  <div style="flex-grow: 1; padding: 22px 24px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; gap: 16px; align-items: center;">
+      <div style="width: 220px; height: 124px; border-radius: 8px; background: #26313d; border: 1px solid #2a2e34; display: flex; align-items: flex-end; padding: 8px; box-sizing: border-box;"><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: rgba(255,255,255,0.7);">02:14:36</span></div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 16px; font-weight: 600;">The whole event was recorded</span>
+        <span style="font-size: 13px; color: #8d949e;">Live Screen · 1080p60 · MP4 · 9.8 GB</span>
+        <span style="font-size: 13px; color: #8d949e;">Presets, text and cues were saved to the library.</span>
+      </div>
+    </div>
+    <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aab0b8;">What do you want to do with the recording?</span>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      <sc-for list="{{choices}}" as="c" hint-placeholder-count="3">
+        <button onClick="{{c.pick}}" style="{{c.style}}"><span style="font-size: 15px; font-weight: 700;">{{c.name}}</span><span style="font-size: 12px; color: #aab0b8; line-height: 1.45;">{{c.desc}}</span></button>
+      </sc-for>
+    </div>
+    <sc-if value="{{exporting}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; gap: 10px;">
+        <select aria-label="Export format" style="flex-grow: 1; height: 36px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; padding: 0 8px;"><option>MP4 · 1080p · High</option><option>MP4 · 720p · Small</option><option>MOV · ProRes (editing)</option></select>
+        <select aria-label="Trim" style="flex-grow: 1; height: 36px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; padding: 0 8px;"><option>Whole event</option><option>Choose start and end…</option></select>
+      </div>
+    </sc-if>
+  </div>
+  <div style="height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 0 24px; border-top: 1px solid #23262b; background: #0f1012;">
+    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 9px; background: #f2b84b; color: #1a1408; font-size: 15px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">{{cta}}</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":760,"height":560}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { pick: 'export' }; }
+  renderVals() {
+    const st = this.state;
+    const C = [['keep', 'Keep', 'Save the MP4 as it is.'], ['export', 'Export…', 'Pick format, quality and trim.'], ['delete', 'Delete', 'Remove it and free the space.']];
+    const choices = C.map(([id, name, desc]) => {
+      const on = st.pick === id;
+      const danger = id === 'delete';
+      return { name, desc, pick: () => this.setState({ pick: id }), style: `padding: 14px; border-radius: 10px; border: 2px solid ${on ? (danger ? '#e5484d' : '#f2b84b') : '#2a2e34'}; background: ${on ? (danger ? '#2a1315' : '#1e1a10') : '#17191c'}; color: #e6e8eb; display: flex; flex-direction: column; gap: 4px; text-align: left;` };
+    });
+    return { choices, exporting: st.pick === 'export', cta: st.pick === 'delete' ? 'Delete recording' : st.pick === 'export' ? 'Export' : 'Keep recording' };
+  }
+}
+</script>
+</body>
+</html>

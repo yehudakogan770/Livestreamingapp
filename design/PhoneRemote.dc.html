@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Phone remote</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0b0c0e;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#e6e8eb}
+a{color:#f2b84b}a:hover{color:#ffd27a}
+button,select{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0b0c0e; display: flex; flex-direction: column; padding: 16px 14px 18px; gap: 12px; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #e6e8eb; overflow: hidden; position: relative;">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <span style="font-family: Sora, sans-serif; font-size: 17px; font-weight: 600;">Lumora</span>
+    <span style="width: 8px; height: 8px; border-radius: 4px; background: #30a46c;"></span>
+    <span style="font-size: 12px; color: #8d949e;">Connected</span>
+    <div style="flex-grow: 1;"></div>
+    <button onDoubleClick="{{togglePanic}}" style="{{panicStyle}}">{{panicText}}</button>
+  </div>
+
+  <div style="display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: #15171a;">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+      <button onClick="{{t.pick}}" style="{{t.style}}">{{t.name}}</button>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; gap: 8px;">
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #3ecf8e;">PREVIEW</span>
+      <div style="{{pvStyle}}"><span style="font-size: 12px; font-weight: 600;">{{pvName}}</span></div>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #ff6b70;">LIVE</span>
+      <div style="{{pgStyle}}"><span style="font-size: 12px; font-weight: 600;">{{pgName}}</span></div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 6px; align-items: center;">
+    <button onClick="{{prevPreset}}" aria-label="Previous preset" style="width: 48px; height: 48px; border-radius: 10px; border: 1px solid #2a2e34; background: #17191c; color: #e6e8eb; font-size: 18px;">‹</button>
+    <label style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; height: 48px; padding: 4px 12px; box-sizing: border-box; border-radius: 10px; border: 1px solid #2a2e34; background: #17191c; justify-content: center;">
+      <span style="font-size: 10px; color: #8d949e;">Preset</span>
+      <select aria-label="Preset" style="background: transparent; border: 0; color: #ffe3a6; font-size: 15px; font-weight: 600; padding: 0; outline: none;"><option>{{presetName}}</option></select>
+    </label>
+    <button onClick="{{nextPreset}}" aria-label="Next preset" style="width: 48px; height: 48px; border-radius: 10px; border: 1px solid #2a2e34; background: #17191c; color: #e6e8eb; font-size: 18px;">›</button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+    <sc-for list="{{sources}}" as="s" hint-placeholder-count="9">
+      <button onClick="{{s.pick}}" style="{{s.style}}"><span style="font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #8d949e;">{{s.kind}}</span><span style="font-size: 13px; font-weight: 600;">{{s.name}}</span></button>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; gap: 8px;">
+    <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
+      <button style="flex-grow: 1; height: 44px; border-radius: 9px; border: 1px solid #4a3f24; background: #1e1a10; color: #ffd27a; font-size: 12px; font-weight: 600;">{{b}}</button>
+    </sc-for>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="display: flex; gap: 8px;">
+    <button onClick="{{toggleBlank}}" style="{{blankStyle}}">{{blankText}}</button>
+    <button onClick="{{take}}" style="flex-grow: 1; height: 64px; border-radius: 12px; border: 0; background: #e5484d; color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 0.04em;">TAKE · Fade</button>
+  </div>
+  <button onClick="{{toggleMore}}" style="height: 44px; border-radius: 10px; border: 1px solid #2a2e34; background: #15171a; color: #c6cad0; font-size: 14px; font-weight: 600;">More controls</button>
+
+  <sc-if value="{{more}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 14px 22px; border-radius: 18px 18px 0 0; background: #17191c; border-top: 1px solid #2f343a; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
+      <div style="display: flex; align-items: center;"><span style="font-size: 15px; font-weight: 600; flex-grow: 1;">More controls</span><button onClick="{{toggleMore}}" aria-label="Close" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2a2e34; background: #111215; color: #d5d8dd;">✕</button></div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{moreItems}}" as="m" hint-placeholder-count="8">
+          <button style="height: 48px; border-radius: 9px; border: 1px solid #2a2e34; background: #111215; color: #d5d8dd; font-size: 13px; font-weight: 600;">{{m}}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'live', pv: 'cam2', pg: 'cam1', preset: 0, blank: false, panic: false, more: false }; }
+  renderVals() {
+    const st = this.state;
+    const SRC = { cam1: ['CAMERA', 'Cam 1', '#26313d'], cam2: ['CAMERA', 'Cam 2', '#2e2a3a'], phone: ['PHONE', 'Phone', '#223329'], vid1: ['VIDEO', 'Vid 1', '#3b2e22'], vid2: ['VIDEO', 'Vid 2', '#2a3040'], vid3: ['VIDEO', 'Vid 3', '#35263a'], ov1: ['OVERLAY', 'Logo', '#2a2230'], split1: ['SPLIT', 'Split 1', '#2a323b'], slides: ['SLIDES', 'Slides', '#33301f'] };
+    const PRESETS = ['Opening', 'Welcome', 'Speaker', '12 Pesukim', 'Video break', 'Closing'];
+    const tabs = [['live', 'Live'], ['back', 'Back'], ['monitor', 'Monitor']].map(([id, name]) => {
+      const on = st.tab === id;
+      return { name, pick: () => this.setState({ tab: id }), style: `flex-grow: 1; height: 38px; border-radius: 8px; border: 0; background: ${on ? '#2a2212' : 'transparent'}; color: ${on ? '#ffe3a6' : '#aab0b8'}; font-size: 14px; font-weight: 600;` };
+    });
+    const sources = Object.entries(SRC).map(([id, [kind, name]]) => {
+      const border = st.pg === id ? '#e5484d' : st.pv === id ? '#3ecf8e' : '#262a2f';
+      return { kind, name, pick: () => this.setState({ pv: id }), style: `height: 64px; padding: 8px 10px; border-radius: 10px; border: 2px solid ${border}; background: #15171a; color: #e6e8eb; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;` };
+    });
+    const mon = (id, color) => `height: 94px; border-radius: 8px; border: 2px solid ${color}; background: ${(SRC[id] || SRC.cam1)[2]}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;`;
+    return {
+      tabs, sources,
+      pvName: SRC[st.pv][1], pgName: st.blank || st.panic ? 'BLANK' : SRC[st.pg][1],
+      pvStyle: mon(st.pv, '#30a46c'),
+      pgStyle: st.blank || st.panic ? 'height: 94px; border-radius: 8px; border: 2px solid #e5484d; background: #000; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: #8d949e;' : mon(st.pg, '#e5484d'),
+      presetName: PRESETS[st.preset],
+      prevPreset: () => this.setState({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
+      nextPreset: () => this.setState({ preset: (st.preset + 1) % PRESETS.length }),
+      presetButtons: ['Button 1', 'Button 2', 'Button 3'],
+      take: () => this.setState({ pg: st.pv, pv: st.pg }),
+      toggleBlank: () => this.setState({ blank: !st.blank }),
+      blankText: st.blank ? 'Unblank' : 'Blank',
+      blankStyle: `width: 110px; height: 64px; border-radius: 12px; border: 1px solid ${st.blank ? '#8d949e' : '#2a2e34'}; background: ${st.blank ? '#e6e8eb' : '#17191c'}; color: ${st.blank ? '#0b0c0e' : '#e6e8eb'}; font-size: 16px; font-weight: 700;`,
+      togglePanic: () => this.setState({ panic: !st.panic }),
+      panicText: st.panic ? 'Restore' : 'Panic',
+      panicStyle: `height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid #e5484d; background: ${st.panic ? '#e5484d' : '#2a1315'}; color: ${st.panic ? '#fff' : '#ff9a9d'}; font-size: 12px; font-weight: 700;`,
+      more: st.more,
+      toggleMore: () => this.setState({ more: !st.more }),
+      moreItems: ['Transitions', 'Audio mixer', 'Monitor message', 'Flash stage', 'Overlays', 'Timer', '12 Pesukim', 'Cues']
+    };
+  }
+}
+</script>
+</body>
+</html>
