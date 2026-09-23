@@ -1,4 +1,4 @@
-# Event Screen Control App — Full Specification
+# Lumora — Full Specification
 
 > Compiled from all handwritten note pages (pen set, pencil set, small "directions" set, and loose pages).
 > The pages were not in order and many were loose notes; everything has been sorted into sections below.
@@ -11,7 +11,7 @@
 >
 > **Numbers are not final.** Counts in the notes and sketches (how many presets, cameras, videos, overlays, split screens, transitions, custom buttons, mixer sliders, etc.) were drawn on the spot and are **examples only**. The app should let the user **add as many as needed** (configurable, not fixed). What matters is the *kind* of control, not the exact number.
 
-**Working name:** not chosen yet (see §31).
+**Name:** Lumora (see §31).
 
 ---
 
@@ -366,7 +366,7 @@ Drawn right after *"on the phone it should be a more simple version — it shoul
 
 ## 31. Name & logo
 
-- **A good professional name, max 2 words.** — Not chosen yet. Suggestions so far: **StageMix**, Stagecast, CueDeck, LiveDeck.
+- **A good professional name, max 2 words.** — **Chosen: Lumora** (lumen + Hebrew "ora", light).
 - **A proper logo** — I either describe it and you make it, or you make it; **must be approved by me.**
 
 ## 32. Settings, modes, customization & saving
@@ -417,7 +417,7 @@ Drawn right after *"on the phone it should be a more simple version — it shoul
 | 6 | "Each device is a WiFi extender" | Not possible on phones (see §37) | Dedicated offline travel router or PC hotspot |
 | 7 | Sign-in sync vs. offline | Needs internet to sync | Local-first: works offline, syncs when online; manual export/import too |
 | 8 | Streaming "no delays" | Platforms add delay | Local outputs instant; stream latency minimized ("low latency" modes) |
-| 9 | Name | Not chosen | Awaiting decision |
+| 9 | Name | — | **Lumora** (decided) |
 
 ## 37. Technical notes (from Claude)
 
