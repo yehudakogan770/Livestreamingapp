@@ -106,6 +106,30 @@
       "x": 5520,
       "y": 3960
     },
+    "LogoOptions.dc.html": {
+      "h": 1060,
+      "is_interactive": true,
+      "title": "Lumora logo options — pick one",
+      "w": 1440,
+      "x": 4960,
+      "y": 0
+    },
+    "LogoRound2.dc.html": {
+      "h": 1160,
+      "is_interactive": true,
+      "title": "Lumora logo — round 2 (from 2 + 5)",
+      "w": 1440,
+      "x": 6480,
+      "y": 0
+    },
+    "LogoRound3.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "title": "Lumora logo — round 3 (Tally + Iris)",
+      "w": 1440,
+      "x": 8000,
+      "y": 0
+    },
     "Main.dc.html": {
       "h": 900,
       "is_interactive": true,
@@ -241,28 +265,12 @@
       "x": 2720,
       "y": 7824
     },
-    "LogoOptions.dc.html": {
-      "h": 1060,
+    "Brand.dc.html": {
+      "h": 900,
       "is_interactive": true,
-      "title": "Lumora logo options — pick one",
+      "title": "Lumora brand — final logo",
       "w": 1440,
-      "x": 4960,
-      "y": 0
-    },
-    "LogoRound2.dc.html": {
-      "h": 1160,
-      "is_interactive": true,
-      "title": "Lumora logo — round 2 (from 2 + 5)",
-      "w": 1440,
-      "x": 6480,
-      "y": 0
-    },
-    "LogoRound3.dc.html": {
-      "h": 1180,
-      "is_interactive": true,
-      "title": "Lumora logo — round 3 (Tally + Iris)",
-      "w": 1440,
-      "x": 8000,
+      "x": 9520,
       "y": 0
     }
   },
@@ -277,7 +285,7 @@
   "notes": {
     "row0": {
       "kind": "title1",
-      "maxW": 9440,
+      "maxW": 10960,
       "text": "Running the event",
       "w": 240,
       "x": 0,
@@ -365,7 +373,8 @@
     "Scene.dc.html",
     "LogoOptions.dc.html",
     "LogoRound2.dc.html",
-    "LogoRound3.dc.html"
+    "LogoRound3.dc.html",
+    "Brand.dc.html"
   ],
   "pages": [],
   "title": "Lumora — System Design"
