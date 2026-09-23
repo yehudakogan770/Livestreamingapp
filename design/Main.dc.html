@@ -275,6 +275,64 @@ input[type=checkbox]{accent-color:#4fb3bf}
             </sc-if>
           </div>
 
+          <!-- Auto controls for what is on air -->
+          <sc-if value="{{ctx.show}}" hint-placeholder-val="{{true}}">
+            <div style="{{ctx.box}}">
+              <div style="width: 118px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="{{ctx.badge}}">{{ctx.where}}</span>
+                <span style="font-size: 13px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ctx.name}}</span>
+              </div>
+              <span style="width: 1px; align-self: stretch; background: #2c3038;"></span>
+              <sc-if value="{{ctx.isTimer}}" hint-placeholder-val="{{true}}">
+                <span style="font-family: Consolas, monospace; font-size: 28px; font-weight: 700; color: {{ctx.timeColor}}; min-width: 92px;">{{ctx.time}}</span>
+                <button onClick="{{ctx.sub1}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">−1 min</button>
+                <button onClick="{{ctx.add1}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">+1 min</button>
+                <button onClick="{{ctx.add5}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">+5 min</button>
+                <button onClick="{{ctx.toggleRun}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap;">{{ctx.runLabel}}</button>
+                <button onClick="{{ctx.last10}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Last 10 s</button>
+                <button onClick="{{ctx.reset}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Reset</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="Timer.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Timer ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isPesukim}}" hint-placeholder-val="{{false}}">
+                <span style="display: flex; flex-direction: column; gap: 1px; min-width: 100px;"><span style="font-size: 11px; color: #8e9096; white-space: nowrap;">{{ctx.pesPos}}</span><span dir="rtl" lang="he" style="font-family: 'Frank Ruhl Libre', David, serif; font-size: 22px; font-weight: 700; color: #ffe39e; text-align: left;">{{ctx.word}}</span></span>
+                <button onClick="{{ctx.prevWord}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">‹ Back a word</button>
+                <button onClick="{{ctx.nextWord}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap; min-width: 130px;">{{ctx.nextLabel}}</button>
+                <button onClick="{{ctx.nextPasuk}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Next pasuk ⏭</button>
+                <span style="font-size: 12px; color: #8e9096; white-space: nowrap;">Next: <span dir="rtl" lang="he" style="font-family: 'Frank Ruhl Libre', David, serif; font-size: 16px; color: #d4d5d8;">{{ctx.upNext}}</span></span>
+                <div style="flex-grow: 1;"></div>
+                <a href="Pesukim.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Pesukim ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isSlides}}" hint-placeholder-val="{{false}}">
+                <button onClick="{{ctx.prevSlide}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">‹ Previous</button>
+                <span style="font-family: Consolas, monospace; font-size: 18px; font-weight: 700; color: #ffffff; min-width: 80px; text-align: center;">{{ctx.slidePos}}</span>
+                <button onClick="{{ctx.nextSlide}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap;">Next slide ›</button>
+                <button onClick="{{ctx.firstSlide}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Back to first</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="Slideshow.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Slideshow ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isCredits}}" hint-placeholder-val="{{false}}">
+                <button onClick="{{ctx.toggleRoll}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap;">{{ctx.rollLabel}}</button>
+                <button onClick="{{ctx.slower}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Slower</button>
+                <span style="font-family: Consolas, monospace; font-size: 14px; color: #ffffff; min-width: 44px; text-align: center;">{{ctx.speed}}</span>
+                <button onClick="{{ctx.faster}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Faster</button>
+                <button onClick="{{ctx.restartRoll}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Restart</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="Credits.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Edit list ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isBrowser}}" hint-placeholder-val="{{false}}">
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">‹ Back</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Reload</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Scroll up</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Scroll down</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Full screen</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="BrowserSource.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Browser ↗</a>
+              </sc-if>
+              <button onClick="{{ctx.hide}}" aria-label="Close these controls" title="Close (they open again next time it goes on air)" style="width: 28px; height: 28px; flex-shrink: 0; padding: 0; border-radius: 4px; border: 0; background: transparent; color: #8e9096; font-size: 16px;">×</button>
+            </div>
+          </sc-if>
+
           <!-- Inputs -->
           <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
             <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 8px;">
@@ -416,7 +474,8 @@ class Component extends DCLogic {
         const next = p.pos + 1;
         play[id] = next < d ? { ...p, pos: next } : st.loops[id] ? { ...p, pos: 0 } : { ...p, pos: d, playing: false };
       });
-      return { play, countdown: st.countdownOn ? Math.max(0, st.countdown - 1) : st.countdown };
+      const hype = st.hype.running && st.hype.secs > 0 ? { ...st.hype, secs: st.hype.secs - 1 } : st.hype;
+      return { play, hype, countdown: st.countdownOn ? Math.max(0, st.countdown - 1) : st.countdown };
     });
   }
   __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
@@ -430,7 +489,7 @@ class Component extends DCLogic {
       ovl: { 1: 'logo', 2: null, 3: null, 4: null },
       vol: { master: 82, cam1: 70, cam2: 60, vid1: 78, vid2: 74, phone: 50 },
       muted: { phone: true }, afv: { vid1: true, vid2: true },
-      play: { vid1: { pos: 72, playing: true }, vid2: { pos: 0, playing: false }, loop1: { pos: 12, playing: true }, loop2: { pos: 0, playing: true } }, tbarHome: 0, monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
+      play: { vid1: { pos: 72, playing: true }, vid2: { pos: 0, playing: false }, loop1: { pos: 12, playing: true }, loop2: { pos: 0, playing: true } }, tbarHome: 0, hype: { secs: 298, total: 300, running: true }, pes: { p: 1, w: 2 }, slide: 4, roll: { on: true, speed: 1 }, ctxHidden: {}, monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
     };
   }
   drag(key, vertical, apply, done) {
@@ -519,6 +578,36 @@ class Component extends DCLogic {
     });
 
     const tbPos = st.tbarHome ? 100 - st.tbar : st.tbar;
+    const CTX = { timer: 'timer', pesukim: 'pesukim', slides: 'slides', thanks: 'credits', browser: 'browser' };
+    const PES = { 1: 'תּוֹרָה צִוָּה לָנוּ מֹשֶׁה מוֹרָשָׁה קְהִלַּת יַעֲקֹב', 2: 'שְׁמַע יִשְׂרָאֵל ה׳ אֱלֹקֵינוּ ה׳ אֶחָד', 3: 'וְהָיוּ הַדְּבָרִים הָאֵלֶּה אֲשֶׁר אָנֹכִי מְצַוְּךָ הַיּוֹם עַל לְבָבֶךָ', 4: 'כִּי קָרוֹב אֵלֶיךָ הַדָּבָר מְאֹד בְּפִיךָ וּבִלְבָבְךָ לַעֲשֹׂתוֹ' };
+    const ctxSrc = !isMon && CTX[sc.pg] ? sc.pg : !isMon && CTX[sc.pv] ? sc.pv : null;
+    const ctxKind = ctxSrc ? CTX[ctxSrc] : null;
+    const ctxOnAir = ctxSrc === sc.pg;
+    const pw = (PES[st.pes.p] || '').split(' ').filter(Boolean);
+    const pAtEnd = st.pes.w >= pw.length - 1;
+    const hs = st.hype.secs, hfmt = String(Math.floor(hs / 60)).padStart(2, '0') + ':' + String(hs % 60).padStart(2, '0');
+    const setHype = (p) => set({ hype: { ...st.hype, ...p } });
+    const ctx = {
+      show: !!ctxKind && !st.ctxHidden[ctxSrc + ':' + st.tab],
+      hide: () => set({ ctxHidden: { ...st.ctxHidden, [ctxSrc + ':' + st.tab]: true } }),
+      name: ctxSrc ? ({ timer: 'Countdown', thanks: 'Thank-you list' }[ctxSrc] || SRC[ctxSrc].name) : '', where: ctxOnAir ? 'ON AIR · ' + ({ live: 'LIVE', back: 'BACK SCREEN' }[st.tab] || '') : 'IN PREVIEW',
+      badge: `align-self: flex-start; height: 16px; padding: 0 6px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; line-height: 16px; color: #ffffff; background: ${ctxOnAir ? '#c7372f' : '#2f8f4e'};`,
+      box: `height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; border-radius: 6px; background: #1b2229; border: 1px solid ${ctxOnAir ? '#7a2a25' : '#2f5a3e'}; box-shadow: inset 3px 0 0 ${ctxOnAir ? '#c7372f' : '#2f8f4e'};`,
+      isTimer: ctxKind === 'timer', isPesukim: ctxKind === 'pesukim', isSlides: ctxKind === 'slides', isCredits: ctxKind === 'credits', isBrowser: ctxKind === 'browser',
+      time: hfmt, timeColor: hs <= 10 ? '#e0473b' : '#ffffff',
+      sub1: () => setHype({ secs: Math.max(0, hs - 60) }), add1: () => setHype({ secs: hs + 60, total: st.hype.total + 60 }), add5: () => setHype({ secs: hs + 300, total: st.hype.total + 300 }),
+      toggleRun: () => setHype({ running: !st.hype.running }), runLabel: st.hype.running ? 'Pause' : 'Resume',
+      last10: () => setHype({ secs: 10, running: true }), reset: () => setHype({ secs: st.hype.total, running: false }),
+      pesPos: 'Pasuk ' + st.pes.p + '/12 · word ' + (st.pes.w + 1) + '/' + (pw.length || 1), word: pw[st.pes.w] || 'Add words',
+      upNext: pAtEnd ? '(pasuk ' + Math.min(12, st.pes.p + 1) + ')' : pw[st.pes.w + 1],
+      nextLabel: pAtEnd ? 'Next pasuk ›' : 'Next word ›',
+      nextWord: () => set({ pes: pAtEnd ? { p: Math.min(12, st.pes.p + 1), w: 0 } : { ...st.pes, w: st.pes.w + 1 } }),
+      prevWord: () => set({ pes: st.pes.w > 0 ? { ...st.pes, w: st.pes.w - 1 } : st.pes }),
+      nextPasuk: () => set({ pes: { p: Math.min(12, st.pes.p + 1), w: 0 } }),
+      slidePos: st.slide + ' / 12', prevSlide: () => set({ slide: Math.max(1, st.slide - 1) }), nextSlide: () => set({ slide: Math.min(12, st.slide + 1) }), firstSlide: () => set({ slide: 1 }),
+      toggleRoll: () => set({ roll: { ...st.roll, on: !st.roll.on } }), rollLabel: st.roll.on ? 'Pause roll' : 'Play roll', speed: st.roll.speed.toFixed(2).replace(/0$/, '') + '×',
+      slower: () => set({ roll: { ...st.roll, speed: Math.max(0.25, st.roll.speed - 0.25) } }), faster: () => set({ roll: { ...st.roll, speed: Math.min(3, st.roll.speed + 0.25) } }), restartRoll: () => set({ roll: { ...st.roll, on: true } })
+    };
     const doTake = () => {
       if (isMon) { set({ monitorText: st.draft, tbar: 0 }); return; }
       set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100 });
@@ -680,6 +769,7 @@ class Component extends DCLogic {
       quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
       flash: () => { set({ flashing: true }); clearTimeout(this._ft); this._ft = setTimeout(() => this.setState({ flashing: false }), 900); },
       take: doTake,
+      ctx,
       tbar: String(tbPos),
       ...(() => { const prog = (x) => Math.abs(x - st.tbarHome); const d = this.drag('tbar', false, (x) => { if (prog(x) >= 100) { this._dragKey = null; doTake(); } else this.setState({ tbar: prog(x) }); }, (x) => { if (prog(x) >= 97) doTake(); else this.setState({ tbar: 0 }); }); return { tbDown: d.down, tbMove: d.move, tbUp: d.up }; })(),
       tbarLeft: st.tbarHome ? 'Preview' : 'Program', tbarRight: st.tbarHome ? 'Program' : 'Preview',
