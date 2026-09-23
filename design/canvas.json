@@ -1,254 +1,318 @@
 {
   "v": 3,
-  "createdOnFiles": {
-    "v": 1,
-    "at": "2026-09-23T01:45:42Z"
+  "attachments": {},
+  "boards": {
+    "AddInput.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Add input",
+      "w": 1160,
+      "x": 0,
+      "y": 1320
+    },
+    "AddPreset.dc.html": {
+      "h": 920,
+      "is_interactive": true,
+      "title": "Create preset",
+      "w": 1160,
+      "x": 0,
+      "y": 5280
+    },
+    "BackLoops.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Back-screen loops & mood",
+      "w": 1160,
+      "x": 3040,
+      "y": 3960
+    },
+    "BrowserSource.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Browser tab control",
+      "w": 1160,
+      "x": 2760,
+      "y": 1320
+    },
+    "Credits.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Thank-you list / credits",
+      "w": 1160,
+      "x": 4280,
+      "y": 3960
+    },
+    "Cues.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Run of show / cues",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "Devices.dc.html": {
+      "h": 740,
+      "is_interactive": true,
+      "title": "Connected devices",
+      "w": 1000,
+      "x": 3560,
+      "y": 5280
+    },
+    "EventEnd.dc.html": {
+      "h": 560,
+      "is_interactive": true,
+      "title": "After the event",
+      "w": 760,
+      "x": 4115,
+      "y": -18
+    },
+    "GoLive.dc.html": {
+      "h": 760,
+      "is_interactive": true,
+      "title": "Go Live popup",
+      "w": 880,
+      "x": 3040,
+      "y": 0
+    },
+    "GreenScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Green screen & scenes",
+      "w": 1440,
+      "x": 0,
+      "y": 3960
+    },
+    "InputSettings.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Input settings (colour, audio…)",
+      "w": 1440,
+      "x": 1240,
+      "y": 1320
+    },
+    "Library.dc.html": {
+      "h": 780,
+      "is_interactive": true,
+      "title": "Library",
+      "w": 1160,
+      "x": 1240,
+      "y": 5280
+    },
+    "LogoMaker.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "3D logo maker",
+      "w": 1160,
+      "x": 5520,
+      "y": 3960
+    },
+    "Main.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Main event screen",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Manual.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "How-to-use manual",
+      "w": 1280,
+      "x": 1360,
+      "y": 7824
+    },
+    "MonitorLayout.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Monitor layout (several things at once)",
+      "w": 1440,
+      "x": 1520,
+      "y": 6560
+    },
+    "MonitorOutput.dc.html": {
+      "h": 810,
+      "is_interactive": true,
+      "title": "Stage monitor output",
+      "w": 1440,
+      "x": 0,
+      "y": 6560
+    },
+    "OverlayEditor.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Overlays",
+      "w": 1440,
+      "x": 0,
+      "y": 2640
+    },
+    "Pesukim.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "12 Pesukim control",
+      "w": 1440,
+      "x": 4560,
+      "y": 2640
+    },
+    "PhoneCamera.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Phone as camera",
+      "w": 390,
+      "x": 4770,
+      "y": 6560
+    },
+    "PhoneRemote.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Phone remote",
+      "w": 390,
+      "x": 4300,
+      "y": 6560
+    },
+    "Scene.dc.html": {
+      "h": 360,
+      "title": "Picture placeholders (shared)",
+      "w": 640,
+      "x": 4080,
+      "y": 7824
+    },
+    "Settings.dc.html": {
+      "h": 740,
+      "is_interactive": true,
+      "title": "Settings",
+      "w": 1000,
+      "x": 2480,
+      "y": 5280
+    },
+    "Slideshow.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Slideshow",
+      "w": 1440,
+      "x": 3040,
+      "y": 2640
+    },
+    "SplitScreen.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Split screen",
+      "w": 1160,
+      "x": 4000,
+      "y": 1320
+    },
+    "StreamPage.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Branded stream page",
+      "w": 1280,
+      "x": 0,
+      "y": 7824
+    },
+    "TabletRemote.dc.html": {
+      "h": 820,
+      "is_interactive": true,
+      "title": "Tablet remote",
+      "w": 1180,
+      "x": 3040,
+      "y": 6560
+    },
+    "TextEditor.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Text & titles",
+      "w": 1440,
+      "x": 1520,
+      "y": 2640
+    },
+    "Timer.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Hype countdown (big screens)",
+      "w": 1440,
+      "x": 1520,
+      "y": 3960
+    },
+    "Website.dc.html": {
+      "h": 2600,
+      "is_interactive": true,
+      "title": "Product website",
+      "w": 1280,
+      "x": 2720,
+      "y": 7824
+    }
   },
-  "title": "Lumora \u2014 System Design",
+  "createdOnFiles": {
+    "at": "2026-09-23T01:45:42Z",
+    "v": 1
+  },
+  "designSystems": [],
   "launch": {
     "view": "canvas"
   },
-  "pages": [],
-  "boards": {
-    "Main.dc.html": {
+  "notes": {
+    "next": {
+      "fill": "orange",
+      "text": "Still to design:\n• Lumora logo options — for your approval",
+      "w": 420,
+      "x": 6880,
+      "y": 3960
+    },
+    "row0": {
+      "kind": "title1",
+      "maxW": 4760,
+      "text": "Running the event",
+      "w": 240,
       "x": 0,
-      "y": 0,
-      "w": 1440,
-      "h": 900,
-      "title": "Main event screen",
-      "is_interactive": true
+      "y": -300
     },
-    "Cues.dc.html": {
-      "x": 1520,
-      "y": 0,
-      "w": 1440,
-      "h": 900,
-      "title": "Run of show / cues",
-      "is_interactive": true
-    },
-    "GoLive.dc.html": {
-      "x": 3040,
-      "y": 0,
-      "w": 880,
-      "h": 760,
-      "title": "Go Live popup",
-      "is_interactive": true
-    },
-    "EventEnd.dc.html": {
-      "x": 4000,
-      "y": 0,
-      "w": 760,
-      "h": 560,
-      "title": "After the event",
-      "is_interactive": true
-    },
-    "AddInput.dc.html": {
+    "row1": {
+      "kind": "title1",
+      "maxW": 5160,
+      "text": "Inputs & sources",
+      "w": 240,
       "x": 0,
-      "y": 1320,
-      "w": 1160,
-      "h": 800,
-      "title": "Add input",
-      "is_interactive": true
+      "y": 1020
     },
-    "InputSettings.dc.html": {
-      "x": 1240,
-      "y": 1320,
-      "w": 1440,
-      "h": 900,
-      "title": "Input settings (colour, audio\u2026)",
-      "is_interactive": true
-    },
-    "BrowserSource.dc.html": {
-      "x": 2760,
-      "y": 1320,
-      "w": 1160,
-      "h": 800,
-      "title": "Browser tab control",
-      "is_interactive": true
-    },
-    "SplitScreen.dc.html": {
-      "x": 4000,
-      "y": 1320,
-      "w": 1160,
-      "h": 800,
-      "title": "Split screen",
-      "is_interactive": true
-    },
-    "OverlayEditor.dc.html": {
+    "row2": {
+      "kind": "title1",
+      "maxW": 6000,
+      "text": "Graphics & content",
+      "w": 240,
       "x": 0,
-      "y": 2640,
-      "w": 1440,
-      "h": 900,
-      "title": "Overlays",
-      "is_interactive": true
+      "y": 2340
     },
-    "TextEditor.dc.html": {
-      "x": 1520,
-      "y": 2640,
-      "w": 1440,
-      "h": 900,
-      "title": "Text & titles",
-      "is_interactive": true
-    },
-    "Slideshow.dc.html": {
-      "x": 3040,
-      "y": 2640,
-      "w": 1440,
-      "h": 900,
-      "title": "Slideshow",
-      "is_interactive": true
-    },
-    "Pesukim.dc.html": {
-      "x": 4560,
-      "y": 2640,
-      "w": 1440,
-      "h": 900,
-      "title": "12 Pesukim control",
-      "is_interactive": true
-    },
-    "GreenScreen.dc.html": {
+    "row3": {
+      "kind": "title1",
+      "maxW": 6680,
+      "text": "Scenes, timer, loops, credits & 3D logo",
+      "w": 240,
       "x": 0,
-      "y": 3960,
-      "w": 1440,
-      "h": 900,
-      "title": "Green screen & scenes",
-      "is_interactive": true
+      "y": 3660
     },
-    "Timer.dc.html": {
-      "x": 1520,
-      "y": 3960,
-      "w": 1440,
-      "h": 900,
-      "title": "Hype countdown (big screens)",
-      "is_interactive": true
-    },
-    "BackLoops.dc.html": {
-      "x": 3040,
-      "y": 3960,
-      "w": 1160,
-      "h": 800,
-      "title": "Back-screen loops & mood",
-      "is_interactive": true
-    },
-    "Credits.dc.html": {
-      "x": 4280,
-      "y": 3960,
-      "w": 1160,
-      "h": 800,
-      "title": "Thank-you list / credits",
-      "is_interactive": true
-    },
-    "LogoMaker.dc.html": {
-      "x": 5520,
-      "y": 3960,
-      "w": 1160,
-      "h": 800,
-      "title": "3D logo maker",
-      "is_interactive": true
-    },
-    "AddPreset.dc.html": {
+    "row4": {
+      "kind": "title1",
+      "maxW": 4560,
+      "text": "Presets, library & settings",
+      "w": 240,
       "x": 0,
-      "y": 5280,
-      "w": 1160,
-      "h": 920,
-      "title": "Create preset",
-      "is_interactive": true
+      "y": 4980
     },
-    "Library.dc.html": {
-      "x": 1240,
-      "y": 5280,
-      "w": 1160,
-      "h": 780,
-      "title": "Library",
-      "is_interactive": true
-    },
-    "Settings.dc.html": {
-      "x": 2480,
-      "y": 5280,
-      "w": 1000,
-      "h": 740,
-      "title": "Settings",
-      "is_interactive": true
-    },
-    "Devices.dc.html": {
-      "x": 3560,
-      "y": 5280,
-      "w": 1000,
-      "h": 740,
-      "title": "Connected devices",
-      "is_interactive": true
-    },
-    "MonitorOutput.dc.html": {
+    "row5": {
+      "kind": "title1",
+      "maxW": 5160,
+      "text": "Outputs & remote control",
+      "w": 240,
       "x": 0,
-      "y": 6560,
-      "w": 1440,
-      "h": 810,
-      "title": "Stage monitor output",
-      "is_interactive": true
+      "y": 6260
     },
-    "TabletRemote.dc.html": {
-      "x": 3040,
-      "y": 6560,
-      "w": 1180,
-      "h": 820,
-      "title": "Tablet remote",
-      "is_interactive": true
-    },
-    "PhoneRemote.dc.html": {
-      "x": 4300,
-      "y": 6560,
-      "w": 390,
-      "h": 844,
-      "title": "Phone remote",
-      "is_interactive": true
-    },
-    "PhoneCamera.dc.html": {
-      "x": 4770,
-      "y": 6560,
-      "w": 390,
-      "h": 844,
-      "title": "Phone as camera",
-      "is_interactive": true
-    },
-    "StreamPage.dc.html": {
+    "row6": {
+      "kind": "title1",
+      "maxW": 4000,
+      "text": "Online: stream page, manual & website",
+      "w": 240,
       "x": 0,
-      "y": 7824,
-      "w": 1280,
-      "h": 900,
-      "title": "Branded stream page",
-      "is_interactive": true
-    },
-    "Manual.dc.html": {
-      "x": 1360,
-      "y": 7824,
-      "w": 1280,
-      "h": 900,
-      "title": "How-to-use manual",
-      "is_interactive": true
-    },
-    "Website.dc.html": {
-      "x": 2720,
-      "y": 7824,
-      "w": 1280,
-      "h": 2600,
-      "title": "Product website",
-      "is_interactive": true
-    },
-    "MonitorLayout.dc.html": {
-      "x": 1520,
-      "y": 6560,
-      "w": 1440,
-      "h": 900,
-      "title": "Monitor layout (several things at once)",
-      "is_interactive": true
-    },
-    "Scene.dc.html": {
-      "x": 4080,
-      "y": 7824,
-      "w": 640,
-      "h": 360,
-      "title": "Picture placeholders (shared)",
-      "is_interactive": false
+      "y": 7524
     }
   },
   "order": [
@@ -283,63 +347,6 @@
     "Website.dc.html",
     "Scene.dc.html"
   ],
-  "notes": {
-    "row0": {
-      "x": 0,
-      "y": -300,
-      "text": "Running the event",
-      "kind": "title1",
-      "maxW": 4760
-    },
-    "row1": {
-      "x": 0,
-      "y": 1020,
-      "text": "Inputs & sources",
-      "kind": "title1",
-      "maxW": 5160
-    },
-    "row2": {
-      "x": 0,
-      "y": 2340,
-      "text": "Graphics & content",
-      "kind": "title1",
-      "maxW": 6000
-    },
-    "row3": {
-      "x": 0,
-      "y": 3660,
-      "text": "Scenes, timer, loops, credits & 3D logo",
-      "kind": "title1",
-      "maxW": 6680
-    },
-    "row4": {
-      "x": 0,
-      "y": 4980,
-      "text": "Presets, library & settings",
-      "kind": "title1",
-      "maxW": 4560
-    },
-    "row5": {
-      "x": 0,
-      "y": 6260,
-      "text": "Outputs & remote control",
-      "kind": "title1",
-      "maxW": 5160
-    },
-    "row6": {
-      "x": 0,
-      "y": 7524,
-      "text": "Online: stream page, manual & website",
-      "kind": "title1",
-      "maxW": 4000
-    },
-    "next": {
-      "x": 6880,
-      "y": 3960,
-      "w": 420,
-      "text": "Still to design:\n\u2022 Lumora logo options \u2014 for your approval",
-      "fill": "orange"
-    }
-  },
-  "designSystems": []
+  "pages": [],
+  "title": "Lumora — System Design"
 }

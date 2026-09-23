@@ -109,16 +109,17 @@ html,body{margin:0;height:100%;background:#000}
 
   <sc-if value="{{is.sponsors}}" hint-placeholder-val="{{false}}">
     <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
-      <rect width="160" height="90" fill="#f2f2f0"></rect>
-      <rect x="0" y="0" width="160" height="16" fill="#e4e4e0"></rect>
-      <rect x="58" y="6" width="44" height="4" rx="2" fill="#6b6e75"></rect>
-      <g fill="#c9cbcf">
-        <rect x="16" y="26" width="36" height="20" rx="2"></rect><rect x="62" y="26" width="36" height="20" rx="2"></rect><rect x="108" y="26" width="36" height="20" rx="2"></rect>
-        <rect x="16" y="56" width="36" height="20" rx="2"></rect><rect x="62" y="56" width="36" height="20" rx="2"></rect><rect x="108" y="56" width="36" height="20" rx="2"></rect>
+      <defs><linearGradient id="lsSp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d2433"></stop><stop offset="1" stop-color="#0b0e15"></stop></linearGradient></defs>
+      <rect width="160" height="90" fill="url(#lsSp)"></rect>
+      <text x="80" y="17" text-anchor="middle" font-family="Segoe UI, sans-serif" font-size="7" font-weight="600" letter-spacing="1.2" fill="#d8b56a">THANK YOU TO OUR SPONSORS</text>
+      <g fill="#ffffff" fill-opacity="0.07" stroke="#ffffff" stroke-opacity="0.12" stroke-width="0.4">
+        <rect x="14" y="26" width="38" height="22" rx="2"></rect><rect x="61" y="26" width="38" height="22" rx="2"></rect><rect x="108" y="26" width="38" height="22" rx="2"></rect>
+        <rect x="14" y="56" width="38" height="22" rx="2"></rect><rect x="61" y="56" width="38" height="22" rx="2"></rect><rect x="108" y="56" width="38" height="22" rx="2"></rect>
       </g>
-      <circle cx="28" cy="36" r="5" fill="#8a8e96"></circle><rect x="36" y="33" width="12" height="3" rx="1.5" fill="#8a8e96"></rect>
-      <rect x="70" y="32" width="20" height="8" rx="4" fill="#8a8e96"></rect>
-      <path d="M118 42 L126 30 L134 42 Z" fill="#8a8e96"></path>
+      <g font-family="Georgia, serif" font-size="6.5" font-weight="700" text-anchor="middle" fill="#e9e6de">
+        <text x="33" y="39.5">Goldberg</text><text x="80" y="39.5" font-family="Segoe UI, sans-serif" letter-spacing="0.6">NORTHSIDE</text><text x="127" y="39.5" font-style="italic">Levin &amp; Co</text>
+        <text x="33" y="69.5" font-family="Segoe UI, sans-serif">BRIGHT</text><text x="80" y="69.5">Klein Family</text><text x="127" y="69.5" font-family="Segoe UI, sans-serif" letter-spacing="0.6">PARK AVE</text>
+      </g>
     </svg>
   </sc-if>
 
@@ -183,14 +184,12 @@ html,body{margin:0;height:100%;background:#000}
 
   <sc-if value="{{is.pesukim}}" hint-placeholder-val="{{false}}">
     <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
-      <defs><radialGradient id="lsPe" cx="0.5" cy="0.35" r="0.8"><stop offset="0" stop-color="#1f3050"></stop><stop offset="1" stop-color="#070a12"></stop></radialGradient></defs>
+      <defs><radialGradient id="lsPe" cx="0.5" cy="0.45" r="0.75"><stop offset="0" stop-color="#1f3050"></stop><stop offset="1" stop-color="#070a12"></stop></radialGradient></defs>
       <rect width="160" height="90" fill="url(#lsPe)"></rect>
-      <circle cx="80" cy="30" r="4" fill="#0c0e12"></circle>
-      <path d="M72 52 C72 40 75 36 80 36 C85 36 88 40 88 52 Z" fill="#0c0e12"></path>
-      <rect x="0" y="62" width="160" height="28" fill="#070a10" fill-opacity="0.88"></rect>
-      <rect x="0" y="62" width="160" height="0.8" fill="#d8b56a"></rect>
-      <rect x="34" y="70" width="92" height="4" rx="2" fill="#f1dca8"></rect>
-      <rect x="48" y="78" width="64" height="3" rx="1.5" fill="#f1dca8" fill-opacity="0.6"></rect>
+      <text x="80" y="54" text-anchor="middle" direction="rtl" font-family="Frank Ruhl Libre, David, Times New Roman, serif" font-size="30" font-weight="700" fill="#f1dca8">תּוֹרָה</text>
+      <rect x="0" y="74" width="160" height="16" fill="#070a10" fill-opacity="0.7"></rect>
+      <g fill="#f1dca8"><rect x="112" y="80.5" width="16" height="3" rx="1.5"></rect></g>
+      <g fill="#f1dca8" fill-opacity="0.3"><rect x="94" y="80.5" width="14" height="3" rx="1.5"></rect><rect x="78" y="80.5" width="12" height="3" rx="1.5"></rect><rect x="60" y="80.5" width="14" height="3" rx="1.5"></rect><rect x="40" y="80.5" width="16" height="3" rx="1.5"></rect><rect x="26" y="80.5" width="10" height="3" rx="1.5"></rect></g>
     </svg>
   </sc-if>
 

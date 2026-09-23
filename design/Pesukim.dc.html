@@ -46,80 +46,128 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
   <div style="height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 20px; background-color: #1a1d22; border-bottom: 1px solid #2c3038;">
     <a href="Main.dc.html" style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box;">‹ Main screen</a>
     <span style="font-size: 18px; font-weight: 600;">12 Pesukim</span>
-    <span style="font-size: 12px; color: #8e9096;">Built-in preset · edits are saved for this event</span>
+    <span style="font-size: 12px; color: #8e9096;">One word at a time · the child says it, the crowd repeats it</span>
     <div style="flex-grow: 1;"></div>
+    <span style="font-size: 12px; color: #8e9096;">Space next word · ← back · P whole pasuk · B blank</span>
+    <span style="width: 1px; height: 20px; background: #2c3038;"></span>
     <span style="font-size: 12px; color: #8e9096;">Showing on</span>
     <select aria-label="Screens" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px;"><option>Live + Back screen</option><option>Live screen only</option><option>Back screen only</option></select>
   </div>
 
   <div style="flex-grow: 1; display: flex; min-height: 0;">
-    <!-- Slide list -->
-    <div style="width: 220px; flex-shrink: 0; background-color: #1a1d22; border-right: 1px solid #2c3038; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box;">
-      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding: 0 4px 6px;">Slides</span>
-      <sc-for list="{{slides}}" as="s" hint-placeholder-count="12">
-        <button onClick="{{s.pick}}" style="{{s.style}}"><span style="font-family: Consolas, monospace; font-size: 11px; width: 20px; color: #8e9096;">{{s.n}}</span><span style="flex-grow: 1;">{{s.label}}</span><span style="{{s.markStyle}}">{{s.mark}}</span></button>
+    <!-- Pesukim list -->
+    <div style="width: 240px; flex-shrink: 0; background-color: #1a1d22; border-right: 1px solid #2c3038; padding: 12px 10px; display: flex; flex-direction: column; gap: 3px; box-sizing: border-box; overflow-y: auto;">
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding: 0 4px 6px;">Pesukim</span>
+      <sc-for list="{{list}}" as="s" hint-placeholder-count="12">
+        <button onClick="{{s.pick}}" style="{{s.style}}">
+          <span style="font-family: Consolas, monospace; font-size: 11px; width: 18px; color: #8e9096; flex-shrink: 0;">{{s.n}}</span>
+          <span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;">
+            <span dir="rtl" lang="he" style="font-family: 'Frank Ruhl Libre', David, serif; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">{{s.first}}</span>
+            <span style="font-size: 10.5px; color: #8e9096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{s.child}}</span>
+          </span>
+          <span style="{{s.markStyle}}">{{s.mark}}</span>
+        </button>
       </sc-for>
     </div>
 
-    <!-- Center: preview + regular buttons -->
-    <div style="flex-grow: 1; min-width: 0; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 12px; font-weight: 600; color: #e0473b;">Program</span>
-        <span style="font-size: 12px; color: #8e9096;">Slide {{cur}} of 12 · camera behind · text bar on the bottom</span>
+    <!-- Centre -->
+    <div style="flex-grow: 1; min-width: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+      <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; border-radius: 2px; background: #e0473b;"></span>
+        <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Program</span>
+        <span style="font-size: 12px; color: #8e9096;">Pasuk {{cur}} of 12 · {{wordPos}}</span>
+        <div style="flex-grow: 1;"></div>
+        <span style="font-size: 12px; color: #8e9096;">Next: </span><span dir="rtl" lang="he" style="font-family: 'Frank Ruhl Libre', David, serif; font-size: 15px; color: #d4d5d8;">{{nextWord}}</span>
       </div>
       <div style="{{stage}}">
         <sc-if value="{{camBehind}}" hint-placeholder-val="{{true}}">
-          <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import></div>
+          <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="stage" hint-size="100%,100%"></dc-import><div style="position: absolute; inset: 0; background: rgba(6,8,14,0.55);"></div></div>
         </sc-if>
-        <div style="{{bar}}">
-          <span dir="rtl" lang="he" style="{{textStyle}}">{{text}}</span>
-        </div>
+        <sc-if value="{{showBig}}" hint-placeholder-val="{{true}}">
+          <div style="position: absolute; left: 0; right: 0; top: 0; bottom: {{bigBottom}}; display: flex; align-items: center; justify-content: center;">
+            <span dir="rtl" lang="he" style="{{bigStyle}}">{{bigText}}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{showStrip}}" hint-placeholder-val="{{true}}">
+          <div dir="rtl" style="{{stripBar}}">
+            <sc-for list="{{words}}" as="w" hint-placeholder-count="6"><span lang="he" style="{{w.strip}}">{{w.text}}</span></sc-for>
+          </div>
+        </sc-if>
+        <span style="position: absolute; left: 14px; top: 12px; height: 22px; padding: 0 8px; border-radius: 4px; background: rgba(10,11,13,0.6); font-size: 11px; line-height: 22px; color: rgba(255,255,255,0.8);">Pasuk {{cur}}</span>
+        <sc-if value="{{showName}}" hint-placeholder-val="{{true}}">
+          <span style="position: absolute; right: 14px; top: 12px; height: 22px; padding: 0 8px; border-radius: 4px; background: rgba(10,11,13,0.6); font-size: 11px; line-height: 22px; color: rgba(255,255,255,0.8);">{{childName}}</span>
+        </sc-if>
+        <sc-if value="{{blank}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #6f737b;">Blank</div></sc-if>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 8px;">
+
+      <!-- Word strip (operator) -->
+      <div dir="rtl" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 40px; align-items: center;">
+        <sc-for list="{{words}}" as="w" hint-placeholder-count="6">
+          <button onClick="{{w.pick}}" lang="he" style="{{w.chip}}"><span style="font-family: Consolas, monospace; font-size: 10px; color: #8e9096; margin-left: 6px;">{{w.num}}</span>{{w.text}}</button>
+        </sc-for>
+      </div>
+
+      <!-- Controls -->
+      <div style="display: grid; grid-template-columns: 1fr 2.2fr 1fr 1fr 0.8fr; gap: 8px;">
+        <button onClick="{{prevWord}}" style="height: 64px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">‹ Back a word<span style="font-size: 10px; font-weight: 400; color: #8e9096;">←</span></button>
+        <button onClick="{{nextWordFn}}" style="height: 64px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 18px; font-weight: 700; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">{{nextLabel}}<span style="font-size: 10px; font-weight: 500; color: #1d4a50;">Space · clicker · remote</span></button>
+        <button onClick="{{toggleWhole}}" style="{{wholeBtn}}">Whole pasuk<span style="font-size: 10px; font-weight: 400; color: #8e9096;">P</span></button>
+        <button onClick="{{nextPasuk}}" style="height: 64px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;">Next pasuk ⏭<span style="font-size: 10px; font-weight: 400; color: #8e9096;">starts at word 1</span></button>
+        <button onClick="{{toggleBlank}}" style="{{blankBtn}}">Blank<span style="font-size: 10px; font-weight: 400; color: #8e9096;">B</span></button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
         <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Regular buttons</span>
-        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
+        <div style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{regular}}" as="r" hint-placeholder-count="10">
-            <button style="height: 46px; border-radius: 6px; border: 1px solid #2c3038; background-color: #262a31; color: #e4e5e7; font-size: 13px; font-weight: 600;">{{r}}</button>
+            <button style="height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #262a31; color: #e4e5e7; font-size: 12px; font-weight: 600; padding: 0 4px; white-space: nowrap;">{{r}}</button>
           </sc-for>
         </div>
       </div>
     </div>
 
-    <!-- Custom controls -->
-    <div style="width: 340px; flex-shrink: 0; background-color: #1a1d22; border-left: 1px solid #2c3038; padding: 16px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box;">
-      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Custom controls</span>
-      <div style="display: flex; gap: 8px;">
-        <button onClick="{{prev}}" style="flex-grow: 1; height: 56px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 16px; font-weight: 600;">‹ Prev</button>
-        <button onClick="{{next}}" style="flex-grow: 1; height: 56px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 16px; font-weight: 600;">Next ›</button>
-      </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <label style="font-size: 13px; color: #a9abb0;" for="goto">Go to slide</label>
-        <input id="goto" value="{{gotoVal}}" onInput="{{onGoto}}" inputmode="numeric" style="width: 60px; height: 38px; text-align: center; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 15px; font-family: Consolas, monospace;">
-        <button onClick="{{go}}" style="height: 38px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Go</button>
-      </div>
+    <!-- Settings -->
+    <div style="width: 340px; flex-shrink: 0; background-color: #1a1d22; border-left: 1px solid #2c3038; padding: 14px 16px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; overflow-y: auto;">
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 13px; color: #a9abb0;">Background</span>
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">ON SCREEN</span>
+        <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+          <sc-for list="{{modes}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 92px;">Word change</span>
+          <div style="flex-grow: 1; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+            <sc-for list="{{transTypes}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+          </div>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e4e5e7;"><input type="checkbox" checked="{{keepSaid}}" onChange="{{toggleKeep}}"> Keep words already said on screen</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e4e5e7;"><input type="checkbox" checked="{{showName}}" onChange="{{toggleName}}"> Show the child's name</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e4e5e7;"><input type="checkbox" checked="{{auto}}" onChange="{{toggleAuto}}"> Auto-advance every <input value="{{autoSecs}}" onInput="{{onAutoSecs}}" aria-label="Seconds per word" style="width: 34px; height: 24px; text-align: center; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px;"> s</label>
+      </div>
+      <div style="height: 1px; background: #2c3038; flex-shrink: 0;"></div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">BACKGROUND</span>
         <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{bgs}}" as="b" hint-placeholder-count="4">
             <button onClick="{{b.pick}}" aria-label="{{b.name}}" style="{{b.style}}"><span style="font-size: 10px; color: rgba(255,255,255,0.75);">{{b.name}}</span></button>
           </sc-for>
         </div>
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e4e5e7;"><input type="checkbox" checked="{{camBehind}}" onChange="{{toggleCam}}"> Camera behind (instead of background)</label>
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e4e5e7;"><input type="checkbox" checked="{{barColor}}" onChange="{{toggleBarColor}}"> Background colour on text bar</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e4e5e7;"><input type="checkbox" checked="{{camBehind}}" onChange="{{toggleCam}}"> Camera behind the words</label>
       </div>
+      <div style="height: 1px; background: #2c3038; flex-shrink: 0;"></div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 13px; color: #a9abb0;">Text</span>
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">TEXT</span>
         <div style="display: flex; gap: 6px;">
-          <select aria-label="Font" style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px;"><option>Frank Ruhl Libre</option><option>David Libre</option><option>Heebo</option><option>+ Import font…</option></select>
-          <button aria-label="Bold" style="width: 34px; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-weight: 600;">B</button>
-          <button aria-label="Text colour" style="width: 34px; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; display: flex; align-items: center; justify-content: center;"><span style="width: 16px; height: 16px; border-radius: 6px; background-color: #ffe39e;"></span></button>
+          <select aria-label="Font" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px;"><option>Frank Ruhl Libre</option><option>David Libre</option><option>Heebo</option><option>+ Import font…</option></select>
+          <sc-for list="{{colours}}" as="c" hint-placeholder-count="3"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
         </div>
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">Size<input type="range" min="24" max="72" value="{{size}}" onInput="{{onSize}}" style="flex-grow: 1;"></label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">Word size<input type="range" min="60" max="180" value="{{size}}" onInput="{{onSize}}" style="flex-grow: 1;"></label>
       </div>
+      <div style="height: 1px; background: #2c3038; flex-shrink: 0;"></div>
       <div style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1; min-height: 0;">
-        <span style="font-size: 13px; color: #a9abb0;">Words for slide {{cur}}</span>
-        <textarea defaultValue="{{text}}" dir="rtl" lang="he" aria-label="Words" style="flex-grow: 1; min-height: 80px; resize: none; padding: 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: 'Frank Ruhl Libre', serif; font-size: 17px;"></textarea>
-        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #e4e5e7;"><input type="checkbox"> Play a video after this slide</label>
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">PASUK {{cur}}</span>
+        <input aria-label="Child's name" value="{{childName}}" onInput="{{onChild}}" placeholder="Child's name" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 13px;">
+        <textarea value="{{rawText}}" onInput="{{onText}}" dir="rtl" lang="he" aria-label="Words" placeholder="Type or paste the pasuk…" style="flex-grow: 1; min-height: 70px; resize: none; padding: 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: 'Frank Ruhl Libre', David, serif; font-size: 17px; line-height: 1.5;"></textarea>
+        <span style="font-size: 11px; color: #8e9096; line-height: 1.4;">Each space starts a new word. To show two words together, join them with a hyphen (e.g. ה׳-אֱלֹקֵינוּ).</span>
       </div>
     </div>
   </div>
@@ -127,59 +175,106 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidMount() {
+    this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true);
+    this._auto = setInterval(() => { const st = this.state; if (!st.auto) return; this._n = (this._n || 0) + 1; if (this._n >= (Number(st.autoSecs) || 3)) { this._n = 0; this.step(1); } }, 1000);
+  }
   componentDidUpdate() { this.__fill(); }
-  componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
+  componentWillUnmount() { clearInterval(this._auto); document.removeEventListener('input', this.__onRange, true); }
   __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
   constructor(props) {
     super(props);
-    this.state = { cur: 1, gotoVal: '1', bg: 'navy', cam: true, barColor: true, size: 44 };
+    this.state = {
+      cur: 1, w: 2, whole: false, blank: false, mode: 'word', trans: 'fade', keepSaid: false, showName: true, auto: false, autoSecs: '3',
+      bg: 'navy', cam: true, colour: '#ffe39e', size: 120,
+      text: {
+        1: 'תּוֹרָה צִוָּה לָנוּ מֹשֶׁה מוֹרָשָׁה קְהִלַּת יַעֲקֹב',
+        2: 'שְׁמַע יִשְׂרָאֵל ה׳ אֱלֹקֵינוּ ה׳ אֶחָד',
+        3: 'וְהָיוּ הַדְּבָרִים הָאֵלֶּה אֲשֶׁר אָנֹכִי מְצַוְּךָ הַיּוֹם עַל לְבָבֶךָ',
+        4: 'כִּי קָרוֹב אֵלֶיךָ הַדָּבָר מְאֹד בְּפִיךָ וּבִלְבָבְךָ לַעֲשֹׂתוֹ'
+      },
+      kids: { 1: 'Mendel K.', 2: 'Chaya S.', 3: 'Levi G.', 4: 'Mushka R.' }
+    };
+  }
+  wordsOf(n) { return String(this.state.text[n] || '').trim().split(/\s+/).filter(Boolean).map((x) => x.replace(/-/g, ' ')); }
+  step(d) {
+    this.setState((st) => {
+      const len = this.wordsOf(st.cur).length;
+      if (d > 0) {
+        if (st.w < len - 1) return { w: st.w + 1, whole: false, blank: false };
+        if (st.cur < 12) return { cur: st.cur + 1, w: 0, whole: false, blank: false };
+        return null;
+      }
+      if (st.w > 0) return { w: st.w - 1, whole: false };
+      if (st.cur > 1) return { cur: st.cur - 1, w: Math.max(0, this.wordsOf(st.cur - 1).length - 1), whole: false };
+      return null;
+    });
   }
   renderVals() {
     const st = this.state;
-    const TEXT = {
-      1: 'תּוֹרָה צִוָּה לָנוּ מֹשֶׁה מוֹרָשָׁה קְהִלַּת יַעֲקֹב',
-      2: 'שְׁמַע יִשְׂרָאֵל ה׳ אֱלֹקֵינוּ ה׳ אֶחָד'
-    };
-    const setCur = (n) => this.setState({ cur: n, gotoVal: String(n) });
-    const slides = Array.from({ length: 12 }, (_, i) => {
-      const n = i + 1;
-      const on = n === st.cur;
-      const has = !!TEXT[n];
+    const set = (p) => this.setState(p);
+    const words = this.wordsOf(st.cur);
+    const len = words.length;
+    const w = Math.min(st.w, Math.max(0, len - 1));
+    const list = Array.from({ length: 12 }, (_, i) => {
+      const n = i + 1, on = n === st.cur;
+      const ws = this.wordsOf(n);
+      const done = n < st.cur;
       return {
         n: String(n).padStart(2, '0'),
-        label: 'Pasuk ' + n,
-        mark: has ? 'Words ✓' : 'Add words',
-        markStyle: `font-size: 10px; color: ${has ? '#6fe0a8' : '#8e9096'};`,
-        pick: () => setCur(n),
-        style: `height: 44px; padding: 0 10px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background-color: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#e4e5e7'}; font-size: 13px; font-weight: ${on ? 600 : 400}; display: flex; align-items: center; gap: 8px; text-align: left;`
+        first: ws.length ? ws.slice(0, 3).join(' ') + '…' : 'Add words',
+        child: (st.kids[n] || 'No name yet') + ' · ' + ws.length + ' words',
+        mark: on ? (w + 1) + '/' + len : done ? '✓' : '',
+        markStyle: `font-family: Consolas, monospace; font-size: 11px; flex-shrink: 0; color: ${on ? '#4fb3bf' : '#6fe0a8'};`,
+        pick: () => set({ cur: n, w: 0, whole: false }),
+        style: `height: 50px; flex-shrink: 0; padding: 0 10px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background-color: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : ws.length ? '#e4e5e7' : '#8e9096'}; display: flex; align-items: center; gap: 8px; text-align: left; opacity: ${done && !on ? 0.7 : 1};`
       };
     });
     const BG = { navy: '#15213a', gold: '#3a2d12', forest: '#12291f', black: '#050506' };
     const bgs = [['navy', 'Night'], ['gold', 'Gold'], ['forest', 'Forest'], ['black', 'Black']].map(([id, name]) => ({
-      name,
-      pick: () => this.setState({ bg: id }),
-      style: `height: 48px; border-radius: 6px; border: 2px solid ${st.bg === id ? '#4fb3bf' : '#2c3038'}; background-color: ${BG[id]}; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;`
+      name, pick: () => set({ bg: id }),
+      style: `height: 44px; border-radius: 6px; border: 2px solid ${st.bg === id ? '#4fb3bf' : '#2c3038'}; background-color: ${BG[id]}; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;`
     }));
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'}; white-space: nowrap;`;
+    const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
+    const whole = st.whole || st.mode === 'pasuk';
+    const withStrip = st.mode === 'strip' && !whole;
+    const bigText = whole ? words.join(' ') : st.keepSaid ? words.slice(0, w + 1).join(' ') : (words[w] || '');
+    const bigSize = whole || st.keepSaid ? Math.round(st.size * 0.42) : st.size;
+    const cols = [['#ffe39e', 'Gold'], ['#ffffff', 'White'], ['#9fe0ff', 'Light blue']];
+    const btn = (on) => `height: 64px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`;
+    const atEnd = w >= len - 1;
     return {
-      slides, bgs,
-      cur: st.cur,
-      gotoVal: st.gotoVal,
-      onGoto: (e) => this.setState({ gotoVal: e.target.value }),
-      go: () => { const n = parseInt(st.gotoVal, 10); if (n >= 1 && n <= 12) setCur(n); },
-      prev: () => setCur(Math.max(1, st.cur - 1)),
-      next: () => setCur(Math.min(12, st.cur + 1)),
-      camBehind: st.cam,
-      barColor: st.barColor,
-      toggleCam: () => this.setState({ cam: !st.cam }),
-      toggleBarColor: () => this.setState({ barColor: !st.barColor }),
-      size: st.size,
-      onSize: (e) => this.setState({ size: Number(e.target.value) }),
-      text: TEXT[st.cur] || '[Words for pasuk ' + st.cur + ']',
-      stage: `position: relative; width: 832px; height: 468px; border-radius: 6px; overflow: hidden; border: 2px solid #c7372f; box-sizing: border-box; background-color: ${st.cam ? '#26313d' : BG[st.bg]};`,
-      bar: `position: absolute; left: 0; right: 0; bottom: 0; min-height: 110px; padding: 18px 32px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background-color: ${st.barColor ? 'rgba(8,10,16,0.82)' : 'transparent'}; border-top: ${st.barColor ? '2px solid #4fb3bf' : '0'};`,
-      textStyle: `font-family: 'Frank Ruhl Libre', serif; font-weight: 600; font-size: ${Math.round(st.size * 0.72)}px; color: #ffe39e; text-align: center; line-height: 1.3;`,
-      regular: ['Camera 1', 'Camera 2', 'Camera 3', 'Vid 1', 'Vid 2', 'Vid 3', 'Vid 4', 'Overlay 1', 'Overlay 2', 'Split screen']
+      list, bgs, cur: st.cur,
+      wordPos: len ? 'word ' + (w + 1) + ' of ' + len : 'no words yet',
+      nextWord: atEnd ? (st.cur < 12 ? '(pasuk ' + (st.cur + 1) + ')' : '(end)') : words[w + 1],
+      nextLabel: atEnd ? (st.cur < 12 ? 'Next pasuk ›' : 'Finished') : 'Next word ›',
+      showBig: !!bigText, bigText, bigBottom: withStrip ? '96px' : '0',
+      bigStyle: `font-family: 'Frank Ruhl Libre', David, serif; font-weight: 700; font-size: ${bigSize}px; line-height: 1.25; color: ${st.colour}; text-align: center; padding: 0 40px; text-shadow: 0 4px 24px rgba(0,0,0,0.55);`,
+      showStrip: withStrip,
+      stripBar: 'position: absolute; left: 0; right: 0; bottom: 0; height: 96px; padding: 0 30px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 14px; background: rgba(6,8,14,0.78); border-top: 2px solid ' + st.colour + ';',
+      words: words.map((t, i) => ({
+        text: t, num: String(i + 1),
+        pick: () => set({ w: i, whole: false, blank: false }),
+        strip: `font-family: 'Frank Ruhl Libre', David, serif; font-size: 26px; font-weight: ${i === w ? 700 : 500}; color: ${i === w ? st.colour : i < w ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.3)'};`,
+        chip: `height: 40px; padding: 0 12px; border-radius: 6px; font-family: 'Frank Ruhl Libre', David, serif; font-size: 19px; border: 1px solid ${i === w ? '#c7372f' : i === w + 1 ? '#2f8f4e' : '#2c3038'}; background: ${i === w ? '#3a1a18' : i < w ? '#1b1e23' : '#262a31'}; color: ${i < w ? '#8e9096' : '#ffffff'}; display: flex; align-items: center;`
+      })),
+      prevWord: () => this.step(-1), nextWordFn: () => { this._n = 0; this.step(1); },
+      nextPasuk: () => set({ cur: Math.min(12, st.cur + 1), w: 0, whole: false, blank: false }),
+      toggleWhole: () => set({ whole: !st.whole }), wholeBtn: btn(st.whole),
+      blank: st.blank, toggleBlank: () => set({ blank: !st.blank }), blankBtn: btn(st.blank),
+      modes: seg('mode', [['word', 'One word'], ['strip', 'Word + pasuk bar'], ['pasuk', 'Whole pasuk']]),
+      transTypes: seg('trans', [['cut', 'Cut'], ['fade', 'Fade'], ['pop', 'Pop']]),
+      keepSaid: st.keepSaid, toggleKeep: () => set({ keepSaid: !st.keepSaid }),
+      showName: st.showName, toggleName: () => set({ showName: !st.showName }),
+      auto: st.auto, toggleAuto: () => set({ auto: !st.auto }), autoSecs: st.autoSecs, onAutoSecs: (e) => set({ autoSecs: e.target.value }),
+      camBehind: st.cam, toggleCam: () => set({ cam: !st.cam }),
+      colours: cols.map(([c, name]) => ({ name, pick: () => set({ colour: c }), style: `width: 32px; height: 32px; flex-shrink: 0; padding: 0; border-radius: 6px; background: ${c}; border: 2px solid ${st.colour === c ? '#4fb3bf' : '#2c3038'}; box-sizing: border-box;` })),
+      size: String(st.size), onSize: (e) => set({ size: Number(e.target.value) }),
+      childName: st.kids[st.cur] || '', onChild: (e) => set({ kids: { ...st.kids, [st.cur]: e.target.value } }),
+      rawText: st.text[st.cur] || '', onText: (e) => set({ text: { ...st.text, [st.cur]: e.target.value } }),
+      stage: `position: relative; width: 832px; height: 468px; flex-shrink: 0; border-radius: 6px; overflow: hidden; border: 2px solid #c7372f; box-sizing: border-box; background-color: ${BG[st.bg]};`,
+      regular: ['Camera 1', 'Camera 2', 'Camera 3', 'Vid 1', 'Vid 2', 'Vid 3', 'Vid 4', 'Overlay 1', 'Overlay 2', 'Split']
     };
   }
 }

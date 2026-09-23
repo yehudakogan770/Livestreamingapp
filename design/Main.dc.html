@@ -178,12 +178,14 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <button onClick="{{tr.pick}}" style="{{tr.style}}"><span style="font-size: 12px; font-weight: 600;">{{tr.name}}</span><span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{tr.dur}}</span></button>
             </sc-for>
           </div>
-          <div style="flex-grow: 1; min-height: 50px; display: flex; gap: 6px;">
-            <div style="display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; font-weight: 600; color: #8e9096; padding: 4px 0;"><span>PGM</span><span>PVW</span></div>
-            <div style="flex-grow: 1; position: relative; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
-              <div style="position: absolute; left: 50%; top: 10px; bottom: 10px; width: 4px; margin-left: -2px; background: #0c0d10; border-radius: 2px;"></div>
-              <div style="position: absolute; left: 10px; right: 10px; top: 10px; bottom: 10px; background: repeating-linear-gradient(to bottom, #2c3038 0 1px, transparent 1px 10%); pointer-events: none;"></div><div style="{{tbarCap}}"></div>
-              <input class="vrange" type="range" min="0" max="100" value="{{tbar}}" onInput="{{onTbar}}" aria-label="T-bar">
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #8e9096;"><span>{{tbarLeft}}</span><span style="font-family: Consolas, monospace; color: #d4d5d8;">{{tbarPct}}</span><span>{{tbarRight}}</span></div>
+            <div onPointerDown="{{tbDown}}" onPointerMove="{{tbMove}}" onPointerUp="{{tbUp}}" onPointerCancel="{{tbUp}}" role="slider" tabindex="0" aria-label="T-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{tbar}}" style="position: relative; width: 100%; box-sizing: border-box; height: 44px; border-radius: 6px; background: #101216; border: 1px solid #2c3038; cursor: ew-resize; touch-action: none; user-select: none;">
+              <div style="position: absolute; left: 12px; right: 12px; top: 8px; bottom: 8px; background: repeating-linear-gradient(to right, #2c3038 0 1px, transparent 1px 10%); pointer-events: none;"></div>
+              <div style="position: absolute; left: 12px; right: 12px; top: 50%; height: 4px; margin-top: -2px; border-radius: 2px; background: #0c0d10; pointer-events: none;"></div>
+              <div style="{{tbarFill}}"></div>
+              <div style="{{tbarCap}}"></div>
             </div>
           </div>
         </div>
@@ -205,7 +207,8 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <sc-if value="{{flashing}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(255,255,255,0.85);"></div></sc-if>
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{pg.scene}}" hint-size="100%,100%"></dc-import></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{pg.scene}}" hint-size="100%,100%"></dc-import></div>
+              <sc-if value="{{tbarActive}}" hint-placeholder-val="{{false}}"><div style="{{tbarOverlay}}"><dc-import name="Scene" kind="{{pv.scene}}" hint-size="100%,100%"></dc-import></div></sc-if><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
               <sc-for list="{{overlayLayers}}" as="o" hint-placeholder-count="1"><div style="{{o.style}}">{{o.label}}</div></sc-for>
             </sc-if>
             <sc-if value="{{pgBlank}}" hint-placeholder-val="{{false}}">
@@ -354,10 +357,9 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <div style="{{c.strip}}">
                 <span style="font-size: 10px; font-weight: 600; color: #e4e5e7; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{c.name}}</span>
                 <div style="flex-grow: 1; min-height: 0; display: flex; gap: 3px; justify-content: center; width: 100%;">
-                  <div style="position: relative; width: 18px; border-radius: 3px; background: #101216; border: 1px solid #2c3038;">
+                  <div onPointerDown="{{c.down}}" onPointerMove="{{c.move}}" onPointerUp="{{c.up}}" onPointerCancel="{{c.up}}" role="slider" tabindex="0" aria-label="{{c.name}} volume" aria-valuenow="{{c.vol}}" style="position: relative; width: 18px; border-radius: 3px; background: #101216; border: 1px solid #2c3038; cursor: ns-resize; touch-action: none; user-select: none;">
                     <div style="position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px; margin-left: -1px; background: #0c0d10;"></div>
                     <div style="position: absolute; left: 2px; right: 2px; top: 6px; bottom: 6px; background: repeating-linear-gradient(to bottom, #3a3f48 0 1px, transparent 1px 12.5%); pointer-events: none;"></div><div style="{{c.cap}}"></div>
-                    <input class="vrange" type="range" min="0" max="100" value="{{c.vol}}" onInput="{{c.onVol}}" aria-label="{{c.name}} volume">
                   </div>
                   <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask}}"></div><div style="position: absolute; inset: 0; background: repeating-linear-gradient(to top, transparent 0 3px, #1e2127 3px 4px); pointer-events: none;"></div></div>
                   <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask2}}"></div><div style="position: absolute; inset: 0; background: repeating-linear-gradient(to top, transparent 0 3px, #1e2127 3px 4px); pointer-events: none;"></div></div>
@@ -399,8 +401,23 @@ input[type=checkbox]{accent-color:#4fb3bf}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); this._tick = setInterval(() => this.tick(), 1000); }
   componentDidUpdate() { this.__fill(); }
+  componentWillUnmount() { clearInterval(this._tick); clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
+  tick() {
+    const DUR = { vid1: 130, vid2: 45, vid3: 252, loop1: 30, loop2: 40 };
+    this.setState((st) => {
+      const onAir = [st.screens.live.pg, st.screens.back.pg];
+      const play = { ...st.play };
+      onAir.forEach((id) => {
+        const p = play[id], d = DUR[id];
+        if (!p || !p.playing || !d) return;
+        const next = p.pos + 1;
+        play[id] = next < d ? { ...p, pos: next } : st.loops[id] ? { ...p, pos: 0 } : { ...p, pos: d, playing: false };
+      });
+      return { play, countdown: st.countdownOn ? Math.max(0, st.countdown - 1) : st.countdown };
+    });
+  }
   __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
   constructor(props) {
     super(props);
@@ -412,7 +429,15 @@ class Component extends DCLogic {
       ovl: { 1: 'logo', 2: null, 3: null, 4: null },
       vol: { master: 82, cam1: 70, cam2: 60, vid1: 78, vid2: 74, phone: 50 },
       muted: { phone: true }, afv: { vid1: true, vid2: true },
-      play: { pvT: { pos: 0, playing: false, loop: false }, pgT: { pos: 72, playing: true, loop: false } }, monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
+      play: { vid1: { pos: 72, playing: true }, vid2: { pos: 0, playing: false }, loop1: { pos: 12, playing: true }, loop2: { pos: 0, playing: true } }, tbarHome: 0, monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
+    };
+  }
+  drag(key, vertical, apply, done) {
+    const calc = (e) => { const r = e.currentTarget.getBoundingClientRect(); const f = vertical ? (r.bottom - 6 - e.clientY) / (r.height - 12) : (e.clientX - r.left - 12) / (r.width - 24); return Math.round(Math.max(0, Math.min(1, f)) * 100); };
+    return {
+      down: (e) => { e.preventDefault(); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} this._dragKey = key; apply(calc(e)); },
+      move: (e) => { if (this._dragKey === key) apply(calc(e)); },
+      up: (e) => { if (this._dragKey === key) { this._dragKey = null; if (done) done(calc(e)); } }
     };
   }
   renderVals() {
@@ -486,9 +511,10 @@ class Component extends DCLogic {
       };
     });
 
+    const tbPos = st.tbarHome ? 100 - st.tbar : st.tbar;
     const doTake = () => {
       if (isMon) { set({ monitorText: st.draft, tbar: 0 }); return; }
-      set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0 });
+      set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100 });
     };
 
     const onAir = new Set([st.screens.live.pg, st.screens.back.pg]);
@@ -541,6 +567,7 @@ class Component extends DCLogic {
         name, vol,
         db: vol === 0 ? '-∞' : ((vol - 80) / 4).toFixed(1),
         onVol: (e) => set({ vol: { ...st.vol, [id]: Number(e.target.value) } }),
+        ...(() => { const d = this.drag('vol-' + id, true, (v) => this.setState((p) => ({ vol: { ...p.vol, [id]: v } }))); return { down: d.down, move: d.move, up: d.up }; })(),
         toggleMute: () => set({ muted: { ...st.muted, [id]: !m } }),
         toggleAfv: () => set({ afv: { ...st.afv, [id]: !st.afv[id] } }),
         strip: `flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; border-radius: 6px; background: ${isMaster ? '#262a31' : 'transparent'};`,
@@ -576,12 +603,12 @@ class Component extends DCLogic {
     });
 
     const fmt = (t) => { t = Math.max(0, Math.round(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
-    const tport = (key, src) => {
+    const tport = (id, src) => {
       const dur = src && src.dur ? src.dur : 0;
       const live = !dur;
-      const p = st.play[key];
+      const p = { pos: 0, playing: false, ...(st.play[id] || {}), loop: !!st.loops[id] };
       const pos = Math.min(p.pos, dur);
-      const upd = (patch) => set({ play: { ...st.play, [key]: { ...p, ...patch } } });
+      const upd = (patch) => set({ play: { ...st.play, [id]: { pos: p.pos, playing: p.playing, ...patch } } });
       const base = (w) => `width: ${w}px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; gap: 1px; border-radius: 4px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`;
       return {
         live, pos: live ? 0 : Math.round(pos / dur * 1000), playing: !live && p.playing, paused: live || !p.playing,
@@ -590,8 +617,8 @@ class Component extends DCLogic {
         back: () => upd({ pos: Math.max(0, pos - 10) }),
         fwd: () => upd({ pos: Math.min(dur, pos + 10) }),
         end: () => upd({ pos: Math.max(0, dur - 1) }),
-        toggle: () => upd({ playing: !p.playing }),
-        toggleLoop: () => upd({ loop: !p.loop }),
+        toggle: () => upd({ playing: !p.playing, pos: p.pos >= dur ? 0 : p.pos }),
+        toggleLoop: () => set({ loops: { ...st.loops, [id]: !p.loop } }),
         btn: base(26), btnWide: base(34),
         playBtn: `width: 34px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid ${!live && p.playing ? '#4fb3bf' : '#2c3038'}; background: ${!live && p.playing ? '#243039' : '#343944'}; color: #ffffff; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
         loopStyle: `height: 24px; padding: 0 9px; border-radius: 4px; border: 1px solid ${p.loop ? '#4fb3bf' : '#2c3038'}; background: ${p.loop ? '#243039' : '#262a31'}; color: ${p.loop ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
@@ -612,7 +639,7 @@ class Component extends DCLogic {
         style: `padding: 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${st.monLayout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.monLayout === id ? '#243039' : '#262a31'}; color: ${st.monLayout === id ? '#ffffff' : '#d4d5d8'};`,
         thumb: `width: 100%; height: 30px; border-radius: 2px; background: #000; box-shadow: ${id === 'full' ? 'inset 0 0 0 7px #000, inset 0 0 0 9px #555' : id === 'stack' ? 'inset 0 -9px 0 #444, inset 0 0 0 1px #333' : 'inset -26px 0 0 #444, inset 0 0 0 1px #333'};`
       })),
-      pvT: tport('pvT', pvSrc), pgT: tport('pgT', pgSrc),
+      pvT: tport(sc.pv, pvSrc), pgT: tport(sc.pg, pgSrc),
       isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
       toggleFollow: () => set({ follow: !st.follow }),
       followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#243039' : '#2a2e36'}; color: ${st.follow ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
@@ -646,9 +673,14 @@ class Component extends DCLogic {
       quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
       flash: () => { set({ flashing: true }); clearTimeout(this._ft); this._ft = setTimeout(() => this.setState({ flashing: false }), 900); },
       take: doTake,
-      tbar: st.tbar,
-      onTbar: (e) => { const v = Number(e.target.value); if (v >= 100) doTake(); else set({ tbar: v }); },
-      tbarCap: `position: absolute; left: 6px; right: 6px; height: 16px; top: calc(${100 - st.tbar}% - ${(100 - st.tbar) * 0.16}px); border-radius: 4px; background: linear-gradient(#eceef2, #c9ccd3); border: 1px solid #0c0d10; box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 -2px 0 rgba(0,0,0,0.12); pointer-events: none;`,
+      tbar: String(tbPos),
+      ...(() => { const prog = (x) => Math.abs(x - st.tbarHome); const d = this.drag('tbar', false, (x) => { if (prog(x) >= 100) { this._dragKey = null; doTake(); } else this.setState({ tbar: prog(x) }); }, (x) => { if (prog(x) >= 97) doTake(); else this.setState({ tbar: 0 }); }); return { tbDown: d.down, tbMove: d.move, tbUp: d.up }; })(),
+      tbarLeft: st.tbarHome ? 'Preview' : 'Program', tbarRight: st.tbarHome ? 'Program' : 'Preview',
+      tbarPct: st.tbar ? st.tbar + '%' : 'drag to take',
+      tbarFill: `position: absolute; left: calc(12px + (100% - 24px) * ${Math.min(tbPos, st.tbarHome) / 100}); top: 50%; height: 4px; margin-top: -2px; width: calc((100% - 24px) * ${st.tbar / 100}); border-radius: 2px; background: #c7372f; pointer-events: none;`,
+      tbarCap: `position: absolute; top: 5px; bottom: 5px; width: 18px; left: calc(12px + (100% - 24px) * ${tbPos / 100} - 9px); border-radius: 4px; background: linear-gradient(to right, transparent 8px, #6f737c 8px 10px, transparent 10px), linear-gradient(#f3f4f6, #c3c6cd); border: 1px solid #0c0d10; box-shadow: 0 2px 6px rgba(0,0,0,0.6); pointer-events: none;`,
+      tbarActive: st.tbar > 0 && !isMon,
+      tbarOverlay: `position: absolute; inset: 0; opacity: ${st.tbar / 100}; pointer-events: none;`,
       pgBlank,
       blankLayer: `position: absolute; inset: 0; background: ${dimOnly ? 'rgba(0,0,0,0.72)' : '#000'}; display: flex; align-items: center; justify-content: center;`,
       blankText: dimOnly ? 'DIMMED' : 'BLANK',
@@ -662,7 +694,6 @@ class Component extends DCLogic {
       recStyle: `height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: ${st.rec ? '#3a1a18' : '#2a2e36'}; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;`
     };
   }
-  componentWillUnmount() { clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
 }
 </script>
 </body>

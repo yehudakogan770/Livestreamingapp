@@ -164,6 +164,19 @@ input[type=range]{accent-color:#4fb3bf}
             <sc-for list="{{rotTypes}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
           </div>
         </div>
+        <sc-if value="{{isSwing}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 96px;">Swing width</span>
+            <input type="range" min="10" max="90" value="{{swingVal}}" onInput="{{onSwing}}" aria-label="Swing width" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 44px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{swingReadout}}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 96px;">At each end</span>
+            <div style="flex-grow: 1; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+              <sc-for list="{{endTypes}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+            </div>
+          </div>
+        </sc-if>
         <sc-for list="{{motionSliders}}" as="s" hint-placeholder-count="2">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
             <span style="width: 96px;">{{s.label}}</span>
@@ -204,22 +217,22 @@ input[type=range]{accent-color:#4fb3bf}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
 class Component extends DCLogic {
-  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); this._anim = setInterval(() => { if (this.state.playing) this.setState((s) => ({ t: s.t + 0.05 })); }, 50); }
   componentDidUpdate() { this.__fill(); }
-  componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
+  componentWillUnmount() { clearInterval(this._anim); document.removeEventListener('input', this.__onRange, true); }
   __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
   constructor(props) {
     super(props);
     this.state = {
       depth: 24, bevel: 6, material: 'metal', colour: '#b8c0c8', light: 45, lightStr: 70,
       rot: 'spin', speed: 12, camDist: 60, bg: 'transparent', bgColour: '#101216', loop: 'Aurora',
-      angle: -32, playing: true, length: 10, res: '1920×1080', fps: '60 fps', format: 'mov'
+      angle: -32, t: 0, swing: 45, ends: 'smooth', playing: true, length: 10, res: '1920×1080', fps: '60 fps', format: 'mov'
     };
   }
   renderVals() {
     const st = this.state;
     const set = (p) => this.setState(p);
-    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'}; white-space: nowrap;`;
     const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
     const sl = (key, label, min, max, fmt) => ({ label, min: String(min), max: String(max), val: String(st[key]), readout: fmt(st[key]), onInput: (e) => set({ [key]: Number(e.target.value) }) });
 
@@ -232,7 +245,16 @@ class Component extends DCLogic {
     };
     const mat = MATS[st.material];
     const rad = (d) => d * Math.PI / 180;
-    const lit = 0.55 + (st.lightStr / 100) * 0.6 * Math.max(0.15, Math.cos(rad(st.light - st.angle)));
+    const period = 60 / st.speed;
+    const ph = (st.t / period) % 1;
+    const wave = st.ends === 'hold' ? Math.max(-1, Math.min(1, 1.35 * Math.sin(2 * Math.PI * ph))) : Math.sin(2 * Math.PI * ph);
+    const tri = ph < 0.25 ? ph * 4 : ph < 0.75 ? 2 - ph * 4 : ph * 4 - 4;
+    const liveAngle = !st.playing ? st.angle
+      : st.rot === 'spin' ? Math.round(((st.angle + ph * 360 + 180) % 360) - 180)
+      : st.rot === 'swing' ? Math.round(st.swing * (st.ends === 'sharp' ? tri : wave))
+      : Math.round(st.angle + 10 * Math.sin(2 * Math.PI * ph));
+    const bob = st.rot === 'float' && st.playing ? Math.round(8 * Math.sin(4 * Math.PI * ph)) : 0;
+    const lit = 0.55 + (st.lightStr / 100) * 0.6 * Math.max(0.15, Math.cos(rad(st.light - liveAngle)));
     const W = 240, H = 150;
     const nLayers = Math.max(1, Math.round(st.depth / 3));
     const step = st.depth / nLayers;
@@ -255,19 +277,19 @@ class Component extends DCLogic {
     const stageBg = st.bg === 'transparent' ? '#15171b' : (st.bg === 'colour' ? st.bgColour : LOOPT[st.loop]);
     const clearWithMp4 = st.bg === 'transparent' && st.format === 'mp4';
     const FMT = { mp4: 'MP4', mov: 'MOV', webm: 'WebM' };
-    const ROT = { spin: 'Spin (full turns)', swing: 'Swing (back and forth)', float: 'Float (gentle bob)' };
+    const ROT = { spin: 'Full spin', swing: 'Back and forth ±' + st.swing + '°', float: 'Float (gentle bob)' };
     return {
       previewMeta: ROT[st.rot] + ' · ' + (st.playing ? 'playing' : 'paused'),
       stage: `position: relative; width: 640px; height: 330px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: ${stageBg}; border: ${st.bg === 'transparent' ? '2px dashed #5a5c62' : '2px solid #2f8f4e'}; box-sizing: border-box; display: flex; align-items: center; justify-content: center;`,
       persp: `perspective: ${400 + st.camDist * 12}px; width: ${W}px; height: ${H}px; transform: scale(${scale.toFixed(2)});`,
-      card: `position: relative; width: ${W}px; height: ${H}px; transform-style: preserve-3d; transform: rotateX(${tilt}deg) rotateY(${st.angle}deg);`,
+      card: `position: relative; width: ${W}px; height: ${H}px; transform-style: preserve-3d; transform: translateY(${bob}px) rotateX(${tilt}deg) rotateY(${liveAngle}deg);`,
       layers,
       face: `position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; box-sizing: border-box; border-radius: ${8 + st.bevel}px; background: ${shade(st.colour, mat.face * lit)}; opacity: ${mat.alpha < 1 ? 0.6 : 1}; border: ${Math.max(1, Math.round(st.bevel / 2))}px solid ${shade(st.colour, st.material === 'gloss' ? 1.5 : 1.2 * lit)}; display: flex; align-items: center; justify-content: center; gap: 12px; transform: translateZ(0);`,
       markColour: shade(st.colour, 0.35),
       faceText: `line-height: 1; font-size: 30px; font-weight: 800; letter-spacing: 0.04em; color: ${shade(st.colour, 0.35)};`,
       bgClear: st.bg === 'transparent', bgColourMode: st.bg === 'colour', bgLoopMode: st.bg === 'loop',
       togglePlay: () => set({ playing: !st.playing }), playGlyph: st.playing ? '❚❚' : '▶',
-      angle: String(st.angle), angleLabel: st.angle + '°', onAngle: (e) => set({ angle: Number(e.target.value) }),
+      angle: String(st.angle), angleLabel: liveAngle + '°', onAngle: (e) => set({ angle: Number(e.target.value) }),
       length: String(st.length), onLength: (e) => set({ length: e.target.value }),
       onRes: (e) => set({ res: String(e.target.value).split(' ')[0] }), onFps: (e) => set({ fps: e.target.value }),
       formats: seg('format', [['mp4', 'MP4'], ['mov', 'MOV (transparent)'], ['webm', 'WebM']]),
@@ -276,8 +298,10 @@ class Component extends DCLogic {
       lookSliders: [sl('depth', 'Depth', 0, 60, (v) => v + 'px'), sl('bevel', 'Bevel', 0, 20, (v) => v + 'px')],
       materials, colours,
       lightSliders: [sl('light', 'Light angle', -180, 180, (v) => v + '°'), sl('lightStr', 'Light strength', 0, 100, (v) => v + '%')],
-      rotTypes: seg('rot', [['spin', 'Spin'], ['swing', 'Swing'], ['float', 'Float']]),
-      motionSliders: [sl('speed', 'Speed', 2, 40, (v) => (60 / v).toFixed(1) + 's'), sl('camDist', 'Camera distance', 0, 100, (v) => v + '%')],
+      rotTypes: seg('rot', [['spin', 'Full spin'], ['swing', 'Back and forth'], ['float', 'Float']]),
+      isSwing: st.rot === 'swing', swingVal: String(st.swing), swingReadout: '±' + st.swing + '°', onSwing: (e) => set({ swing: Number(e.target.value) }),
+      endTypes: seg('ends', [['smooth', 'Ease'], ['hold', 'Pause'], ['sharp', 'Bounce']]),
+      motionSliders: [sl('speed', st.rot === 'swing' ? 'One swing' : 'One turn', 2, 40, (v) => (60 / v).toFixed(1) + 's'), sl('camDist', 'Camera distance', 0, 100, (v) => v + '%')],
       bgTypes: seg('bg', [['transparent', 'Transparent'], ['colour', 'Colour'], ['loop', 'Loop']]),
       bgColours, onLoop: (e) => set({ loop: e.target.value }),
       summary: st.length + ' s · ' + st.res + ' · ' + st.fps + ' · ' + FMT[st.format]

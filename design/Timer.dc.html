@@ -76,7 +76,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
         </sc-if>
         <sc-if value="{{isFinal}}" hint-placeholder-val="{{false}}">
           <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
-            <span style="{{finalStyle}}">10</span>
+            <span style="{{finalStyle}}">{{finalNum}}</span>
           </div>
           <span style="position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7);">Get ready</span>
         </sc-if>
@@ -170,9 +170,9 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
-  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidMount() { this._tick = setInterval(() => { if (this.state.running && this.state.secs > 0) this.setState({ secs: this.state.secs - 1 }); }, 1000); this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
   componentDidUpdate() { this.__fill(); }
-  componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
+  componentWillUnmount() { clearInterval(this._tick); document.removeEventListener('input', this.__onRange, true); }
   __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
   constructor(props) {
     super(props);
@@ -227,7 +227,7 @@ class Component extends DCLogic {
       onSub: (e) => set({ subtitle: e.target.value }),
       size: st.size, onSize: (e) => set({ size: Number(e.target.value) }),
       digits: `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
-      isFinal: st.final, notFinal: !st.final,
+      isFinal: st.final || st.secs <= 10, notFinal: !(st.final || st.secs <= 10), finalNum: String(st.secs <= 10 ? st.secs : 10),
       toggleFinal: () => set({ final: !st.final }),
       finalBtnStyle: `height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid ${st.final ? '#4fb3bf' : '#2c3038'}; background: ${st.final ? '#243039' : '#2a2e36'}; color: ${st.final ? '#ffffff' : '#d4d5d8'}; font-size: 12px; font-weight: 600;`,
       previewNote: `${sty.name} · ${BG[st.bg][0]} background · ${[st.onBack && 'Back Screen', st.onLive && 'Live stream'].filter(Boolean).join(' + ') || 'no screen selected'}`,
@@ -242,10 +242,10 @@ class Component extends DCLogic {
       runLabel: st.running ? '❚❚  Pause' : '▶  Start',
       runStyle: `height: 44px; min-width: 120px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.running ? '#343944' : '#2f8f4e'}; color: #ffffff; font-size: 14px; font-weight: 600;`,
       reset: () => set({ secs: st.total, running: false, final: false }),
-      add1: () => set({ secs: st.secs + 60, total: st.total + 60 }),
-      add5: () => set({ secs: st.secs + 300, total: st.total + 300 }),
-      sub1: () => set({ secs: Math.max(0, st.secs - 60) }),
-      jump10: () => set({ secs: 10, final: true }),
+      add1: () => set({ secs: st.secs + 60, total: st.total + 60, final: false }),
+      add5: () => set({ secs: st.secs + 300, total: st.total + 300, final: false }),
+      sub1: () => set({ secs: Math.max(0, st.secs - 60), final: false }),
+      jump10: () => set({ secs: 10, final: false, running: true }),
       onBack: st.onBack, onLive: st.onLive,
       toggleBack: () => set({ onBack: !st.onBack }),
       toggleLive: () => set({ onLive: !st.onLive })
