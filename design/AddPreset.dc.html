@@ -8,98 +8,98 @@
 <body>
 <x-dc>
 <helmet>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Sora:wght@600&amp;display=swap" rel="stylesheet">
 <style>
-body{margin:0;background:#0b0c0e;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#e6e8eb}
-a{color:#f2b84b}a:hover{color:#ffd27a}
-button,select,input{font-family:inherit}
-input[type=checkbox]{accent-color:#f2b84b}
+button{cursor:pointer;background-image:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.12));box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+body{margin:0;background:#1b1c1f;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#7fb2ec}a:hover{color:#a9cbf3}
+button,select,input,textarea{font-family:inherit}
+input[type=checkbox]{accent-color:#e8b04b}
 </style>
 </helmet>
-<div style="width: 1160px; height: 860px; box-sizing: border-box; background: #121316; border: 1px solid #2a2e34; border-radius: 14px; display: flex; flex-direction: column; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #e6e8eb; overflow: hidden;">
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #23262b;">
-    <span style="font-family: Sora, sans-serif; font-size: 20px; font-weight: 600;">Create preset</span>
+<div style="width: 1160px; height: 860px; box-sizing: border-box; background-color: #26272b; border: 1px solid #111214; border-radius: 4px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #111214;">
+    <span style="font-size: 20px; font-weight: 600;">Create preset</span>
     <div style="flex-grow: 1;"></div>
-    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
 
   <div style="flex-grow: 1; display: flex; min-height: 0;">
     <!-- Library side -->
-    <div style="width: 250px; flex-shrink: 0; border-right: 1px solid #23262b; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; background: #0f1012;">
-      <label style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border-radius: 7px; background: #0b0c0e; border: 1px solid #262a2f; color: #8d949e;">
+    <div style="width: 250px; flex-shrink: 0; border-right: 1px solid #111214; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-sizing: border-box; background-color: #222326;">
+      <label style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border-radius: 4px; background-color: #1b1c1f; border: 1px solid #111214; color: #8e9096;">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.4"></circle><path d="M9.2 9.2l3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>
-        <input aria-label="Search in library" placeholder="Search in library" style="flex-grow: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #e6e8eb; font-size: 13px;">
+        <input aria-label="Search in library" placeholder="Search in library" style="flex-grow: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #e4e5e7; font-size: 13px;">
       </label>
-      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8d949e; padding-top: 4px;">Start from a saved preset</span>
+      <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096; padding-top: 4px;">Start from a saved preset</span>
       <sc-for list="{{saved}}" as="p" hint-placeholder-count="8">
-        <button style="height: 36px; padding: 0 10px; border-radius: 7px; border: 1px solid #23262b; background: #15171a; color: #d5d8dd; font-size: 13px; text-align: left; display: flex; align-items: center; justify-content: space-between;"><span>{{p.name}}</span><span style="font-size: 11px; color: #7f8791;">{{p.cat}}</span></button>
+        <button style="height: 36px; padding: 0 10px; border-radius: 4px; border: 1px solid #111214; background-color: #303135; color: #e4e5e7; font-size: 13px; text-align: left; display: flex; align-items: center; justify-content: space-between;"><span>{{p.name}}</span><span style="font-size: 11px; color: #8e9096;">{{p.cat}}</span></button>
       </sc-for>
     </div>
 
     <!-- Builder -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; padding: 18px 22px; box-sizing: border-box;">
       <div style="display: flex; gap: 12px;">
-        <label style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1; font-size: 12px; color: #aab0b8;">Preset name
-          <input value="Opening" style="height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 14px;">
+        <label style="display: flex; flex-direction: column; gap: 6px; flex-grow: 1; font-size: 12px; color: #a9abb0;">Preset name
+          <input value="Opening" style="height: 38px; padding: 0 12px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; font-size: 14px;">
         </label>
-        <label style="display: flex; flex-direction: column; gap: 6px; width: 200px; font-size: 12px; color: #aab0b8;">Category
-          <select style="height: 38px; padding: 0 10px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 14px;"><option>Concert</option><option>Speeches</option><option>Siyum</option><option>+ New category</option></select>
+        <label style="display: flex; flex-direction: column; gap: 6px; width: 200px; font-size: 12px; color: #a9abb0;">Category
+          <select style="height: 38px; padding: 0 10px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; font-size: 14px;"><option>Concert</option><option>Speeches</option><option>Siyum</option><option>+ New category</option></select>
         </label>
-        <label style="display: flex; flex-direction: column; gap: 6px; width: 200px; font-size: 12px; color: #aab0b8;">Applies to
-          <select style="height: 38px; padding: 0 10px; border-radius: 8px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb; font-size: 14px;"><option>All screens</option><option>Live Screen</option><option>Back Screen</option><option>Monitor</option></select>
+        <label style="display: flex; flex-direction: column; gap: 6px; width: 200px; font-size: 12px; color: #a9abb0;">Applies to
+          <select style="height: 38px; padding: 0 10px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7; font-size: 14px;"><option>All screens</option><option>Live Screen</option><option>Back Screen</option><option>Monitor</option></select>
         </label>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <div style="display: flex; align-items: baseline; gap: 10px;">
-          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aab0b8;">Sources in this preset</span>
-          <span style="font-size: 12px; color: #8d949e;">Only these show on the main screen when the preset is picked. {{count}} selected.</span>
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a9abb0;">Sources in this preset</span>
+          <span style="font-size: 12px; color: #8e9096;">Only these show on the main screen when the preset is picked. {{count}} selected.</span>
         </div>
         <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;">
           <sc-for list="{{sources}}" as="s" hint-placeholder-count="15">
             <button onClick="{{s.toggle}}" style="{{s.style}}">
-              <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #8d949e;">{{s.kind}}</span>
+              <span style="font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">{{s.kind}}</span>
               <span style="font-size: 13px; font-weight: 600;">{{s.name}}</span>
               <span style="{{s.checkStyle}}">{{s.check}}</span>
             </button>
           </sc-for>
-          <button style="height: 64px; border-radius: 9px; border: 1px dashed #3a3f46; background: transparent; color: #aab0b8; font-size: 13px;">+ Add source</button>
+          <button style="height: 64px; border-radius: 4px; border: 1px dashed #5a5c62; background: transparent; color: #a9abb0; font-size: 13px;">+ Add source</button>
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <div style="display: flex; align-items: baseline; gap: 10px;">
-          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #aab0b8;">Preset buttons</span>
-          <span style="font-size: 12px; color: #8d949e;">One click runs several actions in order.</span>
+          <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a9abb0;">Preset buttons</span>
+          <span style="font-size: 12px; color: #8e9096;">One click runs several actions in order.</span>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <sc-for list="{{buttons}}" as="b" hint-placeholder-count="2">
-            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 9px; background: #17191c; border: 1px solid #262a2f;">
-              <span style="height: 30px; padding: 0 12px; border-radius: 7px; border: 1px solid #4a3f24; background: #1e1a10; color: #ffd27a; font-size: 12px; font-weight: 700; display: flex; align-items: center; white-space: nowrap;">{{b.label}}</span>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 4px; background-color: #3c3d42; border: 1px solid #111214;">
+              <span style="height: 30px; padding: 0 12px; border-radius: 4px; border: 1px solid #111214; background-color: #2f4d6e; color: #e6f0fb; font-size: 12px; font-weight: 700; display: flex; align-items: center; white-space: nowrap;">{{b.label}}</span>
               <sc-for list="{{b.steps}}" as="st" hint-placeholder-count="3">
-                <span style="font-size: 12px; color: #7f8791;">→</span>
-                <span style="height: 28px; padding: 0 10px; border-radius: 6px; background: #0f1012; border: 1px solid #2a2e34; font-size: 12px; color: #c6cad0; display: flex; align-items: center; white-space: nowrap;">{{st}}</span>
+                <span style="font-size: 12px; color: #8e9096;">→</span>
+                <span style="height: 28px; padding: 0 10px; border-radius: 4px; background-color: #222326; border: 1px solid #111214; font-size: 12px; color: #d4d5d8; display: flex; align-items: center; white-space: nowrap;">{{st}}</span>
               </sc-for>
               <div style="flex-grow: 1;"></div>
-              <button style="height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid #2a2e34; background: transparent; color: #aab0b8; font-size: 12px;">Edit</button>
+              <button style="height: 28px; padding: 0 10px; border-radius: 4px; border: 1px solid #111214; background: transparent; color: #a9abb0; font-size: 12px;">Edit</button>
             </div>
           </sc-for>
-          <button style="align-self: flex-start; height: 34px; padding: 0 14px; border-radius: 8px; border: 1px dashed #3a3f46; background: transparent; color: #f2b84b; font-size: 13px; font-weight: 600;">+ Add new button</button>
+          <button style="align-self: flex-start; height: 34px; padding: 0 14px; border-radius: 4px; border: 1px dashed #5a5c62; background: transparent; color: #e8b04b; font-size: 13px; font-weight: 600;">+ Add new button</button>
         </div>
       </div>
 
       <div style="display: flex; gap: 12px;">
-        <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; padding: 12px 14px; border-radius: 9px; background: #17191c; border: 1px solid #262a2f; font-size: 13px;"><input type="checkbox" checked="{{true}}"> When picked, load its first source into Preview</label>
-        <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; padding: 12px 14px; border-radius: 9px; background: #17191c; border: 1px solid #262a2f; font-size: 13px;">Default transition <select style="margin-left: auto; height: 30px; border-radius: 6px; border: 1px solid #2f343a; background: #0d0e10; color: #e6e8eb;"><option>Fade · 0.8s</option><option>Merge · 1.2s</option><option>Cut</option></select></label>
+        <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; padding: 12px 14px; border-radius: 4px; background-color: #3c3d42; border: 1px solid #111214; font-size: 13px;"><input type="checkbox" checked="{{true}}"> When picked, load its first source into Preview</label>
+        <label style="display: flex; align-items: center; gap: 10px; flex-grow: 1; padding: 12px 14px; border-radius: 4px; background-color: #3c3d42; border: 1px solid #111214; font-size: 13px;">Default transition <select style="margin-left: auto; height: 30px; border-radius: 4px; border: 1px solid #111214; background-color: #1a1b1e; color: #e4e5e7;"><option>Fade · 0.8s</option><option>Merge · 1.2s</option><option>Cut</option></select></label>
       </div>
     </div>
   </div>
 
-  <div style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #23262b; background: #0f1012;">
-    <span style="font-size: 13px; color: #8d949e;">Saved to the library — reusable and editable at any event.</span>
+  <div style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #111214; background-color: #222326;">
+    <span style="font-size: 13px; color: #8e9096;">Saved to the library — reusable and editable at any event.</span>
     <div style="flex-grow: 1;"></div>
-    <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 9px; border: 1px solid #2a2e34; background: #17191c; color: #d5d8dd; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Cancel</a>
-    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 9px; background: #f2b84b; color: #1a1408; font-size: 15px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Create preset</a>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 4px; border: 1px solid #111214; background-color: #3c3d42; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Cancel</a>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 4px; background-color: #e8b04b; color: #20180a; font-size: 15px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Create preset</a>
   </div>
 </div>
 </x-dc>
@@ -122,9 +122,9 @@ class Component extends DCLogic {
       return {
         kind, name,
         check: on ? 'Included' : 'Add',
-        checkStyle: `font-size: 11px; font-weight: 600; color: ${on ? '#f2b84b' : '#7f8791'};`,
+        checkStyle: `font-size: 11px; font-weight: 600; color: ${on ? '#7fb2ec' : '#8e9096'};`,
         toggle: () => this.setState({ picked: { ...st.picked, [id]: !on } }),
-        style: `height: 64px; padding: 8px 10px; border-radius: 9px; border: 1px solid ${on ? '#6a5a34' : '#262a2f'}; background: ${on ? '#1e1a10' : '#15171a'}; color: #e6e8eb; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;`
+        style: `height: 64px; padding: 8px 10px; border-radius: 4px; border: 1px solid ${on ? '#7fb2ec' : '#111214'}; background-color: ${on ? '#2f4d6e' : '#303135'}; color: #e4e5e7; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;`
       };
     });
     return {

@@ -7,6 +7,8 @@
 >
 > Note from the author: *"All images are what I envisioned it to look like — it does not have to match the images."*
 >
+> **Not every note is for this app.** Some pages from other programs were mixed in by mistake (e.g. the "stage cue" / singer page). Anything that doesn't fit should be flagged, not built.
+>
 > **Numbers are not final.** Counts in the notes and sketches (how many presets, cameras, videos, overlays, split screens, transitions, custom buttons, mixer sliders, etc.) were drawn on the spot and are **examples only**. The app should let the user **add as many as needed** (configurable, not fixed). What matters is the *kind* of control, not the exact number.
 
 **Working name:** not chosen yet (see §31).
@@ -37,7 +39,7 @@
 21. [Green screen](#21-green-screen)
 22. [Back-screen video loops](#22-back-screen-video-loops)
 23. [Audio & video controls, effects](#23-audio--video-controls-effects)
-24. [Songs, playlists & singer page (stage cue)](#24-songs-playlists--singer-page-stage-cue)
+24. [(Removed) Songs / singer page](#24-removed-songs--singer-page)
 25. [End-of-event: thank-you list / credits](#25-end-of-event-thank-you-list--credits)
 26. [3D logo maker](#26-3d-logo-maker)
 27. [Live streaming](#27-live-streaming)
@@ -95,6 +97,7 @@
 ## 4. Look & feel
 
 - **Professional look**; a **full professional / studio look**.
+- **Look like professional broadcast software (in the style of vMix)** — *not* sci-fi or "hacker" style. Proper console controls: real-looking faders with level meters, bevelled buttons, input tiles with title strips, a transitions column with a T-bar — not plain sliders. (Clarified by the author.)
 - **It is made for live events, so everything will be dark** — make it so that **whatever does not have to be bright is not bright**.
 - **All times that a page other than the main page is open, it should be a popup with an [X] to close it.**
 - **The layout should be customizable, but it should come already set up.**
@@ -152,6 +155,7 @@ Drawn right after *"on the phone it should be a more simple version — it shoul
 ## 6. The three screens (outputs) & screen tabs
 
 - The three outputs: **Live Screen** (the stream), **Back Screen** (behind the stage), **Monitor** (for the people on stage).
+- **The Monitor is for communicating with the people on stage. It shows text and similar information only (messages, clock, countdown, flash) — not cameras, videos or the live picture.** (Clarified by the author.)
 - **You can select which screen you want to see on your preview screen** (via the tabs).
 - **The controls change per view screen.** Example: **the Monitor screen will have more controls for text and a button to flash the screen on the stage**, etc.
 - **In settings you choose which screens are what before the event, so you don't have to do it each time.** / **Selecting which screens are what only needs to be done once.**
@@ -252,7 +256,7 @@ Drawn right after *"on the phone it should be a more simple version — it shoul
 ## 16. Text system & monitor messages
 
 - **Putting text on a screen should have an advanced system** that I can use **to set them up before events** and **do it on the spot during events**.
-- **Monitor screen:** more controls for text + **a button to flash the screen on the stage**.
+- **Monitor screen:** text only — used to communicate with the people on stage. Controls for text + **a button to flash the screen on the stage** (plus clock / countdown).
 - **For putting text on the monitor screen, I can either use a ready-made message or type my own, and messages I type myself get saved for future events.**
 
 ## 17. Fonts
@@ -314,12 +318,9 @@ Drawn right after *"on the phone it should be a more simple version — it shoul
 - **Camera settings:** it should have settings to control on the camera import **all the settings you have in a video-editing app for editing: colors, lighting, etc.**
 - **Effects to add to the live stream.**
 
-## 24. Songs, playlists & singer page (stage cue)
+## 24. (Removed) Songs / singer page
 
-(Page titled *"add to stage cue"*.)
-- **Song imports:** I should be able to **import a spreadsheet**, which **is deleted after adding the songs to the library.**
-- **I should be able to download a playlist or my whole library as a PDF or spreadsheet.**
-- **I should be able to make a playlist that I send to the singer** — **a page in the app** that **he can only view**, and it should have **the audio of the song and my comments on that song for the event.**
+- The page titled *"add to stage cue"* (song spreadsheet import, playlists, view-only singer page) **belongs to a different program (Stage Cue)** and was mixed in by mistake. **It is not part of this app.**
 
 ## 25. End-of-event: thank-you list / credits
 
@@ -436,5 +437,5 @@ These are recommendations, not part of the author's notes.
   4. Overlays, split screen, text, slideshow, 12 Pesukim, timer
   5. Green screen & video/audio controls
   6. Recording, export, streaming
-  7. Songs / singer page, thank-you list, 3D logo
+  7. Thank-you list, 3D logo
   8. Sign-in sync, auto-updates, manual, website
