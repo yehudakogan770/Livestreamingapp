@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -45,9 +45,8 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
 <div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
   <!-- Header -->
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">Add input</span>
-    <span style="font-size: 13px; color: #8e9096;">Pick a type on the left, set it up on the right</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Add input</span>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
@@ -95,7 +94,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
             <span style="{{k.h}}">Live thumbnail</span>
             <div style="width: 400px; height: 225px; border-radius: 6px; background-color: #34404c; border: 1px solid #2c3038; position: relative; display: flex; align-items: center; justify-content: center;">
               <span style="font-size: 14px; color: rgba(255,255,255,0.55);">[Camera picture]</span>
-              <span style="position: absolute; left: 10px; top: 10px; height: 20px; padding: 0 8px; border-radius: 4px; background-color: rgba(0,0,0,0.55); display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;"><span style="width: 6px; height: 6px; border-radius: 3px; background-color: #3fbf5a;"></span>SIGNAL</span>
+              <span style="position: absolute; left: 10px; top: 10px; height: 20px; padding: 0 8px; border-radius: 4px; background-color: rgba(0,0,0,0.55); display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em;"><span style="width: 6px; height: 6px; border-radius: 3px; background-color: #3fbf5a;"></span>SIGNAL</span>
               <span style="position: absolute; right: 10px; bottom: 10px; font-family: Consolas, monospace; font-size: 11px; color: rgba(255,255,255,0.7);">{{camRes}}</span>
             </div>
             <div style="display: flex; gap: 8px;">
@@ -181,7 +180,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="{{k.lbl}}">PIN</span>
-              <span style="font-family: Consolas, monospace; font-size: 26px; font-weight: 700; letter-spacing: 0.18em; color: #dff4f6;">{{pin}}</span>
+              <span style="font-family: Consolas, monospace; font-size: 26px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">{{pin}}</span>
             </div>
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="{{k.lbl}}">Wi-Fi</span>
@@ -392,7 +391,7 @@ input[type=checkbox]{width:16px;height:16px;margin:0}
     <span style="font-size: 12px; color: #8e9096;">{{addToNote}}</span>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;">Cancel <span style="font-size: 11px; font-weight: 400; color: #8e9096;">Esc</span></a>
-    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 6px; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;">Add input <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Enter</span></a>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 6px; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;">Add input <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Enter</span></a>
   </div>
 </div>
 </x-dc>
@@ -410,7 +409,7 @@ class Component extends DCLogic {
   renderVals() {
     const st = this.state;
     const seg = (opts, cur, key) => opts.map((label) => ({ label, pick: () => this.setState({ [key]: label }),
-      style: `height: 32px; padding: 0 14px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${cur === label ? '#1d3b40' : '#2a2e36'}; color: ${cur === label ? '#dff4f6' : '#d4d5d8'};` }));
+      style: `height: 32px; padding: 0 14px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${cur === label ? '#243039' : '#2a2e36'}; color: ${cur === label ? '#ffffff' : '#d4d5d8'};` }));
     const sw = {};
     Object.keys(st.sw).forEach((key) => { const on = st.sw[key]; sw[key] = {
       toggle: () => this.setState({ sw: { ...st.sw, [key]: !on } }),
@@ -436,19 +435,19 @@ class Component extends DCLogic {
     ];
     const typeRows = []; let sel = null;
     groups.forEach(([g, items], gi) => {
-      typeRows.push({ isHead: true, isItem: false, label: g, headStyle: `font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096; padding: ${gi ? 12 : 2}px 8px 6px;` });
+      typeRows.push({ isHead: true, isItem: false, label: g, headStyle: `font-size: 12px; font-weight: 600; color: #b4b8bf; padding: ${gi ? 12 : 2}px 8px 6px;` });
       items.forEach(([id, code, name, sub, defName, desc]) => {
         const on = st.type === id;
         if (on) sel = { name, sub: desc, defName };
         typeRows.push({ isHead: false, isItem: true, code, name, sub, pick: () => this.setState({ type: id }),
-          style: `height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background-color: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#e4e5e7'}; text-align: left;`,
-          iconStyle: `width: 34px; height: 26px; flex-shrink: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: Consolas, monospace; font-size: 9px; font-weight: 700; background-color: ${on ? '#4fb3bf' : '#262a31'}; color: ${on ? '#0e2a2e' : '#a9abb0'}; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'};` });
+          style: `height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background-color: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#e4e5e7'}; text-align: left;`,
+          iconStyle: `width: 34px; height: 26px; flex-shrink: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: Consolas, monospace; font-size: 9px; font-weight: 600; background-color: ${on ? '#4fb3bf' : '#262a31'}; color: ${on ? '#0e2a2e' : '#a9abb0'}; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'};` });
       });
     });
     const t = st.type;
     const is = { cam: t === 'hdmi' || t === 'usb', wireless: t === 'wireless', phone: t === 'phone', video: t === 'video', image: t === 'image', slides: t === 'slides', browser: t === 'browser', color: t === 'color', loop: t === 'loop', split: t === 'split', text: t === 'text', timer: t === 'timer' };
     const k = {
-      h: 'font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096;',
+      h: 'font-size: 12px; font-weight: 700; color: #b4b8bf;',
       lbl: 'font-size: 12px; color: #a9abb0;',
       field: 'display: flex; flex-direction: column; gap: 6px; min-width: 0;',
       inp: 'height: 36px; width: 100%; box-sizing: border-box; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px; outline: none;',
@@ -463,7 +462,7 @@ class Component extends DCLogic {
     };
     const tones = ['#34404c', '#473a2c', '#27403f', '#3b3446', '#2f3a2c', '#44302f', '#2c3848', '#3d3a33'];
     const loopNames = ['Soft light beams', 'Slow particles', 'Warm bokeh', 'Deep blue waves', 'Stage haze', 'Candle glow', 'Night sky', 'Abstract lines'];
-    const swHex = ['#000000', '#101216', '#1e2127', '#ffffff', '#34404c', '#27403f', '#1d3b40', '#4fb3bf', '#473a2c', '#44302f', '#3b3446', '#2c3848', '#2f8f4e', '#c7372f', '#5a1f1b', '#8e9096'];
+    const swHex = ['#000000', '#101216', '#1e2127', '#ffffff', '#34404c', '#27403f', '#243039', '#4fb3bf', '#473a2c', '#44302f', '#3b3446', '#2c3848', '#2f8f4e', '#c7372f', '#5a1f1b', '#8e9096'];
     const layoutDefs = [
       ['Side by side', ['left: 4px; top: 16px; width: 54px; height: 36px;', 'right: 4px; top: 16px; width: 54px; height: 36px;']],
       ['Picture in picture', ['left: 0; top: 0; right: 0; bottom: 0;', 'right: 6px; bottom: 6px; width: 40px; height: 24px;']],
@@ -481,12 +480,12 @@ class Component extends DCLogic {
       urlVal: st.proto === 'SRT' ? 'srt://[this computer]:9000' : 'rtmp://[this computer]/live',
       keyLabel: st.proto === 'SRT' ? 'Passphrase' : 'Stream key',
       ndiList: ['[NDI camera 1]', '[NDI camera 2]', '[Computer] · Screen'].map((name, i) => ({ name, meta: i === 2 ? 'NDI · 1080p30' : 'NDI · 1080p60', pick: () => this.setState({ ndi: i }),
-        style: `height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; border-bottom: 1px solid #2c3038; font-size: 13px; background-color: ${st.ndi === i ? '#1d3b40' : '#262a31'}; color: ${st.ndi === i ? '#dff4f6' : '#e4e5e7'};` })),
+        style: `height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; border-bottom: 1px solid #2c3038; font-size: 13px; background-color: ${st.ndi === i ? '#243039' : '#262a31'}; color: ${st.ndi === i ? '#ffffff' : '#e4e5e7'};` })),
       pin: st.pin,
       newPin: () => this.setState({ pin: st.pin === '482 719' ? '905 362' : '482 719' }),
       phones: phoneNames.map(([name, meta], i) => ({ name, meta, thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 4px; background-color: ${tones[i]};`, on: st.phones[i], toggle: () => { const p = st.phones.slice(); p[i] = !p[i]; this.setState({ phones: p }); } })),
       endSeg: [['hold', 'Hold last frame'], ['black', 'Go to black'], ['next', 'Next item']].map(([id, label]) => ({ label, pick: () => this.setState({ end: id }),
-        style: `height: 32px; padding: 0 14px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${st.end === id ? '#1d3b40' : '#2a2e36'}; color: ${st.end === id ? '#dff4f6' : '#d4d5d8'};` })),
+        style: `height: 32px; padding: 0 14px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${st.end === id ? '#243039' : '#2a2e36'}; color: ${st.end === id ? '#ffffff' : '#d4d5d8'};` })),
       fitSeg: seg(['Fit', 'Fill', 'Stretch'], st.fit, 'fit'),
       timerSeg: seg(['Count down', 'Count up', 'Clock'], st.timer, 'timer'),
       slides: tones.slice(0, 6).map((c, i) => ({ n: i + 1, style: `height: 72px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038; display: flex; align-items: flex-end; padding: 4px 6px; box-sizing: border-box;` })),
@@ -494,13 +493,13 @@ class Component extends DCLogic {
       colour: st.colour,
       colourPreview: `height: 169px; border-radius: 6px; border: 1px solid #2c3038; background-color: ${st.colour};`,
       loops: loopNames.map((name, i) => ({ name, pick: () => this.setState({ loopPick: i }),
-        style: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; text-align: left; border: 1px solid ${st.loopPick === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.loopPick === i ? '#1d3b40' : '#262a31'}; color: #e4e5e7;`,
+        style: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; text-align: left; border: 1px solid ${st.loopPick === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.loopPick === i ? '#243039' : '#262a31'}; color: #e4e5e7;`,
         thumb: `height: 74px; border-radius: 4px; background-color: ${tones[i]};` })),
       layouts: layoutDefs.map(([name, [a, b]], i) => ({ name, pick: () => this.setState({ layout: i }),
-        style: `display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; border: 1px solid ${st.layout === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.layout === i ? '#1d3b40' : '#262a31'}; color: #e4e5e7;`,
+        style: `display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; border: 1px solid ${st.layout === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.layout === i ? '#243039' : '#262a31'}; color: #e4e5e7;`,
         a: `position: absolute; ${a} border-radius: 2px; background-color: #34404c;`, b: `position: absolute; ${b} border-radius: 2px; background-color: #4fb3bf;` })),
       addToSeg: [['this', 'This preset'], ['all', 'All presets']].map(([id, label]) => ({ label, pick: () => this.setState({ addTo: id }),
-        style: `height: 36px; padding: 0 16px; border: 0; border-right: 1px solid #2c3038; font-size: 13px; font-weight: 600; background-color: ${st.addTo === id ? '#1d3b40' : '#2a2e36'}; color: ${st.addTo === id ? '#dff4f6' : '#d4d5d8'};` })),
+        style: `height: 36px; padding: 0 16px; border: 0; border-right: 1px solid #2c3038; font-size: 13px; font-weight: 600; background-color: ${st.addTo === id ? '#243039' : '#2a2e36'}; color: ${st.addTo === id ? '#ffffff' : '#d4d5d8'};` })),
       addToNote: st.addTo === 'this' ? '[Current preset name]' : 'Shows in every preset'
     };
   }

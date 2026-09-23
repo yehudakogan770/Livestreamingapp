@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -44,9 +44,8 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
 <div style="width: 1160px; height: 800px; box-sizing: border-box; background: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
   <!-- Header -->
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
-    <span style="font-size: 20px; font-weight: 600;">Split screen</span>
-    <span style="font-size: 13px; color: #8e9096;">Two or more things playing together · works mid-event, lands on Preview first</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <span style="font-size: 16px; font-weight: 600;">Split screen</span>
     <div style="flex-grow: 1;"></div>
     <select aria-label="Editing slot" value="{{target}}" onChange="{{onTarget}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 8px;">
       <option value="1">Editing: Split Screen 1</option>
@@ -60,7 +59,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
 
     <!-- Layouts -->
     <div style="width: 250px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #1a1d22; border-right: 1px solid #2c3038; box-sizing: border-box;">
-      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LAYOUT</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Layout</span>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
         <sc-for list="{{layouts}}" as="l" hint-placeholder-count="10">
           <button onClick="{{l.pick}}" aria-label="{{l.name}}" style="{{l.card}}">
@@ -72,7 +71,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
         </sc-for>
       </div>
       <div style="flex-grow: 1;"></div>
-      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SAVED SPLIT PRESETS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Saved split presets</span>
       <sc-for list="{{saved}}" as="s" hint-placeholder-count="3">
         <button onClick="{{s.load}}" style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 12px; text-align: left;"><span style="flex-grow: 1;">{{s.name}}</span><span style="font-size: 10px; color: #8e9096;">{{s.meta}}</span></button>
       </sc-for>
@@ -81,7 +80,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
     <!-- Preview -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; box-sizing: border-box;">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">{{layoutTitle}}</span>
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">{{layoutTitle}}</span>
         <div style="flex-grow: 1;"></div>
         <button onClick="{{swap}}" style="height: 28px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">⇄ Swap slots</button>
       </div>
@@ -91,20 +90,20 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
             <sc-if value="{{labels}}" hint-placeholder-val="{{true}}">
               <span style="position: absolute; left: 8px; bottom: 8px; height: 20px; padding: 0 7px; border-radius: 3px; background: rgba(0,0,0,0.6); color: #ffffff; font-size: 11px; font-weight: 600; display: flex; align-items: center;">{{s.src}}</span>
             </sc-if>
-            <span style="position: absolute; left: 8px; top: 8px; width: 22px; height: 22px; border-radius: 11px; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{s.n}}</span>
+            <span style="position: absolute; left: 8px; top: 8px; width: 22px; height: 22px; border-radius: 11px; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center;">{{s.n}}</span>
             <sc-if value="{{s.audio}}" hint-placeholder-val="{{false}}">
-              <span style="position: absolute; right: 8px; top: 8px; height: 20px; padding: 0 7px; border-radius: 3px; background: rgba(0,0,0,0.6); color: #8fd3db; font-size: 10px; font-weight: 700; display: flex; align-items: center;">AUDIO</span>
+              <span style="position: absolute; right: 8px; top: 8px; height: 20px; padding: 0 7px; border-radius: 3px; background: rgba(0,0,0,0.6); color: #8fd3db; font-size: 10px; font-weight: 600; display: flex; align-items: center;">AUDIO</span>
             </sc-if>
             <span style="font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.6);">{{s.src}}</span>
           </div>
         </sc-for>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SOURCES</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Sources</span>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
           <sc-for list="{{slots}}" as="s" hint-placeholder-count="2">
             <label style="height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 6px; background: #262a31; border: 1px solid #2c3038;">
-              <span style="width: 20px; height: 20px; border-radius: 10px; background: #1d3b40; color: #8fd3db; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">{{s.n}}</span>
+              <span style="width: 20px; height: 20px; border-radius: 10px; background: #243039; color: #8fd3db; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">{{s.n}}</span>
               <span style="font-size: 12px; color: #a9abb0; width: 42px;">Slot {{s.n}}</span>
               <select aria-label="Slot source" value="{{s.src}}" onChange="{{s.onSrc}}" style="flex-grow: 1; min-width: 0; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;">
                 <sc-for list="{{sources}}" as="o" hint-placeholder-count="8"><option value="{{o}}">{{o}}</option></sc-for>
@@ -117,7 +116,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
 
     <!-- Options -->
     <div style="width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 16px 18px; background: #1a1d22; border-left: 1px solid #2c3038; box-sizing: border-box;">
-      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">OPTIONS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Options</span>
 
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <div style="display: flex; font-size: 12px; color: #a9abb0;"><span style="flex-grow: 1;">Gap between slots</span><span style="font-family: Consolas, monospace; color: #e4e5e7;">{{gapLabel}}</span></div>
@@ -171,7 +170,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
     <button onClick="{{savePreset}}" style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600;">{{saveLabel}}</button>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Close</a>
-    <a href="Main.dc.html" style="height: 44px; padding: 0 22px; border-radius: 6px; background: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #2f8f4e;"></span>Use now (to Preview)</a>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 22px; border-radius: 6px; background: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 10px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #2f8f4e;"></span>Use now (to Preview)</a>
   </div>
 </div>
 </x-dc>
@@ -207,7 +206,7 @@ class Component extends DCLogic {
       const on = k === st.layout;
       return {
         name: L[k][0], pick: () => set({ layout: k }),
-        card: `display: flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; text-align: left;`,
+        card: `display: flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#a9abb0'}; text-align: left;`,
         rects: L[k][1].map((r, i) => ({ style: `position: absolute; left: calc(${r[0]}% + 1.5px); top: calc(${r[1]}% + 1.5px); width: calc(${r[2]}% - 3px); height: calc(${r[3]}% - 3px); border-radius: 2px; background: ${on ? (i === 0 ? '#4fb3bf' : '#8fd3db') : (i === 0 ? '#5a5f69' : '#8e9096')}; ${k.startsWith('pip') && i === 1 ? 'outline: 1.5px solid #101216;' : ''}` }))
       };
     });
@@ -235,7 +234,7 @@ class Component extends DCLogic {
       border: st.border, borderLabel: `${st.border} px`, onBorder: (e) => set({ border: Number(e.target.value) }),
       radius: st.radius, radiusLabel: `${st.radius} px`, onRadius: (e) => set({ radius: Number(e.target.value) }),
       borderColors: sw(['#ffffff', '#101216', '#4fb3bf', '#c7372f', '#2f8f4e', '#8e9096'], 'borderColor', 'Border colour'),
-      bgColors: sw(['#101216', '#000000', '#1e2127', '#1d3b40', '#e4e5e7'], 'bg', 'Background'),
+      bgColors: sw(['#101216', '#000000', '#1e2127', '#243039', '#e4e5e7'], 'bg', 'Background'),
       labels: st.labels, toggleLabels: () => set({ labels: !st.labels }),
       audio: st.audio, onAudio: (e) => set({ audio: e.target.value }),
       target: st.target, onTarget: (e) => set({ target: e.target.value }),

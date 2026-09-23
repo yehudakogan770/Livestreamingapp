@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -45,7 +45,7 @@ input[type=range]{margin:0;height:18px}
 <div style="width: 1440px; height: 900px; box-sizing: border-box; background-color: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
   <!-- Header -->
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; padding: 0 24px; background-color: #1a1d22; border-bottom: 1px solid #2c3038;">
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; padding: 0 24px; background-color: #1a1d22; border-bottom: 1px solid #2c3038;">
     <span style="font-size: 20px; font-weight: 600; white-space: nowrap;">Green screen &amp; scene builder</span>
     <span style="width: 1px; height: 28px; background-color: #2c3038;"></span>
     <label style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 12px; color: #a9abb0;">Scene</span>
@@ -67,7 +67,7 @@ input[type=range]{margin:0;height:18px}
     <!-- Layers -->
     <div style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; background-color: #1a1d22; border-right: 1px solid #2c3038;">
       <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #2c3038;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LAYERS</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Layers</span>
         <div style="display: flex; gap: 4px;">
           <button onClick="{{moveUp}}" aria-label="Move layer up" title="Move up (Ctrl+])" style="{{k.iconBtn}}">▲</button>
           <button onClick="{{moveDown}}" aria-label="Move layer down" title="Move down (Ctrl+[)" style="{{k.iconBtn}}">▼</button>
@@ -97,10 +97,10 @@ input[type=range]{margin:0;height:18px}
         <span style="font-size: 10px; color: #8e9096; padding: 2px 4px 0;">Bottom of the picture</span>
       </div>
       <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-top: 1px solid #2c3038;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ADD LAYER</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Add layer</span>
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{addBtns}}" as="a" hint-placeholder-count="6">
-            <button onClick="{{a.add}}" style="height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7;"><span style="font-family: Consolas, monospace; font-size: 10px; font-weight: 700; color: #8fd3db;">{{a.code}}</span><span style="font-size: 11px;">{{a.label}}</span></button>
+            <button onClick="{{a.add}}" style="height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7;"><span style="font-family: Consolas, monospace; font-size: 10px; font-weight: 600; color: #8fd3db;">{{a.code}}</span><span style="font-size: 11px;">{{a.label}}</span></button>
           </sc-for>
         </div>
       </div>
@@ -109,7 +109,7 @@ input[type=range]{margin:0;height:18px}
     <!-- Canvas -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; box-sizing: border-box;">
       <div style="height: 30px; flex-shrink: 0; display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SCENE</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Scene</span>
         <span style="{{viewBadge}}">{{viewLabel}}</span>
         <div style="flex-grow: 1;"></div>
         <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{safe}}" onChange="{{toggleSafe}}"> Safe area</label>
@@ -138,7 +138,7 @@ input[type=range]{margin:0;height:18px}
         <sc-if value="{{hasSel}}" hint-placeholder-val="{{true}}">
           <div style="{{selBox}}">
             <sc-for list="{{handles}}" as="h" hint-placeholder-count="8"><span style="{{h}}"></span></sc-for>
-            <span style="position: absolute; left: -2px; top: -24px; height: 20px; padding: 0 6px; border-radius: 4px; background-color: #4fb3bf; color: #0e2a2e; display: flex; align-items: center; font-size: 11px; font-weight: 700; white-space: nowrap;">{{selName}}</span>
+            <span style="position: absolute; left: -2px; top: -24px; height: 20px; padding: 0 6px; border-radius: 4px; background-color: #4fb3bf; color: #0e2a2e; display: flex; align-items: center; font-size: 11px; font-weight: 600; white-space: nowrap;">{{selName}}</span>
           </div>
         </sc-if>
         <sc-if value="{{safe}}" hint-placeholder-val="{{false}}">
@@ -158,7 +158,7 @@ input[type=range]{margin:0;height:18px}
 
       <div style="flex-grow: 1; min-height: 0; display: flex; gap: 10px;">
         <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 6px; background-color: #1e2127; border: 1px solid #2c3038;">
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SAVED SCENES</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Saved scenes</span>
           <div style="display: flex; gap: 8px;">
             <sc-for list="{{saved}}" as="s" hint-placeholder-count="4">
               <div style="display: flex; flex-direction: column; gap: 4px; width: 120px;"><div style="{{s.thumb}}"></div><span style="font-size: 11px; color: #d4d5d8;">{{s.name}}</span></div>
@@ -171,7 +171,7 @@ input[type=range]{margin:0;height:18px}
     <!-- Keyer + transform -->
     <div style="width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; box-sizing: border-box; background-color: #1a1d22; border-left: 1px solid #2c3038; overflow: hidden;">
       <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">KEYER</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Keyer</span>
         <select aria-label="Keyed layer" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;"><option>Camera 2 · Person</option><option>Camera 1</option><option>Phone camera 1</option></select>
         <button onClick="{{keyer.toggle}}" aria-label="Keyer on or off" style="{{keyer.track}}"><span style="{{keyer.knob}}"></span></button>
       </div>
@@ -214,7 +214,7 @@ input[type=range]{margin:0;height:18px}
       <div style="height: 1px; flex-shrink: 0; background-color: #2c3038; margin: 2px 0;"></div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SELECTED LAYER</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Selected layer</span>
         <span style="font-size: 12px; color: #8fd3db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{selName}}</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
@@ -232,7 +232,7 @@ input[type=range]{margin:0;height:18px}
       </sc-for>
 
       <div style="flex-grow: 1;"></div>
-      <button onClick="{{save}}" style="height: 48px; flex-shrink: 0; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700;">{{saveText}} <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Ctrl+S</span></button>
+      <button onClick="{{save}}" style="height: 48px; flex-shrink: 0; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 600;">{{saveText}} <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Ctrl+S</span></button>
     </div>
   </div>
 </div>
@@ -251,7 +251,7 @@ class Component extends DCLogic {
       kv: { ...this.kdef },
       sel: 'person', nextId: 1,
       layers: [
-        { id: 'logo', name: 'Logo', type: '3D logo', kind: 'plain', x: 646, y: 22, w: 112, h: 46, color: '#1d3b40', text: '#dff4f6', vis: true, lock: false, scale: 100, rot: 0, op: 100 },
+        { id: 'logo', name: 'Logo', type: '3D logo', kind: 'plain', x: 646, y: 22, w: 112, h: 46, color: '#243039', text: '#ffffff', vis: true, lock: false, scale: 100, rot: 0, op: 100 },
         { id: 'table', name: 'Front table', type: 'Image · PNG', kind: 'plain', x: 190, y: 334, w: 400, h: 105, color: '#3a2f27', text: 'rgba(255,255,255,0.5)', vis: true, lock: false, scale: 100, rot: 0, op: 100 },
         { id: 'person', name: 'Camera 2 · Person', type: 'Camera · keyed', kind: 'person', x: 318, y: 78, w: 144, h: 300, color: '#6b5646', vis: true, lock: false, scale: 100, rot: 0, op: 100 },
         { id: 'bg', name: 'Virtual set', type: 'Video loop', kind: 'bg', x: 0, y: 0, w: 780, h: 439, color: '#1f2a2a', wall: '#27403f', vis: true, lock: true, scale: 100, rot: 0, op: 100 }
@@ -264,7 +264,7 @@ class Component extends DCLogic {
     const sw = (on, toggle) => ({ toggle,
       track: `width: 38px; height: 22px; flex-shrink: 0; position: relative; padding: 0; border-radius: 11px; border: 1px solid ${on ? '#4fb3bf' : '#343944'}; background-color: ${on ? '#4fb3bf' : '#2a2e36'};`,
       knob: `position: absolute; top: 3px; left: ${on ? 19 : 3}px; width: 14px; height: 14px; border-radius: 7px; background-color: ${on ? '#0e2a2e' : '#a9abb0'};` });
-    const segStyle = (on) => `flex-grow: 1; flex-basis: 0; height: 32px; padding: 0 12px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; white-space: nowrap; background-color: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`;
+    const segStyle = (on) => `flex-grow: 1; flex-basis: 0; height: 32px; padding: 0 12px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; white-space: nowrap; background-color: ${on ? '#243039' : '#2a2e36'}; color: ${on ? '#ffffff' : '#d4d5d8'};`;
     const resetStyle = (changed) => `width: 24px; height: 24px; flex-shrink: 0; padding: 0; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; font-size: 12px; color: ${changed ? '#e4e5e7' : '#5a5c62'};`;
     const valStyle = (changed) => `width: 40px; flex-shrink: 0; text-align: right; font-family: Consolas, monospace; font-size: 12px; color: ${changed ? '#8fd3db' : '#e4e5e7'};`;
     const layers = st.layers; const n = layers.length;
@@ -291,7 +291,7 @@ class Component extends DCLogic {
     const handlePos = [['-5px', '-5px', 'nwse'], ['calc(50% - 4px)', '-5px', 'ns'], ['calc(100% - 3px)', '-5px', 'nesw'], ['calc(100% - 3px)', 'calc(50% - 4px)', 'ew'], ['calc(100% - 3px)', 'calc(100% - 3px)', 'nwse'], ['calc(50% - 4px)', 'calc(100% - 3px)', 'ns'], ['-5px', 'calc(100% - 3px)', 'nesw'], ['-5px', 'calc(50% - 4px)', 'ew']];
     const selShow = sel && sel.vis && (view === 'final' || sel.kind === 'person');
     const kvKeys = [['sim', 'Similarity'], ['smooth', 'Smoothness'], ['spill', 'Spill reduction'], ['feather', 'Edge feather'], ['choke', 'Choke / shrink'], ['wrap', 'Light wrap']];
-    const addDefs = [['CAM', 'Camera', 'Camera · keyed', '#5a4a3c'], ['IMG', 'Image', 'Image', '#3b3446'], ['VID', 'Video', 'Video', '#473a2c'], ['LP', 'Loop', 'Video loop', '#27403f'], ['3D', '3D logo', '3D logo', '#1d3b40'], ['TXT', 'Text', 'Text', '#262a31']];
+    const addDefs = [['CAM', 'Camera', 'Camera · keyed', '#5a4a3c'], ['IMG', 'Image', 'Image', '#3b3446'], ['VID', 'Video', 'Video', '#473a2c'], ['LP', 'Loop', 'Video loop', '#27403f'], ['3D', '3D logo', '3D logo', '#243039'], ['TXT', 'Text', 'Text', '#262a31']];
     const moveBy = (d) => { const i = layers.findIndex((l) => l.id === st.sel); const j = i + d; if (i < 0 || j < 0 || j >= n) return; const arr = layers.slice(); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; this.setState({ layers: arr }); };
     const xfDefs = [['scale', 'Scale', 10, 300, (v) => v + '%', 100], ['rot', 'Rotation', -180, 180, (v) => v + '°', 0], ['op', 'Opacity', 0, 100, (v) => v + '%', 100]];
     return {
@@ -303,7 +303,7 @@ class Component extends DCLogic {
         pick: () => this.setState({ sel: l.id }),
         toggleVis: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setLayer(l.id, { vis: !l.vis }); },
         toggleLock: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setLayer(l.id, { lock: !l.lock }); },
-        row: `height: 48px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 8px; border-radius: 6px; cursor: pointer; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background-color: ${on ? '#1d3b40' : '#1e2127'}; opacity: ${l.vis ? 1 : 0.6};`,
+        row: `height: 48px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 8px; border-radius: 6px; cursor: pointer; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background-color: ${on ? '#243039' : '#1e2127'}; opacity: ${l.vis ? 1 : 0.6};`,
         thumb: `width: 36px; height: 24px; flex-shrink: 0; border-radius: 3px; background-color: ${l.kind === 'bg' ? (presetWalls[st.preset] || l.wall) : l.color}; border: 1px solid #2c3038;`,
         eyeStyle: `width: 26px; height: 26px; padding: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 0; background: transparent; color: ${l.vis ? '#d4d5d8' : '#5a5c62'};`,
         lockStyle: `width: 26px; height: 26px; padding: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 0; background: transparent; color: ${l.lock ? '#8fd3db' : '#5a5c62'};` }; }),
@@ -323,7 +323,7 @@ class Component extends DCLogic {
       garbageOn: st.garbageOn && view !== 'final',
       garbageBox: 'position: absolute; left: 240px; top: 40px; width: 300px; height: 399px; z-index: 60; border: 2px dashed #e0473b; box-shadow: 0 0 0 999px rgba(0,0,0,0.55); pointer-events: none;',
       viewLabel: view === 'final' ? 'Final' : (view === 'matte' ? 'Matte view · white is kept' : 'Source view · camera as it comes in'),
-      viewBadge: `height: 22px; padding: 0 8px; border-radius: 4px; display: flex; align-items: center; font-size: 11px; font-weight: 600; background-color: ${view === 'final' ? '#262a31' : '#1d3b40'}; color: ${view === 'final' ? '#a9abb0' : '#dff4f6'};`,
+      viewBadge: `height: 22px; padding: 0 8px; border-radius: 4px; display: flex; align-items: center; font-size: 11px; font-weight: 600; background-color: ${view === 'final' ? '#262a31' : '#243039'}; color: ${view === 'final' ? '#a9abb0' : '#ffffff'};`,
       layerCount: n,
       saved: [['Studio desk', '#27403f'], ['Stage backdrop', '#3b3446'], ['Virtual set', '#2c3848'], ['[Your scene]', '#473a2c']].map(([name, c]) => ({ name, thumb: `height: 60px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038;` })),
       keyer: sw(st.keyerOn, () => this.setState({ keyerOn: !st.keyerOn })),
@@ -332,8 +332,8 @@ class Component extends DCLogic {
       keySwatch: `width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 6px; border: 1px solid #2c3038; background-color: ${keyCol};`,
       keyHex: keyCol.toUpperCase(),
       pickEye: () => this.setState({ eye: !st.eye }),
-      eyeBtn: `width: 32px; height: 32px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid ${st.eye ? '#4fb3bf' : '#2c3038'}; background-color: ${st.eye ? '#1d3b40' : '#2a2e36'}; color: ${st.eye ? '#dff4f6' : '#e4e5e7'};`,
-      keyPresets: [['green', 'Green'], ['blue', 'Blue']].map(([id, label]) => ({ label, pick: () => this.setState({ key: id }), style: `height: 30px; padding: 0 6px; border: 0; font-size: 11px; white-space: nowrap; font-weight: 600; background-color: ${st.key === id ? '#1d3b40' : '#2a2e36'}; color: ${st.key === id ? '#dff4f6' : '#d4d5d8'};` })),
+      eyeBtn: `width: 32px; height: 32px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid ${st.eye ? '#4fb3bf' : '#2c3038'}; background-color: ${st.eye ? '#243039' : '#2a2e36'}; color: ${st.eye ? '#ffffff' : '#e4e5e7'};`,
+      keyPresets: [['green', 'Green'], ['blue', 'Blue']].map(([id, label]) => ({ label, pick: () => this.setState({ key: id }), style: `height: 30px; padding: 0 6px; border: 0; font-size: 11px; white-space: nowrap; font-weight: 600; background-color: ${st.key === id ? '#243039' : '#2a2e36'}; color: ${st.key === id ? '#ffffff' : '#d4d5d8'};` })),
       keySliders: kvKeys.map(([key, label]) => { const v = st.kv[key]; const ch = v !== this.kdef[key]; return { label, value: v, valStyle: valStyle(ch), resetStyle: resetStyle(ch),
         onInput: (e) => this.setState({ kv: { ...this.state.kv, [key]: Number(e.target.value) } }), reset: () => this.setState({ kv: { ...this.state.kv, [key]: this.kdef[key] } }) }; }),
       posFields: sel ? [['X', sel.x], ['Y', sel.y], ['W', sel.w], ['H', sel.h]].map(([label, value]) => ({ label, value })) : [],

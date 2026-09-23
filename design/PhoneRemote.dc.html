@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -58,12 +58,12 @@ button,select{font-family:inherit}
 
   <div style="display: flex; gap: 8px;">
     <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
-      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #3fbf5a;">PREVIEW</span>
-      <div style="{{pvStyle}}"><span style="font-size: 12px; font-weight: 600;">{{pvName}}</span></div>
+      <span style="font-size: 12px; font-weight: 600; color: #3fbf5a;">Preview</span>
+      <div style="{{pvStyle}}"><dc-import name="Scene" kind="{{pvScene}}" hint-size="100%,100%"></dc-import><span style="position: absolute; left: 6px; bottom: 5px; height: 16px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 11px; line-height: 16px; color: #ffffff;">{{pvName}}</span></div>
     </div>
     <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
-      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.1em; color: #e0473b;">LIVE</span>
-      <div style="{{pgStyle}}"><span style="font-size: 12px; font-weight: 600;">{{pgName}}</span></div>
+      <span style="font-size: 12px; font-weight: 600; color: #e0473b;">Live</span>
+      <div style="{{pgStyle}}"><dc-import name="Scene" kind="{{pgScene}}" hint-size="100%,100%"></dc-import><span style="position: absolute; left: 6px; bottom: 5px; height: 16px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 11px; line-height: 16px; color: #ffffff;">{{pgName}}</span></div>
     </div>
   </div>
 
@@ -78,13 +78,13 @@ button,select{font-family:inherit}
 
   <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
     <sc-for list="{{sources}}" as="s" hint-placeholder-count="9">
-      <button onClick="{{s.pick}}" style="{{s.style}}"><span style="font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">{{s.kind}}</span><span style="font-size: 13px; font-weight: 600;">{{s.name}}</span></button>
+      <button onClick="{{s.pick}}" style="{{s.style}}"><span style="position: relative; display: block; align-self: stretch; height: 30px; border-radius: 3px; overflow: hidden;"><dc-import name="Scene" kind="{{s.scene}}" hint-size="100%,100%"></dc-import></span><span style="font-size: 13px; font-weight: 600;">{{s.name}}</span></button>
     </sc-for>
   </div>
 
   <div style="display: flex; gap: 8px;">
     <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
-      <button style="flex-grow: 1; height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #1d3b40; color: #dff4f6; font-size: 12px; font-weight: 600;">{{b}}</button>
+      <button style="flex-grow: 1; height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #243039; color: #ffffff; font-size: 12px; font-weight: 600;">{{b}}</button>
     </sc-for>
   </div>
 
@@ -92,7 +92,7 @@ button,select{font-family:inherit}
 
   <div style="display: flex; gap: 8px;">
     <button onClick="{{toggleBlank}}" style="{{blankStyle}}">{{blankText}}</button>
-    <button onClick="{{take}}" style="flex-grow: 1; height: 64px; border-radius: 6px; border: 0; background-color: #c7372f; color: #fff; font-size: 18px; font-weight: 700; letter-spacing: 0.04em;">TAKE · Fade</button>
+    <button onClick="{{take}}" style="flex-grow: 1; height: 64px; border-radius: 6px; border: 0; background-color: #c7372f; color: #fff; font-size: 18px; font-weight: 600; letter-spacing: 0.04em;">TAKE · Fade</button>
   </div>
   <button onClick="{{toggleMore}}" style="height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #262a31; color: #d4d5d8; font-size: 14px; font-weight: 600;">More controls</button>
 
@@ -121,18 +121,20 @@ class Component extends DCLogic {
     const PRESETS = ['Opening', 'Welcome', 'Speaker', '12 Pesukim', 'Video break', 'Closing'];
     const tabs = [['live', 'Live'], ['back', 'Back'], ['monitor', 'Monitor']].map(([id, name]) => {
       const on = st.tab === id;
-      return { name, pick: () => this.setState({ tab: id }), style: `flex-grow: 1; height: 38px; border-radius: 6px; border: 0; background-color: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 14px; font-weight: 600;` };
+      return { name, pick: () => this.setState({ tab: id }), style: `flex-grow: 1; height: 38px; border-radius: 6px; border: 0; background-color: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 14px; font-weight: 600;` };
     });
+    const SCN = { cam1: 'stage', cam2: 'closeup', phone: 'crowd', vid1: 'opening', vid2: 'sponsors', vid3: 'tribute', ov1: 'overlay', split1: 'split', slides: 'slides' };
     const sources = Object.entries(SRC).map(([id, [kind, name]]) => {
       const border = st.pg === id ? '#c7372f' : st.pv === id ? '#3fbf5a' : '#2c3038';
-      return { kind, name, pick: () => this.setState({ pv: id }), style: `height: 64px; padding: 8px 10px; border-radius: 6px; border: 2px solid ${border}; background-color: #262a31; color: #e4e5e7; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;` };
+      return { kind, name, scene: SCN[id] || 'stage', pick: () => this.setState({ pv: id }), style: `height: 64px; padding: 4px 4px 6px; border-radius: 6px; border: 2px solid ${border}; background-color: #262a31; color: #e4e5e7; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;` };
     });
-    const mon = (id, color) => `height: 94px; border-radius: 6px; border: 2px solid ${color}; background-color: ${(SRC[id] || SRC.cam1)[2]}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;`;
+    const mon = (id, color) => `position: relative; overflow: hidden; height: 94px; border-radius: 6px; border: 2px solid ${color}; background-color: ${(SRC[id] || SRC.cam1)[2]}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;`;
     return {
       tabs, sources,
       pvName: SRC[st.pv][1], pgName: st.blank || st.panic ? 'BLANK' : SRC[st.pg][1],
       pvStyle: mon(st.pv, '#2f8f4e'),
-      pgStyle: st.blank || st.panic ? 'height: 94px; border-radius: 6px; border: 2px solid #c7372f; background: #000; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: #8e9096;' : mon(st.pg, '#c7372f'),
+      pgScene: st.blank || st.panic ? 'black' : SCN[st.pg], pvScene: SCN[st.pv],
+      pgStyle: st.blank || st.panic ? 'position: relative; overflow: hidden; height: 94px; border-radius: 6px; border: 2px solid #c7372f; background: #000; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: #8e9096;' : mon(st.pg, '#c7372f'),
       presetName: PRESETS[st.preset],
       prevPreset: () => this.setState({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
       nextPreset: () => this.setState({ preset: (st.preset + 1) % PRESETS.length }),
@@ -140,10 +142,10 @@ class Component extends DCLogic {
       take: () => this.setState({ pg: st.pv, pv: st.pg }),
       toggleBlank: () => this.setState({ blank: !st.blank }),
       blankText: st.blank ? 'Unblank' : 'Blank',
-      blankStyle: `width: 110px; height: 64px; border-radius: 6px; border: 1px solid ${st.blank ? '#8e9096' : '#2c3038'}; background-color: ${st.blank ? '#e4e5e7' : '#2a2e36'}; color: ${st.blank ? '#15171b' : '#e4e5e7'}; font-size: 16px; font-weight: 700;`,
+      blankStyle: `width: 110px; height: 64px; border-radius: 6px; border: 1px solid ${st.blank ? '#8e9096' : '#2c3038'}; background-color: ${st.blank ? '#e4e5e7' : '#2a2e36'}; color: ${st.blank ? '#15171b' : '#e4e5e7'}; font-size: 16px; font-weight: 600;`,
       togglePanic: () => this.setState({ panic: !st.panic }),
       panicText: st.panic ? 'Restore' : 'Panic',
-      panicStyle: `height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #c7372f; background-color: ${st.panic ? '#c7372f' : '#3a1a18'}; color: ${st.panic ? '#fff' : '#ff9a9d'}; font-size: 12px; font-weight: 700;`,
+      panicStyle: `height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #c7372f; background-color: ${st.panic ? '#c7372f' : '#3a1a18'}; color: ${st.panic ? '#fff' : '#ff9a9d'}; font-size: 12px; font-weight: 600;`,
       more: st.more,
       toggleMore: () => this.setState({ more: !st.more }),
       moreItems: ['Transitions', 'Audio mixer', 'Monitor message', 'Flash stage', 'Overlays', 'Timer', '12 Pesukim', 'Cues']

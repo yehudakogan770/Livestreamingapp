@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -44,9 +44,8 @@ input[type=range]{accent-color:#4fb3bf}
 </helmet>
 <div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">3D logo maker</span>
-    <span style="font-size: 13px; color: #8e9096;">Import a logo · make it 3D and rotating · export a video of any length</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">3D logo maker</span>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
@@ -75,7 +74,7 @@ input[type=range]{accent-color:#4fb3bf}
 
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Preview</span>
         <span style="font-size: 12px; color: #8e9096;">{{previewMeta}}</span>
       </div>
       <div style="{{stage}}">
@@ -100,7 +99,7 @@ input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EXPORT</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Export</span>
         <div style="display: flex; gap: 10px; align-items: flex-end;">
           <label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #a9abb0;">Length (seconds)
             <input type="number" min="1" aria-label="Length in seconds" value="{{length}}" onInput="{{onLength}}" style="width: 96px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 15px; box-sizing: border-box;">
@@ -124,7 +123,7 @@ input[type=range]{accent-color:#4fb3bf}
     <!-- Right: look + motion -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LOOK</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Look</span>
         <sc-for list="{{lookSliders}}" as="s" hint-placeholder-count="2">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
             <span style="width: 96px;">{{s.label}}</span>
@@ -158,7 +157,7 @@ input[type=range]{accent-color:#4fb3bf}
       <div style="height: 1px; background: #2c3038;"></div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MOTION &amp; CAMERA</span>
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">MOTION &amp; CAMERA</span>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
           <span style="width: 96px;">Rotation</span>
           <div style="flex-grow: 1; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
@@ -199,7 +198,7 @@ input[type=range]{accent-color:#4fb3bf}
     <div style="flex-grow: 1;"></div>
     <button style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600;">Save to library</button>
     <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: #343944; color: #ffffff; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Add as input</a>
-    <button style="height: 44px; padding: 0 26px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700;">Export video</button>
+    <button style="height: 44px; padding: 0 26px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 600;">Export video</button>
   </div>
 </div>
 </x-dc>
@@ -220,7 +219,7 @@ class Component extends DCLogic {
   renderVals() {
     const st = this.state;
     const set = (p) => this.setState(p);
-    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
     const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
     const sl = (key, label, min, max, fmt) => ({ label, min: String(min), max: String(max), val: String(st[key]), readout: fmt(st[key]), onInput: (e) => set({ [key]: Number(e.target.value) }) });
 
@@ -245,9 +244,9 @@ class Component extends DCLogic {
     const scale = 0.7 + (100 - st.camDist) / 100 * 0.6;
     const COLS = [['#b8c0c8', 'Silver'], ['#e4e5e7', 'White'], ['#4fb3bf', 'Teal'], ['#4a6fd1', 'Blue'], ['#c7372f', 'Red'], ['#2f3440', 'Charcoal'], ['#8a5cc7', 'Purple']];
     const colours = COLS.map(([c, name]) => ({ name, pick: () => set({ colour: c }),
-      style: `width: 26px; height: 26px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.colour === c ? '#dff4f6' : '#2c3038'}; box-sizing: border-box;` }));
+      style: `width: 26px; height: 26px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.colour === c ? '#ffffff' : '#2c3038'}; box-sizing: border-box;` }));
     const materials = Object.keys(MATS).map((id) => { const m = MATS[id]; const on = st.material === id; return { name: m.name, pick: () => set({ material: id }),
-      card: `height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`,
+      card: `height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: ${on ? '#ffffff' : '#d4d5d8'};`,
       swatch: `width: 28px; height: 14px; border-radius: 3px; background: ${shade(st.colour, m.face)}; opacity: ${m.alpha < 1 ? 0.55 : 1}; border: 1px solid ${id === 'gloss' ? '#ffffff' : shade(st.colour, m.edge)};` }; });
     const BGC = [['#101216', 'Black'], ['#1b2a4a', 'Navy'], ['#27403f', 'Deep teal'], ['#e4e5e7', 'White'], ['#2f8f4e', 'Green (keying)']];
     const bgColours = BGC.map(([c, name]) => ({ name, pick: () => set({ bgColour: c }),

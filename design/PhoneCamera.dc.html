@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -59,7 +59,7 @@ input[type=range]{accent-color:#4fb3bf}
       <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #a9abb0;">Zoom<input type="range" min="1" max="5" step="0.1" value="1.4" style="flex-grow: 1;"></label>
       <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #a9abb0;">Exposure<input type="range" min="-2" max="2" step="0.1" value="0" style="flex-grow: 1;"></label>
       <div style="display: flex; justify-content: space-between; font-family: Consolas, monospace; font-size: 11px; color: #8e9096;"><span>Signal 18 ms</span><span>Battery 64%</span><span>Plugged in: no</span></div>
-      <button onClick="{{goBlack}}" style="height: 56px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 16px; font-weight: 700;">Black screen (keep filming)</button>
+      <button onClick="{{goBlack}}" style="height: 56px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 16px; font-weight: 600;">Black screen (keep filming)</button>
     </div>
   </sc-if>
   <sc-if value="{{black}}" hint-placeholder-val="{{false}}">
@@ -84,7 +84,7 @@ class Component extends DCLogic {
       showControls: () => this.setState({ black: false }),
       toggleAir: () => this.setState({ onAir: !st.onAir }),
       airText: st.onAir ? 'ON AIR' : 'Standby',
-      airStyle: `height: 30px; padding: 0 12px; border-radius: 6px; border: 0; background-color: ${st.onAir ? '#c7372f' : 'rgba(0,0,0,0.55)'}; color: #fff; font-size: 12px; font-weight: 700; letter-spacing: 0.06em;`,
+      airStyle: `height: 30px; padding: 0 12px; border-radius: 6px; border: 0; background-color: ${st.onAir ? '#c7372f' : 'rgba(0,0,0,0.55)'}; color: #fff; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;`,
       tally: `position: absolute; inset: 0; border: 4px solid ${st.onAir ? '#c7372f' : 'transparent'}; box-sizing: border-box; pointer-events: none;`
     };
   }

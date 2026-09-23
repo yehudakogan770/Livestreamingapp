@@ -50,3 +50,13 @@ Reference artboard for the look and the file format: `project/Main.dc.html` in t
 - Video transports: seek bar with chapter marks, restart, −10 s, play/pause, +10 s, end, elapsed / total / remaining,
   loop and speed — usable while on air. Live sources (cameras) show the transport disabled with "LIVE".
 - Layout is verified with `check-layout.js` (renders every artboard and reports overlaps, clipped or hidden content).
+
+## Professional polish rules (added)
+- No tiny ALL-CAPS letter-spaced labels. Section labels are sentence case, 12px, weight 600, #b4b8bf.
+  Uppercase is reserved for broadcast conventions only: TAKE, CUT, ON AIR, PANIC.
+- No helper sentences under dialog titles; dialog headers are 52px with a 16px title.
+- Weight 600 max for UI text (700+ only for large numerals).
+- Pictures, not coloured boxes: every video/camera/loop area uses `<dc-import name="Scene" kind="…">`
+  (stage, side, closeup, crowd, opening, sponsors, tribute, aurora, particles, warm, slides, pesukim,
+  browser, split, overlay, lower, timer, eventlogo, credits, black). The host element must be positioned.
+- Accent (teal) only for the primary action, active toggles and focus — selection uses neutral #243039.

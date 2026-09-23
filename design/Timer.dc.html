@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -43,9 +43,8 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
 </helmet>
 <div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">Hype countdown</span>
-    <span style="font-size: 13px; color: #8e9096;">A big countdown to something exciting — for the Back Screen and the live stream</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Hype countdown</span>
     <div style="flex-grow: 1;"></div>
     <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d5d8;"><input type="checkbox" checked="{{onBack}}" onChange="{{toggleBack}}"> Back Screen</label>
     <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d5d8;"><input type="checkbox" checked="{{onLive}}" onChange="{{toggleLive}}"> Live stream</label>
@@ -58,7 +57,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 20px 24px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Preview</span>
         <span style="font-size: 12px; color: #8e9096;">{{previewNote}}</span>
         <div style="flex-grow: 1;"></div>
         <button onClick="{{toggleFinal}}" style="{{finalBtnStyle}}">Preview final 10 seconds</button>
@@ -78,7 +77,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
           <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
             <span style="{{finalStyle}}">10</span>
           </div>
-          <span style="position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 0.3em; color: rgba(255,255,255,0.7);">GET READY</span>
+          <span style="position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7);">Get ready</span>
         </sc-if>
       </div>
 
@@ -87,19 +86,19 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
         <button onClick="{{toggleRun}}" style="{{runStyle}}">{{runLabel}}</button>
         <button onClick="{{reset}}" style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Reset</button>
         <span style="width: 1px; height: 30px; background: #2c3038; margin: 0 4px;"></span>
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">ADD TIME LIVE</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Add time live</span>
         <button onClick="{{sub1}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">−1 min</button>
         <button onClick="{{add1}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">+1 min</button>
         <button onClick="{{add5}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">+5 min</button>
         <button onClick="{{jump10}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Jump to last 10 s</button>
         <div style="flex-grow: 1;"></div>
-        <button style="height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.04em;">Send to screens</button>
+        <button style="height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 600; letter-spacing: 0.04em;">Send to screens</button>
       </div>
 
       <!-- Count down to -->
       <div style="display: flex; gap: 12px;">
         <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038;">
-          <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">COUNT DOWN TO</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Count down to</span>
           <div style="display: flex; gap: 6px;">
             <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
               <button onClick="{{m.pick}}" style="{{m.style}}">{{m.name}}</button>
@@ -113,7 +112,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
           </div>
         </div>
         <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038;">
-          <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">WHEN IT HITS ZERO</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">When it hits zero</span>
           <select aria-label="At zero" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 13px;"><option>Play video: Opening.mp4 → then Camera 1</option><option>Switch to Camera 1</option><option>Show text: "Welcome!"</option><option>Run preset: Opening</option><option>Go to black</option></select>
           <div style="display: flex; gap: 14px; font-size: 12px; color: #d4d5d8;">
             <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked="{{true}}"> Confetti burst</label>
@@ -126,16 +125,16 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
     <!-- Style panel -->
     <div style="width: 400px; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px; padding: 20px; box-sizing: border-box; background: #1a1d22; border-left: 1px solid #2c3038; overflow: hidden;">
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">STYLE</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Style</span>
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{styles}}" as="s" hint-placeholder-count="6">
-            <button onClick="{{s.pick}}" style="{{s.style}}"><span style="{{s.swatch}}"><span style="font-family: Consolas, monospace; font-size: 14px; font-weight: 800; color: #ffffff;">00:10</span></span><span style="font-size: 11px; font-weight: 600;">{{s.name}}</span></button>
+            <button onClick="{{s.pick}}" style="{{s.style}}"><span style="{{s.swatch}}"><span style="font-family: Consolas, monospace; font-size: 14px; font-weight: 600; color: #ffffff;">00:10</span></span><span style="font-size: 11px; font-weight: 600;">{{s.name}}</span></button>
           </sc-for>
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">TEXT</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Text</span>
         <input aria-label="Title above the numbers" value="{{title}}" onInput="{{onTitle}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px;">
         <input aria-label="Line under the numbers" value="{{subtitle}}" onInput="{{onSub}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px;">
         <div style="display: flex; gap: 6px;">
@@ -146,7 +145,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">BACKGROUND</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Background</span>
         <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{bgs}}" as="b" hint-placeholder-count="8">
             <button onClick="{{b.pick}}" aria-label="{{b.name}}" style="{{b.style}}"><span style="font-size: 9px; color: rgba(255,255,255,0.8);">{{b.name}}</span></button>
@@ -155,7 +154,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">HYPE EFFECTS</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Hype effects</span>
         <sc-for list="{{effects}}" as="e" hint-placeholder-count="6">
           <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #d4d5d8;"><input type="checkbox" checked="{{e.on}}" onChange="{{e.toggle}}">{{e.name}}</label>
         </sc-for>
@@ -213,7 +212,7 @@ class Component extends DCLogic {
     const effects = FX.map(([id, name]) => ({ name, on: !!st.fx[id], toggle: () => set({ fx: { ...st.fx, [id]: !st.fx[id] } }) }));
     const modes = [['time', 'A time of day'], ['length', 'A length of time']].map(([id, name]) => ({
       name, pick: () => set({ mode: id }),
-      style: `flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid ${st.mode === id ? '#4fb3bf' : '#2c3038'}; background: ${st.mode === id ? '#1d3b40' : '#2a2e36'}; color: ${st.mode === id ? '#dff4f6' : '#d4d5d8'}; font-size: 12px; font-weight: 600;`
+      style: `flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid ${st.mode === id ? '#4fb3bf' : '#2c3038'}; background: ${st.mode === id ? '#243039' : '#2a2e36'}; color: ${st.mode === id ? '#ffffff' : '#d4d5d8'}; font-size: 12px; font-weight: 600;`
     }));
     const glow = st.fx.glow ? `0 0 40px ${sty.accent}66, 0 0 90px ${sty.accent}33` : 'none';
     const pct = Math.max(0, Math.min(100, (1 - st.secs / st.total) * 100));
@@ -227,18 +226,18 @@ class Component extends DCLogic {
       digits: `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
       isFinal: st.final, notFinal: !st.final,
       toggleFinal: () => set({ final: !st.final }),
-      finalBtnStyle: `height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid ${st.final ? '#4fb3bf' : '#2c3038'}; background: ${st.final ? '#1d3b40' : '#2a2e36'}; color: ${st.final ? '#dff4f6' : '#d4d5d8'}; font-size: 12px; font-weight: 600;`,
+      finalBtnStyle: `height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid ${st.final ? '#4fb3bf' : '#2c3038'}; background: ${st.final ? '#243039' : '#2a2e36'}; color: ${st.final ? '#ffffff' : '#d4d5d8'}; font-size: 12px; font-weight: 600;`,
       previewNote: `${sty.name} · ${BG[st.bg][0]} background · ${[st.onBack && 'Back Screen', st.onLive && 'Live stream'].filter(Boolean).join(' + ') || 'no screen selected'}`,
       stage: `position: relative; height: 520px; border-radius: 8px; overflow: hidden; border: 1px solid #2f8f4e; background: ${BG[st.bg][1]};`,
       glowLayer: `position: absolute; inset: 0; background: radial-gradient(ellipse at center, ${sty.accent}22 0%, transparent 60%); opacity: ${st.fx.glow ? 1 : 0};`,
-      titleStyle: `font-size: 20px; font-weight: 700; letter-spacing: 0.35em; color: ${sty.accent}; opacity: 0.85;`,
-      digitsStyle: `font-family: Bahnschrift, 'Segoe UI', sans-serif; font-size: ${st.size}px; font-weight: 800; line-height: 1; letter-spacing: 0.02em; color: #ffffff; text-shadow: ${glow}; font-variant-numeric: tabular-nums;`,
+      titleStyle: `font-size: 20px; font-weight: 600; letter-spacing: 0.35em; color: ${sty.accent}; opacity: 0.85;`,
+      digitsStyle: `font-family: Bahnschrift, 'Segoe UI', sans-serif; font-size: ${st.size}px; font-weight: 600; line-height: 1; letter-spacing: 0.02em; color: #ffffff; text-shadow: ${glow}; font-variant-numeric: tabular-nums;`,
       subStyle: `font-size: 22px; font-weight: 600; color: rgba(255,255,255,0.75);`,
       finalStyle: `font-family: Bahnschrift, 'Segoe UI', sans-serif; font-size: 360px; font-weight: 900; line-height: 1; color: ${sty.accent}; text-shadow: ${glow};`,
       progressBar: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pct}%; border-radius: 2px; background: ${sty.accent};`,
       toggleRun: () => set({ running: !st.running }),
       runLabel: st.running ? '❚❚  Pause' : '▶  Start',
-      runStyle: `height: 44px; min-width: 120px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.running ? '#343944' : '#2f8f4e'}; color: #ffffff; font-size: 14px; font-weight: 700;`,
+      runStyle: `height: 44px; min-width: 120px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.running ? '#343944' : '#2f8f4e'}; color: #ffffff; font-size: 14px; font-weight: 600;`,
       reset: () => set({ secs: st.total, running: false, final: false }),
       add1: () => set({ secs: st.secs + 60, total: st.total + 60 }),
       add5: () => set({ secs: st.secs + 300, total: st.total + 300 }),

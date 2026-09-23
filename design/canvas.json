@@ -241,6 +241,14 @@
       "h": 900,
       "title": "Monitor layout (several things at once)",
       "is_interactive": true
+    },
+    "Scene.dc.html": {
+      "x": 4080,
+      "y": 7824,
+      "w": 640,
+      "h": 360,
+      "title": "Picture placeholders (shared)",
+      "is_interactive": false
     }
   },
   "order": [
@@ -272,7 +280,8 @@
     "PhoneCamera.dc.html",
     "StreamPage.dc.html",
     "Manual.dc.html",
-    "Website.dc.html"
+    "Website.dc.html",
+    "Scene.dc.html"
   ],
   "notes": {
     "row0": {

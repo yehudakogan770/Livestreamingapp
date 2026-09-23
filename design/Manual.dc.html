@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -43,9 +43,8 @@ input,select,textarea{font-family:inherit}
 <div style="width: 1280px; height: 900px; box-sizing: border-box; background: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
   <!-- Header -->
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">How to use Lumora</span>
-    <span style="font-size: 13px; color: #8e9096;">Manual · Help menu · F1</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">How to use Lumora</span>
     <div style="flex-grow: 1;"></div>
     <div style="position: relative; width: 320px;">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" style="position: absolute; left: 11px; top: 11px;"><circle cx="6" cy="6" r="4.2" stroke="#8e9096" stroke-width="1.5"></circle><path d="M9.2 9.2l3 3" stroke="#8e9096" stroke-width="1.5" stroke-linecap="round"></path></svg>
@@ -58,7 +57,7 @@ input,select,textarea{font-family:inherit}
   <div style="flex-grow: 1; min-height: 0; display: flex;">
     <!-- TOC -->
     <div style="width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; background: #1a1d22; border-right: 1px solid #2c3038; box-sizing: border-box;">
-      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; padding: 0 8px 6px;">CONTENTS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding: 0 8px 6px;">Contents</span>
       <sc-for list="{{toc}}" as="t" hint-placeholder-count="10">
         <button onClick="{{t.pick}}" style="{{t.style}}">
           <span style="font-family: Consolas, monospace; font-size: 11px; width: 20px; color: #8e9096;">{{t.num}}</span>
@@ -85,19 +84,19 @@ input,select,textarea{font-family:inherit}
 
       <div style="flex-grow: 1; min-height: 0; display: flex; gap: 32px;">
         <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">STEP BY STEP</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Step by step</span>
           <sc-for list="{{art.steps}}" as="s" hint-placeholder-count="5">
             <div style="display: flex; gap: 14px;">
-              <span style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 14px; background: #1d3b40; border: 1px solid #4fb3bf; color: #dff4f6; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">{{s.n}}</span>
+              <span style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 14px; background: #243039; border: 1px solid #4fb3bf; color: #ffffff; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">{{s.n}}</span>
               <div style="display: flex; flex-direction: column; gap: 3px; padding-top: 3px;">
                 <span style="font-size: 15px; font-weight: 600;">{{s.head}}</span>
                 <span style="font-size: 14px; line-height: 1.5; color: #a9abb0;">{{s.text}}</span>
               </div>
             </div>
           </sc-for>
-          <div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 6px; background: #1d3b40; border: 1px solid #2c3038;">
-            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8fd3db; padding-top: 2px;">TIP</span>
-            <span style="font-size: 13px; line-height: 1.5; color: #dff4f6;">{{art.tip}}</span>
+          <div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 6px; background: #243039; border: 1px solid #2c3038;">
+            <span style="font-size: 12px; font-weight: 600; color: #8fd3db; padding-top: 2px;">Tip</span>
+            <span style="font-size: 13px; line-height: 1.5; color: #ffffff;">{{art.tip}}</span>
           </div>
         </div>
 
@@ -171,7 +170,7 @@ class Component extends DCLogic {
     const q = st.query.trim().toLowerCase();
     const toc = A.map((a, i) => ({ a, i })).filter(({ a }) => !q || a.title.toLowerCase().includes(q) || a.intro.toLowerCase().includes(q)).map(({ a, i }) => {
       const on = st.cur === i;
-      return { num: String(i + 1), title: a.title, pick: () => set({ cur: i }), style: `height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#d4d5d8'};` };
+      return { num: String(i + 1), title: a.title, pick: () => set({ cur: i }), style: `height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#d4d5d8'};` };
     });
     const cur = A[st.cur];
     const art = { num: String(st.cur + 1), title: cur.title, intro: cur.intro, tip: cur.tip, shot1: cur.shot1, shot2: cur.shot2, steps: cur.steps.map(([head, text], i) => ({ n: String(i + 1), head, text })) };

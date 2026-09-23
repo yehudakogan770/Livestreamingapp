@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -44,9 +44,8 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
 <div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
   <!-- Header -->
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
-    <span style="font-size: 20px; font-weight: 600;">Run of show</span>
-    <span style="font-size: 13px; color: #8e9096;">Cues for [Event name] · start the event and each cue plays on the clock, or step through by hand</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <span style="font-size: 16px; font-weight: 600;">Run of show</span>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
@@ -54,16 +53,16 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
   <!-- Transport -->
   <div style="height: 100px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #1e2127; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
     <div style="display: flex; flex-direction: column; gap: 2px; width: 180px; flex-shrink: 0;">
-      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EVENT CLOCK</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Event clock</span>
       <span style="font-family: Consolas, monospace; font-size: 32px; font-weight: 700; color: #ffffff; line-height: 1;">19:42:05</span>
     </div>
     <div style="display: flex; gap: 8px;">
       <button onClick="{{start}}" style="{{startStyle}}"><span>{{startLabel}}</span><span style="font-size: 10px; font-weight: 600; opacity: 0.75;">F5</span></button>
       <button onClick="{{pause}}" style="{{pauseStyle}}"><span>❚❚ PAUSE</span><span style="font-size: 10px; font-weight: 600; color: #8e9096;">Space</span></button>
-      <button onClick="{{nextCue}}" style="height: 56px; width: 170px; border-radius: 6px; border: 0; background: #2f8f4e; color: #ffffff; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;"><span>NEXT CUE ▶</span><span style="font-size: 10px; font-weight: 600; opacity: 0.8;">N</span></button>
+      <button onClick="{{nextCue}}" style="height: 56px; width: 170px; border-radius: 6px; border: 0; background: #2f8f4e; color: #ffffff; font-size: 16px; font-weight: 600; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;"><span>NEXT CUE ▶</span><span style="font-size: 10px; font-weight: 600; opacity: 0.8;">N</span></button>
     </div>
     <div style="display: flex; flex-direction: column; gap: 6px;">
-      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MODE</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Mode</span>
       <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
         <button onClick="{{setAuto}}" style="{{autoStyle}}">Auto (clock)</button>
         <button onClick="{{setManual}}" style="{{manualStyle}}">Manual</button>
@@ -72,21 +71,21 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
     <div style="flex-grow: 1;"></div>
     <div style="display: flex; gap: 24px; align-items: center;">
       <div style="display: flex; flex-direction: column; gap: 2px;">
-        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NOW</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Now</span>
         <span style="font-size: 14px; font-weight: 600; color: #e0473b;">{{nowName}}</span>
         <span style="font-family: Consolas, monospace; font-size: 12px; color: #a9abb0;">{{nowLeft}}</span>
       </div>
       <div style="width: 1px; height: 44px; background: #2c3038;"></div>
       <div style="display: flex; flex-direction: column; gap: 2px;">
-        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ELAPSED</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Elapsed</span>
         <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700;">00:12:05</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: 2px;">
-        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">REMAINING</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Remaining</span>
         <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700;">01:02:55</span>
       </div>
       <div style="display: flex; flex-direction: column; gap: 2px;">
-        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ENDS AT</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Ends at</span>
         <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700; color: #a9abb0;">20:45:00</span>
       </div>
     </div>
@@ -98,10 +97,10 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
     <!-- Main column -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px 24px; box-sizing: border-box;">
       <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">CUES</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Cues</span>
         <span style="font-size: 12px; color: #8e9096;">{{cueCount}}</span>
         <div style="flex-grow: 1;"></div>
-        <button onClick="{{addCue}}" style="height: 32px; padding: 0 14px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700;">+ Add cue</button>
+        <button onClick="{{addCue}}" style="height: 32px; padding: 0 14px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 600;">+ Add cue</button>
         <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Group into section</button>
         <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Save to library</button>
         <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Load from library…</button>
@@ -109,7 +108,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
 
       <!-- Table -->
       <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid #2c3038; border-radius: 6px; background: #1e2127; overflow: hidden;">
-        <div style="height: 32px; flex-shrink: 0; display: flex; align-items: center; padding: 0 12px; gap: 10px; background: #1a1d22; border-bottom: 1px solid #2c3038; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">
+        <div style="height: 32px; flex-shrink: 0; display: flex; align-items: center; padding: 0 12px; gap: 10px; background: #1a1d22; border-bottom: 1px solid #2c3038; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">
           <span style="width: 22px;">#</span>
           <span style="width: 78px;">TIME</span>
           <span style="width: 62px;">LENGTH</span>
@@ -123,7 +122,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
           <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
             <sc-if value="{{r.isSection}}" hint-placeholder-val="{{false}}">
               <div style="height: 26px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #15171b; border-bottom: 1px solid #2c3038;">
-                <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #a9abb0;">▾ {{r.title}}</span>
+                <span style="font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: #a9abb0;">▾ {{r.title}}</span>
                 <span style="font-size: 11px; color: #8e9096;">{{r.meta}}</span>
               </div>
             </sc-if>
@@ -148,7 +147,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
       <!-- Timeline -->
       <div style="height: 158px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; border: 1px solid #2c3038; border-radius: 6px; background: #1e2127; box-sizing: border-box;">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">TIMELINE</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Timeline</span>
           <span style="font-size: 12px; color: #8e9096;">19:00 – 20:45 · drag a block to move a cue, drag its edge to change length</span>
           <div style="flex-grow: 1;"></div>
           <span style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #a9abb0;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #c7372f;"></span>Live</span>
@@ -180,7 +179,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
     <!-- Edit panel -->
     <div style="width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-left: 1px solid #2c3038; box-sizing: border-box;">
       <div style="padding: 14px 18px 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #2c3038;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EDIT CUE</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Edit cue</span>
         <span style="font-family: Consolas, monospace; font-size: 12px; color: #8fd3db;">{{sel.numLabel}}</span>
         <div style="flex-grow: 1;"></div>
         <span style="{{sel.badge}}">{{sel.status}}</span>
@@ -220,7 +219,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
         </div>
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <div style="display: flex; align-items: center;">
-            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; flex-grow: 1;">ACTIONS · RUN IN ORDER</span>
+            <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; flex-grow: 1;">Actions – run in order</span>
             <button onClick="{{addAction}}" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px dashed #5a5c62; background: transparent; color: #a9abb0; font-size: 12px;">+ Add action</button>
           </div>
           <sc-for list="{{actions}}" as="a" hint-placeholder-count="3">
@@ -242,7 +241,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
         </label>
       </div>
       <div style="display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid #2c3038;">
-        <button onClick="{{goSelected}}" style="flex-grow: 1; height: 38px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700;">Run this cue now</button>
+        <button onClick="{{goSelected}}" style="flex-grow: 1; height: 38px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 600;">Run this cue now</button>
         <button style="height: 38px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Duplicate</button>
         <button onClick="{{deleteCue}}" style="height: 38px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e0473b; font-size: 12px;">Delete</button>
       </div>
@@ -289,9 +288,9 @@ class Component extends DCLogic {
     const statusOf = (i) => i < st.live ? 'done' : i === st.live ? 'live' : i === st.live + 1 ? 'next' : '';
     const badge = (s) => {
       const c = { done: ['#262a31', '#8e9096'], live: ['#c7372f', '#ffffff'], next: ['#2f8f4e', '#ffffff'], '': ['transparent', '#8e9096'] }[s];
-      return `height: 18px; padding: 0 7px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; display: inline-flex; align-items: center; background: ${c[0]}; color: ${c[1]}; text-transform: uppercase;`;
+      return `height: 18px; padding: 0 7px; border-radius: 3px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; background: ${c[0]}; color: ${c[1]}; `;
     };
-    const chip = (name) => ({ name, style: `height: 20px; padding: 0 7px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; background: ${name === 'Live' ? '#3a1a18' : name === 'Back' ? '#1d3b40' : '#262a31'}; color: ${name === 'Live' ? '#f2b6b1' : name === 'Back' ? '#8fd3db' : '#d4d5d8'}; border: 1px solid #2c3038;` });
+    const chip = (name) => ({ name, style: `height: 20px; padding: 0 7px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; background: ${name === 'Live' ? '#3a1a18' : name === 'Back' ? '#243039' : '#262a31'}; color: ${name === 'Live' ? '#f2b6b1' : name === 'Back' ? '#8fd3db' : '#d4d5d8'}; border: 1px solid #2c3038;` });
     const rows = [];
     let lastSec = null;
     const secs = {};
@@ -306,7 +305,7 @@ class Component extends DCLogic {
       }
       const s = statusOf(i);
       const selected = st.sel === i;
-      const bg = s === 'live' ? '#2e1917' : s === 'next' ? '#16281c' : selected ? '#1d3b40' : 'transparent';
+      const bg = s === 'live' ? '#2e1917' : s === 'next' ? '#16281c' : selected ? '#243039' : 'transparent';
       const left = s === 'live' ? '#e0473b' : s === 'next' ? '#3fbf5a' : selected ? '#4fb3bf' : 'transparent';
       rows.push({
         isSection: false, isCue: true, num: i + 1, time: c.time, dur: c.dur, name: c.name, does: c.does, trigger: c.trigger,
@@ -334,11 +333,11 @@ class Component extends DCLogic {
     const screenToggles = ['Live', 'Back', 'Monitor'].map((n) => {
       const on = c.screens.includes(n);
       return { name: n, toggle: () => upd({ screens: on ? c.screens.filter((x) => x !== n) : [...c.screens, n] }),
-        style: `flex: 1; height: 32px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: 600;` };
+        style: `flex: 1; height: 32px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: 600;` };
     });
     const actions = c.actions.map((a, k) => ({ n: k + 1, kind: a[0], text: a[1], remove: () => upd({ actions: c.actions.filter((_, j) => j !== k) }) }));
     const selStatus = statusOf(st.sel);
-    const seg = (on) => `height: 34px; padding: 0 14px; border: 0; border-radius: 0; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: 600; white-space: nowrap;`;
+    const seg = (on) => `height: 34px; padding: 0 14px; border: 0; border-radius: 0; background: ${on ? '#243039' : '#2a2e36'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: 600; white-space: nowrap;`;
     const liveCue = st.cues[st.live];
     const running = st.running && !st.paused;
     return {
@@ -358,8 +357,8 @@ class Component extends DCLogic {
       start: () => set({ running: true, paused: false }),
       pause: () => set({ paused: !st.paused }),
       startLabel: running ? '● RUNNING' : '▶ START',
-      startStyle: `height: 56px; width: 170px; border-radius: 6px; border: ${running ? '1px solid #4fb3bf' : '0'}; background: ${running ? '#1d3b40' : '#4fb3bf'}; color: ${running ? '#dff4f6' : '#0e2a2e'}; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`,
-      pauseStyle: `height: 56px; width: 140px; border-radius: 6px; border: 1px solid ${st.paused ? '#d4d5d8' : '#2c3038'}; background: ${st.paused ? '#343944' : '#2a2e36'}; color: #ffffff; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`,
+      startStyle: `height: 56px; width: 170px; border-radius: 6px; border: ${running ? '1px solid #4fb3bf' : '0'}; background: ${running ? '#243039' : '#4fb3bf'}; color: ${running ? '#ffffff' : '#0e2a2e'}; font-size: 16px; font-weight: 600; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`,
+      pauseStyle: `height: 56px; width: 140px; border-radius: 6px; border: 1px solid ${st.paused ? '#d4d5d8' : '#2c3038'}; background: ${st.paused ? '#343944' : '#2a2e36'}; color: #ffffff; font-size: 16px; font-weight: 600; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`,
       setAuto: () => set({ mode: 'auto' }), setManual: () => set({ mode: 'manual' }),
       autoStyle: seg(st.mode === 'auto'), manualStyle: seg(st.mode === 'manual'),
       nowName: `${st.live + 1} · ${liveCue.name}`,

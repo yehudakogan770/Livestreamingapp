@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Picture placeholders</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+html,body{margin:0;height:100%;background:#000}
+</style>
+</helmet>
+<div style="position: absolute; inset: 0; overflow: hidden; background: #000000;">
+
+  <sc-if value="{{is.stage}}" hint-placeholder-val="{{true}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs>
+        <linearGradient id="lsScr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a79b0"></stop><stop offset="1" stop-color="#1b3150"></stop></linearGradient>
+        <radialGradient id="lsSpot" cx="0.5" cy="0.3" r="0.7"><stop offset="0" stop-color="#2a3346"></stop><stop offset="1" stop-color="#07090d"></stop></radialGradient>
+        <linearGradient id="lsBeam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity="0.22"></stop><stop offset="1" stop-color="#ffffff" stop-opacity="0"></stop></linearGradient>
+      </defs>
+      <rect width="160" height="90" fill="url(#lsSpot)"></rect>
+      <rect x="44" y="10" width="72" height="38" rx="1" fill="url(#lsScr)"></rect>
+      <rect x="44" y="10" width="72" height="38" rx="1" fill="none" stroke="#6d95c4" stroke-opacity="0.35"></rect>
+      <polygon points="28,0 36,0 52,66 12,66" fill="url(#lsBeam)"></polygon>
+      <polygon points="124,0 132,0 148,66 108,66" fill="url(#lsBeam)"></polygon>
+      <polygon points="0,62 160,62 160,90 0,90" fill="#12151b"></polygon>
+      <line x1="0" y1="62" x2="160" y2="62" stroke="#3a4150" stroke-width="0.6"></line>
+      <ellipse cx="80" cy="66" rx="46" ry="3" fill="#ffffff" fill-opacity="0.05"></ellipse>
+      <rect x="98" y="50" width="12" height="14" rx="1" fill="#1b1f27"></rect>
+      <circle cx="70" cy="45.5" r="3.2" fill="#0c0e12"></circle>
+      <path d="M64 63 C64 53 66 50 70 50 C74 50 76 53 76 63 Z" fill="#0c0e12"></path>
+      <circle cx="103" cy="44" r="3" fill="#0c0e12"></circle>
+      <path d="M98 51 C98 48 100 47.5 103 47.5 C106 47.5 108 48 108 51 Z" fill="#0c0e12"></path>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.side}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs>
+        <radialGradient id="lsSide" cx="0.8" cy="0.2" r="0.9"><stop offset="0" stop-color="#34405a"></stop><stop offset="1" stop-color="#07090d"></stop></radialGradient>
+        <linearGradient id="lsSideScr" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1b3150"></stop><stop offset="1" stop-color="#4a79b0"></stop></linearGradient>
+      </defs>
+      <rect width="160" height="90" fill="url(#lsSide)"></rect>
+      <polygon points="92,6 150,0 150,48 92,44" fill="url(#lsSideScr)"></polygon>
+      <polygon points="0,58 160,50 160,90 0,90" fill="#12151b"></polygon>
+      <line x1="0" y1="58" x2="160" y2="50" stroke="#3a4150" stroke-width="0.6"></line>
+      <circle cx="58" cy="36" r="4.2" fill="#0c0e12"></circle>
+      <path d="M50 58 C50 45 53 41 58 41 C63 41 66 45 66 58 Z" fill="#0c0e12"></path>
+      <path d="M61.5 33 C63 34 63.6 36 63 38.5" stroke="#8fb4e0" stroke-opacity="0.5" stroke-width="0.7" fill="none"></path>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.closeup}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs>
+        <radialGradient id="lsCu" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stop-color="#3a2f44"></stop><stop offset="1" stop-color="#0b0a0f"></stop></radialGradient>
+        <filter id="lsBlur"><feGaussianBlur stdDeviation="2.2"></feGaussianBlur></filter>
+      </defs>
+      <rect width="160" height="90" fill="url(#lsCu)"></rect>
+      <g filter="url(#lsBlur)" opacity="0.8">
+        <circle cx="22" cy="20" r="7" fill="#e0a45a" fill-opacity="0.35"></circle>
+        <circle cx="136" cy="16" r="9" fill="#6e8fd6" fill-opacity="0.3"></circle>
+        <circle cx="120" cy="40" r="5" fill="#e0a45a" fill-opacity="0.3"></circle>
+        <circle cx="34" cy="52" r="6" fill="#b06ed6" fill-opacity="0.25"></circle>
+        <circle cx="146" cy="60" r="7" fill="#e0a45a" fill-opacity="0.2"></circle>
+      </g>
+      <ellipse cx="80" cy="38" rx="15" ry="18" fill="#141217"></ellipse>
+      <path d="M44 90 C46 66 60 58 80 58 C100 58 114 66 116 90 Z" fill="#141217"></path>
+      <path d="M93 25 C97 30 97 40 94 48" stroke="#f0c48a" stroke-opacity="0.45" stroke-width="1" fill="none"></path>
+      <path d="M104 64 C110 70 113 78 114 88" stroke="#f0c48a" stroke-opacity="0.3" stroke-width="1" fill="none"></path>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.crowd}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs>
+        <radialGradient id="lsCr" cx="0.5" cy="0" r="0.9"><stop offset="0" stop-color="#4b5d80"></stop><stop offset="0.6" stop-color="#171c28"></stop><stop offset="1" stop-color="#090b10"></stop></radialGradient>
+      </defs>
+      <rect width="160" height="90" fill="url(#lsCr)"></rect>
+      <rect x="50" y="6" width="60" height="22" fill="#5a7fb4" fill-opacity="0.55"></rect>
+      <g fill="#0a0b0f">
+        <circle cx="12" cy="52" r="5"></circle><circle cx="34" cy="50" r="5"></circle><circle cx="56" cy="53" r="5"></circle><circle cx="78" cy="50" r="5"></circle><circle cx="100" cy="52" r="5"></circle><circle cx="122" cy="50" r="5"></circle><circle cx="144" cy="53" r="5"></circle>
+        <rect x="0" y="56" width="160" height="10"></rect>
+        <circle cx="0" cy="68" r="7"></circle><circle cx="24" cy="66" r="7"></circle><circle cx="50" cy="69" r="7"></circle><circle cx="76" cy="66" r="7"></circle><circle cx="104" cy="68" r="7"></circle><circle cx="130" cy="66" r="7"></circle><circle cx="156" cy="68" r="7"></circle>
+        <rect x="0" y="72" width="160" height="18"></rect>
+      </g>
+      <path d="M92 58 L96 44" stroke="#0a0b0f" stroke-width="3" stroke-linecap="round"></path>
+      <rect x="93" y="38" width="7" height="10" rx="1" fill="#1d2230" stroke="#6d8fc4" stroke-opacity="0.6" stroke-width="0.5"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.opening}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs>
+        <radialGradient id="lsOp" cx="0.5" cy="0.5" r="0.7"><stop offset="0" stop-color="#3b2a14"></stop><stop offset="1" stop-color="#070605"></stop></radialGradient>
+        <linearGradient id="lsFlare" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd9a0" stop-opacity="0"></stop><stop offset="0.5" stop-color="#ffe6c0" stop-opacity="0.8"></stop><stop offset="1" stop-color="#ffd9a0" stop-opacity="0"></stop></linearGradient>
+      </defs>
+      <rect width="160" height="90" fill="url(#lsOp)"></rect>
+      <circle cx="80" cy="40" r="17" fill="none" stroke="#e9b86a" stroke-width="1.2" stroke-opacity="0.85"></circle>
+      <circle cx="80" cy="40" r="11" fill="none" stroke="#e9b86a" stroke-width="0.6" stroke-opacity="0.5"></circle>
+      <rect x="0" y="39.6" width="160" height="0.8" fill="url(#lsFlare)"></rect>
+      <rect x="56" y="64" width="48" height="3" rx="1.5" fill="#e9dcc6" fill-opacity="0.8"></rect>
+      <rect x="64" y="70" width="32" height="2" rx="1" fill="#e9dcc6" fill-opacity="0.4"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.sponsors}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <rect width="160" height="90" fill="#f2f2f0"></rect>
+      <rect x="0" y="0" width="160" height="16" fill="#e4e4e0"></rect>
+      <rect x="58" y="6" width="44" height="4" rx="2" fill="#6b6e75"></rect>
+      <g fill="#c9cbcf">
+        <rect x="16" y="26" width="36" height="20" rx="2"></rect><rect x="62" y="26" width="36" height="20" rx="2"></rect><rect x="108" y="26" width="36" height="20" rx="2"></rect>
+        <rect x="16" y="56" width="36" height="20" rx="2"></rect><rect x="62" y="56" width="36" height="20" rx="2"></rect><rect x="108" y="56" width="36" height="20" rx="2"></rect>
+      </g>
+      <circle cx="28" cy="36" r="5" fill="#8a8e96"></circle><rect x="36" y="33" width="12" height="3" rx="1.5" fill="#8a8e96"></rect>
+      <rect x="70" y="32" width="20" height="8" rx="4" fill="#8a8e96"></rect>
+      <path d="M118 42 L126 30 L134 42 Z" fill="#8a8e96"></path>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.tribute}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsTr" cx="0.4" cy="0.45" r="0.8"><stop offset="0" stop-color="#6b4f33"></stop><stop offset="1" stop-color="#1a120b"></stop></radialGradient></defs>
+      <rect width="160" height="90" fill="url(#lsTr)"></rect>
+      <rect x="46" y="12" width="44" height="58" fill="#d9c6a6" fill-opacity="0.85"></rect>
+      <rect x="49" y="15" width="38" height="52" fill="#8a7255"></rect>
+      <circle cx="68" cy="34" r="8" fill="#4a3a28"></circle>
+      <path d="M54 67 C55 52 60 46 68 46 C76 46 81 52 82 67 Z" fill="#4a3a28"></path>
+      <rect x="100" y="36" width="40" height="3" rx="1.5" fill="#f1e2c8" fill-opacity="0.8"></rect>
+      <rect x="100" y="43" width="28" height="2" rx="1" fill="#f1e2c8" fill-opacity="0.45"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.aurora}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><filter id="lsAu"><feGaussianBlur stdDeviation="3"></feGaussianBlur></filter></defs>
+      <rect width="160" height="90" fill="#050c12"></rect>
+      <g filter="url(#lsAu)">
+        <path d="M-10 60 C30 20 70 70 110 30 C130 12 150 20 170 10" stroke="#2fd3a6" stroke-width="10" stroke-opacity="0.5" fill="none"></path>
+        <path d="M-10 70 C40 40 80 80 120 44 C140 28 160 36 175 26" stroke="#3aa0e0" stroke-width="8" stroke-opacity="0.45" fill="none"></path>
+        <path d="M-10 48 C30 30 60 56 100 22 C120 8 150 12 170 4" stroke="#8fe07a" stroke-width="5" stroke-opacity="0.35" fill="none"></path>
+      </g>
+      <g fill="#ffffff"><circle cx="20" cy="10" r="0.5"></circle><circle cx="60" cy="8" r="0.4"></circle><circle cx="100" cy="14" r="0.5"></circle><circle cx="140" cy="40" r="0.4"></circle><circle cx="40" cy="30" r="0.4"></circle></g>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.particles}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsPa" cx="0.5" cy="0.6" r="0.8"><stop offset="0" stop-color="#1c2a5a"></stop><stop offset="1" stop-color="#050814"></stop></radialGradient><filter id="lsPb"><feGaussianBlur stdDeviation="0.6"></feGaussianBlur></filter></defs>
+      <rect width="160" height="90" fill="url(#lsPa)"></rect>
+      <g fill="#9cc2ff" filter="url(#lsPb)">
+        <circle cx="12" cy="20" r="1.2" fill-opacity="0.8"></circle><circle cx="30" cy="62" r="2" fill-opacity="0.5"></circle><circle cx="44" cy="34" r="0.9" fill-opacity="0.9"></circle><circle cx="58" cy="74" r="1.4" fill-opacity="0.6"></circle><circle cx="70" cy="18" r="2.4" fill-opacity="0.35"></circle><circle cx="84" cy="48" r="1" fill-opacity="0.9"></circle><circle cx="96" cy="70" r="1.8" fill-opacity="0.5"></circle><circle cx="108" cy="28" r="1.2" fill-opacity="0.7"></circle><circle cx="122" cy="56" r="2.6" fill-opacity="0.3"></circle><circle cx="136" cy="16" r="1" fill-opacity="0.8"></circle><circle cx="148" cy="44" r="1.6" fill-opacity="0.6"></circle><circle cx="20" cy="80" r="1" fill-opacity="0.7"></circle><circle cx="110" cy="84" r="1.2" fill-opacity="0.6"></circle><circle cx="150" cy="76" r="0.9" fill-opacity="0.8"></circle><circle cx="62" cy="50" r="0.8" fill-opacity="0.9"></circle>
+      </g>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.warm}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsWa" cx="0.3" cy="0.4" r="0.6"><stop offset="0" stop-color="#e08a3a" stop-opacity="0.8"></stop><stop offset="1" stop-color="#e08a3a" stop-opacity="0"></stop></radialGradient><radialGradient id="lsWb" cx="0.75" cy="0.65" r="0.55"><stop offset="0" stop-color="#d0503a" stop-opacity="0.6"></stop><stop offset="1" stop-color="#d0503a" stop-opacity="0"></stop></radialGradient></defs>
+      <rect width="160" height="90" fill="#120906"></rect>
+      <rect width="160" height="90" fill="url(#lsWa)"></rect>
+      <rect width="160" height="90" fill="url(#lsWb)"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.slides}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsSl" cx="0.75" cy="0.4" r="0.7"><stop offset="0" stop-color="#2f3a4f"></stop><stop offset="1" stop-color="#090b10"></stop></radialGradient></defs>
+      <rect width="160" height="90" fill="url(#lsSl)"></rect>
+      <rect x="8" y="12" width="84" height="56" rx="1.5" fill="#f4f3ef"></rect>
+      <rect x="14" y="18" width="46" height="5" rx="1" fill="#2b2f36"></rect>
+      <rect x="14" y="30" width="70" height="2.2" rx="1" fill="#8a8e96"></rect><rect x="14" y="36" width="62" height="2.2" rx="1" fill="#8a8e96"></rect><rect x="14" y="42" width="66" height="2.2" rx="1" fill="#8a8e96"></rect>
+      <rect x="14" y="50" width="30" height="12" rx="1" fill="#c9b37e"></rect>
+      <circle cx="124" cy="40" r="6" fill="#0c0e12"></circle>
+      <path d="M110 72 C110 56 116 50 124 50 C132 50 138 56 138 72 Z" fill="#0c0e12"></path>
+      <polygon points="0,72 160,72 160,90 0,90" fill="#12151b"></polygon>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.pesukim}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsPe" cx="0.5" cy="0.35" r="0.8"><stop offset="0" stop-color="#1f3050"></stop><stop offset="1" stop-color="#070a12"></stop></radialGradient></defs>
+      <rect width="160" height="90" fill="url(#lsPe)"></rect>
+      <circle cx="80" cy="30" r="4" fill="#0c0e12"></circle>
+      <path d="M72 52 C72 40 75 36 80 36 C85 36 88 40 88 52 Z" fill="#0c0e12"></path>
+      <rect x="0" y="62" width="160" height="28" fill="#070a10" fill-opacity="0.88"></rect>
+      <rect x="0" y="62" width="160" height="0.8" fill="#d8b56a"></rect>
+      <rect x="34" y="70" width="92" height="4" rx="2" fill="#f1dca8"></rect>
+      <rect x="48" y="78" width="64" height="3" rx="1.5" fill="#f1dca8" fill-opacity="0.6"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.browser}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <rect width="160" height="90" fill="#f7f7f5"></rect>
+      <rect width="160" height="12" fill="#e2e3e6"></rect>
+      <circle cx="6" cy="6" r="1.6" fill="#b8bbc2"></circle><circle cx="11" cy="6" r="1.6" fill="#b8bbc2"></circle><circle cx="16" cy="6" r="1.6" fill="#b8bbc2"></circle>
+      <rect x="24" y="3" width="90" height="6" rx="3" fill="#ffffff"></rect>
+      <rect x="10" y="20" width="60" height="6" rx="1" fill="#2e3440"></rect>
+      <rect x="10" y="30" width="80" height="2.2" rx="1" fill="#9aa0aa"></rect><rect x="10" y="35" width="72" height="2.2" rx="1" fill="#9aa0aa"></rect>
+      <rect x="10" y="44" width="68" height="36" rx="1.5" fill="#dfe4ec"></rect>
+      <rect x="86" y="44" width="64" height="16" rx="1.5" fill="#e9ecf1"></rect><rect x="86" y="64" width="64" height="16" rx="1.5" fill="#e9ecf1"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.split}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsSpA" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stop-color="#2a3346"></stop><stop offset="1" stop-color="#07090d"></stop></radialGradient><radialGradient id="lsSpB" cx="0.5" cy="0.4" r="0.8"><stop offset="0" stop-color="#3a2f44"></stop><stop offset="1" stop-color="#0b0a0f"></stop></radialGradient></defs>
+      <rect x="0" y="0" width="79" height="90" fill="url(#lsSpA)"></rect>
+      <rect x="10" y="16" width="59" height="28" fill="#2c4c78"></rect>
+      <polygon points="0,62 79,62 79,90 0,90" fill="#12151b"></polygon>
+      <circle cx="40" cy="48" r="3" fill="#0c0e12"></circle><path d="M35 62 C35 54 37 52 40 52 C43 52 45 54 45 62 Z" fill="#0c0e12"></path>
+      <rect x="81" y="0" width="79" height="90" fill="url(#lsSpB)"></rect>
+      <ellipse cx="120" cy="40" rx="11" ry="13" fill="#141217"></ellipse>
+      <path d="M96 90 C98 70 106 62 120 62 C134 62 142 70 144 90 Z" fill="#141217"></path>
+      <rect x="79" y="0" width="2" height="90" fill="#000000"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.overlay}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><pattern id="lsChk" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#26282d"></rect><rect width="5" height="5" fill="#2f3238"></rect><rect x="5" y="5" width="5" height="5" fill="#2f3238"></rect></pattern></defs>
+      <rect width="160" height="90" fill="url(#lsChk)"></rect>
+      <rect x="112" y="8" width="38" height="16" rx="3" fill="#0d0f13" fill-opacity="0.85"></rect>
+      <circle cx="121" cy="16" r="4" fill="none" stroke="#e8e9ec" stroke-width="1.2"></circle>
+      <rect x="128" y="13.5" width="16" height="2" rx="1" fill="#e8e9ec"></rect><rect x="128" y="17" width="10" height="1.6" rx="0.8" fill="#9aa0aa"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.lower}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><pattern id="lsChk2" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#26282d"></rect><rect width="5" height="5" fill="#2f3238"></rect><rect x="5" y="5" width="5" height="5" fill="#2f3238"></rect></pattern></defs>
+      <rect width="160" height="90" fill="url(#lsChk2)"></rect>
+      <rect x="12" y="62" width="84" height="18" fill="#0d0f13" fill-opacity="0.9"></rect>
+      <rect x="12" y="62" width="2" height="18" fill="#d9dde3"></rect>
+      <rect x="19" y="66" width="46" height="4" rx="1" fill="#ffffff"></rect>
+      <rect x="19" y="73" width="32" height="2.4" rx="1" fill="#9aa0aa"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.timer}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsTi" cx="0.5" cy="0.5" r="0.7"><stop offset="0" stop-color="#1e2c5c"></stop><stop offset="1" stop-color="#05070f"></stop></radialGradient></defs>
+      <rect width="160" height="90" fill="url(#lsTi)"></rect>
+      <rect x="54" y="24" width="52" height="2" rx="1" fill="#c9d4f5" fill-opacity="0.6"></rect>
+      <text x="80" y="56" text-anchor="middle" font-family="Bahnschrift, Segoe UI, sans-serif" font-weight="700" font-size="24" fill="#ffffff">05:00</text>
+      <rect x="40" y="70" width="80" height="1.4" rx="0.7" fill="#ffffff" fill-opacity="0.15"></rect>
+      <rect x="40" y="70" width="30" height="1.4" rx="0.7" fill="#ffffff" fill-opacity="0.8"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.eventlogo}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <defs><radialGradient id="lsEl" cx="0.5" cy="0.45" r="0.7"><stop offset="0" stop-color="#2d2618"></stop><stop offset="1" stop-color="#0a0806"></stop></radialGradient></defs>
+      <rect width="160" height="90" fill="url(#lsEl)"></rect>
+      <circle cx="80" cy="38" r="15" fill="none" stroke="#d8b56a" stroke-width="1.2"></circle>
+      <path d="M72 44 L80 28 L88 44 Z" fill="none" stroke="#d8b56a" stroke-width="1.2" stroke-linejoin="round"></path>
+      <rect x="54" y="62" width="52" height="3.4" rx="1.7" fill="#efe3c8"></rect>
+      <rect x="64" y="69" width="32" height="2" rx="1" fill="#efe3c8" fill-opacity="0.5"></rect>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.credits}}" hint-placeholder-val="{{false}}">
+    <svg viewBox="0 0 160 90" preserveAspectRatio="xMidYMid slice" style="position: absolute; inset: 0; width: 100%; height: 100%;" aria-hidden="true">
+      <rect width="160" height="90" fill="#08090c"></rect>
+      <rect x="58" y="10" width="44" height="3" rx="1.5" fill="#9aa0aa"></rect>
+      <g fill="#e8e9ec"><rect x="62" y="20" width="36" height="2.4" rx="1.2"></rect><rect x="66" y="26" width="28" height="2.4" rx="1.2"></rect><rect x="60" y="32" width="40" height="2.4" rx="1.2"></rect></g>
+      <rect x="58" y="44" width="44" height="3" rx="1.5" fill="#9aa0aa"></rect>
+      <g fill="#e8e9ec"><rect x="64" y="54" width="32" height="2.4" rx="1.2"></rect><rect x="61" y="60" width="38" height="2.4" rx="1.2"></rect><rect x="66" y="66" width="28" height="2.4" rx="1.2"></rect><rect x="63" y="72" width="34" height="2.4" rx="1.2"></rect></g>
+    </svg>
+  </sc-if>
+
+  <sc-if value="{{is.black}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; background: #000000;"></div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"kind":{"editor":"enum","options":["stage","side","closeup","crowd","opening","sponsors","tribute","aurora","particles","warm","slides","pesukim","browser","split","overlay","lower","timer","eventlogo","credits","black"],"default":"stage"},"$preview":{"width":640,"height":360}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const KINDS = ['stage', 'side', 'closeup', 'crowd', 'opening', 'sponsors', 'tribute', 'aurora', 'particles', 'warm', 'slides', 'pesukim', 'browser', 'split', 'overlay', 'lower', 'timer', 'eventlogo', 'credits', 'black'];
+    const k = KINDS.includes(this.props.kind) ? this.props.kind : 'stage';
+    return { is: Object.fromEntries(KINDS.map((x) => [x, x === k])) };
+  }
+}
+</script>
+</body>
+</html>

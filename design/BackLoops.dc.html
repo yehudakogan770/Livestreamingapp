@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -44,9 +44,8 @@ input[type=range]{accent-color:#4fb3bf}
 </helmet>
 <div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">Back-screen loops &amp; mood</span>
-    <span style="font-size: 13px; color: #8e9096;">Ready-made loops for the projector · fit them to the vibe and the music</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Back-screen loops &amp; mood</span>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
@@ -56,7 +55,7 @@ input[type=range]{accent-color:#4fb3bf}
     <!-- Loop library -->
     <div style="width: 470px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
       <div style="display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">READY-MADE LOOPS · {{loopCount}}</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Ready-made loops – {{loopCount}}</span>
         <button style="height: 28px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">+ Import my own loop</button>
       </div>
       <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
@@ -82,7 +81,7 @@ input[type=range]{accent-color:#4fb3bf}
     <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Preview</span>
         <span style="font-size: 12px; color: #8e9096;">{{selName}}</span>
       </div>
       <div style="{{preview}}">
@@ -93,13 +92,13 @@ input[type=range]{accent-color:#4fb3bf}
         <span style="position: absolute; left: 8px; bottom: 6px; font-size: 10px; color: rgba(255,255,255,0.6);">{{previewMeta}}</span>
       </div>
       <div style="display: flex; align-items: center; gap: 6px; height: 18px;">
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; width: 44px;">BEAT</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; width: 44px;">Beat</span>
         <sc-for list="{{beats}}" as="b" hint-placeholder-count="16"><span style="{{b.style}}"></span></sc-for>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MANUAL CONTROLS</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Manual controls</span>
           <button onClick="{{resetManual}}" style="height: 22px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 11px;">Reset</button>
         </div>
         <sc-for list="{{sliders}}" as="s" hint-placeholder-count="6">
@@ -122,12 +121,12 @@ input[type=range]{accent-color:#4fb3bf}
 
     <!-- Automatic -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038; box-sizing: border-box;">
-      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">AUTOMATIC CONTROLS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Automatic controls</span>
 
       <button onClick="{{toggleFollow}}" style="{{followCard}}">
         <span style="{{switchTrack}}"><span style="{{switchKnob}}"></span></span>
         <span style="display: flex; flex-direction: column; gap: 2px; text-align: left;">
-          <span style="font-size: 14px; font-weight: 700;">Follow the music</span>
+          <span style="font-size: 14px; font-weight: 600;">Follow the music</span>
           <span style="font-size: 11px; color: #a9abb0;">Loop reacts to the beat and energy</span>
         </span>
       </button>
@@ -178,7 +177,7 @@ input[type=range]{accent-color:#4fb3bf}
     <div style="flex-grow: 1;"></div>
     <button style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Save as mood preset</button>
     <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2f8f4e; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Send to Preview</a>
-    <button onClick="{{sendBack}}" style="height: 54px; padding: 0 30px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 16px; font-weight: 700;">Send to Back screen</span><span style="font-size: 10px;">Ctrl + B · fades over 1s</span></button>
+    <button onClick="{{sendBack}}" style="height: 54px; padding: 0 30px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 16px; font-weight: 600;">Send to Back screen</span><span style="font-size: 10px;">Ctrl + B · fades over 1s</span></button>
   </div>
 </div>
 </x-dc>
@@ -199,7 +198,7 @@ class Component extends DCLogic {
   renderVals() {
     const st = this.state;
     const set = (p) => this.setState(p);
-    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
     const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
     const LOOPS = [
       ['aurora', 'Aurora', 'Calm', '#27403f'], ['particles', 'Particles', 'Energetic', '#2c3450'],
@@ -214,15 +213,15 @@ class Component extends DCLogic {
     const loops = shown.map(([id, name, cat, tone]) => {
       const on = st.sel === id; const isLive = st.live === id;
       return { name, cat, pick: () => set({ sel: id }),
-        card: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: #e4e5e7; box-sizing: border-box;`,
+        card: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: #e4e5e7; box-sizing: border-box;`,
         thumb: `position: relative; width: 100%; height: 76px; border-radius: 4px; background: ${tone};`,
-        liveTag: `position: absolute; left: 4px; top: 4px; height: 16px; padding: 0 5px; border-radius: 3px; background: #c7372f; color: #ffffff; font-size: 9px; font-weight: 700; display: ${isLive ? 'flex' : 'none'}; align-items: center;` };
+        liveTag: `position: absolute; left: 4px; top: 4px; height: 16px; padding: 0 5px; border-radius: 3px; background: #c7372f; color: #ffffff; font-size: 9px; font-weight: 600; display: ${isLive ? 'flex' : 'none'}; align-items: center;` };
     });
     const sel = byId[st.sel];
     const TINTS = [['none', 'No tint', '#343944'], ['teal', 'Teal', '#4fb3bf'], ['blue', 'Blue', '#4a6fd1'], ['purple', 'Purple', '#8a5cc7'], ['red', 'Red', '#c7372f'], ['green', 'Green', '#3fbf5a']];
     const tintCol = (TINTS.find((t) => t[0] === st.tint) || TINTS[0])[2];
     const tints = TINTS.map(([id, name, c]) => ({ name: name + ' tint', pick: () => set({ tint: id }),
-      style: `width: 24px; height: 24px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.tint === id ? '#dff4f6' : '#2c3038'}; box-sizing: border-box;` }));
+      style: `width: 24px; height: 24px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.tint === id ? '#ffffff' : '#2c3038'}; box-sizing: border-box;` }));
     const sl = (key, label, min, max, fmt) => ({ label, min: String(min), max: String(max), val: String(st[key]), readout: fmt(st[key]), onInput: (e) => set({ [key]: Number(e.target.value) }) });
     const sliders = [
       sl('speed', 'Speed', 10, 300, (v) => (v / 100).toFixed(1) + '×'),
@@ -247,7 +246,7 @@ class Component extends DCLogic {
       beats, sliders, tints,
       resetManual: () => set({ speed: 100, bright: 80, hue: 0, intensity: 60, blur: 0, tint: 'none' }),
       toggleFollow: () => set({ follow: !st.follow }),
-      followCard: `display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 14px; border-radius: 6px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#1d3b40' : '#2a2e36'}; color: #e4e5e7;`,
+      followCard: `display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 14px; border-radius: 6px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#243039' : '#2a2e36'}; color: #e4e5e7;`,
       switchTrack: `position: relative; width: 38px; height: 22px; flex-shrink: 0; border-radius: 11px; background: ${st.follow ? '#4fb3bf' : '#101216'}; border: 1px solid ${st.follow ? '#4fb3bf' : '#5a5c62'}; box-sizing: border-box;`,
       switchKnob: `position: absolute; top: 2px; left: ${st.follow ? 18 : 2}px; width: 16px; height: 16px; border-radius: 8px; background: ${st.follow ? '#0e2a2e' : '#a9abb0'};`,
       reacts: seg('react', [['beat', 'Beat'], ['energy', 'Energy'], ['both', 'Both']]),

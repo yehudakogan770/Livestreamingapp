@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -74,19 +74,19 @@ input[type=checkbox]{accent-color:#4fb3bf}
 
   <!-- ===== Screen selector: pick which screen you are controlling ===== -->
   <div style="height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 11px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 4px;">CONTROLLING</span>
+    <span style="font-size: 12px; color: #8e9096; padding-right: 4px;">Controlling</span>
     <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
       <button onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="{{t.style}}">
-        <span style="{{t.thumb}}"><span style="font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.75);">{{t.onAirName}}</span></span>
+        <span style="{{t.thumb}}"><dc-import name="Scene" kind="{{t.scene}}" hint-size="100%,100%"></dc-import><sc-if value="{{t.isText}}" hint-placeholder-val="{{false}}"><span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 600; color: #ffffff; text-align: center; padding: 2px; box-sizing: border-box;">{{t.monText}}</span></sc-if><sc-if value="{{t.dark}}" hint-placeholder-val="{{false}}"><span style="position: absolute; inset: 0; background: rgba(0,0,0,0.78);"></span></sc-if></span>
         <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
-          <span style="font-size: 14px; font-weight: 700;">{{t.name}}</span>
-          <span style="display: flex; align-items: center; gap: 6px;"><span style="{{t.badge}}">{{t.status}}</span><span style="font-size: 10px; color: #a9abb0;">{{t.where}} · {{t.key}}</span></span>
+          <span style="font-size: 14px; font-weight: 600;">{{t.name}}</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="{{t.badge}}">{{t.status}}</span><span style="font-size: 11px; color: #a9abb0;">{{t.where}}</span><span style="height: 15px; padding: 0 4px; border-radius: 3px; border: 1px solid #3a3f48; font-size: 9px; line-height: 13px; color: #a9abb0; box-sizing: border-box;">{{t.key}}</span></span>
         </span>
       </button>
     </sc-for>
     <div style="flex-grow: 1;"></div>
     <div style="display: flex; align-items: center; gap: 10px; height: 36px;">
-      <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">CPU 18% · 60 fps · 0 dropped</span>
+      <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">CPU 18%   60 fps   0 dropped</span>
       <a href="Devices.dc.html" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3fbf5a;"></span>3 devices connected</a>
       <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
         <button onClick="{{setSimple}}" style="{{simpleStyle}}">Simple</button>
@@ -102,7 +102,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
     <div style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
       <div style="padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 8px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 11px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">PRESETS</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Presets</span>
           <a href="AddPreset.dc.html" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">+ Add preset</a>
         </div>
         <div style="display: flex; gap: 4px;">
@@ -134,7 +134,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
         <div style="width: 455px; display: flex; flex-direction: column; gap: 6px;">
           <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
             <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
-            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW · {{tabNameUpper}}</span>
+            <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Preview</span>
             <span style="font-size: 12px; color: #8e9096;">{{pv.title}}</span>
           </div>
           <div style="{{pv.frame}}">
@@ -143,7 +143,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <span style="position: absolute; right: 12px; top: 10px; font-family: Consolas, monospace; font-size: 14px; color: #a9abb0;">19:42</span>
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.8);">{{pv.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pv.sub}}</span></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{pv.scene}}" hint-size="100%,100%"></dc-import></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
             </sc-if>
           </div>
           <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
@@ -154,9 +154,9 @@ input[type=checkbox]{accent-color:#4fb3bf}
             </div>
             <div style="height: 26px; display: flex; align-items: center; gap: 3px;">
               <button onClick="{{pvT.restart}}" aria-label="Restart" title="Restart" style="{{pvT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M10 2v8L4.5 6z" fill="currentColor"></path></svg></button>
-              <button onClick="{{pvT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pvT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 700;">10</span></button>
+              <button onClick="{{pvT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pvT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 600;">10</span></button>
               <button onClick="{{pvT.toggle}}" aria-label="Play or pause" title="Play / pause" style="{{pvT.playBtn}}"><sc-if value="{{pvT.playing}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect><rect x="7.1" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect></svg></sc-if><sc-if value="{{pvT.paused}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"></path></svg></sc-if></button>
-              <button onClick="{{pvT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pvT.btnWide}}"><span style="font-size: 9px; font-weight: 700;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pvT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pvT.btnWide}}"><span style="font-size: 9px; font-weight: 600;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
               <button onClick="{{pvT.end}}" aria-label="Jump to end" title="Jump to end" style="{{pvT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="8.4" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M2 2v8l5.5-4z" fill="currentColor"></path></svg></button>
               <span style="width: 6px;"></span>
               <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; white-space: nowrap;">{{pvT.elapsed}}<span style="color: #8e9096;">{{pvT.total}}</span></span>
@@ -171,8 +171,8 @@ input[type=checkbox]{accent-color:#4fb3bf}
 
         <!-- Transitions -->
         <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 24px;">
-          <button onClick="{{take}}" style="height: 46px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 14px; font-weight: 700; letter-spacing: 0.1em;">TAKE</span><span style="font-size: 9px; color: #f6c9c5;">Space</span></button>
-          <button onClick="{{take}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #343944; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.1em;">CUT <span style="font-weight: 400; font-size: 9px; color: #a9abb0; letter-spacing: 0;">Enter</span></button>
+          <button onClick="{{take}}" title="Take (Space)" style="height: 46px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.06em;">TAKE</button>
+          <button onClick="{{take}}" title="Cut (Enter)" style="height: 32px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;">CUT</button>
           <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
             <sc-for list="{{transitions}}" as="tr" hint-placeholder-count="4">
               <button onClick="{{tr.pick}}" style="{{tr.style}}"><span style="font-size: 12px; font-weight: 600;">{{tr.name}}</span><span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{tr.dur}}</span></button>
@@ -192,7 +192,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
         <div style="width: 455px; display: flex; flex-direction: column; gap: 6px;">
           <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
             <span style="width: 8px; height: 8px; border-radius: 2px; background: #e0473b;"></span>
-            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PROGRAM</span>
+            <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Program</span>
             <span style="font-size: 12px; color: #8e9096;">{{pg.title}}</span>
             <div style="flex-grow: 1;"></div>
             <span style="{{outBadge}}">{{outState}}</span>
@@ -205,11 +205,11 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <sc-if value="{{flashing}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(255,255,255,0.85);"></div></sc-if>
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.82);">{{pg.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pg.sub}}</span></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{pg.scene}}" hint-size="100%,100%"></dc-import></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
               <sc-for list="{{overlayLayers}}" as="o" hint-placeholder-count="1"><div style="{{o.style}}">{{o.label}}</div></sc-for>
             </sc-if>
             <sc-if value="{{pgBlank}}" hint-placeholder-val="{{false}}">
-              <div style="{{blankLayer}}"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #8e9096;">{{blankText}}</span></div>
+              <div style="{{blankLayer}}"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #8e9096;">{{blankText}}</span></div>
             </sc-if>
           </div>
           <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
@@ -220,9 +220,9 @@ input[type=checkbox]{accent-color:#4fb3bf}
             </div>
             <div style="height: 26px; display: flex; align-items: center; gap: 3px;">
               <button onClick="{{pgT.restart}}" aria-label="Restart" title="Restart" style="{{pgT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M10 2v8L4.5 6z" fill="currentColor"></path></svg></button>
-              <button onClick="{{pgT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pgT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 700;">10</span></button>
+              <button onClick="{{pgT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pgT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 600;">10</span></button>
               <button onClick="{{pgT.toggle}}" aria-label="Play or pause" title="Play / pause" style="{{pgT.playBtn}}"><sc-if value="{{pgT.playing}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect><rect x="7.1" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect></svg></sc-if><sc-if value="{{pgT.paused}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"></path></svg></sc-if></button>
-              <button onClick="{{pgT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pgT.btnWide}}"><span style="font-size: 9px; font-weight: 700;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pgT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pgT.btnWide}}"><span style="font-size: 9px; font-weight: 600;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
               <button onClick="{{pgT.end}}" aria-label="Jump to end" title="Jump to end" style="{{pgT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="8.4" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M2 2v8l5.5-4z" fill="currentColor"></path></svg></button>
               <span style="width: 6px;"></span>
               <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; white-space: nowrap;">{{pgT.elapsed}}<span style="color: #8e9096;">{{pgT.total}}</span></span>
@@ -243,7 +243,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
           <!-- Back-screen loop strip (only on Back Screen) -->
           <sc-if value="{{isBack}}" hint-placeholder-val="{{false}}">
             <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
-              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; white-space: nowrap;">BACK-SCREEN LOOP</span>
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; white-space: nowrap;">Back-screen loop</span>
               <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Energy<input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="width: 90px;"></label>
               <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Speed<input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="width: 90px;"></label>
               <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Brightness<input type="range" min="0" max="100" value="70" aria-label="Loop brightness" style="width: 90px;"></label>
@@ -255,18 +255,18 @@ input[type=checkbox]{accent-color:#4fb3bf}
           <!-- Quick action strip -->
           <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 2px;">PRESET</span>
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding-right: 2px;">Preset</span>
               <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
-                <button style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2d5a61; background: #1d3b40; color: #dff4f6; font-size: 11px; font-weight: 600; white-space: nowrap;">{{b}}</button>
+                <button style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #3a3f48; background: #262a31; color: #e4e5e7; font-size: 12px; font-weight: 500; white-space: nowrap;">{{b}}</button>
               </sc-for>
               <div style="flex-grow: 1;"></div>
-              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 2px;">OVERLAYS</span>
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding-right: 2px;">Overlays</span>
               <sc-for list="{{ovlChannels}}" as="o" hint-placeholder-count="4">
                 <button onClick="{{o.clear}}" title="Click to take this overlay off" style="{{o.style}}">{{o.label}}</button>
               </sc-for>
             </sc-if>
             <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
-              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">STAGE MONITOR</span>
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Stage monitor</span>
               <span style="font-size: 12px; color: #a9abb0;">Text only — for communicating with the people on stage</span>
             </sc-if>
           </div>
@@ -277,9 +277,8 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <sc-for list="{{inputs}}" as="s" hint-placeholder-count="15">
                 <div style="{{s.box}}">
                   <button onClick="{{s.pick}}" onDoubleClick="{{s.air}}" aria-label="{{s.name}}" style="{{s.thumb}}">
-                    <span style="position: absolute; left: 5px; top: 5px; min-width: 18px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: rgba(10,11,13,0.72); font-family: Consolas, monospace; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; color: #ffffff;">{{s.num}}</span>
-                    <span style="position: absolute; right: 5px; top: 5px; height: 16px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.55); font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; line-height: 16px; color: rgba(255,255,255,0.75);">{{s.kind}}</span>
-                    <sc-if value="{{s.hasTally}}" hint-placeholder-val="{{false}}"><span style="{{s.tallyStyle}}">{{s.tally}}</span></sc-if>
+                    <span style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{s.scene}}" hint-size="100%,100%"></dc-import></span>
+                    <span style="position: absolute; left: 5px; top: 5px; min-width: 18px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: rgba(10,11,13,0.72); font-family: Consolas, monospace; font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; color: #ffffff;">{{s.num}}</span>
                   </button>
                   <div style="{{s.strip}}"><span style="overflow: hidden; text-overflow: ellipsis;">{{s.name}}</span></div>
                   <div style="display: flex; gap: 2px; padding: 0 3px 3px;">
@@ -300,13 +299,13 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
                 <textarea aria-label="Message to the stage" value="{{draft}}" onInput="{{onDraft}}" placeholder="Type a message for the stage…" style="height: 62px; resize: none; padding: 8px 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 16px; outline: none;"></textarea>
                 <div style="display: flex; gap: 6px;">
-                  <button onClick="{{sendMsg}}" style="height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #fff; font-size: 12px; font-weight: 700;">Show on monitor</button>
+                  <button onClick="{{sendMsg}}" style="height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #fff; font-size: 12px; font-weight: 600;">Show on monitor</button>
                   <button onClick="{{clearMsg}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Clear</button>
                   <button onClick="{{flash}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Flash to get attention</button>
                   <div style="flex-grow: 1;"></div>
                   <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;">Text size <select value="{{textSize}}" onChange="{{onTextSize}}" style="height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 12px;"><option value="m">Medium</option><option value="l">Large</option><option value="xl">Extra large</option></select></label>
                 </div>
-                <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-top: 4px;">READY-MADE &amp; SAVED MESSAGES</span>
+                <span style="font-size: 10px; font-weight: 600; color: #8e9096; letter-spacing: 0.08em; padding-top: 4px;">READY-MADE &amp; SAVED MESSAGES</span>
                 <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
                   <sc-for list="{{quick}}" as="q" hint-placeholder-count="8">
                     <button onClick="{{q.pick}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 12px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.text}}</button>
@@ -315,7 +314,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
               </div>
               <div style="width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; box-sizing: border-box;">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">MONITOR LAYOUT</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Monitor layout</span>
                   <a href="MonitorLayout.dc.html" style="font-size: 11px; text-decoration: none;">Edit layout…</a>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
@@ -331,7 +330,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
                 </div>
                 <div style="height: 1px; background: #2c3038;"></div>
                 <div style="display: flex; align-items: center; justify-content: space-between;">
-                  <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">TIMER · TIME LEFT</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Timer – time left</span>
                   <span style="font-family: Consolas, monospace; font-size: 26px; font-weight: 700; color: #ffffff;">{{countdown}}</span>
                 </div>
                 <div style="display: flex; gap: 4px;">
@@ -347,7 +346,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
         <!-- Audio mixer -->
         <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
           <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #2c3038;">
-            <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">AUDIO MIXER</span>
+            <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Audio mixer</span>
             <a href="InputSettings.dc.html" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">EQ / Advanced…</a>
           </div>
           <div style="flex-grow: 1; min-height: 0; display: flex; gap: 2px; padding: 8px 6px;">
@@ -382,7 +381,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
     <span style="width: 1px; height: 24px; background: #2c3038; margin: 0 4px;"></span>
     <button onClick="{{toggleRec}}" style="{{recStyle}}"><span style="{{recDot}}"></span>Record <span style="font-family: Consolas, monospace; font-weight: 400; color: #d4d5d8;">{{recTime}}</span></button>
     <a href="GoLive.dc.html" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #3fbf5a;"></span>Streaming · 3 sites</a>
-    <a href="GoLive.dc.html" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Go Live / Outputs</a>
+    <a href="GoLive.dc.html" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Go Live / Outputs</a>
     <div style="flex-grow: 1;"></div>
     <span style="font-size: 11px; color: #8e9096;">Blank</span>
     <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
@@ -441,6 +440,8 @@ class Component extends DCLogic {
       eventlogo: { name: 'Event logo', sub: 'Image', kind: 'IMAGE', tone: '#3b3326' },
       thanks: { name: 'Thank-you list', sub: 'Credits roll', kind: 'CREDITS', tone: '#2f2f38' }
     };
+    const SCENE = { cam1: 'stage', cam2: 'closeup', cam3: 'side', phone: 'crowd', vid1: 'opening', vid2: 'sponsors', vid3: 'tribute', split1: 'split', slides: 'slides', pesukim: 'pesukim', browser: 'browser', logo: 'overlay', lower: 'lower', timer: 'timer', black: 'black', loop1: 'aurora', loop2: 'particles', loop3: 'warm', eventlogo: 'eventlogo', thanks: 'credits' };
+    Object.keys(SRC).forEach((k) => { SRC[k].scene = SCENE[k] || 'stage'; });
     const TAB_INPUTS = {
       live: ['cam1', 'cam2', 'cam3', 'phone', 'split1', 'vid1', 'vid2', 'vid3', 'slides', 'pesukim', 'browser', 'logo', 'lower', 'timer', 'black'],
       back: ['loop1', 'loop2', 'loop3', 'vid1', 'vid2', 'vid3', 'cam1', 'cam2', 'split1', 'slides', 'pesukim', 'eventlogo', 'thanks', 'timer', 'black']
@@ -458,11 +459,12 @@ class Component extends DCLogic {
       const onAirName = id === 'monitor' ? (st.monitorText ? 'TEXT' : '') : ((SRC[scr.pg] || {}).kind || '');
       return {
         name, where, key, on, onAirName: dark && !dimmed ? '' : onAirName,
+        scene: id === 'monitor' ? 'black' : ((SRC[scr.pg] || {}).scene || 'black'), isText: id === 'monitor', monText: st.monitorText, dark: dark,
         pick: () => set({ tab: id, tbar: 0 }),
         status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : 'ON AIR',
-        badge: `height: 15px; padding: 0 5px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : '#c7372f'}; color: #ffffff;`,
-        thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; display: flex; align-items: center; justify-content: center; border: 1px solid ${dark ? '#343944' : '#c7372f'}; background: ${dark && !dimmed ? '#000' : id === 'monitor' ? '#000' : (TONES[scr.pg] || '#262a31')}; opacity: ${dimmed ? 0.4 : 1};`,
-        style: `height: 48px; min-width: 230px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 10px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
+        badge: `height: 15px; padding: 0 5px; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : '#c7372f'}; color: #ffffff;`,
+        thumb: `position: relative; width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; overflow: hidden; display: block; box-shadow: 0 0 0 1px ${dark ? '#3a3f48' : '#c7372f'};`,
+        style: `height: 48px; min-width: 230px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 10px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
       };
     });
 
@@ -472,7 +474,7 @@ class Component extends DCLogic {
       return {
         num: String(i + 1), name, count: String(n),
         pick: () => set({ preset: i }),
-        style: `height: 32px; flex-shrink: 0; padding: 0 8px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 6px; background: ${on ? '#1d3b40' : 'transparent'}; box-shadow: ${on ? 'inset 3px 0 0 #4fb3bf' : 'none'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
+        style: `height: 32px; flex-shrink: 0; padding: 0 8px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 6px; background: ${on ? '#243039' : 'transparent'}; box-shadow: ${on ? 'inset 3px 0 0 #4fb3bf' : 'none'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
       };
     });
 
@@ -480,7 +482,7 @@ class Component extends DCLogic {
       const on = st.trans === id;
       return {
         name, dur, pick: () => set({ trans: id }),
-        style: `height: 34px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: #ffffff;`
+        style: `height: 34px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: #ffffff;`
       };
     });
 
@@ -501,19 +503,19 @@ class Component extends DCLogic {
         pick: () => updScreen({ pv: id }),
         air: () => updScreen({ pg: id }),
         toggleLoop: () => set({ loops: { ...st.loops, [id]: !looping } }),
-        box: `min-height: 0; display: flex; flex-direction: column; gap: 3px; border-radius: 6px; overflow: hidden; background: #1e2127; border: 1px solid ${isPg ? '#e0473b' : isPv ? '#3fbf5a' : '#2c3038'}; box-shadow: ${isPg ? 'inset 0 3px 0 #e0473b' : isPv ? 'inset 0 3px 0 #3fbf5a' : 'none'};`,
+        box: `min-height: 0; display: flex; flex-direction: column; gap: 3px; border-radius: 6px; overflow: hidden; background: #1e2127; border: 1px solid ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#2c3038'};`,
         thumb: `position: relative; flex-grow: 1; min-height: 0; padding: 0; border: 0; border-radius: 0; background: ${s.tone}; box-shadow: inset 0 0 28px rgba(0,0,0,0.35);`,
         hasTally: isPg || isPv,
         tally: isPg ? 'ON AIR' : 'PREVIEW',
-        tallyStyle: `position: absolute; left: 5px; bottom: 5px; height: 15px; padding: 0 5px; border-radius: 3px; background: ${isPg ? '#c7372f' : '#2f8f4e'}; font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; line-height: 15px; color: #ffffff;`,
-        strip: `display: flex; padding: 0 7px; font-size: 12px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden;`,
-        loopStyle: `flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${looping ? '#1d3b40' : '#2a2e36'}; color: ${looping ? '#8fd3db' : '#d4d5d8'}; font-size: 10px;`,
+        tallyStyle: `position: absolute; left: 5px; bottom: 5px; height: 15px; padding: 0 5px; border-radius: 3px; background: ${isPg ? '#c7372f' : '#2f8f4e'}; font-size: 8.5px; font-weight: 600; letter-spacing: 0.08em; line-height: 15px; color: #ffffff;`,
+        strip: `display: flex; align-items: center; height: 20px; margin: 0 3px; padding: 0 6px; border-radius: 3px; background: ${isPg ? '#b3342c' : isPv ? '#2a7d45' : 'transparent'}; font-size: 12px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden;`,
+        loopStyle: `flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${looping ? '#243039' : '#2a2e36'}; color: ${looping ? '#8fd3db' : '#d4d5d8'}; font-size: 10px;`,
         ovl: [1, 2, 3, 4].map((n) => {
           const on = inOvl.includes(String(n));
           return {
             n: String(n), label: 'Overlay channel ' + n,
             toggle: () => set({ ovl: { ...st.ovl, [n]: on ? null : id } }),
-            style: `width: 20px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${on ? '#4fb3bf' : '#2a2e36'}; color: ${on ? '#0e2a2e' : '#a9abb0'}; font-size: 10px; font-weight: 700;`
+            style: `width: 20px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${on ? '#4fb3bf' : '#2a2e36'}; color: ${on ? '#0e2a2e' : '#a9abb0'}; font-size: 10px; font-weight: 600;`
           };
         })
       };
@@ -545,8 +547,8 @@ class Component extends DCLogic {
         cap: `position: absolute; left: -3px; right: -3px; height: 14px; top: calc(${top}% - ${top * 0.14}px); border-radius: 4px; background: linear-gradient(#eceef2, #c9ccd3); border: 1px solid #0c0d10; box-shadow: 0 2px 4px rgba(0,0,0,0.55), inset 0 -2px 0 rgba(0,0,0,0.12); pointer-events: none;`,
         meterMask: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - lvl}%; background: #101216;`,
         meterMask2: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - Math.max(0, lvl - 5)}%; background: #101216;`,
-        muteStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${m ? '#c7372f' : '#2a2e36'}; color: #ffffff; font-size: 10px; font-weight: 700;`,
-        afvStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${st.afv[id] ? '#1d3b40' : '#2a2e36'}; color: ${st.afv[id] ? '#8fd3db' : '#ffffff'}; font-size: 10px; font-weight: 700; visibility: ${isMaster ? 'hidden' : 'visible'};`
+        muteStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${m ? '#c7372f' : '#2a2e36'}; color: #ffffff; font-size: 10px; font-weight: 600;`,
+        afvStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${st.afv[id] ? '#243039' : '#2a2e36'}; color: ${st.afv[id] ? '#8fd3db' : '#ffffff'}; font-size: 10px; font-weight: 600; visibility: ${isMaster ? 'hidden' : 'visible'};`
       };
     });
 
@@ -555,7 +557,7 @@ class Component extends DCLogic {
       return {
         label: v ? `${n} · ${SRC[v].name}` : String(n),
         clear: () => set({ ovl: { ...st.ovl, [n]: null } }),
-        style: `height: 26px; min-width: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid ${v ? '#4fb3bf' : '#2c3038'}; background: ${v ? '#1d3b40' : '#2a2e36'}; color: ${v ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`
+        style: `height: 26px; min-width: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid ${v ? '#4fb3bf' : '#2c3038'}; background: ${v ? '#243039' : '#2a2e36'}; color: ${v ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`
       };
     });
 
@@ -591,8 +593,8 @@ class Component extends DCLogic {
         toggle: () => upd({ playing: !p.playing }),
         toggleLoop: () => upd({ loop: !p.loop }),
         btn: base(26), btnWide: base(34),
-        playBtn: `width: 34px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid ${!live && p.playing ? '#4fb3bf' : '#2c3038'}; background: ${!live && p.playing ? '#1d3b40' : '#343944'}; color: #ffffff; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
-        loopStyle: `height: 24px; padding: 0 9px; border-radius: 4px; border: 1px solid ${p.loop ? '#4fb3bf' : '#2c3038'}; background: ${p.loop ? '#1d3b40' : '#262a31'}; color: ${p.loop ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
+        playBtn: `width: 34px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid ${!live && p.playing ? '#4fb3bf' : '#2c3038'}; background: ${!live && p.playing ? '#243039' : '#343944'}; color: #ffffff; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
+        loopStyle: `height: 24px; padding: 0 9px; border-radius: 4px; border: 1px solid ${p.loop ? '#4fb3bf' : '#2c3038'}; background: ${p.loop ? '#243039' : '#262a31'}; color: ${p.loop ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
         elapsed: live ? 'LIVE' : fmt(pos), total: live ? '' : ' / ' + fmt(dur), remain: live ? 'camera / live source' : '−' + fmt(dur - pos),
         marks: live ? [] : [0.18, 0.46, 0.77].map((f) => `position: absolute; top: 1px; left: calc(${f * 100}% - 1px); width: 2px; height: 5px; border-radius: 1px; background: #8e9096; pointer-events: none;`)
       };
@@ -601,19 +603,19 @@ class Component extends DCLogic {
     const dimOnly = isMon && st.panic && !sc.blank;
     const mm = Math.floor(st.countdown / 60), ss = st.countdown % 60;
     const tabName = { live: 'Live Screen', back: 'Back Screen', monitor: 'Monitor' }[st.tab];
-    const seg = (on) => `height: 26px; padding: 0 12px; border: 0; border-radius: 0; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
+    const seg = (on) => `height: 26px; padding: 0 12px; border: 0; border-radius: 0; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
 
     return {
       tabs, presets, transitions, inputs, channels, ovlChannels, overlayLayers, blankOpts,
       monLayouts: [['full', 'Message'], ['stack', 'Msg + time'], ['split', 'Side by side']].map(([id, name]) => ({
         name, pick: () => set({ monLayout: id }),
-        style: `padding: 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${st.monLayout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.monLayout === id ? '#1d3b40' : '#262a31'}; color: ${st.monLayout === id ? '#dff4f6' : '#d4d5d8'};`,
+        style: `padding: 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${st.monLayout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.monLayout === id ? '#243039' : '#262a31'}; color: ${st.monLayout === id ? '#ffffff' : '#d4d5d8'};`,
         thumb: `width: 100%; height: 30px; border-radius: 2px; background: #000; box-shadow: ${id === 'full' ? 'inset 0 0 0 7px #000, inset 0 0 0 9px #555' : id === 'stack' ? 'inset 0 -9px 0 #444, inset 0 0 0 1px #333' : 'inset -26px 0 0 #444, inset 0 0 0 1px #333'};`
       })),
       pvT: tport('pvT', pvSrc), pgT: tport('pgT', pgSrc),
       isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
       toggleFollow: () => set({ follow: !st.follow }),
-      followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#1d3b40' : '#2a2e36'}; color: ${st.follow ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
+      followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#243039' : '#2a2e36'}; color: ${st.follow ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
       onQuickPick: (e) => { if (e.target.value) set({ draft: e.target.value }); },
       miniMon: `position: relative; height: 118px; border-radius: 4px; background: #000; border: 1px solid ${st.flashing ? '#ffffff' : '#c7372f'}; display: flex; align-items: center; justify-content: center; opacity: ${st.panic ? 0.35 : 1};`,
       setSimple: () => set({ mode: 'simple' }), setAdvanced: () => set({ mode: 'advanced' }),
@@ -621,15 +623,15 @@ class Component extends DCLogic {
       presetButtons: ['Vid 2 + Logo (fade)', 'Cam 1 + Lower third', 'Blank back screen'],
       prevPreset: () => set({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
       nextPreset: () => set({ preset: (st.preset + 1) % PRESETS.length }),
-      pv: isMon ? { title: 'Next message', frame: frame('#000', '#2f8f4e'), time: '' } : { ...pvSrc, title: pvSrc.name, frame: frame(pvSrc.tone, '#2f8f4e'), time: pvSrc.video ? '00:00 / 00:45' : 'LIVE' },
+      pv: isMon ? { title: 'Next message', frame: frame('#000', '#2f8f4e'), time: '', scene: 'black' } : { ...pvSrc, title: pvSrc.name, frame: frame(pvSrc.tone, '#2f8f4e'), time: pvSrc.video ? '00:00 / 00:45' : 'LIVE' },
       pg: isMon
-        ? { title: 'On the monitor now', frame: frame('#000', '#c7372f'), time: '', bar: '' }
+        ? { title: 'On the monitor now', frame: frame('#000', '#c7372f'), time: '', bar: '', scene: 'black' }
         : { ...pgSrc, title: pgSrc.name, frame: frame(pgSrc.tone, '#c7372f'), time: pgSrc.video ? '01:12 / 02:10' : 'LIVE', bar: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pgSrc.video ? 55 : 0}%; background: #e0473b;` },
       outState: pgBlank ? 'BLANK' : 'ON AIR · ' + tabName.toUpperCase(),
-      outBadge: `height: 18px; padding: 0 8px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${pgBlank ? '#343944' : '#c7372f'}; color: #ffffff;`,
+      outBadge: `height: 18px; padding: 0 8px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${pgBlank ? '#343944' : '#c7372f'}; color: #ffffff;`,
       monitorPreviewText: st.draft || ' ',
       monitorLiveText: st.monitorText || ' ',
-      monTextStyle: `font-size: ${{ m: 22, l: 28, xl: 36 }[st.textSize]}px; font-weight: 700; color: #ffffff; text-align: center; line-height: 1.2;`,
+      monTextStyle: `font-size: ${{ m: 22, l: 28, xl: 36 }[st.textSize]}px; font-weight: 600; color: #ffffff; text-align: center; line-height: 1.2;`,
       textSize: st.textSize, onTextSize: (e) => set({ textSize: e.target.value }),
       countdownOn: st.countdownOn, clockOn: st.clockOn,
       countdown: `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
@@ -653,7 +655,7 @@ class Component extends DCLogic {
       panic: st.panic,
       togglePanic: () => set({ panic: !st.panic }),
       panicLabel: st.panic ? 'RESTORE' : 'PANIC',
-      panicBtnStyle: `height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.panic ? '#e0473b' : '#5a1f1b'}; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px;`,
+      panicBtnStyle: `height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.panic ? '#e0473b' : '#5a1f1b'}; color: #ffffff; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px;`,
       toggleRec: () => set({ rec: !st.rec }),
       recTime: st.rec ? '00:42:17' : 'off',
       recDot: `width: 8px; height: 8px; border-radius: 4px; background: ${st.rec ? '#e0473b' : '#6b6d72'};`,

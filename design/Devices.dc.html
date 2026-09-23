@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -42,19 +42,18 @@ button,select{font-family:inherit}
 </style>
 </helmet>
 <div style="width: 1000px; height: 740px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">Connected devices</span>
-    <span style="font-size: 13px; color: #8e9096;">Offline network · no internet needed</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Connected devices</span>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
 
   <sc-if value="{{pending}}" hint-placeholder-val="{{true}}">
-    <div style="margin: 16px 24px 0; padding: 12px 16px; border-radius: 6px; background-color: #1d3b40; border: 1px solid #4fb3bf; display: flex; align-items: center; gap: 12px;">
+    <div style="margin: 16px 24px 0; padding: 12px 16px; border-radius: 6px; background-color: #243039; border: 1px solid #4fb3bf; display: flex; align-items: center; gap: 12px;">
       <span style="width: 10px; height: 10px; border-radius: 6px; background-color: #4fb3bf;"></span>
       <span style="font-size: 14px; flex-grow: 1;"><b>iPad</b> wants to connect as <b>Controller</b> · entered the correct PIN</span>
       <button onClick="{{deny}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Deny</button>
-      <button onClick="{{approve}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700;">Approve</button>
+      <button onClick="{{approve}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 600;">Approve</button>
     </div>
   </sc-if>
 
@@ -79,7 +78,7 @@ button,select{font-family:inherit}
     </div>
 
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
-      <div style="display: flex; align-items: center; padding: 0 4px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096;">
+      <div style="display: flex; align-items: center; padding: 0 4px 4px; font-size: 12px; font-weight: 600; color: #b4b8bf;">
         <span style="flex-grow: 1;">Device</span><span style="width: 130px;">Role</span><span style="width: 90px;">Signal</span><span style="width: 80px;"></span>
       </div>
       <sc-for list="{{devices}}" as="d" hint-placeholder-count="5">

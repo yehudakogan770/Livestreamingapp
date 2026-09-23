@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -45,9 +45,8 @@ input[type=range]{accent-color:#4fb3bf}
 <div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
   <!-- Header -->
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">Slideshow</span>
-    <span style="font-size: 13px; color: #8e9096;">[Slideshow name] · slides on part of the screen, camera on the rest, videos between slides</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Slideshow</span>
     <div style="flex-grow: 1;"></div>
     <button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px;">Save to library</button>
     <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
@@ -60,7 +59,7 @@ input[type=range]{accent-color:#4fb3bf}
     <div style="width: 310px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
       <div style="padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 10px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SLIDES · {{slideCount}}</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Slides – {{slideCount}}</span>
           <span style="font-size: 11px; color: #8e9096;">Drag or use ▲▼ to reorder</span>
         </div>
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
@@ -92,7 +91,7 @@ input[type=range]{accent-color:#4fb3bf}
     <!-- Center: layout + preview -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; box-sizing: border-box;">
       <div style="display: flex; align-items: baseline; gap: 10px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LAYOUT</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Layout</span>
         <span style="font-size: 12px; color: #8e9096;">Where the slide goes — the camera fills the rest of the screen</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
@@ -109,7 +108,7 @@ input[type=range]{accent-color:#4fb3bf}
 
       <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
         <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Preview</span>
         <span style="font-size: 12px; color: #8e9096;">{{previewTitle}}</span>
         <div style="flex-grow: 1;"></div>
         <span style="font-size: 12px; color: #8e9096;">{{camName}} behind</span>
@@ -135,11 +134,11 @@ input[type=range]{accent-color:#4fb3bf}
 
       <div style="height: 44px; flex-shrink: 0; display: flex; gap: 10px;">
         <div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
-          <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NOW</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Now</span>
           <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{nowLabel}}</span>
         </div>
         <div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
-          <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NEXT</span>
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Next</span>
           <span style="font-size: 13px; color: #d4d5d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{nextLabel}}</span>
         </div>
       </div>
@@ -149,7 +148,7 @@ input[type=range]{accent-color:#4fb3bf}
     <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 14px 16px; box-sizing: border-box; background: #1a1d22; border-left: 1px solid #2c3038; overflow: hidden;">
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SLIDE TIMING</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Slide timing</span>
         <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
           <sc-for list="{{timing}}" as="o" hint-placeholder-count="2"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
         </div>
@@ -163,7 +162,7 @@ input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">TRANSITION BETWEEN SLIDES</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Transition between slides</span>
         <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
           <sc-for list="{{trans}}" as="o" hint-placeholder-count="4"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
         </div>
@@ -175,7 +174,7 @@ input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">CAMERA FOR THE REST OF THE SCREEN</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Camera for the rest of the screen</span>
         <select aria-label="Camera source" onChange="{{onCam}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 13px; padding: 0 8px;">
           <option>Camera 1 · Stage wide</option>
           <option>Camera 2 · Close-up</option>
@@ -192,7 +191,7 @@ input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">BORDER &amp; BACKGROUND</span>
+        <span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: #8e9096;">BORDER &amp; BACKGROUND</span>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;">
           <label style="display: flex; align-items: center; gap: 8px; flex-grow: 1;"><input type="checkbox" checked="{{border}}" onChange="{{toggleBorder}}"> Border around slide</label>
           <sc-for list="{{borderColors}}" as="c" hint-placeholder-count="4"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
@@ -208,7 +207,7 @@ input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">WHICH SCREENS</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Which screens</span>
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{screens}}" as="s" hint-placeholder-count="3"><button onClick="{{s.toggle}}" style="{{s.style}}">{{s.name}}</button></sc-for>
         </div>
@@ -219,12 +218,12 @@ input[type=range]{accent-color:#4fb3bf}
 
   <!-- Transport -->
   <div style="height: 84px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-top: 1px solid #2c3038;">
-    <button onClick="{{prev}}" style="height: 52px; width: 140px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 15px; font-weight: 700;">◀ Prev</span><span style="font-size: 10px; color: #8e9096;">← key</span></button>
+    <button onClick="{{prev}}" style="height: 52px; width: 140px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 15px; font-weight: 600;">◀ Prev</span><span style="font-size: 10px; color: #8e9096;">← key</span></button>
     <div style="width: 170px; height: 52px; border-radius: 6px; background: #101216; border: 1px solid #2c3038; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;">
       <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700; color: #ffffff;">{{counter}}</span>
       <span style="font-size: 10px; color: #8e9096;">{{counterSub}}</span>
     </div>
-    <button onClick="{{next}}" style="height: 52px; width: 180px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 16px; font-weight: 700;">Next ▶</span><span style="font-size: 10px; color: #0e2a2e;">→ key or Space</span></button>
+    <button onClick="{{next}}" style="height: 52px; width: 180px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 16px; font-weight: 600;">Next ▶</span><span style="font-size: 10px; color: #0e2a2e;">→ key or Space</span></button>
     <span style="width: 1px; height: 40px; background: #2c3038; margin: 0 6px;"></span>
     <span style="font-size: 13px; color: #a9abb0;">Go to slide</span>
     <input type="number" min="1" aria-label="Slide number" value="{{gotoVal}}" onInput="{{onGoto}}" style="width: 64px; height: 40px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 18px; box-sizing: border-box;">
@@ -233,7 +232,7 @@ input[type=range]{accent-color:#4fb3bf}
     <button onClick="{{toggleAuto}}" style="{{autoBtn}}">{{autoBtnLabel}}</button>
     <button onClick="{{toggleBlack}}" style="{{blackBtn}}">Black slide <span style="font-size: 10px; color: #a9abb0; font-weight: 400;">B</span></button>
     <div style="flex-grow: 1;"></div>
-    <a href="Main.dc.html" style="height: 52px; padding: 0 22px; border-radius: 6px; border: 1px solid #2f8f4e; background: #2a2e36; color: #ffffff; font-size: 14px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Send to Preview</a>
+    <a href="Main.dc.html" style="height: 52px; padding: 0 22px; border-radius: 6px; border: 1px solid #2f8f4e; background: #2a2e36; color: #ffffff; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Send to Preview</a>
   </div>
 </div>
 </x-dc>
@@ -263,7 +262,7 @@ class Component extends DCLogic {
   renderVals() {
     const st = this.state;
     const set = (p) => this.setState(p);
-    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
     const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
 
     // numbering
@@ -292,7 +291,7 @@ class Component extends DCLogic {
         down: (e) => { if (e && e.stopPropagation) e.stopPropagation(); move(i, 1); },
         titleStyle: `font-size: 12px; font-weight: 600; color: ${vid ? '#8fd3db' : '#e4e5e7'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`,
         thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; background: ${vid ? '#403143' : '#3f3b2a'}; border: 1px solid ${vid ? '#6a5470' : '#2c3038'}; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.65); box-sizing: border-box;`,
-        row: `height: 48px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; cursor: pointer; box-sizing: border-box; background: ${on ? '#1d3b40' : (vid ? '#1e2127' : 'transparent')}; border: 1px ${vid ? 'dashed' : 'solid'} ${on ? '#4fb3bf' : (vid ? '#4fb3bf' : 'transparent')};`
+        row: `height: 48px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; cursor: pointer; box-sizing: border-box; background: ${on ? '#243039' : (vid ? '#1e2127' : 'transparent')}; border: 1px ${vid ? 'dashed' : 'solid'} ${on ? '#4fb3bf' : (vid ? '#4fb3bf' : 'transparent')};`
       };
     });
 
@@ -310,7 +309,7 @@ class Component extends DCLogic {
       const on = st.layout === id;
       return {
         name, pick: () => set({ layout: id }),
-        card: `display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`,
+        card: `display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'};`,
         cam: `position: absolute; ${g.cam} background: #34404c; display: ${g.camOn ? 'block' : 'none'};`,
         slide: `position: absolute; ${g.slide} box-sizing: border-box; background: ${g.slideBg ? '#6b6346' : 'transparent'}; border: 1px ${g.slideBg ? 'solid' : 'dashed'} ${g.slideBg ? '#8a8260' : '#c9c3a6'}; ${id === 'behind' ? 'left: 20%; top: 30%; width: 60%; height: 40%;' : ''}`
       };
@@ -334,7 +333,7 @@ class Component extends DCLogic {
     const screens = [['live', 'Live'], ['back', 'Back'], ['monitor', 'Monitor']].map(([id, name]) => {
       const on = st.screens[id];
       return { name, toggle: () => set({ screens: { ...st.screens, [id]: !on } }),
-        style: `height: 34px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'};` };
+        style: `height: 34px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: ${on ? '#ffffff' : '#a9abb0'};` };
     });
     const step = (d) => {
       let i = st.cur + d;
@@ -376,7 +375,7 @@ class Component extends DCLogic {
       goTo: () => { const want = Number(st.gotoVal); const i = slideNums.indexOf(want); if (i >= 0) set({ cur: i, black: false }); },
       toggleAuto: () => set({ auto: !st.auto, timing: 'auto' }),
       autoBtnLabel: st.auto ? '❚❚ Pause auto' : '▶ Play auto',
-      autoBtn: `height: 40px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid ${st.auto ? '#4fb3bf' : '#2c3038'}; background: ${st.auto ? '#1d3b40' : '#2a2e36'}; color: ${st.auto ? '#dff4f6' : '#e4e5e7'};`,
+      autoBtn: `height: 40px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid ${st.auto ? '#4fb3bf' : '#2c3038'}; background: ${st.auto ? '#243039' : '#2a2e36'}; color: ${st.auto ? '#ffffff' : '#e4e5e7'};`,
       toggleBlack: () => set({ black: !st.black }),
       blackBtn: `height: 40px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid ${st.black ? '#e4e5e7' : '#2c3038'}; background: ${st.black ? '#0c0d10' : '#2a2e36'}; color: #e4e5e7;`
     };

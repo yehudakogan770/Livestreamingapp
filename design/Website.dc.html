@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -47,19 +47,19 @@ input[type=checkbox]{accent-color:#4fb3bf}
   <div style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 96px; background: #1a1d22; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
     <div style="display: flex; align-items: center; gap: 10px; margin-right: 24px;">
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="9" width="16" height="11" rx="2" stroke="#6f6a60" stroke-width="2"></rect><rect x="6" y="6" width="16" height="11" rx="2" stroke="#9c948a" stroke-width="2"></rect><rect x="9" y="3" width="16" height="11" rx="2" fill="#e8b04b"></rect></svg>
-      <span style="font-size: 20px; font-weight: 600;">Lumora</span>
+      <span style="font-size: 16px; font-weight: 600;">Lumora</span>
     </div>
     <sc-for list="{{nav}}" as="n" hint-placeholder-count="5">
       <button onClick="{{n.pick}}" style="{{n.style}}">{{n.name}}</button>
     </sc-for>
     <div style="flex-grow: 1;"></div>
-    <button style="height: 40px; padding: 0 18px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 14px; font-weight: 700;">Download for Windows</button>
+    <button style="height: 40px; padding: 0 18px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 14px; font-weight: 600;">Download for Windows</button>
   </div>
 
   <!-- ===== Hero ===== -->
   <div style="height: 480px; flex-shrink: 0; display: flex; align-items: center; gap: 48px; padding: 0 96px; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
     <div style="width: 470px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px;">
-      <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: #8fd3db;">LIVE EVENT SOFTWARE FOR WINDOWS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #8fd3db;">Live event software for Windows</span>
       <span style="font-size: 46px; font-weight: 700; line-height: 1.1;">Run every screen at your event from one app</span>
       <span style="font-size: 17px; line-height: 1.55; color: #d4d5d8;">Lumora controls your live stream, the big screen behind the stage and the monitor your speakers read — together, from one computer. Build your run of show before the event, then run it with one click at a time.</span>
       <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
@@ -80,7 +80,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
   <!-- ===== What Lumora is ===== -->
   <div style="height: 160px; flex-shrink: 0; display: flex; gap: 64px; align-items: center; padding: 0 96px; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
     <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
-      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">WHAT LUMORA IS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">What Lumora is</span>
       <span style="font-size: 26px; font-weight: 600; line-height: 1.2;">One control room for your whole event</span>
     </div>
     <span style="font-size: 16px; line-height: 1.65; color: #d4d5d8;">Lumora is a Windows app for people who run live events — conferences, celebrations, school and community evenings, concerts. It shows the right picture on each screen, sends messages to the people on stage, streams to the internet and records everything, so one person can run the whole show calmly from a laptop.</span>
@@ -95,7 +95,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
     <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
       <sc-for list="{{features}}" as="f" hint-placeholder-count="8">
         <div style="height: 160px; padding: 18px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px;">
-          <span style="width: 28px; height: 28px; border-radius: 6px; background: #1d3b40; color: #8fd3db; font-family: Consolas, monospace; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{f.num}}</span>
+          <span style="width: 28px; height: 28px; border-radius: 6px; background: #243039; color: #8fd3db; font-family: Consolas, monospace; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center;">{{f.num}}</span>
           <span style="font-size: 15px; font-weight: 600;">{{f.title}}</span>
           <span style="font-size: 13px; line-height: 1.45; color: #a9abb0;">{{f.text}}</span>
         </div>
@@ -125,7 +125,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
     <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
       <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
         <div style="display: flex; gap: 12px; padding: 16px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; height: 136px; box-sizing: border-box;">
-          <span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 16px; background: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{s.num}}</span>
+          <span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 16px; background: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: center;">{{s.num}}</span>
           <div style="display: flex; flex-direction: column; gap: 4px;">
             <span style="font-size: 15px; font-weight: 600;">{{s.title}}</span>
             <span style="font-size: 13px; line-height: 1.45; color: #a9abb0;">{{s.text}}</span>
@@ -175,7 +175,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
       </div>
     </div>
     <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 10px;">
-      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SYSTEM REQUIREMENTS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">System requirements</span>
       <div style="border-radius: 6px; border: 1px solid #2c3038; overflow: hidden;">
         <sc-for list="{{reqs}}" as="r" hint-placeholder-count="6">
           <div style="display: flex; height: 30px; align-items: center; border-bottom: 1px solid #2c3038; font-size: 13px;">
@@ -200,9 +200,9 @@ input[type=checkbox]{accent-color:#4fb3bf}
         <input aria-label="Email" placeholder="Email, if you want a reply (optional)" style="flex-grow: 1; height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none;">
         <select aria-label="Topic" style="width: 150px; height: 40px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 14px; padding: 0 8px;"><option>General</option><option>Bug report</option><option>Feature idea</option><option>Question</option></select>
       </div>
-      <textarea aria-label="Your message" onInput="{{onMsg}}" placeholder="Write your comment…" style="height: 96px; resize: none; padding: 10px 12px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none; box-sizing: border-box;">{{msg}}</textarea>
+      <textarea value="{{msg}}" aria-label="Your message" onInput="{{onMsg}}" placeholder="Write your comment…" style="height: 96px; resize: none; padding: 10px 12px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none; box-sizing: border-box;"></textarea>
       <div style="display: flex; align-items: center; gap: 12px;">
-        <button onClick="{{send}}" style="height: 40px; padding: 0 20px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 14px; font-weight: 700;">Send to the Lumora team</button>
+        <button onClick="{{send}}" style="height: 40px; padding: 0 20px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 14px; font-weight: 600;">Send to the Lumora team</button>
         <span style="{{sentStyle}}">{{sentText}}</span>
       </div>
     </div>
@@ -235,7 +235,7 @@ class Component extends DCLogic {
     const set = (o) => this.setState(o);
     const nav = ['Features', 'How it works', 'Screenshots', 'Download', 'Support'].map((name) => {
       const on = st.nav === name;
-      return { name, pick: () => set({ nav: name }), style: `height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#d4d5d8'}; font-size: 14px;` };
+      return { name, pick: () => set({ nav: name }), style: `height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#d4d5d8'}; font-size: 14px;` };
     });
     const F = [
       ['Three screens from one app', 'Live stream, back screen and stage monitor — each shows exactly what it should.'],
@@ -263,7 +263,7 @@ class Component extends DCLogic {
     const TABS = [['Main screen', 'Main event screen'], ['Go Live', 'Go Live popup'], ['Monitor', 'Stage monitor messages'], ['Remote', 'Phone remote']];
     const shotTabs = TABS.map(([name], i) => {
       const on = st.shot === i;
-      return { name, pick: () => set({ shot: i }), style: `height: 34px; padding: 0 14px; border-radius: 6px; border: 0; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 13px; font-weight: 600;` };
+      return { name, pick: () => set({ shot: i }), style: `height: 34px; padding: 0 14px; border-radius: 6px; border: 0; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 13px; font-weight: 600;` };
     });
     const shots = [['Presets panel', 'Build the run of show'], ['Green screen scene', 'Key and place a speaker'], ['Event end', 'Keep or delete the recording']].map(([name, sub]) => ({ name, sub }));
     const reqs = [
@@ -280,7 +280,7 @@ class Component extends DCLogic {
       goHow: () => set({ nav: 'How it works' }),
       download: () => set({ dl: true }),
       dlLabel: st.dl ? 'Download started…' : 'Download for Windows',
-      dlStyle: `height: 52px; padding: 0 24px; border-radius: 6px; border: 0; background: ${st.dl ? '#1d3b40' : '#4fb3bf'}; color: ${st.dl ? '#dff4f6' : '#0e2a2e'}; font-size: 16px; font-weight: 700;`,
+      dlStyle: `height: 52px; padding: 0 24px; border-radius: 6px; border: 0; background: ${st.dl ? '#243039' : '#4fb3bf'}; color: ${st.dl ? '#ffffff' : '#0e2a2e'}; font-size: 16px; font-weight: 600;`,
       msg: st.msg,
       onMsg: (e) => set({ msg: e.target.value, sent: false }),
       send: () => set({ sent: true, msg: '' }),

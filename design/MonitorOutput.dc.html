@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -56,7 +56,7 @@ button{font-family:inherit;cursor:pointer}
 
   <!-- Designer-only switches (not part of the real output) -->
   <div style="position: absolute; left: 12px; bottom: 12px; display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038; opacity: 0.92;">
-    <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; padding: 0 6px;">PREVIEW</span>
+    <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding: 0 6px;">Preview</span>
     <sc-for list="{{layouts}}" as="l" hint-placeholder-count="4">
       <button onClick="{{l.pick}}" style="{{l.style}}">{{l.label}}</button>
     </sc-for>
@@ -84,7 +84,7 @@ class Component extends DCLogic {
       next: { label: 'NEXT UP', value: '[Next speaker] · [Video name]' }
     };
     const box = (extra) => `display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 0; overflow: hidden; border-radius: 10px; background: #0b0b0c; ${extra}`;
-    const lab = 'font-size: 20px; font-weight: 700; letter-spacing: 0.12em; color: #8e9096;';
+    const lab = 'font-size: 20px; font-weight: 600; letter-spacing: 0.12em; color: #8e9096;';
     const val = (size, mono) => `font-size: ${size}px; font-weight: 700; line-height: 1.2; text-align: center; color: #ffffff; ${mono ? 'font-family: Consolas, monospace;' : ''} max-width: 100%;`;
     const L = {
       full: { frame: 'grid-template-columns: 1fr; grid-template-rows: 1fr auto;', zones: [['msg', 'grid-column: 1;', 128], ['clock', 'grid-column: 1; flex-direction: row; gap: 18px; padding: 14px;', 44]] },
@@ -99,7 +99,7 @@ class Component extends DCLogic {
       labelStyle: W[id].label ? lab : 'display: none;',
       valueStyle: val(size, id === 'timer' || id === 'clock')
     }));
-    const btn = (on) => `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
+    const btn = (on) => `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
     return {
       zones,
       frame: `position: absolute; inset: 0; display: grid; gap: 18px; padding: 28px; box-sizing: border-box; ${lay.frame} opacity: ${dim ? 0.22 : 1};`,

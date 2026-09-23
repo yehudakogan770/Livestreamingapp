@@ -11,7 +11,7 @@
 <style>
 /* lumora-polish:start */
 *{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
-::selection{background:#1d3b40;color:#ffffff}
+::selection{background:#243039;color:#ffffff}
 button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
 button:hover,a[href]:hover{filter:brightness(1.14)}
 button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
@@ -43,9 +43,8 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
 </helmet>
 <div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">Monitor layout</span>
-    <span style="font-size: 13px; color: #8e9096;">Arrange what the people on stage see — several things at once</span>
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Monitor layout</span>
     <div style="flex-grow: 1;"></div>
     <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
@@ -54,7 +53,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
 
     <!-- Layout presets -->
     <div style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 16px 12px; box-sizing: border-box; background: #1a1d22; border-right: 1px solid #2c3038;">
-      <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">LAYOUTS</span>
+      <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Layouts</span>
       <sc-for list="{{layouts}}" as="l" hint-placeholder-count="6">
         <button onClick="{{l.pick}}" style="{{l.style}}">
           <span style="{{l.thumb}}">
@@ -70,7 +69,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
     <!-- Preview -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px;">
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">MONITOR PREVIEW</span>
+        <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Monitor preview</span>
         <span style="font-size: 12px; color: #8e9096;">Click an area to format it</span>
       </div>
       <div style="{{stage}}">
@@ -94,7 +93,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
     <!-- Items + format -->
     <div style="width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; padding: 16px; box-sizing: border-box; background: #1a1d22; border-left: 1px solid #2c3038;">
       <div style="display: flex; flex-direction: column; gap: 6px;">
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">SHOW ON THE MONITOR</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Show on the monitor</span>
         <sc-for list="{{items}}" as="it" hint-placeholder-count="6">
           <div style="{{it.row}}">
             <input type="checkbox" checked="{{it.on}}" onChange="{{it.toggle}}" aria-label="Show {{it.name}}">
@@ -107,10 +106,10 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       <div style="height: 1px; background: #2c3038;"></div>
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
-        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">FORMAT · {{selName}}</span>
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Format – {{selName}}</span>
         <div style="display: flex; gap: 6px;">
           <select aria-label="Font" style="flex-grow: 1; min-width: 0; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>Segoe UI Bold</option><option>Bahnschrift</option><option>Consolas (numbers)</option><option>Frank Ruhl Libre</option><option>+ Import font…</option></select>
-          <button aria-label="Bold" style="width: 32px; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-weight: 800;">B</button>
+          <button aria-label="Bold" style="width: 32px; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-weight: 600;">B</button>
         </div>
         <label style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #a9abb0;">Size<input type="range" min="20" max="200" value="{{selSize}}" onInput="{{onSize}}" style="flex-grow: 1;"><span style="font-family: Consolas, monospace; width: 34px; text-align: right;">{{selSize}}</span></label>
         <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
@@ -123,7 +122,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
           <span style="width: 56px;">Align</span>
           <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
             <button style="height: 28px; padding: 0 10px; border: 0; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Left</button>
-            <button style="height: 28px; padding: 0 10px; border: 0; background: #1d3b40; color: #dff4f6; font-size: 11px;">Centre</button>
+            <button style="height: 28px; padding: 0 10px; border: 0; background: #243039; color: #ffffff; font-size: 11px;">Centre</button>
             <button style="height: 28px; padding: 0 10px; border: 0; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Right</button>
           </div>
         </div>
@@ -141,7 +140,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
       <div style="flex-grow: 1;"></div>
       <div style="display: flex; gap: 8px;">
         <button style="flex-grow: 1; height: 40px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Save layout</button>
-        <a href="Main.dc.html" style="flex-grow: 1; height: 40px; border-radius: 6px; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none;">Use on monitor</a>
+        <a href="Main.dc.html" style="flex-grow: 1; height: 40px; border-radius: 6px; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none;">Use on monitor</a>
       </div>
     </div>
   </div>
@@ -181,7 +180,7 @@ class Component extends DCLogic {
     const layouts = Object.entries(LAYOUTS).map(([id, l]) => ({
       name: l.name,
       pick: () => set({ layout: id }),
-      style: `padding: 8px; display: flex; flex-direction: column; align-items: stretch; gap: 6px; border-radius: 6px; border: 2px solid ${st.layout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.layout === id ? '#1d3b40' : '#1e2127'}; color: ${st.layout === id ? '#dff4f6' : '#d4d5d8'}; text-align: left;`,
+      style: `padding: 8px; display: flex; flex-direction: column; align-items: stretch; gap: 6px; border-radius: 6px; border: 2px solid ${st.layout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.layout === id ? '#243039' : '#1e2127'}; color: ${st.layout === id ? '#ffffff' : '#d4d5d8'}; text-align: left;`,
       thumb: `height: 54px; display: grid; gap: 3px; padding: 3px; box-sizing: border-box; border-radius: 3px; background: #000; grid-template-columns: ${l.cols}; grid-template-rows: ${l.rows};`,
       cells: l.areas.map((a) => `${span(a)} border-radius: 2px; background: ${idOf(a) === 'msg' ? '#5a5c62' : '#343944'};`)
     }));
@@ -195,7 +194,7 @@ class Component extends DCLogic {
         name: it.name, label: it.label, value: it.value,
         pick: () => set({ sel: id }),
         box: `${span(a)} min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px; border-radius: 6px; background: #0b0b0c; border: 2px ${on ? 'solid #4fb3bf' : 'dashed #2c3038'}; color: #ffffff;`,
-        labelStyle: it.label ? 'font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #8e9096;' : 'display: none;',
+        labelStyle: it.label ? 'font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #8e9096;' : 'display: none;',
         valueStyle: `font-size: ${Math.round(st.size[id] * 0.62)}px; font-weight: 700; line-height: 1.08; text-align: center; color: ${st.colour[id]}; ${mono ? 'font-family: Consolas, monospace;' : ''} max-width: 100%;`
       };
     });
@@ -203,7 +202,7 @@ class Component extends DCLogic {
       name: it.name, note: it.note, on: !!st.show[id],
       toggle: () => set({ show: { ...st.show, [id]: !st.show[id] } }),
       pick: () => set({ sel: id }),
-      row: `height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 6px; border: 1px solid ${st.sel === id ? '#4fb3bf' : '#2c3038'}; background: ${st.sel === id ? '#1d3b40' : '#1e2127'}; color: #e4e5e7;`
+      row: `height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 6px; border: 1px solid ${st.sel === id ? '#4fb3bf' : '#2c3038'}; background: ${st.sel === id ? '#243039' : '#1e2127'}; color: #e4e5e7;`
     }));
     const colours = [['#ffffff', 'White'], ['#ffd84d', 'Yellow'], ['#ff5a4f', 'Red'], ['#4fb3bf', 'Teal'], ['#7ee08a', 'Green']].map(([hex, name]) => ({
       name, pick: () => set({ colour: { ...st.colour, [st.sel]: hex } }),
