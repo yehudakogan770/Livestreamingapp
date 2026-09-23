@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Input settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+button{cursor:pointer;background-image:none;box-shadow:none;font-family:inherit}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+input,select,textarea{font-family:inherit}
+input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
+input[type=checkbox]{width:16px;height:16px;margin:0}
+input[type=range]{margin:0;height:18px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background-color: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background-color: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Input settings — {{name}}</span>
+    <span style="height: 24px; padding: 0 10px; border-radius: 4px; background-color: #262a31; border: 1px solid #2c3038; display: flex; align-items: center; font-size: 12px; color: #a9abb0;">HDMI · [Capture card] · 1920×1080 · 60 fps</span>
+    <span style="{{tagChip}}"></span>
+    <div style="flex-grow: 1;"></div>
+    <select aria-label="Switch input" style="height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px; padding: 0 10px;"><option>Camera 1</option><option>Camera 2</option><option>Phone camera 1</option><option>Video 1</option></select>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Preview side -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 20px 24px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">PREVIEW</span>
+        <span style="font-size: 12px; color: #8e9096;">Changes apply live</span>
+        <div style="flex-grow: 1;"></div>
+        <span style="font-size: 12px; color: #a9abb0;">Compare</span>
+        <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+          <sc-for list="{{cmpSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+        </div>
+      </div>
+
+      <div style="width: 848px; height: 477px; flex-shrink: 0; position: relative; border-radius: 6px; overflow: hidden; border: 1px solid #2c3038; background-color: #101216;">
+        <div style="{{afterPane}}"><span style="font-size: 18px; color: rgba(255,255,255,0.6);">[Camera 1 picture]</span></div>
+        <sc-if value="{{showBefore}}" hint-placeholder-val="{{true}}">
+          <div style="{{beforePane}}"><span style="font-size: 18px; color: rgba(255,255,255,0.5); white-space: nowrap;">[Camera 1 picture]</span></div>
+        </sc-if>
+        <sc-if value="{{isSplit}}" hint-placeholder-val="{{true}}">
+          <div style="position: absolute; left: 424px; top: 0; bottom: 0; width: 2px; margin-left: -1px; background-color: #ffffff;"></div>
+          <div style="position: absolute; left: 424px; top: 50%; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 14px; background-color: #ffffff; color: #15171b; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;">◀▶</div>
+        </sc-if>
+        <sc-if value="{{showBefore}}" hint-placeholder-val="{{true}}">
+          <span style="position: absolute; left: 12px; top: 12px; height: 22px; padding: 0 8px; border-radius: 4px; background-color: rgba(0,0,0,0.6); display: flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;">BEFORE</span>
+        </sc-if>
+        <sc-if value="{{showAfter}}" hint-placeholder-val="{{true}}">
+          <span style="position: absolute; right: 12px; top: 12px; height: 22px; padding: 0 8px; border-radius: 4px; background-color: #1d3b40; color: #dff4f6; display: flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;">AFTER</span>
+        </sc-if>
+        <sc-if value="{{cropOverlay}}" hint-placeholder-val="{{false}}">
+          <div style="{{cropBox}}"></div>
+        </sc-if>
+      </div>
+
+      <div style="width: 848px; display: flex; gap: 16px;">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LOOKS</span>
+            <button style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 11px;">+ Save current as look</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;">
+            <sc-for list="{{looks}}" as="l" hint-placeholder-count="6">
+              <button onClick="{{l.pick}}" style="{{l.style}}"><div style="{{l.thumb}}"></div><span style="font-size: 12px; font-weight: 600;">{{l.name}}</span></button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">HISTOGRAM</span>
+          <div style="height: 104px; border-radius: 6px; background-color: #101216; border: 1px solid #2c3038; display: flex; align-items: flex-end; gap: 2px; padding: 8px; box-sizing: border-box;">
+            <sc-for list="{{hist}}" as="h" hint-placeholder-count="20"><div style="{{h.style}}"></div></sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Properties panel -->
+    <div style="width: 520px; flex-shrink: 0; display: flex; flex-direction: column; background-color: #1a1d22; border-left: 1px solid #2c3038;">
+      <div style="height: 46px; flex-shrink: 0; display: flex; align-items: flex-end; gap: 2px; padding: 0 12px; border-bottom: 1px solid #2c3038;">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5"><button onClick="{{t.pick}}" style="{{t.style}}">{{t.label}}</button></sc-for>
+      </div>
+
+      <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; gap: 14px; padding: 16px 20px; box-sizing: border-box; overflow: hidden;">
+
+        <!-- Colour & light -->
+        <sc-if value="{{tab.colour}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; gap: 8px;">
+            <button onClick="{{autoWb}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #4fb3bf; background-color: #1d3b40; color: #dff4f6; font-size: 13px; font-weight: 600;">Auto white balance</button>
+            <label style="display: flex; align-items: center; gap: 8px; flex-grow: 1;"><span style="font-size: 12px; color: #a9abb0;">LUT</span>
+              <select aria-label="LUT" style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px; padding: 0 8px;"><option>None</option><option>Rec.709 (from log)</option><option>Warm film</option><option>Import .cube file…</option></select></label>
+          </div>
+          <sc-for list="{{colourRows}}" as="r" hint-placeholder-count="10">
+            <sc-if value="{{r.isHead}}" hint-placeholder-val="{{false}}"><span style="{{r.headStyle}}">{{r.label}}</span></sc-if>
+            <sc-if value="{{r.isSlider}}" hint-placeholder-val="{{true}}">
+              <div style="display: flex; align-items: center; gap: 12px; height: 26px;">
+                <span style="width: 96px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">{{r.label}}</span>
+                <input type="range" min="{{r.min}}" max="{{r.max}}" step="{{r.step}}" value="{{r.value}}" onInput="{{r.onInput}}" aria-label="{{r.label}}" style="flex-grow: 1;">
+                <span style="{{r.valStyle}}">{{r.display}}</span>
+                <button onClick="{{r.reset}}" aria-label="Reset {{r.label}}" title="Reset" style="{{r.resetStyle}}">↺</button>
+              </div>
+            </sc-if>
+          </sc-for>
+        </sc-if>
+
+        <!-- Crop & position -->
+        <sc-if value="{{tab.crop}}" hint-placeholder-val="{{false}}">
+          <sc-for list="{{cropRows}}" as="r" hint-placeholder-count="10">
+            <sc-if value="{{r.isHead}}" hint-placeholder-val="{{false}}"><span style="{{r.headStyle}}">{{r.label}}</span></sc-if>
+            <sc-if value="{{r.isSlider}}" hint-placeholder-val="{{true}}">
+              <div style="display: flex; align-items: center; gap: 12px; height: 26px;">
+                <span style="width: 96px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">{{r.label}}</span>
+                <input type="range" min="{{r.min}}" max="{{r.max}}" step="{{r.step}}" value="{{r.value}}" onInput="{{r.onInput}}" aria-label="{{r.label}}" style="flex-grow: 1;">
+                <span style="{{r.valStyle}}">{{r.display}}</span>
+                <button onClick="{{r.reset}}" aria-label="Reset {{r.label}}" title="Reset" style="{{r.resetStyle}}">↺</button>
+              </div>
+            </sc-if>
+          </sc-for>
+          <div style="display: flex; align-items: center; gap: 8px; padding-top: 4px;">
+            <span style="width: 96px; font-size: 13px; color: #d4d5d8;">Flip</span>
+            <button onClick="{{flipH.toggle}}" style="{{flipH.style}}">⇋ Horizontal</button>
+            <button onClick="{{flipV.toggle}}" style="{{flipV.style}}">⇵ Vertical</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="width: 96px; font-size: 13px; color: #d4d5d8;">Fit</span>
+            <select aria-label="Fit" style="width: 180px; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px; padding: 0 8px;"><option>Fill the screen</option><option>Fit (show all)</option><option>Stretch</option></select>
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d5d8; margin-left: 8px;"><input type="checkbox" checked="{{showCrop}}" onChange="{{toggleShowCrop}}"> Show crop on preview</label>
+          </div>
+        </sc-if>
+
+        <!-- Effects -->
+        <sc-if value="{{tab.effects}}" hint-placeholder-val="{{false}}">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EFFECTS</span>
+          <sc-for list="{{effects}}" as="e" hint-placeholder-count="4">
+            <div style="{{e.card}}">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <button onClick="{{e.toggle}}" aria-label="Turn {{e.name}} on or off" style="{{e.track}}"><span style="{{e.knob}}"></span></button>
+                <span style="font-size: 14px; font-weight: 600; flex-grow: 1;">{{e.name}}</span>
+                <span style="{{e.stateStyle}}">{{e.state}}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px; height: 26px;">
+                <span style="width: 84px; flex-shrink: 0; font-size: 12px; color: #a9abb0;">{{e.amountLabel}}</span>
+                <input type="range" min="0" max="100" value="{{e.value}}" onInput="{{e.onInput}}" aria-label="{{e.name}} amount" style="flex-grow: 1;">
+                <span style="width: 44px; text-align: right; font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7;">{{e.value}}</span>
+              </div>
+            </div>
+          </sc-for>
+          <span style="font-size: 12px; color: #8e9096;">Effects apply to this input wherever it is used. Stream-wide effects are under Overlays.</span>
+        </sc-if>
+
+        <!-- Audio -->
+        <sc-if value="{{tab.audio}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; gap: 14px;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; gap: 8px;">
+                <button onClick="{{toggleMute}}" style="{{muteStyle}}">{{muteText}}</button>
+                <button onClick="{{toggleAfv}}" style="{{afvStyle}}">Audio follows video</button>
+              </div>
+              <sc-for list="{{audioTop}}" as="r" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 12px; height: 26px;">
+                  <span style="width: 84px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">{{r.label}}</span>
+                  <input type="range" min="{{r.min}}" max="{{r.max}}" step="{{r.step}}" value="{{r.value}}" onInput="{{r.onInput}}" aria-label="{{r.label}}" style="flex-grow: 1;">
+                  <span style="{{r.valStyle}}">{{r.display}}</span>
+                  <button onClick="{{r.reset}}" aria-label="Reset {{r.label}}" title="Reset" style="{{r.resetStyle}}">↺</button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="width: 58px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; border-radius: 6px; background-color: #101216; border: 1px solid #2c3038;">
+              <div style="flex-grow: 1; display: flex; gap: 4px;">
+                <div style="position: relative; width: 8px; border-radius: 2px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{meterL}}"></div></div>
+                <div style="position: relative; width: 8px; border-radius: 2px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{meterR}}"></div></div>
+              </div>
+              <span style="font-family: Consolas, monospace; font-size: 10px; color: #a9abb0;">L  R</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EQUALIZER · 3-BAND</span>
+              <button onClick="{{resetEq}}" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; color: #d4d5d8; font-size: 11px;">Flat</button>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <sc-for list="{{eq}}" as="b" hint-placeholder-count="3">
+                <div style="flex-grow: 1; height: 118px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; border-radius: 6px; background-color: #1e2127; border: 1px solid #2c3038;">
+                  <span style="font-size: 11px; font-weight: 600; color: #d4d5d8;">{{b.label}}</span>
+                  <div style="position: relative; flex-grow: 1; width: 24px; border-radius: 3px; background-color: #101216; border: 1px solid #2c3038;">
+                    <div style="position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px; margin-left: -1px; background-color: #0c0d10;"></div>
+                    <div style="position: absolute; left: 2px; right: 2px; top: 50%; height: 1px; background-color: #343944;"></div>
+                    <div style="{{b.cap}}"></div>
+                    <input class="vrange" type="range" min="-12" max="12" value="{{b.value}}" onInput="{{b.onInput}}" aria-label="{{b.label}} gain" style="writing-mode: vertical-lr; direction: rtl; position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ns-resize;">
+                  </div>
+                  <span style="font-family: Consolas, monospace; font-size: 10px; color: #a9abb0;">{{b.display}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <sc-for list="{{dyn}}" as="d" hint-placeholder-count="2">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 6px; background-color: #1e2127; border: 1px solid #2c3038;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button onClick="{{d.toggle}}" aria-label="Turn {{d.name}} on or off" style="{{d.track}}"><span style="{{d.knob}}"></span></button>
+                <span style="font-size: 13px; font-weight: 600; flex-grow: 1;">{{d.name}}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; height: 22px;">
+                <span style="width: 74px; font-size: 12px; color: #a9abb0;">{{d.aLabel}}</span>
+                <input type="range" min="-60" max="0" value="{{d.aVal}}" aria-label="{{d.name}} {{d.aLabel}}" style="flex-grow: 1;">
+                <span style="width: 56px; text-align: right; font-family: Consolas, monospace; font-size: 12px;">{{d.aText}}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px; height: 22px;">
+                <span style="width: 74px; font-size: 12px; color: #a9abb0;">{{d.bLabel}}</span>
+                <input type="range" min="0" max="100" value="{{d.bVal}}" aria-label="{{d.name}} {{d.bLabel}}" style="flex-grow: 1;">
+                <span style="width: 56px; text-align: right; font-family: Consolas, monospace; font-size: 12px;">{{d.bText}}</span>
+              </div>
+            </div>
+          </sc-for>
+
+          <div style="display: flex; align-items: center; gap: 12px; height: 26px;">
+            <span style="width: 120px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">Delay (lip-sync)</span>
+            <input type="range" min="0" max="500" step="5" value="{{delay}}" onInput="{{onDelay}}" aria-label="Delay" style="flex-grow: 1;">
+            <span style="width: 64px; text-align: right; font-family: Consolas, monospace; font-size: 12px;">{{delayText}}</span>
+          </div>
+        </sc-if>
+
+        <!-- General -->
+        <sc-if value="{{tab.general}}" hint-placeholder-val="{{false}}">
+          <label style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; color: #a9abb0;">Name</span>
+            <input value="{{name}}" onInput="{{onName}}" aria-label="Name" style="height: 36px; box-sizing: border-box; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 14px; outline: none;"></label>
+          <div style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; color: #a9abb0;">Colour tag</span>
+            <div style="display: flex; gap: 8px;"><sc-for list="{{tags}}" as="c" hint-placeholder-count="8"><button onClick="{{c.pick}}" aria-label="{{c.name}}" title="{{c.name}}" style="{{c.style}}"></button></sc-for></div></div>
+          <label style="display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 12px; color: #a9abb0;">Keyboard shortcut</span>
+            <input value="1" aria-label="Keyboard shortcut" style="width: 80px; height: 36px; box-sizing: border-box; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 14px; outline: none;"></label>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SHOW IN PRESETS</span>
+              <div style="display: flex; gap: 6px;"><button onClick="{{allPresets}}" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; color: #d4d5d8; font-size: 11px;">All</button><button onClick="{{noPresets}}" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; color: #d4d5d8; font-size: 11px;">None</button></div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;">
+              <sc-for list="{{presetList}}" as="p" hint-placeholder-count="8">
+                <label style="display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 6px; background-color: #1e2127; border: 1px solid #2c3038; font-size: 13px;"><input type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}">{{p.name}}</label>
+              </sc-for>
+            </div>
+          </div>
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #d4d5d8;"><input type="checkbox" checked> Can be used as an overlay</label>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 24px; background-color: #1a1d22; border-top: 1px solid #2c3038;">
+    <button onClick="{{resetAll}}" style="height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Reset all</button>
+    <div style="display: flex; align-items: center; gap: 0;">
+      <button style="height: 40px; padding: 0 16px; border-radius: 6px 0 0 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Copy settings to…</button>
+      <select aria-label="Copy target" style="height: 40px; border-radius: 0 6px 6px 0; border: 1px solid #2c3038; border-left: 0; background-color: #101216; color: #d4d5d8; font-size: 13px; padding: 0 8px;"><option>Camera 2</option><option>Camera 3</option><option>All cameras</option><option>Phone cameras</option></select>
+    </div>
+    <span style="font-size: 12px; color: #8e9096; margin-left: 6px;">{{changedNote}}</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 26px; border-radius: 6px; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;">Close <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Esc</span></a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.defs = {
+      exposure: 0, brightness: 0, contrast: 0, saturation: 0, temperature: 5600, tint: 0, highlights: 0, shadows: 0, gamma: 1, sharpness: 0,
+      cropL: 0, cropR: 0, cropT: 0, cropB: 0, zoom: 100, panX: 0, panY: 0, rotate: 0,
+      volume: 0, gain: 0, balance: 0, eqLow: 0, eqMid: 0, eqHigh: 0
+    };
+    this.state = { tab: 'colour', cmp: 'split', look: 1, name: 'Camera 1', tag: 0, v: { ...this.defs, temperature: 4800, contrast: 12, saturation: 8, shadows: 10 },
+      flipH: false, flipV: false, showCrop: true, mute: false, afv: true, delay: 40,
+      fx: { blur: [false, 30], vignette: [true, 25], bw: [false, 100], grain: [false, 20] }, comp: true, gate: false,
+      presets: [true, true, true, false, true, false, true, true] };
+  }
+  renderVals() {
+    const st = this.state; const v = st.v; const defs = this.defs;
+    const setV = (key, val) => this.setState({ v: { ...this.state.v, [key]: val } });
+    const head = (label) => ({ isHead: true, isSlider: false, label, headStyle: 'font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096; padding-top: 6px;' });
+    const slider = (key, label, min, max, step, fmt) => {
+      const changed = v[key] !== defs[key];
+      return { isHead: false, isSlider: true, key, label, min, max, step, value: v[key], display: fmt(v[key]),
+        onInput: (e) => setV(key, Number(e.target.value)), reset: () => setV(key, defs[key]),
+        valStyle: `width: 58px; flex-shrink: 0; text-align: right; font-family: Consolas, monospace; font-size: 12px; color: ${changed ? '#8fd3db' : '#e4e5e7'};`,
+        resetStyle: `width: 26px; height: 26px; flex-shrink: 0; padding: 0; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; font-size: 13px; color: ${changed ? '#e4e5e7' : '#5a5c62'};` };
+    };
+    const sgn = (n) => (n > 0 ? '+' + n : String(n));
+    const colourRows = [
+      head('Light'),
+      slider('exposure', 'Exposure', -3, 3, 0.1, (n) => sgn(Number(n).toFixed(1)) + ' EV'),
+      slider('brightness', 'Brightness', -100, 100, 1, sgn),
+      slider('contrast', 'Contrast', -100, 100, 1, sgn),
+      slider('highlights', 'Highlights', -100, 100, 1, sgn),
+      slider('shadows', 'Shadows', -100, 100, 1, sgn),
+      slider('gamma', 'Gamma', 0.5, 2, 0.01, (n) => Number(n).toFixed(2)),
+      head('Colour'),
+      slider('temperature', 'Temperature', 2500, 9000, 50, (n) => n + ' K'),
+      slider('tint', 'Tint', -100, 100, 1, sgn),
+      slider('saturation', 'Saturation', -100, 100, 1, sgn),
+      head('Detail'),
+      slider('sharpness', 'Sharpness', 0, 100, 1, String)
+    ];
+    const px = (n) => n + ' px';
+    const cropRows = [
+      head('Crop'),
+      slider('cropL', 'Left', 0, 400, 1, px), slider('cropR', 'Right', 0, 400, 1, px),
+      slider('cropT', 'Top', 0, 300, 1, px), slider('cropB', 'Bottom', 0, 300, 1, px),
+      head('Position'),
+      slider('zoom', 'Zoom', 100, 400, 1, (n) => n + '%'),
+      slider('panX', 'Pan left/right', -100, 100, 1, sgn), slider('panY', 'Pan up/down', -100, 100, 1, sgn),
+      slider('rotate', 'Rotate', -180, 180, 0.5, (n) => n + '°')
+    ];
+    const db = (n) => sgn(n) + ' dB';
+    const audioTop = [slider('volume', 'Volume', -60, 12, 0.5, db), slider('gain', 'Input gain', -20, 30, 0.5, db), slider('balance', 'Balance L/R', -100, 100, 1, (n) => (n == 0 ? 'C' : (n < 0 ? 'L' + (-n) : 'R' + n)))];
+    const swStyle = (on) => ({ track: `width: 38px; height: 22px; flex-shrink: 0; position: relative; padding: 0; border-radius: 11px; border: 1px solid ${on ? '#4fb3bf' : '#343944'}; background-color: ${on ? '#4fb3bf' : '#2a2e36'};`,
+      knob: `position: absolute; top: 3px; left: ${on ? 19 : 3}px; width: 14px; height: 14px; border-radius: 7px; background-color: ${on ? '#0e2a2e' : '#a9abb0'};` });
+    const fxNames = { blur: ['Blur', 'Amount'], vignette: ['Vignette', 'Strength'], bw: ['Black & white', 'Amount'], grain: ['Film grain', 'Amount'] };
+    const effects = Object.keys(fxNames).map((key) => { const [on, val] = st.fx[key]; return { name: fxNames[key][0], amountLabel: fxNames[key][1], value: val, state: on ? 'ON' : 'OFF', ...swStyle(on),
+      toggle: () => this.setState({ fx: { ...st.fx, [key]: [!on, val] } }),
+      onInput: (e) => this.setState({ fx: { ...this.state.fx, [key]: [on, Number(e.target.value)] } }),
+      stateStyle: `font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: ${on ? '#8fd3db' : '#8e9096'};`,
+      card: `display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border-radius: 6px; background-color: ${on ? '#1e2127' : '#1a1d22'}; border: 1px solid ${on ? '#2f5a60' : '#2c3038'};` }; });
+    const tabDefs = [['colour', 'Colour & light'], ['crop', 'Crop & position'], ['effects', 'Effects'], ['audio', 'Audio'], ['general', 'General']];
+    const tabs = tabDefs.map(([id, label]) => { const on = st.tab === id; return { label, pick: () => this.setState({ tab: id }),
+      style: `height: 38px; padding: 0 14px; border: 1px solid ${on ? '#2c3038' : 'transparent'}; border-bottom: 0; border-radius: 6px 6px 0 0; margin-bottom: -1px; font-size: 13px; font-weight: 600; background-color: ${on ? '#1e2127' : 'transparent'}; color: ${on ? '#e4e5e7' : '#a9abb0'}; box-shadow: ${on ? 'inset 0 2px 0 #4fb3bf' : 'none'};` }; });
+    const tab = {}; tabDefs.forEach(([id]) => { tab[id] = st.tab === id; });
+    const cmpSeg = [['off', 'After only'], ['split', 'Split'], ['before', 'Before only']].map(([id, label]) => ({ label, pick: () => this.setState({ cmp: id }),
+      style: `height: 30px; padding: 0 12px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${st.cmp === id ? '#1d3b40' : '#2a2e36'}; color: ${st.cmp === id ? '#dff4f6' : '#d4d5d8'};` }));
+    const warm = Math.max(0, Math.min(1, (5600 - v.temperature) / 3000));
+    const r = Math.round(52 + warm * 30), g = Math.round(64 - warm * 6), b = Math.round(76 - warm * 32);
+    const light = 1 + v.brightness / 250 + v.exposure / 8;
+    const afterCol = `rgb(${Math.round(r * light)}, ${Math.round(g * light)}, ${Math.round(b * light)})`;
+    const filt = `${st.fx.bw[0] ? 'grayscale(' + st.fx.bw[1] + '%)' : ''} ${st.fx.blur[0] ? 'blur(' + (st.fx.blur[1] / 20) + 'px)' : ''}`.trim() || 'none';
+    const vign = st.fx.vignette[0] ? `inset 0 0 ${80 + st.fx.vignette[1] * 2}px rgba(0,0,0,${0.3 + st.fx.vignette[1] / 150})` : 'none';
+    const tr = `rotate(${v.rotate}deg) scale(${(st.flipH ? -1 : 1) * v.zoom / 100}, ${(st.flipV ? -1 : 1) * v.zoom / 100})`;
+    const looksDefs = [['Neutral', '#34404c'], ['Warm stage', '#523f2c'], ['Cool daylight', '#2c4250'], ['High contrast', '#1f272f'], ['Soft skin', '#4d3d38'], ['Black & white', '#3d3d3d']];
+    const tagDefs = [['Teal', '#4fb3bf'], ['Red', '#c7372f'], ['Green', '#2f8f4e'], ['Blue', '#3f6fb3'], ['Purple', '#7a5aa8'], ['Grey', '#8e9096'], ['Rose', '#b3587a'], ['None', '#1e2127']];
+    const presetNames = ['[Preset 1] Welcome', '[Preset 2] Speeches', '[Preset 3] Dancing', '[Preset 4] Video', '[Preset 5] Band', '[Preset 6] Pesukim', '[Preset 7] Candle lighting', '[Preset 8] Thank you'];
+    const eqDefs = [['eqLow', 'Low'], ['eqMid', 'Mid'], ['eqHigh', 'High']];
+    const tb = (on) => `height: 34px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background-color: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`;
+    const changed = Object.keys(defs).filter((kk) => v[kk] !== defs[kk]).length;
+    const hVals = [3, 6, 10, 16, 22, 30, 38, 46, 52, 58, 62, 60, 54, 48, 40, 34, 26, 18, 12, 6];
+    return {
+      name: st.name, tab, tabs, cmpSeg,
+      tagChip: `width: 14px; height: 14px; border-radius: 4px; background-color: ${tagDefs[st.tag][1]}; border: 1px solid #2c3038;`,
+      isSplit: st.cmp === 'split', showBefore: st.cmp !== 'off', showAfter: st.cmp !== 'before',
+      afterPane: `position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background-color: ${afterCol}; filter: ${filt}; box-shadow: ${vign}; transform: ${tr};`,
+      beforePane: `position: absolute; top: 0; bottom: 0; left: 0; width: ${st.cmp === 'split' ? '424px' : '100%'}; overflow: hidden; display: flex; align-items: center; justify-content: ${st.cmp === 'split' ? 'flex-end' : 'center'}; background-color: #34404c;`,
+      cropOverlay: st.tab === 'crop' && st.showCrop,
+      cropBox: `position: absolute; left: ${v.cropL * 848 / 1920}px; right: ${v.cropR * 848 / 1920}px; top: ${v.cropT * 477 / 1080}px; bottom: ${v.cropB * 477 / 1080}px; border: 2px dashed #4fb3bf; box-shadow: 0 0 0 999px rgba(0,0,0,0.45);`,
+      looks: looksDefs.map(([nm, c], i) => ({ name: nm, pick: () => this.setState({ look: i }),
+        style: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; text-align: left; color: #e4e5e7; border: 1px solid ${st.look === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.look === i ? '#1d3b40' : '#1e2127'};`,
+        thumb: `height: 44px; border-radius: 4px; background-color: ${c};` })),
+      hist: hVals.map((h) => ({ style: `flex-grow: 1; height: ${h + 20}%; background-color: #4a5058; border-radius: 1px;` })),
+      colourRows, cropRows, audioTop,
+      autoWb: () => this.setState({ v: { ...v, temperature: 5600, tint: 0 } }),
+      flipH: { toggle: () => this.setState({ flipH: !st.flipH }), style: tb(st.flipH) },
+      flipV: { toggle: () => this.setState({ flipV: !st.flipV }), style: tb(st.flipV) },
+      showCrop: st.showCrop, toggleShowCrop: () => this.setState({ showCrop: !st.showCrop }),
+      effects,
+      toggleMute: () => this.setState({ mute: !st.mute }), muteText: st.mute ? 'Muted' : 'Mute',
+      muteStyle: `height: 34px; padding: 0 16px; border-radius: 6px; font-size: 13px; font-weight: 700; border: 1px solid ${st.mute ? '#c7372f' : '#2c3038'}; background-color: ${st.mute ? '#c7372f' : '#2a2e36'}; color: #ffffff;`,
+      toggleAfv: () => this.setState({ afv: !st.afv }), afvStyle: tb(st.afv),
+      meterL: `position: absolute; left: 0; right: 0; top: 0; height: ${st.mute ? 100 : 38}%; background-color: #101216;`,
+      meterR: `position: absolute; left: 0; right: 0; top: 0; height: ${st.mute ? 100 : 44}%; background-color: #101216;`,
+      eq: eqDefs.map(([key, label]) => ({ label, value: v[key], display: db(v[key]), onInput: (e) => setV(key, Number(e.target.value)),
+        cap: `position: absolute; left: 1px; right: 1px; height: 12px; top: calc(${(12 - v[key]) / 24 * 100}% - ${(12 - v[key]) / 24 * 12}px); border-radius: 4px; background-color: #d9dce3; border: 1px solid #0c0d10; pointer-events: none;` })),
+      resetEq: () => this.setState({ v: { ...v, eqLow: 0, eqMid: 0, eqHigh: 0 } }),
+      dyn: [
+        { name: 'Compressor', on: st.comp, key: 'comp', aLabel: 'Threshold', aVal: -18, aText: '−18 dB', bLabel: 'Ratio', bVal: 30, bText: '3 : 1' },
+        { name: 'Noise gate', on: st.gate, key: 'gate', aLabel: 'Threshold', aVal: -45, aText: '−45 dB', bLabel: 'Release', bVal: 20, bText: '200 ms' }
+      ].map((d) => ({ ...d, ...swStyle(d.on), toggle: () => this.setState({ [d.key]: !d.on }) })),
+      delay: st.delay, delayText: st.delay + ' ms', onDelay: (e) => this.setState({ delay: Number(e.target.value) }),
+      onName: (e) => this.setState({ name: e.target.value }),
+      tags: tagDefs.map(([nm, c], i) => ({ name: nm, pick: () => this.setState({ tag: i }), style: `width: 32px; height: 32px; padding: 0; border-radius: 6px; background-color: ${c}; border: 2px solid ${st.tag === i ? '#e4e5e7' : '#2c3038'};` })),
+      presetList: presetNames.map((nm, i) => ({ name: nm, on: st.presets[i], toggle: () => { const p = st.presets.slice(); p[i] = !p[i]; this.setState({ presets: p }); } })),
+      allPresets: () => this.setState({ presets: st.presets.map(() => true) }),
+      noPresets: () => this.setState({ presets: st.presets.map(() => false) }),
+      resetAll: () => this.setState({ v: { ...defs }, flipH: false, flipV: false, fx: { blur: [false, 30], vignette: [false, 25], bw: [false, 100], grain: [false, 20] }, delay: 0 }),
+      changedNote: changed ? changed + ' setting' + (changed === 1 ? '' : 's') + ' changed from default' : 'All settings at default'
+    };
+  }
+}
+</script>
+</body>
+</html>

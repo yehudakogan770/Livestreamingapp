@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Browser tab control</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+button{cursor:pointer;background-image:none;box-shadow:none;font-family:inherit}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+input,select{font-family:inherit}
+input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
+input[type=range]{margin:0}
+</style>
+</helmet>
+<div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Browser tab — control</span>
+    <span style="height: 24px; padding: 0 10px; border-radius: 4px; background-color: #262a31; border: 1px solid #2c3038; display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;"><span style="width: 7px; height: 7px; border-radius: 4px; background-color: #3fbf5a;"></span>Browser 1 · capturing</span>
+    <div style="flex-grow: 1;"></div>
+    <sc-for list="{{onAirBadges}}" as="b" hint-placeholder-count="2"><span style="{{b.style}}">{{b.label}}</span></sc-for>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Page -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 16px 20px; box-sizing: border-box;">
+      <!-- Toolbar -->
+      <div style="height: 40px; flex-shrink: 0; display: flex; align-items: center; gap: 6px;">
+        <button aria-label="Back" title="Back (Alt+Left)" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; padding: 0;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M8.5 2.5L4 7l4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+        <button aria-label="Forward" title="Forward (Alt+Right)" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; padding: 0;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M5.5 2.5L10 7l-4.5 4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+        <button onClick="{{reload}}" aria-label="Reload" title="Reload (F5)" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; padding: 0;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path><path d="M10.6 1.6v2.6H8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></button>
+        <div style="flex-grow: 1; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 12px; box-sizing: border-box; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216;">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><rect x="2" y="5.5" width="8" height="5" rx="1" stroke="#8e9096" stroke-width="1.3"></rect><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5" stroke="#8e9096" stroke-width="1.3"></path></svg>
+          <input value="{{url}}" onInput="{{onUrl}}" aria-label="Web address" style="flex-grow: 1; min-width: 0; height: 32px; border: 0; background: transparent; color: #e4e5e7; font-family: Consolas, monospace; font-size: 13px; outline: none;">
+        </div>
+        <button style="height: 36px; padding: 0 18px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700;">Go</button>
+      </div>
+
+      <!-- Captured area -->
+      <div style="{{pageFrame}}">
+        <div style="{{pageInner}}">
+          <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 20px; background-color: #2c3848;">
+            <div style="width: 90px; height: 14px; border-radius: 3px; background-color: rgba(255,255,255,0.35);"></div>
+            <div style="flex-grow: 1;"></div>
+            <div style="width: 50px; height: 8px; border-radius: 2px; background-color: rgba(255,255,255,0.2);"></div>
+            <div style="width: 50px; height: 8px; border-radius: 2px; background-color: rgba(255,255,255,0.2);"></div>
+            <div style="width: 50px; height: 8px; border-radius: 2px; background-color: rgba(255,255,255,0.2);"></div>
+          </div>
+          <div style="flex-grow: 1; display: flex; gap: 20px; padding: 24px; box-sizing: border-box;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+              <div style="height: 200px; border-radius: 4px; background-color: #34404c; display: flex; align-items: center; justify-content: center; font-size: 14px; color: rgba(255,255,255,0.55);">[Web page content]</div>
+              <div style="width: 70%; height: 12px; border-radius: 2px; background-color: rgba(255,255,255,0.18);"></div>
+              <div style="width: 90%; height: 8px; border-radius: 2px; background-color: rgba(255,255,255,0.1);"></div>
+              <div style="width: 84%; height: 8px; border-radius: 2px; background-color: rgba(255,255,255,0.1);"></div>
+              <div style="width: 60%; height: 8px; border-radius: 2px; background-color: rgba(255,255,255,0.1);"></div>
+            </div>
+            <div style="width: 180px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
+              <div style="height: 100px; border-radius: 4px; background-color: #27403f;"></div>
+              <div style="height: 100px; border-radius: 4px; background-color: #473a2c;"></div>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{cropOn}}" hint-placeholder-val="{{false}}">
+          <div style="position: absolute; left: 40px; top: 60px; right: 220px; bottom: 90px; border: 2px solid #4fb3bf; box-shadow: 0 0 0 999px rgba(0,0,0,0.5);">
+            <span style="position: absolute; left: -5px; top: -5px; width: 8px; height: 8px; background-color: #4fb3bf;"></span>
+            <span style="position: absolute; right: -5px; top: -5px; width: 8px; height: 8px; background-color: #4fb3bf;"></span>
+            <span style="position: absolute; left: -5px; bottom: -5px; width: 8px; height: 8px; background-color: #4fb3bf;"></span>
+            <span style="position: absolute; right: -5px; bottom: -5px; width: 8px; height: 8px; background-color: #4fb3bf;"></span>
+            <span style="position: absolute; left: 8px; top: 8px; height: 22px; padding: 0 8px; border-radius: 4px; background-color: #1d3b40; color: #dff4f6; display: flex; align-items: center; font-size: 11px; font-weight: 700;">Drag to choose the area shown</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{viewOnly}}" hint-placeholder-val="{{false}}">
+          <span style="position: absolute; right: 10px; bottom: 10px; height: 24px; padding: 0 10px; border-radius: 4px; background-color: rgba(0,0,0,0.65); display: flex; align-items: center; font-size: 11px; color: #d4d5d8;">View only · clicks are blocked</span>
+        </sc-if>
+      </div>
+
+      <div style="height: 22px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">
+        <span>{{sizeText}}</span><span>{{fpsText}}</span><span>Zoom {{zoom}}%</span><span>{{reloadedText}}</span>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div style="width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px; padding: 16px 20px; box-sizing: border-box; background-color: #1a1d22; border-left: 1px solid #2c3038; overflow: hidden;">
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="{{k.h}}">Mouse</span>
+        <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+          <sc-for list="{{modeSeg}}" as="o" hint-placeholder-count="2"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+        </div>
+        <span style="font-size: 11px; color: #8e9096;">{{modeHint}}</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="{{k.h}}">Page</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 70px; font-size: 13px; color: #d4d5d8;">Zoom</span>
+          <button onClick="{{zoomOut}}" aria-label="Zoom out" style="{{k.sq}}">−</button>
+          <span style="flex-grow: 1; height: 32px; border-radius: 6px; background-color: #101216; border: 1px solid #2c3038; display: flex; align-items: center; justify-content: center; font-family: Consolas, monospace; font-size: 13px;">{{zoom}}%</span>
+          <button onClick="{{zoomIn}}" aria-label="Zoom in" style="{{k.sq}}">+</button>
+          <button onClick="{{zoomReset}}" style="{{k.btnSm}}">100%</button>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button onClick="{{reload}}" style="{{k.btnWide}}">Refresh page <span style="color: #8e9096; font-size: 11px;">F5</span></button>
+          <select aria-label="Auto refresh" style="{{k.sel}}"><option>Auto refresh: off</option><option>Every 1 min</option><option>Every 5 min</option></select>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="{{k.h}}">Area</span>
+        <div style="{{k.row}}"><span style="font-size: 13px;">Crop to area</span><button onClick="{{sw.crop.toggle}}" aria-label="Crop to area" style="{{sw.crop.track}}"><span style="{{sw.crop.knob}}"></span></button></div>
+        <div style="{{k.row}}"><span style="font-size: 13px;">Transparent background</span><button onClick="{{sw.transp.toggle}}" aria-label="Transparent background" style="{{sw.transp.track}}"><span style="{{sw.transp.knob}}"></span></button></div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="{{k.h}}">Sound & video</span>
+        <div style="{{k.row}}"><span style="font-size: 13px;">Keep page audio</span><button onClick="{{sw.audio.toggle}}" aria-label="Keep page audio" style="{{sw.audio.track}}"><span style="{{sw.audio.knob}}"></span></button></div>
+        <div style="display: flex; align-items: center; gap: 10px; height: 26px;">
+          <span style="width: 70px; font-size: 13px; color: #d4d5d8;">Volume</span>
+          <input type="range" min="0" max="100" value="{{vol}}" onInput="{{onVol}}" aria-label="Page volume" style="flex-grow: 1;">
+          <span style="width: 36px; text-align: right; font-family: Consolas, monospace; font-size: 12px;">{{vol}}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="width: 70px; font-size: 13px; color: #d4d5d8;">Frame rate</span>
+          <div style="display: flex; flex-grow: 1; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+            <sc-for list="{{fpsSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="{{k.h}}">Shown on</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <sc-for list="{{outs}}" as="o" hint-placeholder-count="2"><button onClick="{{o.toggle}}" style="{{o.style}}"><span style="{{o.dot}}"></span>{{o.label}}</button></sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="height: 68px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 24px; border-top: 1px solid #2c3038; background-color: #1a1d22;">
+    <a href="InputSettings.dc.html" style="height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Colour, crop &amp; audio…</a>
+    <button style="height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Open in Chrome</button>
+    <div style="flex-grow: 1;"></div>
+    <button style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2f8f4e; background-color: #1f3a28; color: #e4e5e7; font-size: 14px; font-weight: 600;">Send to Preview</button>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 6px; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;">Done <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Esc</span></a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { url: 'https://[website address]', mode: 'interact', zoom: 100, fps: '60', vol: 80, reloads: 0,
+      sw: { crop: false, transp: false, audio: true }, out: { live: true, back: false } };
+  }
+  renderVals() {
+    const st = this.state;
+    const sw = {};
+    Object.keys(st.sw).forEach((key) => { const on = st.sw[key]; sw[key] = {
+      toggle: () => this.setState({ sw: { ...st.sw, [key]: !on } }),
+      track: `width: 38px; height: 22px; flex-shrink: 0; position: relative; padding: 0; border-radius: 11px; border: 1px solid ${on ? '#4fb3bf' : '#343944'}; background-color: ${on ? '#4fb3bf' : '#2a2e36'};`,
+      knob: `position: absolute; top: 3px; left: ${on ? 19 : 3}px; width: 14px; height: 14px; border-radius: 7px; background-color: ${on ? '#0e2a2e' : '#a9abb0'};` }; });
+    const segStyle = (on, grow) => `${grow ? 'flex-grow: 1; flex-basis: 0;' : ''} height: 34px; padding: 0 12px; border: 0; border-right: 1px solid #2c3038; font-size: 13px; font-weight: 600; background-color: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`;
+    const outDefs = [['live', 'Live', '#e0473b'], ['back', 'Back', '#4fb3bf']];
+    const z = st.zoom / 100;
+    return {
+      k: {
+        h: 'font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096;',
+        sq: 'width: 32px; height: 32px; padding: 0; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 16px;',
+        btnSm: 'height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;',
+        btnWide: 'flex-grow: 1; height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;',
+        sel: 'width: 130px; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #d4d5d8; font-size: 12px; padding: 0 6px;',
+        row: 'display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 12px; border-radius: 6px; background-color: #1e2127; border: 1px solid #2c3038;'
+      },
+      sw, url: st.url, onUrl: (e) => this.setState({ url: e.target.value }),
+      modeSeg: [['interact', 'Interact'], ['view', 'View only']].map(([id, label]) => ({ label, pick: () => this.setState({ mode: id }), style: segStyle(st.mode === id, true) })),
+      viewOnly: st.mode === 'view', modeHint: st.mode === 'view' ? 'Page can not be clicked by mistake' : 'Click, type and scroll inside the page', cropOn: st.sw.crop,
+      zoom: st.zoom,
+      zoomIn: () => this.setState({ zoom: Math.min(300, st.zoom + 10) }),
+      zoomOut: () => this.setState({ zoom: Math.max(30, st.zoom - 10) }),
+      zoomReset: () => this.setState({ zoom: 100 }),
+      reload: () => this.setState({ reloads: st.reloads + 1 }),
+      reloadedText: st.reloads ? 'Reloaded' : '',
+      vol: st.vol, onVol: (e) => this.setState({ vol: Number(e.target.value) }),
+      fpsSeg: ['24', '30', '60'].map((f) => ({ label: f + ' fps', pick: () => this.setState({ fps: f }), style: segStyle(st.fps === f, true) })),
+      fpsText: st.fps + ' fps', sizeText: '1920×1080',
+      outs: outDefs.map(([id, label, c]) => { const on = st.out[id]; return { label, toggle: () => this.setState({ out: { ...st.out, [id]: !on } }),
+        style: `height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 6px; font-size: 14px; font-weight: 700; border: 1px solid ${on ? c : '#2c3038'}; background-color: ${on ? '#1e2127' : '#2a2e36'}; color: ${on ? '#ffffff' : '#a9abb0'};`,
+        dot: `width: 8px; height: 8px; border-radius: 4px; background-color: ${on ? c : '#5a5c62'};` }; }),
+      onAirBadges: outDefs.filter(([id]) => st.out[id]).map(([id, label, c]) => ({ label: 'On ' + label, style: `height: 24px; padding: 0 10px; border-radius: 4px; display: flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #ffffff; background-color: ${id === 'live' ? '#c7372f' : '#1d3b40'};` })),
+      pageFrame: `flex-grow: 1; min-height: 0; position: relative; overflow: hidden; border-radius: 6px; border: 1px solid ${st.mode === 'interact' ? '#4fb3bf' : '#2c3038'}; background-image: ${st.sw.transp ? 'repeating-conic-gradient(#2a2e36 0% 25%, #1e2127 0% 50%)' : 'none'}; background-size: 20px 20px; background-color: #101216; cursor: ${st.mode === 'interact' ? 'pointer' : 'default'};`,
+      pageInner: `position: absolute; left: 0; top: 0; width: ${100 / z}%; height: ${100 / z}%; transform: scale(${z}); transform-origin: 0 0; display: flex; flex-direction: column; background-color: ${st.sw.transp ? 'transparent' : '#1f262e'};`
+    };
+  }
+}
+</script>
+</body>
+</html>

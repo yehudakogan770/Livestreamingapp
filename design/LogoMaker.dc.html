@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — 3D logo maker</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox]{accent-color:#4fb3bf;width:16px;height:16px;margin:0}
+input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">3D logo maker</span>
+    <span style="font-size: 13px; color: #8e9096;">Import a logo · make it 3D and rotating · export a video of any length</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex; gap: 24px; padding: 18px 24px; box-sizing: border-box;">
+
+    <!-- Left: import, preview, export -->
+    <div style="width: 640px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
+      <div style="height: 64px; flex-shrink: 0; display: flex; gap: 10px;">
+        <div style="flex-grow: 1; display: flex; align-items: center; gap: 12px; padding: 0 14px; border-radius: 6px; border: 1px dashed #5a5c62; background: #101216; box-sizing: border-box;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M11 14V4M7 8l4-4 4 4M4 15v3h14v-3" stroke="#a9abb0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+            <span style="font-size: 13px; font-weight: 600;">Drop a logo here (PNG or SVG)</span>
+            <span style="font-size: 11px; color: #8e9096;">Transparent PNG or SVG works best · SVG gives the sharpest edges</span>
+          </div>
+          <button style="height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Browse…</button>
+        </div>
+        <div style="width: 200px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 6px; background: #2a2e36; border: 1px solid #2c3038; box-sizing: border-box;">
+          <div style="width: 36px; height: 36px; flex-shrink: 0; border-radius: 4px; background: #3a3240; display: flex; align-items: center; justify-content: center; font-size: 9px; color: rgba(255,255,255,0.7);">SVG</div>
+          <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+            <span style="font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[logo].svg</span>
+            <span style="font-size: 10px; color: #8e9096;">Loaded · transparent</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; color: #8e9096;">{{previewMeta}}</span>
+      </div>
+      <div style="{{stage}}">
+        <sc-if value="{{bgClear}}" hint-placeholder-val="{{false}}">
+          <span style="position: absolute; right: 10px; top: 8px; font-size: 10px; color: #8e9096;">Transparent background</span>
+        </sc-if>
+        <div style="{{persp}}">
+          <div style="{{card}}">
+            <sc-for list="{{layers}}" as="ly" hint-placeholder-count="10"><div style="{{ly.style}}"></div></sc-for>
+            <div style="{{face}}">
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" aria-hidden="true"><circle cx="32" cy="32" r="24" stroke="{{markColour}}" stroke-width="6"></circle><path d="M22 34l7 7 14-17" stroke="{{markColour}}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              <span style="{{faceText}}">[LOGO]</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="height: 30px; display: flex; align-items: center; gap: 8px;">
+        <button onClick="{{togglePlay}}" aria-label="Play or pause preview" style="width: 34px; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 10px;">{{playGlyph}}</button>
+        <span style="font-size: 11px; color: #8e9096; width: 40px;">Angle</span>
+        <input type="range" min="-180" max="180" value="{{angle}}" onInput="{{onAngle}}" aria-label="Preview angle" style="flex-grow: 1;">
+        <span style="width: 44px; text-align: right; font-family: Consolas, monospace; font-size: 11px; color: #a9abb0;">{{angleLabel}}</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EXPORT</span>
+        <div style="display: flex; gap: 10px; align-items: flex-end;">
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #a9abb0;">Length (seconds)
+            <input type="number" min="1" aria-label="Length in seconds" value="{{length}}" onInput="{{onLength}}" style="width: 96px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 15px; box-sizing: border-box;">
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #a9abb0;">Resolution
+            <select aria-label="Resolution" onChange="{{onRes}}" style="width: 128px; height: 32px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;"><option>1920×1080</option><option>3840×2160 (4K)</option><option>1280×720</option><option>1080×1080 (square)</option><option>1080×1920 (vertical)</option></select>
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #a9abb0;">Frame rate
+            <select aria-label="Frame rate" onChange="{{onFps}}" style="width: 84px; height: 32px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;"><option>60 fps</option><option>50 fps</option><option>30 fps</option><option>25 fps</option><option>24 fps</option></select>
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #a9abb0; flex-grow: 1;">Format
+            <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+              <sc-for list="{{formats}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+            </div>
+          </div>
+        </div>
+        <span style="{{formatNote}}">{{formatNoteText}}</span>
+      </div>
+    </div>
+
+    <!-- Right: look + motion -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LOOK</span>
+        <sc-for list="{{lookSliders}}" as="s" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 96px;">{{s.label}}</span>
+            <input type="range" min="{{s.min}}" max="{{s.max}}" value="{{s.val}}" onInput="{{s.onInput}}" aria-label="{{s.label}}" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 44px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{s.readout}}</span>
+          </div>
+        </sc-for>
+        <span style="font-size: 12px; color: #a9abb0; margin-top: 2px;">Material</span>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{materials}}" as="m" hint-placeholder-count="4">
+            <button onClick="{{m.pick}}" style="{{m.card}}">
+              <span style="{{m.swatch}}"></span>
+              <span style="font-size: 12px; font-weight: 600;">{{m.name}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 96px;">Colour</span>
+          <sc-for list="{{colours}}" as="c" hint-placeholder-count="7"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
+          <button style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Logo's own</button>
+        </div>
+        <sc-for list="{{lightSliders}}" as="s" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 96px;">{{s.label}}</span>
+            <input type="range" min="{{s.min}}" max="{{s.max}}" value="{{s.val}}" onInput="{{s.onInput}}" aria-label="{{s.label}}" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 44px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{s.readout}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="height: 1px; background: #2c3038;"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MOTION &amp; CAMERA</span>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 96px;">Rotation</span>
+          <div style="flex-grow: 1; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+            <sc-for list="{{rotTypes}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+          </div>
+        </div>
+        <sc-for list="{{motionSliders}}" as="s" hint-placeholder-count="2">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 96px;">{{s.label}}</span>
+            <input type="range" min="{{s.min}}" max="{{s.max}}" value="{{s.val}}" onInput="{{s.onInput}}" aria-label="{{s.label}}" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 44px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{s.readout}}</span>
+          </div>
+        </sc-for>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 96px;">Background</span>
+          <div style="flex-grow: 1; display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+            <sc-for list="{{bgTypes}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0; height: 30px;">
+          <span style="width: 96px;"></span>
+          <sc-if value="{{bgColourMode}}" hint-placeholder-val="{{false}}">
+            <sc-for list="{{bgColours}}" as="c" hint-placeholder-count="5"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
+          </sc-if>
+          <sc-if value="{{bgLoopMode}}" hint-placeholder-val="{{false}}">
+            <select aria-label="Background loop" onChange="{{onLoop}}" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;"><option>Aurora</option><option>Particles</option><option>Warm glow</option><option>Bokeh</option><option>Stars</option></select>
+          </sc-if>
+          <sc-if value="{{bgClear}}" hint-placeholder-val="{{true}}">
+            <span style="font-size: 11px; color: #8e9096;">Only the logo is exported — place it over anything.</span>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 76px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #2c3038; background-color: #1a1d22;">
+    <span style="font-family: Consolas, monospace; font-size: 13px; color: #a9abb0;">{{summary}}</span>
+    <div style="flex-grow: 1;"></div>
+    <button style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600;">Save to library</button>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: #343944; color: #ffffff; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Add as input</a>
+    <button style="height: 44px; padding: 0 26px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700;">Export video</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      depth: 24, bevel: 6, material: 'metal', colour: '#b8c0c8', light: 45, lightStr: 70,
+      rot: 'spin', speed: 12, camDist: 60, bg: 'transparent', bgColour: '#101216', loop: 'Aurora',
+      angle: -32, playing: true, length: 10, res: '1920×1080', fps: '60 fps', format: 'mov'
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
+    const sl = (key, label, min, max, fmt) => ({ label, min: String(min), max: String(max), val: String(st[key]), readout: fmt(st[key]), onInput: (e) => set({ [key]: Number(e.target.value) }) });
+
+    const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const c = (v) => Math.max(0, Math.min(255, Math.round(v * f))); return `rgb(${c((n >> 16) & 255)}, ${c((n >> 8) & 255)}, ${c(n & 255)})`; };
+    const MATS = {
+      metal: { name: 'Metal', face: 1.0, edge: 0.55, alpha: 1 },
+      glass: { name: 'Glass', face: 1.1, edge: 0.8, alpha: 0.45 },
+      gloss: { name: 'Gloss', face: 1.05, edge: 0.6, alpha: 1 },
+      matte: { name: 'Matte', face: 0.85, edge: 0.6, alpha: 1 }
+    };
+    const mat = MATS[st.material];
+    const rad = (d) => d * Math.PI / 180;
+    const lit = 0.55 + (st.lightStr / 100) * 0.6 * Math.max(0.15, Math.cos(rad(st.light - st.angle)));
+    const W = 240, H = 150;
+    const nLayers = Math.max(1, Math.round(st.depth / 3));
+    const step = st.depth / nLayers;
+    const layers = [];
+    for (let k = nLayers; k >= 1; k--) {
+      layers.push({ style: `position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; border-radius: ${8 + st.bevel}px; background: ${shade(st.colour, mat.edge * (0.85 + 0.15 * (1 - k / nLayers)))}; opacity: ${mat.alpha < 1 ? 0.5 : 1}; transform: translateZ(${-k * step}px);` });
+    }
+    const tilt = st.rot === 'float' ? -8 : (st.rot === 'swing' ? 6 : 10);
+    const scale = 0.7 + (100 - st.camDist) / 100 * 0.6;
+    const COLS = [['#b8c0c8', 'Silver'], ['#e4e5e7', 'White'], ['#4fb3bf', 'Teal'], ['#4a6fd1', 'Blue'], ['#c7372f', 'Red'], ['#2f3440', 'Charcoal'], ['#8a5cc7', 'Purple']];
+    const colours = COLS.map(([c, name]) => ({ name, pick: () => set({ colour: c }),
+      style: `width: 26px; height: 26px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.colour === c ? '#dff4f6' : '#2c3038'}; box-sizing: border-box;` }));
+    const materials = Object.keys(MATS).map((id) => { const m = MATS[id]; const on = st.material === id; return { name: m.name, pick: () => set({ material: id }),
+      card: `height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`,
+      swatch: `width: 28px; height: 14px; border-radius: 3px; background: ${shade(st.colour, m.face)}; opacity: ${m.alpha < 1 ? 0.55 : 1}; border: 1px solid ${id === 'gloss' ? '#ffffff' : shade(st.colour, m.edge)};` }; });
+    const BGC = [['#101216', 'Black'], ['#1b2a4a', 'Navy'], ['#27403f', 'Deep teal'], ['#e4e5e7', 'White'], ['#2f8f4e', 'Green (keying)']];
+    const bgColours = BGC.map(([c, name]) => ({ name, pick: () => set({ bgColour: c }),
+      style: `width: 36px; height: 26px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.bgColour === c ? '#4fb3bf' : '#2c3038'}; box-sizing: border-box;` }));
+    const LOOPT = { Aurora: '#27403f', Particles: '#2c3450', 'Warm glow': '#4a3626', Bokeh: '#3a3746', Stars: '#1c2233' };
+    const stageBg = st.bg === 'transparent' ? '#15171b' : (st.bg === 'colour' ? st.bgColour : LOOPT[st.loop]);
+    const clearWithMp4 = st.bg === 'transparent' && st.format === 'mp4';
+    const FMT = { mp4: 'MP4', mov: 'MOV', webm: 'WebM' };
+    const ROT = { spin: 'Spin (full turns)', swing: 'Swing (back and forth)', float: 'Float (gentle bob)' };
+    return {
+      previewMeta: ROT[st.rot] + ' · ' + (st.playing ? 'playing' : 'paused'),
+      stage: `position: relative; width: 640px; height: 330px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: ${stageBg}; border: ${st.bg === 'transparent' ? '2px dashed #5a5c62' : '2px solid #2f8f4e'}; box-sizing: border-box; display: flex; align-items: center; justify-content: center;`,
+      persp: `perspective: ${400 + st.camDist * 12}px; width: ${W}px; height: ${H}px; transform: scale(${scale.toFixed(2)});`,
+      card: `position: relative; width: ${W}px; height: ${H}px; transform-style: preserve-3d; transform: rotateX(${tilt}deg) rotateY(${st.angle}deg);`,
+      layers,
+      face: `position: absolute; left: 0; top: 0; width: ${W}px; height: ${H}px; box-sizing: border-box; border-radius: ${8 + st.bevel}px; background: ${shade(st.colour, mat.face * lit)}; opacity: ${mat.alpha < 1 ? 0.6 : 1}; border: ${Math.max(1, Math.round(st.bevel / 2))}px solid ${shade(st.colour, st.material === 'gloss' ? 1.5 : 1.2 * lit)}; display: flex; align-items: center; justify-content: center; gap: 12px; transform: translateZ(0);`,
+      markColour: shade(st.colour, 0.35),
+      faceText: `font-size: 30px; font-weight: 800; letter-spacing: 0.04em; color: ${shade(st.colour, 0.35)};`,
+      bgClear: st.bg === 'transparent', bgColourMode: st.bg === 'colour', bgLoopMode: st.bg === 'loop',
+      togglePlay: () => set({ playing: !st.playing }), playGlyph: st.playing ? '❚❚' : '▶',
+      angle: String(st.angle), angleLabel: st.angle + '°', onAngle: (e) => set({ angle: Number(e.target.value) }),
+      length: String(st.length), onLength: (e) => set({ length: e.target.value }),
+      onRes: (e) => set({ res: String(e.target.value).split(' ')[0] }), onFps: (e) => set({ fps: e.target.value }),
+      formats: seg('format', [['mp4', 'MP4'], ['mov', 'MOV (transparent)'], ['webm', 'WebM']]),
+      formatNote: `font-size: 11px; color: ${clearWithMp4 ? '#e0473b' : '#8e9096'};`,
+      formatNoteText: clearWithMp4 ? 'MP4 cannot keep a transparent background — choose MOV or WebM, or pick a background.' : 'Any length: the rotation loops seamlessly for as many seconds as you type.',
+      lookSliders: [sl('depth', 'Depth', 0, 60, (v) => v + 'px'), sl('bevel', 'Bevel', 0, 20, (v) => v + 'px')],
+      materials, colours,
+      lightSliders: [sl('light', 'Light angle', -180, 180, (v) => v + '°'), sl('lightStr', 'Light strength', 0, 100, (v) => v + '%')],
+      rotTypes: seg('rot', [['spin', 'Spin'], ['swing', 'Swing'], ['float', 'Float']]),
+      motionSliders: [sl('speed', 'Speed', 2, 40, (v) => (60 / v).toFixed(1) + 's'), sl('camDist', 'Camera distance', 0, 100, (v) => v + '%')],
+      bgTypes: seg('bg', [['transparent', 'Transparent'], ['colour', 'Colour'], ['loop', 'Loop']]),
+      bgColours, onLoop: (e) => set({ loop: e.target.value }),
+      summary: st.length + ' s · ' + st.res + ' · ' + st.fps + ' · ' + FMT[st.format]
+    };
+  }
+}
+</script>
+</body>
+</html>

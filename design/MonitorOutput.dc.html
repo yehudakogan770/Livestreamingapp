@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Stage monitor output</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#000;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+@keyframes lumflash{0%,49%{opacity:1}50%,100%{opacity:.12}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 810px; box-sizing: border-box; background: #000000; position: relative; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #ffffff;">
+
+  <!-- Content layer -->
+  <div style="{{contentStyle}}">
+    <!-- Clock -->
+    <div style="position: absolute; top: 36px; right: 48px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+      <span style="font-family: Consolas, monospace; font-size: 64px; font-weight: 700; line-height: 1; color: #ffffff;">19:42</span>
+      <span style="font-size: 16px; font-weight: 600; letter-spacing: 0.08em; color: #a9abb0;">TIME NOW</span>
+    </div>
+
+    <!-- Main message -->
+    <div style="position: absolute; left: 96px; right: 96px; top: 150px; bottom: 250px; display: flex; align-items: center; justify-content: center;">
+      <span style="font-size: 132px; font-weight: 700; line-height: 1.08; text-align: center; color: #ffffff;">{{message}}</span>
+    </div>
+
+    <!-- Countdown -->
+    <div style="position: absolute; left: 0; right: 0; bottom: 84px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <span style="font-size: 16px; font-weight: 600; letter-spacing: 0.1em; color: #a9abb0;">TIME LEFT IN THIS SEGMENT</span>
+      <span style="{{countStyle}}">{{countdown}}</span>
+    </div>
+
+    <!-- Next up -->
+    <div style="position: absolute; left: 48px; bottom: 36px; display: flex; align-items: baseline; gap: 12px;">
+      <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NEXT UP</span>
+      <span style="font-size: 26px; font-weight: 600; color: #d4d5d8;">[Next speaker] · Video: [Video name]</span>
+    </div>
+  </div>
+
+  <!-- Flash border -->
+  <sc-if value="{{isFlash}}" hint-placeholder-val="{{false}}">
+    <div style="{{flashStyle}}"></div>
+  </sc-if>
+
+  <!-- Preview-state switch (designer only; not part of the real output) -->
+  <div style="position: absolute; left: 16px; top: 16px; display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038; opacity: 0.9;">
+    <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; padding: 0 6px;">PREVIEW STATE</span>
+    <sc-for list="{{states}}" as="s" hint-placeholder-count="3">
+      <button onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}</button>
+    </sc-for>
+    <button onClick="{{cycleMsg}}" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Next message</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":810}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { mode: 'normal', msg: 0 }; }
+  renderVals() {
+    const st = this.state;
+    const MSGS = ['5 minutes left', 'Please wrap up', 'Look at camera 2', 'Stand by', 'Thank you!'];
+    const dim = st.mode === 'dim';
+    const states = [['normal', 'Normal'], ['flash', 'Flash'], ['dim', 'Dimmed (panic)']].map(([id, label]) => {
+      const on = st.mode === id;
+      return { label, pick: () => this.setState({ mode: id }), style: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;` };
+    });
+    return {
+      states,
+      message: MSGS[st.msg],
+      cycleMsg: () => this.setState({ msg: (st.msg + 1) % MSGS.length }),
+      countdown: '04:58',
+      isFlash: st.mode === 'flash',
+      contentStyle: `position: absolute; inset: 0; opacity: ${dim ? 0.22 : 1};`,
+      countStyle: 'font-family: Consolas, monospace; font-size: 96px; font-weight: 700; line-height: 1; color: #ffffff;',
+      flashStyle: `position: absolute; inset: 0; border: 28px solid #ffffff; box-sizing: border-box; pointer-events: none; animation: lumflash 0.9s linear infinite;`
+    };
+  }
+}
+</script>
+</body>
+</html>

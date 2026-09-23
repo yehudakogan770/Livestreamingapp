@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Text and titles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <span style="font-size: 20px; font-weight: 600;">Text &amp; titles</span>
+    <span style="font-size: 13px; color: #8e9096;">Set text up before the event or type it on the spot · Hebrew and English</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Left -->
+    <div style="width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 14px 12px; background: #1a1d22; border-right: 1px solid #2c3038; box-sizing: border-box; overflow: hidden;">
+      <div style="display: flex; align-items: center;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; flex-grow: 1;">TEXT ITEMS · THIS EVENT</span>
+        <button onClick="{{newItem}}" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">+ New</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <sc-for list="{{items}}" as="i" hint-placeholder-count="5">
+          <button onClick="{{i.pick}}" style="{{i.style}}">
+            <span style="{{i.icon}}">{{i.abbr}}</span>
+            <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex-grow: 1;">
+              <span style="font-size: 13px; font-weight: 600;">{{i.kindName}}</span>
+              <span style="{{i.previewStyle}}">{{i.text}}</span>
+            </span>
+            <span style="{{i.stateStyle}}">{{i.state}}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; margin-top: 8px;">SAVED TEMPLATES</span>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+        <sc-for list="{{templates}}" as="t" hint-placeholder-count="4">
+          <button onClick="{{t.apply}}" style="height: 34px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{t.name}}</button>
+        </sc-for>
+      </div>
+
+      <div style="height: 1px; background: #2c3038; margin: 6px 0 2px;"></div>
+      <div style="display: flex; align-items: center;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; flex-grow: 1;">MONITOR MESSAGES</span>
+        <span style="font-size: 10px; color: #8e9096;">text only · stage</span>
+      </div>
+      <span style="font-size: 11px; color: #a9abb0;">Ready-made</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+        <sc-for list="{{readyMsgs}}" as="m" hint-placeholder-count="8">
+          <button onClick="{{m.pick}}" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">{{m.text}}</button>
+        </sc-for>
+      </div>
+      <span style="font-size: 11px; color: #a9abb0; margin-top: 2px;">Typed by you · saved for future events</span>
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <sc-for list="{{typedMsgs}}" as="m" hint-placeholder-count="3">
+          <div style="height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 4px 0 8px; border-radius: 4px; background: #1e2127; border: 1px solid #2c3038;">
+            <button onClick="{{m.pick}}" style="flex-grow: 1; min-width: 0; height: 24px; border: 0; background: transparent; color: #d4d5d8; font-size: 12px; text-align: left; padding: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{m.text}}</button>
+            <button onClick="{{m.remove}}" aria-label="Remove saved message" style="width: 20px; height: 20px; border-radius: 3px; border: 0; background: transparent; color: #8e9096; font-size: 10px;">✕</button>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 4px;">
+        <input aria-label="Type a monitor message" value="{{monDraft}}" onInput="{{onMonDraft}}" placeholder="Type a message for the stage…" style="flex-grow: 1; min-width: 0; height: 30px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; outline: none;">
+        <button onClick="{{saveMon}}" style="height: 30px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">Save</button>
+      </div>
+      <div style="display: flex; gap: 4px;">
+        <button onClick="{{sendMon}}" style="flex-grow: 1; height: 32px; border-radius: 4px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 700;">Send to Monitor</button>
+        <button style="height: 32px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Flash stage</button>
+      </div>
+      <span style="font-size: 11px; color: #8e9096;">{{monStatus}}</span>
+    </div>
+
+    <!-- Center -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 20px 16px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 10px; height: 22px;">
+        <span style="{{stageDot}}"></span>
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">{{stageLabel}}</span>
+        <span style="font-size: 12px; color: #8e9096;">{{stageSub}}</span>
+        <div style="flex-grow: 1;"></div>
+        <select aria-label="Show over" style="height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 12px;"><option>Show over: Camera 1</option><option>Show over: Vid 1</option><option>Show over: black</option></select>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{safe}}" onChange="{{toggleSafe}}" style="width: 15px; height: 15px;">Safe area</label>
+      </div>
+      <div style="{{frame}}">
+        <sc-if value="{{notMon}}" hint-placeholder-val="{{true}}">
+          <span style="position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-size: 16px; font-weight: 600; color: rgba(255,255,255,0.3);">{{bgLabel}}</span>
+        </sc-if>
+        <sc-if value="{{isMon}}" hint-placeholder-val="{{false}}">
+          <span style="position: absolute; right: 16px; top: 12px; font-family: Consolas, monospace; font-size: 18px; color: #a9abb0;">19:42</span>
+        </sc-if>
+        <sc-if value="{{safe}}" hint-placeholder-val="{{true}}">
+          <div style="position: absolute; left: 10%; top: 10%; right: 10%; bottom: 10%; border: 1px dashed rgba(255,255,255,0.22); pointer-events: none;"></div>
+        </sc-if>
+        <div style="{{el.wrap}}">
+          <div style="{{el.box}}">
+            <span dir="auto" style="{{el.text}}">{{el.content}}</span>
+            <sc-if value="{{el.hasSub}}" hint-placeholder-val="{{true}}">
+              <span dir="auto" style="{{el.sub}}">{{el.subText}}</span>
+            </sc-if>
+          </div>
+          <span style="position: absolute; left: -5px; top: -5px; width: 9px; height: 9px; background: #ffffff; border: 1px solid #0e2a2e;"></span>
+          <span style="position: absolute; right: -5px; top: -5px; width: 9px; height: 9px; background: #ffffff; border: 1px solid #0e2a2e;"></span>
+          <span style="position: absolute; left: -5px; bottom: -5px; width: 9px; height: 9px; background: #ffffff; border: 1px solid #0e2a2e;"></span>
+          <span style="position: absolute; right: -5px; bottom: -5px; width: 9px; height: 9px; background: #ffffff; border: 1px solid #0e2a2e;"></span>
+        </div>
+      </div>
+
+      <!-- Where / timing -->
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 12px; color: #a9abb0;">Screens</span>
+        <sc-for list="{{screens}}" as="s" hint-placeholder-count="3">
+          <button onClick="{{s.toggle}}" style="{{s.style}}">{{s.name}}</button>
+        </sc-for>
+        <span style="width: 1px; height: 20px; background: #2c3038; margin: 0 4px;"></span>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{autoHide}}" onChange="{{toggleAutoHide}}" style="width: 15px; height: 15px;">Hide after</label>
+        <input aria-label="Hide after seconds" value="8" style="width: 40px; height: 26px; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none; box-sizing: border-box;">
+        <span style="font-size: 12px; color: #a9abb0;">sec</span>
+        <div style="flex-grow: 1;"></div>
+        <select aria-label="Overlay channel" style="height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 12px;"><option>Overlay channel 2</option><option>Overlay channel 1</option><option>Overlay channel 3</option><option>Overlay channel 4</option></select>
+      </div>
+
+      <!-- Text entry -->
+      <div style="display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; flex-grow: 1;">TEXT</span>
+          <span style="font-size: 11px; color: #8e9096;">{{lineHint}}</span>
+        </div>
+        <textarea dir="auto" aria-label="Text" value="{{sel.text}}" onInput="{{onText}}" style="height: 56px; resize: none; padding: 8px 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 16px; outline: none; font-family: 'Segoe UI', 'Frank Ruhl Libre', sans-serif;"></textarea>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input dir="auto" aria-label="Second line" value="{{sel.sub}}" onInput="{{onSub}}" placeholder="Second line (optional)" style="flex-grow: 1; height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 13px; outline: none;">
+          <button onClick="{{prepare}}" style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px;"><span>Prepare for later</span><span style="font-size: 10px; font-weight: 400; color: #8e9096;">Save to event</span></button>
+          <button onClick="{{showNow}}" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 14px; font-weight: 700; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px;"><span>Show now</span><span style="font-size: 10px; font-weight: 600; opacity: 0.75;">On Preview · Ctrl+Enter</span></button>
+          <button onClick="{{take}}" style="{{takeStyle}}"><span>TAKE</span><span style="font-size: 10px; font-weight: 600; opacity: 0.8;">Enter</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: properties -->
+    <div style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-left: 1px solid #2c3038; box-sizing: border-box; overflow: hidden;">
+      <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; overflow: hidden;">
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; flex-grow: 1;">FONT</span>
+          <button style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">Import font…</button>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <input aria-label="Search fonts" value="{{fontQuery}}" onInput="{{onFontQuery}}" placeholder="Search fonts…" style="flex-grow: 1; min-width: 0; height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; outline: none;">
+          <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
+            <sc-for list="{{langTabs}}" as="l" hint-placeholder-count="3"><button onClick="{{l.pick}}" style="{{l.style}}">{{l.name}}</button></sc-for>
+          </div>
+        </div>
+        <div style="height: 150px; display: flex; flex-direction: column; border: 1px solid #2c3038; border-radius: 4px; background: #101216; overflow-y: auto;">
+          <sc-for list="{{fonts}}" as="f" hint-placeholder-count="6">
+            <button onClick="{{f.pick}}" style="{{f.style}}">
+              <span style="{{f.face}}">{{f.name}}</span>
+              <span style="font-size: 10px; color: #8e9096;">{{f.tag}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <span style="font-size: 11px; color: #8e9096; margin-top: -4px;">[N] fonts installed + your imported fonts · scroll for more</span>
+
+        <div style="display: flex; gap: 8px;">
+          <label style="width: 70px; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 11px; color: #a9abb0;">Size</span>
+            <input type="number" value="{{sel.size}}" onInput="{{onSize}}" style="height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none; min-width: 0;">
+          </label>
+          <label style="flex-grow: 1; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 11px; color: #a9abb0;">Weight</span>
+            <select value="{{sel.weight}}" onChange="{{onWeight}}" style="height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option value="300">Light</option><option value="400">Regular</option><option value="600">Semibold</option><option value="700">Bold</option><option value="900">Black</option></select>
+          </label>
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 11px; color: #a9abb0;">Align</span>
+            <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
+              <sc-for list="{{aligns}}" as="a" hint-placeholder-count="3"><button onClick="{{a.pick}}" aria-label="{{a.aria}}" style="{{a.style}}">{{a.glyph}}</button></sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 58px; font-size: 12px; color: #a9abb0;">Colour</span>
+          <sc-for list="{{colors}}" as="c" hint-placeholder-count="6"><button onClick="{{c.pick}}" aria-label="{{c.aria}}" style="{{c.style}}"></button></sc-for>
+          <input aria-label="Colour hex" value="{{sel.color}}" style="width: 66px; height: 24px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 11px; outline: none; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="width: 58px; display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{sel.outline}}" onChange="{{toggleOutline}}" style="width: 14px; height: 14px;">Outline</label>
+          <input type="range" min="0" max="8" value="{{sel.outlineW}}" onInput="{{onOutlineW}}" aria-label="Outline width" style="flex-grow: 1; margin: 0;">
+          <span style="width: 26px; font-family: Consolas, monospace; font-size: 11px; color: #d4d5d8;">{{outlineLabel}}</span>
+          <span style="width: 22px; height: 22px; border-radius: 4px; background: #000000; border: 1px solid #3a3f48;"></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="width: 58px; display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{sel.shadow}}" onChange="{{toggleShadow}}" style="width: 14px; height: 14px;">Shadow</label>
+          <select aria-label="Shadow style" style="flex-grow: 1; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option>Soft · blur 8 · offset 2</option><option>Hard · offset 3</option><option>Glow-free long shadow</option></select>
+          <span style="width: 22px; height: 22px; border-radius: 4px; background: #000000; border: 1px solid #3a3f48;"></span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #d4d5d8;"><input type="checkbox" checked="{{sel.boxOn}}" onChange="{{toggleBox}}" style="width: 14px; height: 14px;">Background box</label>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <sc-for list="{{boxColors}}" as="c" hint-placeholder-count="5"><button onClick="{{c.pick}}" aria-label="{{c.aria}}" style="{{c.style}}"></button></sc-for>
+            <span style="font-size: 11px; color: #a9abb0; margin-left: 4px;">Opacity</span>
+            <input type="range" min="0" max="100" value="{{sel.boxOp}}" onInput="{{onBoxOp}}" aria-label="Box opacity" style="flex-grow: 1; min-width: 0; margin: 0;">
+            <span style="width: 30px; font-family: Consolas, monospace; font-size: 11px; color: #d4d5d8;">{{boxOpLabel}}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: #a9abb0;">Padding</span>
+            <input type="range" min="0" max="60" value="{{sel.pad}}" onInput="{{onPad}}" aria-label="Box padding" style="flex-grow: 1; min-width: 0; margin: 0;">
+            <span style="font-size: 11px; color: #a9abb0;">Corners</span>
+            <input type="range" min="0" max="40" value="{{sel.radius}}" onInput="{{onRadius}}" aria-label="Box corner radius" style="flex-grow: 1; min-width: 0; margin: 0;">
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; font-size: 11px; color: #a9abb0;"><span style="flex-grow: 1;">Line spacing</span><span style="font-family: Consolas, monospace; color: #d4d5d8;">{{lhLabel}}</span></div>
+            <input type="range" min="80" max="200" value="{{sel.lh}}" onInput="{{onLh}}" aria-label="Line spacing" style="width: 100%; margin: 0;">
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; font-size: 11px; color: #a9abb0;"><span style="flex-grow: 1;">Letter spacing</span><span style="font-family: Consolas, monospace; color: #d4d5d8;">{{lsLabel}}</span></div>
+            <input type="range" min="-5" max="20" value="{{sel.ls}}" onInput="{{onLs}}" aria-label="Letter spacing" style="width: 100%; margin: 0;">
+          </div>
+        </div>
+
+        <div style="height: 1px; background: #2c3038;"></div>
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ANIMATION</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 28px; font-size: 12px; color: #a9abb0;">In</span>
+          <select value="{{sel.animIn}}" onChange="{{onAnimIn}}" aria-label="Animation in" style="flex-grow: 1; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option value="Cut">Cut</option><option value="Fade">Fade</option><option value="Slide">Slide in</option><option value="Zoom">Zoom</option><option value="Typewriter">Typewriter</option><option value="Scroll">Scroll (ticker)</option></select>
+          <input aria-label="Animation in duration" value="0.5 s" style="width: 52px; height: 26px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 11px; outline: none; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="width: 28px; font-size: 12px; color: #a9abb0;">Out</span>
+          <select value="{{sel.animOut}}" onChange="{{onAnimOut}}" aria-label="Animation out" style="flex-grow: 1; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option value="Cut">Cut</option><option value="Fade">Fade</option><option value="Slide">Slide out</option><option value="Zoom">Zoom</option></select>
+          <input aria-label="Animation out duration" value="0.4 s" style="width: 52px; height: 26px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 11px; outline: none; box-sizing: border-box;">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <div style="display: flex; font-size: 11px; color: #a9abb0;"><span style="flex-grow: 1;">Typewriter / scroll speed</span><span style="font-family: Consolas, monospace; color: #d4d5d8;">{{speedLabel}}</span></div>
+          <input type="range" min="1" max="10" value="{{sel.speed}}" onInput="{{onSpeed}}" aria-label="Typewriter or scroll speed" style="width: 100%; margin: 0;">
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; padding: 10px 18px; border-top: 1px solid #2c3038;">
+        <button onClick="{{saveTemplate}}" style="flex: 1; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">{{templateLabel}}</button>
+        <button style="flex: 1; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Reset style</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const base = { font: 'Segoe UI', weight: '600', color: '#ffffff', outline: false, outlineW: 2, shadow: true, boxOn: true, boxColor: '#101216', boxOp: 80, pad: 24, radius: 6, align: 'left', lh: 120, ls: 0, animIn: 'Slide', animOut: 'Fade', speed: 5, screens: ['Live'], state: 'Ready' };
+    this.state = {
+      sel: 0, safe: true, lang: 'all', fontQuery: '', monDraft: '', monSent: '', onPreview: false, onAir: false, templateSaved: false, autoHide: true,
+      typed: ['Rabbi, the video is next', 'Please call up the parents', 'Mic 2 is off — please check'],
+      items: [
+        { ...base, kind: 'lower', text: '[Speaker name]', sub: '[Title / role]', size: 54 },
+        { ...base, kind: 'title', text: '[שם האירוע]', sub: '[Date · place]', font: 'Frank Ruhl Libre', weight: '700', size: 110, align: 'center', boxOn: false, animIn: 'Fade', screens: ['Live', 'Back'], state: 'Saved' },
+        { ...base, kind: 'ticker', text: '[Scrolling news line — sponsors, thank-yous, next up]', sub: '', size: 40, radius: 0, pad: 14, animIn: 'Scroll', speed: 4, state: 'Saved' },
+        { ...base, kind: 'full', text: 'Please take your seats', sub: '[The program begins in a few minutes]', size: 96, align: 'center', boxOn: false, animIn: 'Fade', screens: ['Live', 'Back'], state: 'Saved' },
+        { ...base, kind: 'monitor', text: '5 minutes left', sub: '', size: 120, weight: '700', align: 'center', boxOn: false, shadow: false, animIn: 'Cut', animOut: 'Cut', screens: ['Monitor'], state: 'Saved' }
+      ]
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const it = st.items[st.sel];
+    const upd = (patch) => { const items = st.items.slice(); items[st.sel] = { ...items[st.sel], ...patch }; set({ items, templateSaved: false }); };
+    const KIND = { lower: ['Lower third', 'LT'], title: ['Title card', 'TC'], ticker: ['Scrolling ticker', 'TK'], full: ['Full-screen message', 'FS'], monitor: ['Monitor message', 'MN'] };
+    const isHeb = (s) => /[֐-׿]/.test(s || '');
+    const items = st.items.map((x, i) => {
+      const on = i === st.sel;
+      return {
+        kindName: KIND[x.kind][0], abbr: KIND[x.kind][1], text: x.text, state: x.state,
+        pick: () => set({ sel: i, onPreview: false, onAir: false }),
+        style: `height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background: ${on ? '#1d3b40' : 'transparent'}; color: #e4e5e7; text-align: left; box-sizing: border-box;`,
+        icon: `width: 28px; height: 22px; flex-shrink: 0; border-radius: 3px; background: ${x.kind === 'monitor' ? '#000000' : '#262a31'}; border: 1px solid #343944; color: #a9abb0; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center;`,
+        previewStyle: `font-size: 11px; color: #8e9096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: ${isHeb(x.text) ? "'Frank Ruhl Libre', serif" : 'inherit'};`,
+        stateStyle: `font-size: 10px; font-weight: 600; color: ${x.state === 'Ready' ? '#8fd3db' : '#8e9096'};`
+      };
+    });
+    const templates = [['Lower third — clean', { boxOn: true, boxColor: '#101216', boxOp: 80, radius: 6, font: 'Segoe UI' }], ['Lower third — teal bar', { boxOn: true, boxColor: '#1d3b40', boxOp: 95, radius: 0 }], ['Hebrew title — serif', { font: 'Frank Ruhl Libre', weight: '700', align: 'center', boxOn: false }], ['Big message — white', { boxOn: false, weight: '700', align: 'center', shadow: true }]].map(([name, p]) => ({ name, apply: () => upd(p) }));
+    const ALL_FONTS = [
+      ['Segoe UI', "'Segoe UI', sans-serif", 'Heb + Eng'], ['Frank Ruhl Libre', "'Frank Ruhl Libre', serif", 'Heb + Eng'], ['Arial', 'Arial, sans-serif', 'Heb + Eng'], ['David', "David, 'Frank Ruhl Libre', serif", 'Hebrew'],
+      ['Narkisim', "Narkisim, serif", 'Hebrew'], ['Miriam', "Miriam, sans-serif", 'Hebrew'], ['Tahoma', 'Tahoma, sans-serif', 'Heb + Eng'], ['Georgia', 'Georgia, serif', 'English'],
+      ['Times New Roman', "'Times New Roman', serif", 'Heb + Eng'], ['Verdana', 'Verdana, sans-serif', 'English'], ['Trebuchet MS', "'Trebuchet MS', sans-serif", 'English'], ['Consolas', 'Consolas, monospace', 'English'], ['[Imported font]', 'inherit', 'Imported']
+    ];
+    const FAM = {}; ALL_FONTS.forEach((f) => { FAM[f[0]] = f[1]; });
+    const q = st.fontQuery.toLowerCase();
+    const fonts = ALL_FONTS.filter((f) => (!q || f[0].toLowerCase().includes(q)) && (st.lang === 'all' || (st.lang === 'he' ? f[2].includes('Heb') : (f[2].includes('Eng') || f[2] === 'Imported'))))
+      .map((f) => {
+        const on = it.font === f[0];
+        return { name: f[0], tag: f[2], pick: () => upd({ font: f[0] }),
+          face: `font-family: ${f[1]}; font-size: 14px; flex-grow: 1; text-align: left; white-space: nowrap;`,
+          style: `height: 25px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px; border: 0; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#e4e5e7'}; border-left: 2px solid ${on ? '#4fb3bf' : 'transparent'};` };
+      });
+    const seg = (on) => `height: 26px; padding: 0 8px; border: 0; border-radius: 0; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
+    const langTabs = [['all', 'All'], ['he', 'עב'], ['en', 'En']].map(([id, name]) => ({ name, pick: () => set({ lang: id }), style: seg(st.lang === id) }));
+    const aligns = [['left', '⟸', 'Align left'], ['center', '≡', 'Align centre'], ['right', '⟹', 'Align right']].map(([id, glyph, aria]) => ({ glyph, aria, pick: () => upd({ align: id }), style: seg(it.align === id) + ' width: 28px; padding: 0;' }));
+    const sw = (list, key, aria) => list.map((c) => ({ aria: `${aria} ${c}`, pick: () => upd({ [key]: c }),
+      style: `width: 22px; height: 22px; padding: 0; border-radius: 4px; background: ${c}; border: ${it[key] === c ? '2px solid #4fb3bf' : '1px solid #3a3f48'}; box-sizing: border-box; flex-shrink: 0;` }));
+    const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`; };
+    const S = 0.405;
+    const fz = Math.round(it.size * S);
+    const shadow = [it.shadow ? '0 2px 6px rgba(0,0,0,0.8)' : ''].filter(Boolean).join(', ');
+    const textStyle = `display: block; font-family: ${FAM[it.font] || 'inherit'}; font-size: ${fz}px; font-weight: ${it.weight}; color: ${it.color}; line-height: ${it.lh / 100}; letter-spacing: ${it.ls / 10 * 0.5}px; text-align: ${it.align}; ${it.outline ? `-webkit-text-stroke: ${it.outlineW * 0.5}px #000000;` : ''} text-shadow: ${shadow || 'none'}; white-space: ${it.kind === 'ticker' ? 'nowrap' : 'normal'};`;
+    const boxBg = it.boxOn ? hexA(it.boxColor, it.boxOp / 100) : 'transparent';
+    const pad = Math.round(it.pad * S);
+    const POS = {
+      lower: 'left: 7%; bottom: 12%; max-width: 70%;',
+      title: 'left: 10%; right: 10%; top: 50%; transform: translateY(-50%);',
+      ticker: 'left: 0; right: 0; bottom: 6%;',
+      full: 'left: 10%; right: 10%; top: 50%; transform: translateY(-50%);',
+      monitor: 'left: 6%; right: 6%; top: 50%; transform: translateY(-50%);'
+    };
+    const el = {
+      content: it.text || ' ', subText: it.sub, hasSub: !!it.sub,
+      wrap: `position: absolute; ${POS[it.kind]} outline: 2px solid #4fb3bf; outline-offset: 3px; cursor: move;`,
+      box: `background: ${boxBg}; padding: ${pad}px ${Math.round(pad * 1.3)}px; border-radius: ${Math.round(it.radius * S)}px; ${it.kind === 'lower' && it.boxOn ? 'border-left: 5px solid #4fb3bf;' : ''} overflow: hidden;`,
+      text: textStyle,
+      sub: `display: block; margin-top: 4px; font-family: ${FAM[it.font] || 'inherit'}; font-size: ${Math.round(fz * 0.55)}px; font-weight: 400; color: ${hexA(it.color === '#000000' ? '#000000' : it.color, 0.8)}; text-align: ${it.align}; letter-spacing: ${it.ls / 20}px; text-shadow: ${shadow || 'none'};`
+    };
+    const isMon = it.kind === 'monitor';
+    const dark = isMon || it.kind === 'full';
+    const screens = ['Live', 'Back', 'Monitor'].map((n) => {
+      const on = it.screens.includes(n);
+      const disabled = isMon ? n !== 'Monitor' : n === 'Monitor';
+      return { name: n, toggle: () => { if (disabled) return; upd({ screens: on ? it.screens.filter((x) => x !== n) : [...it.screens, n] }); },
+        style: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: 600; opacity: ${disabled ? 0.4 : 1};` };
+    });
+    const monPick = (t) => () => { const i = st.items.findIndex((x) => x.kind === 'monitor'); const items = st.items.slice(); items[i] = { ...items[i], text: t }; set({ items, sel: i, monDraft: t, onPreview: false, onAir: false }); };
+    return {
+      items, templates, fonts, langTabs, aligns, screens, el,
+      sel: it, isMon, notMon: !isMon,
+      frame: `position: relative; width: 100%; aspect-ratio: 16 / 9; background: ${dark ? '#000000' : '#34404c'}; border: 2px solid ${st.onAir ? '#c7372f' : st.onPreview ? '#2f8f4e' : '#2c3038'}; border-radius: 4px; overflow: hidden; box-sizing: border-box;`,
+      bgLabel: dark ? ' ' : 'Camera 1 · [Stage wide]',
+      stageLabel: st.onAir ? 'ON AIR' : st.onPreview ? 'PREVIEW' : 'EDITING',
+      stageSub: st.onAir ? `${it.screens.join(' + ')} · press Clear on the main screen to remove` : st.onPreview ? 'Ready — press TAKE to put it on air' : 'Not on air · changes are only here until you Show now',
+      stageDot: `width: 8px; height: 8px; border-radius: 2px; background: ${st.onAir ? '#e0473b' : st.onPreview ? '#3fbf5a' : '#8e9096'};`,
+      safe: st.safe, toggleSafe: () => set({ safe: !st.safe }),
+      autoHide: st.autoHide, toggleAutoHide: () => set({ autoHide: !st.autoHide }),
+      lineHint: isHeb(it.text) ? 'Hebrew detected · right-to-left' : 'Type in Hebrew or English — direction is automatic',
+      onText: (e) => upd({ text: e.target.value }),
+      onSub: (e) => upd({ sub: e.target.value }),
+      prepare: () => upd({ state: 'Saved' }),
+      showNow: () => set({ onPreview: true, onAir: false }),
+      take: () => { if (st.onPreview) set({ onAir: true, onPreview: false }); },
+      takeStyle: `height: 44px; width: 96px; border-radius: 6px; border: 0; background: ${st.onPreview ? '#c7372f' : '#3a2422'}; color: ${st.onPreview ? '#ffffff' : '#a9abb0'}; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;`,
+      fontQuery: st.fontQuery, onFontQuery: (e) => set({ fontQuery: e.target.value }),
+      onSize: (e) => upd({ size: Number(e.target.value) || 1 }),
+      onWeight: (e) => upd({ weight: e.target.value }),
+      colors: sw(['#ffffff', '#e4e5e7', '#000000', '#8fd3db', '#e0473b', '#3fbf5a'], 'color', 'Text colour'),
+      boxColors: sw(['#101216', '#000000', '#ffffff', '#1d3b40', '#c7372f'], 'boxColor', 'Box colour'),
+      toggleOutline: () => upd({ outline: !it.outline }), onOutlineW: (e) => upd({ outlineW: Number(e.target.value) }), outlineLabel: `${it.outlineW}px`,
+      toggleShadow: () => upd({ shadow: !it.shadow }),
+      toggleBox: () => upd({ boxOn: !it.boxOn }),
+      onBoxOp: (e) => upd({ boxOp: Number(e.target.value) }), boxOpLabel: `${it.boxOp}%`,
+      onPad: (e) => upd({ pad: Number(e.target.value) }),
+      onRadius: (e) => upd({ radius: Number(e.target.value) }),
+      onLh: (e) => upd({ lh: Number(e.target.value) }), lhLabel: (it.lh / 100).toFixed(2),
+      onLs: (e) => upd({ ls: Number(e.target.value) }), lsLabel: `${it.ls}`,
+      onAnimIn: (e) => upd({ animIn: e.target.value }), onAnimOut: (e) => upd({ animOut: e.target.value }),
+      onSpeed: (e) => upd({ speed: Number(e.target.value) }), speedLabel: `${it.speed} / 10`,
+      saveTemplate: () => set({ templateSaved: true }),
+      templateLabel: st.templateSaved ? 'Saved as template' : 'Save as template',
+      newItem: () => { const items = [...st.items, { ...st.items[0], kind: 'lower', text: '[New text]', sub: '', state: 'Draft' }]; set({ items, sel: items.length - 1 }); },
+      readyMsgs: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'].map((t) => ({ text: t, pick: monPick(t) })),
+      typedMsgs: st.typed.map((t, k) => ({ text: t, pick: monPick(t), remove: () => set({ typed: st.typed.filter((_, j) => j !== k) }) })),
+      monDraft: st.monDraft, onMonDraft: (e) => set({ monDraft: e.target.value }),
+      saveMon: () => { const t = st.monDraft.trim(); if (t && !st.typed.includes(t)) set({ typed: [t, ...st.typed].slice(0, 4) }); },
+      sendMon: () => { const t = st.monDraft.trim(); if (!t) return; set({ monSent: t, typed: st.typed.includes(t) || ['Please wrap up', '5 minutes left'].includes(t) ? st.typed : [t, ...st.typed].slice(0, 4) }); },
+      monStatus: st.monSent ? `On the Monitor now: "${st.monSent}"` : 'Typed messages are kept for your next events.'
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Split screen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1160px; height: 800px; box-sizing: border-box; background: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <span style="font-size: 20px; font-weight: 600;">Split screen</span>
+    <span style="font-size: 13px; color: #8e9096;">Two or more things playing together · works mid-event, lands on Preview first</span>
+    <div style="flex-grow: 1;"></div>
+    <select aria-label="Editing slot" value="{{target}}" onChange="{{onTarget}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 8px;">
+      <option value="1">Editing: Split Screen 1</option>
+      <option value="2">Editing: Split Screen 2</option>
+    </select>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Layouts -->
+    <div style="width: 250px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 16px; background: #1a1d22; border-right: 1px solid #2c3038; box-sizing: border-box;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LAYOUT</span>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        <sc-for list="{{layouts}}" as="l" hint-placeholder-count="10">
+          <button onClick="{{l.pick}}" aria-label="{{l.name}}" style="{{l.card}}">
+            <span style="position: relative; display: block; width: 100%; height: 48px; background: #101216; border-radius: 3px; overflow: hidden;">
+              <sc-for list="{{l.rects}}" as="r" hint-placeholder-count="2"><span style="{{r.style}}"></span></sc-for>
+            </span>
+            <span style="font-size: 11px; line-height: 1.2;">{{l.name}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="flex-grow: 1;"></div>
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SAVED SPLIT PRESETS</span>
+      <sc-for list="{{saved}}" as="s" hint-placeholder-count="3">
+        <button onClick="{{s.load}}" style="height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 12px; text-align: left;"><span style="flex-grow: 1;">{{s.name}}</span><span style="font-size: 10px; color: #8e9096;">{{s.meta}}</span></button>
+      </sc-for>
+    </div>
+
+    <!-- Preview -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">{{layoutTitle}}</span>
+        <div style="flex-grow: 1;"></div>
+        <button onClick="{{swap}}" style="height: 28px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">⇄ Swap slots</button>
+      </div>
+      <div style="{{frameStyle}}">
+        <sc-for list="{{slots}}" as="s" hint-placeholder-count="2">
+          <div style="{{s.style}}">
+            <sc-if value="{{labels}}" hint-placeholder-val="{{true}}">
+              <span style="position: absolute; left: 8px; bottom: 8px; height: 20px; padding: 0 7px; border-radius: 3px; background: rgba(0,0,0,0.6); color: #ffffff; font-size: 11px; font-weight: 600; display: flex; align-items: center;">{{s.src}}</span>
+            </sc-if>
+            <span style="position: absolute; left: 8px; top: 8px; width: 22px; height: 22px; border-radius: 11px; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{s.n}}</span>
+            <sc-if value="{{s.audio}}" hint-placeholder-val="{{false}}">
+              <span style="position: absolute; right: 8px; top: 8px; height: 20px; padding: 0 7px; border-radius: 3px; background: rgba(0,0,0,0.6); color: #8fd3db; font-size: 10px; font-weight: 700; display: flex; align-items: center;">AUDIO</span>
+            </sc-if>
+            <span style="font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.6);">{{s.src}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SOURCES</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <sc-for list="{{slots}}" as="s" hint-placeholder-count="2">
+            <label style="height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 6px; background: #262a31; border: 1px solid #2c3038;">
+              <span style="width: 20px; height: 20px; border-radius: 10px; background: #1d3b40; color: #8fd3db; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">{{s.n}}</span>
+              <span style="font-size: 12px; color: #a9abb0; width: 42px;">Slot {{s.n}}</span>
+              <select aria-label="Slot source" value="{{s.src}}" onChange="{{s.onSrc}}" style="flex-grow: 1; min-width: 0; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;">
+                <sc-for list="{{sources}}" as="o" hint-placeholder-count="8"><option value="{{o}}">{{o}}</option></sc-for>
+              </select>
+            </label>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Options -->
+    <div style="width: 270px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 16px 18px; background: #1a1d22; border-left: 1px solid #2c3038; box-sizing: border-box;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">OPTIONS</span>
+
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; font-size: 12px; color: #a9abb0;"><span style="flex-grow: 1;">Gap between slots</span><span style="font-family: Consolas, monospace; color: #e4e5e7;">{{gapLabel}}</span></div>
+        <input type="range" min="0" max="40" value="{{gap}}" onInput="{{onGap}}" aria-label="Gap" style="width: 100%; margin: 0;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; font-size: 12px; color: #a9abb0;"><span style="flex-grow: 1;">Border width</span><span style="font-family: Consolas, monospace; color: #e4e5e7;">{{borderLabel}}</span></div>
+        <input type="range" min="0" max="12" value="{{border}}" onInput="{{onBorder}}" aria-label="Border width" style="width: 100%; margin: 0;">
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 12px; color: #a9abb0;">Border colour</span>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <sc-for list="{{borderColors}}" as="c" hint-placeholder-count="6">
+            <button onClick="{{c.pick}}" aria-label="{{c.aria}}" style="{{c.style}}"></button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 12px; color: #a9abb0;">Background</span>
+        <div style="display: flex; gap: 6px; align-items: center;">
+          <sc-for list="{{bgColors}}" as="c" hint-placeholder-count="5">
+            <button onClick="{{c.pick}}" aria-label="{{c.aria}}" style="{{c.style}}"></button>
+          </sc-for>
+          <button style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Image…</button>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; font-size: 12px; color: #a9abb0;"><span style="flex-grow: 1;">Rounded corners</span><span style="font-family: Consolas, monospace; color: #e4e5e7;">{{radiusLabel}}</span></div>
+        <input type="range" min="0" max="32" value="{{radius}}" onInput="{{onRadius}}" aria-label="Rounded corners" style="width: 100%; margin: 0;">
+      </div>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d5d8;">
+        <input type="checkbox" checked="{{labels}}" onChange="{{toggleLabels}}" style="width: 16px; height: 16px;">
+        Show source labels
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 12px; color: #a9abb0;">Audio from</span>
+        <select value="{{audio}}" onChange="{{onAudio}}" style="height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;">
+          <sc-for list="{{audioOpts}}" as="a" hint-placeholder-count="3"><option value="{{a.v}}">{{a.label}}</option></sc-for>
+        </select>
+      </label>
+      <label style="display: flex; flex-direction: column; gap: 5px;">
+        <span style="font-size: 12px; color: #a9abb0;">Transition when layout changes</span>
+        <select style="height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option>Smooth move (0.5 s)</option><option>Cut</option><option>Fade (0.5 s)</option></select>
+      </label>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="height: 76px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #2c3038; background: #1a1d22; box-sizing: border-box;">
+    <input aria-label="Split preset name" value="{{presetName}}" onInput="{{onName}}" style="width: 220px; height: 40px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 13px; outline: none; box-sizing: border-box;">
+    <button onClick="{{savePreset}}" style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600;">{{saveLabel}}</button>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Close</a>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 22px; border-radius: 6px; background: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #2f8f4e;"></span>Use now (to Preview)</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { layout: 'side', srcs: ['Camera 1', 'Camera 2', 'Phone cam', 'Vid 1'], gap: 12, border: 2, borderColor: '#ffffff', bg: '#101216', radius: 8, labels: true, audio: '1', target: '1', presetName: '[Split name]', savedNow: false };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const L = {
+      side: ['Side by side 50/50', [[0, 0, 50, 100], [50, 0, 50, 100]]],
+      sixty: ['60 / 40', [[0, 0, 60, 100], [60, 0, 40, 100]]],
+      tb: ['Top / bottom', [[0, 0, 100, 50], [0, 50, 100, 50]]],
+      three: ['3-up', [[0, 0, 33.333, 100], [33.333, 0, 33.334, 100], [66.667, 0, 33.333, 100]]],
+      grid: ['2 × 2 grid', [[0, 0, 50, 50], [50, 0, 50, 50], [0, 50, 50, 50], [50, 50, 50, 50]]],
+      bigtwo: ['1 big + 2', [[0, 0, 66.667, 100], [66.667, 0, 33.333, 50], [66.667, 50, 33.333, 50]]],
+      pipTL: ['PiP top left', [[0, 0, 100, 100], [4, 6, 30, 30]]],
+      pipTR: ['PiP top right', [[0, 0, 100, 100], [66, 6, 30, 30]]],
+      pipBL: ['PiP bottom left', [[0, 0, 100, 100], [4, 64, 30, 30]]],
+      pipBR: ['PiP bottom right', [[0, 0, 100, 100], [66, 64, 30, 30]]]
+    };
+    const TONE = { 'Camera 1': '#34404c', 'Camera 2': '#27403f', 'Camera 3': '#3a3f4a', 'Phone cam': '#3b3048', 'Vid 1': '#473a2c', 'Vid 2': '#40322f', 'Slideshow': '#2f3a2c', 'Screen share': '#2c3440', 'Black': '#101216' };
+    const sources = Object.keys(TONE);
+    const isPip = st.layout.startsWith('pip');
+    const layouts = Object.keys(L).map((k) => {
+      const on = k === st.layout;
+      return {
+        name: L[k][0], pick: () => set({ layout: k }),
+        card: `display: flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; text-align: left;`,
+        rects: L[k][1].map((r, i) => ({ style: `position: absolute; left: calc(${r[0]}% + 1.5px); top: calc(${r[1]}% + 1.5px); width: calc(${r[2]}% - 3px); height: calc(${r[3]}% - 3px); border-radius: 2px; background: ${on ? (i === 0 ? '#4fb3bf' : '#8fd3db') : (i === 0 ? '#5a5f69' : '#8e9096')}; ${k.startsWith('pip') && i === 1 ? 'outline: 1.5px solid #101216;' : ''}` }))
+      };
+    });
+    const g = st.gap;
+    const rects = L[st.layout][1];
+    const slots = rects.map((r, i) => {
+      const src = st.srcs[i];
+      const pipMain = isPip && i === 0;
+      const inset = pipMain ? 0 : g / 2;
+      return {
+        n: i + 1, src, audio: st.audio === String(i + 1),
+        onSrc: (e) => { const srcs = st.srcs.slice(); srcs[i] = e.target.value; set({ srcs }); },
+        style: `position: absolute; left: calc(${r[0]}% + ${inset}px); top: calc(${r[1]}% + ${inset}px); width: calc(${r[2]}% - ${inset * 2}px); height: calc(${r[3]}% - ${inset * 2}px); background: ${TONE[src] || '#34404c'}; border: ${pipMain ? 0 : st.border}px solid ${st.borderColor}; border-radius: ${pipMain ? 0 : st.radius}px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden;`
+      };
+    });
+    const sw = (list, key, aria) => list.map((c) => ({ aria: `${aria} ${c}`, pick: () => set({ [key]: c }),
+      style: `width: 26px; height: 26px; border-radius: 4px; padding: 0; background: ${c}; border: ${st[key] === c ? '2px solid #4fb3bf' : '1px solid #3a3f48'}; box-sizing: border-box;` }));
+    const audioOpts = [...slots.map((s) => ({ v: String(s.n), label: `Slot ${s.n} · ${s.src}` })), { v: 'mix', label: 'Mix all slots' }, { v: 'none', label: 'None (use main audio)' }];
+    return {
+      layouts, slots, sources, audioOpts,
+      layoutTitle: `PREVIEW OF LAYOUT · ${L[st.layout][0].toUpperCase()}`,
+      frameStyle: `position: relative; width: 100%; aspect-ratio: 16 / 9; background: ${st.bg}; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden; box-sizing: border-box;`,
+      swap: () => { const srcs = st.srcs.slice(); const t = srcs[0]; srcs[0] = srcs[1]; srcs[1] = t; set({ srcs }); },
+      gap: st.gap, gapLabel: `${st.gap} px`, onGap: (e) => set({ gap: Number(e.target.value) }),
+      border: st.border, borderLabel: `${st.border} px`, onBorder: (e) => set({ border: Number(e.target.value) }),
+      radius: st.radius, radiusLabel: `${st.radius} px`, onRadius: (e) => set({ radius: Number(e.target.value) }),
+      borderColors: sw(['#ffffff', '#101216', '#4fb3bf', '#c7372f', '#2f8f4e', '#8e9096'], 'borderColor', 'Border colour'),
+      bgColors: sw(['#101216', '#000000', '#1e2127', '#1d3b40', '#e4e5e7'], 'bg', 'Background'),
+      labels: st.labels, toggleLabels: () => set({ labels: !st.labels }),
+      audio: st.audio, onAudio: (e) => set({ audio: e.target.value }),
+      target: st.target, onTarget: (e) => set({ target: e.target.value }),
+      presetName: st.presetName, onName: (e) => set({ presetName: e.target.value, savedNow: false }),
+      savePreset: () => set({ savedNow: true }),
+      saveLabel: st.savedNow ? 'Saved to split presets' : 'Save as split preset',
+      saved: [['Two cameras', '50/50'], ['Speaker + slides', '60/40'], ['Camera + phone PiP', 'PiP']].map(([name, meta]) => ({ name, meta, load: () => set({ layout: meta === '50/50' ? 'side' : meta === '60/40' ? 'sixty' : 'pipBR' }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

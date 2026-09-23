@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Product website</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{cursor:pointer;background-image:none;box-shadow:none;font-family:inherit}
+input,select,textarea{font-family:inherit}
+input[type=checkbox]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1280px; height: 2600px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- ===== Nav ===== -->
+  <div style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 96px; background: #1a1d22; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <div style="display: flex; align-items: center; gap: 10px; margin-right: 24px;">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="9" width="16" height="11" rx="2" stroke="#6f6a60" stroke-width="2"></rect><rect x="6" y="6" width="16" height="11" rx="2" stroke="#9c948a" stroke-width="2"></rect><rect x="9" y="3" width="16" height="11" rx="2" fill="#e8b04b"></rect></svg>
+      <span style="font-size: 20px; font-weight: 600;">Lumora</span>
+    </div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="5">
+      <button onClick="{{n.pick}}" style="{{n.style}}">{{n.name}}</button>
+    </sc-for>
+    <div style="flex-grow: 1;"></div>
+    <button style="height: 40px; padding: 0 18px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 14px; font-weight: 700;">Download for Windows</button>
+  </div>
+
+  <!-- ===== Hero ===== -->
+  <div style="height: 480px; flex-shrink: 0; display: flex; align-items: center; gap: 48px; padding: 0 96px; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
+    <div style="width: 470px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px;">
+      <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; color: #8fd3db;">LIVE EVENT SOFTWARE FOR WINDOWS</span>
+      <span style="font-size: 46px; font-weight: 700; line-height: 1.1;">Run every screen at your event from one app</span>
+      <span style="font-size: 17px; line-height: 1.55; color: #d4d5d8;">Lumora controls your live stream, the big screen behind the stage and the monitor your speakers read — together, from one computer. Build your run of show before the event, then run it with one click at a time.</span>
+      <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+        <button onClick="{{download}}" style="{{dlStyle}}">{{dlLabel}}</button>
+        <button onClick="{{goHow}}" style="height: 52px; padding: 0 20px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 15px; font-weight: 600;">See how it works</button>
+      </div>
+      <span style="font-size: 13px; color: #8e9096;">Version [x.y.z] · Windows 10 or 11 (64-bit) · Free [or: pricing]</span>
+    </div>
+    <div style="flex-grow: 1; height: 360px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px;">
+      <div style="height: 16px; display: flex; gap: 6px; align-items: center;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #343944;"></span><span style="width: 8px; height: 8px; border-radius: 4px; background: #343944;"></span><span style="width: 8px; height: 8px; border-radius: 4px; background: #343944;"></span></div>
+      <div style="flex-grow: 1; border-radius: 4px; background: #262a31; border: 1px solid #2c3038; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+        <span style="font-size: 16px; font-weight: 600; color: #a9abb0;">[Screenshot: Main event screen]</span>
+        <span style="font-size: 12px; color: #8e9096;">Preview, Live, presets, inputs and audio on one screen</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== What Lumora is ===== -->
+  <div style="height: 160px; flex-shrink: 0; display: flex; gap: 64px; align-items: center; padding: 0 96px; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
+    <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">WHAT LUMORA IS</span>
+      <span style="font-size: 26px; font-weight: 600; line-height: 1.2;">One control room for your whole event</span>
+    </div>
+    <span style="font-size: 16px; line-height: 1.65; color: #d4d5d8;">Lumora is a Windows app for people who run live events — conferences, celebrations, school and community evenings, concerts. It shows the right picture on each screen, sends messages to the people on stage, streams to the internet and records everything, so one person can run the whole show calmly from a laptop.</span>
+  </div>
+
+  <!-- ===== Features ===== -->
+  <div style="height: 440px; flex-shrink: 0; display: flex; flex-direction: column; gap: 24px; padding: 44px 96px 0; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+      <span style="font-size: 30px; font-weight: 600;">Features</span>
+      <span style="font-size: 14px; color: #8e9096;">Everything you need for the night, in one window</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+      <sc-for list="{{features}}" as="f" hint-placeholder-count="8">
+        <div style="height: 160px; padding: 18px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px;">
+          <span style="width: 28px; height: 28px; border-radius: 6px; background: #1d3b40; color: #8fd3db; font-family: Consolas, monospace; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{f.num}}</span>
+          <span style="font-size: 15px; font-weight: 600;">{{f.title}}</span>
+          <span style="font-size: 13px; line-height: 1.45; color: #a9abb0;">{{f.text}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ===== Why Lumora ===== -->
+  <div style="height: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; padding: 40px 96px 0; box-sizing: border-box; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 30px; font-weight: 600;">Why Lumora</span>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px;">
+      <sc-for list="{{whys}}" as="w" hint-placeholder-count="4">
+        <div style="display: flex; flex-direction: column; gap: 6px; border-left: 2px solid #4fb3bf; padding-left: 14px;">
+          <span style="font-size: 15px; font-weight: 600;">{{w.title}}</span>
+          <span style="font-size: 13px; line-height: 1.5; color: #a9abb0;">{{w.text}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ===== How it works ===== -->
+  <div style="height: 240px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; padding: 40px 96px 0; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+      <span style="font-size: 30px; font-weight: 600;">Explore the app: how it works</span>
+      <a href="Manual.dc.html" style="font-size: 14px;">Read the full manual →</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px;">
+      <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+        <div style="display: flex; gap: 12px; padding: 16px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; height: 118px; box-sizing: border-box;">
+          <span style="width: 32px; height: 32px; flex-shrink: 0; border-radius: 16px; background: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; justify-content: center;">{{s.num}}</span>
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-size: 15px; font-weight: 600;">{{s.title}}</span>
+            <span style="font-size: 13px; line-height: 1.45; color: #a9abb0;">{{s.text}}</span>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ===== Screenshots ===== -->
+  <div style="height: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; padding: 36px 96px 0; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 30px; font-weight: 600;">Screenshots</span>
+      <div style="display: flex; gap: 4px; padding: 3px; border-radius: 6px; background: #262a31;">
+        <sc-for list="{{shotTabs}}" as="t" hint-placeholder-count="4">
+          <button onClick="{{t.pick}}" style="{{t.style}}">{{t.name}}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display: flex; gap: 16px;">
+      <div style="width: 380px; height: 200px; flex-shrink: 0; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #a9abb0;">[Screenshot: {{shotMain}}]</div>
+      <sc-for list="{{shots}}" as="s" hint-placeholder-count="3">
+        <div style="flex-grow: 1; height: 200px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 10px; box-sizing: border-box; text-align: center;">
+          <span style="font-size: 13px; color: #a9abb0;">[Screenshot: {{s.name}}]</span>
+          <span style="font-size: 11px; color: #8e9096;">{{s.sub}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- ===== Download ===== -->
+  <div style="height: 290px; flex-shrink: 0; display: flex; gap: 48px; padding: 40px 96px 0; box-sizing: border-box; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <div style="width: 440px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px;">
+      <span style="font-size: 30px; font-weight: 600;">Download Lumora</span>
+      <span style="font-size: 15px; line-height: 1.55; color: #d4d5d8;">One installer. Lumora keeps itself up to date whenever the computer is online, and works fully offline during your event.</span>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button onClick="{{download}}" style="{{dlStyle}}">{{dlLabel}}</button>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-family: Consolas, monospace; font-size: 13px; color: #e4e5e7;">Version [x.y.z]</span>
+          <span style="font-size: 12px; color: #8e9096;">Released [date] · [size] MB</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 16px; font-size: 13px;">
+        <a href="#release-notes">Release notes</a>
+        <a href="#older">Older versions</a>
+        <a href="PhoneRemote.dc.html">Phone &amp; tablet remote (no install)</a>
+      </div>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SYSTEM REQUIREMENTS</span>
+      <div style="border-radius: 6px; border: 1px solid #2c3038; overflow: hidden;">
+        <sc-for list="{{reqs}}" as="r" hint-placeholder-count="6">
+          <div style="display: flex; height: 30px; align-items: center; border-bottom: 1px solid #2c3038; font-size: 13px;">
+            <span style="width: 170px; padding: 0 14px; color: #a9abb0;">{{r.k}}</span>
+            <span style="flex-grow: 1; color: #e4e5e7;">{{r.v}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Feedback ===== -->
+  <div style="height: 280px; flex-shrink: 0; display: flex; gap: 48px; padding: 40px 96px 0; box-sizing: border-box; border-bottom: 1px solid #2c3038;">
+    <div style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 30px; font-weight: 600;">Send feedback</span>
+      <span style="font-size: 15px; line-height: 1.55; color: #d4d5d8;">Found a problem, or have an idea? Tell us.</span>
+      <span style="font-size: 13px; line-height: 1.5; color: #8e9096;">Only the Lumora team sees what you send. Comments are never shown publicly on this site.</span>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; gap: 10px;">
+        <input aria-label="Your name" placeholder="Your name (optional)" style="flex-grow: 1; height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none;">
+        <input aria-label="Email" placeholder="Email, if you want a reply (optional)" style="flex-grow: 1; height: 40px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none;">
+        <select aria-label="Topic" style="width: 150px; height: 40px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 14px; padding: 0 8px;"><option>General</option><option>Bug report</option><option>Feature idea</option><option>Question</option></select>
+      </div>
+      <textarea aria-label="Your message" onInput="{{onMsg}}" placeholder="Write your comment…" style="height: 96px; resize: none; padding: 10px 12px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none; box-sizing: border-box;">{{msg}}</textarea>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button onClick="{{send}}" style="height: 40px; padding: 0 20px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 14px; font-weight: 700;">Send to the Lumora team</button>
+        <span style="{{sentStyle}}">{{sentText}}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Footer ===== -->
+  <div style="flex-grow: 1; display: flex; align-items: center; gap: 24px; padding: 0 96px; background: #1a1d22; box-sizing: border-box; font-size: 13px; color: #8e9096;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <svg width="20" height="20" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="9" width="16" height="11" rx="2" stroke="#6f6a60" stroke-width="2"></rect><rect x="6" y="6" width="16" height="11" rx="2" stroke="#9c948a" stroke-width="2"></rect><rect x="9" y="3" width="16" height="11" rx="2" fill="#e8b04b"></rect></svg>
+      <span style="color: #d4d5d8;">© [Year] Lumora</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <a href="Manual.dc.html" style="text-decoration: none;">Manual</a>
+    <a href="#support" style="text-decoration: none;">Support</a>
+    <a href="#privacy" style="text-decoration: none;">Privacy</a>
+    <a href="#terms" style="text-decoration: none;">Terms</a>
+    <span>Contact: [support email]</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":2600}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { nav: 'Features', shot: 0, dl: false, msg: '', sent: false }; }
+  renderVals() {
+    const st = this.state;
+    const set = (o) => this.setState(o);
+    const nav = ['Features', 'How it works', 'Screenshots', 'Download', 'Support'].map((name) => {
+      const on = st.nav === name;
+      return { name, pick: () => set({ nav: name }), style: `height: 36px; padding: 0 12px; border: 0; border-radius: 6px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#d4d5d8'}; font-size: 14px;` };
+    });
+    const F = [
+      ['Three screens from one app', 'Live stream, back screen and stage monitor — each shows exactly what it should.'],
+      ['Presets & cues', 'Save each moment of the night as a preset and step through the run of show.'],
+      ['Stage monitor messages', 'Send “5 minutes left”, a clock and a countdown to the stage, or flash to get attention.'],
+      ['Phones as cameras & remotes', 'Turn a phone into a camera, or run the show from a phone or tablet browser.'],
+      ['Green screen scenes', 'Key out a green background and place speakers in a scene of your choice.'],
+      ['Stream everywhere + record', 'Go live on several sites at once, and every event is recorded to MP4.'],
+      ['Works offline', 'Nothing depends on the internet during the event, except the stream itself.'],
+      ['Panic button', 'Double-click to blank the screens instantly; the stage monitor just dims.']
+    ];
+    const features = F.map(([title, text], i) => ({ num: String(i + 1).padStart(2, '0'), title, text }));
+    const whys = [
+      ['Built for one operator', 'The important actions are big and one click away, with keyboard shortcuts for all of them.'],
+      ['Set up once', 'Screens, inputs and messages are remembered, so the next event starts ready.'],
+      ['Calm under pressure', 'Preview before anything goes live, and a panic button when you need it.'],
+      ['Everything in one place', 'No separate apps for streaming, slides, the stage monitor and recording.']
+    ].map(([title, text]) => ({ title, text }));
+    const steps = [
+      ['Connect your screens', 'Choose which display is the Live, Back and Monitor screen — once.'],
+      ['Add inputs', 'Cameras, phones, videos, slides, images and text.'],
+      ['Build presets', 'Arrange each moment of the event and put them in order.'],
+      ['Go live', 'Press Go Live, then step through with Next and TAKE.']
+    ].map(([title, text], i) => ({ num: String(i + 1), title, text }));
+    const TABS = [['Main screen', 'Main event screen'], ['Go Live', 'Go Live popup'], ['Monitor', 'Stage monitor messages'], ['Remote', 'Phone remote']];
+    const shotTabs = TABS.map(([name], i) => {
+      const on = st.shot === i;
+      return { name, pick: () => set({ shot: i }), style: `height: 34px; padding: 0 14px; border-radius: 6px; border: 0; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 13px; font-weight: 600;` };
+    });
+    const shots = [['Presets panel', 'Build the run of show'], ['Green screen scene', 'Key and place a speaker'], ['Event end', 'Keep or delete the recording']].map(([name, sub]) => ({ name, sub }));
+    const reqs = [
+      ['Operating system', 'Windows 10 or Windows 11, 64-bit'],
+      ['Processor', '[Minimum CPU — to be confirmed]'],
+      ['Memory', '[Minimum RAM — to be confirmed]'],
+      ['Graphics', '[GPU requirement — to be confirmed]'],
+      ['Displays', 'Up to 3 outputs (Live, Back, Monitor)'],
+      ['Internet', 'Only for streaming and updates']
+    ].map(([k, v]) => ({ k, v }));
+    return {
+      nav, features, whys, steps, shotTabs, shots, reqs,
+      shotMain: TABS[st.shot][1],
+      goHow: () => set({ nav: 'How it works' }),
+      download: () => set({ dl: true }),
+      dlLabel: st.dl ? 'Download started…' : 'Download for Windows',
+      dlStyle: `height: 52px; padding: 0 24px; border-radius: 6px; border: 0; background: ${st.dl ? '#1d3b40' : '#4fb3bf'}; color: ${st.dl ? '#dff4f6' : '#0e2a2e'}; font-size: 16px; font-weight: 700;`,
+      msg: st.msg,
+      onMsg: (e) => set({ msg: e.target.value, sent: false }),
+      send: () => set({ sent: true, msg: '' }),
+      sentText: st.sent ? 'Thank you — your message was sent to the Lumora team.' : 'Private — not published on the site.',
+      sentStyle: `font-size: 13px; color: ${st.sent ? '#8fd3db' : '#8e9096'};`
+    };
+  }
+}
+</script>
+</body>
+</html>

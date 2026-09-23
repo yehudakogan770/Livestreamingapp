@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Green screen &amp; scene builder</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+button{cursor:pointer;background-image:none;box-shadow:none;font-family:inherit}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+input,select{font-family:inherit}
+input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
+input[type=range]{margin:0;height:18px}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background-color: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; padding: 0 24px; background-color: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600; white-space: nowrap;">Green screen &amp; scene builder</span>
+    <span style="width: 1px; height: 28px; background-color: #2c3038;"></span>
+    <label style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 12px; color: #a9abb0;">Scene</span>
+      <input value="{{sceneName}}" onInput="{{onSceneName}}" aria-label="Scene name" style="width: 220px; height: 34px; box-sizing: border-box; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px; outline: none;"></label>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 12px; color: #a9abb0;">Start from</span>
+      <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+        <sc-for list="{{presetSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+      </div>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <button onClick="{{undo}}" style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">Undo <span style="color: #8e9096; font-size: 11px;">Ctrl+Z</span></button>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Layers -->
+    <div style="width: 260px; flex-shrink: 0; display: flex; flex-direction: column; background-color: #1a1d22; border-right: 1px solid #2c3038;">
+      <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid #2c3038;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LAYERS</span>
+        <div style="display: flex; gap: 4px;">
+          <button onClick="{{moveUp}}" aria-label="Move layer up" title="Move up (Ctrl+])" style="{{k.iconBtn}}">▲</button>
+          <button onClick="{{moveDown}}" aria-label="Move layer down" title="Move down (Ctrl+[)" style="{{k.iconBtn}}">▼</button>
+          <button onClick="{{removeLayer}}" aria-label="Delete layer" title="Delete (Del)" style="{{k.iconBtn}}">✕</button>
+        </div>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; padding: 8px; overflow: hidden;">
+        <span style="font-size: 10px; color: #8e9096; padding: 0 4px 2px;">Top of the picture</span>
+        <sc-for list="{{layerRows}}" as="l" hint-placeholder-count="4">
+          <div onClick="{{l.pick}}" style="{{l.row}}">
+            <span style="font-size: 11px; color: #5a5c62; letter-spacing: -2px; cursor: grab;">⋮⋮</span>
+            <span style="{{l.thumb}}"></span>
+            <div style="display: flex; flex-direction: column; gap: 1px; flex-grow: 1; min-width: 0;">
+              <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{l.name}}</span>
+              <span style="font-size: 10px; color: #8e9096;">{{l.type}}</span>
+            </div>
+            <button onClick="{{l.toggleVis}}" aria-label="Show or hide {{l.name}}" title="Show / hide" style="{{l.eyeStyle}}">
+              <sc-if value="{{l.visible}}" hint-placeholder-val="{{true}}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" stroke="currentColor" stroke-width="1.3"></path><circle cx="7" cy="7" r="1.8" fill="currentColor"></circle></svg></sc-if>
+              <sc-if value="{{l.hidden}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M1 7s2.2-4 6-4 6 4 6 4-2.2 4-6 4-6-4-6-4z" stroke="currentColor" stroke-width="1.3"></path><path d="M2 12L12 2" stroke="currentColor" stroke-width="1.3"></path></svg></sc-if>
+            </button>
+            <button onClick="{{l.toggleLock}}" aria-label="Lock or unlock {{l.name}}" title="Lock" style="{{l.lockStyle}}">
+              <sc-if value="{{l.locked}}" hint-placeholder-val="{{false}}"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true"><rect x="1.5" y="6" width="9" height="7" rx="1.2" fill="currentColor"></rect><path d="M3.5 6V4.2a2.5 2.5 0 0 1 5 0V6" stroke="currentColor" stroke-width="1.3"></path></svg></sc-if>
+              <sc-if value="{{l.unlocked}}" hint-placeholder-val="{{true}}"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true"><rect x="1.5" y="6" width="9" height="7" rx="1.2" stroke="currentColor" stroke-width="1.3"></rect><path d="M3.5 6V4.2a2.5 2.5 0 0 1 5-.4" stroke="currentColor" stroke-width="1.3"></path></svg></sc-if>
+            </button>
+          </div>
+        </sc-for>
+        <span style="font-size: 10px; color: #8e9096; padding: 2px 4px 0;">Bottom of the picture</span>
+      </div>
+      <div style="flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-top: 1px solid #2c3038;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ADD LAYER</span>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{addBtns}}" as="a" hint-placeholder-count="6">
+            <button onClick="{{a.add}}" style="height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7;"><span style="font-family: Consolas, monospace; font-size: 10px; font-weight: 700; color: #8fd3db;">{{a.code}}</span><span style="font-size: 11px;">{{a.label}}</span></button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canvas -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; box-sizing: border-box;">
+      <div style="height: 30px; flex-shrink: 0; display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SCENE</span>
+        <span style="{{viewBadge}}">{{viewLabel}}</span>
+        <div style="flex-grow: 1;"></div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{safe}}" onChange="{{toggleSafe}}"> Safe area</label>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{snap}}" onChange="{{toggleSnap}}"> Snap</label>
+        <select aria-label="Canvas zoom" style="height: 28px; border-radius: 4px; border: 1px solid #2c3038; background-color: #101216; color: #d4d5d8; font-size: 12px; padding: 0 6px;"><option>Fit</option><option>50%</option><option>100%</option></select>
+      </div>
+
+      <div style="{{canvas}}">
+        <sc-for list="{{canvasLayers}}" as="c" hint-placeholder-count="4">
+          <div onClick="{{c.pick}}" style="{{c.box}}">
+            <sc-if value="{{c.isBg}}" hint-placeholder-val="{{false}}">
+              <div style="position: absolute; left: 0; right: 0; top: 0; height: 68%; background-color: {{c.wall}};"></div>
+              <div style="position: absolute; left: 12%; top: 12%; width: 22%; height: 40%; border-radius: 4px; background-color: rgba(255,255,255,0.06);"></div>
+              <div style="position: absolute; right: 12%; top: 12%; width: 22%; height: 40%; border-radius: 4px; background-color: rgba(255,255,255,0.06);"></div>
+              <span style="position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,0.5);">{{c.label}}</span>
+            </sc-if>
+            <sc-if value="{{c.isPerson}}" hint-placeholder-val="{{false}}">
+              <div style="{{c.head}}"></div>
+              <div style="{{c.body}}"></div>
+            </sc-if>
+            <sc-if value="{{c.isPlain}}" hint-placeholder-val="{{true}}">
+              <div style="{{c.plain}}"><span style="{{c.plainText}}">{{c.label}}</span></div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{hasSel}}" hint-placeholder-val="{{true}}">
+          <div style="{{selBox}}">
+            <sc-for list="{{handles}}" as="h" hint-placeholder-count="8"><span style="{{h}}"></span></sc-for>
+            <span style="position: absolute; left: -2px; top: -24px; height: 20px; padding: 0 6px; border-radius: 4px; background-color: #4fb3bf; color: #0e2a2e; display: flex; align-items: center; font-size: 11px; font-weight: 700; white-space: nowrap;">{{selName}}</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{safe}}" hint-placeholder-val="{{false}}">
+          <div style="position: absolute; left: 5%; right: 5%; top: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.3); pointer-events: none;"></div>
+        </sc-if>
+        <sc-if value="{{garbageOn}}" hint-placeholder-val="{{false}}">
+          <div style="{{garbageBox}}"></div>
+        </sc-if>
+      </div>
+
+      <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 8px;">
+        <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">1920×1080 · {{layerCount}} layers</span>
+        <div style="flex-grow: 1;"></div>
+        <button style="height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Use as preset input</button>
+        <button style="height: 40px; padding: 0 18px; border-radius: 6px; border: 1px solid #2f8f4e; background-color: #1f3a28; color: #e4e5e7; font-size: 13px; font-weight: 600;">Send to Preview</button>
+      </div>
+
+      <div style="flex-grow: 1; min-height: 0; display: flex; gap: 10px;">
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 6px; background-color: #1e2127; border: 1px solid #2c3038;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SAVED SCENES</span>
+          <div style="display: flex; gap: 8px;">
+            <sc-for list="{{saved}}" as="s" hint-placeholder-count="4">
+              <div style="display: flex; flex-direction: column; gap: 4px; width: 120px;"><div style="{{s.thumb}}"></div><span style="font-size: 11px; color: #d4d5d8;">{{s.name}}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyer + transform -->
+    <div style="width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; box-sizing: border-box; background-color: #1a1d22; border-left: 1px solid #2c3038; overflow: hidden;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">KEYER</span>
+        <select aria-label="Keyed layer" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;"><option>Camera 2 · Person</option><option>Camera 1</option><option>Phone camera 1</option></select>
+        <button onClick="{{keyer.toggle}}" aria-label="Keyer on or off" style="{{keyer.track}}"><span style="{{keyer.knob}}"></span></button>
+      </div>
+
+      <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+        <sc-for list="{{viewSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}} <span style="font-size: 10px; color: #8e9096; font-weight: 400;">{{o.key}}</span></button></sc-for>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 88px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">Key colour</span>
+        <span style="{{keySwatch}}"></span>
+        <input value="{{keyHex}}" aria-label="Key colour hex" style="width: 84px; height: 32px; box-sizing: border-box; padding: 0 8px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;">
+        <button onClick="{{pickEye}}" aria-label="Pick colour from picture" title="Eyedropper (I)" style="{{eyeBtn}}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9.5 1.8l2.7 2.7-1.6 1.6-2.7-2.7z" fill="currentColor"></path><path d="M8.3 4.9L2.6 10.6 2 12l1.4-.6 5.7-5.7" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"></path></svg></button>
+        <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
+          <sc-for list="{{keyPresets}}" as="p" hint-placeholder-count="2"><button onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button></sc-for>
+        </div>
+      </div>
+
+      <sc-for list="{{keySliders}}" as="r" hint-placeholder-count="6">
+        <div style="display: flex; align-items: center; gap: 10px; height: 24px;">
+          <span style="width: 88px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">{{r.label}}</span>
+          <input type="range" min="0" max="100" value="{{r.value}}" onInput="{{r.onInput}}" aria-label="{{r.label}}" style="flex-grow: 1;">
+          <span style="{{r.valStyle}}">{{r.value}}</span>
+          <button onClick="{{r.reset}}" aria-label="Reset {{r.label}}" title="Reset" style="{{r.resetStyle}}">↺</button>
+        </div>
+      </sc-for>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 88px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">Despill to</span>
+        <select aria-label="Despill colour" style="flex-grow: 1; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;"><option>Neutral grey</option><option>Warm skin tone</option><option>Match background</option><option>Custom colour…</option></select>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 88px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">Garbage matte</span>
+        <button onClick="{{garbage.toggle}}" aria-label="Garbage matte on or off" style="{{garbage.track}}"><span style="{{garbage.knob}}"></span></button>
+        <select aria-label="Garbage matte shape" style="flex-grow: 1; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;"><option>Rectangle</option><option>Custom shape</option></select>
+        <button style="height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">Edit</button>
+      </div>
+
+      <div style="height: 1px; flex-shrink: 0; background-color: #2c3038; margin: 2px 0;"></div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SELECTED LAYER</span>
+        <span style="font-size: 12px; color: #8fd3db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{selName}}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+        <sc-for list="{{posFields}}" as="f" hint-placeholder-count="4">
+          <label style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 8px; box-sizing: border-box; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216;"><span style="font-size: 11px; color: #8e9096;">{{f.label}}</span><input value="{{f.value}}" aria-label="{{f.label}}" style="width: 100%; min-width: 0; border: 0; background: transparent; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;"></label>
+        </sc-for>
+      </div>
+      <sc-for list="{{xfSliders}}" as="r" hint-placeholder-count="3">
+        <div style="display: flex; align-items: center; gap: 10px; height: 24px;">
+          <span style="width: 88px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">{{r.label}}</span>
+          <input type="range" min="{{r.min}}" max="{{r.max}}" value="{{r.value}}" onInput="{{r.onInput}}" aria-label="{{r.label}}" style="flex-grow: 1;">
+          <span style="{{r.valStyle}}">{{r.display}}</span>
+          <button onClick="{{r.reset}}" aria-label="Reset {{r.label}}" title="Reset" style="{{r.resetStyle}}">↺</button>
+        </div>
+      </sc-for>
+
+      <div style="flex-grow: 1;"></div>
+      <button onClick="{{save}}" style="height: 48px; flex-shrink: 0; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700;">{{saveText}} <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Ctrl+S</span></button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.kdef = { sim: 42, smooth: 18, spill: 60, feather: 12, choke: 6, wrap: 20 };
+    this.state = {
+      sceneName: '[Scene name]', preset: 'Studio desk', view: 'final', keyerOn: true, garbageOn: false, key: 'green', eye: false, safe: false, snap: true, saved: false,
+      kv: { ...this.kdef },
+      sel: 'person', nextId: 1,
+      layers: [
+        { id: 'logo', name: 'Logo', type: '3D logo', kind: 'plain', x: 646, y: 22, w: 112, h: 46, color: '#1d3b40', text: '#dff4f6', vis: true, lock: false, scale: 100, rot: 0, op: 100 },
+        { id: 'table', name: 'Front table', type: 'Image · PNG', kind: 'plain', x: 190, y: 334, w: 400, h: 105, color: '#3a2f27', text: 'rgba(255,255,255,0.5)', vis: true, lock: false, scale: 100, rot: 0, op: 100 },
+        { id: 'person', name: 'Camera 2 · Person', type: 'Camera · keyed', kind: 'person', x: 318, y: 78, w: 144, h: 300, color: '#6b5646', vis: true, lock: false, scale: 100, rot: 0, op: 100 },
+        { id: 'bg', name: 'Virtual set', type: 'Video loop', kind: 'bg', x: 0, y: 0, w: 780, h: 439, color: '#1f2a2a', wall: '#27403f', vis: true, lock: true, scale: 100, rot: 0, op: 100 }
+      ]
+    };
+  }
+  setLayer(id, patch) { this.setState({ layers: this.state.layers.map((l) => (l.id === id ? { ...l, ...patch } : l)) }); }
+  renderVals() {
+    const st = this.state;
+    const sw = (on, toggle) => ({ toggle,
+      track: `width: 38px; height: 22px; flex-shrink: 0; position: relative; padding: 0; border-radius: 11px; border: 1px solid ${on ? '#4fb3bf' : '#343944'}; background-color: ${on ? '#4fb3bf' : '#2a2e36'};`,
+      knob: `position: absolute; top: 3px; left: ${on ? 19 : 3}px; width: 14px; height: 14px; border-radius: 7px; background-color: ${on ? '#0e2a2e' : '#a9abb0'};` });
+    const segStyle = (on) => `flex-grow: 1; flex-basis: 0; height: 32px; padding: 0 12px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; white-space: nowrap; background-color: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`;
+    const resetStyle = (changed) => `width: 24px; height: 24px; flex-shrink: 0; padding: 0; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; font-size: 12px; color: ${changed ? '#e4e5e7' : '#5a5c62'};`;
+    const valStyle = (changed) => `width: 40px; flex-shrink: 0; text-align: right; font-family: Consolas, monospace; font-size: 12px; color: ${changed ? '#8fd3db' : '#e4e5e7'};`;
+    const layers = st.layers; const n = layers.length;
+    const sel = layers.find((l) => l.id === st.sel);
+    const view = st.view;
+    const keyCol = st.key === 'green' ? '#2fa84f' : '#2f5fc0';
+    const presetWalls = { 'Studio desk': '#27403f', 'Stage backdrop': '#3b3446', 'Virtual set': '#2c3848' };
+    const canvasLayers = layers.map((l, i) => {
+      const z = n - i;
+      let show = l.vis;
+      if (view !== 'final' && l.kind !== 'person') show = false;
+      const s = l.scale / 100;
+      const base = `position: absolute; left: ${l.x}px; top: ${l.y}px; width: ${l.w}px; height: ${l.h}px; z-index: ${z}; display: ${show ? 'block' : 'none'}; opacity: ${l.op / 100}; transform: rotate(${l.rot}deg) scale(${s}); cursor: ${l.lock ? 'default' : 'move'};`;
+      const personCol = view === 'matte' ? '#ffffff' : l.color;
+      const soft = view === 'matte' ? `box-shadow: 0 0 ${st.kv.feather / 4}px ${st.kv.feather / 6}px rgba(255,255,255,0.6);` : '';
+      return { pick: () => this.setState({ sel: l.id }), box: base,
+        isBg: l.kind === 'bg', isPerson: l.kind === 'person', isPlain: l.kind === 'plain', label: l.kind === 'bg' ? '[Background image / video]' : (l.id === 'logo' ? '[Logo]' : '[' + l.name + ']'),
+        wall: presetWalls[st.preset] || l.wall,
+        head: `position: absolute; left: 50%; top: 0; width: 56px; height: 64px; margin-left: -28px; border-radius: 28px; background-color: ${personCol}; ${soft}`,
+        body: `position: absolute; left: 0; right: 0; top: 70px; bottom: 0; border-radius: 60px 60px 6px 6px; background-color: ${personCol}; ${soft}`,
+        plain: `position: absolute; inset: 0; border-radius: ${l.id === 'table' ? '6px 6px 0 0' : '4px'}; background-color: ${l.color}; border-top: ${l.id === 'table' ? '6px solid #4a3c30' : '0'}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;`,
+        plainText: `font-size: ${l.id === 'logo' ? 14 : 11}px; font-weight: ${l.id === 'logo' ? 700 : 400}; color: ${l.text || 'rgba(255,255,255,0.6)'};` };
+    });
+    const handlePos = [['-5px', '-5px', 'nwse'], ['calc(50% - 4px)', '-5px', 'ns'], ['calc(100% - 3px)', '-5px', 'nesw'], ['calc(100% - 3px)', 'calc(50% - 4px)', 'ew'], ['calc(100% - 3px)', 'calc(100% - 3px)', 'nwse'], ['calc(50% - 4px)', 'calc(100% - 3px)', 'ns'], ['-5px', 'calc(100% - 3px)', 'nesw'], ['-5px', 'calc(50% - 4px)', 'ew']];
+    const selShow = sel && sel.vis && (view === 'final' || sel.kind === 'person');
+    const kvKeys = [['sim', 'Similarity'], ['smooth', 'Smoothness'], ['spill', 'Spill reduction'], ['feather', 'Edge feather'], ['choke', 'Choke / shrink'], ['wrap', 'Light wrap']];
+    const addDefs = [['CAM', 'Camera', 'Camera · keyed', '#5a4a3c'], ['IMG', 'Image', 'Image', '#3b3446'], ['VID', 'Video', 'Video', '#473a2c'], ['LP', 'Loop', 'Video loop', '#27403f'], ['3D', '3D logo', '3D logo', '#1d3b40'], ['TXT', 'Text', 'Text', '#262a31']];
+    const moveBy = (d) => { const i = layers.findIndex((l) => l.id === st.sel); const j = i + d; if (i < 0 || j < 0 || j >= n) return; const arr = layers.slice(); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; this.setState({ layers: arr }); };
+    const xfDefs = [['scale', 'Scale', 10, 300, (v) => v + '%', 100], ['rot', 'Rotation', -180, 180, (v) => v + '°', 0], ['op', 'Opacity', 0, 100, (v) => v + '%', 100]];
+    return {
+      k: { iconBtn: 'width: 26px; height: 26px; padding: 0; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; color: #d4d5d8; font-size: 10px;' },
+      sceneName: st.sceneName, onSceneName: (e) => this.setState({ sceneName: e.target.value }),
+      presetSeg: ['Studio desk', 'Stage backdrop', 'Virtual set'].map((p) => ({ label: p, pick: () => this.setState({ preset: p }), style: segStyle(st.preset === p) })),
+      undo: () => this.setState({ kv: { ...this.kdef } }),
+      layerRows: layers.map((l) => { const on = l.id === st.sel; return { name: l.name, type: l.type, visible: l.vis, hidden: !l.vis, locked: l.lock, unlocked: !l.lock,
+        pick: () => this.setState({ sel: l.id }),
+        toggleVis: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setLayer(l.id, { vis: !l.vis }); },
+        toggleLock: (e) => { if (e && e.stopPropagation) e.stopPropagation(); this.setLayer(l.id, { lock: !l.lock }); },
+        row: `height: 48px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 8px; border-radius: 6px; cursor: pointer; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background-color: ${on ? '#1d3b40' : '#1e2127'}; opacity: ${l.vis ? 1 : 0.6};`,
+        thumb: `width: 36px; height: 24px; flex-shrink: 0; border-radius: 3px; background-color: ${l.kind === 'bg' ? (presetWalls[st.preset] || l.wall) : l.color}; border: 1px solid #2c3038;`,
+        eyeStyle: `width: 26px; height: 26px; padding: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 0; background: transparent; color: ${l.vis ? '#d4d5d8' : '#5a5c62'};`,
+        lockStyle: `width: 26px; height: 26px; padding: 0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 0; background: transparent; color: ${l.lock ? '#8fd3db' : '#5a5c62'};` }; }),
+      moveUp: () => moveBy(-1), moveDown: () => moveBy(1),
+      removeLayer: () => { if (!sel || sel.lock) return; const rest = layers.filter((l) => l.id !== st.sel); this.setState({ layers: rest, sel: rest.length ? rest[0].id : null }); },
+      addBtns: addDefs.map(([code, label, type, color]) => ({ code, label, add: () => {
+        const id = 'n' + st.nextId;
+        const nl = { id, name: label + ' ' + st.nextId, type, kind: 'plain', x: 60 + st.nextId * 16, y: 60 + st.nextId * 12, w: 180, h: 100, color, vis: true, lock: false, scale: 100, rot: 0, op: 100 };
+        this.setState({ layers: [nl, ...layers], sel: id, nextId: st.nextId + 1 }); } })),
+      canvas: `width: 780px; height: 439px; flex-shrink: 0; position: relative; overflow: hidden; border-radius: 6px; border: 1px solid #2c3038; background-color: ${view === 'matte' ? '#000000' : (view === 'source' ? '#2f7a3c' : '#101216')}; cursor: ${st.eye ? 'crosshair' : 'default'};`,
+      canvasLayers,
+      hasSel: !!selShow, selName: sel ? sel.name : 'Nothing selected',
+      selBox: sel ? `position: absolute; left: ${sel.x}px; top: ${sel.y}px; width: ${sel.w}px; height: ${sel.h}px; z-index: 50; box-sizing: border-box; border: 2px solid ${sel.lock ? '#8e9096' : '#4fb3bf'}; pointer-events: none; transform: rotate(${sel.rot}deg) scale(${sel.scale / 100});` : '',
+      handles: handlePos.map(([l, t]) => `position: absolute; left: ${l}; top: ${t}; width: 8px; height: 8px; box-sizing: border-box; background-color: #ffffff; border: 1px solid #0e2a2e; display: ${sel && sel.lock ? 'none' : 'block'};`),
+      safe: st.safe, toggleSafe: () => this.setState({ safe: !st.safe }),
+      snap: st.snap, toggleSnap: () => this.setState({ snap: !st.snap }),
+      garbageOn: st.garbageOn && view !== 'final',
+      garbageBox: 'position: absolute; left: 240px; top: 40px; width: 300px; height: 399px; z-index: 60; border: 2px dashed #e0473b; box-shadow: 0 0 0 999px rgba(0,0,0,0.55); pointer-events: none;',
+      viewLabel: view === 'final' ? 'Final' : (view === 'matte' ? 'Matte view · white is kept' : 'Source view · camera as it comes in'),
+      viewBadge: `height: 22px; padding: 0 8px; border-radius: 4px; display: flex; align-items: center; font-size: 11px; font-weight: 600; background-color: ${view === 'final' ? '#262a31' : '#1d3b40'}; color: ${view === 'final' ? '#a9abb0' : '#dff4f6'};`,
+      layerCount: n,
+      saved: [['Studio desk', '#27403f'], ['Stage backdrop', '#3b3446'], ['Virtual set', '#2c3848'], ['[Your scene]', '#473a2c']].map(([name, c]) => ({ name, thumb: `height: 60px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038;` })),
+      keyer: sw(st.keyerOn, () => this.setState({ keyerOn: !st.keyerOn })),
+      garbage: sw(st.garbageOn, () => this.setState({ garbageOn: !st.garbageOn })),
+      viewSeg: [['final', 'Final', 'F'], ['matte', 'Matte', 'M'], ['source', 'Source', 'S']].map(([id, label, key]) => ({ label, key, pick: () => this.setState({ view: id }), style: segStyle(view === id) })),
+      keySwatch: `width: 32px; height: 32px; flex-shrink: 0; box-sizing: border-box; border-radius: 6px; border: 1px solid #2c3038; background-color: ${keyCol};`,
+      keyHex: keyCol.toUpperCase(),
+      pickEye: () => this.setState({ eye: !st.eye }),
+      eyeBtn: `width: 32px; height: 32px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid ${st.eye ? '#4fb3bf' : '#2c3038'}; background-color: ${st.eye ? '#1d3b40' : '#2a2e36'}; color: ${st.eye ? '#dff4f6' : '#e4e5e7'};`,
+      keyPresets: [['green', 'Green'], ['blue', 'Blue']].map(([id, label]) => ({ label, pick: () => this.setState({ key: id }), style: `height: 30px; padding: 0 8px; border: 0; font-size: 11px; font-weight: 600; background-color: ${st.key === id ? '#1d3b40' : '#2a2e36'}; color: ${st.key === id ? '#dff4f6' : '#d4d5d8'};` })),
+      keySliders: kvKeys.map(([key, label]) => { const v = st.kv[key]; const ch = v !== this.kdef[key]; return { label, value: v, valStyle: valStyle(ch), resetStyle: resetStyle(ch),
+        onInput: (e) => this.setState({ kv: { ...this.state.kv, [key]: Number(e.target.value) } }), reset: () => this.setState({ kv: { ...this.state.kv, [key]: this.kdef[key] } }) }; }),
+      posFields: sel ? [['X', sel.x], ['Y', sel.y], ['W', sel.w], ['H', sel.h]].map(([label, value]) => ({ label, value })) : [],
+      xfSliders: sel ? xfDefs.map(([key, label, min, max, fmt, def]) => { const v = sel[key]; const ch = v !== def; return { label, min, max, value: v, display: fmt(v), valStyle: valStyle(ch), resetStyle: resetStyle(ch),
+        onInput: (e) => this.setLayer(sel.id, { [key]: Number(e.target.value) }), reset: () => this.setLayer(sel.id, { [key]: def }) }; }) : [],
+      save: () => this.setState({ saved: true }),
+      saveText: st.saved ? 'Saved to library' : 'Save scene to library'
+    };
+  }
+}
+</script>
+</body>
+</html>

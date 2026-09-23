@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Add input</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+button{cursor:pointer;background-image:none;box-shadow:none;font-family:inherit}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+input,select,textarea{font-family:inherit}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:#4fb3bf}
+input[type=checkbox]{width:16px;height:16px;margin:0}
+</style>
+</helmet>
+<div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Add input</span>
+    <span style="font-size: 13px; color: #8e9096;">Pick a type on the left, set it up on the right</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Type list -->
+    <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding: 12px 10px; box-sizing: border-box; background-color: #1a1d22; border-right: 1px solid #2c3038; overflow: hidden;">
+      <sc-for list="{{typeRows}}" as="r" hint-placeholder-count="16">
+        <sc-if value="{{r.isHead}}" hint-placeholder-val="{{false}}">
+          <span style="{{r.headStyle}}">{{r.label}}</span>
+        </sc-if>
+        <sc-if value="{{r.isItem}}" hint-placeholder-val="{{true}}">
+          <button onClick="{{r.pick}}" style="{{r.style}}">
+            <span style="{{r.iconStyle}}">{{r.code}}</span>
+            <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-width: 0;">
+              <span style="font-size: 13px; font-weight: 600;">{{r.name}}</span>
+              <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">{{r.sub}}</span>
+            </span>
+          </button>
+        </sc-if>
+      </sc-for>
+    </div>
+
+    <!-- Settings -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 18px; padding: 20px 24px; box-sizing: border-box; overflow: hidden;">
+
+      <div style="display: flex; align-items: flex-end; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1;">
+          <span style="font-size: 17px; font-weight: 600;">{{sel.name}}</span>
+          <span style="font-size: 12px; color: #8e9096;">{{sel.sub}}</span>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px; width: 260px;">
+          <span style="{{k.lbl}}">Input name</span>
+          <input value="{{sel.defName}}" aria-label="Input name" style="{{k.inp}}">
+        </label>
+      </div>
+      <div style="height: 1px; background-color: #2c3038; flex-shrink: 0;"></div>
+
+      <!-- HDMI / USB camera -->
+      <sc-if value="{{is.cam}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; gap: 24px;">
+          <div style="width: 400px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+            <span style="{{k.h}}">Live thumbnail</span>
+            <div style="width: 400px; height: 225px; border-radius: 6px; background-color: #34404c; border: 1px solid #2c3038; position: relative; display: flex; align-items: center; justify-content: center;">
+              <span style="font-size: 14px; color: rgba(255,255,255,0.55);">[Camera picture]</span>
+              <span style="position: absolute; left: 10px; top: 10px; height: 20px; padding: 0 8px; border-radius: 4px; background-color: rgba(0,0,0,0.55); display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em;"><span style="width: 6px; height: 6px; border-radius: 3px; background-color: #3fbf5a;"></span>SIGNAL</span>
+              <span style="position: absolute; right: 10px; bottom: 10px; font-family: Consolas, monospace; font-size: 11px; color: rgba(255,255,255,0.7);">{{camRes}}</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button style="{{k.btnSm}}">Refresh devices</button>
+              <button style="{{k.btnSm}}">Device properties…</button>
+            </div>
+          </div>
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Device</span>
+              <select aria-label="Device" style="{{k.inp}}"><option>{{camDevice}}</option><option>[Capture card] · Input 2</option><option>[Other device]</option></select></label>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+              <label style="{{k.field}}"><span style="{{k.lbl}}">Resolution</span>
+                <select aria-label="Resolution" style="{{k.inp}}"><option>{{camRes}} · highest</option><option>1920×1080</option><option>1280×720</option></select></label>
+              <label style="{{k.field}}"><span style="{{k.lbl}}">Frame rate</span>
+                <select aria-label="Frame rate" style="{{k.inp}}"><option>60 fps · highest</option><option>50 fps</option><option>30 fps</option><option>25 fps</option></select></label>
+            </div>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Audio source</span>
+              <select aria-label="Audio source" style="{{k.inp}}"><option>{{camAudio}}</option><option>[Sound desk] · USB audio</option><option>No audio</option></select></label>
+            <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 4px;">
+              <label style="{{k.check}}"><input type="checkbox" checked> Show in audio mixer</label>
+              <label style="{{k.check}}"><input type="checkbox"> Deinterlace</label>
+              <label style="{{k.check}}"><input type="checkbox"> Open input settings (colour, crop) after adding</label>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Wireless -->
+      <sc-if value="{{is.wireless}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="{{k.lbl}}">Protocol</span>
+            <div style="{{k.segWrap}}">
+              <sc-for list="{{protoSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+            </div>
+          </div>
+          <div style="display: flex; gap: 24px;">
+            <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
+              <sc-if value="{{isNdi}}" hint-placeholder-val="{{true}}">
+                <span style="{{k.h}}">Found on this network</span>
+                <div style="display: flex; flex-direction: column; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+                  <sc-for list="{{ndiList}}" as="n" hint-placeholder-count="3">
+                    <button onClick="{{n.pick}}" style="{{n.style}}"><span style="width: 8px; height: 8px; border-radius: 4px; background-color: #3fbf5a;"></span><span style="flex-grow: 1; text-align: left;">{{n.name}}</span><span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">{{n.meta}}</span></button>
+                  </sc-for>
+                </div>
+                <button style="{{k.btnSm}}">Search again</button>
+              </sc-if>
+              <sc-if value="{{isUrl}}" hint-placeholder-val="{{false}}">
+                <label style="{{k.field}}"><span style="{{k.lbl}}">{{urlLabel}}</span><input value="{{urlVal}}" aria-label="Stream address" style="{{k.inpMono}}"></label>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+                  <label style="{{k.field}}"><span style="{{k.lbl}}">{{keyLabel}}</span><input type="password" value="[key]" aria-label="Key" style="{{k.inp}}"></label>
+                  <label style="{{k.field}}"><span style="{{k.lbl}}">Latency</span><select aria-label="Latency" style="{{k.inp}}"><option>Low (120 ms)</option><option>Normal (300 ms)</option><option>Safe (800 ms)</option></select></label>
+                </div>
+                <button style="{{k.btnSm}}">Copy address for the sender</button>
+              </sc-if>
+              <label style="{{k.field}}"><span style="{{k.lbl}}">Audio</span><select aria-label="Audio" style="{{k.inp}}"><option>Use audio from the stream</option><option>No audio</option></select></label>
+            </div>
+            <div style="width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+              <span style="{{k.h}}">Live thumbnail</span>
+              <div style="height: 180px; border-radius: 6px; background-color: #27403f; border: 1px solid #2c3038; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,0.55);">[Wireless camera picture]</div>
+              <span style="font-size: 11px; color: #8e9096;">Stays on the Lumora network — no internet needed.</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Phone -->
+      <sc-if value="{{is.phone}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 24px;">
+          <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px; box-sizing: border-box; border-radius: 6px; background-color: #1a1d22; border: 1px solid #2c3038;">
+            <span style="{{k.h}}">Join with a phone</span>
+            <div style="width: 180px; height: 180px; align-self: center; border-radius: 6px; background-color: #ffffff; display: flex; align-items: center; justify-content: center;">
+              <svg width="150" height="150" viewBox="0 0 25 25" aria-label="QR code to join" shape-rendering="crispEdges">
+                <rect x="0" y="0" width="7" height="7" fill="#111"></rect><rect x="1" y="1" width="5" height="5" fill="#fff"></rect><rect x="2" y="2" width="3" height="3" fill="#111"></rect>
+                <rect x="18" y="0" width="7" height="7" fill="#111"></rect><rect x="19" y="1" width="5" height="5" fill="#fff"></rect><rect x="20" y="2" width="3" height="3" fill="#111"></rect>
+                <rect x="0" y="18" width="7" height="7" fill="#111"></rect><rect x="1" y="19" width="5" height="5" fill="#fff"></rect><rect x="2" y="20" width="3" height="3" fill="#111"></rect>
+                <rect x="9" y="1" width="2" height="1" fill="#111"></rect><rect x="12" y="0" width="1" height="3" fill="#111"></rect><rect x="14" y="2" width="2" height="2" fill="#111"></rect><rect x="9" y="4" width="1" height="3" fill="#111"></rect><rect x="11" y="5" width="3" height="1" fill="#111"></rect>
+                <rect x="0" y="9" width="3" height="1" fill="#111"></rect><rect x="4" y="9" width="2" height="2" fill="#111"></rect><rect x="8" y="8" width="2" height="2" fill="#111"></rect><rect x="11" y="9" width="3" height="3" fill="#111"></rect><rect x="15" y="8" width="1" height="4" fill="#111"></rect><rect x="18" y="9" width="3" height="1" fill="#111"></rect><rect x="22" y="8" width="2" height="3" fill="#111"></rect>
+                <rect x="1" y="12" width="2" height="3" fill="#111"></rect><rect x="5" y="13" width="3" height="1" fill="#111"></rect><rect x="9" y="13" width="1" height="3" fill="#111"></rect><rect x="17" y="12" width="2" height="2" fill="#111"></rect><rect x="20" y="13" width="3" height="1" fill="#111"></rect><rect x="23" y="15" width="2" height="2" fill="#111"></rect>
+                <rect x="3" y="16" width="3" height="1" fill="#111"></rect><rect x="11" y="15" width="2" height="2" fill="#111"></rect><rect x="14" y="14" width="2" height="3" fill="#111"></rect><rect x="18" y="16" width="3" height="1" fill="#111"></rect>
+                <rect x="9" y="18" width="3" height="1" fill="#111"></rect><rect x="13" y="19" width="2" height="2" fill="#111"></rect><rect x="9" y="21" width="1" height="3" fill="#111"></rect><rect x="11" y="22" width="3" height="1" fill="#111"></rect><rect x="16" y="18" width="1" height="4" fill="#111"></rect><rect x="18" y="19" width="4" height="4" fill="#111"></rect><rect x="19" y="20" width="2" height="2" fill="#fff"></rect><rect x="23" y="18" width="1" height="2" fill="#111"></rect><rect x="22" y="23" width="3" height="1" fill="#111"></rect><rect x="15" y="23" width="2" height="2" fill="#111"></rect>
+              </svg>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="{{k.lbl}}">PIN</span>
+              <span style="font-family: Consolas, monospace; font-size: 26px; font-weight: 700; letter-spacing: 0.18em; color: #dff4f6;">{{pin}}</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="{{k.lbl}}">Wi-Fi</span>
+              <span style="font-size: 13px; font-weight: 600;">[Lumora network name]</span>
+            </div>
+            <button onClick="{{newPin}}" style="{{k.btnSm}}">New PIN</button>
+          </div>
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: baseline; gap: 10px;">
+              <span style="{{k.h}}">Connected phone cameras</span>
+              <span style="font-size: 12px; color: #8e9096;">No limit · each phone becomes its own input</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <sc-for list="{{phones}}" as="p" hint-placeholder-count="3">
+                <div style="display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 12px; border-radius: 6px; background-color: #262a31; border: 1px solid #2c3038;">
+                  <input type="checkbox" checked="{{p.on}}" onChange="{{p.toggle}}" aria-label="Add {{p.name}}">
+                  <div style="{{p.thumb}}"></div>
+                  <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0;">
+                    <span style="font-size: 13px; font-weight: 600;">{{p.name}}</span>
+                    <span style="font-size: 11px; color: #8e9096;">{{p.meta}}</span>
+                  </div>
+                  <span style="font-size: 11px; color: #8fd3db;">Connected</span>
+                  <button style="{{k.btnSm}}">Identify</button>
+                </div>
+              </sc-for>
+            </div>
+            <div style="height: 40px; border-radius: 6px; border: 1px dashed #343944; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #8e9096;">Waiting for more phones… scan the code or enter the PIN in the Lumora phone app</div>
+            <label style="{{k.check}}"><input type="checkbox" checked> Add each new phone automatically</label>
+            <a href="PhoneCamera.dc.html" style="font-size: 12px;">What the phone shows</a>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Video file -->
+      <sc-if value="{{is.video}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 24px;">
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+            <div style="{{k.field}}"><span style="{{k.lbl}}">File</span>
+              <div style="display: flex; gap: 8px;"><input value="[Video file].mp4" aria-label="File" readonly style="{{k.inp}}"><button style="{{k.btn}}">Choose file…</button><button style="{{k.btn}}">From library</button></div></div>
+            <div style="{{k.swRow}}"><div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 13px; font-weight: 600;">Loop</span><span style="font-size: 11px; color: #8e9096;">Play again from the start</span></div>
+              <button onClick="{{sw.loop.toggle}}" aria-label="Loop" style="{{sw.loop.track}}"><span style="{{sw.loop.knob}}"></span></button></div>
+            <div style="{{k.field}}"><span style="{{k.lbl}}">When it ends</span>
+              <div style="{{k.segWrap}}"><sc-for list="{{endSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div></div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+              <label style="{{k.field}}"><span style="{{k.lbl}}">When taken live</span><select aria-label="When taken live" style="{{k.inp}}"><option>Restart from the beginning</option><option>Continue where it was</option></select></label>
+              <label style="{{k.field}}"><span style="{{k.lbl}}">Audio</span><select aria-label="Audio" style="{{k.inp}}"><option>Use the file's sound</option><option>Muted</option></select></label>
+            </div>
+          </div>
+          <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+            <span style="{{k.h}}">Preview</span>
+            <div style="height: 169px; border-radius: 6px; background-color: #473a2c; border: 1px solid #2c3038; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,0.55);">[Video first frame]</div>
+            <div style="display: flex; justify-content: space-between; font-family: Consolas, monospace; font-size: 11px; color: #a9abb0;"><span>[Length]</span><span>[Resolution]</span></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Image -->
+      <sc-if value="{{is.image}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 24px;">
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+            <div style="{{k.field}}"><span style="{{k.lbl}}">File</span>
+              <div style="display: flex; gap: 8px;"><input value="[Image file].png" aria-label="File" readonly style="{{k.inp}}"><button style="{{k.btn}}">Choose file…</button><button style="{{k.btn}}">From library</button></div></div>
+            <div style="{{k.field}}"><span style="{{k.lbl}}">Fit</span>
+              <div style="{{k.segWrap}}"><sc-for list="{{fitSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div></div>
+            <label style="{{k.check}}"><input type="checkbox" checked> Keep transparency (PNG)</label>
+          </div>
+          <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+            <span style="{{k.h}}">Preview</span>
+            <div style="height: 169px; border-radius: 6px; background-color: #3b3446; border: 1px solid #2c3038; display: flex; align-items: center; justify-content: center; font-size: 13px; color: rgba(255,255,255,0.55);">[Image]</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Slideshow -->
+      <sc-if value="{{is.slides}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px;"><span style="{{k.h}}">Slides</span><div style="flex-grow: 1;"></div><button style="{{k.btnSm}}">+ Add images…</button><button style="{{k.btnSm}}">Add a folder…</button></div>
+          <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;">
+            <sc-for list="{{slides}}" as="s" hint-placeholder-count="6"><div style="{{s.style}}"><span style="font-family: Consolas, monospace; font-size: 11px; color: rgba(255,255,255,0.6);">{{s.n}}</span></div></sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Each slide</span><select aria-label="Seconds per slide" style="{{k.inp}}"><option>8 seconds</option><option>5 seconds</option><option>12 seconds</option><option>Manual (click next)</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Transition</span><select aria-label="Transition" style="{{k.inp}}"><option>Fade</option><option>Cut</option><option>Slide</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Order</span><select aria-label="Order" style="{{k.inp}}"><option>In order</option><option>Shuffle</option></select></label>
+          </div>
+          <div style="{{k.swRow}}"><span style="font-size: 13px; font-weight: 600;">Loop the slideshow</span><button onClick="{{sw.loop.toggle}}" aria-label="Loop" style="{{sw.loop.track}}"><span style="{{sw.loop.knob}}"></span></button></div>
+        </div>
+      </sc-if>
+
+      <!-- Browser -->
+      <sc-if value="{{is.browser}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="{{k.field}}"><span style="{{k.lbl}}">Web address</span>
+            <div style="display: flex; gap: 8px;"><input value="https://[website address]" aria-label="URL" style="{{k.inpMono}}"><button style="{{k.btn}}">Pick an open Chrome tab…</button></div></div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Page size</span><select aria-label="Page size" style="{{k.inp}}"><option>1920×1080</option><option>1280×720</option><option>3840×2160</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Frame rate</span><select aria-label="Frame rate" style="{{k.inp}}"><option>60 fps</option><option>30 fps</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Zoom</span><select aria-label="Zoom" style="{{k.inp}}"><option>100%</option><option>125%</option><option>150%</option><option>75%</option></select></label>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <div style="{{k.swRow}}"><span style="font-size: 13px; font-weight: 600;">Keep page audio</span><button onClick="{{sw.audio.toggle}}" aria-label="Keep page audio" style="{{sw.audio.track}}"><span style="{{sw.audio.knob}}"></span></button></div>
+            <div style="{{k.swRow}}"><span style="font-size: 13px; font-weight: 600;">Transparent background</span><button onClick="{{sw.transp.toggle}}" aria-label="Transparent background" style="{{sw.transp.track}}"><span style="{{sw.transp.knob}}"></span></button></div>
+          </div>
+          <label style="{{k.check}}"><input type="checkbox" checked> Open the control window after adding</label>
+          <a href="BrowserSource.dc.html" style="font-size: 12px;">Open browser control</a>
+        </div>
+      </sc-if>
+
+      <!-- Solid colour -->
+      <sc-if value="{{is.color}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 24px;">
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+            <span style="{{k.h}}">Colour</span>
+            <div style="display: grid; grid-template-columns: repeat(8, 44px); gap: 8px;">
+              <sc-for list="{{swatches}}" as="c" hint-placeholder-count="16"><button onClick="{{c.pick}}" aria-label="{{c.hex}}" style="{{c.style}}"></button></sc-for>
+            </div>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Hex</span><input value="{{colour}}" aria-label="Hex colour" style="{{k.inpMonoSm}}"></label>
+          </div>
+          <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+            <span style="{{k.h}}">Preview</span>
+            <div style="{{colourPreview}}"></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Back-screen loop -->
+      <sc-if value="{{is.loop}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="{{k.h}}">Built-in loops</span><div style="flex-grow: 1;"></div>
+            <select aria-label="Mood" style="{{k.selSm}}"><option>All moods</option><option>Calm</option><option>Energetic</option><option>Elegant</option></select>
+            <button style="{{k.btnSm}}">Import your own…</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+            <sc-for list="{{loops}}" as="l" hint-placeholder-count="8">
+              <button onClick="{{l.pick}}" style="{{l.style}}"><div style="{{l.thumb}}"></div><span style="font-size: 12px; font-weight: 600; padding: 0 2px;">{{l.name}}</span></button>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Speed</span><input type="range" min="25" max="200" value="100" aria-label="Speed"></label>
+            <div style="{{k.swRow}}"><span style="font-size: 13px; font-weight: 600;">Follow the music tempo</span><button onClick="{{sw.tempo.toggle}}" aria-label="Follow music tempo" style="{{sw.tempo.track}}"><span style="{{sw.tempo.knob}}"></span></button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Split screen -->
+      <sc-if value="{{is.split}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <span style="{{k.h}}">Layout</span>
+          <div style="display: flex; gap: 10px;">
+            <sc-for list="{{layouts}}" as="l" hint-placeholder-count="4">
+              <button onClick="{{l.pick}}" style="{{l.style}}">
+                <div style="width: 120px; height: 68px; border-radius: 4px; background-color: #101216; position: relative;"><div style="{{l.a}}"></div><div style="{{l.b}}"></div></div>
+                <span style="font-size: 12px;">{{l.name}}</span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Slot A</span><select aria-label="Slot A" style="{{k.inp}}"><option>Camera 1</option><option>Camera 2</option><option>Video 1</option><option>Browser tab</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Slot B</span><select aria-label="Slot B" style="{{k.inp}}"><option>Camera 2</option><option>Camera 1</option><option>Video 1</option><option>Browser tab</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Gap between</span><input type="range" min="0" max="40" value="8" aria-label="Gap"></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Background</span><select aria-label="Background" style="{{k.inp}}"><option>Black</option><option>Back-screen loop</option><option>Solid colour</option></select></label>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Text / title -->
+      <sc-if value="{{is.text}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <label style="{{k.field}}"><span style="{{k.lbl}}">Text</span><textarea aria-label="Text" style="height: 72px; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 14px; resize: none; outline: none;">[Title text]</textarea></label>
+          <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px;">
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Font</span><select aria-label="Font" style="{{k.inp}}"><option>Segoe UI Semibold</option><option>Frank Ruhl Libre</option><option>Consolas</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Size</span><select aria-label="Size" style="{{k.inp}}"><option>72 px</option><option>48 px</option><option>96 px</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Position</span><select aria-label="Position" style="{{k.inp}}"><option>Lower third</option><option>Centre</option><option>Top</option></select></label>
+            <label style="{{k.field}}"><span style="{{k.lbl}}">Animation</span><select aria-label="Animation" style="{{k.inp}}"><option>Fade in</option><option>Slide up</option><option>None</option></select></label>
+          </div>
+          <div style="{{k.swRow}}"><span style="font-size: 13px; font-weight: 600;">Background box behind text</span><button onClick="{{sw.box.toggle}}" aria-label="Background box" style="{{sw.box.track}}"><span style="{{sw.box.knob}}"></span></button></div>
+        </div>
+      </sc-if>
+
+      <!-- Timer -->
+      <sc-if value="{{is.timer}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 24px;">
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+            <div style="{{k.field}}"><span style="{{k.lbl}}">Type</span>
+              <div style="{{k.segWrap}}"><sc-for list="{{timerSeg}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div></div>
+            <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+              <label style="{{k.field}}"><span style="{{k.lbl}}">Length (mm:ss)</span><input value="10:00" aria-label="Length" style="{{k.inpMono}}"></label>
+              <label style="{{k.field}}"><span style="{{k.lbl}}">At zero</span><select aria-label="At zero" style="{{k.inp}}"><option>Hold 00:00</option><option>Flash</option><option>Go to next item</option><option>Count up in red</option></select></label>
+              <label style="{{k.field}}"><span style="{{k.lbl}}">Style</span><select aria-label="Style" style="{{k.inp}}"><option>Large centre</option><option>Corner</option><option>Over a loop</option></select></label>
+              <label style="{{k.field}}"><span style="{{k.lbl}}">Font</span><select aria-label="Font" style="{{k.inp}}"><option>Consolas</option><option>Segoe UI</option></select></label>
+            </div>
+            <label style="{{k.check}}"><input type="checkbox" checked> Also show on the stage Monitor</label>
+          </div>
+          <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+            <span style="{{k.h}}">Preview</span>
+            <div style="height: 169px; border-radius: 6px; background-color: #101216; border: 1px solid #2c3038; display: flex; align-items: center; justify-content: center; font-family: Consolas, monospace; font-size: 48px; font-weight: 700;">10:00</div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #2c3038; background-color: #1a1d22;">
+    <span style="font-size: 13px; color: #a9abb0;">Add to</span>
+    <div style="{{k.segWrap}}"><sc-for list="{{addToSeg}}" as="o" hint-placeholder-count="2"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for></div>
+    <span style="font-size: 12px; color: #8e9096;">{{addToNote}}</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;">Cancel <span style="font-size: 11px; font-weight: 400; color: #8e9096;">Esc</span></a>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 6px; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;">Add input <span style="font-size: 11px; font-weight: 600; color: #1d5a61;">Enter</span></a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { type: 'hdmi', proto: 'NDI', ndi: 0, end: 'hold', fit: 'Fit', timer: 'Count down', addTo: 'this', colour: '#101216', loopPick: 0, layout: 0,
+      sw: { loop: false, audio: true, transp: false, tempo: true, box: true }, phones: [true, true, false], pin: '482 719' };
+  }
+  renderVals() {
+    const st = this.state;
+    const seg = (opts, cur, key) => opts.map((label) => ({ label, pick: () => this.setState({ [key]: label }),
+      style: `height: 32px; padding: 0 14px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${cur === label ? '#1d3b40' : '#2a2e36'}; color: ${cur === label ? '#dff4f6' : '#d4d5d8'};` }));
+    const sw = {};
+    Object.keys(st.sw).forEach((key) => { const on = st.sw[key]; sw[key] = {
+      toggle: () => this.setState({ sw: { ...st.sw, [key]: !on } }),
+      track: `width: 38px; height: 22px; flex-shrink: 0; position: relative; padding: 0; border-radius: 11px; border: 1px solid ${on ? '#4fb3bf' : '#343944'}; background-color: ${on ? '#4fb3bf' : '#2a2e36'};`,
+      knob: `position: absolute; top: 3px; left: ${on ? 19 : 3}px; width: 14px; height: 14px; border-radius: 7px; background-color: ${on ? '#0e2a2e' : '#a9abb0'};` }; });
+    const groups = [
+      ['Cameras', [
+        ['hdmi', 'HDMI', 'Camera – HDMI', 'Capture card', 'Camera 1', 'Plug the camera into a capture card.'],
+        ['usb', 'USB', 'Camera – USB / webcam', 'Plugged in by USB', 'Camera 2', 'Any USB camera or webcam.'],
+        ['wireless', 'NET', 'Wireless camera', 'NDI · SRT · RTMP', 'Wireless 1', 'A camera that sends its picture over the network.'],
+        ['phone', 'PH', 'Phone as camera', 'Unlimited phones', 'Phone camera', 'Phones join over the Lumora offline network.']]],
+      ['Media', [
+        ['video', 'VID', 'Video file', 'MP4, MOV, …', 'Video 1', 'Play a video from this computer or the library.'],
+        ['image', 'IMG', 'Image', 'PNG, JPG', 'Image 1', 'A still picture.'],
+        ['slides', 'SLD', 'Slideshow', 'Several images', 'Slideshow 1', 'Images that change on a timer or by click.'],
+        ['loop', 'LP', 'Back-screen loop', 'Built-in library', 'Loop 1', 'Moving backgrounds for the Back Screen.']]],
+      ['Web & graphics', [
+        ['browser', 'WEB', 'Browser tab (Chrome)', 'Web page, controllable', 'Browser 1', 'Show a web page and control it from Lumora.'],
+        ['color', 'COL', 'Solid colour', 'Plain fill', 'Colour 1', 'A full-screen solid colour.'],
+        ['split', 'SPL', 'Split screen', 'Two sources together', 'Split 1', 'Show two inputs at the same time.'],
+        ['text', 'TXT', 'Text / title', 'Titles, names', 'Title 1', 'Words on the screen.'],
+        ['timer', 'TMR', 'Timer', 'Count down / up', 'Timer 1', 'A clock or countdown on the screen.']]]
+    ];
+    const typeRows = []; let sel = null;
+    groups.forEach(([g, items], gi) => {
+      typeRows.push({ isHead: true, isItem: false, label: g, headStyle: `font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096; padding: ${gi ? 12 : 2}px 8px 6px;` });
+      items.forEach(([id, code, name, sub, defName, desc]) => {
+        const on = st.type === id;
+        if (on) sel = { name, sub: desc, defName };
+        typeRows.push({ isHead: false, isItem: true, code, name, sub, pick: () => this.setState({ type: id }),
+          style: `height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background-color: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#e4e5e7'}; text-align: left;`,
+          iconStyle: `width: 34px; height: 26px; flex-shrink: 0; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: Consolas, monospace; font-size: 9px; font-weight: 700; background-color: ${on ? '#4fb3bf' : '#262a31'}; color: ${on ? '#0e2a2e' : '#a9abb0'}; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'};` });
+      });
+    });
+    const t = st.type;
+    const is = { cam: t === 'hdmi' || t === 'usb', wireless: t === 'wireless', phone: t === 'phone', video: t === 'video', image: t === 'image', slides: t === 'slides', browser: t === 'browser', color: t === 'color', loop: t === 'loop', split: t === 'split', text: t === 'text', timer: t === 'timer' };
+    const k = {
+      h: 'font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #8e9096;',
+      lbl: 'font-size: 12px; color: #a9abb0;',
+      field: 'display: flex; flex-direction: column; gap: 6px; min-width: 0;',
+      inp: 'height: 36px; width: 100%; box-sizing: border-box; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px; outline: none;',
+      inpMono: 'height: 36px; width: 100%; box-sizing: border-box; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 13px; outline: none;',
+      inpMonoSm: 'height: 36px; width: 160px; box-sizing: border-box; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 13px; outline: none;',
+      selSm: 'height: 30px; border-radius: 4px; border: 1px solid #2c3038; background-color: #101216; color: #d4d5d8; font-size: 12px; padding: 0 6px;',
+      btn: 'height: 36px; flex-shrink: 0; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; white-space: nowrap;',
+      btnSm: 'height: 30px; flex-shrink: 0; align-self: flex-start; padding: 0 12px; border-radius: 4px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px; white-space: nowrap;',
+      check: 'display: flex; align-items: center; gap: 10px; font-size: 13px; color: #d4d5d8;',
+      swRow: 'display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 6px 14px; box-sizing: border-box; border-radius: 6px; background-color: #262a31; border: 1px solid #2c3038;',
+      segWrap: 'display: flex; align-self: flex-start; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;'
+    };
+    const tones = ['#34404c', '#473a2c', '#27403f', '#3b3446', '#2f3a2c', '#44302f', '#2c3848', '#3d3a33'];
+    const loopNames = ['Soft light beams', 'Slow particles', 'Warm bokeh', 'Deep blue waves', 'Stage haze', 'Candle glow', 'Night sky', 'Abstract lines'];
+    const swHex = ['#000000', '#101216', '#1e2127', '#ffffff', '#34404c', '#27403f', '#1d3b40', '#4fb3bf', '#473a2c', '#44302f', '#3b3446', '#2c3848', '#2f8f4e', '#c7372f', '#5a1f1b', '#8e9096'];
+    const layoutDefs = [
+      ['Side by side', ['left: 4px; top: 16px; width: 54px; height: 36px;', 'right: 4px; top: 16px; width: 54px; height: 36px;']],
+      ['Picture in picture', ['left: 0; top: 0; right: 0; bottom: 0;', 'right: 6px; bottom: 6px; width: 40px; height: 24px;']],
+      ['Top / bottom', ['left: 30px; top: 3px; width: 60px; height: 30px;', 'left: 30px; bottom: 3px; width: 60px; height: 30px;']],
+      ['Large + small', ['left: 4px; top: 8px; width: 78px; height: 52px;', 'right: 4px; top: 22px; width: 30px; height: 24px;']]];
+    const phoneNames = [['[Phone name 1]', 'Back camera · 1080p'], ['[Phone name 2]', 'Back camera · 1080p'], ['[Phone name 3]', 'Front camera · 720p']];
+    return {
+      typeRows, sel, is, k, sw,
+      camDevice: t === 'usb' ? '[Webcam name]' : '[Capture card] · HDMI 1',
+      camRes: t === 'usb' ? '1920×1080' : '3840×2160',
+      camAudio: t === 'usb' ? 'Webcam microphone' : 'Audio from HDMI (embedded)',
+      protoSeg: seg(['NDI', 'SRT', 'RTMP'], st.proto, 'proto'),
+      isNdi: st.proto === 'NDI', isUrl: st.proto !== 'NDI',
+      urlLabel: st.proto === 'SRT' ? 'SRT address (Lumora listens)' : 'RTMP address to send to',
+      urlVal: st.proto === 'SRT' ? 'srt://[this computer]:9000' : 'rtmp://[this computer]/live',
+      keyLabel: st.proto === 'SRT' ? 'Passphrase' : 'Stream key',
+      ndiList: ['[NDI camera 1]', '[NDI camera 2]', '[Computer] · Screen'].map((name, i) => ({ name, meta: i === 2 ? 'NDI · 1080p30' : 'NDI · 1080p60', pick: () => this.setState({ ndi: i }),
+        style: `height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 12px; border: 0; border-bottom: 1px solid #2c3038; font-size: 13px; background-color: ${st.ndi === i ? '#1d3b40' : '#262a31'}; color: ${st.ndi === i ? '#dff4f6' : '#e4e5e7'};` })),
+      pin: st.pin,
+      newPin: () => this.setState({ pin: st.pin === '482 719' ? '905 362' : '482 719' }),
+      phones: phoneNames.map(([name, meta], i) => ({ name, meta, thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 4px; background-color: ${tones[i]};`, on: st.phones[i], toggle: () => { const p = st.phones.slice(); p[i] = !p[i]; this.setState({ phones: p }); } })),
+      endSeg: [['hold', 'Hold last frame'], ['black', 'Go to black'], ['next', 'Next item']].map(([id, label]) => ({ label, pick: () => this.setState({ end: id }),
+        style: `height: 32px; padding: 0 14px; border: 0; border-right: 1px solid #2c3038; font-size: 12px; font-weight: 600; background-color: ${st.end === id ? '#1d3b40' : '#2a2e36'}; color: ${st.end === id ? '#dff4f6' : '#d4d5d8'};` })),
+      fitSeg: seg(['Fit', 'Fill', 'Stretch'], st.fit, 'fit'),
+      timerSeg: seg(['Count down', 'Count up', 'Clock'], st.timer, 'timer'),
+      slides: tones.slice(0, 6).map((c, i) => ({ n: i + 1, style: `height: 72px; border-radius: 4px; background-color: ${c}; border: 1px solid #2c3038; display: flex; align-items: flex-end; padding: 4px 6px; box-sizing: border-box;` })),
+      swatches: swHex.map((hex) => ({ hex, pick: () => this.setState({ colour: hex }), style: `width: 44px; height: 44px; padding: 0; border-radius: 6px; background-color: ${hex}; border: 2px solid ${st.colour === hex ? '#4fb3bf' : '#2c3038'};` })),
+      colour: st.colour,
+      colourPreview: `height: 169px; border-radius: 6px; border: 1px solid #2c3038; background-color: ${st.colour};`,
+      loops: loopNames.map((name, i) => ({ name, pick: () => this.setState({ loopPick: i }),
+        style: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; text-align: left; border: 1px solid ${st.loopPick === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.loopPick === i ? '#1d3b40' : '#262a31'}; color: #e4e5e7;`,
+        thumb: `height: 74px; border-radius: 4px; background-color: ${tones[i]};` })),
+      layouts: layoutDefs.map(([name, [a, b]], i) => ({ name, pick: () => this.setState({ layout: i }),
+        style: `display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; border-radius: 6px; border: 1px solid ${st.layout === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.layout === i ? '#1d3b40' : '#262a31'}; color: #e4e5e7;`,
+        a: `position: absolute; ${a} border-radius: 2px; background-color: #34404c;`, b: `position: absolute; ${b} border-radius: 2px; background-color: #4fb3bf;` })),
+      addToSeg: [['this', 'This preset'], ['all', 'All presets']].map(([id, label]) => ({ label, pick: () => this.setState({ addTo: id }),
+        style: `height: 36px; padding: 0 16px; border: 0; border-right: 1px solid #2c3038; font-size: 13px; font-weight: 600; background-color: ${st.addTo === id ? '#1d3b40' : '#2a2e36'}; color: ${st.addTo === id ? '#dff4f6' : '#d4d5d8'};` })),
+      addToNote: st.addTo === 'this' ? '[Current preset name]' : 'Shows in every preset'
+    };
+  }
+}
+</script>
+</body>
+</html>

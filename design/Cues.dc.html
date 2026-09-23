@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Run of show / Cues</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <span style="font-size: 20px; font-weight: 600;">Run of show</span>
+    <span style="font-size: 13px; color: #8e9096;">Cues for [Event name] · start the event and each cue plays on the clock, or step through by hand</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Transport -->
+  <div style="height: 88px; flex-shrink: 0; display: flex; align-items: center; gap: 20px; padding: 0 24px; background: #1e2127; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 150px;">
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EVENT CLOCK</span>
+      <span style="font-family: Consolas, monospace; font-size: 32px; font-weight: 700; color: #ffffff; line-height: 1;">19:42:05</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button onClick="{{start}}" style="{{startStyle}}"><span>{{startLabel}}</span><span style="font-size: 10px; font-weight: 600; opacity: 0.75;">F5</span></button>
+      <button onClick="{{pause}}" style="{{pauseStyle}}"><span>❚❚ PAUSE</span><span style="font-size: 10px; font-weight: 600; color: #8e9096;">Space</span></button>
+      <button onClick="{{nextCue}}" style="height: 56px; width: 170px; border-radius: 6px; border: 0; background: #2f8f4e; color: #ffffff; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;"><span>NEXT CUE ▶</span><span style="font-size: 10px; font-weight: 600; opacity: 0.8;">N</span></button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+      <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MODE</span>
+      <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+        <button onClick="{{setAuto}}" style="{{autoStyle}}">Automatic (on the clock)</button>
+        <button onClick="{{setManual}}" style="{{manualStyle}}">Manual (step through)</button>
+      </div>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; gap: 24px; align-items: center;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NOW</span>
+        <span style="font-size: 14px; font-weight: 600; color: #e0473b;">{{nowName}}</span>
+        <span style="font-family: Consolas, monospace; font-size: 12px; color: #a9abb0;">{{nowLeft}}</span>
+      </div>
+      <div style="width: 1px; height: 44px; background: #2c3038;"></div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ELAPSED</span>
+        <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700;">00:12:05</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">REMAINING</span>
+        <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700;">01:02:55</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ENDS AT</span>
+        <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700; color: #a9abb0;">20:45:00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Main column -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px 24px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">CUES</span>
+        <span style="font-size: 12px; color: #8e9096;">{{cueCount}}</span>
+        <div style="flex-grow: 1;"></div>
+        <button onClick="{{addCue}}" style="height: 32px; padding: 0 14px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700;">+ Add cue</button>
+        <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Group into section</button>
+        <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Save to library</button>
+        <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Load from library…</button>
+      </div>
+
+      <!-- Table -->
+      <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; border: 1px solid #2c3038; border-radius: 6px; background: #1e2127; overflow: hidden;">
+        <div style="height: 32px; flex-shrink: 0; display: flex; align-items: center; padding: 0 12px; gap: 10px; background: #1a1d22; border-bottom: 1px solid #2c3038; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">
+          <span style="width: 22px;">#</span>
+          <span style="width: 78px;">TIME</span>
+          <span style="width: 62px;">LENGTH</span>
+          <span style="width: 150px;">NAME</span>
+          <span style="flex-grow: 1;">WHAT IT DOES</span>
+          <span style="width: 150px;">SCREENS</span>
+          <span style="width: 128px;">TRIGGER</span>
+          <span style="width: 62px;">STATUS</span>
+        </div>
+        <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;">
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+            <sc-if value="{{r.isSection}}" hint-placeholder-val="{{false}}">
+              <div style="height: 26px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #15171b; border-bottom: 1px solid #2c3038;">
+                <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #a9abb0;">▾ {{r.title}}</span>
+                <span style="font-size: 11px; color: #8e9096;">{{r.meta}}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{r.isCue}}" hint-placeholder-val="{{true}}">
+              <button onClick="{{r.pick}}" style="{{r.style}}">
+                <span style="width: 22px; font-family: Consolas, monospace; font-size: 12px; color: #8e9096;">{{r.num}}</span>
+                <span style="width: 78px; font-family: Consolas, monospace; font-size: 13px;">{{r.time}}</span>
+                <span style="width: 62px; font-family: Consolas, monospace; font-size: 12px; color: #a9abb0;">{{r.dur}}</span>
+                <span style="width: 150px; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.name}}</span>
+                <span style="flex-grow: 1; min-width: 0; font-size: 12px; color: #d4d5d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.does}}</span>
+                <span style="width: 150px; display: flex; gap: 4px;">
+                  <sc-for list="{{r.chips}}" as="c" hint-placeholder-count="2"><span style="{{c.style}}">{{c.name}}</span></sc-for>
+                </span>
+                <span style="width: 128px; font-size: 12px; color: #a9abb0;">{{r.trigger}}</span>
+                <span style="width: 62px;"><span style="{{r.badge}}">{{r.status}}</span></span>
+              </button>
+            </sc-if>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div style="height: 138px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; border: 1px solid #2c3038; border-radius: 6px; background: #1e2127; box-sizing: border-box;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">TIMELINE</span>
+          <span style="font-size: 12px; color: #8e9096;">19:00 – 20:45 · drag a block to move a cue, drag its edge to change length</span>
+          <div style="flex-grow: 1;"></div>
+          <span style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #a9abb0;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #c7372f;"></span>Live</span>
+          <span style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #a9abb0;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #2f8f4e;"></span>Next</span>
+          <span style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: #a9abb0;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #343944;"></span>Done / later</span>
+        </div>
+        <div style="position: relative; flex-grow: 1;">
+          <div style="position: absolute; left: 0; right: 0; top: 0; height: 16px;">
+            <sc-for list="{{ticks}}" as="t" hint-placeholder-count="8">
+              <span style="{{t.style}}">{{t.label}}</span>
+            </sc-for>
+          </div>
+          <div style="position: absolute; left: 0; right: 0; top: 20px; height: 26px; background: #101216; border-radius: 4px;">
+            <sc-for list="{{sectionBlocks}}" as="s" hint-placeholder-count="3">
+              <div style="{{s.style}}">{{s.title}}</div>
+            </sc-for>
+          </div>
+          <div style="position: absolute; left: 0; right: 0; top: 50px; height: 38px; background: #101216; border-radius: 4px;">
+            <sc-for list="{{blocks}}" as="b" hint-placeholder-count="9">
+              <button onClick="{{b.pick}}" style="{{b.style}}">{{b.label}}</button>
+            </sc-for>
+          </div>
+          <div style="position: absolute; top: 16px; bottom: -4px; left: 40.08%; width: 2px; background: #ffffff; pointer-events: none;"></div>
+          <div style="position: absolute; top: 12px; left: calc(40.08% - 5px); width: 12px; height: 8px; background: #ffffff; clip-path: polygon(0 0, 100% 0, 50% 100%); pointer-events: none;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit panel -->
+    <div style="width: 360px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-left: 1px solid #2c3038; box-sizing: border-box;">
+      <div style="padding: 14px 18px 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #2c3038;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EDIT CUE</span>
+        <span style="font-family: Consolas, monospace; font-size: 12px; color: #8fd3db;">{{sel.numLabel}}</span>
+        <div style="flex-grow: 1;"></div>
+        <span style="{{sel.badge}}">{{sel.status}}</span>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 14px 18px;">
+        <label style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 12px; color: #a9abb0;">Name</span>
+          <input value="{{sel.name}}" onInput="{{onName}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none;">
+        </label>
+        <div style="display: flex; gap: 10px;">
+          <label style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 12px; color: #a9abb0;">Start</span>
+            <input value="{{sel.time}}" onInput="{{onTime}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 14px; outline: none; min-width: 0;">
+          </label>
+          <label style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 12px; color: #a9abb0;">Duration</span>
+            <input value="{{sel.dur}}" onInput="{{onDur}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 14px; outline: none; min-width: 0;">
+          </label>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 12px; color: #a9abb0;">Trigger — how this cue starts</span>
+          <select value="{{sel.trigger}}" onChange="{{onTrigger}}" style="height: 34px; padding: 0 8px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 13px;">
+            <option value="On clock">On the clock (at start time)</option>
+            <option value="Manual">Manual (press NEXT CUE)</option>
+            <option value="After previous ends">After previous cue ends</option>
+            <option value="After video ends">After the video ends</option>
+            <option value="Phone remote">From a phone remote</option>
+          </select>
+        </label>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; color: #a9abb0;">Screens affected</span>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{screenToggles}}" as="s" hint-placeholder-count="3">
+              <button onClick="{{s.toggle}}" style="{{s.style}}">{{s.name}}</button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; align-items: center;">
+            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; flex-grow: 1;">ACTIONS · RUN IN ORDER</span>
+            <button onClick="{{addAction}}" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px dashed #5a5c62; background: transparent; color: #a9abb0; font-size: 12px;">+ Add action</button>
+          </div>
+          <sc-for list="{{actions}}" as="a" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+              <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096; width: 12px;">{{a.n}}</span>
+              <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;">
+                <span style="font-size: 13px; color: #e4e5e7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{a.text}}</span>
+                <span style="font-size: 11px; color: #8e9096;">{{a.kind}}</span>
+              </div>
+              <button aria-label="Edit action" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Edit</button>
+              <button aria-label="Remove action" onClick="{{a.remove}}" style="width: 24px; height: 24px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 11px;">✕</button>
+            </div>
+          </sc-for>
+          <span style="font-size: 11px; color: #8e9096;">Actions: preset, input to Preview / Live, overlay on/off, text, monitor message, blank, timer, wait.</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d5d8;">
+          <input type="checkbox" checked="{{sel.warn}}" onChange="{{toggleWarn}}" style="width: 16px; height: 16px;">
+          Warn me 10 s before this cue starts
+        </label>
+      </div>
+      <div style="display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid #2c3038;">
+        <button onClick="{{goSelected}}" style="flex-grow: 1; height: 38px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700;">Run this cue now</button>
+        <button style="height: 38px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Duplicate</button>
+        <button onClick="{{deleteCue}}" style="height: 38px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e0473b; font-size: 12px;">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      mode: 'auto', running: true, paused: false, live: 3, sel: 3,
+      cues: [
+        { sec: 'Opening', time: '19:00:00', start: 0, len: 30, dur: '30:00', name: 'Doors open', does: 'Preset: Welcome loop · Back screen video loop', screens: ['Live', 'Back'], trigger: 'On clock', warn: false,
+          actions: [['Preset', 'Preset: Welcome loop'], ['Back screen', 'Loop: [Welcome loop video] on Back'], ['Monitor', "Monitor: clock only"]] },
+        { sec: 'Opening', time: '19:30:00', start: 30, len: 5, dur: '05:00', name: 'Opening', does: 'Preset: Opening', screens: ['Live', 'Back', 'Monitor'], trigger: 'On clock', warn: true,
+          actions: [['Preset', 'Preset: Opening'], ['Overlay', 'Overlay 1: Logo bug on (fade 0.5 s)']] },
+        { sec: 'Opening', time: '+00:05:00', start: 35, len: 3, dur: '03:00', name: 'Welcome video', does: 'Vid 1 on Live + Back', screens: ['Live', 'Back'], trigger: 'After previous ends', warn: false,
+          actions: [['Input', 'Vid 1 → Preview'], ['Take', 'Take to Live + Back (fade 1 s)']] },
+        { sec: 'Program', time: '19:38:00', start: 38, len: 12, dur: '12:00', name: 'Opening speech', does: 'Cam 1 + Lower third: [Speaker name]', screens: ['Live', 'Back'], trigger: 'Manual', warn: true,
+          actions: [['Input', 'Camera 1 → Live (cut)'], ['Text', 'Lower third: [Speaker name] · 8 s'], ['Timer', 'Monitor countdown 12:00']] },
+        { sec: 'Program', time: '19:48:00', start: 48, len: 2, dur: '00:10', name: 'Wrap-up warning', does: "Monitor: 'Please wrap up'", screens: ['Monitor'], trigger: 'On clock', warn: false,
+          actions: [['Monitor', "Monitor: 'Please wrap up'"], ['Monitor', 'Flash the stage screen']] },
+        { sec: 'Program', time: '19:50:00', start: 50, len: 15, dur: '15:00', name: '12 Pesukim', does: 'Preset: 12 Pesukim', screens: ['Live', 'Back', 'Monitor'], trigger: 'Manual', warn: true,
+          actions: [['Preset', 'Preset: 12 Pesukim']] },
+        { sec: 'Program', time: '20:05:00', start: 65, len: 25, dur: '25:00', name: 'Main speaker', does: 'Cam 2 + Lower third · Back: slides', screens: ['Live', 'Back'], trigger: 'After previous ends', warn: true,
+          actions: [['Input', 'Camera 2 → Live'], ['Text', 'Lower third: [Main speaker]'], ['Back screen', 'Slideshow on Back']] },
+        { sec: 'Closing', time: '20:30:00', start: 90, len: 8, dur: '08:00', name: 'Photo slideshow', does: 'Slideshow on Live + Back', screens: ['Live', 'Back'], trigger: 'On clock', warn: false,
+          actions: [['Input', 'Slideshow → Live + Back (fade 1 s)']] },
+        { sec: 'Closing', time: '+00:08:00', start: 98, len: 7, dur: '07:00', name: 'Thank-you & credits', does: 'Preset: Credits roll · Monitor: "Thank you!"', screens: ['Live', 'Back', 'Monitor'], trigger: 'After previous ends', warn: false,
+          actions: [['Preset', 'Preset: Credits roll'], ['Monitor', "Monitor: 'Thank you!'"]] }
+      ]
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const TOTAL = 105;
+    const statusOf = (i) => i < st.live ? 'done' : i === st.live ? 'live' : i === st.live + 1 ? 'next' : '';
+    const badge = (s) => {
+      const c = { done: ['#262a31', '#8e9096'], live: ['#c7372f', '#ffffff'], next: ['#2f8f4e', '#ffffff'], '': ['transparent', '#8e9096'] }[s];
+      return `height: 18px; padding: 0 7px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; display: inline-flex; align-items: center; background: ${c[0]}; color: ${c[1]}; text-transform: uppercase;`;
+    };
+    const chip = (name) => ({ name, style: `height: 20px; padding: 0 7px; border-radius: 4px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; background: ${name === 'Live' ? '#3a1a18' : name === 'Back' ? '#1d3b40' : '#262a31'}; color: ${name === 'Live' ? '#f2b6b1' : name === 'Back' ? '#8fd3db' : '#d4d5d8'}; border: 1px solid #2c3038;` });
+    const rows = [];
+    let lastSec = null;
+    const secs = {};
+    st.cues.forEach((c, i) => {
+      if (!secs[c.sec]) secs[c.sec] = { n: 0, start: c.start, end: c.start + c.len };
+      secs[c.sec].n++; secs[c.sec].end = c.start + c.len;
+    });
+    st.cues.forEach((c, i) => {
+      if (c.sec !== lastSec) {
+        lastSec = c.sec;
+        rows.push({ isSection: true, isCue: false, title: c.sec.toUpperCase(), meta: `${secs[c.sec].n} cues`, chips: [] });
+      }
+      const s = statusOf(i);
+      const selected = st.sel === i;
+      const bg = s === 'live' ? '#2e1917' : s === 'next' ? '#16281c' : selected ? '#1d3b40' : 'transparent';
+      const left = s === 'live' ? '#e0473b' : s === 'next' ? '#3fbf5a' : selected ? '#4fb3bf' : 'transparent';
+      rows.push({
+        isSection: false, isCue: true, num: i + 1, time: c.time, dur: c.dur, name: c.name, does: c.does, trigger: c.trigger,
+        status: s || '—', badge: badge(s), chips: c.screens.map(chip),
+        pick: () => set({ sel: i }),
+        style: `height: 40px; flex-shrink: 0; width: 100%; display: flex; align-items: center; gap: 10px; padding: 0 12px 0 9px; border: 0; border-left: 3px solid ${left}; border-bottom: 1px solid #2c3038; background: ${bg}; color: ${s === 'done' ? '#a9abb0' : '#e4e5e7'}; text-align: left; box-sizing: border-box; outline: ${selected ? '1px solid #4fb3bf' : 'none'}; outline-offset: -1px;`
+      });
+    });
+    const ticks = [0, 15, 30, 45, 60, 75, 90, 105].map((m) => {
+      const h = 19 + Math.floor(m / 60), mm = m % 60;
+      return { label: `${h}:${String(mm).padStart(2, '0')}`, style: `position: absolute; top: 0; left: ${m / TOTAL * 100}%; transform: translateX(${m === 0 ? '0' : m === 105 ? '-100%' : '-50%'}); font-family: Consolas, monospace; font-size: 10px; color: #8e9096;` };
+    });
+    const sectionBlocks = Object.keys(secs).map((k) => ({ title: k, style: `position: absolute; top: 3px; bottom: 3px; left: calc(${secs[k].start / TOTAL * 100}% + 1px); width: calc(${(secs[k].end - secs[k].start) / TOTAL * 100}% - 2px); border-radius: 3px; background: #262a31; color: #a9abb0; font-size: 11px; font-weight: 600; display: flex; align-items: center; padding: 0 8px; box-sizing: border-box; overflow: hidden; white-space: nowrap;` }));
+    const blocks = st.cues.map((c, i) => {
+      const s = statusOf(i);
+      const selected = st.sel === i;
+      const bg = s === 'live' ? '#c7372f' : s === 'next' ? '#2f8f4e' : s === 'done' ? '#262a31' : '#343944';
+      return {
+        label: c.len >= 5 ? c.name : String(i + 1), pick: () => set({ sel: i }),
+        style: `position: absolute; top: 3px; bottom: 3px; left: calc(${c.start / TOTAL * 100}% + 1px); width: calc(${c.len / TOTAL * 100}% - 2px); border-radius: 3px; border: ${selected ? '2px solid #4fb3bf' : '0'}; background: ${bg}; color: ${s === 'done' ? '#8e9096' : '#ffffff'}; font-size: 11px; font-weight: 600; padding: 0 6px; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; box-sizing: border-box;`
+      };
+    });
+    const c = st.cues[st.sel] || st.cues[0];
+    const upd = (patch) => { const cues = st.cues.slice(); cues[st.sel] = { ...cues[st.sel], ...patch }; set({ cues }); };
+    const screenToggles = ['Live', 'Back', 'Monitor'].map((n) => {
+      const on = c.screens.includes(n);
+      return { name: n, toggle: () => upd({ screens: on ? c.screens.filter((x) => x !== n) : [...c.screens, n] }),
+        style: `flex: 1; height: 32px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: 600;` };
+    });
+    const actions = c.actions.map((a, k) => ({ n: k + 1, kind: a[0], text: a[1], remove: () => upd({ actions: c.actions.filter((_, j) => j !== k) }) }));
+    const selStatus = statusOf(st.sel);
+    const seg = (on) => `height: 34px; padding: 0 14px; border: 0; border-radius: 0; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: 600;`;
+    const liveCue = st.cues[st.live];
+    const running = st.running && !st.paused;
+    return {
+      rows, ticks, sectionBlocks, blocks, screenToggles, actions,
+      cueCount: `${st.cues.length} cues · 3 sections`,
+      sel: { ...c, numLabel: `#${st.sel + 1}`, status: selStatus || 'later', badge: badge(selStatus) },
+      onName: (e) => upd({ name: e.target.value }),
+      onTime: (e) => upd({ time: e.target.value }),
+      onDur: (e) => upd({ dur: e.target.value }),
+      onTrigger: (e) => upd({ trigger: e.target.value }),
+      toggleWarn: () => upd({ warn: !c.warn }),
+      addAction: () => upd({ actions: [...c.actions, ['Text', '[New action — choose what it does]']] }),
+      addCue: () => { const cues = [...st.cues, { sec: 'Closing', time: '+00:00:00', start: 104, len: 1, dur: '01:00', name: '[New cue]', does: '[Choose an action]', screens: ['Live'], trigger: 'Manual', warn: false, actions: [] }]; set({ cues, sel: cues.length - 1 }); },
+      deleteCue: () => { if (st.cues.length < 2) return; const cues = st.cues.filter((_, j) => j !== st.sel); set({ cues, sel: Math.max(0, st.sel - 1), live: Math.min(st.live, cues.length - 1) }); },
+      goSelected: () => set({ live: st.sel }),
+      nextCue: () => set({ live: Math.min(st.cues.length - 1, st.live + 1) }),
+      start: () => set({ running: true, paused: false }),
+      pause: () => set({ paused: !st.paused }),
+      startLabel: running ? '● RUNNING' : '▶ START',
+      startStyle: `height: 56px; width: 170px; border-radius: 6px; border: ${running ? '1px solid #4fb3bf' : '0'}; background: ${running ? '#1d3b40' : '#4fb3bf'}; color: ${running ? '#dff4f6' : '#0e2a2e'}; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`,
+      pauseStyle: `height: 56px; width: 140px; border-radius: 6px; border: 1px solid ${st.paused ? '#d4d5d8' : '#2c3038'}; background: ${st.paused ? '#343944' : '#2a2e36'}; color: #ffffff; font-size: 16px; font-weight: 700; letter-spacing: 0.04em; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`,
+      setAuto: () => set({ mode: 'auto' }), setManual: () => set({ mode: 'manual' }),
+      autoStyle: seg(st.mode === 'auto'), manualStyle: seg(st.mode === 'manual'),
+      nowName: `${st.live + 1} · ${liveCue.name}`,
+      nowLeft: st.paused ? 'Paused' : `${liveCue.dur} cue · 07:55 left`
+    };
+  }
+}
+</script>
+</body>
+</html>

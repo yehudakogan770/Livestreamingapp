@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Overlays</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <span style="font-size: 20px; font-weight: 600;">Overlays</span>
+    <span style="font-size: 13px; color: #8e9096;">Place overlays on Preview first, then send them to Live · everything here is saved to the event</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Toolbar -->
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 24px; background: #1e2127; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <button onClick="{{newOnSpot}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700;">+ New overlay on the spot</button>
+    <select aria-label="Pick any input as overlay" onChange="{{pickInput}}" value="" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px;">
+      <option value="">Pick any input as overlay…</option>
+      <option value="Camera 1">Camera 1</option>
+      <option value="Camera 2">Camera 2</option>
+      <option value="Camera 3">Camera 3</option>
+      <option value="Phone cam">Phone cam</option>
+      <option value="Vid 2">Vid 2</option>
+      <option value="Slideshow">Slideshow</option>
+      <option value="Split Screen 1">Split Screen 1</option>
+    </select>
+    <button style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Import image / video…</button>
+    <button style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Open library</button>
+    <div style="flex-grow: 1;"></div>
+    <span style="font-size: 12px; color: #8e9096;">Overlay channels on Live:</span>
+    <sc-for list="{{channelStatus}}" as="c" hint-placeholder-count="4">
+      <span style="{{c.style}}">{{c.label}}</span>
+    </sc-for>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Left: overlay list -->
+    <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
+      <div style="padding: 14px 14px 8px; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; flex-grow: 1;">THIS EVENT</span>
+        <span style="font-size: 11px; color: #8e9096;">Channel</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 0 8px;">
+        <sc-for list="{{overlays}}" as="o" hint-placeholder-count="6">
+          <div style="{{o.style}}">
+            <button onClick="{{o.pick}}" style="flex-grow: 1; min-width: 0; display: flex; align-items: center; gap: 10px; border: 0; background: transparent; color: inherit; padding: 0; text-align: left;">
+              <span style="{{o.thumb}}"></span>
+              <span style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+                <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{o.name}}</span>
+                <span style="font-size: 11px; color: #8e9096;">{{o.kind}}</span>
+              </span>
+            </button>
+            <div style="display: flex; gap: 2px;">
+              <sc-for list="{{o.chans}}" as="ch" hint-placeholder-count="4">
+                <button onClick="{{ch.pick}}" aria-label="{{ch.aria}}" style="{{ch.style}}">{{ch.n}}</button>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding: 16px 14px 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">READY-MADE</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 14px;">
+        <sc-for list="{{readyMade}}" as="r" hint-placeholder-count="6">
+          <button onClick="{{r.add}}" style="height: 54px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 4px; padding: 6px 8px; box-sizing: border-box; position: relative; text-align: left;">
+            <span style="{{r.shape}}"></span>
+            <span>{{r.name}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="flex-grow: 1;"></div>
+      <div style="padding: 12px 14px; font-size: 11px; color: #8e9096; border-top: 1px solid #2c3038; line-height: 1.5;">Channels 1–4 are the overlay buttons on the main screen. Click a number to assign; click again to clear.</div>
+    </div>
+
+    <!-- Center: preview canvas -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; box-sizing: border-box;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="height: 20px; padding: 0 8px; border-radius: 3px; background: #16281c; border: 1px solid #2f8f4e; color: #9fe0b0; font-size: 11px; font-weight: 600; display: flex; align-items: center;">Editing in Preview — not on air</span>
+        <div style="flex-grow: 1;"></div>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{showSafe}}" onChange="{{toggleSafe}}" style="width: 15px; height: 15px;">Safe-area guide</label>
+        <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{snap}}" onChange="{{toggleSnap}}" style="width: 15px; height: 15px;">Snap to edges</label>
+        <select aria-label="Background under overlay" style="height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 12px;"><option>Show on: Camera 1 (Preview)</option><option>Show on: Vid 1</option><option>Show on: black</option><option>Show on: checkerboard</option></select>
+      </div>
+
+      <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; background: #34404c; border: 2px solid #2f8f4e; border-radius: 4px; overflow: hidden; box-sizing: border-box;">
+        <span style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 18px; font-weight: 600; color: rgba(255,255,255,0.35);">Camera 1 · [Stage wide]</span>
+        <sc-if value="{{showSafe}}" hint-placeholder-val="{{true}}">
+          <div style="position: absolute; left: 5%; top: 5%; right: 5%; bottom: 5%; border: 1px dashed rgba(255,255,255,0.35); pointer-events: none;"></div>
+          <div style="position: absolute; left: 10%; top: 10%; right: 10%; bottom: 10%; border: 1px dashed rgba(255,255,255,0.2); pointer-events: none;"></div>
+          <span style="position: absolute; left: calc(5% + 4px); top: calc(5% + 2px); font-size: 10px; color: rgba(255,255,255,0.5);">Action safe 90%</span>
+          <span style="position: absolute; left: calc(10% + 4px); top: calc(10% + 2px); font-size: 10px; color: rgba(255,255,255,0.4);">Title safe 80%</span>
+        </sc-if>
+        <sc-for list="{{others}}" as="x" hint-placeholder-count="1">
+          <div style="{{x.style}}"><span style="font-size: 11px; color: rgba(255,255,255,0.6);">{{x.name}}</span></div>
+        </sc-for>
+        <div style="{{box.style}}">
+          <div style="{{box.inner}}">{{box.content}}</div>
+          <sc-for list="{{handles}}" as="h" hint-placeholder-count="8">
+            <span style="{{h.style}}"></span>
+          </sc-for>
+          <span style="position: absolute; left: 0; top: -22px; height: 18px; padding: 0 6px; border-radius: 3px; background: #4fb3bf; color: #0e2a2e; font-size: 10px; font-weight: 700; display: flex; align-items: center; white-space: nowrap;">{{box.tag}}</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <button aria-label="Play overlay animation in" onClick="{{play}}" style="height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">▶ Test animation in</button>
+        <button style="height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Test animation out</button>
+        <button onClick="{{center}}" style="height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Center</button>
+        <button onClick="{{fit}}" style="height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Fit to safe area</button>
+        <button onClick="{{reset}}" style="height: 30px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Reset</button>
+        <span style="font-size: 11px; color: #8e9096; margin-left: 4px;">Drag to move · drag corners to resize · Shift keeps ratio · arrows nudge 1 px</span>
+      </div>
+
+      <div style="flex-grow: 1;"></div>
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+        <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600;">{{sendStatus}}</span>
+          <span style="font-size: 12px; color: #8e9096;">Send to Live uses this overlay's animation in. Nothing changes on air until you press it.</span>
+        </div>
+        <button onClick="{{saveEvent}}" style="height: 48px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600;">{{saveLabel}}</button>
+        <button onClick="{{sendLive}}" style="height: 48px; padding: 0 26px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 10px;">{{sendLabel}}<span style="font-size: 10px; font-weight: 600; opacity: 0.8;">Enter</span></button>
+      </div>
+    </div>
+
+    <!-- Right: properties -->
+    <div style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-left: 1px solid #2c3038; box-sizing: border-box; overflow: hidden;">
+      <div style="padding: 14px 18px 10px; border-bottom: 1px solid #2c3038; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">PROPERTIES</span>
+        <span style="font-size: 12px; color: #8fd3db; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{sel.name}}</span>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px 18px; overflow: hidden;">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px;">
+          <sc-for list="{{geo}}" as="g" hint-placeholder-count="4">
+            <label style="display: flex; flex-direction: column; gap: 3px;">
+              <span style="font-size: 11px; color: #a9abb0;">{{g.label}}</span>
+              <input type="number" value="{{g.val}}" onInput="{{g.on}}" style="height: 28px; width: 100%; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none; box-sizing: border-box;">
+            </label>
+          </sc-for>
+        </div>
+        <span style="font-size: 11px; color: #8e9096; margin-top: -6px;">Position and size in % of the 1920×1080 frame</span>
+
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; font-size: 12px; color: #a9abb0;"><span style="flex-grow: 1;">Opacity</span><span style="font-family: Consolas, monospace; color: #e4e5e7;">{{opacityLabel}}</span></div>
+          <input type="range" min="0" max="100" value="{{sel.opacity}}" onInput="{{onOpacity}}" aria-label="Opacity" style="width: 100%; margin: 0;">
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <label style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 11px; color: #a9abb0;">Rotation °</span>
+            <input type="number" value="{{sel.rot}}" onInput="{{onRot}}" style="height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none; min-width: 0;">
+          </label>
+          <label style="flex: 2; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 11px; color: #a9abb0;">Crop T · R · B · L (px)</span>
+            <span style="display: flex; gap: 4px;">
+              <input aria-label="Crop top" value="0" style="width: 0; flex: 1; height: 28px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;">
+              <input aria-label="Crop right" value="0" style="width: 0; flex: 1; height: 28px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;">
+              <input aria-label="Crop bottom" value="0" style="width: 0; flex: 1; height: 28px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;">
+              <input aria-label="Crop left" value="0" style="width: 0; flex: 1; height: 28px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;">
+            </span>
+          </label>
+        </div>
+
+        <div style="height: 1px; background: #2c3038;"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">ANIMATION</span>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 30px; font-size: 12px; color: #a9abb0;">In</span>
+            <select value="{{sel.animIn}}" onChange="{{onAnimIn}}" aria-label="Animation in" style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option value="Cut">Cut</option><option value="Fade">Fade</option><option value="Slide left">Slide from left</option><option value="Slide right">Slide from right</option><option value="Slide up">Slide up</option><option value="Zoom">Zoom</option><option value="Wipe">Wipe</option></select>
+            <input aria-label="Animation in duration" value="{{sel.inDur}}" style="width: 56px; height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none; box-sizing: border-box;">
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 30px; font-size: 12px; color: #a9abb0;">Out</span>
+            <select value="{{sel.animOut}}" onChange="{{onAnimOut}}" aria-label="Animation out" style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option value="Cut">Cut</option><option value="Fade">Fade</option><option value="Slide left">Slide to left</option><option value="Slide right">Slide to right</option><option value="Slide up">Slide down</option><option value="Zoom">Zoom</option><option value="Wipe">Wipe</option></select>
+            <input aria-label="Animation out duration" value="{{sel.outDur}}" style="width: 56px; height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none; box-sizing: border-box;">
+          </div>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;">
+            <input type="checkbox" checked="{{sel.autoHide}}" onChange="{{toggleAutoHide}}" style="width: 15px; height: 15px;">
+            <span style="flex-grow: 1;">Auto-hide after</span>
+            <input aria-label="Auto-hide seconds" value="{{sel.hideSec}}" onInput="{{onHideSec}}" style="width: 44px; height: 26px; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none; box-sizing: border-box;">
+            <span style="color: #a9abb0;">sec</span>
+          </label>
+        </div>
+
+        <sc-if value="{{isVideo}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 13px; font-weight: 600; flex-grow: 1;">Loop video</span>
+              <button onClick="{{toggleLoop}}" aria-label="Loop video" style="{{loopTrack}}"><span style="{{loopKnob}}"></span></button>
+            </div>
+            <span style="font-size: 11px; color: #8e9096;">{{loopNote}}</span>
+          </div>
+        </sc-if>
+
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 12px; color: #a9abb0; flex-grow: 1;">Layer order</span>
+          <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7;">{{layerLabel}}</span>
+          <button onClick="{{layerUp}}" aria-label="Bring forward" style="width: 28px; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">▲</button>
+          <button onClick="{{layerDown}}" aria-label="Send backward" style="width: 28px; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">▼</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 12px; color: #a9abb0;">Show on screens</span>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{screens}}" as="s" hint-placeholder-count="2">
+              <button onClick="{{s.toggle}}" style="{{s.style}}">{{s.name}}</button>
+            </sc-for>
+          </div>
+          <span style="font-size: 11px; color: #8e9096;">The Monitor is text only — overlays never go there.</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid #2c3038;">
+        <button style="flex: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Save to library</button>
+        <button style="flex: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Duplicate</button>
+        <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e0473b; font-size: 12px;">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sel: 1, showSafe: true, snap: true, saved: false, sent: false,
+      items: [
+        { name: 'Logo bug', kind: 'Image · PNG', tone: '#d9dce3', ch: 1, x: 84, y: 7, w: 10, h: 12, opacity: 90, rot: 0, animIn: 'Fade', animOut: 'Fade', inDur: '0.5 s', outDur: '0.5 s', autoHide: false, hideSec: '10', loop: false, layer: 4, screens: ['Live', 'Back'], content: '[Logo]' },
+        { name: 'Lower third — [Speaker name]', kind: 'Text · 2 lines', tone: '#4fb3bf', ch: 2, x: 8, y: 72, w: 46, h: 14, opacity: 100, rot: 0, animIn: 'Slide left', animOut: 'Fade', inDur: '0.6 s', outDur: '0.4 s', autoHide: true, hideSec: '8', loop: false, layer: 3, screens: ['Live'], content: '[Speaker name] · [Title]' },
+        { name: 'Scoreboard / timer', kind: 'Live data · countdown', tone: '#262a31', ch: 3, x: 40, y: 6, w: 20, h: 10, opacity: 100, rot: 0, animIn: 'Zoom', animOut: 'Zoom', inDur: '0.3 s', outDur: '0.3 s', autoHide: false, hideSec: '10', loop: false, layer: 2, screens: ['Live', 'Back'], content: '05:00' },
+        { name: '[Sponsor image]', kind: 'Image · JPG', tone: '#473a2c', ch: 0, x: 66, y: 62, w: 26, h: 26, opacity: 100, rot: 0, animIn: 'Fade', animOut: 'Fade', inDur: '1.0 s', outDur: '1.0 s', autoHide: true, hideSec: '15', loop: false, layer: 1, screens: ['Back'], content: '[Sponsor image]' },
+        { name: 'Confetti burst', kind: 'Video overlay · 0:06 · alpha', tone: '#3b3048', ch: 4, x: 0, y: 0, w: 100, h: 100, opacity: 100, rot: 0, animIn: 'Cut', animOut: 'Fade', inDur: '0.0 s', outDur: '0.5 s', autoHide: false, hideSec: '6', loop: false, layer: 5, screens: ['Live', 'Back'], content: 'Vid overlay · confetti', video: true },
+        { name: 'Camera 2 as overlay', kind: 'Input · picture-in-picture', tone: '#27403f', ch: 0, x: 70, y: 8, w: 24, h: 24, opacity: 100, rot: 0, animIn: 'Zoom', animOut: 'Fade', inDur: '0.4 s', outDur: '0.4 s', autoHide: false, hideSec: '10', loop: false, layer: 6, screens: ['Live'], content: 'Camera 2' }
+      ]
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const it = st.items[st.sel];
+    const upd = (patch) => { const items = st.items.slice(); items[st.sel] = { ...items[st.sel], ...patch }; set({ items, saved: false, sent: false }); };
+    const overlays = st.items.map((o, i) => {
+      const on = i === st.sel;
+      return {
+        name: o.name, kind: o.kind,
+        pick: () => set({ sel: i, sent: false }),
+        thumb: `width: 36px; height: 22px; flex-shrink: 0; border-radius: 3px; background: ${o.tone}; border: 1px solid #2c3038;`,
+        style: `height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : 'transparent'}; background: ${on ? '#1d3b40' : 'transparent'}; box-sizing: border-box;`,
+        chans: [1, 2, 3, 4].map((n) => {
+          const a = o.ch === n;
+          return { n, aria: `Assign ${o.name} to overlay channel ${n}`,
+            pick: () => { const items = st.items.map((x, j) => j === i ? { ...x, ch: a ? 0 : n } : (x.ch === n ? { ...x, ch: 0 } : x)); set({ items }); },
+            style: `width: 20px; height: 22px; padding: 0; border-radius: 3px; border: 1px solid ${a ? '#4fb3bf' : '#2c3038'}; background: ${a ? '#4fb3bf' : '#2a2e36'}; color: ${a ? '#0e2a2e' : '#8e9096'}; font-size: 11px; font-weight: 700;` };
+        })
+      };
+    });
+    const channelStatus = [1, 2, 3, 4].map((n) => {
+      const o = st.items.find((x) => x.ch === n);
+      return { label: o ? `${n} · ${o.name.split(' — ')[0]}` : `${n} · empty`,
+        style: `height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid ${o ? '#2c3038' : '#2c3038'}; background: ${o ? '#262a31' : 'transparent'}; color: ${o ? '#d4d5d8' : '#8e9096'}; font-size: 11px; font-weight: 600; display: flex; align-items: center; white-space: nowrap;` };
+    });
+    const readyMade = [
+      ['Lower third — clean', 'left: 8px; top: 20px; width: 44px; height: 8px; background: #4fb3bf;'],
+      ['Lower third — bar', 'left: 8px; top: 20px; width: 60px; height: 8px; background: #d9dce3;'],
+      ['Corner logo', 'right: 8px; top: 7px; width: 14px; height: 10px; background: #d9dce3;'],
+      ['Countdown', 'left: 50%; top: 7px; width: 26px; height: 10px; margin-left: -13px; background: #343944; border: 1px solid #8e9096;'],
+      ['LIVE badge', 'left: 8px; top: 7px; width: 22px; height: 10px; background: #c7372f;'],
+      ['Full-screen frame', 'left: 8px; top: 6px; right: 8px; height: 18px; border: 2px solid #8fd3db; background: transparent;']
+    ].map(([name, s]) => ({ name, shape: `position: absolute; ${s} border-radius: 2px; box-sizing: border-box;`,
+      add: () => { const items = [...st.items, { name, kind: 'Ready-made', tone: '#343944', ch: 0, x: 10, y: 70, w: 40, h: 12, opacity: 100, rot: 0, animIn: 'Fade', animOut: 'Fade', inDur: '0.5 s', outDur: '0.5 s', autoHide: false, hideSec: '10', loop: false, layer: st.items.length + 1, screens: ['Live'], content: name }]; set({ items, sel: items.length - 1 }); } }));
+    const isText = it.kind.startsWith('Text');
+    const box = {
+      tag: `${it.name.split(' — ')[0]} · ${it.w}×${it.h}%`,
+      content: it.content,
+      style: `position: absolute; left: ${it.x}%; top: ${it.y}%; width: ${it.w}%; height: ${it.h}%; opacity: ${it.opacity / 100}; transform: rotate(${it.rot}deg); outline: 2px solid #4fb3bf; outline-offset: 0; cursor: move; box-sizing: border-box;`,
+      inner: `position: absolute; inset: 0; background: ${isText ? 'rgba(16,18,22,0.85)' : it.video ? 'rgba(59,48,72,0.55)' : it.tone}; border-left: ${isText ? '6px solid #4fb3bf' : '0'}; color: ${it.tone === '#d9dce3' ? '#15171b' : '#ffffff'}; font-size: ${it.kind.startsWith('Live') ? 26 : 15}px; font-family: ${it.kind.startsWith('Live') ? 'Consolas, monospace' : 'inherit'}; font-weight: 700; display: flex; align-items: center; justify-content: ${isText ? 'flex-start' : 'center'}; padding: 0 14px; box-sizing: border-box; overflow: hidden; white-space: nowrap;`
+    };
+    const handles = [[0, 0], [50, 0], [100, 0], [0, 50], [100, 50], [0, 100], [50, 100], [100, 100]].map(([hx, hy]) => ({
+      style: `position: absolute; left: calc(${hx}% - 5px); top: calc(${hy}% - 5px); width: 10px; height: 10px; background: #ffffff; border: 1px solid #0e2a2e; box-sizing: border-box; cursor: ${hx === 50 ? 'ns-resize' : hy === 50 ? 'ew-resize' : (hx === hy ? 'nwse-resize' : 'nesw-resize')};`
+    }));
+    const others = st.items.filter((o, i) => i !== st.sel && o.ch && o.ch <= 1).map((o) => ({ name: o.name, style: `position: absolute; left: ${o.x}%; top: ${o.y}%; width: ${o.w}%; height: ${o.h}%; border: 1px dashed rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; box-sizing: border-box;` }));
+    const geo = [['X', 'x'], ['Y', 'y'], ['W', 'w'], ['H', 'h']].map(([label, k]) => ({ label, val: it[k], on: (e) => upd({ [k]: Math.max(0, Math.min(100, Number(e.target.value) || 0)) }) }));
+    const screens = ['Live', 'Back'].map((n) => {
+      const on = it.screens.includes(n);
+      return { name: n, toggle: () => upd({ screens: on ? it.screens.filter((x) => x !== n) : [...it.screens, n] }),
+        style: `flex: 1; height: 32px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: 600;` };
+    });
+    const sorted = st.items.map((o) => o.layer).sort((a, b) => b - a);
+    return {
+      overlays, channelStatus, readyMade, box, handles, others, geo, screens,
+      sel: it, isVideo: !!it.video,
+      showSafe: st.showSafe, toggleSafe: () => set({ showSafe: !st.showSafe }),
+      snap: st.snap, toggleSnap: () => set({ snap: !st.snap }),
+      opacityLabel: `${it.opacity}%`,
+      onOpacity: (e) => upd({ opacity: Number(e.target.value) }),
+      onRot: (e) => upd({ rot: Number(e.target.value) || 0 }),
+      onAnimIn: (e) => upd({ animIn: e.target.value }),
+      onAnimOut: (e) => upd({ animOut: e.target.value }),
+      toggleAutoHide: () => upd({ autoHide: !it.autoHide }),
+      onHideSec: (e) => upd({ hideSec: e.target.value }),
+      toggleLoop: () => upd({ loop: !it.loop }),
+      loopTrack: `width: 40px; height: 22px; border-radius: 11px; border: 0; padding: 0; position: relative; background: ${it.loop ? '#4fb3bf' : '#343944'};`,
+      loopKnob: `position: absolute; top: 3px; left: ${it.loop ? 21 : 3}px; width: 16px; height: 16px; border-radius: 8px; background: #ffffff;`,
+      loopNote: it.loop ? 'On — the video repeats until you turn the overlay off.' : 'Off (default) — the overlay turns off by itself when the video ends.',
+      layerLabel: `${sorted.indexOf(it.layer) + 1} of ${st.items.length} (1 = top)`,
+      layerUp: () => upd({ layer: it.layer + 1.5 }),
+      layerDown: () => upd({ layer: it.layer - 1.5 }),
+      center: () => upd({ x: Math.round((100 - it.w) / 2), y: Math.round((100 - it.h) / 2) }),
+      fit: () => upd({ x: Math.max(it.x, 5), y: Math.max(it.y, 5), w: Math.min(it.w, 90), h: Math.min(it.h, 90) }),
+      reset: () => upd({ rot: 0, opacity: 100 }),
+      play: () => {},
+      newOnSpot: () => { const items = [...st.items, { name: '[New overlay]', kind: 'On the spot · Preview only', tone: '#343944', ch: 0, x: 30, y: 30, w: 40, h: 30, opacity: 100, rot: 0, animIn: 'Fade', animOut: 'Fade', inDur: '0.5 s', outDur: '0.5 s', autoHide: false, hideSec: '10', loop: false, layer: st.items.length + 1, screens: ['Live'], content: 'Drop an image, video or input here' }]; set({ items, sel: items.length - 1 }); },
+      pickInput: (e) => { const v = e.target.value; if (!v) return; const items = [...st.items, { name: `${v} as overlay`, kind: 'Input · picture-in-picture', tone: '#27403f', ch: 0, x: 66, y: 10, w: 28, h: 28, opacity: 100, rot: 0, animIn: 'Zoom', animOut: 'Fade', inDur: '0.4 s', outDur: '0.4 s', autoHide: false, hideSec: '10', loop: false, layer: st.items.length + 1, screens: ['Live'], content: v }]; set({ items, sel: items.length - 1 }); },
+      saveEvent: () => set({ saved: true }),
+      saveLabel: st.saved ? 'Saved to event' : 'Save to event',
+      sendLive: () => set({ sent: true, saved: true }),
+      sendLabel: st.sent ? 'On Live' : 'Send to Live',
+      sendStatus: st.sent ? `${it.name} is on Live (${it.screens.join(' + ') || 'no screen'})` : `${it.name} — only on Preview`
+    };
+  }
+}
+</script>
+</body>
+</html>

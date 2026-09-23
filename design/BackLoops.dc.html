@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Back-screen loops</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox]{accent-color:#4fb3bf;width:16px;height:16px;margin:0}
+input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Back-screen loops &amp; mood</span>
+    <span style="font-size: 13px; color: #8e9096;">Ready-made loops for the projector · fit them to the vibe and the music</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex; gap: 20px; padding: 18px 24px; box-sizing: border-box;">
+
+    <!-- Loop library -->
+    <div style="width: 470px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">READY-MADE LOOPS · {{loopCount}}</span>
+        <button style="height: 28px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">+ Import my own loop</button>
+      </div>
+      <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+        <sc-for list="{{cats}}" as="o" hint-placeholder-count="5"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+      </div>
+      <input aria-label="Search loops" placeholder="Search loops…" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; box-sizing: border-box;">
+      <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 112px; gap: 10px;">
+        <sc-for list="{{loops}}" as="l" hint-placeholder-count="12">
+          <button onClick="{{l.pick}}" style="{{l.card}}">
+            <div style="{{l.thumb}}">
+              <span style="{{l.liveTag}}">ON BACK</span>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <span style="font-size: 12px; font-weight: 600;">{{l.name}}</span>
+              <span style="font-size: 10px; color: #8e9096;">{{l.cat}}</span>
+            </div>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Preview + manual -->
+    <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; color: #8e9096;">{{selName}}</span>
+      </div>
+      <div style="{{preview}}">
+        <div style="{{tintLayer}}"></div>
+        <sc-if value="{{logoOn}}" hint-placeholder-val="{{true}}">
+          <div style="{{logoBox}}">[Event logo]</div>
+        </sc-if>
+        <span style="position: absolute; left: 8px; bottom: 6px; font-size: 10px; color: rgba(255,255,255,0.6);">{{previewMeta}}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; height: 18px;">
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; width: 44px;">BEAT</span>
+        <sc-for list="{{beats}}" as="b" hint-placeholder-count="16"><span style="{{b.style}}"></span></sc-for>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MANUAL CONTROLS</span>
+          <button onClick="{{resetManual}}" style="height: 22px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 11px;">Reset</button>
+        </div>
+        <sc-for list="{{sliders}}" as="s" hint-placeholder-count="6">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 74px;">{{s.label}}</span>
+            <input type="range" min="{{s.min}}" max="{{s.max}}" value="{{s.val}}" onInput="{{s.onInput}}" aria-label="{{s.label}}" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 40px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{s.readout}}</span>
+          </div>
+        </sc-for>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 74px;">Tint</span>
+          <sc-for list="{{tints}}" as="t" hint-placeholder-count="6"><button onClick="{{t.pick}}" aria-label="{{t.name}}" style="{{t.style}}"></button></sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8; padding-top: 4px; border-top: 1px solid #2c3038;">
+          <label style="display: flex; align-items: center; gap: 8px; flex-grow: 1;"><input type="checkbox" checked="{{logoOn}}" onChange="{{toggleLogo}}"> Overlay event logo</label>
+          <select aria-label="Logo position" style="height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 11px;"><option>Centre</option><option>Bottom right</option><option>Top left</option><option>Bottom centre</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Automatic -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038; box-sizing: border-box;">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">AUTOMATIC CONTROLS</span>
+
+      <button onClick="{{toggleFollow}}" style="{{followCard}}">
+        <span style="{{switchTrack}}"><span style="{{switchKnob}}"></span></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; text-align: left;">
+          <span style="font-size: 14px; font-weight: 700;">Follow the music</span>
+          <span style="font-size: 11px; color: #a9abb0;">Loop reacts to the beat and energy</span>
+        </span>
+      </button>
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 12px; color: #a9abb0;">Listen to audio input</span>
+        <select aria-label="Audio input" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 8px;">
+          <option>Master mix</option><option>Mixer channel · Band</option><option>Mic 1 (stage)</option><option>USB audio interface</option><option>Opening.mp4 audio</option>
+        </select>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 12px; color: #a9abb0;">Reacts to</span>
+        <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+          <sc-for list="{{reacts}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+        <span style="width: 74px;">Sensitivity</span>
+        <input type="range" min="0" max="100" value="{{sens}}" onInput="{{onSens}}" aria-label="Sensitivity" style="flex-grow: 1; min-width: 0;">
+        <span style="width: 36px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{sensLabel}}</span>
+      </div>
+
+      <div style="height: 1px; background: #2c3038;"></div>
+
+      <span style="font-size: 12px; color: #a9abb0;">Switch loops automatically</span>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;">
+        <input type="checkbox" checked="{{autoTime}}" onChange="{{toggleAutoTime}}"> Every
+        <input type="number" min="1" aria-label="Minutes between loops" value="{{everyMin}}" onInput="{{onEvery}}" style="width: 52px; height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 13px; box-sizing: border-box;"> minutes
+      </label>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{autoSong}}" onChange="{{toggleAutoSong}}"> When the song changes</label>
+      <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{sameCat}}" onChange="{{toggleSameCat}}"> Stay in the selected category</label>
+
+      <div style="height: 1px; background: #2c3038;"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 12px; color: #a9abb0;">Match mood</span>
+        <select aria-label="Match mood" onChange="{{onMood}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 8px;">
+          <option>Off — I choose</option><option>Auto from music</option><option>Calm</option><option>Energetic</option><option>Elegant</option><option>Festive</option>
+        </select>
+        <span style="font-size: 11px; color: #8e9096;">{{moodNote}}</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 80px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #2c3038; background-color: #1a1d22;">
+    <span style="width: 8px; height: 8px; border-radius: 2px; background: #e0473b;"></span>
+    <span style="font-size: 13px; color: #a9abb0;">Now on Back screen: <span style="color: #e4e5e7; font-weight: 600;">{{liveName}}</span></span>
+    <div style="flex-grow: 1;"></div>
+    <button style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Save as mood preset</button>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2f8f4e; background-color: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Send to Preview</a>
+    <button onClick="{{sendBack}}" style="height: 54px; padding: 0 30px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 16px; font-weight: 700;">Send to Back screen</span><span style="font-size: 10px;">Ctrl + B · fades over 1s</span></button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      cat: 'all', sel: 'aurora', live: 'aurora',
+      speed: 100, bright: 80, hue: 0, intensity: 60, blur: 0, tint: 'none', logo: true,
+      follow: true, react: 'both', sens: 65, autoTime: false, everyMin: 5, autoSong: true, sameCat: true, mood: 'Off — I choose'
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
+    const LOOPS = [
+      ['aurora', 'Aurora', 'Calm', '#27403f'], ['particles', 'Particles', 'Energetic', '#2c3450'],
+      ['warm', 'Warm glow', 'Elegant', '#4a3626'], ['bokeh', 'Bokeh', 'Elegant', '#3a3746'],
+      ['geo', 'Geometric', 'Energetic', '#2f3a44'], ['waves', 'Waves', 'Calm', '#233a4a'],
+      ['stars', 'Stars', 'Calm', '#1c2233'], ['smoke', 'Smoke', 'Elegant', '#34363b'],
+      ['confetti', 'Confetti', 'Festive', '#3f2f3f'], ['lights', 'Light beams', 'Energetic', '#2e2f48'],
+      ['sparkle', 'Sparkle', 'Festive', '#3a3040'], ['silk', 'Silk', 'Elegant', '#3b2f2f']
+    ];
+    const byId = {}; LOOPS.forEach((l) => { byId[l[0]] = l; });
+    const shown = LOOPS.filter((l) => st.cat === 'all' || l[2].toLowerCase() === st.cat);
+    const loops = shown.map(([id, name, cat, tone]) => {
+      const on = st.sel === id; const isLive = st.live === id;
+      return { name, cat, pick: () => set({ sel: id }),
+        card: `display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: #e4e5e7; box-sizing: border-box;`,
+        thumb: `position: relative; width: 100%; height: 76px; border-radius: 4px; background: ${tone};`,
+        liveTag: `position: absolute; left: 4px; top: 4px; height: 16px; padding: 0 5px; border-radius: 3px; background: #c7372f; color: #ffffff; font-size: 9px; font-weight: 700; display: ${isLive ? 'flex' : 'none'}; align-items: center;` };
+    });
+    const sel = byId[st.sel];
+    const TINTS = [['none', 'No tint', '#343944'], ['teal', 'Teal', '#4fb3bf'], ['blue', 'Blue', '#4a6fd1'], ['purple', 'Purple', '#8a5cc7'], ['red', 'Red', '#c7372f'], ['green', 'Green', '#3fbf5a']];
+    const tintCol = (TINTS.find((t) => t[0] === st.tint) || TINTS[0])[2];
+    const tints = TINTS.map(([id, name, c]) => ({ name: name + ' tint', pick: () => set({ tint: id }),
+      style: `width: 24px; height: 24px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.tint === id ? '#dff4f6' : '#2c3038'}; box-sizing: border-box;` }));
+    const sl = (key, label, min, max, fmt) => ({ label, min: String(min), max: String(max), val: String(st[key]), readout: fmt(st[key]), onInput: (e) => set({ [key]: Number(e.target.value) }) });
+    const sliders = [
+      sl('speed', 'Speed', 10, 300, (v) => (v / 100).toFixed(1) + '×'),
+      sl('bright', 'Brightness', 0, 100, (v) => v + '%'),
+      sl('hue', 'Hue shift', -180, 180, (v) => v + '°'),
+      sl('intensity', 'Intensity', 0, 100, (v) => v + '%'),
+      sl('blur', 'Blur', 0, 40, (v) => v + 'px')
+    ];
+    const BEATS = [3, 7, 10, 5, 2, 8, 11, 6, 3, 9, 12, 7, 4, 6, 10, 5];
+    const beats = BEATS.map((h) => ({ style: `width: 10px; height: ${st.follow ? h + 4 : 2}px; border-radius: 1px; background: ${st.follow ? '#4fb3bf' : '#343944'};` }));
+    const MOODS = { 'Off — I choose': 'You pick the loop. Nothing changes on its own.', 'Auto from music': 'Picks calm or energetic loops from the music energy.', Calm: 'Only Calm loops, slow speed, soft brightness.', Energetic: 'Energetic loops, faster speed, beat pulses.', Elegant: 'Elegant loops, warm tint, slow movement.', Festive: 'Festive loops, brighter, bursts on the beat.' };
+    const bright = st.bright / 100;
+    return {
+      loopCount: String(LOOPS.length),
+      cats: seg('cat', [['all', 'All'], ['calm', 'Calm'], ['energetic', 'Energetic'], ['elegant', 'Elegant'], ['festive', 'Festive']]),
+      loops, selName: sel[1] + ' · ' + sel[2],
+      preview: `position: relative; width: 300px; height: 169px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: ${sel[3]}; border: 2px solid #2f8f4e; box-sizing: border-box; filter: brightness(${0.4 + bright * 0.8}) hue-rotate(${st.hue}deg) blur(${st.blur / 10}px);`,
+      tintLayer: `position: absolute; inset: 0; background: ${tintCol}; opacity: ${st.tint === 'none' ? 0 : 0.25};`,
+      logoOn: st.logo, toggleLogo: () => set({ logo: !st.logo }),
+      logoBox: 'position: absolute; left: 50%; top: 50%; width: 110px; height: 44px; margin: -22px 0 0 -55px; border-radius: 4px; border: 1px dashed rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; font-size: 12px; color: rgba(255,255,255,0.85);',
+      previewMeta: 'Speed ' + (st.speed / 100).toFixed(1) + '× · ' + (st.follow ? 'following music' : 'manual'),
+      beats, sliders, tints,
+      resetManual: () => set({ speed: 100, bright: 80, hue: 0, intensity: 60, blur: 0, tint: 'none' }),
+      toggleFollow: () => set({ follow: !st.follow }),
+      followCard: `display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 14px; border-radius: 6px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#1d3b40' : '#2a2e36'}; color: #e4e5e7;`,
+      switchTrack: `position: relative; width: 38px; height: 22px; flex-shrink: 0; border-radius: 11px; background: ${st.follow ? '#4fb3bf' : '#101216'}; border: 1px solid ${st.follow ? '#4fb3bf' : '#5a5c62'}; box-sizing: border-box;`,
+      switchKnob: `position: absolute; top: 2px; left: ${st.follow ? 18 : 2}px; width: 16px; height: 16px; border-radius: 8px; background: ${st.follow ? '#0e2a2e' : '#a9abb0'};`,
+      reacts: seg('react', [['beat', 'Beat'], ['energy', 'Energy'], ['both', 'Both']]),
+      sens: String(st.sens), sensLabel: st.sens + '%', onSens: (e) => set({ sens: Number(e.target.value) }),
+      autoTime: st.autoTime, toggleAutoTime: () => set({ autoTime: !st.autoTime }),
+      everyMin: String(st.everyMin), onEvery: (e) => set({ everyMin: e.target.value }),
+      autoSong: st.autoSong, toggleAutoSong: () => set({ autoSong: !st.autoSong }),
+      sameCat: st.sameCat, toggleSameCat: () => set({ sameCat: !st.sameCat }),
+      onMood: (e) => set({ mood: e.target.value }), moodNote: MOODS[st.mood] || '',
+      liveName: byId[st.live][1] + ' loop',
+      sendBack: () => set({ live: st.sel })
+    };
+  }
+}
+</script>
+</body>
+</html>

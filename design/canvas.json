@@ -18,118 +18,308 @@
       "title": "Main event screen",
       "is_interactive": true
     },
-    "GoLive.dc.html": {
+    "Cues.dc.html": {
       "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "title": "Run of show / cues",
+      "is_interactive": true
+    },
+    "GoLive.dc.html": {
+      "x": 3040,
       "y": 0,
       "w": 880,
       "h": 700,
       "title": "Go Live popup",
       "is_interactive": true
     },
-    "AddPreset.dc.html": {
-      "x": 2480,
+    "EventEnd.dc.html": {
+      "x": 4000,
       "y": 0,
-      "w": 1160,
-      "h": 860,
-      "title": "Create preset popup",
+      "w": 760,
+      "h": 560,
+      "title": "After the event",
       "is_interactive": true
     },
-    "Library.dc.html": {
+    "AddInput.dc.html": {
       "x": 0,
       "y": 1320,
       "w": 1160,
-      "h": 780,
-      "title": "Library",
+      "h": 800,
+      "title": "Add input",
+      "is_interactive": true
+    },
+    "InputSettings.dc.html": {
+      "x": 1240,
+      "y": 1320,
+      "w": 1440,
+      "h": 900,
+      "title": "Input settings (colour, audio\u2026)",
+      "is_interactive": true
+    },
+    "BrowserSource.dc.html": {
+      "x": 2760,
+      "y": 1320,
+      "w": 1160,
+      "h": 800,
+      "title": "Browser tab control",
+      "is_interactive": true
+    },
+    "SplitScreen.dc.html": {
+      "x": 4000,
+      "y": 1320,
+      "w": 1160,
+      "h": 800,
+      "title": "Split screen",
+      "is_interactive": true
+    },
+    "OverlayEditor.dc.html": {
+      "x": 0,
+      "y": 2640,
+      "w": 1440,
+      "h": 900,
+      "title": "Overlays",
+      "is_interactive": true
+    },
+    "TextEditor.dc.html": {
+      "x": 1520,
+      "y": 2640,
+      "w": 1440,
+      "h": 900,
+      "title": "Text & titles",
+      "is_interactive": true
+    },
+    "Slideshow.dc.html": {
+      "x": 3040,
+      "y": 2640,
+      "w": 1440,
+      "h": 900,
+      "title": "Slideshow",
       "is_interactive": true
     },
     "Pesukim.dc.html": {
-      "x": 1240,
-      "y": 1320,
+      "x": 4560,
+      "y": 2640,
       "w": 1440,
       "h": 900,
       "title": "12 Pesukim control",
       "is_interactive": true
     },
-    "Settings.dc.html": {
+    "GreenScreen.dc.html": {
+      "x": 0,
+      "y": 3960,
+      "w": 1440,
+      "h": 900,
+      "title": "Green screen & scenes",
+      "is_interactive": true
+    },
+    "Timer.dc.html": {
+      "x": 1520,
+      "y": 3960,
+      "w": 1160,
+      "h": 800,
+      "title": "Timer designer",
+      "is_interactive": true
+    },
+    "BackLoops.dc.html": {
       "x": 2760,
-      "y": 1320,
+      "y": 3960,
+      "w": 1160,
+      "h": 800,
+      "title": "Back-screen loops & mood",
+      "is_interactive": true
+    },
+    "Credits.dc.html": {
+      "x": 4000,
+      "y": 3960,
+      "w": 1160,
+      "h": 800,
+      "title": "Thank-you list / credits",
+      "is_interactive": true
+    },
+    "LogoMaker.dc.html": {
+      "x": 5240,
+      "y": 3960,
+      "w": 1160,
+      "h": 800,
+      "title": "3D logo maker",
+      "is_interactive": true
+    },
+    "AddPreset.dc.html": {
+      "x": 0,
+      "y": 5280,
+      "w": 1160,
+      "h": 860,
+      "title": "Create preset",
+      "is_interactive": true
+    },
+    "Library.dc.html": {
+      "x": 1240,
+      "y": 5280,
+      "w": 1160,
+      "h": 780,
+      "title": "Library",
+      "is_interactive": true
+    },
+    "Settings.dc.html": {
+      "x": 2480,
+      "y": 5280,
       "w": 1000,
       "h": 740,
       "title": "Settings",
       "is_interactive": true
     },
     "Devices.dc.html": {
-      "x": 3840,
-      "y": 1320,
+      "x": 3560,
+      "y": 5280,
       "w": 1000,
       "h": 740,
       "title": "Connected devices",
       "is_interactive": true
     },
-    "PhoneRemote.dc.html": {
+    "MonitorOutput.dc.html": {
       "x": 0,
-      "y": 2640,
+      "y": 6560,
+      "w": 1440,
+      "h": 810,
+      "title": "Stage monitor output",
+      "is_interactive": true
+    },
+    "TabletRemote.dc.html": {
+      "x": 1520,
+      "y": 6560,
+      "w": 1180,
+      "h": 820,
+      "title": "Tablet remote",
+      "is_interactive": true
+    },
+    "PhoneRemote.dc.html": {
+      "x": 2780,
+      "y": 6560,
       "w": 390,
       "h": 844,
       "title": "Phone remote",
       "is_interactive": true
     },
     "PhoneCamera.dc.html": {
-      "x": 470,
-      "y": 2640,
+      "x": 3250,
+      "y": 6560,
       "w": 390,
       "h": 844,
       "title": "Phone as camera",
       "is_interactive": true
     },
-    "EventEnd.dc.html": {
-      "x": 940,
-      "y": 2640,
-      "w": 760,
-      "h": 560,
-      "title": "After the event",
+    "StreamPage.dc.html": {
+      "x": 0,
+      "y": 7824,
+      "w": 1280,
+      "h": 900,
+      "title": "Branded stream page",
+      "is_interactive": true
+    },
+    "Manual.dc.html": {
+      "x": 1360,
+      "y": 7824,
+      "w": 1280,
+      "h": 900,
+      "title": "How-to-use manual",
+      "is_interactive": true
+    },
+    "Website.dc.html": {
+      "x": 2720,
+      "y": 7824,
+      "w": 1280,
+      "h": 2600,
+      "title": "Product website",
       "is_interactive": true
     }
   },
   "order": [
     "Main.dc.html",
+    "Cues.dc.html",
     "GoLive.dc.html",
+    "EventEnd.dc.html",
+    "AddInput.dc.html",
+    "InputSettings.dc.html",
+    "BrowserSource.dc.html",
+    "SplitScreen.dc.html",
+    "OverlayEditor.dc.html",
+    "TextEditor.dc.html",
+    "Slideshow.dc.html",
+    "Pesukim.dc.html",
+    "GreenScreen.dc.html",
+    "Timer.dc.html",
+    "BackLoops.dc.html",
+    "Credits.dc.html",
+    "LogoMaker.dc.html",
     "AddPreset.dc.html",
     "Library.dc.html",
-    "Pesukim.dc.html",
     "Settings.dc.html",
     "Devices.dc.html",
+    "MonitorOutput.dc.html",
+    "TabletRemote.dc.html",
     "PhoneRemote.dc.html",
     "PhoneCamera.dc.html",
-    "EventEnd.dc.html"
+    "StreamPage.dc.html",
+    "Manual.dc.html",
+    "Website.dc.html"
   ],
   "notes": {
-    "row1": {
+    "row0": {
       "x": 0,
       "y": -300,
       "text": "Running the event",
       "kind": "title1",
-      "maxW": 3640
+      "maxW": 4760
+    },
+    "row1": {
+      "x": 0,
+      "y": 1020,
+      "text": "Inputs & sources",
+      "kind": "title1",
+      "maxW": 5160
     },
     "row2": {
       "x": 0,
-      "y": 1020,
-      "text": "Library, 12 Pesukim, settings & devices",
+      "y": 2340,
+      "text": "Graphics & content",
       "kind": "title1",
-      "maxW": 4840
+      "maxW": 6000
     },
     "row3": {
       "x": 0,
-      "y": 2340,
-      "text": "Phones & after the event",
+      "y": 3660,
+      "text": "Scenes, timer, loops, credits & 3D logo",
       "kind": "title1",
-      "maxW": 1700
+      "maxW": 6400
+    },
+    "row4": {
+      "x": 0,
+      "y": 4980,
+      "text": "Presets, library & settings",
+      "kind": "title1",
+      "maxW": 4560
+    },
+    "row5": {
+      "x": 0,
+      "y": 6260,
+      "text": "Outputs & remote control",
+      "kind": "title1",
+      "maxW": 3640
+    },
+    "row6": {
+      "x": 0,
+      "y": 7524,
+      "text": "Online: stream page, manual & website",
+      "kind": "title1",
+      "maxW": 4000
     },
     "next": {
-      "x": 1780,
-      "y": 2640,
+      "x": 6600,
+      "y": 3960,
       "w": 420,
-      "text": "Coming in the next design round:\n\u2022 Cues / run-of-show timeline\n\u2022 Text & overlay editor\n\u2022 Timer designer\n\u2022 Green-screen scene builder\n\u2022 Back-screen loop controls\n\u2022 Thank-you / credits builder\n\u2022 3D logo maker\n\u2022 Branded stream page\n\u2022 Product website\n\u2022 How-to-use manual\n\u2022 Logo for approval",
+      "text": "Still to design:\n\u2022 Lumora logo options \u2014 for your approval",
       "fill": "orange"
     }
   },

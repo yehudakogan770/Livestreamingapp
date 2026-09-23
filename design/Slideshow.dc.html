@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Slideshow</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox]{accent-color:#4fb3bf;width:16px;height:16px;margin:0}
+input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header -->
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Slideshow</span>
+    <span style="font-size: 13px; color: #8e9096;">[Slideshow name] · slides on part of the screen, camera on the rest, videos between slides</span>
+    <div style="flex-grow: 1;"></div>
+    <button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px;">Save to library</button>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <!-- Body -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Left: slide list -->
+    <div style="width: 310px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
+      <div style="padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SLIDES · {{slideCount}}</span>
+          <span style="font-size: 11px; color: #8e9096;">Drag or use ▲▼ to reorder</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
+          <button onClick="{{addImage}}" style="height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">+ Images</button>
+          <button style="height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">+ PowerPoint</button>
+          <button style="height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">+ PDF</button>
+        </div>
+        <button onClick="{{addVideo}}" style="height: 30px; border-radius: 4px; border: 1px dashed #4fb3bf; background: transparent; color: #8fd3db; font-size: 12px; font-weight: 600;">▶ Add video after selected slide</button>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 4px; padding: 0 10px 10px;">
+        <sc-for list="{{items}}" as="it" hint-placeholder-count="12">
+          <div onClick="{{it.pick}}" style="{{it.row}}">
+            <span style="width: 10px; color: #5a5c62; font-size: 11px; letter-spacing: -2px;">⋮⋮</span>
+            <span style="width: 18px; font-family: Consolas, monospace; font-size: 11px; color: #8e9096; text-align: right;">{{it.num}}</span>
+            <div style="{{it.thumb}}">{{it.thumbLabel}}</div>
+            <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;">
+              <span style="{{it.titleStyle}}">{{it.title}}</span>
+              <span style="font-size: 10px; color: #8e9096; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{it.sub}}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <button onClick="{{it.up}}" aria-label="Move up" style="width: 22px; height: 16px; padding: 0; border-radius: 3px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 8px; line-height: 1;">▲</button>
+              <button onClick="{{it.down}}" aria-label="Move down" style="width: 22px; height: 16px; padding: 0; border-radius: 3px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 8px; line-height: 1;">▼</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Center: layout + preview -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 14px 16px; box-sizing: border-box;">
+      <div style="display: flex; align-items: baseline; gap: 10px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LAYOUT</span>
+        <span style="font-size: 12px; color: #8e9096;">Where the slide goes — the camera fills the rest of the screen</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+        <sc-for list="{{layouts}}" as="l" hint-placeholder-count="4">
+          <button onClick="{{l.pick}}" style="{{l.card}}">
+            <div style="position: relative; width: 100%; height: 62px; border-radius: 4px; background: #101216; overflow: hidden;">
+              <div style="{{l.cam}}"></div>
+              <div style="{{l.slide}}"></div>
+            </div>
+            <span style="font-size: 12px; font-weight: 600; text-align: left;">{{l.name}}</span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 2px;">
+        <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; color: #8e9096;">{{previewTitle}}</span>
+        <div style="flex-grow: 1;"></div>
+        <span style="font-size: 12px; color: #8e9096;">{{camName}} behind</span>
+      </div>
+      <div style="position: relative; width: 776px; height: 437px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: #0c0d10; border: 2px solid #2f8f4e; box-sizing: border-box; align-self: center;">
+        <sc-if value="{{showSlideLayout}}" hint-placeholder-val="{{true}}">
+          <div style="{{pvCam}}">
+            <span style="position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,0.55);">{{camName}} · live camera</span>
+          </div>
+          <div style="{{pvSlide}}">
+            <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: rgba(255,255,255,0.6);">{{slideKicker}}</span>
+            <span style="font-size: 30px; font-weight: 700; color: #ffffff; text-align: center; line-height: 1.2;">{{slideTitle}}</span>
+            <span style="font-size: 14px; color: rgba(255,255,255,0.7); text-align: center;">[Slide text]</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{showVideo}}" hint-placeholder-val="{{false}}">
+          <div style="position: absolute; inset: 0; background: #403143; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+            <span style="font-size: 24px; font-weight: 600; color: rgba(255,255,255,0.85);">▶ {{videoName}}</span>
+            <span style="font-size: 12px; color: rgba(255,255,255,0.6);">Plays full screen · slideshow continues when it ends</span>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="height: 44px; flex-shrink: 0; display: flex; gap: 10px;">
+        <div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+          <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NOW</span>
+          <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{nowLabel}}</span>
+        </div>
+        <div style="flex: 1 1 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+          <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NEXT</span>
+          <span style="font-size: 13px; color: #d4d5d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{nextLabel}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: settings -->
+    <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 14px 16px; box-sizing: border-box; background: #1a1d22; border-left: 1px solid #2c3038; overflow: hidden;">
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SLIDE TIMING</span>
+        <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+          <sc-for list="{{timing}}" as="o" hint-placeholder-count="2"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+        </div>
+        <div style="{{autoRow}}">
+          <span>Next slide every</span>
+          <input type="number" aria-label="Seconds per slide" value="{{autoSecs}}" onInput="{{onAutoSecs}}" style="width: 56px; height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 13px; box-sizing: border-box;">
+          <span>seconds</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{loop}}" onChange="{{toggleLoop}}"> Loop back to slide 1 at the end</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{alwaysOn}}"> Videos play to the end, then continue</label>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">TRANSITION BETWEEN SLIDES</span>
+        <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+          <sc-for list="{{trans}}" as="o" hint-placeholder-count="4"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 58px;">Duration</span>
+          <input type="range" min="1" max="30" value="{{transDur}}" onInput="{{onTransDur}}" aria-label="Transition duration" style="flex-grow: 1;">
+          <span style="width: 36px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{transDurLabel}}</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">CAMERA FOR THE REST OF THE SCREEN</span>
+        <select aria-label="Camera source" onChange="{{onCam}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 13px; padding: 0 8px;">
+          <option>Camera 1 · Stage wide</option>
+          <option>Camera 2 · Close-up</option>
+          <option>Camera 3 · Side</option>
+          <option>Phone cam · Crowd</option>
+          <option>Split: Cam 1 + 2</option>
+          <option>Background image instead</option>
+        </select>
+        <div style="{{sizeRow}}">
+          <span style="width: 58px;">Slide size</span>
+          <input type="range" min="30" max="70" value="{{boxSize}}" onInput="{{onBoxSize}}" aria-label="Slide size" style="flex-grow: 1;">
+          <span style="width: 36px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{boxSizeLabel}}</span>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">BORDER &amp; BACKGROUND</span>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;">
+          <label style="display: flex; align-items: center; gap: 8px; flex-grow: 1;"><input type="checkbox" checked="{{border}}" onChange="{{toggleBorder}}"> Border around slide</label>
+          <sc-for list="{{borderColors}}" as="c" hint-placeholder-count="4"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 58px;">Rounded</span>
+          <input type="range" min="0" max="24" value="{{radius}}" onInput="{{onRadius}}" aria-label="Corner rounding" style="flex-grow: 1;">
+          <span style="width: 36px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{radiusLabel}}</span>
+        </div>
+        <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+          <sc-for list="{{bgOpts}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">WHICH SCREENS</span>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{screens}}" as="s" hint-placeholder-count="3"><button onClick="{{s.toggle}}" style="{{s.style}}">{{s.name}}</button></sc-for>
+        </div>
+        <span style="font-size: 11px; color: #8e9096;">Monitor is text only: it shows the slide number and the next slide's title.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transport -->
+  <div style="height: 84px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; background: #1a1d22; border-top: 1px solid #2c3038;">
+    <button onClick="{{prev}}" style="height: 52px; width: 140px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 15px; font-weight: 700;">◀ Prev</span><span style="font-size: 10px; color: #8e9096;">← key</span></button>
+    <div style="width: 170px; height: 52px; border-radius: 6px; background: #101216; border: 1px solid #2c3038; display: flex; flex-direction: column; align-items: center; justify-content: center; box-sizing: border-box;">
+      <span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700; color: #ffffff;">{{counter}}</span>
+      <span style="font-size: 10px; color: #8e9096;">{{counterSub}}</span>
+    </div>
+    <button onClick="{{next}}" style="height: 52px; width: 180px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 16px; font-weight: 700;">Next ▶</span><span style="font-size: 10px; color: #0e2a2e;">→ key or Space</span></button>
+    <span style="width: 1px; height: 40px; background: #2c3038; margin: 0 6px;"></span>
+    <span style="font-size: 13px; color: #a9abb0;">Go to slide</span>
+    <input type="number" min="1" aria-label="Slide number" value="{{gotoVal}}" onInput="{{onGoto}}" style="width: 64px; height: 40px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 18px; box-sizing: border-box;">
+    <button onClick="{{goTo}}" style="height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background: #343944; color: #ffffff; font-size: 13px; font-weight: 600;">Go <span style="font-size: 10px; color: #a9abb0; font-weight: 400;">G</span></button>
+    <span style="width: 1px; height: 40px; background: #2c3038; margin: 0 6px;"></span>
+    <button onClick="{{toggleAuto}}" style="{{autoBtn}}">{{autoBtnLabel}}</button>
+    <button onClick="{{toggleBlack}}" style="{{blackBtn}}">Black slide <span style="font-size: 10px; color: #a9abb0; font-weight: 400;">B</span></button>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" style="height: 52px; padding: 0 22px; border-radius: 6px; border: 1px solid #2f8f4e; background: #2a2e36; color: #ffffff; font-size: 14px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Send to Preview</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const s = (n, file) => ({ id: 's' + n, kind: 'slide', title: 'Pasuk ' + n, file: file });
+    this.state = {
+      items: [
+        { id: 'title', kind: 'slide', title: '[Event title]', file: 'Opening.png' },
+        s(1, 'Pesukim.pptx'), s(2, 'Pesukim.pptx'), s(3, 'Pesukim.pptx'),
+        { id: 'v1', kind: 'video', title: 'Tribute.mp4', file: '04:12' },
+        s(4, 'Pesukim.pptx'), s(5, 'Pesukim.pptx'), s(6, 'Pesukim.pptx'), s(7, 'Pesukim.pptx'),
+        { id: 'v2', kind: 'video', title: 'Sponsors.mp4', file: '00:45' },
+        s(8, 'Pesukim.pptx'), { id: 'end', kind: 'slide', title: 'Thank you', file: 'Closing.pdf · p1' }
+      ],
+      cur: 2, layout: 'split', timing: 'manual', autoSecs: 8, loop: false,
+      trans: 'fade', transDur: 8, cam: 'Camera 1', boxSize: 48, border: true, borderColor: '#e4e5e7', radius: 6, bg: 'keep',
+      screens: { live: true, back: true, monitor: true }, gotoVal: 5, auto: false, black: false, added: 0
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
+
+    // numbering
+    let n = 0;
+    const slideNums = st.items.map((it) => (it.kind === 'slide' ? ++n : null));
+    const slideCount = n;
+    const move = (i, d) => {
+      const j = i + d;
+      if (j < 0 || j >= st.items.length) return;
+      const arr = st.items.slice();
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+      let cur = st.cur;
+      if (cur === i) cur = j; else if (cur === j) cur = i;
+      set({ items: arr, cur });
+    };
+    const items = st.items.map((it, i) => {
+      const on = i === st.cur;
+      const vid = it.kind === 'video';
+      return {
+        num: vid ? '' : String(slideNums[i]),
+        title: vid ? '▶ Video: ' + it.title + ' plays here' : it.title,
+        sub: vid ? 'Full screen · ' + it.file + ' · then next slide' : it.file,
+        thumbLabel: vid ? '▶' : String(slideNums[i]),
+        pick: () => set({ cur: i, black: false }),
+        up: (e) => { if (e && e.stopPropagation) e.stopPropagation(); move(i, -1); },
+        down: (e) => { if (e && e.stopPropagation) e.stopPropagation(); move(i, 1); },
+        titleStyle: `font-size: 12px; font-weight: 600; color: ${vid ? '#8fd3db' : '#e4e5e7'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`,
+        thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; background: ${vid ? '#403143' : '#3f3b2a'}; border: 1px solid ${vid ? '#6a5470' : '#2c3038'}; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.65); box-sizing: border-box;`,
+        row: `height: 48px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-radius: 6px; cursor: pointer; box-sizing: border-box; background: ${on ? '#1d3b40' : (vid ? '#1e2127' : 'transparent')}; border: 1px ${vid ? 'dashed' : 'solid'} ${on ? '#4fb3bf' : (vid ? '#4fb3bf' : 'transparent')};`
+      };
+    });
+
+    // layout geometry (percent based)
+    const geo = (lay, size) => {
+      const full = 'left: 0; top: 0; width: 100%; height: 100%;';
+      if (lay === 'split') return { cam: 'left: 58%; top: 0; width: 42%; height: 100%;', slide: 'left: 0; top: 0; width: 58%; height: 100%;', camOn: true, slideBg: true };
+      if (lay === 'behind') return { cam: full, slide: full, camOn: true, slideBg: false };
+      if (lay === 'box') return { cam: full, slide: `right: 4%; top: 6%; width: ${size}%; height: ${size}%;`, camOn: true, slideBg: true };
+      return { cam: full, slide: full, camOn: false, slideBg: true };
+    };
+    const LAYOUTS = [['split', 'Slide left + camera right'], ['behind', 'Slide full + camera behind'], ['box', 'Slide in box over camera'], ['full', 'Slide full screen']];
+    const layouts = LAYOUTS.map(([id, name]) => {
+      const g = geo(id, 48);
+      const on = st.layout === id;
+      return {
+        name, pick: () => set({ layout: id }),
+        card: `display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`,
+        cam: `position: absolute; ${g.cam} background: #34404c; display: ${g.camOn ? 'block' : 'none'};`,
+        slide: `position: absolute; ${g.slide} box-sizing: border-box; background: ${g.slideBg ? '#6b6346' : 'transparent'}; border: 1px ${g.slideBg ? 'solid' : 'dashed'} ${g.slideBg ? '#8a8260' : '#c9c3a6'}; ${id === 'behind' ? 'left: 20%; top: 30%; width: 60%; height: 40%;' : ''}`
+      };
+    });
+
+    const curItem = st.items[st.cur] || st.items[0];
+    const isVideo = curItem.kind === 'video';
+    const g = geo(st.layout, st.boxSize);
+    const borderCss = st.border ? `border: 3px solid ${st.borderColor};` : 'border: 0;';
+    const slideBgCss = st.black ? '#000000' : (g.slideBg && st.bg !== 'remove' ? (st.bg === 'colour' ? '#1b2a4a' : '#3f3b2a') : 'rgba(0,0,0,0.25)');
+    const nextIdx = st.cur + 1 < st.items.length ? st.cur + 1 : (st.loop ? 0 : -1);
+    const labelOf = (i) => { const it = st.items[i]; return it.kind === 'video' ? '▶ ' + it.title + ' (video)' : 'Slide ' + slideNums[i] + ' · ' + it.title; };
+    let curSlideNum = slideNums[st.cur];
+    if (curSlideNum === null) { for (let k = st.cur; k >= 0; k--) if (slideNums[k]) { curSlideNum = slideNums[k]; break; } }
+
+    const colours = [['#e4e5e7', 'White'], ['#4fb3bf', 'Teal'], ['#0c0d10', 'Black'], ['#8a8260', 'Stone']];
+    const borderColors = colours.map(([c, name]) => ({
+      name: name + ' border', pick: () => set({ borderColor: c, border: true }),
+      style: `width: 20px; height: 20px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.borderColor === c ? '#4fb3bf' : '#2c3038'};`
+    }));
+    const screens = [['live', 'Live'], ['back', 'Back'], ['monitor', 'Monitor']].map(([id, name]) => {
+      const on = st.screens[id];
+      return { name, toggle: () => set({ screens: { ...st.screens, [id]: !on } }),
+        style: `height: 34px; border-radius: 6px; font-size: 12px; font-weight: 600; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'};` };
+    });
+    const step = (d) => {
+      let i = st.cur + d;
+      if (i >= st.items.length) i = st.loop ? 0 : st.items.length - 1;
+      if (i < 0) i = 0;
+      set({ cur: i, black: false });
+    };
+    const pvSlideStyle = `position: absolute; ${g.slide} box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 20px; background: ${slideBgCss}; ${st.layout === 'behind' ? 'border: 0;' : borderCss} border-radius: ${st.layout === 'split' || st.layout === 'full' ? 0 : st.radius}px; transition: all .2s;`;
+
+    return {
+      items, slideCount: String(slideCount), layouts, alwaysOn: true,
+      addImage: () => set({ items: st.items.concat([{ id: 'img' + st.added, kind: 'slide', title: '[New image]', file: 'Image.jpg' }]), added: st.added + 1 }),
+      addVideo: () => { const arr = st.items.slice(); arr.splice(st.cur + 1, 0, { id: 'nv' + st.added, kind: 'video', title: '[Video].mp4', file: '00:00' }); set({ items: arr, added: st.added + 1 }); },
+      showSlideLayout: !isVideo, showVideo: isVideo, videoName: curItem.title,
+      pvCam: `position: absolute; ${g.cam} background: #34404c; display: ${g.camOn ? 'block' : 'none'};`,
+      pvSlide: pvSlideStyle,
+      slideKicker: st.black ? '' : 'SLIDE ' + curSlideNum,
+      slideTitle: st.black ? '' : curItem.title,
+      camName: st.cam,
+      previewTitle: isVideo ? 'Video between slides' : 'Slide ' + curSlideNum + ' of ' + slideCount + ' · ' + (LAYOUTS.find((l) => l[0] === st.layout) || LAYOUTS[0])[1],
+      nowLabel: labelOf(st.cur), nextLabel: nextIdx < 0 ? 'End of slideshow' : labelOf(nextIdx),
+      timing: seg('timing', [['manual', 'Manual (click Next)'], ['auto', 'Automatic']]),
+      autoRow: `display: ${st.timing === 'auto' ? 'flex' : 'none'}; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;`,
+      autoSecs: String(st.autoSecs), onAutoSecs: (e) => set({ autoSecs: e.target.value }),
+      loop: st.loop, toggleLoop: () => set({ loop: !st.loop }),
+      trans: seg('trans', [['cut', 'Cut'], ['fade', 'Fade'], ['slide', 'Slide'], ['zoom', 'Zoom']]),
+      transDur: String(st.transDur), transDurLabel: (st.transDur / 10).toFixed(1) + 's', onTransDur: (e) => set({ transDur: Number(e.target.value) }),
+      onCam: (e) => set({ cam: String(e.target.value).split(' · ')[0] }),
+      sizeRow: `display: ${st.layout === 'box' ? 'flex' : 'none'}; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;`,
+      boxSize: String(st.boxSize), boxSizeLabel: st.boxSize + '%', onBoxSize: (e) => set({ boxSize: Number(e.target.value) }),
+      border: st.border, toggleBorder: () => set({ border: !st.border }), borderColors,
+      radius: String(st.radius), radiusLabel: st.radius + 'px', onRadius: (e) => set({ radius: Number(e.target.value) }),
+      bgOpts: seg('bg', [['keep', 'Slide background'], ['remove', 'Remove (see-through)'], ['colour', 'Colour']]),
+      screens,
+      prev: () => step(-1), next: () => step(1),
+      counter: isVideo ? '▶ Video' : curSlideNum + ' / ' + slideCount,
+      counterSub: isVideo ? curItem.title : 'slide',
+      gotoVal: String(st.gotoVal), onGoto: (e) => set({ gotoVal: e.target.value }),
+      goTo: () => { const want = Number(st.gotoVal); const i = slideNums.indexOf(want); if (i >= 0) set({ cur: i, black: false }); },
+      toggleAuto: () => set({ auto: !st.auto, timing: 'auto' }),
+      autoBtnLabel: st.auto ? '❚❚ Pause auto' : '▶ Play auto',
+      autoBtn: `height: 40px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid ${st.auto ? '#4fb3bf' : '#2c3038'}; background: ${st.auto ? '#1d3b40' : '#2a2e36'}; color: ${st.auto ? '#dff4f6' : '#e4e5e7'};`,
+      toggleBlack: () => set({ black: !st.black }),
+      blackBtn: `height: 40px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid ${st.black ? '#e4e5e7' : '#2c3038'}; background: ${st.black ? '#0c0d10' : '#2a2e36'}; color: #e4e5e7;`
+    };
+  }
+}
+</script>
+</body>
+</html>

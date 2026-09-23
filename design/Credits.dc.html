@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Thank-you list</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+input,select,textarea{font-family:inherit}
+input[type=checkbox]{accent-color:#4fb3bf;width:16px;height:16px;margin:0}
+input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Thank-you list / credits</span>
+    <span style="font-size: 13px; color: #8e9096;">For the end of the event · sponsors, organizers, volunteers</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex; gap: 24px; padding: 18px 24px; box-sizing: border-box;">
+
+    <!-- Left: list editor -->
+    <div style="width: 520px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NAMES &amp; SPONSORS · {{rowCount}}</span>
+        <span style="font-size: 11px; color: #8e9096;">Drag ⋮⋮ or use ▲▼ to reorder</span>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button onClick="{{addHeading}}" style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600;">+ Heading</button>
+        <button onClick="{{addRow}}" style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600;">+ Name</button>
+        <button onClick="{{addLogo}}" style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600;">+ Logo</button>
+        <div style="flex-grow: 1;"></div>
+        <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Import from spreadsheet…</button>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 3px; padding: 8px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="14">
+          <div onClick="{{r.pick}}" style="{{r.row}}">
+            <span style="width: 10px; color: #5a5c62; font-size: 11px; letter-spacing: -2px;">⋮⋮</span>
+            <sc-if value="{{r.isLogo}}" hint-placeholder-val="{{false}}">
+              <span style="width: 44px; height: 24px; flex-shrink: 0; border-radius: 3px; background: #3a3240; display: flex; align-items: center; justify-content: center; font-size: 9px; color: rgba(255,255,255,0.7);">LOGO</span>
+            </sc-if>
+            <input aria-label="{{r.kindLabel}}" value="{{r.text}}" onInput="{{r.onText}}" style="{{r.input}}">
+            <sc-if value="{{r.hasSub}}" hint-placeholder-val="{{true}}">
+              <input aria-label="Role or note" value="{{r.sub}}" placeholder="Role (optional)" style="width: 140px; height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #a9abb0; font-size: 12px; box-sizing: border-box;">
+            </sc-if>
+            <button onClick="{{r.up}}" aria-label="Move up" style="width: 24px; height: 24px; padding: 0; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 9px;">▲</button>
+            <button onClick="{{r.down}}" aria-label="Move down" style="width: 24px; height: 24px; padding: 0; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 9px;">▼</button>
+            <button onClick="{{r.remove}}" aria-label="Delete row" style="width: 24px; height: 24px; padding: 0; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #a9abb0; font-size: 11px;">✕</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Right: style + preview -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+        <span style="font-size: 12px; color: #8e9096;">{{styleName}}</span>
+        <div style="flex-grow: 1;"></div>
+        <span style="font-family: Consolas, monospace; font-size: 12px; color: #a9abb0;">{{durLabel}}</span>
+      </div>
+      <div style="{{frame}}">
+        <sc-if value="{{isGrid}}" hint-placeholder-val="{{false}}">
+          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; box-sizing: border-box;">
+            <span style="{{hStyle}}">{{firstHeading}}</span>
+            <div style="display: grid; grid-template-columns: repeat(4, 90px); gap: 10px;">
+              <sc-for list="{{gridLogos}}" as="g" hint-placeholder-count="8"><span style="height: 44px; border-radius: 4px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.8); text-align: center; padding: 0 4px;">{{g.text}}</span></sc-for>
+            </div>
+          </div>
+        </sc-if>
+        <sc-if value="{{notGrid}}" hint-placeholder-val="{{true}}">
+          <div style="{{rollBox}}">
+            <sc-for list="{{previewLines}}" as="p" hint-placeholder-count="10"><span style="{{p.style}}">{{p.text}}</span></sc-for>
+          </div>
+        </sc-if>
+        <span style="position: absolute; left: 10px; bottom: 8px; font-size: 10px; color: rgba(255,255,255,0.5);">{{bgLabel}}</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px;">
+        <div style="display: flex; flex-direction: column; gap: 6px; grid-column: 1 / 3;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">STYLE</span>
+          <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+            <sc-for list="{{styles}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SPEED</span>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <input type="range" min="1" max="10" value="{{speed}}" onInput="{{onSpeed}}" aria-label="Speed" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 64px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{speedLabel}}</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">FONT</span>
+          <div style="display: flex; gap: 6px;">
+            <select aria-label="Font" onChange="{{onFont}}" style="flex-grow: 1; min-width: 0; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;">
+              <option>Segoe UI</option><option>Georgia</option><option>Palatino Linotype</option><option>Garamond</option><option>Cambria</option><option>Bahnschrift</option><option>Trebuchet MS</option><option>Times New Roman</option><option>[Imported font]</option>
+            </select>
+            <button style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Import…</button>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SIZES</span>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 60px;">Headings</span>
+            <input type="range" min="14" max="40" value="{{hSize}}" onInput="{{onHSize}}" aria-label="Heading size" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 34px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{hSizeLabel}}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 60px;">Names</span>
+            <input type="range" min="10" max="32" value="{{nSize}}" onInput="{{onNSize}}" aria-label="Name size" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 34px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{nSizeLabel}}</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">BACKGROUND</span>
+          <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+            <sc-for list="{{bgs}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
+          </div>
+          <select aria-label="Background choice" style="height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;">
+            <option>{{bgChoice}}</option><option>Choose from library…</option>
+          </select>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MUSIC</span>
+          <select aria-label="Music track" style="height: 30px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 6px;">
+            <option>[Closing song].mp3 · 02:45</option><option>No music</option><option>Choose file…</option>
+          </select>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 60px;">Volume</span>
+            <input type="range" min="0" max="100" value="{{vol}}" onInput="{{onVol}}" aria-label="Music volume" style="flex-grow: 1; min-width: 0;">
+            <span style="width: 34px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{volLabel}}</span>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">DURATION</span>
+          <label style="display: flex; align-items: center; gap: 8px; height: 30px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{autoFit}}" onChange="{{toggleAutoFit}}"> Auto-fit to the music length</label>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <span style="width: 60px;">Length</span>
+            <input aria-label="Duration" value="{{durValue}}" style="{{durInput}}">
+            <span>{{durNote}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 76px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-top: 1px solid #2c3038; background-color: #1a1d22;">
+    <span style="font-size: 13px; color: #a9abb0;">{{summary}}</span>
+    <div style="flex-grow: 1;"></div>
+    <button style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600;">Save to library</button>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 26px; border-radius: 6px; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Send to Preview</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const h = (t) => ({ kind: 'heading', text: t, sub: '' });
+    const n = (t, s) => ({ kind: 'name', text: t, sub: s || '' });
+    const l = (t) => ({ kind: 'logo', text: t, sub: '' });
+    this.state = {
+      rows: [
+        h('Thank you to our sponsors'), l('[Sponsor 1]'), l('[Sponsor 2]'), l('[Sponsor 3]'), l('[Sponsor 4]'),
+        h('Organizers'), n('[Name]', '[Role]'), n('[Name]', '[Role]'), n('[Name]', '[Role]'),
+        h('Volunteers'), n('[Name]'), n('[Name]'), n('[Name]'),
+        h('Special thanks'), n('[Name]', '[Note]')
+      ],
+      sel: 1, style: 'roll', speed: 5, font: 'Segoe UI', hSize: 24, nSize: 16, bg: 'loop', vol: 70, autoFit: true
+    };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
+    const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
+    const stop = (e) => { if (e && e.stopPropagation) e.stopPropagation(); };
+    const move = (i, d) => {
+      const j = i + d; if (j < 0 || j >= st.rows.length) return;
+      const a = st.rows.slice(); const t = a[i]; a[i] = a[j]; a[j] = t;
+      set({ rows: a, sel: st.sel === i ? j : st.sel });
+    };
+    const insert = (row) => { const a = st.rows.slice(); a.splice(st.sel + 1, 0, row); set({ rows: a, sel: st.sel + 1 }); };
+    const rows = st.rows.map((r, i) => {
+      const on = st.sel === i; const head = r.kind === 'heading';
+      return {
+        text: r.text, sub: r.sub, isLogo: r.kind === 'logo', hasSub: r.kind === 'name',
+        kindLabel: head ? 'Heading' : (r.kind === 'logo' ? 'Sponsor name' : 'Name'),
+        pick: () => set({ sel: i }),
+        onText: (e) => { const a = st.rows.slice(); a[i] = { ...r, text: e.target.value }; set({ rows: a }); },
+        up: (e) => { stop(e); move(i, -1); }, down: (e) => { stop(e); move(i, 1); },
+        remove: (e) => { stop(e); const a = st.rows.slice(); a.splice(i, 1); set({ rows: a, sel: Math.max(0, Math.min(st.sel, a.length - 1)) }); },
+        row: `height: 32px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 6px 0 ${head ? 6 : 22}px; margin-top: ${head && i > 0 ? 6 : 0}px; border-radius: 4px; background: ${on ? '#1d3b40' : (head ? '#1e2127' : 'transparent')}; box-shadow: ${on ? 'inset 3px 0 0 #4fb3bf' : 'none'}; box-sizing: border-box;`,
+        input: `flex-grow: 1; min-width: 0; height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid ${head ? 'transparent' : '#2c3038'}; background: ${head ? 'transparent' : '#1e2127'}; color: ${head ? '#8fd3db' : '#e4e5e7'}; font-size: ${head ? 13 : 12}px; font-weight: ${head ? 700 : 400}; box-sizing: border-box;`
+      };
+    });
+    const hCss = `font-family: '${st.font}', 'Segoe UI', sans-serif; font-size: ${st.hSize}px; font-weight: 700; color: #8fd3db; text-align: center; margin-top: 10px;`;
+    const nCss = `font-family: '${st.font}', 'Segoe UI', sans-serif; font-size: ${st.nSize}px; color: #ffffff; text-align: center;`;
+    let lines = st.rows;
+    if (st.style === 'pages') { const start = st.rows.findIndex((r) => r.kind === 'heading' && r.text === 'Organizers'); const s0 = start < 0 ? 0 : start; let e = st.rows.findIndex((r, k) => k > s0 && r.kind === 'heading'); if (e < 0) e = st.rows.length; lines = st.rows.slice(s0, e); }
+    const previewLines = lines.slice(0, 12).map((r) => ({ text: r.sub ? r.text + '  ·  ' + r.sub : r.text, style: r.kind === 'heading' ? hCss : nCss }));
+    const firstHeadingRow = st.rows.find((r) => r.kind === 'heading');
+    const gridLogos = st.rows.filter((r) => r.kind !== 'heading').slice(0, 8).map((r) => ({ text: r.text }));
+    const BG = { loop: ['#27403f', 'Aurora loop', 'Aurora loop'], colour: ['#101216', 'Solid colour', 'Black'], image: ['#3b3326', '[Image]', '[Image].jpg'] };
+    const bg = BG[st.bg];
+    const names = st.rows.filter((r) => r.kind !== 'heading').length;
+    const heads = st.rows.length - names;
+    const speedWords = ['Very slow', 'Very slow', 'Slow', 'Slow', 'Medium', 'Medium', 'Medium', 'Fast', 'Fast', 'Very fast', 'Very fast'];
+    const STYLES = { roll: 'Rolling credits', pages: 'Pages (one group at a time)', grid: 'Grid of logos' };
+    return {
+      rows, rowCount: String(st.rows.length),
+      addHeading: () => insert({ kind: 'heading', text: '[New heading]', sub: '' }),
+      addRow: () => insert({ kind: 'name', text: '[Name]', sub: '' }),
+      addLogo: () => insert({ kind: 'logo', text: '[Sponsor]', sub: '' }),
+      styleName: STYLES[st.style],
+      durLabel: st.autoFit ? '02:45 · fits the music' : '02:00',
+      frame: `position: relative; width: 100%; height: 250px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: ${bg[0]}; border: 2px solid #2f8f4e; box-sizing: border-box;`,
+      isGrid: st.style === 'grid', notGrid: st.style !== 'grid',
+      rollBox: `position: absolute; left: 0; right: 0; top: ${st.style === 'roll' ? '-40px' : '0'}; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: ${st.style === 'roll' ? 'flex-start' : 'center'}; gap: 4px; padding: 16px;`,
+      previewLines, hStyle: hCss, firstHeading: firstHeadingRow ? firstHeadingRow.text : '', gridLogos,
+      bgLabel: bg[1],
+      styles: seg('style', [['roll', 'Rolling credits'], ['pages', 'Pages'], ['grid', 'Grid of logos']]),
+      speed: String(st.speed), speedLabel: speedWords[st.speed], onSpeed: (e) => set({ speed: Number(e.target.value) }),
+      onFont: (e) => set({ font: e.target.value }),
+      hSize: String(st.hSize), hSizeLabel: st.hSize + 'px', onHSize: (e) => set({ hSize: Number(e.target.value) }),
+      nSize: String(st.nSize), nSizeLabel: st.nSize + 'px', onNSize: (e) => set({ nSize: Number(e.target.value) }),
+      bgs: seg('bg', [['loop', 'Loop'], ['colour', 'Colour'], ['image', 'Image']]), bgChoice: bg[2],
+      vol: String(st.vol), volLabel: st.vol + '%', onVol: (e) => set({ vol: Number(e.target.value) }),
+      autoFit: st.autoFit, toggleAutoFit: () => set({ autoFit: !st.autoFit }),
+      durInput: 'width: 72px; height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 13px; box-sizing: border-box; opacity: ' + (st.autoFit ? '0.6' : '1') + ';', durValue: st.autoFit ? '02:45' : '02:00', durNote: st.autoFit ? 'from the music' : 'min:sec',
+      summary: heads + ' heading' + (heads === 1 ? '' : 's') + ' · ' + names + ' names / sponsors · ' + STYLES[st.style]
+    };
+  }
+}
+</script>
+</body>
+</html>
