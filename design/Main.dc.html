@@ -11,7 +11,7 @@
 <style>
 body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#e4e5e7}
 a{color:#4fb3bf}a:hover{color:#8fd3db}
-button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+button{font-family:inherit;cursor:pointer}
 input,select,textarea{font-family:inherit}
 input[type=checkbox]{accent-color:#4fb3bf}
 .vrange{writing-mode:vertical-lr;direction:rtl;position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:ns-resize}
@@ -19,95 +19,126 @@ input[type=checkbox]{accent-color:#4fb3bf}
 </helmet>
 <div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; position: relative; overflow: hidden;">
 
-  <!-- Menu bar -->
-  <div style="height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 4px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+  <!-- ===== Menu bar ===== -->
+  <div style="height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 2px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
     <div style="display: flex; align-items: center; gap: 8px; padding-right: 14px;">
       <svg width="18" height="18" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="9" width="16" height="11" rx="2" stroke="#6f6a60" stroke-width="2"></rect><rect x="6" y="6" width="16" height="11" rx="2" stroke="#9c948a" stroke-width="2"></rect><rect x="9" y="3" width="16" height="11" rx="2" fill="#e8b04b"></rect></svg>
       <span style="font-size: 13px; font-weight: 600;">Lumora</span>
     </div>
-    <button style="height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; box-shadow: none; color: #d4d5d8; font-size: 12px;">Event</button>
+    <button style="height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #d4d5d8; font-size: 12px;">Event</button>
     <a href="AddPreset.dc.html" style="height: 26px; padding: 0 10px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Presets</a>
     <a href="Library.dc.html" style="height: 26px; padding: 0 10px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Library</a>
-    <a href="Devices.dc.html" style="height: 26px; padding: 0 10px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Devices</a>
     <a href="Settings.dc.html" style="height: 26px; padding: 0 10px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Settings</a>
-    <button style="height: 26px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent; box-shadow: none; color: #d4d5d8; font-size: 12px;">Help</button>
+    <button style="height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #d4d5d8; font-size: 12px;">Help &amp; Manual</button>
     <div style="flex-grow: 1;"></div>
+    <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">CPU 18% · 60 fps · 0 dropped</span>
+    <span style="width: 1px; height: 16px; background: #343944; margin: 0 12px;"></span>
     <span style="font-size: 12px; color: #a9abb0;">[Event name]</span>
     <span style="width: 1px; height: 16px; background: #343944; margin: 0 12px;"></span>
-    <span style="font-family: Consolas, 'Courier New', monospace; font-size: 13px; color: #e4e5e7;">19:42:05</span>
+    <span style="font-family: Consolas, monospace; font-size: 13px; color: #e4e5e7;">19:42:05</span>
   </div>
 
-  <!-- Screen tabs -->
+  <!-- ===== Screen tabs ===== -->
   <div style="height: 42px; flex-shrink: 0; display: flex; align-items: flex-end; gap: 2px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
     <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
       <button onClick="{{t.pick}}" style="{{t.style}}">
-        <span style="{{t.dot}}"></span>
         <span style="font-size: 13px; font-weight: 600;">{{t.name}}</span>
+        <span style="{{t.badge}}">{{t.status}}</span>
       </button>
     </sc-for>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 10px; height: 36px;">
+      <a href="Devices.dc.html" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3fbf5a;"></span>3 devices connected</a>
+      <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
+        <button onClick="{{setSimple}}" style="{{simpleStyle}}">Simple</button>
+        <button onClick="{{setAdvanced}}" style="{{advancedStyle}}">Advanced</button>
+      </div>
+    </div>
   </div>
 
-  <!-- Body -->
+  <!-- ===== Body ===== -->
   <div style="flex-grow: 1; min-height: 0; display: flex;">
 
     <!-- Presets -->
-    <div style="width: 200px; flex-shrink: 0; display: flex; flex-direction: column; background: #1e2127; border-right: 1px solid #2c3038;">
-      <div style="height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 10px 0 12px;">
-        <span style="font-size: 12px; font-weight: 600; color: #a9abb0; letter-spacing: 0.04em;">PRESETS</span>
-        <a href="AddPreset.dc.html" aria-label="Add preset" style="width: 24px; height: 24px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 15px; display: flex; align-items: center; justify-content: center; text-decoration: none;">+</a>
+    <div style="width: 200px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
+      <div style="padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 11px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">PRESETS</span>
+          <a href="AddPreset.dc.html" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">+ Add preset</a>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <input aria-label="Search presets" placeholder="Search…" style="flex-grow: 1; min-width: 0; height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; outline: none;">
+          <select aria-label="Category" style="width: 74px; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px;"><option>All</option><option>Concert</option><option>Speeches</option><option>Built-in</option></select>
+        </div>
       </div>
       <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 0 6px; gap: 2px;">
-        <sc-for list="{{presets}}" as="p" hint-placeholder-count="12">
+        <sc-for list="{{presets}}" as="p" hint-placeholder-count="14">
           <button onClick="{{p.pick}}" style="{{p.style}}">
             <span style="font-family: Consolas, monospace; font-size: 11px; width: 18px; color: #8e9096;">{{p.num}}</span>
-            <span style="font-size: 13px;">{{p.name}}</span>
+            <span style="flex-grow: 1; font-size: 13px;">{{p.name}}</span>
+            <span style="font-size: 10px; color: #8e9096;">{{p.count}}</span>
           </button>
         </sc-for>
       </div>
       <div style="display: flex; gap: 6px; padding: 10px;">
-        <button onClick="{{prevPreset}}" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">◀ Prev</button>
-        <button onClick="{{nextPreset}}" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">Next ▶</button>
+        <button onClick="{{prevPreset}}" style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">◀ Prev</button>
+        <button onClick="{{nextPreset}}" style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Next ▶</button>
       </div>
     </div>
 
     <!-- Center -->
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box;">
 
-      <!-- Monitors -->
+      <!-- Monitors row -->
       <div style="display: flex; gap: 12px; flex-shrink: 0;">
-        <div style="width: 520px; display: flex; flex-direction: column; gap: 6px;">
-          <div style="display: flex; align-items: center; gap: 8px; height: 18px;">
-            <span style="width: 8px; height: 8px; border-radius: 1px; background: #3fbf5a;"></span>
+        <!-- Preview -->
+        <div style="width: 500px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
             <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
             <span style="font-size: 12px; color: #8e9096;">{{pv.title}}</span>
           </div>
           <div style="{{pv.frame}}">
             <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
-              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"><span style="font-size: 30px; font-weight: 700; color: #ffffff; text-align: center; line-height: 1.2;">{{monitorPreviewText}}</span></div>
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"><span style="font-size: 28px; font-weight: 700; color: #ffffff; text-align: center; line-height: 1.2;">{{monitorPreviewText}}</span></div>
+              <span style="position: absolute; right: 12px; top: 10px; font-family: Consolas, monospace; font-size: 14px; color: #a9abb0;">19:42</span>
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
               <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.8);">{{pv.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pv.sub}}</span></div>
             </sc-if>
           </div>
-        </div>
-
-        <!-- Transitions -->
-        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 6px; padding-top: 24px;">
-          <button onClick="{{take}}" style="height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #c7372f; color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.08em;">TAKE</button>
-          <button onClick="{{take}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background-color: #343944; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;">CUT</button>
-          <sc-for list="{{transitions}}" as="tr" hint-placeholder-count="3">
-            <button onClick="{{tr.pick}}" style="{{tr.style}}"><span>{{tr.name}}</span><span style="font-family: Consolas, monospace; font-size: 10px; color: #a9abb0;">{{tr.dur}}</span></button>
-          </sc-for>
-          <div style="flex-grow: 1; min-height: 60px; position: relative; margin-top: 4px; border-radius: 6px; background: #101216; border: 1px solid #0c0d10;">
-            <div style="position: absolute; left: 50%; top: 10px; bottom: 10px; width: 4px; margin-left: -2px; background: #0c0d10; border-radius: 6px;"></div>
-            <div style="{{tbarCap}}"></div>
-            <input class="vrange" type="range" min="0" max="100" value="{{tbar}}" onInput="{{onTbar}}" aria-label="T-bar">
+          <div style="height: 24px; display: flex; align-items: center; gap: 4px;">
+            <button aria-label="Play preview" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">▶</button>
+            <button aria-label="Pause preview" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">❚❚</button>
+            <button aria-label="Restart preview" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">⏮</button>
+            <div style="flex-grow: 1; height: 4px; margin: 0 6px; border-radius: 2px; background: #101216;"></div>
+            <span style="font-family: Consolas, monospace; font-size: 11px; color: #a9abb0;">{{pv.time}}</span>
           </div>
         </div>
 
-        <div style="width: 520px; display: flex; flex-direction: column; gap: 6px;">
-          <div style="display: flex; align-items: center; gap: 8px; height: 18px;">
-            <span style="width: 8px; height: 8px; border-radius: 1px; background: #e0473b;"></span>
+        <!-- Transitions -->
+        <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 24px;">
+          <button onClick="{{take}}" style="height: 46px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;"><span style="font-size: 14px; font-weight: 700; letter-spacing: 0.1em;">TAKE</span><span style="font-size: 9px; color: #f6c9c5;">Space</span></button>
+          <button onClick="{{take}}" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #343944; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.1em;">CUT <span style="font-weight: 400; font-size: 9px; color: #a9abb0; letter-spacing: 0;">Enter</span></button>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
+            <sc-for list="{{transitions}}" as="tr" hint-placeholder-count="4">
+              <button onClick="{{tr.pick}}" style="{{tr.style}}"><span style="font-size: 12px; font-weight: 600;">{{tr.name}}</span><span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{tr.dur}}</span></button>
+            </sc-for>
+          </div>
+          <div style="flex-grow: 1; min-height: 50px; display: flex; gap: 6px;">
+            <div style="display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; font-weight: 600; color: #8e9096; padding: 4px 0;"><span>PGM</span><span>PVW</span></div>
+            <div style="flex-grow: 1; position: relative; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+              <div style="position: absolute; left: 50%; top: 10px; bottom: 10px; width: 4px; margin-left: -2px; background: #0c0d10; border-radius: 2px;"></div>
+              <div style="{{tbarCap}}"></div>
+              <input class="vrange" type="range" min="0" max="100" value="{{tbar}}" onInput="{{onTbar}}" aria-label="T-bar">
+            </div>
+          </div>
+        </div>
+
+        <!-- Program -->
+        <div style="width: 500px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 2px; background: #e0473b;"></span>
             <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PROGRAM</span>
             <span style="font-size: 12px; color: #8e9096;">{{pg.title}}</span>
             <div style="flex-grow: 1;"></div>
@@ -115,23 +146,24 @@ input[type=checkbox]{accent-color:#4fb3bf}
           </div>
           <div style="{{pg.frame}}">
             <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
-              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"><span style="font-size: 30px; font-weight: 700; color: #ffffff; text-align: center; line-height: 1.2;">{{monitorLiveText}}</span></div>
-              <span style="position: absolute; right: 14px; top: 10px; font-family: Consolas, monospace; font-size: 15px; color: #a9abb0;">19:42</span>
-              <sc-if value="{{countdownOn}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; font-family: Consolas, monospace; font-size: 26px; font-weight: 700; color: #ffffff;">{{countdown}}</span></sc-if>
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"><span style="{{monTextStyle}}">{{monitorLiveText}}</span></div>
+              <sc-if value="{{clockOn}}" hint-placeholder-val="{{true}}"><span style="position: absolute; right: 12px; top: 10px; font-family: Consolas, monospace; font-size: 14px; color: #a9abb0;">19:42</span></sc-if>
+              <sc-if value="{{countdownOn}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-family: Consolas, monospace; font-size: 24px; font-weight: 700; color: #ffffff;">{{countdown}}</span></sc-if>
               <sc-if value="{{flashing}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(255,255,255,0.85);"></div></sc-if>
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
               <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.82);">{{pg.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pg.sub}}</span></div>
-              <sc-if value="{{logoOn}}" hint-placeholder-val="{{true}}"><div style="position: absolute; right: 12px; top: 10px; height: 22px; padding: 0 10px; background: rgba(10,10,12,0.7); color: #ffffff; font-size: 11px; font-weight: 600; display: flex; align-items: center;">LOGO</div></sc-if>
+              <sc-for list="{{overlayLayers}}" as="o" hint-placeholder-count="1"><div style="{{o.style}}">{{o.label}}</div></sc-for>
             </sc-if>
             <sc-if value="{{pgBlank}}" hint-placeholder-val="{{false}}">
               <div style="{{blankLayer}}"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #8e9096;">{{blankText}}</span></div>
             </sc-if>
           </div>
-          <div style="height: 24px; display: flex; align-items: center; gap: 6px;">
-            <button aria-label="Play" style="width: 28px; height: 22px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 9px;">▶</button>
-            <button aria-label="Pause" style="width: 28px; height: 22px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 9px;">❚❚</button>
-            <div style="flex-grow: 1; height: 4px; border-radius: 6px; background: #2c3038; position: relative; overflow: hidden;"><div style="{{pg.bar}}"></div></div>
+          <div style="height: 24px; display: flex; align-items: center; gap: 4px;">
+            <button aria-label="Play program" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">▶</button>
+            <button aria-label="Pause program" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">❚❚</button>
+            <button aria-label="Restart program" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">⏮</button>
+            <div style="flex-grow: 1; height: 4px; margin: 0 6px; border-radius: 2px; background: #101216; position: relative; overflow: hidden;"><div style="{{pg.bar}}"></div></div>
             <span style="font-family: Consolas, monospace; font-size: 11px; color: #a9abb0;">{{pg.time}}</span>
           </div>
         </div>
@@ -139,73 +171,107 @@ input[type=checkbox]{accent-color:#4fb3bf}
 
       <!-- Lower row -->
       <div style="flex-grow: 1; min-height: 0; display: flex; gap: 12px;">
+        <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
 
-        <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
-            <div style="height: 20px; display: flex; align-items: center; gap: 10px;">
-              <span style="font-size: 12px; font-weight: 600; color: #a9abb0; letter-spacing: 0.04em;">INPUTS</span>
-              <span style="font-size: 12px; color: #8e9096;">{{presetName}}</span>
+          <!-- Quick action strip -->
+          <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+            <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 2px;">PRESET</span>
+              <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
+                <button style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2d5a61; background: #1d3b40; color: #dff4f6; font-size: 11px; font-weight: 600; white-space: nowrap;">{{b}}</button>
+              </sc-for>
               <div style="flex-grow: 1;"></div>
-              <button style="height: 24px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 11px;">+ Add input</button>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px;">
-              <sc-for list="{{inputs}}" as="s" hint-placeholder-count="10">
-                <button onClick="{{s.pick}}" onDoubleClick="{{s.air}}" style="{{s.box}}">
-                  <div style="{{s.thumb}}"><span style="position: absolute; left: 6px; top: 5px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; color: rgba(255,255,255,0.6);">{{s.kind}}</span></div>
-                  <div style="{{s.strip}}"><span style="font-family: Consolas, monospace; font-weight: 700; width: 14px;">{{s.num}}</span><span style="overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">{{s.name}}</span></div>
-                </button>
+              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 2px;">OVERLAYS</span>
+              <sc-for list="{{ovlChannels}}" as="o" hint-placeholder-count="4">
+                <button onClick="{{o.clear}}" title="Click to take this overlay off" style="{{o.style}}">{{o.label}}</button>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
+              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">STAGE MONITOR</span>
+              <span style="font-size: 12px; color: #a9abb0;">Text only — for communicating with the people on stage</span>
+            </sc-if>
+          </div>
+
+          <!-- Inputs -->
+          <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+            <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 8px;">
+              <sc-for list="{{inputs}}" as="s" hint-placeholder-count="15">
+                <div style="{{s.box}}">
+                  <button onClick="{{s.pick}}" onDoubleClick="{{s.air}}" aria-label="{{s.name}}" style="{{s.thumb}}">
+                    <span style="position: absolute; left: 6px; top: 4px; font-family: Consolas, monospace; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85);">{{s.num}}</span>
+                    <span style="position: absolute; right: 6px; top: 5px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; color: rgba(255,255,255,0.55);">{{s.kind}}</span>
+                  </button>
+                  <div style="{{s.strip}}">{{s.name}}</div>
+                  <div style="display: flex; gap: 2px; padding: 0 3px 3px;">
+                    <button onClick="{{s.air}}" style="flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: #2a2e36; color: #d4d5d8; font-size: 10px;">Cut</button>
+                    <button onClick="{{s.toggleLoop}}" style="{{s.loopStyle}}">Loop</button>
+                    <sc-for list="{{s.ovl}}" as="o" hint-placeholder-count="4">
+                      <button onClick="{{o.toggle}}" aria-label="{{o.label}}" style="{{o.style}}">{{o.n}}</button>
+                    </sc-for>
+                  </div>
+                </div>
               </sc-for>
             </div>
-          </div>
-        </sc-if>
+          </sc-if>
 
-        <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
-          <div style="flex-grow: 1; min-width: 0; display: flex; gap: 12px;">
-            <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
-              <label for="msg" style="font-size: 12px; font-weight: 600; color: #a9abb0; letter-spacing: 0.04em;">MESSAGE TO THE STAGE</label>
-              <textarea id="msg" value="{{draft}}" onInput="{{onDraft}}" placeholder="Type a message…" style="height: 60px; resize: none; padding: 8px 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 16px; outline: none;"></textarea>
-              <div style="display: flex; gap: 8px;">
-                <button onClick="{{sendMsg}}" style="height: 34px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: #c7372f; color: #fff; font-size: 12px; font-weight: 700;">Show on monitor</button>
-                <button onClick="{{clearMsg}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">Clear</button>
-                <button onClick="{{flash}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">Flash</button>
+          <!-- Monitor panel -->
+          <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
+            <div style="flex-grow: 1; min-height: 0; display: flex; gap: 12px;">
+              <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+                <textarea aria-label="Message to the stage" value="{{draft}}" onInput="{{onDraft}}" placeholder="Type a message for the stage…" style="height: 62px; resize: none; padding: 8px 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 16px; outline: none;"></textarea>
+                <div style="display: flex; gap: 6px;">
+                  <button onClick="{{sendMsg}}" style="height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #fff; font-size: 12px; font-weight: 700;">Show on monitor</button>
+                  <button onClick="{{clearMsg}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Clear</button>
+                  <button onClick="{{flash}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Flash to get attention</button>
+                  <div style="flex-grow: 1;"></div>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;">Text size <select value="{{textSize}}" onChange="{{onTextSize}}" style="height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 12px;"><option value="m">Medium</option><option value="l">Large</option><option value="xl">Extra large</option></select></label>
+                </div>
+                <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-top: 4px;">READY-MADE &amp; SAVED MESSAGES</span>
+                <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+                  <sc-for list="{{quick}}" as="q" hint-placeholder-count="8">
+                    <button onClick="{{q.pick}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 12px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.text}}</button>
+                  </sc-for>
+                </div>
               </div>
-              <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding-top: 6px;">
-                <sc-for list="{{quick}}" as="q" hint-placeholder-count="6">
-                  <button onClick="{{q.pick}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background-color: #262a31; color: #e4e5e7; font-size: 12px; text-align: left;">{{q.text}}</button>
-                </sc-for>
+              <div style="width: 210px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; box-sizing: border-box;">
+                <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">COUNTDOWN</span>
+                <span style="font-family: Consolas, monospace; font-size: 34px; font-weight: 700; color: #ffffff; text-align: center;">{{countdown}}</span>
+                <div style="display: flex; gap: 4px;">
+                  <button onClick="{{subMinute}}" style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">−1 min</button>
+                  <button onClick="{{addMinute}}" style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">+1 min</button>
+                  <button style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">Reset</button>
+                </div>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{countdownOn}}" onChange="{{toggleCountdown}}"> Show countdown</label>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{clockOn}}" onChange="{{toggleClock}}"> Show clock</label>
               </div>
             </div>
-            <div style="width: 200px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
-              <span style="font-size: 12px; font-weight: 600; color: #a9abb0; letter-spacing: 0.04em;">COUNTDOWN</span>
-              <span style="font-family: Consolas, monospace; font-size: 34px; font-weight: 700; color: #ffffff;">{{countdown}}</span>
-              <div style="display: flex; gap: 6px;">
-                <button onClick="{{subMinute}}" style="flex-grow: 1; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">−1 min</button>
-                <button onClick="{{addMinute}}" style="flex-grow: 1; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">+1 min</button>
-              </div>
-              <button onClick="{{toggleCountdown}}" style="height: 30px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 12px;">{{countdownBtn}}</button>
-            </div>
-          </div>
-        </sc-if>
+          </sc-if>
+        </div>
 
-        <!-- Mixer -->
-        <div style="width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
-          <div style="height: 20px; display: flex; align-items: center; justify-content: space-between;">
-            <span style="font-size: 12px; font-weight: 600; color: #a9abb0; letter-spacing: 0.04em;">AUDIO</span>
-            <button style="height: 22px; padding: 0 8px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 11px;">Mixer…</button>
+        <!-- Audio mixer -->
+        <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+          <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #2c3038;">
+            <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">AUDIO MIXER</span>
+            <button style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">EQ / Advanced…</button>
           </div>
-          <div style="flex-grow: 1; min-height: 0; display: flex; gap: 4px; padding: 8px 6px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
-            <sc-for list="{{channels}}" as="c" hint-placeholder-count="5">
-              <div style="flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                <div style="flex-grow: 1; min-height: 0; display: flex; gap: 4px; width: 100%; justify-content: center;">
-                  <div style="position: relative; width: 20px; border-radius: 6px; background: #101216; border: 1px solid #0c0d10;">
+          <div style="flex-grow: 1; min-height: 0; display: flex; gap: 2px; padding: 8px 6px;">
+            <sc-for list="{{channels}}" as="c" hint-placeholder-count="6">
+              <div style="{{c.strip}}">
+                <span style="font-size: 10px; font-weight: 600; color: #e4e5e7; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{c.name}}</span>
+                <div style="flex-grow: 1; min-height: 0; display: flex; gap: 3px; justify-content: center; width: 100%;">
+                  <div style="position: relative; width: 18px; border-radius: 3px; background: #101216; border: 1px solid #2c3038;">
                     <div style="position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px; margin-left: -1px; background: #0c0d10;"></div>
                     <div style="{{c.cap}}"></div>
                     <input class="vrange" type="range" min="0" max="100" value="{{c.vol}}" onInput="{{c.onVol}}" aria-label="{{c.name}} volume">
                   </div>
-                  <div style="position: relative; width: 4px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask}}"></div></div>
+                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask}}"></div></div>
+                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask2}}"></div></div>
                 </div>
-                <button onClick="{{c.toggleMute}}" aria-label="Mute {{c.name}}" style="{{c.muteStyle}}">M</button>
-                <span style="font-size: 10px; color: #d4d5d8; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{c.name}}</span>
+                <span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{c.db}}</span>
+                <div style="display: flex; gap: 2px;">
+                  <button onClick="{{c.toggleMute}}" aria-label="Mute {{c.name}}" title="Mute" style="{{c.muteStyle}}">M</button>
+                  <button onClick="{{c.toggleAfv}}" aria-label="Audio follows video" title="Audio follows video" style="{{c.afvStyle}}">A</button>
+                </div>
               </div>
             </sc-for>
           </div>
@@ -214,18 +280,25 @@ input[type=checkbox]{accent-color:#4fb3bf}
     </div>
   </div>
 
-  <!-- Bottom bar -->
+  <!-- ===== Bottom bar ===== -->
   <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1a1d22; border-top: 1px solid #2c3038;">
+    <button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600;">+ Add input</button>
+    <span style="width: 1px; height: 24px; background: #2c3038; margin: 0 4px;"></span>
     <button onClick="{{toggleRec}}" style="{{recStyle}}"><span style="{{recDot}}"></span>Record <span style="font-family: Consolas, monospace; font-weight: 400; color: #d4d5d8;">{{recTime}}</span></button>
-    <a href="GoLive.dc.html" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 6px; background: #3fbf5a;"></span>Streaming</a>
-    <a href="GoLive.dc.html" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Go Live / Outputs</a>
+    <a href="GoLive.dc.html" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #3fbf5a;"></span>Streaming · 3 sites</a>
+    <a href="GoLive.dc.html" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Go Live / Outputs</a>
     <div style="flex-grow: 1;"></div>
-    <button onClick="{{toggleBlank}}" style="{{blankBtnStyle}}">{{blankBtnText}}</button>
+    <span style="font-size: 11px; color: #8e9096;">Blank</span>
+    <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+      <sc-for list="{{blankOpts}}" as="b" hint-placeholder-count="3">
+        <button onClick="{{b.toggle}}" style="{{b.style}}">{{b.label}}</button>
+      </sc-for>
+    </div>
     <button onDoubleClick="{{togglePanic}}" title="Double-click: Live and Back go black, Monitor dims" style="{{panicBtnStyle}}">{{panicLabel}}</button>
   </div>
 
   <sc-if value="{{panic}}" hint-placeholder-val="{{false}}">
-    <div style="position: absolute; left: 50%; top: 84px; transform: translateX(-50%); padding: 8px 16px; border-radius: 6px; background: #4a1714; border: 1px solid #c7372f; color: #ffe1de; font-size: 12px; font-weight: 600;">PANIC — Live and Back are black, Monitor is dimmed. Double-click again to restore.</div>
+    <div style="position: absolute; left: 50%; top: 86px; transform: translateX(-50%); padding: 8px 16px; border-radius: 6px; background: #3a1a18; border: 1px solid #c7372f; color: #ffe1de; font-size: 12px; font-weight: 600;">PANIC — Live and Back are black, Monitor is dimmed. Double-click again to restore.</div>
   </sc-if>
 </div>
 </x-dc>
@@ -234,36 +307,44 @@ class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      tab: 'live',
+      tab: 'live', mode: 'advanced',
       screens: { live: { pv: 'cam2', pg: 'cam1', blank: false }, back: { pv: 'vid2', pg: 'loop1', blank: false }, monitor: { blank: false } },
       trans: 'fade', tbar: 0, preset: 0, panic: false, rec: true,
-      vol: { master: 82, cam1: 70, vid1: 78, vid2: 74, phone: 50 },
-      muted: { phone: true },
-      draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, flashing: false
+      loops: { vid2: true, loop1: true, loop2: true },
+      ovl: { 1: 'logo', 2: null, 3: null, 4: null },
+      vol: { master: 82, cam1: 70, cam2: 60, vid1: 78, vid2: 74, phone: 50 },
+      muted: { phone: true }, afv: { vid1: true, vid2: true },
+      draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false
     };
   }
   renderVals() {
     const st = this.state;
     const set = (p) => this.setState(p);
     const SRC = {
-      cam1: { name: 'Camera 1', sub: 'Stage wide', kind: 'CAMERA', tone: '#34404c' },
-      cam2: { name: 'Camera 2', sub: 'Close-up', kind: 'CAMERA', tone: '#3a3746' },
-      phone: { name: 'Phone cam', sub: 'Crowd', kind: 'PHONE', tone: '#2e3d34' },
+      cam1: { name: 'Camera 1', sub: 'HDMI · Stage wide', kind: 'CAM', tone: '#34404c' },
+      cam2: { name: 'Camera 2', sub: 'USB · Close-up', kind: 'CAM', tone: '#3a3746' },
+      cam3: { name: 'Camera 3', sub: 'HDMI · Side', kind: 'CAM', tone: '#2f3a44' },
+      phone: { name: 'Phone cam', sub: 'Wireless · Crowd', kind: 'PHONE', tone: '#2e3d34' },
       vid1: { name: 'Opening.mp4', sub: 'Video · 02:10', kind: 'VIDEO', tone: '#473a2c', video: true },
       vid2: { name: 'Sponsors.mp4', sub: 'Video · 00:45', kind: 'VIDEO', tone: '#343b4b', video: true },
       vid3: { name: 'Tribute.mp4', sub: 'Video · 04:12', kind: 'VIDEO', tone: '#403143', video: true },
-      split1: { name: 'Split screen', sub: 'Camera 1 + 2', kind: 'SPLIT', tone: '#353d46' },
-      slides: { name: 'Slideshow', sub: '12 slides', kind: 'SLIDES', tone: '#3f3b2a' },
+      split1: { name: 'Split: Cam 1 + 2', sub: 'Side by side', kind: 'SPLIT', tone: '#353d46' },
+      slides: { name: 'Slideshow', sub: '12 slides · camera behind', kind: 'SLIDES', tone: '#3f3b2a' },
       pesukim: { name: '12 Pesukim', sub: 'Slide 1 of 12', kind: 'PRESET', tone: '#3b3222' },
-      browser: { name: 'Browser tab', sub: 'Chrome', kind: 'WEB', tone: '#30363f' },
+      browser: { name: 'Browser tab', sub: 'Chrome · controlled', kind: 'WEB', tone: '#30363f' },
+      logo: { name: 'Logo bug', sub: 'Overlay', kind: 'OVERLAY', tone: '#3a3240' },
+      lower: { name: 'Lower third', sub: 'Name + title', kind: 'TITLE', tone: '#3a3240' },
+      timer: { name: 'Countdown', sub: 'Timer', kind: 'TIMER', tone: '#2f3440' },
+      black: { name: 'Black', sub: 'Solid colour', kind: 'COLOUR', tone: '#0c0d10' },
       loop1: { name: 'Aurora loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#27403f' },
       loop2: { name: 'Particles loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#2c3450' },
+      loop3: { name: 'Warm glow loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#4a3626' },
       eventlogo: { name: 'Event logo', sub: 'Image', kind: 'IMAGE', tone: '#3b3326' },
-      thanks: { name: 'Thank-you list', sub: 'Credits', kind: 'CREDITS', tone: '#2f2f38' }
+      thanks: { name: 'Thank-you list', sub: 'Credits roll', kind: 'CREDITS', tone: '#2f2f38' }
     };
     const TAB_INPUTS = {
-      live: ['cam1', 'cam2', 'phone', 'split1', 'vid1', 'vid2', 'vid3', 'slides', 'pesukim', 'browser'],
-      back: ['loop1', 'loop2', 'vid1', 'vid2', 'cam1', 'slides', 'pesukim', 'eventlogo', 'thanks', 'split1']
+      live: ['cam1', 'cam2', 'cam3', 'phone', 'split1', 'vid1', 'vid2', 'vid3', 'slides', 'pesukim', 'browser', 'logo', 'lower', 'timer', 'black'],
+      back: ['loop1', 'loop2', 'loop3', 'vid1', 'vid2', 'vid3', 'cam1', 'cam2', 'split1', 'slides', 'pesukim', 'eventlogo', 'thanks', 'timer', 'black']
     };
     const isMon = st.tab === 'monitor';
     const sc = st.screens[st.tab];
@@ -275,26 +356,27 @@ class Component extends DCLogic {
       return {
         name,
         pick: () => set({ tab: id, tbar: 0 }),
-        dot: `width: 8px; height: 8px; border-radius: 6px; background: ${dark ? '#5b5d62' : '#e0473b'};`,
-        style: `height: 36px; padding: 0 18px; display: flex; align-items: center; gap: 8px; border: 1px solid ${on ? '#2c3038' : 'transparent'}; border-bottom: 0; border-radius: 3px 3px 0 0; background-color: ${on ? '#15171b' : 'transparent'}; background-image: none; box-shadow: none; color: ${on ? '#ffffff' : '#a9abb0'};`
+        status: dark ? (id === 'monitor' && st.panic && !st.screens[id].blank ? 'DIMMED' : 'BLANK') : 'ON AIR',
+        badge: `height: 16px; padding: 0 6px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : '#c7372f'}; color: #ffffff;`,
+        style: `height: 36px; padding: 0 16px; display: flex; align-items: center; gap: 10px; border: 1px solid ${on ? '#2c3038' : 'transparent'}; border-bottom: 0; border-radius: 6px 6px 0 0; background: ${on ? '#15171b' : 'transparent'}; box-shadow: ${on ? 'inset 0 2px 0 #4fb3bf' : 'none'}; color: ${on ? '#ffffff' : '#a9abb0'};`
       };
     });
 
-    const PRESETS = ['Opening', 'Welcome', 'Speaker', '12 Pesukim', 'Video break', 'Concert', 'Split view', 'Slideshow', 'Sponsors', 'Tribute', 'Thank you', 'Closing'];
-    const presets = PRESETS.map((name, i) => {
+    const PRESETS = [['Opening', 6], ['Welcome', 4], ['Speaker', 5], ['12 Pesukim', 7], ['Video break', 4], ['Concert', 8], ['Split view', 3], ['Slideshow', 4], ['Sponsors', 3], ['Tribute', 4], ['Thank you', 3], ['Closing', 5], ['Timer break', 2], ['Emergency', 1]];
+    const presets = PRESETS.map(([name, n], i) => {
       const on = st.preset === i;
       return {
-        num: String(i + 1), name,
+        num: String(i + 1), name, count: String(n),
         pick: () => set({ preset: i }),
-        style: `height: 34px; flex-shrink: 0; padding: 0 8px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 6px; background-color: ${on ? '#1d3b40' : 'transparent'}; background-image: none; box-shadow: none; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
+        style: `height: 32px; flex-shrink: 0; padding: 0 8px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 6px; background: ${on ? '#1d3b40' : 'transparent'}; box-shadow: ${on ? 'inset 3px 0 0 #4fb3bf' : 'none'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
       };
     });
 
-    const transitions = [['fade', 'Fade', '0.8s'], ['merge', 'Merge', '1.2s'], ['wipe', 'Wipe', '0.6s']].map(([id, name, dur]) => {
+    const transitions = [['fade', 'Fade', '0.8s'], ['merge', 'Merge', '1.2s'], ['dip', 'Dip', '1.0s'], ['wipe', 'Wipe', '0.6s']].map(([id, name, dur]) => {
       const on = st.trans === id;
       return {
         name, dur, pick: () => set({ trans: id }),
-        style: `height: 30px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background-color: ${on ? '#1d3b40' : '#2a2e36'}; color: #ffffff; font-size: 12px; font-weight: 600;`
+        style: `height: 34px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: #ffffff;`
       };
     });
 
@@ -304,36 +386,83 @@ class Component extends DCLogic {
     };
 
     const onAir = new Set([st.screens.live.pg, st.screens.back.pg]);
+    const ovlOf = (id) => Object.keys(st.ovl).filter((k) => st.ovl[k] === id);
     const inputs = isMon ? [] : TAB_INPUTS[st.tab].map((id, i) => {
       const s = SRC[id];
       const isPg = sc.pg === id, isPv = sc.pv === id;
+      const looping = !!st.loops[id];
+      const inOvl = ovlOf(id);
       return {
         ...s, num: String(i + 1),
         pick: () => updScreen({ pv: id }),
         air: () => updScreen({ pg: id }),
-        box: `padding: 0; display: flex; flex-direction: column; border: 1px solid ${isPg ? '#e0473b' : isPv ? '#3fbf5a' : '#2c3038'}; border-radius: 6px; overflow: hidden; background-color: #1e2127; background-image: none; box-shadow: none; text-align: left;`,
-        thumb: `position: relative; height: 92px; background: ${s.tone};`,
-        strip: `height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 8px; background: ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#262a31'}; color: #ffffff; font-size: 12px;`
+        toggleLoop: () => set({ loops: { ...st.loops, [id]: !looping } }),
+        box: `min-height: 0; display: flex; flex-direction: column; gap: 3px; border-radius: 6px; overflow: hidden; background: #1e2127; border: 1px solid ${isPg ? '#e0473b' : isPv ? '#3fbf5a' : '#2c3038'}; box-shadow: ${isPg ? 'inset 0 3px 0 #e0473b' : isPv ? 'inset 0 3px 0 #3fbf5a' : 'none'};`,
+        thumb: `position: relative; flex-grow: 1; min-height: 0; padding: 0; border: 0; border-radius: 0; background: ${s.tone};`,
+        strip: `padding: 0 7px; font-size: 12px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`,
+        loopStyle: `flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${looping ? '#1d3b40' : '#2a2e36'}; color: ${looping ? '#8fd3db' : '#d4d5d8'}; font-size: 10px;`,
+        ovl: [1, 2, 3, 4].map((n) => {
+          const on = inOvl.includes(String(n));
+          return {
+            n: String(n), label: 'Overlay channel ' + n,
+            toggle: () => set({ ovl: { ...st.ovl, [n]: on ? null : id } }),
+            style: `width: 20px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${on ? '#4fb3bf' : '#2a2e36'}; color: ${on ? '#0e2a2e' : '#a9abb0'}; font-size: 10px; font-weight: 700;`
+          };
+        })
       };
     });
 
-    const frame = (tone, color) => `position: relative; height: 292px; background: ${tone}; border: 1px solid ${color}; border-radius: 6px; overflow: hidden;`;
-    const pvSrc = isMon ? null : (SRC[sc.pv] || SRC.cam1);
-    const pgSrc = isMon ? null : (SRC[sc.pg] || SRC.cam1);
+    const frame = (tone, color) => `position: relative; height: 281px; background: ${tone}; border: 1px solid ${color}; border-radius: 6px; overflow: hidden;`;
+    const pvSrc = isMon ? null : (SRC[sc.pv] || SRC.black);
+    const pgSrc = isMon ? null : (SRC[sc.pg] || SRC.black);
 
-    const CH = [['master', 'Master', 0], ['cam1', 'Stage mic', 62], ['vid1', 'Opening', 70], ['vid2', 'Sponsors', 70], ['phone', 'Phone', 40]];
+    const overlayLayers = st.tab === 'live' ? Object.entries(st.ovl).filter(([, v]) => v).map(([n, v]) => {
+      const pos = { 1: 'right: 12px; top: 10px;', 2: 'left: 14px; bottom: 16px;', 3: 'left: 14px; top: 10px;', 4: 'right: 12px; bottom: 16px;' }[n];
+      return { label: SRC[v].name, style: `position: absolute; ${pos} height: 22px; padding: 0 10px; border-radius: 4px; background: rgba(10,12,14,0.72); color: #ffffff; font-size: 11px; font-weight: 600; display: flex; align-items: center;` };
+    }) : [];
+
+    const CH = [['master', 'Master', 0], ['cam1', 'Stage mic', 62], ['vid1', 'Opening', 70], ['vid2', 'Sponsors', 70], ['cam2', 'Camera 2', 40], ['phone', 'Phone', 40]];
     const channels = CH.map(([id, name, base]) => {
       const vol = st.vol[id] ?? 70;
       const m = !!st.muted[id];
-      const lvl = m ? 0 : id === 'master' ? Math.round(vol * 0.72) : onAir.has(id) ? Math.round(base * vol / 100) : 0;
+      const isMaster = id === 'master';
+      const lvl = m ? 0 : isMaster ? Math.round(vol * 0.72) : onAir.has(id) ? Math.round(base * vol / 100) : 0;
       const top = 100 - vol;
       return {
         name, vol,
+        db: vol === 0 ? '-∞' : ((vol - 80) / 4).toFixed(1),
         onVol: (e) => set({ vol: { ...st.vol, [id]: Number(e.target.value) } }),
         toggleMute: () => set({ muted: { ...st.muted, [id]: !m } }),
-        cap: `position: absolute; left: -3px; right: -3px; height: 14px; top: calc(${top}% - ${top * 0.14}px); border-radius: 6px; background: #d9dce3; border: 1px solid #0c0d10; pointer-events: none;`,
+        toggleAfv: () => set({ afv: { ...st.afv, [id]: !st.afv[id] } }),
+        strip: `flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; border-radius: 6px; background: ${isMaster ? '#262a31' : 'transparent'};`,
+        cap: `position: absolute; left: -3px; right: -3px; height: 14px; top: calc(${top}% - ${top * 0.14}px); border-radius: 7px; background: #d9dce3; border: 1px solid #0c0d10; pointer-events: none;`,
         meterMask: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - lvl}%; background: #101216;`,
-        muteStyle: `width: 30px; height: 22px; padding: 0; border-radius: 6px; border: 1px solid #2c3038; background-color: ${m ? '#c7372f' : '#2a2e36'}; color: #ffffff; font-size: 10px; font-weight: 700;`
+        meterMask2: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - Math.max(0, lvl - 5)}%; background: #101216;`,
+        muteStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${m ? '#c7372f' : '#2a2e36'}; color: #ffffff; font-size: 10px; font-weight: 700;`,
+        afvStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${st.afv[id] ? '#1d3b40' : '#2a2e36'}; color: ${st.afv[id] ? '#8fd3db' : '#ffffff'}; font-size: 10px; font-weight: 700; visibility: ${isMaster ? 'hidden' : 'visible'};`
+      };
+    });
+
+    const ovlChannels = [1, 2, 3, 4].map((n) => {
+      const v = st.ovl[n];
+      return {
+        label: v ? `${n} · ${SRC[v].name}` : String(n),
+        clear: () => set({ ovl: { ...st.ovl, [n]: null } }),
+        style: `height: 26px; min-width: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid ${v ? '#4fb3bf' : '#2c3038'}; background: ${v ? '#1d3b40' : '#2a2e36'}; color: ${v ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`
+      };
+    });
+
+    const blankOpts = [['back', 'Back'], ['backlive', 'Back + Live'], ['all', 'All']].map(([id, label]) => {
+      const targets = id === 'back' ? ['back'] : id === 'backlive' ? ['back', 'live'] : ['back', 'live', 'monitor'];
+      const on = targets.every((t) => st.screens[t].blank);
+      return {
+        label,
+        toggle: () => {
+          const screens = { ...st.screens };
+          for (const t of ['back', 'live', 'monitor']) screens[t] = { ...screens[t], blank: on ? false : targets.includes(t) };
+          set({ screens });
+        },
+        style: `height: 32px; padding: 0 12px; border: 0; border-radius: 0; background: ${on ? '#d9dce3' : '#2a2e36'}; color: ${on ? '#15171b' : '#e4e5e7'}; font-size: 12px; font-weight: 600;`
       };
     });
 
@@ -341,53 +470,53 @@ class Component extends DCLogic {
     const dimOnly = isMon && st.panic && !sc.blank;
     const mm = Math.floor(st.countdown / 60), ss = st.countdown % 60;
     const tabName = { live: 'Live Screen', back: 'Back Screen', monitor: 'Monitor' }[st.tab];
+    const seg = (on) => `height: 26px; padding: 0 12px; border: 0; border-radius: 0; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
 
     return {
-      tabs, presets, transitions, inputs, channels,
+      tabs, presets, transitions, inputs, channels, ovlChannels, overlayLayers, blankOpts,
       isMonitor: isMon, notMonitor: !isMon,
-      logoOn: st.tab === 'live',
-      presetName: 'Preset: ' + PRESETS[st.preset],
+      setSimple: () => set({ mode: 'simple' }), setAdvanced: () => set({ mode: 'advanced' }),
+      simpleStyle: seg(st.mode === 'simple'), advancedStyle: seg(st.mode === 'advanced'),
+      presetButtons: ['Vid 2 + Logo (fade)', 'Cam 1 + Lower third', 'Blank back screen'],
       prevPreset: () => set({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
       nextPreset: () => set({ preset: (st.preset + 1) % PRESETS.length }),
-      pv: isMon ? { title: 'Next message', frame: frame('#000', '#2f8f4e') } : { ...pvSrc, title: pvSrc.name, frame: frame(pvSrc.tone, '#2f8f4e') },
+      pv: isMon ? { title: 'Next message', frame: frame('#000', '#2f8f4e'), time: '' } : { ...pvSrc, title: pvSrc.name, frame: frame(pvSrc.tone, '#2f8f4e'), time: pvSrc.video ? '00:00 / 00:45' : 'LIVE' },
       pg: isMon
         ? { title: 'On the monitor now', frame: frame('#000', '#c7372f'), time: '', bar: '' }
-        : { ...pgSrc, title: pgSrc.name, frame: frame(pgSrc.tone, '#c7372f'), time: pgSrc.video ? '01:12 / 02:10' : 'LIVE', bar: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pgSrc.video ? 55 : 0}%; background: #a9abb0;` },
+        : { ...pgSrc, title: pgSrc.name, frame: frame(pgSrc.tone, '#c7372f'), time: pgSrc.video ? '01:12 / 02:10' : 'LIVE', bar: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pgSrc.video ? 55 : 0}%; background: #e0473b;` },
       outState: pgBlank ? 'BLANK' : 'ON AIR · ' + tabName.toUpperCase(),
-      outBadge: `height: 18px; padding: 0 8px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${pgBlank ? '#343944' : '#c7372f'}; color: #ffffff;`,
+      outBadge: `height: 18px; padding: 0 8px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${pgBlank ? '#343944' : '#c7372f'}; color: #ffffff;`,
       monitorPreviewText: st.draft || ' ',
       monitorLiveText: st.monitorText || ' ',
-      countdownOn: st.countdownOn,
+      monTextStyle: `font-size: ${{ m: 22, l: 28, xl: 36 }[st.textSize]}px; font-weight: 700; color: #ffffff; text-align: center; line-height: 1.2;`,
+      textSize: st.textSize, onTextSize: (e) => set({ textSize: e.target.value }),
+      countdownOn: st.countdownOn, clockOn: st.clockOn,
       countdown: `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
-      countdownBtn: st.countdownOn ? 'Hide countdown' : 'Show countdown',
       toggleCountdown: () => set({ countdownOn: !st.countdownOn }),
+      toggleClock: () => set({ clockOn: !st.clockOn }),
       addMinute: () => set({ countdown: st.countdown + 60 }),
       subMinute: () => set({ countdown: Math.max(0, st.countdown - 60) }),
       flashing: st.flashing,
-      draft: st.draft,
-      onDraft: (e) => set({ draft: e.target.value }),
+      draft: st.draft, onDraft: (e) => set({ draft: e.target.value }),
       sendMsg: () => set({ monitorText: st.draft }),
       clearMsg: () => set({ monitorText: '' }),
-      quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Stand by', 'Thank you!'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
+      quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
       flash: () => { set({ flashing: true }); clearTimeout(this._ft); this._ft = setTimeout(() => this.setState({ flashing: false }), 900); },
       take: doTake,
       tbar: st.tbar,
       onTbar: (e) => { const v = Number(e.target.value); if (v >= 100) doTake(); else set({ tbar: v }); },
-      tbarCap: `position: absolute; left: 6px; right: 6px; height: 16px; top: calc(${100 - st.tbar}% - ${(100 - st.tbar) * 0.16}px); border-radius: 6px; background: #d9dce3; border: 1px solid #0c0d10; pointer-events: none;`,
+      tbarCap: `position: absolute; left: 6px; right: 6px; height: 16px; top: calc(${100 - st.tbar}% - ${(100 - st.tbar) * 0.16}px); border-radius: 8px; background: #d9dce3; border: 1px solid #0c0d10; pointer-events: none;`,
       pgBlank,
       blankLayer: `position: absolute; inset: 0; background: ${dimOnly ? 'rgba(0,0,0,0.72)' : '#000'}; display: flex; align-items: center; justify-content: center;`,
       blankText: dimOnly ? 'DIMMED' : 'BLANK',
-      toggleBlank: () => updScreen({ blank: !sc.blank }),
-      blankBtnText: sc.blank ? 'Unblank ' + tabName : 'Blank ' + tabName,
-      blankBtnStyle: `height: 34px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background-color: ${sc.blank ? '#d4d5d8' : '#2a2e36'}; color: ${sc.blank ? '#2c3038' : '#e4e5e7'}; font-size: 12px; font-weight: 600;`,
       panic: st.panic,
       togglePanic: () => set({ panic: !st.panic }),
       panicLabel: st.panic ? 'RESTORE' : 'PANIC',
-      panicBtnStyle: `height: 34px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: ${st.panic ? '#c93a31' : '#5a1f1b'}; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;`,
+      panicBtnStyle: `height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.panic ? '#e0473b' : '#5a1f1b'}; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;`,
       toggleRec: () => set({ rec: !st.rec }),
       recTime: st.rec ? '00:42:17' : 'off',
-      recDot: `width: 8px; height: 8px; border-radius: 6px; background: ${st.rec ? '#e0473b' : '#6b6d72'};`,
-      recStyle: `height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;`
+      recDot: `width: 8px; height: 8px; border-radius: 4px; background: ${st.rec ? '#e0473b' : '#6b6d72'};`,
+      recStyle: `height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: ${st.rec ? '#3a1a18' : '#2a2e36'}; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;`
     };
   }
   componentWillUnmount() { clearTimeout(this._ft); }

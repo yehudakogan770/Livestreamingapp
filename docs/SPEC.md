@@ -97,7 +97,7 @@
 ## 4. Look & feel
 
 - **Professional look**; a **full professional / studio look**.
-- **Professional broadcast-console concept (like vMix) but with Lumora's OWN style — not a copy of vMix**, and *not* sci-fi or "hacker" style. Clean and uncluttered; no yellow sliders. Proper console controls: real-looking faders with level meters, clean flat controls, input tiles with title strips, a transitions column with a T-bar — not plain sliders. (Clarified by the author.)
+- **Professional broadcast-console concept (like vMix) but with Lumora's OWN style — not a copy of vMix**, and *not* sci-fi or "hacker" style. Clean and uncluttered — achieved through layout, grouping and sizing, **never by removing controls** (every control must stay; it is for live events and must be fast). No yellow sliders. Proper console controls: real-looking faders with level meters, clean flat controls, input tiles with title strips, a transitions column with a T-bar — not plain sliders. (Clarified by the author.)
 - **It is made for live events, so everything will be dark** — make it so that **whatever does not have to be bright is not bright**.
 - **All times that a page other than the main page is open, it should be a popup with an [X] to close it.**
 - **The layout should be customizable, but it should come already set up.**
