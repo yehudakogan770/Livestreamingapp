@@ -44,7 +44,7 @@ button,select{font-family:inherit}
 </helmet>
 <div style="width: 390px; height: 844px; box-sizing: border-box; background-color: #15171b; display: flex; flex-direction: column; padding: 16px 14px 18px; gap: 12px; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden; position: relative;">
   <div style="display: flex; align-items: center; gap: 8px;">
-    <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 17px; color: #ffffff;">Lumora</span>
+    <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0; transition: none;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="{{logo.c0}}" opacity="{{logo.o0}}"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="{{logo.c1}}" opacity="{{logo.o1}}"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="{{logo.c2}}" opacity="{{logo.o2}}"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 17px; color: #ffffff;">Lumora</span>
     <span style="width: 8px; height: 8px; border-radius: 6px; background-color: #2f8f4e;"></span>
     <span style="font-size: 12px; color: #8e9096;">Connected</span>
     <div style="flex-grow: 1;"></div>
@@ -116,7 +116,13 @@ class Component extends DCLogic {
   componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
   __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
   constructor(props) { super(props); this.state = { tab: 'live', pv: 'cam2', pg: 'cam1', preset: 0, blank: false, panic: false, more: false }; }
-  renderVals() {
+  logoVals() {
+    const a = { live: 0, back: 1, monitor: 2 }[this.state.tab] || 0;
+    const c = (i) => i === a ? '#4fb3bf' : '#ffffff', o = (i) => i === a ? '1' : String([0.8, 0.5][(i - a + 2) % 3] || 0.8);
+    return { c0: c(0), c1: c(1), c2: c(2), o0: o(0), o1: o(1), o2: o(2) };
+  }
+  renderVals() { return { ...this._rv(), logo: this.logoVals() }; }
+  _rv() {
     const st = this.state;
     const SRC = { cam1: ['CAMERA', 'Cam 1', '#26313d'], cam2: ['CAMERA', 'Cam 2', '#2e2a3a'], phone: ['PHONE', 'Phone', '#223329'], vid1: ['VIDEO', 'Vid 1', '#3b2e22'], vid2: ['VIDEO', 'Vid 2', '#2a3040'], vid3: ['VIDEO', 'Vid 3', '#35263a'], ov1: ['OVERLAY', 'Logo', '#2a2230'], split1: ['SPLIT', 'Split 1', '#2a323b'], slides: ['SLIDES', 'Slides', '#33301f'] };
     const PRESETS = ['Opening', 'Welcome', 'Speaker', '12 Pesukim', 'Video break', 'Closing'];

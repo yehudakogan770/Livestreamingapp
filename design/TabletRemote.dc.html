@@ -48,7 +48,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
   <!-- ===== Header ===== -->
   <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 16px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
     <div style="display: flex; align-items: center; gap: 8px;">
-      <svg width="24" height="24" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg>
+      <svg width="24" height="24" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0; transition: none;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="{{logo.c0}}" opacity="{{logo.o0}}"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="{{logo.c1}}" opacity="{{logo.o1}}"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="{{logo.c2}}" opacity="{{logo.o2}}"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg>
       <span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 18px; color: #ffffff;">Lumora</span>
       <span style="font-size: 13px; color: #8e9096;">Remote</span>
     </div>
@@ -216,7 +216,13 @@ class Component extends DCLogic {
     super(props);
     this.state = { tab: 'live', pv: 'cam2', pg: 'cam1', preset: 2, trans: 'fade', ovl: { 1: true, 2: false, 3: false, 4: false }, blank: null, panic: false, draft: '5 minutes left', monitorText: 'Welcome — stand by', flashing: false, countdown: 298, vol: { master: 78, mic1: 72, mic2: 64, cam1: 40, vid: 58, music: 50 }, muted: { cam1: true } };
   }
-  renderVals() {
+  logoVals() {
+    const a = { live: 0, back: 1, monitor: 2 }[this.state.tab] || 0;
+    const c = (i) => i === a ? '#4fb3bf' : '#ffffff', o = (i) => i === a ? '1' : String([0.8, 0.5][(i - a + 2) % 3] || 0.8);
+    return { c0: c(0), c1: c(1), c2: c(2), o0: o(0), o1: o(1), o2: o(2) };
+  }
+  renderVals() { return { ...this._rv(), logo: this.logoVals() }; }
+  _rv() {
     const st = this.state;
     const set = (o) => this.setState(o);
     const SRC = { cam1: ['CAMERA', 'Cam 1', '#34404c'], cam2: ['CAMERA', 'Cam 2', '#2e3a44'], ph1: ['PHONE', 'Phone 1', '#27403f'], ph2: ['PHONE', 'Phone 2', '#2b3b37'], vid1: ['VIDEO', 'Vid 1', '#473a2c'], vid2: ['VIDEO', 'Vid 2', '#3f3a30'], vid3: ['VIDEO', 'Vid 3', '#40342c'], slides: ['SLIDES', 'Slideshow', '#353846'], pes: ['TEXT', '12 Pesukim', '#2f3440'], split: ['SPLIT', 'Split 2-up', '#323a3a'], gs: ['GREEN SCREEN', 'Scene 1', '#2c4034'], color: ['COLOUR', 'Black', '#101216'] };
