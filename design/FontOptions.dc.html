@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Brand font</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600&amp;family=Unbounded:wght@600&amp;family=Bricolage+Grotesque:opsz,wght@12..96,700&amp;family=Saira:wght@600&amp;family=Michroma&amp;family=Space+Grotesk:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+/* lumora-polish:start */
+*{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+::selection{background:#243039;color:#ffffff}
+button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
+button:hover,a[href]:hover{filter:brightness(1.14)}
+button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #4fb3bf;outline-offset:1px}
+input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:#4fb3bf !important;box-shadow:0 0 0 3px rgba(79,179,191,.18)}
+input::placeholder,textarea::placeholder{color:#6f737b}
+select{appearance:none;-webkit-appearance:none;padding-right:26px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a9abb0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 9px center !important;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f333b;border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:#3d424c}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:30px !important;height:17px !important;margin:0;flex-shrink:0;border-radius:9px;border:1px solid #3a3f48;background:#262a31;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#aeb2ba;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:transform .15s ease,background-color .15s ease}
+input[type=checkbox]:checked{background:#2a7f89;border-color:#4fb3bf}
+input[type=checkbox]:checked::before{transform:translateX(13px);background:#ffffff}
+input[type=range]:not(.vrange){appearance:none;-webkit-appearance:none;height:20px;margin:0;cursor:pointer;border-radius:2px;background:linear-gradient(to right,#4fb3bf 0 var(--fill,0%),#0c0d10 var(--fill,0%) 100%) center / 100% 4px no-repeat}
+input[type=range]:not(.vrange)::-webkit-slider-runnable-track{height:20px;background:transparent;border-radius:2px}
+input[type=range]:not(.vrange)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:20px;border-radius:3px;border:1px solid #0c0d10;background:linear-gradient(to right,transparent 4.5px,#6f737c 4.5px 5.5px,transparent 5.5px),linear-gradient(#f3f4f6,#c3c6cd);box-shadow:0 1px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+input[type=range]:not(.vrange):hover::-webkit-slider-thumb{background:linear-gradient(to right,transparent 4.5px,#4fb3bf 4.5px 5.5px,transparent 5.5px),linear-gradient(#ffffff,#d3d6dc)}
+input[type=range]:disabled{opacity:.35;cursor:default}
+/* lumora-polish:end */
+
+button{cursor:pointer;background-image:none;box-shadow:none}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+button{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1120px; box-sizing: border-box; background: #15171b; padding: 32px 40px; display: flex; flex-direction: column; gap: 20px; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+  <div style="display: flex; align-items: flex-end; gap: 16px;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 24px; font-weight: 600; color: #ffffff;">Lumora's own font — pick one</span>
+      <span style="font-size: 13px; color: #8e9096;">Used for the name, headings, screen names, big buttons and countdown numbers. Small menu text stays in Segoe UI so it's easy to read. Every option is free to bundle with the app, so it works offline.</span>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <span style="font-size: 13px; color: #a9abb0; white-space: nowrap;">Chosen: <span style="color: #ffffff; font-weight: 600;">{{chosenName}}</span></span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+      <div style="{{cards.sora.box}}">
+        <div style="height: 110px; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #1d2230 0%, #0c0d11 75%); border: 1px solid #262a32; display: flex; align-items: center; justify-content: center; gap: 12px;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 36px; color: #ffffff;">Lumora</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 15px; color: #ffffff; flex-grow: 1; white-space: nowrap;">Live Screen · Back · Monitor</span>
+          <span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 24px; color: #ffffff;">04:59</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600; color: #ffffff;"><span style="font-family: Consolas, monospace; color: #8e9096; font-weight: 400;">1</span>  Sora</span>
+          <span style="font-size: 12px; line-height: 1.45; color: #a9abb0;">Current choice. Geometric and calm; clean, but you see it in many apps.</span>
+        </div>
+        <button onClick="{{cards.sora.pick}}" style="{{cards.sora.btn}}">{{cards.sora.label}}</button>
+      </div>
+      <div style="{{cards.unbounded.box}}">
+        <div style="height: 110px; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #1d2230 0%, #0c0d11 75%); border: 1px solid #262a32; display: flex; align-items: center; justify-content: center; gap: 12px;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Unbounded', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 36px; color: #ffffff;">Lumora</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'Unbounded', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 15px; color: #ffffff; flex-grow: 1; white-space: nowrap;">Live Screen · Back · Monitor</span>
+          <span style="font-family: 'Unbounded', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 24px; color: #ffffff;">04:59</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600; color: #ffffff;"><span style="font-family: Consolas, monospace; color: #8e9096; font-weight: 400;">2</span>  Unbounded</span>
+          <span style="font-size: 12px; line-height: 1.45; color: #a9abb0;">Wide and rounded with a lot of personality. Instantly recognisable on a big screen.</span>
+        </div>
+        <button onClick="{{cards.unbounded.pick}}" style="{{cards.unbounded.btn}}">{{cards.unbounded.label}}</button>
+      </div>
+      <div style="{{cards.bricolage.box}}">
+        <div style="height: 110px; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #1d2230 0%, #0c0d11 75%); border: 1px solid #262a32; display: flex; align-items: center; justify-content: center; gap: 12px;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif; font-weight: 700; letter-spacing: -0.025em; font-size: 36px; color: #ffffff;">Lumora</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif; font-weight: 700; letter-spacing: -0.025em; font-size: 15px; color: #ffffff; flex-grow: 1; white-space: nowrap;">Live Screen · Back · Monitor</span>
+          <span style="font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif; font-weight: 700; letter-spacing: -0.025em; font-size: 24px; color: #ffffff;">04:59</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600; color: #ffffff;"><span style="font-family: Consolas, monospace; color: #8e9096; font-weight: 400;">3</span>  Bricolage Grotesque</span>
+          <span style="font-size: 12px; line-height: 1.45; color: #a9abb0;">A modern grotesque with ink-trap details. Distinctive but still professional.</span>
+        </div>
+        <button onClick="{{cards.bricolage.pick}}" style="{{cards.bricolage.btn}}">{{cards.bricolage.label}}</button>
+      </div>
+      <div style="{{cards.saira.box}}">
+        <div style="height: 110px; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #1d2230 0%, #0c0d11 75%); border: 1px solid #262a32; display: flex; align-items: center; justify-content: center; gap: 12px;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Saira', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: 0em; font-size: 36px; color: #ffffff;">Lumora</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'Saira', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: 0em; font-size: 15px; color: #ffffff; flex-grow: 1; white-space: nowrap;">Live Screen · Back · Monitor</span>
+          <span style="font-family: 'Saira', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: 0em; font-size: 24px; color: #ffffff;">04:59</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600; color: #ffffff;"><span style="font-family: Consolas, monospace; color: #8e9096; font-weight: 400;">4</span>  Saira</span>
+          <span style="font-size: 12px; line-height: 1.45; color: #a9abb0;">Squared, slightly condensed. Feels like sports and broadcast TV graphics; great numbers.</span>
+        </div>
+        <button onClick="{{cards.saira.pick}}" style="{{cards.saira.btn}}">{{cards.saira.label}}</button>
+      </div>
+      <div style="{{cards.michroma.box}}">
+        <div style="height: 110px; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #1d2230 0%, #0c0d11 75%); border: 1px solid #262a32; display: flex; align-items: center; justify-content: center; gap: 12px;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Michroma', 'Segoe UI', sans-serif; font-weight: 400; letter-spacing: 0.02em; font-size: 36px; color: #ffffff;">Lumora</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'Michroma', 'Segoe UI', sans-serif; font-weight: 400; letter-spacing: 0.02em; font-size: 15px; color: #ffffff; flex-grow: 1; white-space: nowrap;">Live Screen · Back · Monitor</span>
+          <span style="font-family: 'Michroma', 'Segoe UI', sans-serif; font-weight: 400; letter-spacing: 0.02em; font-size: 24px; color: #ffffff;">04:59</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600; color: #ffffff;"><span style="font-family: Consolas, monospace; color: #8e9096; font-weight: 400;">5</span>  Michroma</span>
+          <span style="font-size: 12px; line-height: 1.45; color: #a9abb0;">Extended and technical, like the labels on broadcast hardware. Best for name and headings only.</span>
+        </div>
+        <button onClick="{{cards.michroma.pick}}" style="{{cards.michroma.btn}}">{{cards.michroma.label}}</button>
+      </div>
+      <div style="{{cards.spacegrotesk.box}}">
+        <div style="height: 110px; border-radius: 8px; background: radial-gradient(circle at 50% 35%, #1d2230 0%, #0c0d11 75%); border: 1px solid #262a32; display: flex; align-items: center; justify-content: center; gap: 12px;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 36px; color: #ffffff;">Lumora</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 15px; color: #ffffff; flex-grow: 1; white-space: nowrap;">Live Screen · Back · Monitor</span>
+          <span style="font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em; font-size: 24px; color: #ffffff;">04:59</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex-grow: 1;">
+          <span style="font-size: 14px; font-weight: 600; color: #ffffff;"><span style="font-family: Consolas, monospace; color: #8e9096; font-weight: 400;">6</span>  Space Grotesk</span>
+          <span style="font-size: 12px; line-height: 1.45; color: #a9abb0;">A technical grotesque with quirky letters (a, t, y). Friendly and precise.</span>
+        </div>
+        <button onClick="{{cards.spacegrotesk.pick}}" style="{{cards.spacegrotesk.btn}}">{{cards.spacegrotesk.label}}</button>
+      </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; flex-grow: 1; min-height: 0;">
+    <div style="border-radius: 10px; overflow: hidden; border: 1px solid #2c3038; background: #15171b; display: flex; flex-direction: column;">
+      <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 16px; padding: 0 14px; background: #1a1d22; border-bottom: 1px solid #2c3038; font-size: 12px; color: #d4d5d8;">
+        <span style="display: flex; align-items: center; gap: 8px;"><svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="{{f}} font-size: 15px; color: #ffffff;">Lumora</span></span><span>Event</span><span>Presets</span><span>Cues</span><span>Library</span>
+      </div>
+      <div style="padding: 12px 14px; display: flex; gap: 8px;">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+          <span style="{{t.style}}"><span style="{{f}} font-size: 16px; color: #ffffff;">{{t.name}}</span><span style="font-size: 11px; color: #a9abb0;">{{t.sub}}</span></span>
+        </sc-for>
+      </div>
+      <div style="flex-grow: 1; display: grid; grid-template-columns: 1fr 180px; gap: 12px; padding: 0 14px 14px; min-height: 0;">
+        <div style="position: relative; border-radius: 6px; overflow: hidden; border: 2px solid #c7372f; background: radial-gradient(circle at 50% 40%, #1c2a4a, #070a12 75%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;">
+          <span style="{{f}} font-size: 18px; color: #d8b56a; text-transform: uppercase; letter-spacing: 0.12em;">The celebration begins in</span>
+          <span style="{{f}} font-size: 88px; line-height: 1; color: #ffffff;">04:59</span>
+          <span style="position: absolute; left: 8px; top: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: #c7372f; font-size: 10px; font-weight: 600; line-height: 18px; color: #fff;">PROGRAM · HYPE COUNTDOWN</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <span style="height: 58px; border-radius: 6px; background: #c7372f; display: flex; align-items: center; justify-content: center;"><span style="{{f}} font-size: 20px; color: #ffffff; letter-spacing: 0.06em;">TAKE</span></span>
+          <span style="height: 40px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; display: flex; align-items: center; justify-content: center;"><span style="{{f}} font-size: 14px; color: #ffffff; letter-spacing: 0.06em;">CUT</span></span>
+          <span style="flex-grow: 1; border-radius: 6px; background: #101216; border: 1px solid #2c3038; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;"><span style="font-size: 10px; color: #8e9096;">Recording</span><span style="{{f}} font-size: 22px; color: #ffffff;">00:42:17</span></span>
+        </div>
+      </div>
+    </div>
+    <div style="border-radius: 10px; overflow: hidden; border: 1px solid #2c3038; background: radial-gradient(circle at 50% 42%, #1c2738 0%, #0a0c10 70%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;">
+      <span style="display: flex; align-items: center; gap: 18px;"><svg width="84" height="84" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" opacity="1"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="{{f}} font-size: 56px; color: #ffffff;">Lumora</span></span>
+      <span style="font-size: 12px; color: #8e9096;">Startup screen</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { pick: 'bricolage', tab: 'live' }; }
+  renderVals() {
+    const st = this.state;
+    const F = { sora: ['Sora', "font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em;"], unbounded: ['Unbounded', "font-family: 'Unbounded', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em;"], bricolage: ['Bricolage Grotesque', "font-family: 'Bricolage Grotesque', 'Segoe UI', sans-serif; font-weight: 700; letter-spacing: -0.025em;"], saira: ['Saira', "font-family: 'Saira', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: 0em;"], michroma: ['Michroma', "font-family: 'Michroma', 'Segoe UI', sans-serif; font-weight: 400; letter-spacing: 0.02em;"], spacegrotesk: ['Space Grotesk', "font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.02em;"] };
+    const cards = {};
+    Object.keys(F).forEach((k) => {
+      const on = st.pick === k;
+      cards[k] = { pick: () => this.setState({ pick: k }), label: on ? 'Chosen ✓' : 'Choose',
+        box: `display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 10px; background: ${on ? '#1b262d' : '#1c1f25'}; border: 2px solid ${on ? '#4fb3bf' : '#2a2e36'}; box-sizing: border-box;`,
+        btn: `height: 34px; border-radius: 6px; border: ${on ? '0' : '1px solid #3a3f48'}; background: ${on ? '#4fb3bf' : '#2a2e36'}; color: ${on ? '#0e2a2e' : '#e4e5e7'}; font-size: 12px; font-weight: 600;` };
+    });
+    const tabs = [['live', 'Live Screen', 'Display 2 + stream'], ['back', 'Back Screen', 'Display 3'], ['monitor', 'Monitor', 'Display 4 · text']].map(([id, name, sub]) => {
+      const on = st.tab === id;
+      return { name, sub, style: `flex: 1 1 0; height: 50px; padding: 0 12px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; display: flex; flex-direction: column; justify-content: center; gap: 1px; box-sizing: border-box;` };
+    });
+    return { cards, tabs, f: F[st.pick][1], chosenName: F[st.pick][0] };
+  }
+}
+</script>
+</body>
+</html>

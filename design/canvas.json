@@ -26,6 +26,14 @@
       "x": 3040,
       "y": 3960
     },
+    "Brand.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Lumora brand — final logo",
+      "w": 1440,
+      "x": 9520,
+      "y": 0
+    },
     "BrowserSource.dc.html": {
       "h": 800,
       "is_interactive": true,
@@ -265,12 +273,12 @@
       "x": 2720,
       "y": 7824
     },
-    "Brand.dc.html": {
-      "h": 900,
+    "FontOptions.dc.html": {
+      "h": 1120,
       "is_interactive": true,
-      "title": "Lumora brand — final logo",
+      "title": "Lumora font — pick one",
       "w": 1440,
-      "x": 9520,
+      "x": 11040,
       "y": 0
     }
   },
@@ -285,7 +293,7 @@
   "notes": {
     "row0": {
       "kind": "title1",
-      "maxW": 10960,
+      "maxW": 12480,
       "text": "Running the event",
       "w": 240,
       "x": 0,
@@ -374,7 +382,8 @@
     "LogoOptions.dc.html",
     "LogoRound2.dc.html",
     "LogoRound3.dc.html",
-    "Brand.dc.html"
+    "Brand.dc.html",
+    "FontOptions.dc.html"
   ],
   "pages": [],
   "title": "Lumora — System Design"
