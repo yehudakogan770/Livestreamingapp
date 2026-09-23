@@ -25,29 +25,43 @@ input[type=checkbox]{accent-color:#4fb3bf}
       <svg width="18" height="18" viewBox="0 0 28 28" fill="none" aria-hidden="true"><rect x="3" y="9" width="16" height="11" rx="2" stroke="#6f6a60" stroke-width="2"></rect><rect x="6" y="6" width="16" height="11" rx="2" stroke="#9c948a" stroke-width="2"></rect><rect x="9" y="3" width="16" height="11" rx="2" fill="#e8b04b"></rect></svg>
       <span style="font-size: 13px; font-weight: 600;">Lumora</span>
     </div>
-    <button style="height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #d4d5d8; font-size: 12px;">Event</button>
-    <a href="AddPreset.dc.html" style="height: 26px; padding: 0 10px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Presets</a>
-    <a href="Library.dc.html" style="height: 26px; padding: 0 10px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Library</a>
-    <a href="Settings.dc.html" style="height: 26px; padding: 0 10px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Settings</a>
-    <button style="height: 26px; padding: 0 10px; border: 0; border-radius: 4px; background: transparent; color: #d4d5d8; font-size: 12px;">Help &amp; Manual</button>
+    <button style="height: 26px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: #d4d5d8; font-size: 12px;">Event</button>
+    <a href="AddPreset.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Presets</a>
+    <a href="Cues.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Cues</a>
+    <a href="Library.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Library</a>
+    <a href="AddInput.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Inputs</a>
+    <a href="OverlayEditor.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Overlays</a>
+    <a href="TextEditor.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Text</a>
+    <a href="Slideshow.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Slideshow</a>
+    <a href="Pesukim.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">12 Pesukim</a>
+    <a href="GreenScreen.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Green screen</a>
+    <a href="Timer.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Timer</a>
+    <a href="BackLoops.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Loops</a>
+    <a href="Credits.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Credits</a>
+    <a href="LogoMaker.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">3D logo</a>
+    <a href="Settings.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Settings</a>
+    <a href="Manual.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Help</a>
     <div style="flex-grow: 1;"></div>
-    <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">CPU 18% · 60 fps · 0 dropped</span>
-    <span style="width: 1px; height: 16px; background: #343944; margin: 0 12px;"></span>
     <span style="font-size: 12px; color: #a9abb0;">[Event name]</span>
     <span style="width: 1px; height: 16px; background: #343944; margin: 0 12px;"></span>
     <span style="font-family: Consolas, monospace; font-size: 13px; color: #e4e5e7;">19:42:05</span>
   </div>
 
-  <!-- ===== Screen tabs ===== -->
-  <div style="height: 42px; flex-shrink: 0; display: flex; align-items: flex-end; gap: 2px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+  <!-- ===== Screen selector: pick which screen you are controlling ===== -->
+  <div style="height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 11px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 4px;">CONTROLLING</span>
     <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
-      <button onClick="{{t.pick}}" style="{{t.style}}">
-        <span style="font-size: 13px; font-weight: 600;">{{t.name}}</span>
-        <span style="{{t.badge}}">{{t.status}}</span>
+      <button onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="{{t.style}}">
+        <span style="{{t.thumb}}"><span style="font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.75);">{{t.onAirName}}</span></span>
+        <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+          <span style="font-size: 14px; font-weight: 700;">{{t.name}}</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="{{t.badge}}">{{t.status}}</span><span style="font-size: 10px; color: #a9abb0;">{{t.where}} · {{t.key}}</span></span>
+        </span>
       </button>
     </sc-for>
     <div style="flex-grow: 1;"></div>
     <div style="display: flex; align-items: center; gap: 10px; height: 36px;">
+      <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">CPU 18% · 60 fps · 0 dropped</span>
       <a href="Devices.dc.html" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3fbf5a;"></span>3 devices connected</a>
       <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
         <button onClick="{{setSimple}}" style="{{simpleStyle}}">Simple</button>
@@ -60,7 +74,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
   <div style="flex-grow: 1; min-height: 0; display: flex;">
 
     <!-- Presets -->
-    <div style="width: 200px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
+    <div style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
       <div style="padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 8px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
           <span style="font-size: 11px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">PRESETS</span>
@@ -71,7 +85,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
           <select aria-label="Category" style="width: 74px; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px;"><option>All</option><option>Concert</option><option>Speeches</option><option>Built-in</option></select>
         </div>
       </div>
-      <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 0 6px; gap: 2px;">
+      <div style="flex-grow: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 0 6px; gap: 2px;">
         <sc-for list="{{presets}}" as="p" hint-placeholder-count="14">
           <button onClick="{{p.pick}}" style="{{p.style}}">
             <span style="font-family: Consolas, monospace; font-size: 11px; width: 18px; color: #8e9096;">{{p.num}}</span>
@@ -80,9 +94,9 @@ input[type=checkbox]{accent-color:#4fb3bf}
           </button>
         </sc-for>
       </div>
-      <div style="display: flex; gap: 6px; padding: 10px;">
-        <button onClick="{{prevPreset}}" style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">◀ Prev</button>
-        <button onClick="{{nextPreset}}" style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Next ▶</button>
+      <div style="display: flex; gap: 6px; padding: 8px 10px 10px;">
+        <button onClick="{{prevPreset}}" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">◀ Prev</button>
+        <button onClick="{{nextPreset}}" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Next ▶</button>
       </div>
     </div>
 
@@ -92,10 +106,10 @@ input[type=checkbox]{accent-color:#4fb3bf}
       <!-- Monitors row -->
       <div style="display: flex; gap: 12px; flex-shrink: 0;">
         <!-- Preview -->
-        <div style="width: 500px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="width: 455px; display: flex; flex-direction: column; gap: 6px;">
           <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
             <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
-            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
+            <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW · {{tabNameUpper}}</span>
             <span style="font-size: 12px; color: #8e9096;">{{pv.title}}</span>
           </div>
           <div style="{{pv.frame}}">
@@ -136,7 +150,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
         </div>
 
         <!-- Program -->
-        <div style="width: 500px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="width: 455px; display: flex; flex-direction: column; gap: 6px;">
           <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
             <span style="width: 8px; height: 8px; border-radius: 2px; background: #e0473b;"></span>
             <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PROGRAM</span>
@@ -176,6 +190,13 @@ input[type=checkbox]{accent-color:#4fb3bf}
           <!-- Quick action strip -->
           <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+              <sc-if value="{{isBack}}" hint-placeholder-val="{{false}}">
+                <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">LOOP</span>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a9abb0;">Energy<input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="width: 64px;"></label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a9abb0;">Speed<input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="width: 64px;"></label>
+                <button onClick="{{toggleFollow}}" style="{{followStyle}}">Follow music</button>
+                <a href="BackLoops.dc.html" style="font-size: 11px; text-decoration: none; padding-right: 6px;">Loops…</a>
+              </sc-if>
               <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 2px;">PRESET</span>
               <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
                 <button style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2d5a61; background: #1d3b40; color: #dff4f6; font-size: 11px; font-weight: 600; white-space: nowrap;">{{b}}</button>
@@ -252,7 +273,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
         <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
           <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #2c3038;">
             <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">AUDIO MIXER</span>
-            <button style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">EQ / Advanced…</button>
+            <a href="InputSettings.dc.html" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">EQ / Advanced…</a>
           </div>
           <div style="flex-grow: 1; min-height: 0; display: flex; gap: 2px; padding: 8px 6px;">
             <sc-for list="{{channels}}" as="c" hint-placeholder-count="6">
@@ -282,7 +303,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
 
   <!-- ===== Bottom bar ===== -->
   <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1a1d22; border-top: 1px solid #2c3038;">
-    <button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600;">+ Add input</button>
+    <a href="AddInput.dc.html" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">+ Add input</a>
     <span style="width: 1px; height: 24px; background: #2c3038; margin: 0 4px;"></span>
     <button onClick="{{toggleRec}}" style="{{recStyle}}"><span style="{{recDot}}"></span>Record <span style="font-family: Consolas, monospace; font-weight: 400; color: #d4d5d8;">{{recTime}}</span></button>
     <a href="GoLive.dc.html" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #3fbf5a;"></span>Streaming · 3 sites</a>
@@ -314,7 +335,7 @@ class Component extends DCLogic {
       ovl: { 1: 'logo', 2: null, 3: null, 4: null },
       vol: { master: 82, cam1: 70, cam2: 60, vid1: 78, vid2: 74, phone: 50 },
       muted: { phone: true }, afv: { vid1: true, vid2: true },
-      draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false
+      draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
     };
   }
   renderVals() {
@@ -350,15 +371,20 @@ class Component extends DCLogic {
     const sc = st.screens[st.tab];
     const updScreen = (p) => set({ screens: { ...st.screens, [st.tab]: { ...sc, ...p } } });
 
-    const tabs = [['live', 'Live Screen'], ['back', 'Back Screen'], ['monitor', 'Monitor']].map(([id, name]) => {
+    const TONES = { cam1: '#34404c', cam2: '#3a3746', cam3: '#2f3a44', phone: '#2e3d34', vid1: '#473a2c', vid2: '#343b4b', vid3: '#403143', loop1: '#27403f', loop2: '#2c3450' };
+    const tabs = [['live', 'Live Screen', 'Display 2 + stream', 'F1'], ['back', 'Back Screen', 'Display 3', 'F2'], ['monitor', 'Monitor', 'Display 4 · text', 'F3']].map(([id, name, where, key]) => {
       const on = id === st.tab;
-      const dark = st.screens[id].blank || st.panic;
+      const scr = st.screens[id];
+      const dark = scr.blank || st.panic;
+      const dimmed = id === 'monitor' && st.panic && !scr.blank;
+      const onAirName = id === 'monitor' ? (st.monitorText ? 'TEXT' : '') : ((SRC[scr.pg] || {}).kind || '');
       return {
-        name,
+        name, where, key, on, onAirName: dark && !dimmed ? '' : onAirName,
         pick: () => set({ tab: id, tbar: 0 }),
-        status: dark ? (id === 'monitor' && st.panic && !st.screens[id].blank ? 'DIMMED' : 'BLANK') : 'ON AIR',
-        badge: `height: 16px; padding: 0 6px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : '#c7372f'}; color: #ffffff;`,
-        style: `height: 36px; padding: 0 16px; display: flex; align-items: center; gap: 10px; border: 1px solid ${on ? '#2c3038' : 'transparent'}; border-bottom: 0; border-radius: 6px 6px 0 0; background: ${on ? '#15171b' : 'transparent'}; box-shadow: ${on ? 'inset 0 2px 0 #4fb3bf' : 'none'}; color: ${on ? '#ffffff' : '#a9abb0'};`
+        status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : 'ON AIR',
+        badge: `height: 15px; padding: 0 5px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : '#c7372f'}; color: #ffffff;`,
+        thumb: `width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; display: flex; align-items: center; justify-content: center; border: 1px solid ${dark ? '#343944' : '#c7372f'}; background: ${dark && !dimmed ? '#000' : id === 'monitor' ? '#000' : (TONES[scr.pg] || '#262a31')}; opacity: ${dimmed ? 0.4 : 1};`,
+        style: `height: 48px; min-width: 230px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 10px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
       };
     });
 
@@ -412,7 +438,7 @@ class Component extends DCLogic {
       };
     });
 
-    const frame = (tone, color) => `position: relative; height: 281px; background: ${tone}; border: 1px solid ${color}; border-radius: 6px; overflow: hidden;`;
+    const frame = (tone, color) => `position: relative; height: 256px; background: ${tone}; border: 1px solid ${color}; border-radius: 6px; overflow: hidden;`;
     const pvSrc = isMon ? null : (SRC[sc.pv] || SRC.black);
     const pgSrc = isMon ? null : (SRC[sc.pg] || SRC.black);
 
@@ -474,7 +500,11 @@ class Component extends DCLogic {
 
     return {
       tabs, presets, transitions, inputs, channels, ovlChannels, overlayLayers, blankOpts,
-      isMonitor: isMon, notMonitor: !isMon,
+      isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
+      toggleFollow: () => set({ follow: !st.follow }),
+      followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#1d3b40' : '#2a2e36'}; color: ${st.follow ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;`,
+      onQuickPick: (e) => { if (e.target.value) set({ draft: e.target.value }); },
+      miniMon: `position: relative; height: 118px; border-radius: 4px; background: #000; border: 1px solid ${st.flashing ? '#ffffff' : '#c7372f'}; display: flex; align-items: center; justify-content: center; opacity: ${st.panic ? 0.35 : 1};`,
       setSimple: () => set({ mode: 'simple' }), setAdvanced: () => set({ mode: 'advanced' }),
       simpleStyle: seg(st.mode === 'simple'), advancedStyle: seg(st.mode === 'advanced'),
       presetButtons: ['Vid 2 + Logo (fade)', 'Cam 1 + Lower third', 'Blank back screen'],

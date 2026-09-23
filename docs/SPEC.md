@@ -156,6 +156,7 @@ Drawn right after *"on the phone it should be a more simple version — it shoul
 
 - The three outputs: **Live Screen** (the stream), **Back Screen** (behind the stage), **Monitor** (for the people on stage).
 - **The Monitor is for communicating with the people on stage. It shows text and similar information only (messages, clock, countdown, flash) — not cameras, videos or the live picture.** (Clarified by the author.)
+- **You select which screen you are controlling at that time** (Live Screen / Back Screen / Monitor). The whole work area — preview, program, inputs and controls — switches to that screen. This selector is the centre of the design. (Emphasised by the author.)
 - **You can select which screen you want to see on your preview screen** (via the tabs).
 - **The controls change per view screen.** Example: **the Monitor screen will have more controls for text and a button to flash the screen on the stage**, etc.
 - **In settings you choose which screens are what before the event, so you don't have to do it each time.** / **Selecting which screens are what only needs to be done once.**
