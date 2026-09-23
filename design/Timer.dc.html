@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Lumora — Timer designer</title>
+<title>Lumora — Hype countdown</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -11,292 +11,213 @@
 <style>
 body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
 a{color:#4fb3bf}a:hover{color:#8fd3db}
-button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
-input,select,textarea{font-family:inherit}
-input[type=checkbox]{accent-color:#4fb3bf;width:16px;height:16px;margin:0}
-input[type=range]{accent-color:#4fb3bf}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
 </style>
 </helmet>
-<div style="width: 1160px; height: 800px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
 
-  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
-    <span style="font-size: 20px; font-weight: 600;">Timer designer</span>
-    <span style="font-size: 13px; color: #8e9096;">Big on-screen countdown · add minutes while it is live</span>
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Hype countdown</span>
+    <span style="font-size: 13px; color: #8e9096;">A big countdown to something exciting — for the Back Screen and the live stream</span>
     <div style="flex-grow: 1;"></div>
-    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d5d8;"><input type="checkbox" checked="{{onBack}}" onChange="{{toggleBack}}"> Back Screen</label>
+    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #d4d5d8;"><input type="checkbox" checked="{{onLive}}" onChange="{{toggleLive}}"> Live stream</label>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; margin-left: 8px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
   </div>
 
-  <div style="flex-grow: 1; min-height: 0; display: flex; gap: 24px; padding: 18px 24px; box-sizing: border-box;">
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
 
-    <!-- Left: preview + live controls -->
-    <div style="width: 600px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
+    <!-- Preview + live controls -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px; padding: 20px 24px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
         <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">PREVIEW</span>
-        <span style="font-size: 12px; color: #8e9096;">{{bgName}}</span>
+        <span style="font-size: 12px; color: #8e9096;">{{previewNote}}</span>
         <div style="flex-grow: 1;"></div>
-        <span style="{{statusBadge}}">{{statusText}}</span>
-      </div>
-      <div style="{{frame}}">
-        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.2em; color: rgba(255,255,255,0.75);">{{titleText}}</span>
-        <span style="{{digits}}">{{display}}</span>
-        <span style="position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: rgba(255,255,255,0.5);">{{bgName}}</span>
+        <button onClick="{{toggleFinal}}" style="{{finalBtnStyle}}">Preview final 10 seconds</button>
       </div>
 
-      <!-- Live controls -->
-      <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">LIVE CONTROLS</span>
-          <span style="font-size: 11px; color: #8e9096;">Changes apply instantly, even while on the Live screen</span>
-        </div>
-        <div style="display: flex; gap: 6px;">
-          <button onClick="{{start}}" style="flex: 1.4 1 0; height: 48px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;"><span style="font-size: 14px; font-weight: 700;">▶ Start</span><span style="font-size: 9px;">Space</span></button>
-          <button onClick="{{pause}}" style="flex: 1 1 0; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;"><span style="font-size: 13px; font-weight: 600;">❚❚ Pause</span><span style="font-size: 9px; color: #8e9096;">P</span></button>
-          <button onClick="{{reset}}" style="flex: 1 1 0; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;"><span style="font-size: 13px; font-weight: 600;">↺ Reset</span><span style="font-size: 9px; color: #8e9096;">R</span></button>
-          <span style="width: 1px; background: #2c3038; margin: 4px 2px;"></span>
-          <button onClick="{{plus1}}" style="flex: 1 1 0; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background: #343944; color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;"><span style="font-size: 14px; font-weight: 700;">+1 min</span><span style="font-size: 9px; color: #a9abb0;">+</span></button>
-          <button onClick="{{plus5}}" style="flex: 1 1 0; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background: #343944; color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;"><span style="font-size: 14px; font-weight: 700;">+5 min</span><span style="font-size: 9px; color: #a9abb0;">Shift +</span></button>
-          <button onClick="{{minus1}}" style="flex: 1 1 0; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background: #343944; color: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;"><span style="font-size: 14px; font-weight: 700;">−1 min</span><span style="font-size: 9px; color: #a9abb0;">−</span></button>
-        </div>
+      <div style="{{stage}}">
+        <div style="{{glowLayer}}"></div>
+        <sc-if value="{{notFinal}}" hint-placeholder-val="{{true}}">
+          <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+            <span style="{{titleStyle}}">{{title}}</span>
+            <span style="{{digitsStyle}}">{{digits}}</span>
+            <span style="{{subStyle}}">{{subtitle}}</span>
+          </div>
+          <div style="position: absolute; left: 64px; right: 64px; bottom: 34px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.12);"><div style="{{progressBar}}"></div></div>
+        </sc-if>
+        <sc-if value="{{isFinal}}" hint-placeholder-val="{{false}}">
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+            <span style="{{finalStyle}}">10</span>
+          </div>
+          <span style="position: absolute; left: 0; right: 0; bottom: 40px; text-align: center; font-size: 14px; font-weight: 700; letter-spacing: 0.3em; color: rgba(255,255,255,0.7);">GET READY</span>
+        </sc-if>
       </div>
 
+      <!-- Live control bar -->
+      <div style="display: flex; align-items: center; gap: 8px; padding: 12px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038;">
+        <button onClick="{{toggleRun}}" style="{{runStyle}}">{{runLabel}}</button>
+        <button onClick="{{reset}}" style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Reset</button>
+        <span style="width: 1px; height: 30px; background: #2c3038; margin: 0 4px;"></span>
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">ADD TIME LIVE</span>
+        <button onClick="{{sub1}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">−1 min</button>
+        <button onClick="{{add1}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">+1 min</button>
+        <button onClick="{{add5}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">+5 min</button>
+        <button onClick="{{jump10}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Jump to last 10 s</button>
+        <div style="flex-grow: 1;"></div>
+        <button style="height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.04em;">Send to screens</button>
+      </div>
+
+      <!-- Count down to -->
+      <div style="display: flex; gap: 12px;">
+        <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038;">
+          <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">COUNT DOWN TO</span>
+          <div style="display: flex; gap: 6px;">
+            <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+              <button onClick="{{m.pick}}" style="{{m.style}}">{{m.name}}</button>
+            </sc-for>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+            <sc-if value="{{byTime}}" hint-placeholder-val="{{true}}">Starts at <input value="20:00" aria-label="Time of day" style="width: 80px; height: 32px; text-align: center; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 15px;"></sc-if>
+            <sc-if value="{{byLength}}" hint-placeholder-val="{{false}}">Length <input value="05:00" aria-label="Countdown length" style="width: 80px; height: 32px; text-align: center; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 15px;"></sc-if>
+            <span style="flex-grow: 1;"></span>
+            Format <select style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>mm:ss</option><option>hh:mm:ss</option><option>Seconds only (last minute)</option></select>
+          </div>
+        </div>
+        <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038;">
+          <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">WHEN IT HITS ZERO</span>
+          <select aria-label="At zero" style="height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 13px;"><option>Play video: Opening.mp4 → then Camera 1</option><option>Switch to Camera 1</option><option>Show text: "Welcome!"</option><option>Run preset: Opening</option><option>Go to black</option></select>
+          <div style="display: flex; gap: 14px; font-size: 12px; color: #d4d5d8;">
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked="{{true}}"> Confetti burst</label>
+            <label style="display: flex; align-items: center; gap: 6px;"><input type="checkbox" checked="{{true}}"> Horn / impact sound</label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Style panel -->
+    <div style="width: 400px; flex-shrink: 0; display: flex; flex-direction: column; gap: 18px; padding: 20px; box-sizing: border-box; background: #1a1d22; border-left: 1px solid #2c3038; overflow: hidden;">
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">STYLE PRESETS</span>
-        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px;">
-          <sc-for list="{{presets}}" as="p" hint-placeholder-count="5">
-            <button onClick="{{p.pick}}" style="{{p.card}}">
-              <div style="height: 40px; border-radius: 4px; background: #101216; display: flex; align-items: center; justify-content: center;"><span style="{{p.sample}}">05:00</span></div>
-              <span style="font-size: 11px; font-weight: 600;">{{p.name}}</span>
-            </button>
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">STYLE</span>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{styles}}" as="s" hint-placeholder-count="6">
+            <button onClick="{{s.pick}}" style="{{s.style}}"><span style="{{s.swatch}}"><span style="font-family: Consolas, monospace; font-size: 14px; font-weight: 800; color: #ffffff;">00:10</span></span><span style="font-size: 11px; font-weight: 600;">{{s.name}}</span></button>
           </sc-for>
         </div>
       </div>
-    </div>
-
-    <!-- Right: settings -->
-    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px;">
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">MODE</span>
-        <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
-          <sc-for list="{{modes}}" as="o" hint-placeholder-count="4"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8; height: 32px;">
-          <sc-if value="{{isDown}}" hint-placeholder-val="{{true}}">
-            <span style="width: 64px; color: #a9abb0;">Duration</span>
-            <input type="number" min="0" aria-label="Minutes" value="{{durMin}}" onInput="{{onDurMin}}" style="width: 64px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 15px; box-sizing: border-box;">
-            <span>min</span>
-            <input type="number" min="0" max="59" aria-label="Seconds" value="{{durSec}}" onInput="{{onDurSec}}" style="width: 56px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 15px; box-sizing: border-box;">
-            <span>sec</span>
-            <div style="flex-grow: 1;"></div>
-            <sc-for list="{{quick}}" as="q" hint-placeholder-count="4"><button onClick="{{q.pick}}" style="height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #d4d5d8; font-size: 11px;">{{q.label}}</button></sc-for>
-          </sc-if>
-          <sc-if value="{{isUp}}" hint-placeholder-val="{{false}}">
-            <span style="width: 64px; color: #a9abb0;">Starts at</span>
-            <span style="font-family: Consolas, monospace; font-size: 15px;">00:00</span>
-            <label style="display: flex; align-items: center; gap: 8px; margin-left: 12px;"><input type="checkbox" checked="{{stopAt}}" onChange="{{toggleStopAt}}"> Stop at</label>
-            <input aria-label="Stop at" value="45:00" style="width: 72px; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 15px; box-sizing: border-box;">
-          </sc-if>
-          <sc-if value="{{isClock}}" hint-placeholder-val="{{false}}">
-            <span style="width: 64px; color: #a9abb0;">Format</span>
-            <select aria-label="Clock format" style="height: 32px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 8px;"><option>24-hour (19:42)</option><option>12-hour (7:42 PM)</option></select>
-            <label style="display: flex; align-items: center; gap: 8px; margin-left: 8px;"><input type="checkbox" checked="{{showSecs}}" onChange="{{toggleSecs}}"> Show seconds</label>
-          </sc-if>
-          <sc-if value="{{isTo}}" hint-placeholder-val="{{false}}">
-            <span style="width: 64px; color: #a9abb0;">Count to</span>
-            <input type="time" aria-label="Target time" value="20:30" style="height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-family: Consolas, monospace; font-size: 14px; box-sizing: border-box; color-scheme: dark;">
-            <span style="color: #8e9096;">e.g. doors close, program starts</span>
-          </sc-if>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
-          <span style="width: 64px; color: #a9abb0;">Title</span>
-          <input aria-label="Title above the timer" value="{{titleText}}" onInput="{{onTitle}}" style="flex-grow: 1; height: 30px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; box-sizing: border-box;">
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">FONT, SIZE &amp; COLOUR</span>
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">TEXT</span>
+        <input aria-label="Title above the numbers" value="{{title}}" onInput="{{onTitle}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px;">
+        <input aria-label="Line under the numbers" value="{{subtitle}}" onInput="{{onSub}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px;">
         <div style="display: flex; gap: 6px;">
-          <select aria-label="Font" onChange="{{onFont}}" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 13px; padding: 0 8px;">
-            <optgroup label="Numbers / digital">
-              <option>Bahnschrift</option><option>Consolas</option><option>Courier New</option><option>Lucida Console</option>
-            </optgroup>
-            <optgroup label="Bold / stage">
-              <option>Segoe UI</option><option>Arial Black</option><option>Impact</option><option>Franklin Gothic Medium</option><option>Tahoma</option><option>Verdana</option>
-            </optgroup>
-            <optgroup label="Elegant">
-              <option>Georgia</option><option>Times New Roman</option><option>Palatino Linotype</option><option>Garamond</option><option>Cambria</option><option>Book Antiqua</option>
-            </optgroup>
-            <optgroup label="Imported">
-              <option>[Imported font]</option>
-            </optgroup>
-          </select>
-          <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Import font…</button>
+          <select aria-label="Font" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>Bahnschrift Bold</option><option>Impact</option><option>Segoe UI Black</option><option>Frank Ruhl Libre</option><option>+ Import font…</option></select>
+          <select aria-label="Number colour" style="width: 110px; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>White</option><option>Event colour</option><option>Custom…</option></select>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
-          <span style="width: 64px;">Size</span>
-          <input type="range" min="40" max="140" value="{{size}}" onInput="{{onSize}}" aria-label="Size" style="flex-grow: 1;">
-          <span style="width: 44px; text-align: right; font-family: Consolas, monospace; color: #e4e5e7;">{{sizeLabel}}</span>
-        </div>
-        <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;">
-          <span style="width: 64px;">Colour</span>
-          <sc-for list="{{colours}}" as="c" hint-placeholder-count="7"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
-          <button style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Custom…</button>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #a9abb0;">Size<input type="range" min="80" max="220" value="{{size}}" onInput="{{onSize}}" style="flex-grow: 1;"></label>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">BACKGROUND</span>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+          <sc-for list="{{bgs}}" as="b" hint-placeholder-count="8">
+            <button onClick="{{b.pick}}" aria-label="{{b.name}}" style="{{b.style}}"><span style="font-size: 9px; color: rgba(255,255,255,0.8);">{{b.name}}</span></button>
+          </sc-for>
         </div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">BACKGROUND</span>
-        <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
-          <sc-for list="{{bgTypes}}" as="o" hint-placeholder-count="4"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
-        </div>
-        <div style="height: 58px; display: flex; gap: 6px; align-items: stretch;">
-          <sc-if value="{{bgIsLoop}}" hint-placeholder-val="{{true}}">
-            <sc-for list="{{loops}}" as="l" hint-placeholder-count="5"><button onClick="{{l.pick}}" style="{{l.style}}">{{l.name}}</button></sc-for>
-          </sc-if>
-          <sc-if value="{{bgIsImage}}" hint-placeholder-val="{{false}}">
-            <div style="width: 100px; border-radius: 4px; background: #3b3326; display: flex; align-items: center; justify-content: center; font-size: 10px; color: rgba(255,255,255,0.6);">[Image]</div>
-            <button style="height: 32px; align-self: center; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Choose image…</button>
-          </sc-if>
-          <sc-if value="{{bgIsColour}}" hint-placeholder-val="{{false}}">
-            <sc-for list="{{bgColours}}" as="c" hint-placeholder-count="6"><button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button></sc-for>
-          </sc-if>
-          <sc-if value="{{bgIsClear}}" hint-placeholder-val="{{false}}">
-            <span style="align-self: center; font-size: 12px; color: #a9abb0;">No background — the timer sits on top of whatever is on screen (camera, slides).</span>
-          </sc-if>
-        </div>
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">HYPE EFFECTS</span>
+        <sc-for list="{{effects}}" as="e" hint-placeholder-count="6">
+          <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; color: #d4d5d8;"><input type="checkbox" checked="{{e.on}}" onChange="{{e.toggle}}">{{e.name}}</label>
+        </sc-for>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #a9abb0;">Music<select style="flex-grow: 1; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>Build-up track (rises to zero)</option><option>Use stage audio</option><option>None</option></select></label>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EFFECTS</span>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
-          <label style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border-radius: 6px; background: #2a2e36; border: 1px solid #2c3038; font-size: 12px;"><input type="checkbox" checked="{{glow}}" onChange="{{toggleGlow}}"> Glow</label>
-          <label style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border-radius: 6px; background: #2a2e36; border: 1px solid #2c3038; font-size: 12px;"><input type="checkbox" checked="{{pulse}}" onChange="{{togglePulse}}"> Pulse in last minute</label>
-          <label style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border-radius: 6px; background: #2a2e36; border: 1px solid #2c3038; font-size: 12px;"><input type="checkbox" checked="{{warn}}" onChange="{{toggleWarn}}"> Red at 1:00 <span style="width: 12px; height: 12px; border-radius: 3px; background: #e0473b;"></span></label>
-        </div>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">WHEN IT REACHES ZERO</span>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038; width: 300px; flex-shrink: 0;">
-            <sc-for list="{{ends}}" as="o" hint-placeholder-count="3"><button onClick="{{o.pick}}" style="{{o.style}}">{{o.label}}</button></sc-for>
-          </div>
-          <sc-if value="{{endIsText}}" hint-placeholder-val="{{true}}">
-            <input aria-label="End text" value="[We are starting now]" style="flex-grow: 1; min-width: 0; height: 32px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; box-sizing: border-box;">
-          </sc-if>
-          <sc-if value="{{endIsVideo}}" hint-placeholder-val="{{false}}">
-            <select aria-label="Video to play" style="flex-grow: 1; min-width: 0; height: 32px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 8px;"><option>Opening.mp4</option><option>Sponsors.mp4</option><option>Tribute.mp4</option><option>From library…</option></select>
-          </sc-if>
-          <sc-if value="{{endIsBlack}}" hint-placeholder-val="{{false}}">
-            <span style="font-size: 12px; color: #a9abb0;">Fades the screen to black.</span>
-          </sc-if>
-        </div>
-      </div>
+      <div style="flex-grow: 1;"></div>
+      <button style="height: 40px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Save countdown to library</button>
     </div>
-  </div>
-
-  <div style="height: 72px; flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 0 24px; border-top: 1px solid #2c3038; background-color: #1a1d22;">
-    <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">SHOW ON</span>
-    <sc-for list="{{screens}}" as="s" hint-placeholder-count="3"><button onClick="{{s.toggle}}" style="{{s.style}}">{{s.name}}</button></sc-for>
-    <span style="font-size: 11px; color: #8e9096;">Monitor shows the numbers only (text)</span>
-    <div style="flex-grow: 1;"></div>
-    <button style="height: 44px; padding: 0 18px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 14px; font-weight: 600;">Save to library</button>
-    <a href="Main.dc.html" style="height: 44px; padding: 0 24px; border-radius: 6px; background-color: #4fb3bf; color: #0e2a2e; font-size: 15px; font-weight: 700; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Send to Preview</a>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1160,"height":800}}'>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
     this.state = {
-      mode: 'down', durMin: 5, durSec: 0, remaining: 300, running: false, stopAt: false, showSecs: true,
-      title: 'STARTING SOON', font: 'Bahnschrift', size: 96, colour: '#ffffff',
-      bg: 'loop', loop: 'aurora', bgColour: '#101216', glow: false, pulse: true, warn: true, end: 'text', preset: 'classic',
-      screens: { live: true, back: true, monitor: false }
+      secs: 299, total: 300, running: true, final: false, mode: 'time',
+      style: 'cinematic', bg: 'particles', size: 150,
+      title: 'THE SHOW BEGINS IN', subtitle: '[Event name]',
+      onBack: true, onLive: true,
+      fx: { pulse: true, beat: true, glow: true, zoom10: true, shake: false, tick: true }
     };
   }
   renderVals() {
     const st = this.state;
     const set = (p) => this.setState(p);
-    const segStyle = (on) => `flex: 1 1 0; height: 28px; padding: 0 6px; border: 0; border-radius: 4px; background: ${on ? '#1d3b40' : 'transparent'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 12px; font-weight: ${on ? 600 : 400}; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};`;
-    const seg = (key, opts) => opts.map(([id, label]) => ({ label, pick: () => set({ [key]: id }), style: segStyle(st[key] === id) }));
-    const pad = (n) => String(n).padStart(2, '0');
-    const mmss = (s) => { s = Math.max(0, s); const h = Math.floor(s / 3600); const m = Math.floor((s % 3600) / 60); return (h ? h + ':' + pad(m) : pad(m)) + ':' + pad(s % 60); };
-    const total = st.durMin * 60 + st.durSec;
-    let display = mmss(st.remaining);
-    if (st.mode === 'up') display = mmss(total - st.remaining);
-    if (st.mode === 'clock') display = st.showSecs ? '19:42:05' : '19:42';
-    if (st.mode === 'to') display = '0:47:55';
-    const lastMin = (st.mode === 'down') && st.remaining <= 60;
-    const colour = st.warn && lastMin ? '#e0473b' : st.colour;
-
-    const LOOPS = { aurora: ['Aurora', '#27403f'], particles: ['Particles', '#2c3450'], warm: ['Warm glow', '#4a3626'], bokeh: ['Bokeh', '#3a3746'], stars: ['Stars', '#1c2233'] };
-    let bgCss = '#101216'; let bgName = 'Transparent';
-    if (st.bg === 'loop') { bgCss = LOOPS[st.loop][1]; bgName = LOOPS[st.loop][0] + ' loop'; }
-    if (st.bg === 'image') { bgCss = '#3b3326'; bgName = '[Image]'; }
-    if (st.bg === 'colour') { bgCss = st.bgColour; bgName = 'Solid colour'; }
-
-    const PRESETS = [
-      ['classic', 'Classic', 'Bahnschrift', '#ffffff', 96],
-      ['bold', 'Bold stage', 'Impact', '#ffffff', 120],
-      ['minimal', 'Minimal', 'Segoe UI', '#d4d5d8', 72],
-      ['digital', 'Digital', 'Consolas', '#8fd3db', 100],
-      ['elegant', 'Elegant', 'Georgia', '#ece7df', 88]
-    ];
-    const presets = PRESETS.map(([id, name, font, col, size]) => {
-      const on = st.preset === id;
-      return { name, pick: () => set({ preset: id, font, colour: col, size }),
-        card: `display: flex; flex-direction: column; gap: 5px; padding: 6px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#d4d5d8'};`,
-        sample: `font-family: '${font}', sans-serif; font-size: 18px; font-weight: 700; color: ${col};` };
-    });
-    const COLS = [['#ffffff', 'White'], ['#d4d5d8', 'Silver'], ['#8fd3db', 'Light teal'], ['#4fb3bf', 'Teal'], ['#ece7df', 'Cream'], ['#e0473b', 'Red'], ['#9ab8ff', 'Blue']];
-    const colours = COLS.map(([c, name]) => ({ name, pick: () => set({ colour: c }),
-      style: `width: 26px; height: 26px; padding: 0; border-radius: 4px; background: ${c}; border: 2px solid ${st.colour === c ? '#4fb3bf' : '#2c3038'}; box-sizing: border-box;` }));
-    const loops = Object.keys(LOOPS).map((id) => { const on = st.loop === id; return { name: LOOPS[id][0], pick: () => set({ loop: id }),
-      style: `flex: 1 1 0; border-radius: 4px; background: ${LOOPS[id][1]}; border: 2px solid ${on ? '#4fb3bf' : 'transparent'}; color: rgba(255,255,255,0.8); font-size: 10px; display: flex; align-items: flex-end; padding: 4px 6px; box-sizing: border-box;` }; });
-    const BGC = [['#101216', 'Black'], ['#1b2a4a', 'Navy'], ['#27403f', 'Deep teal'], ['#3a2330', 'Plum'], ['#34404c', 'Slate'], ['#e4e5e7', 'White']];
-    const bgColours = BGC.map(([c, name]) => ({ name, pick: () => set({ bgColour: c }),
-      style: `width: 58px; border-radius: 4px; background: ${c}; border: 2px solid ${st.bgColour === c ? '#4fb3bf' : '#2c3038'};` }));
-    const screens = [['live', 'Live'], ['back', 'Back'], ['monitor', 'Monitor']].map(([id, name]) => {
-      const on = st.screens[id];
-      return { name, toggle: () => set({ screens: { ...st.screens, [id]: !on } }),
-        style: `height: 36px; padding: 0 14px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#2a2e36'}; color: ${on ? '#dff4f6' : '#a9abb0'};` };
-    });
-    const addMin = (m) => set({ remaining: Math.max(0, st.remaining + m * 60) });
-    const onScreens = ['live', 'back', 'monitor'].filter((k) => st.screens[k]).map((k) => ({ live: 'Live', back: 'Back', monitor: 'Monitor' })[k]).join(' + ');
-
+    const STYLES = {
+      cinematic: { name: 'Cinematic', accent: '#e8e2d4', bg: '#0e1116' },
+      neon: { name: 'Neon pulse', accent: '#4fb3bf', bg: '#07161a' },
+      festive: { name: 'Festive', accent: '#f0c86a', bg: '#1a1208' },
+      bold: { name: 'Bold red', accent: '#ff5a4f', bg: '#170909' },
+      clean: { name: 'Clean', accent: '#ffffff', bg: '#15171b' },
+      royal: { name: 'Royal', accent: '#b9a4ff', bg: '#100c1e' }
+    };
+    const BG = { particles: ['Particles', '#1c2440'], aurora: ['Aurora', '#153230'], stars: ['Stars', '#0b0f1c'], smoke: ['Smoke', '#23262c'], glow: ['Warm glow', '#3a2616'], lights: ['Stage lights', '#241a33'], logo: ['Event logo', '#2b2518'], color: ['Colour', '#000000'] };
+    const sty = STYLES[st.style];
+    const mm = Math.floor(st.secs / 60), ss = st.secs % 60;
+    const styles = Object.entries(STYLES).map(([id, s]) => ({
+      name: s.name,
+      pick: () => set({ style: id }),
+      style: `padding: 6px; display: flex; flex-direction: column; gap: 6px; border-radius: 6px; border: 2px solid ${st.style === id ? '#4fb3bf' : '#2c3038'}; background: #1e2127; color: #e4e5e7; align-items: stretch;`,
+      swatch: `height: 44px; border-radius: 4px; background: ${s.bg}; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 1px ${s.accent}33;`
+    }));
+    const bgs = Object.entries(BG).map(([id, [name, tone]]) => ({
+      name,
+      pick: () => set({ bg: id }),
+      style: `height: 50px; border-radius: 6px; border: 2px solid ${st.bg === id ? '#4fb3bf' : '#2c3038'}; background: ${tone}; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px;`
+    }));
+    const FX = [['pulse', 'Numbers pulse every second'], ['beat', 'Background moves to the music'], ['glow', 'Glow around numbers'], ['zoom10', 'Last 10 seconds: huge numbers zoom in'], ['shake', 'Camera-shake on each of the last 10 seconds'], ['tick', 'Tick sound in the last 10 seconds']];
+    const effects = FX.map(([id, name]) => ({ name, on: !!st.fx[id], toggle: () => set({ fx: { ...st.fx, [id]: !st.fx[id] } }) }));
+    const modes = [['time', 'A time of day'], ['length', 'A length of time']].map(([id, name]) => ({
+      name, pick: () => set({ mode: id }),
+      style: `flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid ${st.mode === id ? '#4fb3bf' : '#2c3038'}; background: ${st.mode === id ? '#1d3b40' : '#2a2e36'}; color: ${st.mode === id ? '#dff4f6' : '#d4d5d8'}; font-size: 12px; font-weight: 600;`
+    }));
+    const glow = st.fx.glow ? `0 0 40px ${sty.accent}66, 0 0 90px ${sty.accent}33` : 'none';
+    const pct = Math.max(0, Math.min(100, (1 - st.secs / st.total) * 100));
     return {
-      bgName, titleText: st.title, onTitle: (e) => set({ title: e.target.value }), display,
-      statusText: st.running ? 'RUNNING · ' + (onScreens || 'no screen') : 'PAUSED',
-      statusBadge: `height: 20px; padding: 0 8px; border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; display: flex; align-items: center; background: ${st.running ? '#2f8f4e' : '#343944'}; color: #ffffff;`,
-      frame: `position: relative; width: 600px; height: 338px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: ${bgCss}; border: ${st.bg === 'transparent' ? '2px dashed #5a5c62' : '2px solid #2f8f4e'}; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;`,
-      digits: `font-family: '${st.font}', 'Segoe UI', sans-serif; font-size: ${st.size}px; font-weight: 700; line-height: 1; color: ${colour}; font-variant-numeric: tabular-nums; text-shadow: ${st.glow ? '0 0 18px ' + colour : 'none'}; opacity: ${st.pulse && lastMin ? 0.85 : 1};`,
-      start: () => set({ running: true }), pause: () => set({ running: false }),
-      reset: () => set({ remaining: total, running: false }),
-      plus1: () => addMin(1), plus5: () => addMin(5), minus1: () => addMin(-1),
-      presets,
-      modes: seg('mode', [['down', 'Count down'], ['up', 'Count up'], ['clock', 'Clock'], ['to', 'Count to a time']]),
-      isDown: st.mode === 'down', isUp: st.mode === 'up', isClock: st.mode === 'clock', isTo: st.mode === 'to',
-      durMin: String(st.durMin), durSec: pad(st.durSec),
-      onDurMin: (e) => { const m = Number(e.target.value) || 0; set({ durMin: m, remaining: m * 60 + st.durSec }); },
-      onDurSec: (e) => { const s = Math.min(59, Number(e.target.value) || 0); set({ durSec: s, remaining: st.durMin * 60 + s }); },
-      quick: [5, 10, 15, 30].map((m) => ({ label: m + 'm', pick: () => set({ durMin: m, durSec: 0, remaining: m * 60 }) })),
-      stopAt: st.stopAt, toggleStopAt: () => set({ stopAt: !st.stopAt }),
-      showSecs: st.showSecs, toggleSecs: () => set({ showSecs: !st.showSecs }),
-      onFont: (e) => set({ font: e.target.value }),
-      size: String(st.size), sizeLabel: st.size + 'px', onSize: (e) => set({ size: Number(e.target.value) }),
-      colours,
-      bgTypes: seg('bg', [['loop', 'Ready-made loop'], ['image', 'Image'], ['colour', 'Colour'], ['transparent', 'Transparent']]),
-      bgIsLoop: st.bg === 'loop', bgIsImage: st.bg === 'image', bgIsColour: st.bg === 'colour', bgIsClear: st.bg === 'transparent',
-      loops, bgColours,
-      glow: st.glow, toggleGlow: () => set({ glow: !st.glow }),
-      pulse: st.pulse, togglePulse: () => set({ pulse: !st.pulse }),
-      warn: st.warn, toggleWarn: () => set({ warn: !st.warn }),
-      ends: seg('end', [['text', 'Show text'], ['video', 'Play video'], ['black', 'Go black']]),
-      endIsText: st.end === 'text', endIsVideo: st.end === 'video', endIsBlack: st.end === 'black',
-      screens
+      styles, bgs, effects, modes,
+      byTime: st.mode === 'time', byLength: st.mode === 'length',
+      title: st.title, subtitle: st.subtitle,
+      onTitle: (e) => set({ title: e.target.value }),
+      onSub: (e) => set({ subtitle: e.target.value }),
+      size: st.size, onSize: (e) => set({ size: Number(e.target.value) }),
+      digits: `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
+      isFinal: st.final, notFinal: !st.final,
+      toggleFinal: () => set({ final: !st.final }),
+      finalBtnStyle: `height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid ${st.final ? '#4fb3bf' : '#2c3038'}; background: ${st.final ? '#1d3b40' : '#2a2e36'}; color: ${st.final ? '#dff4f6' : '#d4d5d8'}; font-size: 12px; font-weight: 600;`,
+      previewNote: `${sty.name} · ${BG[st.bg][0]} background · ${[st.onBack && 'Back Screen', st.onLive && 'Live stream'].filter(Boolean).join(' + ') || 'no screen selected'}`,
+      stage: `position: relative; height: 520px; border-radius: 8px; overflow: hidden; border: 1px solid #2f8f4e; background: ${BG[st.bg][1]};`,
+      glowLayer: `position: absolute; inset: 0; background: radial-gradient(ellipse at center, ${sty.accent}22 0%, transparent 60%); opacity: ${st.fx.glow ? 1 : 0};`,
+      titleStyle: `font-size: 20px; font-weight: 700; letter-spacing: 0.35em; color: ${sty.accent}; opacity: 0.85;`,
+      digitsStyle: `font-family: Bahnschrift, 'Segoe UI', sans-serif; font-size: ${st.size}px; font-weight: 800; line-height: 1; letter-spacing: 0.02em; color: #ffffff; text-shadow: ${glow}; font-variant-numeric: tabular-nums;`,
+      subStyle: `font-size: 22px; font-weight: 600; color: rgba(255,255,255,0.75);`,
+      finalStyle: `font-family: Bahnschrift, 'Segoe UI', sans-serif; font-size: 360px; font-weight: 900; line-height: 1; color: ${sty.accent}; text-shadow: ${glow};`,
+      progressBar: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pct}%; border-radius: 2px; background: ${sty.accent};`,
+      toggleRun: () => set({ running: !st.running }),
+      runLabel: st.running ? '❚❚  Pause' : '▶  Start',
+      runStyle: `height: 44px; min-width: 120px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.running ? '#343944' : '#2f8f4e'}; color: #ffffff; font-size: 14px; font-weight: 700;`,
+      reset: () => set({ secs: st.total, running: false, final: false }),
+      add1: () => set({ secs: st.secs + 60, total: st.total + 60 }),
+      add5: () => set({ secs: st.secs + 300, total: st.total + 300 }),
+      sub1: () => set({ secs: Math.max(0, st.secs - 60) }),
+      jump10: () => set({ secs: 10, final: true }),
+      onBack: st.onBack, onLive: st.onLive,
+      toggleBack: () => set({ onBack: !st.onBack }),
+      toggleLive: () => set({ onLive: !st.onLive })
     };
   }
 }

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Monitor layout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <div style="height: 64px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 24px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 20px; font-weight: 600;">Monitor layout</span>
+    <span style="font-size: 13px; color: #8e9096;">Arrange what the people on stage see — several things at once</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Layout presets -->
+    <div style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 16px 12px; box-sizing: border-box; background: #1a1d22; border-right: 1px solid #2c3038;">
+      <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">LAYOUTS</span>
+      <sc-for list="{{layouts}}" as="l" hint-placeholder-count="6">
+        <button onClick="{{l.pick}}" style="{{l.style}}">
+          <span style="{{l.thumb}}">
+            <sc-for list="{{l.cells}}" as="c" hint-placeholder-count="2"><span style="{{c}}"></span></sc-for>
+          </span>
+          <span style="font-size: 12px; font-weight: 600;">{{l.name}}</span>
+        </button>
+      </sc-for>
+      <div style="flex-grow: 1;"></div>
+      <button style="height: 34px; border-radius: 6px; border: 1px dashed #5a5c62; background: transparent; color: #d4d5d8; font-size: 12px;">+ Custom layout</button>
+    </div>
+
+    <!-- Preview -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #d4d5d8;">MONITOR PREVIEW</span>
+        <span style="font-size: 12px; color: #8e9096;">Click an area to format it</span>
+      </div>
+      <div style="{{stage}}">
+        <sc-for list="{{zones}}" as="z" hint-placeholder-count="3">
+          <button onClick="{{z.pick}}" aria-label="{{z.name}}" style="{{z.box}}">
+            <span style="{{z.labelStyle}}">{{z.label}}</span>
+            <span style="{{z.valueStyle}}">{{z.value}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <span style="font-size: 12px; color: #a9abb0;">Gap between areas</span>
+        <input type="range" min="0" max="40" value="14" aria-label="Gap between areas" style="width: 140px;">
+        <span style="font-size: 12px; color: #a9abb0; padding-left: 12px;">Screen margin</span>
+        <input type="range" min="0" max="80" value="20" aria-label="Screen margin" style="width: 140px;">
+        <div style="flex-grow: 1;"></div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{true}}"> Dividers between areas</label>
+      </div>
+    </div>
+
+    <!-- Items + format -->
+    <div style="width: 360px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; padding: 16px; box-sizing: border-box; background: #1a1d22; border-left: 1px solid #2c3038;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">SHOW ON THE MONITOR</span>
+        <sc-for list="{{items}}" as="it" hint-placeholder-count="6">
+          <div style="{{it.row}}">
+            <input type="checkbox" checked="{{it.on}}" onChange="{{it.toggle}}" aria-label="Show {{it.name}}">
+            <button onClick="{{it.pick}}" style="flex-grow: 1; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; font-size: 13px; font-weight: 600;">{{it.name}}</button>
+            <span style="font-size: 11px; color: #8e9096;">{{it.note}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="height: 1px; background: #2c3038;"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">FORMAT · {{selName}}</span>
+        <div style="display: flex; gap: 6px;">
+          <select aria-label="Font" style="flex-grow: 1; min-width: 0; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>Segoe UI Bold</option><option>Bahnschrift</option><option>Consolas (numbers)</option><option>Frank Ruhl Libre</option><option>+ Import font…</option></select>
+          <button aria-label="Bold" style="width: 32px; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-weight: 800;">B</button>
+        </div>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #a9abb0;">Size<input type="range" min="20" max="200" value="{{selSize}}" onInput="{{onSize}}" style="flex-grow: 1;"><span style="font-family: Consolas, monospace; width: 34px; text-align: right;">{{selSize}}</span></label>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 56px;">Colour</span>
+          <sc-for list="{{colours}}" as="c" hint-placeholder-count="5">
+            <button onClick="{{c.pick}}" aria-label="{{c.name}}" style="{{c.style}}"></button>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">
+          <span style="width: 56px;">Align</span>
+          <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+            <button style="height: 28px; padding: 0 10px; border: 0; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Left</button>
+            <button style="height: 28px; padding: 0 10px; border: 0; background: #1d3b40; color: #dff4f6; font-size: 11px;">Centre</button>
+            <button style="height: 28px; padding: 0 10px; border: 0; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Right</button>
+          </div>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{true}}"> Show small label (e.g. "TIME LEFT")</label>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox"> Background box behind this area</label>
+        <sc-if value="{{selTimer}}" hint-placeholder-val="{{false}}">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{true}}"> Turn red in the last minute</label>
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">Shows<select style="flex-grow: 1; height: 28px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>Time left on the countdown</option><option>Time left in this cue</option><option>Own stage timer</option></select></label>
+        </sc-if>
+        <sc-if value="{{selClock}}" hint-placeholder-val="{{false}}">
+          <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #a9abb0;">Format<select style="flex-grow: 1; height: 28px; border-radius: 6px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; font-size: 12px;"><option>24-hour (19:42)</option><option>12-hour (7:42 PM)</option><option>With seconds</option></select></label>
+        </sc-if>
+      </div>
+
+      <div style="flex-grow: 1;"></div>
+      <div style="display: flex; gap: 8px;">
+        <button style="flex-grow: 1; height: 40px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Save layout</button>
+        <a href="Main.dc.html" style="flex-grow: 1; height: 40px; border-radius: 6px; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none;">Use on monitor</a>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { layout: 'stack', sel: 'msg', show: { msg: true, timer: true, clock: true, next: false, custom: false, logo: false }, size: { msg: 64, timer: 72, clock: 72, next: 24, custom: 32, logo: 32 }, colour: { msg: '#ffffff', timer: '#ffffff', clock: '#ffffff', next: '#d4d5d8', custom: '#ffffff', logo: '#ffffff' } };
+  }
+  renderVals() {
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const ITEMS = {
+      msg: { name: 'Message', note: 'typed or ready-made', label: '', value: '5 minutes left' },
+      timer: { name: 'Timer', note: 'time left', label: 'TIME LEFT', value: '04:58' },
+      clock: { name: 'Clock', note: 'current time', label: 'TIME NOW', value: '19:42' },
+      next: { name: 'Next up', note: 'from the cues', label: 'NEXT UP', value: '[Next speaker]' },
+      custom: { name: 'Custom text', note: 'e.g. a name', label: 'NOTE', value: '[Your text]' },
+      logo: { name: 'Event logo', note: 'image', label: '', value: '[Logo]' }
+    };
+    const LAYOUTS = {
+      full: { name: 'Message only', cols: '1fr', rows: '1fr', areas: ['msg'] },
+      msgclock: { name: 'Message + clock', cols: '1fr', rows: '2fr 1fr', areas: ['msg', 'clock'] },
+      stack: { name: 'Message, timer & clock', cols: '1fr 1fr', rows: '1.5fr 1fr', areas: ['msg*2', 'timer', 'clock'] },
+      split: { name: 'Side by side', cols: '1.5fr 1fr', rows: '1fr 1fr', areas: ['msg|2', 'timer', 'clock'] },
+      grid: { name: '4 areas', cols: '1fr 1fr', rows: '1fr 1fr', areas: ['msg', 'timer', 'clock', 'next'] },
+      timerbig: { name: 'Big timer', cols: '1fr 1fr', rows: '2fr 1fr', areas: ['timer*2', 'msg', 'clock'] }
+    };
+    const span = (a) => a.endsWith('*2') ? 'grid-column: span 2;' : a.endsWith('|2') ? 'grid-row: span 2;' : '';
+    const idOf = (a) => a.replace(/[*|]2$/, '');
+    const layouts = Object.entries(LAYOUTS).map(([id, l]) => ({
+      name: l.name,
+      pick: () => set({ layout: id }),
+      style: `padding: 8px; display: flex; flex-direction: column; align-items: stretch; gap: 6px; border-radius: 6px; border: 2px solid ${st.layout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.layout === id ? '#1d3b40' : '#1e2127'}; color: ${st.layout === id ? '#dff4f6' : '#d4d5d8'}; text-align: left;`,
+      thumb: `height: 54px; display: grid; gap: 3px; padding: 3px; box-sizing: border-box; border-radius: 3px; background: #000; grid-template-columns: ${l.cols}; grid-template-rows: ${l.rows};`,
+      cells: l.areas.map((a) => `${span(a)} border-radius: 2px; background: ${idOf(a) === 'msg' ? '#5a5c62' : '#343944'};`)
+    }));
+    const lay = LAYOUTS[st.layout];
+    const zones = lay.areas.filter((a) => st.show[idOf(a)]).map((a) => {
+      const id = idOf(a);
+      const it = ITEMS[id];
+      const on = st.sel === id;
+      const mono = id === 'timer' || id === 'clock';
+      return {
+        name: it.name, label: it.label, value: it.value,
+        pick: () => set({ sel: id }),
+        box: `${span(a)} min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px; border-radius: 6px; background: #0b0b0c; border: 2px ${on ? 'solid #4fb3bf' : 'dashed #2c3038'}; color: #ffffff;`,
+        labelStyle: it.label ? 'font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #8e9096;' : 'display: none;',
+        valueStyle: `font-size: ${Math.round(st.size[id] * 0.62)}px; font-weight: 700; line-height: 1.08; text-align: center; color: ${st.colour[id]}; ${mono ? 'font-family: Consolas, monospace;' : ''} max-width: 100%;`
+      };
+    });
+    const items = Object.entries(ITEMS).map(([id, it]) => ({
+      name: it.name, note: it.note, on: !!st.show[id],
+      toggle: () => set({ show: { ...st.show, [id]: !st.show[id] } }),
+      pick: () => set({ sel: id }),
+      row: `height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 6px; border: 1px solid ${st.sel === id ? '#4fb3bf' : '#2c3038'}; background: ${st.sel === id ? '#1d3b40' : '#1e2127'}; color: #e4e5e7;`
+    }));
+    const colours = [['#ffffff', 'White'], ['#ffd84d', 'Yellow'], ['#ff5a4f', 'Red'], ['#4fb3bf', 'Teal'], ['#7ee08a', 'Green']].map(([hex, name]) => ({
+      name, pick: () => set({ colour: { ...st.colour, [st.sel]: hex } }),
+      style: `width: 24px; height: 24px; padding: 0; border-radius: 4px; background: ${hex}; border: 2px solid ${st.colour[st.sel] === hex ? '#4fb3bf' : '#2c3038'};`
+    }));
+    return {
+      layouts, zones, items, colours,
+      selName: ITEMS[st.sel].name.toUpperCase(),
+      selSize: st.size[st.sel],
+      onSize: (e) => set({ size: { ...st.size, [st.sel]: Number(e.target.value) } }),
+      selTimer: st.sel === 'timer', selClock: st.sel === 'clock',
+      stage: `height: 461px; display: grid; gap: 14px; padding: 20px; box-sizing: border-box; border-radius: 8px; background: #000; border: 1px solid #2c3038; grid-template-columns: ${lay.cols}; grid-template-rows: ${lay.rows};`
+    };
+  }
+}
+</script>
+</body>
+</html>

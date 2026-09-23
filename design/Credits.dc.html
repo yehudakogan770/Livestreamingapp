@@ -41,10 +41,10 @@ input[type=range]{accent-color:#4fb3bf}
         <div style="flex-grow: 1;"></div>
         <button style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Import from spreadsheet…</button>
       </div>
-      <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 3px; padding: 8px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+      <div style="flex-grow: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding: 8px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
         <sc-for list="{{rows}}" as="r" hint-placeholder-count="14">
           <div onClick="{{r.pick}}" style="{{r.row}}">
-            <span style="width: 10px; color: #5a5c62; font-size: 11px; letter-spacing: -2px;">⋮⋮</span>
+            <span style="width: 16px; flex-shrink: 0; color: #5a5c62; font-size: 11px; letter-spacing: -2px;">⋮⋮</span>
             <sc-if value="{{r.isLogo}}" hint-placeholder-val="{{false}}">
               <span style="width: 44px; height: 24px; flex-shrink: 0; border-radius: 3px; background: #3a3240; display: flex; align-items: center; justify-content: center; font-size: 9px; color: rgba(255,255,255,0.7);">LOGO</span>
             </sc-if>

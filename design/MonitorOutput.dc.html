@@ -10,73 +10,74 @@
 <helmet>
 <style>
 body{margin:0;background:#000;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
-button{font-family:inherit;cursor:pointer;background-image:none;box-shadow:none}
+button{font-family:inherit;cursor:pointer}
 @keyframes lumflash{0%,49%{opacity:1}50%,100%{opacity:.12}}
 </style>
 </helmet>
 <div style="width: 1440px; height: 810px; box-sizing: border-box; background: #000000; position: relative; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; color: #ffffff;">
 
-  <!-- Content layer -->
-  <div style="{{contentStyle}}">
-    <!-- Clock -->
-    <div style="position: absolute; top: 36px; right: 48px; display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
-      <span style="font-family: Consolas, monospace; font-size: 64px; font-weight: 700; line-height: 1; color: #ffffff;">19:42</span>
-      <span style="font-size: 16px; font-weight: 600; letter-spacing: 0.08em; color: #a9abb0;">TIME NOW</span>
-    </div>
-
-    <!-- Main message -->
-    <div style="position: absolute; left: 96px; right: 96px; top: 150px; bottom: 250px; display: flex; align-items: center; justify-content: center;">
-      <span style="font-size: 132px; font-weight: 700; line-height: 1.08; text-align: center; color: #ffffff;">{{message}}</span>
-    </div>
-
-    <!-- Countdown -->
-    <div style="position: absolute; left: 0; right: 0; bottom: 84px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
-      <span style="font-size: 16px; font-weight: 600; letter-spacing: 0.1em; color: #a9abb0;">TIME LEFT IN THIS SEGMENT</span>
-      <span style="{{countStyle}}">{{countdown}}</span>
-    </div>
-
-    <!-- Next up -->
-    <div style="position: absolute; left: 48px; bottom: 36px; display: flex; align-items: baseline; gap: 12px;">
-      <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">NEXT UP</span>
-      <span style="font-size: 26px; font-weight: 600; color: #d4d5d8;">[Next speaker] · Video: [Video name]</span>
-    </div>
+  <div style="{{frame}}">
+    <sc-for list="{{zones}}" as="z" hint-placeholder-count="3">
+      <div style="{{z.box}}">
+        <span style="{{z.labelStyle}}">{{z.label}}</span>
+        <span style="{{z.valueStyle}}">{{z.value}}</span>
+      </div>
+    </sc-for>
   </div>
 
-  <!-- Flash border -->
   <sc-if value="{{isFlash}}" hint-placeholder-val="{{false}}">
     <div style="{{flashStyle}}"></div>
   </sc-if>
 
-  <!-- Preview-state switch (designer only; not part of the real output) -->
-  <div style="position: absolute; left: 16px; top: 16px; display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038; opacity: 0.9;">
-    <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; padding: 0 6px;">PREVIEW STATE</span>
+  <!-- Designer-only switches (not part of the real output) -->
+  <div style="position: absolute; left: 12px; bottom: 12px; display: flex; align-items: center; gap: 6px; padding: 4px; border-radius: 6px; background: #1a1d22; border: 1px solid #2c3038; opacity: 0.92;">
+    <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096; padding: 0 6px;">PREVIEW</span>
+    <sc-for list="{{layouts}}" as="l" hint-placeholder-count="4">
+      <button onClick="{{l.pick}}" style="{{l.style}}">{{l.label}}</button>
+    </sc-for>
+    <span style="width: 1px; height: 18px; background: #2c3038;"></span>
     <sc-for list="{{states}}" as="s" hint-placeholder-count="3">
       <button onClick="{{s.pick}}" style="{{s.style}}">{{s.label}}</button>
     </sc-for>
-    <button onClick="{{cycleMsg}}" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #d4d5d8; font-size: 11px;">Next message</button>
   </div>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":810}}'>
 class Component extends DCLogic {
-  constructor(props) { super(props); this.state = { mode: 'normal', msg: 0 }; }
+  constructor(props) { super(props); this.state = { mode: 'normal', layout: 'stack' }; }
   renderVals() {
     const st = this.state;
-    const MSGS = ['5 minutes left', 'Please wrap up', 'Look at camera 2', 'Stand by', 'Thank you!'];
     const dim = st.mode === 'dim';
-    const states = [['normal', 'Normal'], ['flash', 'Flash'], ['dim', 'Dimmed (panic)']].map(([id, label]) => {
-      const on = st.mode === id;
-      return { label, pick: () => this.setState({ mode: id }), style: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;` };
-    });
+    const W = {
+      msg: { label: '', value: '5 minutes left' },
+      timer: { label: 'TIME LEFT', value: '04:58' },
+      clock: { label: 'TIME NOW', value: '19:42' },
+      next: { label: 'NEXT UP', value: '[Next speaker] · [Video name]' }
+    };
+    const box = (extra) => `display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 0; overflow: hidden; border-radius: 10px; background: #0b0b0c; ${extra}`;
+    const lab = 'font-size: 20px; font-weight: 700; letter-spacing: 0.12em; color: #8e9096;';
+    const val = (size, mono) => `font-size: ${size}px; font-weight: 700; line-height: 1.08; text-align: center; color: #ffffff; ${mono ? 'font-family: Consolas, monospace;' : ''} max-width: 100%;`;
+    const L = {
+      full: { frame: 'grid-template-columns: 1fr; grid-template-rows: 1fr auto;', zones: [['msg', 'grid-column: 1;', 128], ['clock', 'grid-column: 1; flex-direction: row; gap: 18px; padding: 14px;', 44]] },
+      stack: { frame: 'grid-template-columns: 1fr 1fr; grid-template-rows: 1.6fr 1fr;', zones: [['msg', 'grid-column: 1 / span 2;', 116], ['timer', '', 120], ['clock', '', 120]] },
+      split: { frame: 'grid-template-columns: 1.5fr 1fr; grid-template-rows: 1fr 1fr;', zones: [['msg', 'grid-row: 1 / span 2;', 104], ['timer', '', 112], ['clock', '', 112]] },
+      grid: { frame: 'grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;', zones: [['msg', '', 72], ['timer', '', 120], ['clock', '', 120], ['next', '', 40]] }
+    };
+    const lay = L[st.layout];
+    const zones = lay.zones.map(([id, extra, size]) => ({
+      label: W[id].label, value: W[id].value,
+      box: box(extra),
+      labelStyle: W[id].label ? lab : 'display: none;',
+      valueStyle: val(size, id === 'timer' || id === 'clock')
+    }));
+    const btn = (on) => `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#1d3b40' : '#1e2127'}; color: ${on ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
     return {
-      states,
-      message: MSGS[st.msg],
-      cycleMsg: () => this.setState({ msg: (st.msg + 1) % MSGS.length }),
-      countdown: '04:58',
+      zones,
+      frame: `position: absolute; inset: 0; display: grid; gap: 18px; padding: 28px; box-sizing: border-box; ${lay.frame} opacity: ${dim ? 0.22 : 1};`,
+      layouts: [['full', 'Message only'], ['stack', 'Message + timer + clock'], ['split', 'Side by side'], ['grid', '4 zones']].map(([id, label]) => ({ label, pick: () => this.setState({ layout: id }), style: btn(st.layout === id) })),
+      states: [['normal', 'Normal'], ['flash', 'Flash'], ['dim', 'Dimmed']].map(([id, label]) => ({ label, pick: () => this.setState({ mode: id }), style: btn(st.mode === id) })),
       isFlash: st.mode === 'flash',
-      contentStyle: `position: absolute; inset: 0; opacity: ${dim ? 0.22 : 1};`,
-      countStyle: 'font-family: Consolas, monospace; font-size: 96px; font-weight: 700; line-height: 1; color: #ffffff;',
-      flashStyle: `position: absolute; inset: 0; border: 28px solid #ffffff; box-sizing: border-box; pointer-events: none; animation: lumflash 0.9s linear infinite;`
+      flashStyle: 'position: absolute; inset: 0; border: 28px solid #ffffff; box-sizing: border-box; pointer-events: none; animation: lumflash 0.9s linear infinite;'
     };
   }
 }

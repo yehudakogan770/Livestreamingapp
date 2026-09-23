@@ -48,7 +48,7 @@ input[type=range]{accent-color:#4fb3bf}
       <div style="flex-grow: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 4px; padding: 0 10px 10px;">
         <sc-for list="{{items}}" as="it" hint-placeholder-count="12">
           <div onClick="{{it.pick}}" style="{{it.row}}">
-            <span style="width: 10px; color: #5a5c62; font-size: 11px; letter-spacing: -2px;">⋮⋮</span>
+            <span style="width: 16px; flex-shrink: 0; color: #5a5c62; font-size: 11px; letter-spacing: -2px;">⋮⋮</span>
             <span style="width: 18px; font-family: Consolas, monospace; font-size: 11px; color: #8e9096; text-align: right;">{{it.num}}</span>
             <div style="{{it.thumb}}">{{it.thumbLabel}}</div>
             <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px;">

@@ -187,16 +187,21 @@ input[type=checkbox]{accent-color:#4fb3bf}
       <div style="flex-grow: 1; min-height: 0; display: flex; gap: 12px;">
         <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
 
+          <!-- Back-screen loop strip (only on Back Screen) -->
+          <sc-if value="{{isBack}}" hint-placeholder-val="{{false}}">
+            <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+              <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; white-space: nowrap;">BACK-SCREEN LOOP</span>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Energy<input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="width: 90px;"></label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Speed<input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="width: 90px;"></label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Brightness<input type="range" min="0" max="100" value="70" aria-label="Loop brightness" style="width: 90px;"></label>
+              <button onClick="{{toggleFollow}}" style="{{followStyle}}">Follow the music</button>
+              <div style="flex-grow: 1;"></div>
+              <a href="BackLoops.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">More…</a>
+            </div>
+          </sc-if>
           <!-- Quick action strip -->
           <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-              <sc-if value="{{isBack}}" hint-placeholder-val="{{false}}">
-                <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">LOOP</span>
-                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a9abb0;">Energy<input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="width: 64px;"></label>
-                <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a9abb0;">Speed<input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="width: 64px;"></label>
-                <button onClick="{{toggleFollow}}" style="{{followStyle}}">Follow music</button>
-                <a href="BackLoops.dc.html" style="font-size: 11px; text-decoration: none; padding-right: 6px;">Loops…</a>
-              </sc-if>
               <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em; padding-right: 2px;">PRESET</span>
               <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
                 <button style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2d5a61; background: #1d3b40; color: #dff4f6; font-size: 11px; font-weight: 600; white-space: nowrap;">{{b}}</button>
@@ -254,16 +259,32 @@ input[type=checkbox]{accent-color:#4fb3bf}
                   </sc-for>
                 </div>
               </div>
-              <div style="width: 210px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; box-sizing: border-box;">
-                <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">COUNTDOWN</span>
-                <span style="font-family: Consolas, monospace; font-size: 34px; font-weight: 700; color: #ffffff; text-align: center;">{{countdown}}</span>
-                <div style="display: flex; gap: 4px;">
-                  <button onClick="{{subMinute}}" style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">−1 min</button>
-                  <button onClick="{{addMinute}}" style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">+1 min</button>
-                  <button style="flex-grow: 1; height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">Reset</button>
+              <div style="width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; box-sizing: border-box;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">MONITOR LAYOUT</span>
+                  <a href="MonitorLayout.dc.html" style="font-size: 11px; text-decoration: none;">Edit layout…</a>
                 </div>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{countdownOn}}" onChange="{{toggleCountdown}}"> Show countdown</label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{clockOn}}" onChange="{{toggleClock}}"> Show clock</label>
+                <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
+                  <sc-for list="{{monLayouts}}" as="l" hint-placeholder-count="3">
+                    <button onClick="{{l.pick}}" aria-label="{{l.name}}" style="{{l.style}}"><span style="{{l.thumb}}"></span><span style="font-size: 10px; white-space: nowrap;">{{l.name}}</span></button>
+                  </sc-for>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px;">
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{true}}"> Message</label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{clockOn}}" onChange="{{toggleClock}}"> Clock</label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{countdownOn}}" onChange="{{toggleCountdown}}"> Timer</label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox"> Next up</label>
+                </div>
+                <div style="height: 1px; background: #2c3038;"></div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 10px; font-weight: 700; color: #8e9096; letter-spacing: 0.08em;">TIMER · TIME LEFT</span>
+                  <span style="font-family: Consolas, monospace; font-size: 26px; font-weight: 700; color: #ffffff;">{{countdown}}</span>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <button onClick="{{subMinute}}" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">−1 min</button>
+                  <button onClick="{{addMinute}}" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">+1 min</button>
+                  <a href="Timer.dc.html" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;">Timer…</a>
+                </div>
               </div>
             </div>
           </sc-if>
@@ -335,7 +356,7 @@ class Component extends DCLogic {
       ovl: { 1: 'logo', 2: null, 3: null, 4: null },
       vol: { master: 82, cam1: 70, cam2: 60, vid1: 78, vid2: 74, phone: 50 },
       muted: { phone: true }, afv: { vid1: true, vid2: true },
-      draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
+      monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
     };
   }
   renderVals() {
@@ -355,7 +376,7 @@ class Component extends DCLogic {
       browser: { name: 'Browser tab', sub: 'Chrome · controlled', kind: 'WEB', tone: '#30363f' },
       logo: { name: 'Logo bug', sub: 'Overlay', kind: 'OVERLAY', tone: '#3a3240' },
       lower: { name: 'Lower third', sub: 'Name + title', kind: 'TITLE', tone: '#3a3240' },
-      timer: { name: 'Countdown', sub: 'Timer', kind: 'TIMER', tone: '#2f3440' },
+      timer: { name: 'Hype countdown', sub: 'Countdown · 04:58 left', kind: 'TIMER', tone: '#1c2440' },
       black: { name: 'Black', sub: 'Solid colour', kind: 'COLOUR', tone: '#0c0d10' },
       loop1: { name: 'Aurora loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#27403f' },
       loop2: { name: 'Particles loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#2c3450' },
@@ -500,9 +521,14 @@ class Component extends DCLogic {
 
     return {
       tabs, presets, transitions, inputs, channels, ovlChannels, overlayLayers, blankOpts,
+      monLayouts: [['full', 'Message'], ['stack', 'Msg + time'], ['split', 'Side by side']].map(([id, name]) => ({
+        name, pick: () => set({ monLayout: id }),
+        style: `padding: 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${st.monLayout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.monLayout === id ? '#1d3b40' : '#262a31'}; color: ${st.monLayout === id ? '#dff4f6' : '#d4d5d8'};`,
+        thumb: `width: 100%; height: 30px; border-radius: 2px; background: #000; box-shadow: ${id === 'full' ? 'inset 0 0 0 7px #000, inset 0 0 0 9px #555' : id === 'stack' ? 'inset 0 -9px 0 #444, inset 0 0 0 1px #333' : 'inset -26px 0 0 #444, inset 0 0 0 1px #333'};`
+      })),
       isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
       toggleFollow: () => set({ follow: !st.follow }),
-      followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#1d3b40' : '#2a2e36'}; color: ${st.follow ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600;`,
+      followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#1d3b40' : '#2a2e36'}; color: ${st.follow ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
       onQuickPick: (e) => { if (e.target.value) set({ draft: e.target.value }); },
       miniMon: `position: relative; height: 118px; border-radius: 4px; background: #000; border: 1px solid ${st.flashing ? '#ffffff' : '#c7372f'}; display: flex; align-items: center; justify-content: center; opacity: ${st.panic ? 0.35 : 1};`,
       setSimple: () => set({ mode: 'simple' }), setAdvanced: () => set({ mode: 'advanced' }),

@@ -197,13 +197,13 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
           <input aria-label="Colour hex" value="{{sel.color}}" style="width: 66px; height: 24px; padding: 0 5px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 11px; outline: none; box-sizing: border-box;">
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="width: 58px; display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{sel.outline}}" onChange="{{toggleOutline}}" style="width: 14px; height: 14px;">Outline</label>
+          <label style="width: 76px; display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{sel.outline}}" onChange="{{toggleOutline}}" style="width: 14px; height: 14px;">Outline</label>
           <input type="range" min="0" max="8" value="{{sel.outlineW}}" onInput="{{onOutlineW}}" aria-label="Outline width" style="flex-grow: 1; margin: 0;">
           <span style="width: 26px; font-family: Consolas, monospace; font-size: 11px; color: #d4d5d8;">{{outlineLabel}}</span>
           <span style="width: 22px; height: 22px; border-radius: 4px; background: #000000; border: 1px solid #3a3f48;"></span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="width: 58px; display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{sel.shadow}}" onChange="{{toggleShadow}}" style="width: 14px; height: 14px;">Shadow</label>
+          <label style="width: 76px; display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a9abb0;"><input type="checkbox" checked="{{sel.shadow}}" onChange="{{toggleShadow}}" style="width: 14px; height: 14px;">Shadow</label>
           <select aria-label="Shadow style" style="flex-grow: 1; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px;"><option>Soft · blur 8 · offset 2</option><option>Hard · offset 3</option><option>Glow-free long shadow</option></select>
           <span style="width: 22px; height: 22px; border-radius: 4px; background: #000000; border: 1px solid #3a3f48;"></span>
         </div>

@@ -27,8 +27,8 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
   </div>
 
   <!-- Transport -->
-  <div style="height: 88px; flex-shrink: 0; display: flex; align-items: center; gap: 20px; padding: 0 24px; background: #1e2127; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
-    <div style="display: flex; flex-direction: column; gap: 2px; width: 150px;">
+  <div style="height: 100px; flex-shrink: 0; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: #1e2127; border-bottom: 1px solid #2c3038; box-sizing: border-box;">
+    <div style="display: flex; flex-direction: column; gap: 2px; width: 180px; flex-shrink: 0;">
       <span style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">EVENT CLOCK</span>
       <span style="font-family: Consolas, monospace; font-size: 32px; font-weight: 700; color: #ffffff; line-height: 1;">19:42:05</span>
     </div>
@@ -90,7 +90,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
           <span style="width: 62px;">LENGTH</span>
           <span style="width: 150px;">NAME</span>
           <span style="flex-grow: 1;">WHAT IT DOES</span>
-          <span style="width: 150px;">SCREENS</span>
+          <span style="width: 176px; flex-shrink: 0;">SCREENS</span>
           <span style="width: 128px;">TRIGGER</span>
           <span style="width: 62px;">STATUS</span>
         </div>
@@ -109,7 +109,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
                 <span style="width: 62px; font-family: Consolas, monospace; font-size: 12px; color: #a9abb0;">{{r.dur}}</span>
                 <span style="width: 150px; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.name}}</span>
                 <span style="flex-grow: 1; min-width: 0; font-size: 12px; color: #d4d5d8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.does}}</span>
-                <span style="width: 150px; display: flex; gap: 4px;">
+                <span style="width: 176px; flex-shrink: 0; display: flex; gap: 4px;">
                   <sc-for list="{{r.chips}}" as="c" hint-placeholder-count="2"><span style="{{c.style}}">{{c.name}}</span></sc-for>
                 </span>
                 <span style="width: 128px; font-size: 12px; color: #a9abb0;">{{r.trigger}}</span>
@@ -121,7 +121,7 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
       </div>
 
       <!-- Timeline -->
-      <div style="height: 138px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; border: 1px solid #2c3038; border-radius: 6px; background: #1e2127; box-sizing: border-box;">
+      <div style="height: 158px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; padding: 10px 12px 12px; border: 1px solid #2c3038; border-radius: 6px; background: #1e2127; box-sizing: border-box;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: #8e9096;">TIMELINE</span>
           <span style="font-size: 12px; color: #8e9096;">19:00 – 20:45 · drag a block to move a cue, drag its edge to change length</span>
@@ -166,11 +166,11 @@ input[type=checkbox],input[type=range]{accent-color:#4fb3bf}
           <input value="{{sel.name}}" onInput="{{onName}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 14px; outline: none;">
         </label>
         <div style="display: flex; gap: 10px;">
-          <label style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+          <label style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;">
             <span style="font-size: 12px; color: #a9abb0;">Start</span>
             <input value="{{sel.time}}" onInput="{{onTime}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 14px; outline: none; min-width: 0;">
           </label>
-          <label style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+          <label style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px;">
             <span style="font-size: 12px; color: #a9abb0;">Duration</span>
             <input value="{{sel.dur}}" onInput="{{onDur}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 14px; outline: none; min-width: 0;">
           </label>

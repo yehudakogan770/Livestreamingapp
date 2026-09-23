@@ -117,13 +117,13 @@
     "Timer.dc.html": {
       "x": 1520,
       "y": 3960,
-      "w": 1160,
-      "h": 800,
-      "title": "Timer designer",
+      "w": 1440,
+      "h": 900,
+      "title": "Hype countdown (big screens)",
       "is_interactive": true
     },
     "BackLoops.dc.html": {
-      "x": 2760,
+      "x": 3040,
       "y": 3960,
       "w": 1160,
       "h": 800,
@@ -131,7 +131,7 @@
       "is_interactive": true
     },
     "Credits.dc.html": {
-      "x": 4000,
+      "x": 4280,
       "y": 3960,
       "w": 1160,
       "h": 800,
@@ -139,7 +139,7 @@
       "is_interactive": true
     },
     "LogoMaker.dc.html": {
-      "x": 5240,
+      "x": 5520,
       "y": 3960,
       "w": 1160,
       "h": 800,
@@ -187,7 +187,7 @@
       "is_interactive": true
     },
     "TabletRemote.dc.html": {
-      "x": 1520,
+      "x": 3040,
       "y": 6560,
       "w": 1180,
       "h": 820,
@@ -195,7 +195,7 @@
       "is_interactive": true
     },
     "PhoneRemote.dc.html": {
-      "x": 2780,
+      "x": 4300,
       "y": 6560,
       "w": 390,
       "h": 844,
@@ -203,7 +203,7 @@
       "is_interactive": true
     },
     "PhoneCamera.dc.html": {
-      "x": 3250,
+      "x": 4770,
       "y": 6560,
       "w": 390,
       "h": 844,
@@ -233,6 +233,14 @@
       "h": 2600,
       "title": "Product website",
       "is_interactive": true
+    },
+    "MonitorLayout.dc.html": {
+      "x": 1520,
+      "y": 6560,
+      "w": 1440,
+      "h": 900,
+      "title": "Monitor layout (several things at once)",
+      "is_interactive": true
     }
   },
   "order": [
@@ -258,6 +266,7 @@
     "Settings.dc.html",
     "Devices.dc.html",
     "MonitorOutput.dc.html",
+    "MonitorLayout.dc.html",
     "TabletRemote.dc.html",
     "PhoneRemote.dc.html",
     "PhoneCamera.dc.html",
@@ -292,7 +301,7 @@
       "y": 3660,
       "text": "Scenes, timer, loops, credits & 3D logo",
       "kind": "title1",
-      "maxW": 6400
+      "maxW": 6680
     },
     "row4": {
       "x": 0,
@@ -306,7 +315,7 @@
       "y": 6260,
       "text": "Outputs & remote control",
       "kind": "title1",
-      "maxW": 3640
+      "maxW": 5160
     },
     "row6": {
       "x": 0,
@@ -316,7 +325,7 @@
       "maxW": 4000
     },
     "next": {
-      "x": 6600,
+      "x": 6880,
       "y": 3960,
       "w": 420,
       "text": "Still to design:\n\u2022 Lumora logo options \u2014 for your approval",
