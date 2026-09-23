@@ -248,6 +248,14 @@
       "w": 1440,
       "x": 4960,
       "y": 0
+    },
+    "LogoRound2.dc.html": {
+      "h": 1160,
+      "is_interactive": true,
+      "title": "Lumora logo — round 2 (from 2 + 5)",
+      "w": 1440,
+      "x": 6480,
+      "y": 0
     }
   },
   "createdOnFiles": {
@@ -261,7 +269,7 @@
   "notes": {
     "row0": {
       "kind": "title1",
-      "maxW": 6400,
+      "maxW": 7920,
       "text": "Running the event",
       "w": 240,
       "x": 0,
@@ -347,7 +355,8 @@
     "Manual.dc.html",
     "Website.dc.html",
     "Scene.dc.html",
-    "LogoOptions.dc.html"
+    "LogoOptions.dc.html",
+    "LogoRound2.dc.html"
   ],
   "pages": [],
   "title": "Lumora — System Design"
