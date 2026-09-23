@@ -93,7 +93,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
         <button onClick="{{add5}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">+5 min</button>
         <button onClick="{{jump10}}" style="height: 44px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; font-weight: 600;">Jump to last 10 s</button>
         <div style="flex-grow: 1;"></div>
-        <button style="height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 600; letter-spacing: 0.04em;">Send to screens</button>
+        <button onClick="{{sendNow}}" style="{{sendStyle}}">{{sendLabel}}</button>
       </div>
 
       <!-- Count down to -->
@@ -185,6 +185,14 @@ class Component extends DCLogic {
     };
   }
   renderVals() {
+    const out = this._rv();
+    const sent = !!this.state.sent;
+    return { ...out,
+      sendNow: () => { clearTimeout(this._sentT); this.setState({ sent: true }); this._sentT = setTimeout(() => this.setState({ sent: false }), 2500); },
+      sendLabel: sent ? 'On Live + Back ✓' : 'Send to screens',
+      sendStyle: `height: 44px; padding: 0 18px; border-radius: 6px; border: 0; background: ${sent ? '#2f8f4e' : '#c7372f'}; color: #ffffff; font-size: 13px; font-weight: 600; letter-spacing: 0.04em;` };
+  }
+  _rv() {
     const st = this.state;
     const set = (p) => this.setState(p);
     const STYLES = {

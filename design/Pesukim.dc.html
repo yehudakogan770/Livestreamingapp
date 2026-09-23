@@ -120,7 +120,7 @@ input[type=range],input[type=checkbox]{accent-color:#4fb3bf}
         <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Regular buttons</span>
         <div style="display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 6px;">
           <sc-for list="{{regular}}" as="r" hint-placeholder-count="10">
-            <button style="height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #262a31; color: #e4e5e7; font-size: 12px; font-weight: 600; padding: 0 4px; white-space: nowrap;">{{r}}</button>
+            <button onClick="{{r.pick}}" style="{{r.style}}">{{r.name}}</button>
           </sc-for>
         </div>
       </div>
@@ -241,7 +241,7 @@ class Component extends DCLogic {
     const withStrip = st.mode === 'strip' && !whole;
     const bigText = whole ? words.join(' ') : st.keepSaid ? words.slice(0, w + 1).join(' ') : (words[w] || '');
     const bigSize = whole || st.keepSaid ? Math.round(st.size * 0.42) : st.size;
-    const cols = [['#ffe39e', 'Gold'], ['#ffffff', 'White'], ['#9fe0ff', 'Light blue']];
+    const cols = [['#ffe39e', 'Gold text'], ['#ffffff', 'White text'], ['#9fe0ff', 'Light blue text']];
     const btn = (on) => `height: 64px; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: #e4e5e7; font-size: 14px; font-weight: 600; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;`;
     const atEnd = w >= len - 1;
     return {
@@ -274,7 +274,7 @@ class Component extends DCLogic {
       childName: st.kids[st.cur] || '', onChild: (e) => set({ kids: { ...st.kids, [st.cur]: e.target.value } }),
       rawText: st.text[st.cur] || '', onText: (e) => set({ text: { ...st.text, [st.cur]: e.target.value } }),
       stage: `position: relative; width: 832px; height: 468px; flex-shrink: 0; border-radius: 6px; overflow: hidden; border: 2px solid #c7372f; box-sizing: border-box; background-color: ${BG[st.bg]};`,
-      regular: ['Camera 1', 'Camera 2', 'Camera 3', 'Vid 1', 'Vid 2', 'Vid 3', 'Vid 4', 'Overlay 1', 'Overlay 2', 'Split']
+      regular: ['Camera 1', 'Camera 2', 'Camera 3', 'Vid 1', 'Vid 2', 'Vid 3', 'Vid 4', 'Overlay 1', 'Overlay 2', 'Split'].map((name) => { const on = st.reg === name; return { name, pick: () => set({ reg: on ? null : name }), style: `height: 36px; border-radius: 6px; border: 1px solid ${on ? '#c7372f' : '#2c3038'}; background-color: ${on ? '#3a1a18' : '#262a31'}; color: #e4e5e7; font-size: 12px; font-weight: 600; padding: 0 4px; white-space: nowrap;` }; })
     };
   }
 }

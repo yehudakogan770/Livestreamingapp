@@ -85,7 +85,7 @@ button,select{font-family:inherit}
 
   <div style="display: flex; gap: 8px;">
     <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
-      <button style="flex-grow: 1; height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #243039; color: #ffffff; font-size: 12px; font-weight: 600;">{{b}}</button>
+      <button onClick="{{b.pick}}" style="{{b.style}}">{{b.name}}</button>
     </sc-for>
   </div>
 
@@ -145,7 +145,7 @@ class Component extends DCLogic {
       presetName: PRESETS[st.preset],
       prevPreset: () => this.setState({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
       nextPreset: () => this.setState({ preset: (st.preset + 1) % PRESETS.length }),
-      presetButtons: ['Button 1', 'Button 2', 'Button 3'],
+      presetButtons: ['Button 1', 'Button 2', 'Button 3'].map((name, i) => ({ name, pick: () => this.setState({ pbtn: st.pbtn === i ? null : i }), style: `flex-grow: 1; height: 44px; border-radius: 6px; border: 1px solid ${st.pbtn === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.pbtn === i ? '#2a7f89' : '#243039'}; color: #ffffff; font-size: 12px; font-weight: 600;` })),
       take: () => this.setState({ pg: st.pv, pv: st.pg }),
       toggleBlank: () => this.setState({ blank: !st.blank }),
       blankText: st.blank ? 'Unblank' : 'Blank',

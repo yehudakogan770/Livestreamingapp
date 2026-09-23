@@ -172,8 +172,8 @@ input[type=checkbox]{accent-color:#4fb3bf}
 
         <!-- Transitions -->
         <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 24px;">
-          <button onClick="{{take}}" title="Take (Space)" style="height: 46px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.06em;">TAKE</button>
-          <button onClick="{{take}}" title="Cut (Enter)" style="height: 32px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;">CUT</button>
+          <button onClick="{{autoTake}}" title="Take with the chosen transition (Space)" style="height: 46px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.06em;">TAKE</button>
+          <button onClick="{{take}}" title="Cut straight across, no transition (Enter)" style="height: 32px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;">CUT</button>
           <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
             <sc-for list="{{transitions}}" as="tr" hint-placeholder-count="4">
               <button onClick="{{tr.pick}}" style="{{tr.style}}"><span style="font-size: 12px; font-weight: 600;">{{tr.name}}</span><span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{tr.dur}}</span></button>
@@ -209,7 +209,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
               <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{pg.scene}}" hint-size="100%,100%"></dc-import></div>
-              <sc-if value="{{tbarActive}}" hint-placeholder-val="{{false}}"><div style="{{tbarOverlay}}"><dc-import name="Scene" kind="{{pv.scene}}" hint-size="100%,100%"></dc-import></div></sc-if><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
+              <sc-if value="{{tbarActive}}" hint-placeholder-val="{{false}}"><div style="{{tbarOverlay}}"><dc-import name="Scene" kind="{{pv.scene}}" hint-size="100%,100%"></dc-import></div><div style="{{tbarDip}}"></div></sc-if><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
               <sc-for list="{{overlayLayers}}" as="o" hint-placeholder-count="1"><div style="{{o.style}}">{{o.label}}</div></sc-for>
             </sc-if>
             <sc-if value="{{pgBlank}}" hint-placeholder-val="{{false}}">
@@ -462,7 +462,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
 class Component extends DCLogic {
   componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); this._tick = setInterval(() => this.tick(), 1000); }
   componentDidUpdate() { this.__fill(); }
-  componentWillUnmount() { clearInterval(this._tick); clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
+  componentWillUnmount() { clearInterval(this._anim); clearInterval(this._tick); clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
   tick() {
     const DUR = { vid1: 130, vid2: 45, vid3: 252, loop1: 30, loop2: 40 };
     this.setState((st) => {
@@ -495,7 +495,7 @@ class Component extends DCLogic {
   drag(key, vertical, apply, done) {
     const calc = (e) => { const r = e.currentTarget.getBoundingClientRect(); const f = vertical ? (r.bottom - 6 - e.clientY) / (r.height - 12) : (e.clientX - r.left - 12) / (r.width - 24); return Math.round(Math.max(0, Math.min(1, f)) * 100); };
     return {
-      down: (e) => { e.preventDefault(); try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} this._dragKey = key; apply(calc(e)); },
+      down: (e) => { e.preventDefault(); if (key === 'tbar' && this._anim) { clearInterval(this._anim); this._anim = null; } try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} this._dragKey = key; apply(calc(e)); },
       move: (e) => { if (this._dragKey === key) apply(calc(e)); },
       up: (e) => { if (this._dragKey === key) { this._dragKey = null; if (done) done(calc(e)); } }
     };
@@ -504,6 +504,12 @@ class Component extends DCLogic {
     const a = { live: 0, back: 1, monitor: 2 }[this.state.tab] || 0;
     const c = (i) => i === a ? '#4fb3bf' : '#ffffff', o = (i) => i === a ? '1' : String([0.8, 0.5][(i - a + 2) % 3] || 0.8);
     return { c0: c(0), c1: c(1), c2: c(2), o0: o(0), o1: o(1), o2: o(2) };
+  }
+  takeNow() {
+    const st = this.state;
+    if (st.tab === 'monitor') { this.setState({ monitorText: st.draft, tbar: 0 }); return; }
+    const sc = st.screens[st.tab];
+    this.setState({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100 });
   }
   renderVals() { return { ...this._rv(), logo: this.logoVals() }; }
   _rv() {
@@ -551,7 +557,7 @@ class Component extends DCLogic {
       return {
         name, where, key, on, onAirName: dark && !dimmed ? '' : onAirName,
         scene: id === 'monitor' ? 'black' : ((SRC[scr.pg] || {}).scene || 'black'), isText: id === 'monitor', monText: st.monitorText, dark: dark,
-        pick: () => set({ tab: id, tbar: 0 }),
+        pick: () => { clearInterval(this._anim); this._anim = null; set({ tab: id, tbar: 0 }); },
         status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : 'ON AIR',
         badge: `height: 15px; padding: 0 5px; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : '#c7372f'}; color: #ffffff;`,
         thumb: `position: relative; width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; overflow: hidden; display: block; box-shadow: 0 0 0 1px ${dark ? '#3a3f48' : '#c7372f'};`,
@@ -609,6 +615,7 @@ class Component extends DCLogic {
       slower: () => set({ roll: { ...st.roll, speed: Math.max(0.25, st.roll.speed - 0.25) } }), faster: () => set({ roll: { ...st.roll, speed: Math.min(3, st.roll.speed + 0.25) } }), restartRoll: () => set({ roll: { ...st.roll, on: true } })
     };
     const doTake = () => {
+      clearInterval(this._anim); this._anim = null;
       if (isMon) { set({ monitorText: st.draft, tbar: 0 }); return; }
       set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100 });
     };
@@ -777,7 +784,22 @@ class Component extends DCLogic {
       tbarFill: `position: absolute; left: calc(12px + (100% - 24px) * ${Math.min(tbPos, st.tbarHome) / 100}); top: 50%; height: 4px; margin-top: -2px; width: calc((100% - 24px) * ${st.tbar / 100}); border-radius: 2px; background: #c7372f; pointer-events: none;`,
       tbarCap: `position: absolute; top: 5px; bottom: 5px; width: 18px; left: calc(12px + (100% - 24px) * ${tbPos / 100} - 9px); border-radius: 4px; background: linear-gradient(to right, transparent 8px, #6f737c 8px 10px, transparent 10px), linear-gradient(#f3f4f6, #c3c6cd); border: 1px solid #0c0d10; box-shadow: 0 2px 6px rgba(0,0,0,0.6); pointer-events: none;`,
       tbarActive: st.tbar > 0 && !isMon,
-      tbarOverlay: `position: absolute; inset: 0; opacity: ${st.tbar / 100}; pointer-events: none;`,
+      tbarOverlay: (() => { const t = st.tbar / 100; const base = 'position: absolute; inset: 0; pointer-events: none;';
+        if (st.trans === 'dip') return base + ` opacity: ${t >= 0.5 ? 1 : 0};`;
+        if (st.trans === 'wipe') return base + ` clip-path: inset(0 ${Math.round((1 - t) * 100)}% 0 0); box-shadow: 2px 0 0 #ffffff;`;
+        return base + ` opacity: ${t};`; })(),
+      tbarDip: `position: absolute; inset: 0; pointer-events: none; background: #000; opacity: ${st.trans === 'dip' ? (1 - Math.abs(st.tbar / 50 - 1)).toFixed(2) : 0};`,
+      autoTake: () => {
+        if (isMon || this._anim) { if (isMon) doTake(); return; }
+        const dur = { fade: 800, merge: 1200, dip: 1000, wipe: 600 }[st.trans] || 800;
+        const t0 = performance.now();
+        this._anim = setInterval(() => {
+          const f = Math.min(1, (performance.now() - t0) / dur);
+          if (f >= 1) { clearInterval(this._anim); this._anim = null; this.takeNow(); }
+          else this.setState({ tbar: Math.round(f * 100) });
+        }, 30);
+      },
+      taking: !!this._anim,
       pgBlank,
       blankLayer: `position: absolute; inset: 0; background: ${dimOnly ? 'rgba(0,0,0,0.72)' : '#000'}; display: flex; align-items: center; justify-content: center;`,
       blankText: dimOnly ? 'DIMMED' : 'BLANK',
