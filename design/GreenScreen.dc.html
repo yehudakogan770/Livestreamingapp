@@ -9,6 +9,31 @@
 <x-dc>
 <helmet>
 <style>
+/* lumora-polish:start */
+*{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+::selection{background:#1d3b40;color:#ffffff}
+button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
+button:hover,a[href]:hover{filter:brightness(1.14)}
+button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #4fb3bf;outline-offset:1px}
+input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:#4fb3bf !important;box-shadow:0 0 0 3px rgba(79,179,191,.18)}
+input::placeholder,textarea::placeholder{color:#6f737b}
+select{appearance:none;-webkit-appearance:none;padding-right:26px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a9abb0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 9px center !important;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f333b;border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:#3d424c}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:30px !important;height:17px !important;margin:0;flex-shrink:0;border-radius:9px;border:1px solid #3a3f48;background:#262a31;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#aeb2ba;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:transform .15s ease,background-color .15s ease}
+input[type=checkbox]:checked{background:#2a7f89;border-color:#4fb3bf}
+input[type=checkbox]:checked::before{transform:translateX(13px);background:#ffffff}
+input[type=range]:not(.vrange){appearance:none;-webkit-appearance:none;height:20px;margin:0;cursor:pointer;border-radius:2px;background:linear-gradient(to right,#4fb3bf 0 var(--fill,0%),#0c0d10 var(--fill,0%) 100%) center / 100% 4px no-repeat}
+input[type=range]:not(.vrange)::-webkit-slider-runnable-track{height:20px;background:transparent;border-radius:2px}
+input[type=range]:not(.vrange)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:20px;border-radius:3px;border:1px solid #0c0d10;background:linear-gradient(to right,transparent 4.5px,#6f737c 4.5px 5.5px,transparent 5.5px),linear-gradient(#f3f4f6,#c3c6cd);box-shadow:0 1px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+input[type=range]:not(.vrange):hover::-webkit-slider-thumb{background:linear-gradient(to right,transparent 4.5px,#4fb3bf 4.5px 5.5px,transparent 5.5px),linear-gradient(#ffffff,#d3d6dc)}
+input[type=range]:disabled{opacity:.35;cursor:default}
+/* lumora-polish:end */
+
 button{cursor:pointer;background-image:none;box-shadow:none;font-family:inherit}
 body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
 a{color:#4fb3bf}a:hover{color:#8fd3db}
@@ -156,11 +181,11 @@ input[type=range]{margin:0;height:18px}
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="width: 88px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">Key colour</span>
+        <span style="width: 74px; flex-shrink: 0; font-size: 13px; color: #d4d5d8;">Key colour</span>
         <span style="{{keySwatch}}"></span>
-        <input value="{{keyHex}}" aria-label="Key colour hex" style="width: 84px; height: 32px; box-sizing: border-box; padding: 0 8px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;">
+        <input value="{{keyHex}}" aria-label="Key colour hex" style="width: 72px; min-width: 0; height: 32px; box-sizing: border-box; padding: 0 8px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-family: Consolas, monospace; font-size: 12px; outline: none;">
         <button onClick="{{pickEye}}" aria-label="Pick colour from picture" title="Eyedropper (I)" style="{{eyeBtn}}"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M9.5 1.8l2.7 2.7-1.6 1.6-2.7-2.7z" fill="currentColor"></path><path d="M8.3 4.9L2.6 10.6 2 12l1.4-.6 5.7-5.7" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"></path></svg></button>
-        <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
+        <div style="display: flex; flex-shrink: 0; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
           <sc-for list="{{keyPresets}}" as="p" hint-placeholder-count="2"><button onClick="{{p.pick}}" style="{{p.style}}">{{p.label}}</button></sc-for>
         </div>
       </div>
@@ -214,6 +239,10 @@ input[type=range]{margin:0;height:18px}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidUpdate() { this.__fill(); }
+  componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
+  __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
   constructor(props) {
     super(props);
     this.kdef = { sim: 42, smooth: 18, spill: 60, feather: 12, choke: 6, wrap: 20 };
@@ -304,7 +333,7 @@ class Component extends DCLogic {
       keyHex: keyCol.toUpperCase(),
       pickEye: () => this.setState({ eye: !st.eye }),
       eyeBtn: `width: 32px; height: 32px; flex-shrink: 0; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid ${st.eye ? '#4fb3bf' : '#2c3038'}; background-color: ${st.eye ? '#1d3b40' : '#2a2e36'}; color: ${st.eye ? '#dff4f6' : '#e4e5e7'};`,
-      keyPresets: [['green', 'Green'], ['blue', 'Blue']].map(([id, label]) => ({ label, pick: () => this.setState({ key: id }), style: `height: 30px; padding: 0 8px; border: 0; font-size: 11px; font-weight: 600; background-color: ${st.key === id ? '#1d3b40' : '#2a2e36'}; color: ${st.key === id ? '#dff4f6' : '#d4d5d8'};` })),
+      keyPresets: [['green', 'Green'], ['blue', 'Blue']].map(([id, label]) => ({ label, pick: () => this.setState({ key: id }), style: `height: 30px; padding: 0 6px; border: 0; font-size: 11px; white-space: nowrap; font-weight: 600; background-color: ${st.key === id ? '#1d3b40' : '#2a2e36'}; color: ${st.key === id ? '#dff4f6' : '#d4d5d8'};` })),
       keySliders: kvKeys.map(([key, label]) => { const v = st.kv[key]; const ch = v !== this.kdef[key]; return { label, value: v, valStyle: valStyle(ch), resetStyle: resetStyle(ch),
         onInput: (e) => this.setState({ kv: { ...this.state.kv, [key]: Number(e.target.value) } }), reset: () => this.setState({ kv: { ...this.state.kv, [key]: this.kdef[key] } }) }; }),
       posFields: sel ? [['X', sel.x], ['Y', sel.y], ['W', sel.w], ['H', sel.h]].map(([label, value]) => ({ label, value })) : [],

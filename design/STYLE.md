@@ -42,3 +42,11 @@ Reference artboard for the look and the file format: `project/Main.dc.html` in t
 - Use real `<button>`, `<input>`, `<label>`, `<select>`; `aria-label` on icon-only buttons. Icons: small inline stroke SVG or text glyphs (▶ ❚❚ ✕), never emoji.
 - Make it interactive where cheap (tabs, selections, toggles) so it can be clicked through.
 - Do NOT publish, do NOT touch canvas.json, do NOT edit other agents' files. Only write the files you were assigned.
+
+## Finishing standard (added)
+- Every artboard includes the shared `polish.css` block in its helmet (between `lumora-polish:start/end`):
+  fader-style slider thumbs with a teal filled track (`--fill`, kept in sync by `__fill()`), toggle switches
+  instead of checkboxes, custom dropdown chevrons, hover/press/focus states, thin scrollbars, tabular numbers.
+- Video transports: seek bar with chapter marks, restart, −10 s, play/pause, +10 s, end, elapsed / total / remaining,
+  loop and speed — usable while on air. Live sources (cameras) show the transport disabled with "LIVE".
+- Layout is verified with `check-layout.js` (renders every artboard and reports overlaps, clipped or hidden content).

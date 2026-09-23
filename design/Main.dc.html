@@ -9,6 +9,31 @@
 <x-dc>
 <helmet>
 <style>
+/* lumora-polish:start */
+*{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+::selection{background:#1d3b40;color:#ffffff}
+button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
+button:hover,a[href]:hover{filter:brightness(1.14)}
+button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #4fb3bf;outline-offset:1px}
+input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:#4fb3bf !important;box-shadow:0 0 0 3px rgba(79,179,191,.18)}
+input::placeholder,textarea::placeholder{color:#6f737b}
+select{appearance:none;-webkit-appearance:none;padding-right:26px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a9abb0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 9px center !important;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f333b;border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:#3d424c}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:30px !important;height:17px !important;margin:0;flex-shrink:0;border-radius:9px;border:1px solid #3a3f48;background:#262a31;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#aeb2ba;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:transform .15s ease,background-color .15s ease}
+input[type=checkbox]:checked{background:#2a7f89;border-color:#4fb3bf}
+input[type=checkbox]:checked::before{transform:translateX(13px);background:#ffffff}
+input[type=range]:not(.vrange){appearance:none;-webkit-appearance:none;height:20px;margin:0;cursor:pointer;border-radius:2px;background:linear-gradient(to right,#4fb3bf 0 var(--fill,0%),#0c0d10 var(--fill,0%) 100%) center / 100% 4px no-repeat}
+input[type=range]:not(.vrange)::-webkit-slider-runnable-track{height:20px;background:transparent;border-radius:2px}
+input[type=range]:not(.vrange)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:20px;border-radius:3px;border:1px solid #0c0d10;background:linear-gradient(to right,transparent 4.5px,#6f737c 4.5px 5.5px,transparent 5.5px),linear-gradient(#f3f4f6,#c3c6cd);box-shadow:0 1px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+input[type=range]:not(.vrange):hover::-webkit-slider-thumb{background:linear-gradient(to right,transparent 4.5px,#4fb3bf 4.5px 5.5px,transparent 5.5px),linear-gradient(#ffffff,#d3d6dc)}
+input[type=range]:disabled{opacity:.35;cursor:default}
+/* lumora-polish:end */
+
 body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#e4e5e7}
 a{color:#4fb3bf}a:hover{color:#8fd3db}
 button{font-family:inherit;cursor:pointer}
@@ -118,16 +143,30 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <span style="position: absolute; right: 12px; top: 10px; font-family: Consolas, monospace; font-size: 14px; color: #a9abb0;">19:42</span>
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.8);">{{pv.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pv.sub}}</span></div>
+              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.8);">{{pv.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pv.sub}}</span></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
             </sc-if>
           </div>
-          <div style="height: 24px; display: flex; align-items: center; gap: 4px;">
-            <button aria-label="Play preview" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">▶</button>
-            <button aria-label="Pause preview" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">❚❚</button>
-            <button aria-label="Restart preview" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">⏮</button>
-            <div style="flex-grow: 1; height: 4px; margin: 0 6px; border-radius: 2px; background: #101216;"></div>
-            <span style="font-family: Consolas, monospace; font-size: 11px; color: #a9abb0;">{{pv.time}}</span>
+          <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="position: relative; height: 20px;">
+              <input type="range" min="0" max="1000" value="{{pvT.pos}}" onInput="{{pvT.onSeek}}" disabled="{{pvT.live}}" aria-label="Seek" style="position: absolute; left: 0; top: 0; width: 100%; margin: 0;">
+              <sc-for list="{{pvT.marks}}" as="m" hint-placeholder-count="3"><span style="{{m}}"></span></sc-for>
+            </div>
+            <div style="height: 26px; display: flex; align-items: center; gap: 3px;">
+              <button onClick="{{pvT.restart}}" aria-label="Restart" title="Restart" style="{{pvT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M10 2v8L4.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pvT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pvT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 700;">10</span></button>
+              <button onClick="{{pvT.toggle}}" aria-label="Play or pause" title="Play / pause" style="{{pvT.playBtn}}"><sc-if value="{{pvT.playing}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect><rect x="7.1" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect></svg></sc-if><sc-if value="{{pvT.paused}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"></path></svg></sc-if></button>
+              <button onClick="{{pvT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pvT.btnWide}}"><span style="font-size: 9px; font-weight: 700;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pvT.end}}" aria-label="Jump to end" title="Jump to end" style="{{pvT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="8.4" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M2 2v8l5.5-4z" fill="currentColor"></path></svg></button>
+              <span style="width: 6px;"></span>
+              <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; white-space: nowrap;">{{pvT.elapsed}}<span style="color: #8e9096;">{{pvT.total}}</span></span>
+              <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096; padding-left: 6px; white-space: nowrap;">{{pvT.remain}}</span>
+              <div style="flex-grow: 1;"></div>
+              <button onClick="{{pvT.toggleLoop}}" aria-label="Loop" title="Loop" style="{{pvT.loopStyle}}">Loop</button>
+              <select aria-label="Playback speed" disabled="{{pvT.live}}" style="height: 24px; width: 58px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; padding-left: 6px;"><option>1×</option><option>0.5×</option><option>0.75×</option><option>1.25×</option><option>1.5×</option><option>2×</option></select>
+            </div>
           </div>
+          </sc-if>
         </div>
 
         <!-- Transitions -->
@@ -143,7 +182,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
             <div style="display: flex; flex-direction: column; justify-content: space-between; font-size: 9px; font-weight: 600; color: #8e9096; padding: 4px 0;"><span>PGM</span><span>PVW</span></div>
             <div style="flex-grow: 1; position: relative; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
               <div style="position: absolute; left: 50%; top: 10px; bottom: 10px; width: 4px; margin-left: -2px; background: #0c0d10; border-radius: 2px;"></div>
-              <div style="{{tbarCap}}"></div>
+              <div style="position: absolute; left: 10px; right: 10px; top: 10px; bottom: 10px; background: repeating-linear-gradient(to bottom, #2c3038 0 1px, transparent 1px 10%); pointer-events: none;"></div><div style="{{tbarCap}}"></div>
               <input class="vrange" type="range" min="0" max="100" value="{{tbar}}" onInput="{{onTbar}}" aria-label="T-bar">
             </div>
           </div>
@@ -166,20 +205,34 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <sc-if value="{{flashing}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(255,255,255,0.85);"></div></sc-if>
             </sc-if>
             <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
-              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.82);">{{pg.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pg.sub}}</span></div>
+              <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;"><span style="font-size: 20px; font-weight: 600; color: rgba(255,255,255,0.82);">{{pg.name}}</span><span style="font-size: 12px; color: rgba(255,255,255,0.5);">{{pg.sub}}</span></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
               <sc-for list="{{overlayLayers}}" as="o" hint-placeholder-count="1"><div style="{{o.style}}">{{o.label}}</div></sc-for>
             </sc-if>
             <sc-if value="{{pgBlank}}" hint-placeholder-val="{{false}}">
               <div style="{{blankLayer}}"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.12em; color: #8e9096;">{{blankText}}</span></div>
             </sc-if>
           </div>
-          <div style="height: 24px; display: flex; align-items: center; gap: 4px;">
-            <button aria-label="Play program" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">▶</button>
-            <button aria-label="Pause program" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">❚❚</button>
-            <button aria-label="Restart program" style="width: 28px; height: 22px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 9px;">⏮</button>
-            <div style="flex-grow: 1; height: 4px; margin: 0 6px; border-radius: 2px; background: #101216; position: relative; overflow: hidden;"><div style="{{pg.bar}}"></div></div>
-            <span style="font-family: Consolas, monospace; font-size: 11px; color: #a9abb0;">{{pg.time}}</span>
+          <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="position: relative; height: 20px;">
+              <input type="range" min="0" max="1000" value="{{pgT.pos}}" onInput="{{pgT.onSeek}}" disabled="{{pgT.live}}" aria-label="Seek" style="position: absolute; left: 0; top: 0; width: 100%; margin: 0;">
+              <sc-for list="{{pgT.marks}}" as="m" hint-placeholder-count="3"><span style="{{m}}"></span></sc-for>
+            </div>
+            <div style="height: 26px; display: flex; align-items: center; gap: 3px;">
+              <button onClick="{{pgT.restart}}" aria-label="Restart" title="Restart" style="{{pgT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M10 2v8L4.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pgT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pgT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 700;">10</span></button>
+              <button onClick="{{pgT.toggle}}" aria-label="Play or pause" title="Play / pause" style="{{pgT.playBtn}}"><sc-if value="{{pgT.playing}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect><rect x="7.1" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect></svg></sc-if><sc-if value="{{pgT.paused}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"></path></svg></sc-if></button>
+              <button onClick="{{pgT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pgT.btnWide}}"><span style="font-size: 9px; font-weight: 700;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pgT.end}}" aria-label="Jump to end" title="Jump to end" style="{{pgT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="8.4" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M2 2v8l5.5-4z" fill="currentColor"></path></svg></button>
+              <span style="width: 6px;"></span>
+              <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; white-space: nowrap;">{{pgT.elapsed}}<span style="color: #8e9096;">{{pgT.total}}</span></span>
+              <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096; padding-left: 6px; white-space: nowrap;">{{pgT.remain}}</span>
+              <div style="flex-grow: 1;"></div>
+              <button onClick="{{pgT.toggleLoop}}" aria-label="Loop" title="Loop" style="{{pgT.loopStyle}}">Loop</button>
+              <select aria-label="Playback speed" disabled="{{pgT.live}}" style="height: 24px; width: 58px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; padding-left: 6px;"><option>1×</option><option>0.5×</option><option>0.75×</option><option>1.25×</option><option>1.5×</option><option>2×</option></select>
+            </div>
           </div>
+          </sc-if>
         </div>
       </div>
 
@@ -224,10 +277,11 @@ input[type=checkbox]{accent-color:#4fb3bf}
               <sc-for list="{{inputs}}" as="s" hint-placeholder-count="15">
                 <div style="{{s.box}}">
                   <button onClick="{{s.pick}}" onDoubleClick="{{s.air}}" aria-label="{{s.name}}" style="{{s.thumb}}">
-                    <span style="position: absolute; left: 6px; top: 4px; font-family: Consolas, monospace; font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.85);">{{s.num}}</span>
-                    <span style="position: absolute; right: 6px; top: 5px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; color: rgba(255,255,255,0.55);">{{s.kind}}</span>
+                    <span style="position: absolute; left: 5px; top: 5px; min-width: 18px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: rgba(10,11,13,0.72); font-family: Consolas, monospace; font-size: 10px; font-weight: 700; line-height: 16px; text-align: center; color: #ffffff;">{{s.num}}</span>
+                    <span style="position: absolute; right: 5px; top: 5px; height: 16px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.55); font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; line-height: 16px; color: rgba(255,255,255,0.75);">{{s.kind}}</span>
+                    <sc-if value="{{s.hasTally}}" hint-placeholder-val="{{false}}"><span style="{{s.tallyStyle}}">{{s.tally}}</span></sc-if>
                   </button>
-                  <div style="{{s.strip}}">{{s.name}}</div>
+                  <div style="{{s.strip}}"><span style="overflow: hidden; text-overflow: ellipsis;">{{s.name}}</span></div>
                   <div style="display: flex; gap: 2px; padding: 0 3px 3px;">
                     <button onClick="{{s.air}}" style="flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: #2a2e36; color: #d4d5d8; font-size: 10px;">Cut</button>
                     <button onClick="{{s.toggleLoop}}" style="{{s.loopStyle}}">Loop</button>
@@ -303,11 +357,11 @@ input[type=checkbox]{accent-color:#4fb3bf}
                 <div style="flex-grow: 1; min-height: 0; display: flex; gap: 3px; justify-content: center; width: 100%;">
                   <div style="position: relative; width: 18px; border-radius: 3px; background: #101216; border: 1px solid #2c3038;">
                     <div style="position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px; margin-left: -1px; background: #0c0d10;"></div>
-                    <div style="{{c.cap}}"></div>
+                    <div style="position: absolute; left: 2px; right: 2px; top: 6px; bottom: 6px; background: repeating-linear-gradient(to bottom, #3a3f48 0 1px, transparent 1px 12.5%); pointer-events: none;"></div><div style="{{c.cap}}"></div>
                     <input class="vrange" type="range" min="0" max="100" value="{{c.vol}}" onInput="{{c.onVol}}" aria-label="{{c.name}} volume">
                   </div>
-                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask}}"></div></div>
-                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask2}}"></div></div>
+                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask}}"></div><div style="position: absolute; inset: 0; background: repeating-linear-gradient(to top, transparent 0 3px, #1e2127 3px 4px); pointer-events: none;"></div></div>
+                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask2}}"></div><div style="position: absolute; inset: 0; background: repeating-linear-gradient(to top, transparent 0 3px, #1e2127 3px 4px); pointer-events: none;"></div></div>
                 </div>
                 <span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{c.db}}</span>
                 <div style="display: flex; gap: 2px;">
@@ -336,7 +390,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
         <button onClick="{{b.toggle}}" style="{{b.style}}">{{b.label}}</button>
       </sc-for>
     </div>
-    <button onDoubleClick="{{togglePanic}}" title="Double-click: Live and Back go black, Monitor dims" style="{{panicBtnStyle}}">{{panicLabel}}</button>
+    <button onDoubleClick="{{togglePanic}}" title="Double-click: Live and Back go black, Monitor dims" style="{{panicBtnStyle}}"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.6l6 10.8H1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><path d="M7 5.6v3M7 10.4v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>{{panicLabel}}<span style="font-size: 9px; font-weight: 600; opacity: 0.7; letter-spacing: 0;">double-click</span></button>
   </div>
 
   <sc-if value="{{panic}}" hint-placeholder-val="{{false}}">
@@ -346,17 +400,20 @@ input[type=checkbox]{accent-color:#4fb3bf}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
 class Component extends DCLogic {
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidUpdate() { this.__fill(); }
+  __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
   constructor(props) {
     super(props);
     this.state = {
       tab: 'live', mode: 'advanced',
-      screens: { live: { pv: 'cam2', pg: 'cam1', blank: false }, back: { pv: 'vid2', pg: 'loop1', blank: false }, monitor: { blank: false } },
+      screens: { live: { pv: 'cam2', pg: 'vid1', blank: false }, back: { pv: 'vid2', pg: 'loop1', blank: false }, monitor: { blank: false } },
       trans: 'fade', tbar: 0, preset: 0, panic: false, rec: true,
       loops: { vid2: true, loop1: true, loop2: true },
       ovl: { 1: 'logo', 2: null, 3: null, 4: null },
       vol: { master: 82, cam1: 70, cam2: 60, vid1: 78, vid2: 74, phone: 50 },
       muted: { phone: true }, afv: { vid1: true, vid2: true },
-      monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
+      play: { pvT: { pos: 0, playing: false, loop: false }, pgT: { pos: 72, playing: true, loop: false } }, monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
     };
   }
   renderVals() {
@@ -367,9 +424,9 @@ class Component extends DCLogic {
       cam2: { name: 'Camera 2', sub: 'USB · Close-up', kind: 'CAM', tone: '#3a3746' },
       cam3: { name: 'Camera 3', sub: 'HDMI · Side', kind: 'CAM', tone: '#2f3a44' },
       phone: { name: 'Phone cam', sub: 'Wireless · Crowd', kind: 'PHONE', tone: '#2e3d34' },
-      vid1: { name: 'Opening.mp4', sub: 'Video · 02:10', kind: 'VIDEO', tone: '#473a2c', video: true },
-      vid2: { name: 'Sponsors.mp4', sub: 'Video · 00:45', kind: 'VIDEO', tone: '#343b4b', video: true },
-      vid3: { name: 'Tribute.mp4', sub: 'Video · 04:12', kind: 'VIDEO', tone: '#403143', video: true },
+      vid1: { name: 'Opening.mp4', sub: 'Video · 02:10', kind: 'VIDEO', tone: '#473a2c', video: true, dur: 130 },
+      vid2: { name: 'Sponsors.mp4', sub: 'Video · 00:45', kind: 'VIDEO', tone: '#343b4b', video: true, dur: 45 },
+      vid3: { name: 'Tribute.mp4', sub: 'Video · 04:12', kind: 'VIDEO', tone: '#403143', video: true, dur: 252 },
       split1: { name: 'Split: Cam 1 + 2', sub: 'Side by side', kind: 'SPLIT', tone: '#353d46' },
       slides: { name: 'Slideshow', sub: '12 slides · camera behind', kind: 'SLIDES', tone: '#3f3b2a' },
       pesukim: { name: '12 Pesukim', sub: 'Slide 1 of 12', kind: 'PRESET', tone: '#3b3222' },
@@ -378,8 +435,8 @@ class Component extends DCLogic {
       lower: { name: 'Lower third', sub: 'Name + title', kind: 'TITLE', tone: '#3a3240' },
       timer: { name: 'Hype countdown', sub: 'Countdown · 04:58 left', kind: 'TIMER', tone: '#1c2440' },
       black: { name: 'Black', sub: 'Solid colour', kind: 'COLOUR', tone: '#0c0d10' },
-      loop1: { name: 'Aurora loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#27403f' },
-      loop2: { name: 'Particles loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#2c3450' },
+      loop1: { name: 'Aurora loop', sub: 'Back-screen loop · 00:30', kind: 'LOOP', tone: '#27403f', dur: 30 },
+      loop2: { name: 'Particles loop', sub: 'Back-screen loop · 00:40', kind: 'LOOP', tone: '#2c3450', dur: 40 },
       loop3: { name: 'Warm glow loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#4a3626' },
       eventlogo: { name: 'Event logo', sub: 'Image', kind: 'IMAGE', tone: '#3b3326' },
       thanks: { name: 'Thank-you list', sub: 'Credits roll', kind: 'CREDITS', tone: '#2f2f38' }
@@ -445,8 +502,11 @@ class Component extends DCLogic {
         air: () => updScreen({ pg: id }),
         toggleLoop: () => set({ loops: { ...st.loops, [id]: !looping } }),
         box: `min-height: 0; display: flex; flex-direction: column; gap: 3px; border-radius: 6px; overflow: hidden; background: #1e2127; border: 1px solid ${isPg ? '#e0473b' : isPv ? '#3fbf5a' : '#2c3038'}; box-shadow: ${isPg ? 'inset 0 3px 0 #e0473b' : isPv ? 'inset 0 3px 0 #3fbf5a' : 'none'};`,
-        thumb: `position: relative; flex-grow: 1; min-height: 0; padding: 0; border: 0; border-radius: 0; background: ${s.tone};`,
-        strip: `padding: 0 7px; font-size: 12px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`,
+        thumb: `position: relative; flex-grow: 1; min-height: 0; padding: 0; border: 0; border-radius: 0; background: ${s.tone}; box-shadow: inset 0 0 28px rgba(0,0,0,0.35);`,
+        hasTally: isPg || isPv,
+        tally: isPg ? 'ON AIR' : 'PREVIEW',
+        tallyStyle: `position: absolute; left: 5px; bottom: 5px; height: 15px; padding: 0 5px; border-radius: 3px; background: ${isPg ? '#c7372f' : '#2f8f4e'}; font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; line-height: 15px; color: #ffffff;`,
+        strip: `display: flex; padding: 0 7px; font-size: 12px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden;`,
         loopStyle: `flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${looping ? '#1d3b40' : '#2a2e36'}; color: ${looping ? '#8fd3db' : '#d4d5d8'}; font-size: 10px;`,
         ovl: [1, 2, 3, 4].map((n) => {
           const on = inOvl.includes(String(n));
@@ -468,7 +528,7 @@ class Component extends DCLogic {
       return { label: SRC[v].name, style: `position: absolute; ${pos} height: 22px; padding: 0 10px; border-radius: 4px; background: rgba(10,12,14,0.72); color: #ffffff; font-size: 11px; font-weight: 600; display: flex; align-items: center;` };
     }) : [];
 
-    const CH = [['master', 'Master', 0], ['cam1', 'Stage mic', 62], ['vid1', 'Opening', 70], ['vid2', 'Sponsors', 70], ['cam2', 'Camera 2', 40], ['phone', 'Phone', 40]];
+    const CH = [['master', 'Master', 0], ['cam1', 'Mic', 62], ['vid1', 'Vid 1', 70], ['vid2', 'Vid 2', 70], ['cam2', 'Cam 2', 40], ['phone', 'Phone', 40]];
     const channels = CH.map(([id, name, base]) => {
       const vol = st.vol[id] ?? 70;
       const m = !!st.muted[id];
@@ -482,7 +542,7 @@ class Component extends DCLogic {
         toggleMute: () => set({ muted: { ...st.muted, [id]: !m } }),
         toggleAfv: () => set({ afv: { ...st.afv, [id]: !st.afv[id] } }),
         strip: `flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; border-radius: 6px; background: ${isMaster ? '#262a31' : 'transparent'};`,
-        cap: `position: absolute; left: -3px; right: -3px; height: 14px; top: calc(${top}% - ${top * 0.14}px); border-radius: 7px; background: #d9dce3; border: 1px solid #0c0d10; pointer-events: none;`,
+        cap: `position: absolute; left: -3px; right: -3px; height: 14px; top: calc(${top}% - ${top * 0.14}px); border-radius: 4px; background: linear-gradient(#eceef2, #c9ccd3); border: 1px solid #0c0d10; box-shadow: 0 2px 4px rgba(0,0,0,0.55), inset 0 -2px 0 rgba(0,0,0,0.12); pointer-events: none;`,
         meterMask: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - lvl}%; background: #101216;`,
         meterMask2: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - Math.max(0, lvl - 5)}%; background: #101216;`,
         muteStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${m ? '#c7372f' : '#2a2e36'}; color: #ffffff; font-size: 10px; font-weight: 700;`,
@@ -513,6 +573,30 @@ class Component extends DCLogic {
       };
     });
 
+    const fmt = (t) => { t = Math.max(0, Math.round(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
+    const tport = (key, src) => {
+      const dur = src && src.dur ? src.dur : 0;
+      const live = !dur;
+      const p = st.play[key];
+      const pos = Math.min(p.pos, dur);
+      const upd = (patch) => set({ play: { ...st.play, [key]: { ...p, ...patch } } });
+      const base = (w) => `width: ${w}px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; gap: 1px; border-radius: 4px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`;
+      return {
+        live, pos: live ? 0 : Math.round(pos / dur * 1000), playing: !live && p.playing, paused: live || !p.playing,
+        onSeek: (e) => upd({ pos: Number(e.target.value) / 1000 * dur }),
+        restart: () => upd({ pos: 0 }),
+        back: () => upd({ pos: Math.max(0, pos - 10) }),
+        fwd: () => upd({ pos: Math.min(dur, pos + 10) }),
+        end: () => upd({ pos: Math.max(0, dur - 1) }),
+        toggle: () => upd({ playing: !p.playing }),
+        toggleLoop: () => upd({ loop: !p.loop }),
+        btn: base(26), btnWide: base(34),
+        playBtn: `width: 34px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid ${!live && p.playing ? '#4fb3bf' : '#2c3038'}; background: ${!live && p.playing ? '#1d3b40' : '#343944'}; color: #ffffff; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
+        loopStyle: `height: 24px; padding: 0 9px; border-radius: 4px; border: 1px solid ${p.loop ? '#4fb3bf' : '#2c3038'}; background: ${p.loop ? '#1d3b40' : '#262a31'}; color: ${p.loop ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
+        elapsed: live ? 'LIVE' : fmt(pos), total: live ? '' : ' / ' + fmt(dur), remain: live ? 'camera / live source' : '−' + fmt(dur - pos),
+        marks: live ? [] : [0.18, 0.46, 0.77].map((f) => `position: absolute; top: 1px; left: calc(${f * 100}% - 1px); width: 2px; height: 5px; border-radius: 1px; background: #8e9096; pointer-events: none;`)
+      };
+    };
     const pgBlank = !!sc.blank || st.panic;
     const dimOnly = isMon && st.panic && !sc.blank;
     const mm = Math.floor(st.countdown / 60), ss = st.countdown % 60;
@@ -526,6 +610,7 @@ class Component extends DCLogic {
         style: `padding: 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${st.monLayout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.monLayout === id ? '#1d3b40' : '#262a31'}; color: ${st.monLayout === id ? '#dff4f6' : '#d4d5d8'};`,
         thumb: `width: 100%; height: 30px; border-radius: 2px; background: #000; box-shadow: ${id === 'full' ? 'inset 0 0 0 7px #000, inset 0 0 0 9px #555' : id === 'stack' ? 'inset 0 -9px 0 #444, inset 0 0 0 1px #333' : 'inset -26px 0 0 #444, inset 0 0 0 1px #333'};`
       })),
+      pvT: tport('pvT', pvSrc), pgT: tport('pgT', pgSrc),
       isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
       toggleFollow: () => set({ follow: !st.follow }),
       followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#1d3b40' : '#2a2e36'}; color: ${st.follow ? '#dff4f6' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
@@ -561,21 +646,21 @@ class Component extends DCLogic {
       take: doTake,
       tbar: st.tbar,
       onTbar: (e) => { const v = Number(e.target.value); if (v >= 100) doTake(); else set({ tbar: v }); },
-      tbarCap: `position: absolute; left: 6px; right: 6px; height: 16px; top: calc(${100 - st.tbar}% - ${(100 - st.tbar) * 0.16}px); border-radius: 8px; background: #d9dce3; border: 1px solid #0c0d10; pointer-events: none;`,
+      tbarCap: `position: absolute; left: 6px; right: 6px; height: 16px; top: calc(${100 - st.tbar}% - ${(100 - st.tbar) * 0.16}px); border-radius: 4px; background: linear-gradient(#eceef2, #c9ccd3); border: 1px solid #0c0d10; box-shadow: 0 2px 6px rgba(0,0,0,0.6), inset 0 -2px 0 rgba(0,0,0,0.12); pointer-events: none;`,
       pgBlank,
       blankLayer: `position: absolute; inset: 0; background: ${dimOnly ? 'rgba(0,0,0,0.72)' : '#000'}; display: flex; align-items: center; justify-content: center;`,
       blankText: dimOnly ? 'DIMMED' : 'BLANK',
       panic: st.panic,
       togglePanic: () => set({ panic: !st.panic }),
       panicLabel: st.panic ? 'RESTORE' : 'PANIC',
-      panicBtnStyle: `height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.panic ? '#e0473b' : '#5a1f1b'}; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em;`,
+      panicBtnStyle: `height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.panic ? '#e0473b' : '#5a1f1b'}; color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px;`,
       toggleRec: () => set({ rec: !st.rec }),
       recTime: st.rec ? '00:42:17' : 'off',
       recDot: `width: 8px; height: 8px; border-radius: 4px; background: ${st.rec ? '#e0473b' : '#6b6d72'};`,
       recStyle: `height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: ${st.rec ? '#3a1a18' : '#2a2e36'}; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;`
     };
   }
-  componentWillUnmount() { clearTimeout(this._ft); }
+  componentWillUnmount() { clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
 }
 </script>
 </body>
