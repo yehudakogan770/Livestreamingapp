@@ -57,7 +57,10 @@ pub fn save_json(show: &Show) -> String {
 pub fn load_json(text: &str) -> Result<Show, LoadError> {
     let raw: Show = serde_json::from_str(text)?;
     if raw.version > SHOW_VERSION {
-        return Err(LoadError::TooNew { found: raw.version, supported: SHOW_VERSION });
+        return Err(LoadError::TooNew {
+            found: raw.version,
+            supported: SHOW_VERSION,
+        });
     }
     Ok(repair(to_saved(&raw)))
 }
@@ -66,7 +69,8 @@ pub fn load_json(text: &str) -> Result<Show, LoadError> {
 pub fn repair(mut s: Show) -> Show {
     // Drop sources with duplicate or empty ids (keep the first).
     let mut seen = HashSet::new();
-    s.sources.retain(|src| !src.id.as_str().trim().is_empty() && seen.insert(src.id.clone()));
+    s.sources
+        .retain(|src| !src.id.as_str().trim().is_empty() && seen.insert(src.id.clone()));
 
     for src in &mut s.sources {
         if !src.volume.is_finite() {
@@ -74,15 +78,25 @@ pub fn repair(mut s: Show) -> Show {
         }
         src.volume = src.volume.clamp(0.0, 1.0);
         let name = src.name.trim();
-        src.name = if name.is_empty() { "Untitled".to_owned() } else { name.chars().take(crate::engine::MAX_NAME_LEN).collect() };
+        src.name = if name.is_empty() {
+            "Untitled".to_owned()
+        } else {
+            name.chars().take(crate::engine::MAX_NAME_LEN).collect()
+        };
         match &mut src.kind {
             SourceKind::Color { color } => {
-                let ok = color.len() == 7 && color.starts_with('#') && color[1..].chars().all(|c| c.is_ascii_hexdigit());
+                let ok = color.len() == 7
+                    && color.starts_with('#')
+                    && color[1..].chars().all(|c| c.is_ascii_hexdigit());
                 if !ok {
                     *color = "#000000".to_owned();
                 }
             }
-            SourceKind::Video { duration_s, .. } if !(duration_s.is_finite() && *duration_s >= 0.0) => *duration_s = 0.0,
+            SourceKind::Video { duration_s, .. }
+                if !(duration_s.is_finite() && *duration_s >= 0.0) =>
+            {
+                *duration_s = 0.0
+            }
             _ => {}
         }
     }

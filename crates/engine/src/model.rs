@@ -96,14 +96,20 @@ pub struct Transition {
 
 impl Default for Transition {
     fn default() -> Self {
-        Transition { kind: TransitionKind::Fade, duration_ms: 800 }
+        Transition {
+            kind: TransitionKind::Fade,
+            duration_ms: 800,
+        }
     }
 }
 
 impl Transition {
     /// The same transition with its duration forced into the allowed range.
     pub fn clamped(self) -> Self {
-        Transition { kind: self.kind, duration_ms: self.duration_ms.clamp(MIN_TRANSITION_MS, MAX_TRANSITION_MS) }
+        Transition {
+            kind: self.kind,
+            duration_ms: self.duration_ms.clamp(MIN_TRANSITION_MS, MAX_TRANSITION_MS),
+        }
     }
 }
 
@@ -144,13 +150,28 @@ pub struct Playback {
 
 /// What a source is, with the data that kind needs.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[serde(tag = "type", rename_all = "lowercase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "type",
+    rename_all = "lowercase",
+    rename_all_fields = "camelCase"
+)]
 #[ts(export)]
 pub enum SourceKind {
-    Camera { device_id: String, label: String },
-    Video { path: String, duration_s: f64, playback: Playback },
-    Image { path: String },
-    Color { color: String },
+    Camera {
+        device_id: String,
+        label: String,
+    },
+    Video {
+        path: String,
+        duration_s: f64,
+        playback: Playback,
+    },
+    Image {
+        path: String,
+    },
+    Color {
+        color: String,
+    },
     Pattern,
 }
 
@@ -239,7 +260,10 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        Settings { displays: PerScreen::default(), auto_play_on_take: true }
+        Settings {
+            displays: PerScreen::default(),
+            auto_play_on_take: true,
+        }
     }
 }
 

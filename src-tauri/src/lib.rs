@@ -27,27 +27,42 @@ struct Snapshot {
 
 /// Milliseconds since 1970 — the clock every window shares.
 fn now_ms() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.as_millis() as u64)
 }
 
 fn lock(state: &AppState) -> std::sync::MutexGuard<'_, Engine> {
     // A panic while holding the lock must never take the show down with it.
-    state.engine.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    state
+        .engine
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 #[tauri::command]
 fn get_show(state: State<'_, AppState>) -> Snapshot {
     let engine = lock(&state);
-    Snapshot { revision: engine.revision(), show: engine.show().clone() }
+    Snapshot {
+        revision: engine.revision(),
+        show: engine.show().clone(),
+    }
 }
 
 #[tauri::command]
-fn dispatch(action: Action, state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), ActionError> {
+fn dispatch(
+    action: Action,
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<(), ActionError> {
     let snapshot = {
         let mut engine = lock(&state);
         match engine.apply(action, now_ms())? {
             Outcome::Unchanged => return Ok(()),
-            Outcome::Changed => Snapshot { revision: engine.revision(), show: engine.show().clone() },
+            Outcome::Changed => Snapshot {
+                revision: engine.revision(),
+                show: engine.show().clone(),
+            },
         }
     };
     state.store.save(snapshot.show.clone());
@@ -66,7 +81,10 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             let (store, show, from) = Store::open(dir);
             eprintln!("lumora: show loaded ({from:?})");
-            app.manage(AppState { engine: Mutex::new(Engine::with_show(show)), store });
+            app.manage(AppState {
+                engine: Mutex::new(Engine::with_show(show)),
+                store,
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![get_show, dispatch])

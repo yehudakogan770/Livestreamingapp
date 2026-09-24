@@ -100,7 +100,11 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             sc.tbar = 0.0;
             Ok(())
         }
-        Action::Take { screen, transition, duration_ms } => {
+        Action::Take {
+            screen,
+            transition,
+            duration_ms,
+        } => {
             not_monitor(screen)?;
             let t = Transition {
                 kind: transition.unwrap_or(s.transition.kind),
@@ -114,7 +118,15 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             require_source(s, &source_id)?;
             let keep = s.screens.get(screen).preview.clone();
             s.screens.get_mut(screen).preview = Some(source_id);
-            take(s, screen, Transition { kind: TransitionKind::Cut, duration_ms: MIN_TRANSITION_MS }, now)?;
+            take(
+                s,
+                screen,
+                Transition {
+                    kind: TransitionKind::Cut,
+                    duration_ms: MIN_TRANSITION_MS,
+                },
+                now,
+            )?;
             if keep.is_some() {
                 s.screens.get_mut(screen).preview = keep;
             }
@@ -129,7 +141,15 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             if v >= 0.999 {
                 // Fader pushed all the way: the mix is already complete on
                 // screen, so finish with a cut rather than a second animation.
-                take(s, screen, Transition { kind: TransitionKind::Cut, duration_ms: MIN_TRANSITION_MS }, now)
+                take(
+                    s,
+                    screen,
+                    Transition {
+                        kind: TransitionKind::Cut,
+                        duration_ms: MIN_TRANSITION_MS,
+                    },
+                    now,
+                )
             } else {
                 s.screens.get_mut(screen).tbar = v;
                 if v > 0.0 {
@@ -150,7 +170,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         }
         Action::SetBlank { screens, value } => {
             if screens.is_empty() {
-                return Err(ActionError::invalid("screens", "choose at least one screen"));
+                return Err(ActionError::invalid(
+                    "screens",
+                    "choose at least one screen",
+                ));
             }
             for id in screens {
                 let sc = s.screens.get_mut(id);
@@ -177,9 +200,24 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         Action::Seek { id, pos_s } => {
             let pos = finite(pos_s, "posS")?;
             let src = video_mut(s, &id)?;
-            let SourceKind::Video { duration_s, playback, .. } = &mut src.kind else { unreachable!() };
-            let max = if *duration_s > 0.0 { *duration_s } else { f64::MAX };
-            *playback = Playback { playing: playback.playing, pos_s: pos.clamp(0.0, max), at: now };
+            let SourceKind::Video {
+                duration_s,
+                playback,
+                ..
+            } = &mut src.kind
+            else {
+                unreachable!()
+            };
+            let max = if *duration_s > 0.0 {
+                *duration_s
+            } else {
+                f64::MAX
+            };
+            *playback = Playback {
+                playing: playback.playing,
+                pos_s: pos.clamp(0.0, max),
+                at: now,
+            };
             Ok(())
         }
         Action::SetDuration { id, duration_s } => {
@@ -188,7 +226,9 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 return Err(ActionError::invalid("durationS", "must be more than zero"));
             }
             let src = video_mut(s, &id)?;
-            let SourceKind::Video { duration_s, .. } = &mut src.kind else { unreachable!() };
+            let SourceKind::Video { duration_s, .. } = &mut src.kind else {
+                unreachable!()
+            };
             *duration_s = d;
             Ok(())
         }
@@ -222,7 +262,11 @@ fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()
     sc.program = Some(incoming.clone());
     // Broadcast convention: what was on air drops back into preview.
     sc.preview = outgoing.or_else(|| Some(incoming.clone()));
-    sc.transition = Some(ActiveTransition { kind: t.kind, duration_ms: t.duration_ms, started_at: now });
+    sc.transition = Some(ActiveTransition {
+        kind: t.kind,
+        duration_ms: t.duration_ms,
+        started_at: now,
+    });
     sc.tbar = 0.0;
     start_if_video(s, &incoming, now);
     Ok(())
@@ -234,12 +278,20 @@ fn start_if_video(s: &mut Show, id: &SourceId, now: Millis) {
     }
     let Some(src) = s.source_mut(id) else { return };
     let ended = source_ended(src, now);
-    let pos = if ended { 0.0 } else { source_position(src, now) };
+    let pos = if ended {
+        0.0
+    } else {
+        source_position(src, now)
+    };
     if let SourceKind::Video { playback, .. } = &mut src.kind {
         if playback.playing && !ended {
             return;
         }
-        *playback = Playback { playing: true, pos_s: pos, at: now };
+        *playback = Playback {
+            playing: true,
+            pos_s: pos,
+            at: now,
+        };
     }
 }
 
@@ -254,7 +306,11 @@ fn set_playing(s: &mut Show, id: &SourceId, playing: bool, now: Millis) -> Resul
         if playback.playing == playing && !(playing && ended) {
             return Ok(());
         }
-        *playback = Playback { playing, pos_s: pos, at: now };
+        *playback = Playback {
+            playing,
+            pos_s: pos,
+            at: now,
+        };
     }
     Ok(())
 }
@@ -263,7 +319,9 @@ fn set_playing(s: &mut Show, id: &SourceId, playing: bool, now: Millis) -> Resul
 
 fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
     let id = match new.id {
-        Some(id) if id.as_str().trim().is_empty() => return Err(ActionError::invalid("id", "must not be empty")),
+        Some(id) if id.as_str().trim().is_empty() => {
+            return Err(ActionError::invalid("id", "must not be empty"))
+        }
         Some(id) => id,
         None => next_source_id(s),
     };
@@ -285,7 +343,9 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
 }
 
 fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> {
-    let src = s.source_mut(id).ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
     if let Some(name) = patch.name {
         src.name = clean_name(&name);
     }
@@ -304,7 +364,12 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
     if let Some(c) = patch.color {
         match &mut src.kind {
             SourceKind::Color { color } => *color = clean_color(&c)?,
-            _ => return Err(ActionError::invalid("color", "only colour sources have a colour")),
+            _ => {
+                return Err(ActionError::invalid(
+                    "color",
+                    "only colour sources have a colour",
+                ))
+            }
         }
     }
     Ok(())
@@ -313,12 +378,24 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
 fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
     Ok(match kind {
         SourceKind::Camera { device_id, label } => SourceKind::Camera { device_id, label },
-        SourceKind::Video { path, duration_s, .. } => {
-            let d = if duration_s.is_finite() && duration_s > 0.0 { duration_s } else { 0.0 };
-            SourceKind::Video { path, duration_s: d, playback: Playback::default() }
+        SourceKind::Video {
+            path, duration_s, ..
+        } => {
+            let d = if duration_s.is_finite() && duration_s > 0.0 {
+                duration_s
+            } else {
+                0.0
+            };
+            SourceKind::Video {
+                path,
+                duration_s: d,
+                playback: Playback::default(),
+            }
         }
         SourceKind::Image { path } => SourceKind::Image { path },
-        SourceKind::Color { color } => SourceKind::Color { color: clean_color(&color)? },
+        SourceKind::Color { color } => SourceKind::Color {
+            color: clean_color(&color)?,
+        },
         SourceKind::Pattern => SourceKind::Pattern,
     })
 }
@@ -354,7 +431,10 @@ fn next_source_id(s: &Show) -> SourceId {
 // ---------- small helpers ----------
 
 fn index_of(s: &Show, id: &SourceId) -> Result<usize> {
-    s.sources.iter().position(|src| &src.id == id).ok_or_else(|| ActionError::UnknownSource { id: id.clone() })
+    s.sources
+        .iter()
+        .position(|src| &src.id == id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })
 }
 
 fn require_source(s: &Show, id: &SourceId) -> Result<()> {
@@ -366,7 +446,9 @@ fn require_source(s: &Show, id: &SourceId) -> Result<()> {
 }
 
 fn video_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Source> {
-    let src = s.source_mut(id).ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
     if src.kind.is_video() {
         Ok(src)
     } else {

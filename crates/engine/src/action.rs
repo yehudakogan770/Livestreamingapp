@@ -60,18 +60,35 @@ pub struct SourcePatch {
 
 /// One request to change the show.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "type",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 #[ts(export)]
 pub enum Action {
     // ----- sources -----
-    AddSource { source: NewSource },
-    UpdateSource { id: SourceId, patch: SourcePatch },
-    RemoveSource { id: SourceId },
-    MoveSource { id: SourceId, index: usize },
+    AddSource {
+        source: NewSource,
+    },
+    UpdateSource {
+        id: SourceId,
+        patch: SourcePatch,
+    },
+    RemoveSource {
+        id: SourceId,
+    },
+    MoveSource {
+        id: SourceId,
+        index: usize,
+    },
 
     // ----- switching -----
     /// Line a source up in a screen's preview (or clear it with `null`).
-    SetPreview { screen: ScreenId, source_id: Option<SourceId> },
+    SetPreview {
+        screen: ScreenId,
+        source_id: Option<SourceId>,
+    },
     /// Send the preview to air with a transition (the show's default if omitted).
     Take {
         screen: ScreenId,
@@ -83,9 +100,15 @@ pub enum Action {
         duration_ms: Option<u32>,
     },
     /// Send a source straight to air with a cut, keeping the preview as it is.
-    CutTo { screen: ScreenId, source_id: SourceId },
+    CutTo {
+        screen: ScreenId,
+        source_id: SourceId,
+    },
     /// Move the manual fader (0.0 – 1.0). Reaching the end completes the take.
-    SetTbar { screen: ScreenId, value: f32 },
+    SetTbar {
+        screen: ScreenId,
+        value: f32,
+    },
     /// Choose the transition TAKE uses.
     SetTransition {
         #[serde(default)]
@@ -97,21 +120,38 @@ pub enum Action {
     },
 
     // ----- safety -----
-    SetBlank { screens: Vec<ScreenId>, value: bool },
+    SetBlank {
+        screens: Vec<ScreenId>,
+        value: bool,
+    },
     /// Everything black except the monitor, which dims.
-    Panic { value: bool },
+    Panic {
+        value: bool,
+    },
     /// Flash the stage monitor to get attention.
     MonitorFlash,
 
     // ----- video playback -----
-    Play { id: SourceId },
-    Pause { id: SourceId },
-    Seek { id: SourceId, pos_s: f64 },
+    Play {
+        id: SourceId,
+    },
+    Pause {
+        id: SourceId,
+    },
+    Seek {
+        id: SourceId,
+        pos_s: f64,
+    },
     /// Reported by the media layer once a file's length is known.
-    SetDuration { id: SourceId, duration_s: f64 },
+    SetDuration {
+        id: SourceId,
+        duration_s: f64,
+    },
 
     // ----- audio -----
-    SetMasterVolume { value: f32 },
+    SetMasterVolume {
+        value: f32,
+    },
 
     // ----- settings -----
     SetDisplay {
@@ -120,12 +160,18 @@ pub enum Action {
         #[ts(optional)]
         display_id: Option<String>,
     },
-    SetAutoPlayOnTake { value: bool },
+    SetAutoPlayOnTake {
+        value: bool,
+    },
 }
 
 /// Why an action was refused. The show is never changed when this happens.
 #[derive(Debug, Clone, PartialEq, Error, Serialize, Deserialize, TS)]
-#[serde(tag = "code", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "code",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 #[ts(export)]
 pub enum ActionError {
     #[error("there is no source with id {id}")]
@@ -144,6 +190,9 @@ pub enum ActionError {
 
 impl ActionError {
     pub(crate) fn invalid(field: &str, reason: &str) -> Self {
-        ActionError::InvalidValue { field: field.to_owned(), reason: reason.to_owned() }
+        ActionError::InvalidValue {
+            field: field.to_owned(),
+            reason: reason.to_owned(),
+        }
     }
 }
