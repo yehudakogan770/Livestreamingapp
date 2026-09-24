@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lumora",
+  "version": "0.1.0",
+  "identifier": "app.lumora.desktop",
+  "build": {
+    "beforeDevCommand": "npm run ui:dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run ui:build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "control",
+        "title": "Lumora",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1280,
+        "minHeight": 760,
+        "maximized": true,
+        "backgroundColor": "#15171b",
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: data: blob:; media-src 'self' asset: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Lumora",
+    "category": "Video",
+    "shortDescription": "Live event control for three screens",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "windows": {
+      "nsis": { "installMode": "perMachine" }
+    }
+  }
+}

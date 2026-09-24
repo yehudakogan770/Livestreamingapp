@@ -1,0 +1,31 @@
+/* Lumora design tokens — taken from the approved designs in /design. */
+:root {
+  --bg: #15171b;
+  --bar: #1a1d22;
+  --panel: #1e2127;
+  --button: #2a2e36;
+  --border: #2c3038;
+  --well: #101216;
+  --text: #e4e5e7;
+  --text-dim: #a9abb0;
+  --text-faint: #8e9096;
+  --accent: #4fb3bf;
+  --accent-deep: #1f6f79;
+  --selected: #243039;
+  --program: #c7372f;
+  --program-bright: #e0473b;
+  --preview: #2f8f4e;
+  --preview-bright: #3fbf5a;
+  --on-air: #e5483c;
+  --radius: 6px;
+  --font: 'Segoe UI', system-ui, sans-serif;
+  --mono: Consolas, 'Cascadia Mono', monospace;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; user-select: none; overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+::selection { background: var(--selected); }
