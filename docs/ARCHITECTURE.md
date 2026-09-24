@@ -1,7 +1,8 @@
 # Lumora — Architecture & Quality Plan
 
 This file records the decisions that every part of Lumora must follow.
-The product spec is in `SPEC.md`; the approved screen designs are in `../design/`.
+The product spec is in `SPEC.md`, the full feature list with priorities and the
+definition of done is in `FEATURES.md`, and the approved screen designs are in `../design/`.
 
 ## Goal
 
