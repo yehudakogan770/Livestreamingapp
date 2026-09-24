@@ -564,7 +564,7 @@ fn save_and_load_round_trip_resets_runtime_state() {
 
 #[test]
 fn damaged_save_files_are_repaired() {
-    let text = r##"{
+    let text = r#"{
         "version": 1,
         "sources": [
             { "id": "a", "name": "  ", "kind": { "type": "color", "color": "nope" }, "volume": 7, "muted": false, "looping": false, "fit": "contain" },
@@ -572,7 +572,7 @@ fn damaged_save_files_are_repaired() {
         ],
         "screens": { "live": { "program": "missing" }, "monitor": { "program": "a" } },
         "transition": { "kind": "fade", "durationMs": 0 }
-    }"##;
+    }"#;
     let s = load_json(text).unwrap();
     assert_eq!(s.sources.len(), 1, "duplicate id dropped");
     assert_eq!(s.sources[0].name, "Untitled");

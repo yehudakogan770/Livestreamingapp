@@ -105,6 +105,7 @@ impl Default for Transition {
 
 impl Transition {
     /// The same transition with its duration forced into the allowed range.
+    #[must_use]
     pub fn clamped(self) -> Self {
         Transition {
             kind: self.kind,

@@ -66,6 +66,8 @@ impl Engine {
     }
 }
 
+// One arm per action keeps every rule of the show in a single, readable place.
+#[allow(clippy::too_many_lines)]
 fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     match action {
         Action::AddSource { source } => add_source(s, source),

@@ -89,13 +89,13 @@ pub fn repair(mut s: Show) -> Show {
                     && color.starts_with('#')
                     && color[1..].chars().all(|c| c.is_ascii_hexdigit());
                 if !ok {
-                    *color = "#000000".to_owned();
+                    "#000000".clone_into(color);
                 }
             }
             SourceKind::Video { duration_s, .. }
                 if !(duration_s.is_finite() && *duration_s >= 0.0) =>
             {
-                *duration_s = 0.0
+                *duration_s = 0.0;
             }
             _ => {}
         }
