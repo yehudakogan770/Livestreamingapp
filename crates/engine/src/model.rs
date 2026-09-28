@@ -6,6 +6,8 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::stage::{Countdown, Monitor};
+
 /// Milliseconds on the engine clock. The engine never reads the clock itself;
 /// callers pass `now` in, which keeps every result reproducible in tests.
 pub type Millis = u64;
@@ -288,6 +290,10 @@ pub struct Show {
     /// including its transitions. Taking something on the Back Screen
     /// directly turns this off.
     pub back_follows_live: bool,
+    /// What the stage monitor shows.
+    pub monitor: Monitor,
+    /// The countdown (on the monitor and, when chosen, big on Live / Back).
+    pub countdown: Countdown,
     pub settings: Settings,
 }
 
@@ -305,6 +311,8 @@ impl Default for Show {
             panic_changed_at: 0,
             master_volume: 1.0,
             back_follows_live: false,
+            monitor: Monitor::default(),
+            countdown: Countdown::default(),
             settings: Settings::default(),
         }
     }

@@ -50,10 +50,16 @@ export interface SourceViewProps {
   thumb?: boolean;
   /** Tell the engine a video's length once it is known (control window only). */
   reportDuration?: boolean;
+  /**
+   * Drawn on a screen the audience sees. If the source fails (camera
+   * unplugged, file missing or broken) it shows plain black here, never an
+   * error message; the control window shows the warning instead.
+   */
+  audience?: boolean;
 }
 
 /** Draws one source filling its box. */
-export function SourceView({ source, client, audible = false, master = 1, thumb = false, reportDuration = false }: SourceViewProps) {
+export function SourceView({ source, client, audible = false, master = 1, thumb = false, reportDuration = false, audience = false }: SourceViewProps) {
   const fit = source.fit === 'cover' ? 'cover' : 'contain';
   const k = source.kind;
   switch (k.type) {
@@ -66,17 +72,24 @@ export function SourceView({ source, client, audible = false, master = 1, thumb 
         </div>
       );
     case 'image':
-      return <img src={client.mediaUrl(k.path)} alt="" draggable={false} style={{ ...fill, objectFit: fit }} data-kind="image" />;
+      return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
-      return <CameraView deviceId={k.deviceId} fit={fit} />;
+      return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
     case 'video':
       return (
-        <VideoView source={source} client={client} fit={fit} audible={audible} master={master} thumb={thumb} reportDuration={reportDuration} />
+        <VideoView source={source} client={client} fit={fit} audible={audible} master={master} thumb={thumb} reportDuration={reportDuration} audience={audience} />
       );
   }
 }
 
-function CameraView({ deviceId, fit }: { deviceId: string; fit: 'cover' | 'contain' }) {
+function ImageView({ url, fit, audience }: { url: string; fit: 'cover' | 'contain'; audience: boolean }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [url]);
+  if (failed) return <Missing text="Picture file not found" audience={audience} />;
+  return <img src={url} alt="" draggable={false} style={{ ...fill, objectFit: fit }} data-kind="image" onError={() => setFailed(true)} />;
+}
+
+function CameraView({ deviceId, fit, audience }: { deviceId: string; fit: 'cover' | 'contain'; audience: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -87,10 +100,13 @@ function CameraView({ deviceId, fit }: { deviceId: string; fit: 'cover' | 'conta
     }
     acquireCamera(deviceId).then(
       (stream) => {
-        if (alive && ref.current) {
-          ref.current.srcObject = stream;
-          void ref.current.play().catch(() => {});
-        }
+        if (!alive || !ref.current) return;
+        // Unplugged during the show: the track ends and the screen goes black.
+        const tracks = stream.getVideoTracks();
+        if (tracks.length === 0 || tracks.every((t) => t.readyState === 'ended')) return setFailed(true);
+        tracks.forEach((t) => t.addEventListener('ended', () => alive && setFailed(true)));
+        ref.current.srcObject = stream;
+        void ref.current.play().catch(() => {});
       },
       () => alive && setFailed(true),
     );
@@ -99,7 +115,7 @@ function CameraView({ deviceId, fit }: { deviceId: string; fit: 'cover' | 'conta
       releaseCamera(deviceId);
     };
   }, [deviceId]);
-  if (failed) return <Missing text="Camera not found" />;
+  if (failed) return <Missing text="Camera not found or unplugged" audience={audience} />;
   return <video ref={ref} muted playsInline autoPlay style={{ ...fill, objectFit: fit, background: '#000' }} data-kind="camera" />;
 }
 
@@ -111,6 +127,7 @@ function VideoView({
   master,
   thumb,
   reportDuration,
+  audience,
 }: Required<Omit<SourceViewProps, 'source' | 'client'>> & { source: Source; client: EngineClient; fit: 'cover' | 'contain' }) {
   const ref = useRef<HTMLVideoElement>(null);
   const latest = useRef(source);
@@ -149,7 +166,8 @@ function VideoView({
     v.volume = Math.min(1, Math.max(0, source.volume * master));
   }, [audible, master, source.muted, source.volume]);
 
-  if (failed) return <Missing text="Video file not found" />;
+  useEffect(() => setFailed(false), [path]);
+  if (failed) return <Missing text="Video file not found or can't be played" audience={audience} />;
   return (
     <video
       ref={ref}
@@ -172,9 +190,10 @@ function VideoView({
   );
 }
 
-function Missing({ text }: { text: string }) {
+function Missing({ text, audience }: { text: string; audience: boolean }) {
+  if (audience) return <div style={{ ...fill, background: '#000' }} data-failed />;
   return (
-    <div style={{ ...fill, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a0f10', color: '#e0847b', fontSize: 12, textAlign: 'center', padding: 8 }}>
+    <div data-failed style={{ ...fill, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a0f10', color: '#e0847b', fontSize: 12, textAlign: 'center', padding: 8 }}>
       {text}
     </div>
   );

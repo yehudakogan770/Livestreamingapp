@@ -6,6 +6,7 @@ import { useShow } from '../engine/useShow';
 import { FLASH_MS, fadeAmount } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { ProgramView } from '../components/ScreenView';
+import { SafeBoundary } from '../components/SafeBoundary';
 import './OutputView.css';
 
 /**
@@ -40,13 +41,15 @@ export function OutputView({ screen }: { screen: ScreenId }) {
   const show = snapshot?.show;
   return (
     <div className="output" onDoubleClick={toggleFull}>
+      <SafeBoundary audience>
       {show &&
         (screen === 'monitor' ? (
           <MonitorOutput panic={show.panic} panicAt={show.panicChangedAt} blank={show.screens.monitor.blank} blankAt={show.screens.monitor.blankChangedAt} flashAt={show.screens.monitor.flashAt} />
         ) : (
           // Only the Live output plays sound; it is the one that goes to the stream.
-          <ProgramView show={show} screen={screen} client={client} audible={screen === 'live'} />
+          <ProgramView show={show} screen={screen} client={client} audible={screen === 'live'} audience />
         ))}
+      </SafeBoundary>
     </div>
   );
 }

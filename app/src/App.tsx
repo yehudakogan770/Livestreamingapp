@@ -7,6 +7,7 @@ import { TitleBar } from './components/TitleBar';
 import { ScreenSelector } from './components/ScreenSelector';
 import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
+import { SafeBoundary } from './components/SafeBoundary';
 import './App.css';
 
 export function App() {
@@ -27,7 +28,9 @@ function Control() {
       <ScreenSelector show={show} selected={controlling} onSelect={select} />
       <main className="workarea">
         {show ? (
-          <ControlView show={show} screen={controlling} client={client} />
+          <SafeBoundary audience={false}>
+            <ControlView show={show} screen={controlling} client={client} />
+          </SafeBoundary>
         ) : (
           <div className="loading">{error ? `The engine did not answer: ${error}` : 'Starting…'}</div>
         )}

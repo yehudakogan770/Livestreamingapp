@@ -99,6 +99,28 @@ export function emptyShow(): Show {
     panicChangedAt: 0,
     masterVolume: 1,
     backFollowsLive: false,
+    monitor: {
+      message: '',
+      messageOn: false,
+      layout: 'full',
+      showClock: true,
+      showTimer: true,
+      textSize: 'l',
+      clock24h: false,
+      quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'],
+    },
+    countdown: {
+      lengthMs: 300_000,
+      endsAt: null,
+      remainingMs: 300_000,
+      label: 'Starting soon',
+      endText: 'Welcome!',
+      onLive: false,
+      onBack: false,
+      format: 'auto',
+      atZero: { type: 'hold' },
+      fired: false,
+    },
     settings: { displays: { live: null, back: null, monitor: null }, autoPlayOnTake: true },
   };
 }

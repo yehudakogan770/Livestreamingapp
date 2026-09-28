@@ -115,6 +115,27 @@ pub fn repair(mut s: Show) -> Show {
         }
     }
 
+    // Monitor and countdown: bounded text, exactly 8 quick messages, sane times.
+    let m = &mut s.monitor;
+    m.message = crate::engine::short_text(&m.message, crate::stage::MAX_MESSAGE_LEN);
+    m.quick.resize(crate::stage::QUICK_MESSAGES, String::new());
+    for q in &mut m.quick {
+        *q = crate::engine::short_text(q, crate::stage::MAX_SHORT_TEXT_LEN);
+    }
+    let c = &mut s.countdown;
+    let max = crate::stage::MAX_COUNTDOWN_MS;
+    if c.length_ms == 0 || c.length_ms > max {
+        c.length_ms = crate::stage::Countdown::default().length_ms;
+    }
+    c.remaining_ms = c.remaining_ms.min(max);
+    c.label = crate::engine::short_text(&c.label, crate::stage::MAX_SHORT_TEXT_LEN);
+    c.end_text = crate::engine::short_text(&c.end_text, crate::stage::MAX_SHORT_TEXT_LEN);
+    if let crate::stage::AtZero::CutTo { source_id } = &c.at_zero {
+        if !s.sources.iter().any(|x| &x.id == source_id) {
+            c.at_zero = crate::stage::AtZero::Hold;
+        }
+    }
+
     s.transition = s.transition.clamped();
     if !s.master_volume.is_finite() {
         s.master_volume = 1.0;

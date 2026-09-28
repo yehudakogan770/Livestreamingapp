@@ -4,7 +4,8 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
-use crate::model::{Fit, ScreenId, SourceId, SourceKind, TransitionKind};
+use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
+use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 
 /// A new source as requested by the UI. The engine fills in and cleans up the
 /// rest (id, limits, play state).
@@ -56,6 +57,59 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub color: Option<String>,
+}
+
+/// Changes to the stage monitor. Fields left out stay as they are.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MonitorPatch {
+    #[serde(default)]
+    #[ts(optional)]
+    pub message: Option<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub message_on: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub layout: Option<MonitorLayout>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub show_clock: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub show_timer: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub text_size: Option<TextSize>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub clock_24h: Option<bool>,
+}
+
+/// Changes to how the countdown looks and ends. Fields left out stay as they are.
+#[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CountdownPatch {
+    #[serde(default)]
+    #[ts(optional)]
+    pub label: Option<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub end_text: Option<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub on_live: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub on_back: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub format: Option<TimerFormat>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub at_zero: Option<AtZero>,
 }
 
 /// One request to change the show.
@@ -166,6 +220,44 @@ pub enum Action {
     },
     SetAutoPlayOnTake {
         value: bool,
+    },
+
+    // ----- stage monitor -----
+    UpdateMonitor {
+        patch: MonitorPatch,
+    },
+    /// Change one of the quick messages (0 – 7).
+    SetQuickMessage {
+        index: usize,
+        text: String,
+    },
+
+    // ----- countdown -----
+    UpdateCountdown {
+        patch: CountdownPatch,
+    },
+    /// Set the length and get ready to start from it (stops the countdown).
+    SetCountdownLength {
+        #[ts(type = "number")]
+        length_ms: u64,
+    },
+    StartCountdown,
+    PauseCountdown,
+    ResetCountdown,
+    /// Add time (negative takes time away). Works at any moment, even after zero.
+    AddCountdownTime {
+        #[ts(type = "number")]
+        ms: i64,
+    },
+    /// Jump to a time left, e.g. the last 10 seconds.
+    SetCountdownRemaining {
+        #[ts(type = "number")]
+        ms: u64,
+    },
+    /// Count down to a clock time ("starts at 19:30"). Starts it running.
+    CountdownTo {
+        #[ts(type = "number")]
+        at: Millis,
     },
 }
 

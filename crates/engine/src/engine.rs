@@ -1,10 +1,11 @@
 //! Applying actions to the show.
 
-use crate::action::{Action, ActionError, NewSource, SourcePatch};
+use crate::action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
 use crate::model::{
     ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
     Transition, TransitionKind, MIN_TRANSITION_MS,
 };
+use crate::stage::{AtZero, MAX_COUNTDOWN_MS, MAX_MESSAGE_LEN, MAX_SHORT_TEXT_LEN, QUICK_MESSAGES};
 use crate::timing::{source_ended, source_position};
 
 /// Longest name a source may have.
@@ -67,6 +68,58 @@ impl Engine {
         self.revision += 1;
         Ok(Outcome::Changed)
     }
+
+    /// Let time pass: runs anything due at `now` (the countdown's at-zero
+    /// action). Call it a few times a second.
+    pub fn tick(&mut self, now: Millis) -> Outcome {
+        let c = &self.show.countdown;
+        if c.fired || !c.finished(now) {
+            return Outcome::Unchanged;
+        }
+        let mut next = self.show.clone();
+        let live_before = next.screens.live.clone();
+        let was_following = next.back_follows_live;
+        next.countdown.fired = true;
+        match next.countdown.at_zero.clone() {
+            AtZero::Hold | AtZero::ShowText | AtZero::Hide => {}
+            AtZero::Blank => {
+                let mut screens = Vec::new();
+                if next.countdown.on_live {
+                    screens.push(ScreenId::Live);
+                }
+                if next.countdown.on_back {
+                    screens.push(ScreenId::Back);
+                }
+                if screens.is_empty() {
+                    screens = vec![ScreenId::Live, ScreenId::Back];
+                }
+                for id in screens {
+                    let sc = next.screens.get_mut(id);
+                    if !sc.blank {
+                        sc.blank = true;
+                        sc.blank_changed_at = now;
+                    }
+                }
+            }
+            AtZero::CutTo { source_id } => {
+                // The source may have been removed since; then just stop.
+                if next.has_source(&source_id) {
+                    let _ = apply_to(
+                        &mut next,
+                        Action::CutTo {
+                            screen: ScreenId::Live,
+                            source_id,
+                        },
+                        now,
+                    );
+                }
+            }
+        }
+        follow_live(&mut next, &live_before, was_following, now);
+        self.show = next;
+        self.revision += 1;
+        Outcome::Changed
+    }
 }
 
 // One arm per action keeps every rule of the show in a single, readable place.
@@ -95,6 +148,9 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         Action::RemoveSource { id } => {
             let index = index_of(s, &id)?;
             s.sources.remove(index);
+            if matches!(&s.countdown.at_zero, AtZero::CutTo { source_id } if *source_id == id) {
+                s.countdown.at_zero = AtZero::Hold;
+            }
             for id_screen in ScreenId::ALL {
                 let sc = s.screens.get_mut(id_screen);
                 for slot in [&mut sc.preview, &mut sc.program, &mut sc.previous] {
@@ -270,7 +326,134 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.auto_play_on_take = value;
             Ok(())
         }
+        Action::UpdateMonitor { patch } => {
+            update_monitor(s, patch);
+            Ok(())
+        }
+        Action::SetQuickMessage { index, text } => {
+            if index >= QUICK_MESSAGES {
+                return Err(ActionError::invalid(
+                    "index",
+                    "there are 8 quick messages (0 – 7)",
+                ));
+            }
+            s.monitor.quick[index] = short_text(&text, MAX_SHORT_TEXT_LEN);
+            Ok(())
+        }
+        Action::UpdateCountdown { patch } => update_countdown(s, patch),
+        Action::SetCountdownLength { length_ms } => {
+            s.countdown.length_ms = countdown_ms(length_ms, "lengthMs")?;
+            s.countdown.reset();
+            Ok(())
+        }
+        Action::StartCountdown => {
+            s.countdown.start(now);
+            Ok(())
+        }
+        Action::PauseCountdown => {
+            s.countdown.pause(now);
+            Ok(())
+        }
+        Action::ResetCountdown => {
+            s.countdown.reset();
+            Ok(())
+        }
+        Action::AddCountdownTime { ms } => {
+            if ms.unsigned_abs() > MAX_COUNTDOWN_MS {
+                return Err(ActionError::invalid("ms", "at most 24 hours at a time"));
+            }
+            s.countdown.add(ms, now);
+            Ok(())
+        }
+        Action::SetCountdownRemaining { ms } => {
+            s.countdown.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
+            Ok(())
+        }
+        Action::CountdownTo { at } => {
+            if at <= now {
+                return Err(ActionError::invalid("at", "that time has already passed"));
+            }
+            let left = countdown_ms(at - now, "at")?;
+            s.countdown.length_ms = left;
+            s.countdown.remaining_ms = left;
+            s.countdown.ends_at = Some(at);
+            s.countdown.fired = false;
+            Ok(())
+        }
     }
+}
+
+// ---------- stage monitor and countdown ----------
+
+fn update_monitor(s: &mut Show, p: MonitorPatch) {
+    let m = &mut s.monitor;
+    if let Some(text) = p.message {
+        m.message = short_text(&text, MAX_MESSAGE_LEN);
+    }
+    if let Some(v) = p.message_on {
+        m.message_on = v;
+    }
+    if let Some(v) = p.layout {
+        m.layout = v;
+    }
+    if let Some(v) = p.show_clock {
+        m.show_clock = v;
+    }
+    if let Some(v) = p.show_timer {
+        m.show_timer = v;
+    }
+    if let Some(v) = p.text_size {
+        m.text_size = v;
+    }
+    if let Some(v) = p.clock_24h {
+        m.clock_24h = v;
+    }
+}
+
+fn update_countdown(s: &mut Show, p: CountdownPatch) -> Result<()> {
+    if let Some(AtZero::CutTo { source_id }) = &p.at_zero {
+        require_source(s, source_id)?;
+    }
+    let c = &mut s.countdown;
+    if let Some(text) = p.label {
+        c.label = short_text(&text, MAX_SHORT_TEXT_LEN);
+    }
+    if let Some(text) = p.end_text {
+        c.end_text = short_text(&text, MAX_SHORT_TEXT_LEN);
+    }
+    if let Some(v) = p.on_live {
+        c.on_live = v;
+    }
+    if let Some(v) = p.on_back {
+        c.on_back = v;
+    }
+    if let Some(v) = p.format {
+        c.format = v;
+    }
+    if let Some(v) = p.at_zero {
+        c.at_zero = v;
+    }
+    Ok(())
+}
+
+fn countdown_ms(ms: u64, field: &str) -> Result<u64> {
+    if ms == 0 || ms > MAX_COUNTDOWN_MS {
+        return Err(ActionError::invalid(
+            field,
+            "must be between 1 second and 24 hours",
+        ));
+    }
+    Ok(ms)
+}
+
+/// Trimmed, one line, at most `max` characters.
+pub(crate) fn short_text(text: &str, max: usize) -> String {
+    text.split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .chars()
+        .take(max)
+        .collect()
 }
 
 // ---------- Back follows Live ----------

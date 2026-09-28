@@ -59,6 +59,7 @@ export function ProgramView({
   client,
   audible = false,
   reportDuration = false,
+  audience = false,
   children,
 }: {
   show: Show;
@@ -66,6 +67,8 @@ export function ProgramView({
   client: EngineClient;
   audible?: boolean;
   reportDuration?: boolean;
+  /** An audience screen: failed sources show black, never an error. */
+  audience?: boolean;
   children?: ReactNode;
 }) {
   const now = useNow(screenMoving(show, screen, Date.now()));
@@ -95,6 +98,7 @@ export function ProgramView({
               audible={audible && l.opacity > 0}
               master={show.masterVolume * (1 - blank)}
               reportDuration={reportDuration}
+              audience={audience}
             />
           </div>
         );

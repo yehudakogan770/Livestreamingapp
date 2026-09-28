@@ -32,8 +32,11 @@ software. When quality and speed of development conflict, quality wins.
    actions and renders the state it receives; it never owns show state.
 2. **The engine never waits on the UI.** Video output runs on its own threads.
    A frozen or crashed UI must never freeze or blank an output.
-3. **Never go black by accident.** If a source fails, outputs hold the last good
-   frame and the UI shows a clear warning.
+3. **The audience never sees an error.** If a source fails (camera unplugged,
+   file missing or broken), that screen shows clean black and only the control
+   window shows the warning. If an output window itself breaks, it goes black at
+   once and reloads; the show lives in the engine, so it resumes exactly where
+   it was. (Operator's choice: black rather than a frozen last frame.)
 4. **Everything is recoverable.** The show autosaves continuously; after a crash
    or restart Lumora reopens exactly where it was.
 5. **Offline first.** Nothing needed to run an event may depend on the internet.
