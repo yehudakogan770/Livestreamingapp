@@ -12,6 +12,7 @@ import { Mixer } from './Mixer';
 import { PresetsPanel } from './PresetsPanel';
 import { PresetButtons } from './PresetButtons';
 import { ProblemLight, ProblemToasts } from '../problems/ProblemsUI';
+import { BroadcastButtons } from '../broadcast/BroadcastButtons';
 import { OutputWatcher, SoundWatcher } from '../problems/watchers';
 import { SwitchPanel } from './SwitchPanel';
 import { Transport } from './Transport';
@@ -30,7 +31,18 @@ const typing = (t: EventTarget | null) =>
   t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName));
 
 /** The main event screen for the screen being controlled. */
-export function ControlView({ show, screen, client }: { show: Show; screen: ScreenId; client: EngineClient }) {
+export function ControlView({
+  show,
+  screen,
+  client,
+  onBroadcastSettings,
+}: {
+  show: Show;
+  screen: ScreenId;
+  client: EngineClient;
+  /** Open Settings → Recording and streaming. */
+  onBroadcastSettings?: () => void;
+}) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [adding, setAdding] = useState(false);
   const [outputsOpen, setOutputsOpen] = useState(false);
@@ -183,6 +195,7 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
         >
           Back = Live
         </button>
+        <BroadcastButtons onSettings={onBroadcastSettings ?? (() => {})} />
         <span className="grow" />
         <span className="bar__label">Blank</span>
         {SCREENS.map((s) => (

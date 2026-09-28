@@ -1,0 +1,122 @@
+/* ---- REC / LIVE on the bottom bar ---- */
+.bc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.bc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+.bc-btn--rec,
+.bc-btn--live {
+  background: var(--program);
+  border-color: var(--program-bright);
+  color: #fff;
+}
+.bc-btn--rec .bc-dot,
+.bc-btn--live .bc-dot {
+  background: #fff;
+  animation: bc-blink 1.2s steps(1) infinite;
+}
+.bc-btn--warn {
+  background: #6b5a12;
+  border-color: #d4b23a;
+}
+@keyframes bc-blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+.bc-saved {
+  position: fixed;
+  left: 50%;
+  bottom: 56px;
+  z-index: 30;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 48px);
+  padding: 8px 8px 8px 14px;
+  border-radius: 6px;
+  background: #16302a;
+  border: 1px solid #2f8f4e;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+.bc-saved a {
+  color: var(--accent);
+}
+.bc-saved__path {
+  font-family: var(--mono);
+  user-select: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btn--danger {
+  background: var(--program);
+  border-color: var(--program-bright);
+  color: #fff;
+}
+
+/* ---- settings ---- */
+.bcd {
+  width: min(720px, calc(100vw - 48px));
+}
+.bcd__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 16px;
+  overflow: auto;
+}
+.bcd__intro {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.bcd__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bcd__section h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.bcd__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bcd__grow {
+  flex: 1;
+  min-width: 0;
+}
+.bcd__path {
+  font-family: var(--mono);
+  user-select: text;
+}
+.bcd__dest {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.bcd__dest.is-off {
+  opacity: 0.6;
+}
+.bcd__destbody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

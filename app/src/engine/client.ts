@@ -51,6 +51,56 @@ export interface RemoteStatus {
   error: string | null;
 }
 
+// ----- recording and streaming (mirrors src-tauri/src/capture.rs) -----
+
+export type CaptureKind = 'record' | 'stream';
+export type Quality = '720p' | '1080p' | '1080p60';
+
+/** Where the stream goes. */
+export interface Destination {
+  id: string;
+  name: string;
+  /** The server, e.g. rtmp://a.rtmp.youtube.com/live2 */
+  url: string;
+  key: string;
+  enabled: boolean;
+}
+
+export interface CaptureSettings {
+  /** Where recordings go (null: the Videos folder). */
+  folder: string | null;
+  quality: Quality;
+  videoKbps: number;
+  /** Which mix a recording hears: the same as the stream, or mix B. */
+  recordMix: 'stream' | 'recording';
+  destinations: Destination[];
+}
+
+export interface CaptureRunning {
+  session: number;
+  startedAt: number;
+  path: string | null;
+  destinations: string[];
+  bytes: number;
+  /** How fast FFmpeg keeps up (1 = real time). */
+  speed: number | null;
+}
+
+export interface CaptureStatus {
+  /** FFmpeg was found (needed for streaming and for .mp4 files). */
+  ffmpeg: boolean;
+  recording: CaptureRunning | null;
+  streaming: CaptureRunning | null;
+  lastRecording: string | null;
+  /** Still turning the last recording into an .mp4. */
+  finishing: boolean;
+  failure: { kind: CaptureKind; session: number; message: string } | null;
+}
+
+export function defaultCaptureSettings(): CaptureSettings {
+  return { folder: null, quality: '1080p', videoKbps: 6000, recordMix: 'stream', destinations: [] };
+}
+
 export interface EngineClient {
   /** True when connected to the real engine. */
   readonly live: boolean;
@@ -82,6 +132,21 @@ export interface EngineClient {
   setRemote(on: boolean): Promise<RemoteStatus>;
   /** A new PIN; connected phones have to type it again. */
   newRemotePin(): Promise<RemoteStatus>;
+
+  // ----- recording and streaming -----
+  /** Called with the recording/streaming status, now and on every change. */
+  watchCapture(onChange: (s: CaptureStatus) => void): () => void;
+  captureSettings(): Promise<CaptureSettings>;
+  setCaptureSettings(s: CaptureSettings): Promise<CaptureSettings>;
+  /** The folder recordings go to. */
+  captureFolder(): Promise<string>;
+  /** Ask the operator for a folder. Resolves null if cancelled. */
+  pickFolder(): Promise<string | null>;
+  /** Start a recording or stream of what the encoder makes (`mime`); `name` names the file. */
+  captureStart(kind: CaptureKind, mime: string, name: string): Promise<CaptureRunning>;
+  /** More encoded picture and sound, in order. */
+  captureChunk(session: number, data: ArrayBuffer): Promise<void>;
+  captureStop(session: number): Promise<void>;
 
   // ----- files -----
   /** Ask the operator for a video or picture file. Resolves to its path, or null if cancelled. */
@@ -313,6 +378,54 @@ class TauriClient implements EngineClient {
     return invoke<RemoteStatus>('new_remote_pin');
   }
 
+  watchCapture(onChange: (s: CaptureStatus) => void): () => void {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void invoke<CaptureStatus>('capture_status').then((s) => !cancelled && onChange(s));
+    void listen<CaptureStatus>('capture-changed', (e) => onChange(e.payload)).then((unlisten) => {
+      if (cancelled) unlisten();
+      else stop = unlisten;
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }
+
+  captureSettings(): Promise<CaptureSettings> {
+    return invoke<CaptureSettings>('capture_settings');
+  }
+
+  setCaptureSettings(settings: CaptureSettings): Promise<CaptureSettings> {
+    return invoke<CaptureSettings>('set_capture_settings', { settings });
+  }
+
+  captureFolder(): Promise<string> {
+    return invoke<string>('capture_folder');
+  }
+
+  async pickFolder(): Promise<string | null> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const path = await open({ multiple: false, directory: true });
+    return typeof path === 'string' ? path : null;
+  }
+
+  async captureStart(kind: CaptureKind, mime: string, name: string): Promise<CaptureRunning> {
+    try {
+      return await invoke<CaptureRunning>('capture_start', { kind, mime, name });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async captureChunk(session: number, data: ArrayBuffer): Promise<void> {
+    await invoke('capture_chunk', new Uint8Array(data), { headers: { session: String(session) } });
+  }
+
+  async captureStop(session: number): Promise<void> {
+    await invoke('capture_stop', { session });
+  }
+
   async pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({ multiple: false, directory: false, filters: [FILTERS[kind]] });
@@ -441,6 +554,70 @@ export class DemoClient implements EngineClient {
 
   newRemotePin(): Promise<RemoteStatus> {
     return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  // Recording in the browser demo keeps the file in memory and offers it as a
+  // download; streaming needs the Lumora app.
+  private capture: CaptureStatus = { ffmpeg: false, recording: null, streaming: null, lastRecording: null, finishing: false, failure: null };
+  private captureWatchers = new Set<(s: CaptureStatus) => void>();
+  private captureSet = defaultCaptureSettings();
+  private recorded: { session: number; mime: string; name: string; parts: ArrayBuffer[] } | null = null;
+  private nextSession = 1;
+
+  private captureChanged(patch: Partial<CaptureStatus>) {
+    this.capture = { ...this.capture, ...patch };
+    for (const w of this.captureWatchers) w(this.capture);
+  }
+
+  watchCapture(onChange: (s: CaptureStatus) => void): () => void {
+    this.captureWatchers.add(onChange);
+    onChange(this.capture);
+    return () => this.captureWatchers.delete(onChange);
+  }
+
+  captureSettings(): Promise<CaptureSettings> {
+    return Promise.resolve(this.captureSet);
+  }
+
+  setCaptureSettings(s: CaptureSettings): Promise<CaptureSettings> {
+    this.captureSet = s;
+    return Promise.resolve(s);
+  }
+
+  captureFolder(): Promise<string> {
+    return Promise.resolve('Downloads (browser demo)');
+  }
+
+  pickFolder(): Promise<string | null> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  captureStart(kind: CaptureKind, mime: string, name: string): Promise<CaptureRunning> {
+    if (kind === 'stream') return Promise.reject(new Error('Streaming needs the Lumora app; the browser demo can only record.'));
+    if (this.capture.recording) return Promise.reject(new Error('Already recording.'));
+    const session = this.nextSession++;
+    this.recorded = { session, mime, name, parts: [] };
+    const running: CaptureRunning = { session, startedAt: Date.now(), path: `${name}.webm`, destinations: [], bytes: 0, speed: null };
+    this.captureChanged({ recording: running, failure: null });
+    return Promise.resolve(running);
+  }
+
+  captureChunk(session: number, data: ArrayBuffer): Promise<void> {
+    const r = this.recorded;
+    if (!r || r.session !== session) return Promise.reject(new Error('not running'));
+    r.parts.push(data);
+    const bytes = r.parts.reduce((n, p) => n + p.byteLength, 0);
+    if (this.capture.recording) this.captureChanged({ recording: { ...this.capture.recording, bytes } });
+    return Promise.resolve();
+  }
+
+  captureStop(session: number): Promise<void> {
+    const r = this.recorded;
+    if (!r || r.session !== session) return Promise.resolve();
+    this.recorded = null;
+    const url = URL.createObjectURL(new Blob(r.parts, { type: r.mime }));
+    this.captureChanged({ recording: null, lastRecording: url });
+    return Promise.resolve();
   }
 
   pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {

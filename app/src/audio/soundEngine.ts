@@ -100,6 +100,30 @@ export class SoundEngine {
     return this.ctx.state !== 'running';
   }
 
+  private readonly taps = new Map<MediaStream, { mix: 'master' | 'b'; node: MediaStreamAudioDestinationNode }>();
+
+  /**
+   * A mix as a live sound track, for recording and streaming. It carries
+   * the mix exactly as heard (faders, mutes, audio-follows-video fades).
+   */
+  mixStream(mix: 'master' | 'b'): MediaStream {
+    const node = this.ctx.createMediaStreamDestination();
+    node.channelCount = 2;
+    this.outputs[mix].gain.connect(node);
+    this.taps.set(node.stream, { mix, node });
+    void this.ctx.resume().catch(() => {});
+    return node.stream;
+  }
+
+  /** Stop feeding a stream made by {@link mixStream}. */
+  endMixStream(stream: MediaStream): void {
+    const tap = this.taps.get(stream);
+    if (!tap) return;
+    this.taps.delete(stream);
+    stream.getTracks().forEach((t) => t.stop());
+    this.outputs[tap.mix].gain.disconnect(tap.node);
+  }
+
   /** Give the engine the latest show. */
   setShow(show: Show): void {
     this.show = show;

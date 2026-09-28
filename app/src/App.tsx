@@ -10,6 +10,8 @@ import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
 import { EventSetup } from './views/EventSetup';
 import { RemoteDialog } from './views/RemoteDialog';
+import { BroadcastProvider } from './broadcast/BroadcastContext';
+import { BroadcastDialog } from './broadcast/BroadcastDialog';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
@@ -76,6 +78,8 @@ function ControlApp() {
   useEffect(() => client.watchEventFiles(setFiles), [client]);
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
   const [remoteOpen, setRemoteOpen] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const openBroadcast = useCallback(() => setBroadcastOpen(true), []);
   useEffect(() => client.watchRemote(setRemote), [client]);
   useReportProblem(
     remote?.enabled && remote.error
@@ -118,6 +122,7 @@ function ControlApp() {
     }
     const phones = remote?.phones ?? 0;
     const settings: MenuItem[] = [
+      { label: 'Recording and streaming…', onClick: openBroadcast },
       {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
@@ -126,7 +131,7 @@ function ControlApp() {
       ...TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) })),
     ];
     return { Event: event, Settings: settings };
-  }, [files, open, saveAs, textSize, remote]);
+  }, [files, open, saveAs, textSize, remote, openBroadcast]);
 
   return (
     <div className="app">
@@ -137,7 +142,10 @@ function ControlApp() {
           <SafeBoundary audience={false}>
             <SoundProvider show={show} client={client}>
               <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p) }}>
-                <ControlView show={show} screen={controlling} client={client} />
+                <BroadcastProvider show={show} client={client}>
+                  <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
+                  {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
+                </BroadcastProvider>
               </StageContext.Provider>
             </SoundProvider>
           </SafeBoundary>

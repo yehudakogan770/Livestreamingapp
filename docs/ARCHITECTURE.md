@@ -79,7 +79,14 @@ screens stay in step. In a plain browser the UI runs on a demo engine
 they opened.
 5. Monitor (text, clock, timer) and hype countdown. **Done.**
 6. Audio mixer. **Done** (web audio engine: channels, three mixes, solo, speakers per mix; native WASAPI engine later).
-7. Recording and streaming.
+7. Recording and streaming. **Done** (first version: REC / GO LIVE on the bottom bar,
+   Settings → Recording and streaming. `app/src/broadcast/compositor.ts` draws the
+   Live Screen onto a canvas (same rules as the output windows, no window needed);
+   the WebView's MediaRecorder encodes it with the Stream mix; chunks go to
+   `src-tauri/src/capture.rs`, which writes the recording as it arrives (then
+   remuxes to .mp4) or pipes it into FFmpeg for RTMP to several destinations at
+   once. Dropped streams reconnect by themselves. The native renderer will later
+   replace the canvas and share one encode between recording and streaming.)
 8. Presets, library, save / open events, crash recovery.
 9. Phone and tablet remotes. **Done** (first version: Settings → Phone remote.
    `src-tauri/src/remote.rs` serves `src-tauri/remote/` on the local network with

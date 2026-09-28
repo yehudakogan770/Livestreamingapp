@@ -20,7 +20,8 @@
         "minHeight": 760,
         "maximized": true,
         "backgroundColor": "#15171b",
-        "center": true
+        "center": true,
+        "backgroundThrottling": "disabled"
       }
     ],
     "security": {

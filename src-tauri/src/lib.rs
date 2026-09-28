@@ -1,5 +1,6 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
+mod capture;
 mod events;
 mod outputs;
 mod remote;
@@ -23,6 +24,7 @@ struct AppState {
     files: Mutex<events::EventFiles>,
     dir: std::path::PathBuf,
     remote: remote::Remote,
+    capture: capture::Capture,
 }
 
 /// A version of the show together with its revision number.
@@ -229,6 +231,64 @@ fn new_remote_pin(state: State<'_, AppState>, app: tauri::AppHandle) -> remote::
     status
 }
 
+/// Recording and streaming: what is running, and the last problem.
+#[tauri::command]
+fn capture_status(state: State<'_, AppState>) -> capture::CaptureStatus {
+    state.capture.status()
+}
+
+#[tauri::command]
+fn capture_settings(state: State<'_, AppState>) -> capture::CaptureSettings {
+    state.capture.settings()
+}
+
+#[tauri::command]
+fn set_capture_settings(
+    settings: capture::CaptureSettings,
+    state: State<'_, AppState>,
+) -> capture::CaptureSettings {
+    state.capture.set_settings(settings)
+}
+
+/// The folder recordings go to.
+#[tauri::command]
+fn capture_folder(state: State<'_, AppState>) -> String {
+    state.capture.folder().to_string_lossy().into_owned()
+}
+
+#[tauri::command]
+fn capture_start(
+    kind: capture::Kind,
+    mime: String,
+    name: String,
+    state: State<'_, AppState>,
+) -> Result<capture::Running, String> {
+    state.capture.start(kind, &mime, &name)
+}
+
+/// More of the encoded Live Screen: the bytes are the body, the session a header.
+#[tauri::command]
+fn capture_chunk(
+    request: tauri::ipc::Request<'_>,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let session = request
+        .headers()
+        .get("session")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse().ok())
+        .ok_or("no session")?;
+    state.capture.chunk(session, bytes.clone())
+}
+
+#[tauri::command]
+fn capture_stop(session: u64, state: State<'_, AppState>) {
+    state.capture.stop(session);
+}
+
 /// Lets the remote reach the engine.
 struct RemoteBackend(tauri::AppHandle);
 
@@ -272,7 +332,11 @@ pub fn run() {
             if let WindowEvent::Destroyed = event {
                 let app = window.app_handle();
                 if window.label() == "control" {
-                    // Closing the control window ends the show: close the outputs too.
+                    // Closing the control window ends the show: finish any
+                    // recording or stream, and close the outputs too.
+                    if let Some(state) = app.try_state::<AppState>() {
+                        state.capture.stop_all();
+                    }
                     app.exit(0);
                 } else {
                     outputs::notify(app);
@@ -293,12 +357,25 @@ pub fn run() {
                 remote::DEFAULT_PORT,
                 RemoteBackend(app.handle().clone()),
             );
+            let videos = app
+                .path()
+                .video_dir()
+                .or_else(|_| app.path().home_dir())
+                .unwrap_or_else(|_| dir.clone())
+                .join("Lumora");
+            let ffmpeg = capture::find_ffmpeg();
+            eprintln!("lumora: ffmpeg {ffmpeg:?}");
+            let handle = app.handle().clone();
+            let capture = capture::Capture::new(Some(&dir), videos, ffmpeg, move |status| {
+                let _ = handle.emit("capture-changed", status);
+            });
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
                 files: Mutex::new(files),
                 dir,
                 remote,
+                capture,
             });
             heartbeat(app.handle().clone());
             if std::env::var_os("LUMORA_SMOKE_TEST").is_some() {
@@ -319,7 +396,14 @@ pub fn run() {
             save_event_as,
             remote_status,
             set_remote,
-            new_remote_pin
+            new_remote_pin,
+            capture_status,
+            capture_settings,
+            set_capture_settings,
+            capture_folder,
+            capture_start,
+            capture_chunk,
+            capture_stop
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");
