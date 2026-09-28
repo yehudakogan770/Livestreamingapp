@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import type { SourceAudioPatch } from '../engine/types/SourceAudioPatch';
 import { soundSources } from '../engine/audio';
 import { Meter, useSound } from '../audio/SoundContext';
+import { Fader } from '../components/Fader';
 import { SoundOutputsDialog } from './SoundOutputsDialog';
 import type { Act } from './act';
 
@@ -46,38 +47,6 @@ export function Mixer({ show, act }: { show: Show; act: Act }) {
       </div>
       {outputs && <SoundOutputsDialog show={show} act={act} onClose={() => setOutputs(false)} />}
     </div>
-  );
-}
-
-function Fader({ value, label, onChange }: { value: number; label: string; onChange: (v: number) => void }) {
-  // Sends at most one change per frame while dragging.
-  const pending = useRef<number | null>(null);
-  const frame = useRef(0);
-  const [local, setLocal] = useState<number | null>(null);
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
-  return (
-    <input
-      className="fader"
-      type="range"
-      min={0}
-      max={1000}
-      value={Math.round((local ?? value) * 1000)}
-      aria-label={label}
-      title="Double-click: back to 0 dB"
-      onChange={(e) => {
-        const v = Number(e.target.value) / 1000;
-        setLocal(v);
-        pending.current = v;
-        if (!frame.current)
-          frame.current = requestAnimationFrame(() => {
-            frame.current = 0;
-            if (pending.current !== null) onChange(pending.current);
-          });
-      }}
-      onPointerUp={() => setLocal(null)}
-      onBlur={() => setLocal(null)}
-      onDoubleClick={() => onChange(1)}
-    />
   );
 }
 
