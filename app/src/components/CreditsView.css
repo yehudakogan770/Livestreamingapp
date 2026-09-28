@@ -1,0 +1,55 @@
+.cr {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  text-align: center;
+}
+.cr__roll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  will-change: transform;
+}
+.cr__page {
+  position: absolute;
+  inset: 7% 5%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: cr-page 0.6s ease-out both;
+}
+.cr__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.cr__name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cr__role {
+  font-size: 0.62em;
+  font-weight: 400;
+  opacity: 0.75;
+}
+.cr__wall {
+  display: grid;
+  width: 100%;
+  column-gap: 2cqw;
+}
+@keyframes cr-page {
+  from {
+    opacity: 0;
+  }
+}

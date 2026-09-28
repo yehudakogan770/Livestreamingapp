@@ -105,4 +105,7 @@ they opened.
     Text and titles: **done** (a `text` input: lower third, title, ticker,
     full-screen message; font, weight, colour, outline, shadow, box; `TextView`,
     `TextEditor`, drawn by the recorder too).
+    Credits: **done** (a `credits` input: rolling, pages or a wall of names;
+    paste from a spreadsheet; play/pause/speed/restart live; rolls from the top
+    when taken to air).
 11. Installer, auto-update, rehearsal / soak testing, release.

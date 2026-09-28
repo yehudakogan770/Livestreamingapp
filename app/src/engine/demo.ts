@@ -3,6 +3,8 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { creditsPosition } from './credits';
+import type { Credits } from './types/Credits';
 import { repairOverlay, setOverlayOn } from './overlays';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -43,8 +45,7 @@ function startTimer(c: Countdown, now: number) {
 }
 
 function countdownMs(ms: number, field: string): number {
-  if (!(ms > 0 && ms <= MAX_COUNTDOWN_MS))
-    throw new Refused({ code: 'invalidValue', field, reason: 'must be between 1 second and 24 hours' });
+  if (!(ms > 0 && ms <= MAX_COUNTDOWN_MS)) throw new Refused({ code: 'invalidValue', field, reason: 'must be between 1 second and 24 hours' });
   return ms;
 }
 const MAX_TRANSITION_MS = 10_000;
@@ -122,6 +123,20 @@ function take(s: Show, screen: ScreenId, kind: Show['transition']['kind'], durat
   // A countdown waits in Next and starts counting when it goes on air.
   const k = s.sources.find((x) => x.id === incoming)?.kind;
   if (k?.type === 'countdown' && k.timer.endsAt === null) startTimer(k.timer, now);
+  // Credits roll from the top when they go on air.
+  if (k?.type === 'credits' && !k.playing) Object.assign(k, { playing: true, posMs: 0, at: now });
+}
+
+function creditsIn(s: Show, id: string): Credits {
+  const src = find(s, id);
+  if (src.kind.type !== 'credits') throw new Refused({ code: 'invalidValue', field: 'credits', reason: 'that input is not a credits input' });
+  return src.kind;
+}
+
+/** Keep where it is when playing, stopping or changing speed (no jump). */
+function creditsAt(c: Credits, now: number) {
+  c.posMs = creditsPosition(c, now);
+  c.at = now;
 }
 
 function sameScreen(a: ScreenState, b: ScreenState) {
@@ -162,7 +177,11 @@ function apply(s: Show, a: Action, now: number) {
         a.source.kind.type === 'video'
           ? { ...a.source.kind, playback: { playing: false, posS: 0, at: 0 } }
           : a.source.kind.type === 'pesukim'
-            ? { ...structuredClone(a.source.kind), look: { ...a.source.kind.look, behind: null }, place: { pasuk: 0, word: 0, whole: false, blank: false, changedAt: 0 } }
+            ? {
+                ...structuredClone(a.source.kind),
+                look: { ...a.source.kind.look, behind: null },
+                place: { pasuk: 0, word: 0, whole: false, blank: false, changedAt: 0 },
+              }
             : a.source.kind;
       if (kind.type === 'pesukim') repairPesukim(kind);
       s.sources.push({
@@ -214,7 +233,8 @@ function apply(s: Show, a: Action, now: number) {
       if (s.audio.solo === a.id) s.audio.solo = null;
       for (const p of s.presets) p.sources = p.sources.filter((x) => x !== a.id);
       for (const src of s.sources) {
-        if (src.kind.type === 'countdown' && src.kind.timer.atZero.type === 'cutTo' && src.kind.timer.atZero.sourceId === a.id) src.kind.timer.atZero = { type: 'hide' };
+        if (src.kind.type === 'countdown' && src.kind.timer.atZero.type === 'cutTo' && src.kind.timer.atZero.sourceId === a.id)
+          src.kind.timer.atZero = { type: 'hide' };
         if (src.kind.type === 'pesukim' && src.kind.look.behind === a.id) src.kind.look.behind = null;
       }
       for (const o of s.overlays) {
@@ -415,8 +435,7 @@ function apply(s: Show, a: Action, now: number) {
       return;
     }
     case 'setQuickMessage':
-      if (a.index < 0 || a.index >= 8)
-        throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 8 quick messages (0 – 7)' });
+      if (a.index < 0 || a.index >= 8) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 8 quick messages (0 – 7)' });
       s.monitor.quick[a.index] = oneLine(a.text, 60);
       return;
     case 'updateCountdown': {
@@ -465,6 +484,34 @@ function apply(s: Show, a: Action, now: number) {
     case 'setCountdownRemaining':
       setRemaining(timer(s, a.id), a.ms, now);
       return;
+    case 'updateCredits': {
+      const c = creditsIn(s, a.id);
+      const { playing, posMs, at } = c;
+      Object.assign(c, structuredClone(a.credits), { playing, posMs, at });
+      c.names = c.names.map((n) => n.trim()).filter(Boolean);
+      c.speed = Math.min(600, Math.max(5, c.speed));
+      c.pageMs = Math.min(120_000, Math.max(1000, c.pageMs));
+      return;
+    }
+    case 'creditsPlay': {
+      const c = creditsIn(s, a.id);
+      if (c.playing === a.value) return;
+      creditsAt(c, now);
+      c.playing = a.value;
+      return;
+    }
+    case 'creditsRestart': {
+      const c = creditsIn(s, a.id);
+      c.posMs = 0;
+      c.at = now;
+      return;
+    }
+    case 'creditsSpeed': {
+      const c = creditsIn(s, a.id);
+      creditsAt(c, now);
+      c.speed = Math.min(600, Math.max(5, a.speed));
+      return;
+    }
     case 'updateText': {
       const src = find(s, a.id);
       if (src.kind.type !== 'text') throw new Refused({ code: 'invalidValue', field: 'text', reason: 'that input is not a text input' });
@@ -547,7 +594,11 @@ function apply(s: Show, a: Action, now: number) {
           const src = s.sources.find((x) => x.id === b);
           if (!src) throw new Refused({ code: 'unknownSource', id: b });
           if (b === a.id || !['camera', 'video', 'image', 'color', 'pattern'].includes(src.kind.type))
-            throw new Refused({ code: 'invalidValue', field: 'behind', reason: 'only a camera, video, picture, colour or test pattern can go behind the words' });
+            throw new Refused({
+              code: 'invalidValue',
+              field: 'behind',
+              reason: 'only a camera, video, picture, colour or test pattern can go behind the words',
+            });
         }
         p.look = structuredClone(a.look);
       }
@@ -575,7 +626,8 @@ function cleanPreset(s: Show, p: Preset): Preset {
   for (const id of p.sources) find(s, id);
   for (const b of p.buttons) {
     if (b.steps.length > 50) throw new Refused({ code: 'invalidValue', field: 'steps', reason: 'at most 50 steps in one button' });
-    if (b.steps.some((st) => st.type === 'wait' && st.ms > 600_000)) throw new Refused({ code: 'invalidValue', field: 'steps', reason: 'a wait can be at most 10 minutes' });
+    if (b.steps.some((st) => st.type === 'wait' && st.ms > 600_000))
+      throw new Refused({ code: 'invalidValue', field: 'steps', reason: 'a wait can be at most 10 minutes' });
   }
   return {
     ...structuredClone(p),

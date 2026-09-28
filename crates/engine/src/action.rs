@@ -5,6 +5,7 @@ use thiserror::Error;
 use ts_rs::TS;
 
 use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
+use crate::credits::Credits;
 use crate::event::EventPatch;
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
 use crate::overlays::OverlayPatch;
@@ -344,6 +345,25 @@ pub enum Action {
     UpdateText {
         id: SourceId,
         text: TextInput,
+    },
+
+    // ----- credits -----
+    /// Replace the names, title and look (where it is rolling is kept).
+    UpdateCredits {
+        id: SourceId,
+        credits: Credits,
+    },
+    CreditsPlay {
+        id: SourceId,
+        value: bool,
+    },
+    /// Back to the top.
+    CreditsRestart {
+        id: SourceId,
+    },
+    CreditsSpeed {
+        id: SourceId,
+        speed: u32,
     },
 
     // ----- overlays (channels 0 – 3, shown as 1 – 4) -----

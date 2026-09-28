@@ -119,6 +119,7 @@ pub fn repair(mut s: Show) -> Show {
                 *duration_s = 0.0;
             }
             SourceKind::Text(t) => t.repair(),
+            SourceKind::Credits(c) => c.repair(),
             SourceKind::Pesukim(p) => {
                 p.repair();
                 let defaults = crate::pesukim::PesukimLook::default();

@@ -19,6 +19,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   countdown: 'Countdown',
   pesukim: '12 Pesukim',
   text: 'Text',
+  credits: 'Credits',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */

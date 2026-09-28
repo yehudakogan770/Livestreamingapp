@@ -5,6 +5,7 @@ import type { SourceKind } from '../engine/types/SourceKind';
 import { SourceView } from '../components/SourceView';
 import { defaultPesukim } from '../engine/pesukim';
 import { TEXT_TEMPLATES } from '../engine/text';
+import { defaultCredits, parseNames } from '../engine/credits';
 
 /** What can be added; a sound file is stored as a video source that is never shown. */
 type Kind = SourceKind['type'] | 'sound';
@@ -18,6 +19,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'countdown', name: 'Countdown', hint: 'The show countdown, big' },
   { kind: 'pesukim', name: '12 Pesukim', hint: 'One word at a time, the crowd repeats' },
   { kind: 'text', name: 'Text / title', hint: 'Lower third, title, ticker, message' },
+  { kind: 'credits', name: 'Credits / thank-you', hint: 'Rolling names at the end' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
@@ -109,6 +111,8 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
           kind: { type: 'text', ...t, text: words.trim() || t.text, sub: words.trim() ? subWords.trim() : t.sub },
         };
       }
+      case 'credits':
+        return { name: n || 'Credits', kind: { type: 'credits', ...defaultCredits(), names: parseNames(words) } };
       case 'pesukim':
         // The words are typed or pasted in afterwards (Edit on its card).
         return { name: n || '12 Pesukim', kind: { type: 'pesukim', ...defaultPesukim() } };
@@ -222,6 +226,22 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
                   <input type="color" aria-label="Any colour" value={color} onChange={(e) => setColor(e.target.value)} />
                 </div>
               </div>
+            )}
+
+            {kind === 'credits' && (
+              <label className="field">
+                <span className="field__label">Names (one per line, or paste from a spreadsheet)</span>
+                <textarea
+                  className="text addinput__names"
+                  dir="auto"
+                  rows={6}
+                  value={words}
+                  placeholder={'Mendel K. — Chazzan\nChaya S.\n…'}
+                  onChange={(e) => setWords(e.target.value)}
+                  aria-label="Names"
+                />
+                <span className="field__note">A second column (or “Name — role”) shows the role smaller. Edit more on its card when it is on air.</span>
+              </label>
             )}
 
             {kind === 'text' && (

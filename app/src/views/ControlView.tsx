@@ -10,6 +10,7 @@ import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
 import { OverlayBar } from './OverlayBar';
+import { CreditsCard, creditsTarget } from './CreditsCard';
 import { pesukimTarget } from '../engine/pesukim';
 import { Mixer } from './Mixer';
 import { PresetsPanel } from './PresetsPanel';
@@ -158,6 +159,8 @@ export function ControlView({
                 <SwitchPanel show={show} screen={screen} act={act} />
                 {pesukimTarget(show, screen) ? (
                   <PesukimCard show={show} act={act} screen={screen} client={client} />
+                ) : creditsTarget(show, screen) ? (
+                  <CreditsCard show={show} act={act} screen={screen} />
                 ) : (
                   <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
                 )}

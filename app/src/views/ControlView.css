@@ -824,6 +824,7 @@ select {
   gap: 10px;
   min-width: 0;
 }
+.addinput__names { height: auto; padding: 6px 8px; resize: vertical; line-height: 1.4; }
 .addinput__path {
   color: var(--text-dim);
   font-size: 12px;

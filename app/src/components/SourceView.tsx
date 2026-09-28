@@ -8,6 +8,7 @@ import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
 import { PesukimView } from './PesukimView';
 import { TextView } from './TextView';
+import { CreditsView } from './CreditsView';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 
 // ---- views ----
@@ -76,6 +77,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
     case 'text':
       return <TextView t={k} />;
+    case 'credits':
+      return <CreditsView c={k} />;
     case 'pesukim':
       return <PesukimInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'countdown':

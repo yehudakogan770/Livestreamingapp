@@ -468,3 +468,28 @@ describe('Text', () => {
     expect(tile).toHaveTextContent('Head of School');
   });
 });
+
+describe('Credits', () => {
+  it('names pasted from a spreadsheet roll when taken to air, and pause works', async () => {
+    await start();
+    fireEvent.click(screen.getAllByRole('button', { name: /Add input/ })[0]!);
+    const add = screen.getByRole('dialog', { name: 'Add input' });
+    fireEvent.click(within(add).getByRole('button', { name: /^Credits \/ thank-you/ }));
+    fireEvent.change(within(add).getByLabelText('Names'), { target: { value: 'Mendel K.\tChazzan\nChaya S.' } });
+    await act(async () => {
+      fireEvent.click(within(add).getByRole('button', { name: 'Add input' }));
+    });
+    await act(async () => {
+      fireEvent.click(document.querySelector('.tile__pick')!);
+    });
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'Enter' });
+    });
+    expect(screen.getByLabelText('Credits')).toHaveTextContent('2 names · rolling');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '❚❚ Pause' }));
+    });
+    expect(screen.getByLabelText('Credits')).toHaveTextContent('(paused)');
+    expect(document.querySelector('.mon--pgm [data-kind="credits"]')).toHaveTextContent('Chazzan');
+  });
+});

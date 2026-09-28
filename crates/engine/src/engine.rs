@@ -2,6 +2,7 @@
 
 use crate::action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
 use crate::audio::{SourceAudio, MAX_BUS_NAME_LEN};
+use crate::credits::Credits;
 use crate::model::{
     ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
     Transition, TransitionKind, MIN_TRANSITION_MS,
@@ -255,6 +256,41 @@ pub(crate) fn can_be_behind(kind: &SourceKind) -> bool {
             | SourceKind::Color { .. }
             | SourceKind::Pattern
     )
+}
+
+fn credits_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Credits> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Credits(c) => Ok(c),
+        _ => Err(ActionError::invalid(
+            "credits",
+            "that input is not a credits input",
+        )),
+    }
+}
+
+/// The credits actions.
+fn apply_credits(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    match action {
+        Action::UpdateCredits { id, credits } => {
+            let c = credits_mut(s, &id)?;
+            let (playing, pos_ms, at) = (c.playing, c.pos_ms, c.at);
+            *c = Credits {
+                playing,
+                pos_ms,
+                at,
+                ..credits
+            };
+            c.repair();
+        }
+        Action::CreditsPlay { id, value } => credits_mut(s, &id)?.play(value, now),
+        Action::CreditsRestart { id } => credits_mut(s, &id)?.restart(now),
+        Action::CreditsSpeed { id, speed } => credits_mut(s, &id)?.set_speed(speed, now),
+        _ => {}
+    }
+    Ok(())
 }
 
 fn channel_mut(s: &mut Show, channel: usize) -> Result<&mut Overlay> {
@@ -770,6 +806,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             timer_mut(s, &id)?.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
             Ok(())
         }
+        a @ (Action::UpdateCredits { .. }
+        | Action::CreditsPlay { .. }
+        | Action::CreditsRestart { .. }
+        | Action::CreditsSpeed { .. }) => apply_credits(s, a, now),
         Action::UpdateText { id, text } => {
             let src = s
                 .source_mut(&id)
@@ -1136,6 +1176,13 @@ fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()
     sc.tbar = 0.0;
     start_if_video(s, &incoming, now);
     start_if_countdown(s, &incoming, now);
+    // Credits roll from the top when they go on air.
+    if let Ok(c) = credits_mut(s, &incoming) {
+        if !c.playing {
+            c.restart(now);
+            c.play(true, now);
+        }
+    }
     Ok(())
 }
 
@@ -1304,6 +1351,12 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
+        SourceKind::Credits(mut c) => {
+            c.playing = false;
+            c.pos_ms = 0;
+            c.repair();
+            SourceKind::Credits(c)
+        }
         SourceKind::Text(mut t) => {
             t.repair();
             SourceKind::Text(t)

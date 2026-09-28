@@ -196,6 +196,8 @@ pub enum SourceKind {
     Pesukim(Box<crate::pesukim::Pesukim>),
     /// A lower third, title, ticker or full-screen message.
     Text(Box<crate::text::TextInput>),
+    /// Credits / thank-you list: rolling, pages or a wall of names.
+    Credits(Box<crate::credits::Credits>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,

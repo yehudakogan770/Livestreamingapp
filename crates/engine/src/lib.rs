@@ -12,6 +12,7 @@
 
 pub mod action;
 pub mod audio;
+pub mod credits;
 pub mod engine;
 pub mod event;
 pub mod model;
@@ -27,6 +28,7 @@ pub use action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, S
 pub use audio::{
     AudioMix, AudioOutputId, AudioOutputs, Bus, BusId, BusPatch, SourceAudio, SourceAudioPatch,
 };
+pub use credits::{Credits, CreditsMode};
 pub use engine::{Engine, Outcome};
 pub use event::{EventInfo, EventPatch, SafeScreen};
 pub use model::*;

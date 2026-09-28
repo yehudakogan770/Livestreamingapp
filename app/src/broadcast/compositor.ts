@@ -14,6 +14,8 @@ import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { isRtl, withAlpha } from '../engine/text';
+import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
+import type { Credits } from '../engine/types/Credits';
 import type { TextInput } from '../engine/types/TextInput';
 import type { Overlay } from '../engine/types/Overlay';
 import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, fadeAmount, formatCountdown, ZERO_HOLD_MS } from '../engine/timing';
@@ -166,6 +168,9 @@ export class ProgramCompositor {
       case 'text':
         this.text(k, now, w, h);
         return;
+      case 'credits':
+        this.credits(k, now, w, h);
+        return;
       case 'image':
       case 'video':
       case 'camera': {
@@ -297,6 +302,67 @@ export class ProgramCompositor {
       ctx.shadowBlur = 0;
       ctx.globalAlpha = appear;
       if (logo) this.centred(logo, w * 0.6, h * 0.6, w, h, 0.92 + 0.08 * appear);
+    }
+    ctx.restore();
+  }
+
+  /** Credits (mirrors CreditsView): rolling, pages or a wall of names. */
+  private credits(c: Credits, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const k = h / 1080;
+    const { lineH, titleH, gap } = creditsMetrics(c);
+    const font = (size: number, weight: number) => `${weight} ${size * k}px "${c.font}", "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    ctx.fillStyle = c.background;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = c.color;
+    ctx.textBaseline = 'middle';
+    const name = (line: string, cx: number, cy: number, size: number) => {
+      const { name: n, role } = splitName(line);
+      ctx.font = font(size, 600);
+      const nw = ctx.measureText(n).width;
+      ctx.font = font(size * 0.62, 400);
+      const rw = role ? ctx.measureText(role).width + size * 0.4 * k : 0;
+      const x = cx - (nw + rw) / 2;
+      ctx.textAlign = 'left';
+      ctx.font = font(size, 600);
+      ctx.globalAlpha = 1;
+      ctx.fillText(n, x, cy);
+      if (role) {
+        ctx.font = font(size * 0.62, 400);
+        ctx.globalAlpha = 0.75;
+        ctx.fillText(role, x + nw + size * 0.4 * k, cy);
+        ctx.globalAlpha = 1;
+      }
+    };
+    const title = (top: number) => {
+      if (!c.title) return;
+      ctx.font = font(c.size * 1.8, 700);
+      ctx.textAlign = 'center';
+      ctx.fillText(c.title, w / 2, top + (titleH * k) / 2);
+    };
+    if (c.mode === 'roll') {
+      const top = h - rollOffset(c, now) * k;
+      title(top);
+      c.names.forEach((n, i) => {
+        const cy = top + (titleH + gap + i * lineH + lineH / 2) * k;
+        if (cy > -lineH * k && cy < h + lineH * k) name(n, w / 2, cy, c.size);
+      });
+    } else if (c.mode === 'pages') {
+      const { perPage, page } = creditsPage(c, now);
+      const list = c.names.slice(page * perPage, (page + 1) * perPage);
+      const top = (h - (titleH + gap + list.length * lineH) * k) / 2;
+      title(top);
+      list.forEach((n, i) => name(n, w / 2, top + (titleH + gap + i * lineH + lineH / 2) * k, c.size));
+    } else {
+      const { cols, size } = wallLayout(c);
+      const rows = Math.ceil(c.names.length / cols);
+      const rowH = size * 1.4;
+      const top = (h - (titleH + gap + rows * rowH) * k) / 2;
+      title(top);
+      const colW = (w * 0.9) / cols;
+      // Row by row, like the screens' grid.
+      c.names.forEach((n, i) => name(n, w * 0.05 + colW * (i % cols) + colW / 2, top + (titleH + gap + Math.floor(i / cols) * rowH + rowH / 2) * k, size));
     }
     ctx.restore();
   }

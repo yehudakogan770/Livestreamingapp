@@ -120,6 +120,9 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SetCountdownRemaining { .. }
             | Action::CountdownTo { .. }
             | Action::SetOverlayOn { .. }
+            | Action::CreditsPlay { .. }
+            | Action::CreditsRestart { .. }
+            | Action::CreditsSpeed { .. }
             | Action::OverlaysOff
             | Action::PesukimNext { .. }
             | Action::PesukimBack { .. }
