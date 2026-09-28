@@ -61,7 +61,7 @@ A feature only counts as finished when **all** of these are true:
 - ◆ Screen / window capture (a PowerPoint, a second computer's output)
 - ◆ PTZ camera control (pan, tilt, zoom, presets) for VISCA / NDI PTZ cameras
 - ◆ Playlists (a list of videos that play in order)
-- ○ Instant replay (last 10–60 s of any camera, slow motion)
+- ◆ Instant replay (last 10–60 s of any camera, slow motion) — see §27
 - ○ Audio-only inputs (microphones, music player)
 
 **Proven by:** capture-card matrix test, hot-unplug test, 5-hour playback soak, phone-camera reconnection test.
@@ -248,7 +248,7 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 - ◆ Permissions per device (full control, monitor messages only, camera only, view only)
 - ◆ Second PC as an extra control screen or as an output only
 - ◆ Stream Deck, MIDI controllers and keyboard shortcuts (all customisable)
-- ○ Tally lights on phone cameras
+- ◆ Tally lights on phone cameras (and hardware tally, see §27)
 
 ## 23. Reliability and monitoring
 
@@ -280,3 +280,78 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 - ★ Iris-blades logo; the lit blade follows the screen you control
 - ★ Startup animation
 - ★ Lumora's own font (chosen from the font boards)
+
+---
+
+## 27. Everything vMix has (parity checklist)
+
+Rule: **any tool vMix has, Lumora has too** — built the Lumora way (simple
+words, safe by default, tested). Items already covered elsewhere are listed
+with their section; everything new is below them.
+
+### Already planned elsewhere
+Preview / program and TAKE / CUT / T-bar (§1, done) · transitions and stingers
+(§1) · overlay channels (§7) · PiP and split screens (§8) · titles and tickers
+(§9) · video lists and playlists (§2) · virtual sets and chroma key (§14) · NDI
+input, PTZ control (§2) · per-input audio EQ, compressor, gate, VST (§16) ·
+recording and ISO recording (§20) · streaming to several sites (§21) · Stream
+Deck, MIDI, shortcuts (§22) · scoreboards (§9).
+
+### Mixing
+- ◆ **Multiview output**: every input plus preview and program on one extra
+  screen, with names, red/green tally borders and audio meters; choose the layout.
+- ◆ **Layers inside an input** (up to 10): e.g. camera + logo + lower third
+  saved as one input and switched as one.
+- ◆ **Colour correction per input**: brightness, contrast, saturation, white
+  balance, lift / gamma / gain; plus crop, zoom, position and rotate.
+- ◆ **Four favourite transition buttons**, each with its own effect and length.
+- ◆ **Quick play**: send one input to air with its own transition in one click.
+- ◆ **Video and audio delay per input**, to line up cameras and sound.
+- ◆ **Fade to black** with a chosen length (in addition to Blank and PANIC).
+- ◆ **Snapshot**: save a still picture of any screen.
+
+### Inputs
+- ◆ **Screen capture**: this computer's screen or a single window, and other
+  computers' screens over the network.
+- ◆ **Stream inputs**: SRT, RTMP, HLS and web video links as live inputs.
+- ◆ **Remote guests by link** (like vMix Call): up to 8 guests join from a
+  browser; they see the show and hear a mix without their own voice.
+- ◆ **Audio-only inputs**: music files and music playlists.
+
+### Audio
+- ◆ **Audio buses**: Master plus A–D, so the stream, the hall speakers and the
+  recording can each get their own mix.
+- ◆ **Audio follows video**: an input's sound comes up automatically when it
+  goes on air and down when it leaves.
+- ◆ **Headphone monitoring and solo**: listen to any input or bus privately.
+
+### Outputs
+- ◆ **NDI and SRT output** of each screen, to other computers and devices.
+- ◆ **Virtual camera**: Lumora's program appears as a webcam in Zoom, Teams, etc.
+- ◆ **Any resolution and frame rate per output** (up to 4K), with performance
+  stats (CPU, GPU, render time, dropped frames).
+
+### Replay
+- ◆ **Instant replay**: keeps the last minutes of chosen cameras; replay any
+  moment at normal or slow speed; mark highlights and play them as a reel.
+
+### Automation and control
+- ◆ **Triggers**: “when this happens, do that” — e.g. when a video ends, cut
+  to Camera 1; when an input goes on air, show its lower third; at a clock time,
+  start the countdown.
+- ◆ **Macros**: a list of actions (with waits) run by one button, key, MIDI
+  note or remote.
+- ◆ **Web control and API**: control Lumora from any browser on the network,
+  and from Bitfocus Companion, so Stream Deck, X-keys and other panels work.
+- ◆ **Hardware tally lights** through Companion and network tally.
+- ◆ **Data sources for titles and lists**: Excel / CSV / Google Sheets / RSS
+  fill lower thirds, sponsor lists and credits automatically.
+- ◆ **Animated title designer** with ready-made templates.
+- ○ **Social media**: show chosen comments and questions from the stream on screen.
+
+### Where Lumora already goes further than vMix
+Three-screen control built in (Live / Back / Monitor) · stage monitor with
+messages and countdown · hype countdown with actions at zero · 12 Pesukim ·
+beat-synced stage visuals with keyboard control · Back = Live · simple words
+everywhere · the audience never sees an error.
+
