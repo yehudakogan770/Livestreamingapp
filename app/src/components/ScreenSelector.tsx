@@ -9,7 +9,7 @@ export const SCREENS: { id: ScreenId; name: string; where: string; key: string }
   { id: 'monitor', name: 'Monitor', where: 'Stage · text', key: 'F3' },
 ];
 
-type Status = 'on-air' | 'blank' | 'dimmed' | 'idle';
+type Status = 'on-air' | 'following' | 'blank' | 'dimmed' | 'idle';
 
 export function screenStatus(show: Show | null, id: ScreenId): Status {
   if (!show) return 'idle';
@@ -17,10 +17,11 @@ export function screenStatus(show: Show | null, id: ScreenId): Status {
   if (show.panic) return id === 'monitor' ? 'dimmed' : 'blank';
   if (sc.blank) return 'blank';
   if (id === 'monitor') return 'on-air';
+  if (id === 'back' && show.backFollowsLive) return 'following';
   return sc.program ? 'on-air' : 'idle';
 }
 
-const LABEL: Record<Status, string> = { 'on-air': 'ON AIR', blank: 'BLANK', dimmed: 'DIMMED', idle: 'EMPTY' };
+const LABEL: Record<Status, string> = { 'on-air': 'ON AIR', following: 'FOLLOWS LIVE', blank: 'BLANK', dimmed: 'DIMMED', idle: 'EMPTY' };
 
 /** Choose which screen you are controlling. The centre of the design; F1–F3 work anywhere. */
 export function ScreenSelector({

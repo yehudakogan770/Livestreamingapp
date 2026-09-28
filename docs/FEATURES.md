@@ -36,10 +36,10 @@ A feature only counts as finished when **all** of these are true:
 - ★ Transitions: Cut, Fade, Merge, Dip to black, Wipe, Slide — duration adjustable per button
 - ★ As many transition buttons as needed, each with its own type and length
 - ★ Double-click an input to send it straight to air
+- ★ **Back = Live** switch: when on, whatever is on the Live Screen also plays on the Back Screen, with the same transitions; the Back Screen keeps its own blank; taking something on the Back Screen by hand turns it off
 - ◆ Stinger transitions (a video with alpha that plays over the switch)
 - ◆ Transition preview on hover
 - ◆ Same source on several screens at once, or different sources per screen
-- ◆ Follow mode: Back Screen automatically mirrors the Live Screen until you break it off
 - ○ Custom transitions (shape wipes, logo wipes)
 
 **Proven by:** take/cut/T-bar timing tests (frame-accurate), transition render tests per type, 3-display hardware test.

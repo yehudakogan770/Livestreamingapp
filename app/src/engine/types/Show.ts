@@ -20,4 +20,10 @@ transition: Transition, panic: boolean, panicChangedAt: number,
 /**
  * Master volume, 0.0 – 1.0.
  */
-masterVolume: number, settings: Settings, };
+masterVolume: number, 
+/**
+ * When on, the Back Screen shows whatever is on the Live Screen,
+ * including its transitions. Taking something on the Back Screen
+ * directly turns this off.
+ */
+backFollowsLive: boolean, settings: Settings, };

@@ -160,6 +160,10 @@ pub enum Action {
         #[ts(optional)]
         display_id: Option<String>,
     },
+    /// Make the Back Screen show whatever is on the Live Screen (or stop).
+    SetBackFollowsLive {
+        value: bool,
+    },
     SetAutoPlayOnTake {
         value: bool,
     },

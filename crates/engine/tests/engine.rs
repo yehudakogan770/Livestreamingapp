@@ -622,3 +622,168 @@ fn actions_round_trip_through_json_the_way_the_ui_sends_them() {
         }
     );
 }
+
+// ---------- Back follows Live ----------
+
+/// src-1 on Live, src-3 on Back, src-2 lined up in Live's preview.
+fn two_screens() -> Engine {
+    let mut e = on_air();
+    e.apply(color("Loop"), 0).unwrap();
+    e.apply(
+        Action::CutTo {
+            screen: ScreenId::Back,
+            source_id: id("src-3"),
+        },
+        0,
+    )
+    .unwrap();
+    e
+}
+
+#[test]
+fn turning_follow_on_moves_back_to_what_live_shows_with_a_transition() {
+    let mut e = two_screens();
+    e.apply(Action::SetBackFollowsLive { value: true }, 1_000)
+        .unwrap();
+    let back = &e.show().screens.back;
+    assert!(e.show().back_follows_live);
+    assert_eq!(back.program, Some(id("src-1")));
+    assert_eq!(back.previous, Some(id("src-3")));
+    let t = back.transition.unwrap();
+    assert_eq!(
+        (t.kind, t.started_at),
+        (TransitionKind::Fade, 1_000),
+        "no jump: it fades over"
+    );
+}
+
+#[test]
+fn while_following_every_live_take_plays_on_back_in_sync() {
+    let mut e = two_screens();
+    e.apply(Action::SetBackFollowsLive { value: true }, 0)
+        .unwrap();
+    e.apply(
+        Action::Take {
+            screen: ScreenId::Live,
+            transition: Some(TransitionKind::Wipe),
+            duration_ms: Some(600),
+        },
+        5_000,
+    )
+    .unwrap();
+    let s = e.show();
+    assert_eq!(s.screens.back.program, Some(id("src-2")));
+    assert_eq!(
+        s.screens.back.transition, s.screens.live.transition,
+        "same transition, same timing"
+    );
+    // The fader too.
+    e.apply(
+        Action::SetTbar {
+            screen: ScreenId::Live,
+            value: 0.3,
+        },
+        6_000,
+    )
+    .unwrap();
+    assert!((e.show().screens.back.tbar - 0.3).abs() < 1e-6);
+}
+
+#[test]
+fn back_keeps_its_own_preview_and_blank_while_following() {
+    let mut e = two_screens();
+    e.apply(Action::SetBackFollowsLive { value: true }, 0)
+        .unwrap();
+    e.apply(
+        Action::SetPreview {
+            screen: ScreenId::Back,
+            source_id: Some(id("src-3")),
+        },
+        0,
+    )
+    .unwrap();
+    e.apply(
+        Action::SetBlank {
+            screens: vec![ScreenId::Back],
+            value: true,
+        },
+        0,
+    )
+    .unwrap();
+    assert!(
+        e.show().back_follows_live,
+        "lining up or blanking does not break away"
+    );
+    assert!(e.show().screens.back.blank);
+    assert!(!e.show().screens.live.blank);
+    assert_eq!(e.show().screens.back.preview, Some(id("src-3")));
+}
+
+#[test]
+fn taking_on_back_by_hand_stops_following() {
+    let mut e = two_screens();
+    e.apply(Action::SetBackFollowsLive { value: true }, 0)
+        .unwrap();
+    e.apply(
+        Action::SetPreview {
+            screen: ScreenId::Back,
+            source_id: Some(id("src-3")),
+        },
+        0,
+    )
+    .unwrap();
+    e.apply(
+        Action::Take {
+            screen: ScreenId::Back,
+            transition: None,
+            duration_ms: None,
+        },
+        2_000,
+    )
+    .unwrap();
+    assert!(!e.show().back_follows_live);
+    assert_eq!(e.show().screens.back.program, Some(id("src-3")));
+    // Live changes no longer reach the Back Screen.
+    e.apply(
+        Action::Take {
+            screen: ScreenId::Live,
+            transition: None,
+            duration_ms: None,
+        },
+        3_000,
+    )
+    .unwrap();
+    assert_eq!(e.show().screens.back.program, Some(id("src-3")));
+}
+
+#[test]
+fn turning_follow_off_leaves_back_where_it_is() {
+    let mut e = two_screens();
+    e.apply(Action::SetBackFollowsLive { value: true }, 0)
+        .unwrap();
+    e.apply(Action::SetBackFollowsLive { value: false }, 100)
+        .unwrap();
+    assert_eq!(
+        e.show().screens.back.program,
+        Some(id("src-1")),
+        "no jump back"
+    );
+    e.apply(
+        Action::Take {
+            screen: ScreenId::Live,
+            transition: None,
+            duration_ms: None,
+        },
+        200,
+    )
+    .unwrap();
+    assert_eq!(e.show().screens.back.program, Some(id("src-1")));
+}
+
+#[test]
+fn follow_setting_is_saved_with_the_show() {
+    let mut e = two_screens();
+    e.apply(Action::SetBackFollowsLive { value: true }, 0)
+        .unwrap();
+    assert!(load_json(&save_json(e.show())).unwrap().back_follows_live);
+}

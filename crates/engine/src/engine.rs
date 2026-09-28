@@ -2,8 +2,8 @@
 
 use crate::action::{Action, ActionError, NewSource, SourcePatch};
 use crate::model::{
-    ActiveTransition, Millis, Playback, ScreenId, Show, Source, SourceId, SourceKind, Transition,
-    TransitionKind, MIN_TRANSITION_MS,
+    ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
+    Transition, TransitionKind, MIN_TRANSITION_MS,
 };
 use crate::timing::{source_ended, source_position};
 
@@ -56,7 +56,10 @@ impl Engine {
         // Work on a copy so a failure halfway through can never leave the show
         // half-changed.
         let mut next = self.show.clone();
+        let live_before = next.screens.live.clone();
+        let was_following = next.back_follows_live;
         apply_to(&mut next, action, now)?;
+        follow_live(&mut next, &live_before, was_following, now);
         if next == self.show {
             return Ok(Outcome::Unchanged);
         }
@@ -69,6 +72,23 @@ impl Engine {
 // One arm per action keeps every rule of the show in a single, readable place.
 #[allow(clippy::too_many_lines)]
 fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    // Switching the Back Screen by hand means the operator wants it back:
+    // stop following the Live Screen before doing it.
+    if let Action::Take {
+        screen: ScreenId::Back,
+        ..
+    }
+    | Action::CutTo {
+        screen: ScreenId::Back,
+        ..
+    }
+    | Action::SetTbar {
+        screen: ScreenId::Back,
+        ..
+    } = &action
+    {
+        s.back_follows_live = false;
+    }
     match action {
         Action::AddSource { source } => add_source(s, source),
         Action::UpdateSource { id, patch } => update_source(s, &id, patch),
@@ -242,10 +262,53 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             *s.settings.displays.get_mut(screen) = display_id;
             Ok(())
         }
+        Action::SetBackFollowsLive { value } => {
+            s.back_follows_live = value;
+            Ok(())
+        }
         Action::SetAutoPlayOnTake { value } => {
             s.settings.auto_play_on_take = value;
             Ok(())
         }
+    }
+}
+
+// ---------- Back follows Live ----------
+
+/// Keep the Back Screen showing the Live Screen while following is on.
+///
+/// - Just switched on: the Back Screen moves to what Live shows, using the
+///   show's transition, so the audience never sees a jump.
+/// - Already following and the Live Screen changed: the Back Screen copies it
+///   exactly (same source, same transition, same timing), so both play in sync.
+///
+/// The Back Screen keeps its own preview and its own blank.
+fn follow_live(s: &mut Show, live_before: &ScreenState, was_following: bool, now: Millis) {
+    if !s.back_follows_live {
+        return;
+    }
+    let live = s.screens.live.clone();
+    let back = &mut s.screens.back;
+    if !was_following {
+        if back.program != live.program {
+            back.previous = back
+                .program
+                .clone()
+                .filter(|b| Some(b) != live.program.as_ref());
+            back.program.clone_from(&live.program);
+            let t = s.transition;
+            back.transition = Some(ActiveTransition {
+                kind: t.kind,
+                duration_ms: t.duration_ms,
+                started_at: now,
+            });
+        }
+        back.tbar = 0.0;
+    } else if &live != live_before {
+        back.program = live.program;
+        back.previous = live.previous;
+        back.transition = live.transition;
+        back.tbar = live.tbar;
     }
 }
 

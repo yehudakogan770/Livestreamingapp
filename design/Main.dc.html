@@ -85,10 +85,11 @@ input[type=checkbox]{accent-color:#4fb3bf}
         </span>
       </button>
     </sc-for>
+    <button onClick="{{toggleBackLive}}" aria-pressed="{{backLive}}" title="When on, whatever is on the Live Screen also plays on the Back Screen" style="{{backLiveStyle}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6.5 9.5l3-3M5 11a2.5 2.5 0 0 1 0-3.5l1.5-1.5M11 5a2.5 2.5 0 0 1 0 3.5L9.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15;"><span style="font-size: 12px; font-weight: 600;">Back = Live</span><span style="font-size: 10px; opacity: 0.75;">{{backLiveLabel}}</span></span></button>
     <div style="flex-grow: 1;"></div>
     <div style="display: flex; align-items: center; gap: 10px; height: 36px;">
-      <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096;">CPU 18%   60 fps   0 dropped</span>
-      <a href="Devices.dc.html" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3fbf5a;"></span>3 devices connected</a>
+      <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096; white-space: nowrap;">60 fps · 0 dropped</span>
+      <a href="Devices.dc.html" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box; white-space: nowrap;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3fbf5a;"></span>3 devices</a>
       <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
         <button onClick="{{setSimple}}" style="{{simpleStyle}}">Simple</button>
         <button onClick="{{setAdvanced}}" style="{{advancedStyle}}">Advanced</button>
@@ -505,15 +506,19 @@ class Component extends DCLogic {
     const c = (i) => i === a ? '#4fb3bf' : '#ffffff', o = (i) => i === a ? '1' : String([0.8, 0.5][(i - a + 2) % 3] || 0.8);
     return { c0: c(0), c1: c(1), c2: c(2), o0: o(0), o1: o(1), o2: o(2) };
   }
+  view(state) {
+    if (!state.backLive) return state;
+    return { ...state, screens: { ...state.screens, back: { ...state.screens.back, pg: state.screens.live.pg } } };
+  }
   takeNow() {
-    const st = this.state;
+    const st = this.view(this.state);
     if (st.tab === 'monitor') { this.setState({ monitorText: st.draft, tbar: 0 }); return; }
     const sc = st.screens[st.tab];
-    this.setState({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100 });
+    this.setState({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100, ...(st.tab === 'back' ? { backLive: false } : {}) });
   }
   renderVals() { return { ...this._rv(), logo: this.logoVals() }; }
   _rv() {
-    const st = this.state;
+    const st = this.view(this.state);
     const set = (p) => this.setState(p);
     const SRC = {
       cam1: { name: 'Camera 1', sub: 'HDMI · Stage wide', kind: 'CAM', tone: '#34404c' },
@@ -548,7 +553,7 @@ class Component extends DCLogic {
     const updScreen = (p) => set({ screens: { ...st.screens, [st.tab]: { ...sc, ...p } } });
 
     const TONES = { cam1: '#34404c', cam2: '#3a3746', cam3: '#2f3a44', phone: '#2e3d34', vid1: '#473a2c', vid2: '#343b4b', vid3: '#403143', loop1: '#27403f', loop2: '#2c3450' };
-    const tabs = [['live', 'Live Screen', 'Display 2 + stream', 'F1'], ['back', 'Back Screen', 'Display 3', 'F2'], ['monitor', 'Monitor', 'Display 4 · text', 'F3']].map(([id, name, where, key]) => {
+    const tabs = [['live', 'Live Screen', 'Stream', 'F1'], ['back', 'Back Screen', 'Projector', 'F2'], ['monitor', 'Monitor', 'Stage', 'F3']].map(([id, name, where, key]) => {
       const on = id === st.tab;
       const scr = st.screens[id];
       const dark = scr.blank || st.panic;
@@ -558,10 +563,10 @@ class Component extends DCLogic {
         name, where, key, on, onAirName: dark && !dimmed ? '' : onAirName,
         scene: id === 'monitor' ? 'black' : ((SRC[scr.pg] || {}).scene || 'black'), isText: id === 'monitor', monText: st.monitorText, dark: dark,
         pick: () => { clearInterval(this._anim); this._anim = null; set({ tab: id, tbar: 0 }); },
-        status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : 'ON AIR',
-        badge: `height: 15px; padding: 0 5px; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : '#c7372f'}; color: #ffffff;`,
+        status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : (id === 'back' && st.backLive ? 'FOLLOWS LIVE' : 'ON AIR'),
+        badge: `height: 15px; padding: 0 5px; white-space: nowrap; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : id === 'back' && st.backLive ? '#1f6f79' : '#c7372f'}; color: #ffffff;`,
         thumb: `position: relative; width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; overflow: hidden; display: block; box-shadow: 0 0 0 1px ${dark ? '#3a3f48' : '#c7372f'};`,
-        style: `height: 48px; min-width: 230px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 10px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
+        style: `height: 48px; min-width: 214px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 10px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
       };
     });
 
@@ -617,7 +622,7 @@ class Component extends DCLogic {
     const doTake = () => {
       clearInterval(this._anim); this._anim = null;
       if (isMon) { set({ monitorText: st.draft, tbar: 0 }); return; }
-      set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100 });
+      set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100, ...(st.tab === 'back' ? { backLive: false } : {}) });
     };
 
     const onAir = new Set([st.screens.live.pg, st.screens.back.pg]);
@@ -630,7 +635,7 @@ class Component extends DCLogic {
       return {
         ...s, num: String(i + 1),
         pick: () => updScreen({ pv: id }),
-        air: () => updScreen({ pg: id }),
+        air: () => set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: id } }, ...(st.tab === 'back' ? { backLive: false } : {}) }),
         toggleLoop: () => set({ loops: { ...st.loops, [id]: !looping } }),
         box: `min-height: 0; display: flex; flex-direction: column; gap: 3px; border-radius: 6px; overflow: hidden; background: #1e2127; border: 1px solid ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#2c3038'};`,
         thumb: `position: relative; flex-grow: 1; min-height: 0; padding: 0; border: 0; border-radius: 0; background: ${s.tone}; box-shadow: inset 0 0 28px rgba(0,0,0,0.35);`,
@@ -745,6 +750,10 @@ class Component extends DCLogic {
       pvT: tport(sc.pv, pvSrc), pgT: tport(sc.pg, pgSrc),
       isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
       toggleFollow: () => set({ follow: !st.follow }),
+      backLive: !!st.backLive,
+      toggleBackLive: () => set({ backLive: !st.backLive }),
+      backLiveLabel: st.backLive ? 'On · Back plays Live' : 'Off · separate',
+      backLiveStyle: `height: 48px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: 8px; border: 2px solid ${st.backLive ? '#4fb3bf' : '#2c3038'}; background: ${st.backLive ? '#1f6f79' : '#1e2127'}; color: ${st.backLive ? '#ffffff' : '#d4d5d8'}; white-space: nowrap;`,
       followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#243039' : '#2a2e36'}; color: ${st.follow ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
       onQuickPick: (e) => { if (e.target.value) set({ draft: e.target.value }); },
       miniMon: `position: relative; height: 118px; border-radius: 4px; background: #000; border: 1px solid ${st.flashing ? '#ffffff' : '#c7372f'}; display: flex; align-items: center; justify-content: center; opacity: ${st.panic ? 0.35 : 1};`,

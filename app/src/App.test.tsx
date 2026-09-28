@@ -35,6 +35,8 @@ describe('screenStatus', () => {
     expect(screenStatus(show, 'live')).toBe('idle');
     show.screens.live.program = 'src-1';
     expect(screenStatus(show, 'live')).toBe('on-air');
+    show.backFollowsLive = true;
+    expect(screenStatus(show, 'back')).toBe('following');
     show.screens.back.blank = true;
     expect(screenStatus(show, 'back')).toBe('blank');
     show.panic = true;

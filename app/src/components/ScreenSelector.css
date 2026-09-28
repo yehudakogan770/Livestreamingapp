@@ -7,3 +7,4 @@
 .selector__meta kbd { font-family: var(--mono); font-size: 10px; padding: 0 4px; border: 1px solid var(--border); border-radius: 3px; color: var(--text-faint); }
 .selector__badge { height: 15px; padding: 0 5px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.05em; line-height: 15px; color: #fff; background: #343944; }
 .selector__badge--on-air { background: var(--program); }
+.selector__badge--following { background: var(--accent-deep); }

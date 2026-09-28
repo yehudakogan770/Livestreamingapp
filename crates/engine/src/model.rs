@@ -284,6 +284,10 @@ pub struct Show {
     pub panic_changed_at: Millis,
     /// Master volume, 0.0 – 1.0.
     pub master_volume: f32,
+    /// When on, the Back Screen shows whatever is on the Live Screen,
+    /// including its transitions. Taking something on the Back Screen
+    /// directly turns this off.
+    pub back_follows_live: bool,
     pub settings: Settings,
 }
 
@@ -300,6 +304,7 @@ impl Default for Show {
             panic: false,
             panic_changed_at: 0,
             master_volume: 1.0,
+            back_follows_live: false,
             settings: Settings::default(),
         }
     }

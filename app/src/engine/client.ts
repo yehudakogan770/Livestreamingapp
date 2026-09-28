@@ -69,6 +69,7 @@ export function emptyShow(): Show {
     panic: false,
     panicChangedAt: 0,
     masterVolume: 1,
+    backFollowsLive: false,
     settings: { displays: { live: null, back: null, monitor: null }, autoPlayOnTake: true },
   };
 }
