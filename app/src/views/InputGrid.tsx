@@ -6,6 +6,7 @@ import type { Source } from '../engine/types/Source';
 import type { SourcePatch } from '../engine/types/SourcePatch';
 import { SourceView } from '../components/SourceView';
 import type { Act } from './act';
+import { useProblems } from '../problems/problems';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
   camera: 'Camera',
@@ -35,6 +36,7 @@ export function InputGrid({
   only?: string[] | null;
 }) {
   const sc = show.screens[screen];
+  const problemIds = new Set(useProblems().flatMap((p) => (p.sourceId ? [p.sourceId] : [])));
   const [menu, setMenu] = useState<string | null>(null);
   const textOnly = screen === 'monitor';
   return (
@@ -62,6 +64,7 @@ export function InputGrid({
                 {soundFile ? <span className="tile__sound">♪</span> : <SourceView source={src} client={client} thumb />}
               </span>
               <span className="tile__num">{i + 1}</span>
+              {problemIds.has(src.id) && <span className="tile__warn" title="Something is wrong with this input: see the problem light">⚠</span>}
               {onAir && <span className="tile__badge tile__badge--pgm">ON AIR</span>}
               {next && <span className="tile__badge tile__badge--pvw">NEXT</span>}
               <span className="tile__name">{src.name}</span>

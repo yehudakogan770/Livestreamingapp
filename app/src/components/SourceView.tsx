@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useReportProblem } from '../problems/problems';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 import { syncMedia } from '../engine/mediaSync';
@@ -64,16 +65,24 @@ export interface SourceViewProps {
    * error message; the control window shows the warning instead.
    */
   audience?: boolean;
+  /** Report failures to the problem centre (off for previews of something not added yet). */
+  report?: boolean;
 }
 
 /** Draws one source filling its box. */
-export function SourceView({
-  source,
-  client,
-  thumb = false,
-  reportDuration = false,
-  audience = false,
-}: SourceViewProps) {
+export function SourceView(props: SourceViewProps) {
+  const { source, report = true } = props;
+  // Lets a failure below say which input it is about (for the problem centre).
+  return (
+    <Who.Provider value={report ? { id: source.id, name: source.name, kind: source.kind.type } : null}>
+      <SourceBody {...props} />
+    </Who.Provider>
+  );
+}
+
+const Who = createContext<{ id: string; name: string; kind: Source['kind']['type'] } | null>(null);
+
+function SourceBody({ source, client, thumb = false, reportDuration = false, audience = false }: SourceViewProps) {
   const fit = source.fit === 'cover' ? 'cover' : 'contain';
   const k = source.kind;
   switch (k.type) {
@@ -226,7 +235,29 @@ function VideoView({
   );
 }
 
+const FIX: Partial<Record<Source['kind']['type'], string>> = {
+  camera: 'Check its cable and that no other program is using it. Unplugging and plugging it back in usually brings it back.',
+  microphone: 'Check its cable and that Lumora is allowed to use it.',
+  video: 'The file was moved, renamed or deleted. Remove this input and add the file again from its new place.',
+  image: 'The file was moved, renamed or deleted. Remove this input and add the picture again from its new place.',
+};
+
 function Missing({ text, audience }: { text: string; audience: boolean }) {
+  const who = useContext(Who);
+  const stage = useStage();
+  // Tell the operator straight away (control window only; outputs stay quiet).
+  useReportProblem(
+    who && !audience
+      ? {
+          key: `source:${who.id}`,
+          level: 'error',
+          title: `${who.name}: ${text.toLowerCase()}`,
+          detail: `Screens showing it show ${stage?.event.onFailure === 'logo' && stage.event.logo ? 'your event logo' : 'black'} instead.`,
+          fix: FIX[who.kind],
+          sourceId: who.id,
+        }
+      : null,
+  );
   if (audience) return <SafeScreenView />;
   return (
     <div

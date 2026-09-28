@@ -95,6 +95,11 @@ export class SoundEngine {
 
   private readonly unwake: () => void;
 
+  /** Browsers hold sound back until the operator first clicks or types. */
+  get waitingForClick(): boolean {
+    return this.ctx.state !== 'running';
+  }
+
   /** Give the engine the latest show. */
   setShow(show: Show): void {
     this.show = show;

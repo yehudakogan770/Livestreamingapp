@@ -2,6 +2,8 @@ import { act, fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SourceView } from './SourceView';
 import { SafeBoundary } from './SafeBoundary';
+import { ProblemStore, ProblemsProvider } from '../problems/problems';
+import { ProblemLight } from '../problems/ProblemsUI';
 import { DemoClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 
@@ -72,5 +74,25 @@ describe('when a screen crashes', () => {
     Object.defineProperty(window, 'location', { configurable: true, value: original });
     vi.useRealTimers();
     vi.restoreAllMocks();
+  });
+});
+
+describe('the problem centre hears about it at once', () => {
+  it('a picture that fails is listed with what to do, and the light turns red', () => {
+    const store = new ProblemStore();
+    const { container } = render(
+      <ProblemsProvider store={store}>
+        <ProblemLight />
+        <SourceView source={picture} client={client} thumb />
+      </ProblemsProvider>,
+    );
+    expect(container.textContent).toMatch(/All good/);
+    act(() => {
+      fireEvent.error(container.querySelector('img')!);
+    });
+    expect(store.snapshot()).toHaveLength(1);
+    expect(store.snapshot()[0]).toMatchObject({ key: 'source:p', level: 'error', sourceId: 'p' });
+    expect(store.snapshot()[0]!.fix).toMatch(/moved, renamed or deleted/);
+    expect(container.textContent).toMatch(/1 problem/);
   });
 });

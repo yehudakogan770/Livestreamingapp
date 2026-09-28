@@ -144,7 +144,7 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
           <div className="addinput__setup">
             <div className="addinput__preview">
               {previewSource ? (
-                <SourceView source={previewSource} client={client} />
+                <SourceView source={previewSource} client={client} report={false} />
               ) : (
                 <span className="addinput__empty">Nothing chosen yet</span>
               )}

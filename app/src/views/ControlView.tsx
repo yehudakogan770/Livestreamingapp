@@ -11,6 +11,8 @@ import { CountdownCard } from './CountdownCard';
 import { Mixer } from './Mixer';
 import { PresetsPanel } from './PresetsPanel';
 import { PresetButtons } from './PresetButtons';
+import { ProblemLight, ProblemToasts } from '../problems/ProblemsUI';
+import { OutputWatcher, SoundWatcher } from '../problems/watchers';
 import { SwitchPanel } from './SwitchPanel';
 import { Transport } from './Transport';
 import { InputGrid } from './InputGrid';
@@ -34,6 +36,7 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
   const [outputsOpen, setOutputsOpen] = useState(false);
   const [open, setOpen] = useState<ScreenId[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const openOutputs = useCallback(() => setOutputsOpen(true), []);
   const activePreset = show.presets.find((p) => p.id === show.activePreset);
   const onlyInputs = !showAll && activePreset && activePreset.sources.length > 0 ? activePreset.sources : null;
   const nextToast = useRef(1);
@@ -158,6 +161,7 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
       </div>
 
       <footer className="bar">
+        <ProblemLight />
         <button type="button" className="btn" onClick={() => setOutputsOpen(true)}>
           Outputs
           <span className="bar__lamps" aria-label={`${open.length} of 3 open`}>
@@ -195,6 +199,9 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
         <PanicButton on={show.panic} act={act} />
       </footer>
 
+      <SoundWatcher show={show} />
+      <OutputWatcher show={show} client={client} open={open} onOpenOutputs={openOutputs} />
+      <ProblemToasts />
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div key={t.id} className="toast">

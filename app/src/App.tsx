@@ -9,6 +9,7 @@ import { ScreenSelector } from './components/ScreenSelector';
 import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
 import { EventSetup } from './views/EventSetup';
+import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
 import { StageContext } from './engine/CountdownContext';
@@ -20,11 +21,31 @@ export function App() {
 }
 
 function Control() {
+  const [problems] = useState(() => new ProblemStore());
+  return (
+    <ProblemsProvider store={problems}>
+      <ControlApp />
+    </ProblemsProvider>
+  );
+}
+
+function ControlApp() {
   const client = useMemo(createEngineClient, []);
   const { snapshot, error } = useShow(client);
   const [controlling, setControlling] = useState<ScreenId>('live');
   const select = useCallback((id: ScreenId) => setControlling(id), []);
   const show = snapshot?.show ?? null;
+  useReportProblem(
+    error
+      ? {
+          key: 'engine',
+          level: 'error',
+          title: 'Lumora’s engine is not answering',
+          detail: error,
+          fix: 'Close Lumora and open it again. The show is saved all the time, so it comes back as it was.',
+        }
+      : null,
+  );
   // The event setup opens by itself until it has been answered once, and from the Event menu.
   const [setupOpen, setSetupOpen] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);

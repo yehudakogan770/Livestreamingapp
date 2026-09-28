@@ -4,6 +4,7 @@ import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import { SCREENS } from '../components/ScreenSelector';
 import type { Act } from './act';
+import { expectedCloses } from '../problems/watchers';
 
 /** Choose which display each screen goes to, and open or close each output. */
 export function OutputsDialog({
@@ -89,7 +90,10 @@ export function OutputsDialog({
                 <button
                   type="button"
                   className={`btn${isOpen ? '' : ' btn--primary'}`}
-                  onClick={() => void (isOpen ? client.closeOutput(s.id) : client.openOutput(s.id)).catch(onError)}
+                  onClick={() => {
+                    if (isOpen) expectedCloses.add(s.id);
+                    void (isOpen ? client.closeOutput(s.id) : client.openOutput(s.id)).catch(onError);
+                  }}
                 >
                   {isOpen ? 'Close' : 'Open'}
                 </button>

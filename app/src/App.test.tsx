@@ -307,6 +307,13 @@ describe('Presets', () => {
   });
 });
 
+describe('Problems', () => {
+  it('the bottom bar says all is good when nothing is wrong', async () => {
+    await start();
+    expect(screen.getByRole('button', { name: '✓ All good' })).toBeInTheDocument();
+  });
+});
+
 describe('screenStatus', () => {
   it('reports on air, blank and the panic states', () => {
     const show = emptyShow();
