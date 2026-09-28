@@ -8,6 +8,7 @@ use ts_rs::TS;
 
 use crate::audio::{AudioMix, AudioOutputs, SourceAudio};
 use crate::event::EventInfo;
+use crate::presets::{Preset, RunningSteps};
 use crate::stage::{Countdown, Monitor};
 
 /// Milliseconds on the engine clock. The engine never reads the clock itself;
@@ -327,6 +328,12 @@ pub struct Show {
     pub back_follows_live: bool,
     /// The event: name, logo and emergency plan.
     pub event: EventInfo,
+    /// The event's segments, in running order.
+    pub presets: Vec<Preset>,
+    /// The preset picked now.
+    pub active_preset: Option<String>,
+    /// Preset-button steps still running (waiting to resume). Not saved.
+    pub running: Vec<RunningSteps>,
     /// The Stream / Hall / Recording mixes and the headphone solo.
     pub audio: AudioMix,
     /// What the stage monitor shows.
@@ -352,6 +359,9 @@ impl Default for Show {
             master_volume: 1.0,
             back_follows_live: false,
             event: EventInfo::default(),
+            presets: Vec::new(),
+            active_preset: None,
+            running: Vec::new(),
             audio: AudioMix::default(),
             monitor: Monitor::default(),
             countdown: Countdown::default(),

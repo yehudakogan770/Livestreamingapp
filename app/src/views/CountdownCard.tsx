@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import { countdownFinished, countdownRemaining, formatCountdown } from '../engine/timing';
 import { useNow } from '../engine/useNow';
@@ -18,9 +18,6 @@ export function CountdownCard({ show, act, onPutInNext }: { show: Show; act: Act
   const [setup, setSetup] = useState(false);
   const [typing, setTyping] = useState<string | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
-  const frame = useRef(0);
-  const pending = useRef<number | null>(null);
-  useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
   const running = c.endsAt !== null;
   const left = scrub ?? countdownRemaining(c, now);
@@ -82,18 +79,17 @@ export function CountdownCard({ show, act, onPutInNext }: { show: Show; act: Act
         value={Math.min(max, left)}
         aria-label="Move the countdown"
         title="Drag to any point"
-        onChange={(e) => {
-          const v = Number(e.target.value);
-          setScrub(v);
-          pending.current = v;
-          if (!frame.current)
-            frame.current = requestAnimationFrame(() => {
-              frame.current = 0;
-              if (pending.current !== null) moveTo(pending.current);
-            });
+        // Dragging only previews the time on this card; the countdown moves
+        // when the bar is let go, at the time chosen.
+        onChange={(e) => setScrub(Number(e.target.value))}
+        onPointerUp={() => {
+          if (scrub !== null) moveTo(scrub);
+          setScrub(null);
         }}
-        onPointerUp={() => setScrub(null)}
-        onKeyUp={() => setScrub(null)}
+        onKeyUp={() => {
+          if (scrub !== null) moveTo(scrub);
+          setScrub(null);
+        }}
         onBlur={() => setScrub(null)}
       />
       <div className="cd__row">

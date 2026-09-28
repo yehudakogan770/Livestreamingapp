@@ -4,6 +4,8 @@ import type { Countdown } from "./Countdown";
 import type { EventInfo } from "./EventInfo";
 import type { Monitor } from "./Monitor";
 import type { PerScreen } from "./PerScreen";
+import type { Preset } from "./Preset";
+import type { RunningSteps } from "./RunningSteps";
 import type { ScreenState } from "./ScreenState";
 import type { Settings } from "./Settings";
 import type { Source } from "./Source";
@@ -35,6 +37,18 @@ backFollowsLive: boolean,
  * The event: name, logo and emergency plan.
  */
 event: EventInfo, 
+/**
+ * The event's segments, in running order.
+ */
+presets: Array<Preset>, 
+/**
+ * The preset picked now.
+ */
+activePreset: string | null, 
+/**
+ * Preset-button steps still running (waiting to resume). Not saved.
+ */
+running: Array<RunningSteps>, 
 /**
  * The Stream / Hall / Recording mixes and the headphone solo.
  */

@@ -102,6 +102,9 @@ export function emptyShow(): Show {
     masterVolume: 1,
     backFollowsLive: false,
     event: { name: '', logo: null, onFailure: 'black', panicShows: 'black', setUp: false },
+    presets: [],
+    activePreset: null,
+    running: [],
     audio: {
       masterMuted: false,
       a: { name: 'Hall', volume: 1, muted: false },

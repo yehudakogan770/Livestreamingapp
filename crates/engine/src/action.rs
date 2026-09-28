@@ -7,6 +7,7 @@ use ts_rs::TS;
 use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
 use crate::event::EventPatch;
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
+use crate::presets::{Preset, Step};
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 
 /// A new source as requested by the UI. The engine fills in and cleans up the
@@ -246,6 +247,39 @@ pub enum Action {
     SetAutoPlayOnTake {
         value: bool,
     },
+
+    // ----- presets -----
+    /// Add a preset (an empty id gets one chosen by the engine).
+    AddPreset {
+        preset: Preset,
+    },
+    /// Replace a preset with an edited version (same id).
+    UpdatePreset {
+        preset: Preset,
+    },
+    RemovePreset {
+        id: String,
+    },
+    MovePreset {
+        id: String,
+        index: usize,
+    },
+    /// Pick a preset (or none): its inputs, transition and first input in Next.
+    PickPreset {
+        #[serde(default)]
+        #[ts(optional)]
+        id: Option<String>,
+    },
+    /// Pick the next preset in the list (run the show in order).
+    NextPreset,
+    PreviousPreset,
+    /// Run steps in order (a preset button). Waits are resumed by the heartbeat.
+    RunSteps {
+        name: String,
+        steps: Vec<Step>,
+    },
+    /// Stop every running button.
+    StopSteps,
 
     // ----- the event -----
     UpdateEvent {

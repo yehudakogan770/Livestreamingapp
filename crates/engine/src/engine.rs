@@ -6,6 +6,9 @@ use crate::model::{
     ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
     Transition, TransitionKind, MIN_TRANSITION_MS,
 };
+use crate::presets::{
+    Preset, PresetButton, RunningSteps, Step, MAX_PRESET_NAME_LEN, MAX_STEPS, MAX_WAIT_MS,
+};
 use crate::stage::{AtZero, MAX_COUNTDOWN_MS, MAX_MESSAGE_LEN, MAX_SHORT_TEXT_LEN, QUICK_MESSAGES};
 use crate::timing::{source_ended, source_position};
 
@@ -45,6 +48,12 @@ impl Engine {
         &self.show
     }
 
+    /// Replace the whole show (opening an event, starting a new one).
+    pub fn replace(&mut self, show: Show) {
+        self.show = show;
+        self.revision += 1;
+    }
+
     pub fn revision(&self) -> u64 {
         self.revision
     }
@@ -70,59 +79,75 @@ impl Engine {
         Ok(Outcome::Changed)
     }
 
-    /// Let time pass: runs anything due at `now` (the countdown's at-zero
-    /// action). Call it a few times a second.
+    /// Let time pass: runs anything due at `now` — the countdown's at-zero
+    /// action, and preset-button steps waiting to resume. Call it a few
+    /// times a second.
     pub fn tick(&mut self, now: Millis) -> Outcome {
         let c = &self.show.countdown;
         // It lands on 0, holds a moment, then the at-zero action runs.
-        if c.fired || !c.due(now) {
+        let countdown_due = !c.fired && c.due(now);
+        let steps_due = self.show.running.iter().any(|r| r.resume_at <= now);
+        if !countdown_due && !steps_due {
             return Outcome::Unchanged;
         }
         let mut next = self.show.clone();
         let live_before = next.screens.live.clone();
         let was_following = next.back_follows_live;
-        next.countdown.fired = true;
-        match next.countdown.at_zero.clone() {
-            AtZero::Hold | AtZero::ShowText | AtZero::Hide => {}
-            AtZero::Blank => {
-                // Black on the screens showing the countdown right now.
-                let showing: Vec<ScreenId> = [ScreenId::Live, ScreenId::Back]
-                    .into_iter()
-                    .filter(|id| {
-                        next.screens
-                            .get(*id)
-                            .program
-                            .as_ref()
-                            .and_then(|p| next.source(p))
-                            .is_some_and(|s| matches!(s.kind, SourceKind::Countdown { .. }))
-                    })
-                    .collect();
-                for id in showing {
-                    let sc = next.screens.get_mut(id);
-                    if !sc.blank {
-                        sc.blank = true;
-                        sc.blank_changed_at = now;
-                    }
-                }
-            }
-            AtZero::CutTo { source_id } => {
-                // The source may have been removed since; then just stop.
-                if next.has_source(&source_id) {
-                    let _ = apply_to(
-                        &mut next,
-                        Action::CutTo {
-                            screen: ScreenId::Live,
-                            source_id,
-                        },
-                        now,
-                    );
-                }
-            }
+        if countdown_due {
+            run_at_zero(&mut next, now);
+        }
+        if steps_due {
+            run_steps(&mut next, now);
         }
         follow_live(&mut next, &live_before, was_following, now);
+        if next == self.show {
+            return Outcome::Unchanged;
+        }
         self.show = next;
         self.revision += 1;
         Outcome::Changed
+    }
+}
+
+/// The countdown has held on 0: do what was chosen for zero, once.
+fn run_at_zero(next: &mut Show, now: Millis) {
+    next.countdown.fired = true;
+    match next.countdown.at_zero.clone() {
+        AtZero::Hold | AtZero::ShowText | AtZero::Hide => {}
+        AtZero::Blank => {
+            // Black on the screens showing the countdown right now.
+            let showing: Vec<ScreenId> = [ScreenId::Live, ScreenId::Back]
+                .into_iter()
+                .filter(|id| {
+                    next.screens
+                        .get(*id)
+                        .program
+                        .as_ref()
+                        .and_then(|p| next.source(p))
+                        .is_some_and(|s| matches!(s.kind, SourceKind::Countdown { .. }))
+                })
+                .collect();
+            for id in showing {
+                let sc = next.screens.get_mut(id);
+                if !sc.blank {
+                    sc.blank = true;
+                    sc.blank_changed_at = now;
+                }
+            }
+        }
+        AtZero::CutTo { source_id } => {
+            // The source may have been removed since; then just stop.
+            if next.has_source(&source_id) {
+                let _ = apply_to(
+                    next,
+                    Action::CutTo {
+                        screen: ScreenId::Live,
+                        source_id,
+                    },
+                    now,
+                );
+            }
+        }
     }
 }
 
@@ -152,6 +177,9 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         Action::RemoveSource { id } => {
             let index = index_of(s, &id)?;
             s.sources.remove(index);
+            for p in &mut s.presets {
+                p.sources.retain(|x| x != &id);
+            }
             if s.audio.solo.as_ref() == Some(&id) {
                 s.audio.solo = None;
             }
@@ -369,6 +397,60 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.auto_play_on_take = value;
             Ok(())
         }
+        Action::AddPreset { preset } => {
+            let mut p = clean_preset(s, preset)?;
+            if p.id.trim().is_empty() {
+                p.id = next_preset_id(s);
+            } else if s.presets.iter().any(|x| x.id == p.id) {
+                return Err(ActionError::invalid(
+                    "id",
+                    "a preset with that id already exists",
+                ));
+            }
+            s.presets.push(p);
+            Ok(())
+        }
+        Action::UpdatePreset { preset } => {
+            let i = preset_index(s, &preset.id)?;
+            s.presets[i] = clean_preset(s, preset)?;
+            Ok(())
+        }
+        Action::RemovePreset { id } => {
+            let i = preset_index(s, &id)?;
+            s.presets.remove(i);
+            if s.active_preset.as_deref() == Some(id.as_str()) {
+                s.active_preset = None;
+            }
+            Ok(())
+        }
+        Action::MovePreset { id, index } => {
+            let from = preset_index(s, &id)?;
+            let p = s.presets.remove(from);
+            let to = index.min(s.presets.len());
+            s.presets.insert(to, p);
+            Ok(())
+        }
+        Action::PickPreset { id } => pick_preset(s, id, now),
+        Action::NextPreset => step_preset(s, true, now),
+        Action::PreviousPreset => step_preset(s, false, now),
+        Action::RunSteps { name, steps } => {
+            let steps = clean_steps(steps)?;
+            if steps.is_empty() {
+                return Ok(());
+            }
+            s.running.push(RunningSteps {
+                name: short_text(&name, MAX_PRESET_NAME_LEN),
+                steps,
+                next: 0,
+                resume_at: now,
+            });
+            run_steps(s, now);
+            Ok(())
+        }
+        Action::StopSteps => {
+            s.running.clear();
+            Ok(())
+        }
         Action::UpdateEvent { patch } => {
             let ev = &mut s.event;
             if let Some(name) = patch.name {
@@ -443,6 +525,188 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             Ok(())
         }
     }
+}
+
+// ---------- presets and their steps ----------
+
+fn preset_index(s: &Show, id: &str) -> Result<usize> {
+    s.presets
+        .iter()
+        .position(|p| p.id == id)
+        .ok_or_else(|| ActionError::invalid("id", "there is no such preset"))
+}
+
+fn next_preset_id(s: &Show) -> String {
+    let mut n = s.presets.len() + 1;
+    while s.presets.iter().any(|p| p.id == format!("preset-{n}")) {
+        n += 1;
+    }
+    format!("preset-{n}")
+}
+
+fn clean_preset(s: &Show, p: Preset) -> Result<Preset> {
+    if p.screen == ScreenId::Monitor {
+        return Err(ActionError::MonitorIsTextOnly);
+    }
+    for id in &p.sources {
+        require_source(s, id)?;
+    }
+    let name = short_text(&p.name, MAX_PRESET_NAME_LEN);
+    let mut buttons = Vec::with_capacity(p.buttons.len());
+    for b in p.buttons {
+        let bname = short_text(&b.name, MAX_PRESET_NAME_LEN);
+        buttons.push(PresetButton {
+            name: if bname.is_empty() {
+                "Button".to_owned()
+            } else {
+                bname
+            },
+            steps: clean_steps(b.steps)?,
+        });
+    }
+    let mut sources = p.sources;
+    let mut seen = std::collections::HashSet::new();
+    sources.retain(|x| seen.insert(x.clone()));
+    Ok(Preset {
+        id: p.id.trim().to_owned(),
+        name: if name.is_empty() {
+            "Preset".to_owned()
+        } else {
+            name
+        },
+        category: short_text(&p.category, MAX_PRESET_NAME_LEN),
+        screen: p.screen,
+        sources,
+        transition: p.transition.map(Transition::clamped),
+        load_first: p.load_first,
+        buttons,
+    })
+}
+
+fn clean_steps(steps: Vec<Step>) -> Result<Vec<Step>> {
+    if steps.len() > MAX_STEPS {
+        return Err(ActionError::invalid(
+            "steps",
+            "at most 50 steps in one button",
+        ));
+    }
+    steps
+        .into_iter()
+        .map(|st| match st {
+            Step::Wait { ms } if ms > MAX_WAIT_MS => Err(ActionError::invalid(
+                "steps",
+                "a wait can be at most 10 minutes",
+            )),
+            Step::MonitorMessage { text } => Ok(Step::MonitorMessage {
+                text: short_text(&text, MAX_MESSAGE_LEN),
+            }),
+            other => Ok(other),
+        })
+        .collect()
+}
+
+fn pick_preset(s: &mut Show, id: Option<String>, _now: Millis) -> Result<()> {
+    let Some(id) = id else {
+        s.active_preset = None;
+        return Ok(());
+    };
+    let p = s.presets[preset_index(s, &id)?].clone();
+    s.active_preset = Some(id);
+    if let Some(t) = p.transition {
+        s.transition = t.clamped();
+    }
+    if p.load_first {
+        let first = p
+            .sources
+            .iter()
+            .find(|x| s.source(x).is_some_and(|src| !src.kind.is_sound_only()))
+            .cloned();
+        if let Some(first) = first {
+            let sc = s.screens.get_mut(p.screen);
+            if sc.program.as_ref() != Some(&first) {
+                sc.preview = Some(first);
+                sc.tbar = 0.0;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn step_preset(s: &mut Show, forward: bool, now: Millis) -> Result<()> {
+    if s.presets.is_empty() {
+        return Ok(());
+    }
+    let last = s.presets.len() - 1;
+    let at = s
+        .active_preset
+        .as_deref()
+        .and_then(|id| s.presets.iter().position(|p| p.id == id));
+    let to = match (at, forward) {
+        (None, true) => 0,
+        (None, false) => last,
+        (Some(i), true) => (i + 1).min(last),
+        (Some(i), false) => i.saturating_sub(1),
+    };
+    let id = s.presets[to].id.clone();
+    pick_preset(s, Some(id), now)
+}
+
+/// Turn a step into the action it stands for (waits are handled by the runner).
+fn step_action(step: Step) -> Option<Action> {
+    Some(match step {
+        Step::Preview { screen, source_id } => Action::SetPreview { screen, source_id },
+        Step::Take { screen, transition } => Action::Take {
+            screen,
+            transition,
+            duration_ms: None,
+        },
+        Step::CutTo { screen, source_id } => Action::CutTo { screen, source_id },
+        Step::Blank { screens, value } => Action::SetBlank { screens, value },
+        Step::MonitorMessage { text } => Action::UpdateMonitor {
+            patch: MonitorPatch {
+                message: Some(text),
+                message_on: Some(true),
+                ..MonitorPatch::default()
+            },
+        },
+        Step::ClearMonitorMessage => Action::UpdateMonitor {
+            patch: MonitorPatch {
+                message_on: Some(false),
+                ..MonitorPatch::default()
+            },
+        },
+        Step::StartCountdown => Action::StartCountdown,
+        Step::PauseCountdown => Action::PauseCountdown,
+        Step::ResetCountdown => Action::ResetCountdown,
+        Step::SetCountdownLength { length_ms } => Action::SetCountdownLength { length_ms },
+        Step::Play { source_id } => Action::Play { id: source_id },
+        Step::Pause { source_id } => Action::Pause { id: source_id },
+        Step::BackFollowsLive { value } => Action::SetBackFollowsLive { value },
+        Step::Preset { preset_id } => Action::PickPreset {
+            id: Some(preset_id),
+        },
+        Step::Wait { .. } => return None,
+    })
+}
+
+/// Run every step that is due. A step that cannot be done (say, its input
+/// was removed) is skipped so the rest still run.
+fn run_steps(s: &mut Show, now: Millis) {
+    let mut running = std::mem::take(&mut s.running);
+    for r in &mut running {
+        while r.resume_at <= now && r.next < r.steps.len() {
+            let step = r.steps[r.next].clone();
+            r.next += 1;
+            if let Step::Wait { ms } = step {
+                // Timed from when the wait was due, so waits never drift.
+                r.resume_at = r.resume_at.saturating_add(u64::from(ms));
+            } else if let Some(action) = step_action(step) {
+                let _ = apply_to(s, action, now);
+            }
+        }
+    }
+    running.retain(|r| r.next < r.steps.len());
+    s.running = running;
 }
 
 // ---------- stage monitor and countdown ----------

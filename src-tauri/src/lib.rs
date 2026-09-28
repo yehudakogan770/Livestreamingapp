@@ -1,5 +1,6 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
+mod events;
 mod outputs;
 mod store;
 
@@ -18,6 +19,8 @@ use store::Store;
 struct AppState {
     engine: Mutex<Engine>,
     store: Store,
+    files: Mutex<events::EventFiles>,
+    dir: std::path::PathBuf,
 }
 
 /// A version of the show together with its revision number.
@@ -84,6 +87,88 @@ fn dispatch(
     Ok(())
 }
 
+fn publish(app: &tauri::AppHandle, state: &AppState, engine: &Engine) {
+    let snapshot = Snapshot {
+        revision: engine.revision(),
+        show: engine.show().clone(),
+    };
+    state.store.save(snapshot.show.clone());
+    let _ = app.emit("show-changed", snapshot);
+}
+
+fn files_changed(app: &tauri::AppHandle, state: &AppState, files: &events::EventFiles) {
+    files.save(&state.dir);
+    let _ = app.emit("event-files-changed", files.clone());
+}
+
+/// The open event's file and the recent list.
+#[tauri::command]
+fn event_files(state: State<'_, AppState>) -> events::EventFiles {
+    state
+        .files
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+}
+
+/// Start a new event (this computer's settings are kept).
+#[tauri::command]
+fn new_event(state: State<'_, AppState>, app: tauri::AppHandle) {
+    let mut engine = lock(&state);
+    let fresh = events::fresh(engine.show());
+    engine.replace(fresh);
+    state.store.set_target(None);
+    publish(&app, &state, &engine);
+    let mut files = state
+        .files
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    files.current = None;
+    files_changed(&app, &state, &files);
+}
+
+/// Open an event file.
+#[tauri::command]
+fn open_event(
+    path: String,
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    let mut engine = lock(&state);
+    let show = events::read(std::path::Path::new(&path), engine.show())?;
+    engine.replace(show);
+    state.store.set_target(Some(path.clone().into()));
+    publish(&app, &state, &engine);
+    let mut files = state
+        .files
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    files.opened(&path);
+    files_changed(&app, &state, &files);
+    Ok(())
+}
+
+/// Save the event to a file; from then on that file is kept up to date.
+#[tauri::command]
+fn save_event_as(
+    path: String,
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> Result<String, String> {
+    let path = events::with_extension(&path);
+    let engine = lock(&state);
+    events::write(&path, engine.show())?;
+    let shown = path.to_string_lossy().into_owned();
+    state.store.set_target(Some(path));
+    let mut files = state
+        .files
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    files.opened(&shown);
+    files_changed(&app, &state, &files);
+    Ok(shown)
+}
+
 /// Displays connected to this computer, for choosing where each output goes.
 #[tauri::command]
 fn list_displays(app: tauri::AppHandle) -> Vec<Display> {
@@ -131,11 +216,18 @@ pub fn run() {
         })
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
-            let (store, show, from) = Store::open(dir);
+            let (store, show, from) = Store::open(dir.clone());
             eprintln!("lumora: show loaded ({from:?})");
+            // Carry on with the event that was open (its file keeps being updated).
+            let files = events::EventFiles::load(&dir);
+            if let Some(current) = &files.current {
+                store.set_target(Some(current.into()));
+            }
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
+                files: Mutex::new(files),
+                dir,
             });
             heartbeat(app.handle().clone());
             if std::env::var_os("LUMORA_SMOKE_TEST").is_some() {
@@ -149,7 +241,11 @@ pub fn run() {
             list_displays,
             open_outputs,
             open_output,
-            close_output
+            close_output,
+            event_files,
+            new_event,
+            open_event,
+            save_event_as
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

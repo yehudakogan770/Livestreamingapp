@@ -6,6 +6,9 @@
 //!   real one, so a crash or power cut mid-write can never corrupt the save.
 //! - The previous good save is kept as a backup and used if the main file is
 //!   ever unreadable.
+//! - When the event has its own file (Save event as…), that file is kept up
+//!   to date too, the same safe way. The app's own copy is always written,
+//!   so crash recovery works whether or not the event was saved anywhere.
 
 use std::fs;
 use std::io::Write;
@@ -28,8 +31,14 @@ pub enum LoadedFrom {
     Fresh,
 }
 
+enum Msg {
+    Save(Box<Show>),
+    /// Also keep this event file up to date (or stop).
+    Target(Option<PathBuf>),
+}
+
 pub struct Store {
-    tx: Sender<Show>,
+    tx: Sender<Msg>,
 }
 
 impl Store {
@@ -47,7 +56,12 @@ impl Store {
 
     /// Ask for the show to be saved. Returns immediately.
     pub fn save(&self, show: Show) {
-        let _ = self.tx.send(show);
+        let _ = self.tx.send(Msg::Save(Box::new(show)));
+    }
+
+    /// Keep an event file up to date from now on (`None`: only the app's copy).
+    pub fn set_target(&self, path: Option<PathBuf>) {
+        let _ = self.tx.send(Msg::Target(path));
     }
 }
 
@@ -63,16 +77,43 @@ fn load(dir: &Path) -> (Show, LoadedFrom) {
     (Show::default(), LoadedFrom::Fresh)
 }
 
-fn writer(dir: &Path, rx: &Receiver<Show>) {
-    while let Ok(mut show) = rx.recv() {
+fn writer(dir: &Path, rx: &Receiver<Msg>) {
+    let mut target: Option<PathBuf> = None;
+    while let Ok(msg) = rx.recv() {
+        let mut latest = None;
+        let mut apply = |m: Msg, latest: &mut Option<Show>| match m {
+            Msg::Save(show) => *latest = Some(*show),
+            Msg::Target(t) => target = t,
+        };
+        apply(msg, &mut latest);
         // Coalesce: skip straight to the newest queued show.
-        while let Ok(newer) = rx.try_recv() {
-            show = newer;
+        while let Ok(m) = rx.try_recv() {
+            apply(m, &mut latest);
         }
-        if let Err(e) = write_atomic(dir, &save_json(&show)) {
+        let Some(show) = latest else { continue };
+        let text = save_json(&show);
+        if let Err(e) = write_atomic(dir, &text) {
             eprintln!("lumora: saving the show failed: {e}");
         }
+        if let Some(path) = &target {
+            if let Err(e) = write_file_atomic(path, &text) {
+                eprintln!("lumora: saving the event file failed: {e}");
+            }
+        }
     }
+}
+
+/// Write any file safely: temporary file first, then rename over it.
+pub fn write_file_atomic(path: &Path, text: &str) -> std::io::Result<()> {
+    let mut temp = path.as_os_str().to_owned();
+    temp.push(".tmp");
+    let temp = PathBuf::from(temp);
+    {
+        let mut f = fs::File::create(&temp)?;
+        f.write_all(text.as_bytes())?;
+        f.sync_all()?;
+    }
+    fs::rename(&temp, path)
 }
 
 fn write_atomic(dir: &Path, text: &str) -> std::io::Result<()> {

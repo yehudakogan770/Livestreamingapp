@@ -26,6 +26,7 @@ pub fn to_saved(show: &Show) -> Show {
     s.panic = false;
     s.panic_changed_at = 0;
     s.audio.solo = None;
+    s.running.clear();
     for id in ScreenId::ALL {
         let sc = s.screens.get_mut(id);
         sc.previous = None;
@@ -124,6 +125,21 @@ pub fn repair(mut s: Show) -> Show {
         }
     }
 
+    repair_sound(&mut s);
+    repair_presets(&mut s);
+    repair_stage(&mut s);
+
+    s.transition = s.transition.clamped();
+    if !s.master_volume.is_finite() {
+        s.master_volume = 1.0;
+    }
+    s.master_volume = s.master_volume.clamp(0.0, 1.0);
+    s.version = SHOW_VERSION;
+    s
+}
+
+/// Sound: bounded delays and names; sound-only sources never on a screen.
+fn repair_sound(s: &mut Show) {
     // Sound: bounded delays and names; sound-only sources never on a screen.
     for src in &mut s.sources {
         src.audio.delay_ms = src.audio.delay_ms.min(crate::audio::MAX_AUDIO_DELAY_MS);
@@ -149,7 +165,32 @@ pub fn repair(mut s: Show) -> Show {
             }
         }
     }
+}
 
+/// Presets: unique ids, only known inputs, never the Monitor.
+fn repair_presets(s: &mut Show) {
+    // Presets: unique ids, only known inputs, never the Monitor.
+    let known: HashSet<_> = s.sources.iter().map(|x| x.id.clone()).collect();
+    let mut ids = HashSet::new();
+    s.presets
+        .retain(|p| !p.id.trim().is_empty() && ids.insert(p.id.clone()));
+    for p in &mut s.presets {
+        p.sources.retain(|x| known.contains(x));
+        if p.screen == ScreenId::Monitor {
+            p.screen = ScreenId::Live;
+        }
+        p.transition = p.transition.map(crate::model::Transition::clamped);
+    }
+    if s.active_preset
+        .as_ref()
+        .is_some_and(|a| !s.presets.iter().any(|p| &p.id == a))
+    {
+        s.active_preset = None;
+    }
+}
+
+/// The event, the monitor and the countdown: bounded text and sane times.
+fn repair_stage(s: &mut Show) {
     s.event.name = crate::engine::short_text(&s.event.name, crate::event::MAX_EVENT_NAME_LEN);
     if s.event.logo.as_deref().is_some_and(|p| p.trim().is_empty()) {
         s.event.logo = None;
@@ -175,12 +216,4 @@ pub fn repair(mut s: Show) -> Show {
             c.at_zero = crate::stage::AtZero::Hold;
         }
     }
-
-    s.transition = s.transition.clamped();
-    if !s.master_volume.is_finite() {
-        s.master_volume = 1.0;
-    }
-    s.master_volume = s.master_volume.clamp(0.0, 1.0);
-    s.version = SHOW_VERSION;
-    s
 }
