@@ -36,6 +36,21 @@ export interface EventFiles {
   recent: string[];
 }
 
+/** The phone and tablet remote (from the Rust side). */
+export interface RemoteStatus {
+  enabled: boolean;
+  /** Listening right now. */
+  running: boolean;
+  pin: string;
+  port: number | null;
+  /** Addresses phones can open, each with a QR code (SVG). */
+  addresses: { url: string; qr: string }[];
+  /** Phones connected now. */
+  phones: number;
+  /** Why it could not start. */
+  error: string | null;
+}
+
 export interface EngineClient {
   /** True when connected to the real engine. */
   readonly live: boolean;
@@ -60,6 +75,13 @@ export interface EngineClient {
   openEvent(path?: string): Promise<boolean>;
   /** Save the event to a file the operator chooses. Resolves the path, or null if cancelled. */
   saveEventAs(): Promise<string | null>;
+
+  // ----- phone remote -----
+  /** Called with the remote's status, now and on every change. */
+  watchRemote(onChange: (s: RemoteStatus) => void): () => void;
+  setRemote(on: boolean): Promise<RemoteStatus>;
+  /** A new PIN; connected phones have to type it again. */
+  newRemotePin(): Promise<RemoteStatus>;
 
   // ----- files -----
   /** Ask the operator for a video or picture file. Resolves to its path, or null if cancelled. */
@@ -269,6 +291,28 @@ class TauriClient implements EngineClient {
     }
   }
 
+  watchRemote(onChange: (s: RemoteStatus) => void): () => void {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void invoke<RemoteStatus>('remote_status').then((s) => !cancelled && onChange(s));
+    void listen<RemoteStatus>('remote-changed', (e) => onChange(e.payload)).then((unlisten) => {
+      if (cancelled) unlisten();
+      else stop = unlisten;
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }
+
+  setRemote(on: boolean): Promise<RemoteStatus> {
+    return invoke<RemoteStatus>('set_remote', { on });
+  }
+
+  newRemotePin(): Promise<RemoteStatus> {
+    return invoke<RemoteStatus>('new_remote_pin');
+  }
+
   async pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({ multiple: false, directory: false, filters: [FILTERS[kind]] });
@@ -383,6 +427,19 @@ export class DemoClient implements EngineClient {
   }
 
   saveEventAs(): Promise<string | null> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  watchRemote(onChange: (s: RemoteStatus) => void): () => void {
+    onChange({ enabled: false, running: false, pin: '', port: null, addresses: [], phones: 0, error: null });
+    return () => {};
+  }
+
+  setRemote(): Promise<RemoteStatus> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  newRemotePin(): Promise<RemoteStatus> {
     return Promise.reject(new EngineError({ code: 'unavailable' }));
   }
 

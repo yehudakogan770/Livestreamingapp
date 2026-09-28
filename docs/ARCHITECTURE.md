@@ -81,7 +81,11 @@ they opened.
 6. Audio mixer. **Done** (web audio engine: channels, three mixes, solo, speakers per mix; native WASAPI engine later).
 7. Recording and streaming.
 8. Presets, library, save / open events, crash recovery.
-9. Phone and tablet remotes.
+9. Phone and tablet remotes. **Done** (first version: Settings → Phone remote.
+   `src-tauri/src/remote.rs` serves `src-tauri/remote/` on the local network with
+   a 4-digit PIN; phones get every change live by Server-Sent Events and send
+   actions through the same engine. Only show-running actions are accepted.
+   Per-device permissions come later.)
 10. Remaining screens from `design/` (stage visuals, pesukim, slideshow, credits,
     overlays, green screen, 3D logo, split screen, browser source).
 11. Installer, auto-update, rehearsal / soak testing, release.

@@ -2,6 +2,7 @@
 
 mod events;
 mod outputs;
+mod remote;
 mod store;
 
 use std::sync::Mutex;
@@ -21,6 +22,7 @@ struct AppState {
     store: Store,
     files: Mutex<events::EventFiles>,
     dir: std::path::PathBuf,
+    remote: remote::Remote,
 }
 
 /// A version of the show together with its revision number.
@@ -61,12 +63,17 @@ fn dispatch(
     state: State<'_, AppState>,
     app: tauri::AppHandle,
 ) -> Result<(), ActionError> {
+    apply(&app, &state, action)
+}
+
+/// Change the show (from the control window or a phone) and tell everyone.
+fn apply(app: &tauri::AppHandle, state: &AppState, action: Action) -> Result<(), ActionError> {
     let moved_display = match &action {
         Action::SetDisplay { screen, .. } => Some(*screen),
         _ => None,
     };
     let snapshot = {
-        let mut engine = lock(&state);
+        let mut engine = lock(state);
         match engine.apply(action, now_ms())? {
             Outcome::Unchanged => return Ok(()),
             Outcome::Changed => Snapshot {
@@ -75,16 +82,23 @@ fn dispatch(
             },
         }
     };
-    state.store.save(snapshot.show.clone());
-    // Every window gets the new show.
     // A new display choice takes effect straight away if that output is open.
     if let Some(screen) = moved_display {
         if let Some(w) = app.get_webview_window(&outputs::label(screen)) {
-            let _ = outputs::place(&app, &w, &snapshot.show, screen);
+            let _ = outputs::place(app, &w, &snapshot.show, screen);
         }
     }
-    let _ = app.emit("show-changed", snapshot);
+    announce(app, state, &snapshot);
     Ok(())
+}
+
+/// Save a new version of the show and send it to every window and phone.
+fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
+    state.store.save(snapshot.show.clone());
+    let _ = app.emit("show-changed", snapshot);
+    if let Ok(json) = serde_json::to_string(snapshot) {
+        state.remote.broadcast(&json);
+    }
 }
 
 fn publish(app: &tauri::AppHandle, state: &AppState, engine: &Engine) {
@@ -92,8 +106,7 @@ fn publish(app: &tauri::AppHandle, state: &AppState, engine: &Engine) {
         revision: engine.revision(),
         show: engine.show().clone(),
     };
-    state.store.save(snapshot.show.clone());
-    let _ = app.emit("show-changed", snapshot);
+    announce(app, state, &snapshot);
 }
 
 fn files_changed(app: &tauri::AppHandle, state: &AppState, files: &events::EventFiles) {
@@ -196,6 +209,58 @@ fn close_output(screen: ScreenId, app: tauri::AppHandle) -> Result<(), String> {
     outputs::close(&app, screen).map_err(|e| e.to_string())
 }
 
+/// The phone remote: on or off, its PIN, addresses and connected phones.
+#[tauri::command]
+fn remote_status(state: State<'_, AppState>) -> remote::RemoteStatus {
+    state.remote.status()
+}
+
+#[tauri::command]
+fn set_remote(on: bool, state: State<'_, AppState>, app: tauri::AppHandle) -> remote::RemoteStatus {
+    let status = state.remote.set_enabled(on);
+    let _ = app.emit("remote-changed", &status);
+    status
+}
+
+#[tauri::command]
+fn new_remote_pin(state: State<'_, AppState>, app: tauri::AppHandle) -> remote::RemoteStatus {
+    let status = state.remote.change_pin();
+    let _ = app.emit("remote-changed", &status);
+    status
+}
+
+/// Lets the remote reach the engine.
+struct RemoteBackend(tauri::AppHandle);
+
+impl remote::Backend for RemoteBackend {
+    fn snapshot(&self) -> Option<String> {
+        let state = self.0.try_state::<AppState>()?;
+        let engine = lock(&state);
+        serde_json::to_string(&Snapshot {
+            revision: engine.revision(),
+            show: engine.show().clone(),
+        })
+        .ok()
+    }
+
+    fn apply(&self, action: Action) -> Result<(), ActionError> {
+        let state = self
+            .0
+            .try_state::<AppState>()
+            .ok_or_else(|| ActionError::InvalidValue {
+                field: "Lumora".to_owned(),
+                reason: "still starting".to_owned(),
+            })?;
+        apply(&self.0, &state, action)
+    }
+
+    fn phones_changed(&self) {
+        if let Some(state) = self.0.try_state::<AppState>() {
+            let _ = self.0.emit("remote-changed", state.remote.status());
+        }
+    }
+}
+
 /// Start Lumora.
 ///
 /// # Panics
@@ -223,11 +288,17 @@ pub fn run() {
             if let Some(current) = &files.current {
                 store.set_target(Some(current.into()));
             }
+            let remote = remote::Remote::new(
+                Some(&dir),
+                remote::DEFAULT_PORT,
+                RemoteBackend(app.handle().clone()),
+            );
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
                 files: Mutex::new(files),
                 dir,
+                remote,
             });
             heartbeat(app.handle().clone());
             if std::env::var_os("LUMORA_SMOKE_TEST").is_some() {
@@ -245,7 +316,10 @@ pub fn run() {
             event_files,
             new_event,
             open_event,
-            save_event_as
+            save_event_as,
+            remote_status,
+            set_remote,
+            new_remote_pin
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");
@@ -267,8 +341,7 @@ fn heartbeat(app: tauri::AppHandle) {
                 },
             }
         };
-        state.store.save(snapshot.show.clone());
-        let _ = app.emit("show-changed", snapshot);
+        announce(&app, &state, &snapshot);
     });
 }
 

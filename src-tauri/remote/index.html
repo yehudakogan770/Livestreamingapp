@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#15171b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Lumora Remote</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="/remote.css" />
+  </head>
+  <body>
+    <!-- Typing the PIN -->
+    <section id="login" class="login" hidden>
+      <div class="login__box">
+        <div class="brand">Lumora <span>Remote</span></div>
+        <p>
+          Type the PIN shown on the computer<br />(Settings → Phone remote).
+        </p>
+        <form id="login-form" autocomplete="off">
+          <input
+            id="pin"
+            class="pin"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            maxlength="4"
+            placeholder="• • • •"
+            aria-label="PIN"
+          />
+          <button class="btn btn--primary btn--big" type="submit">
+            Connect
+          </button>
+        </form>
+        <p id="login-error" class="login__error" role="alert"></p>
+      </div>
+    </section>
+
+    <!-- The remote -->
+    <div id="app" class="app" hidden>
+      <header class="top">
+        <span id="conn" class="conn" title="Connection"></span>
+        <span id="event" class="top__event">Lumora</span>
+        <span id="clock" class="top__clock"></span>
+        <button id="panic" class="panic" type="button">PANIC</button>
+      </header>
+      <div id="panic-banner" class="panic-banner" hidden>
+        <strong>PANIC is on</strong> — the screens are hidden.
+        <button id="panic-off" class="btn" type="button">
+          Hold to bring screens back
+        </button>
+      </div>
+      <div id="offline" class="offline" hidden>
+        Lost the connection to the computer. Trying again…
+      </div>
+
+      <main>
+        <!-- Screens: Next, On air, TAKE, presets, inputs -->
+        <section id="tab-screens" class="tab">
+          <div class="seg" role="tablist" aria-label="Screen">
+            <button type="button" data-screen="live" class="seg__btn">
+              Live Screen
+            </button>
+            <button type="button" data-screen="back" class="seg__btn">
+              Back Screen
+            </button>
+          </div>
+          <div id="follows" class="note" hidden></div>
+          <div class="monitors">
+            <div class="mon mon--next">
+              <span class="mon__tag">NEXT</span
+              ><span id="next-name" class="mon__name"></span>
+            </div>
+            <div class="mon mon--air">
+              <span class="mon__tag">ON AIR</span
+              ><span id="air-name" class="mon__name"></span>
+            </div>
+          </div>
+          <div class="take-row">
+            <button id="take" class="btn btn--take" type="button">TAKE</button>
+            <button id="cut" class="btn" type="button">CUT</button>
+            <button id="blank" class="btn" type="button">BLANK</button>
+          </div>
+          <div id="media" class="media" hidden>
+            <span id="media-name"></span>
+            <button id="media-play" class="btn" type="button">▶ Play</button>
+            <button id="media-pause" class="btn" type="button">❚❚ Pause</button>
+          </div>
+
+          <div id="presets" class="presets" hidden>
+            <div class="presets__bar">
+              <button
+                id="preset-prev"
+                class="btn"
+                type="button"
+                aria-label="Previous preset"
+              >
+                ◀
+              </button>
+              <select
+                id="preset-pick"
+                class="presets__pick"
+                aria-label="Preset"
+              ></select>
+              <button
+                id="preset-next"
+                class="btn"
+                type="button"
+                aria-label="Next preset"
+              >
+                ▶
+              </button>
+            </div>
+            <div id="preset-buttons" class="grid grid--buttons"></div>
+            <div id="running" class="running" hidden>
+              <span id="running-name"></span>
+              <button id="running-stop" class="btn" type="button">Stop</button>
+            </div>
+          </div>
+
+          <h2 class="head">
+            Inputs <small>— tap to put in Next</small>
+            <label id="show-all-wrap" class="show-all" hidden
+              ><input id="show-all" type="checkbox" /> show all</label
+            >
+          </h2>
+          <div id="inputs" class="grid"></div>
+        </section>
+
+        <!-- The countdown -->
+        <section id="tab-timer" class="tab" hidden>
+          <div id="cd-none" class="note">
+            There is no countdown input yet. Add one on the computer.
+          </div>
+          <div id="cd" hidden>
+            <div class="cd__head">
+              <span id="cd-where" class="tag"></span> <span id="cd-name"></span>
+            </div>
+            <div id="cd-time" class="cd__time">0:00</div>
+            <div id="cd-state" class="cd__state"></div>
+            <div class="row">
+              <button
+                id="cd-start"
+                class="btn btn--primary btn--big"
+                type="button"
+              >
+                Start
+              </button>
+              <button id="cd-pause" class="btn btn--big" type="button">
+                Pause
+              </button>
+            </div>
+            <div class="row">
+              <button class="btn" type="button" data-add="-60000">
+                −1 min
+              </button>
+              <button class="btn" type="button" data-add="-10000">−10 s</button>
+              <button class="btn" type="button" data-add="10000">+10 s</button>
+              <button class="btn" type="button" data-add="60000">+1 min</button>
+            </div>
+            <div class="row">
+              <button class="btn" type="button" data-left="30000">
+                Last 30 s
+              </button>
+              <button class="btn" type="button" data-left="10000">
+                Last 10 s
+              </button>
+              <button id="cd-reset" class="btn" type="button">Reset</button>
+            </div>
+            <h2 class="head">Length</h2>
+            <div class="row row--wrap">
+              <button class="btn" type="button" data-len="60000">1 min</button>
+              <button class="btn" type="button" data-len="120000">2 min</button>
+              <button class="btn" type="button" data-len="180000">3 min</button>
+              <button class="btn" type="button" data-len="300000">5 min</button>
+              <button class="btn" type="button" data-len="600000">
+                10 min
+              </button>
+              <button class="btn" type="button" data-len="900000">
+                15 min
+              </button>
+              <button class="btn" type="button" data-len="1800000">
+                30 min
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- The stage monitor -->
+        <section id="tab-stage" class="tab" hidden>
+          <div class="stage-now">
+            <span class="tag">ON THE MONITOR</span>
+            <span id="stage-now"></span>
+          </div>
+          <textarea
+            id="msg"
+            class="msg"
+            rows="3"
+            maxlength="500"
+            placeholder="Type a message for the stage…"
+          ></textarea>
+          <div class="row">
+            <button
+              id="msg-send"
+              class="btn btn--primary btn--big"
+              type="button"
+            >
+              Show on monitor
+            </button>
+            <button id="msg-clear" class="btn btn--big" type="button">
+              Take off
+            </button>
+          </div>
+          <h2 class="head">Quick messages <small>— tap to show</small></h2>
+          <div id="quick" class="grid grid--quick"></div>
+          <button id="flash" class="btn btn--wide" type="button">
+            ⚡ Flash the monitor
+          </button>
+        </section>
+      </main>
+
+      <nav class="tabs" role="tablist" aria-label="Sections">
+        <button type="button" class="tabs__btn" data-tab="screens">
+          ▦<span>Screens</span>
+        </button>
+        <button type="button" class="tabs__btn" data-tab="timer">
+          ⏱<span>Countdown</span>
+        </button>
+        <button type="button" class="tabs__btn" data-tab="stage">
+          ✎<span>Stage</span>
+        </button>
+      </nav>
+      <div id="toast" class="toast" role="status" hidden></div>
+    </div>
+
+    <script src="/remote.js"></script>
+  </body>
+</html>

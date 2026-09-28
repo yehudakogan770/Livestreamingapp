@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { baseName, createEngineClient, type EventFiles } from './engine/client';
+import { baseName, createEngineClient, type EventFiles, type RemoteStatus } from './engine/client';
 import { useShow } from './engine/useShow';
 import { outputScreen } from './engine/role';
 import type { ScreenId } from './engine/types/ScreenId';
@@ -9,6 +9,7 @@ import { ScreenSelector } from './components/ScreenSelector';
 import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
 import { EventSetup } from './views/EventSetup';
+import { RemoteDialog } from './views/RemoteDialog';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
@@ -73,6 +74,21 @@ function ControlApp() {
     return () => window.removeEventListener('keydown', key);
   }, []);
   useEffect(() => client.watchEventFiles(setFiles), [client]);
+  const [remote, setRemote] = useState<RemoteStatus | null>(null);
+  const [remoteOpen, setRemoteOpen] = useState(false);
+  useEffect(() => client.watchRemote(setRemote), [client]);
+  useReportProblem(
+    remote?.enabled && remote.error
+      ? {
+          key: 'remote',
+          level: 'warning',
+          title: 'The phone remote could not start',
+          detail: remote.error,
+          fix: 'Turn it off and on again (Settings → Phone remote). If that does not help, restart the computer.',
+          action: { label: 'Phone remote…', run: () => setRemoteOpen(true) },
+        }
+      : null,
+  );
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(null), 5000);
@@ -100,9 +116,17 @@ function ControlApp() {
       event.push(null);
       for (const r of files.recent) event.push({ label: `${r === files.current ? '● ' : ''}${baseName(r)}`, hint: r, onClick: () => open(r), disabled: r === files.current });
     }
-    const settings: MenuItem[] = TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) }));
+    const phones = remote?.phones ?? 0;
+    const settings: MenuItem[] = [
+      {
+        label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
+        onClick: () => setRemoteOpen(true),
+      },
+      null,
+      ...TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) })),
+    ];
     return { Event: event, Settings: settings };
-  }, [files, open, saveAs, textSize]);
+  }, [files, open, saveAs, textSize, remote]);
 
   return (
     <div className="app">
@@ -126,6 +150,7 @@ function ControlApp() {
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
       )}
+      {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       {confirmNew && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="New event">
           <div className="modal__box confirm">
