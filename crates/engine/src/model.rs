@@ -200,6 +200,8 @@ pub enum SourceKind {
     Credits(Box<crate::credits::Credits>),
     /// Split screen: two to four inputs at once.
     Split(Box<crate::split::Split>),
+    /// A slideshow: pictures, PDF pages and other inputs as slides.
+    Slideshow(Box<crate::slideshow::Slideshow>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,

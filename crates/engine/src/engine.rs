@@ -12,6 +12,7 @@ use crate::pesukim::{Pesukim, PesukimLook};
 use crate::presets::{
     Preset, PresetButton, RunningSteps, Step, MAX_PRESET_NAME_LEN, MAX_STEPS, MAX_WAIT_MS,
 };
+use crate::slideshow::{Slide, Slideshow};
 use crate::stage::{AtZero, MAX_COUNTDOWN_MS, MAX_MESSAGE_LEN, MAX_SHORT_TEXT_LEN, QUICK_MESSAGES};
 use crate::timing::{source_ended, source_position};
 
@@ -108,10 +109,23 @@ impl Engine {
             .filter(|src| matches!(&src.kind, SourceKind::Pesukim(p) if p.due(now)))
             .map(|src| src.id.clone())
             .collect();
+        let slides_due: Vec<SourceId> = self
+            .show
+            .sources
+            .iter()
+            .filter(|src| on_air.contains(&Some(src.id.clone())))
+            .filter(|src| matches!(&src.kind, SourceKind::Slideshow(sh) if sh.due(now)))
+            .map(|src| src.id.clone())
+            .collect();
         let overlays_due: Vec<usize> = (0..self.show.overlays.len())
             .filter(|&i| overlay_due(&self.show, i, now))
             .collect();
-        if due.is_empty() && !steps_due && words_due.is_empty() && overlays_due.is_empty() {
+        if due.is_empty()
+            && !steps_due
+            && words_due.is_empty()
+            && overlays_due.is_empty()
+            && slides_due.is_empty()
+        {
             return Outcome::Unchanged;
         }
         let mut next = self.show.clone();
@@ -122,6 +136,9 @@ impl Engine {
         }
         if steps_due {
             run_steps(&mut next, now);
+        }
+        for id in &slides_due {
+            let _ = apply_slideshow(&mut next, Action::SlideNext { id: id.clone() }, now);
         }
         for &i in &overlays_due {
             next.overlays[i].set_on(false, now);
@@ -256,6 +273,73 @@ pub(crate) fn can_be_behind(kind: &SourceKind) -> bool {
             | SourceKind::Color { .. }
             | SourceKind::Pattern
     )
+}
+
+fn slideshow_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Slideshow> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Slideshow(sh) => Ok(sh),
+        _ => Err(ActionError::invalid(
+            "slideshow",
+            "that input is not a slideshow",
+        )),
+    }
+}
+
+/// Move a slideshow to a slide; an input on the new slide (a video) starts.
+fn go_to_slide(s: &mut Show, id: &SourceId, index: usize, now: Millis) -> Result<()> {
+    if let Some(inner) = slideshow_mut(s, id)?.go(index, now) {
+        start_if_video(s, &inner, now);
+    }
+    Ok(())
+}
+
+/// The slideshow actions.
+fn apply_slideshow(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    match action {
+        Action::SlideNext { id } => {
+            if let Some(i) = slideshow_mut(s, &id)?.next_index() {
+                go_to_slide(s, &id, i, now)?;
+            }
+        }
+        Action::SlidePrevious { id } => {
+            let i = slideshow_mut(s, &id)?.current.saturating_sub(1);
+            go_to_slide(s, &id, i, now)?;
+        }
+        Action::SlideGo { id, index } => go_to_slide(s, &id, index, now)?,
+        Action::UpdateSlideshow { id, slideshow } => {
+            // Slides and what is behind may only be pictures that exist, and
+            // never a slideshow (nothing can contain itself).
+            let inputs = slideshow.slides.iter().filter_map(|sl| match sl {
+                Slide::Input { source_id } => Some(source_id),
+                Slide::Image { .. } => None,
+            });
+            for inner in inputs.chain(slideshow.behind.iter()) {
+                require_picture(s, inner)?;
+                if matches!(
+                    s.source(inner).map(|x| &x.kind),
+                    Some(SourceKind::Slideshow(_))
+                ) {
+                    return Err(ActionError::invalid(
+                        "slideshow",
+                        "a slideshow can't show another slideshow",
+                    ));
+                }
+            }
+            let sh = slideshow_mut(s, &id)?;
+            let (current, changed_at) = (sh.current, sh.changed_at);
+            *sh = Slideshow {
+                current,
+                changed_at,
+                ..slideshow
+            };
+            sh.repair();
+        }
+        _ => {}
+    }
+    Ok(())
 }
 
 fn credits_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Credits> {
@@ -464,6 +548,15 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                         {
                             timer.at_zero = AtZero::Hide;
                         }
+                    }
+                    SourceKind::Slideshow(sh) => {
+                        sh.slides.retain(
+                            |sl| !matches!(sl, Slide::Input { source_id } if *source_id == id),
+                        );
+                        if sh.behind.as_ref() == Some(&id) {
+                            sh.behind = None;
+                        }
+                        sh.repair();
                     }
                     SourceKind::Split(sp) => {
                         for b in &mut sp.boxes {
@@ -813,6 +906,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             timer_mut(s, &id)?.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
             Ok(())
         }
+        a @ (Action::SlideNext { .. }
+        | Action::SlidePrevious { .. }
+        | Action::SlideGo { .. }
+        | Action::UpdateSlideshow { .. }) => apply_slideshow(s, a, now),
         Action::UpdateSplit { id, split } => {
             // Each box shows a picture that exists, and never a split screen
             // (so nothing can contain itself).
@@ -1386,6 +1483,12 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
+        SourceKind::Slideshow(mut sh) => {
+            sh.current = 0;
+            sh.behind = None;
+            sh.repair();
+            SourceKind::Slideshow(sh)
+        }
         SourceKind::Split(mut sp) => {
             sp.repair();
             SourceKind::Split(sp)

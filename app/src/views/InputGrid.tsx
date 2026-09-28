@@ -9,6 +9,7 @@ import type { Act } from './act';
 import { useProblems } from '../problems/problems';
 import { TextEditor } from './TextEditor';
 import { SplitEditor } from './SplitEditor';
+import { SlideshowEditor } from './SlideshowEditor';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
   camera: 'Camera',
@@ -22,6 +23,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   text: 'Text',
   credits: 'Credits',
   split: 'Split screen',
+  slideshow: 'Slideshow',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -47,6 +49,7 @@ export function InputGrid({
   const [editing, setEditing] = useState<string | null>(null);
   const editingText = show.sources.find((x) => x.id === editing && x.kind.type === 'text');
   const editingSplit = show.sources.find((x) => x.id === editing && x.kind.type === 'split');
+  const editingSlides = show.sources.find((x) => x.id === editing && x.kind.type === 'slideshow');
   const textOnly = screen === 'monitor';
   return (
     <div className="inputs" aria-label="Inputs">
@@ -106,6 +109,7 @@ export function InputGrid({
         Add input
       </button>
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
+      {editingSlides && <SlideshowEditor source={editingSlides} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingSplit && <SplitEditor source={editingSplit} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
     </div>
   );
@@ -192,7 +196,7 @@ function TileMenu({ source, act, onClose, onEditText }: { source: Source; act: A
           </label>
         </>
       )}
-      {(k === 'text' || k === 'split') && (
+      {(k === 'text' || k === 'split' || k === 'slideshow') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -201,7 +205,7 @@ function TileMenu({ source, act, onClose, onEditText }: { source: Source; act: A
             onEditText();
           }}
         >
-          {k === 'text' ? 'Edit text…' : 'Edit split screen…'}
+          {k === 'text' ? 'Edit text…' : k === 'split' ? 'Edit split screen…' : 'Edit slides…'}
         </button>
       )}
       <div className="menu__foot">

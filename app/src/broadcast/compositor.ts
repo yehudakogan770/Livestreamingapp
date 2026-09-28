@@ -91,6 +91,11 @@ export class ProgramCompositor {
     for (const l of layers) {
       const k = show.sources.find((x) => x.id === l.id)?.kind;
       if (k?.type === 'split') behind.push(...k.boxes.map((b) => b.sourceId));
+      if (k?.type === 'slideshow') {
+        behind.push(k.behind);
+        const slide = k.slides[k.current];
+        if (slide?.type === 'input') behind.push(slide.sourceId);
+      }
     }
     const overlays = overlaysOn(show.overlays, 'live', now);
     this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
@@ -176,6 +181,36 @@ export class ProgramCompositor {
       case 'credits':
         this.credits(k, now, w, h);
         return;
+      case 'slideshow': {
+        const ctx = this.ctx;
+        ctx.fillStyle = k.background;
+        ctx.fillRect(0, 0, w, h);
+        const other = (id: string | null) => (id ? this.show?.sources.find((x) => x.id === id && x.kind.type !== 'slideshow') : undefined);
+        const behind = other(k.behind);
+        if (behind) this.drawSource(behind, event, now, w, h);
+        const slide = k.slides[k.current];
+        if (!slide) return;
+        const ax = (k.area.x / 100) * w;
+        const ay = (k.area.y / 100) * h;
+        const aw = (k.area.w / 100) * w;
+        const ah = (k.area.h / 100) * h;
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.beginPath();
+        ctx.rect(0, 0, aw, ah);
+        ctx.clip();
+        // Each new slide fades in over 0.4 s, like the screens.
+        ctx.globalAlpha *= k.fade ? ease((now - k.changedAt) / 400) : 1;
+        if (slide.type === 'image') {
+          const pic = this.picture(slide.path);
+          if (pic) this.fit(pic, k.fit, aw, ah);
+        } else {
+          const inner = other(slide.sourceId);
+          if (inner) this.drawSource(inner, event, now, aw, ah);
+        }
+        ctx.restore();
+        return;
+      }
       case 'split': {
         const ctx = this.ctx;
         ctx.fillStyle = k.background;

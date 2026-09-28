@@ -54,3 +54,10 @@ button:focus-visible {
 ::selection {
   background: var(--selected);
 }
+
+/* A new slide in a slideshow fades in. */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+  }
+}

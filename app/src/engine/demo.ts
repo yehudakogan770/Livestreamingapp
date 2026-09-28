@@ -3,6 +3,8 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { nextSlideIndex, slideDue } from './slideshow';
+import type { Slideshow } from './types/Slideshow';
 import { applyLayout } from './split';
 import { creditsPosition } from './credits';
 import type { Credits } from './types/Credits';
@@ -128,6 +130,29 @@ function take(s: Show, screen: ScreenId, kind: Show['transition']['kind'], durat
   if (k?.type === 'credits' && !k.playing) Object.assign(k, { playing: true, posMs: 0, at: now });
 }
 
+function slideshowIn(s: Show, id: string): Slideshow {
+  const src = find(s, id);
+  if (src.kind.type !== 'slideshow') throw new Refused({ code: 'invalidValue', field: 'slideshow', reason: 'that input is not a slideshow' });
+  return src.kind;
+}
+
+function checkSlideInput(s: Show, id: string) {
+  if (picture(s, id).kind.type === 'slideshow')
+    throw new Refused({ code: 'invalidValue', field: 'slideshow', reason: 'a slideshow can’t show another slideshow' });
+}
+
+/** Go to a slide; a video on the new slide starts. */
+function goToSlide(s: Show, id: string, index: number, now: number) {
+  const sh = slideshowIn(s, id);
+  const i = Math.min(Math.max(0, index), Math.max(0, sh.slides.length - 1));
+  if (i !== sh.current) {
+    sh.current = i;
+    sh.changedAt = now;
+  }
+  const slide = sh.slides[sh.current];
+  if (slide?.type === 'input') startIfVideo(s, slide.sourceId, now);
+}
+
 function creditsIn(s: Show, id: string): Credits {
   const src = find(s, id);
   if (src.kind.type !== 'credits') throw new Refused({ code: 'invalidValue', field: 'credits', reason: 'that input is not a credits input' });
@@ -238,6 +263,12 @@ function apply(s: Show, a: Action, now: number) {
           src.kind.timer.atZero = { type: 'hide' };
         if (src.kind.type === 'pesukim' && src.kind.look.behind === a.id) src.kind.look.behind = null;
         if (src.kind.type === 'split') for (const b of src.kind.boxes) if (b.sourceId === a.id) b.sourceId = null;
+        if (src.kind.type === 'slideshow') {
+          const sh = src.kind;
+          sh.slides = sh.slides.filter((sl) => !(sl.type === 'input' && sl.sourceId === a.id));
+          if (sh.behind === a.id) sh.behind = null;
+          sh.current = Math.min(sh.current, Math.max(0, sh.slides.length - 1));
+        }
       }
       for (const o of s.overlays) {
         if (o.sourceId === a.id) {
@@ -486,6 +517,26 @@ function apply(s: Show, a: Action, now: number) {
     case 'setCountdownRemaining':
       setRemaining(timer(s, a.id), a.ms, now);
       return;
+    case 'slideNext': {
+      const i = nextSlideIndex(slideshowIn(s, a.id));
+      if (i !== null) goToSlide(s, a.id, i, now);
+      return;
+    }
+    case 'slidePrevious':
+      goToSlide(s, a.id, Math.max(0, slideshowIn(s, a.id).current - 1), now);
+      return;
+    case 'slideGo':
+      goToSlide(s, a.id, a.index, now);
+      return;
+    case 'updateSlideshow': {
+      for (const sl of a.slideshow.slides) if (sl.type === 'input') checkSlideInput(s, sl.sourceId);
+      if (a.slideshow.behind) checkSlideInput(s, a.slideshow.behind);
+      const sh = slideshowIn(s, a.id);
+      const { current, changedAt } = sh;
+      Object.assign(sh, structuredClone(a.slideshow), { changedAt });
+      sh.current = Math.min(current, Math.max(0, sh.slides.length - 1));
+      return;
+    }
     case 'updateSplit': {
       for (const b of a.split.boxes) {
         if (b.sourceId === null) continue;
@@ -755,13 +806,18 @@ export function demoTick(show: Show, now: number): Show | null {
       return !!src && src.kind.type === 'video' && sourceEnded(src, now);
     })
     .map(({ i }) => i);
-  if (due.length === 0 && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0) return null;
+  const slidesDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'slideshow' && slideDue(x.kind, now)).map((x) => x.id);
+  if (due.length === 0 && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0 && slidesDue.length === 0) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
   for (const id of due) atZero(next, id, now);
   if (stepsDue) runSteps(next, now);
   for (const id of wordsDue) nextWord(pesukimIn(next, id), now);
   for (const i of overlaysDue) setOverlayOn(next.overlays[i]!, false, now);
+  for (const id of slidesDue) {
+    const i = nextSlideIndex(slideshowIn(next, id));
+    if (i !== null) goToSlide(next, id, i, now);
+  }
   followLive(next, liveBefore, show.backFollowsLive, now);
   return next;
 }

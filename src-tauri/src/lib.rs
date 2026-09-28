@@ -289,6 +289,40 @@ fn capture_stop(session: u64, state: State<'_, AppState>) {
     state.capture.stop(session);
 }
 
+/// Keep a slide picture (a PDF page, rendered by the control window) with
+/// the app's files. The bytes are the body; the file name a header. Returns
+/// the path to use.
+#[tauri::command]
+fn save_slide(
+    request: tauri::ipc::Request<'_>,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let name = request
+        .headers()
+        .get("name")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("slide.png");
+    // Only a plain file name, never a path.
+    let safe: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let dir = state.dir.join("slides");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(safe.trim_start_matches('.'));
+    std::fs::write(&path, bytes).map_err(|e| format!("Could not keep the slide: {e}"))?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 /// Lets the remote reach the engine.
 struct RemoteBackend(tauri::AppHandle);
 
@@ -403,7 +437,8 @@ pub fn run() {
             capture_folder,
             capture_start,
             capture_chunk,
-            capture_stop
+            capture_stop,
+            save_slide
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

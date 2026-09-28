@@ -8,6 +8,9 @@ import { defaultPesukim } from '../engine/pesukim';
 import { TEXT_TEMPLATES } from '../engine/text';
 import { defaultCredits, parseNames } from '../engine/credits';
 import { SplitPicker } from './SplitEditor';
+import { SlideshowSetup } from './SlideshowEditor';
+import { defaultSlideshow } from '../engine/slideshow';
+import type { Slideshow } from '../engine/types/Slideshow';
 import { defaultSplit } from '../engine/split';
 import type { Split } from '../engine/types/Split';
 
@@ -25,6 +28,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'text', name: 'Text / title', hint: 'Lower third, title, ticker, message' },
   { kind: 'credits', name: 'Credits / thank-you', hint: 'Rolling names at the end' },
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
+  { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
@@ -50,6 +54,7 @@ export function AddInput({
   const [color, setColor] = useState('#1f6f79');
   const [template, setTemplate] = useState(0);
   const [split, setSplit] = useState<Split>(defaultSplit);
+  const [slideshow, setSlideshow] = useState<Slideshow>(defaultSlideshow);
   const [words, setWords] = useState('');
   const [subWords, setSubWords] = useState('');
   const [looping, setLooping] = useState(true);
@@ -130,6 +135,8 @@ export function AddInput({
       }
       case 'split':
         return { name: n || 'Split screen', kind: { type: 'split', ...split } };
+      case 'slideshow':
+        return slideshow.slides.length ? { name: n || 'Slideshow', kind: { type: 'slideshow', ...slideshow } } : null;
       case 'credits':
         return { name: n || 'Credits', kind: { type: 'credits', ...defaultCredits(), names: parseNames(words) } };
       case 'pesukim':
@@ -248,6 +255,9 @@ export function AddInput({
             )}
 
             {kind === 'split' && <SplitPicker split={split} sources={sources} onChange={setSplit} />}
+            {kind === 'slideshow' && (
+              <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
+            )}
 
             {kind === 'credits' && (
               <label className="field">

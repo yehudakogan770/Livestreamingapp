@@ -121,6 +121,7 @@ pub fn repair(mut s: Show) -> Show {
             SourceKind::Text(t) => t.repair(),
             SourceKind::Credits(c) => c.repair(),
             SourceKind::Split(sp) => sp.repair(),
+            SourceKind::Slideshow(sh) => sh.repair(),
             SourceKind::Pesukim(p) => {
                 p.repair();
                 let defaults = crate::pesukim::PesukimLook::default();
@@ -185,6 +186,25 @@ fn repair_links(s: &mut Show) {
         .filter(|x| !x.kind.is_sound_only() && !splits.contains(&x.id))
         .map(|x| x.id.clone())
         .collect();
+    let slideshows: HashSet<_> = s
+        .sources
+        .iter()
+        .filter(|x| matches!(x.kind, SourceKind::Slideshow(_)))
+        .map(|x| x.id.clone())
+        .collect();
+    let slide_ok = |id: &crate::model::SourceId| shown.contains(id) && !slideshows.contains(id);
+    for src in &mut s.sources {
+        if let SourceKind::Slideshow(sh) = &mut src.kind {
+            sh.slides.retain(|sl| match sl {
+                crate::slideshow::Slide::Input { source_id } => slide_ok(source_id),
+                crate::slideshow::Slide::Image { .. } => true,
+            });
+            if sh.behind.as_ref().is_some_and(|b| !slide_ok(b)) {
+                sh.behind = None;
+            }
+            sh.repair();
+        }
+    }
     for src in &mut s.sources {
         if let SourceKind::Split(sp) = &mut src.kind {
             for b in &mut sp.boxes {

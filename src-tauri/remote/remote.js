@@ -190,6 +190,11 @@
     return SOUND_EXT.includes(path.split('.').pop()?.toLowerCase() ?? '');
   }
 
+  /** @param {string | null} id */
+  function kindOf(id) {
+    return source(id)?.kind.type ?? null;
+  }
+
   /** A 12 Pesukim input's data. @param {string | null} id */
   function pesukimOf(id) {
     const k = source(id)?.kind;
@@ -287,6 +292,16 @@
         return `<button type="button" class="btn${o.on ? ' is-on' : ''}" data-overlay="${ch}"><b>${ch + 1}</b>${esc(name)}</button>`;
       })
       .join('');
+
+    // A slideshow on air (or in Next) here: next / back.
+    const sliId = kindOf(sc.program) === 'slideshow' ? sc.program : kindOf(sc.preview) === 'slideshow' ? sc.preview : null;
+    const sli = source(sliId)?.kind;
+    $('sli').hidden = sli?.type !== 'slideshow';
+    if (sli?.type === 'slideshow') {
+      $('sli-tag').textContent = sliId === sc.program ? 'ON AIR' : 'NEXT';
+      $('sli-tag').className = sliId === sc.program ? 'tag tag--air' : 'tag tag--next';
+      $('sli-where').textContent = `Slide ${Math.min(sli.current + 1, sli.slides.length)} of ${sli.slides.length}`;
+    }
 
     // The 12 Pesukim, when on air (or in Next) here: one big button for the next word.
     const pesId = pesukimOf(sc.program) ? sc.program : pesukimOf(sc.preview) ? sc.preview : null;
@@ -479,6 +494,23 @@
       const ch = Number(/** @type {HTMLElement | null} */ (el)?.dataset.overlay);
       const o = show?.overlays[ch];
       if (o) void send({ type: 'setOverlayOn', channel: ch, value: !o.on });
+    });
+    const sliId = () => {
+      const sc = show?.screens[screen];
+      if (!sc) return null;
+      return kindOf(sc.program) === 'slideshow' ? sc.program : kindOf(sc.preview) === 'slideshow' ? sc.preview : null;
+    };
+    on('sli-go', () => {
+      const id = sliId();
+      if (id) void send({ type: 'slideNext', id });
+    });
+    on('sli-back', () => {
+      const id = sliId();
+      if (id) void send({ type: 'slidePrevious', id });
+    });
+    on('sli-first', () => {
+      const id = sliId();
+      if (id) void send({ type: 'slideGo', id, index: 0 });
     });
     on('take', () => void send({ type: 'take', screen }));
     on('cut', () => void send({ type: 'take', screen, transition: 'cut' }));

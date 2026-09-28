@@ -11,6 +11,7 @@ use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
 use crate::overlays::OverlayPatch;
 use crate::pesukim::{Pasuk, PesukimLook};
 use crate::presets::{Preset, Step};
+use crate::slideshow::Slideshow;
 use crate::split::Split;
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 use crate::text::TextInput;
@@ -346,6 +347,24 @@ pub enum Action {
     UpdateText {
         id: SourceId,
         text: TextInput,
+    },
+
+    // ----- slideshow -----
+    SlideNext {
+        id: SourceId,
+    },
+    SlidePrevious {
+        id: SourceId,
+    },
+    /// Go to a slide (0-based).
+    SlideGo {
+        id: SourceId,
+        index: usize,
+    },
+    /// Replace the slides and settings (the slide showing is kept if it can be).
+    UpdateSlideshow {
+        id: SourceId,
+        slideshow: Slideshow,
     },
 
     // ----- split screen -----

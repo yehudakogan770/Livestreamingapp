@@ -1,0 +1,114 @@
+.sls__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 4px;
+  border-radius: 6px;
+  background: var(--well);
+}
+.sls__slide {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  background: var(--panel);
+}
+.sls__n {
+  width: 22px;
+  font: 700 11px var(--mono);
+  color: var(--text-faint);
+  text-align: right;
+}
+.sls__thumb {
+  width: 96px;
+  height: 54px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #000;
+}
+.sls__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.sls__input {
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.sls__btns {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+}
+.sls input[type='color'] {
+  width: 40px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+}
+.sled {
+  width: min(1100px, calc(100vw - 48px));
+}
+.sled__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+  overflow: auto;
+}
+.sled__preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  align-self: start;
+}
+
+/* ---- the live card's strip ---- */
+.slc__strip {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.slc__thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 36px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  border: 2px solid var(--border);
+  background: #000;
+  color: var(--text-dim);
+  font-size: 9px;
+}
+.slc__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.slc__thumb i {
+  position: absolute;
+  left: 2px;
+  bottom: 1px;
+  font: normal 700 9px var(--mono);
+  color: #fff;
+  text-shadow: 0 0 3px #000;
+}
+.slc__thumb.is-now {
+  border-color: var(--program-bright);
+}

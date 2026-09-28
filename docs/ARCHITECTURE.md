@@ -111,4 +111,9 @@ they opened.
     Split screen: **done** (a `split` input: side by side, picture-in-picture,
     one big + two small, grid of four, or custom boxes; layout changes glide
     while on air; drawn by the recorder too).
+    Slideshow: **done** (a `slideshow` input: pictures, PDF pages (turned into
+    pictures once with pdf.js and kept in the app's data folder), and any input
+    as a slide — a video between slides plays when it comes up; slides on part
+    of the screen with a camera behind; clicker keys, phone, auto-advance).
+    PowerPoint files: save as PDF first.
 11. Installer, auto-update, rehearsal / soak testing, release.

@@ -29,7 +29,7 @@ export interface Display {
   primary: boolean;
 }
 
-export type MediaKind = 'video' | 'image' | 'audio';
+export type MediaKind = 'video' | 'image' | 'audio' | 'pdf';
 
 /** The open event's file and the recent list. */
 export interface EventFiles {
@@ -152,8 +152,12 @@ export interface EngineClient {
   // ----- files -----
   /** Ask the operator for a video or picture file. Resolves to its path, or null if cancelled. */
   pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null>;
+  /** Ask for several files at once (e.g. slides). Resolves [] if cancelled. */
+  pickFiles(kind: MediaKind): Promise<{ path: string; name: string }[]>;
   /** A URL the page can load a file path from. */
   mediaUrl(path: string): string;
+  /** Keep a picture made here (a PDF page) with the app's files; resolves its path. */
+  saveSlide(png: Blob, name: string): Promise<string>;
 }
 
 /** An action the engine refused, with the engine's reason. */
@@ -237,16 +241,7 @@ export function emptyShow(): Show {
       showTimer: true,
       textSize: 'l',
       clock24h: false,
-      quick: [
-        'Please wrap up',
-        '5 minutes left',
-        '2 minutes left',
-        'Speak louder',
-        'Look at camera 2',
-        'Next: video',
-        'Stand by',
-        'Thank you!',
-      ],
+      quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'],
     },
     overlays: channels(),
     settings: {
@@ -265,6 +260,7 @@ const FILTERS: Record<MediaKind, { name: string; extensions: string[] }> = {
   video: { name: 'Videos', extensions: ['mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'wmv', 'mpg', 'mpeg'] },
   image: { name: 'Pictures', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'] },
   audio: { name: 'Sound and music', extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'wma', 'opus'] },
+  pdf: { name: 'PDF (save PowerPoint as PDF first)', extensions: ['pdf'] },
 };
 
 /** A "video" source that is really a sound file (music, effects): heard, never shown. */
@@ -437,6 +433,16 @@ class TauriClient implements EngineClient {
   mediaUrl(path: string): string {
     if (/^(blob:|data:|https?:)/.test(path)) return path;
     return convertFileSrc(path);
+  }
+
+  async pickFiles(kind: MediaKind): Promise<{ path: string; name: string }[]> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const paths = await open({ multiple: true, directory: false, filters: [FILTERS[kind]] });
+    return (Array.isArray(paths) ? paths : paths ? [paths] : []).map((path) => ({ path, name: baseName(path) }));
+  }
+
+  async saveSlide(png: Blob, name: string): Promise<string> {
+    return invoke<string>('save_slide', new Uint8Array(await png.arrayBuffer()), { headers: { name } });
   }
 
   async getShow(): Promise<ShowSnapshot> {
@@ -639,6 +645,22 @@ export class DemoClient implements EngineClient {
 
   mediaUrl(path: string): string {
     return path;
+  }
+
+  pickFiles(kind: MediaKind): Promise<{ path: string; name: string }[]> {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.multiple = true;
+      input.accept = FILTERS[kind].extensions.map((e) => '.' + e).join(',');
+      input.onchange = () => resolve([...(input.files ?? [])].map((f) => ({ path: `${URL.createObjectURL(f)}#${f.name}`, name: baseName(f.name) })));
+      input.oncancel = () => resolve([]);
+      input.click();
+    });
+  }
+
+  saveSlide(png: Blob, name: string): Promise<string> {
+    return Promise.resolve(`${URL.createObjectURL(png)}#${name}`);
   }
 }
 

@@ -78,6 +78,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <TextView t={k} />;
     case 'credits':
       return <CreditsView c={k} />;
+    case 'slideshow':
+      return <SlideshowInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'split':
       return <SplitInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'pesukim':
@@ -96,6 +98,37 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
     case 'video':
       return <VideoView source={source} client={client} fit={fit} thumb={thumb} reportDuration={reportDuration} audience={audience} />;
   }
+}
+
+/**
+ * A slideshow: the slide showing (a picture, or another input such as a
+ * video), in its area, over what is behind. Each new slide fades in.
+ */
+function SlideshowInput({ source, client, thumb, audience }: { source: Source; client: EngineClient; thumb: boolean; audience: boolean }) {
+  const stage = useStage();
+  if (source.kind.type !== 'slideshow') return null;
+  const sh = source.kind;
+  const find = (id: string | null) => (id ? stage?.sources?.find((s) => s.id === id && s.kind.type !== 'slideshow') : undefined);
+  const behind = find(sh.behind);
+  const slide = sh.slides[sh.current];
+  const inner = slide?.type === 'input' ? find(slide.sourceId) : undefined;
+  const fit = sh.fit === 'cover' ? 'cover' : 'contain';
+  return (
+    <div style={{ ...fill, background: sh.background, overflow: 'hidden' }} data-kind="slideshow">
+      {behind && <SourceBody source={behind} client={client} thumb={thumb} audience={audience} />}
+      <div style={{ position: 'absolute', left: `${sh.area.x}%`, top: `${sh.area.y}%`, width: `${sh.area.w}%`, height: `${sh.area.h}%`, overflow: 'hidden' }}>
+        {slide && (
+          <div key={`${sh.current}:${sh.changedAt}`} style={{ ...fill, animation: sh.fade && !thumb ? 'slide-in 0.4s ease-out both' : undefined }}>
+            {slide.type === 'image' ? (
+              <ImageView url={client.mediaUrl(slide.path)} fit={fit} audience={audience} />
+            ) : (
+              inner && <SourceBody source={inner} client={client} thumb={thumb} audience={audience} />
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /** A split screen: each box draws its input; boxes glide when the layout changes. */
