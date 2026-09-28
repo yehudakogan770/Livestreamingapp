@@ -279,6 +279,15 @@
       $('media-pause').hidden = !playing;
     }
 
+    // Overlay buttons 1 – 4 (only channels with something in them).
+    $('ovs').innerHTML = show.overlays
+      .map((o, ch) => {
+        const name = source(o.sourceId)?.name;
+        if (!name) return '';
+        return `<button type="button" class="btn${o.on ? ' is-on' : ''}" data-overlay="${ch}"><b>${ch + 1}</b>${esc(name)}</button>`;
+      })
+      .join('');
+
     // The 12 Pesukim, when on air (or in Next) here: one big button for the next word.
     const pesId = pesukimOf(sc.program) ? sc.program : pesukimOf(sc.preview) ? sc.preview : null;
     const pes = pesukimOf(pesId);
@@ -464,6 +473,12 @@
       const id = pesId();
       const p = pesukimOf(id);
       if (id && p) void send({ type: 'pesukimBlank', id, value: !p.place.blank });
+    });
+    $('ovs').addEventListener('click', (e) => {
+      const el = /** @type {HTMLElement} */ (e.target).closest('[data-overlay]');
+      const ch = Number(/** @type {HTMLElement | null} */ (el)?.dataset.overlay);
+      const o = show?.overlays[ch];
+      if (o) void send({ type: 'setOverlayOn', channel: ch, value: !o.on });
     });
     on('take', () => void send({ type: 'take', screen }));
     on('cut', () => void send({ type: 'take', screen, transition: 'cut' }));

@@ -12,6 +12,7 @@ import type { Countdown } from './types/Countdown';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { demoApply, demoTick } from './demo';
+import { channels } from './overlays';
 
 export interface ShowSnapshot {
   revision: number;
@@ -247,6 +248,7 @@ export function emptyShow(): Show {
         'Thank you!',
       ],
     },
+    overlays: channels(),
     settings: {
       displays: { live: null, back: null, monitor: null },
       autoPlayOnTake: true,

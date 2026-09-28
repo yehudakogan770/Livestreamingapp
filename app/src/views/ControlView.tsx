@@ -9,6 +9,7 @@ import { SCREENS } from '../components/ScreenSelector';
 import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
+import { OverlayBar } from './OverlayBar';
 import { pesukimTarget } from '../engine/pesukim';
 import { Mixer } from './Mixer';
 import { PresetsPanel } from './PresetsPanel';
@@ -29,8 +30,7 @@ interface Toast {
   text: string;
 }
 
-const typing = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName));
+const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(t.tagName));
 
 /** The main event screen for the screen being controlled. */
 export function ControlView({
@@ -75,8 +75,23 @@ export function ControlView({
     const free = cds.find((s) => !onAir.has(s.id));
     if (free) return act({ type: 'setPreview', screen, sourceId: free.id });
     const like = cds[0]?.kind.type === 'countdown' ? cds[0].kind : null;
-    const timer = { ...defaultCountdown(), ...(like ? { label: like.timer.label, endText: like.timer.endText, format: like.timer.format, atZero: like.timer.atZero, lengthMs: like.timer.lengthMs, remainingMs: like.timer.lengthMs } : {}) };
-    add({ name: cds.length ? `Countdown ${cds.length + 1}` : 'Countdown', kind: { type: 'countdown', background: like?.background ?? '#0b2545', logo: like?.logo, timer } });
+    const timer = {
+      ...defaultCountdown(),
+      ...(like
+        ? {
+            label: like.timer.label,
+            endText: like.timer.endText,
+            format: like.timer.format,
+            atZero: like.timer.atZero,
+            lengthMs: like.timer.lengthMs,
+            remainingMs: like.timer.lengthMs,
+          }
+        : {}),
+    };
+    add({
+      name: cds.length ? `Countdown ${cds.length + 1}` : 'Countdown',
+      kind: { type: 'countdown', background: like?.background ?? '#0b2545', logo: like?.logo, timer },
+    });
   };
 
   const add = (src: NewSource) => {
@@ -92,7 +107,7 @@ export function ControlView({
       .catch(fail);
   };
 
-  // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · B blank this screen.
+  // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · Shift+1–4 overlays · B blank this screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (adding || outputsOpen || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -100,6 +115,11 @@ export function ControlView({
       if (e.key === 'Enter' && screen !== 'monitor' && sc.preview !== null && sc.preview !== sc.program) {
         e.preventDefault();
         act(e.shiftKey ? { type: 'take', screen, transition: 'cut' } : { type: 'take', screen });
+      } else if (e.shiftKey && /^Digit[1-4]$/.test(e.code)) {
+        // Shift + 1 – 4: overlay on / off.
+        const ch = Number(e.code.slice(5)) - 1;
+        const o = show.overlays[ch];
+        if (o?.sourceId) act({ type: 'setOverlayOn', channel: ch, value: !o.on });
       } else if (/^[0-9]$/.test(e.key) && screen !== 'monitor') {
         const src = show.sources[e.key === '0' ? 9 : Number(e.key) - 1];
         if (src) act({ type: 'setPreview', screen, sourceId: src.id });
@@ -120,61 +140,62 @@ export function ControlView({
       <div className="control__main">
         <PresetsPanel show={show} client={client} act={act} />
         <div className="control__work">
-        {screen === 'monitor' ? (
-          <MonitorPanel show={show} act={act} />
-        ) : (
-          <section className="stage">
-            <div className="mon mon--pvw">
-              <div className="mon__head">
-                <span className="dot dot--pvw" /> Next <em>{find(sc.preview)?.name ?? 'nothing lined up'}</em>
+          {screen === 'monitor' ? (
+            <MonitorPanel show={show} act={act} />
+          ) : (
+            <section className="stage">
+              <div className="mon mon--pvw">
+                <div className="mon__head">
+                  <span className="dot dot--pvw" /> Next <em>{find(sc.preview)?.name ?? 'nothing lined up'}</em>
+                </div>
+                <div className="mon__screen">
+                  <PreviewView show={show} screen={screen} client={client} />
+                  {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+                </div>
+                <Transport source={find(sc.preview)} act={act} label="Next" />
               </div>
-              <div className="mon__screen">
-                <PreviewView show={show} screen={screen} client={client} />
-                {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
-              </div>
-              <Transport source={find(sc.preview)} act={act} label="Next" />
-            </div>
-            <div className="centre">
-              <SwitchPanel show={show} screen={screen} act={act} />
-              {pesukimTarget(show, screen) ? (
-                <PesukimCard show={show} act={act} screen={screen} client={client} />
-              ) : (
-                <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
-              )}
-            </div>
-            <div className="mon mon--pgm">
-              <div className="mon__head">
-                <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
-                <span className="mon__tag">{name.toUpperCase()}</span>
-              </div>
-              <div className="mon__screen">
-                <ProgramView show={show} screen={screen} client={client} reportDuration />
-                {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
-                {(sc.blank || show.panic) && (
-                  <span className="mon__blanked">
-                    {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
-                    <small>
-                      {show.panic
-                        ? 'Click PANIC (bottom right) to bring the screens back'
-                        : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
-                    </small>
-                  </span>
+              <div className="centre">
+                <SwitchPanel show={show} screen={screen} act={act} />
+                {pesukimTarget(show, screen) ? (
+                  <PesukimCard show={show} act={act} screen={screen} client={client} />
+                ) : (
+                  <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
                 )}
               </div>
-              <Transport source={find(sc.program)} act={act} label="On air" />
-            </div>
-          </section>
-        )}
+              <div className="mon mon--pgm">
+                <div className="mon__head">
+                  <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
+                  <span className="mon__tag">{name.toUpperCase()}</span>
+                </div>
+                <div className="mon__screen">
+                  <ProgramView show={show} screen={screen} client={client} reportDuration />
+                  {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
+                  {(sc.blank || show.panic) && (
+                    <span className="mon__blanked">
+                      {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
+                      <small>
+                        {show.panic
+                          ? 'Click PANIC (bottom right) to bring the screens back'
+                          : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
+                      </small>
+                    </span>
+                  )}
+                </div>
+                <Transport source={find(sc.program)} act={act} label="On air" />
+                <OverlayBar show={show} screen={screen} act={act} client={client} />
+              </div>
+            </section>
+          )}
 
-        {screen !== 'monitor' && (
-          <section className="inputs-area">
-            <div className="inputs-area__grid">
-              <PresetButtons show={show} act={act} showAll={showAll} onShowAll={setShowAll} />
-              <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} only={onlyInputs} />
-            </div>
-            <Mixer show={show} act={act} />
-          </section>
-        )}
+          {screen !== 'monitor' && (
+            <section className="inputs-area">
+              <div className="inputs-area__grid">
+                <PresetButtons show={show} act={act} showAll={showAll} onShowAll={setShowAll} />
+                <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} only={onlyInputs} />
+              </div>
+              <Mixer show={show} act={act} />
+            </section>
+          )}
         </div>
       </div>
 
@@ -184,11 +205,7 @@ export function ControlView({
           Outputs
           <span className="bar__lamps" aria-label={`${open.length} of 3 open`}>
             {SCREENS.map((s) => (
-              <i
-                key={s.id}
-                className={open.includes(s.id) ? 'is-on' : ''}
-                title={`${s.name}: ${open.includes(s.id) ? 'open' : 'closed'}`}
-              />
+              <i key={s.id} className={open.includes(s.id) ? 'is-on' : ''} title={`${s.name}: ${open.includes(s.id) ? 'open' : 'closed'}`} />
             ))}
           </span>
         </button>
@@ -230,9 +247,7 @@ export function ControlView({
       </div>
 
       {adding && <AddInput client={client} onAdd={add} onClose={() => setAdding(false)} />}
-      {outputsOpen && (
-        <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />
-      )}
+      {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}
     </div>
   );
 }

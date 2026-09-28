@@ -6,6 +6,7 @@ import type { TransitionKind } from '../engine/types/TransitionKind';
 import { fadeAmount, mixAt, transitionProgress, BLANK_FADE_MS, type Mix } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { SafeScreenView, SourceView } from './SourceView';
+import { OverlaysView } from './OverlaysView';
 
 interface Layer {
   id: string;
@@ -192,6 +193,7 @@ export function ProgramView({
           </div>
         );
       })}
+      <OverlaysView show={show} screen={screen} client={client} audience={audience} />
       {(black > 0 || animating) && <div style={{ ...box, background: '#000', opacity: black }} data-dip />}
       {blank > 0 && <div style={{ ...box, background: '#000', opacity: blank, zIndex: 4 }} data-blank />}
       {panic > 0 && (
@@ -208,5 +210,10 @@ export function ProgramView({
 export function PreviewView({ show, screen, client }: { show: Show; screen: ScreenId; client: EngineClient }) {
   const id = show.screens[screen].preview;
   const src = id === null ? undefined : show.sources.find((s) => s.id === id);
-  return <div style={box}>{src && <SourceView key={src.id} source={src} client={client} />}</div>;
+  return (
+    <div style={box}>
+      {src && <SourceView key={src.id} source={src} client={client} />}
+      <OverlaysView show={show} screen={screen} client={client} next />
+    </div>
+  );
 }

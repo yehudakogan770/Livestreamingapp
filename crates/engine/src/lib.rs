@@ -15,6 +15,7 @@ pub mod audio;
 pub mod engine;
 pub mod event;
 pub mod model;
+pub mod overlays;
 pub mod persist;
 pub mod pesukim;
 pub mod presets;
@@ -28,6 +29,7 @@ pub use audio::{
 pub use engine::{Engine, Outcome};
 pub use event::{EventInfo, EventPatch, SafeScreen};
 pub use model::*;
+pub use overlays::{Frame, Overlay, OverlayAnim, OverlayPatch};
 pub use pesukim::{Pasuk, Pesukim, PesukimLook, PesukimMode, PesukimPlace, WordChange};
 pub use presets::{Preset, PresetButton, RunningSteps, Step};
 pub use stage::{AtZero, Countdown, Monitor, MonitorLayout, TextSize, TimerFormat};

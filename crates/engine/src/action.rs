@@ -7,6 +7,7 @@ use ts_rs::TS;
 use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
 use crate::event::EventPatch;
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
+use crate::overlays::OverlayPatch;
 use crate::pesukim::{Pasuk, PesukimLook};
 use crate::presets::{Preset, Step};
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
@@ -336,6 +337,29 @@ pub enum Action {
         #[ts(type = "number")]
         at: Millis,
     },
+
+    // ----- overlays (channels 0 – 3, shown as 1 – 4) -----
+    /// Choose the input on an overlay channel (`null` empties it).
+    SetOverlaySource {
+        channel: usize,
+        source_id: Option<SourceId>,
+    },
+    UpdateOverlay {
+        channel: usize,
+        patch: OverlayPatch,
+    },
+    /// Put an overlay on air (with its animation) or take it off.
+    SetOverlayOn {
+        channel: usize,
+        value: bool,
+    },
+    /// Show an overlay on the Next monitors to set it up.
+    SetOverlayInNext {
+        channel: usize,
+        value: bool,
+    },
+    /// Take every overlay off.
+    OverlaysOff,
 
     // ----- 12 Pesukim -----
     /// Next word (after the last word, the next pasuk).

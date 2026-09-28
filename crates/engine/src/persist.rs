@@ -164,6 +164,25 @@ pub fn repair(mut s: Show) -> Show {
         }
     }
 
+    // Four overlay channels, each pointing at a picture that exists.
+    s.overlays
+        .resize_with(crate::overlays::CHANNELS, Default::default);
+    let pictures: HashSet<_> = s
+        .sources
+        .iter()
+        .filter(|x| !x.kind.is_sound_only())
+        .map(|x| x.id.clone())
+        .collect();
+    for o in &mut s.overlays {
+        if o.source_id
+            .as_ref()
+            .is_some_and(|id| !pictures.contains(id))
+        {
+            o.source_id = None;
+        }
+        o.repair();
+    }
+
     repair_sound(&mut s);
     repair_presets(&mut s);
     repair_stage(&mut s);

@@ -13,6 +13,7 @@ import { RemoteDialog } from './views/RemoteDialog';
 import { defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { BroadcastDialog } from './broadcast/BroadcastDialog';
+import { OverlayEditor } from './views/OverlayEditor';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
@@ -81,6 +82,7 @@ function ControlApp() {
   const [remoteOpen, setRemoteOpen] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const openBroadcast = useCallback(() => setBroadcastOpen(true), []);
+  const [overlaysOpen, setOverlaysOpen] = useState(false);
   useEffect(() => client.watchRemote(setRemote), [client]);
   useReportProblem(
     remote?.enabled && remote.error
@@ -100,15 +102,11 @@ function ControlApp() {
     return () => clearTimeout(t);
   }, [notice]);
   const fail = useCallback((e: unknown) => setNotice(e instanceof Error ? e.message : String(e)), []);
-  const open = useCallback(
-    (path?: string) =>
-      void client.openEvent(path).then(
-        (ok) => ok && setSetupDismissed(true),
-        fail,
-      ),
+  const open = useCallback((path?: string) => void client.openEvent(path).then((ok) => ok && setSetupDismissed(true), fail), [client, fail]);
+  const saveAs = useCallback(
+    () => void client.saveEventAs().then((p) => p && setNotice(`Saved. Lumora keeps “${baseName(p)}” up to date from now on.`), fail),
     [client, fail],
   );
-  const saveAs = useCallback(() => void client.saveEventAs().then((p) => p && setNotice(`Saved. Lumora keeps “${baseName(p)}” up to date from now on.`), fail), [client, fail]);
   const menus = useMemo(() => {
     const event: MenuItem[] = [
       { label: 'Event setup…', onClick: () => setSetupOpen(true) },
@@ -119,7 +117,8 @@ function ControlApp() {
     ];
     if (files.recent.length) {
       event.push(null);
-      for (const r of files.recent) event.push({ label: `${r === files.current ? '● ' : ''}${baseName(r)}`, hint: r, onClick: () => open(r), disabled: r === files.current });
+      for (const r of files.recent)
+        event.push({ label: `${r === files.current ? '● ' : ''}${baseName(r)}`, hint: r, onClick: () => open(r), disabled: r === files.current });
     }
     const phones = remote?.phones ?? 0;
     const settings: MenuItem[] = [
@@ -148,12 +147,24 @@ function ControlApp() {
             },
           },
         ];
-    return { Event: event, Settings: settings, '12 Pesukim': pesukimMenu };
-  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, controlling, client, fail]);
+    const overlays: MenuItem[] = [
+      { label: 'Set up overlays…', onClick: () => setOverlaysOpen(true) },
+      {
+        label: 'Take every overlay off',
+        onClick: () => void client.dispatch({ type: 'overlaysOff' }).catch(fail),
+        disabled: !show?.overlays.some((o) => o.on),
+      },
+    ];
+    return { Event: event, Settings: settings, '12 Pesukim': pesukimMenu, Overlays: overlays };
+  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, show?.overlays, controlling, client, fail]);
 
   return (
     <div className="app">
-      <TitleBar controlling={controlling} eventName={[show?.event.name, files.current ? baseName(files.current) : show ? 'not saved to a file' : ''].filter(Boolean).join(' · ')} menus={menus} />
+      <TitleBar
+        controlling={controlling}
+        eventName={[show?.event.name, files.current ? baseName(files.current) : show ? 'not saved to a file' : ''].filter(Boolean).join(' · ')}
+        menus={menus}
+      />
       <ScreenSelector show={show} selected={controlling} onSelect={select} />
       <main className="workarea">
         {show ? (
@@ -163,6 +174,15 @@ function ControlApp() {
                 <BroadcastProvider show={show} client={client}>
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
+                  {overlaysOpen && (
+                    <OverlayEditor
+                      show={show}
+                      channel={0}
+                      client={client}
+                      act={(a) => void client.dispatch(a).catch(fail)}
+                      onClose={() => setOverlaysOpen(false)}
+                    />
+                  )}
                 </BroadcastProvider>
               </StageContext.Provider>
             </SoundProvider>
@@ -189,7 +209,9 @@ function ControlApp() {
                 : 'This event has not been saved to a file, so it will be gone. Use “Save event as…” first to keep it.'}
             </p>
             <footer className="modal__foot">
-              <button type="button" className="btn" onClick={() => setConfirmNew(false)}>Cancel</button>
+              <button type="button" className="btn" onClick={() => setConfirmNew(false)}>
+                Cancel
+              </button>
               <button
                 type="button"
                 className="btn btn--primary"

@@ -2,6 +2,7 @@
 import type { AudioMix } from "./AudioMix";
 import type { EventInfo } from "./EventInfo";
 import type { Monitor } from "./Monitor";
+import type { Overlay } from "./Overlay";
 import type { PerScreen } from "./PerScreen";
 import type { Preset } from "./Preset";
 import type { RunningSteps } from "./RunningSteps";
@@ -55,4 +56,8 @@ audio: AudioMix,
 /**
  * What the stage monitor shows.
  */
-monitor: Monitor, settings: Settings, };
+monitor: Monitor, 
+/**
+ * Overlay channels 1 – 4 (always four).
+ */
+overlays: Array<Overlay>, settings: Settings, };

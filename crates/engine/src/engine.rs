@@ -6,6 +6,7 @@ use crate::model::{
     ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
     Transition, TransitionKind, MIN_TRANSITION_MS,
 };
+use crate::overlays::Overlay;
 use crate::pesukim::{Pesukim, PesukimLook};
 use crate::presets::{
     Preset, PresetButton, RunningSteps, Step, MAX_PRESET_NAME_LEN, MAX_STEPS, MAX_WAIT_MS,
@@ -106,7 +107,10 @@ impl Engine {
             .filter(|src| matches!(&src.kind, SourceKind::Pesukim(p) if p.due(now)))
             .map(|src| src.id.clone())
             .collect();
-        if due.is_empty() && !steps_due && words_due.is_empty() {
+        let overlays_due: Vec<usize> = (0..self.show.overlays.len())
+            .filter(|&i| overlay_due(&self.show, i, now))
+            .collect();
+        if due.is_empty() && !steps_due && words_due.is_empty() && overlays_due.is_empty() {
             return Outcome::Unchanged;
         }
         let mut next = self.show.clone();
@@ -117,6 +121,9 @@ impl Engine {
         }
         if steps_due {
             run_steps(&mut next, now);
+        }
+        for &i in &overlays_due {
+            next.overlays[i].set_on(false, now);
         }
         for id in &words_due {
             if let Ok(p) = pesukim_mut(&mut next, id) {
@@ -131,6 +138,22 @@ impl Engine {
         self.revision += 1;
         Outcome::Changed
     }
+}
+
+/// An overlay goes off by itself: its auto-hide time is up, or its video
+/// ended (video overlays turn off at the end unless they loop).
+fn overlay_due(s: &Show, i: usize, now: Millis) -> bool {
+    let o = &s.overlays[i];
+    if !o.on {
+        return false;
+    }
+    if o.due(now) {
+        return true;
+    }
+    o.source_id
+        .as_ref()
+        .and_then(|id| s.source(id))
+        .is_some_and(|src| src.kind.is_video() && source_ended(src, now))
 }
 
 /// A countdown input has held on 0: do what was chosen for zero, once.
@@ -234,6 +257,91 @@ pub(crate) fn can_be_behind(kind: &SourceKind) -> bool {
     )
 }
 
+fn channel_mut(s: &mut Show, channel: usize) -> Result<&mut Overlay> {
+    s.overlays
+        .get_mut(channel)
+        .ok_or_else(|| ActionError::invalid("channel", "overlay channels are 1 to 4"))
+}
+
+/// The overlay actions.
+fn apply_overlay(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    match action {
+        Action::SetOverlaySource { channel, source_id } => {
+            if let Some(id) = &source_id {
+                require_picture(s, id)?;
+            }
+            let o = channel_mut(s, channel)?;
+            if o.source_id != source_id {
+                o.source_id = source_id;
+                // A new input starts off air; an emptied channel goes off.
+                o.on = false;
+                o.changed_at = now;
+            }
+            o.repair();
+        }
+        Action::UpdateOverlay { channel, patch } => {
+            let o = channel_mut(s, channel)?;
+            if let Some(f) = patch.frame {
+                o.frame = f;
+            }
+            if let Some(v) = patch.opacity {
+                o.opacity = finite(v, "opacity")?;
+            }
+            if let Some(a) = patch.anim_in {
+                o.anim_in = a;
+            }
+            if let Some(a) = patch.anim_out {
+                o.anim_out = a;
+            }
+            if let Some(ms) = patch.anim_ms {
+                o.anim_ms = ms;
+            }
+            if let Some(ms) = patch.auto_hide_ms {
+                o.auto_hide_ms = (ms > 0).then_some(ms);
+            }
+            if let Some(screens) = patch.screens {
+                o.screens = screens;
+            }
+            o.repair();
+        }
+        Action::SetOverlayOn { channel, value } => {
+            let o = channel_mut(s, channel)?;
+            if value && o.source_id.is_none() {
+                return Err(ActionError::invalid(
+                    "overlay",
+                    "choose an input for this overlay first",
+                ));
+            }
+            o.set_on(value, now);
+            if value {
+                o.in_next = false;
+            }
+            // A video overlay starts when it comes on.
+            if let (true, Some(id)) = (value, o.source_id.clone()) {
+                start_if_video(s, &id, now);
+            }
+        }
+        Action::SetOverlayInNext { channel, value } => {
+            let o = channel_mut(s, channel)?;
+            if value && o.source_id.is_none() {
+                return Err(ActionError::invalid(
+                    "overlay",
+                    "choose an input for this overlay first",
+                ));
+            }
+            o.in_next = value;
+        }
+        Action::OverlaysOff => {
+            for o in &mut s.overlays {
+                o.set_on(false, now);
+                o.in_next = false;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 /// The 12 Pesukim actions.
 fn apply_pesukim(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     match action {
@@ -325,6 +433,12 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                         p.look.behind = None;
                     }
                     _ => {}
+                }
+            }
+            for o in &mut s.overlays {
+                if o.source_id.as_ref() == Some(&id) {
+                    o.source_id = None;
+                    o.repair();
                 }
             }
             for id_screen in ScreenId::ALL {
@@ -656,6 +770,11 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             timer_mut(s, &id)?.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
             Ok(())
         }
+        a @ (Action::SetOverlaySource { .. }
+        | Action::UpdateOverlay { .. }
+        | Action::SetOverlayOn { .. }
+        | Action::SetOverlayInNext { .. }
+        | Action::OverlaysOff) => apply_overlay(s, a, now),
         a @ (Action::PesukimNext { .. }
         | Action::PesukimBack { .. }
         | Action::PesukimGo { .. }

@@ -3,6 +3,8 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { repairOverlay, setOverlayOn } from './overlays';
+import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
 import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
@@ -63,6 +65,12 @@ function finite(v: number, field: string): number {
 
 function notMonitor(screen: ScreenId) {
   if (screen === 'monitor') throw new Refused({ code: 'monitorIsTextOnly' });
+}
+
+function channelOf(s: Show, channel: number): Overlay {
+  const o = s.overlays[channel];
+  if (!o) throw new Refused({ code: 'invalidValue', field: 'channel', reason: 'overlay channels are 1 to 4' });
+  return o;
 }
 
 function pesukimIn(s: Show, id: string): PesukimData {
@@ -208,6 +216,12 @@ function apply(s: Show, a: Action, now: number) {
       for (const src of s.sources) {
         if (src.kind.type === 'countdown' && src.kind.timer.atZero.type === 'cutTo' && src.kind.timer.atZero.sourceId === a.id) src.kind.timer.atZero = { type: 'hide' };
         if (src.kind.type === 'pesukim' && src.kind.look.behind === a.id) src.kind.look.behind = null;
+      }
+      for (const o of s.overlays) {
+        if (o.sourceId === a.id) {
+          o.sourceId = null;
+          repairOverlay(o);
+        }
       }
       for (const sc of Object.values(s.screens)) {
         if (sc.preview === a.id) sc.preview = null;
@@ -451,6 +465,52 @@ function apply(s: Show, a: Action, now: number) {
     case 'setCountdownRemaining':
       setRemaining(timer(s, a.id), a.ms, now);
       return;
+    case 'setOverlaySource': {
+      if (a.sourceId !== null) picture(s, a.sourceId);
+      const o = channelOf(s, a.channel);
+      if (o.sourceId !== a.sourceId) {
+        o.sourceId = a.sourceId;
+        o.on = false;
+        o.changedAt = now;
+      }
+      repairOverlay(o);
+      return;
+    }
+    case 'updateOverlay': {
+      const o = channelOf(s, a.channel);
+      const p = a.patch;
+      if (p.frame !== undefined) o.frame = p.frame;
+      if (p.opacity !== undefined) o.opacity = finite(p.opacity, 'opacity');
+      if (p.animIn !== undefined) o.animIn = p.animIn;
+      if (p.animOut !== undefined) o.animOut = p.animOut;
+      if (p.animMs !== undefined) o.animMs = p.animMs;
+      if (p.autoHideMs !== undefined) o.autoHideMs = p.autoHideMs > 0 ? p.autoHideMs : null;
+      if (p.screens !== undefined) o.screens = p.screens;
+      repairOverlay(o);
+      return;
+    }
+    case 'setOverlayOn': {
+      const o = channelOf(s, a.channel);
+      if (a.value && o.sourceId === null) throw new Refused({ code: 'invalidValue', field: 'overlay', reason: 'choose an input for this overlay first' });
+      setOverlayOn(o, a.value, now);
+      if (a.value) {
+        o.inNext = false;
+        if (o.sourceId) startIfVideo(s, o.sourceId, now);
+      }
+      return;
+    }
+    case 'setOverlayInNext': {
+      const o = channelOf(s, a.channel);
+      if (a.value && o.sourceId === null) throw new Refused({ code: 'invalidValue', field: 'overlay', reason: 'choose an input for this overlay first' });
+      o.inNext = a.value;
+      return;
+    }
+    case 'overlaysOff':
+      for (const o of s.overlays) {
+        setOverlayOn(o, false, now);
+        o.inNext = false;
+      }
+      return;
     case 'pesukimNext':
       nextWord(pesukimIn(s, a.id), now);
       return;
@@ -613,12 +673,23 @@ export function demoTick(show: Show, now: number): Show | null {
   // Pesukim on auto-advance move on by themselves, only while on air.
   const onAir = [show.screens.live.program, show.screens.back.program];
   const wordsDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'pesukim' && wordDue(x.kind, now)).map((x) => x.id);
-  if (due.length === 0 && !stepsDue && wordsDue.length === 0) return null;
+  // Overlays go off by themselves: auto-hide, or a video that ended.
+  const overlaysDue = show.overlays
+    .map((o, i) => ({ o, i }))
+    .filter(({ o }) => {
+      if (!o.on) return false;
+      if (o.autoHideMs !== null && now >= o.changedAt + o.autoHideMs) return true;
+      const src = show.sources.find((x) => x.id === o.sourceId);
+      return !!src && src.kind.type === 'video' && sourceEnded(src, now);
+    })
+    .map(({ i }) => i);
+  if (due.length === 0 && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
   for (const id of due) atZero(next, id, now);
   if (stepsDue) runSteps(next, now);
   for (const id of wordsDue) nextWord(pesukimIn(next, id), now);
+  for (const i of overlaysDue) setOverlayOn(next.overlays[i]!, false, now);
   followLive(next, liveBefore, show.backFollowsLive, now);
   return next;
 }

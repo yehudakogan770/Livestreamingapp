@@ -427,3 +427,27 @@ describe('12 Pesukim', () => {
     expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'false');
   });
 });
+
+describe('Overlays', () => {
+  it('sets up overlay 1, puts it on air over the picture, and Shift+1 takes it off', async () => {
+    await start();
+    await addColour('#c7372f');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit overlay 1' }));
+    const ed = screen.getByRole('dialog', { name: 'Overlays' });
+    const input = within(ed).getByLabelText('Overlay input');
+    const colour = within(input).getByRole('option', { name: '#c7372f' }) as HTMLOptionElement;
+    fireEvent.change(input, { target: { value: colour.value } });
+    fireEvent.click(within(ed).getByRole('button', { name: 'Logo, top right' }));
+    expect(within(ed).getByLabelText('Left')).toHaveValue(86);
+    await act(async () => {
+      fireEvent.click(within(ed).getByRole('button', { name: 'Save and put on air' }));
+    });
+    const btn = document.querySelector('.ovbar__btn')!;
+    expect(btn).toHaveAttribute('aria-pressed', 'true');
+    expect(document.querySelector('.mon--pgm [data-overlay]')).not.toBeNull();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: '!', code: 'Digit1', shiftKey: true });
+    });
+    expect(btn).toHaveAttribute('aria-pressed', 'false');
+  });
+});

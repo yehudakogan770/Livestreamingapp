@@ -12,6 +12,8 @@ import { programLayers } from '../components/ScreenView';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
+import { overlayLook, overlaysOn } from '../engine/overlays';
+import type { Overlay } from '../engine/types/Overlay';
 import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, fadeAmount, formatCountdown, ZERO_HOLD_MS } from '../engine/timing';
 
 const FONT = '"Segoe UI", system-ui, sans-serif';
@@ -81,7 +83,8 @@ export class ProgramCompositor {
     const { layers, black } = programLayers(show, 'live', now);
     // Also open what is behind a Pesukim input on air.
     const behind = layers.map((l) => pesukimOf(show, l.id)?.look.behind ?? null);
-    this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind]);
+    const overlays = overlaysOn(show.overlays, 'live', now);
+    this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
     if (now - this.lastSync > 150) {
       this.lastSync = now;
       for (const [id, m] of this.media) {
@@ -107,6 +110,7 @@ export class ProgramCompositor {
       ctx.restore();
     }
     this.overlay('#000', black, w, h);
+    for (const { o } of overlays) this.drawOverlay(o, show, now, w, h);
     this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now), w, h);
     const panic = fadeAmount(show.panic, show.panicChangedAt, now);
     if (panic > 0) {
@@ -289,6 +293,29 @@ export class ProgramCompositor {
       ctx.globalAlpha = appear;
       if (logo) this.centred(logo, w * 0.6, h * 0.6, w, h, 0.92 + 0.08 * appear);
     }
+    ctx.restore();
+  }
+
+  /** One overlay channel in its box, with its animation (mirrors OverlaysView). */
+  private drawOverlay(o: Overlay, show: Show, now: number, w: number, h: number) {
+    const src = show.sources.find((s) => s.id === o.sourceId);
+    const look = overlayLook(o, now);
+    if (!src || !look || look.opacity <= 0) return;
+    const ctx = this.ctx;
+    const bw = (o.frame.w / 100) * w;
+    const bh = (o.frame.h / 100) * h;
+    ctx.save();
+    ctx.globalAlpha = clamp01(look.opacity);
+    ctx.translate((o.frame.x / 100) * w + look.dx * bw, (o.frame.y / 100) * h + look.dy * bh);
+    if (look.scale !== 1) {
+      ctx.translate(bw / 2, bh / 2);
+      ctx.scale(look.scale, look.scale);
+      ctx.translate(-bw / 2, -bh / 2);
+    }
+    ctx.beginPath();
+    ctx.rect(0, 0, bw * look.reveal, bh);
+    ctx.clip();
+    this.drawSource(src, show.event, now, bw, bh);
     ctx.restore();
   }
 

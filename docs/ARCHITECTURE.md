@@ -98,4 +98,8 @@ they opened.
     12 Pesukim: **done** (a `pesukim` input: `crates/engine/src/pesukim.rs`,
     `app/src/engine/pesukim.ts`, `PesukimView`, `PesukimCard`, `PesukimEditor`;
     Hebrew fonts bundled with @fontsource so they work offline).
+    Overlays: **done** (four channels in `Show.overlays`, `crates/engine/src/overlays.rs`:
+    input, box, opacity, animation in/out, auto-hide, screens, on air / in Next;
+    `OverlaysView` animates them with the Web Animations API; the recorder draws
+    them too; buttons 1 – 4 under the On air picture, Shift+1 – 4, the phone).
 11. Installer, auto-update, rehearsal / soak testing, release.
