@@ -16,8 +16,7 @@ import { acquireCamera, releaseCamera } from '../engine/cameras';
 const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%' };
 
 /** SMPTE-style bars, drawn with CSS so they never need a file. */
-const PATTERN =
-  'linear-gradient(90deg,#c0c0c0 0 14.28%,#c0c000 0 28.57%,#00c0c0 0 42.85%,#00c000 0 57.14%,#c000c0 0 71.42%,#c00000 0 85.71%,#0000c0 0)';
+const PATTERN = 'linear-gradient(90deg,#c0c0c0 0 14.28%,#c0c000 0 28.57%,#00c0c0 0 42.85%,#00c000 0 57.14%,#c000c0 0 71.42%,#c00000 0 85.71%,#0000c0 0)';
 
 export interface SourceViewProps {
   source: Source;
@@ -79,28 +78,57 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <TextView t={k} />;
     case 'credits':
       return <CreditsView c={k} />;
+    case 'split':
+      return <SplitInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'pesukim':
       return <PesukimInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'countdown':
       return <CountdownInput timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':
       return (
-        <div style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8e9096', fontSize: 28 }} data-kind="microphone">
+        <div
+          style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8e9096', fontSize: 28 }}
+          data-kind="microphone"
+        >
           🎤
         </div>
       );
     case 'video':
-      return (
-        <VideoView
-          source={source}
-          client={client}
-          fit={fit}
-          thumb={thumb}
-          reportDuration={reportDuration}
-          audience={audience}
-        />
-      );
+      return <VideoView source={source} client={client} fit={fit} thumb={thumb} reportDuration={reportDuration} audience={audience} />;
   }
+}
+
+/** A split screen: each box draws its input; boxes glide when the layout changes. */
+function SplitInput({ source, client, thumb, audience }: { source: Source; client: EngineClient; thumb: boolean; audience: boolean }) {
+  const stage = useStage();
+  if (source.kind.type !== 'split') return null;
+  const sp = source.kind;
+  return (
+    <div style={{ ...fill, background: sp.background, overflow: 'hidden' }} data-kind="split">
+      {sp.boxes.map((b, i) => {
+        const inner = b.sourceId ? stage?.sources?.find((s) => s.id === b.sourceId) : undefined;
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: `${b.frame.x}%`,
+              top: `${b.frame.y}%`,
+              width: `${b.frame.w}%`,
+              height: `${b.frame.h}%`,
+              overflow: 'hidden',
+              background: '#000',
+              boxShadow: sp.border ? `inset 0 0 0 2px ${sp.borderColor}` : undefined,
+              transition: 'left 0.5s ease, top 0.5s ease, width 0.5s ease, height 0.5s ease',
+            }}
+          >
+            {inner && inner.kind.type !== 'split' && <SourceBody source={inner} client={client} thumb={thumb} audience={audience} />}
+            {sp.border && <div style={{ ...fill, boxShadow: `inset 0 0 0 2px ${sp.borderColor}`, pointerEvents: 'none' }} />}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function PesukimInput({ source, client, thumb, audience }: { source: Source; client: EngineClient; thumb: boolean; audience: boolean }) {
@@ -195,7 +223,6 @@ function VideoView({
     const id = setInterval(sync, 200);
     return () => clearInterval(id);
   }, [thumb, path]);
-
 
   useEffect(() => setFailed(false), [path]);
   if (failed) return <Missing text="Video file not found or can't be played" audience={audience} />;

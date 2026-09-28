@@ -465,6 +465,13 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                             timer.at_zero = AtZero::Hide;
                         }
                     }
+                    SourceKind::Split(sp) => {
+                        for b in &mut sp.boxes {
+                            if b.source_id.as_ref() == Some(&id) {
+                                b.source_id = None;
+                            }
+                        }
+                    }
                     SourceKind::Pesukim(p) if p.look.behind.as_ref() == Some(&id) => {
                         p.look.behind = None;
                     }
@@ -804,6 +811,34 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         }
         Action::SetCountdownRemaining { id, ms } => {
             timer_mut(s, &id)?.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
+            Ok(())
+        }
+        Action::UpdateSplit { id, split } => {
+            // Each box shows a picture that exists, and never a split screen
+            // (so nothing can contain itself).
+            for b in &split.boxes {
+                if let Some(bid) = &b.source_id {
+                    require_picture(s, bid)?;
+                    if matches!(s.source(bid).map(|x| &x.kind), Some(SourceKind::Split(_))) {
+                        return Err(ActionError::invalid(
+                            "split",
+                            "a split screen can't be inside another split screen",
+                        ));
+                    }
+                }
+            }
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !matches!(src.kind, SourceKind::Split(_)) {
+                return Err(ActionError::invalid(
+                    "split",
+                    "that input is not a split screen",
+                ));
+            }
+            let mut sp = split;
+            sp.repair();
+            src.kind = SourceKind::Split(Box::new(sp));
             Ok(())
         }
         a @ (Action::UpdateCredits { .. }
@@ -1351,6 +1386,10 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
+        SourceKind::Split(mut sp) => {
+            sp.repair();
+            SourceKind::Split(sp)
+        }
         SourceKind::Credits(mut c) => {
             c.playing = false;
             c.pos_ms = 0;

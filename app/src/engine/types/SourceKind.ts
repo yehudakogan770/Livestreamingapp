@@ -3,6 +3,7 @@ import type { Countdown } from "./Countdown";
 import type { Credits } from "./Credits";
 import type { Pesukim } from "./Pesukim";
 import type { Playback } from "./Playback";
+import type { Split } from "./Split";
 import type { TextInput } from "./TextInput";
 
 /**
@@ -17,4 +18,4 @@ logo?: string,
  * This input's own timer: each countdown input counts on its own,
  * so the next one can be prepared while another is on air.
  */
-timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "microphone", deviceId: string, label: string, };
+timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "split" } & Split | { "type": "microphone", deviceId: string, label: string, };

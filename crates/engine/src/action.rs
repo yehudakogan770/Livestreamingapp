@@ -11,6 +11,7 @@ use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
 use crate::overlays::OverlayPatch;
 use crate::pesukim::{Pasuk, PesukimLook};
 use crate::presets::{Preset, Step};
+use crate::split::Split;
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 use crate::text::TextInput;
 
@@ -345,6 +346,13 @@ pub enum Action {
     UpdateText {
         id: SourceId,
         text: TextInput,
+    },
+
+    // ----- split screen -----
+    /// Replace the layout and the inputs in its boxes (works on air too).
+    UpdateSplit {
+        id: SourceId,
+        split: Split,
     },
 
     // ----- credits -----

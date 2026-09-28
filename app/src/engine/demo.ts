@@ -3,6 +3,7 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { applyLayout } from './split';
 import { creditsPosition } from './credits';
 import type { Credits } from './types/Credits';
 import { repairOverlay, setOverlayOn } from './overlays';
@@ -236,6 +237,7 @@ function apply(s: Show, a: Action, now: number) {
         if (src.kind.type === 'countdown' && src.kind.timer.atZero.type === 'cutTo' && src.kind.timer.atZero.sourceId === a.id)
           src.kind.timer.atZero = { type: 'hide' };
         if (src.kind.type === 'pesukim' && src.kind.look.behind === a.id) src.kind.look.behind = null;
+        if (src.kind.type === 'split') for (const b of src.kind.boxes) if (b.sourceId === a.id) b.sourceId = null;
       }
       for (const o of s.overlays) {
         if (o.sourceId === a.id) {
@@ -484,6 +486,18 @@ function apply(s: Show, a: Action, now: number) {
     case 'setCountdownRemaining':
       setRemaining(timer(s, a.id), a.ms, now);
       return;
+    case 'updateSplit': {
+      for (const b of a.split.boxes) {
+        if (b.sourceId === null) continue;
+        const inner = picture(s, b.sourceId);
+        if (inner.kind.type === 'split')
+          throw new Refused({ code: 'invalidValue', field: 'split', reason: 'a split screen can’t be inside another split screen' });
+      }
+      const src = find(s, a.id);
+      if (src.kind.type !== 'split') throw new Refused({ code: 'invalidValue', field: 'split', reason: 'that input is not a split screen' });
+      src.kind = { type: 'split', ...applyLayout(structuredClone(a.split)) };
+      return;
+    }
     case 'updateCredits': {
       const c = creditsIn(s, a.id);
       const { playing, posMs, at } = c;

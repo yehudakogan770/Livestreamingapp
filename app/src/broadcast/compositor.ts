@@ -87,6 +87,11 @@ export class ProgramCompositor {
     const { layers, black } = programLayers(show, 'live', now);
     // Also open what is behind a Pesukim input on air.
     const behind = layers.map((l) => pesukimOf(show, l.id)?.look.behind ?? null);
+    // And what is inside a split screen on air.
+    for (const l of layers) {
+      const k = show.sources.find((x) => x.id === l.id)?.kind;
+      if (k?.type === 'split') behind.push(...k.boxes.map((b) => b.sourceId));
+    }
     const overlays = overlaysOn(show.overlays, 'live', now);
     this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
     if (now - this.lastSync > 150) {
@@ -171,6 +176,33 @@ export class ProgramCompositor {
       case 'credits':
         this.credits(k, now, w, h);
         return;
+      case 'split': {
+        const ctx = this.ctx;
+        ctx.fillStyle = k.background;
+        ctx.fillRect(0, 0, w, h);
+        for (const b of k.boxes) {
+          const inner = this.show?.sources.find((x) => x.id === b.sourceId);
+          const bx = (b.frame.x / 100) * w;
+          const by = (b.frame.y / 100) * h;
+          const bw = (b.frame.w / 100) * w;
+          const bh = (b.frame.h / 100) * h;
+          ctx.save();
+          ctx.translate(bx, by);
+          ctx.beginPath();
+          ctx.rect(0, 0, bw, bh);
+          ctx.clip();
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, bw, bh);
+          if (inner && inner.kind.type !== 'split') this.drawSource(inner, event, now, bw, bh);
+          if (k.border) {
+            ctx.strokeStyle = k.borderColor;
+            ctx.lineWidth = Math.max(2, h / 540);
+            ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, bw - ctx.lineWidth, bh - ctx.lineWidth);
+          }
+          ctx.restore();
+        }
+        return;
+      }
       case 'image':
       case 'video':
       case 'camera': {

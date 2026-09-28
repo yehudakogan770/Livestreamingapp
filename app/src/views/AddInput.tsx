@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react';
 import { defaultCountdown, type EngineClient } from '../engine/client';
 import type { NewSource } from '../engine/types/NewSource';
 import type { SourceKind } from '../engine/types/SourceKind';
+import type { Source } from '../engine/types/Source';
 import { SourceView } from '../components/SourceView';
 import { defaultPesukim } from '../engine/pesukim';
 import { TEXT_TEMPLATES } from '../engine/text';
 import { defaultCredits, parseNames } from '../engine/credits';
+import { SplitPicker } from './SplitEditor';
+import { defaultSplit } from '../engine/split';
+import type { Split } from '../engine/types/Split';
 
 /** What can be added; a sound file is stored as a video source that is never shown. */
 type Kind = SourceKind['type'] | 'sound';
@@ -20,6 +24,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'pesukim', name: '12 Pesukim', hint: 'One word at a time, the crowd repeats' },
   { kind: 'text', name: 'Text / title', hint: 'Lower third, title, ticker, message' },
   { kind: 'credits', name: 'Credits / thank-you', hint: 'Rolling names at the end' },
+  { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
@@ -27,12 +32,24 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
 const SWATCHES = ['#000000', '#ffffff', '#1f6f79', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
 
 /** Choose what kind of input to add, set it up, and add it. */
-export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onAdd: (source: NewSource) => void; onClose: () => void }) {
+export function AddInput({
+  client,
+  onAdd,
+  onClose,
+  sources = [],
+}: {
+  client: EngineClient;
+  onAdd: (source: NewSource) => void;
+  onClose: () => void;
+  /** Inputs already added (to put in a split screen's boxes). */
+  sources?: Source[];
+}) {
   const [kind, setKind] = useState<Kind>('camera');
   const [name, setName] = useState('');
   const [path, setPath] = useState<string | null>(null);
   const [color, setColor] = useState('#1f6f79');
   const [template, setTemplate] = useState(0);
+  const [split, setSplit] = useState<Split>(defaultSplit);
   const [words, setWords] = useState('');
   const [subWords, setSubWords] = useState('');
   const [looping, setLooping] = useState(true);
@@ -111,6 +128,8 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
           kind: { type: 'text', ...t, text: words.trim() || t.text, sub: words.trim() ? subWords.trim() : t.sub },
         };
       }
+      case 'split':
+        return { name: n || 'Split screen', kind: { type: 'split', ...split } };
       case 'credits':
         return { name: n || 'Credits', kind: { type: 'credits', ...defaultCredits(), names: parseNames(words) } };
       case 'pesukim':
@@ -227,6 +246,8 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
                 </div>
               </div>
             )}
+
+            {kind === 'split' && <SplitPicker split={split} sources={sources} onChange={setSplit} />}
 
             {kind === 'credits' && (
               <label className="field">

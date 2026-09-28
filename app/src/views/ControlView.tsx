@@ -249,7 +249,7 @@ export function ControlView({
         ))}
       </div>
 
-      {adding && <AddInput client={client} onAdd={add} onClose={() => setAdding(false)} />}
+      {adding && <AddInput client={client} onAdd={add} onClose={() => setAdding(false)} sources={show.sources} />}
       {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}
     </div>
   );

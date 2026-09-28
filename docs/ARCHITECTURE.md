@@ -108,4 +108,7 @@ they opened.
     Credits: **done** (a `credits` input: rolling, pages or a wall of names;
     paste from a spreadsheet; play/pause/speed/restart live; rolls from the top
     when taken to air).
+    Split screen: **done** (a `split` input: side by side, picture-in-picture,
+    one big + two small, grid of four, or custom boxes; layout changes glide
+    while on air; drawn by the recorder too).
 11. Installer, auto-update, rehearsal / soak testing, release.

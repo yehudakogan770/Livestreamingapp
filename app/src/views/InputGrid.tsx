@@ -8,6 +8,7 @@ import { SourceView } from '../components/SourceView';
 import type { Act } from './act';
 import { useProblems } from '../problems/problems';
 import { TextEditor } from './TextEditor';
+import { SplitEditor } from './SplitEditor';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
   camera: 'Camera',
@@ -20,6 +21,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   pesukim: '12 Pesukim',
   text: 'Text',
   credits: 'Credits',
+  split: 'Split screen',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -44,6 +46,7 @@ export function InputGrid({
   const [menu, setMenu] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const editingText = show.sources.find((x) => x.id === editing && x.kind.type === 'text');
+  const editingSplit = show.sources.find((x) => x.id === editing && x.kind.type === 'split');
   const textOnly = screen === 'monitor';
   return (
     <div className="inputs" aria-label="Inputs">
@@ -103,6 +106,7 @@ export function InputGrid({
         Add input
       </button>
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
+      {editingSplit && <SplitEditor source={editingSplit} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
     </div>
   );
 }
@@ -188,7 +192,7 @@ function TileMenu({ source, act, onClose, onEditText }: { source: Source; act: A
           </label>
         </>
       )}
-      {k === 'text' && (
+      {(k === 'text' || k === 'split') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -197,7 +201,7 @@ function TileMenu({ source, act, onClose, onEditText }: { source: Source; act: A
             onEditText();
           }}
         >
-          Edit text…
+          {k === 'text' ? 'Edit text…' : 'Edit split screen…'}
         </button>
       )}
       <div className="menu__foot">

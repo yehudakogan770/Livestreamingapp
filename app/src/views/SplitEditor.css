@@ -1,0 +1,47 @@
+.spl__box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.spl__box select {
+  flex: 1;
+  min-width: 0;
+}
+.spl__n {
+  width: 18px;
+  font: 700 12px var(--mono);
+  color: var(--text-faint);
+}
+.spl__num {
+  width: 56px;
+  height: 30px;
+}
+.spl input[type='range'] {
+  accent-color: var(--accent);
+}
+.spl input[type='color'] {
+  width: 40px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+}
+.spled {
+  width: min(980px, calc(100vw - 48px));
+}
+.spled__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+  overflow: auto;
+}
+.spled__preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  align-self: start;
+}

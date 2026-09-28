@@ -120,6 +120,7 @@ pub fn repair(mut s: Show) -> Show {
             }
             SourceKind::Text(t) => t.repair(),
             SourceKind::Credits(c) => c.repair(),
+            SourceKind::Split(sp) => sp.repair(),
             SourceKind::Pesukim(p) => {
                 p.repair();
                 let defaults = crate::pesukim::PesukimLook::default();
@@ -133,24 +134,7 @@ pub fn repair(mut s: Show) -> Show {
             _ => {}
         }
     }
-    // What is behind the pesukim must exist and be a picture.
-    let pictures: HashSet<_> = s
-        .sources
-        .iter()
-        .filter(|x| crate::engine::can_be_behind(&x.kind))
-        .map(|x| x.id.clone())
-        .collect();
-    for src in &mut s.sources {
-        if let SourceKind::Pesukim(p) = &mut src.kind {
-            if p.look
-                .behind
-                .as_ref()
-                .is_some_and(|b| !pictures.contains(b))
-            {
-                p.look.behind = None;
-            }
-        }
-    }
+    repair_links(&mut s);
 
     // Screens may only point at sources that exist; the Monitor shows text only.
     for id in ScreenId::ALL {
@@ -163,6 +147,62 @@ pub fn repair(mut s: Show) -> Show {
         }
         if !sc.tbar.is_finite() {
             sc.tbar = 0.0;
+        }
+    }
+
+    repair_sound(&mut s);
+    repair_presets(&mut s);
+    repair_stage(&mut s);
+
+    s.transition = s.transition.clamped();
+    if !s.master_volume.is_finite() {
+        s.master_volume = 1.0;
+    }
+    s.master_volume = s.master_volume.clamp(0.0, 1.0);
+    s.version = SHOW_VERSION;
+    s
+}
+
+/// Inputs that point at other inputs (behind the pesukim, split-screen
+/// boxes, overlay channels) point only at ones that exist and can be shown.
+fn repair_links(s: &mut Show) {
+    // What is behind the pesukim must exist and be a picture.
+    let pictures: HashSet<_> = s
+        .sources
+        .iter()
+        .filter(|x| crate::engine::can_be_behind(&x.kind))
+        .map(|x| x.id.clone())
+        .collect();
+    let splits: HashSet<_> = s
+        .sources
+        .iter()
+        .filter(|x| matches!(x.kind, SourceKind::Split(_)))
+        .map(|x| x.id.clone())
+        .collect();
+    let shown: HashSet<_> = s
+        .sources
+        .iter()
+        .filter(|x| !x.kind.is_sound_only() && !splits.contains(&x.id))
+        .map(|x| x.id.clone())
+        .collect();
+    for src in &mut s.sources {
+        if let SourceKind::Split(sp) = &mut src.kind {
+            for b in &mut sp.boxes {
+                if b.source_id.as_ref().is_some_and(|id| !shown.contains(id)) {
+                    b.source_id = None;
+                }
+            }
+        }
+    }
+    for src in &mut s.sources {
+        if let SourceKind::Pesukim(p) = &mut src.kind {
+            if p.look
+                .behind
+                .as_ref()
+                .is_some_and(|b| !pictures.contains(b))
+            {
+                p.look.behind = None;
+            }
         }
     }
 
@@ -184,18 +224,6 @@ pub fn repair(mut s: Show) -> Show {
         }
         o.repair();
     }
-
-    repair_sound(&mut s);
-    repair_presets(&mut s);
-    repair_stage(&mut s);
-
-    s.transition = s.transition.clamped();
-    if !s.master_volume.is_finite() {
-        s.master_volume = 1.0;
-    }
-    s.master_volume = s.master_volume.clamp(0.0, 1.0);
-    s.version = SHOW_VERSION;
-    s
 }
 
 /// `#rrggbb`.

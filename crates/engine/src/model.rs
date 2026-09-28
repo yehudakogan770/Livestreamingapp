@@ -198,6 +198,8 @@ pub enum SourceKind {
     Text(Box<crate::text::TextInput>),
     /// Credits / thank-you list: rolling, pages or a wall of names.
     Credits(Box<crate::credits::Credits>),
+    /// Split screen: two to four inputs at once.
+    Split(Box<crate::split::Split>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,
