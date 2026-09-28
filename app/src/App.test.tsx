@@ -88,6 +88,19 @@ describe('Main screen', () => {
     expect(onAir()).toBe('Logo');
   });
 
+  it('tells the operator when the screen they control is blanked', async () => {
+    await start();
+    expect(screen.queryByText(/BLANKED/)).toBeNull();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'b' });
+    });
+    expect(screen.getByText(/BLANKED/)).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'b' });
+    });
+    expect(screen.queryByText(/BLANKED/)).toBeNull();
+  });
+
   it('PANIC needs a double-click, and one click brings the screens back', async () => {
     await start();
     const panic = screen.getByRole('button', { name: 'PANIC' });

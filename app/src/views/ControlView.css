@@ -39,6 +39,8 @@
 .mon--pvw .mon__screen { box-shadow: 0 0 0 2px var(--preview); }
 .mon--pgm .mon__screen { box-shadow: 0 0 0 2px var(--program); }
 .mon__empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--text-faint); font-size: 12px; }
+.mon__blanked { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #fff; font-size: 15px; font-weight: 800; letter-spacing: 0.06em; text-align: center; pointer-events: none; }
+.mon__blanked small { font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--text-dim); }
 .mon__follow { position: absolute; left: 8px; top: 8px; height: 20px; padding: 0 8px; border-radius: 3px; background: var(--accent-deep); color: #fff; font-size: 11px; font-weight: 700; line-height: 20px; }
 
 .transport { height: 32px; display: flex; align-items: center; gap: 5px; }

@@ -120,6 +120,12 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
             <div className="mon__screen">
               <ProgramView show={show} screen={screen} client={client} audible={screen === 'live' && liveAudioHere} reportDuration />
               {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
+              {(sc.blank || show.panic) && (
+                <span className="mon__blanked">
+                  {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
+                  <small>{show.panic ? 'Click PANIC (bottom right) to bring the screens back' : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}</small>
+                </span>
+              )}
             </div>
             <Transport source={find(sc.program)} act={act} label="On air" />
           </div>
