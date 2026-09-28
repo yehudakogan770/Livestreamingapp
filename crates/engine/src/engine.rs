@@ -770,6 +770,21 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             timer_mut(s, &id)?.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
             Ok(())
         }
+        Action::UpdateText { id, text } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !matches!(src.kind, SourceKind::Text(_)) {
+                return Err(ActionError::invalid(
+                    "text",
+                    "that input is not a text input",
+                ));
+            }
+            let mut t = text;
+            t.repair();
+            src.kind = SourceKind::Text(Box::new(t));
+            Ok(())
+        }
         a @ (Action::SetOverlaySource { .. }
         | Action::UpdateOverlay { .. }
         | Action::SetOverlayOn { .. }
@@ -1289,6 +1304,10 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
+        SourceKind::Text(mut t) => {
+            t.repair();
+            SourceKind::Text(t)
+        }
         SourceKind::Pesukim(mut p) => {
             clean_color(&p.look.background)?;
             clean_color(&p.look.text_color)?;

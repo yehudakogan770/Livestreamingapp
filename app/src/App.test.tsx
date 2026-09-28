@@ -451,3 +451,20 @@ describe('Overlays', () => {
     expect(btn).toHaveAttribute('aria-pressed', 'false');
   });
 });
+
+describe('Text', () => {
+  it('adds a lower third with a name and title, shown on its tile', async () => {
+    await start();
+    fireEvent.click(screen.getAllByRole('button', { name: /Add input/ })[0]!);
+    const add = screen.getByRole('dialog', { name: 'Add input' });
+    fireEvent.click(within(add).getByRole('button', { name: /^Text \/ title/ }));
+    fireEvent.change(within(add).getByLabelText('Text'), { target: { value: 'Rabbi Cohen' } });
+    fireEvent.change(within(add).getByLabelText('Second line'), { target: { value: 'Head of School' } });
+    await act(async () => {
+      fireEvent.click(within(add).getByRole('button', { name: 'Add input' }));
+    });
+    const tile = document.querySelector('.tile [data-kind="text"]')!;
+    expect(tile).toHaveTextContent('Rabbi Cohen');
+    expect(tile).toHaveTextContent('Head of School');
+  });
+});

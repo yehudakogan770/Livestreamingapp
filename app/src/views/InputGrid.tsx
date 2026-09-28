@@ -7,6 +7,7 @@ import type { SourcePatch } from '../engine/types/SourcePatch';
 import { SourceView } from '../components/SourceView';
 import type { Act } from './act';
 import { useProblems } from '../problems/problems';
+import { TextEditor } from './TextEditor';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
   camera: 'Camera',
@@ -17,6 +18,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   microphone: 'Microphone',
   countdown: 'Countdown',
   pesukim: '12 Pesukim',
+  text: 'Text',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -39,6 +41,8 @@ export function InputGrid({
   const sc = show.screens[screen];
   const problemIds = new Set(useProblems().flatMap((p) => (p.sourceId ? [p.sourceId] : [])));
   const [menu, setMenu] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const editingText = show.sources.find((x) => x.id === editing && x.kind.type === 'text');
   const textOnly = screen === 'monitor';
   return (
     <div className="inputs" aria-label="Inputs">
@@ -61,11 +65,13 @@ export function InputGrid({
               onClick={() => act({ type: 'setPreview', screen, sourceId: src.id })}
               onDoubleClick={() => act({ type: 'cutTo', screen, sourceId: src.id })}
             >
-              <span className="tile__thumb">
-                {soundFile ? <span className="tile__sound">♪</span> : <SourceView source={src} client={client} thumb />}
-              </span>
+              <span className="tile__thumb">{soundFile ? <span className="tile__sound">♪</span> : <SourceView source={src} client={client} thumb />}</span>
               <span className="tile__num">{i + 1}</span>
-              {problemIds.has(src.id) && <span className="tile__warn" title="Something is wrong with this input: see the problem light">⚠</span>}
+              {problemIds.has(src.id) && (
+                <span className="tile__warn" title="Something is wrong with this input: see the problem light">
+                  ⚠
+                </span>
+              )}
               {onAir && <span className="tile__badge tile__badge--pgm">ON AIR</span>}
               {next && <span className="tile__badge tile__badge--pvw">NEXT</span>}
               <span className="tile__name">{src.name}</span>
@@ -84,15 +90,10 @@ export function InputGrid({
                 {playing ? '❚❚' : '▶'}
               </button>
             )}
-            <button
-              type="button"
-              className="tile__more"
-              aria-label={`Options for ${src.name}`}
-              onClick={() => setMenu(menu === src.id ? null : src.id)}
-            >
+            <button type="button" className="tile__more" aria-label={`Options for ${src.name}`} onClick={() => setMenu(menu === src.id ? null : src.id)}>
               ⋯
             </button>
-            {menu === src.id && <TileMenu source={src} act={act} onClose={() => setMenu(null)} />}
+            {menu === src.id && <TileMenu source={src} act={act} onClose={() => setMenu(null)} onEditText={() => setEditing(src.id)} />}
           </div>
         );
       })}
@@ -100,16 +101,24 @@ export function InputGrid({
         <span className="tile--add__plus">+</span>
         Add input
       </button>
+      {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function TileMenu({ source, act, onClose }: { source: Source; act: Act; onClose: () => void }) {
+function TileMenu({ source, act, onClose, onEditText }: { source: Source; act: Act; onClose: () => void; onEditText: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [confirm, setConfirm] = useState(false);
   // Everything is changed here first and applied on Done; clicking away or Esc cancels.
   const colour = source.kind.type === 'color' ? source.kind.color : source.kind.type === 'countdown' ? source.kind.background : null;
-  const [draft, setDraft] = useState({ name: source.name, color: colour, fit: source.fit, looping: source.looping, volume: source.volume, muted: source.muted });
+  const [draft, setDraft] = useState({
+    name: source.name,
+    color: colour,
+    fit: source.fit,
+    looping: source.looping,
+    volume: source.volume,
+    muted: source.muted,
+  });
   const set = (p: Partial<typeof draft>) => setDraft((d) => ({ ...d, ...p }));
   useEffect(() => {
     const away = (e: PointerEvent) => {
@@ -153,8 +162,12 @@ function TileMenu({ source, act, onClose }: { source: Source; act: Act; onClose:
         <div className="menu__row">
           Picture
           <span className="segs">
-            <button type="button" className="seg" aria-pressed={draft.fit === 'contain'} onClick={() => set({ fit: 'contain' })}>Whole</button>
-            <button type="button" className="seg" aria-pressed={draft.fit === 'cover'} onClick={() => set({ fit: 'cover' })}>Fill</button>
+            <button type="button" className="seg" aria-pressed={draft.fit === 'contain'} onClick={() => set({ fit: 'contain' })}>
+              Whole
+            </button>
+            <button type="button" className="seg" aria-pressed={draft.fit === 'cover'} onClick={() => set({ fit: 'cover' })}>
+              Fill
+            </button>
           </span>
         </div>
       )}
@@ -174,9 +187,25 @@ function TileMenu({ source, act, onClose }: { source: Source; act: Act; onClose:
           </label>
         </>
       )}
+      {k === 'text' && (
+        <button
+          type="button"
+          className="btn menu__wide"
+          onClick={() => {
+            onClose();
+            onEditText();
+          }}
+        >
+          Edit text…
+        </button>
+      )}
       <div className="menu__foot">
-        <button type="button" className="btn" onClick={onClose}>Cancel</button>
-        <button type="button" className="btn btn--primary" onClick={done}>Done</button>
+        <button type="button" className="btn" onClick={onClose}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn--primary" onClick={done}>
+          Done
+        </button>
       </div>
       <button
         type="button"

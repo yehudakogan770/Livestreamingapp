@@ -102,4 +102,7 @@ they opened.
     input, box, opacity, animation in/out, auto-hide, screens, on air / in Next;
     `OverlaysView` animates them with the Web Animations API; the recorder draws
     them too; buttons 1 – 4 under the On air picture, Shift+1 – 4, the phone).
+    Text and titles: **done** (a `text` input: lower third, title, ticker,
+    full-screen message; font, weight, colour, outline, shadow, box; `TextView`,
+    `TextEditor`, drawn by the recorder too).
 11. Installer, auto-update, rehearsal / soak testing, release.

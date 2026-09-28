@@ -1163,6 +1163,7 @@ button.strip__name:hover { background: #2a2e36; }
 .cd__row--jump { grid-template-columns: auto 1fr 1fr 1fr; align-items: center; }
 .cd__jumplabel { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-faint); text-transform: uppercase; padding-right: 2px; }
 .menu__foot { display: flex; justify-content: flex-end; gap: 6px; }
+.menu__wide { width: 100%; height: 30px; justify-content: center; }
 .menu__foot .btn { height: 28px; }
 
 /* ---- presets column ---- */

@@ -4,6 +4,7 @@ import type { NewSource } from '../engine/types/NewSource';
 import type { SourceKind } from '../engine/types/SourceKind';
 import { SourceView } from '../components/SourceView';
 import { defaultPesukim } from '../engine/pesukim';
+import { TEXT_TEMPLATES } from '../engine/text';
 
 /** What can be added; a sound file is stored as a video source that is never shown. */
 type Kind = SourceKind['type'] | 'sound';
@@ -16,6 +17,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'pattern', name: 'Test pattern', hint: 'Colour bars for setup' },
   { kind: 'countdown', name: 'Countdown', hint: 'The show countdown, big' },
   { kind: 'pesukim', name: '12 Pesukim', hint: 'One word at a time, the crowd repeats' },
+  { kind: 'text', name: 'Text / title', hint: 'Lower third, title, ticker, message' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
@@ -28,6 +30,9 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
   const [name, setName] = useState('');
   const [path, setPath] = useState<string | null>(null);
   const [color, setColor] = useState('#1f6f79');
+  const [template, setTemplate] = useState(0);
+  const [words, setWords] = useState('');
+  const [subWords, setSubWords] = useState('');
   const [looping, setLooping] = useState(true);
   const [cams, setCams] = useState<MediaDeviceInfo[] | null>(null);
   const [camErr, setCamErr] = useState<string | null>(null);
@@ -76,9 +81,7 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
       case 'camera':
         return cam ? { name: n || cam.label || 'Camera', kind: { type: 'camera', deviceId: cam.deviceId, label: cam.label } } : null;
       case 'video':
-        return path
-          ? { name: n || 'Video', kind: { type: 'video', path, durationS: 0, playback: { playing: false, posS: 0, at: 0 } }, looping }
-          : null;
+        return path ? { name: n || 'Video', kind: { type: 'video', path, durationS: 0, playback: { playing: false, posS: 0, at: 0 } }, looping } : null;
       case 'image':
         return path ? { name: n || 'Picture', kind: { type: 'image', path } } : null;
       case 'color':
@@ -99,6 +102,13 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
         return { name: n || 'Test pattern', kind: { type: 'pattern' } };
       case 'countdown':
         return { name: n || 'Countdown', kind: { type: 'countdown', background: color, timer: defaultCountdown() } };
+      case 'text': {
+        const t = TEXT_TEMPLATES[template]!.make();
+        return {
+          name: n || words.trim() || t.text,
+          kind: { type: 'text', ...t, text: words.trim() || t.text, sub: words.trim() ? subWords.trim() : t.sub },
+        };
+      }
       case 'pesukim':
         // The words are typed or pasted in afterwards (Edit on its card).
         return { name: n || '12 Pesukim', kind: { type: 'pesukim', ...defaultPesukim() } };
@@ -106,17 +116,19 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
   };
   const ready = draft();
   const previewSource = ready
-    ? { id: 'draft', volume: 1, muted: true, looping: false, fit: 'contain' as const, audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 }, ...ready }
+    ? {
+        id: 'draft',
+        volume: 1,
+        muted: true,
+        looping: false,
+        fit: 'contain' as const,
+        audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+        ...ready,
+      }
     : null;
 
   return (
-    <div
-      className="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Add input"
-      onPointerDown={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Add input" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box addinput">
         <header className="modal__head">
           <h2>Add input</h2>
@@ -162,13 +174,7 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
                 {camErr && <span className="field__note field__note--warn">{camErr}</span>}
                 <div className="addinput__list">
                   {cams?.map((d, i) => (
-                    <button
-                      key={d.deviceId || i}
-                      type="button"
-                      className="seg"
-                      aria-pressed={cam?.deviceId === d.deviceId}
-                      onClick={() => setCam(d)}
-                    >
+                    <button key={d.deviceId || i} type="button" className="seg" aria-pressed={cam?.deviceId === d.deviceId} onClick={() => setCam(d)}>
                       {d.label || `${kind === 'camera' ? 'Camera' : 'Sound input'} ${i + 1}`}
                     </button>
                   ))}
@@ -192,8 +198,7 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
                 </div>
                 {(kind === 'video' || kind === 'sound') && (
                   <label className="check">
-                    <input type="checkbox" checked={looping} onChange={(e) => setLooping(e.target.checked)} /> Loop at the end (good for
-                    background loops)
+                    <input type="checkbox" checked={looping} onChange={(e) => setLooping(e.target.checked)} /> Loop at the end (good for background loops)
                   </label>
                 )}
               </div>
@@ -216,6 +221,40 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
                   ))}
                   <input type="color" aria-label="Any colour" value={color} onChange={(e) => setColor(e.target.value)} />
                 </div>
+              </div>
+            )}
+
+            {kind === 'text' && (
+              <div className="field">
+                <span className="field__label">Kind of text</span>
+                <div className="addinput__list">
+                  {TEXT_TEMPLATES.map((t, i) => (
+                    <button key={t.layout} type="button" className="seg" aria-pressed={template === i} onClick={() => setTemplate(i)} title={t.hint}>
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  className="text"
+                  dir="auto"
+                  value={words}
+                  placeholder={TEXT_TEMPLATES[template]!.make().text}
+                  onChange={(e) => setWords(e.target.value)}
+                  aria-label="Text"
+                />
+                {TEXT_TEMPLATES[template]!.layout !== 'ticker' && (
+                  <input
+                    className="text"
+                    dir="auto"
+                    value={subWords}
+                    placeholder={TEXT_TEMPLATES[template]!.make().sub || 'Second line (optional)'}
+                    onChange={(e) => setSubWords(e.target.value)}
+                    aria-label="Second line"
+                  />
+                )}
+                <span className="field__note">
+                  Fonts, colours, the box and more: “Edit text…” on its tile after adding. Put it on an overlay button to show it over what is on air.
+                </span>
               </div>
             )}
 

@@ -2,6 +2,7 @@
 import type { Countdown } from "./Countdown";
 import type { Pesukim } from "./Pesukim";
 import type { Playback } from "./Playback";
+import type { TextInput } from "./TextInput";
 
 /**
  * What a source is, with the data that kind needs.
@@ -15,4 +16,4 @@ logo?: string,
  * This input's own timer: each countdown input counts on its own,
  * so the next one can be prepared while another is on air.
  */
-timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "microphone", deviceId: string, label: string, };
+timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "microphone", deviceId: string, label: string, };

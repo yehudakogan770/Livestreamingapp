@@ -13,6 +13,8 @@ import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
+import { isRtl, withAlpha } from '../engine/text';
+import type { TextInput } from '../engine/types/TextInput';
 import type { Overlay } from '../engine/types/Overlay';
 import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, fadeAmount, formatCountdown, ZERO_HOLD_MS } from '../engine/timing';
 
@@ -161,6 +163,9 @@ export class ProgramCompositor {
       case 'pesukim':
         this.pesukim(k, event, now, w, h);
         return;
+      case 'text':
+        this.text(k, now, w, h);
+        return;
       case 'image':
       case 'video':
       case 'camera': {
@@ -293,6 +298,98 @@ export class ProgramCompositor {
       ctx.globalAlpha = appear;
       if (logo) this.centred(logo, w * 0.6, h * 0.6, w, h, 0.92 + 0.08 * appear);
     }
+    ctx.restore();
+  }
+
+  /** A text input (mirrors TextView and its CSS): transparent except the text and its box. */
+  private text(t: TextInput, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const s = t.style;
+    const k = h / 1080;
+    const rtl = isRtl(t.text + t.sub);
+    const font = (size: number, weight: number) => `${weight} ${size * k}px "${s.font}", "Segoe UI", system-ui, sans-serif`;
+    const lineH = s.size * s.lineHeight * k;
+    const subSize = s.size * 0.6;
+    const subH = subSize * s.lineHeight * k;
+    const pad = s.boxOn ? s.padding * k : 0;
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.direction = rtl ? 'rtl' : 'ltr';
+    this.spacing(s.letterSpacing * k);
+    const paint = (str: string, x: number, y: number, size: number, weight: number, alpha = 1) => {
+      ctx.font = font(size, weight);
+      ctx.globalAlpha = alpha;
+      ctx.shadowColor = s.shadow ? 'rgba(0,0,0,0.6)' : 'transparent';
+      ctx.shadowBlur = s.shadow ? 12 * k : 0;
+      ctx.shadowOffsetY = s.shadow ? 3 * k : 0;
+      if (s.outline > 0) {
+        ctx.lineWidth = s.outline * 2 * k;
+        ctx.strokeStyle = s.outlineColor;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(str, x, y);
+      }
+      ctx.fillStyle = s.color;
+      ctx.fillText(str, x, y);
+    };
+    const box = (x: number, y: number, bw: number, bh: number, radius: number) => {
+      if (!s.boxOn) return;
+      ctx.save();
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = withAlpha(s.boxColor, s.boxOpacity);
+      ctx.beginPath();
+      ctx.roundRect(x, y, bw, bh, radius);
+      ctx.fill();
+      ctx.restore();
+    };
+
+    if (t.layout === 'ticker') {
+      const line = [t.text, t.sub].filter(Boolean).join('   ·   ');
+      ctx.font = font(s.size, s.weight);
+      const tw = ctx.measureText(line).width;
+      const barH = lineH + 2 * s.padding * k;
+      const top = h * 0.96 - barH;
+      box(0, top, w, barH, 0);
+      // Moving along at `speed` px a second, starting just off screen.
+      const travel = ((now / 1000) * s.speed * k) % (tw + w);
+      ctx.textAlign = 'left';
+      ctx.direction = 'ltr';
+      const x = rtl ? -tw + travel : w - travel;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, top, w, barH);
+      ctx.clip();
+      paint(line, x, top + barH / 2, s.size, s.weight);
+      ctx.restore();
+      ctx.restore();
+      return;
+    }
+
+    ctx.font = font(s.size, s.weight);
+    const mainW = ctx.measureText(t.text).width;
+    ctx.font = font(subSize, Math.max(300, s.weight - 200));
+    const subW = t.sub ? ctx.measureText(t.sub).width : 0;
+    const contentW = Math.max(mainW, subW);
+    const contentH = lineH + (t.sub ? subH : 0);
+    const bw = contentW + 2 * pad;
+    const bh = contentH + 2 * pad;
+    let bx: number;
+    let by: number;
+    if (t.layout === 'lowerThird') {
+      const left = w * 0.05;
+      const right = w * 0.95;
+      bx = s.align === 'center' ? (w - bw) / 2 : s.align === 'right' ? right - bw : left;
+      by = h * 0.9 - bh;
+    } else {
+      bx = (w - bw) / 2;
+      by = (h - bh) / 2;
+    }
+    box(bx, by, bw, bh, s.radius * k);
+    // Lines line up by the chosen alignment inside the box (left and right
+    // are absolute, as in the screens' CSS, for Hebrew too).
+    const ax = s.align === 'center' ? bx + bw / 2 : s.align === 'right' ? bx + bw - pad : bx + pad;
+    ctx.textAlign = s.align;
+    paint(t.text, ax, by + pad + lineH / 2, s.size, s.weight);
+    if (t.sub) paint(t.sub, ax, by + pad + lineH + subH / 2, subSize, Math.max(300, s.weight - 200), 0.9);
     ctx.restore();
   }
 

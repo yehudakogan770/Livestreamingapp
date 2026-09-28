@@ -11,6 +11,7 @@ use crate::overlays::OverlayPatch;
 use crate::pesukim::{Pasuk, PesukimLook};
 use crate::presets::{Preset, Step};
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
+use crate::text::TextInput;
 
 /// A new source as requested by the UI. The engine fills in and cleans up the
 /// rest (id, limits, play state).
@@ -336,6 +337,13 @@ pub enum Action {
         id: SourceId,
         #[ts(type = "number")]
         at: Millis,
+    },
+
+    // ----- text -----
+    /// Replace a text input's words, layout and style.
+    UpdateText {
+        id: SourceId,
+        text: TextInput,
     },
 
     // ----- overlays (channels 0 – 3, shown as 1 – 4) -----

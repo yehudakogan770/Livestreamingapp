@@ -20,6 +20,7 @@ pub mod persist;
 pub mod pesukim;
 pub mod presets;
 pub mod stage;
+pub mod text;
 pub mod timing;
 
 pub use action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
@@ -33,4 +34,5 @@ pub use overlays::{Frame, Overlay, OverlayAnim, OverlayPatch};
 pub use pesukim::{Pasuk, Pesukim, PesukimLook, PesukimMode, PesukimPlace, WordChange};
 pub use presets::{Preset, PresetButton, RunningSteps, Step};
 pub use stage::{AtZero, Countdown, Monitor, MonitorLayout, TextSize, TimerFormat};
+pub use text::{TextAlign, TextInput, TextLayout, TextStyle};
 pub use timing::{in_transition, source_ended, source_position, transition_progress};

@@ -7,6 +7,7 @@ import { useStage } from '../engine/CountdownContext';
 import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
 import { PesukimView } from './PesukimView';
+import { TextView } from './TextView';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 
 // ---- views ----
@@ -73,6 +74,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
+    case 'text':
+      return <TextView t={k} />;
     case 'pesukim':
       return <PesukimInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'countdown':

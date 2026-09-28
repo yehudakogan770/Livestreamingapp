@@ -465,6 +465,12 @@ function apply(s: Show, a: Action, now: number) {
     case 'setCountdownRemaining':
       setRemaining(timer(s, a.id), a.ms, now);
       return;
+    case 'updateText': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'text') throw new Refused({ code: 'invalidValue', field: 'text', reason: 'that input is not a text input' });
+      src.kind = { type: 'text', ...structuredClone(a.text) };
+      return;
+    }
     case 'setOverlaySource': {
       if (a.sourceId !== null) picture(s, a.sourceId);
       const o = channelOf(s, a.channel);
