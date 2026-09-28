@@ -352,6 +352,8 @@ pub struct Show {
     pub audio: AudioMix,
     /// What the stage monitor shows.
     pub monitor: Monitor,
+    /// The run of show: cues and where it is.
+    pub run: crate::cues::RunOfShow,
     /// Overlay channels 1 – 4 (always four).
     #[serde(default = "crate::overlays::channels")]
     pub overlays: Vec<crate::overlays::Overlay>,
@@ -380,6 +382,7 @@ impl Default for Show {
             running: Vec::new(),
             audio: AudioMix::default(),
             monitor: Monitor::default(),
+            run: crate::cues::RunOfShow::default(),
             overlays: crate::overlays::channels(),
             settings: Settings::default(),
         }

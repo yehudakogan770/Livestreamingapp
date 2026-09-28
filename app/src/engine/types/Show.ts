@@ -5,6 +5,7 @@ import type { Monitor } from "./Monitor";
 import type { Overlay } from "./Overlay";
 import type { PerScreen } from "./PerScreen";
 import type { Preset } from "./Preset";
+import type { RunOfShow } from "./RunOfShow";
 import type { RunningSteps } from "./RunningSteps";
 import type { ScreenState } from "./ScreenState";
 import type { Settings } from "./Settings";
@@ -57,6 +58,10 @@ audio: AudioMix,
  * What the stage monitor shows.
  */
 monitor: Monitor, 
+/**
+ * The run of show: cues and where it is.
+ */
+run: RunOfShow, 
 /**
  * Overlay channels 1 – 4 (always four).
  */

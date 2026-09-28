@@ -120,6 +120,8 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SetCountdownRemaining { .. }
             | Action::CountdownTo { .. }
             | Action::SetOverlayOn { .. }
+            | Action::NextCue
+            | Action::PauseShow { .. }
             | Action::SlideNext { .. }
             | Action::SlidePrevious { .. }
             | Action::SlideGo { .. }

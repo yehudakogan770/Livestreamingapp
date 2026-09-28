@@ -178,10 +178,23 @@ function ControlApp() {
       { label: 'Next preset', onClick: () => void client.dispatch({ type: 'nextPreset' }).catch(fail), disabled: !show?.presets.length },
       { label: 'Previous preset', onClick: () => void client.dispatch({ type: 'previousPreset' }).catch(fail), disabled: !show?.presets.length },
     ];
+    const run = show?.run;
+    const cues: MenuItem[] = [
+      { label: 'Run of show…', onClick: () => sendCommand({ type: 'runOfShow' }) },
+      { label: 'Next cue (N)', onClick: () => void client.dispatch({ type: 'nextCue' }).catch(fail), disabled: !run?.cues.length },
+      run?.running
+        ? { label: run.paused ? 'Carry on' : 'Hold the show', onClick: () => void client.dispatch({ type: 'pauseShow', value: !run.paused }).catch(fail) }
+        : {
+            label: 'Start the show',
+            onClick: () => void client.dispatch({ type: 'startShow', utcOffsetMin: -new Date().getTimezoneOffset() }).catch(fail),
+            disabled: !run?.cues.length,
+          },
+    ];
     const help: MenuItem[] = [{ label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) }];
     return {
       Event: event,
       Presets: presets,
+      Cues: cues,
       Inputs: inputs,
       Overlays: overlays,
       Text: text,
@@ -191,7 +204,7 @@ function ControlApp() {
       Settings: settings,
       Help: help,
     };
-  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, show?.overlays, show?.presets.length, controlling, client, fail]);
+  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, show?.overlays, show?.presets.length, show?.run, controlling, client, fail]);
 
   return (
     <div className="app">

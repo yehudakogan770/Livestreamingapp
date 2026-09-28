@@ -85,6 +85,11 @@ pub enum Step {
     Preset {
         preset_id: String,
     },
+    /// Put an overlay on or take it off (channel 0 – 3).
+    Overlay {
+        channel: usize,
+        value: bool,
+    },
     /// Wait before the next step.
     Wait {
         ms: u32,

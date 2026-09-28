@@ -116,4 +116,9 @@ they opened.
     as a slide — a video between slides plays when it comes up; slides on part
     of the screen with a camera behind; clicker keys, phone, auto-advance).
     PowerPoint files: save as PDF first.
+    Run of show / cues: **done** (`crates/engine/src/cues.rs`: cues in sections,
+    each running preset-style steps by hand, on the clock (local time, the
+    computer's offset sent on Start), or after the previous cue's length; the
+    engine's heartbeat fires them; `RunOfShow.tsx` window, bottom-bar strip,
+    N key, phone NEXT CUE).
 11. Installer, auto-update, rehearsal / soak testing, release.

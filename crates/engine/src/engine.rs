@@ -109,6 +109,7 @@ impl Engine {
             .filter(|src| matches!(&src.kind, SourceKind::Pesukim(p) if p.due(now)))
             .map(|src| src.id.clone())
             .collect();
+        let cue_due = self.show.run.due(now);
         let slides_due: Vec<SourceId> = self
             .show
             .sources
@@ -121,6 +122,7 @@ impl Engine {
             .filter(|&i| overlay_due(&self.show, i, now))
             .collect();
         if due.is_empty()
+            && cue_due.is_none()
             && !steps_due
             && words_due.is_empty()
             && overlays_due.is_empty()
@@ -133,6 +135,9 @@ impl Engine {
         let was_following = next.back_follows_live;
         for id in &due {
             run_at_zero(&mut next, id, now);
+        }
+        if let Some(i) = cue_due {
+            let _ = fire_cue(&mut next, i, now);
         }
         if steps_due {
             run_steps(&mut next, now);
@@ -273,6 +278,72 @@ pub(crate) fn can_be_behind(kind: &SourceKind) -> bool {
             | SourceKind::Color { .. }
             | SourceKind::Pattern
     )
+}
+
+/// Run a cue: its steps start now, and the show carries on from it.
+fn fire_cue(s: &mut Show, index: usize, now: Millis) -> Result<()> {
+    let cue = s
+        .run
+        .cues
+        .get(index)
+        .cloned()
+        .ok_or_else(|| ActionError::invalid("cue", "there is no such cue"))?;
+    s.run.current = Some(index);
+    s.run.cue_started_at = now;
+    apply_to(
+        s,
+        Action::RunSteps {
+            name: cue.name,
+            steps: cue.steps,
+        },
+        now,
+    )
+}
+
+/// The run-of-show actions.
+fn apply_run(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    match action {
+        Action::SetCues { cues } => {
+            for c in &cues {
+                clean_steps(c.steps.clone())?;
+            }
+            let keep = s
+                .run
+                .current
+                .and_then(|i| s.run.cues.get(i))
+                .map(|c| c.id.clone());
+            s.run.cues = cues;
+            // Stay on the same cue if it is still there.
+            s.run.current = keep.and_then(|id| s.run.cues.iter().position(|c| c.id == id));
+            s.run.repair();
+        }
+        Action::StartShow { utc_offset_min } => {
+            s.run.running = true;
+            s.run.paused = false;
+            s.run.current = None;
+            s.run.started_at = now;
+            s.run.cue_started_at = now;
+            s.run.utc_offset_min = utc_offset_min;
+            s.run.repair();
+        }
+        Action::StopShow => {
+            s.run.running = false;
+            s.run.paused = false;
+        }
+        Action::PauseShow { value } => s.run.paused = value && s.run.running,
+        Action::NextCue => {
+            if let Some(i) = s.run.next_index() {
+                if !s.run.running {
+                    s.run.running = true;
+                    s.run.started_at = now;
+                }
+                fire_cue(s, i, now)?;
+            }
+        }
+        Action::GoCue { index } => fire_cue(s, index, now)?,
+        _ => {}
+    }
+    Ok(())
 }
 
 fn slideshow_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Slideshow> {
@@ -942,6 +1013,12 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::CreditsPlay { .. }
         | Action::CreditsRestart { .. }
         | Action::CreditsSpeed { .. }) => apply_credits(s, a, now),
+        a @ (Action::SetCues { .. }
+        | Action::StartShow { .. }
+        | Action::StopShow
+        | Action::PauseShow { .. }
+        | Action::NextCue
+        | Action::GoCue { .. }) => apply_run(s, a, now),
         Action::UpdateText { id, text } => {
             let src = s
                 .source_mut(&id)
@@ -1150,6 +1227,7 @@ fn step_action(step: Step, main: Option<&SourceId>) -> Option<Action> {
         Step::Play { source_id } => Action::Play { id: source_id },
         Step::Pause { source_id } => Action::Pause { id: source_id },
         Step::BackFollowsLive { value } => Action::SetBackFollowsLive { value },
+        Step::Overlay { channel, value } => Action::SetOverlayOn { channel, value },
         Step::Preset { preset_id } => Action::PickPreset {
             id: Some(preset_id),
         },

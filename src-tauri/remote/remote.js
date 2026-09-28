@@ -284,6 +284,17 @@
       $('media-pause').hidden = !playing;
     }
 
+    // Run of show: what is running, and NEXT CUE.
+    const run = show.run;
+    $('cues').hidden = run.cues.length === 0;
+    if (run.cues.length) {
+      const cur = run.current !== null ? run.cues[run.current] : null;
+      const next = run.cues[run.current === null ? 0 : run.current + 1];
+      $('cues-text').textContent =
+        `${cur ? `Now: ${cur.name}` : run.running ? 'Show started' : 'Run of show'}${next ? ` · next: ${next.name}` : ' · last cue'}`;
+      /** @type {HTMLButtonElement} */ ($('cues-next')).disabled = !next;
+    }
+
     // Overlay buttons 1 – 4 (only channels with something in them).
     $('ovs').innerHTML = show.overlays
       .map((o, ch) => {
@@ -512,6 +523,7 @@
       const id = sliId();
       if (id) void send({ type: 'slideGo', id, index: 0 });
     });
+    on('cues-next', () => void send({ type: 'nextCue' }));
     on('take', () => void send({ type: 'take', screen }));
     on('cut', () => void send({ type: 'take', screen, transition: 'cut' }));
     on(

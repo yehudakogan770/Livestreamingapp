@@ -6,6 +6,7 @@ use ts_rs::TS;
 
 use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
 use crate::credits::Credits;
+use crate::cues::Cue;
 use crate::event::EventPatch;
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
 use crate::overlays::OverlayPatch;
@@ -340,6 +341,28 @@ pub enum Action {
         id: SourceId,
         #[ts(type = "number")]
         at: Millis,
+    },
+
+    // ----- run of show -----
+    /// Replace the cues (where the show is stays, if it can).
+    SetCues {
+        cues: Vec<Cue>,
+    },
+    /// Start the run of show: cues on the clock and "after the previous"
+    /// run by themselves from now. `utc_offset_min`: this computer's time zone.
+    StartShow {
+        utc_offset_min: i32,
+    },
+    StopShow,
+    /// Hold (nothing runs by itself) or carry on.
+    PauseShow {
+        value: bool,
+    },
+    /// Run the next cue now.
+    NextCue,
+    /// Run a cue now (and carry on from there).
+    GoCue {
+        index: usize,
     },
 
     // ----- text -----

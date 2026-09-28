@@ -438,6 +438,27 @@ main {
   border-color: var(--program-bright);
 }
 
+/* ---- run of show ---- */
+.cues {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.cues__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.9em;
+  color: var(--text-dim);
+}
+.cues .btn {
+  min-height: 52px;
+}
+
 /* ---- overlays ---- */
 .ovs {
   display: grid;

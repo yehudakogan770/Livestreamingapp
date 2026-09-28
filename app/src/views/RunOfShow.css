@@ -1,0 +1,175 @@
+/* ---- bottom-bar strip ---- */
+.cuebar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin-left: 6px;
+}
+.cuebar__info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  max-width: 320px;
+  padding: 0 8px;
+  height: 32px;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  line-height: 1.15;
+}
+.cuebar__info b,
+.cuebar__info em {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cuebar__info b {
+  font-size: 12px;
+}
+.cuebar__info em {
+  font-size: 11px;
+  font-style: normal;
+  color: var(--text-dim);
+}
+.cuebar__next {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ---- the window ---- */
+.ros {
+  width: min(1320px, calc(100vw - 48px));
+  height: min(860px, calc(100vh - 48px));
+}
+.ros__run {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ros__clock {
+  font: 700 22px var(--mono);
+  margin-right: 8px;
+}
+.ros__run kbd {
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font: 10px var(--mono);
+}
+.ros__status {
+  margin-left: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.ros__body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+.ros__list {
+  overflow: auto;
+  padding: 10px 14px;
+  border-right: 1px solid var(--border);
+}
+.ros__row {
+  display: grid;
+  grid-template-columns: 28px 100px 60px minmax(0, 1fr) 118px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.ros__row > span:last-child {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+}
+.ros__row--head {
+  cursor: default;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+.ros__row:not(.ros__row--head):hover {
+  background: var(--panel);
+}
+.ros__row.is-sel {
+  background: var(--selected);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.ros__row--done {
+  opacity: 0.55;
+}
+.ros__row--live {
+  box-shadow: inset 3px 0 0 var(--program-bright);
+}
+.ros__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ros__name em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.ros__section {
+  margin: 10px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+.ros__tag {
+  padding: 0 5px;
+  border-radius: 3px;
+  font: normal 700 9px var(--font);
+  letter-spacing: 0.06em;
+  color: #fff;
+}
+.ros__tag--live {
+  background: var(--program);
+}
+.ros__tag--next {
+  background: var(--preview);
+}
+.ros__tag--done {
+  background: var(--button);
+}
+.ros__go {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.ros__add {
+  margin-top: 8px;
+}
+.ros__edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  overflow: auto;
+}
+.ros__cuebtns {
+  margin-top: auto;
+  padding-top: 8px;
+}

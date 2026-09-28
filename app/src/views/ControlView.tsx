@@ -12,6 +12,7 @@ import { PesukimCard } from './PesukimCard';
 import { OverlayBar } from './OverlayBar';
 import { useCommands, type Command } from './commands';
 import { ShortcutsDialog } from './ShortcutsDialog';
+import { CueBar, RunOfShowDialog } from './RunOfShow';
 import { CreditsCard, creditsTarget } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
 import { slideshowTarget } from '../engine/slideshow';
@@ -54,12 +55,14 @@ export function ControlView({
   const [adding, setAdding] = useState(false);
   const [addStart, setAddStart] = useState<{ kind?: string; template?: number }>({});
   const [shortcuts, setShortcuts] = useState(false);
+  const [runOpen, setRunOpen] = useState(false);
   useCommands(
     useCallback((c: Command) => {
       if (c.type === 'addInput') {
         setAddStart({ kind: c.kind, template: c.template });
         setAdding(true);
       } else if (c.type === 'shortcuts') setShortcuts(true);
+      else if (c.type === 'runOfShow') setRunOpen(true);
     }, []),
   );
   const [outputsOpen, setOutputsOpen] = useState(false);
@@ -125,7 +128,7 @@ export function ControlView({
   // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · Shift+1–4 overlays · B blank this screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (adding || outputsOpen || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (adding || outputsOpen || runOpen || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
       const sc = show.screens[screen];
       if (e.key === 'Enter' && screen !== 'monitor' && sc.preview !== null && sc.preview !== sc.program) {
         e.preventDefault();
@@ -138,13 +141,15 @@ export function ControlView({
       } else if (/^[0-9]$/.test(e.key) && screen !== 'monitor') {
         const src = show.sources[e.key === '0' ? 9 : Number(e.key) - 1];
         if (src) act({ type: 'setPreview', screen, sourceId: src.id });
+      } else if ((e.key === 'n' || e.key === 'N') && show.run.cues.length > 0) {
+        act({ type: 'nextCue' });
       } else if (e.key === 'b' || e.key === 'B') {
         act({ type: 'setBlank', screens: [screen], value: !sc.blank });
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [act, adding, outputsOpen, screen, show]);
+  }, [act, adding, outputsOpen, runOpen, screen, show]);
 
   const sc = show.screens[screen];
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
@@ -248,6 +253,7 @@ export function ControlView({
           Back = Live
         </button>
         <BroadcastButtons onSettings={onBroadcastSettings ?? (() => {})} />
+        <CueBar show={show} act={act} onOpen={() => setRunOpen(true)} />
         <span className="grow" />
         <span className="bar__label">Blank</span>
         {SCREENS.map((s) => (
@@ -286,6 +292,7 @@ export function ControlView({
         />
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
+      {runOpen && <RunOfShowDialog show={show} act={act} onClose={() => setRunOpen(false)} />}
       {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}
     </div>
   );

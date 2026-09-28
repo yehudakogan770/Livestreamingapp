@@ -136,6 +136,7 @@ pub fn repair(mut s: Show) -> Show {
         }
     }
     repair_links(&mut s);
+    s.run.repair();
 
     // Screens may only point at sources that exist; the Monitor shows text only.
     for id in ScreenId::ALL {

@@ -28,6 +28,7 @@ export const STEP_KINDS: { type: Step['type']; name: string }[] = [
   { type: 'pause', name: 'Pause a video or sound' },
   { type: 'backFollowsLive', name: 'Back = Live on / off' },
   { type: 'preset', name: 'Pick another preset' },
+  { type: 'overlay', name: 'Overlay on / off' },
 ];
 
 const pictures = (show: Show) => show.sources.filter((s) => s.kind.type !== 'microphone' && !(s.kind.type === 'video' && isSoundFile(s.kind.path)));
@@ -59,6 +60,8 @@ export function newStep(type: Step['type'], show: Show, screen: ScreenId): Step 
       return { type, value: true };
     case 'preset':
       return { type, presetId: show.presets[0]?.id ?? '' };
+    case 'overlay':
+      return { type, channel: 0, value: true };
     case 'clearMonitorMessage':
     case 'startCountdown':
     case 'pauseCountdown':
@@ -94,13 +97,27 @@ export function describeStep(st: Step, show: Show): string {
       return `Back = Live ${st.value ? 'on' : 'off'}`;
     case 'preset':
       return `Preset: ${show.presets.find((p) => p.id === st.presetId)?.name ?? '(removed)'}`;
+    case 'overlay':
+      return `Overlay ${st.channel + 1} ${st.value ? 'on' : 'off'}`;
     default:
       return STEP_KINDS.find((k) => k.type === st.type)?.name ?? st.type;
   }
 }
 
 /** Create or edit a preset. Nothing changes until Done. */
-export function PresetEditor({ show, client, act, preset, onClose }: { show: Show; client: EngineClient; act: Act; preset: Preset | null; onClose: () => void }) {
+export function PresetEditor({
+  show,
+  client,
+  act,
+  preset,
+  onClose,
+}: {
+  show: Show;
+  client: EngineClient;
+  act: Act;
+  preset: Preset | null;
+  onClose: () => void;
+}) {
   const [draft, setDraft] = useState<Preset>(
     () =>
       preset ?? {
@@ -130,23 +147,49 @@ export function PresetEditor({ show, client, act, preset, onClose }: { show: Sho
   const categories = [...new Set(show.presets.map((p) => p.category).filter(Boolean))];
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label={preset ? 'Edit preset' : 'New preset'} onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={preset ? 'Edit preset' : 'New preset'}
+      onPointerDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal__box pe">
         <header className="modal__head">
           <h2>{preset ? `Edit “${preset.name}”` : 'New preset'}</h2>
-          <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>✕</button>
+          <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
+            ✕
+          </button>
         </header>
         <div className="pe__body">
           <div className="pe__col">
             <div className="pe__row">
               <label className="field pe__grow">
                 <span className="field__label">Name</span>
-                <input className="text" autoFocus value={draft.name} maxLength={40} placeholder="e.g. Speaker" onChange={(e) => set({ name: e.target.value })} />
+                <input
+                  className="text"
+                  autoFocus
+                  value={draft.name}
+                  maxLength={40}
+                  placeholder="e.g. Speaker"
+                  onChange={(e) => set({ name: e.target.value })}
+                />
               </label>
               <label className="field">
                 <span className="field__label">Category</span>
-                <input className="text" list="pe-cats" value={draft.category} maxLength={40} placeholder="e.g. Speeches" onChange={(e) => set({ category: e.target.value })} />
-                <datalist id="pe-cats">{categories.map((c) => <option key={c} value={c} />)}</datalist>
+                <input
+                  className="text"
+                  list="pe-cats"
+                  value={draft.category}
+                  maxLength={40}
+                  placeholder="e.g. Speeches"
+                  onChange={(e) => set({ category: e.target.value })}
+                />
+                <datalist id="pe-cats">
+                  {categories.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </label>
             </div>
             <div className="pe__row">
@@ -163,13 +206,31 @@ export function PresetEditor({ show, client, act, preset, onClose }: { show: Sho
               <div className="field">
                 <span className="field__label">Transition</span>
                 <span className="pe__trans">
-                  <select aria-label="Transition" value={draft.transition?.kind ?? ''} onChange={(e) => set({ transition: e.target.value ? { kind: e.target.value as TransitionKind, durationMs: draft.transition?.durationMs ?? 800 } : null })}>
+                  <select
+                    aria-label="Transition"
+                    value={draft.transition?.kind ?? ''}
+                    onChange={(e) =>
+                      set({ transition: e.target.value ? { kind: e.target.value as TransitionKind, durationMs: draft.transition?.durationMs ?? 800 } : null })
+                    }
+                  >
                     <option value="">Keep the current one</option>
-                    {KINDS.map((k) => <option key={k.kind} value={k.kind}>{k.name}</option>)}
+                    {KINDS.map((k) => (
+                      <option key={k.kind} value={k.kind}>
+                        {k.name}
+                      </option>
+                    ))}
                   </select>
                   {draft.transition && draft.transition.kind !== 'cut' && (
-                    <select aria-label="Transition length" value={draft.transition.durationMs} onChange={(e) => set({ transition: { ...draft.transition!, durationMs: Number(e.target.value) } })}>
-                      {DURATIONS.map((d) => <option key={d} value={d}>{d / 1000} s</option>)}
+                    <select
+                      aria-label="Transition length"
+                      value={draft.transition.durationMs}
+                      onChange={(e) => set({ transition: { ...draft.transition!, durationMs: Number(e.target.value) } })}
+                    >
+                      {DURATIONS.map((d) => (
+                        <option key={d} value={d}>
+                          {d / 1000} s
+                        </option>
+                      ))}
                     </select>
                   )}
                 </span>
@@ -182,15 +243,27 @@ export function PresetEditor({ show, client, act, preset, onClose }: { show: Sho
                 {show.sources.map((src) => {
                   const n = draft.sources.indexOf(src.id);
                   return (
-                    <button key={src.id} type="button" className={`pe__input${n >= 0 ? ' is-on' : ''}`} aria-pressed={n >= 0} onClick={() => toggleSource(src.id)}>
-                      <span className="pe__thumb"><SourceView source={src} client={client} thumb /></span>
-                      <span className="pe__iname">{n >= 0 && <b>{n + 1}</b>}{src.name}</span>
+                    <button
+                      key={src.id}
+                      type="button"
+                      className={`pe__input${n >= 0 ? ' is-on' : ''}`}
+                      aria-pressed={n >= 0}
+                      onClick={() => toggleSource(src.id)}
+                    >
+                      <span className="pe__thumb">
+                        <SourceView source={src} client={client} thumb />
+                      </span>
+                      <span className="pe__iname">
+                        {n >= 0 && <b>{n + 1}</b>}
+                        {src.name}
+                      </span>
                     </button>
                   );
                 })}
               </div>
               <label className="check">
-                <input type="checkbox" checked={draft.loadFirst} onChange={(e) => set({ loadFirst: e.target.checked })} /> When picked, line up its first input in Next
+                <input type="checkbox" checked={draft.loadFirst} onChange={(e) => set({ loadFirst: e.target.checked })} /> When picked, line up its first input
+                in Next
               </label>
             </div>
           </div>
@@ -198,9 +271,20 @@ export function PresetEditor({ show, client, act, preset, onClose }: { show: Sho
             <div className="field">
               <span className="field__label">Preset buttons · one click runs several steps in order</span>
               {draft.buttons.map((b, i) => (
-                <ButtonEditor key={i} show={show} screen={draft.screen} button={b} onChange={(nb) => setButton(i, nb)} onRemove={() => set({ buttons: draft.buttons.filter((_, j) => j !== i) })} />
+                <ButtonEditor
+                  key={i}
+                  show={show}
+                  screen={draft.screen}
+                  button={b}
+                  onChange={(nb) => setButton(i, nb)}
+                  onRemove={() => set({ buttons: draft.buttons.filter((_, j) => j !== i) })}
+                />
               ))}
-              <button type="button" className="btn" onClick={() => set({ buttons: [...draft.buttons, { name: `Button ${draft.buttons.length + 1}`, steps: [] }] })}>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => set({ buttons: [...draft.buttons, { name: `Button ${draft.buttons.length + 1}`, steps: [] }] })}
+              >
                 + Add button
               </button>
             </div>
@@ -213,36 +297,42 @@ export function PresetEditor({ show, client, act, preset, onClose }: { show: Sho
             </button>
           )}
           <span className="grow" />
-          <button type="button" className="btn" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn--primary" onClick={done}>{preset ? 'Done' : 'Create preset'}</button>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn--primary" onClick={done}>
+            {preset ? 'Done' : 'Create preset'}
+          </button>
         </footer>
       </div>
     </div>
   );
 }
 
-function ButtonEditor({ show, screen, button, onChange, onRemove }: { show: Show; screen: ScreenId; button: PresetButton; onChange: (b: PresetButton) => void; onRemove: () => void }) {
-  const setStep = (i: number, st: Step) => onChange({ ...button, steps: button.steps.map((x, j) => (j === i ? st : x)) });
+/** A list of steps: each with its choices, move up / down, remove, and add. */
+export function StepsEditor({ show, screen, steps, onChange }: { show: Show; screen: ScreenId; steps: Step[]; onChange: (s: Step[]) => void }) {
   const move = (i: number, d: number) => {
-    const steps = [...button.steps];
-    const [st] = steps.splice(i, 1);
-    steps.splice(Math.max(0, Math.min(steps.length, i + d)), 0, st!);
-    onChange({ ...button, steps });
+    const next = [...steps];
+    const [st] = next.splice(i, 1);
+    next.splice(Math.max(0, Math.min(next.length, i + d)), 0, st!);
+    onChange(next);
   };
   return (
-    <div className="pe__button">
-      <div className="pe__bhead">
-        <input className="text" value={button.name} maxLength={40} aria-label="Button name" onChange={(e) => onChange({ ...button, name: e.target.value })} />
-        <button type="button" className="linkbtn" onClick={onRemove}>Remove button</button>
-      </div>
+    <>
       <ol className="pe__steps">
-        {button.steps.map((st, i) => (
+        {steps.map((st, i) => (
           <li key={i} className="pe__step">
-            <StepFields show={show} step={st} onChange={(n) => setStep(i, n)} />
+            <StepFields show={show} step={st} onChange={(n) => onChange(steps.map((x, j) => (j === i ? n : x)))} />
             <span className="pe__stepbtns">
-              <button type="button" className="icon" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)}>↑</button>
-              <button type="button" className="icon" aria-label="Move down" disabled={i === button.steps.length - 1} onClick={() => move(i, 1)}>↓</button>
-              <button type="button" className="icon" aria-label="Remove step" onClick={() => onChange({ ...button, steps: button.steps.filter((_, j) => j !== i) })}>✕</button>
+              <button type="button" className="icon" aria-label="Move up" disabled={i === 0} onClick={() => move(i, -1)}>
+                ↑
+              </button>
+              <button type="button" className="icon" aria-label="Move down" disabled={i === steps.length - 1} onClick={() => move(i, 1)}>
+                ↓
+              </button>
+              <button type="button" className="icon" aria-label="Remove step" onClick={() => onChange(steps.filter((_, j) => j !== i))}>
+                ✕
+              </button>
             </span>
           </li>
         ))}
@@ -251,11 +341,42 @@ function ButtonEditor({ show, screen, button, onChange, onRemove }: { show: Show
         className="pe__add"
         aria-label="Add step"
         value=""
-        onChange={(e) => e.target.value && onChange({ ...button, steps: [...button.steps, newStep(e.target.value as Step['type'], show, screen)] })}
+        onChange={(e) => e.target.value && onChange([...steps, newStep(e.target.value as Step['type'], show, screen)])}
       >
         <option value="">+ Add step…</option>
-        {STEP_KINDS.map((k) => <option key={k.type} value={k.type}>{k.name}</option>)}
+        {STEP_KINDS.map((k) => (
+          <option key={k.type} value={k.type}>
+            {k.name}
+          </option>
+        ))}
       </select>
+    </>
+  );
+}
+
+/** One button of a preset: its name and its steps. */
+function ButtonEditor({
+  show,
+  screen,
+  button,
+  onChange,
+  onRemove,
+}: {
+  show: Show;
+  screen: ScreenId;
+  button: PresetButton;
+  onChange: (b: PresetButton) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="pe__button">
+      <div className="pe__bhead">
+        <input className="text" value={button.name} maxLength={40} aria-label="Button name" onChange={(e) => onChange({ ...button, name: e.target.value })} />
+        <button type="button" className="linkbtn" onClick={onRemove}>
+          Remove button
+        </button>
+      </div>
+      <StepsEditor show={show} screen={screen} steps={button.steps} onChange={(steps) => onChange({ ...button, steps })} />
     </div>
   );
 }
@@ -271,24 +392,46 @@ function StepFields({ show, step, onChange }: { show: Show; step: Step; onChange
   );
   const sourceSel = (value: string | null, list: Source[], set: (id: string) => void) => (
     <select aria-label="Input" value={value ?? ''} onChange={(e) => set(e.target.value)}>
-      {list.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+      {list.map((s) => (
+        <option key={s.id} value={s.id}>
+          {s.name}
+        </option>
+      ))}
     </select>
   );
   let fields: React.ReactNode = null;
   switch (step.type) {
     case 'preview':
-      fields = (<>{screenSel(step.screen, (screen) => onChange({ ...step, screen }))}{sourceSel(step.sourceId, pictures(show), (sourceId) => onChange({ ...step, sourceId }))}</>);
+      fields = (
+        <>
+          {screenSel(step.screen, (screen) => onChange({ ...step, screen }))}
+          {sourceSel(step.sourceId, pictures(show), (sourceId) => onChange({ ...step, sourceId }))}
+        </>
+      );
       break;
     case 'cutTo':
-      fields = (<>{screenSel(step.screen, (screen) => onChange({ ...step, screen }))}{sourceSel(step.sourceId, pictures(show), (sourceId) => onChange({ ...step, sourceId }))}</>);
+      fields = (
+        <>
+          {screenSel(step.screen, (screen) => onChange({ ...step, screen }))}
+          {sourceSel(step.sourceId, pictures(show), (sourceId) => onChange({ ...step, sourceId }))}
+        </>
+      );
       break;
     case 'take':
       fields = (
         <>
           {screenSel(step.screen, (screen) => onChange({ ...step, screen }))}
-          <select aria-label="Transition" value={step.transition ?? ''} onChange={(e) => onChange(e.target.value ? { ...step, transition: e.target.value as TransitionKind } : { type: 'take', screen: step.screen })}>
+          <select
+            aria-label="Transition"
+            value={step.transition ?? ''}
+            onChange={(e) => onChange(e.target.value ? { ...step, transition: e.target.value as TransitionKind } : { type: 'take', screen: step.screen })}
+          >
             <option value="">current transition</option>
-            {KINDS.map((k) => <option key={k.kind} value={k.kind}>{k.name}</option>)}
+            {KINDS.map((k) => (
+              <option key={k.kind} value={k.kind}>
+                {k.name}
+              </option>
+            ))}
           </select>
         </>
       );
@@ -296,7 +439,16 @@ function StepFields({ show, step, onChange }: { show: Show; step: Step; onChange
     case 'wait':
       fields = (
         <label className="pe__num">
-          <input type="number" min={0.1} max={600} step={0.5} value={step.ms / 1000} aria-label="Seconds" onChange={(e) => onChange({ ...step, ms: Math.round(Math.max(0, Math.min(600, Number(e.target.value))) * 1000) })} /> s
+          <input
+            type="number"
+            min={0.1}
+            max={600}
+            step={0.5}
+            value={step.ms / 1000}
+            aria-label="Seconds"
+            onChange={(e) => onChange({ ...step, ms: Math.round(Math.max(0, Math.min(600, Number(e.target.value))) * 1000) })}
+          />{' '}
+          s
         </label>
       );
       break;
@@ -317,7 +469,15 @@ function StepFields({ show, step, onChange }: { show: Show; step: Step; onChange
     case 'setCountdownLength':
       fields = (
         <label className="pe__num">
-          <input type="number" min={1} max={1440} value={Math.round(step.lengthMs / 60_000)} aria-label="Minutes" onChange={(e) => onChange({ ...step, lengthMs: Math.max(1, Math.min(1440, Number(e.target.value))) * 60_000 })} /> min
+          <input
+            type="number"
+            min={1}
+            max={1440}
+            value={Math.round(step.lengthMs / 60_000)}
+            aria-label="Minutes"
+            onChange={(e) => onChange({ ...step, lengthMs: Math.max(1, Math.min(1440, Number(e.target.value))) * 60_000 })}
+          />{' '}
+          min
         </label>
       );
       break;
@@ -336,8 +496,29 @@ function StepFields({ show, step, onChange }: { show: Show; step: Step; onChange
     case 'preset':
       fields = (
         <select aria-label="Preset" value={step.presetId} onChange={(e) => onChange({ ...step, presetId: e.target.value })}>
-          {show.presets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {show.presets.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
         </select>
+      );
+      break;
+    case 'overlay':
+      fields = (
+        <>
+          <select aria-label="Overlay" value={step.channel} onChange={(e) => onChange({ ...step, channel: Number(e.target.value) })}>
+            {show.overlays.map((o, i) => (
+              <option key={i} value={i}>
+                {i + 1}: {show.sources.find((s) => s.id === o.sourceId)?.name ?? 'empty'}
+              </option>
+            ))}
+          </select>
+          <select aria-label="On or off" value={step.value ? 'on' : 'off'} onChange={(e) => onChange({ ...step, value: e.target.value === 'on' })}>
+            <option value="on">on</option>
+            <option value="off">off</option>
+          </select>
+        </>
       );
       break;
     default:

@@ -13,6 +13,7 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { demoApply, demoTick } from './demo';
 import { channels } from './overlays';
+import { emptyRun } from './cues';
 
 export interface ShowSnapshot {
   revision: number;
@@ -243,6 +244,7 @@ export function emptyShow(): Show {
       clock24h: false,
       quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'],
     },
+    run: emptyRun(),
     overlays: channels(),
     settings: {
       displays: { live: null, back: null, monitor: null },

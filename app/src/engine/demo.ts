@@ -3,6 +3,7 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { cueDue, nextCueIndex } from './cues';
 import { nextSlideIndex, slideDue } from './slideshow';
 import type { Slideshow } from './types/Slideshow';
 import { applyLayout } from './split';
@@ -128,6 +129,15 @@ function take(s: Show, screen: ScreenId, kind: Show['transition']['kind'], durat
   if (k?.type === 'countdown' && k.timer.endsAt === null) startTimer(k.timer, now);
   // Credits roll from the top when they go on air.
   if (k?.type === 'credits' && !k.playing) Object.assign(k, { playing: true, posMs: 0, at: now });
+}
+
+/** Run a cue: its steps start now, and the show carries on from it. */
+function fireCue(s: Show, index: number, now: number) {
+  const cue = s.run.cues[index];
+  if (!cue) throw new Refused({ code: 'invalidValue', field: 'cue', reason: 'there is no such cue' });
+  s.run.current = index;
+  s.run.cueStartedAt = now;
+  apply(s, { type: 'runSteps', name: cue.name, steps: cue.steps }, now);
 }
 
 function slideshowIn(s: Show, id: string): Slideshow {
@@ -577,6 +587,32 @@ function apply(s: Show, a: Action, now: number) {
       c.speed = Math.min(600, Math.max(5, a.speed));
       return;
     }
+    case 'setCues': {
+      const keep = s.run.current !== null ? s.run.cues[s.run.current]?.id : undefined;
+      s.run.cues = structuredClone(a.cues);
+      const at = s.run.cues.findIndex((c) => c.id === keep);
+      s.run.current = at >= 0 ? at : null;
+      return;
+    }
+    case 'startShow':
+      Object.assign(s.run, { running: true, paused: false, current: null, startedAt: now, cueStartedAt: now, utcOffsetMin: a.utcOffsetMin });
+      return;
+    case 'stopShow':
+      Object.assign(s.run, { running: false, paused: false });
+      return;
+    case 'pauseShow':
+      s.run.paused = a.value && s.run.running;
+      return;
+    case 'nextCue': {
+      const i = nextCueIndex(s.run);
+      if (i === null) return;
+      if (!s.run.running) Object.assign(s.run, { running: true, startedAt: now });
+      fireCue(s, i, now);
+      return;
+    }
+    case 'goCue':
+      fireCue(s, a.index, now);
+      return;
     case 'updateText': {
       const src = find(s, a.id);
       if (src.kind.type !== 'text') throw new Refused({ code: 'invalidValue', field: 'text', reason: 'that input is not a text input' });
@@ -758,6 +794,8 @@ function stepAction(st: Step, main: string | null): Action | null {
       return { type: 'pause', id: st.sourceId };
     case 'backFollowsLive':
       return { type: 'setBackFollowsLive', value: st.value };
+    case 'overlay':
+      return { type: 'setOverlayOn', channel: st.channel, value: st.value };
     case 'preset':
       return { type: 'pickPreset', id: st.presetId };
     case 'wait':
@@ -807,10 +845,12 @@ export function demoTick(show: Show, now: number): Show | null {
     })
     .map(({ i }) => i);
   const slidesDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'slideshow' && slideDue(x.kind, now)).map((x) => x.id);
-  if (due.length === 0 && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0 && slidesDue.length === 0) return null;
+  const cue = cueDue(show.run, now);
+  if (due.length === 0 && cue === null && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0 && slidesDue.length === 0) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
   for (const id of due) atZero(next, id, now);
+  if (cue !== null) fireCue(next, cue, now);
   if (stepsDue) runSteps(next, now);
   for (const id of wordsDue) nextWord(pesukimIn(next, id), now);
   for (const i of overlaysDue) setOverlayOn(next.overlays[i]!, false, now);
