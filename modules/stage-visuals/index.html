@@ -258,6 +258,7 @@ const VS = `attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`;
 const SCENE_FS = `
 precision highp float;
 uniform vec2 uRes; uniform float uBeat; uniform float uPulse; uniform float uMix;
+uniform float uB0; uniform float uB1; uniform float uB2;
 uniform int uM0; uniform int uM1; uniform int uM2; uniform mat3 uP0; uniform mat3 uP1; uniform mat3 uP2;
 uniform float uS0; uniform float uS1; uniform float uS2; uniform float uF0; uniform float uF1; uniform float uF2;
 uniform float uK0; uniform float uK1; uniform float uK2; uniform float uOv; uniform float uOvMode;
@@ -275,8 +276,9 @@ vec3 pal(mat3 P,float t){t=fract(t);
   return mix(P[2],P[0],(t-.6667)*3.);}
 mat2 rot(float a){float c=cos(a),s=sin(a);return mat2(c,-s,s,c);}
 
+// tb = this scene's own beat clock, spd = its speed-scaled phase (both advance smoothly, never jump)
 vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
-  float z0=tb*spd; vec3 col=vec3(0.); float bright=1.+pu*1.6;
+  float z0=spd; vec3 col=vec3(0.); float bright=1.+pu*1.6;
   if(m<=5){ uv+=vec2(sin(tb*PI/8.),cos(tb*PI/12.))*.07; uv=rot(sin(tb*PI/16.)*.35)*uv; }
   float a=atan(uv.y,uv.x); float L=length(uv); float r=L;
 
@@ -314,7 +316,7 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
   } else if(m==6){ // lasers
     vec2 p=uv-vec2(0.,-.62); float an=atan(p.x,p.y); float d=length(p);
     for(int i=0;i<9;i++){float fi=float(i);
-      float ba=sin(tb*spd*PI*.25+fi*.9)*.85+(fi-4.)*.05;
+      float ba=sin(spd*PI*.25+fi*.9)*.85+(fi-4.)*.05;
       col+=pal(P,fi/9.+tb*.02)*exp(-abs(an-ba)*(70.+30.*sin(fi)))*exp(-d*.6)*1.2*bright;}
     col+=P[2]*.06*exp(-d*1.5)*(1.+pu*2.); col+=P[0]*exp(-d*14.)*.8;
   } else if(m==7){ // retro grid + sun
@@ -325,24 +327,24 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       col=pal(P,.05)*(exp(-lx*12.)+exp(-lz*12.))*smoothstep(0.,.25,dy)*bright+P[2]*.25*exp(-dy*8.);
     } else {
       vec2 c=vec2(0.,.33); float R=.26; float s=length(uv-c);
-      float cut=uv.y>c.y?1.:step(.35,fract((uv.y-c.y)*18.-tb*spd*.5));
+      float cut=uv.y>c.y?1.:step(.35,fract((uv.y-c.y)*18.-spd*.5));
       vec3 sunc=mix(P[1],P[0],clamp((uv.y-c.y+R)/(2.*R),0.,1.));
       col=sunc*smoothstep(R,R-.01,s)*cut*(1.+pu*.5)+P[0]*.25*exp(-max(s-R,0.)*6.)+P[2]*.12*exp(-(uv.y-hz)*4.);
       col+=vec3(.8)*step(.997,hv(floor(uv*150.)))*smoothstep(.25,.6,uv.y);
     }
   } else if(m==8){ // plasma
-    float t=tb*spd*.5;
+    float t=spd*.5;
     float v=sin(uv.x*3.+t)+sin(uv.y*4.-t*1.3)+sin((uv.x+uv.y)*3.+t*.7)+sin(length(uv*4.+vec2(sin(t*.3),cos(t*.4))*2.)-t);
     col=pal(P,v*.12+t*.03)*(.55+.25*sin(v*2.))*bright;
   } else if(m==9){ // bokeh
     col=P[2]*.04;
     for(int i=0;i<26;i++){float fi=float(i); float ha=h1(fi*3.1), hb=h1(fi*7.7), hc=h1(fi*1.3);
-      vec2 c=vec2((ha*2.-1.)*.95+sin(tb*.1+fi)*.05, fract(hb+tb*spd*.02*(.5+hc))*1.4-.7);
+      vec2 c=vec2((ha*2.-1.)*.95+sin(tb*.1+fi)*.05, fract(hb+spd*.02*(.5+hc))*1.4-.7);
       float s=(.04+.1*hc)*(1.+pu*.3); float d=length(uv-c);
       float disk=smoothstep(s,s*.8,d); float rim=smoothstep(s,s*.93,d)-smoothstep(s*.93,s*.86,d);
       col+=pal(P,ha)*(disk*.22+rim*.25)*(.7+.3*hb);}
   } else if(m==10){ // aurora
-    float t=tb*spd*.25; col=mix(P[2]*.02,P[2]*.1,uv.y+.5);
+    float t=spd*.25; col=mix(P[2]*.02,P[2]*.1,uv.y+.5);
     for(int i=0;i<3;i++){float fi=float(i);
       float y=(fbm(vec2(uv.x*1.2+t*.5+fi*3.,t*.3+fi))-.5)*.7+.05+fi*.08;
       float band=exp(-abs(uv.y-y)*7.)*smoothstep(-.3,.1,uv.y-y+.05);
@@ -352,7 +354,7 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
   } else if(m==11){ // bouncing EQ bars
     float nb=16.; float xx=(uv.x+.85)/1.7*nb; float idx=floor(xx); float fx=fract(xx);
     if(idx>=0.&&idx<nb){
-      float bn=floor(tb*spd*2.); float env=exp(-fract(tb*spd*2.)*3.);
+      float bn=floor(spd*2.); float env=exp(-fract(spd*2.)*3.);
       float hgt=.1+.75*(.3+.7*h1(idx*13.+bn))*(.35+.65*env);
       float yy=uv.y+.45; float inBar=step(.12,fx)*step(fx,.88); float seg=step(.25,fract(yy*28.));
       if(yy>0.&&yy<hgt) col=pal(P,yy*.9+idx*.02)*inBar*seg*(1.+pu*.6);
@@ -361,50 +363,50 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
     }
   } else if(m==12){ // bouncing dot grid
     float g=.1; vec2 cell=floor(uv/g); vec2 f=fract(uv/g)-.5; vec2 cc=(cell+.5)*g;
-    float ph=fract(tb*spd-length(cc)*.9); float rr=.08+.3*exp(-ph*5.);
+    float ph=fract(spd-length(cc)*.9); float rr=.08+.3*exp(-ph*5.);
     col=pal(P,length(cc)*.6-tb*.1)*smoothstep(rr,rr-.06,length(f))*(.8+pu);
   } else if(m==13){ // kaleidoscope
-    float sec=TAU/8.; float ka=mod(a+tb*spd*.1,sec); ka=abs(ka-sec*.5);
+    float sec=TAU/8.; float ka=mod(a+spd*.1,sec); ka=abs(ka-sec*.5);
     vec2 p=vec2(cos(ka),sin(ka))*L*(1.+.15*pu); vec2 q=p*4.-vec2(z0*.8,0.);
     float v=sin(q.x*2.+sin(q.y*3.+tb*.5))+cos(L*10.-z0*3.)+sin(q.y*5.-tb*.3);
     col=pal(P,v*.15+L*.3-tb*.04)*smoothstep(0.,1.5,v+.5)*bright*(smoothstep(1.1,.2,L)+.2);
   } else if(m==14){ // firelight
-    float t=tb*spd*.4; vec2 q=vec2(uv.x*2.2,uv.y*1.8+.9);
+    float t=spd*.4; vec2 q=vec2(uv.x*2.2,uv.y*1.8+.9);
     float n=fbm(q-vec2(0.,t*1.2)+fbm(q*1.3+vec2(t*.2,-t))*.8);
     float heat=clamp(n*1.6-q.y*.45,0.,1.);
     col=P[1]*smoothstep(.15,.5,heat); col=mix(col,P[0],smoothstep(.45,.75,heat)); col=mix(col,P[2],smoothstep(.75,1.,heat));
     col*=heat*1.4*(1.+pu*.5);
   } else if(m==15){ // water ripples
-    float t=tb*spd; col=mix(P[0]*.05,P[0]*.15,.5+.5*uv.y)+P[1]*.05*fbm(uv*3.+t*.05);
+    float t=spd; col=mix(P[0]*.05,P[0]*.15,.5+.5*uv.y)+P[1]*.05*fbm(uv*3.+t*.05);
     for(int i=0;i<6;i++){float fi=float(i); float cyc=t*.5+fi/6.; float id=floor(cyc); float age=fract(cyc);
       vec2 c=vec2(h1(id*3.3+fi)*1.6-.8,h1(id*5.1+fi*2.)*.8-.4); float d=length((uv-c)*vec2(1.,1.6));
       float ring=exp(-abs(d-age*.7)*60.)+exp(-abs(d-age*.5)*80.)*.5;
       col+=pal(P,h1(id+fi))*ring*(1.-age)*.8*bright;}
   } else if(m==16){ // sun rays
-    float t=tb*spd*.2; vec2 p=uv-vec2(-.3,.75); float an=atan(p.x,-p.y); float d=length(p);
+    float t=spd*.2; vec2 p=uv-vec2(-.3,.75); float an=atan(p.x,-p.y); float d=length(p);
     float rays=pow(vnoise(vec2(an*9.,t))*.6+vnoise(vec2(an*23.,t*1.7))*.4,2.2);
     col=mix(P[2]*.03,P[1]*.12,clamp(1.-d*.6,0.,1.));
     col+=pal(P,.1+rays*.3)*rays*exp(-d*.9)*1.3*bright+P[1]*exp(-d*5.)*.5;
     vec2 g=uv*18.+vec2(t*2.,-t*3.);
     col+=P[1]*step(.985,hv(floor(g)))*smoothstep(.3,0.,length(fract(g)-.5))*rays*1.5;
   } else if(m==17){ // fireflies
-    float t=tb*spd*.3; col=mix(P[0]*.03,P[0]*.1,.5-uv.y);
+    float t=spd*.3; col=mix(P[0]*.03,P[0]*.1,.5-uv.y);
     for(int i=0;i<36;i++){float fi=float(i); float ha=h1(fi*1.7), hb=h1(fi*9.3);
       vec2 c=vec2(sin(t*(.3+ha*.4)+ha*20.)*.85,cos(t*(.25+hb*.3)+hb*20.)*.42);
       float tw=.4+.6*pow(.5+.5*sin(t*6.*(.5+ha)+ha*30.),3.); float d=length(uv-c);
       col+=mix(P[1],P[2],ha)*(.0008/(d*d+.0008))*tw*.35*(1.+pu);}
   } else if(m==18){ // stripes
-    vec2 p=rot(PI*.25+sin(tb*spd*PI*.125)*.3)*uv; float s=p.x*5.-z0*2.;
+    vec2 p=rot(PI*.25+sin(spd*PI*.125)*.3)*uv; float s=p.x*5.-z0*2.;
     float band=smoothstep(.45,.5,fract(s))-smoothstep(.95,1.,fract(s));
     col=pal(P,floor(s)*.23)*band*bright*(.6+.4*(1.-fract(tb)));
   } else if(m==20){ // soft clouds
-    float t=tb*spd*.15; vec2 q=uv*1.6+vec2(t,0.);
+    float t=spd*.15; vec2 q=uv*1.6+vec2(t,0.);
     float n=fbm(q+fbm(q*.7+t*.3));
     vec3 sky=mix(P[2]*.25,P[0]*.35,uv.y+.5);
     col=mix(sky,pal(P,.3+n*.3),smoothstep(.45,.8,n))*(.8+pu*.4);
     col+=P[1]*exp(-length(uv-vec2(.35,.3))*3.)*.3;
   } else if(m==21){ // moonlit sea
-    float t=tb*spd*.3; col=mix(P[0]*.08,P[0]*.3,clamp(uv.y*1.5+.3,0.,1.));
+    float t=spd*.3; col=mix(P[0]*.08,P[0]*.3,clamp(uv.y*1.5+.3,0.,1.));
     vec2 mc=vec2(.25,.28); float md=length(uv-mc);
     col+=P[2]*smoothstep(.09,.085,md)*.9+P[2]*exp(-md*5.)*.25*(1.+pu*.4);
     col+=vec3(.7)*step(.996,hv(floor(uv*130.)))*step(0.,uv.y);
@@ -414,37 +416,37 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
         col+=P[2]*exp(-abs(uv.x-mc.x)*6.)*.2*(.5+.5*sin(uv.y*140.+t*3.+fi)); }
     }
   } else if(m==22){ // slow spotlights in haze
-    float t=tb*spd*.25; col=P[0]*.03;
+    float t=spd*.25; col=P[0]*.03;
     float haze=.6+.4*fbm(uv*2.5+vec2(t*.3,-t*.2));
     for(int i=0;i<5;i++){float fi=float(i);
       vec2 p=uv-vec2((fi-2.)*.35,.62); float an=atan(p.x,-p.y)-sin(t+fi*1.7)*.45;
       col+=pal(P,fi*.2)*exp(-abs(an)*12.)*smoothstep(1.4,0.,length(p))*haze*.55*(1.+pu*.5);
       col+=pal(P,fi*.2)*exp(-length(p)*18.)*.6;}
   } else if(m==26){ // lava lamp
-    float t=tb*spd*.2; float f=0.;
+    float t=spd*.2; float f=0.;
     for(int i=0;i<7;i++){float fi=float(i);
       vec2 c=vec2(sin(t*(.5+h1(fi)*.5)+fi*2.)*.55,sin(t*(.3+h1(fi+9.)*.4)+fi)*.35);
       float rr=.1+.06*h1(fi+3.); f+=rr*rr/dot(uv-c,uv-c);}
     float mm=smoothstep(.9,1.1,f);
     col=mix(P[2]*.08,pal(P,f*.1+t*.05),mm)*(.8+pu*.3)+pal(P,.5)*smoothstep(.4,1.,f)*.15*(1.-mm);
   } else if(m==27){ // floating lanterns
-    float t=tb*spd; col=mix(vec3(.01,.01,.03),P[1]*.1,clamp(.4-uv.y,0.,1.));
+    float t=spd; col=mix(vec3(.01,.01,.03),P[1]*.1,clamp(.4-uv.y,0.,1.));
     for(int i=0;i<22;i++){float fi=float(i); float ha=h1(fi*2.3), hb=h1(fi*5.9), hc=h1(fi*8.1);
       float s=.02+.035*hc; vec2 c=vec2((ha*2.-1.)*.9+sin(t*.15+fi)*.04,fract(hb+t*.012*(.5+hc))*1.6-.8);
       vec2 p=(uv-c)/s; float flick=.8+.2*sin(t*5.+fi*3.);
       col+=mix(P[0],P[2],p.y*.3+.5)*smoothstep(1.,.85,length(p*vec2(1.,.8)))*.8*flick*(.4+.6*hc);
       col+=P[0]*exp(-length(uv-c)/s*.8)*.08*flick;}
   } else if(m==28){ // contour waves
-    float t=tb*spd*.15; float n=fbm(uv*1.5+vec2(t,t*.6))+.3*fbm(uv*3.-t);
+    float t=spd*.15; float n=fbm(uv*1.5+vec2(t,t*.6))+.3*fbm(uv*3.-t);
     float v=n*14.; float line=exp(-min(fract(v),1.-fract(v))*20.);
     col=pal(P,n*.8+t*.1)*(line*.7+.08)*(1.+pu*.4);
   } else if(m==29){ // galaxy
-    float t=tb*spd*.05; vec2 p=rot(t)*uv; float r2=length(p); float an=atan(p.y,p.x);
+    float t=spd*.05; vec2 p=rot(t)*uv; float r2=length(p); float an=atan(p.y,p.x);
     float arms=pow(.5+.5*cos(2.*an-log(r2+.01)*4.),3.);
     col=pal(P,r2*1.2+.2)*arms*exp(-r2*2.5)*(.6+.8*fbm(p*6.))*1.2+P[2]*exp(-r2*12.)*.8*(1.+pu*.3);
     col+=vec3(.8)*step(.993,hv(floor(uv*120.)));
   } else if(m==30){ // sunset hills
-    float t=tb*spd*.05;
+    float t=spd*.05;
     col=mix(P[0],P[2]*.4,clamp(uv.y*1.2+.2,0.,1.))*.6;
     vec2 sc=vec2(0.,-.05+.08*sin(t)); float sd=length(uv-sc);
     col+=P[1]*smoothstep(.17,.16,sd)+P[1]*exp(-sd*3.)*.35*(1.+pu*.3);
@@ -452,7 +454,7 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       float y=-.12-fi*.1+.06*sin(uv.x*(2.+fi)+fi*2.+t*(.5+fi*.3))+.03*sin(uv.x*7.+fi);
       if(uv.y<y) col=P[2]*(.18-fi*.05);}
   } else if(m==23){ // night sky
-    float t=tb*spd; col=mix(P[0]*.02,P[0]*.16,.5-uv.y*.8)+P[1]*.07*fbm(uv*2.+vec2(t*.01,0.));
+    float t=spd; col=mix(P[0]*.02,P[0]*.16,.5-uv.y*.8)+P[1]*.07*fbm(uv*2.+vec2(t*.01,0.));
     vec2 g=uv*60.; float hh=hv(floor(g)); float d=length(fract(g)-.5);
     col+=vec3(1.)*step(.975,hh)*smoothstep(.12,0.,d)*(.5+.5*sin(t*1.5+hh*60.));
     vec2 mc=vec2(-.45,.25); float md=length(uv-mc);
@@ -462,13 +464,13 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       vec2 rel=uv-(s0+dir*age); float along=dot(rel,-dir); float perp=abs(dot(rel,vec2(-dir.y,dir.x)));
       col+=vec3(1.)*step(0.,along)*exp(-along*6.)*exp(-perp*400.)*(1.-age); }
   } else if(m==24){ // snowfall
-    float t=tb*spd; col=mix(P[0]*.05,P[0]*.18,.5-uv.y)+P[2]*exp(-length(uv-vec2(0.,.6))*2.)*.12;
+    float t=spd; col=mix(P[0]*.05,P[0]*.18,.5-uv.y)+P[2]*exp(-length(uv-vec2(0.,.6))*2.)*.12;
     for(int i=0;i<4;i++){float fi=float(i); float sc=14.-fi*3.;
       vec2 g=uv*sc+vec2(sin(t*.2+fi)*.5,t*(.3+fi*.08)); vec2 id=floor(g); vec2 f=fract(g)-.5;
       float hh=hv(id+fi*7.); vec2 o=(vec2(hv(id+1.3),hv(id+2.7))-.5)*.6;
       col+=mix(P[1],vec3(1.),.6)*step(.5,hh)*smoothstep(.1+fi*.03,0.,length(f-o))*(.3+fi*.18)*(1.+pu*.3);}
   } else if(m==25){ // silk ribbons
-    float t=tb*spd*.3; col=P[0]*.03;
+    float t=spd*.3; col=P[0]*.03;
     for(int i=0;i<5;i++){float fi=float(i);
       float y=sin(uv.x*(1.5+fi*.3)+t*(1.+fi*.2)+fi*1.3)*.25*cos(t*.3+fi)+(fi-2.)*.06;
       float d=abs(uv.y-y);
@@ -483,22 +485,22 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
     col=pal(P,floor(z)*.21)*exp(-min(f,1.-f)*16.)*bright+pal(P,floor(z)*.21+.4)*exp(-abs(abs(ar)-sec*.5)*30.)*.4;
     col*=clamp(rp*2.4,0.,1.);
   } else if(m==34){ // shockwaves on the beat
-    float ph=fract(tb*spd);
+    float ph=fract(spd);
     for(int i=0;i<4;i++){float fi=float(i); float age=ph+fi;
-      col+=pal(P,(floor(tb*spd)-fi)*.2)*exp(-abs(L-age*.6)*30.)*exp(-age*1.1)*bright;}
+      col+=pal(P,(floor(spd)-fi)*.2)*exp(-abs(L-age*.6)*30.)*exp(-age*1.1)*bright;}
     col+=P[2]*exp(-L*14.)*(.4+pu);
   } else if(m==35){ // waveform
-    float t=tb*spd; float env=exp(-fract(t)*3.);
+    float t=spd; float env=exp(-fract(t)*3.);
     col+=P[2]*.05*step(.47,max(abs(fract(uv.x*5.)-.5),abs(fract(uv.y*5.)-.5)));
     for(int i=0;i<4;i++){float fi=float(i);
       float y=sin(uv.x*(6.+fi*3.)+t*PI*(1.+fi*.5))*(.08+.22*env)*cos(uv.x*1.5)*(1.-fi*.2);
       float d=abs(uv.y-y); col+=pal(P,fi*.25+uv.x*.2)*(exp(-d*80.)+exp(-d*12.)*.2)*bright;}
   } else if(m==36){ // tile flip
     float g=.14; vec2 id=floor(uv/g); vec2 f=fract(uv/g)-.5; float hh=hv(id);
-    float bt=floor(tb*spd); float on=step(.55,hv(id+bt*1.37)); float env=exp(-fract(tb*spd)*3.);
+    float bt=floor(spd); float on=step(.55,hv(id+bt*1.37)); float env=exp(-fract(spd)*3.);
     col=pal(P,hh+bt*.1)*smoothstep(.45,.4,max(abs(f.x),abs(f.y)))*(on*(.3+.9*env)+.06)*(1.+pu*.3);
   } else if(m==37){ // sunburst
-    float ra=fract((a+tb*spd*.15)/TAU*16.); float ray=smoothstep(.45,.5,ra)-smoothstep(.95,1.,ra);
+    float ra=fract((a+spd*.15)/TAU*16.); float ray=smoothstep(.45,.5,ra)-smoothstep(.95,1.,ra);
     col=mix(pal(P,.1)*.25,pal(P,.5),ray)*bright*(1.-smoothstep(0.,1.2,L)*.6)+P[2]*exp(-L*6.)*(.6+pu);
   } else if(m==38){ // wormhole
     float d=.3/r; float v=d+z0; float aa=a+d*.4;
@@ -508,7 +510,7 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
   } else if(m==39){ // digital rain
     float cols=40.; float gx=(uv.x+1.)*cols*.5; float cx=floor(gx); float hh=h1(cx);
     float y=uv.y*cols*.5; float cy=floor(y);
-    float hp=1.-fract(tb*spd*(.5+hh)*.15+hh)*2.4; float dist=uv.y-hp;
+    float hp=1.-fract(spd*(.5+hh)*.15+hh)*2.4; float dist=uv.y-hp;
     float box=step(.15,fract(gx))*step(fract(gx),.85)*step(.15,fract(y))*step(fract(y),.85);
     float ch=step(.3,hv(vec2(cx,cy+floor(tb*4.))));
     col=pal(P,hh*.3)*step(0.,dist)*exp(-dist*4.)*box*ch*1.2+vec3(.8)*box*exp(-abs(dist)*60.);
@@ -519,28 +521,28 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
   } else if(m==41){ // bouncing orbs
     col+=P[2]*exp(-abs(uv.y+.42)*80.)*.4;
     for(int i=0;i<7;i++){float fi=float(i);
-      float hgt=abs(sin(PI*(tb*spd-fi*.125)))*.55; vec2 c=vec2((fi-3.)*.25,-.35+hgt);
+      float hgt=abs(sin(PI*(spd-fi*.125)))*.55; vec2 c=vec2((fi-3.)*.25,-.35+hgt);
       float d=length(uv-c); col+=pal(P,fi/7.)*(smoothstep(.07,.06,d)+.004/(d*d+.004)*.3)*bright;}
   } else if(m==42){ // circle EQ
     float n=48.; float t2=(a/TAU+.5)*n; float idx=floor(t2); float fa=fract(t2);
-    float bt=floor(tb*spd*2.); float env=exp(-fract(tb*spd*2.)*3.);
+    float bt=floor(spd*2.); float env=exp(-fract(spd*2.)*3.);
     float hgt=.08+.3*(.3+.7*h1(idx*7.+bt))*(.35+.65*env); float r0=.18;
     col=pal(P,idx/n+tb*.02)*step(r0,L)*step(L,r0+hgt)*step(.2,fa)*step(fa,.8)*bright;
     col+=P[2]*smoothstep(r0,r0-.01,L)*(.15+pu*.5)+pal(P,.5)*exp(-abs(L-r0)*60.)*.6;
   } else if(m==43){ // falling leaves
-    float t=tb*spd; col=mix(P[1]*.06,P[0]*.14,uv.y+.5);
+    float t=spd; col=mix(P[1]*.06,P[0]*.14,uv.y+.5);
     for(int i=0;i<20;i++){float fi=float(i); float ha=h1(fi*2.1), hb=h1(fi*4.7), hc=h1(fi*6.3);
       float s=.02+.03*hc; vec2 c=vec2((ha*2.-1.)*.95+sin(t*.4+fi*2.)*.08,.8-fract(hb+t*.03*(.6+hc))*1.7);
       vec2 p=rot(t*(.5+ha)+fi)*(uv-c)/s; p.x*=1.+.5*sin(t*1.3+fi);
       col+=pal(P,ha)*smoothstep(1.,.9,length(vec2(p.x*.55,p.y)))*(.5+.5*hc);}
   } else if(m==44){ // gentle rain
-    float t=tb*spd; col=mix(P[0]*.04,P[0]*.12,uv.y+.5)+P[2]*exp(-length(uv-vec2(.4,.2))*3.)*.2*(1.+pu*.3);
+    float t=spd; col=mix(P[0]*.04,P[0]*.12,uv.y+.5)+P[2]*exp(-length(uv-vec2(.4,.2))*3.)*.2*(1.+pu*.3);
     for(int i=0;i<3;i++){float fi=float(i); float sc=30.+fi*20.;
       vec2 g=vec2(uv.x*sc,uv.y*sc*.15+t*(1.5+fi*.5)); vec2 id=floor(g); vec2 f=fract(g);
       float drop=step(.85,hv(id+fi*9.))*smoothstep(0.,.1,f.y)*smoothstep(.6,.1,f.y)*exp(-abs(f.x-.5)*20.);
       col+=mix(P[1],vec3(1.),.5)*drop*(.25+fi*.1);}
   } else if(m==45){ // candles
-    float t=tb*spd; col=mix(vec3(.01),P[1]*.05,.5-uv.y);
+    float t=spd; col=mix(vec3(.01),P[1]*.05,.5-uv.y);
     for(int i=0;i<7;i++){float fi=float(i);
       float x=(fi-3.)*.24+(h1(fi)-.5)*.05; float base=-.2-h1(fi+2.)*.15; float hgt=.18+.12*h1(fi+4.);
       vec2 p=uv-vec2(x,base-hgt*.5);
@@ -550,7 +552,7 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       vec2 gp=uv-vec2(x,base+.04);
       col+=mix(P[0],P[2],.5)*smoothstep(.035,0.,fl)*1.2+P[0]*.01/(dot(gp,gp)+.01)*.08*(1.+pu*.3);}
   } else if(m==46){ // sunlit water
-    float t=tb*spd*.3; vec2 p=uv*5.; float c=0.;
+    float t=spd*.3; vec2 p=uv*5.; float c=0.;
     for(int i=0;i<3;i++){float fi=float(i);
       p+=vec2(sin(p.y+t*(1.+fi*.3)),cos(p.x-t*(.8+fi*.2)))*.6;
       c+=1./(1.+abs(sin(p.x)+sin(p.y))*4.);}
@@ -558,12 +560,12 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
   } else if(m==47){ // stained glass
     vec2 g=uv*5.; vec2 id=floor(g); vec2 f=fract(g); float d1=9., d2=9.; vec2 best=vec2(0.);
     for(int j=-1;j<=1;j++){ for(int i=-1;i<=1;i++){ vec2 o=vec2(float(i),float(j));
-      vec2 pt=.5+.4*sin(tb*spd*.3+vec2(hv(id+o),hv(id+o+5.3))*6.28); float d=length(o+pt-f);
+      vec2 pt=.5+.4*sin(spd*.3+vec2(hv(id+o),hv(id+o+5.3))*6.28); float d=length(o+pt-f);
       if(d<d1){d2=d1;d1=d;best=id+o;} else if(d<d2){d2=d;} } }
     float edge=d2-d1; float hh=hv(best);
-    col=pal(P,hh)*(.35+.4*(.5+.5*sin(tb*spd*.5+hh*20.)))*smoothstep(.02,.06,edge)*bright+P[2]*exp(-edge*40.)*.2;
+    col=pal(P,hh)*(.35+.4*(.5+.5*sin(spd*.5+hh*20.)))*smoothstep(.02,.06,edge)*bright+P[2]*exp(-edge*40.)*.2;
   } else if(m==48){ // lightning storm
-    float t=tb*spd; float bi=floor(t); float ph=fract(t);
+    float t=spd; float bi=floor(t); float ph=fract(t);
     col=P[2]*.08*fbm(uv*2.+vec2(t*.05,0.))+P[0]*.02;
     if(h1(bi)>.35){
       float fade=exp(-ph*5.); float x0=(h1(bi+1.)-.5)*1.2;
@@ -573,14 +575,14 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       col+=P[0]*.18*fade*(1.+pu);
     }
   } else if(m==49){ // rising sparks
-    float t=tb*spd; col=P[2]*.03*(.5-uv.y)+P[0]*exp(-(uv.y+.55)*6.)*.35;
+    float t=spd; col=P[2]*.03*(.5-uv.y)+P[0]*exp(-(uv.y+.55)*6.)*.35;
     for(int i=0;i<40;i++){float fi=float(i); float ha=h1(fi*1.9), hb=h1(fi*3.7), hc=h1(fi*6.1);
       float life=fract(hb+t*.25*(.5+hc));
       vec2 c=vec2((ha-.5)*1.6+sin(fi+life*4.)*.06,-.6+life*1.3);
       vec2 dd=(uv-c)*vec2(1.,.5); float d2=dot(dd,dd);
       col+=mix(P[0],P[1],hc)*.00004/(d2+.00004)*(1.-life)*1.6*(1.+pu);}
   } else if(m==50){ // city at night
-    float t=tb*spd; col=mix(P[2]*.3,P[0]*.04,clamp(uv.y+.2,0.,1.));
+    float t=spd; col=mix(P[2]*.3,P[0]*.04,clamp(uv.y+.2,0.,1.));
     col+=vec3(.6)*step(.996,hv(floor(uv*140.)))*step(.15,uv.y);
     for(int i=0;i<2;i++){float fi=float(i); float w=.09-fi*.03;
       float xx=(uv.x+t*.01*(fi+1.))/w; float bx=floor(xx);
@@ -593,14 +595,14 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       }}
     col+=P[0]*exp(-abs(uv.y-.05)*8.)*.08;
   } else if(m==51){ // confetti
-    float t=tb*spd; col=P[2]*.04+P[0]*.03;
+    float t=spd; col=P[2]*.04+P[0]*.03;
     for(int i=0;i<50;i++){float fi=float(i); float ha=h1(fi*2.7), hb=h1(fi*4.3), hc=h1(fi*7.9);
       float fall=fract(hb+t*.06*(.6+hc));
       vec2 c=vec2((ha*2.-1.)*.95+sin(t*.8+fi)*.05,.75-fall*1.5);
       vec2 p=rot(t*(1.+ha*3.)+fi)*(uv-c); p.x/=abs(sin(t*2.+fi*1.3))*.8+.2;
       col+=pal(P,ha)*step(abs(p.x),.016)*step(abs(p.y),.009)*1.2*(1.+pu*.4);}
   } else if(m==52){ // balloons
-    float t=tb*spd; col=mix(P[2]*.15,P[2]*.05,uv.y+.5);
+    float t=spd; col=mix(P[2]*.15,P[2]*.05,uv.y+.5);
     for(int i=0;i<14;i++){float fi=float(i); float ha=h1(fi*2.2), hb=h1(fi*4.4), hc=h1(fi*6.6);
       float s=.05+.04*hc; vec2 c=vec2((ha*2.-1.)*.85+sin(t*.3+fi)*.04,-.8+fract(hb+t*.02*(.6+hc))*1.8);
       vec2 q=(uv-c)/s; float body=smoothstep(1.,.95,length(vec2(q.x,q.y*.85)));
@@ -609,14 +611,14 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       float sxp=c.x+sin((uv.y-c.y)*20.+t)*.004;
       col+=vec3(.4)*step(uv.y,c.y-s*1.15)*step(c.y-s*1.15-.25,uv.y)*exp(-abs(uv.x-sxp)*800.)*(1.-body);}
   } else if(m==53){ // bubbles
-    float t=tb*spd; col=mix(P[0]*.05,P[2]*.12,uv.y+.5);
+    float t=spd; col=mix(P[0]*.05,P[2]*.12,uv.y+.5);
     for(int i=0;i<24;i++){float fi=float(i); float ha=h1(fi*3.3), hb=h1(fi*5.1), hc=h1(fi*8.7);
       float s=.02+.06*hc; vec2 c=vec2((ha*2.-1.)*.9+sin(t*.6+fi*2.)*.05,-.8+fract(hb+t*.03*(.5+hc))*1.7);
       vec2 q=(uv-c)/s; float d=length(q);
       col+=pal(P,ha+d*.2+t*.05)*smoothstep(.75,1.,d)*smoothstep(1.05,.98,d)*.9*(1.+pu*.3);
       col+=vec3(.8)*smoothstep(.3,0.,length(q-vec2(-.4,.4)))*.6;}
   } else if(m==54){ // fireworks
-    float t=tb*spd; col=mix(vec3(.005,.005,.02),P[2]*.06,clamp(.2-uv.y,0.,1.));
+    float t=spd; col=mix(vec3(.005,.005,.02),P[2]*.06,clamp(.2-uv.y,0.,1.));
     for(int i=0;i<4;i++){float fi=float(i); float cyc=t*.25+fi*.25; float id=floor(cyc); float age=fract(cyc);
       vec2 c=vec2(h1(id*3.+fi)*1.2-.6,h1(id*7.+fi)*.35+.05); vec3 fc=pal(P,h1(id+fi*5.));
       if(age<.15){ vec2 rp=vec2(c.x,-.6+(c.y+.6)*age/.15); vec2 dd=uv-rp; col+=fc*.0015/(dot(dd,dd)+.0015)*.5; }
@@ -625,7 +627,7 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
         col+=fc*(exp(-abs(dl-R)*70.)*(.3+ray*1.4)+exp(-dl*8.)*.12)*(1.-e)*1.4*(1.+pu*.3); }
     }
   } else if(m==55){ // fairy lights
-    float t=tb*spd; col=P[2]*.02+P[0]*.02*(.5-uv.y);
+    float t=spd; col=P[2]*.02+P[0]*.02*(.5-uv.y);
     for(int i=0;i<4;i++){float fi=float(i); float y0=.35-fi*.23;
       float sx=fract(uv.x*1.2+fi*.3)*2.-1.; float y=y0-.08*(1.-sx*sx);
       col+=vec3(.25)*exp(-abs(uv.y-y)*400.);
@@ -634,22 +636,22 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       float hh=h1(cell+fi*31.); vec2 dd=uv-bp;
       col+=pal(P,hh)*(smoothstep(.012,.006,length(dd))*1.2+.00015/(dot(dd,dd)+.00015)*.5)*(.4+.6*(.5+.5*sin(t*2.+hh*30.)))*(1.+pu*.5);}
   } else if(m==56){ // nebula
-    float t=tb*spd*.05; vec2 q=uv*1.5; float n=fbm(q+fbm(q*1.7+t)*1.2+vec2(t,0.)); float n2=fbm(q*2.5-t*.5);
+    float t=spd*.05; vec2 q=uv*1.5; float n=fbm(q+fbm(q*1.7+t)*1.2+vec2(t,0.)); float n2=fbm(q*2.5-t*.5);
     col=pal(P,n*1.2+n2*.3)*pow(n,2.)*1.6*(1.+pu*.3)+P[2]*pow(n2,4.)*.8;
     float st=hv(floor(uv*160.)); col+=vec3(1.)*step(.994,st)*(.5+.5*sin(tb*2.+st*50.));
   } else if(m==57){ // glowing cross
-    float t=tb*spd; col=mix(P[2]*.05,P[1]*.08,.5+uv.y*.5);
+    float t=spd; col=mix(P[2]*.05,P[1]*.08,.5+uv.y*.5);
     vec2 p=uv-vec2(0.,.02);
     float d=min(max(abs(p.x)-.025,abs(p.y+.02)-.3),max(abs(p.x)-.17,abs(p.y-.1)-.025));
     float an=atan(p.x,p.y); col+=P[1]*pow(vnoise(vec2(an*8.,t*.2)),3.)*exp(-length(p)*2.)*.35;
     col+=P[0]*exp(-max(d,0.)*14.)*(.6+.2*sin(t*.5))*(1.+pu*.4)*.6+mix(P[0],vec3(1.),.6)*smoothstep(.004,0.,d);
   } else if(m==58){ // heaven light
-    float t=tb*spd*.1; vec2 q=uv*1.4+vec2(t,0.); float n=fbm(q+fbm(q*.6+t));
+    float t=spd*.1; vec2 q=uv*1.4+vec2(t,0.); float n=fbm(q+fbm(q*.6+t));
     col=mix(P[2]*.35,P[0]*.9,smoothstep(.35,.8,n));
     vec2 p=uv-vec2(0.,.55); float an=atan(p.x,-p.y);
     col+=P[1]*pow(vnoise(vec2(an*10.,t*2.)),2.)*exp(-length(p)*1.2)*.9*(1.+pu*.3)+P[1]*exp(-length(p)*3.)*.5;
   } else if(m==59){ // neon shapes
-    float t=tb*spd; col=P[2]*.02;
+    float t=spd; col=P[2]*.02;
     for(int i=0;i<12;i++){float fi=float(i); float ha=h1(fi*2.9), hb=h1(fi*6.7), hc=h1(fi*9.1);
       vec2 c=vec2((ha*2.-1.)*.8+sin(t*.1+fi)*.1,(hb*2.-1.)*.4+cos(t*.13+fi)*.08);
       float s=(.05+.06*hc)*(1.+pu*.2);
@@ -659,7 +661,7 @@ vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){
       else d=length(p)-1.;
       float ds=abs(d)*s; col+=pal(P,ha+t*.02)*(exp(-ds*300.)*1.2+exp(-ds*40.)*.15);}
   } else { // star drift
-    float t=tb*spd; col=P[2]*.02+P[1]*.12*fbm(uv*2.+t*.01);
+    float t=spd; col=P[2]*.02+P[1]*.12*fbm(uv*2.+t*.01);
     for(int i=0;i<4;i++){float fi=float(i); float dep=fract(fi*.25+t*.03);
       float sc=mix(28.,2.,dep); float fade=smoothstep(0.,.3,dep)*smoothstep(1.,.85,dep);
       vec2 g=uv*sc+fi*17.3; vec2 id=floor(g); vec2 f=fract(g)-.5; float hh=hv(id);
@@ -681,11 +683,11 @@ void main(){
   else if(uMirror>1.5&&uMirror<2.5) uv.y=abs(uv.y);
   else if(uMirror>2.5) uv=abs(uv);
   vec3 c0=vec3(0.), c1=vec3(0.);
-  if(uMix<1.){ float pu=uPulse*uF0; c0=scene(uM0,uv/(1.+uK0*pu*.18),uBeat,uS0,pu,uP0); }
-  if(uMix>0.){ float pu=uPulse*uF1; c1=scene(uM1,uv/(1.+uK1*pu*.18),uBeat,uS1,pu,uP1); }
+  if(uMix<1.){ float pu=uPulse*uF0; c0=scene(uM0,uv/(1.+uK0*pu*.18),uB0,uS0,pu,uP0); }
+  if(uMix>0.){ float pu=uPulse*uF1; c1=scene(uM1,uv/(1.+uK1*pu*.18),uB1,uS1,pu,uP1); }
   vec3 col=1.-exp(-mix(c0,c1,uMix)*1.5);
   if(uOv>0.){
-    float pu=uPulse*uF2; vec3 c2=1.-exp(-scene(uM2,uv/(1.+uK2*pu*.18),uBeat,uS2,pu,uP2)*1.5);
+    float pu=uPulse*uF2; vec3 c2=1.-exp(-scene(uM2,uv/(1.+uK2*pu*.18),uB2,uS2,pu,uP2)*1.5);
     vec3 o=c2*uOv;
     if(uOvMode<.5) col=min(col+o,1.);
     else if(uOvMode<1.5) col=1.-(1.-col)*(1.-o);
@@ -741,6 +743,7 @@ void main(){
   if(uVig>0.) col*=1.-uVig*smoothstep(.25,.85,length(uv-.5)*1.3);
   if(uInv>.5) col=1.-col;
   col=mix(col,vec3(1.),uWhite);
+  col+=(fract(sin(dot(gl_FragCoord.xy,vec2(12.9898,78.233)))*43758.5453)-.5)/255.; // dither: no banding in dark gradients
   col*=1.-uBlack;
   gl_FragColor=vec4(col,1.);
 }`;
@@ -758,7 +761,7 @@ function makeRenderer(canvas, maxDpr){
     gl.bindAttribLocation(pr,0,'p');gl.linkProgram(pr);
     if(!gl.getProgramParameter(pr,gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(pr));
     const U={};names.forEach(n=>U[n]=gl.getUniformLocation(pr,n));return {pr,U};};
-  const A=mk(SCENE_FS,['uRes','uBeat','uPulse','uMix','uM0','uM1','uM2','uP0','uP1','uP2','uS0','uS1','uS2','uF0','uF1','uF2','uK0','uK1','uK2','uOv','uOvMode','uZoom','uRot','uPan','uKal','uMirror']);
+  const A=mk(SCENE_FS,['uRes','uBeat','uB0','uB1','uB2','uPulse','uMix','uM0','uM1','uM2','uP0','uP1','uP2','uS0','uS1','uS2','uF0','uF1','uF2','uK0','uK1','uK2','uOv','uOvMode','uZoom','uRot','uPan','uKal','uMirror']);
   const B=mk(COMP_FS,['uScene','uPrev','uRes','uTrail','uEcho','uEchoRot','uRGB','uPix','uHue','uSat','uCon','uGlow','uPost']);
   const C=mk(FINAL_FS,['uComp','uText','uRes','uBright','uWhite','uBlack','uInv','uScan','uVig','uTextOn','uTextScale','uTextY','uTextCol']);
   const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
@@ -798,7 +801,7 @@ function makeRenderer(canvas, maxDpr){
     updateText(u.text.str,u.text.font);
     // pass 1: scenes
     gl.bindFramebuffer(gl.FRAMEBUFFER,Sc.f); gl.viewport(0,0,w,h); gl.useProgram(A.pr); const a=A.U;
-    gl.uniform2f(a.uRes,w,h); gl.uniform1f(a.uBeat,u.beat); gl.uniform1f(a.uPulse,u.pulse); gl.uniform1f(a.uMix,u.mix);
+    gl.uniform2f(a.uRes,w,h); gl.uniform1f(a.uBeat,u.beat); gl.uniform1f(a.uB0,u.b0); gl.uniform1f(a.uB1,u.b1); gl.uniform1f(a.uB2,u.b2); gl.uniform1f(a.uPulse,u.pulse); gl.uniform1f(a.uMix,u.mix);
     gl.uniform1i(a.uM0,u.m0); gl.uniform1i(a.uM1,u.m1); gl.uniform1i(a.uM2,u.m2);
     gl.uniformMatrix3fv(a.uP0,false,new Float32Array(u.p0)); gl.uniformMatrix3fv(a.uP1,false,new Float32Array(u.p1)); gl.uniformMatrix3fv(a.uP2,false,new Float32Array(u.p2));
     gl.uniform1f(a.uS0,u.s0); gl.uniform1f(a.uS1,u.s1); gl.uniform1f(a.uS2,u.s2);
@@ -835,7 +838,7 @@ const renderers=[];
 const fontsReady=Promise.all(['700 50px "Chakra Petch"','50px "Bebas Neue"','50px "Great Vibes"'].map(f=>document.fonts?document.fonts.load(f).catch(()=>{}):null));
 fontsReady.then(()=>renderers.forEach(r=>r.refreshText()));
 
-const blankU=()=>({beat:0,pulse:0,mix:1,m0:0,m1:0,m2:0,p0:[0,0,0,0,0,0,0,0,0],p1:[0,0,0,0,0,0,0,0,0],p2:[0,0,0,0,0,0,0,0,0],
+const blankU=()=>({beat:0,b0:0,b1:0,b2:0,r0:0,r1:0,r2:0,pulse:0,mix:1,m0:0,m1:0,m2:0,p0:[0,0,0,0,0,0,0,0,0],p1:[0,0,0,0,0,0,0,0,0],p2:[0,0,0,0,0,0,0,0,0],
   s0:1,s1:1,s2:1,f0:0,f1:0,f2:0,k0:0,k1:0,k2:0,ov:0,ovMode:0,zoom:1,rot:0,panX:0,panY:0,kal:0,mirror:0,
   trail:0,echo:0,echoRot:0,rgb:0,pix:0,hue:0,sat:1,con:1,glow:0,post:0,bright:0,white:0,black:1,inv:0,scan:0,vig:0,q:.5,
   text:{on:0,str:'',font:'clean',col:[1,1,1],scale:.5,y:0}});
@@ -864,7 +867,7 @@ if(isOutput){
   (function loop(){
     const live=last&&epoch()-lastAt<1500;
     $('#waiting').classList.toggle('show',!live);
-    if(draw){ if(live){ const u=Object.assign({},last.u); if(!last.frozen) u.beat+=(epoch()-last.sentAt)*last.bpm/60000; draw(u);} else draw(black); }
+    if(draw){ if(live){ const u=Object.assign({},last.u); if(!last.frozen){ const d=clamp((epoch()-last.sentAt)*last.bpm/60000,0,.5); u.beat+=d; u.b0+=d; u.b1+=d; u.b2+=d; u.s0+=d*u.r0; u.s1+=d*u.r1; u.s2+=d*u.r2; } draw(u);} else draw(black); }
     requestAnimationFrame(loop);
   })();
   wake();
@@ -1338,7 +1341,13 @@ setInterval(sendPing,4000);
 
 /* ---- main loop ---- */
 const dots=[...document.querySelectorAll('.dots i')];
-let lastDot=-1, lastRb=null, rotAcc=0, hueAcc=0;
+let lastDot=-1, lastRb=null, rotAcc=0, hueAcc=0, lastT=null;
+// Smoothness: every scene runs on its own clock (so speed changes and clock resyncs never make it jump),
+// continuous settings glide instead of snapping, and palette changes blend over PAL_MS.
+const clocks=new Map(), G={}, GLIDE=['zoom', 'panX', 'panY', 'hue', 'sat', 'con', 'glow', 'trail', 'echo', 'echoRot', 'rgb', 'pix', 'vig', 'scan', 'ov'];
+let speedV=S.speed, brightV=S.bright, palMode=S.pal, palFrom=null, palAt=0;
+const PAL_MS=700, smooth01=x=>x*x*(3-2*x);
+const refKey=r=>r.b+':'+r.i;
 function frame(){
   const t=now(), beat=clockBeat(t);
   const isCtl=ROLE==='controller';
@@ -1347,24 +1356,37 @@ function frame(){
   if(isCtl&&S.auto>0){ if(nextAuto===null) nextAuto=(Math.floor(bar/S.auto)+1)*S.auto; if(bar>=nextAuto) autoNext(); }
   const rb=fx.freeze?frozenBeat:beat;
   const dB=lastRb===null?0:clamp(rb-lastRb,-1,1); lastRb=rb;
+  const dt=lastT===null?0:clamp((t-lastT)/1000,0,.1); lastT=t; const k60=dt*60;
+  const ease=tc=>1-Math.exp(-dt/tc), decay=(v,f)=>v*Math.pow(f,k60), approach=(v,to,f)=>v+(to-v)*(1-Math.pow(1-f,k60));
+  const gk=ease(.12); for(const key of GLIDE) G[key]=G[key]===undefined?F[key]:G[key]+(F[key]-G[key])*gk;
+  speedV+=(S.speed-speedV)*ease(.25); brightV+=(S.bright-brightV)*gk;
   rotAcc=(rotAcc+F.spin*dB*Math.PI/8)%(Math.PI*2); hueAcc=(hueAcc+F.hueCycle*dB*.5)%(Math.PI*2);
   let bp=0; const ev=S.flashEvery;
   if(!fx.freeze&&ev>0){ const phB=(rb/ev-Math.floor(rb/ev))*ev;
     bp=Math.exp(-phB*6)*(ev===1?((((Math.floor(rb)%4)+4)%4===0)?1:.6):1); }
-  kick*=.9; noteFlash*=.88; whiteFlash*=.85;
+  kick=decay(kick,.9); noteFlash=decay(noteFlash,.88); whiteFlash=decay(whiteFlash,.85);
   const pulse=Math.max(bp,kick,noteFlash*.8);
-  fx.blackV+=((fx.black?1:0)-fx.blackV)*(S.blackFade==='slow'?.03:.15);
-  textV+=((T.on?1:0)-textV)*.12;
+  fx.blackV=approach(fx.blackV,fx.black?1:0,S.blackFade==='slow'?.03:.15);
+  textV=approach(textV,T.on?1:0,.12);
   const white=Math.max(fx.strobe&&((beat*S.strobeDiv)%1)<.3?1:0,whiteFlash);
-  const mix=prev&&fadeLen>0?clamp((beat-fadeStart)/fadeLen,0,1):1;
+  const mix=prev&&fadeLen>0?clamp((beat-fadeStart)/fadeLen,0,1):1, mixE=smooth01(mix);
   const s1=sceneOf(cur), s0=prev?sceneOf(prev):s1;
-  const s2=(BANKS[F.ovB]&&BANKS[F.ovB].scenes[F.ovI])||s1;
-  const pk=sc=>S.pal==='scene'?sc[2]:S.pal;
-  const u={beat:rb,pulse,mix,m0:s0[1],m1:s1[1],m2:s2[1],p0:palMat(pk(s0)),p1:palMat(pk(s1)),p2:palMat(pk(s2)),
-    s0:s0[3]*S.speed,s1:s1[3]*S.speed,s2:s2[3]*S.speed,f0:s0[4]*S.flash,f1:s1[4]*S.flash,f2:s2[4]*S.flash,k0:s0[5],k1:s1[5],k2:s2[5],
-    ov:F.ov,ovMode:F.ovMode,zoom:F.zoom*(1+F.pump*bp*.35),rot:rotAcc,panX:F.panX,panY:F.panY,kal:F.kal,mirror:F.mirror,
-    trail:F.trail,echo:F.echo,echoRot:F.echoRot,rgb:F.rgb,pix:F.pix,hue:(F.hue+hueAcc)%(Math.PI*2),sat:F.sat,con:F.con,glow:F.glow,post:F.post,
-    bright:S.bright,white,black:fx.blackV,inv:fx.invert?1:0,scan:F.scan,vig:F.vig,q:S.quality,
+  const ovRef=okScene({b:F.ovB,i:F.ovI})?{b:F.ovB,i:F.ovI}:cur, s2=sceneOf(ovRef);
+  const refs=[prev||cur,cur,ovRef], rates=[s0[3]*speedV,s1[3]*speedV,s2[3]*speedV], adv=clamp(dB,0,.5), seen=new Set();
+  const clk=refs.map((r,n)=>{ const k=refKey(r); let c=clocks.get(k);
+    if(!c){ c={lb:((rb%64)+64)%64,ph:0}; c.ph=c.lb*rates[n]; clocks.set(k,c); }
+    if(!seen.has(k)){ seen.add(k); c.lb+=adv; c.ph+=adv*rates[n]; } return c; });
+  for(const k of clocks.keys()) if(!seen.has(k)) clocks.delete(k);
+  if(S.pal!==palMode){ palFrom=palMode; palMode=S.pal; palAt=t; }
+  const pe=palFrom===null?1:smooth01(clamp((t-palAt)/PAL_MS,0,1)); if(pe>=1) palFrom=null;
+  const pkey=(mode,sc)=>mode==='scene'?sc[2]:mode;
+  const pmat=sc=>{ const a=palMat(pkey(palMode,sc)); if(palFrom===null) return a;
+    const b=palMat(pkey(palFrom,sc)); return a.map((v,i)=>b[i]+(v-b[i])*pe); };
+  const u={beat:rb,b0:clk[0].lb,b1:clk[1].lb,b2:clk[2].lb,r0:rates[0],r1:rates[1],r2:rates[2],pulse,mix:mixE,m0:s0[1],m1:s1[1],m2:s2[1],p0:pmat(s0),p1:pmat(s1),p2:pmat(s2),
+    s0:clk[0].ph,s1:clk[1].ph,s2:clk[2].ph,f0:s0[4]*S.flash,f1:s1[4]*S.flash,f2:s2[4]*S.flash,k0:s0[5],k1:s1[5],k2:s2[5],
+    ov:G.ov,ovMode:F.ovMode,zoom:G.zoom*(1+F.pump*bp*.35),rot:rotAcc,panX:G.panX,panY:G.panY,kal:F.kal,mirror:F.mirror,
+    trail:G.trail,echo:G.echo,echoRot:G.echoRot,rgb:G.rgb,pix:G.pix,hue:(G.hue+hueAcc)%(Math.PI*2),sat:G.sat,con:G.con,glow:G.glow,post:F.post,
+    bright:brightV,white,black:fx.blackV,inv:fx.invert?1:0,scan:G.scan,vig:G.vig,q:S.quality,
     text:{on:textV,str:T.str,font:T.font,col:hexRgb(T.col),scale:T.size*(1+bp*T.pulse*.12),y:T.y}};
   if(draw) draw(u);
   if(chan&&isCtl) chan.postMessage({type:'frame',u,bpm:S.bpm,sentAt:epoch(),frozen:fx.freeze});

@@ -62,7 +62,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
     <a href="Pesukim.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">12 Pesukim</a>
     <a href="GreenScreen.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Green screen</a>
     <a href="Timer.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Timer</a>
-    <a href="BackLoops.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Loops</a>
+    <a href="BackLoops.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Visuals</a>
     <a href="Credits.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Credits</a>
     <a href="LogoMaker.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">3D logo</a>
     <a href="Settings.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Settings</a>
@@ -250,11 +250,17 @@ input[type=checkbox]{accent-color:#4fb3bf}
           <!-- Back-screen loop strip (only on Back Screen) -->
           <sc-if value="{{isBack}}" hint-placeholder-val="{{false}}">
             <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
-              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; white-space: nowrap;">Back-screen loop</span>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Energy<input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="width: 90px;"></label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Speed<input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="width: 90px;"></label>
-              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Brightness<input type="range" min="0" max="100" value="70" aria-label="Loop brightness" style="width: 90px;"></label>
-              <button onClick="{{toggleFollow}}" style="{{followStyle}}">Follow the music</button>
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; white-space: nowrap;">Stage visuals</span>
+              <select aria-label="Music type" value="{{svBankVal}}" onChange="{{onSvBank}}" style="height: 26px; max-width: 150px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 11px; padding: 0 6px;"><sc-for list="{{svBanks}}" as="sb" hint-placeholder-count="14"><option value="{{sb.v}}">{{sb.n}}</option></sc-for></select>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <button onClick="{{svSlower}}" aria-label="Slower" style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap; width: 24px; padding: 0;">−</button>
+                <span style="font-family: Consolas, monospace; font-size: 13px; font-weight: 700; color: #ffffff; width: 30px; text-align: center;">{{svBpm}}</span>
+                <button onClick="{{svFaster}}" aria-label="Faster" style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap; width: 24px; padding: 0;">+</button>
+                <button onClick="{{svTap}}" style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap;">Tap</button>
+              </div>
+              <sc-for list="{{svPads}}" as="sp" hint-placeholder-count="3"><button onClick="{{sp.press}}" style="{{sp.style}}">{{sp.name}}</button></sc-for>
+              <button onClick="{{toggleFollow}}" title="Change scenes by themselves with the music" style="{{followStyle}}">Autopilot</button>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #a9abb0; white-space: nowrap; min-width: 0;">Energy<input type="range" min="0" max="100" value="55" aria-label="Visuals energy" style="width: 80px; min-width: 40px;"></label>
               <div style="flex-grow: 1;"></div>
               <a href="BackLoops.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">More…</a>
             </div>
@@ -503,11 +509,15 @@ input[type=checkbox]{accent-color:#4fb3bf}
             <sc-if value="{{c.isBack}}" hint-placeholder-val="{{false}}">
               <div style="height: 30px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 6px; flex-shrink: 0;">
                 <button onClick="{{toggleBackLive}}" style="{{c.followStyle}}">{{c.followLabel}}</button>
-                <button onClick="{{toggleFollow}}" style="{{followStyle}}">Follow the music</button>
+                <button onClick="{{toggleFollow}}" title="Change scenes by themselves with the music" style="{{followStyle}} height: 30px;">Autopilot</button>
               </div>
-              <div style="height: 30px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">Loop energy</span><input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="flex-grow: 1; min-width: 40px;">
-                <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">Speed</span><input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="flex-grow: 1; min-width: 40px;">
+              <div style="height: 30px; display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                <button onClick="{{svSlower}}" aria-label="Slower" style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap; width: 24px; padding: 0;">−</button>
+                <span style="display: flex; flex-direction: column; align-items: center; width: 32px; line-height: 1;"><span style="font-family: Consolas, monospace; font-size: 13px; font-weight: 700; color: #ffffff;">{{svBpm}}</span><span style="font-size: 8px; color: #8e9096;">BPM</span></span>
+                <button onClick="{{svFaster}}" aria-label="Faster" style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap; width: 24px; padding: 0;">+</button>
+                <button onClick="{{svTap}}" style="height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap;">Tap</button>
+                <div style="flex-grow: 1;"></div>
+                <sc-for list="{{svPads}}" as="sp" hint-placeholder-count="3"><button onClick="{{sp.press}}" style="{{sp.style}}">{{sp.name}}</button></sc-for>
               </div>
             </sc-if>
             <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 4px;">
@@ -674,7 +684,7 @@ class Component extends DCLogic {
       lower: { name: 'Lower third', sub: 'Name + title', kind: 'TITLE', tone: '#3a3240' },
       timer: { name: 'Hype countdown', sub: 'Countdown · 04:58 left', kind: 'TIMER', tone: '#1c2440' },
       black: { name: 'Black', sub: 'Solid colour', kind: 'COLOUR', tone: '#0c0d10' },
-      loop1: { name: 'Aurora loop', sub: 'Back-screen loop · 00:30', kind: 'LOOP', tone: '#27403f', dur: 30 },
+      loop1: { name: 'Stage visuals', sub: 'Music visuals · live', kind: 'LOOP', tone: '#27403f', dur: 30 },
       loop2: { name: 'Particles loop', sub: 'Back-screen loop · 00:40', kind: 'LOOP', tone: '#2c3450', dur: 40 },
       loop3: { name: 'Warm glow loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#4a3626' },
       eventlogo: { name: 'Event logo', sub: 'Image', kind: 'IMAGE', tone: '#3b3326' },
@@ -701,7 +711,7 @@ class Component extends DCLogic {
         name, where, key, on, onAirName: dark && !dimmed ? '' : onAirName,
         scene: id === 'monitor' ? 'black' : ((SRC[scr.pg] || {}).scene || 'black'), isText: id === 'monitor', monText: st.monitorText, dark: dark,
         pick: () => { clearInterval(this._anim); this._anim = null; set({ tab: id, tbar: 0, allView: false }); },
-        status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : (id === 'back' && st.backLive ? 'FOLLOWS LIVE' : 'ON AIR'),
+        status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : (id === 'back' && st.backLive ? '= LIVE' : 'ON AIR'),
         badge: `height: 15px; padding: 0 5px; white-space: nowrap; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : id === 'back' && st.backLive ? '#1f6f79' : '#c7372f'}; color: #ffffff;`,
         thumb: `position: relative; width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; overflow: hidden; display: block; box-shadow: 0 0 0 1px ${dark ? '#3a3f48' : '#c7372f'};`,
         style: `height: 48px; min-width: 214px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 10px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
@@ -888,6 +898,25 @@ class Component extends DCLogic {
       pvT: tport(sc.pv, pvSrc), pgT: tport(sc.pg, pgSrc),
       isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
       toggleFollow: () => set({ follow: !st.follow }),
+      svBanks: ["Slow", "Medium", "Fast", "Bounce", "Electric", "Acoustic", "Worship", "Hip hop", "Rock", "Latin", "Retro 80s", "Party & kids", "Space", "Simcha & events"].map((n, i) => ({ v: String(i), n })), svBankVal: String(st.svBank ?? 13),
+      onSvBank: (e) => set({ svBank: Number(e.target.value) }),
+      svBpm: st.svBpm ?? 118,
+      svSlower: () => set({ svBpm: Math.max(60, (st.svBpm ?? 118) - 1) }),
+      svFaster: () => set({ svBpm: Math.min(200, (st.svBpm ?? 118) + 1) }),
+      svTap: () => {
+        const now = Date.now(), taps = [...(this._svTaps || []).filter((t) => now - t < 2500), now];
+        this._svTaps = taps;
+        if (taps.length >= 2) set({ svBpm: Math.max(60, Math.min(200, Math.round(60000 / ((now - taps[0]) / (taps.length - 1))))) });
+      },
+      svPads: [['flash', 'Flash'], ['dark', 'Blackout'], ['next', 'Next']].map(([id, name]) => {
+        const on = id === 'flash' ? !!st.svFlash : id === 'dark' ? !!st.svDark : false;
+        return { name, style: `height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap; border-color: ${on ? '#4fb3bf' : '#3a3f48'}; background: ${on ? (id === 'flash' ? '#e4e5e7' : '#243039') : '#2a2e36'}; color: ${on && id === 'flash' ? '#15171b' : '#e4e5e7'};`,
+          press: () => {
+            if (id === 'flash') { set({ svFlash: true }); clearTimeout(this._svFl); this._svFl = setTimeout(() => this.setState({ svFlash: false }), 250); }
+            else if (id === 'dark') set({ svDark: !st.svDark });
+            else set({ svScene: ((st.svScene ?? 0) + 1) % 20 });
+          } };
+      }),
       backLive: !!st.backLive,
       toggleBackLive: () => set({ backLive: !st.backLive }),
       backLiveLabel: st.backLive ? 'On · Back plays Live' : 'Off · separate',
