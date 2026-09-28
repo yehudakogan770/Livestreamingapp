@@ -48,7 +48,19 @@
   color: #a9abb0;
 }
 
+.mscreen__msgbox {
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
 .mscreen__message {
+  max-width: 100%;
   font-size: calc(var(--size, 1) * 13cqh);
   font-weight: 800;
   line-height: 1.1;
@@ -67,13 +79,8 @@
   justify-content: center;
   gap: 4cqh;
 }
-.mscreen__full .mscreen__message {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .mscreen__strip {
+  flex: 0 0 auto;
   width: 100%;
   height: 26cqh;
   display: flex;
@@ -103,8 +110,8 @@
 }
 .mscreen__stack .mscreen__area {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
   border-bottom: 0.4cqh solid #2c3038;
 }
 .mscreen__stack .mscreen__side {
@@ -124,8 +131,9 @@
 }
 .mscreen__split .mscreen__area {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   border-right: 0.4cqh solid #2c3038;
 }
 .mscreen__split .mscreen__side {

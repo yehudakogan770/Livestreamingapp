@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, type RefObject } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { TextSize } from '../engine/types/TextSize';
 import { FLASH_MS, countdownFinished, countdownRemaining, fadeAmount, formatCountdown } from '../engine/timing';
@@ -5,6 +6,39 @@ import { useNow } from '../engine/useNow';
 import './MonitorScreen.css';
 
 const SIZE: Record<TextSize, number> = { s: 0.55, m: 0.75, l: 1, xl: 1.3 };
+
+/**
+ * Shrinks the text inside `box` until it fits without overflowing. The size
+ * chosen by the operator is the largest it may be; long messages get smaller
+ * instead of running into the clock.
+ */
+function useFitText(box: RefObject<HTMLDivElement | null>, text: HTMLDivElement | null, key: string) {
+  useLayoutEffect(() => {
+    const b = box.current;
+    if (!b || !text) return;
+    const fit = () => {
+      text.style.fontSize = '';
+      const max = parseFloat(getComputedStyle(text).fontSize) || 16;
+      // Leave a little room at the edges so text never touches the dividers.
+      const fits = () => text.scrollHeight <= b.clientHeight * 0.92 && text.scrollWidth <= b.clientWidth + 1;
+      if (fits() || b.clientHeight === 0) return;
+      let lo = 6;
+      let hi = max;
+      for (let i = 0; i < 14 && hi - lo > 0.5; i++) {
+        const mid = (lo + hi) / 2;
+        text.style.fontSize = `${mid}px`;
+        if (fits()) lo = mid;
+        else hi = mid;
+      }
+      text.style.fontSize = `${lo}px`;
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(fit);
+    ro.observe(b);
+    return () => ro.disconnect();
+  }, [box, text, key]);
+}
 
 /** The stage monitor: large, readable text for the people on stage. */
 export function MonitorScreen({ show }: { show: Show }) {
@@ -28,6 +62,9 @@ export function MonitorScreen({ show }: { show: Show }) {
   const timerText = done && c.atZero.type === 'showText' ? c.endText : formatCountdown(left, c.format === 'auto' ? 'minSec' : c.format);
 
   const message = m.messageOn && m.message ? m.message : null;
+  const msgBox = useRef<HTMLDivElement>(null);
+  const msgText = useRef<HTMLDivElement | null>(null);
+  useFitText(msgBox, msgText.current, `${message}|${m.textSize}|${m.layout}|${m.showClock}|${m.showTimer}`);
   const dark = Math.max(fadeAmount(sc.blank, sc.blankChangedAt, now), fadeAmount(show.panic, show.panicChangedAt, now) * 0.6);
   const flash = now - sc.flashAt < FLASH_MS && Math.floor((now - sc.flashAt) / 300) % 2 === 0;
 
@@ -47,8 +84,10 @@ export function MonitorScreen({ show }: { show: Show }) {
     </div>
   );
   const msg = (
-    <div className="mscreen__message" style={{ ['--size' as string]: SIZE[m.textSize] }}>
-      {message ?? ''}
+    <div ref={msgBox} className="mscreen__msgbox">
+      <div ref={msgText} className="mscreen__message" style={{ ['--size' as string]: SIZE[m.textSize] }}>
+        {message ?? ''}
+      </div>
     </div>
   );
 
