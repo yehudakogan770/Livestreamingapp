@@ -389,3 +389,41 @@ describe('Recording and streaming', () => {
     expect(screen.getByText('The Live Screen goes out to YouTube.')).toBeInTheDocument();
   });
 });
+
+describe('12 Pesukim', () => {
+  it('pastes the pesukim, then Space and the clicker keys move word by word; B hides only the words', async () => {
+    await start();
+    fireEvent.click(screen.getAllByRole('button', { name: /Add input/ })[0]!);
+    const add = screen.getByRole('dialog', { name: 'Add input' });
+    fireEvent.click(within(add).getByRole('button', { name: /^12 Pesukim/ }));
+    await act(async () => {
+      fireEvent.click(within(add).getByRole('button', { name: 'Add input' }));
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Type or paste the 12 pesukim' }));
+    const ed = screen.getByRole('dialog', { name: '12 Pesukim' });
+    fireEvent.click(within(ed).getByRole('button', { name: 'Paste all 12…' }));
+    fireEvent.change(within(ed).getByLabelText('Paste the pesukim'), { target: { value: 'Mendel: תּוֹרָה צִוָּה לָנוּ\nשְׁמַע יִשְׂרָאֵל' } });
+    fireEvent.click(within(ed).getByRole('button', { name: 'Use these' }));
+    expect(within(ed).getByLabelText('Child for pasuk 1')).toHaveValue('Mendel');
+    await act(async () => {
+      fireEvent.click(within(ed).getByRole('button', { name: 'Done' }));
+    });
+    const now = () => screen.getByTestId('pesukim-now').textContent;
+    expect(now()).toBe('תּוֹרָה');
+    await act(async () => {
+      fireEvent.keyDown(window, { key: ' ' });
+      fireEvent.keyDown(window, { key: 'PageDown' });
+    });
+    expect(now()).toBe('לָנוּ');
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'ArrowRight' });
+    });
+    expect(screen.getByText(/Pasuk 2 of 12/)).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'b' });
+    });
+    expect(now()).toBe('words hidden');
+    // B hid the words, not the whole screen.
+    expect(screen.getByRole('button', { name: 'Live' })).toHaveAttribute('aria-pressed', 'false');
+  });
+});

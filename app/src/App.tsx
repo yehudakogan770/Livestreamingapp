@@ -10,6 +10,7 @@ import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
 import { EventSetup } from './views/EventSetup';
 import { RemoteDialog } from './views/RemoteDialog';
+import { defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { BroadcastDialog } from './broadcast/BroadcastDialog';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
@@ -130,8 +131,25 @@ function ControlApp() {
       null,
       ...TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) })),
     ];
-    return { Event: event, Settings: settings };
-  }, [files, open, saveAs, textSize, remote, openBroadcast]);
+    // 12 Pesukim: line one up in Next (making one if there is none); the card has the rest.
+    const screen = controlling === 'monitor' ? 'live' : controlling;
+    const pesukim = show?.sources.filter((x) => x.kind.type === 'pesukim') ?? [];
+    const putInNext = (id: string) => void client.dispatch({ type: 'setPreview', screen, sourceId: id }).catch(fail);
+    const pesukimMenu: MenuItem[] = pesukim.length
+      ? pesukim.map((x) => ({ label: `Put “${x.name}” in Next`, onClick: () => putInNext(x.id) }))
+      : [
+          {
+            label: 'Add 12 Pesukim and put it in Next',
+            onClick: () => {
+              const id = `pesukim-${Date.now().toString(36)}`;
+              void client
+                .dispatch({ type: 'addSource', source: { id, name: '12 Pesukim', kind: { type: 'pesukim', ...defaultPesukim() } } })
+                .then(() => putInNext(id), fail);
+            },
+          },
+        ];
+    return { Event: event, Settings: settings, '12 Pesukim': pesukimMenu };
+  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, controlling, client, fail]);
 
   return (
     <div className="app">

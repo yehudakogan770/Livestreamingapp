@@ -95,4 +95,7 @@ they opened.
    Per-device permissions come later.)
 10. Remaining screens from `design/` (stage visuals, pesukim, slideshow, credits,
     overlays, green screen, 3D logo, split screen, browser source).
+    12 Pesukim: **done** (a `pesukim` input: `crates/engine/src/pesukim.rs`,
+    `app/src/engine/pesukim.ts`, `PesukimView`, `PesukimCard`, `PesukimEditor`;
+    Hebrew fonts bundled with @fontsource so they work offline).
 11. Installer, auto-update, rehearsal / soak testing, release.

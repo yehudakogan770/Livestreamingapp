@@ -9,8 +9,8 @@ import './PesukimCard.css';
 
 /** Typing in a field, or a dialog open: keys belong there. */
 function keysElsewhere(e: KeyboardEvent): boolean {
-  const t = e.target as HTMLElement | null;
-  return !!t?.closest('input, textarea, select, [contenteditable="true"]') || !!document.querySelector('.modal');
+  const t = e.target;
+  return (t instanceof Element && !!t.closest('input, textarea, select, [contenteditable="true"]')) || !!document.querySelector('.modal');
 }
 
 /**
@@ -120,16 +120,21 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
             >
               Hide words <kbd>B</kbd>
             </button>
-            <select aria-label="Go to pasuk" value={pasuk} onChange={(e) => act({ type: 'pesukimGo', id, pasuk: Number(e.target.value), word: 0 })}>
-              {data.pesukim.map((p, i) => (
-                <option key={i} value={i}>
-                  Pasuk {i + 1}
-                  {p.child ? ` · ${p.child}` : ''}
-                  {p.text.trim() ? '' : ' (empty)'}
-                </option>
-              ))}
-            </select>
           </div>
+          <select
+            className="pk__goto"
+            aria-label="Go to pasuk"
+            value={pasuk}
+            onChange={(e) => act({ type: 'pesukimGo', id, pasuk: Number(e.target.value), word: 0 })}
+          >
+            {data.pesukim.map((p, i) => (
+              <option key={i} value={i}>
+                Pasuk {i + 1}
+                {p.child ? ` · ${p.child}` : ''}
+                {p.text.trim() ? '' : ' (empty)'}
+              </option>
+            ))}
+          </select>
           {words.length > 0 && (
             <div className="pk__strip" dir="rtl" aria-label="Words: click to jump">
               {words.map((w, i) => (
@@ -139,6 +144,7 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
                   className={i === word ? 'is-now' : i < word ? 'is-said' : ''}
                   style={{ fontFamily: font }}
                   onClick={() => act({ type: 'pesukimGo', id, pasuk, word: i })}
+                  ref={i === word ? (el) => el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }) : undefined}
                 >
                   {w}
                 </button>
