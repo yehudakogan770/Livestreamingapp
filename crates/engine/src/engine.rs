@@ -572,7 +572,18 @@ fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()
     });
     sc.tbar = 0.0;
     start_if_video(s, &incoming, now);
+    start_if_countdown(s, &incoming, now);
     Ok(())
+}
+
+/// A countdown waits in Next and starts counting when it goes on air.
+fn start_if_countdown(s: &mut Show, id: &SourceId, now: Millis) {
+    let is_countdown = s
+        .source(id)
+        .is_some_and(|src| matches!(src.kind, SourceKind::Countdown { .. }));
+    if is_countdown && !s.countdown.running() {
+        s.countdown.start(now);
+    }
 }
 
 fn start_if_video(s: &mut Show, id: &SourceId, now: Millis) {

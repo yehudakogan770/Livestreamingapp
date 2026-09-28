@@ -153,11 +153,13 @@ describe('Stage monitor and countdown', () => {
     });
     expect(next()).toBe('Countdown');
     expect(onAir()).toBe('nothing');
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument(); // waiting in Next
     expect(document.querySelector('.mon--pvw [data-countdown]')?.textContent).toMatch(/Starting soon/i);
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: /^TAKE/ }));
     });
     expect(onAir()).toBe('Countdown');
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument(); // counting once on air
   });
 
   it('countdown settings change nothing until Done', async () => {

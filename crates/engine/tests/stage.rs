@@ -369,3 +369,88 @@ fn the_event_remembers_its_name_logo_and_emergency_plan() {
     assert_eq!(loaded.event.panic_shows, SafeScreen::Logo);
     assert!(loaded.event.set_up);
 }
+
+fn add_countdown(e: &mut Engine) {
+    apply(
+        e,
+        Action::AddSource {
+            source: NewSource {
+                id: Some(SourceId::new("cd")),
+                name: "Countdown".into(),
+                kind: SourceKind::Countdown {
+                    background: "#000000".into(),
+                    logo: None,
+                },
+                volume: None,
+                muted: None,
+                looping: None,
+                fit: None,
+                audio: None,
+            },
+        },
+        0,
+    );
+}
+
+#[test]
+fn a_countdown_waits_in_next_and_starts_when_taken_to_air() {
+    let mut e = engine();
+    add_countdown(&mut e);
+    apply(
+        &mut e,
+        Action::SetPreview {
+            screen: ScreenId::Live,
+            source_id: Some(SourceId::new("cd")),
+        },
+        1_000,
+    );
+    assert!(
+        !e.show().countdown.running(),
+        "lined up in Next: still waiting"
+    );
+    assert_eq!(left(&e, 60_000), 5 * MIN);
+    apply(
+        &mut e,
+        Action::Take {
+            screen: ScreenId::Live,
+            transition: None,
+            duration_ms: None,
+        },
+        60_000,
+    );
+    assert!(e.show().countdown.running(), "on air: counting");
+    assert_eq!(left(&e, 70_000), 5 * MIN - 10_000);
+}
+
+#[test]
+fn the_t_bar_and_cut_start_it_too_but_never_restart_a_running_one() {
+    let mut e = engine();
+    add_countdown(&mut e);
+    apply(
+        &mut e,
+        Action::CutTo {
+            screen: ScreenId::Back,
+            source_id: SourceId::new("cd"),
+        },
+        0,
+    );
+    assert!(e.show().countdown.running());
+    // Taking it to the Live Screen as well keeps the same count going.
+    apply(
+        &mut e,
+        Action::SetPreview {
+            screen: ScreenId::Live,
+            source_id: Some(SourceId::new("cd")),
+        },
+        30_000,
+    );
+    apply(
+        &mut e,
+        Action::SetTbar {
+            screen: ScreenId::Live,
+            value: 1.0,
+        },
+        30_000,
+    );
+    assert_eq!(left(&e, 30_000), 5 * MIN - 30_000);
+}

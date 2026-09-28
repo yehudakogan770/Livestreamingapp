@@ -88,6 +88,12 @@ function take(s: Show, screen: ScreenId, kind: Show['transition']['kind'], durat
   sc.transition = { kind, durationMs, startedAt: now };
   sc.tbar = 0;
   startIfVideo(s, incoming, now);
+  // A countdown waits in Next and starts counting when it goes on air.
+  if (s.sources.find((x) => x.id === incoming)?.kind.type === 'countdown' && s.countdown.endsAt === null) {
+    if (s.countdown.remainingMs === 0) s.countdown.remainingMs = s.countdown.lengthMs;
+    s.countdown.endsAt = now + s.countdown.remainingMs;
+    s.countdown.fired = false;
+  }
 }
 
 function sameScreen(a: ScreenState, b: ScreenState) {
