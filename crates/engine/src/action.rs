@@ -7,6 +7,7 @@ use ts_rs::TS;
 use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
 use crate::event::EventPatch;
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
+use crate::pesukim::{Pasuk, PesukimLook};
 use crate::presets::{Preset, Step};
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 
@@ -334,6 +335,42 @@ pub enum Action {
         id: SourceId,
         #[ts(type = "number")]
         at: Millis,
+    },
+
+    // ----- 12 Pesukim -----
+    /// Next word (after the last word, the next pasuk).
+    PesukimNext {
+        id: SourceId,
+    },
+    /// Back a word.
+    PesukimBack {
+        id: SourceId,
+    },
+    /// Jump to a word (0-based pasuk and word).
+    PesukimGo {
+        id: SourceId,
+        pasuk: usize,
+        word: usize,
+    },
+    /// Show the whole pasuk (until the next word).
+    PesukimWhole {
+        id: SourceId,
+        value: bool,
+    },
+    /// Hide the words; the background stays.
+    PesukimBlank {
+        id: SourceId,
+        value: bool,
+    },
+    /// Change the words or the look (left out: unchanged).
+    UpdatePesukim {
+        id: SourceId,
+        #[serde(default)]
+        #[ts(optional)]
+        pesukim: Option<Vec<Pasuk>>,
+        #[serde(default)]
+        #[ts(optional)]
+        look: Option<PesukimLook>,
     },
 }
 

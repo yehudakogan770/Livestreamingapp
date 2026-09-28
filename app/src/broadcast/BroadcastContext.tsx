@@ -1,24 +1,9 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
-import {
-  defaultCaptureSettings,
-  type CaptureKind,
-  type CaptureSettings,
-  type CaptureStatus,
-  type EngineClient,
-} from "../engine/client";
-import type { Show } from "../engine/types/Show";
-import { useSound } from "../audio/SoundContext";
-import { useReportProblem } from "../problems/problems";
-import { Broadcaster } from "./recorder";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { defaultCaptureSettings, type CaptureKind, type CaptureSettings, type CaptureStatus, type EngineClient } from '../engine/client';
+import type { Show } from '../engine/types/Show';
+import { useSound } from '../audio/SoundContext';
+import { useReportProblem } from '../problems/problems';
+import { Broadcaster } from './recorder';
 
 /** Waits between attempts to bring a dropped stream back (then every 30 s). */
 const RETRY_MS = [2000, 4000, 8000, 15000, 30000];
@@ -53,35 +38,21 @@ const EMPTY: CaptureStatus = {
 /** A file name for a recording: the event and when it started. */
 function recordingName(show: Show): string {
   const d = new Date();
-  const p = (n: number) => String(n).padStart(2, "0");
-  return `${show.event.name.trim() || "Lumora"} ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}.${p(d.getMinutes())}`;
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${show.event.name.trim() || 'Lumora'} ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}.${p(d.getMinutes())}`;
 }
 
 /** Records and streams the Live Screen for the control window. */
-export function BroadcastProvider({
-  show,
-  client,
-  children,
-}: {
-  show: Show;
-  client: EngineClient;
-  children: ReactNode;
-}) {
+export function BroadcastProvider({ show, client, children }: { show: Show; client: EngineClient; children: ReactNode }) {
   const sound = useSound();
-  const broadcaster = useMemo(
-    () =>
-      typeof document === "undefined" ? null : new Broadcaster(client, sound),
-    [client, sound],
-  );
+  const broadcaster = useMemo(() => (typeof document === 'undefined' ? null : new Broadcaster(client, sound)), [client, sound]);
   useEffect(() => () => broadcaster?.dispose(), [broadcaster]);
   useEffect(() => broadcaster?.setShow(show), [broadcaster, show]);
   const showRef = useRef(show);
   showRef.current = show;
 
   const [status, setStatus] = useState<CaptureStatus>(EMPTY);
-  const [settings, setSettings] = useState<CaptureSettings>(
-    defaultCaptureSettings,
-  );
+  const [settings, setSettings] = useState<CaptureSettings>(defaultCaptureSettings);
   const [busy, setBusy] = useState<Record<CaptureKind, boolean>>({
     record: false,
     stream: false,
@@ -112,18 +83,13 @@ export function BroadcastProvider({
   useEffect(() => {
     if (checkedOrphans.current || !broadcaster || status === EMPTY) return;
     checkedOrphans.current = true;
-    for (const r of [status.recording, status.streaming])
-      if (r) void client.captureStop(r.session);
+    for (const r of [status.recording, status.streaming]) if (r) void client.captureStop(r.session);
   }, [status, broadcaster, client]);
 
   const launch = useCallback(
     async (kind: CaptureKind) => {
-      if (!broadcaster) throw new Error("Recording is not available here.");
-      await broadcaster.start(
-        kind,
-        settingsRef.current,
-        recordingName(showRef.current),
-      );
+      if (!broadcaster) throw new Error('Recording is not available here.');
+      await broadcaster.start(kind, settingsRef.current, recordingName(showRef.current));
     },
     [broadcaster],
   );
@@ -152,7 +118,7 @@ export function BroadcastProvider({
   const stop = useCallback(
     async (kind: CaptureKind) => {
       wanted.current[kind] = false;
-      if (kind === "stream") setReconnecting(null);
+      if (kind === 'stream') setReconnecting(null);
       setBusy((b) => ({ ...b, [kind]: true }));
       try {
         await broadcaster?.stop(kind);
@@ -176,11 +142,11 @@ export function BroadcastProvider({
     if (!wanted.current[kind]) return;
     const n = attempts.current[kind]++;
     // A recording is restarted once (into a new file); a stream keeps trying.
-    if (kind === "record" && n >= 1) {
+    if (kind === 'record' && n >= 1) {
       wanted.current.record = false;
       return;
     }
-    if (kind === "stream") setReconnecting({ attempt: n + 1, message });
+    if (kind === 'stream') setReconnecting({ attempt: n + 1, message });
     const id = setTimeout(
       () => {
         if (!wanted.current[kind]) return;
@@ -203,26 +169,23 @@ export function BroadcastProvider({
   useReportProblem(
     reconnecting
       ? {
-          key: "stream",
-          level: "error",
+          key: 'stream',
+          level: 'error',
           title: `The stream dropped — reconnecting (attempt ${reconnecting.attempt})`,
           detail: reconnecting.message,
-          fix: "Lumora keeps trying by itself. Check the internet connection; press LIVE to stop trying.",
+          fix: 'Lumora keeps trying by itself. Check the internet connection; press LIVE to stop trying.',
         }
       : null,
   );
-  const recordFailed =
-    failure?.kind === "record" && !status.recording && !wanted.current.record
-      ? failure
-      : null;
+  const recordFailed = failure?.kind === 'record' && !status.recording && !wanted.current.record ? failure : null;
   useReportProblem(
     recordFailed
       ? {
-          key: "recording",
-          level: "error",
-          title: "The recording stopped",
+          key: 'recording',
+          level: 'error',
+          title: 'The recording stopped',
           detail: recordFailed.message,
-          fix: "Check there is space on the disk, then press REC to record again.",
+          fix: 'Check there is space on the disk, then press REC to record again.',
         }
       : null,
   );
@@ -230,11 +193,11 @@ export function BroadcastProvider({
   useReportProblem(
     slow
       ? {
-          key: "stream:slow",
-          level: "warning",
-          title: "The internet is too slow for this stream",
+          key: 'stream:slow',
+          level: 'warning',
+          title: 'The internet is too slow for this stream',
           detail: `The stream is only getting ${Math.round((status.streaming?.speed ?? 0) * 100)}% of the speed it needs, so viewers may see it stop and start.`,
-          fix: "Use a wired connection, or choose a lower quality in Settings → Recording and streaming (for the next stream).",
+          fix: 'Use a wired connection, or choose a lower quality in Settings → Recording and streaming (for the next stream).',
         }
       : null,
   );
@@ -248,11 +211,8 @@ export function BroadcastProvider({
     startError
       ? {
           key: `capture-start:${startError.kind}`,
-          level: "error",
-          title:
-            startError.kind === "record"
-              ? "Recording could not start"
-              : "The stream could not start",
+          level: 'error',
+          title: startError.kind === 'record' ? 'Recording could not start' : 'The stream could not start',
           detail: startError.message,
         }
       : null,

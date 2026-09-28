@@ -3,6 +3,7 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
 import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
 import type { ScreenId } from './types/ScreenId';
@@ -62,6 +63,12 @@ function finite(v: number, field: string): number {
 
 function notMonitor(screen: ScreenId) {
   if (screen === 'monitor') throw new Refused({ code: 'monitorIsTextOnly' });
+}
+
+function pesukimIn(s: Show, id: string): PesukimData {
+  const src = find(s, id);
+  if (src.kind.type !== 'pesukim') throw new Refused({ code: 'invalidValue', field: 'pesukim', reason: 'that input is not a 12 Pesukim input' });
+  return src.kind;
 }
 
 function find(s: Show, id: string): Source {
@@ -143,7 +150,13 @@ function apply(s: Show, a: Action, now: number) {
     case 'addSource': {
       const id = a.source.id ?? nextId(s);
       if (s.sources.some((x) => x.id === id)) throw new Refused({ code: 'duplicateSource', id });
-      const kind = a.source.kind.type === 'video' ? { ...a.source.kind, playback: { playing: false, posS: 0, at: 0 } } : a.source.kind;
+      const kind =
+        a.source.kind.type === 'video'
+          ? { ...a.source.kind, playback: { playing: false, posS: 0, at: 0 } }
+          : a.source.kind.type === 'pesukim'
+            ? { ...structuredClone(a.source.kind), look: { ...a.source.kind.look, behind: null }, place: { pasuk: 0, word: 0, whole: false, blank: false, changedAt: 0 } }
+            : a.source.kind;
+      if (kind.type === 'pesukim') repairPesukim(kind);
       s.sources.push({
         id,
         name: a.source.name.trim() || 'Untitled',
@@ -194,6 +207,7 @@ function apply(s: Show, a: Action, now: number) {
       for (const p of s.presets) p.sources = p.sources.filter((x) => x !== a.id);
       for (const src of s.sources) {
         if (src.kind.type === 'countdown' && src.kind.timer.atZero.type === 'cutTo' && src.kind.timer.atZero.sourceId === a.id) src.kind.timer.atZero = { type: 'hide' };
+        if (src.kind.type === 'pesukim' && src.kind.look.behind === a.id) src.kind.look.behind = null;
       }
       for (const sc of Object.values(s.screens)) {
         if (sc.preview === a.id) sc.preview = null;
@@ -437,6 +451,44 @@ function apply(s: Show, a: Action, now: number) {
     case 'setCountdownRemaining':
       setRemaining(timer(s, a.id), a.ms, now);
       return;
+    case 'pesukimNext':
+      nextWord(pesukimIn(s, a.id), now);
+      return;
+    case 'pesukimBack':
+      backWord(pesukimIn(s, a.id), now);
+      return;
+    case 'pesukimGo':
+      goTo(pesukimIn(s, a.id), a.pasuk, a.word, now);
+      return;
+    case 'pesukimWhole': {
+      const pl = pesukimIn(s, a.id).place;
+      pl.whole = a.value;
+      if (a.value) pl.blank = false;
+      pl.changedAt = now;
+      return;
+    }
+    case 'pesukimBlank': {
+      const pl = pesukimIn(s, a.id).place;
+      pl.blank = a.value;
+      pl.changedAt = now;
+      return;
+    }
+    case 'updatePesukim': {
+      const p = pesukimIn(s, a.id);
+      if (a.look) {
+        const b = a.look.behind;
+        if (b !== null) {
+          const src = s.sources.find((x) => x.id === b);
+          if (!src) throw new Refused({ code: 'unknownSource', id: b });
+          if (b === a.id || !['camera', 'video', 'image', 'color', 'pattern'].includes(src.kind.type))
+            throw new Refused({ code: 'invalidValue', field: 'behind', reason: 'only a camera, video, picture, colour or test pattern can go behind the words' });
+        }
+        p.look = structuredClone(a.look);
+      }
+      if (a.pesukim) p.pesukim = structuredClone(a.pesukim);
+      repairPesukim(p);
+      return;
+    }
     case 'countdownTo': {
       if (a.at <= now) throw new Refused({ code: 'invalidValue', field: 'at', reason: 'that time has already passed' });
       const left = countdownMs(a.at - now, 'at');
@@ -558,11 +610,15 @@ function runSteps(s: Show, now: number) {
 export function demoTick(show: Show, now: number): Show | null {
   const due = show.sources.filter((x) => x.kind.type === 'countdown' && !x.kind.timer.fired && countdownDue(x.kind.timer, now)).map((x) => x.id);
   const stepsDue = show.running.some((r) => r.resumeAt <= now);
-  if (due.length === 0 && !stepsDue) return null;
+  // Pesukim on auto-advance move on by themselves, only while on air.
+  const onAir = [show.screens.live.program, show.screens.back.program];
+  const wordsDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'pesukim' && wordDue(x.kind, now)).map((x) => x.id);
+  if (due.length === 0 && !stepsDue && wordsDue.length === 0) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
   for (const id of due) atZero(next, id, now);
   if (stepsDue) runSteps(next, now);
+  for (const id of wordsDue) nextWord(pesukimIn(next, id), now);
   followLive(next, liveBefore, show.backFollowsLive, now);
   return next;
 }

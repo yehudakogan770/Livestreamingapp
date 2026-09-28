@@ -8,6 +8,8 @@ import { PreviewView, ProgramView } from '../components/ScreenView';
 import { SCREENS } from '../components/ScreenSelector';
 import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard } from './CountdownCard';
+import { PesukimCard } from './PesukimCard';
+import { pesukimTarget } from '../engine/pesukim';
 import { Mixer } from './Mixer';
 import { PresetsPanel } from './PresetsPanel';
 import { PresetButtons } from './PresetButtons';
@@ -134,7 +136,11 @@ export function ControlView({
             </div>
             <div className="centre">
               <SwitchPanel show={show} screen={screen} act={act} />
-              <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
+              {pesukimTarget(show, screen) ? (
+                <PesukimCard show={show} act={act} screen={screen} client={client} />
+              ) : (
+                <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
+              )}
             </div>
             <div className="mon mon--pgm">
               <div className="mon__head">

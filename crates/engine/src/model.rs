@@ -192,6 +192,8 @@ pub enum SourceKind {
         #[serde(default)]
         timer: Countdown,
     },
+    /// The 12 Pesukim, one word at a time.
+    Pesukim(Box<crate::pesukim::Pesukim>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,
@@ -387,6 +389,14 @@ impl Show {
     pub fn countdown(&self, id: &SourceId) -> Option<&Countdown> {
         match self.source(id).map(|s| &s.kind) {
             Some(SourceKind::Countdown { timer, .. }) => Some(timer),
+            _ => None,
+        }
+    }
+
+    /// A Pesukim input's words and place.
+    pub fn pesukim(&self, id: &SourceId) -> Option<&crate::pesukim::Pesukim> {
+        match self.source(id).map(|s| &s.kind) {
+            Some(SourceKind::Pesukim(p)) => Some(p),
             _ => None,
         }
     }

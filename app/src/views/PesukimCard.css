@@ -1,0 +1,243 @@
+/* ---- the live card ---- */
+.pk {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.pk__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.pk__where {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pk__where em {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+.pk__edit {
+  height: 26px;
+  padding: 0 10px;
+}
+.pk__empty {
+  height: 48px;
+}
+.pk__now {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--well);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  color: #fff;
+  overflow-wrap: anywhere;
+}
+.pk__off {
+  font: 400 13px var(--font);
+  color: var(--text-faint);
+}
+.pk__next {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.pk__next span {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.pk__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 4px;
+}
+.pk__row .btn,
+.pk__row select {
+  height: 30px;
+  font-size: 12px;
+  padding: 0 6px;
+  justify-content: center;
+}
+.pk__row--main {
+  grid-template-columns: 1fr 2.4fr;
+}
+.pk__row--main .btn {
+  height: 44px;
+  font-size: 14px;
+}
+.pk__go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pk kbd {
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font: 10px var(--mono);
+  opacity: 0.8;
+}
+.pk__strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  max-height: 84px;
+  overflow: auto;
+}
+.pk__strip button {
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--button);
+  color: var(--text-dim);
+  font-size: 15px;
+  font-weight: 700;
+}
+.pk__strip .is-said {
+  color: var(--text);
+}
+.pk__strip .is-now {
+  border-color: var(--accent);
+  background: #1d3b40;
+  color: #fff;
+}
+
+/* ---- the editor ---- */
+.pked {
+  width: min(1180px, calc(100vw - 48px));
+  height: min(820px, calc(100vh - 48px));
+}
+.pked__body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+}
+.pked__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+}
+.pked__listhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pked__paste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+}
+.pked__paste textarea,
+.pked__text {
+  height: auto;
+  padding: 6px 8px;
+  resize: vertical;
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.pked__pasuk {
+  display: grid;
+  grid-template-columns: 24px 150px minmax(0, 1fr) 24px;
+  gap: 6px;
+  align-items: start;
+  padding: 4px;
+  border-radius: 6px;
+}
+.pked__pasuk.is-on {
+  background: var(--selected);
+}
+.pked__n {
+  padding-top: 8px;
+  font: 700 12px var(--mono);
+  color: var(--text-faint);
+}
+.pked__count {
+  padding-top: 8px;
+  font: 11px var(--mono);
+  color: var(--text-faint);
+  text-align: right;
+}
+.pked__look {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  overflow: auto;
+}
+.pked__preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+.seg-group {
+  display: flex;
+  gap: 4px;
+}
+.seg-group .seg {
+  flex: 1;
+}
+.pked__swatches {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.pked__swatch {
+  flex: 1;
+  height: 36px;
+  border-radius: 6px;
+  border: 2px solid var(--border);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.pked__swatch--text {
+  background: #101216;
+}
+.pked__swatch.is-on {
+  border-color: var(--accent);
+}
+.pked__swatches input[type='color'] {
+  width: 40px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+}
+.pked__secs {
+  width: 64px;
+  height: 26px;
+}
+.pked__look input[type='range'] {
+  accent-color: var(--accent);
+}

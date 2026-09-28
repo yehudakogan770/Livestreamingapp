@@ -6,6 +6,7 @@ use crate::model::{
     ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
     Transition, TransitionKind, MIN_TRANSITION_MS,
 };
+use crate::pesukim::{Pesukim, PesukimLook};
 use crate::presets::{
     Preset, PresetButton, RunningSteps, Step, MAX_PRESET_NAME_LEN, MAX_STEPS, MAX_WAIT_MS,
 };
@@ -94,7 +95,18 @@ impl Engine {
             .map(|src| src.id.clone())
             .collect();
         let steps_due = self.show.running.iter().any(|r| r.resume_at <= now);
-        if due.is_empty() && !steps_due {
+        // Pesukim on auto-advance move on by themselves, only while on air.
+        let on_air =
+            [ScreenId::Live, ScreenId::Back].map(|sc| self.show.screens.get(sc).program.clone());
+        let words_due: Vec<SourceId> = self
+            .show
+            .sources
+            .iter()
+            .filter(|src| on_air.contains(&Some(src.id.clone())))
+            .filter(|src| matches!(&src.kind, SourceKind::Pesukim(p) if p.due(now)))
+            .map(|src| src.id.clone())
+            .collect();
+        if due.is_empty() && !steps_due && words_due.is_empty() {
             return Outcome::Unchanged;
         }
         let mut next = self.show.clone();
@@ -105,6 +117,11 @@ impl Engine {
         }
         if steps_due {
             run_steps(&mut next, now);
+        }
+        for id in &words_due {
+            if let Ok(p) = pesukim_mut(&mut next, id) {
+                p.next(now);
+            }
         }
         follow_live(&mut next, &live_before, was_following, now);
         if next == self.show {
@@ -171,6 +188,100 @@ fn timer_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::stage:
 }
 
 // One arm per action keeps every rule of the show in a single, readable place.
+fn pesukim_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Pesukim> {
+    let src = s
+        .sources
+        .iter_mut()
+        .find(|x| &x.id == id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Pesukim(p) => Ok(p),
+        _ => Err(ActionError::invalid(
+            "pesukim",
+            "that input is not a 12 Pesukim input",
+        )),
+    }
+}
+
+/// Colours must be colours; what is behind the words must be a picture that
+/// exists (not another text input, so nothing can draw itself forever).
+fn check_look(s: &Show, id: &SourceId, look: &PesukimLook) -> Result<()> {
+    clean_color(&look.background)?;
+    clean_color(&look.text_color)?;
+    if let Some(behind) = &look.behind {
+        let src = s
+            .source(behind)
+            .ok_or_else(|| ActionError::UnknownSource { id: behind.clone() })?;
+        if behind == id || !can_be_behind(&src.kind) {
+            return Err(ActionError::invalid(
+                "behind",
+                "only a camera, video, picture, colour or test pattern can go behind the words",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// Can go behind the pesukim.
+pub(crate) fn can_be_behind(kind: &SourceKind) -> bool {
+    matches!(
+        kind,
+        SourceKind::Camera { .. }
+            | SourceKind::Video { .. }
+            | SourceKind::Image { .. }
+            | SourceKind::Color { .. }
+            | SourceKind::Pattern
+    )
+}
+
+/// The 12 Pesukim actions.
+fn apply_pesukim(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    match action {
+        Action::PesukimNext { id } => {
+            pesukim_mut(s, &id)?.next(now);
+            Ok(())
+        }
+        Action::PesukimBack { id } => {
+            pesukim_mut(s, &id)?.back(now);
+            Ok(())
+        }
+        Action::PesukimGo { id, pasuk, word } => {
+            pesukim_mut(s, &id)?.go(pasuk, word, now);
+            Ok(())
+        }
+        Action::PesukimWhole { id, value } => {
+            let p = pesukim_mut(s, &id)?;
+            p.place.whole = value;
+            if value {
+                p.place.blank = false;
+            }
+            p.place.changed_at = now;
+            Ok(())
+        }
+        Action::PesukimBlank { id, value } => {
+            let p = pesukim_mut(s, &id)?;
+            p.place.blank = value;
+            p.place.changed_at = now;
+            Ok(())
+        }
+        Action::UpdatePesukim { id, pesukim, look } => {
+            if let Some(look) = &look {
+                check_look(s, &id, look)?;
+            }
+            let p = pesukim_mut(s, &id)?;
+            if let Some(list) = pesukim {
+                p.pesukim = list;
+            }
+            if let Some(look) = look {
+                p.look = look;
+            }
+            p.repair();
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
 #[allow(clippy::too_many_lines)]
 fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     // Switching the Back Screen by hand means the operator wants it back:
@@ -203,10 +314,17 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 s.audio.solo = None;
             }
             for src in &mut s.sources {
-                if let SourceKind::Countdown { timer, .. } = &mut src.kind {
-                    if matches!(&timer.at_zero, AtZero::CutTo { source_id } if *source_id == id) {
-                        timer.at_zero = AtZero::Hide;
+                match &mut src.kind {
+                    SourceKind::Countdown { timer, .. } => {
+                        if matches!(&timer.at_zero, AtZero::CutTo { source_id } if *source_id == id)
+                        {
+                            timer.at_zero = AtZero::Hide;
+                        }
                     }
+                    SourceKind::Pesukim(p) if p.look.behind.as_ref() == Some(&id) => {
+                        p.look.behind = None;
+                    }
+                    _ => {}
                 }
             }
             for id_screen in ScreenId::ALL {
@@ -538,6 +656,12 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             timer_mut(s, &id)?.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
             Ok(())
         }
+        a @ (Action::PesukimNext { .. }
+        | Action::PesukimBack { .. }
+        | Action::PesukimGo { .. }
+        | Action::PesukimWhole { .. }
+        | Action::PesukimBlank { .. }
+        | Action::UpdatePesukim { .. }) => apply_pesukim(s, a, now),
         Action::CountdownTo { id, at } => {
             if at <= now {
                 return Err(ActionError::invalid("at", "that time has already passed"));
@@ -1046,6 +1170,15 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
+        SourceKind::Pesukim(mut p) => {
+            clean_color(&p.look.background)?;
+            clean_color(&p.look.text_color)?;
+            // Something to go behind is chosen after adding (it must exist).
+            p.look.behind = None;
+            p.place = crate::pesukim::PesukimPlace::default();
+            p.repair();
+            SourceKind::Pesukim(p)
+        }
         SourceKind::Countdown {
             background,
             logo,

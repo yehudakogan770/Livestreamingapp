@@ -27,7 +27,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font:
-    17px/1.35 "Segoe UI",
+    17px/1.35 'Segoe UI',
     system-ui,
     -apple-system,
     sans-serif;
@@ -198,7 +198,7 @@ textarea {
 /* Fills up while held. */
 .panic::after,
 #panic-off::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   transform: scaleX(0);
@@ -436,6 +436,39 @@ main {
 }
 .tile--air {
   border-color: var(--program-bright);
+}
+
+/* ---- 12 pesukim ---- */
+.pes {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.pes__where {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 0.9em;
+}
+.pes__now {
+  margin: 10px 0 4px;
+  text-align: center;
+  font: 700 2.4em 'Frank Ruhl Libre', 'David', serif;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.pes__next {
+  text-align: center;
+  color: var(--text-dim);
+}
+.pes__go {
+  width: 100%;
+  min-height: 84px;
+  margin-top: 12px;
+  font-size: 1.4em;
 }
 
 /* ---- countdown ---- */

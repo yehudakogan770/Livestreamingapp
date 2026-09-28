@@ -6,6 +6,7 @@ import { syncMedia } from '../engine/mediaSync';
 import { useStage } from '../engine/CountdownContext';
 import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
+import { PesukimView } from './PesukimView';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 
 // ---- views ----
@@ -72,6 +73,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
+    case 'pesukim':
+      return <PesukimInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'countdown':
       return <CountdownInput timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':
@@ -92,6 +95,19 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
         />
       );
   }
+}
+
+function PesukimInput({ source, client, thumb, audience }: { source: Source; client: EngineClient; thumb: boolean; audience: boolean }) {
+  const stage = useStage();
+  if (source.kind.type !== 'pesukim') return null;
+  const id = source.kind.look.behind;
+  const behind = id ? stage?.sources?.find((s) => s.id === id) : undefined;
+  return (
+    <PesukimView
+      data={source.kind}
+      behind={behind && behind.kind.type !== 'pesukim' ? <SourceBody source={behind} client={client} thumb={thumb} audience={audience} /> : null}
+    />
+  );
 }
 
 function CountdownInput({ timer, background, logoUrl, client }: { timer: Countdown; background: string; logoUrl: string | null; client: EngineClient }) {

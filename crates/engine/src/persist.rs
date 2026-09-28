@@ -109,10 +109,7 @@ pub fn repair(mut s: Show) -> Show {
             | SourceKind::Countdown {
                 background: color, ..
             } => {
-                let ok = color.len() == 7
-                    && color.starts_with('#')
-                    && color[1..].chars().all(|c| c.is_ascii_hexdigit());
-                if !ok {
+                if !is_color(color) {
                     "#000000".clone_into(color);
                 }
             }
@@ -121,7 +118,35 @@ pub fn repair(mut s: Show) -> Show {
             {
                 *duration_s = 0.0;
             }
+            SourceKind::Pesukim(p) => {
+                p.repair();
+                let defaults = crate::pesukim::PesukimLook::default();
+                if !is_color(&p.look.background) {
+                    p.look.background = defaults.background;
+                }
+                if !is_color(&p.look.text_color) {
+                    p.look.text_color = defaults.text_color;
+                }
+            }
             _ => {}
+        }
+    }
+    // What is behind the pesukim must exist and be a picture.
+    let pictures: HashSet<_> = s
+        .sources
+        .iter()
+        .filter(|x| crate::engine::can_be_behind(&x.kind))
+        .map(|x| x.id.clone())
+        .collect();
+    for src in &mut s.sources {
+        if let SourceKind::Pesukim(p) = &mut src.kind {
+            if p.look
+                .behind
+                .as_ref()
+                .is_some_and(|b| !pictures.contains(b))
+            {
+                p.look.behind = None;
+            }
         }
     }
 
@@ -150,6 +175,11 @@ pub fn repair(mut s: Show) -> Show {
     s.master_volume = s.master_volume.clamp(0.0, 1.0);
     s.version = SHOW_VERSION;
     s
+}
+
+/// `#rrggbb`.
+fn is_color(c: &str) -> bool {
+    c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|c| c.is_ascii_hexdigit())
 }
 
 /// Sound: bounded delays and names; sound-only sources never on a screen.

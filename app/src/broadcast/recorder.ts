@@ -3,35 +3,26 @@
 // and sent, chunk by chunk and in order, to the app, which writes the file or
 // feeds FFmpeg. See src-tauri/src/capture.rs.
 
-import type {
-  CaptureKind,
-  CaptureRunning,
-  CaptureSettings,
-  EngineClient,
-  Quality,
-} from "../engine/client";
-import type { Show } from "../engine/types/Show";
-import type { SoundEngine } from "../audio/soundEngine";
-import { ProgramCompositor } from "./compositor";
+import type { CaptureKind, CaptureRunning, CaptureSettings, EngineClient, Quality } from '../engine/client';
+import type { Show } from '../engine/types/Show';
+import type { SoundEngine } from '../audio/soundEngine';
+import { ProgramCompositor } from './compositor';
 
-export const QUALITIES: Record<
-  Quality,
-  { name: string; width: number; height: number; fps: number }
-> = {
-  "720p": {
-    name: "720p (1280 × 720), 30 frames a second",
+export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number }> = {
+  '720p': {
+    name: '720p (1280 × 720), 30 frames a second',
     width: 1280,
     height: 720,
     fps: 30,
   },
-  "1080p": {
-    name: "1080p (1920 × 1080), 30 frames a second",
+  '1080p': {
+    name: '1080p (1920 × 1080), 30 frames a second',
     width: 1920,
     height: 1080,
     fps: 30,
   },
-  "1080p60": {
-    name: "1080p, 60 frames a second (smoothest, needs a fast computer)",
+  '1080p60': {
+    name: '1080p, 60 frames a second (smoothest, needs a fast computer)',
     width: 1920,
     height: 1080,
     fps: 60,
@@ -39,22 +30,11 @@ export const QUALITIES: Record<
 };
 
 /** H.264 first: it goes to YouTube and into .mp4 files without re-encoding. */
-const TYPES = [
-  "video/x-matroska;codecs=avc1,opus",
-  "video/webm;codecs=h264,opus",
-  "video/webm;codecs=vp9,opus",
-  "video/webm;codecs=vp8,opus",
-  "video/webm",
-];
+const TYPES = ['video/x-matroska;codecs=avc1,opus', 'video/webm;codecs=h264,opus', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
 
 /** The best format this computer can encode, or null if it can't record at all. */
 export function recordingType(): string | null {
-  if (
-    typeof MediaRecorder === "undefined" ||
-    typeof HTMLCanvasElement === "undefined" ||
-    !("captureStream" in HTMLCanvasElement.prototype)
-  )
-    return null;
+  if (typeof MediaRecorder === 'undefined' || typeof HTMLCanvasElement === 'undefined' || !('captureStream' in HTMLCanvasElement.prototype)) return null;
   return TYPES.find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
@@ -93,20 +73,10 @@ export class Broadcaster {
    * Start recording or streaming.
    * @throws Error with a message for the operator if it can't start.
    */
-  async start(
-    kind: CaptureKind,
-    settings: CaptureSettings,
-    name: string,
-  ): Promise<CaptureRunning> {
-    if (this.live.has(kind))
-      throw new Error(
-        kind === "record" ? "Already recording." : "Already streaming.",
-      );
+  async start(kind: CaptureKind, settings: CaptureSettings, name: string): Promise<CaptureRunning> {
+    if (this.live.has(kind)) throw new Error(kind === 'record' ? 'Already recording.' : 'Already streaming.');
     const mime = recordingType();
-    if (!mime)
-      throw new Error(
-        "This computer’s web view can’t record video. Recording and streaming work in the Windows app.",
-      );
+    if (!mime) throw new Error('This computer’s web view can’t record video. Recording and streaming work in the Windows app.');
     const q = QUALITIES[settings.quality];
     if (!this.compositor) {
       this.compositor = new ProgramCompositor(this.client, q.width, q.height);
@@ -123,17 +93,8 @@ export class Broadcaster {
     }
     this.run(Math.max(q.fps, this.fps));
     const video = compositor.canvas.captureStream(q.fps);
-    const audio = this.sound
-      ? this.sound.mixStream(
-          kind === "record" && settings.recordMix === "recording"
-            ? "b"
-            : "master",
-        )
-      : null;
-    const stream = new MediaStream([
-      ...video.getVideoTracks(),
-      ...(audio?.getAudioTracks() ?? []),
-    ]);
+    const audio = this.sound ? this.sound.mixStream(kind === 'record' && settings.recordMix === 'recording' ? 'b' : 'master') : null;
+    const stream = new MediaStream([...video.getVideoTracks(), ...(audio?.getAudioTracks() ?? [])]);
     let recorder: MediaRecorder;
     try {
       recorder = new MediaRecorder(stream, {
@@ -147,9 +108,7 @@ export class Broadcaster {
       await this.client.captureStop(running.session);
       this.release(video, audio);
       if (this.live.size === 0) this.run(0);
-      throw new Error(
-        `The video encoder could not start: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      throw new Error(`The video encoder could not start: ${e instanceof Error ? e.message : String(e)}`);
     }
     const live: Live = {
       running,
@@ -176,10 +135,10 @@ export class Broadcaster {
     const live = this.live.get(kind);
     if (!live) return;
     this.live.delete(kind);
-    if (live.recorder.state !== "inactive") {
+    if (live.recorder.state !== 'inactive') {
       // The last chunk arrives before `stop` fires.
       await new Promise<void>((resolve) => {
-        live.recorder.addEventListener("stop", () => resolve(), { once: true });
+        live.recorder.addEventListener('stop', () => resolve(), { once: true });
         live.recorder.stop();
       });
     }

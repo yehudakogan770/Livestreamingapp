@@ -16,6 +16,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   pattern: 'Test pattern',
   microphone: 'Microphone',
   countdown: 'Countdown',
+  pesukim: '12 Pesukim',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */

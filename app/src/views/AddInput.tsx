@@ -3,6 +3,7 @@ import { defaultCountdown, type EngineClient } from '../engine/client';
 import type { NewSource } from '../engine/types/NewSource';
 import type { SourceKind } from '../engine/types/SourceKind';
 import { SourceView } from '../components/SourceView';
+import { defaultPesukim } from '../engine/pesukim';
 
 /** What can be added; a sound file is stored as a video source that is never shown. */
 type Kind = SourceKind['type'] | 'sound';
@@ -14,6 +15,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'color', name: 'Colour', hint: 'A solid colour' },
   { kind: 'pattern', name: 'Test pattern', hint: 'Colour bars for setup' },
   { kind: 'countdown', name: 'Countdown', hint: 'The show countdown, big' },
+  { kind: 'pesukim', name: '12 Pesukim', hint: 'One word at a time, the crowd repeats' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
@@ -97,6 +99,9 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
         return { name: n || 'Test pattern', kind: { type: 'pattern' } };
       case 'countdown':
         return { name: n || 'Countdown', kind: { type: 'countdown', background: color, timer: defaultCountdown() } };
+      case 'pesukim':
+        // The words are typed or pasted in afterwards (Edit on its card).
+        return { name: n || '12 Pesukim', kind: { type: 'pesukim', ...defaultPesukim() } };
     }
   };
   const ready = draft();

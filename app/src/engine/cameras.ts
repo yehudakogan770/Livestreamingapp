@@ -1,10 +1,7 @@
 // Cameras: one stream per device, shared by every view in this window (the
 // screens and the recorder), and stopped when nothing uses it any more.
 
-const cameras = new Map<
-  string,
-  { stream: Promise<MediaStream>; users: number }
->();
+const cameras = new Map<string, { stream: Promise<MediaStream>; users: number }>();
 
 /** A camera's stream; call releaseCamera when done with it. */
 export function acquireCamera(deviceId: string): Promise<MediaStream> {

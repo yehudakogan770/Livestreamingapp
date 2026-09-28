@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import type { CaptureKind } from "../engine/client";
-import { clock } from "../engine/timing";
-import { useBroadcast } from "./BroadcastContext";
-import "./broadcast.css";
+import { useEffect, useRef, useState } from 'react';
+import type { CaptureKind } from '../engine/client';
+import { clock } from '../engine/timing';
+import { useBroadcast } from './BroadcastContext';
+import './broadcast.css';
 
 /** How long something has been running, ticking every second. */
 function useElapsed(since: number | null): string {
@@ -12,7 +12,7 @@ function useElapsed(since: number | null): string {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
   }, [since]);
-  return since === null ? "" : clock((now - since) / 1000);
+  return since === null ? '' : clock((now - since) / 1000);
 }
 
 /** REC and LIVE on the bottom bar. Stopping always asks first. */
@@ -40,14 +40,12 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
   }, [last]);
   if (!b) return null;
   const reconnecting = !live && b.reconnecting;
-  const destinations = b.settings.destinations.filter(
-    (d) => d.enabled && d.url.trim(),
-  );
+  const destinations = b.settings.destinations.filter((d) => d.enabled && d.url.trim());
 
   const press = (kind: CaptureKind) => {
-    const running = kind === "record" ? !!rec : !!live || !!reconnecting;
+    const running = kind === 'record' ? !!rec : !!live || !!reconnecting;
     if (running) return setConfirm({ kind, stopping: true });
-    if (kind === "record") return void b.start("record").catch(() => {});
+    if (kind === 'record') return void b.start('record').catch(() => {});
     // Going live: set up first if there is nowhere to go, otherwise confirm.
     if (destinations.length === 0) return onSettings();
     setConfirm({ kind, stopping: false });
@@ -56,120 +54,78 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
   const yes = () => {
     if (!confirm) return;
     setConfirm(null);
-    void (
-      confirm.stopping ? b.stop(confirm.kind) : b.start(confirm.kind)
-    ).catch(() => {});
+    void (confirm.stopping ? b.stop(confirm.kind) : b.start(confirm.kind)).catch(() => {});
   };
 
   return (
     <>
       <button
         type="button"
-        className={`btn bc-btn${rec ? " bc-btn--rec" : ""}`}
+        className={`btn bc-btn${rec ? ' bc-btn--rec' : ''}`}
         aria-pressed={!!rec}
         disabled={b.busy.record}
-        title={
-          rec?.path
-            ? `Recording to ${rec.path}`
-            : "Record the Live Screen to a file"
-        }
-        onClick={() => press("record")}
+        title={rec?.path ? `Recording to ${rec.path}` : 'Record the Live Screen to a file'}
+        onClick={() => press('record')}
       >
         <i className="bc-dot" />
-        {rec ? `REC ${recTime}` : b.status.finishing ? "Saving…" : "REC"}
+        {rec ? `REC ${recTime}` : b.status.finishing ? 'Saving…' : 'REC'}
       </button>
       <button
         type="button"
-        className={`btn bc-btn${live ? " bc-btn--live" : ""}${reconnecting ? " bc-btn--warn" : ""}`}
+        className={`btn bc-btn${live ? ' bc-btn--live' : ''}${reconnecting ? ' bc-btn--warn' : ''}`}
         aria-pressed={!!live}
         disabled={b.busy.stream}
-        title={
-          live
-            ? `Live on ${live.destinations.join(", ")}`
-            : "Stream the Live Screen"
-        }
-        onClick={() => press("stream")}
+        title={live ? `Live on ${live.destinations.join(', ')}` : 'Stream the Live Screen'}
+        onClick={() => press('stream')}
       >
         <i className="bc-dot" />
-        {live ? `LIVE ${liveTime}` : reconnecting ? "Reconnecting…" : "GO LIVE"}
+        {live ? `LIVE ${liveTime}` : reconnecting ? 'Reconnecting…' : 'GO LIVE'}
       </button>
 
       {saved && (
         <div className="bc-saved" role="status">
-          Recording saved:{" "}
-          {saved.startsWith("blob:") ? (
+          Recording saved:{' '}
+          {saved.startsWith('blob:') ? (
             <a href={saved} download="Lumora recording.webm">
               download it
             </a>
           ) : (
             <span className="bc-saved__path">{saved}</span>
           )}
-          <button
-            type="button"
-            className="icon"
-            aria-label="Close"
-            onClick={() => setSaved(null)}
-          >
+          <button type="button" className="icon" aria-label="Close" onClick={() => setSaved(null)}>
             ✕
           </button>
         </div>
       )}
       {confirm && (
-        <div
-          className="modal"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Confirm"
-          onPointerDown={(e) =>
-            e.target === e.currentTarget && setConfirm(null)
-          }
-        >
+        <div className="modal" role="dialog" aria-modal="true" aria-label="Confirm" onPointerDown={(e) => e.target === e.currentTarget && setConfirm(null)}>
           <div className="modal__box confirm">
             <header className="modal__head">
-              <h2>
-                {confirm.stopping
-                  ? confirm.kind === "record"
-                    ? "Stop recording?"
-                    : "End the stream?"
-                  : "Go live?"}
-              </h2>
+              <h2>{confirm.stopping ? (confirm.kind === 'record' ? 'Stop recording?' : 'End the stream?') : 'Go live?'}</h2>
             </header>
             <p className="confirm__text">
               {confirm.stopping
-                ? confirm.kind === "record"
-                  ? "The recording is saved and a new one can be started any time."
-                  : "Viewers will see the stream end."
-                : `The Live Screen goes out to ${destinations.map((d) => d.name).join(", ")}.`}
+                ? confirm.kind === 'record'
+                  ? 'The recording is saved and a new one can be started any time.'
+                  : 'Viewers will see the stream end.'
+                : `The Live Screen goes out to ${destinations.map((d) => d.name).join(', ')}.`}
             </p>
             {!confirm.stopping && destinations.some((d) => !d.key.trim()) && (
               <p className="confirm__text field__note--warn">
-                No stream key for{" "}
+                No stream key for{' '}
                 {destinations
                   .filter((d) => !d.key.trim())
                   .map((d) => d.name)
-                  .join(", ")}
+                  .join(', ')}
                 . Most services need one (Settings → Recording and streaming).
               </p>
             )}
             <footer className="modal__foot">
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setConfirm(null)}
-              >
+              <button type="button" className="btn" onClick={() => setConfirm(null)}>
                 Cancel
               </button>
-              <button
-                type="button"
-                className={`btn ${confirm.stopping ? "btn--danger" : "btn--primary"}`}
-                onClick={yes}
-                autoFocus
-              >
-                {confirm.stopping
-                  ? confirm.kind === "record"
-                    ? "Stop recording"
-                    : "End stream"
-                  : "Go live"}
+              <button type="button" className={`btn ${confirm.stopping ? 'btn--danger' : 'btn--primary'}`} onClick={yes} autoFocus>
+                {confirm.stopping ? (confirm.kind === 'record' ? 'Stop recording' : 'End stream') : 'Go live'}
               </button>
             </footer>
           </div>

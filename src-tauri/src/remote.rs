@@ -119,6 +119,11 @@ pub fn allowed(action: &Action) -> bool {
             | Action::AddCountdownTime { .. }
             | Action::SetCountdownRemaining { .. }
             | Action::CountdownTo { .. }
+            | Action::PesukimNext { .. }
+            | Action::PesukimBack { .. }
+            | Action::PesukimGo { .. }
+            | Action::PesukimWhole { .. }
+            | Action::PesukimBlank { .. }
     )
 }
 
