@@ -41,18 +41,23 @@ export function AddInput({
   onAdd,
   onClose,
   sources = [],
+  initialKind,
+  initialTemplate,
 }: {
   client: EngineClient;
   onAdd: (source: NewSource) => void;
   onClose: () => void;
   /** Inputs already added (to put in a split screen's boxes). */
   sources?: Source[];
+  /** Open on this kind (from the menu bar). */
+  initialKind?: string;
+  initialTemplate?: number;
 }) {
-  const [kind, setKind] = useState<Kind>('camera');
+  const [kind, setKind] = useState<Kind>(() => (KINDS.some((k) => k.kind === initialKind) ? (initialKind as Kind) : 'camera'));
   const [name, setName] = useState('');
   const [path, setPath] = useState<string | null>(null);
   const [color, setColor] = useState('#1f6f79');
-  const [template, setTemplate] = useState(0);
+  const [template, setTemplate] = useState(initialTemplate ?? 0);
   const [split, setSplit] = useState<Split>(defaultSplit);
   const [slideshow, setSlideshow] = useState<Slideshow>(defaultSlideshow);
   const [words, setWords] = useState('');

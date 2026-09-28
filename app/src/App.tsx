@@ -14,6 +14,8 @@ import { defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { BroadcastDialog } from './broadcast/BroadcastDialog';
 import { OverlayEditor } from './views/OverlayEditor';
+import { sendCommand } from './views/commands';
+import { TEXT_TEMPLATES } from './engine/text';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
@@ -155,8 +157,41 @@ function ControlApp() {
         disabled: !show?.overlays.some((o) => o.on),
       },
     ];
-    return { Event: event, Settings: settings, '12 Pesukim': pesukimMenu, Overlays: overlays };
-  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, show?.overlays, controlling, client, fail]);
+    const inputs: MenuItem[] = [{ label: 'Add input…', onClick: () => sendCommand({ type: 'addInput' }) }];
+    const text: MenuItem[] = TEXT_TEMPLATES.map((t, i) => ({
+      label: `Add a ${t.name.toLowerCase()}…`,
+      hint: t.hint,
+      onClick: () => sendCommand({ type: 'addInput', kind: 'text', template: i }),
+    }));
+    const slides = show?.sources.filter((x) => x.kind.type === 'slideshow') ?? [];
+    const slideshow: MenuItem[] = [
+      { label: 'Add a slideshow…', onClick: () => sendCommand({ type: 'addInput', kind: 'slideshow' }) },
+      ...(slides.length ? [null, ...slides.map((x) => ({ label: `Put “${x.name}” in Next`, onClick: () => putInNext(x.id) }))] : []),
+    ];
+    const timers = show?.sources.filter((x) => x.kind.type === 'countdown') ?? [];
+    const timer: MenuItem[] = [
+      { label: 'Add a countdown…', onClick: () => sendCommand({ type: 'addInput', kind: 'countdown' }) },
+      ...(timers.length ? [null, ...timers.map((x) => ({ label: `Put “${x.name}” in Next`, onClick: () => putInNext(x.id) }))] : []),
+    ];
+    const presets: MenuItem[] = [
+      { label: 'Add a preset…', onClick: () => sendCommand({ type: 'addPreset' }) },
+      { label: 'Next preset', onClick: () => void client.dispatch({ type: 'nextPreset' }).catch(fail), disabled: !show?.presets.length },
+      { label: 'Previous preset', onClick: () => void client.dispatch({ type: 'previousPreset' }).catch(fail), disabled: !show?.presets.length },
+    ];
+    const help: MenuItem[] = [{ label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) }];
+    return {
+      Event: event,
+      Presets: presets,
+      Inputs: inputs,
+      Overlays: overlays,
+      Text: text,
+      Slideshow: slideshow,
+      '12 Pesukim': pesukimMenu,
+      Timer: timer,
+      Settings: settings,
+      Help: help,
+    };
+  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, show?.overlays, show?.presets.length, controlling, client, fail]);
 
   return (
     <div className="app">

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useCommands, type Command } from './commands';
 import type { EngineClient } from '../engine/client';
 import type { Preset } from '../engine/types/Preset';
 import type { Show } from '../engine/types/Show';
@@ -8,18 +9,21 @@ import type { Act } from './act';
 /** The event's presets in running order: click to pick, ◀ ▶ to run the show. */
 export function PresetsPanel({ show, client, act }: { show: Show; client: EngineClient; act: Act }) {
   const [editing, setEditing] = useState<Preset | 'new' | null>(null);
+  useCommands(useCallback((c: Command) => c.type === 'addPreset' && setEditing('new'), []));
   const [search, setSearch] = useState('');
   const q = search.trim().toLowerCase();
-  const list = show.presets
-    .map((p, i) => ({ p, n: i + 1 }))
-    .filter(({ p }) => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+  const list = show.presets.map((p, i) => ({ p, n: i + 1 })).filter(({ p }) => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
   return (
     <aside className="presets" aria-label="Presets">
       <div className="presets__head">
         <span className="presets__title">Presets</span>
-        <button type="button" className="chip" onClick={() => setEditing('new')}>+ Add</button>
+        <button type="button" className="chip" onClick={() => setEditing('new')}>
+          + Add
+        </button>
       </div>
-      {show.presets.length > 4 && <input className="text presets__search" value={search} placeholder="Search…" aria-label="Search presets" onChange={(e) => setSearch(e.target.value)} />}
+      {show.presets.length > 4 && (
+        <input className="text presets__search" value={search} placeholder="Search…" aria-label="Search presets" onChange={(e) => setSearch(e.target.value)} />
+      )}
       <ol className="presets__list">
         {show.presets.length === 0 && (
           <li className="presets__empty">
@@ -36,16 +40,24 @@ export function PresetsPanel({ show, client, act }: { show: Show; client: Engine
                   {p.name}
                   {p.category && <small>{p.category}</small>}
                 </span>
-                <span className="presets__count" title="Inputs in this preset">{p.sources.length || ''}</span>
+                <span className="presets__count" title="Inputs in this preset">
+                  {p.sources.length || ''}
+                </span>
               </button>
-              <button type="button" className="presets__edit" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}>✎</button>
+              <button type="button" className="presets__edit" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}>
+                ✎
+              </button>
             </li>
           );
         })}
       </ol>
       <div className="presets__nav">
-        <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'previousPreset' })}>◀ Prev</button>
-        <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'nextPreset' })}>Next ▶</button>
+        <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'previousPreset' })}>
+          ◀ Prev
+        </button>
+        <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'nextPreset' })}>
+          Next ▶
+        </button>
       </div>
       {editing && <PresetEditor show={show} client={client} act={act} preset={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
     </aside>

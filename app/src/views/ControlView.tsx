@@ -10,6 +10,8 @@ import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
 import { OverlayBar } from './OverlayBar';
+import { useCommands, type Command } from './commands';
+import { ShortcutsDialog } from './ShortcutsDialog';
 import { CreditsCard, creditsTarget } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
 import { slideshowTarget } from '../engine/slideshow';
@@ -50,6 +52,16 @@ export function ControlView({
 }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [adding, setAdding] = useState(false);
+  const [addStart, setAddStart] = useState<{ kind?: string; template?: number }>({});
+  const [shortcuts, setShortcuts] = useState(false);
+  useCommands(
+    useCallback((c: Command) => {
+      if (c.type === 'addInput') {
+        setAddStart({ kind: c.kind, template: c.template });
+        setAdding(true);
+      } else if (c.type === 'shortcuts') setShortcuts(true);
+    }, []),
+  );
   const [outputsOpen, setOutputsOpen] = useState(false);
   const [open, setOpen] = useState<ScreenId[]>([]);
   const [showAll, setShowAll] = useState(false);
@@ -198,7 +210,17 @@ export function ControlView({
             <section className="inputs-area">
               <div className="inputs-area__grid">
                 <PresetButtons show={show} act={act} showAll={showAll} onShowAll={setShowAll} />
-                <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} only={onlyInputs} />
+                <InputGrid
+                  show={show}
+                  screen={screen}
+                  client={client}
+                  act={act}
+                  onAdd={() => {
+                    setAddStart({});
+                    setAdding(true);
+                  }}
+                  only={onlyInputs}
+                />
               </div>
               <Mixer show={show} act={act} />
             </section>
@@ -253,7 +275,17 @@ export function ControlView({
         ))}
       </div>
 
-      {adding && <AddInput client={client} onAdd={add} onClose={() => setAdding(false)} sources={show.sources} />}
+      {adding && (
+        <AddInput
+          client={client}
+          onAdd={add}
+          onClose={() => setAdding(false)}
+          sources={show.sources}
+          initialKind={addStart.kind}
+          initialTemplate={addStart.template}
+        />
+      )}
+      {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
       {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}
     </div>
   );
