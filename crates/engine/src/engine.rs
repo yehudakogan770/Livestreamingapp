@@ -74,7 +74,8 @@ impl Engine {
     /// action). Call it a few times a second.
     pub fn tick(&mut self, now: Millis) -> Outcome {
         let c = &self.show.countdown;
-        if c.fired || !c.finished(now) {
+        // It lands on 0, holds a moment, then the at-zero action runs.
+        if c.fired || !c.due(now) {
             return Outcome::Unchanged;
         }
         let mut next = self.show.clone();

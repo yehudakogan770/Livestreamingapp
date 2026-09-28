@@ -1,5 +1,5 @@
 import type { Countdown } from '../engine/types/Countdown';
-import { countdownFinished, countdownRemaining, countdownVisible, formatCountdown } from '../engine/timing';
+import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, formatCountdown } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import './CountdownOverlay.css';
 
@@ -12,21 +12,24 @@ export function CountdownView({ countdown, background, logoUrl }: { countdown: C
   const now = useNow(false, 100);
   const left = countdownRemaining(countdown, now);
   const done = countdownFinished(countdown, now);
+  // It lands on 0, holds a moment, then fades to what comes next.
+  const after = countdownDue(countdown, now);
   const secs = Math.ceil(left / 1000);
   const final = countdown.endsAt !== null && !done && secs <= 10;
-  const text = done && countdown.atZero.type === 'showText' ? countdown.endText : formatCountdown(left, countdown.format);
+  const words = after && countdown.atZero.type === 'showText';
+  const numbersGone = !countdownVisible(countdown, now) || words;
+  const time = formatCountdown(left, countdown.format);
   return (
     <div className={`hype${final ? ' hype--final' : ''}${done ? ' hype--done' : ''}`} style={{ background: `radial-gradient(ellipse at center, ${background} 0%, #000 140%)` }} data-countdown>
-      {!countdownVisible(countdown, now) && logoUrl && <img className="hype__logo" src={logoUrl} alt="" draggable={false} />}
-      {countdownVisible(countdown, now) && (
-        <>
-          {countdown.label && !done && <div className="hype__label">{countdown.label}</div>}
-          {/* Keyed by the second so the pulse restarts on each one. */}
-          <div key={final ? secs : 'steady'} className={`hype__time${text.length > 8 ? ' hype__time--text' : ''}`}>
-            {text}
-          </div>
-        </>
-      )}
+      <div className={`hype__stack${numbersGone ? ' is-gone' : ''}`} aria-hidden={numbersGone}>
+        {countdown.label && !done && <div className="hype__label">{countdown.label}</div>}
+        {/* Keyed by the second so the pulse restarts on each one. */}
+        <div key={final ? secs : done ? 'zero' : 'steady'} className="hype__time">
+          {time}
+        </div>
+      </div>
+      {words && <div className="hype__end hype__time hype__time--text">{countdown.endText}</div>}
+      {after && countdown.atZero.type === 'hide' && logoUrl && <img className="hype__logo" src={logoUrl} alt="" draggable={false} />}
     </div>
   );
 }

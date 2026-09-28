@@ -125,7 +125,15 @@ export function formatCountdown(ms: number, format: TimerFormat): string {
   }
 }
 
-/** Whether the countdown's numbers show right now (after zero, "take it off" hides them). */
+/** How long the countdown holds on 0 before it fades and its at-zero action runs (engine ZERO_HOLD_MS). */
+export const ZERO_HOLD_MS = 1500;
+
+/** Reached zero and has held on 0 long enough: time to fade to what comes next. */
+export function countdownDue(c: Countdown, now: number): boolean {
+  return c.endsAt !== null && now >= c.endsAt + ZERO_HOLD_MS;
+}
+
+/** Whether the numbers show right now: they land on 0, hold, then fade unless "stay on 0" or words were chosen. */
 export function countdownVisible(c: Countdown, now: number): boolean {
-  return !(countdownFinished(c, now) && c.atZero.type !== 'hold' && c.atZero.type !== 'showText');
+  return !(countdownDue(c, now) && c.atZero.type !== 'hold' && c.atZero.type !== 'showText');
 }

@@ -9,7 +9,7 @@ import type { ScreenId } from './types/ScreenId';
 import type { ScreenState } from './types/ScreenState';
 import type { Show } from './types/Show';
 import type { Source } from './types/Source';
-import { countdownFinished, countdownRemaining, sourceEnded, sourcePosition } from './timing';
+import { countdownDue, countdownRemaining, sourceEnded, sourcePosition } from './timing';
 import type { Countdown } from './types/Countdown';
 
 const MIN_TRANSITION_MS = 100;
@@ -382,7 +382,7 @@ function apply(s: Show, a: Action, now: number) {
 /** Let time pass (mirrors Engine::tick): runs the countdown's at-zero action once. */
 export function demoTick(show: Show, now: number): Show | null {
   const c = show.countdown;
-  if (c.fired || !countdownFinished(c, now)) return null;
+  if (c.fired || !countdownDue(c, now)) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
   next.countdown.fired = true;

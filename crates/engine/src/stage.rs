@@ -13,6 +13,8 @@ pub const MAX_MESSAGE_LEN: usize = 200;
 pub const MAX_SHORT_TEXT_LEN: usize = 60;
 /// Number of quick messages.
 pub const QUICK_MESSAGES: usize = 8;
+/// How long the countdown holds on 0 before its at-zero action and fade.
+pub const ZERO_HOLD_MS: u64 = 1_500;
 /// Longest countdown: 24 hours.
 pub const MAX_COUNTDOWN_MS: u64 = 24 * 60 * 60 * 1000;
 
@@ -188,6 +190,12 @@ impl Countdown {
     /// Running and reached zero.
     pub fn finished(&self, now: Millis) -> bool {
         self.running() && self.remaining(now) == 0
+    }
+
+    /// Reached zero and has held on 0 long enough: time for the at-zero action.
+    pub fn due(&self, now: Millis) -> bool {
+        self.ends_at
+            .is_some_and(|end| now >= end.saturating_add(ZERO_HOLD_MS))
     }
 
     pub fn start(&mut self, now: Millis) {

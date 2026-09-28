@@ -142,12 +142,17 @@ fn at_zero_cuts_live_to_a_source_once() {
     apply(&mut e, Action::SetCountdownLength { length_ms: 5_000 }, 0);
     apply(&mut e, Action::StartCountdown, 0);
     assert_eq!(e.tick(4_900), Outcome::Unchanged, "not yet");
-    assert_eq!(e.tick(5_000), Outcome::Changed);
+    assert_eq!(
+        e.tick(5_000),
+        Outcome::Unchanged,
+        "on 0: holds a moment first"
+    );
+    assert_eq!(e.tick(6_500), Outcome::Changed);
     assert_eq!(
         e.show().screens.live.program,
         Some(SourceId::new("opening"))
     );
-    assert_eq!(e.tick(6_000), Outcome::Unchanged, "only once");
+    assert_eq!(e.tick(8_000), Outcome::Unchanged, "only once");
 }
 
 #[test]
@@ -192,7 +197,7 @@ fn at_zero_blanks_the_screens_the_countdown_is_on() {
     );
     apply(&mut e, Action::SetCountdownLength { length_ms: 1_000 }, 0);
     apply(&mut e, Action::StartCountdown, 0);
-    e.tick(1_000);
+    e.tick(2_500);
     assert!(e.show().screens.back.blank);
     assert!(!e.show().screens.live.blank);
 }

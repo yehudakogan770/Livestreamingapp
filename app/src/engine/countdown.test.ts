@@ -41,10 +41,12 @@ describe('countdown rules (same as the engine)', () => {
       [{ type: 'startCountdown' }, 0],
     ]);
     expect(demoTick(s, 4_000)).toBeNull();
-    s = demoTick(s, 5_000)!;
+    expect(demoTick(s, 5_000)).toBeNull(); // on 0: holds a moment first
+    expect(countdownVisible(s.countdown, 5_500)).toBe(true); // the 0 is still showing
+    s = demoTick(s, 6_500)!;
     expect(s.screens.live.program).toBe('open');
-    expect(demoTick(s, 6_000)).toBeNull();
-    expect(countdownVisible(s.countdown, 6_000)).toBe(false);
+    expect(demoTick(s, 8_000)).toBeNull();
+    expect(countdownVisible(s.countdown, 8_000)).toBe(false);
   });
 
   it('“go to black” at zero blanks only the screens showing the countdown', () => {
@@ -55,7 +57,7 @@ describe('countdown rules (same as the engine)', () => {
       [{ type: 'setCountdownLength', lengthMs: 1_000 }, 0],
       [{ type: 'startCountdown' }, 0],
     ]);
-    s = demoTick(s, 1_000)!;
+    s = demoTick(s, 2_500)!;
     expect(s.screens.back.blank).toBe(true);
     expect(s.screens.live.blank).toBe(false);
   });
