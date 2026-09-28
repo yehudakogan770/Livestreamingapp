@@ -9,6 +9,8 @@ import { SCREENS } from '../components/ScreenSelector';
 import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard } from './CountdownCard';
 import { Mixer } from './Mixer';
+import { PresetsPanel } from './PresetsPanel';
+import { PresetButtons } from './PresetButtons';
 import { SwitchPanel } from './SwitchPanel';
 import { Transport } from './Transport';
 import { InputGrid } from './InputGrid';
@@ -31,6 +33,9 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
   const [adding, setAdding] = useState(false);
   const [outputsOpen, setOutputsOpen] = useState(false);
   const [open, setOpen] = useState<ScreenId[]>([]);
+  const [showAll, setShowAll] = useState(false);
+  const activePreset = show.presets.find((p) => p.id === show.activePreset);
+  const onlyInputs = !showAll && activePreset && activePreset.sources.length > 0 ? activePreset.sources : null;
   const nextToast = useRef(1);
 
   const fail = useCallback((e: unknown) => {
@@ -89,56 +94,62 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
 
   return (
     <div className="control">
-      {screen === 'monitor' ? (
-        <MonitorPanel show={show} act={act} />
-      ) : (
-        <section className="stage">
-          <div className="mon mon--pvw">
-            <div className="mon__head">
-              <span className="dot dot--pvw" /> Next <em>{find(sc.preview)?.name ?? 'nothing lined up'}</em>
+      <div className="control__main">
+        <PresetsPanel show={show} client={client} act={act} />
+        <div className="control__work">
+        {screen === 'monitor' ? (
+          <MonitorPanel show={show} act={act} />
+        ) : (
+          <section className="stage">
+            <div className="mon mon--pvw">
+              <div className="mon__head">
+                <span className="dot dot--pvw" /> Next <em>{find(sc.preview)?.name ?? 'nothing lined up'}</em>
+              </div>
+              <div className="mon__screen">
+                <PreviewView show={show} screen={screen} client={client} />
+                {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+              </div>
+              <Transport source={find(sc.preview)} act={act} label="Next" />
             </div>
-            <div className="mon__screen">
-              <PreviewView show={show} screen={screen} client={client} />
-              {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+            <div className="centre">
+              <SwitchPanel show={show} screen={screen} act={act} />
+              <CountdownCard show={show} act={act} onPutInNext={putCountdownInNext} />
             </div>
-            <Transport source={find(sc.preview)} act={act} label="Next" />
-          </div>
-          <div className="centre">
-            <SwitchPanel show={show} screen={screen} act={act} />
-            <CountdownCard show={show} act={act} onPutInNext={putCountdownInNext} />
-          </div>
-          <div className="mon mon--pgm">
-            <div className="mon__head">
-              <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
-              <span className="mon__tag">{name.toUpperCase()}</span>
+            <div className="mon mon--pgm">
+              <div className="mon__head">
+                <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
+                <span className="mon__tag">{name.toUpperCase()}</span>
+              </div>
+              <div className="mon__screen">
+                <ProgramView show={show} screen={screen} client={client} reportDuration />
+                {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
+                {(sc.blank || show.panic) && (
+                  <span className="mon__blanked">
+                    {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
+                    <small>
+                      {show.panic
+                        ? 'Click PANIC (bottom right) to bring the screens back'
+                        : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
+                    </small>
+                  </span>
+                )}
+              </div>
+              <Transport source={find(sc.program)} act={act} label="On air" />
             </div>
-            <div className="mon__screen">
-              <ProgramView show={show} screen={screen} client={client} reportDuration />
-              {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
-              {(sc.blank || show.panic) && (
-                <span className="mon__blanked">
-                  {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
-                  <small>
-                    {show.panic
-                      ? 'Click PANIC (bottom right) to bring the screens back'
-                      : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
-                  </small>
-                </span>
-              )}
-            </div>
-            <Transport source={find(sc.program)} act={act} label="On air" />
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
-      {screen !== 'monitor' && (
-        <section className="inputs-area">
-          <div className="inputs-area__grid">
-            <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} />
-          </div>
-          <Mixer show={show} act={act} />
-        </section>
-      )}
+        {screen !== 'monitor' && (
+          <section className="inputs-area">
+            <div className="inputs-area__grid">
+              <PresetButtons show={show} act={act} showAll={showAll} onShowAll={setShowAll} />
+              <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} only={onlyInputs} />
+            </div>
+            <Mixer show={show} act={act} />
+          </section>
+        )}
+        </div>
+      </div>
 
       <footer className="bar">
         <button type="button" className="btn" onClick={() => setOutputsOpen(true)}>

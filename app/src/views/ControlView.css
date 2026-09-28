@@ -1164,3 +1164,58 @@ button.strip__name:hover { background: #2a2e36; }
 .cd__jumplabel { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-faint); text-transform: uppercase; padding-right: 2px; }
 .menu__foot { display: flex; justify-content: flex-end; gap: 6px; }
 .menu__foot .btn { height: 28px; }
+
+/* ---- presets column ---- */
+.control__main { flex: 1; min-height: 0; display: flex; }
+.control__work { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.presets { width: 206px; flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; padding: 12px 0 12px 12px; min-height: 0; }
+.presets__head { display: flex; align-items: center; justify-content: space-between; height: 22px; }
+.presets__title { font-size: 13px; font-weight: 700; }
+.presets__search { height: 28px; }
+.presets__list { flex: 1; min-height: 0; margin: 0; padding: 0; list-style: none; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.presets__empty { padding: 10px 6px; color: var(--text-faint); font-size: 12px; line-height: 1.5; }
+.presets__item { position: relative; display: flex; }
+.presets__pick { flex: 1; min-width: 0; height: 36px; padding: 0 28px 0 6px; display: flex; align-items: center; gap: 8px; border-radius: 6px; border: 1px solid transparent; background: transparent; text-align: left; }
+.presets__pick:hover { background: var(--panel); }
+.presets__item.is-on .presets__pick { border-color: var(--accent); background: var(--selected); }
+.presets__n { width: 18px; font-family: var(--mono); font-size: 11px; color: var(--text-faint); text-align: right; }
+.presets__name { flex: 1; min-width: 0; display: flex; flex-direction: column; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.presets__name small { font-size: 10px; font-weight: 400; color: var(--text-faint); }
+.presets__count { font-size: 11px; color: var(--text-faint); }
+.presets__edit { position: absolute; right: 3px; top: 7px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--text-faint); }
+.presets__edit:hover { background: #3a3f48; color: #fff; }
+.presets__nav { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.presets__nav .btn { justify-content: center; padding: 0 6px; }
+
+.pbuttons { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pbuttons__label { font-size: 12px; font-weight: 700; color: var(--accent); margin-right: 4px; }
+.pbuttons__btn { height: 30px; }
+.pbuttons__running { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: #f2c14e; }
+.pbuttons__all { font-size: 12px; }
+
+/* ---- preset editor ---- */
+.pe { width: min(1100px, calc(100vw - 48px)); }
+.pe__body { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; padding: 16px; overflow: auto; }
+.pe__col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.pe__row { display: flex; gap: 12px; flex-wrap: wrap; }
+.pe__grow { flex: 1; min-width: 180px; }
+.pe__trans { display: flex; gap: 6px; }
+.pe__inputs { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 6px; max-height: 300px; overflow-y: auto; }
+.pe__input { position: relative; padding: 0; border-radius: 6px; border: 2px solid var(--border); background: var(--panel); overflow: hidden; text-align: left; }
+.pe__input.is-on { border-color: var(--accent); }
+.pe__thumb { position: relative; display: block; aspect-ratio: 16 / 9; background: #000; pointer-events: none; }
+.pe__iname { display: flex; gap: 6px; padding: 4px 6px; font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe__iname b { color: var(--accent); }
+.pe__button { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 8px; background: var(--panel); border: 1px solid var(--border); }
+.pe__bhead { display: flex; gap: 8px; align-items: center; }
+.pe__bhead .text { flex: 1; font-weight: 700; }
+.pe__steps { margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 4px; }
+.pe__step { display: flex; align-items: center; gap: 6px; }
+.pe__fields { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+.pe__fields select, .pe__fields .text { height: 28px; font-size: 12px; }
+.pe__fields .text { flex: 1; min-width: 120px; }
+.pe__kind { font-weight: 600; }
+.pe__num input { width: 64px; height: 28px; border-radius: 4px; border: 1px solid var(--border); background: var(--well); color: #fff; padding: 0 6px; }
+.pe__stepbtns { display: flex; gap: 2px; }
+.pe__add { align-self: flex-start; }
+.pe__delete { border-color: #5a2a27; color: #e0847b; }

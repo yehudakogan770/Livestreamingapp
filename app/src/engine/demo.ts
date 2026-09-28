@@ -11,6 +11,8 @@ import type { Show } from './types/Show';
 import type { Source } from './types/Source';
 import { countdownDue, countdownRemaining, sourceEnded, sourcePosition } from './timing';
 import type { Countdown } from './types/Countdown';
+import type { Preset } from './types/Preset';
+import type { Step } from './types/Step';
 
 const MIN_TRANSITION_MS = 100;
 const MAX_COUNTDOWN_MS = 24 * 60 * 60 * 1000;
@@ -178,6 +180,7 @@ function apply(s: Show, a: Action, now: number) {
       find(s, a.id);
       s.sources = s.sources.filter((x) => x.id !== a.id);
       if (s.audio.solo === a.id) s.audio.solo = null;
+      for (const p of s.presets) p.sources = p.sources.filter((x) => x !== a.id);
       if (s.countdown.atZero.type === 'cutTo' && s.countdown.atZero.sourceId === a.id) s.countdown.atZero = { type: 'hold' };
       for (const sc of Object.values(s.screens)) {
         if (sc.preview === a.id) sc.preview = null;
@@ -301,6 +304,53 @@ function apply(s: Show, a: Action, now: number) {
     case 'setAutoPlayOnTake':
       s.settings.autoPlayOnTake = a.value;
       return;
+    case 'addPreset': {
+      const p = cleanPreset(s, a.preset);
+      if (!p.id) {
+        let n = s.presets.length + 1;
+        while (s.presets.some((x) => x.id === `preset-${n}`)) n++;
+        p.id = `preset-${n}`;
+      } else if (s.presets.some((x) => x.id === p.id)) throw new Refused({ code: 'invalidValue', field: 'id', reason: 'a preset with that id already exists' });
+      s.presets.push(p);
+      return;
+    }
+    case 'updatePreset': {
+      const i = presetIndex(s, a.preset.id);
+      s.presets[i] = cleanPreset(s, a.preset);
+      return;
+    }
+    case 'removePreset': {
+      s.presets.splice(presetIndex(s, a.id), 1);
+      if (s.activePreset === a.id) s.activePreset = null;
+      return;
+    }
+    case 'movePreset': {
+      const [p] = s.presets.splice(presetIndex(s, a.id), 1);
+      s.presets.splice(Math.min(a.index, s.presets.length), 0, p!);
+      return;
+    }
+    case 'pickPreset':
+      pickPreset(s, a.id ?? null);
+      return;
+    case 'nextPreset':
+    case 'previousPreset': {
+      if (!s.presets.length) return;
+      const at = s.presets.findIndex((p) => p.id === s.activePreset);
+      const last = s.presets.length - 1;
+      const to = a.type === 'nextPreset' ? (at < 0 ? 0 : Math.min(at + 1, last)) : at < 0 ? last : Math.max(at - 1, 0);
+      pickPreset(s, s.presets[to]!.id);
+      return;
+    }
+    case 'runSteps': {
+      if (a.steps.length > 50) throw new Refused({ code: 'invalidValue', field: 'steps', reason: 'at most 50 steps in one button' });
+      if (!a.steps.length) return;
+      s.running.push({ name: oneLine(a.name, 40), steps: structuredClone(a.steps), next: 0, resumeAt: now });
+      runSteps(s, now);
+      return;
+    }
+    case 'stopSteps':
+      s.running = [];
+      return;
     case 'updateEvent': {
       const p = a.patch;
       const ev = s.event;
@@ -379,12 +429,119 @@ function apply(s: Show, a: Action, now: number) {
   }
 }
 
+function presetIndex(s: Show, id: string): number {
+  const i = s.presets.findIndex((p) => p.id === id);
+  if (i < 0) throw new Refused({ code: 'invalidValue', field: 'id', reason: 'there is no such preset' });
+  return i;
+}
+
+function cleanPreset(s: Show, p: Preset): Preset {
+  if (p.screen === 'monitor') throw new Refused({ code: 'monitorIsTextOnly' });
+  for (const id of p.sources) find(s, id);
+  for (const b of p.buttons) {
+    if (b.steps.length > 50) throw new Refused({ code: 'invalidValue', field: 'steps', reason: 'at most 50 steps in one button' });
+    if (b.steps.some((st) => st.type === 'wait' && st.ms > 600_000)) throw new Refused({ code: 'invalidValue', field: 'steps', reason: 'a wait can be at most 10 minutes' });
+  }
+  return {
+    ...structuredClone(p),
+    id: p.id.trim(),
+    name: oneLine(p.name, 40) || 'Preset',
+    category: oneLine(p.category, 40),
+    sources: [...new Set(p.sources)],
+    buttons: p.buttons.map((b) => ({ name: oneLine(b.name, 40) || 'Button', steps: structuredClone(b.steps) })),
+  };
+}
+
+function pickPreset(s: Show, id: string | null) {
+  if (id === null) {
+    s.activePreset = null;
+    return;
+  }
+  const p = s.presets[presetIndex(s, id)]!;
+  s.activePreset = id;
+  if (p.transition) s.transition = { kind: p.transition.kind, durationMs: clampMs(p.transition.durationMs) };
+  if (p.loadFirst) {
+    const first = p.sources.find((x) => s.sources.find((src) => src.id === x)?.kind.type !== 'microphone');
+    const sc = s.screens[p.screen];
+    if (first && sc.program !== first) {
+      sc.preview = first;
+      sc.tbar = 0;
+    }
+  }
+}
+
+function stepAction(st: Step): Action | null {
+  switch (st.type) {
+    case 'preview':
+      return { type: 'setPreview', screen: st.screen, sourceId: st.sourceId };
+    case 'take':
+      return st.transition ? { type: 'take', screen: st.screen, transition: st.transition } : { type: 'take', screen: st.screen };
+    case 'cutTo':
+      return { type: 'cutTo', screen: st.screen, sourceId: st.sourceId };
+    case 'blank':
+      return { type: 'setBlank', screens: st.screens, value: st.value };
+    case 'monitorMessage':
+      return { type: 'updateMonitor', patch: { message: st.text, messageOn: true } };
+    case 'clearMonitorMessage':
+      return { type: 'updateMonitor', patch: { messageOn: false } };
+    case 'startCountdown':
+      return { type: 'startCountdown' };
+    case 'pauseCountdown':
+      return { type: 'pauseCountdown' };
+    case 'resetCountdown':
+      return { type: 'resetCountdown' };
+    case 'setCountdownLength':
+      return { type: 'setCountdownLength', lengthMs: st.lengthMs };
+    case 'play':
+      return { type: 'play', id: st.sourceId };
+    case 'pause':
+      return { type: 'pause', id: st.sourceId };
+    case 'backFollowsLive':
+      return { type: 'setBackFollowsLive', value: st.value };
+    case 'preset':
+      return { type: 'pickPreset', id: st.presetId };
+    case 'wait':
+      return null;
+  }
+}
+
+/** Run every step that is due; a step that cannot run is skipped (mirrors the engine). */
+function runSteps(s: Show, now: number) {
+  const running = s.running;
+  s.running = [];
+  for (const r of running) {
+    while (r.resumeAt <= now && r.next < r.steps.length) {
+      const st = r.steps[r.next]!;
+      r.next++;
+      if (st.type === 'wait') r.resumeAt += st.ms;
+      else {
+        const act = stepAction(st);
+        if (act) {
+          try {
+            apply(s, act, now);
+          } catch {
+            // Skipped: the rest still run.
+          }
+        }
+      }
+    }
+  }
+  s.running = running.filter((r) => r.next < r.steps.length);
+}
+
 /** Let time pass (mirrors Engine::tick): runs the countdown's at-zero action once. */
 export function demoTick(show: Show, now: number): Show | null {
   const c = show.countdown;
-  if (c.fired || !countdownDue(c, now)) return null;
+  const countdownDueNow = !c.fired && countdownDue(c, now);
+  const stepsDue = show.running.some((r) => r.resumeAt <= now);
+  if (!countdownDueNow && !stepsDue) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
+  if (stepsDue) runSteps(next, now);
+  if (!countdownDueNow) {
+    followLive(next, liveBefore, show.backFollowsLive, now);
+    return next;
+  }
   next.countdown.fired = true;
   const z = next.countdown.atZero;
   if (z.type === 'blank') {

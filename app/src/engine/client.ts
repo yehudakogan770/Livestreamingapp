@@ -29,6 +29,12 @@ export interface Display {
 
 export type MediaKind = 'video' | 'image' | 'audio';
 
+/** The open event's file and the recent list. */
+export interface EventFiles {
+  current: string | null;
+  recent: string[];
+}
+
 export interface EngineClient {
   /** True when connected to the real engine. */
   readonly live: boolean;
@@ -44,6 +50,15 @@ export interface EngineClient {
   closeOutput(screen: ScreenId): Promise<void>;
   /** Called with the screens whose output window is open, now and on every change. */
   watchOutputs(onChange: (open: ScreenId[]) => void): () => void;
+
+  // ----- event files -----
+  eventFiles(): Promise<EventFiles>;
+  watchEventFiles(onChange: (f: EventFiles) => void): () => void;
+  newEvent(): Promise<void>;
+  /** Open an event file (asks which one when no path is given). Resolves false if cancelled. */
+  openEvent(path?: string): Promise<boolean>;
+  /** Save the event to a file the operator chooses. Resolves the path, or null if cancelled. */
+  saveEventAs(): Promise<string | null>;
 
   // ----- files -----
   /** Ask the operator for a video or picture file. Resolves to its path, or null if cancelled. */
@@ -200,6 +215,55 @@ class TauriClient implements EngineClient {
     };
   }
 
+  eventFiles(): Promise<EventFiles> {
+    return invoke<EventFiles>('event_files');
+  }
+
+  watchEventFiles(onChange: (f: EventFiles) => void): () => void {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void this.eventFiles().then((f) => !cancelled && onChange(f));
+    void listen<EventFiles>('event-files-changed', (e) => onChange(e.payload)).then((unlisten) => {
+      if (cancelled) unlisten();
+      else stop = unlisten;
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }
+
+  async newEvent(): Promise<void> {
+    await invoke('new_event');
+  }
+
+  async openEvent(path?: string): Promise<boolean> {
+    let p = path;
+    if (!p) {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const chosen = await open({ multiple: false, directory: false, filters: [{ name: 'Lumora events', extensions: ['lumora'] }] });
+      if (typeof chosen !== 'string') return false;
+      p = chosen;
+    }
+    try {
+      await invoke('open_event', { path: p });
+      return true;
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async saveEventAs(): Promise<string | null> {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const path = await save({ filters: [{ name: 'Lumora events', extensions: ['lumora'] }], defaultPath: 'Event.lumora' });
+    if (!path) return null;
+    try {
+      return await invoke<string>('save_event_as', { path });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
   async pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({ multiple: false, directory: false, filters: [FILTERS[kind]] });
@@ -293,6 +357,28 @@ export class DemoClient implements EngineClient {
   watchOutputs(onChange: (open: ScreenId[]) => void): () => void {
     onChange([]);
     return () => {};
+  }
+
+  eventFiles(): Promise<EventFiles> {
+    return Promise.resolve({ current: null, recent: [] });
+  }
+
+  watchEventFiles(onChange: (f: EventFiles) => void): () => void {
+    onChange({ current: null, recent: [] });
+    return () => {};
+  }
+
+  newEvent(): Promise<void> {
+    this.publish({ ...emptyShow(), settings: this.snapshot.show.settings });
+    return Promise.resolve();
+  }
+
+  openEvent(): Promise<boolean> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  saveEventAs(): Promise<string | null> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
   }
 
   pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {

@@ -49,3 +49,11 @@
 }
 .titlebar__event { margin-left: auto; margin-right: 14px; font-size: 12px; font-weight: 600; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30vw; }
 .titlebar__item:not(:disabled):hover { color: #fff; }
+
+.titlebar__slot { position: relative; }
+.titlebar__item.is-open { color: #fff; background: #2a2e36; border-radius: 4px; }
+.titlebar__drop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 80; min-width: 240px; padding: 4px; display: flex; flex-direction: column; border-radius: 8px; background: #23272e; border: 1px solid #3a3f48; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
+.titlebar__drop button { height: 30px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: var(--text); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.titlebar__drop button:hover:not(:disabled) { background: var(--selected); color: #fff; }
+.titlebar__drop button:disabled { color: var(--text-faint); cursor: default; }
+.titlebar__drop hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid #3a3f48; }

@@ -24,19 +24,23 @@ export function InputGrid({
   client,
   act,
   onAdd,
+  only = null,
 }: {
   show: Show;
   screen: ScreenId;
   client: EngineClient;
   act: Act;
   onAdd: () => void;
+  /** Show only these inputs (the picked preset's), in this order. */
+  only?: string[] | null;
 }) {
   const sc = show.screens[screen];
   const [menu, setMenu] = useState<string | null>(null);
   const textOnly = screen === 'monitor';
   return (
     <div className="inputs" aria-label="Inputs">
-      {show.sources.map((src, i) => {
+      {(only ? only.map((id) => show.sources.find((s) => s.id === id)).filter((s) => s !== undefined) : show.sources).map((src) => {
+        const i = show.sources.indexOf(src);
         const onAir = sc.program === src.id;
         const next = sc.preview === src.id && !onAir;
         // Microphones and music files are heard, never shown: they live in the mixer.

@@ -212,14 +212,74 @@ describe('Event setup', () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'Done' }));
     });
     expect(screen.queryByRole('dialog', { name: 'Event setup' })).toBeNull();
-    expect(screen.getByText('Chanukah Rally')).toBeInTheDocument();
+    expect(screen.getByText(/Chanukah Rally · not saved to a file/)).toBeInTheDocument();
   });
 
   it('can be opened again from the Event menu', async () => {
     await start();
     expect(screen.queryByRole('dialog', { name: 'Event setup' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Event' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Event setup…' }));
     expect(screen.getByRole('dialog', { name: 'Event setup' })).toBeInTheDocument();
+  });
+
+  it('New event asks first, then starts clean with the setup questions', async () => {
+    await start();
+    await addColour('Red');
+    fireEvent.click(screen.getByRole('button', { name: 'Event' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'New event' }));
+    expect(screen.getByText(/has not been saved to a file/)).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start a new event' }));
+    });
+    expect(screen.getByRole('dialog', { name: 'Event setup' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '1 Red' })).toBeNull();
+  });
+});
+
+describe('Presets', () => {
+  it('create a preset, pick it, and only its inputs show with its first one in Next', async () => {
+    await start();
+    await addColour('Cam A');
+    await addColour('Cam B');
+    await addColour('Logo');
+    fireEvent.click(screen.getByRole('button', { name: '+ Add' }));
+    const dlg = screen.getByRole('dialog', { name: 'New preset' });
+    fireEvent.change(within(dlg).getByPlaceholderText('e.g. Speaker'), { target: { value: 'Speaker' } });
+    fireEvent.click(within(dlg).getByRole('button', { name: /Cam B/ }));
+    fireEvent.click(within(dlg).getByRole('button', { name: /Logo/ }));
+    await act(async () => {
+      fireEvent.click(within(dlg).getByRole('button', { name: 'Create preset' }));
+    });
+    await act(async () => {
+      fireEvent.click(within(screen.getByLabelText('Presets')).getByRole('button', { name: /1\s*Speaker/ }));
+    });
+    expect(next()).toBe('Cam B');
+    expect(screen.queryByRole('button', { name: '1 Cam A' })).toBeNull();
+    expect(screen.getByRole('button', { name: '2 Cam B' })).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Show all inputs'));
+    expect(screen.getByRole('button', { name: '1 Cam A' })).toBeInTheDocument();
+  });
+
+  it('a preset button runs its steps', async () => {
+    await start();
+    await addColour('Cam A');
+    fireEvent.click(screen.getByRole('button', { name: '+ Add' }));
+    const dlg = screen.getByRole('dialog', { name: 'New preset' });
+    fireEvent.change(within(dlg).getByPlaceholderText('e.g. Speaker'), { target: { value: 'Open' } });
+    fireEvent.click(within(dlg).getByRole('button', { name: '+ Add button' }));
+    fireEvent.change(within(dlg).getByLabelText('Add step'), { target: { value: 'cutTo' } });
+    fireEvent.change(within(dlg).getByLabelText('Add step'), { target: { value: 'monitorMessage' } });
+    await act(async () => {
+      fireEvent.click(within(dlg).getByRole('button', { name: 'Create preset' }));
+    });
+    await act(async () => {
+      fireEvent.click(within(screen.getByLabelText('Presets')).getByRole('button', { name: /1\s*Open/ }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Button 1' }));
+    });
+    expect(onAir()).toBe('Cam A');
   });
 });
 
