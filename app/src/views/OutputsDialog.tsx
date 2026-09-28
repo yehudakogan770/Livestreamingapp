@@ -33,15 +33,23 @@ export function OutputsDialog({
   const used = (id: string, except: ScreenId) => SCREENS.some((s) => s.id !== except && show.settings.displays[s.id] === id);
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Outputs" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Outputs"
+      onPointerDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal__box outputs">
         <header className="modal__head">
           <h2>Outputs</h2>
-          <button type="button" className="icon" aria-label="Close" onClick={onClose}>✕</button>
+          <button type="button" className="icon" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
         </header>
         <p className="outputs__intro">
-          Pick the display each screen goes to. Lumora remembers it for next time. With a display chosen, the output fills it;
-          with “Window” it opens as a normal window you can move and resize.
+          Pick the display each screen goes to. Lumora remembers it for next time. With a display chosen, the output fills it; with “Window”
+          it opens as a normal window you can move and resize.
         </p>
         <div className="outputs__rows">
           {SCREENS.map((s) => {
@@ -82,12 +90,16 @@ export function OutputsDialog({
           })}
         </div>
         <footer className="modal__foot">
-          <button type="button" className="linkbtn" onClick={refresh}>Look for displays again</button>
+          <button type="button" className="linkbtn" onClick={refresh}>
+            Look for displays again
+          </button>
           <span className="grow" />
           <button type="button" className="btn" onClick={() => SCREENS.forEach((s) => void client.openOutput(s.id).catch(onError))}>
             Open all three
           </button>
-          <button type="button" className="btn btn--primary" onClick={onClose}>Done</button>
+          <button type="button" className="btn btn--primary" onClick={onClose}>
+            Done
+          </button>
         </footer>
       </div>
     </div>

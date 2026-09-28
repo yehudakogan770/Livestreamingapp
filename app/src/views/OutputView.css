@@ -1,9 +1,9 @@
-.output { position: fixed; inset: 0; background: #000; cursor: none; }
-.output:hover { cursor: default; }
-
-.monitor { position: absolute; inset: 0; container-type: size; background: #000; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2cqh; }
-.monitor--flash { box-shadow: inset 0 0 0 1.5cqw #fff; }
-.monitor__clock { font-family: var(--mono); font-size: min(26cqh, 15cqw); font-weight: 700; letter-spacing: 0.02em; line-height: 1; white-space: nowrap; }
-.monitor__clock small { margin-left: 0.25em; font-size: 0.32em; color: #a9abb0; }
-.monitor__hint { font-size: max(11px, 3cqh); color: #8e9096; }
-.monitor__dark { position: absolute; inset: 0; background: #000; pointer-events: none; }
+.output {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  cursor: none;
+}
+.output:hover {
+  cursor: default;
+}

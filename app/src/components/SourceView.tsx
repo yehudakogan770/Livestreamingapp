@@ -12,7 +12,12 @@ function acquireCamera(deviceId: string): Promise<MediaStream> {
   if (!entry) {
     const stream = navigator.mediaDevices.getUserMedia({
       audio: false,
-      video: { deviceId: deviceId ? { exact: deviceId } : undefined, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } },
+      video: {
+        deviceId: deviceId ? { exact: deviceId } : undefined,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 60 },
+      },
     });
     entry = { stream, users: 0 };
     cameras.set(deviceId, entry);
@@ -28,7 +33,10 @@ function releaseCamera(deviceId: string) {
   entry.users--;
   if (entry.users <= 0) {
     cameras.delete(deviceId);
-    void entry.stream.then((s) => s.getTracks().forEach((t) => t.stop()), () => {});
+    void entry.stream.then(
+      (s) => s.getTracks().forEach((t) => t.stop()),
+      () => {},
+    );
   }
 }
 
@@ -59,7 +67,15 @@ export interface SourceViewProps {
 }
 
 /** Draws one source filling its box. */
-export function SourceView({ source, client, audible = false, master = 1, thumb = false, reportDuration = false, audience = false }: SourceViewProps) {
+export function SourceView({
+  source,
+  client,
+  audible = false,
+  master = 1,
+  thumb = false,
+  reportDuration = false,
+  audience = false,
+}: SourceViewProps) {
   const fit = source.fit === 'cover' ? 'cover' : 'contain';
   const k = source.kind;
   switch (k.type) {
@@ -68,7 +84,17 @@ export function SourceView({ source, client, audible = false, master = 1, thumb 
     case 'pattern':
       return (
         <div style={{ ...fill, background: PATTERN }} data-kind="pattern">
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '22%', background: 'linear-gradient(90deg,#0000c0 0 14.28%,#131313 0 28.57%,#c000c0 0 42.85%,#131313 0 57.14%,#00c0c0 0 71.42%,#131313 0 85.71%,#c0c0c0 0)' }} />
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: '22%',
+              background:
+                'linear-gradient(90deg,#0000c0 0 14.28%,#131313 0 28.57%,#c000c0 0 42.85%,#131313 0 57.14%,#00c0c0 0 71.42%,#131313 0 85.71%,#c0c0c0 0)',
+            }}
+          />
         </div>
       );
     case 'image':
@@ -77,7 +103,16 @@ export function SourceView({ source, client, audible = false, master = 1, thumb 
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
     case 'video':
       return (
-        <VideoView source={source} client={client} fit={fit} audible={audible} master={master} thumb={thumb} reportDuration={reportDuration} audience={audience} />
+        <VideoView
+          source={source}
+          client={client}
+          fit={fit}
+          audible={audible}
+          master={master}
+          thumb={thumb}
+          reportDuration={reportDuration}
+          audience={audience}
+        />
       );
   }
 }
@@ -193,7 +228,20 @@ function VideoView({
 function Missing({ text, audience }: { text: string; audience: boolean }) {
   if (audience) return <div style={{ ...fill, background: '#000' }} data-failed />;
   return (
-    <div data-failed style={{ ...fill, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#1a0f10', color: '#e0847b', fontSize: 12, textAlign: 'center', padding: 8 }}>
+    <div
+      data-failed
+      style={{
+        ...fill,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#1a0f10',
+        color: '#e0847b',
+        fontSize: 12,
+        textAlign: 'center',
+        padding: 8,
+      }}
+    >
       {text}
     </div>
   );

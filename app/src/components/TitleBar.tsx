@@ -29,7 +29,9 @@ export function TitleBar({ controlling }: { controlling: ScreenId }) {
           </button>
         ))}
       </nav>
-      <span className="titlebar__clock" aria-label="Current time">{clock}</span>
+      <span className="titlebar__clock" aria-label="Current time">
+        {clock}
+      </span>
     </header>
   );
 }

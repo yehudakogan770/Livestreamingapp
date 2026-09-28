@@ -55,9 +55,17 @@ export function InputGrid({
               {onAir && <span className="tile__badge tile__badge--pgm">ON AIR</span>}
               {next && <span className="tile__badge tile__badge--pvw">NEXT</span>}
               <span className="tile__name">{src.name}</span>
-              <span className="tile__kind">{KIND_NAME[src.kind.type]}{src.kind.type === 'video' && src.looping ? ' · loop' : ''}</span>
+              <span className="tile__kind">
+                {KIND_NAME[src.kind.type]}
+                {src.kind.type === 'video' && src.looping ? ' · loop' : ''}
+              </span>
             </button>
-            <button type="button" className="tile__more" aria-label={`Options for ${src.name}`} onClick={() => setMenu(menu === src.id ? null : src.id)}>
+            <button
+              type="button"
+              className="tile__more"
+              aria-label={`Options for ${src.name}`}
+              onClick={() => setMenu(menu === src.id ? null : src.id)}
+            >
               ⋯
             </button>
             {menu === src.id && <TileMenu source={src} act={act} onClose={() => setMenu(null)} />}
@@ -111,8 +119,12 @@ function TileMenu({ source, act, onClose }: { source: Source; act: Act; onClose:
         <div className="menu__row">
           Picture
           <span className="segs">
-            <button type="button" className="seg" aria-pressed={source.fit === 'contain'} onClick={() => patch({ fit: 'contain' })}>Whole</button>
-            <button type="button" className="seg" aria-pressed={source.fit === 'cover'} onClick={() => patch({ fit: 'cover' })}>Fill</button>
+            <button type="button" className="seg" aria-pressed={source.fit === 'contain'} onClick={() => patch({ fit: 'contain' })}>
+              Whole
+            </button>
+            <button type="button" className="seg" aria-pressed={source.fit === 'cover'} onClick={() => patch({ fit: 'cover' })}>
+              Fill
+            </button>
           </span>
         </div>
       )}
@@ -123,7 +135,13 @@ function TileMenu({ source, act, onClose }: { source: Source; act: Act; onClose:
           </label>
           <label className="menu__row">
             Volume
-            <input type="range" min={0} max={100} value={Math.round(source.volume * 100)} onChange={(e) => patch({ volume: Number(e.target.value) / 100 })} />
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={Math.round(source.volume * 100)}
+              onChange={(e) => patch({ volume: Number(e.target.value) / 100 })}
+            />
           </label>
           <label className="menu__row menu__row--check">
             <input type="checkbox" checked={source.muted} onChange={(e) => patch({ muted: e.target.checked })} /> Mute

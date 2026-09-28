@@ -10,7 +10,7 @@ import type { ScreenId } from './types/ScreenId';
 import type { Show } from './types/Show';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { demoApply } from './demo';
+import { demoApply, demoTick } from './demo';
 
 export interface ShowSnapshot {
   revision: number;
@@ -107,7 +107,16 @@ export function emptyShow(): Show {
       showTimer: true,
       textSize: 'l',
       clock24h: false,
-      quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'],
+      quick: [
+        'Please wrap up',
+        '5 minutes left',
+        '2 minutes left',
+        'Speak louder',
+        'Look at camera 2',
+        'Next: video',
+        'Stand by',
+        'Thank you!',
+      ],
     },
     countdown: {
       lengthMs: 300_000,
@@ -215,6 +224,18 @@ export class DemoClient implements EngineClient {
 
   constructor(show: Show = emptyShow()) {
     this.snapshot = { revision: 0, show };
+    // The demo's heartbeat, like the engine's: runs anything due (countdown at zero).
+    if (typeof window !== 'undefined') {
+      setInterval(() => {
+        const next = demoTick(this.snapshot.show, Date.now());
+        if (next) this.publish(next);
+      }, 100);
+    }
+  }
+
+  private publish(show: Show) {
+    this.snapshot = { revision: this.snapshot.revision + 1, show };
+    for (const l of this.listeners) l(this.snapshot);
   }
 
   getShow(): Promise<ShowSnapshot> {
@@ -224,9 +245,7 @@ export class DemoClient implements EngineClient {
   dispatch(action: Action): Promise<void> {
     try {
       const show = demoApply(this.snapshot.show, action, Date.now());
-      if (JSON.stringify(show) === JSON.stringify(this.snapshot.show)) return Promise.resolve();
-      this.snapshot = { revision: this.snapshot.revision + 1, show };
-      for (const l of this.listeners) l(this.snapshot);
+      if (JSON.stringify(show) !== JSON.stringify(this.snapshot.show)) this.publish(show);
       return Promise.resolve();
     } catch (detail) {
       return Promise.reject(new EngineError(detail as ActionError));

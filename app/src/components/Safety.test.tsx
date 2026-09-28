@@ -6,7 +6,15 @@ import { DemoClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 
 const client = new DemoClient();
-const picture: Source = { id: 'p', name: 'Logo', kind: { type: 'image', path: 'missing.png' }, volume: 1, muted: false, looping: false, fit: 'contain' };
+const picture: Source = {
+  id: 'p',
+  name: 'Logo',
+  kind: { type: 'image', path: 'missing.png' },
+  volume: 1,
+  muted: false,
+  looping: false,
+  fit: 'contain',
+};
 const video: Source = {
   id: 'v',
   name: 'Opening',

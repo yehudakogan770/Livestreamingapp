@@ -9,9 +9,25 @@ import type { ScreenId } from './types/ScreenId';
 import type { ScreenState } from './types/ScreenState';
 import type { Show } from './types/Show';
 import type { Source } from './types/Source';
-import { sourceEnded, sourcePosition } from './timing';
+import { countdownFinished, countdownRemaining, sourceEnded, sourcePosition } from './timing';
+import type { Countdown } from './types/Countdown';
 
 const MIN_TRANSITION_MS = 100;
+const MAX_COUNTDOWN_MS = 24 * 60 * 60 * 1000;
+const oneLine = (t: string, max: number) => t.split(/\s+/).filter(Boolean).join(' ').slice(0, max);
+
+function setRemaining(c: Countdown, ms: number, now: number) {
+  const v = Math.min(MAX_COUNTDOWN_MS, Math.max(0, ms));
+  if (c.endsAt !== null) c.endsAt = now + v;
+  else c.remainingMs = v;
+  if (v > 0) c.fired = false;
+}
+
+function countdownMs(ms: number, field: string): number {
+  if (!(ms > 0 && ms <= MAX_COUNTDOWN_MS))
+    throw new Refused({ code: 'invalidValue', field, reason: 'must be between 1 second and 24 hours' });
+  return ms;
+}
 const MAX_TRANSITION_MS = 10_000;
 
 class Refused extends Error {
@@ -122,7 +138,8 @@ function apply(s: Show, a: Action, now: number) {
       if (p.looping !== undefined) src.looping = p.looping;
       if (p.fit !== undefined) src.fit = p.fit;
       if (p.color !== undefined) {
-        if (src.kind.type !== 'color') throw new Refused({ code: 'invalidValue', field: 'color', reason: 'only colour sources have a colour' });
+        if (src.kind.type !== 'color')
+          throw new Refused({ code: 'invalidValue', field: 'color', reason: 'only colour sources have a colour' });
         src.kind.color = p.color;
       }
       return;
@@ -130,6 +147,7 @@ function apply(s: Show, a: Action, now: number) {
     case 'removeSource': {
       find(s, a.id);
       s.sources = s.sources.filter((x) => x.id !== a.id);
+      if (s.countdown.atZero.type === 'cutTo' && s.countdown.atZero.sourceId === a.id) s.countdown.atZero = { type: 'hold' };
       for (const sc of Object.values(s.screens)) {
         if (sc.preview === a.id) sc.preview = null;
         if (sc.program === a.id) sc.program = null;
@@ -232,7 +250,103 @@ function apply(s: Show, a: Action, now: number) {
     case 'setAutoPlayOnTake':
       s.settings.autoPlayOnTake = a.value;
       return;
+    case 'updateMonitor': {
+      const p = a.patch;
+      const m = s.monitor;
+      if (p.message !== undefined) m.message = oneLine(p.message, 200);
+      if (p.messageOn !== undefined) m.messageOn = p.messageOn;
+      if (p.layout !== undefined) m.layout = p.layout;
+      if (p.showClock !== undefined) m.showClock = p.showClock;
+      if (p.showTimer !== undefined) m.showTimer = p.showTimer;
+      if (p.textSize !== undefined) m.textSize = p.textSize;
+      if (p.clock24h !== undefined) m.clock24h = p.clock24h;
+      return;
+    }
+    case 'setQuickMessage':
+      if (a.index < 0 || a.index >= 8)
+        throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 8 quick messages (0 – 7)' });
+      s.monitor.quick[a.index] = oneLine(a.text, 60);
+      return;
+    case 'updateCountdown': {
+      const p = a.patch;
+      const c = s.countdown;
+      if (p.atZero?.type === 'cutTo') find(s, p.atZero.sourceId);
+      if (p.label !== undefined) c.label = oneLine(p.label, 60);
+      if (p.endText !== undefined) c.endText = oneLine(p.endText, 60);
+      if (p.onLive !== undefined) c.onLive = p.onLive;
+      if (p.onBack !== undefined) c.onBack = p.onBack;
+      if (p.format !== undefined) c.format = p.format;
+      if (p.atZero !== undefined) c.atZero = p.atZero;
+      return;
+    }
+    case 'setCountdownLength': {
+      const c = s.countdown;
+      c.lengthMs = countdownMs(a.lengthMs, 'lengthMs');
+      c.endsAt = null;
+      c.remainingMs = c.lengthMs;
+      c.fired = false;
+      return;
+    }
+    case 'startCountdown': {
+      const c = s.countdown;
+      if (c.endsAt !== null) return;
+      if (c.remainingMs === 0) c.remainingMs = c.lengthMs;
+      c.endsAt = now + c.remainingMs;
+      c.fired = false;
+      return;
+    }
+    case 'pauseCountdown':
+      s.countdown.remainingMs = countdownRemaining(s.countdown, now);
+      s.countdown.endsAt = null;
+      return;
+    case 'resetCountdown':
+      s.countdown.endsAt = null;
+      s.countdown.remainingMs = s.countdown.lengthMs;
+      s.countdown.fired = false;
+      return;
+    case 'addCountdownTime':
+      if (Math.abs(a.ms) > MAX_COUNTDOWN_MS) throw new Refused({ code: 'invalidValue', field: 'ms', reason: 'at most 24 hours at a time' });
+      setRemaining(s.countdown, countdownRemaining(s.countdown, now) + a.ms, now);
+      return;
+    case 'setCountdownRemaining':
+      setRemaining(s.countdown, a.ms, now);
+      return;
+    case 'countdownTo': {
+      if (a.at <= now) throw new Refused({ code: 'invalidValue', field: 'at', reason: 'that time has already passed' });
+      const left = countdownMs(a.at - now, 'at');
+      Object.assign(s.countdown, { lengthMs: left, remainingMs: left, endsAt: a.at, fired: false });
+      return;
+    }
   }
+}
+
+/** Let time pass (mirrors Engine::tick): runs the countdown's at-zero action once. */
+export function demoTick(show: Show, now: number): Show | null {
+  const c = show.countdown;
+  if (c.fired || !countdownFinished(c, now)) return null;
+  const next = structuredClone(show);
+  const liveBefore = structuredClone(show.screens.live);
+  next.countdown.fired = true;
+  const z = next.countdown.atZero;
+  if (z.type === 'blank') {
+    const screens: ('live' | 'back')[] = [];
+    if (c.onLive) screens.push('live');
+    if (c.onBack) screens.push('back');
+    for (const id of screens.length ? screens : (['live', 'back'] as const)) {
+      if (!next.screens[id].blank) {
+        next.screens[id].blank = true;
+        next.screens[id].blankChangedAt = now;
+      }
+    }
+  } else if (z.type === 'cutTo' && next.sources.some((x) => x.id === z.sourceId)) {
+    try {
+      apply(next, { type: 'cutTo', screen: 'live', sourceId: z.sourceId }, now);
+    } catch {
+      // Nothing to do: the countdown still counts as finished.
+    }
+  }
+  followLive(next, liveBefore, show.backFollowsLive, now);
+  return next;
 }
 
 /** Apply an action to a copy of the show. Returns the new show, or throws the engine's refusal. */

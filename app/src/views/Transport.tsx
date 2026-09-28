@@ -18,8 +18,12 @@ export function Transport({ source, act, label }: { source: Source | undefined; 
   const seek = (s: number) => act({ type: 'seek', id: source.id, posS: Math.max(0, durationS > 0 ? Math.min(durationS, s) : s) });
   return (
     <div className="transport">
-      <button type="button" className="icon" aria-label="Back to start" onClick={() => seek(0)}>⏮</button>
-      <button type="button" className="icon" aria-label="Back 10 seconds" onClick={() => seek(pos - 10)}>−10</button>
+      <button type="button" className="icon" aria-label="Back to start" onClick={() => seek(0)}>
+        ⏮
+      </button>
+      <button type="button" className="icon" aria-label="Back 10 seconds" onClick={() => seek(pos - 10)}>
+        −10
+      </button>
       <button
         type="button"
         className={`icon icon--play${playback.playing ? ' is-on' : ''}`}
@@ -28,7 +32,9 @@ export function Transport({ source, act, label }: { source: Source | undefined; 
       >
         {playback.playing ? '❚❚' : '▶'}
       </button>
-      <button type="button" className="icon" aria-label="Forward 10 seconds" onClick={() => seek(pos + 10)}>+10</button>
+      <button type="button" className="icon" aria-label="Forward 10 seconds" onClick={() => seek(pos + 10)}>
+        +10
+      </button>
       <input
         className="transport__scrub"
         type="range"

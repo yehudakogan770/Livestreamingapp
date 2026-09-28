@@ -24,10 +24,22 @@ export function SwitchPanel({ show, screen, act }: { show: Show; screen: ScreenI
   const hasPreview = sc.preview !== null && sc.preview !== sc.program;
   return (
     <div className="switch">
-      <button type="button" className="switch__take" disabled={!hasPreview} onClick={() => act({ type: 'take', screen })} title="Send preview to air with the chosen transition (Enter)">
+      <button
+        type="button"
+        className="switch__take"
+        disabled={!hasPreview}
+        onClick={() => act({ type: 'take', screen })}
+        title="Send preview to air with the chosen transition (Enter)"
+      >
         TAKE <span>· {KINDS.find((k) => k.kind === t.kind)?.name}</span>
       </button>
-      <button type="button" className="switch__cut" disabled={!hasPreview} onClick={() => act({ type: 'take', screen, transition: 'cut' })} title="Send preview to air instantly (Shift+Enter)">
+      <button
+        type="button"
+        className="switch__cut"
+        disabled={!hasPreview}
+        onClick={() => act({ type: 'take', screen, transition: 'cut' })}
+        title="Send preview to air instantly (Shift+Enter)"
+      >
         CUT
       </button>
       <div className="switch__kinds" role="radiogroup" aria-label="Transition">

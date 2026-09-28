@@ -6,7 +6,8 @@ import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import { PreviewView, ProgramView } from '../components/ScreenView';
 import { SCREENS } from '../components/ScreenSelector';
-import { MonitorOutput } from './OutputView';
+import { MonitorPanel } from './MonitorPanel';
+import { CountdownCard } from './CountdownCard';
 import { SwitchPanel } from './SwitchPanel';
 import { Transport } from './Transport';
 import { InputGrid } from './InputGrid';
@@ -79,26 +80,7 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
   return (
     <div className="control">
       {screen === 'monitor' ? (
-        <section className="stage stage--monitor">
-          <div className="mon mon--pgm">
-            <div className="mon__head">
-              <span className="dot dot--pgm" /> On the stage monitor
-            </div>
-            <div className="mon__screen">
-              <MonitorOutput panic={show.panic} panicAt={show.panicChangedAt} blank={sc.blank} blankAt={sc.blankChangedAt} flashAt={sc.flashAt} />
-            </div>
-          </div>
-          <div className="monpanel">
-            <h3>Stage monitor</h3>
-            <p>The monitor shows text only: the time now, and soon messages and the countdown for the people on stage.</p>
-            <button type="button" className="btn btn--big" onClick={() => act({ type: 'monitorFlash' })}>
-              Flash the monitor
-            </button>
-            <button type="button" className={`btn btn--big${sc.blank ? ' is-on' : ''}`} onClick={() => act({ type: 'setBlank', screens: ['monitor'], value: !sc.blank })}>
-              {sc.blank ? 'Show the monitor again' : 'Blank the monitor'}
-            </button>
-          </div>
-        </section>
+        <MonitorPanel show={show} act={act} />
       ) : (
         <section className="stage">
           <div className="mon mon--pvw">
@@ -111,7 +93,10 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
             </div>
             <Transport source={find(sc.preview)} act={act} label="Next" />
           </div>
-          <SwitchPanel show={show} screen={screen} act={act} />
+          <div className="centre">
+            <SwitchPanel show={show} screen={screen} act={act} />
+            <CountdownCard show={show} act={act} />
+          </div>
           <div className="mon mon--pgm">
             <div className="mon__head">
               <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
@@ -123,7 +108,11 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
               {(sc.blank || show.panic) && (
                 <span className="mon__blanked">
                   {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
-                  <small>{show.panic ? 'Click PANIC (bottom right) to bring the screens back' : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}</small>
+                  <small>
+                    {show.panic
+                      ? 'Click PANIC (bottom right) to bring the screens back'
+                      : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
+                  </small>
                 </span>
               )}
             </div>
@@ -138,16 +127,22 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
         </div>
       )}
 
-      <section className="inputs-area">
-        <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} />
-      </section>
+      {screen !== 'monitor' && (
+        <section className="inputs-area">
+          <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} />
+        </section>
+      )}
 
       <footer className="bar">
         <button type="button" className="btn" onClick={() => setOutputsOpen(true)}>
           Outputs
           <span className="bar__lamps" aria-label={`${open.length} of 3 open`}>
             {SCREENS.map((s) => (
-              <i key={s.id} className={open.includes(s.id) ? 'is-on' : ''} title={`${s.name}: ${open.includes(s.id) ? 'open' : 'closed'}`} />
+              <i
+                key={s.id}
+                className={open.includes(s.id) ? 'is-on' : ''}
+                title={`${s.name}: ${open.includes(s.id) ? 'open' : 'closed'}`}
+              />
             ))}
           </span>
         </button>
@@ -178,7 +173,9 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
 
       <div className="toasts" role="status" aria-live="polite">
         {toasts.map((t) => (
-          <div key={t.id} className="toast">{t.text}</div>
+          <div key={t.id} className="toast">
+            {t.text}
+          </div>
         ))}
       </div>
 

@@ -77,7 +77,7 @@ screens stay in step. In a plain browser the UI runs on a demo engine
 (`app/src/engine/demo.ts`) with the same rules, for design work and UI tests.
 `LUMORA_SMOKE_TEST=1` starts the app, opens all three outputs and exits 0 if
 they opened.
-5. Monitor (text, clock, timer) and hype countdown.
+5. Monitor (text, clock, timer) and hype countdown. **Done.**
 6. Audio mixer.
 7. Recording and streaming.
 8. Presets, library, save / open events, crash recovery.

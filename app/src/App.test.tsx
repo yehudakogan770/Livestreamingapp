@@ -36,7 +36,7 @@ describe('App shell', () => {
     expect(document.querySelector('svg[data-lit="back"]')).not.toBeNull();
     fireEvent.keyDown(window, { key: 'F3' });
     expect(screen.getByRole('tab', { name: /Monitor/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: 'Flash the monitor' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Flash to get attention' })).toBeInTheDocument();
   });
 
   it('says when it is a browser demo rather than Lumora itself', async () => {
@@ -123,6 +123,31 @@ describe('Main screen', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Open all three' }));
     });
     expect(screen.getAllByRole('status')[0]!.textContent).toMatch(/Not available in the browser demo/);
+  });
+});
+
+describe('Stage monitor and countdown', () => {
+  it('a quick message goes straight to the monitor, and Clear takes it off', async () => {
+    await start();
+    fireEvent.keyDown(window, { key: 'F3' });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Please wrap up' }));
+    });
+    expect(document.querySelector('[data-monitor]')?.textContent).toMatch(/Please wrap up/);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Clear message' }));
+    });
+    expect(document.querySelector('[data-monitor]')?.textContent).not.toMatch(/Please wrap up/);
+  });
+
+  it('the countdown can be started and shown on the Live Screen', async () => {
+    await start();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'On Live' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    });
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
+    expect(document.querySelector('.mon--pgm [data-countdown]')?.textContent).toMatch(/Starting soon/i);
   });
 });
 

@@ -17,9 +17,7 @@ export function useShow(client: EngineClient): ShowState {
     let active = true;
     const accept = (next: ShowSnapshot) => {
       if (!active) return;
-      setState((prev) =>
-        prev.snapshot && prev.snapshot.revision > next.revision ? prev : { snapshot: next, error: null },
-      );
+      setState((prev) => (prev.snapshot && prev.snapshot.revision > next.revision ? prev : { snapshot: next, error: null }));
     };
     const unsubscribe = client.subscribe(accept);
     client.getShow().then(accept, (err: unknown) => {

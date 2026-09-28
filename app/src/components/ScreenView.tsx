@@ -6,6 +6,7 @@ import type { TransitionKind } from '../engine/types/TransitionKind';
 import { fadeAmount, mixAt, transitionProgress, BLANK_FADE_MS, type Mix } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { SourceView } from './SourceView';
+import { CountdownOverlay } from './CountdownOverlay';
 
 interface Layer {
   id: string;
@@ -43,11 +44,7 @@ export function programLayers(show: Show, screen: ScreenId, now: number): { laye
 /** True while something on this screen is animating and needs every frame. */
 export function screenMoving(show: Show, screen: ScreenId, now: number): boolean {
   const sc = show.screens[screen];
-  return (
-    transitionProgress(sc, now) < 1 ||
-    now - sc.blankChangedAt < BLANK_FADE_MS + 50 ||
-    now - show.panicChangedAt < BLANK_FADE_MS + 50
-  );
+  return transitionProgress(sc, now) < 1 || now - sc.blankChangedAt < BLANK_FADE_MS + 50 || now - show.panicChangedAt < BLANK_FADE_MS + 50;
 }
 
 const box: CSSProperties = { position: 'absolute', inset: 0, overflow: 'hidden', background: '#000' };
@@ -104,7 +101,8 @@ export function ProgramView({
         );
       })}
       {black > 0 && <div style={{ ...box, background: '#000', opacity: black }} />}
-      {blank > 0 && <div style={{ ...box, background: '#000', opacity: blank }} data-blank />}
+      {screen !== 'monitor' && <CountdownOverlay countdown={show.countdown} screen={screen} />}
+      {blank > 0 && <div style={{ ...box, background: '#000', opacity: blank, zIndex: 4 }} data-blank />}
       {children}
     </div>
   );

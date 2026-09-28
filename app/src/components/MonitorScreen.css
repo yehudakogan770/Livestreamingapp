@@ -1,0 +1,141 @@
+.mscreen {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  background: #000;
+  color: #fff;
+  font-family: var(--font);
+  overflow: hidden;
+}
+.mscreen--flash {
+  box-shadow: inset 0 0 0 2cqw #fff;
+}
+.mscreen__dark {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+}
+
+.mscreen__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.mscreen__tag {
+  font-size: 3.2cqh;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: #8e9096;
+}
+.mscreen__num {
+  font-family: var(--mono);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.mscreen__num small {
+  margin-left: 0.25em;
+  font-size: 0.35em;
+  color: #a9abb0;
+}
+.mscreen__timer.is-urgent .mscreen__num {
+  color: #ff5a4f;
+}
+.mscreen__timer.is-paused .mscreen__num {
+  color: #a9abb0;
+}
+
+.mscreen__message {
+  font-size: calc(var(--size, 1) * 13cqh);
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  overflow-wrap: anywhere;
+  padding: 0 3cqw;
+}
+
+/* full: message fills the screen, time in a strip; with no message the time fills it */
+.mscreen__full {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4cqh;
+}
+.mscreen__full .mscreen__message {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mscreen__strip {
+  width: 100%;
+  height: 26cqh;
+  display: flex;
+  justify-content: space-around;
+  border-top: 0.4cqh solid #2c3038;
+}
+.mscreen__strip .mscreen__num {
+  font-size: 13cqh;
+}
+.mscreen__full--idle {
+  flex-direction: row;
+  justify-content: space-evenly;
+}
+.mscreen__full--idle .mscreen__num {
+  font-size: min(28cqh, 15cqw);
+}
+.mscreen__full--idle .mscreen__tag {
+  font-size: 4cqh;
+}
+
+/* stack: message on top, time underneath */
+.mscreen__stack {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: 62% 38%;
+}
+.mscreen__stack .mscreen__area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 0.4cqh solid #2c3038;
+}
+.mscreen__stack .mscreen__side {
+  display: flex;
+  justify-content: space-around;
+}
+.mscreen__stack .mscreen__num {
+  font-size: 17cqh;
+}
+
+/* split: message left, time right */
+.mscreen__split {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 62% 38%;
+}
+.mscreen__split .mscreen__area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 0.4cqh solid #2c3038;
+}
+.mscreen__split .mscreen__side {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+}
+.mscreen__split .mscreen__num {
+  font-size: min(18cqh, 9cqw);
+}
+.mscreen__split .mscreen__message {
+  font-size: calc(var(--size, 1) * 10cqh);
+}

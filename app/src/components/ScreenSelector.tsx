@@ -24,15 +24,7 @@ export function screenStatus(show: Show | null, id: ScreenId): Status {
 const LABEL: Record<Status, string> = { 'on-air': 'ON AIR', following: 'FOLLOWS LIVE', blank: 'BLANK', dimmed: 'DIMMED', idle: 'EMPTY' };
 
 /** Choose which screen you are controlling. The centre of the design; F1–F3 work anywhere. */
-export function ScreenSelector({
-  show,
-  selected,
-  onSelect,
-}: {
-  show: Show | null;
-  selected: ScreenId;
-  onSelect: (id: ScreenId) => void;
-}) {
+export function ScreenSelector({ show, selected, onSelect }: { show: Show | null; selected: ScreenId; onSelect: (id: ScreenId) => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const hit = SCREENS.find((s) => s.key === e.key);

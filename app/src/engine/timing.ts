@@ -5,6 +5,8 @@
 import type { ScreenState } from './types/ScreenState';
 import type { Source } from './types/Source';
 import type { TransitionKind } from './types/TransitionKind';
+import type { Countdown } from './types/Countdown';
+import type { TimerFormat } from './types/TimerFormat';
 
 /** How long a blank fades in or out (engine BLANK_FADE_MS). */
 export const BLANK_FADE_MS = 300;
@@ -70,9 +72,7 @@ export function mixAt(kind: TransitionKind, p: number): Mix {
     case 'merge':
       return { inOpacity: smooth(x), outOpacity: 1 - smooth(x) * 0.35, black: 0 };
     case 'dip':
-      return x < 0.5
-        ? { inOpacity: 0, outOpacity: 1, black: smooth(x * 2) }
-        : { inOpacity: 1, outOpacity: 0, black: smooth((1 - x) * 2) };
+      return x < 0.5 ? { inOpacity: 0, outOpacity: 1, black: smooth(x * 2) } : { inOpacity: 1, outOpacity: 0, black: smooth((1 - x) * 2) };
     case 'wipe':
       return { inOpacity: 1, outOpacity: 1, black: 0, inClip: `inset(0 ${((1 - x) * 100).toFixed(3)}% 0 0)` };
     case 'slide': {
@@ -89,4 +89,47 @@ export function clock(seconds: number): string {
   const m = Math.floor((s % 3600) / 60);
   const ss = String(s % 60).padStart(2, '0');
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`;
+}
+
+// ---- countdown (mirrors crates/engine/src/stage.rs) ----
+
+/** Time left on the countdown at `now`, in ms. */
+export function countdownRemaining(c: Countdown, now: number): number {
+  return c.endsAt !== null ? Math.max(0, c.endsAt - now) : c.remainingMs;
+}
+
+/** Running and reached zero. */
+export function countdownFinished(c: Countdown, now: number): boolean {
+  return c.endsAt !== null && countdownRemaining(c, now) === 0;
+}
+
+/**
+ * The countdown as text. Seconds are rounded up, so it reads 0:01 until the
+ * very end and 0:00 only at zero, like every broadcast clock.
+ */
+export function formatCountdown(ms: number, format: TimerFormat): string {
+  const total = Math.ceil(Math.max(0, ms) / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const ss = String(s).padStart(2, '0');
+  switch (format) {
+    case 'hourMinSec':
+      return `${h}:${String(m).padStart(2, '0')}:${ss}`;
+    case 'minSec':
+      return `${Math.floor(total / 60)}:${ss}`;
+    case 'auto':
+      if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${ss}`;
+      if (total < 60) return String(total);
+      return `${m}:${ss}`;
+  }
+}
+
+/** Whether the big countdown should be on a screen right now. */
+export function countdownShownOn(c: Countdown, screen: 'live' | 'back', now: number): boolean {
+  const on = screen === 'live' ? c.onLive : c.onBack;
+  if (!on) return false;
+  // After zero, only "hold" and "show text" keep it on screen.
+  if (countdownFinished(c, now) && c.atZero.type !== 'hold' && c.atZero.type !== 'showText') return false;
+  return true;
 }

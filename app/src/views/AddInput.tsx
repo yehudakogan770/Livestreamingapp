@@ -17,15 +17,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
 const SWATCHES = ['#000000', '#ffffff', '#1f6f79', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
 
 /** Choose what kind of input to add, set it up, and add it. */
-export function AddInput({
-  client,
-  onAdd,
-  onClose,
-}: {
-  client: EngineClient;
-  onAdd: (source: NewSource) => void;
-  onClose: () => void;
-}) {
+export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onAdd: (source: NewSource) => void; onClose: () => void }) {
   const [kind, setKind] = useState<Kind>('camera');
   const [name, setName] = useState('');
   const [path, setPath] = useState<string | null>(null);
@@ -76,7 +68,9 @@ export function AddInput({
       case 'camera':
         return cam ? { name: n || cam.label || 'Camera', kind: { type: 'camera', deviceId: cam.deviceId, label: cam.label } } : null;
       case 'video':
-        return path ? { name: n || 'Video', kind: { type: 'video', path, durationS: 0, playback: { playing: false, posS: 0, at: 0 } }, looping } : null;
+        return path
+          ? { name: n || 'Video', kind: { type: 'video', path, durationS: 0, playback: { playing: false, posS: 0, at: 0 } }, looping }
+          : null;
       case 'image':
         return path ? { name: n || 'Picture', kind: { type: 'image', path } } : null;
       case 'color':
@@ -89,11 +83,19 @@ export function AddInput({
   const previewSource = ready ? { id: 'draft', volume: 1, muted: true, looping: false, fit: 'contain' as const, ...ready } : null;
 
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label="Add input" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Add input"
+      onPointerDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal__box addinput">
         <header className="modal__head">
           <h2>Add input</h2>
-          <button type="button" className="icon" aria-label="Close" onClick={onClose}>✕</button>
+          <button type="button" className="icon" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
         </header>
         <div className="addinput__body">
           <nav className="addinput__kinds" aria-label="Input type">
@@ -116,7 +118,11 @@ export function AddInput({
           </nav>
           <div className="addinput__setup">
             <div className="addinput__preview">
-              {previewSource ? <SourceView source={previewSource} client={client} /> : <span className="addinput__empty">Nothing chosen yet</span>}
+              {previewSource ? (
+                <SourceView source={previewSource} client={client} />
+              ) : (
+                <span className="addinput__empty">Nothing chosen yet</span>
+              )}
             </div>
 
             {kind === 'camera' && (
@@ -126,12 +132,20 @@ export function AddInput({
                 {camErr && <span className="field__note field__note--warn">{camErr}</span>}
                 <div className="addinput__list">
                   {cams?.map((d, i) => (
-                    <button key={d.deviceId || i} type="button" className="seg" aria-pressed={cam?.deviceId === d.deviceId} onClick={() => setCam(d)}>
+                    <button
+                      key={d.deviceId || i}
+                      type="button"
+                      className="seg"
+                      aria-pressed={cam?.deviceId === d.deviceId}
+                      onClick={() => setCam(d)}
+                    >
                       {d.label || `Camera ${i + 1}`}
                     </button>
                   ))}
                 </div>
-                <button type="button" className="linkbtn" onClick={() => setCams(null)}>Look again</button>
+                <button type="button" className="linkbtn" onClick={() => setCams(null)}>
+                  Look again
+                </button>
               </div>
             )}
 
@@ -139,12 +153,17 @@ export function AddInput({
               <div className="field">
                 <span className="field__label">{kind === 'video' ? 'Video file' : 'Picture file'}</span>
                 <div className="addinput__file">
-                  <button type="button" className="btn" onClick={() => void choose(kind)}>Choose file…</button>
-                  <span className="addinput__path" title={path ?? ''}>{path ? path : 'No file chosen'}</span>
+                  <button type="button" className="btn" onClick={() => void choose(kind)}>
+                    Choose file…
+                  </button>
+                  <span className="addinput__path" title={path ?? ''}>
+                    {path ? path : 'No file chosen'}
+                  </span>
                 </div>
                 {kind === 'video' && (
                   <label className="check">
-                    <input type="checkbox" checked={looping} onChange={(e) => setLooping(e.target.checked)} /> Loop at the end (good for background loops)
+                    <input type="checkbox" checked={looping} onChange={(e) => setLooping(e.target.checked)} /> Loop at the end (good for
+                    background loops)
                   </label>
                 )}
               </div>
@@ -155,7 +174,15 @@ export function AddInput({
                 <span className="field__label">Colour</span>
                 <div className="addinput__swatches">
                   {SWATCHES.map((c) => (
-                    <button key={c} type="button" className="swatch" aria-label={c} aria-pressed={color === c} style={{ background: c }} onClick={() => setColor(c)} />
+                    <button
+                      key={c}
+                      type="button"
+                      className="swatch"
+                      aria-label={c}
+                      aria-pressed={color === c}
+                      style={{ background: c }}
+                      onClick={() => setColor(c)}
+                    />
                   ))}
                   <input type="color" aria-label="Any colour" value={color} onChange={(e) => setColor(e.target.value)} />
                 </div>
@@ -164,12 +191,20 @@ export function AddInput({
 
             <label className="field">
               <span className="field__label">Name</span>
-              <input className="text" value={name} maxLength={60} placeholder={ready?.name ?? 'Name shown on the tile'} onChange={(e) => setName(e.target.value)} />
+              <input
+                className="text"
+                value={name}
+                maxLength={60}
+                placeholder={ready?.name ?? 'Name shown on the tile'}
+                onChange={(e) => setName(e.target.value)}
+              />
             </label>
           </div>
         </div>
         <footer className="modal__foot">
-          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
           <button type="button" className="btn btn--primary" disabled={!ready} onClick={() => ready && onAdd(ready)}>
             Add input
           </button>

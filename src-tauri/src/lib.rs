@@ -137,6 +137,7 @@ pub fn run() {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
             });
+            heartbeat(app.handle().clone());
             if std::env::var_os("LUMORA_SMOKE_TEST").is_some() {
                 smoke_test(app.handle().clone());
             }
@@ -152,6 +153,27 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");
+}
+
+/// Lets time pass in the engine ten times a second, so things that are due
+/// (the countdown's at-zero action) happen on time with nobody touching anything.
+fn heartbeat(app: tauri::AppHandle) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        let state = app.state::<AppState>();
+        let snapshot = {
+            let mut engine = lock(&state);
+            match engine.tick(now_ms()) {
+                Outcome::Unchanged => continue,
+                Outcome::Changed => Snapshot {
+                    revision: engine.revision(),
+                    show: engine.show().clone(),
+                },
+            }
+        };
+        state.store.save(snapshot.show.clone());
+        let _ = app.emit("show-changed", snapshot);
+    });
 }
 
 /// `LUMORA_SMOKE_TEST=1`: open all three outputs, check they exist, report and
