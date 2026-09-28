@@ -14,6 +14,7 @@ import { listen } from '@tauri-apps/api/event';
 import { demoApply, demoTick } from './demo';
 import { channels } from './overlays';
 import { emptyRun } from './cues';
+import type { LibraryItem } from './library';
 
 export interface ShowSnapshot {
   revision: number;
@@ -159,6 +160,14 @@ export interface EngineClient {
   mediaUrl(path: string): string;
   /** Keep a picture made here (a PDF page) with the app's files; resolves its path. */
   saveSlide(png: Blob, name: string): Promise<string>;
+
+  // ----- library (kept on this computer) -----
+  libraryItems(): Promise<LibraryItem[]>;
+  saveLibrary(items: LibraryItem[]): Promise<void>;
+  /** Save items to a file the operator chooses (to take to another computer). Resolves false if cancelled. */
+  exportLibrary(items: LibraryItem[]): Promise<boolean>;
+  /** Read items from a file the operator chooses. Resolves [] if cancelled. */
+  importLibrary(): Promise<LibraryItem[]>;
 }
 
 /** An action the engine refused, with the engine's reason. */
@@ -447,6 +456,41 @@ class TauriClient implements EngineClient {
     return invoke<string>('save_slide', new Uint8Array(await png.arrayBuffer()), { headers: { name } });
   }
 
+  async libraryItems(): Promise<LibraryItem[]> {
+    return invoke<LibraryItem[]>('library_items');
+  }
+
+  async saveLibrary(items: LibraryItem[]): Promise<void> {
+    try {
+      await invoke('save_library', { items });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async exportLibrary(items: LibraryItem[]): Promise<boolean> {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const path = await save({ filters: [{ name: 'Lumora library', extensions: ['lumora-library'] }], defaultPath: 'Lumora library.lumora-library' });
+    if (!path) return false;
+    try {
+      await invoke('export_library', { path, items });
+      return true;
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async importLibrary(): Promise<LibraryItem[]> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const path = await open({ multiple: false, directory: false, filters: [{ name: 'Lumora library', extensions: ['lumora-library', 'json'] }] });
+    if (typeof path !== 'string') return [];
+    try {
+      return await invoke<LibraryItem[]>('import_library', { path });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
   async getShow(): Promise<ShowSnapshot> {
     return invoke<ShowSnapshot>('get_show');
   }
@@ -663,6 +707,56 @@ export class DemoClient implements EngineClient {
 
   saveSlide(png: Blob, name: string): Promise<string> {
     return Promise.resolve(`${URL.createObjectURL(png)}#${name}`);
+  }
+
+  // The demo keeps its library in this browser.
+  libraryItems(): Promise<LibraryItem[]> {
+    try {
+      return Promise.resolve(JSON.parse(localStorage.getItem('lumora.library') ?? '[]') as LibraryItem[]);
+    } catch {
+      return Promise.resolve([]);
+    }
+  }
+
+  saveLibrary(items: LibraryItem[]): Promise<void> {
+    try {
+      localStorage.setItem('lumora.library', JSON.stringify(items));
+    } catch {
+      /* private browsing: kept until the page closes */
+    }
+    return Promise.resolve();
+  }
+
+  exportLibrary(items: LibraryItem[]): Promise<boolean> {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify({ lumoraLibrary: 1, items }, null, 2)], { type: 'application/json' }));
+    a.download = 'Lumora library.lumora-library';
+    a.click();
+    return Promise.resolve(true);
+  }
+
+  importLibrary(): Promise<LibraryItem[]> {
+    return new Promise((resolve, reject) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.lumora-library,.json';
+      input.onchange = () => {
+        const f = input.files?.[0];
+        if (!f) return resolve([]);
+        void f.text().then((t) => {
+          try {
+            const v = JSON.parse(t) as { items?: LibraryItem[] } | LibraryItem[];
+            const items = Array.isArray(v) ? v : v.items;
+            if (!Array.isArray(items)) throw new Error('That file is not a Lumora library.');
+            resolve(items);
+          } catch (e) {
+            reject(e instanceof Error ? e : new Error(String(e)));
+          }
+        });
+      };
+      input.oncancel = () => resolve([]);
+      input.click();
+    });
   }
 }
 

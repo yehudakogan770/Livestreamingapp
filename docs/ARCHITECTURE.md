@@ -121,4 +121,8 @@ they opened.
     computer's offset sent on Start), or after the previous cue's length; the
     engine's heartbeat fires them; `RunOfShow.tsx` window, bottom-bar strip,
     N key, phone NEXT CUE).
+    Library: **done** (`src-tauri/src/library.rs`, `app/src/engine/library.ts`:
+    inputs, presets and runs of show kept on this computer in library.json,
+    categories and search, use in any event (links to missing inputs left
+    out), export / import to a .lumora-library file).
 11. Installer, auto-update, rehearsal / soak testing, release.

@@ -7,6 +7,9 @@ import { clock } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { StepsEditor, describeStep } from './PresetEditor';
 import type { Act } from './act';
+import type { EngineClient } from '../engine/client';
+import { SaveToLibrary } from './LibraryDialog';
+import { cuesItem } from '../engine/library';
 import './RunOfShow.css';
 import './TextEditor.css';
 import './PesukimCard.css';
@@ -69,7 +72,8 @@ export function CueBar({ show, act, onOpen }: { show: Show; act: Act; onOpen: ()
 }
 
 /** The run of show: start it, hold it, run cues, and set them up. */
-export function RunOfShowDialog({ show, act, onClose }: { show: Show; act: Act; onClose: () => void }) {
+export function RunOfShowDialog({ show, act, client, onClose }: { show: Show; act: Act; client: EngineClient; onClose: () => void }) {
+  const [keeping, setKeeping] = useState(false);
   const now = useNow(false, 250);
   const r = show.run;
   const [cues, setCues] = useState<Cue[]>(() => structuredClone(r.cues));
@@ -305,6 +309,15 @@ export function RunOfShowDialog({ show, act, onClose }: { show: Show; act: Act; 
         </div>
         <footer className="modal__foot">
           {dirty && <span className="field__note field__note--warn">Changes to the cues are not saved yet.</span>}
+          <button
+            type="button"
+            className="btn"
+            disabled={dirty || !r.cues.length}
+            onClick={() => setKeeping(true)}
+            title="Keep this run of show for later events"
+          >
+            Save to library…
+          </button>
           <span className="remote__spacer" />
           <button type="button" className="btn" disabled={!dirty} onClick={() => setCues(structuredClone(r.cues))}>
             Undo changes
@@ -314,6 +327,13 @@ export function RunOfShowDialog({ show, act, onClose }: { show: Show; act: Act; 
           </button>
         </footer>
       </div>
+      {keeping && (
+        <SaveToLibrary
+          client={client}
+          item={cuesItem(r.cues, show.event.name ? `Run of show · ${show.event.name}` : 'Run of show', '')}
+          onClose={() => setKeeping(false)}
+        />
+      )}
     </div>
   );
 }

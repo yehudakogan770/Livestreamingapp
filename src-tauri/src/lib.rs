@@ -2,6 +2,7 @@
 
 mod capture;
 mod events;
+mod library;
 mod outputs;
 mod remote;
 mod store;
@@ -25,6 +26,7 @@ struct AppState {
     dir: std::path::PathBuf,
     remote: remote::Remote,
     capture: capture::Capture,
+    library: library::Library,
 }
 
 /// A version of the show together with its revision number.
@@ -323,6 +325,27 @@ fn save_slide(
     Ok(path.to_string_lossy().into_owned())
 }
 
+/// The library: things kept on this computer for later events.
+#[tauri::command]
+fn library_items(state: State<'_, AppState>) -> serde_json::Value {
+    state.library.load()
+}
+
+#[tauri::command]
+fn save_library(items: serde_json::Value, state: State<'_, AppState>) -> Result<(), String> {
+    state.library.save(&items)
+}
+
+#[tauri::command]
+fn export_library(path: String, items: serde_json::Value) -> Result<(), String> {
+    library::export(std::path::Path::new(&path), &items)
+}
+
+#[tauri::command]
+fn import_library(path: String) -> Result<serde_json::Value, String> {
+    library::import(std::path::Path::new(&path))
+}
+
 /// Lets the remote reach the engine.
 struct RemoteBackend(tauri::AppHandle);
 
@@ -403,6 +426,7 @@ pub fn run() {
             let capture = capture::Capture::new(Some(&dir), videos, ffmpeg, move |status| {
                 let _ = handle.emit("capture-changed", status);
             });
+            let library = library::Library::new(&dir);
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -410,6 +434,7 @@ pub fn run() {
                 dir,
                 remote,
                 capture,
+                library,
             });
             heartbeat(app.handle().clone());
             if std::env::var_os("LUMORA_SMOKE_TEST").is_some() {
@@ -438,7 +463,11 @@ pub fn run() {
             capture_start,
             capture_chunk,
             capture_stop,
-            save_slide
+            save_slide,
+            library_items,
+            save_library,
+            export_library,
+            import_library
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

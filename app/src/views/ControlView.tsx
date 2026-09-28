@@ -13,6 +13,7 @@ import { OverlayBar } from './OverlayBar';
 import { useCommands, type Command } from './commands';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { CueBar, RunOfShowDialog } from './RunOfShow';
+import { LibraryDialog } from './LibraryDialog';
 import { CreditsCard, creditsTarget } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
 import { slideshowTarget } from '../engine/slideshow';
@@ -56,6 +57,7 @@ export function ControlView({
   const [addStart, setAddStart] = useState<{ kind?: string; template?: number }>({});
   const [shortcuts, setShortcuts] = useState(false);
   const [runOpen, setRunOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   useCommands(
     useCallback((c: Command) => {
       if (c.type === 'addInput') {
@@ -63,6 +65,7 @@ export function ControlView({
         setAdding(true);
       } else if (c.type === 'shortcuts') setShortcuts(true);
       else if (c.type === 'runOfShow') setRunOpen(true);
+      else if (c.type === 'library') setLibraryOpen(true);
     }, []),
   );
   const [outputsOpen, setOutputsOpen] = useState(false);
@@ -128,7 +131,7 @@ export function ControlView({
   // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · Shift+1–4 overlays · B blank this screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (adding || outputsOpen || runOpen || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (adding || outputsOpen || runOpen || libraryOpen || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
       const sc = show.screens[screen];
       if (e.key === 'Enter' && screen !== 'monitor' && sc.preview !== null && sc.preview !== sc.program) {
         e.preventDefault();
@@ -149,7 +152,7 @@ export function ControlView({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [act, adding, outputsOpen, runOpen, screen, show]);
+  }, [act, adding, outputsOpen, runOpen, libraryOpen, screen, show]);
 
   const sc = show.screens[screen];
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
@@ -292,7 +295,8 @@ export function ControlView({
         />
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
-      {runOpen && <RunOfShowDialog show={show} act={act} onClose={() => setRunOpen(false)} />}
+      {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
+      {libraryOpen && <LibraryDialog show={show} client={client} act={act} onClose={() => setLibraryOpen(false)} />}
       {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}
     </div>
   );

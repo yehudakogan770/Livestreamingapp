@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react';
 
-export type Command = { type: 'addInput'; kind?: string; template?: number } | { type: 'addPreset' } | { type: 'shortcuts' } | { type: 'runOfShow' };
+export type Command = { type: 'addInput'; kind?: string; template?: number } | { type: 'addPreset' } | { type: 'shortcuts' } | { type: 'runOfShow' } | { type: 'library' };
 
 const bus = new EventTarget();
 

@@ -10,6 +10,8 @@ import type { TransitionKind } from '../engine/types/TransitionKind';
 import { SourceView } from '../components/SourceView';
 import { KINDS, DURATIONS } from './SwitchPanel';
 import type { Act } from './act';
+import { SaveToLibrary } from './LibraryDialog';
+import { presetItem } from '../engine/library';
 
 /** Every kind of step, in the order the "Add step" menu shows them. */
 export const STEP_KINDS: { type: Step['type']; name: string }[] = [
@@ -118,6 +120,7 @@ export function PresetEditor({
   preset: Preset | null;
   onClose: () => void;
 }) {
+  const [keeping, setKeeping] = useState(false);
   const [draft, setDraft] = useState<Preset>(
     () =>
       preset ?? {
@@ -296,6 +299,11 @@ export function PresetEditor({
               Delete preset
             </button>
           )}
+          {preset && (
+            <button type="button" className="btn" onClick={() => setKeeping(true)} title="Keep this preset for later events">
+              Save to library…
+            </button>
+          )}
           <span className="grow" />
           <button type="button" className="btn" onClick={onClose}>
             Cancel
@@ -305,6 +313,7 @@ export function PresetEditor({
           </button>
         </footer>
       </div>
+      {keeping && preset && <SaveToLibrary client={client} item={presetItem(preset, '')} onClose={() => setKeeping(false)} />}
     </div>
   );
 }

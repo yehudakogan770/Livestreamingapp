@@ -10,6 +10,8 @@ import { useProblems } from '../problems/problems';
 import { TextEditor } from './TextEditor';
 import { SplitEditor } from './SplitEditor';
 import { SlideshowEditor } from './SlideshowEditor';
+import { SaveToLibrary } from './LibraryDialog';
+import { inputItem } from '../engine/library';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
   camera: 'Camera',
@@ -50,6 +52,8 @@ export function InputGrid({
   const editingText = show.sources.find((x) => x.id === editing && x.kind.type === 'text');
   const editingSplit = show.sources.find((x) => x.id === editing && x.kind.type === 'split');
   const editingSlides = show.sources.find((x) => x.id === editing && x.kind.type === 'slideshow');
+  const [keeping, setKeeping] = useState<string | null>(null);
+  const keepSource = show.sources.find((x) => x.id === keeping);
   const textOnly = screen === 'monitor';
   return (
     <div className="inputs" aria-label="Inputs">
@@ -100,7 +104,9 @@ export function InputGrid({
             <button type="button" className="tile__more" aria-label={`Options for ${src.name}`} onClick={() => setMenu(menu === src.id ? null : src.id)}>
               ⋯
             </button>
-            {menu === src.id && <TileMenu source={src} act={act} onClose={() => setMenu(null)} onEditText={() => setEditing(src.id)} />}
+            {menu === src.id && (
+              <TileMenu source={src} act={act} onClose={() => setMenu(null)} onEditText={() => setEditing(src.id)} onKeep={() => setKeeping(src.id)} />
+            )}
           </div>
         );
       })}
@@ -109,13 +115,14 @@ export function InputGrid({
         Add input
       </button>
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
+      {keepSource && <SaveToLibrary client={client} item={inputItem(keepSource, '')} onClose={() => setKeeping(null)} />}
       {editingSlides && <SlideshowEditor source={editingSlides} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingSplit && <SplitEditor source={editingSplit} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
     </div>
   );
 }
 
-function TileMenu({ source, act, onClose, onEditText }: { source: Source; act: Act; onClose: () => void; onEditText: () => void }) {
+function TileMenu({ source, act, onClose, onEditText, onKeep }: { source: Source; act: Act; onClose: () => void; onEditText: () => void; onKeep: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [confirm, setConfirm] = useState(false);
   // Everything is changed here first and applied on Done; clicking away or Esc cancels.
@@ -208,6 +215,16 @@ function TileMenu({ source, act, onClose, onEditText }: { source: Source; act: A
           {k === 'text' ? 'Edit text…' : k === 'split' ? 'Edit split screen…' : 'Edit slides…'}
         </button>
       )}
+      <button
+        type="button"
+        className="btn menu__wide"
+        onClick={() => {
+          onClose();
+          onKeep();
+        }}
+      >
+        Save to library…
+      </button>
       <div className="menu__foot">
         <button type="button" className="btn" onClick={onClose}>
           Cancel

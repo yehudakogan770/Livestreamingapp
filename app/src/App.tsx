@@ -195,6 +195,7 @@ function ControlApp() {
       Event: event,
       Presets: presets,
       Cues: cues,
+      Library: [{ label: 'Open the library…', onClick: () => sendCommand({ type: 'library' }) }],
       Inputs: inputs,
       Overlays: overlays,
       Text: text,
