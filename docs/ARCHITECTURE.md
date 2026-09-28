@@ -24,6 +24,7 @@ software. When quality and speed of development conflict, quality wins.
 | Record / stream | **FFmpeg with NVENC / Quick Sync / AMF** | MP4 recording, RTMP streaming |
 | Outputs | Native full-screen windows per display | Live, Back, Monitor — frame-accurate |
 | Remotes | Local web server in the engine (LAN only) | Phone / tablet control, no internet needed |
+| Stage visuals | Stage Visuals renderer (`modules/stage-visuals`), WebGL first, ported to wgpu later | Beat-synced back-screen visuals, MIDI keyboard control |
 
 ### Rules
 
@@ -68,6 +69,6 @@ Each milestone is tested on real hardware before the next one starts.
 7. Recording and streaming.
 8. Presets, library, save / open events, crash recovery.
 9. Phone and tablet remotes.
-10. Remaining screens from `design/` (loops, pesukim, slideshow, credits,
+10. Remaining screens from `design/` (stage visuals, pesukim, slideshow, credits,
     overlays, green screen, 3D logo, split screen, browser source).
 11. Installer, auto-update, rehearsal / soak testing, release.

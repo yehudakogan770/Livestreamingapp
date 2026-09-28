@@ -174,12 +174,22 @@ A feature only counts as finished when **all** of these are true:
 - ◆ Virtual sets
 - ○ AI background removal (no green screen needed)
 
-## 15. Back-screen loops
+## 15. Stage visuals (beat-synced back-screen visuals)
 
-- ★ Ready-made loops (aurora, particles, warm glow …)
-- ★ Energy, speed, brightness, tint controls
-- ★ Follow the music (react to the beat and volume)
-- ◆ Mood presets; import your own loops
+Built from the Stage Visuals Live project (`modules/stage-visuals`).
+
+- ★ 13 music types (Slow, Medium, Fast, Bounce, Electric, Acoustic, Worship, Hip hop, Rock, Latin, Retro 80s, Party & kids, Space) with 261 ready-made scenes on 60 animated looks
+- ★ Beat clock: BPM, tap tempo, sync to 1; scenes change on the beat or the bar with automatic fades
+- ★ Effect pads: strobe (hold), flash, blackout, freeze, invert, text, randomize, reset, colours, next scene
+- ★ Quick visuals controls on the Back Screen strip and in the All-three view
+- ★ Show on the Back Screen, the Live Screen, or both
+- ◆ Advanced effects: zoom, spin, pan, zoom kick, mirror, kaleidoscope, hue, saturation, contrast, glow, trails, RGB split, pixelate, posterize, TV lines, vignette
+- ◆ Overlay layer (a second scene blended on top) and text on screen with fonts and beat pulse
+- ◆ Saved looks (scene + every effect setting); auto-change every N bars
+- ◆ **MIDI keyboard control** (Yamaha PSR-SX720 first): learn mode maps keys to scenes, pads, looks, sliders — and to Lumora actions like TAKE and presets; MIDI clock sets the tempo
+- ◆ Follow the music: react to the room's audio as well as the beat
+- ◆ Import your own video loops alongside the generated visuals
+- ○ Add your own scenes and colour sets
 
 ## 16. Audio
 
