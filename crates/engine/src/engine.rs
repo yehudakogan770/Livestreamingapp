@@ -83,18 +83,25 @@ impl Engine {
     /// action, and preset-button steps waiting to resume. Call it a few
     /// times a second.
     pub fn tick(&mut self, now: Millis) -> Outcome {
-        let c = &self.show.countdown;
-        // It lands on 0, holds a moment, then the at-zero action runs.
-        let countdown_due = !c.fired && c.due(now);
+        // Each countdown lands on 0, holds a moment, then its at-zero action runs.
+        let due: Vec<SourceId> = self
+            .show
+            .sources
+            .iter()
+            .filter(|src| {
+                matches!(&src.kind, SourceKind::Countdown { timer, .. } if !timer.fired && timer.due(now))
+            })
+            .map(|src| src.id.clone())
+            .collect();
         let steps_due = self.show.running.iter().any(|r| r.resume_at <= now);
-        if !countdown_due && !steps_due {
+        if due.is_empty() && !steps_due {
             return Outcome::Unchanged;
         }
         let mut next = self.show.clone();
         let live_before = next.screens.live.clone();
         let was_following = next.back_follows_live;
-        if countdown_due {
-            run_at_zero(&mut next, now);
+        for id in &due {
+            run_at_zero(&mut next, id, now);
         }
         if steps_due {
             run_steps(&mut next, now);
@@ -109,45 +116,57 @@ impl Engine {
     }
 }
 
-/// The countdown has held on 0: do what was chosen for zero, once.
-fn run_at_zero(next: &mut Show, now: Millis) {
-    next.countdown.fired = true;
-    match next.countdown.at_zero.clone() {
+/// A countdown input has held on 0: do what was chosen for zero, once.
+fn run_at_zero(next: &mut Show, id: &SourceId, now: Millis) {
+    let Ok(timer) = timer_mut(next, id) else {
+        return;
+    };
+    timer.fired = true;
+    let at_zero = timer.at_zero.clone();
+    // The screens showing this countdown right now.
+    let showing: Vec<ScreenId> = [ScreenId::Live, ScreenId::Back]
+        .into_iter()
+        .filter(|sc| next.screens.get(*sc).program.as_ref() == Some(id))
+        .collect();
+    match at_zero {
         AtZero::Hold | AtZero::ShowText | AtZero::Hide => {}
         AtZero::Blank => {
-            // Black on the screens showing the countdown right now.
-            let showing: Vec<ScreenId> = [ScreenId::Live, ScreenId::Back]
-                .into_iter()
-                .filter(|id| {
-                    next.screens
-                        .get(*id)
-                        .program
-                        .as_ref()
-                        .and_then(|p| next.source(p))
-                        .is_some_and(|s| matches!(s.kind, SourceKind::Countdown { .. }))
-                })
-                .collect();
-            for id in showing {
-                let sc = next.screens.get_mut(id);
-                if !sc.blank {
-                    sc.blank = true;
-                    sc.blank_changed_at = now;
+            for sc in showing {
+                let st = next.screens.get_mut(sc);
+                if !st.blank {
+                    st.blank = true;
+                    st.blank_changed_at = now;
                 }
             }
         }
         AtZero::CutTo { source_id } => {
-            // The source may have been removed since; then just stop.
-            if next.has_source(&source_id) {
+            // Switch the screens it is on (the Live Screen if none). The
+            // input may have been removed since; then nothing happens.
+            let screens = if showing.is_empty() {
+                vec![ScreenId::Live]
+            } else {
+                showing
+            };
+            for screen in screens {
                 let _ = apply_to(
                     next,
                     Action::CutTo {
-                        screen: ScreenId::Live,
-                        source_id,
+                        screen,
+                        source_id: source_id.clone(),
                     },
                     now,
                 );
             }
         }
+    }
+}
+
+/// A countdown input's timer, or why there isn't one.
+fn timer_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::stage::Countdown> {
+    match s.source_mut(id).map(|x| &mut x.kind) {
+        Some(SourceKind::Countdown { timer, .. }) => Ok(timer),
+        Some(_) => Err(ActionError::invalid("id", "that input is not a countdown")),
+        None => Err(ActionError::UnknownSource { id: id.clone() }),
     }
 }
 
@@ -183,8 +202,12 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             if s.audio.solo.as_ref() == Some(&id) {
                 s.audio.solo = None;
             }
-            if matches!(&s.countdown.at_zero, AtZero::CutTo { source_id } if *source_id == id) {
-                s.countdown.at_zero = AtZero::Hold;
+            for src in &mut s.sources {
+                if let SourceKind::Countdown { timer, .. } = &mut src.kind {
+                    if matches!(&timer.at_zero, AtZero::CutTo { source_id } if *source_id == id) {
+                        timer.at_zero = AtZero::Hide;
+                    }
+                }
             }
             for id_screen in ScreenId::ALL {
                 let sc = s.screens.get_mut(id_screen);
@@ -484,44 +507,47 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.monitor.quick[index] = short_text(&text, MAX_SHORT_TEXT_LEN);
             Ok(())
         }
-        Action::UpdateCountdown { patch } => update_countdown(s, patch),
-        Action::SetCountdownLength { length_ms } => {
-            s.countdown.length_ms = countdown_ms(length_ms, "lengthMs")?;
-            s.countdown.reset();
+        Action::UpdateCountdown { id, patch } => update_countdown(s, &id, patch),
+        Action::SetCountdownLength { id, length_ms } => {
+            let len = countdown_ms(length_ms, "lengthMs")?;
+            let t = timer_mut(s, &id)?;
+            t.length_ms = len;
+            t.reset();
             Ok(())
         }
-        Action::StartCountdown => {
-            s.countdown.start(now);
+        Action::StartCountdown { id } => {
+            timer_mut(s, &id)?.start(now);
             Ok(())
         }
-        Action::PauseCountdown => {
-            s.countdown.pause(now);
+        Action::PauseCountdown { id } => {
+            timer_mut(s, &id)?.pause(now);
             Ok(())
         }
-        Action::ResetCountdown => {
-            s.countdown.reset();
+        Action::ResetCountdown { id } => {
+            timer_mut(s, &id)?.reset();
             Ok(())
         }
-        Action::AddCountdownTime { ms } => {
+        Action::AddCountdownTime { id, ms } => {
             if ms.unsigned_abs() > MAX_COUNTDOWN_MS {
                 return Err(ActionError::invalid("ms", "at most 24 hours at a time"));
             }
-            s.countdown.add(ms, now);
+            timer_mut(s, &id)?.add(ms, now);
             Ok(())
         }
-        Action::SetCountdownRemaining { ms } => {
-            s.countdown.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
+        Action::SetCountdownRemaining { id, ms } => {
+            timer_mut(s, &id)?.set_remaining(ms.min(MAX_COUNTDOWN_MS), now);
             Ok(())
         }
-        Action::CountdownTo { at } => {
+        Action::CountdownTo { id, at } => {
             if at <= now {
                 return Err(ActionError::invalid("at", "that time has already passed"));
             }
             let left = countdown_ms(at - now, "at")?;
-            s.countdown.length_ms = left;
-            s.countdown.remaining_ms = left;
-            s.countdown.ends_at = Some(at);
-            s.countdown.fired = false;
+            let t = timer_mut(s, &id)?;
+            t.length_ms = left;
+            t.remaining_ms = left;
+            t.ends_at = Some(at);
+            t.fired = false;
             Ok(())
         }
     }
@@ -652,7 +678,7 @@ fn step_preset(s: &mut Show, forward: bool, now: Millis) -> Result<()> {
 }
 
 /// Turn a step into the action it stands for (waits are handled by the runner).
-fn step_action(step: Step) -> Option<Action> {
+fn step_action(step: Step, main: Option<&SourceId>) -> Option<Action> {
     Some(match step {
         Step::Preview { screen, source_id } => Action::SetPreview { screen, source_id },
         Step::Take { screen, transition } => Action::Take {
@@ -675,10 +701,22 @@ fn step_action(step: Step) -> Option<Action> {
                 ..MonitorPatch::default()
             },
         },
-        Step::StartCountdown => Action::StartCountdown,
-        Step::PauseCountdown => Action::PauseCountdown,
-        Step::ResetCountdown => Action::ResetCountdown,
-        Step::SetCountdownLength { length_ms } => Action::SetCountdownLength { length_ms },
+        Step::StartCountdown { source_id } => Action::StartCountdown {
+            id: source_id.or_else(|| main.cloned())?,
+        },
+        Step::PauseCountdown { source_id } => Action::PauseCountdown {
+            id: source_id.or_else(|| main.cloned())?,
+        },
+        Step::ResetCountdown { source_id } => Action::ResetCountdown {
+            id: source_id.or_else(|| main.cloned())?,
+        },
+        Step::SetCountdownLength {
+            source_id,
+            length_ms,
+        } => Action::SetCountdownLength {
+            id: source_id.or_else(|| main.cloned())?,
+            length_ms,
+        },
         Step::Play { source_id } => Action::Play { id: source_id },
         Step::Pause { source_id } => Action::Pause { id: source_id },
         Step::BackFollowsLive { value } => Action::SetBackFollowsLive { value },
@@ -700,7 +738,7 @@ fn run_steps(s: &mut Show, now: Millis) {
             if let Step::Wait { ms } = step {
                 // Timed from when the wait was due, so waits never drift.
                 r.resume_at = r.resume_at.saturating_add(u64::from(ms));
-            } else if let Some(action) = step_action(step) {
+            } else if let Some(action) = step_action(step, s.main_countdown()) {
                 let _ = apply_to(s, action, now);
             }
         }
@@ -736,11 +774,11 @@ fn update_monitor(s: &mut Show, p: MonitorPatch) {
     }
 }
 
-fn update_countdown(s: &mut Show, p: CountdownPatch) -> Result<()> {
+fn update_countdown(s: &mut Show, id: &SourceId, p: CountdownPatch) -> Result<()> {
     if let Some(AtZero::CutTo { source_id }) = &p.at_zero {
         require_picture(s, source_id)?;
     }
-    let c = &mut s.countdown;
+    let c = timer_mut(s, id)?;
     if let Some(text) = p.label {
         c.label = short_text(&text, MAX_SHORT_TEXT_LEN);
     }
@@ -828,8 +866,10 @@ fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()
     let sc = s.screens.get_mut(screen);
     sc.previous = outgoing.clone().filter(|o| o != &incoming);
     sc.program = Some(incoming.clone());
-    // Broadcast convention: what was on air drops back into preview.
-    sc.preview = outgoing.or_else(|| Some(incoming.clone()));
+    // Broadcast convention: what was on air drops back into Next. When
+    // nothing was on air, Next is left empty rather than showing the same
+    // picture twice.
+    sc.preview = outgoing;
     sc.transition = Some(ActiveTransition {
         kind: t.kind,
         duration_ms: t.duration_ms,
@@ -843,11 +883,10 @@ fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()
 
 /// A countdown waits in Next and starts counting when it goes on air.
 fn start_if_countdown(s: &mut Show, id: &SourceId, now: Millis) {
-    let is_countdown = s
-        .source(id)
-        .is_some_and(|src| matches!(src.kind, SourceKind::Countdown { .. }));
-    if is_countdown && !s.countdown.running() {
-        s.countdown.start(now);
+    if let Ok(timer) = timer_mut(s, id) {
+        if !timer.running() {
+            timer.start(now);
+        }
     }
 }
 
@@ -1007,9 +1046,21 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
-        SourceKind::Countdown { background, logo } => SourceKind::Countdown {
+        SourceKind::Countdown {
+            background,
+            logo,
+            timer,
+        } => SourceKind::Countdown {
             background: clean_color(&background)?,
             logo: logo.filter(|p| !p.trim().is_empty()),
+            // A new countdown input waits, ready to start from its length.
+            timer: crate::stage::Countdown {
+                ends_at: None,
+                remaining_ms: timer.length_ms.clamp(1_000, MAX_COUNTDOWN_MS),
+                length_ms: timer.length_ms.clamp(1_000, MAX_COUNTDOWN_MS),
+                fired: false,
+                ..timer
+            },
         },
     })
 }

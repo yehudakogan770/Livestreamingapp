@@ -297,29 +297,41 @@ pub enum Action {
     },
 
     // ----- countdown -----
+    // Each names the countdown input it is for (`id`).
     UpdateCountdown {
+        id: SourceId,
         patch: CountdownPatch,
     },
     /// Set the length and get ready to start from it (stops the countdown).
     SetCountdownLength {
+        id: SourceId,
         #[ts(type = "number")]
         length_ms: u64,
     },
-    StartCountdown,
-    PauseCountdown,
-    ResetCountdown,
+    StartCountdown {
+        id: SourceId,
+    },
+    PauseCountdown {
+        id: SourceId,
+    },
+    ResetCountdown {
+        id: SourceId,
+    },
     /// Add time (negative takes time away). Works at any moment, even after zero.
     AddCountdownTime {
+        id: SourceId,
         #[ts(type = "number")]
         ms: i64,
     },
     /// Jump to a time left, e.g. the last 10 seconds.
     SetCountdownRemaining {
+        id: SourceId,
         #[ts(type = "number")]
         ms: u64,
     },
     /// Count down to a clock time ("starts at 19:30"). Starts it running.
     CountdownTo {
+        id: SourceId,
         #[ts(type = "number")]
         at: Millis,
     },

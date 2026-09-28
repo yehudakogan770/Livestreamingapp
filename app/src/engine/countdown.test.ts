@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { demoApply, demoTick } from './demo';
-import { emptyShow } from './client';
+import { countdownTarget, mainCountdown, timerOf } from './countdowns';
+import { defaultCountdown, emptyShow } from './client';
 import { countdownRemaining, countdownVisible, formatCountdown } from './timing';
 import { nextClockTime, parseLength } from '../views/CountdownDialog';
 import type { Action } from './types/Action';
@@ -23,39 +24,42 @@ describe('countdown text', () => {
   });
 });
 
+const withCd = (extra: [Action, number][] = []) =>
+  run(emptyShow(), [[{ type: 'addSource', source: { id: 'cd', name: 'Countdown', kind: { type: 'countdown', background: '#000000', timer: defaultCountdown() } } }, 0], ...extra]);
+const t = (s: Show, id = 'cd') => timerOf(s, id)!;
+
 describe('countdown rules (same as the engine)', () => {
   it('adding time in the last seconds carries on from the new time', () => {
-    const s = run(emptyShow(), [
-      [{ type: 'setCountdownLength', lengthMs: MIN }, 0],
-      [{ type: 'startCountdown' }, 0],
-      [{ type: 'addCountdownTime', ms: MIN }, 55_000],
+    const s = withCd([
+      [{ type: 'setCountdownLength', id: 'cd', lengthMs: MIN }, 0],
+      [{ type: 'startCountdown', id: 'cd' }, 0],
+      [{ type: 'addCountdownTime', id: 'cd', ms: MIN }, 55_000],
     ]);
-    expect(countdownRemaining(s.countdown, 55_000)).toBe(65_000);
+    expect(countdownRemaining(t(s), 55_000)).toBe(65_000);
   });
 
-  it('at zero it switches the Live Screen once, and the numbers can come off', () => {
-    let s = run(emptyShow(), [
+  it('at zero it holds on 0, then switches the screen it is on once, and the numbers can come off', () => {
+    let s = withCd([
       [{ type: 'addSource', source: { id: 'open', name: 'Opening', kind: { type: 'pattern' } } }, 0],
-      [{ type: 'updateCountdown', patch: { atZero: { type: 'cutTo', sourceId: 'open' } } }, 0],
-      [{ type: 'setCountdownLength', lengthMs: 5_000 }, 0],
-      [{ type: 'startCountdown' }, 0],
+      [{ type: 'updateCountdown', id: 'cd', patch: { atZero: { type: 'cutTo', sourceId: 'open' } } }, 0],
+      [{ type: 'setCountdownLength', id: 'cd', lengthMs: 5_000 }, 0],
+      [{ type: 'cutTo', screen: 'live', sourceId: 'cd' }, 0],
     ]);
     expect(demoTick(s, 4_000)).toBeNull();
     expect(demoTick(s, 5_000)).toBeNull(); // on 0: holds a moment first
-    expect(countdownVisible(s.countdown, 5_500)).toBe(true); // the 0 is still showing
+    expect(countdownVisible(t(s), 5_500)).toBe(true); // the 0 is still showing
     s = demoTick(s, 6_500)!;
     expect(s.screens.live.program).toBe('open');
     expect(demoTick(s, 8_000)).toBeNull();
-    expect(countdownVisible(s.countdown, 8_000)).toBe(false);
+    expect(countdownVisible(t(s), 8_000)).toBe(false);
   });
 
-  it('“go to black” at zero blanks only the screens showing the countdown', () => {
-    let s = run(emptyShow(), [
-      [{ type: 'addSource', source: { id: 'cd', name: 'Countdown', kind: { type: 'countdown', background: '#000000' } } }, 0],
+  it('“go to black” at zero blanks only the screens showing that countdown', () => {
+    let s = withCd([
       [{ type: 'cutTo', screen: 'back', sourceId: 'cd' }, 0],
-      [{ type: 'updateCountdown', patch: { atZero: { type: 'blank' } } }, 0],
-      [{ type: 'setCountdownLength', lengthMs: 1_000 }, 0],
-      [{ type: 'startCountdown' }, 0],
+      [{ type: 'updateCountdown', id: 'cd', patch: { atZero: { type: 'blank' } } }, 0],
+      [{ type: 'setCountdownLength', id: 'cd', lengthMs: 1_000 }, 0],
+      [{ type: 'startCountdown', id: 'cd' }, 0],
     ]);
     s = demoTick(s, 2_500)!;
     expect(s.screens.back.blank).toBe(true);
@@ -63,21 +67,43 @@ describe('countdown rules (same as the engine)', () => {
   });
 
   it('“show the end text” keeps it on screen at zero', () => {
-    const s = run(emptyShow(), [
-      [{ type: 'updateCountdown', patch: { atZero: { type: 'showText' } } }, 0],
-      [{ type: 'setCountdownLength', lengthMs: 1_000 }, 0],
-      [{ type: 'startCountdown' }, 0],
+    const s = withCd([
+      [{ type: 'updateCountdown', id: 'cd', patch: { atZero: { type: 'showText' } } }, 0],
+      [{ type: 'setCountdownLength', id: 'cd', lengthMs: 1_000 }, 0],
+      [{ type: 'startCountdown', id: 'cd' }, 0],
     ]);
-    expect(countdownVisible(s.countdown, 2_000)).toBe(true);
+    expect(countdownVisible(t(s), 2_000)).toBe(true);
   });
 
   it('can be moved to any second: jump, nudge by 10 s', () => {
-    const s = run(emptyShow(), [
-      [{ type: 'startCountdown' }, 0],
-      [{ type: 'setCountdownRemaining', ms: 30_000 }, 1_000],
-      [{ type: 'addCountdownTime', ms: -10_000 }, 1_000],
+    const s = withCd([
+      [{ type: 'startCountdown', id: 'cd' }, 0],
+      [{ type: 'setCountdownRemaining', id: 'cd', ms: 30_000 }, 1_000],
+      [{ type: 'addCountdownTime', id: 'cd', ms: -10_000 }, 1_000],
     ]);
-    expect(countdownRemaining(s.countdown, 1_000)).toBe(20_000);
+    expect(countdownRemaining(t(s), 1_000)).toBe(20_000);
+  });
+
+  it('a countdown prepared in Next changes on its own while another is on air', () => {
+    const s = withCd([
+      [{ type: 'addSource', source: { id: 'nx', name: 'Countdown 2', kind: { type: 'countdown', background: '#000000', timer: defaultCountdown() } } }, 0],
+      [{ type: 'cutTo', screen: 'live', sourceId: 'cd' }, 0],
+      [{ type: 'setPreview', screen: 'live', sourceId: 'nx' }, 1_000],
+      [{ type: 'setCountdownLength', id: 'nx', lengthMs: 10 * MIN }, 2_000],
+    ]);
+    expect(countdownTarget(s, 'live')).toEqual({ id: 'nx', where: 'next' });
+    expect(countdownRemaining(t(s, 'cd'), 2_000)).toBe(5 * MIN - 2_000); // on air: untouched, counting
+    expect(countdownRemaining(t(s, 'nx'), 60_000)).toBe(10 * MIN); // in Next: waiting
+  });
+
+  it('after the first TAKE, Next is left empty', () => {
+    const s = withCd([
+      [{ type: 'setPreview', screen: 'live', sourceId: 'cd' }, 0],
+      [{ type: 'take', screen: 'live' }, 0],
+    ]);
+    expect(s.screens.live.program).toBe('cd');
+    expect(s.screens.live.preview).toBeNull();
+    expect(mainCountdown(s)).toBe('cd');
   });
 });
 

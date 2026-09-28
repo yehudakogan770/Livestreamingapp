@@ -233,7 +233,7 @@ fn removing_an_input_takes_it_out_of_presets_and_presets_are_saved() {
     let mut p = preset("Speaker", &["cam1", "cam2"]);
     p.buttons = vec![PresetButton {
         name: "Go".into(),
-        steps: vec![Step::StartCountdown],
+        steps: vec![Step::StartCountdown { source_id: None }],
     }];
     apply(&mut e, Action::AddPreset { preset: p }, 0);
     apply(&mut e, Action::RemoveSource { id: id("cam1") }, 0);

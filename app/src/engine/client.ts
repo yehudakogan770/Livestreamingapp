@@ -8,6 +8,7 @@ import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
 import type { ScreenId } from './types/ScreenId';
 import type { Show } from './types/Show';
+import type { Countdown } from './types/Countdown';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { demoApply, demoTick } from './demo';
@@ -96,6 +97,20 @@ function describe(detail: ActionError | { code: 'unavailable' }): string {
   }
 }
 
+/** A countdown timer with the standard settings (mirrors Countdown::default). */
+export function defaultCountdown(): Countdown {
+  return {
+    lengthMs: 300_000,
+    endsAt: null,
+    remainingMs: 300_000,
+    label: 'Starting soon',
+    endText: 'Welcome!',
+    format: 'auto',
+    atZero: { type: 'hide' },
+    fired: false,
+  };
+}
+
 export function emptyShow(): Show {
   const screen = {
     preview: null,
@@ -144,16 +159,6 @@ export function emptyShow(): Show {
         'Stand by',
         'Thank you!',
       ],
-    },
-    countdown: {
-      lengthMs: 300_000,
-      endsAt: null,
-      remainingMs: 300_000,
-      label: 'Starting soon',
-      endText: 'Welcome!',
-      format: 'auto',
-      atZero: { type: 'hide' },
-      fired: false,
     },
     settings: {
       displays: { live: null, back: null, monitor: null },

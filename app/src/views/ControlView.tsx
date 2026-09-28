@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EngineError, isSoundFile, type EngineClient } from '../engine/client';
+import { EngineError, defaultCountdown, isSoundFile, type EngineClient } from '../engine/client';
 import type { Action } from '../engine/types/Action';
 import type { NewSource } from '../engine/types/NewSource';
 import type { ScreenId } from '../engine/types/ScreenId';
@@ -50,10 +50,16 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
   useEffect(() => client.watchOutputs(setOpen), [client]);
 
   // The countdown goes on a screen like any input: lined up in Next, then TAKE.
+  // Each countdown input has its own timer, so if every one is already on
+  // air a new one is made to prepare in Next without touching the live one.
   const putCountdownInNext = () => {
-    const existing = show.sources.find((s) => s.kind.type === 'countdown');
-    if (existing) return act({ type: 'setPreview', screen, sourceId: existing.id });
-    add({ name: 'Countdown', kind: { type: 'countdown', background: '#0b2545' } });
+    const cds = show.sources.filter((s) => s.kind.type === 'countdown');
+    const onAir = new Set([show.screens.live.program, show.screens.back.program]);
+    const free = cds.find((s) => !onAir.has(s.id));
+    if (free) return act({ type: 'setPreview', screen, sourceId: free.id });
+    const like = cds[0]?.kind.type === 'countdown' ? cds[0].kind : null;
+    const timer = { ...defaultCountdown(), ...(like ? { label: like.timer.label, endText: like.timer.endText, format: like.timer.format, atZero: like.timer.atZero, lengthMs: like.timer.lengthMs, remainingMs: like.timer.lengthMs } : {}) };
+    add({ name: cds.length ? `Countdown ${cds.length + 1}` : 'Countdown', kind: { type: 'countdown', background: like?.background ?? '#0b2545', logo: like?.logo, timer } });
   };
 
   const add = (src: NewSource) => {
@@ -113,7 +119,7 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
             </div>
             <div className="centre">
               <SwitchPanel show={show} screen={screen} act={act} />
-              <CountdownCard show={show} act={act} onPutInNext={putCountdownInNext} />
+              <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
             </div>
             <div className="mon mon--pgm">
               <div className="mon__head">

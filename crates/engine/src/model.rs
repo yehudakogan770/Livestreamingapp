@@ -187,6 +187,10 @@ pub enum SourceKind {
         #[serde(default)]
         #[ts(optional)]
         logo: Option<String>,
+        /// This input's own timer: each countdown input counts on its own,
+        /// so the next one can be prepared while another is on air.
+        #[serde(default)]
+        timer: Countdown,
     },
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
@@ -338,14 +342,13 @@ pub struct Show {
     pub audio: AudioMix,
     /// What the stage monitor shows.
     pub monitor: Monitor,
-    /// The countdown (on the monitor and, when chosen, big on Live / Back).
-    pub countdown: Countdown,
     pub settings: Settings,
 }
 
 /// Current save-file format version.
 /// 2: the countdown's at-zero default became "take the numbers off".
-pub const SHOW_VERSION: u32 = 2;
+/// 3: each countdown input has its own timer (was one shared countdown).
+pub const SHOW_VERSION: u32 = 3;
 
 impl Default for Show {
     fn default() -> Self {
@@ -364,7 +367,6 @@ impl Default for Show {
             running: Vec::new(),
             audio: AudioMix::default(),
             monitor: Monitor::default(),
-            countdown: Countdown::default(),
             settings: Settings::default(),
         }
     }
@@ -379,5 +381,40 @@ impl Show {
     }
     pub fn has_source(&self, id: &SourceId) -> bool {
         self.source(id).is_some()
+    }
+
+    /// A countdown input's timer.
+    pub fn countdown(&self, id: &SourceId) -> Option<&Countdown> {
+        match self.source(id).map(|s| &s.kind) {
+            Some(SourceKind::Countdown { timer, .. }) => Some(timer),
+            _ => None,
+        }
+    }
+
+    /// The countdown that matters most right now, for the stage monitor and
+    /// for steps that don't name one: on air on the Live Screen, then the
+    /// Back Screen, then any that is running, then the first one.
+    pub fn main_countdown(&self) -> Option<&SourceId> {
+        let on = |sc: ScreenId| {
+            self.screens
+                .get(sc)
+                .program
+                .as_ref()
+                .filter(|id| self.countdown(id).is_some())
+        };
+        on(ScreenId::Live)
+            .or_else(|| on(ScreenId::Back))
+            .or_else(|| {
+                self.sources
+                    .iter()
+                    .map(|s| &s.id)
+                    .find(|id| self.countdown(id).is_some_and(Countdown::running))
+            })
+            .or_else(|| {
+                self.sources
+                    .iter()
+                    .map(|s| &s.id)
+                    .find(|id| self.countdown(id).is_some())
+            })
     }
 }

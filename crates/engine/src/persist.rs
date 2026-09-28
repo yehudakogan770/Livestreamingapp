@@ -57,17 +57,31 @@ pub fn save_json(show: &Show) -> String {
 /// Fails only when the text is not a show file at all, or comes from a newer
 /// version of Lumora.
 pub fn load_json(text: &str) -> Result<Show, LoadError> {
-    let raw: Show = serde_json::from_str(text)?;
-    if raw.version > SHOW_VERSION {
+    let value: serde_json::Value = serde_json::from_str(text)?;
+    // Before version 3 there was one shared countdown; its settings move
+    // into every countdown input so nothing that was set up is lost.
+    let old_countdown: Option<crate::stage::Countdown> = value
+        .get("countdown")
+        .and_then(|v| serde_json::from_value(v.clone()).ok());
+    let mut show: Show = serde_json::from_value(value)?;
+    if show.version > SHOW_VERSION {
         return Err(LoadError::TooNew {
-            found: raw.version,
+            found: show.version,
             supported: SHOW_VERSION,
         });
     }
-    let mut show = raw;
-    if show.version < 2 && show.countdown.at_zero == crate::stage::AtZero::Hold {
-        // Shows from before version 2 kept the old default; use the new one.
-        show.countdown.at_zero = crate::stage::AtZero::Hide;
+    if show.version < 3 {
+        if let Some(mut old) = old_countdown {
+            if show.version < 2 && old.at_zero == crate::stage::AtZero::Hold {
+                // Shows from before version 2 kept the old default; use the new one.
+                old.at_zero = crate::stage::AtZero::Hide;
+            }
+            for src in &mut show.sources {
+                if let SourceKind::Countdown { timer, .. } = &mut src.kind {
+                    *timer = old.clone();
+                }
+            }
+        }
     }
     Ok(repair(to_saved(&show)))
 }
@@ -203,17 +217,21 @@ fn repair_stage(s: &mut Show) {
     for q in &mut m.quick {
         *q = crate::engine::short_text(q, crate::stage::MAX_SHORT_TEXT_LEN);
     }
-    let c = &mut s.countdown;
-    let max = crate::stage::MAX_COUNTDOWN_MS;
-    if c.length_ms == 0 || c.length_ms > max {
-        c.length_ms = crate::stage::Countdown::default().length_ms;
-    }
-    c.remaining_ms = c.remaining_ms.min(max);
-    c.label = crate::engine::short_text(&c.label, crate::stage::MAX_SHORT_TEXT_LEN);
-    c.end_text = crate::engine::short_text(&c.end_text, crate::stage::MAX_SHORT_TEXT_LEN);
-    if let crate::stage::AtZero::CutTo { source_id } = &c.at_zero {
-        if !s.sources.iter().any(|x| &x.id == source_id) {
-            c.at_zero = crate::stage::AtZero::Hold;
+    let known: HashSet<_> = s.sources.iter().map(|x| x.id.clone()).collect();
+    for src in &mut s.sources {
+        let SourceKind::Countdown { timer: c, .. } = &mut src.kind else {
+            continue;
+        };
+        let max = crate::stage::MAX_COUNTDOWN_MS;
+        if c.length_ms == 0 || c.length_ms > max {
+            c.length_ms = crate::stage::Countdown::default().length_ms;
+        }
+        c.remaining_ms = c.remaining_ms.min(max);
+        c.label = crate::engine::short_text(&c.label, crate::stage::MAX_SHORT_TEXT_LEN);
+        c.end_text = crate::engine::short_text(&c.end_text, crate::stage::MAX_SHORT_TEXT_LEN);
+        if matches!(&c.at_zero, crate::stage::AtZero::CutTo { source_id } if !known.contains(source_id))
+        {
+            c.at_zero = crate::stage::AtZero::Hide;
         }
     }
 }

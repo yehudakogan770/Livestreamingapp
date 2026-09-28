@@ -42,7 +42,7 @@ export function OutputView({ screen }: { screen: ScreenId }) {
   return (
     <div className="output" onDoubleClick={toggleFull}>
       <SafeBoundary audience>
-        <StageContext.Provider value={show ? { countdown: show.countdown, event: show.event, mediaUrl: (p) => client.mediaUrl(p) } : null}>
+        <StageContext.Provider value={show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p) } : null}>
         {show &&
           (screen === 'monitor' ? (
             <MonitorScreen show={show} />

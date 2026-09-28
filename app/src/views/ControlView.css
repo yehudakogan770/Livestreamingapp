@@ -1219,3 +1219,8 @@ button.strip__name:hover { background: #2a2e36; }
 .pe__stepbtns { display: flex; gap: 2px; }
 .pe__add { align-self: flex-start; }
 .pe__delete { border-color: #5a2a27; color: #e0847b; }
+.cd__tag { display: inline-block; margin-right: 6px; padding: 0 5px; border-radius: 3px; font-size: 9px; letter-spacing: 0.06em; color: #fff; }
+.cd__tag--next { background: var(--preview); }
+.cd__tag--onAir { background: var(--program); }
+.cd--none { align-items: flex-start; }
+.cd__hint { font-size: 12px; color: var(--text-dim); }

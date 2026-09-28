@@ -48,10 +48,27 @@ pub enum Step {
         text: String,
     },
     ClearMonitorMessage,
-    StartCountdown,
-    PauseCountdown,
-    ResetCountdown,
+    // Countdown steps name a countdown input, or none for the main one
+    // (the one on air, or else the first).
+    StartCountdown {
+        #[serde(default)]
+        #[ts(optional)]
+        source_id: Option<SourceId>,
+    },
+    PauseCountdown {
+        #[serde(default)]
+        #[ts(optional)]
+        source_id: Option<SourceId>,
+    },
+    ResetCountdown {
+        #[serde(default)]
+        #[ts(optional)]
+        source_id: Option<SourceId>,
+    },
     SetCountdownLength {
+        #[serde(default)]
+        #[ts(optional)]
+        source_id: Option<SourceId>,
         #[ts(type = "number")]
         length_ms: u64,
     },

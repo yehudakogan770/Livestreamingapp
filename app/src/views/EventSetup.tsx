@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import type { EngineClient } from '../engine/client';
+import { defaultCountdown, type EngineClient } from '../engine/client';
 import type { AtZero } from '../engine/types/AtZero';
 import type { SafeScreen } from '../engine/types/SafeScreen';
 import type { Show } from '../engine/types/Show';
@@ -19,7 +19,10 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
   const [logo, setLogo] = useState<string | null>(ev.logo);
   const [onFailure, setOnFailure] = useState<SafeScreen>(ev.onFailure);
   const [panicShows, setPanicShows] = useState<SafeScreen>(ev.panicShows);
-  const z = show.countdown.atZero.type;
+  // The countdown ending applies to every countdown input (and new ones copy it).
+  const cds = show.sources.flatMap((s) => (s.kind.type === 'countdown' ? [{ id: s.id, timer: s.kind.timer }] : []));
+  const firstTimer = cds[0]?.timer ?? defaultCountdown();
+  const z = firstTimer.atZero.type;
   const [ending, setEnding] = useState<Ending>(z === 'hide' ? 'logo' : z === 'cutTo' ? 'logo' : z);
 
   useEffect(() => {
@@ -41,7 +44,9 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
       } else {
         await client.dispatch({ type: 'updateEvent', patch: { name, logo: logo ?? '', onFailure, panicShows, setUp: true } });
         const atZero: AtZero = ending === 'logo' ? { type: 'hide' } : { type: ending };
-        if (JSON.stringify(atZero) !== JSON.stringify(show.countdown.atZero)) await client.dispatch({ type: 'updateCountdown', patch: { atZero } });
+        for (const cd of cds) {
+          if (JSON.stringify(atZero) !== JSON.stringify(cd.timer.atZero)) await client.dispatch({ type: 'updateCountdown', id: cd.id, patch: { atZero } });
+        }
       }
       onClose();
     } catch (e) {
@@ -102,7 +107,7 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
         <Choice on={ending === 'logo'} onPick={() => setEnding('logo')} title="Numbers go, logo appears" preview={withLogo}>
           The background stays
         </Choice>
-        <Choice on={ending === 'showText'} onPick={() => setEnding('showText')} title="Show words" preview={<span className="evs__black evs__words">{show.countdown.endText}</span>}>
+        <Choice on={ending === 'showText'} onPick={() => setEnding('showText')} title="Show words" preview={<span className="evs__black evs__words">{firstTimer.endText}</span>}>
           Set the words under More…
         </Choice>
         <Choice on={ending === 'blank'} onPick={() => setEnding('blank')} title="Go to black" preview={black} />

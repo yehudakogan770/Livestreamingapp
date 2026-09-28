@@ -13,6 +13,7 @@ import { countdownDue, countdownRemaining, sourceEnded, sourcePosition } from '.
 import type { Countdown } from './types/Countdown';
 import type { Preset } from './types/Preset';
 import type { Step } from './types/Step';
+import { mainCountdown } from './countdowns';
 
 const MIN_TRANSITION_MS = 100;
 const MAX_COUNTDOWN_MS = 24 * 60 * 60 * 1000;
@@ -23,6 +24,19 @@ function setRemaining(c: Countdown, ms: number, now: number) {
   if (c.endsAt !== null) c.endsAt = now + v;
   else c.remainingMs = v;
   if (v > 0) c.fired = false;
+}
+
+/** A countdown input's own timer. */
+function timer(s: Show, id: string): Countdown {
+  const src = find(s, id);
+  if (src.kind.type !== 'countdown') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a countdown' });
+  return src.kind.timer;
+}
+
+function startTimer(c: Countdown, now: number) {
+  if (c.remainingMs === 0) c.remainingMs = c.lengthMs;
+  c.endsAt = now + c.remainingMs;
+  c.fired = false;
 }
 
 function countdownMs(ms: number, field: string): number {
@@ -86,16 +100,13 @@ function take(s: Show, screen: ScreenId, kind: Show['transition']['kind'], durat
   const outgoing = sc.program;
   sc.previous = outgoing !== incoming ? outgoing : null;
   sc.program = incoming;
-  sc.preview = outgoing ?? incoming;
+  sc.preview = outgoing; // nothing was on air: Next is left empty
   sc.transition = { kind, durationMs, startedAt: now };
   sc.tbar = 0;
   startIfVideo(s, incoming, now);
   // A countdown waits in Next and starts counting when it goes on air.
-  if (s.sources.find((x) => x.id === incoming)?.kind.type === 'countdown' && s.countdown.endsAt === null) {
-    if (s.countdown.remainingMs === 0) s.countdown.remainingMs = s.countdown.lengthMs;
-    s.countdown.endsAt = now + s.countdown.remainingMs;
-    s.countdown.fired = false;
-  }
+  const k = s.sources.find((x) => x.id === incoming)?.kind;
+  if (k?.type === 'countdown' && k.timer.endsAt === null) startTimer(k.timer, now);
 }
 
 function sameScreen(a: ScreenState, b: ScreenState) {
@@ -181,7 +192,9 @@ function apply(s: Show, a: Action, now: number) {
       s.sources = s.sources.filter((x) => x.id !== a.id);
       if (s.audio.solo === a.id) s.audio.solo = null;
       for (const p of s.presets) p.sources = p.sources.filter((x) => x !== a.id);
-      if (s.countdown.atZero.type === 'cutTo' && s.countdown.atZero.sourceId === a.id) s.countdown.atZero = { type: 'hold' };
+      for (const src of s.sources) {
+        if (src.kind.type === 'countdown' && src.kind.timer.atZero.type === 'cutTo' && src.kind.timer.atZero.sourceId === a.id) src.kind.timer.atZero = { type: 'hide' };
+      }
       for (const sc of Object.values(s.screens)) {
         if (sc.preview === a.id) sc.preview = null;
         if (sc.program === a.id) sc.program = null;
@@ -380,8 +393,8 @@ function apply(s: Show, a: Action, now: number) {
       return;
     case 'updateCountdown': {
       const p = a.patch;
-      const c = s.countdown;
       if (p.atZero?.type === 'cutTo') picture(s, p.atZero.sourceId);
+      const c = timer(s, a.id);
       if (p.label !== undefined) c.label = oneLine(p.label, 60);
       if (p.endText !== undefined) c.endText = oneLine(p.endText, 60);
       if (p.format !== undefined) c.format = p.format;
@@ -389,41 +402,45 @@ function apply(s: Show, a: Action, now: number) {
       return;
     }
     case 'setCountdownLength': {
-      const c = s.countdown;
-      c.lengthMs = countdownMs(a.lengthMs, 'lengthMs');
+      const len = countdownMs(a.lengthMs, 'lengthMs');
+      const c = timer(s, a.id);
+      c.lengthMs = len;
       c.endsAt = null;
       c.remainingMs = c.lengthMs;
       c.fired = false;
       return;
     }
     case 'startCountdown': {
-      const c = s.countdown;
-      if (c.endsAt !== null) return;
-      if (c.remainingMs === 0) c.remainingMs = c.lengthMs;
-      c.endsAt = now + c.remainingMs;
+      const c = timer(s, a.id);
+      if (c.endsAt === null) startTimer(c, now);
+      return;
+    }
+    case 'pauseCountdown': {
+      const c = timer(s, a.id);
+      c.remainingMs = countdownRemaining(c, now);
+      c.endsAt = null;
+      return;
+    }
+    case 'resetCountdown': {
+      const c = timer(s, a.id);
+      c.endsAt = null;
+      c.remainingMs = c.lengthMs;
       c.fired = false;
       return;
     }
-    case 'pauseCountdown':
-      s.countdown.remainingMs = countdownRemaining(s.countdown, now);
-      s.countdown.endsAt = null;
-      return;
-    case 'resetCountdown':
-      s.countdown.endsAt = null;
-      s.countdown.remainingMs = s.countdown.lengthMs;
-      s.countdown.fired = false;
-      return;
-    case 'addCountdownTime':
+    case 'addCountdownTime': {
       if (Math.abs(a.ms) > MAX_COUNTDOWN_MS) throw new Refused({ code: 'invalidValue', field: 'ms', reason: 'at most 24 hours at a time' });
-      setRemaining(s.countdown, countdownRemaining(s.countdown, now) + a.ms, now);
+      const c = timer(s, a.id);
+      setRemaining(c, countdownRemaining(c, now) + a.ms, now);
       return;
+    }
     case 'setCountdownRemaining':
-      setRemaining(s.countdown, a.ms, now);
+      setRemaining(timer(s, a.id), a.ms, now);
       return;
     case 'countdownTo': {
       if (a.at <= now) throw new Refused({ code: 'invalidValue', field: 'at', reason: 'that time has already passed' });
       const left = countdownMs(a.at - now, 'at');
-      Object.assign(s.countdown, { lengthMs: left, remainingMs: left, endsAt: a.at, fired: false });
+      Object.assign(timer(s, a.id), { lengthMs: left, remainingMs: left, endsAt: a.at, fired: false });
       return;
     }
   }
@@ -470,7 +487,7 @@ function pickPreset(s: Show, id: string | null) {
   }
 }
 
-function stepAction(st: Step): Action | null {
+function stepAction(st: Step, main: string | null): Action | null {
   switch (st.type) {
     case 'preview':
       return { type: 'setPreview', screen: st.screen, sourceId: st.sourceId };
@@ -484,14 +501,22 @@ function stepAction(st: Step): Action | null {
       return { type: 'updateMonitor', patch: { message: st.text, messageOn: true } };
     case 'clearMonitorMessage':
       return { type: 'updateMonitor', patch: { messageOn: false } };
-    case 'startCountdown':
-      return { type: 'startCountdown' };
-    case 'pauseCountdown':
-      return { type: 'pauseCountdown' };
-    case 'resetCountdown':
-      return { type: 'resetCountdown' };
-    case 'setCountdownLength':
-      return { type: 'setCountdownLength', lengthMs: st.lengthMs };
+    case 'startCountdown': {
+      const id = st.sourceId ?? main;
+      return id ? { type: 'startCountdown', id } : null;
+    }
+    case 'pauseCountdown': {
+      const id = st.sourceId ?? main;
+      return id ? { type: 'pauseCountdown', id } : null;
+    }
+    case 'resetCountdown': {
+      const id = st.sourceId ?? main;
+      return id ? { type: 'resetCountdown', id } : null;
+    }
+    case 'setCountdownLength': {
+      const id = st.sourceId ?? main;
+      return id ? { type: 'setCountdownLength', id, lengthMs: st.lengthMs } : null;
+    }
     case 'play':
       return { type: 'play', id: st.sourceId };
     case 'pause':
@@ -515,7 +540,7 @@ function runSteps(s: Show, now: number) {
       r.next++;
       if (st.type === 'wait') r.resumeAt += st.ms;
       else {
-        const act = stepAction(st);
+        const act = stepAction(st, mainCountdown(s));
         if (act) {
           try {
             apply(s, act, now);
@@ -529,39 +554,41 @@ function runSteps(s: Show, now: number) {
   s.running = running.filter((r) => r.next < r.steps.length);
 }
 
-/** Let time pass (mirrors Engine::tick): runs the countdown's at-zero action once. */
+/** Let time pass (mirrors Engine::tick): runs each countdown's at-zero action once, and button steps. */
 export function demoTick(show: Show, now: number): Show | null {
-  const c = show.countdown;
-  const countdownDueNow = !c.fired && countdownDue(c, now);
+  const due = show.sources.filter((x) => x.kind.type === 'countdown' && !x.kind.timer.fired && countdownDue(x.kind.timer, now)).map((x) => x.id);
   const stepsDue = show.running.some((r) => r.resumeAt <= now);
-  if (!countdownDueNow && !stepsDue) return null;
+  if (due.length === 0 && !stepsDue) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
+  for (const id of due) atZero(next, id, now);
   if (stepsDue) runSteps(next, now);
-  if (!countdownDueNow) {
-    followLive(next, liveBefore, show.backFollowsLive, now);
-    return next;
-  }
-  next.countdown.fired = true;
-  const z = next.countdown.atZero;
-  if (z.type === 'blank') {
-    // Black on the screens showing the countdown right now.
-    const showing = (['live', 'back'] as const).filter((id) => next.sources.find((x) => x.id === next.screens[id].program)?.kind.type === 'countdown');
-    for (const id of showing) {
-      if (!next.screens[id].blank) {
-        next.screens[id].blank = true;
-        next.screens[id].blankChangedAt = now;
-      }
-    }
-  } else if (z.type === 'cutTo' && next.sources.some((x) => x.id === z.sourceId)) {
-    try {
-      apply(next, { type: 'cutTo', screen: 'live', sourceId: z.sourceId }, now);
-    } catch {
-      // Nothing to do: the countdown still counts as finished.
-    }
-  }
   followLive(next, liveBefore, show.backFollowsLive, now);
   return next;
+}
+
+function atZero(next: Show, id: string, now: number) {
+  const c = timer(next, id);
+  c.fired = true;
+  const z = c.atZero;
+  // The screens showing this countdown right now.
+  const showing = (['live', 'back'] as const).filter((sc) => next.screens[sc].program === id);
+  if (z.type === 'blank') {
+    for (const sc of showing) {
+      if (!next.screens[sc].blank) {
+        next.screens[sc].blank = true;
+        next.screens[sc].blankChangedAt = now;
+      }
+    }
+  } else if (z.type === 'cutTo') {
+    for (const screen of showing.length ? showing : (['live'] as const)) {
+      try {
+        apply(next, { type: 'cutTo', screen, sourceId: z.sourceId }, now);
+      } catch {
+        // The input was removed: nothing to switch to.
+      }
+    }
+  }
 }
 
 /** Apply an action to a copy of the show. Returns the new show, or throws the engine's refusal. */

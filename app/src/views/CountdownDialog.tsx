@@ -5,6 +5,7 @@ import type { Show } from '../engine/types/Show';
 import type { TimerFormat } from '../engine/types/TimerFormat';
 import { CountdownView } from '../components/CountdownOverlay';
 import type { Act } from './act';
+import { defaultCountdown } from '../engine/client';
 
 const MIN = 60_000;
 const LENGTHS = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60];
@@ -52,10 +53,12 @@ const fmtLength = (ms: number) => {
  * Everything about the countdown. Nothing changes on the screens until
  * Done; Cancel (or ✕ / Esc) forgets the changes.
  */
-export function CountdownDialog({ show, act, onClose }: { show: Show; act: Act; onClose: () => void }) {
-  const c = show.countdown;
-  const countdownInputs = show.sources.filter((s) => s.kind.type === 'countdown');
-  const firstBg = countdownInputs[0]?.kind.type === 'countdown' ? countdownInputs[0].kind.background : BACKGROUNDS[0]!;
+export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: string; act: Act; onClose: () => void }) {
+  // Only this countdown input changes; others (say, the one on air) are untouched.
+  const src = show.sources.find((s) => s.id === id);
+  const kind = src?.kind.type === 'countdown' ? src.kind : null;
+  const c = kind?.timer ?? defaultCountdown();
+  const firstBg = kind?.background ?? BACKGROUNDS[0]!;
 
   const [mode, setMode] = useState<'length' | 'clock'>('length');
   const [length, setLength] = useState(fmtLength(c.lengthMs));
@@ -72,15 +75,15 @@ export function CountdownDialog({ show, act, onClose }: { show: Show; act: Act; 
 
   const done = () => {
     if (!valid) return;
-    if (mode === 'length' && lengthMs !== c.lengthMs && lengthMs !== null) act({ type: 'setCountdownLength', lengthMs });
-    if (mode === 'clock' && target !== null) act({ type: 'countdownTo', at: target });
+    if (mode === 'length' && lengthMs !== c.lengthMs && lengthMs !== null) act({ type: 'setCountdownLength', id, lengthMs });
+    if (mode === 'clock' && target !== null) act({ type: 'countdownTo', id, at: target });
     const patch: Record<string, unknown> = {};
     if (label !== c.label) patch.label = label;
     if (endText !== c.endText) patch.endText = endText;
     if (format !== c.format) patch.format = format;
     if (JSON.stringify(atZero) !== JSON.stringify(c.atZero)) patch.atZero = atZero;
-    if (Object.keys(patch).length) act({ type: 'updateCountdown', patch });
-    for (const s of countdownInputs) if (s.kind.type === 'countdown' && s.kind.background !== background) act({ type: 'updateSource', id: s.id, patch: { color: background } });
+    if (Object.keys(patch).length) act({ type: 'updateCountdown', id, patch });
+    if (kind && kind.background !== background) act({ type: 'updateSource', id, patch: { color: background } });
     onClose();
   };
   useEffect(() => {
@@ -104,7 +107,7 @@ export function CountdownDialog({ show, act, onClose }: { show: Show; act: Act; 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Countdown" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box cdset">
         <header className="modal__head">
-          <h2>Countdown</h2>
+          <h2>Countdown · {src?.name ?? 'Countdown'}</h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>✕</button>
         </header>
         <div className="cdset__body">

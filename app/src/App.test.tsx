@@ -149,7 +149,7 @@ describe('Stage monitor and countdown', () => {
   it('the countdown goes to Next first, and only TAKE puts it on air', async () => {
     await start();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Put in Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Make one and put it in Next' }));
     });
     expect(next()).toBe('Countdown');
     expect(onAir()).toBe('nothing');
@@ -162,8 +162,32 @@ describe('Stage monitor and countdown', () => {
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument(); // counting once on air
   });
 
+  it('a second countdown can be prepared in Next without touching the one on air', async () => {
+    await start();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Make one and put it in Next' }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^TAKE/ }));
+    });
+    // The only countdown is on air, so Put in Next makes another one.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Put in Next' }));
+    });
+    expect(next()).toBe('Countdown 2');
+    expect(screen.getByText('NEXT', { selector: '.cd__tag' })).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '+1 min' }));
+    });
+    expect(screen.getByRole('button', { name: /6:00/ })).toBeInTheDocument(); // the one in Next
+    expect(document.querySelector('.mon--pgm [data-countdown]')?.textContent).not.toMatch(/6:0/); // on air untouched
+  });
+
   it('countdown settings change nothing until Done', async () => {
     await start();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Make one and put it in Next' }));
+    });
     fireEvent.click(screen.getByRole('button', { name: 'More…' }));
     fireEvent.change(screen.getByLabelText('Length'), { target: { value: '2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

@@ -91,7 +91,7 @@ function Control() {
         {show ? (
           <SafeBoundary audience={false}>
             <SoundProvider show={show} client={client}>
-              <StageContext.Provider value={{ countdown: show.countdown, event: show.event, mediaUrl: (p) => client.mediaUrl(p) }}>
+              <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p) }}>
                 <ControlView show={show} screen={controlling} client={client} />
               </StageContext.Provider>
             </SoundProvider>
@@ -101,7 +101,7 @@ function Control() {
         )}
       </main>
       {showSetup && show && (
-        <StageContext.Provider value={{ countdown: show.countdown, event: show.event, mediaUrl: (p) => client.mediaUrl(p) }}>
+        <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p) }}>
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
       )}

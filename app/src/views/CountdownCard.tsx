@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
+import { countdownTarget, timerOf } from '../engine/countdowns';
 import { countdownFinished, countdownRemaining, formatCountdown } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { CountdownDialog, parseLength } from './CountdownDialog';
@@ -8,30 +10,53 @@ import type { Act } from './act';
 const MIN = 60_000;
 
 /**
- * The countdown at a glance, with what is needed live: start / pause, move to
- * any second (drag the bar, ±10 s, ±1 min, or click the time and type it),
- * and put it in Next. Everything else is under "More…".
+ * The countdown at a glance, with what is needed live. It works on the
+ * countdown in Next when one is being prepared (changes go only to that
+ * one), else on the one on air. Move to any second: drag the bar (applied on
+ * release), ±10 s, ±1 min, click the time and type it, go to the last
+ * 1 min / 30 s / 10 s. Everything else is under "More…".
  */
-export function CountdownCard({ show, act, onPutInNext }: { show: Show; act: Act; onPutInNext?: () => void }) {
-  const c = show.countdown;
-  const now = useNow(false, c.endsAt !== null ? 100 : 1000);
+export function CountdownCard({ show, act, screen = null, onPutInNext }: { show: Show; act: Act; screen?: ScreenId | null; onPutInNext?: () => void }) {
+  const target = countdownTarget(show, screen);
+  const c = target ? timerOf(show, target.id) : null;
+  const now = useNow(false, c?.endsAt != null ? 100 : 1000);
   const [setup, setSetup] = useState(false);
   const [typing, setTyping] = useState<string | null>(null);
   const [scrub, setScrub] = useState<number | null>(null);
 
+  if (!target || !c) {
+    return (
+      <div className="cd cd--none" aria-label="Countdown">
+        <span className="cd__label">Countdown</span>
+        <span className="cd__hint">No countdown yet.</span>
+        {onPutInNext && (
+          <button type="button" className="btn btn--primary" onClick={onPutInNext}>
+            Make one and put it in Next
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  const id = target.id;
   const running = c.endsAt !== null;
   const left = scrub ?? countdownRemaining(c, now);
   const done = countdownFinished(c, now);
   const max = Math.max(c.lengthMs, countdownRemaining(c, now), 1000);
-  const moveTo = (ms: number) => act({ type: 'setCountdownRemaining', ms: Math.max(0, Math.round(ms)) });
-  const nudge = (ms: number) => act({ type: 'addCountdownTime', ms });
+  const moveTo = (ms: number) => act({ type: 'setCountdownRemaining', id, ms: Math.max(0, Math.round(ms)) });
+  const nudge = (ms: number) => act({ type: 'addCountdownTime', id, ms });
   const shown = formatCountdown(left, c.format === 'auto' ? 'minSec' : c.format);
+  const name = show.sources.find((s) => s.id === id)?.name ?? 'Countdown';
+  const tag = target.where === 'next' ? 'NEXT' : target.where === 'onAir' ? 'ON AIR' : null;
 
   return (
     <div className="cd" aria-label="Countdown">
       <div className="cd__top">
         <div className="cd__read">
-          <span className="cd__label">{c.label || 'Countdown'}</span>
+          <span className="cd__label">
+            {tag && <b className={`cd__tag cd__tag--${target.where}`}>{tag}</b>}
+            {c.label || name}
+          </span>
           {typing === null ? (
             <button
               type="button"
@@ -65,7 +90,8 @@ export function CountdownCard({ show, act, onPutInNext }: { show: Show; act: Act
         <button
           type="button"
           className={`btn cd__go${running && !done ? ' is-on' : ' btn--primary'}`}
-          onClick={() => act(running && !done ? { type: 'pauseCountdown' } : done ? { type: 'resetCountdown' } : { type: 'startCountdown' })}
+          title={target.where === 'next' ? 'It also starts by itself when you TAKE it' : undefined}
+          onClick={() => act(running && !done ? { type: 'pauseCountdown', id } : done ? { type: 'resetCountdown', id } : { type: 'startCountdown', id })}
         >
           {running && !done ? 'Pause' : done ? 'Reset' : left < c.lengthMs && left > 0 ? 'Resume' : 'Start'}
         </button>
@@ -78,7 +104,7 @@ export function CountdownCard({ show, act, onPutInNext }: { show: Show; act: Act
         step={1000}
         value={Math.min(max, left)}
         aria-label="Move the countdown"
-        title="Drag to any point"
+        title="Drag to any point; it moves when you let go"
         // Dragging only previews the time on this card; the countdown moves
         // when the bar is let go, at the time chosen.
         onChange={(e) => setScrub(Number(e.target.value))}
@@ -106,16 +132,16 @@ export function CountdownCard({ show, act, onPutInNext }: { show: Show; act: Act
       </div>
       <div className="cd__row">
         {onPutInNext ? (
-          <button type="button" className="seg" title="Line the countdown up in Next, then TAKE it" onClick={onPutInNext}>
+          <button type="button" className="seg" title="Line a countdown up in Next, then TAKE it" onClick={onPutInNext}>
             Put in Next
           </button>
         ) : (
           <button type="button" className="seg" onClick={() => nudge(5 * MIN)}>+5 min</button>
         )}
-        <button type="button" className="seg" onClick={() => act({ type: 'resetCountdown' })}>Reset</button>
+        <button type="button" className="seg" onClick={() => act({ type: 'resetCountdown', id })}>Reset</button>
         <button type="button" className="seg" onClick={() => setSetup(true)}>More…</button>
       </div>
-      {setup && <CountdownDialog show={show} act={act} onClose={() => setSetup(false)} />}
+      {setup && <CountdownDialog show={show} id={id} act={act} onClose={() => setSetup(false)} />}
     </div>
   );
 }

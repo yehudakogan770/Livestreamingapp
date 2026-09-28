@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 import { syncMedia } from '../engine/mediaSync';
-import { useCountdown, useStage } from '../engine/CountdownContext';
+import { useStage } from '../engine/CountdownContext';
+import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
 
 // ---- cameras: one stream per device, shared by every view in this window ----
@@ -99,7 +100,7 @@ export function SourceView({
     case 'camera':
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
     case 'countdown':
-      return <CountdownInput background={k.background} logoUrl={k.logo ?? null} client={client} />;
+      return <CountdownInput timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':
       return (
         <div style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8e9096', fontSize: 28 }} data-kind="microphone">
@@ -120,12 +121,11 @@ export function SourceView({
   }
 }
 
-function CountdownInput({ background, logoUrl, client }: { background: string; logoUrl: string | null; client: EngineClient }) {
-  const c = useCountdown();
+function CountdownInput({ timer, background, logoUrl, client }: { timer: Countdown; background: string; logoUrl: string | null; client: EngineClient }) {
   const stage = useStage();
   // At the end: this countdown's own picture, or else the event logo.
   const logo = logoUrl ?? stage?.event.logo ?? null;
-  return c ? <CountdownView countdown={c} background={background} logoUrl={logo ? client.mediaUrl(logo) : null} /> : <div style={{ ...fill, background }} />;
+  return <CountdownView countdown={timer} background={background} logoUrl={logo ? client.mediaUrl(logo) : null} />;
 }
 
 /** What the audience sees instead of something broken: black, or the event logo if chosen in the event setup. */

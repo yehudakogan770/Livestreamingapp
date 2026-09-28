@@ -3,6 +3,7 @@ import type { Show } from '../engine/types/Show';
 import type { TextSize } from '../engine/types/TextSize';
 import { FLASH_MS, countdownFinished, countdownRemaining, fadeAmount, formatCountdown } from '../engine/timing';
 import { useNow } from '../engine/useNow';
+import { mainCountdown } from '../engine/countdowns';
 import './MonitorScreen.css';
 
 const SIZE: Record<TextSize, number> = { s: 0.55, m: 0.75, l: 1, xl: 1.3 };
@@ -44,9 +45,12 @@ function useFitText(box: RefObject<HTMLDivElement | null>, text: HTMLDivElement 
 export function MonitorScreen({ show }: { show: Show }) {
   const sc = show.screens.monitor;
   const m = show.monitor;
-  const c = show.countdown;
+  // The countdown on air (or else the first one); none if there is no countdown input.
+  const mainId = mainCountdown(show);
+  const main = show.sources.find((x) => x.id === mainId)?.kind;
+  const c = main?.type === 'countdown' ? main.timer : null;
   const flashing = Date.now() - sc.flashAt < FLASH_MS;
-  const now = useNow(flashing, c.endsAt !== null ? 100 : 500);
+  const now = useNow(flashing, c?.endsAt != null ? 100 : 500);
 
   const parts = new Intl.DateTimeFormat([], { hour: 'numeric', minute: '2-digit', hour12: !m.clock24h }).formatToParts(new Date(now));
   const time = parts
@@ -56,10 +60,10 @@ export function MonitorScreen({ show }: { show: Show }) {
     .trim();
   const period = parts.find((x) => x.type === 'dayPeriod')?.value;
 
-  const left = countdownRemaining(c, now);
-  const done = countdownFinished(c, now);
-  const urgent = c.endsAt !== null && left < 60_000;
-  const timerText = done && c.atZero.type === 'showText' ? c.endText : formatCountdown(left, c.format === 'auto' ? 'minSec' : c.format);
+  const left = c ? countdownRemaining(c, now) : 0;
+  const done = c ? countdownFinished(c, now) : false;
+  const urgent = !!c && c.endsAt !== null && left < 60_000;
+  const timerText = !c ? '' : done && c.atZero.type === 'showText' ? c.endText : formatCountdown(left, c.format === 'auto' ? 'minSec' : c.format);
 
   const message = m.messageOn && m.message ? m.message : null;
   const msgBox = useRef<HTMLDivElement>(null);
@@ -77,9 +81,9 @@ export function MonitorScreen({ show }: { show: Show }) {
       </span>
     </div>
   );
-  const timer = m.showTimer && (
+  const timer = m.showTimer && c && (
     <div className={`mscreen__cell mscreen__timer${urgent ? ' is-urgent' : ''}${c.endsAt === null ? ' is-paused' : ''}`}>
-      <span className="mscreen__tag">{c.endsAt === null ? 'COUNTDOWN · PAUSED' : 'TIME LEFT'}</span>
+      <span className="mscreen__tag">{c.endsAt === null ? 'COUNTDOWN · WAITING' : 'TIME LEFT'}</span>
       <span className="mscreen__num">{timerText}</span>
     </div>
   );

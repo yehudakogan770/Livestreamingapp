@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { EngineClient } from '../engine/client';
+import { defaultCountdown, type EngineClient } from '../engine/client';
 import type { NewSource } from '../engine/types/NewSource';
 import type { SourceKind } from '../engine/types/SourceKind';
 import { SourceView } from '../components/SourceView';
@@ -96,7 +96,7 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
       case 'pattern':
         return { name: n || 'Test pattern', kind: { type: 'pattern' } };
       case 'countdown':
-        return { name: n || 'Countdown', kind: { type: 'countdown', background: color } };
+        return { name: n || 'Countdown', kind: { type: 'countdown', background: color, timer: defaultCountdown() } };
     }
   };
   const ready = draft();
