@@ -441,88 +441,121 @@ input[type=checkbox]{accent-color:#4fb3bf}
 
     <!-- Center: all three screens at once -->
     <sc-if value="{{isAll}}" hint-placeholder-val="{{false}}">
-    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; box-sizing: border-box;">
-      <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start;">
+    <div style="flex-grow: 1; min-width: 0; min-height: 0; display: grid; grid-template-columns: 1.3fr 1fr 0.9fr; gap: 12px; padding: 12px; box-sizing: border-box;">
         <sc-for list="{{allCards}}" as="c" hint-placeholder-count="2">
           <div style="{{c.box}}">
-            <div style="height: 26px; display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 14px; font-weight: 600; color: #ffffff;">{{c.name}}</span>
+            <div style="height: 24px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 600; color: #ffffff; white-space: nowrap;">{{c.name}}</span>
               <span style="{{c.badge}}">{{c.status}}</span>
               <div style="flex-grow: 1;"></div>
-              <button onClick="{{c.open}}" title="Open this screen with all its controls" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px;">Full controls ›</button>
+              <button onClick="{{c.open}}" title="Open this screen with every control" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px; white-space: nowrap;">Full controls ›</button>
             </div>
-            <div style="position: relative; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #c7372f; background: #000;">
+            <div style="position: relative; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #c7372f; background: #000;">
               <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{c.pgScene}}" hint-size="100%,100%"></dc-import></div>
               <sc-if value="{{c.fading}}" hint-placeholder-val="{{false}}"><div style="{{c.fadeStyle}}"><dc-import name="Scene" kind="{{c.pvScene}}" hint-size="100%,100%"></dc-import></div></sc-if>
               <sc-if value="{{c.dark}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: #6f737b;">BLANK</div></sc-if>
               <span style="position: absolute; left: 6px; bottom: 6px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 11px; line-height: 18px; color: #ffffff;">{{c.pgName}}</span>
             </div>
-            <div style="display: flex; gap: 8px; align-items: stretch;">
-              <div style="position: relative; width: 150px; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #2f8f4e; background: #000;">
+            <div style="display: flex; gap: 8px; flex-shrink: 0;">
+              <div style="{{c.pvBox}}">
                 <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{c.pvScene}}" hint-size="100%,100%"></dc-import></div>
-                <span style="position: absolute; left: 4px; bottom: 4px; height: 15px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 10px; line-height: 15px; color: #ffffff;">Next: {{c.pvName}}</span>
+                <span style="position: absolute; left: 4px; bottom: 4px; height: 15px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 10px; line-height: 15px; color: #ffffff; white-space: nowrap;">Next: {{c.pvName}}</span>
               </div>
-              <div style="flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px;">
-                <button onClick="{{c.take}}" style="grid-column: 1 / 3; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;">TAKE · {{c.trans}}</button>
+              <div style="flex-grow: 1; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px;">
+                <button onClick="{{c.take}}" style="grid-column: 1 / 3; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap;">TAKE · {{c.trans}}</button>
                 <button onClick="{{c.cut}}" style="border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600;">CUT</button>
                 <button onClick="{{c.toggleBlank}}" style="{{c.blankStyle}}">{{c.blankLabel}}</button>
               </div>
             </div>
-            <div style="height: 30px; display: flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+            <div style="height: 30px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+              <div style="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038; flex-shrink: 0;">
+                <sc-for list="{{allTrans}}" as="tr" hint-placeholder-count="4"><button onClick="{{tr.pick}}" style="{{tr.style}}">{{tr.name}}</button></sc-for>
+              </div>
+              <div onPointerDown="{{c.tDown}}" onPointerMove="{{c.tMove}}" onPointerUp="{{c.tUp}}" onPointerCancel="{{c.tUp}}" role="slider" aria-label="{{c.name}} T-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{c.tVal}}" tabindex="0" style="position: relative; flex-grow: 1; min-width: 60px; height: 30px; border-radius: 6px; background: #101216; border: 1px solid #2c3038; cursor: ew-resize; touch-action: none; user-select: none; box-sizing: border-box;">
+                <div style="position: absolute; left: 12px; right: 12px; top: 50%; height: 4px; margin-top: -2px; border-radius: 2px; background: #0c0d10; pointer-events: none;"></div>
+                <div style="{{c.tFill}}"></div>
+                <div style="{{c.tCap}}"></div>
+              </div>
+            </div>
+            <div style="height: 30px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 0 6px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
               <button onClick="{{c.tp.restart}}" aria-label="Back to start" style="{{c.tp.btn}}">⏮</button>
               <button onClick="{{c.tp.back}}" aria-label="Back 10 seconds" style="{{c.tp.btnWide}}">−10</button>
               <button onClick="{{c.tp.toggle}}" aria-label="Play or pause" style="{{c.tp.playBtn}}">{{c.tp.playGlyph}}</button>
               <button onClick="{{c.tp.fwd}}" aria-label="Forward 10 seconds" style="{{c.tp.btnWide}}">+10</button>
+              <button onClick="{{c.tp.toggleLoop}}" style="{{c.tp.loopStyle}}">Loop</button>
               <div style="flex-grow: 1;"></div>
               <span style="font-family: Consolas, monospace; font-size: 11px; color: #e4e5e7; white-space: nowrap;">{{c.tp.elapsed}}<span style="color: #8e9096;">{{c.tp.total}}</span></span>
             </div>
-            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+            <sc-if value="{{c.isLive}}" hint-placeholder-val="{{true}}">
+              <div style="height: 30px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">Overlays</span>
+                <sc-for list="{{ovlChannels}}" as="o" hint-placeholder-count="4"><button onClick="{{o.clear}}" title="Click to take this overlay off" style="{{o.style}}">{{o.label}}</button></sc-for>
+              </div>
+              <div style="height: 30px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">On-air sound</span>
+                <input type="range" min="0" max="100" value="{{c.volVal}}" onInput="{{c.onVol}}" aria-label="On-air source volume" style="flex-grow: 1; min-width: 50px;">
+                <button onClick="{{c.toggleMute}}" style="{{c.muteStyle}}">{{c.muteLabel}}</button>
+                <span style="font-size: 11px; color: #8e9096; white-space: nowrap; padding-left: 6px;">Master</span>
+                <input type="range" min="0" max="100" value="{{masterVal}}" onInput="{{onMaster}}" aria-label="Master volume" style="flex-grow: 1; min-width: 50px;">
+                <span style="font-family: Consolas, monospace; font-size: 11px; color: #e4e5e7; width: 30px; text-align: right;">{{masterVal}}%</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{c.isBack}}" hint-placeholder-val="{{false}}">
+              <div style="height: 30px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 6px; flex-shrink: 0;">
+                <button onClick="{{toggleBackLive}}" style="{{c.followStyle}}">{{c.followLabel}}</button>
+                <button onClick="{{toggleFollow}}" style="{{followStyle}}">Follow the music</button>
+              </div>
+              <div style="height: 30px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">Loop energy</span><input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="flex-grow: 1; min-width: 40px;">
+                <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">Speed</span><input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="flex-grow: 1; min-width: 40px;">
+              </div>
+            </sc-if>
+            <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 4px;">
               <sc-for list="{{c.chips}}" as="ch" hint-placeholder-count="15">
                 <button onClick="{{ch.pick}}" onDoubleClick="{{ch.air}}" title="Click: line up next · Double-click: straight to air" style="{{ch.style}}">{{ch.name}}</button>
               </sc-for>
             </div>
-            <sc-if value="{{c.isBack}}" hint-placeholder-val="{{false}}">
-              <button onClick="{{toggleBackLive}}" style="{{c.followStyle}}">{{c.followLabel}}</button>
-            </sc-if>
           </div>
         </sc-for>
         <div style="{{allMon.box}}">
-          <div style="height: 26px; display: flex; align-items: center; gap: 8px;">
+          <div style="height: 24px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; gap: 8px;">
             <span style="font-size: 14px; font-weight: 600; color: #ffffff;">Monitor</span>
             <span style="{{allMon.badge}}">{{allMon.status}}</span>
             <div style="flex-grow: 1;"></div>
-            <button onClick="{{allMon.open}}" title="Open the Monitor with all its controls" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px;">Full controls ›</button>
+            <button onClick="{{allMon.open}}" title="Open the Monitor with every control" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px; white-space: nowrap;">Full controls ›</button>
           </div>
           <div style="{{allMon.screen}}">
-            <span style="position: absolute; left: 8px; top: 6px; font-family: Consolas, monospace; font-size: 13px; color: #a9abb0;">{{allMon.clock}}</span>
+            <sc-if value="{{clockOn}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 8px; top: 6px; font-family: Consolas, monospace; font-size: 13px; color: #a9abb0;">{{allMon.clock}}</span></sc-if>
             <span style="position: absolute; right: 8px; top: 6px; font-family: Consolas, monospace; font-size: 13px; color: #ffe39e;">{{allMon.countdown}}</span>
-            <span style="font-size: 26px; font-weight: 700; color: #ffffff; text-align: center; padding: 0 16px; line-height: 1.2;">{{allMon.text}}</span>
+            <span style="{{allMon.textStyle}}">{{allMon.text}}</span>
           </div>
-          <input aria-label="Message for the stage" value="{{draft}}" onInput="{{onDraftInput}}" placeholder="Type a message for the stage…" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px; outline: none;">
-          <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 6px;">
-            <button onClick="{{sendMsg}}" style="height: 34px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 12px; font-weight: 700;">Show on monitor</button>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; flex-shrink: 0;">
+            <sc-for list="{{allMon.layouts}}" as="l" hint-placeholder-count="3"><button onClick="{{l.pick}}" style="{{l.style}}">{{l.name}}</button></sc-for>
+          </div>
+          <div style="height: 28px; display: flex; align-items: center; gap: 6px; flex-shrink: 0; gap: 10px;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #d4d5d8; white-space: nowrap;"><input type="checkbox" checked="{{clockOn}}" onChange="{{toggleClock}}"> Clock</label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #d4d5d8; white-space: nowrap;"><input type="checkbox" checked="{{countdownOn}}" onChange="{{toggleCountdown}}"> Timer</label>
+            <div style="flex-grow: 1;"></div>
+            <select aria-label="Text size" value="{{textSize}}" onChange="{{onTextSize}}" style="height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 11px;"><option value="m">Text M</option><option value="l">Text L</option><option value="xl">Text XL</option></select>
+          </div>
+          <input aria-label="Message for the stage" value="{{draft}}" onInput="{{onDraftInput}}" placeholder="Type a message for the stage…" style="height: 32px; flex-shrink: 0; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px; outline: none;">
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 6px; flex-shrink: 0;">
+            <button onClick="{{sendMsg}}" style="height: 34px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 12px; font-weight: 700; white-space: nowrap;">Show on monitor</button>
             <button onClick="{{clearMsg}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 34px;">Clear</button>
             <button onClick="{{flash}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 34px;">Flash</button>
           </div>
-          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
-            <sc-for list="{{allMon.quick}}" as="q" hint-placeholder-count="4">
-              <button onClick="{{q.pick}}" style="height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 11px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.text}}</button>
+          <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 4px;">
+            <sc-for list="{{allMon.quick}}" as="q" hint-placeholder-count="8">
+              <button onClick="{{q.pick}}" title="Put this message in the box, then press Show" style="padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 12px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.text}}</button>
             </sc-for>
           </div>
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 11px; color: #a9abb0; flex-grow: 1;">Timer on the monitor</span>
+          <div style="height: 30px; display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+            <span style="font-size: 11px; color: #8e9096; white-space: nowrap;">Timer</span>
+            <span style="font-family: Consolas, monospace; font-size: 14px; font-weight: 700; color: #ffe39e; flex-grow: 1;">{{allMon.countdownAlways}}</span>
             <button onClick="{{subMinute}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 28px;">−1 min</button>
             <button onClick="{{addMinute}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 28px;">+1 min</button>
           </div>
         </div>
-      </div>
-      <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
-        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Master volume</span>
-        <input type="range" min="0" max="100" value="{{masterVal}}" onInput="{{onMaster}}" aria-label="Master volume" style="width: 260px;">
-        <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; width: 40px;">{{masterVal}}%</span>
-        <div style="flex-grow: 1;"></div>
-        <span style="font-size: 12px; color: #8e9096;">Click a source to line it up, double-click to send it straight to air · F1–F3 open one screen with every control</span>
-      </div>
     </div>
     </sc-if>
   </div>
@@ -895,21 +928,33 @@ class Component extends DCLogic {
         const allView = !!st.allView;
         const TR = { fade: 'Fade', merge: 'Merge', dip: 'Dip', wipe: 'Wipe' };
         const badge = (bg) => `height: 16px; padding: 0 6px; border-radius: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; line-height: 16px; color: #ffffff; background: ${bg}; white-space: nowrap;`;
-        const card = 'display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038; min-width: 0;';
+        const card = 'display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038; min-width: 0; min-height: 0; box-sizing: border-box;';
         const allCards = ['live', 'back'].map((id) => {
           const scr = st.screens[id];
           const dark = !!scr.blank || st.panic;
           const following = id === 'back' && !!st.backLive;
-          const fx = st.allFx && st.allFx.id === id ? st.allFx.t : 0;
+          const tv = (st.allT && st.allT[id]) || 0;
+          const fx = st.allFx && st.allFx.id === id ? st.allFx.t : tv / 100;
+          const setT = (v) => this.setState((p) => ({ allT: { ...(p.allT || {}), [id]: v } }));
+          const d = this.drag('allT-' + id, false, (v) => { if (v >= 100) { this._dragKey = null; setT(0); this.allSwap(id); } else setT(v); }, (v) => { if (v >= 97) { setT(0); this.allSwap(id); } });
+          const pgId = scr.pg;
+          const muted = !!st.muted[pgId];
           const setScr = (patch, breakFollow) => set({ screens: { ...st.screens, [id]: { ...scr, ...patch } }, ...(breakFollow && id === 'back' ? { backLive: false } : {}) });
           return {
-            name: id === 'live' ? 'Live Screen' : 'Back Screen', isBack: id === 'back',
+            name: id === 'live' ? 'Live Screen' : 'Back Screen', isBack: id === 'back', isLive: id === 'live',
+            pvBox: `position: relative; width: ${id === 'live' ? 170 : 130}px; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #2f8f4e; background: #000;`,
+            tDown: d.down, tMove: d.move, tUp: d.up, tVal: String(tv),
+            tFill: `position: absolute; left: 12px; top: 50%; height: 4px; margin-top: -2px; width: calc((100% - 24px) * ${tv / 100}); border-radius: 2px; background: #c7372f; pointer-events: none;`,
+            tCap: `position: absolute; top: 3px; bottom: 3px; width: 14px; left: calc(12px + (100% - 24px) * ${tv / 100} - 7px); border-radius: 3px; background: linear-gradient(#f3f4f6, #c3c6cd); border: 1px solid #0c0d10; box-shadow: 0 1px 4px rgba(0,0,0,0.6); pointer-events: none;`,
+            volVal: String(st.vol[pgId] ?? 70), onVol: (e) => set({ vol: { ...st.vol, [pgId]: Number(e.target.value) } }),
+            toggleMute: () => set({ muted: { ...st.muted, [pgId]: !muted } }), muteLabel: muted ? 'Muted' : 'Mute',
+            muteStyle: `height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid ${muted ? '#e0473b' : '#3a3f48'}; background: ${muted ? '#3a1a18' : '#262a31'}; color: ${muted ? '#ff9a9d' : '#e4e5e7'}; font-size: 11px; font-weight: 600;`,
             status: dark ? 'BLANK' : following ? 'FOLLOWS LIVE' : 'ON AIR',
             badge: badge(dark ? '#343944' : following ? '#1f6f79' : '#c7372f'),
             box: card,
             pgScene: (SRC[scr.pg] || {}).scene || 'black', pvScene: (SRC[scr.pv] || {}).scene || 'black',
             pgName: (SRC[scr.pg] || {}).name || 'Nothing on air', pvName: (SRC[scr.pv] || {}).name || '—',
-            dark, fading: fx > 0, fadeStyle: `position: absolute; inset: 0; opacity: ${fx};`,
+            dark, fading: fx > 0, fadeStyle: `position: absolute; inset: 0; opacity: ${fx}; pointer-events: none;`,
             trans: TR[st.trans] || 'Fade',
             take: () => this.allTake(id),
             cut: () => { clearInterval(this._allAnim); this._allAnim = null; this.allSwap(id); },
@@ -922,11 +967,11 @@ class Component extends DCLogic {
                 name: SRC[x].name,
                 pick: () => setScr({ pv: x }, false),
                 air: () => setScr({ pg: x }, true),
-                style: `height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#2c3038'}; background: ${isPg ? '#3a1a18' : isPv ? '#16301f' : '#262a31'}; color: #e4e5e7; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`
+                style: `min-height: 24px; padding: 0 6px; border-radius: 4px; border: 1px solid ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#2c3038'}; background: ${isPg ? '#3a1a18' : isPv ? '#16301f' : '#262a31'}; color: #e4e5e7; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`
               };
             }),
-            followLabel: following ? 'Back = Live · on (tap to control the Back Screen separately)' : 'Back = Live · off (tap to mirror the Live Screen)',
-            followStyle: `height: 30px; border-radius: 6px; border: 1px solid ${following ? '#4fb3bf' : '#2c3038'}; background: ${following ? '#1f6f79' : '#262a31'}; color: #ffffff; font-size: 11px; font-weight: 600;`,
+            followLabel: following ? 'Back = Live · on' : 'Back = Live · off',
+            followStyle: `height: 30px; white-space: nowrap; border-radius: 6px; border: 1px solid ${following ? '#4fb3bf' : '#2c3038'}; background: ${following ? '#1f6f79' : '#262a31'}; color: #ffffff; font-size: 11px; font-weight: 600;`,
             open: () => set({ allView: false, tab: id, tbar: 0 }),
             tp: tport(scr.pg, SRC[scr.pg])
           };
@@ -940,6 +985,7 @@ class Component extends DCLogic {
           pickAll: () => { clearInterval(this._anim); this._anim = null; set({ allView: !allView, tbar: 0 }); },
           allTabStyle: `height: 48px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: 8px; border: 2px solid ${allView ? '#4fb3bf' : '#2c3038'}; background: ${allView ? '#243039' : '#1e2127'}; color: ${allView ? '#ffffff' : '#d4d5d8'}; white-space: nowrap;`,
           allCards,
+          allTrans: transitions.map((t, n) => { const idk = ['fade', 'merge', 'dip', 'wipe'][n]; const on = st.trans === idk; return { name: t.name, pick: t.pick, style: `height: 24px; padding: 0 8px; border: 0; border-radius: 4px; background: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; box-shadow: ${on ? 'inset 0 0 0 1px #4fb3bf' : 'none'};` }; }),
           allMon: {
             status: st.panic ? 'DIMMED' : monDark ? 'BLANK' : 'ON AIR',
             badge: badge(st.panic || monDark ? '#343944' : '#c7372f'),
@@ -948,7 +994,10 @@ class Component extends DCLogic {
             clock: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
             countdown: st.countdownOn ? `${String(cm).padStart(2, '0')}:${String(cs).padStart(2, '0')}` : '',
             text: st.monitorText || ' ',
-            quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Stand by'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
+            quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
+            layouts: [['full', 'Message'], ['stack', 'Msg + time'], ['split', 'Side by side']].map(([lid, name]) => ({ name, pick: () => set({ monLayout: lid }), style: `height: 30px; border-radius: 4px; border: 1px solid ${st.monLayout === lid ? '#4fb3bf' : '#2c3038'}; background: ${st.monLayout === lid ? '#243039' : '#262a31'}; color: #e4e5e7; font-size: 11px; font-weight: 600; white-space: nowrap;` })),
+            textStyle: `font-size: ${{ m: 20, l: 26, xl: 34 }[st.textSize] || 26}px; font-weight: 700; color: #ffffff; text-align: center; padding: 0 16px; line-height: 1.2;`,
+            countdownAlways: `${String(cm).padStart(2, '0')}:${String(cs).padStart(2, '0')}`,
             open: () => set({ allView: false, tab: 'monitor', tbar: 0 })
           },
           onDraftInput: (e) => set({ draft: e.target.value }),
