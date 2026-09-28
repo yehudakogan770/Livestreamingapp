@@ -194,7 +194,7 @@ function VideoView({
   thumb,
   reportDuration,
   audience,
-}: Required<Omit<SourceViewProps, 'source' | 'client'>> & { source: Source; client: EngineClient; fit: 'cover' | 'contain' }) {
+}: Required<Omit<SourceViewProps, 'source' | 'client' | 'report'>> & { source: Source; client: EngineClient; fit: 'cover' | 'contain' }) {
   const ref = useRef<HTMLVideoElement>(null);
   const latest = useRef(source);
   latest.current = source;
