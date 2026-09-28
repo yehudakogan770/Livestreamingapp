@@ -1,7 +1,16 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "What the control window is allowed to do.",
-  "windows": ["control"],
-  "permissions": ["core:default"]
+  "description": "What the Lumora windows are allowed to do.",
+  "windows": [
+    "control",
+    "output-*"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-is-fullscreen",
+    "core:window:allow-close",
+    "dialog:allow-open"
+  ]
 }

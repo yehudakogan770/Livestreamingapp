@@ -60,10 +60,20 @@ software. When quality and speed of development conflict, quality wins.
 
 Each milestone is tested on real hardware before the next one starts.
 
-1. Project foundation: app shell, CI, tests, empty Lumora window with branding.
-2. Engine core: show state, the three outputs on chosen displays.
-3. Sources: cameras / capture cards, video files, images, colours.
-4. Switching: preview / program, TAKE, CUT, T-bar, transitions.
+1. Project foundation: app shell, CI, tests, empty Lumora window with branding. **Done.**
+2. Engine core: show state, the three outputs on chosen displays. **Done** (outputs
+   render in their own windows; the wgpu renderer replaces the web renderer later).
+3. Sources: cameras / capture cards, video files, images, colours. **Done** (web
+   renderer; capture-card formats and hardware decode arrive with the native renderer).
+4. Switching: preview / program, TAKE, CUT, T-bar, transitions. **Done.**
+
+Until the native renderer lands, outputs are drawn by the web view: every window
+computes transitions and video positions from the show and the shared clock
+(`app/src/engine/timing.ts`, mirroring `crates/engine/src/timing.rs`), so all
+screens stay in step. In a plain browser the UI runs on a demo engine
+(`app/src/engine/demo.ts`) with the same rules, for design work and UI tests.
+`LUMORA_SMOKE_TEST=1` starts the app, opens all three outputs and exits 0 if
+they opened.
 5. Monitor (text, clock, timer) and hype countdown.
 6. Audio mixer.
 7. Recording and streaming.

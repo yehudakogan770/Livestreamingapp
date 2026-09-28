@@ -1,13 +1,20 @@
 import { useCallback, useMemo, useState } from 'react';
 import { createEngineClient } from './engine/client';
 import { useShow } from './engine/useShow';
+import { outputScreen } from './engine/role';
 import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar } from './components/TitleBar';
 import { ScreenSelector } from './components/ScreenSelector';
-import { LogoMark } from './components/Logo';
+import { ControlView } from './views/ControlView';
+import { OutputView } from './views/OutputView';
 import './App.css';
 
 export function App() {
+  const output = useMemo(outputScreen, []);
+  return output ? <OutputView screen={output} /> : <Control />;
+}
+
+function Control() {
   const client = useMemo(createEngineClient, []);
   const { snapshot, error } = useShow(client);
   const [controlling, setControlling] = useState<ScreenId>('live');
@@ -19,28 +26,17 @@ export function App() {
       <TitleBar controlling={controlling} />
       <ScreenSelector show={show} selected={controlling} onSelect={select} />
       <main className="workarea">
-        <div className="welcome">
-          <LogoMark size={96} lit={controlling} />
-          <h1>Lumora</h1>
-          <p>Foundation is running. Preview, program and inputs arrive in the next milestones.</p>
-          <dl className="welcome__facts">
-            <dt>Engine</dt>
-            <dd data-testid="engine-status">
-              {error ? `error: ${error}` : !snapshot ? 'connecting…' : client.live ? 'connected' : 'browser preview (not running inside Lumora)'}
-            </dd>
-            <dt>Show revision</dt>
-            <dd>{snapshot?.revision ?? '—'}</dd>
-            <dt>Sources</dt>
-            <dd>{show?.sources.length ?? '—'}</dd>
-            <dt>TAKE transition</dt>
-            <dd>{show ? `${show.transition.kind} · ${show.transition.durationMs} ms` : '—'}</dd>
-          </dl>
-        </div>
+        {show ? (
+          <ControlView show={show} screen={controlling} client={client} />
+        ) : (
+          <div className="loading">{error ? `The engine did not answer: ${error}` : 'Starting…'}</div>
+        )}
       </main>
-      <footer className="statusbar">
-        <span>Lumora 0.1.0 · milestone 1</span>
-        <span>F1 Live · F2 Back · F3 Monitor</span>
-      </footer>
+      {!client.live && (
+        <div className="demo-flag" data-testid="engine-status" title="Opened in a browser: changes are not saved">
+          browser demo
+        </div>
+      )}
     </div>
   );
 }

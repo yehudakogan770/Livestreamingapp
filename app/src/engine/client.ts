@@ -1,17 +1,33 @@
 // Talks to the Lumora engine.
 //
 // Inside the Lumora app this goes through Tauri to the Rust engine. When the
-// UI is opened in a plain browser (for design work), a read-only stand-in is
-// used so the screens still render.
+// UI is opened in a plain browser (design work, UI tests), a demo engine that
+// follows the same rules is used so every screen can be tried out.
 
 import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
+import type { ScreenId } from './types/ScreenId';
 import type { Show } from './types/Show';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { demoApply } from './demo';
 
 export interface ShowSnapshot {
   revision: number;
   show: Show;
 }
+
+/** A display connected to the computer (from the Rust side). */
+export interface Display {
+  id: string;
+  width: number;
+  height: number;
+  x: number;
+  y: number;
+  primary: boolean;
+}
+
+export type MediaKind = 'video' | 'image';
 
 export interface EngineClient {
   /** True when connected to the real engine. */
@@ -21,6 +37,19 @@ export interface EngineClient {
   dispatch(action: Action): Promise<void>;
   /** Called with every new version of the show. Returns an unsubscribe function. */
   subscribe(onChange: (snapshot: ShowSnapshot) => void): () => void;
+
+  // ----- output windows -----
+  listDisplays(): Promise<Display[]>;
+  openOutput(screen: ScreenId): Promise<void>;
+  closeOutput(screen: ScreenId): Promise<void>;
+  /** Called with the screens whose output window is open, now and on every change. */
+  watchOutputs(onChange: (open: ScreenId[]) => void): () => void;
+
+  // ----- files -----
+  /** Ask the operator for a video or picture file. Resolves to its path, or null if cancelled. */
+  pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null>;
+  /** A URL the page can load a file path from. */
+  mediaUrl(path: string): string;
 }
 
 /** An action the engine refused, with the engine's reason. */
@@ -46,7 +75,7 @@ function describe(detail: ActionError | { code: 'unavailable' }): string {
     case 'invalidValue':
       return `${detail.field}: ${detail.reason}`;
     case 'unavailable':
-      return 'The Lumora engine is not running (browser preview).';
+      return 'Not available in the browser demo. Open Lumora itself for this.';
   }
 }
 
@@ -78,16 +107,63 @@ export function isInsideLumora(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
+const FILTERS: Record<MediaKind, { name: string; extensions: string[] }> = {
+  video: { name: 'Videos', extensions: ['mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'wmv', 'mpg', 'mpeg'] },
+  image: { name: 'Pictures', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'] },
+};
+
+/** The file name without folders or extension, for a default input name. */
+export function baseName(path: string): string {
+  const file = path.split(/[\\/]/).pop() ?? path;
+  const dot = file.lastIndexOf('.');
+  return dot > 0 ? file.slice(0, dot) : file;
+}
+
 class TauriClient implements EngineClient {
   readonly live = true;
 
+  listDisplays(): Promise<Display[]> {
+    return invoke<Display[]>('list_displays');
+  }
+
+  async openOutput(screen: ScreenId): Promise<void> {
+    await invoke('open_output', { screen });
+  }
+
+  async closeOutput(screen: ScreenId): Promise<void> {
+    await invoke('close_output', { screen });
+  }
+
+  watchOutputs(onChange: (open: ScreenId[]) => void): () => void {
+    let stop: (() => void) | null = null;
+    let cancelled = false;
+    void invoke<ScreenId[]>('open_outputs').then((o) => !cancelled && onChange(o));
+    void listen<ScreenId[]>('outputs-changed', (e) => onChange(e.payload)).then((unlisten) => {
+      if (cancelled) unlisten();
+      else stop = unlisten;
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }
+
+  async pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const path = await open({ multiple: false, directory: false, filters: [FILTERS[kind]] });
+    return typeof path === 'string' ? { path, name: baseName(path) } : null;
+  }
+
+  mediaUrl(path: string): string {
+    if (/^(blob:|data:|https?:)/.test(path)) return path;
+    return convertFileSrc(path);
+  }
+
   async getShow(): Promise<ShowSnapshot> {
-    const { invoke } = await import('@tauri-apps/api/core');
     return invoke<ShowSnapshot>('get_show');
   }
 
   async dispatch(action: Action): Promise<void> {
-    const { invoke } = await import('@tauri-apps/api/core');
     try {
       await invoke('dispatch', { action });
     } catch (err) {
@@ -98,12 +174,10 @@ class TauriClient implements EngineClient {
   subscribe(onChange: (snapshot: ShowSnapshot) => void): () => void {
     let stop: (() => void) | null = null;
     let cancelled = false;
-    void import('@tauri-apps/api/event').then(({ listen }) =>
-      listen<ShowSnapshot>('show-changed', (e) => onChange(e.payload)).then((unlisten) => {
-        if (cancelled) unlisten();
-        else stop = unlisten;
-      }),
-    );
+    void listen<ShowSnapshot>('show-changed', (e) => onChange(e.payload)).then((unlisten) => {
+      if (cancelled) unlisten();
+      else stop = unlisten;
+    });
     return () => {
       cancelled = true;
       stop?.();
@@ -111,19 +185,73 @@ class TauriClient implements EngineClient {
   }
 }
 
-class PreviewClient implements EngineClient {
+/** Browser stand-in: keeps a show in memory and applies actions with the demo engine. */
+export class DemoClient implements EngineClient {
   readonly live = false;
-  getShow(): Promise<ShowSnapshot> {
-    return Promise.resolve({ revision: 0, show: emptyShow() });
+  private snapshot: ShowSnapshot;
+  private listeners = new Set<(s: ShowSnapshot) => void>();
+
+  constructor(show: Show = emptyShow()) {
+    this.snapshot = { revision: 0, show };
   }
-  dispatch(): Promise<void> {
+
+  getShow(): Promise<ShowSnapshot> {
+    return Promise.resolve(this.snapshot);
+  }
+
+  dispatch(action: Action): Promise<void> {
+    try {
+      const show = demoApply(this.snapshot.show, action, Date.now());
+      if (JSON.stringify(show) === JSON.stringify(this.snapshot.show)) return Promise.resolve();
+      this.snapshot = { revision: this.snapshot.revision + 1, show };
+      for (const l of this.listeners) l(this.snapshot);
+      return Promise.resolve();
+    } catch (detail) {
+      return Promise.reject(new EngineError(detail as ActionError));
+    }
+  }
+
+  subscribe(onChange: (snapshot: ShowSnapshot) => void): () => void {
+    this.listeners.add(onChange);
+    return () => this.listeners.delete(onChange);
+  }
+
+  listDisplays(): Promise<Display[]> {
+    return Promise.resolve([{ id: 'This screen', width: window.screen.width, height: window.screen.height, x: 0, y: 0, primary: true }]);
+  }
+
+  openOutput(): Promise<void> {
     return Promise.reject(new EngineError({ code: 'unavailable' }));
   }
-  subscribe(): () => void {
+
+  closeOutput(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  watchOutputs(onChange: (open: ScreenId[]) => void): () => void {
+    onChange([]);
     return () => {};
+  }
+
+  pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = FILTERS[kind].extensions.map((e) => '.' + e).join(',');
+      input.onchange = () => {
+        const f = input.files?.[0];
+        resolve(f ? { path: URL.createObjectURL(f), name: baseName(f.name) } : null);
+      };
+      input.oncancel = () => resolve(null);
+      input.click();
+    });
+  }
+
+  mediaUrl(path: string): string {
+    return path;
   }
 }
 
 export function createEngineClient(): EngineClient {
-  return isInsideLumora() ? new TauriClient() : new PreviewClient();
+  return isInsideLumora() ? new TauriClient() : new DemoClient();
 }
