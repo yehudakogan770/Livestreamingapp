@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
-import { sourcePosition } from '../engine/timing';
+import { syncMedia } from '../engine/mediaSync';
 
 // ---- cameras: one stream per device, shared by every view in this window ----
 
@@ -51,9 +51,6 @@ const PATTERN =
 export interface SourceViewProps {
   source: Source;
   client: EngineClient;
-  /** Play sound from this view (only the one on-air view should). */
-  audible?: boolean;
-  master?: number;
   /** Small, still preview for the input grid: videos show their first frame. */
   thumb?: boolean;
   /** Tell the engine a video's length once it is known (control window only). */
@@ -70,8 +67,6 @@ export interface SourceViewProps {
 export function SourceView({
   source,
   client,
-  audible = false,
-  master = 1,
   thumb = false,
   reportDuration = false,
   audience = false,
@@ -101,14 +96,18 @@ export function SourceView({
       return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
+    case 'microphone':
+      return (
+        <div style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8e9096', fontSize: 28 }} data-kind="microphone">
+          🎤
+        </div>
+      );
     case 'video':
       return (
         <VideoView
           source={source}
           client={client}
           fit={fit}
-          audible={audible}
-          master={master}
           thumb={thumb}
           reportDuration={reportDuration}
           audience={audience}
@@ -158,8 +157,6 @@ function VideoView({
   source,
   client,
   fit,
-  audible,
-  master,
   thumb,
   reportDuration,
   audience,
@@ -170,36 +167,15 @@ function VideoView({
   const [failed, setFailed] = useState(false);
   const path = source.kind.type === 'video' ? source.kind.path : '';
 
-  // Keep the element on the engine's clock: every window computes the same
-  // position from the show, and only corrects when it drifts noticeably.
+  // Keep the element on the engine's clock (see syncMedia).
   useEffect(() => {
     if (thumb) return;
-    const sync = () => {
-      const v = ref.current;
-      const src = latest.current;
-      if (!v || src.kind.type !== 'video' || v.readyState < 1) return;
-      const want = sourcePosition(src, Date.now());
-      const playing = src.kind.playback.playing && !(src.kind.durationS > 0 && !src.looping && want >= src.kind.durationS);
-      v.loop = src.looping;
-      if (playing) {
-        if (v.paused) void v.play().catch(() => {});
-        if (Math.abs(v.currentTime - want) > 0.35) v.currentTime = want;
-      } else {
-        if (!v.paused) v.pause();
-        if (Math.abs(v.currentTime - want) > 0.04) v.currentTime = want;
-      }
-    };
+    const sync = () => ref.current && syncMedia(ref.current, latest.current, Date.now());
     sync();
     const id = setInterval(sync, 200);
     return () => clearInterval(id);
   }, [thumb, path]);
 
-  useEffect(() => {
-    const v = ref.current;
-    if (!v) return;
-    v.muted = !audible || source.muted;
-    v.volume = Math.min(1, Math.max(0, source.volume * master));
-  }, [audible, master, source.muted, source.volume]);
 
   useEffect(() => setFailed(false), [path]);
   if (failed) return <Missing text="Video file not found or can't be played" audience={audience} />;

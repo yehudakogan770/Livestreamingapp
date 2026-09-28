@@ -8,6 +8,7 @@ import { ScreenSelector } from './components/ScreenSelector';
 import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
 import { SafeBoundary } from './components/SafeBoundary';
+import { SoundProvider } from './audio/SoundContext';
 import './App.css';
 
 export function App() {
@@ -29,7 +30,9 @@ function Control() {
       <main className="workarea">
         {show ? (
           <SafeBoundary audience={false}>
-            <ControlView show={show} screen={controlling} client={client} />
+            <SoundProvider show={show} client={client}>
+              <ControlView show={show} screen={controlling} client={client} />
+            </SoundProvider>
           </SafeBoundary>
         ) : (
           <div className="loading">{error ? `The engine did not answer: ${error}` : 'Starting…'}</div>

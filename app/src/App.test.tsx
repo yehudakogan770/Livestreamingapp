@@ -151,6 +151,27 @@ describe('Stage monitor and countdown', () => {
   });
 });
 
+describe('Audio mixer', () => {
+  it('is on the main screen with the Stream, Hall and Recording mixes', async () => {
+    await start();
+    const mixer = screen.getByLabelText('Audio mixer');
+    expect(within(mixer).getByText('Stream')).toBeInTheDocument();
+    expect(within(mixer).getByText('Hall')).toBeInTheDocument();
+    expect(within(mixer).getByText('Recording')).toBeInTheDocument();
+    expect(within(mixer).getByText(/Add a microphone/)).toBeInTheDocument();
+  });
+
+  it('muting the Stream mix is one click', async () => {
+    await start();
+    const mixer = screen.getByLabelText('Audio mixer');
+    const mute = within(mixer).getAllByRole('button', { name: 'M' })[0]!;
+    await act(async () => {
+      fireEvent.click(mute);
+    });
+    expect(within(screen.getByLabelText('Audio mixer')).getAllByRole('button', { name: 'M' })[0]).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
 describe('screenStatus', () => {
   it('reports on air, blank and the panic states', () => {
     const show = emptyShow();

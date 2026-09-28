@@ -54,6 +54,13 @@ function find(s: Show, id: string): Source {
   return src;
 }
 
+/** A source that can go on a screen (exists and is not sound only). */
+function picture(s: Show, id: string): Source {
+  const src = find(s, id);
+  if (src.kind.type === 'microphone') throw new Refused({ code: 'soundOnly', id });
+  return src;
+}
+
 function video(s: Show, id: string): Source & { kind: { type: 'video' } } {
   const src = find(s, id);
   if (src.kind.type !== 'video') throw new Refused({ code: 'notAVideo', id });
@@ -126,6 +133,10 @@ function apply(s: Show, a: Action, now: number) {
         muted: a.source.muted ?? false,
         looping: a.source.looping ?? false,
         fit: a.source.fit ?? 'contain',
+        audio: {
+          ...(a.source.audio ?? { follow: kind.type !== 'microphone', toMaster: true, toA: true, toB: true, delayMs: 0 }),
+          delayMs: Math.min(5000, Math.max(0, a.source.audio?.delayMs ?? 0)),
+        },
       });
       return;
     }
@@ -137,6 +148,15 @@ function apply(s: Show, a: Action, now: number) {
       if (p.muted !== undefined) src.muted = p.muted;
       if (p.looping !== undefined) src.looping = p.looping;
       if (p.fit !== undefined) src.fit = p.fit;
+      if (p.audio !== undefined) {
+        const q = p.audio;
+        const au = src.audio;
+        if (q.follow !== undefined) au.follow = q.follow;
+        if (q.toMaster !== undefined) au.toMaster = q.toMaster;
+        if (q.toA !== undefined) au.toA = q.toA;
+        if (q.toB !== undefined) au.toB = q.toB;
+        if (q.delayMs !== undefined) au.delayMs = Math.min(5000, Math.max(0, q.delayMs));
+      }
       if (p.color !== undefined) {
         if (src.kind.type !== 'color')
           throw new Refused({ code: 'invalidValue', field: 'color', reason: 'only colour sources have a colour' });
@@ -147,6 +167,7 @@ function apply(s: Show, a: Action, now: number) {
     case 'removeSource': {
       find(s, a.id);
       s.sources = s.sources.filter((x) => x.id !== a.id);
+      if (s.audio.solo === a.id) s.audio.solo = null;
       if (s.countdown.atZero.type === 'cutTo' && s.countdown.atZero.sourceId === a.id) s.countdown.atZero = { type: 'hold' };
       for (const sc of Object.values(s.screens)) {
         if (sc.preview === a.id) sc.preview = null;
@@ -164,7 +185,7 @@ function apply(s: Show, a: Action, now: number) {
     }
     case 'setPreview':
       notMonitor(a.screen);
-      if (a.sourceId !== null) find(s, a.sourceId);
+      if (a.sourceId !== null) picture(s, a.sourceId);
       s.screens[a.screen].preview = a.sourceId;
       s.screens[a.screen].tbar = 0;
       return;
@@ -174,7 +195,7 @@ function apply(s: Show, a: Action, now: number) {
       return;
     case 'cutTo': {
       notMonitor(a.screen);
-      find(s, a.sourceId);
+      picture(s, a.sourceId);
       const keep = s.screens[a.screen].preview;
       s.screens[a.screen].preview = a.sourceId;
       take(s, a.screen, 'cut', MIN_TRANSITION_MS, now);
@@ -238,6 +259,26 @@ function apply(s: Show, a: Action, now: number) {
       video(s, a.id).kind.durationS = d;
       return;
     }
+    case 'setMasterMuted':
+      s.audio.masterMuted = a.value;
+      return;
+    case 'updateBus': {
+      const b = s.audio[a.bus];
+      if (a.patch.name !== undefined) b.name = oneLine(a.patch.name, 24);
+      if (a.patch.volume !== undefined) b.volume = clamp01(finite(a.patch.volume, 'volume'));
+      if (a.patch.muted !== undefined) b.muted = a.patch.muted;
+      return;
+    }
+    case 'setSolo':
+      if (a.sourceId !== null) {
+        const k = find(s, a.sourceId).kind.type;
+        if (k !== 'video' && k !== 'microphone') throw new Refused({ code: 'invalidValue', field: 'sourceId', reason: 'that input has no sound' });
+      }
+      s.audio.solo = a.sourceId;
+      return;
+    case 'setAudioOutput':
+      s.settings.audioOutputs[a.output] = a.deviceId ?? null;
+      return;
     case 'setMasterVolume':
       s.masterVolume = clamp01(finite(a.value, 'value'));
       return;
@@ -270,7 +311,7 @@ function apply(s: Show, a: Action, now: number) {
     case 'updateCountdown': {
       const p = a.patch;
       const c = s.countdown;
-      if (p.atZero?.type === 'cutTo') find(s, p.atZero.sourceId);
+      if (p.atZero?.type === 'cutTo') picture(s, p.atZero.sourceId);
       if (p.label !== undefined) c.label = oneLine(p.label, 60);
       if (p.endText !== undefined) c.endText = oneLine(p.endText, 60);
       if (p.onLive !== undefined) c.onLive = p.onLive;

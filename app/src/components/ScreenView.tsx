@@ -54,7 +54,6 @@ export function ProgramView({
   show,
   screen,
   client,
-  audible = false,
   reportDuration = false,
   audience = false,
   children,
@@ -62,7 +61,6 @@ export function ProgramView({
   show: Show;
   screen: ScreenId;
   client: EngineClient;
-  audible?: boolean;
   reportDuration?: boolean;
   /** An audience screen: failed sources show black, never an error. */
   audience?: boolean;
@@ -92,8 +90,6 @@ export function ProgramView({
             <SourceView
               source={src}
               client={client}
-              audible={audible && l.opacity > 0}
-              master={show.masterVolume * (1 - blank)}
               reportDuration={reportDuration}
               audience={audience}
             />

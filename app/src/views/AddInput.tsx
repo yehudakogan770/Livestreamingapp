@@ -4,7 +4,8 @@ import type { NewSource } from '../engine/types/NewSource';
 import type { SourceKind } from '../engine/types/SourceKind';
 import { SourceView } from '../components/SourceView';
 
-type Kind = SourceKind['type'];
+/** What can be added; a sound file is stored as a video source that is never shown. */
+type Kind = SourceKind['type'] | 'sound';
 
 const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'camera', name: 'Camera', hint: 'Webcam, capture card or phone' },
@@ -12,6 +13,8 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'image', name: 'Picture', hint: 'PNG, JPG, logo…' },
   { kind: 'color', name: 'Colour', hint: 'A solid colour' },
   { kind: 'pattern', name: 'Test pattern', hint: 'Colour bars for setup' },
+  { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
+  { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
 
 const SWATCHES = ['#000000', '#ffffff', '#1f6f79', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
@@ -26,6 +29,8 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
   const [cams, setCams] = useState<MediaDeviceInfo[] | null>(null);
   const [camErr, setCamErr] = useState<string | null>(null);
   const [cam, setCam] = useState<MediaDeviceInfo | null>(null);
+  const deviceKind = kind === 'microphone' ? 'audioinput' : 'videoinput';
+  const what = kind === 'microphone' ? 'microphones' : 'cameras';
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -35,26 +40,26 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
 
   // Cameras are listed once permission is given, so their real names show.
   useEffect(() => {
-    if (kind !== 'camera' || cams !== null) return;
+    if ((kind !== 'camera' && kind !== 'microphone') || cams !== null) return;
     const md = navigator.mediaDevices;
     if (!md?.enumerateDevices) {
       setCams([]);
-      setCamErr('Cameras are not available here.');
+      setCamErr(`No ${what} are available here.`);
       return;
     }
-    md.getUserMedia({ video: true })
+    md.getUserMedia(deviceKind === 'audioinput' ? { audio: true } : { video: true })
       .then((s) => s.getTracks().forEach((t) => t.stop()))
-      .catch(() => setCamErr('Lumora was not allowed to use cameras, or none is plugged in.'))
+      .catch(() => setCamErr(`Lumora was not allowed to use ${what}, or none is plugged in.`))
       .finally(() =>
         md.enumerateDevices().then((all) => {
-          const list = all.filter((d) => d.kind === 'videoinput');
+          const list = all.filter((d) => d.kind === deviceKind && !(deviceKind === 'audioinput' && d.deviceId === 'default'));
           setCams(list);
           if (list.length) setCamErr(null);
         }),
       );
-  }, [kind, cams]);
+  }, [kind, cams, deviceKind, what]);
 
-  const choose = async (k: 'video' | 'image') => {
+  const choose = async (k: 'video' | 'image' | 'audio') => {
     const f = await client.pickFile(k);
     if (f) {
       setPath(f.path);
@@ -75,12 +80,26 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
         return path ? { name: n || 'Picture', kind: { type: 'image', path } } : null;
       case 'color':
         return { name: n || 'Colour', kind: { type: 'color', color } };
+      case 'microphone':
+        return cam ? { name: n || cam.label || 'Microphone', kind: { type: 'microphone', deviceId: cam.deviceId, label: cam.label } } : null;
+      case 'sound':
+        return path
+          ? {
+              name: n || 'Music',
+              kind: { type: 'video', path, durationS: 0, playback: { playing: false, posS: 0, at: 0 } },
+              looping,
+              // Music and effects are heard whenever they play, not only "on air".
+              audio: { follow: false, toMaster: true, toA: true, toB: true, delayMs: 0 },
+            }
+          : null;
       case 'pattern':
         return { name: n || 'Test pattern', kind: { type: 'pattern' } };
     }
   };
   const ready = draft();
-  const previewSource = ready ? { id: 'draft', volume: 1, muted: true, looping: false, fit: 'contain' as const, ...ready } : null;
+  const previewSource = ready
+    ? { id: 'draft', volume: 1, muted: true, looping: false, fit: 'contain' as const, audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 }, ...ready }
+    : null;
 
   return (
     <div
@@ -109,6 +128,9 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
                   setKind(k.kind);
                   setPath(null);
                   setName('');
+                  setCams(null);
+                  setCam(null);
+                  setCamErr(null);
                 }}
               >
                 <strong>{k.name}</strong>
@@ -125,10 +147,10 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
               )}
             </div>
 
-            {kind === 'camera' && (
+            {(kind === 'camera' || kind === 'microphone') && (
               <div className="field">
-                <span className="field__label">Choose a camera</span>
-                {cams === null && <span className="field__note">Looking for cameras…</span>}
+                <span className="field__label">{kind === 'camera' ? 'Choose a camera' : 'Choose a microphone or sound input'}</span>
+                {cams === null && <span className="field__note">Looking for {what}…</span>}
                 {camErr && <span className="field__note field__note--warn">{camErr}</span>}
                 <div className="addinput__list">
                   {cams?.map((d, i) => (
@@ -139,7 +161,7 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
                       aria-pressed={cam?.deviceId === d.deviceId}
                       onClick={() => setCam(d)}
                     >
-                      {d.label || `Camera ${i + 1}`}
+                      {d.label || `${kind === 'camera' ? 'Camera' : 'Sound input'} ${i + 1}`}
                     </button>
                   ))}
                 </div>
@@ -149,18 +171,18 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
               </div>
             )}
 
-            {(kind === 'video' || kind === 'image') && (
+            {(kind === 'video' || kind === 'image' || kind === 'sound') && (
               <div className="field">
-                <span className="field__label">{kind === 'video' ? 'Video file' : 'Picture file'}</span>
+                <span className="field__label">{kind === 'video' ? 'Video file' : kind === 'sound' ? 'Sound or music file' : 'Picture file'}</span>
                 <div className="addinput__file">
-                  <button type="button" className="btn" onClick={() => void choose(kind)}>
+                  <button type="button" className="btn" onClick={() => void choose(kind === 'sound' ? 'audio' : kind)}>
                     Choose file…
                   </button>
                   <span className="addinput__path" title={path ?? ''}>
                     {path ? path : 'No file chosen'}
                   </span>
                 </div>
-                {kind === 'video' && (
+                {(kind === 'video' || kind === 'sound') && (
                   <label className="check">
                     <input type="checkbox" checked={looping} onChange={(e) => setLooping(e.target.checked)} /> Loop at the end (good for
                     background loops)

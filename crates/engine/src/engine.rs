@@ -1,6 +1,7 @@
 //! Applying actions to the show.
 
 use crate::action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
+use crate::audio::{SourceAudio, MAX_BUS_NAME_LEN};
 use crate::model::{
     ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
     Transition, TransitionKind, MIN_TRANSITION_MS,
@@ -148,6 +149,9 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         Action::RemoveSource { id } => {
             let index = index_of(s, &id)?;
             s.sources.remove(index);
+            if s.audio.solo.as_ref() == Some(&id) {
+                s.audio.solo = None;
+            }
             if matches!(&s.countdown.at_zero, AtZero::CutTo { source_id } if *source_id == id) {
                 s.countdown.at_zero = AtZero::Hold;
             }
@@ -171,7 +175,7 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         Action::SetPreview { screen, source_id } => {
             not_monitor(screen)?;
             if let Some(id) = &source_id {
-                require_source(s, id)?;
+                require_picture(s, id)?;
             }
             let sc = s.screens.get_mut(screen);
             sc.preview = source_id;
@@ -193,7 +197,7 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         }
         Action::CutTo { screen, source_id } => {
             not_monitor(screen)?;
-            require_source(s, &source_id)?;
+            require_picture(s, &source_id)?;
             let keep = s.screens.get(screen).preview.clone();
             s.screens.get_mut(screen).preview = Some(source_id);
             take(
@@ -314,6 +318,42 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.master_volume = finite(value, "value")?.clamp(0.0, 1.0);
             Ok(())
         }
+        Action::SetMasterMuted { value } => {
+            s.audio.master_muted = value;
+            Ok(())
+        }
+        Action::UpdateBus { bus, patch } => {
+            let b = match bus {
+                crate::audio::BusId::A => &mut s.audio.a,
+                crate::audio::BusId::B => &mut s.audio.b,
+            };
+            if let Some(name) = patch.name {
+                b.name = short_text(&name, MAX_BUS_NAME_LEN);
+            }
+            if let Some(v) = patch.volume {
+                b.volume = finite(v, "volume")?.clamp(0.0, 1.0);
+            }
+            if let Some(m) = patch.muted {
+                b.muted = m;
+            }
+            Ok(())
+        }
+        Action::SetSolo { source_id } => {
+            if let Some(id) = &source_id {
+                let src = s
+                    .source(id)
+                    .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+                if !src.kind.has_sound() {
+                    return Err(ActionError::invalid("sourceId", "that input has no sound"));
+                }
+            }
+            s.audio.solo = source_id;
+            Ok(())
+        }
+        Action::SetAudioOutput { output, device_id } => {
+            *s.settings.audio_outputs.get_mut(output) = device_id;
+            Ok(())
+        }
         Action::SetDisplay { screen, display_id } => {
             *s.settings.displays.get_mut(screen) = display_id;
             Ok(())
@@ -412,7 +452,7 @@ fn update_monitor(s: &mut Show, p: MonitorPatch) {
 
 fn update_countdown(s: &mut Show, p: CountdownPatch) -> Result<()> {
     if let Some(AtZero::CutTo { source_id }) = &p.at_zero {
-        require_source(s, source_id)?;
+        require_picture(s, source_id)?;
     }
     let c = &mut s.countdown;
     if let Some(text) = p.label {
@@ -577,6 +617,14 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         return Err(ActionError::DuplicateSource { id });
     }
     let kind = clean_kind(new.kind)?;
+    let mut audio = new.audio.unwrap_or_else(|| {
+        if kind.is_sound_only() {
+            SourceAudio::live()
+        } else {
+            SourceAudio::default()
+        }
+    });
+    audio.delay_ms = audio.delay_ms.min(crate::audio::MAX_AUDIO_DELAY_MS);
     let src = Source {
         id,
         name: clean_name(&new.name),
@@ -585,6 +633,7 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         muted: new.muted.unwrap_or(false),
         looping: new.looping.unwrap_or(false),
         fit: new.fit.unwrap_or_default(),
+        audio,
     };
     s.sources.push(src);
     Ok(())
@@ -620,6 +669,9 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
             }
         }
     }
+    if let Some(a) = patch.audio {
+        src.audio.apply(&a);
+    }
     Ok(())
 }
 
@@ -645,6 +697,7 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
             color: clean_color(&color)?,
         },
         SourceKind::Pattern => SourceKind::Pattern,
+        SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
     })
 }
 
@@ -690,6 +743,15 @@ fn require_source(s: &Show, id: &SourceId) -> Result<()> {
         Ok(())
     } else {
         Err(ActionError::UnknownSource { id: id.clone() })
+    }
+}
+
+/// A source that can go on a screen (exists and is not sound only).
+fn require_picture(s: &Show, id: &SourceId) -> Result<()> {
+    match s.source(id) {
+        None => Err(ActionError::UnknownSource { id: id.clone() }),
+        Some(src) if src.kind.is_sound_only() => Err(ActionError::SoundOnly { id: id.clone() }),
+        Some(_) => Ok(()),
     }
 }
 

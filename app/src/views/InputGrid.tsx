@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { EngineClient } from '../engine/client';
+import { isSoundFile, type EngineClient } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
@@ -13,6 +13,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   image: 'Picture',
   color: 'Colour',
   pattern: 'Test pattern',
+  microphone: 'Microphone',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -37,29 +38,43 @@ export function InputGrid({
       {show.sources.map((src, i) => {
         const onAir = sc.program === src.id;
         const next = sc.preview === src.id && !onAir;
+        // Microphones and music files are heard, never shown: they live in the mixer.
+        const soundFile = src.kind.type === 'video' && isSoundFile(src.kind.path);
+        const soundOnly = soundFile || src.kind.type === 'microphone';
+        const playing = src.kind.type === 'video' && src.kind.playback.playing;
         return (
           <div key={src.id} className={`tile${onAir ? ' tile--pgm' : ''}${next ? ' tile--pvw' : ''}`}>
             <button
               type="button"
               className="tile__pick"
-              disabled={textOnly}
+              disabled={textOnly || soundOnly}
               aria-label={`${i + 1} ${src.name}`}
-              title="Click: line up next · Double-click: straight to air"
+              title={soundOnly ? 'Sound only: use the mixer' : 'Click: line up next · Double-click: straight to air'}
               onClick={() => act({ type: 'setPreview', screen, sourceId: src.id })}
               onDoubleClick={() => act({ type: 'cutTo', screen, sourceId: src.id })}
             >
               <span className="tile__thumb">
-                <SourceView source={src} client={client} thumb />
+                {soundFile ? <span className="tile__sound">♪</span> : <SourceView source={src} client={client} thumb />}
               </span>
               <span className="tile__num">{i + 1}</span>
               {onAir && <span className="tile__badge tile__badge--pgm">ON AIR</span>}
               {next && <span className="tile__badge tile__badge--pvw">NEXT</span>}
               <span className="tile__name">{src.name}</span>
               <span className="tile__kind">
-                {KIND_NAME[src.kind.type]}
+                {soundFile ? 'Sound' : KIND_NAME[src.kind.type]}
                 {src.kind.type === 'video' && src.looping ? ' · loop' : ''}
               </span>
             </button>
+            {soundFile && (
+              <button
+                type="button"
+                className={`tile__play${playing ? ' is-on' : ''}`}
+                aria-label={playing ? `Pause ${src.name}` : `Play ${src.name}`}
+                onClick={() => act({ type: playing ? 'pause' : 'play', id: src.id })}
+              >
+                {playing ? '❚❚' : '▶'}
+              </button>
+            )}
             <button
               type="button"
               className="tile__more"

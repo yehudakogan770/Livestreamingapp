@@ -78,7 +78,7 @@ screens stay in step. In a plain browser the UI runs on a demo engine
 `LUMORA_SMOKE_TEST=1` starts the app, opens all three outputs and exits 0 if
 they opened.
 5. Monitor (text, clock, timer) and hype countdown. **Done.**
-6. Audio mixer.
+6. Audio mixer. **Done** (web audio engine: channels, three mixes, solo, speakers per mix; native WASAPI engine later).
 7. Recording and streaming.
 8. Presets, library, save / open events, crash recovery.
 9. Phone and tablet remotes.

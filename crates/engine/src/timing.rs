@@ -74,6 +74,7 @@ mod tests {
             muted: false,
             looping,
             fit: Fit::Contain,
+            audio: crate::audio::SourceAudio::default(),
         }
     }
 

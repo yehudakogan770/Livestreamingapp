@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { EngineError, type EngineClient } from '../engine/client';
+import { EngineError, isSoundFile, type EngineClient } from '../engine/client';
 import type { Action } from '../engine/types/Action';
 import type { NewSource } from '../engine/types/NewSource';
 import type { ScreenId } from '../engine/types/ScreenId';
@@ -8,6 +8,7 @@ import { PreviewView, ProgramView } from '../components/ScreenView';
 import { SCREENS } from '../components/ScreenSelector';
 import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard } from './CountdownCard';
+import { Mixer } from './Mixer';
 import { SwitchPanel } from './SwitchPanel';
 import { Transport } from './Transport';
 import { InputGrid } from './InputGrid';
@@ -48,7 +49,11 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
     setAdding(false);
     void client
       .dispatch({ type: 'addSource', source: { ...src, id } })
-      .then(() => (screen === 'monitor' ? undefined : client.dispatch({ type: 'setPreview', screen, sourceId: id })))
+      .then(() => {
+        // Line up new pictures next; sound-only inputs (microphones, music) go to the mixer only.
+        const soundOnly = src.kind.type === 'microphone' || (src.kind.type === 'video' && isSoundFile(src.kind.path));
+        return screen === 'monitor' || soundOnly ? undefined : client.dispatch({ type: 'setPreview', screen, sourceId: id });
+      })
       .catch(fail);
   };
 
@@ -74,8 +79,6 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
   const sc = show.screens[screen];
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
   const name = SCREENS.find((s) => s.id === screen)?.name ?? '';
-  // Sound comes from the Live output window; until it is open, from here.
-  const liveAudioHere = !open.includes('live');
 
   return (
     <div className="control">
@@ -103,7 +106,7 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
               <span className="mon__tag">{name.toUpperCase()}</span>
             </div>
             <div className="mon__screen">
-              <ProgramView show={show} screen={screen} client={client} audible={screen === 'live' && liveAudioHere} reportDuration />
+              <ProgramView show={show} screen={screen} client={client} reportDuration />
               {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
               {(sc.blank || show.panic) && (
                 <span className="mon__blanked">
@@ -121,15 +124,12 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
         </section>
       )}
 
-      {screen !== 'live' && liveAudioHere && (
-        <div hidden aria-hidden>
-          <ProgramView show={show} screen="live" client={client} audible />
-        </div>
-      )}
-
       {screen !== 'monitor' && (
         <section className="inputs-area">
-          <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} />
+          <div className="inputs-area__grid">
+            <InputGrid show={show} screen={screen} client={client} act={act} onAdd={() => setAdding(true)} />
+          </div>
+          <Mixer show={show} act={act} />
         </section>
       )}
 

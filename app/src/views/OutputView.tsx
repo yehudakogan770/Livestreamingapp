@@ -46,7 +46,7 @@ export function OutputView({ screen }: { screen: ScreenId }) {
             <MonitorScreen show={show} />
           ) : (
             // Only the Live output plays sound; it is the one that goes to the stream.
-            <ProgramView show={show} screen={screen} client={client} audible={screen === 'live'} audience />
+            <ProgramView show={show} screen={screen} client={client} audience />
           ))}
       </SafeBoundary>
     </div>

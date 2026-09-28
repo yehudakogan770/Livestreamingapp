@@ -14,6 +14,7 @@ const picture: Source = {
   muted: false,
   looping: false,
   fit: 'contain',
+  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
 };
 const video: Source = {
   id: 'v',
@@ -23,6 +24,7 @@ const video: Source = {
   muted: false,
   looping: false,
   fit: 'contain',
+  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
 };
 
 describe('when a source fails', () => {

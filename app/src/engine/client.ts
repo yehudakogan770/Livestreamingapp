@@ -27,7 +27,7 @@ export interface Display {
   primary: boolean;
 }
 
-export type MediaKind = 'video' | 'image';
+export type MediaKind = 'video' | 'image' | 'audio';
 
 export interface EngineClient {
   /** True when connected to the real engine. */
@@ -72,6 +72,8 @@ function describe(detail: ActionError | { code: 'unavailable' }): string {
       return 'Nothing is lined up in preview yet.';
     case 'monitorIsTextOnly':
       return 'The Monitor shows text only.';
+    case 'soundOnly':
+      return 'That input is sound only (like a microphone), so it can’t go on a screen.';
     case 'invalidValue':
       return `${detail.field}: ${detail.reason}`;
     case 'unavailable':
@@ -99,6 +101,12 @@ export function emptyShow(): Show {
     panicChangedAt: 0,
     masterVolume: 1,
     backFollowsLive: false,
+    audio: {
+      masterMuted: false,
+      a: { name: 'Hall', volume: 1, muted: false },
+      b: { name: 'Recording', volume: 1, muted: false },
+      solo: null,
+    },
     monitor: {
       message: '',
       messageOn: false,
@@ -130,7 +138,11 @@ export function emptyShow(): Show {
       atZero: { type: 'hold' },
       fired: false,
     },
-    settings: { displays: { live: null, back: null, monitor: null }, autoPlayOnTake: true },
+    settings: {
+      displays: { live: null, back: null, monitor: null },
+      autoPlayOnTake: true,
+      audioOutputs: { master: null, a: null, b: null, headphones: null },
+    },
   };
 }
 
@@ -141,7 +153,14 @@ export function isInsideLumora(): boolean {
 const FILTERS: Record<MediaKind, { name: string; extensions: string[] }> = {
   video: { name: 'Videos', extensions: ['mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'wmv', 'mpg', 'mpeg'] },
   image: { name: 'Pictures', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'] },
+  audio: { name: 'Sound and music', extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'wma', 'opus'] },
 };
+
+/** A "video" source that is really a sound file (music, effects): heard, never shown. */
+export function isSoundFile(path: string): boolean {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  return FILTERS.audio.extensions.includes(ext);
+}
 
 /** The file name without folders or extension, for a default input name. */
 export function baseName(path: string): string {
@@ -281,7 +300,8 @@ export class DemoClient implements EngineClient {
       input.accept = FILTERS[kind].extensions.map((e) => '.' + e).join(',');
       input.onchange = () => {
         const f = input.files?.[0];
-        resolve(f ? { path: URL.createObjectURL(f), name: baseName(f.name) } : null);
+        // Keep the file name after # so the kind of file (e.g. .mp3) is still known.
+        resolve(f ? { path: `${URL.createObjectURL(f)}#${f.name}`, name: baseName(f.name) } : null);
       };
       input.oncancel = () => resolve(null);
       input.click();

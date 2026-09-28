@@ -5,4 +5,4 @@ import type { SourceId } from "./SourceId";
 /**
  * Why an action was refused. The show is never changed when this happens.
  */
-export type ActionError = { "code": "unknownSource", id: SourceId, } | { "code": "duplicateSource", id: SourceId, } | { "code": "notAVideo", id: SourceId, } | { "code": "nothingInPreview", screen: ScreenId, } | { "code": "monitorIsTextOnly" } | { "code": "invalidValue", field: string, reason: string, };
+export type ActionError = { "code": "unknownSource", id: SourceId, } | { "code": "duplicateSource", id: SourceId, } | { "code": "notAVideo", id: SourceId, } | { "code": "nothingInPreview", screen: ScreenId, } | { "code": "monitorIsTextOnly" } | { "code": "soundOnly", id: SourceId, } | { "code": "invalidValue", field: string, reason: string, };

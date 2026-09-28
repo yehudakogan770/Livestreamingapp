@@ -123,6 +123,7 @@ mod tests {
             muted: None,
             looping: None,
             fit: None,
+            audio: None,
         };
         e.apply(Action::AddSource { source }, 0).unwrap();
         e.show().clone()

@@ -6,6 +6,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use crate::audio::{AudioMix, AudioOutputs, SourceAudio};
 use crate::stage::{Countdown, Monitor};
 
 /// Milliseconds on the engine clock. The engine never reads the clock itself;
@@ -176,11 +177,29 @@ pub enum SourceKind {
         color: String,
     },
     Pattern,
+    /// A sound-only input: microphone, line in, audio interface channel.
+    Microphone {
+        device_id: String,
+        label: String,
+    },
 }
 
 impl SourceKind {
     pub fn is_video(&self) -> bool {
         matches!(self, SourceKind::Video { .. })
+    }
+
+    /// Sound only: it can be heard but never put on a screen.
+    pub fn is_sound_only(&self) -> bool {
+        matches!(self, SourceKind::Microphone { .. })
+    }
+
+    /// Makes sound (and so gets a channel on the mixer).
+    pub fn has_sound(&self) -> bool {
+        matches!(
+            self,
+            SourceKind::Video { .. } | SourceKind::Microphone { .. }
+        )
     }
 }
 
@@ -197,6 +216,9 @@ pub struct Source {
     pub muted: bool,
     pub looping: bool,
     pub fit: Fit,
+    /// How it is heard: audio follows video, which mixes, delay.
+    #[serde(default)]
+    pub audio: SourceAudio,
 }
 
 /// Everything about one output screen.
@@ -259,6 +281,8 @@ pub struct Settings {
     pub displays: PerScreen<Option<String>>,
     /// Start videos automatically when they are taken to air.
     pub auto_play_on_take: bool,
+    /// Which sound device each mix plays on.
+    pub audio_outputs: AudioOutputs,
 }
 
 impl Default for Settings {
@@ -266,6 +290,7 @@ impl Default for Settings {
         Settings {
             displays: PerScreen::default(),
             auto_play_on_take: true,
+            audio_outputs: AudioOutputs::default(),
         }
     }
 }
@@ -290,6 +315,8 @@ pub struct Show {
     /// including its transitions. Taking something on the Back Screen
     /// directly turns this off.
     pub back_follows_live: bool,
+    /// The Stream / Hall / Recording mixes and the headphone solo.
+    pub audio: AudioMix,
     /// What the stage monitor shows.
     pub monitor: Monitor,
     /// The countdown (on the monitor and, when chosen, big on Live / Back).
@@ -311,6 +338,7 @@ impl Default for Show {
             panic_changed_at: 0,
             master_volume: 1.0,
             back_follows_live: false,
+            audio: AudioMix::default(),
             monitor: Monitor::default(),
             countdown: Countdown::default(),
             settings: Settings::default(),

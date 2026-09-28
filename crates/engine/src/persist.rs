@@ -25,6 +25,7 @@ pub fn to_saved(show: &Show) -> Show {
     s.version = SHOW_VERSION;
     s.panic = false;
     s.panic_changed_at = 0;
+    s.audio.solo = None;
     for id in ScreenId::ALL {
         let sc = s.screens.get_mut(id);
         sc.previous = None;
@@ -112,6 +113,32 @@ pub fn repair(mut s: Show) -> Show {
         }
         if !sc.tbar.is_finite() {
             sc.tbar = 0.0;
+        }
+    }
+
+    // Sound: bounded delays and names; sound-only sources never on a screen.
+    for src in &mut s.sources {
+        src.audio.delay_ms = src.audio.delay_ms.min(crate::audio::MAX_AUDIO_DELAY_MS);
+    }
+    for bus in [&mut s.audio.a, &mut s.audio.b] {
+        bus.name = crate::engine::short_text(&bus.name, crate::audio::MAX_BUS_NAME_LEN);
+        if !bus.volume.is_finite() {
+            bus.volume = 1.0;
+        }
+        bus.volume = bus.volume.clamp(0.0, 1.0);
+    }
+    let sound_only: HashSet<_> = s
+        .sources
+        .iter()
+        .filter(|x| x.kind.is_sound_only())
+        .map(|x| x.id.clone())
+        .collect();
+    for id in ScreenId::ALL {
+        let sc = s.screens.get_mut(id);
+        for slot in [&mut sc.preview, &mut sc.program, &mut sc.previous] {
+            if slot.as_ref().is_some_and(|x| sound_only.contains(x)) {
+                *slot = None;
+            }
         }
     }
 

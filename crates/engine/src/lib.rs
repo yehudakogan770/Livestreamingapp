@@ -11,6 +11,7 @@
 //! - Time is passed in, never read, so behaviour is reproducible and testable.
 
 pub mod action;
+pub mod audio;
 pub mod engine;
 pub mod model;
 pub mod persist;
@@ -18,6 +19,9 @@ pub mod stage;
 pub mod timing;
 
 pub use action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
+pub use audio::{
+    AudioMix, AudioOutputId, AudioOutputs, Bus, BusId, BusPatch, SourceAudio, SourceAudioPatch,
+};
 pub use engine::{Engine, Outcome};
 pub use model::*;
 pub use stage::{AtZero, Countdown, Monitor, MonitorLayout, TextSize, TimerFormat};

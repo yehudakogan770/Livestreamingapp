@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use ts_rs::TS;
 
+use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 
@@ -31,6 +32,10 @@ pub struct NewSource {
     #[serde(default)]
     #[ts(optional)]
     pub fit: Option<Fit>,
+    /// Leave empty for the usual: videos follow the picture, microphones are always live.
+    #[serde(default)]
+    #[ts(optional)]
+    pub audio: Option<SourceAudio>,
 }
 
 /// Changes to an existing source. Fields left out stay as they are.
@@ -57,6 +62,9 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub color: Option<String>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub audio: Option<SourceAudioPatch>,
 }
 
 /// Changes to the stage monitor. Fields left out stay as they are.
@@ -206,6 +214,24 @@ pub enum Action {
     SetMasterVolume {
         value: f32,
     },
+    SetMasterMuted {
+        value: bool,
+    },
+    UpdateBus {
+        bus: BusId,
+        patch: BusPatch,
+    },
+    /// Hear one source on its own in the headphones (or `null` for the Stream mix).
+    SetSolo {
+        source_id: Option<SourceId>,
+    },
+    /// Choose the sound device a mix plays on (`null`: the computer's default).
+    SetAudioOutput {
+        output: AudioOutputId,
+        #[serde(default)]
+        #[ts(optional)]
+        device_id: Option<String>,
+    },
 
     // ----- settings -----
     SetDisplay {
@@ -280,6 +306,8 @@ pub enum ActionError {
     NothingInPreview { screen: ScreenId },
     #[error("the Monitor shows text only; it cannot show sources")]
     MonitorIsTextOnly,
+    #[error("{id} is sound only; it cannot go on a screen")]
+    SoundOnly { id: SourceId },
     #[error("{field} is not valid: {reason}")]
     InvalidValue { field: String, reason: String },
 }

@@ -122,6 +122,7 @@ fn at_zero_cuts_live_to_a_source_once() {
                 muted: None,
                 looping: None,
                 fit: None,
+                audio: None,
             },
         },
         0,
