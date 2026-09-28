@@ -84,17 +84,19 @@ impl Engine {
         match next.countdown.at_zero.clone() {
             AtZero::Hold | AtZero::ShowText | AtZero::Hide => {}
             AtZero::Blank => {
-                let mut screens = Vec::new();
-                if next.countdown.on_live {
-                    screens.push(ScreenId::Live);
-                }
-                if next.countdown.on_back {
-                    screens.push(ScreenId::Back);
-                }
-                if screens.is_empty() {
-                    screens = vec![ScreenId::Live, ScreenId::Back];
-                }
-                for id in screens {
+                // Black on the screens showing the countdown right now.
+                let showing: Vec<ScreenId> = [ScreenId::Live, ScreenId::Back]
+                    .into_iter()
+                    .filter(|id| {
+                        next.screens
+                            .get(*id)
+                            .program
+                            .as_ref()
+                            .and_then(|p| next.source(p))
+                            .is_some_and(|s| matches!(s.kind, SourceKind::Countdown { .. }))
+                    })
+                    .collect();
+                for id in showing {
                     let sc = next.screens.get_mut(id);
                     if !sc.blank {
                         sc.blank = true;
@@ -366,6 +368,25 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.auto_play_on_take = value;
             Ok(())
         }
+        Action::UpdateEvent { patch } => {
+            let ev = &mut s.event;
+            if let Some(name) = patch.name {
+                ev.name = short_text(&name, crate::event::MAX_EVENT_NAME_LEN);
+            }
+            if let Some(path) = patch.logo {
+                ev.logo = Some(path).filter(|p| !p.trim().is_empty());
+            }
+            if let Some(v) = patch.on_failure {
+                ev.on_failure = v;
+            }
+            if let Some(v) = patch.panic_shows {
+                ev.panic_shows = v;
+            }
+            if let Some(v) = patch.set_up {
+                ev.set_up = v;
+            }
+            Ok(())
+        }
         Action::UpdateMonitor { patch } => {
             update_monitor(s, patch);
             Ok(())
@@ -460,12 +481,6 @@ fn update_countdown(s: &mut Show, p: CountdownPatch) -> Result<()> {
     }
     if let Some(text) = p.end_text {
         c.end_text = short_text(&text, MAX_SHORT_TEXT_LEN);
-    }
-    if let Some(v) = p.on_live {
-        c.on_live = v;
-    }
-    if let Some(v) = p.on_back {
-        c.on_back = v;
     }
     if let Some(v) = p.format {
         c.format = v;
@@ -660,11 +675,29 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
     }
     if let Some(c) = patch.color {
         match &mut src.kind {
-            SourceKind::Color { color } => *color = clean_color(&c)?,
+            SourceKind::Color { color }
+            | SourceKind::Countdown {
+                background: color, ..
+            } => {
+                *color = clean_color(&c)?;
+            }
             _ => {
                 return Err(ActionError::invalid(
                     "color",
                     "only colour sources have a colour",
+                ))
+            }
+        }
+    }
+    if let Some(path) = patch.logo {
+        match &mut src.kind {
+            SourceKind::Countdown { logo, .. } => {
+                *logo = Some(path).filter(|p| !p.trim().is_empty());
+            }
+            _ => {
+                return Err(ActionError::invalid(
+                    "logo",
+                    "only countdown inputs have an event logo",
                 ))
             }
         }
@@ -698,6 +731,10 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
+        SourceKind::Countdown { background, logo } => SourceKind::Countdown {
+            background: clean_color(&background)?,
+            logo: logo.filter(|p| !p.trim().is_empty()),
+        },
     })
 }
 

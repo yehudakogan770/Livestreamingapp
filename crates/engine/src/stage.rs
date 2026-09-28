@@ -117,11 +117,12 @@ pub enum TimerFormat {
 #[ts(export)]
 pub enum AtZero {
     /// Stay on 0:00.
-    #[default]
     Hold,
     /// Replace the numbers with the end text.
     ShowText,
-    /// Take the countdown off the screens.
+    /// Take the numbers off; the countdown's background stays and its event
+    /// logo (if it has one) fades in.
+    #[default]
     Hide,
     /// Blank the screens the countdown is on.
     Blank,
@@ -129,7 +130,9 @@ pub enum AtZero {
     CutTo { source_id: SourceId },
 }
 
-/// The countdown. Its time is stored as "ends at" while running and "time
+/// The countdown. It goes on a screen as a Countdown input (lined up in
+/// Next and taken to air like any other input); the stage monitor can show
+/// it too. Its time is stored as "ends at" while running and "time
 /// left" while paused, so every window can work out the time on its own.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
@@ -148,10 +151,6 @@ pub struct Countdown {
     pub label: String,
     /// Shown at zero when [`AtZero::ShowText`] is chosen.
     pub end_text: String,
-    /// Show the big countdown on the Live Screen.
-    pub on_live: bool,
-    /// Show the big countdown on the Back Screen.
-    pub on_back: bool,
     pub format: TimerFormat,
     pub at_zero: AtZero,
     /// True once the at-zero action has run, so it runs only once.
@@ -166,10 +165,8 @@ impl Default for Countdown {
             remaining_ms: 5 * 60 * 1000,
             label: "Starting soon".to_owned(),
             end_text: "Welcome!".to_owned(),
-            on_live: false,
-            on_back: false,
             format: TimerFormat::Auto,
-            at_zero: AtZero::Hold,
+            at_zero: AtZero::Hide,
             fired: false,
         }
     }

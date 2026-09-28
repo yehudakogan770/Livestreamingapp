@@ -6,6 +6,7 @@ import { useShow } from '../engine/useShow';
 import { MonitorScreen } from '../components/MonitorScreen';
 import { ProgramView } from '../components/ScreenView';
 import { SafeBoundary } from '../components/SafeBoundary';
+import { StageContext } from '../engine/CountdownContext';
 import './OutputView.css';
 
 /**
@@ -41,6 +42,7 @@ export function OutputView({ screen }: { screen: ScreenId }) {
   return (
     <div className="output" onDoubleClick={toggleFull}>
       <SafeBoundary audience>
+        <StageContext.Provider value={show ? { countdown: show.countdown, event: show.event, mediaUrl: (p) => client.mediaUrl(p) } : null}>
         {show &&
           (screen === 'monitor' ? (
             <MonitorScreen show={show} />
@@ -48,6 +50,7 @@ export function OutputView({ screen }: { screen: ScreenId }) {
             // Only the Live output plays sound; it is the one that goes to the stream.
             <ProgramView show={show} screen={screen} client={client} audience />
           ))}
+        </StageContext.Provider>
       </SafeBoundary>
     </div>
   );

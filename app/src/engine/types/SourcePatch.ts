@@ -9,4 +9,8 @@ export type SourcePatch = { name?: string, volume?: number, muted?: boolean, loo
 /**
  * Only for colour sources.
  */
-color?: string, audio?: SourceAudioPatch, };
+color?: string, audio?: SourceAudioPatch, 
+/**
+ * Only for countdown inputs: the event logo picture ("" removes it).
+ */
+logo?: string, };

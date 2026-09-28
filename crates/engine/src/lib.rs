@@ -13,6 +13,7 @@
 pub mod action;
 pub mod audio;
 pub mod engine;
+pub mod event;
 pub mod model;
 pub mod persist;
 pub mod stage;
@@ -23,6 +24,7 @@ pub use audio::{
     AudioMix, AudioOutputId, AudioOutputs, Bus, BusId, BusPatch, SourceAudio, SourceAudioPatch,
 };
 pub use engine::{Engine, Outcome};
+pub use event::{EventInfo, EventPatch, SafeScreen};
 pub use model::*;
 pub use stage::{AtZero, Countdown, Monitor, MonitorLayout, TextSize, TimerFormat};
 pub use timing::{in_transition, source_ended, source_position, transition_progress};

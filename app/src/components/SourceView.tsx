@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 import { syncMedia } from '../engine/mediaSync';
+import { useCountdown, useStage } from '../engine/CountdownContext';
+import { CountdownView } from './CountdownOverlay';
 
 // ---- cameras: one stream per device, shared by every view in this window ----
 
@@ -96,6 +98,8 @@ export function SourceView({
       return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
+    case 'countdown':
+      return <CountdownInput background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':
       return (
         <div style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8e9096', fontSize: 28 }} data-kind="microphone">
@@ -114,6 +118,27 @@ export function SourceView({
         />
       );
   }
+}
+
+function CountdownInput({ background, logoUrl, client }: { background: string; logoUrl: string | null; client: EngineClient }) {
+  const c = useCountdown();
+  const stage = useStage();
+  // At the end: this countdown's own picture, or else the event logo.
+  const logo = logoUrl ?? stage?.event.logo ?? null;
+  return c ? <CountdownView countdown={c} background={background} logoUrl={logo ? client.mediaUrl(logo) : null} /> : <div style={{ ...fill, background }} />;
+}
+
+/** What the audience sees instead of something broken: black, or the event logo if chosen in the event setup. */
+export function SafeScreenView({ reason = 'failure' }: { reason?: 'failure' | 'panic' }) {
+  const stage = useStage();
+  const ev = stage?.event;
+  const choice = reason === 'panic' ? ev?.panicShows : ev?.onFailure;
+  const logo = choice === 'logo' ? ev?.logo : null;
+  return (
+    <div style={{ ...fill, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }} data-failed>
+      {logo && stage && <img src={stage.mediaUrl(logo)} alt="" draggable={false} style={{ maxWidth: '50%', maxHeight: '50%', objectFit: 'contain' }} />}
+    </div>
+  );
 }
 
 function ImageView({ url, fit, audience }: { url: string; fit: 'cover' | 'contain'; audience: boolean }) {
@@ -202,7 +227,7 @@ function VideoView({
 }
 
 function Missing({ text, audience }: { text: string; audience: boolean }) {
-  if (audience) return <div style={{ ...fill, background: '#000' }} data-failed />;
+  if (audience) return <SafeScreenView />;
   return (
     <div
       data-failed

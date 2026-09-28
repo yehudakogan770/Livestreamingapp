@@ -44,6 +44,13 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
 
   useEffect(() => client.watchOutputs(setOpen), [client]);
 
+  // The countdown goes on a screen like any input: lined up in Next, then TAKE.
+  const putCountdownInNext = () => {
+    const existing = show.sources.find((s) => s.kind.type === 'countdown');
+    if (existing) return act({ type: 'setPreview', screen, sourceId: existing.id });
+    add({ name: 'Countdown', kind: { type: 'countdown', background: '#0b2545' } });
+  };
+
   const add = (src: NewSource) => {
     const id = `src-${Date.now().toString(36)}`;
     setAdding(false);
@@ -98,7 +105,7 @@ export function ControlView({ show, screen, client }: { show: Show; screen: Scre
           </div>
           <div className="centre">
             <SwitchPanel show={show} screen={screen} act={act} />
-            <CountdownCard show={show} act={act} />
+            <CountdownCard show={show} act={act} onPutInNext={putCountdownInNext} />
           </div>
           <div className="mon mon--pgm">
             <div className="mon__head">

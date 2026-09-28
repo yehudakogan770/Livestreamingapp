@@ -22,6 +22,14 @@ export function OutputsDialog({
   onError: (e: unknown) => void;
 }) {
   const [displays, setDisplays] = useState<Display[] | null>(null);
+  // Display choices are applied on Done; Open / Close act straight away.
+  const [chosenAll, setChosenAll] = useState({ ...show.settings.displays });
+  const done = () => {
+    for (const s of SCREENS) {
+      if (chosenAll[s.id] !== show.settings.displays[s.id]) act({ type: 'setDisplay', screen: s.id, displayId: chosenAll[s.id] ?? undefined });
+    }
+    onClose();
+  };
   const refresh = () => void client.listDisplays().then(setDisplays, onError);
   useEffect(refresh, [client]);
   useEffect(() => {
@@ -30,7 +38,7 @@ export function OutputsDialog({
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
 
-  const used = (id: string, except: ScreenId) => SCREENS.some((s) => s.id !== except && show.settings.displays[s.id] === id);
+  const used = (id: string, except: ScreenId) => SCREENS.some((s) => s.id !== except && chosenAll[s.id] === id);
 
   return (
     <div
@@ -43,7 +51,7 @@ export function OutputsDialog({
       <div className="modal__box outputs">
         <header className="modal__head">
           <h2>Outputs</h2>
-          <button type="button" className="icon" aria-label="Close" onClick={onClose}>
+          <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
             ✕
           </button>
         </header>
@@ -54,7 +62,7 @@ export function OutputsDialog({
         <div className="outputs__rows">
           {SCREENS.map((s) => {
             const isOpen = open.includes(s.id);
-            const chosen = show.settings.displays[s.id];
+            const chosen = chosenAll[s.id];
             const missing = chosen !== null && displays !== null && !displays.some((d) => d.id === chosen);
             return (
               <div key={s.id} className="outputs__row">
@@ -65,7 +73,7 @@ export function OutputsDialog({
                 <select
                   aria-label={`Display for ${s.name}`}
                   value={chosen ?? ''}
-                  onChange={(e) => act({ type: 'setDisplay', screen: s.id, displayId: e.target.value || undefined })}
+                  onChange={(e) => setChosenAll((c) => ({ ...c, [s.id]: e.target.value || null }))}
                 >
                   <option value="">Window (no display chosen)</option>
                   {displays?.map((d) => (
@@ -97,7 +105,10 @@ export function OutputsDialog({
           <button type="button" className="btn" onClick={() => SCREENS.forEach((s) => void client.openOutput(s.id).catch(onError))}>
             Open all three
           </button>
-          <button type="button" className="btn btn--primary" onClick={onClose}>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn--primary" onClick={done}>
             Done
           </button>
         </footer>

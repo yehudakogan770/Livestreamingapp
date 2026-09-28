@@ -134,7 +134,6 @@ fn at_zero_cuts_live_to_a_source_once() {
                 at_zero: Some(AtZero::CutTo {
                     source_id: SourceId::new("opening"),
                 }),
-                on_live: Some(true),
                 ..Default::default()
             },
         },
@@ -156,10 +155,36 @@ fn at_zero_blanks_the_screens_the_countdown_is_on() {
     let mut e = engine();
     apply(
         &mut e,
+        Action::AddSource {
+            source: NewSource {
+                id: Some(SourceId::new("count")),
+                name: "Countdown".into(),
+                kind: SourceKind::Countdown {
+                    background: "#0b2545".into(),
+                    logo: None,
+                },
+                volume: None,
+                muted: None,
+                looping: None,
+                fit: None,
+                audio: None,
+            },
+        },
+        0,
+    );
+    apply(
+        &mut e,
+        Action::CutTo {
+            screen: ScreenId::Back,
+            source_id: SourceId::new("count"),
+        },
+        0,
+    );
+    apply(
+        &mut e,
         Action::UpdateCountdown {
             patch: CountdownPatch {
                 at_zero: Some(AtZero::Blank),
-                on_back: Some(true),
                 ..Default::default()
             },
         },
@@ -250,4 +275,97 @@ fn old_show_files_get_default_monitor_and_countdown() {
     let loaded = load_json(r#"{"version":1,"sources":[]}"#).expect("loads");
     assert_eq!(loaded.monitor, Monitor::default());
     assert_eq!(loaded.countdown.length_ms, 5 * MIN);
+}
+
+#[test]
+fn by_default_the_numbers_come_off_at_zero_and_older_shows_are_updated() {
+    assert_eq!(Countdown::default().at_zero, AtZero::Hide);
+    let old = r#"{"version":1,"sources":[],"countdown":{"atZero":{"type":"hold"}}}"#;
+    assert_eq!(load_json(old).unwrap().countdown.at_zero, AtZero::Hide);
+    let new = r#"{"version":2,"sources":[],"countdown":{"atZero":{"type":"hold"}}}"#;
+    assert_eq!(
+        load_json(new).unwrap().countdown.at_zero,
+        AtZero::Hold,
+        "a deliberate choice is kept"
+    );
+}
+
+#[test]
+fn a_countdown_input_can_have_an_event_logo() {
+    let mut e = engine();
+    apply(
+        &mut e,
+        Action::AddSource {
+            source: NewSource {
+                id: Some(SourceId::new("cd")),
+                name: "Countdown".into(),
+                kind: SourceKind::Countdown {
+                    background: "#000000".into(),
+                    logo: None,
+                },
+                volume: None,
+                muted: None,
+                looping: None,
+                fit: None,
+                audio: None,
+            },
+        },
+        0,
+    );
+    let logo_of = |e: &Engine| match &e.show().sources[0].kind {
+        SourceKind::Countdown { logo, .. } => logo.clone(),
+        _ => unreachable!(),
+    };
+    apply(
+        &mut e,
+        Action::UpdateSource {
+            id: SourceId::new("cd"),
+            patch: SourcePatch {
+                logo: Some("C:/event/logo.png".into()),
+                ..Default::default()
+            },
+        },
+        0,
+    );
+    assert_eq!(logo_of(&e).as_deref(), Some("C:/event/logo.png"));
+    apply(
+        &mut e,
+        Action::UpdateSource {
+            id: SourceId::new("cd"),
+            patch: SourcePatch {
+                logo: Some(String::new()),
+                ..Default::default()
+            },
+        },
+        0,
+    );
+    assert_eq!(logo_of(&e), None, "an empty path removes it");
+}
+
+#[test]
+fn the_event_remembers_its_name_logo_and_emergency_plan() {
+    let mut e = engine();
+    assert!(
+        !e.show().event.set_up,
+        "a new show asks the setup questions"
+    );
+    apply(
+        &mut e,
+        Action::UpdateEvent {
+            patch: EventPatch {
+                name: Some("  Chanukah   Rally ".into()),
+                logo: Some("C:/event/logo.png".into()),
+                on_failure: Some(SafeScreen::Logo),
+                panic_shows: Some(SafeScreen::Logo),
+                set_up: Some(true),
+            },
+        },
+        0,
+    );
+    let loaded = load_json(&save_json(e.show())).unwrap();
+    assert_eq!(loaded.event.name, "Chanukah Rally");
+    assert_eq!(loaded.event.logo.as_deref(), Some("C:/event/logo.png"));
+    assert_eq!(loaded.event.on_failure, SafeScreen::Logo);
+    assert_eq!(loaded.event.panic_shows, SafeScreen::Logo);
+    assert!(loaded.event.set_up);
 }

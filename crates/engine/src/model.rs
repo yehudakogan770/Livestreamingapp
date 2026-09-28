@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::audio::{AudioMix, AudioOutputs, SourceAudio};
+use crate::event::EventInfo;
 use crate::stage::{Countdown, Monitor};
 
 /// Milliseconds on the engine clock. The engine never reads the clock itself;
@@ -177,6 +178,15 @@ pub enum SourceKind {
         color: String,
     },
     Pattern,
+    /// The show's countdown, big, over a background colour. At zero the
+    /// numbers can give way to the event logo.
+    Countdown {
+        background: String,
+        /// Picture shown when the countdown finishes (the event logo).
+        #[serde(default)]
+        #[ts(optional)]
+        logo: Option<String>,
+    },
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,
@@ -315,6 +325,8 @@ pub struct Show {
     /// including its transitions. Taking something on the Back Screen
     /// directly turns this off.
     pub back_follows_live: bool,
+    /// The event: name, logo and emergency plan.
+    pub event: EventInfo,
     /// The Stream / Hall / Recording mixes and the headphone solo.
     pub audio: AudioMix,
     /// What the stage monitor shows.
@@ -325,7 +337,8 @@ pub struct Show {
 }
 
 /// Current save-file format version.
-pub const SHOW_VERSION: u32 = 1;
+/// 2: the countdown's at-zero default became "take the numbers off".
+pub const SHOW_VERSION: u32 = 2;
 
 impl Default for Show {
     fn default() -> Self {
@@ -338,6 +351,7 @@ impl Default for Show {
             panic_changed_at: 0,
             master_volume: 1.0,
             back_follows_live: false,
+            event: EventInfo::default(),
             audio: AudioMix::default(),
             monitor: Monitor::default(),
             countdown: Countdown::default(),

@@ -14,7 +14,11 @@ function useClock(): string {
   return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 }
 
-export function TitleBar({ controlling }: { controlling: ScreenId }) {
+/**
+ * The top bar. Menus with an action are live; the rest arrive in later
+ * milestones. The event's name shows beside the clock.
+ */
+export function TitleBar({ controlling, eventName, actions = {} }: { controlling: ScreenId; eventName?: string; actions?: Partial<Record<string, () => void>> }) {
   const clock = useClock();
   return (
     <header className="titlebar">
@@ -24,11 +28,12 @@ export function TitleBar({ controlling }: { controlling: ScreenId }) {
       </div>
       <nav className="titlebar__menu" aria-label="Main menu">
         {MENUS.map((m) => (
-          <button key={m} type="button" className="titlebar__item" disabled title="Coming in a later milestone">
+          <button key={m} type="button" className="titlebar__item" disabled={!actions[m]} title={actions[m] ? undefined : 'Coming in a later milestone'} onClick={actions[m]}>
             {m}
           </button>
         ))}
       </nav>
+      {eventName && <span className="titlebar__event">{eventName}</span>}
       <span className="titlebar__clock" aria-label="Current time">
         {clock}
       </span>

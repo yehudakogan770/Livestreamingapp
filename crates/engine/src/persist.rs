@@ -63,7 +63,12 @@ pub fn load_json(text: &str) -> Result<Show, LoadError> {
             supported: SHOW_VERSION,
         });
     }
-    Ok(repair(to_saved(&raw)))
+    let mut show = raw;
+    if show.version < 2 && show.countdown.at_zero == crate::stage::AtZero::Hold {
+        // Shows from before version 2 kept the old default; use the new one.
+        show.countdown.at_zero = crate::stage::AtZero::Hide;
+    }
+    Ok(repair(to_saved(&show)))
 }
 
 /// Fix anything that breaks the show's rules.
@@ -85,7 +90,10 @@ pub fn repair(mut s: Show) -> Show {
             name.chars().take(crate::engine::MAX_NAME_LEN).collect()
         };
         match &mut src.kind {
-            SourceKind::Color { color } => {
+            SourceKind::Color { color }
+            | SourceKind::Countdown {
+                background: color, ..
+            } => {
                 let ok = color.len() == 7
                     && color.starts_with('#')
                     && color[1..].chars().all(|c| c.is_ascii_hexdigit());
@@ -140,6 +148,11 @@ pub fn repair(mut s: Show) -> Show {
                 *slot = None;
             }
         }
+    }
+
+    s.event.name = crate::engine::short_text(&s.event.name, crate::event::MAX_EVENT_NAME_LEN);
+    if s.event.logo.as_deref().is_some_and(|p| p.trim().is_empty()) {
+        s.event.logo = None;
     }
 
     // Monitor and countdown: bounded text, exactly 8 quick messages, sane times.

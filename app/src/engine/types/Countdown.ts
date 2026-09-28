@@ -3,7 +3,9 @@ import type { AtZero } from "./AtZero";
 import type { TimerFormat } from "./TimerFormat";
 
 /**
- * The countdown. Its time is stored as "ends at" while running and "time
+ * The countdown. It goes on a screen as a Countdown input (lined up in
+ * Next and taken to air like any other input); the stage monitor can show
+ * it too. Its time is stored as "ends at" while running and "time
  * left" while paused, so every window can work out the time on its own.
  */
 export type Countdown = { 
@@ -26,15 +28,7 @@ label: string,
 /**
  * Shown at zero when [`AtZero::ShowText`] is chosen.
  */
-endText: string, 
-/**
- * Show the big countdown on the Live Screen.
- */
-onLive: boolean, 
-/**
- * Show the big countdown on the Back Screen.
- */
-onBack: boolean, format: TimerFormat, atZero: AtZero, 
+endText: string, format: TimerFormat, atZero: AtZero, 
 /**
  * True once the at-zero action has run, so it runs only once.
  */

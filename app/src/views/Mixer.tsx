@@ -77,19 +77,32 @@ function Strip({ src, show, act, problem }: { src: Source; show: Show; act: Act;
         <button type="button" className={`send${a.toA ? ' is-on' : ''}`} aria-pressed={a.toA} title={`Goes to ${show.audio.a.name}`} onClick={() => setAudio({ toA: !a.toA })}>{show.audio.a.name.slice(0, 2) || 'A'}</button>
         <button type="button" className={`send${a.toB ? ' is-on' : ''}`} aria-pressed={a.toB} title={`Goes to ${show.audio.b.name}`} onClick={() => setAudio({ toB: !a.toB })}>{show.audio.b.name.slice(0, 2) || 'B'}</button>
       </div>
-      {menu && (
-        <div className="menu strip__menu" role="dialog" aria-label={`${src.name} sound`}>
-          <label className="menu__row">
-            Sound delay
-            <input type="range" min={0} max={1000} step={10} value={a.delayMs} onChange={(e) => setAudio({ delayMs: Number(e.target.value) })} />
-          </label>
-          <span className="menu__hint">{a.delayMs} ms — lines the sound up with a camera that is late.</span>
-          <label className="menu__row menu__row--check">
-            <input type="checkbox" checked={a.follow} onChange={(e) => setAudio({ follow: e.target.checked })} /> Only heard when on air (audio follows video)
-          </label>
-          <button type="button" className="btn" onClick={() => setMenu(false)}>Done</button>
-        </div>
-      )}
+      {menu && <StripMenu src={src} onDone={(p) => (Object.keys(p).length && setAudio(p), setMenu(false))} onCancel={() => setMenu(false)} />}
+    </div>
+  );
+}
+
+/** A channel's sound settings; applied on Done. */
+function StripMenu({ src, onDone, onCancel }: { src: Source; onDone: (p: SourceAudioPatch) => void; onCancel: () => void }) {
+  const [delay, setDelay] = useState(src.audio.delayMs);
+  const [follow, setFollow] = useState(src.audio.follow);
+  const patch: SourceAudioPatch = {};
+  if (delay !== src.audio.delayMs) patch.delayMs = delay;
+  if (follow !== src.audio.follow) patch.follow = follow;
+  return (
+    <div className="menu strip__menu" role="dialog" aria-label={`${src.name} sound`}>
+      <label className="menu__row">
+        Sound delay
+        <input type="range" min={0} max={1000} step={10} value={delay} onChange={(e) => setDelay(Number(e.target.value))} />
+      </label>
+      <span className="menu__hint">{delay} ms — lines the sound up with a camera that is late.</span>
+      <label className="menu__row menu__row--check">
+        <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Only heard when on air (audio follows video)
+      </label>
+      <div className="menu__foot">
+        <button type="button" className="btn" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn btn--primary" onClick={() => onDone(patch)}>Done</button>
+      </div>
     </div>
   );
 }

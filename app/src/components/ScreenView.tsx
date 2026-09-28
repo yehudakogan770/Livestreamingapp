@@ -5,8 +5,7 @@ import type { Show } from '../engine/types/Show';
 import type { TransitionKind } from '../engine/types/TransitionKind';
 import { fadeAmount, mixAt, transitionProgress, BLANK_FADE_MS, type Mix } from '../engine/timing';
 import { useNow } from '../engine/useNow';
-import { SourceView } from './SourceView';
-import { CountdownOverlay } from './CountdownOverlay';
+import { SafeScreenView, SourceView } from './SourceView';
 
 interface Layer {
   id: string;
@@ -69,7 +68,9 @@ export function ProgramView({
   const now = useNow(screenMoving(show, screen, Date.now()));
   const { layers, black } = programLayers(show, screen, now);
   const sc = show.screens[screen];
-  const blank = Math.max(fadeAmount(sc.blank, sc.blankChangedAt, now), fadeAmount(show.panic, show.panicChangedAt, now));
+  const blank = fadeAmount(sc.blank, sc.blankChangedAt, now);
+  // PANIC shows black or the event logo, as chosen in the event setup.
+  const panic = fadeAmount(show.panic, show.panicChangedAt, now);
   return (
     <div style={box} data-screen={screen}>
       {layers.map((l) => {
@@ -97,8 +98,12 @@ export function ProgramView({
         );
       })}
       {black > 0 && <div style={{ ...box, background: '#000', opacity: black }} />}
-      {screen !== 'monitor' && <CountdownOverlay countdown={show.countdown} screen={screen} />}
       {blank > 0 && <div style={{ ...box, background: '#000', opacity: blank, zIndex: 4 }} data-blank />}
+      {panic > 0 && (
+        <div style={{ ...box, opacity: panic, zIndex: 5 }} data-panic>
+          <SafeScreenView reason="panic" />
+        </div>
+      )}
       {children}
     </div>
   );

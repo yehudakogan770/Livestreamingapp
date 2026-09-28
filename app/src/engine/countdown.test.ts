@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { demoApply, demoTick } from './demo';
 import { emptyShow } from './client';
-import { countdownRemaining, countdownShownOn, formatCountdown } from './timing';
+import { countdownRemaining, countdownVisible, formatCountdown } from './timing';
 import { nextClockTime, parseLength } from '../views/CountdownDialog';
 import type { Action } from './types/Action';
 import type { Show } from './types/Show';
@@ -33,10 +33,10 @@ describe('countdown rules (same as the engine)', () => {
     expect(countdownRemaining(s.countdown, 55_000)).toBe(65_000);
   });
 
-  it('at zero it switches the Live Screen once, then leaves the screen', () => {
+  it('at zero it switches the Live Screen once, and the numbers can come off', () => {
     let s = run(emptyShow(), [
       [{ type: 'addSource', source: { id: 'open', name: 'Opening', kind: { type: 'pattern' } } }, 0],
-      [{ type: 'updateCountdown', patch: { atZero: { type: 'cutTo', sourceId: 'open' }, onLive: true } }, 0],
+      [{ type: 'updateCountdown', patch: { atZero: { type: 'cutTo', sourceId: 'open' } } }, 0],
       [{ type: 'setCountdownLength', lengthMs: 5_000 }, 0],
       [{ type: 'startCountdown' }, 0],
     ]);
@@ -44,17 +44,38 @@ describe('countdown rules (same as the engine)', () => {
     s = demoTick(s, 5_000)!;
     expect(s.screens.live.program).toBe('open');
     expect(demoTick(s, 6_000)).toBeNull();
-    expect(countdownShownOn(s.countdown, 'live', 6_000)).toBe(false);
+    expect(countdownVisible(s.countdown, 6_000)).toBe(false);
+  });
+
+  it('“go to black” at zero blanks only the screens showing the countdown', () => {
+    let s = run(emptyShow(), [
+      [{ type: 'addSource', source: { id: 'cd', name: 'Countdown', kind: { type: 'countdown', background: '#000000' } } }, 0],
+      [{ type: 'cutTo', screen: 'back', sourceId: 'cd' }, 0],
+      [{ type: 'updateCountdown', patch: { atZero: { type: 'blank' } } }, 0],
+      [{ type: 'setCountdownLength', lengthMs: 1_000 }, 0],
+      [{ type: 'startCountdown' }, 0],
+    ]);
+    s = demoTick(s, 1_000)!;
+    expect(s.screens.back.blank).toBe(true);
+    expect(s.screens.live.blank).toBe(false);
   });
 
   it('“show the end text” keeps it on screen at zero', () => {
     const s = run(emptyShow(), [
-      [{ type: 'updateCountdown', patch: { atZero: { type: 'showText' }, onBack: true } }, 0],
+      [{ type: 'updateCountdown', patch: { atZero: { type: 'showText' } } }, 0],
       [{ type: 'setCountdownLength', lengthMs: 1_000 }, 0],
       [{ type: 'startCountdown' }, 0],
     ]);
-    expect(countdownShownOn(s.countdown, 'back', 2_000)).toBe(true);
-    expect(countdownShownOn(s.countdown, 'live', 2_000)).toBe(false);
+    expect(countdownVisible(s.countdown, 2_000)).toBe(true);
+  });
+
+  it('can be moved to any second: jump, nudge by 10 s', () => {
+    const s = run(emptyShow(), [
+      [{ type: 'startCountdown' }, 0],
+      [{ type: 'setCountdownRemaining', ms: 30_000 }, 1_000],
+      [{ type: 'addCountdownTime', ms: -10_000 }, 1_000],
+    ]);
+    expect(countdownRemaining(s.countdown, 1_000)).toBe(20_000);
   });
 });
 

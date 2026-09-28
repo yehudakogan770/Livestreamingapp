@@ -13,6 +13,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'image', name: 'Picture', hint: 'PNG, JPG, logo…' },
   { kind: 'color', name: 'Colour', hint: 'A solid colour' },
   { kind: 'pattern', name: 'Test pattern', hint: 'Colour bars for setup' },
+  { kind: 'countdown', name: 'Countdown', hint: 'The show countdown, big' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
@@ -94,6 +95,8 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
           : null;
       case 'pattern':
         return { name: n || 'Test pattern', kind: { type: 'pattern' } };
+      case 'countdown':
+        return { name: n || 'Countdown', kind: { type: 'countdown', background: color } };
     }
   };
   const ready = draft();
@@ -191,9 +194,9 @@ export function AddInput({ client, onAdd, onClose }: { client: EngineClient; onA
               </div>
             )}
 
-            {kind === 'color' && (
+            {(kind === 'color' || kind === 'countdown') && (
               <div className="field">
-                <span className="field__label">Colour</span>
+                <span className="field__label">{kind === 'countdown' ? 'Background' : 'Colour'}</span>
                 <div className="addinput__swatches">
                   {SWATCHES.map((c) => (
                     <button

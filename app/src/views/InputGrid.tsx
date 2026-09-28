@@ -14,6 +14,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   color: 'Colour',
   pattern: 'Test pattern',
   microphone: 'Microphone',
+  countdown: 'Countdown',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -97,8 +98,11 @@ export function InputGrid({
 
 function TileMenu({ source, act, onClose }: { source: Source; act: Act; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [name, setName] = useState(source.name);
   const [confirm, setConfirm] = useState(false);
+  // Everything is changed here first and applied on Done; clicking away or Esc cancels.
+  const colour = source.kind.type === 'color' ? source.kind.color : source.kind.type === 'countdown' ? source.kind.background : null;
+  const [draft, setDraft] = useState({ name: source.name, color: colour, fit: source.fit, looping: source.looping, volume: source.volume, muted: source.muted });
+  const set = (p: Partial<typeof draft>) => setDraft((d) => ({ ...d, ...p }));
   useEffect(() => {
     const away = (e: PointerEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
@@ -111,58 +115,61 @@ function TileMenu({ source, act, onClose }: { source: Source; act: Act; onClose:
       window.removeEventListener('keydown', esc);
     };
   }, [onClose]);
-  const patch = (p: SourcePatch) => act({ type: 'updateSource', id: source.id, patch: p });
+
+  const done = () => {
+    const patch: SourcePatch = {};
+    if (draft.name.trim() && draft.name !== source.name) patch.name = draft.name;
+    if (draft.color !== null && draft.color !== colour) patch.color = draft.color;
+    if (draft.fit !== source.fit) patch.fit = draft.fit;
+    if (draft.looping !== source.looping) patch.looping = draft.looping;
+    if (draft.volume !== source.volume) patch.volume = draft.volume;
+    if (draft.muted !== source.muted) patch.muted = draft.muted;
+    if (Object.keys(patch).length) act({ type: 'updateSource', id: source.id, patch });
+    onClose();
+  };
+
+  const k = source.kind.type;
   return (
     <div ref={ref} className="menu" role="dialog" aria-label={`Options for ${source.name}`}>
       <label className="menu__row">
         Name
-        <input
-          value={name}
-          maxLength={60}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => name !== source.name && patch({ name })}
-          onKeyDown={(e) => e.key === 'Enter' && (e.currentTarget.blur(), onClose())}
-        />
+        <input value={draft.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && done()} />
       </label>
-      {source.kind.type === 'color' && (
+      {draft.color !== null && (
         <label className="menu__row">
-          Colour
-          <input type="color" value={source.kind.color} onChange={(e) => patch({ color: e.target.value })} />
+          {k === 'countdown' ? 'Background' : 'Colour'}
+          <input type="color" value={draft.color} onChange={(e) => set({ color: e.target.value })} />
         </label>
       )}
-      {(source.kind.type === 'video' || source.kind.type === 'image' || source.kind.type === 'camera') && (
+      {(k === 'video' || k === 'image' || k === 'camera') && (
         <div className="menu__row">
           Picture
           <span className="segs">
-            <button type="button" className="seg" aria-pressed={source.fit === 'contain'} onClick={() => patch({ fit: 'contain' })}>
-              Whole
-            </button>
-            <button type="button" className="seg" aria-pressed={source.fit === 'cover'} onClick={() => patch({ fit: 'cover' })}>
-              Fill
-            </button>
+            <button type="button" className="seg" aria-pressed={draft.fit === 'contain'} onClick={() => set({ fit: 'contain' })}>Whole</button>
+            <button type="button" className="seg" aria-pressed={draft.fit === 'cover'} onClick={() => set({ fit: 'cover' })}>Fill</button>
           </span>
         </div>
       )}
-      {source.kind.type === 'video' && (
+      {k === 'video' && (
+        <label className="menu__row menu__row--check">
+          <input type="checkbox" checked={draft.looping} onChange={(e) => set({ looping: e.target.checked })} /> Loop at the end
+        </label>
+      )}
+      {(k === 'video' || k === 'microphone') && (
         <>
-          <label className="menu__row menu__row--check">
-            <input type="checkbox" checked={source.looping} onChange={(e) => patch({ looping: e.target.checked })} /> Loop at the end
-          </label>
           <label className="menu__row">
             Volume
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={Math.round(source.volume * 100)}
-              onChange={(e) => patch({ volume: Number(e.target.value) / 100 })}
-            />
+            <input type="range" min={0} max={100} value={Math.round(draft.volume * 100)} onChange={(e) => set({ volume: Number(e.target.value) / 100 })} />
           </label>
           <label className="menu__row menu__row--check">
-            <input type="checkbox" checked={source.muted} onChange={(e) => patch({ muted: e.target.checked })} /> Mute
+            <input type="checkbox" checked={draft.muted} onChange={(e) => set({ muted: e.target.checked })} /> Mute
           </label>
         </>
       )}
+      <div className="menu__foot">
+        <button type="button" className="btn" onClick={onClose}>Cancel</button>
+        <button type="button" className="btn btn--primary" onClick={done}>Done</button>
+      </div>
       <button
         type="button"
         className={`menu__remove${confirm ? ' is-armed' : ''}`}

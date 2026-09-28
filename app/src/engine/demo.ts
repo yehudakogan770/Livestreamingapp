@@ -148,6 +148,10 @@ function apply(s: Show, a: Action, now: number) {
       if (p.muted !== undefined) src.muted = p.muted;
       if (p.looping !== undefined) src.looping = p.looping;
       if (p.fit !== undefined) src.fit = p.fit;
+      if (p.logo !== undefined) {
+        if (src.kind.type !== 'countdown') throw new Refused({ code: 'invalidValue', field: 'logo', reason: 'only countdown inputs have an event logo' });
+        src.kind.logo = p.logo.trim() ? p.logo : undefined;
+      }
       if (p.audio !== undefined) {
         const q = p.audio;
         const au = src.audio;
@@ -158,9 +162,9 @@ function apply(s: Show, a: Action, now: number) {
         if (q.delayMs !== undefined) au.delayMs = Math.min(5000, Math.max(0, q.delayMs));
       }
       if (p.color !== undefined) {
-        if (src.kind.type !== 'color')
-          throw new Refused({ code: 'invalidValue', field: 'color', reason: 'only colour sources have a colour' });
-        src.kind.color = p.color;
+        if (src.kind.type === 'color') src.kind.color = p.color;
+        else if (src.kind.type === 'countdown') src.kind.background = p.color;
+        else throw new Refused({ code: 'invalidValue', field: 'color', reason: 'only colour sources have a colour' });
       }
       return;
     }
@@ -291,6 +295,16 @@ function apply(s: Show, a: Action, now: number) {
     case 'setAutoPlayOnTake':
       s.settings.autoPlayOnTake = a.value;
       return;
+    case 'updateEvent': {
+      const p = a.patch;
+      const ev = s.event;
+      if (p.name !== undefined) ev.name = oneLine(p.name, 80);
+      if (p.logo !== undefined) ev.logo = p.logo.trim() ? p.logo : null;
+      if (p.onFailure !== undefined) ev.onFailure = p.onFailure;
+      if (p.panicShows !== undefined) ev.panicShows = p.panicShows;
+      if (p.setUp !== undefined) ev.setUp = p.setUp;
+      return;
+    }
     case 'updateMonitor': {
       const p = a.patch;
       const m = s.monitor;
@@ -314,8 +328,6 @@ function apply(s: Show, a: Action, now: number) {
       if (p.atZero?.type === 'cutTo') picture(s, p.atZero.sourceId);
       if (p.label !== undefined) c.label = oneLine(p.label, 60);
       if (p.endText !== undefined) c.endText = oneLine(p.endText, 60);
-      if (p.onLive !== undefined) c.onLive = p.onLive;
-      if (p.onBack !== undefined) c.onBack = p.onBack;
       if (p.format !== undefined) c.format = p.format;
       if (p.atZero !== undefined) c.atZero = p.atZero;
       return;
@@ -370,10 +382,9 @@ export function demoTick(show: Show, now: number): Show | null {
   next.countdown.fired = true;
   const z = next.countdown.atZero;
   if (z.type === 'blank') {
-    const screens: ('live' | 'back')[] = [];
-    if (c.onLive) screens.push('live');
-    if (c.onBack) screens.push('back');
-    for (const id of screens.length ? screens : (['live', 'back'] as const)) {
+    // Black on the screens showing the countdown right now.
+    const showing = (['live', 'back'] as const).filter((id) => next.sources.find((x) => x.id === next.screens[id].program)?.kind.type === 'countdown');
+    for (const id of showing) {
       if (!next.screens[id].blank) {
         next.screens[id].blank = true;
         next.screens[id].blankChangedAt = now;

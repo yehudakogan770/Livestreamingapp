@@ -1153,3 +1153,14 @@ button.strip__name:hover { background: #2a2e36; }
 
 .outputs__row--sound { grid-template-columns: 200px minmax(0, 1fr); }
 .outputs__row--sound .text { height: 30px; font-weight: 700; }
+
+/* countdown card: scrub, typed time, jumps */
+.cd__time { padding: 0; border: 0; background: none; text-align: left; cursor: text; }
+.cd__time:hover { text-decoration: underline dotted #5a5f68; }
+.cd__type { width: 100%; height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid var(--accent); background: var(--well); color: #fff; font-family: var(--mono); font-size: 20px; font-weight: 700; user-select: text; }
+.cd__scrub { width: 100%; margin: 0; accent-color: var(--accent); }
+.cd__row:last-child { grid-template-columns: 2fr 1fr 1fr; }
+.cd__row--jump { grid-template-columns: auto 1fr 1fr 1fr; align-items: center; }
+.cd__jumplabel { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-faint); text-transform: uppercase; padding-right: 2px; }
+.menu__foot { display: flex; justify-content: flex-end; gap: 6px; }
+.menu__foot .btn { height: 28px; }

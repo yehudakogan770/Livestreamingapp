@@ -5,4 +5,4 @@ import type { TimerFormat } from "./TimerFormat";
 /**
  * Changes to how the countdown looks and ends. Fields left out stay as they are.
  */
-export type CountdownPatch = { label?: string, endText?: string, onLive?: boolean, onBack?: boolean, format?: TimerFormat, atZero?: AtZero, };
+export type CountdownPatch = { label?: string, endText?: string, format?: TimerFormat, atZero?: AtZero, };

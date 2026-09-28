@@ -5,6 +5,7 @@ use thiserror::Error;
 use ts_rs::TS;
 
 use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
+use crate::event::EventPatch;
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 
@@ -65,6 +66,10 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub audio: Option<SourceAudioPatch>,
+    /// Only for countdown inputs: the event logo picture ("" removes it).
+    #[serde(default)]
+    #[ts(optional)]
+    pub logo: Option<String>,
 }
 
 /// Changes to the stage monitor. Fields left out stay as they are.
@@ -106,12 +111,6 @@ pub struct CountdownPatch {
     #[serde(default)]
     #[ts(optional)]
     pub end_text: Option<String>,
-    #[serde(default)]
-    #[ts(optional)]
-    pub on_live: Option<bool>,
-    #[serde(default)]
-    #[ts(optional)]
-    pub on_back: Option<bool>,
     #[serde(default)]
     #[ts(optional)]
     pub format: Option<TimerFormat>,
@@ -246,6 +245,11 @@ pub enum Action {
     },
     SetAutoPlayOnTake {
         value: bool,
+    },
+
+    // ----- the event -----
+    UpdateEvent {
+        patch: EventPatch,
     },
 
     // ----- stage monitor -----

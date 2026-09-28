@@ -47,3 +47,5 @@
   color: var(--text-dim);
   padding-left: 12px;
 }
+.titlebar__event { margin-left: auto; margin-right: 14px; font-size: 12px; font-weight: 600; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30vw; }
+.titlebar__item:not(:disabled):hover { color: #fff; }

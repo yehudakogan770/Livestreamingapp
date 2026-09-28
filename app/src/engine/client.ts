@@ -93,7 +93,7 @@ export function emptyShow(): Show {
     flashAt: 0,
   };
   return {
-    version: 1,
+    version: 2,
     sources: [],
     screens: { live: { ...screen }, back: { ...screen }, monitor: { ...screen } },
     transition: { kind: 'fade', durationMs: 800 },
@@ -101,6 +101,7 @@ export function emptyShow(): Show {
     panicChangedAt: 0,
     masterVolume: 1,
     backFollowsLive: false,
+    event: { name: '', logo: null, onFailure: 'black', panicShows: 'black', setUp: false },
     audio: {
       masterMuted: false,
       a: { name: 'Hall', volume: 1, muted: false },
@@ -132,10 +133,8 @@ export function emptyShow(): Show {
       remainingMs: 300_000,
       label: 'Starting soon',
       endText: 'Welcome!',
-      onLive: false,
-      onBack: false,
       format: 'auto',
-      atZero: { type: 'hold' },
+      atZero: { type: 'hide' },
       fired: false,
     },
     settings: {

@@ -77,3 +77,9 @@
     animation: none;
   }
 }
+
+.hype__logo { max-width: 60cqw; max-height: 60cqh; object-fit: contain; animation: hype-logo 0.9s ease-out both; }
+@keyframes hype-logo {
+  0% { opacity: 0; transform: scale(0.92); }
+  100% { opacity: 1; transform: scale(1); }
+}

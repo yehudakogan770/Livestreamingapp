@@ -4,4 +4,8 @@ import type { Playback } from "./Playback";
 /**
  * What a source is, with the data that kind needs.
  */
-export type SourceKind = { "type": "camera", deviceId: string, label: string, } | { "type": "video", path: string, durationS: number, playback: Playback, } | { "type": "image", path: string, } | { "type": "color", color: string, } | { "type": "pattern" } | { "type": "microphone", deviceId: string, label: string, };
+export type SourceKind = { "type": "camera", deviceId: string, label: string, } | { "type": "video", path: string, durationS: number, playback: Playback, } | { "type": "image", path: string, } | { "type": "color", color: string, } | { "type": "pattern" } | { "type": "countdown", background: string, 
+/**
+ * Picture shown when the countdown finishes (the event logo).
+ */
+logo?: string, } | { "type": "microphone", deviceId: string, label: string, };

@@ -125,11 +125,7 @@ export function formatCountdown(ms: number, format: TimerFormat): string {
   }
 }
 
-/** Whether the big countdown should be on a screen right now. */
-export function countdownShownOn(c: Countdown, screen: 'live' | 'back', now: number): boolean {
-  const on = screen === 'live' ? c.onLive : c.onBack;
-  if (!on) return false;
-  // After zero, only "hold" and "show text" keep it on screen.
-  if (countdownFinished(c, now) && c.atZero.type !== 'hold' && c.atZero.type !== 'showText') return false;
-  return true;
+/** Whether the countdown's numbers show right now (after zero, "take it off" hides them). */
+export function countdownVisible(c: Countdown, now: number): boolean {
+  return !(countdownFinished(c, now) && c.atZero.type !== 'hold' && c.atZero.type !== 'showText');
 }

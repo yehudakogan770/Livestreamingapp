@@ -4,9 +4,15 @@ import { App } from './App';
 import { emptyShow } from './engine/client';
 import { screenStatus } from './components/ScreenSelector';
 
-async function start() {
+async function start({ keepSetup = false } = {}) {
   render(<App />);
   await act(async () => {});
+  // A new show asks the event setup questions first; most tests skip them.
+  if (!keepSetup) {
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Skip for now' }));
+    });
+  }
 }
 
 async function addColour(name: string) {
@@ -140,14 +146,32 @@ describe('Stage monitor and countdown', () => {
     expect(document.querySelector('[data-monitor]')?.textContent).not.toMatch(/Please wrap up/);
   });
 
-  it('the countdown can be started and shown on the Live Screen', async () => {
+  it('the countdown goes to Next first, and only TAKE puts it on air', async () => {
     await start();
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'On Live' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Put in Next' }));
     });
-    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument();
-    expect(document.querySelector('.mon--pgm [data-countdown]')?.textContent).toMatch(/Starting soon/i);
+    expect(next()).toBe('Countdown');
+    expect(onAir()).toBe('nothing');
+    expect(document.querySelector('.mon--pvw [data-countdown]')?.textContent).toMatch(/Starting soon/i);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /^TAKE/ }));
+    });
+    expect(onAir()).toBe('Countdown');
+  });
+
+  it('countdown settings change nothing until Done', async () => {
+    await start();
+    fireEvent.click(screen.getByRole('button', { name: 'More…' }));
+    fireEvent.change(screen.getByLabelText('Length'), { target: { value: '2' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByRole('button', { name: /5:00/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More…' }));
+    fireEvent.change(screen.getByLabelText('Length'), { target: { value: '2' } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    });
+    expect(screen.getByRole('button', { name: /2:00/ })).toBeInTheDocument();
   });
 });
 
@@ -169,6 +193,31 @@ describe('Audio mixer', () => {
       fireEvent.click(mute);
     });
     expect(within(screen.getByLabelText('Audio mixer')).getAllByRole('button', { name: 'M' })[0]).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+describe('Event setup', () => {
+  it('asks about the event, the logo and emergencies at the start, and applies on Done', async () => {
+    await start({ keepSetup: true });
+    const dialog = screen.getByRole('dialog', { name: 'Event setup' });
+    fireEvent.change(within(dialog).getByPlaceholderText(/Chanukah Rally/), { target: { value: 'Chanukah Rally' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    expect(within(dialog).getByText('If a camera or video stops working, that screen shows')).toBeInTheDocument();
+    fireEvent.click(within(dialog).getAllByRole('button', { name: /The event logo/ })[1]!);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
+    fireEvent.click(within(dialog).getByRole('button', { name: /Go to black/ }));
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Done' }));
+    });
+    expect(screen.queryByRole('dialog', { name: 'Event setup' })).toBeNull();
+    expect(screen.getByText('Chanukah Rally')).toBeInTheDocument();
+  });
+
+  it('can be opened again from the Event menu', async () => {
+    await start();
+    expect(screen.queryByRole('dialog', { name: 'Event setup' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Event' }));
+    expect(screen.getByRole('dialog', { name: 'Event setup' })).toBeInTheDocument();
   });
 });
 

@@ -9,6 +9,8 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [nameA, setNameA] = useState(show.audio.a.name);
   const [nameB, setNameB] = useState(show.audio.b.name);
+  // Chosen here, applied on Done.
+  const [outs, setOuts] = useState({ ...show.settings.audioOutputs });
   const choose = canChooseSpeakers();
 
   useEffect(() => {
@@ -22,11 +24,15 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
       .finally(() => md.enumerateDevices().then((all) => setDevices(all.filter((d) => d.kind === 'audiooutput' && d.deviceId !== 'default'))));
   }, []);
 
-  const close = () => {
+  const done = () => {
     if (nameA !== show.audio.a.name) act({ type: 'updateBus', bus: 'a', patch: { name: nameA } });
     if (nameB !== show.audio.b.name) act({ type: 'updateBus', bus: 'b', patch: { name: nameB } });
+    for (const id of ['master', 'a', 'b', 'headphones'] as const) {
+      if (outs[id] !== show.settings.audioOutputs[id]) act({ type: 'setAudioOutput', output: id, deviceId: outs[id] ?? undefined });
+    }
     onClose();
   };
+  const close = onClose;
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && close();
     window.addEventListener('keydown', esc);
@@ -41,9 +47,9 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
       </div>
       <select
         aria-label={`Speakers for ${id}`}
-        value={show.settings.audioOutputs[id] ?? ''}
+        value={outs[id] ?? ''}
         disabled={!choose && id !== 'master'}
-        onChange={(e) => act({ type: 'setAudioOutput', output: id, deviceId: e.target.value || undefined })}
+        onChange={(e) => setOuts((o) => ({ ...o, [id]: e.target.value || null }))}
       >
         <option value="">{emptyName}</option>
         {devices.map((d, i) => (
@@ -58,7 +64,7 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
       <div className="modal__box outputs">
         <header className="modal__head">
           <h2>Speakers and mixes</h2>
-          <button type="button" className="icon" aria-label="Close" onClick={close}>✕</button>
+          <button type="button" className="icon" aria-label="Close without saving" onClick={close}>✕</button>
         </header>
         <p className="outputs__intro">
           Each mix can play on its own speakers or sound device. The Stream mix is what the live stream and recording hear by default.
@@ -71,7 +77,10 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
           {row('headphones', <strong>Headphones</strong>, 'Hears the Stream mix, or the input you solo (S)', 'Not played')}
         </div>
         <footer className="modal__foot">
-          <button type="button" className="btn btn--primary" onClick={close}>Done</button>
+          <button type="button" className="btn" onClick={close}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn--primary" onClick={done}>Done</button>
         </footer>
       </div>
     </div>
