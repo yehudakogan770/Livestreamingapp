@@ -85,6 +85,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
         </span>
       </button>
     </sc-for>
+    <button onClick="{{pickAll}}" aria-pressed="{{allView}}" title="See and control all three screens at once (F4)" style="{{allTabStyle}}"><svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true"><rect x="1" y="2" width="6" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"></rect><rect x="8" y="2" width="6" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"></rect><rect x="15" y="2" width="6" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"></rect></svg><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15;"><span style="font-size: 13px; font-weight: 600;">All three</span><span style="font-size: 10px; opacity: 0.75;">at once · F4</span></span></button>
     <button onClick="{{toggleBackLive}}" aria-pressed="{{backLive}}" title="When on, whatever is on the Live Screen also plays on the Back Screen" style="{{backLiveStyle}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6.5 9.5l3-3M5 11a2.5 2.5 0 0 1 0-3.5l1.5-1.5M11 5a2.5 2.5 0 0 1 0 3.5L9.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15;"><span style="font-size: 12px; font-weight: 600;">Back = Live</span><span style="font-size: 10px; opacity: 0.75;">{{backLiveLabel}}</span></span></button>
     <div style="flex-grow: 1;"></div>
     <div style="display: flex; align-items: center; gap: 10px; height: 36px;">
@@ -127,7 +128,8 @@ input[type=checkbox]{accent-color:#4fb3bf}
       </div>
     </div>
 
-    <!-- Center -->
+    <!-- Center: one screen at a time -->
+    <sc-if value="{{notAll}}" hint-placeholder-val="{{true}}">
     <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box;">
 
       <!-- Monitors row -->
@@ -435,6 +437,94 @@ input[type=checkbox]{accent-color:#4fb3bf}
         </div>
       </div>
     </div>
+    </sc-if>
+
+    <!-- Center: all three screens at once -->
+    <sc-if value="{{isAll}}" hint-placeholder-val="{{false}}">
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; box-sizing: border-box;">
+      <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start;">
+        <sc-for list="{{allCards}}" as="c" hint-placeholder-count="2">
+          <div style="{{c.box}}">
+            <div style="height: 26px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 600; color: #ffffff;">{{c.name}}</span>
+              <span style="{{c.badge}}">{{c.status}}</span>
+              <div style="flex-grow: 1;"></div>
+              <button onClick="{{c.open}}" title="Open this screen with all its controls" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px;">Full controls ›</button>
+            </div>
+            <div style="position: relative; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #c7372f; background: #000;">
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{c.pgScene}}" hint-size="100%,100%"></dc-import></div>
+              <sc-if value="{{c.fading}}" hint-placeholder-val="{{false}}"><div style="{{c.fadeStyle}}"><dc-import name="Scene" kind="{{c.pvScene}}" hint-size="100%,100%"></dc-import></div></sc-if>
+              <sc-if value="{{c.dark}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: #6f737b;">BLANK</div></sc-if>
+              <span style="position: absolute; left: 6px; bottom: 6px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 11px; line-height: 18px; color: #ffffff;">{{c.pgName}}</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: stretch;">
+              <div style="position: relative; width: 150px; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #2f8f4e; background: #000;">
+                <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{c.pvScene}}" hint-size="100%,100%"></dc-import></div>
+                <span style="position: absolute; left: 4px; bottom: 4px; height: 15px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 10px; line-height: 15px; color: #ffffff;">Next: {{c.pvName}}</span>
+              </div>
+              <div style="flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px;">
+                <button onClick="{{c.take}}" style="grid-column: 1 / 3; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;">TAKE · {{c.trans}}</button>
+                <button onClick="{{c.cut}}" style="border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600;">CUT</button>
+                <button onClick="{{c.toggleBlank}}" style="{{c.blankStyle}}">{{c.blankLabel}}</button>
+              </div>
+            </div>
+            <div style="height: 30px; display: flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+              <button onClick="{{c.tp.restart}}" aria-label="Back to start" style="{{c.tp.btn}}">⏮</button>
+              <button onClick="{{c.tp.back}}" aria-label="Back 10 seconds" style="{{c.tp.btnWide}}">−10</button>
+              <button onClick="{{c.tp.toggle}}" aria-label="Play or pause" style="{{c.tp.playBtn}}">{{c.tp.playGlyph}}</button>
+              <button onClick="{{c.tp.fwd}}" aria-label="Forward 10 seconds" style="{{c.tp.btnWide}}">+10</button>
+              <div style="flex-grow: 1;"></div>
+              <span style="font-family: Consolas, monospace; font-size: 11px; color: #e4e5e7; white-space: nowrap;">{{c.tp.elapsed}}<span style="color: #8e9096;">{{c.tp.total}}</span></span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+              <sc-for list="{{c.chips}}" as="ch" hint-placeholder-count="15">
+                <button onClick="{{ch.pick}}" onDoubleClick="{{ch.air}}" title="Click: line up next · Double-click: straight to air" style="{{ch.style}}">{{ch.name}}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{c.isBack}}" hint-placeholder-val="{{false}}">
+              <button onClick="{{toggleBackLive}}" style="{{c.followStyle}}">{{c.followLabel}}</button>
+            </sc-if>
+          </div>
+        </sc-for>
+        <div style="{{allMon.box}}">
+          <div style="height: 26px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600; color: #ffffff;">Monitor</span>
+            <span style="{{allMon.badge}}">{{allMon.status}}</span>
+            <div style="flex-grow: 1;"></div>
+            <button onClick="{{allMon.open}}" title="Open the Monitor with all its controls" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px;">Full controls ›</button>
+          </div>
+          <div style="{{allMon.screen}}">
+            <span style="position: absolute; left: 8px; top: 6px; font-family: Consolas, monospace; font-size: 13px; color: #a9abb0;">{{allMon.clock}}</span>
+            <span style="position: absolute; right: 8px; top: 6px; font-family: Consolas, monospace; font-size: 13px; color: #ffe39e;">{{allMon.countdown}}</span>
+            <span style="font-size: 26px; font-weight: 700; color: #ffffff; text-align: center; padding: 0 16px; line-height: 1.2;">{{allMon.text}}</span>
+          </div>
+          <input aria-label="Message for the stage" value="{{draft}}" onInput="{{onDraftInput}}" placeholder="Type a message for the stage…" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px; outline: none;">
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 6px;">
+            <button onClick="{{sendMsg}}" style="height: 34px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 12px; font-weight: 700;">Show on monitor</button>
+            <button onClick="{{clearMsg}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 34px;">Clear</button>
+            <button onClick="{{flash}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 34px;">Flash</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
+            <sc-for list="{{allMon.quick}}" as="q" hint-placeholder-count="4">
+              <button onClick="{{q.pick}}" style="height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 11px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.text}}</button>
+            </sc-for>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: #a9abb0; flex-grow: 1;">Timer on the monitor</span>
+            <button onClick="{{subMinute}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 28px;">−1 min</button>
+            <button onClick="{{addMinute}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 28px;">+1 min</button>
+          </div>
+        </div>
+      </div>
+      <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Master volume</span>
+        <input type="range" min="0" max="100" value="{{masterVal}}" onInput="{{onMaster}}" aria-label="Master volume" style="width: 260px;">
+        <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; width: 40px;">{{masterVal}}%</span>
+        <div style="flex-grow: 1;"></div>
+        <span style="font-size: 12px; color: #8e9096;">Click a source to line it up, double-click to send it straight to air · F1–F3 open one screen with every control</span>
+      </div>
+    </div>
+    </sc-if>
   </div>
 
   <!-- ===== Bottom bar ===== -->
@@ -463,7 +553,7 @@ input[type=checkbox]{accent-color:#4fb3bf}
 class Component extends DCLogic {
   componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); this._tick = setInterval(() => this.tick(), 1000); }
   componentDidUpdate() { this.__fill(); }
-  componentWillUnmount() { clearInterval(this._anim); clearInterval(this._tick); clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
+  componentWillUnmount() { clearInterval(this._allAnim); clearInterval(this._anim); clearInterval(this._tick); clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
   tick() {
     const DUR = { vid1: 130, vid2: 45, vid3: 252, loop1: 30, loop2: 40 };
     this.setState((st) => {
@@ -510,6 +600,21 @@ class Component extends DCLogic {
     if (!state.backLive) return state;
     return { ...state, screens: { ...state.screens, back: { ...state.screens.back, pg: state.screens.live.pg } } };
   }
+  allSwap(id) {
+    const st = this.view(this.state);
+    const sc = st.screens[id];
+    this.setState({ screens: { ...st.screens, [id]: { ...sc, pg: sc.pv, pv: sc.pg } }, allFx: null, ...(id === 'back' ? { backLive: false } : {}) });
+  }
+  allTake(id) {
+    if (this._allAnim) return;
+    const dur = { fade: 800, merge: 1200, dip: 1000, wipe: 600 }[this.state.trans] || 800;
+    const t0 = performance.now();
+    this._allAnim = setInterval(() => {
+      const f = Math.min(1, (performance.now() - t0) / dur);
+      if (f >= 1) { clearInterval(this._allAnim); this._allAnim = null; this.allSwap(id); }
+      else this.setState({ allFx: { id, t: f } });
+    }, 30);
+  }
   takeNow() {
     const st = this.view(this.state);
     if (st.tab === 'monitor') { this.setState({ monitorText: st.draft, tbar: 0 }); return; }
@@ -554,7 +659,7 @@ class Component extends DCLogic {
 
     const TONES = { cam1: '#34404c', cam2: '#3a3746', cam3: '#2f3a44', phone: '#2e3d34', vid1: '#473a2c', vid2: '#343b4b', vid3: '#403143', loop1: '#27403f', loop2: '#2c3450' };
     const tabs = [['live', 'Live Screen', 'Stream', 'F1'], ['back', 'Back Screen', 'Projector', 'F2'], ['monitor', 'Monitor', 'Stage', 'F3']].map(([id, name, where, key]) => {
-      const on = id === st.tab;
+      const on = id === st.tab && !st.allView;
       const scr = st.screens[id];
       const dark = scr.blank || st.panic;
       const dimmed = id === 'monitor' && st.panic && !scr.blank;
@@ -562,7 +667,7 @@ class Component extends DCLogic {
       return {
         name, where, key, on, onAirName: dark && !dimmed ? '' : onAirName,
         scene: id === 'monitor' ? 'black' : ((SRC[scr.pg] || {}).scene || 'black'), isText: id === 'monitor', monText: st.monitorText, dark: dark,
-        pick: () => { clearInterval(this._anim); this._anim = null; set({ tab: id, tbar: 0 }); },
+        pick: () => { clearInterval(this._anim); this._anim = null; set({ tab: id, tbar: 0, allView: false }); },
         status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : (id === 'back' && st.backLive ? 'FOLLOWS LIVE' : 'ON AIR'),
         badge: `height: 15px; padding: 0 5px; white-space: nowrap; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : id === 'back' && st.backLive ? '#1f6f79' : '#c7372f'}; color: #ffffff;`,
         thumb: `position: relative; width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; overflow: hidden; display: block; box-shadow: 0 0 0 1px ${dark ? '#3a3f48' : '#c7372f'};`,
@@ -719,7 +824,7 @@ class Component extends DCLogic {
       const upd = (patch) => set({ play: { ...st.play, [id]: { pos: p.pos, playing: p.playing, ...patch } } });
       const base = (w) => `width: ${w}px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; gap: 1px; border-radius: 4px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`;
       return {
-        live, pos: live ? 0 : Math.round(pos / dur * 1000), playing: !live && p.playing, paused: live || !p.playing,
+        live, pos: live ? 0 : Math.round(pos / dur * 1000), playing: !live && p.playing, paused: live || !p.playing, playGlyph: !live && p.playing ? '❚❚' : '▶',
         onSeek: (e) => upd({ pos: Number(e.target.value) / 1000 * dur }),
         restart: () => upd({ pos: 0 }),
         back: () => upd({ pos: Math.max(0, pos - 10) }),
@@ -786,6 +891,71 @@ class Component extends DCLogic {
       flash: () => { set({ flashing: true }); clearTimeout(this._ft); this._ft = setTimeout(() => this.setState({ flashing: false }), 900); },
       take: doTake,
       ctx,
+      ...(() => {
+        const allView = !!st.allView;
+        const TR = { fade: 'Fade', merge: 'Merge', dip: 'Dip', wipe: 'Wipe' };
+        const badge = (bg) => `height: 16px; padding: 0 6px; border-radius: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; line-height: 16px; color: #ffffff; background: ${bg}; white-space: nowrap;`;
+        const card = 'display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038; min-width: 0;';
+        const allCards = ['live', 'back'].map((id) => {
+          const scr = st.screens[id];
+          const dark = !!scr.blank || st.panic;
+          const following = id === 'back' && !!st.backLive;
+          const fx = st.allFx && st.allFx.id === id ? st.allFx.t : 0;
+          const setScr = (patch, breakFollow) => set({ screens: { ...st.screens, [id]: { ...scr, ...patch } }, ...(breakFollow && id === 'back' ? { backLive: false } : {}) });
+          return {
+            name: id === 'live' ? 'Live Screen' : 'Back Screen', isBack: id === 'back',
+            status: dark ? 'BLANK' : following ? 'FOLLOWS LIVE' : 'ON AIR',
+            badge: badge(dark ? '#343944' : following ? '#1f6f79' : '#c7372f'),
+            box: card,
+            pgScene: (SRC[scr.pg] || {}).scene || 'black', pvScene: (SRC[scr.pv] || {}).scene || 'black',
+            pgName: (SRC[scr.pg] || {}).name || 'Nothing on air', pvName: (SRC[scr.pv] || {}).name || '—',
+            dark, fading: fx > 0, fadeStyle: `position: absolute; inset: 0; opacity: ${fx};`,
+            trans: TR[st.trans] || 'Fade',
+            take: () => this.allTake(id),
+            cut: () => { clearInterval(this._allAnim); this._allAnim = null; this.allSwap(id); },
+            toggleBlank: () => setScr({ blank: !scr.blank }, false),
+            blankLabel: scr.blank ? 'Unblank' : 'Blank',
+            blankStyle: `border-radius: 6px; border: 1px solid ${scr.blank ? '#8e9096' : '#3a3f48'}; background: ${scr.blank ? '#e4e5e7' : '#2a2e36'}; color: ${scr.blank ? '#15171b' : '#ffffff'}; font-size: 12px; font-weight: 600;`,
+            chips: TAB_INPUTS[id].map((x) => {
+              const isPg = scr.pg === x, isPv = scr.pv === x;
+              return {
+                name: SRC[x].name,
+                pick: () => setScr({ pv: x }, false),
+                air: () => setScr({ pg: x }, true),
+                style: `height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#2c3038'}; background: ${isPg ? '#3a1a18' : isPv ? '#16301f' : '#262a31'}; color: #e4e5e7; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`
+              };
+            }),
+            followLabel: following ? 'Back = Live · on (tap to control the Back Screen separately)' : 'Back = Live · off (tap to mirror the Live Screen)',
+            followStyle: `height: 30px; border-radius: 6px; border: 1px solid ${following ? '#4fb3bf' : '#2c3038'}; background: ${following ? '#1f6f79' : '#262a31'}; color: #ffffff; font-size: 11px; font-weight: 600;`,
+            open: () => set({ allView: false, tab: id, tbar: 0 }),
+            tp: tport(scr.pg, SRC[scr.pg])
+          };
+        });
+        const mon = st.screens.monitor;
+        const monDark = !!mon.blank;
+        const now = new Date();
+        const cm = Math.floor(st.countdown / 60), cs = st.countdown % 60;
+        return {
+          allView, isAll: allView, notAll: !allView,
+          pickAll: () => { clearInterval(this._anim); this._anim = null; set({ allView: !allView, tbar: 0 }); },
+          allTabStyle: `height: 48px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: 8px; border: 2px solid ${allView ? '#4fb3bf' : '#2c3038'}; background: ${allView ? '#243039' : '#1e2127'}; color: ${allView ? '#ffffff' : '#d4d5d8'}; white-space: nowrap;`,
+          allCards,
+          allMon: {
+            status: st.panic ? 'DIMMED' : monDark ? 'BLANK' : 'ON AIR',
+            badge: badge(st.panic || monDark ? '#343944' : '#c7372f'),
+            box: card,
+            screen: `position: relative; aspect-ratio: 16 / 9; border-radius: 4px; border: 2px solid #c7372f; background: #000; display: flex; align-items: center; justify-content: center; opacity: ${st.panic ? 0.35 : monDark ? 0.15 : 1};`,
+            clock: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
+            countdown: st.countdownOn ? `${String(cm).padStart(2, '0')}:${String(cs).padStart(2, '0')}` : '',
+            text: st.monitorText || ' ',
+            quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Stand by'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
+            open: () => set({ allView: false, tab: 'monitor', tbar: 0 })
+          },
+          onDraftInput: (e) => set({ draft: e.target.value }),
+          masterVal: String(st.vol.master),
+          onMaster: (e) => set({ vol: { ...st.vol, master: Number(e.target.value) } })
+        };
+      })(),
       tbar: String(tbPos),
       ...(() => { const prog = (x) => Math.abs(x - st.tbarHome); const d = this.drag('tbar', false, (x) => { if (prog(x) >= 100) { this._dragKey = null; doTake(); } else this.setState({ tbar: prog(x) }); }, (x) => { if (prog(x) >= 97) doTake(); else this.setState({ tbar: 0 }); }); return { tbDown: d.down, tbMove: d.move, tbUp: d.up }; })(),
       tbarLeft: st.tbarHome ? 'Preview' : 'Program', tbarRight: st.tbarHome ? 'Program' : 'Preview',

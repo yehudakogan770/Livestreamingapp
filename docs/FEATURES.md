@@ -29,6 +29,7 @@ A feature only counts as finished when **all** of these are true:
 
 - ★ Three outputs: **Live Screen** (stream), **Back Screen** (projector), **Monitor** (stage)
 - ★ **Choose which screen you control** (Live / Back / Monitor, F1–F3); the whole work area follows
+- ★ **All three at once** (F4): all three screens side by side, each with its basic controls — program and next-up pictures, TAKE, CUT, Blank, video play / pause / skip, every input one click away; the Monitor with its message, quick messages, flash and timer. Each has "Full controls" to jump into that screen
 - ★ Screens assigned to physical displays once in Settings, remembered for every event
 - ★ Preview and Program monitors per screen, with source name and resolution
 - ★ **TAKE** plays the chosen transition; **CUT** switches instantly
