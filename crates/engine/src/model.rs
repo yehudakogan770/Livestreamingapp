@@ -284,6 +284,8 @@ pub enum SourceKind {
     Raffle(Box<crate::audience::Raffle>),
     /// A fundraiser: goal, total and donors on screen; pledges from phones.
     Fundraiser(Box<crate::audience::Fundraiser>),
+    /// Messages, dedications and photos from phones, shown on screen.
+    Wall(Box<crate::wall::Wall>),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

@@ -869,6 +869,13 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::RaffleRemove { .. }
         | Action::RaffleDraw { .. }
         | Action::RaffleReset { .. }) => apply_raffle(s, a, now),
+        a @ (Action::UpdateWall { .. }
+        | Action::WallOpen { .. }
+        | Action::WallPost { .. }
+        | Action::WallAdd { .. }
+        | Action::WallApprove { .. }
+        | Action::WallPin { .. }
+        | Action::WallRemove { .. }) => apply_wall(s, a, now),
         a @ (Action::UpdateFundraiser { .. }
         | Action::FundraiserOpen { .. }
         | Action::Pledge { .. }
@@ -2039,6 +2046,89 @@ fn apply_fundraiser(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     Ok(())
 }
 
+fn wall_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::wall::Wall> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Wall(w) => Ok(w),
+        _ => Err(ActionError::invalid(
+            "id",
+            "that input is not a messages wall",
+        )),
+    }
+}
+
+fn apply_wall(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    let empty = || ActionError::invalid("text", "a message needs some words or a photo");
+    match action {
+        Action::UpdateWall { id, wall } => {
+            let w = wall_mut(s, &id)?;
+            let mut next = wall;
+            next.repair();
+            w.title = next.title;
+            w.prompt = next.prompt;
+            w.photos = next.photos;
+            w.auto_approve = next.auto_approve;
+            w.style = next.style;
+            w.seconds = next.seconds;
+            w.join_url = next.join_url;
+            w.join_qr = next.join_qr;
+            w.show_join = next.show_join;
+        }
+        Action::WallOpen { id, value } => wall_mut(s, &id)?.open = value,
+        Action::WallPost {
+            id,
+            name,
+            text,
+            photo,
+        } => {
+            let w = wall_mut(s, &id)?;
+            if !w.open {
+                return Err(ActionError::invalid(
+                    "wall",
+                    "this wall is not taking messages",
+                ));
+            }
+            let photo = if w.photos {
+                photo.unwrap_or_default()
+            } else {
+                String::new()
+            };
+            let approved = w.auto_approve;
+            w.post(&name, &text, &photo, approved, now)
+                .ok_or_else(empty)?;
+        }
+        Action::WallAdd { id, name, text } => {
+            wall_mut(s, &id)?
+                .post(&name, &text, "", true, now)
+                .ok_or_else(empty)?;
+        }
+        Action::WallApprove { id, message, value } => {
+            let w = wall_mut(s, &id)?;
+            if let Some(m) = w.messages.iter_mut().find(|m| m.id == message) {
+                m.approved = value;
+            }
+            if !value && w.pinned == Some(message) {
+                w.pinned = None;
+            }
+        }
+        Action::WallPin { id, message } => {
+            let w = wall_mut(s, &id)?;
+            if let Some(m) = message {
+                let found = w.messages.iter_mut().find(|x| x.id == m).ok_or_else(|| {
+                    ActionError::invalid("message", "that message is not on this wall")
+                })?;
+                found.approved = true;
+            }
+            w.pinned = message;
+        }
+        Action::WallRemove { id, message } => wall_mut(s, &id)?.remove(message),
+        _ => unreachable!("only messages wall actions come here"),
+    }
+    Ok(())
+}
+
 fn comment_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::chat::CommentCard> {
     let src = s
         .source_mut(id)
@@ -2323,6 +2413,10 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             f.repair();
             f.open = false;
         }
+        SourceKind::Wall(w) => {
+            w.repair();
+            w.open = false;
+        }
         SourceKind::Poll(p) => {
             p.repair();
             p.open = false;
@@ -2370,7 +2464,8 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         | SourceKind::Poll(_)
         | SourceKind::Comment(_)
         | SourceKind::Raffle(_)
-        | SourceKind::Fundraiser(_)) => fresh(k),
+        | SourceKind::Fundraiser(_)
+        | SourceKind::Wall(_)) => fresh(k),
         SourceKind::Guest(g) => clean_guest(g)?,
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {

@@ -1,5 +1,9 @@
 import type { Fundraiser } from '../engine/types/Fundraiser';
 import type { Raffle } from '../engine/types/Raffle';
+import type { Wall } from '../engine/types/Wall';
+import type { WallMessage } from '../engine/types/WallMessage';
+import { useEffect, useRef } from 'react';
+import { approved, cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { useNow } from '../engine/useNow';
 import './AudienceViews.css';
@@ -127,6 +131,130 @@ export function FundraiserView({ f, thumb = false }: { f: Fundraiser; thumb?: bo
           <div className="fund__cheer">{pct >= 100 ? 'Goal reached! Thank you!' : `${Math.floor(pct / 25) * 25}% of the goal!`}</div>
           <Confetti t={t} />
         </>
+      )}
+    </div>
+  );
+}
+
+/** A photo or message card's picture, by file path. */
+type Url = (path: string) => string;
+
+function WallText({ m, size }: { m: WallMessage; size: number }) {
+  return (
+    <div className="wall__words" dir="auto">
+      {m.text && (
+        <p className="wall__text" style={{ fontSize: `${size}cqh` }}>
+          “{m.text}”
+        </p>
+      )}
+      {m.name && <p className="wall__name">— {m.name}</p>}
+    </div>
+  );
+}
+
+/** The ticker: every message running along the bottom, over whatever is behind. */
+function WallTicker({ w, thumb }: { w: Wall; thumb: boolean }) {
+  const area = useRef<HTMLDivElement>(null);
+  const run = useRef<HTMLSpanElement>(null);
+  const words = wallTicker(w);
+  useEffect(() => {
+    let id = 0;
+    const tick = () => {
+      const a = area.current;
+      const r = run.current;
+      const frame = a?.closest('.wall')?.clientHeight ?? 0;
+      if (a && r && frame) {
+        const shift = thumb ? 0 : tickerShift(Date.now(), a.clientWidth / frame, r.scrollWidth / frame);
+        r.style.transform = `translateX(${a.clientWidth - shift * frame}px)`;
+      }
+      if (!thumb) id = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(id);
+  }, [thumb, words]);
+  return (
+    <div className="wall__ticker">
+      <b className="wall__label">{w.title}</b>
+      <div className="wall__run" ref={area}>
+        <span ref={run} dir="auto">
+          {words}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** A messages wall on screen: one at a time, the newest six, or a ticker. */
+export function WallView({ w, url, thumb = false }: { w: Wall; url: Url; thumb?: boolean }) {
+  const cards = w.style === 'cards' && approved(w).length > 1 && w.pinned === null;
+  const now = useNow(cards && !thumb, 250);
+  if (w.style === 'ticker') {
+    return (
+      <div className="wall wall--ticker" data-kind="wall">
+        <WallTicker w={w} thumb={thumb} />
+      </div>
+    );
+  }
+  const join = w.showJoin && w.open && w.joinQr && !thumb;
+  const card = w.style === 'cards' ? wallCard(w, now) : null;
+  const grid = w.style === 'grid' ? wallGrid(w) : [];
+  const empty = w.style === 'cards' ? !card : !grid.length;
+  return (
+    <div className="aud wall" data-kind="wall">
+      <div className="aud__head">
+        <h2 className="aud__title" dir="auto">
+          {w.title}
+        </h2>
+        {join && w.prompt && (
+          <p className="aud__sub" dir="auto">
+            {w.prompt}
+          </p>
+        )}
+      </div>
+      <div className={`wall__area${join ? ' wall__area--join' : ''}`}>
+        {empty && <p className="wall__empty">{join ? 'Be the first — scan the code' : 'Messages will appear here'}</p>}
+        {card && (
+          <div className={`wall__card${card.m.photo ? (card.m.text ? ' wall__card--photo' : ' wall__card--only') : ''}`} style={{ opacity: card.alpha }}>
+            {card.m.photo && (
+              <div className="wall__photo">
+                <img src={url(card.m.photo)} alt="" />
+              </div>
+            )}
+            {card.m.photo && !card.m.text ? (
+              card.m.name && (
+                <p className="wall__name" dir="auto">
+                  — {card.m.name}
+                </p>
+              )
+            ) : (
+              <WallText m={card.m} size={cardSize(card.m.text, !!card.m.photo)} />
+            )}
+          </div>
+        )}
+        {grid.length > 0 && (
+          <div className="wall__grid">
+            {grid.map((m) => (
+              <div key={m.id} className={`wall__cell${m.photo ? ' wall__cell--photo' : ''}`}>
+                {m.photo && <img src={url(m.photo)} alt="" />}
+                {m.text && (
+                  <p className="wall__celltext" dir="auto">
+                    {m.text}
+                  </p>
+                )}
+                {m.name && (
+                  <p className="wall__cellname" dir="auto">
+                    {m.name}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      {join && (
+        <div className="wall__join">
+          <Join url={w.joinUrl} qr={w.joinQr} label="Scan to send" />
+        </div>
       )}
     </div>
   );

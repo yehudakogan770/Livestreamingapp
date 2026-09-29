@@ -1,4 +1,5 @@
 import { defaultFundraiser, defaultRaffle } from '../engine/audience';
+import { defaultWall } from '../engine/wall';
 import { newRoom } from '../engine/guest';
 import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
@@ -44,6 +45,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
   { kind: 'raffle', name: 'Raffle', hint: 'People enter from their phones; the draw is on screen' },
   { kind: 'fundraiser', name: 'Fundraiser', hint: 'Goal, total and donors on screen; pledges from phones' },
+  { kind: 'wall', name: 'Messages wall', hint: 'Messages, dedications and photos from phones, on screen' },
   { kind: 'guest', name: 'Guest by link', hint: 'Someone joins from their phone or computer, anywhere' },
   { kind: 'comment', name: 'Chat comments', hint: 'Comments from the YouTube or Twitch live chat, on screen' },
   { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
@@ -168,6 +170,8 @@ export function AddInput({
           kind: { type: 'fundraiser', ...defaultFundraiser(), title: words.trim() || defaultFundraiser().title, goal: goal > 0 ? goal : 10_000 },
         };
       }
+      case 'wall':
+        return { name: n || 'Messages', kind: { type: 'wall', ...defaultWall(), title: n || 'Messages', prompt: words.trim() || defaultWall().prompt } };
       case 'guest':
         return { name: n || 'Guest', kind: { type: 'guest', room: newRoom(), reload: 0 } };
       case 'comment':
@@ -350,6 +354,20 @@ export function AddInput({
               <label className="field">
                 <span className="field__label">The prize (optional; the name above is the raffle's title)</span>
                 <input className="text" dir="auto" value={words} onChange={(e) => setWords(e.target.value)} aria-label="Prize" autoFocus />
+              </label>
+            )}
+            {kind === 'wall' && (
+              <label className="field">
+                <span className="field__label">What people are asked on their phones</span>
+                <input
+                  className="text"
+                  dir="auto"
+                  value={words}
+                  placeholder="Write a blessing for the couple"
+                  onChange={(e) => setWords(e.target.value)}
+                  aria-label="What people are asked"
+                  autoFocus
+                />
               </label>
             )}
             {kind === 'fundraiser' && (

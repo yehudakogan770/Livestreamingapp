@@ -94,6 +94,29 @@
         text-transform: uppercase;
         letter-spacing: 0.06em;
       }
+      .file {
+        display: none;
+      }
+      .pick {
+        display: block;
+        margin: 0 0 10px;
+        padding: 14px;
+        border: 2px dashed var(--line);
+        border-radius: 12px;
+        text-align: center;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .photo {
+        display: block;
+        max-width: 100%;
+        max-height: 50vh;
+        margin: 0 auto 10px;
+        border-radius: 12px;
+      }
+      button:disabled {
+        opacity: 0.6;
+      }
       .empty {
         margin-top: 30vh;
         text-align: center;
@@ -145,7 +168,7 @@
       }
 
       function draw(a) {
-        const key = JSON.stringify(a) + JSON.stringify(mine) + sentNote + pledgeNote + JSON.stringify(joined);
+        const key = JSON.stringify(a) + JSON.stringify(mine) + sentNote + pledgeNote + JSON.stringify(joined) + wallNote + (photo ? photo.size : '') + sending;
         if (key === last) return;
         // Never redraw under someone typing.
         if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
@@ -154,7 +177,8 @@
         if (a.event) app.append(el('p', { className: 'event', textContent: a.event }));
         const raffles = a.raffles || [];
         const funds = a.fundraisers || [];
-        const open = a.polls.length || a.questions || raffles.length || funds.length;
+        const walls = a.walls || [];
+        const open = a.polls.length || a.questions || raffles.length || funds.length || walls.length;
         if (!open) {
           app.append(el('p', { className: 'empty', textContent: 'Nothing to join right now — this page updates by itself.' }));
           return;
@@ -193,6 +217,37 @@
             el('section', { className: 'poll' }, el('h1', { textContent: f.title || 'Fundraiser' }), nameBox(), amount, msg, go,
               el('p', { className: 'note', textContent: pledgeNote || 'A pledge is a promise: the hosts will tell you how to give.' })),
           );
+        }
+        for (const w of walls) {
+          const text = el('textarea', { placeholder: 'Your message', value: typed.wall, maxLength: 280, dir: 'auto' });
+          text.oninput = () => (typed.wall = text.value);
+          const box = el('section', { className: 'poll' }, el('h1', { textContent: w.prompt || w.title || 'Send a message', dir: 'auto' }), nameBox(), text);
+          if (w.photos) {
+            if (photo) {
+              const img = el('img', { src: photoUrl, className: 'photo', alt: '' });
+              const off = el('button', { textContent: 'Remove the photo' });
+              off.onclick = () => {
+                setPhoto(null);
+                last = '';
+                load();
+              };
+              box.append(img, off);
+            } else {
+              const pick = el('input', { type: 'file', accept: 'image/*', className: 'file', id: 'photo-' + w.id });
+              pick.onchange = async () => {
+                const f = pick.files && pick.files[0];
+                if (f) setPhoto(await shrink(f));
+                if (document.activeElement) document.activeElement.blur();
+                last = '';
+                load();
+              };
+              box.append(el('label', { className: 'pick', htmlFor: 'photo-' + w.id, textContent: '📷 Add a photo' }), pick);
+            }
+          }
+          const send = el('button', { className: 'send', textContent: sending ? 'Sending…' : 'Send', disabled: sending });
+          send.onclick = () => sendMessage(w);
+          box.append(send, el('p', { className: 'note', textContent: wallNote || 'The hosts choose what goes on screen.' }));
+          app.append(box);
         }
         if (a.questions) {
           const q = el('textarea', { placeholder: 'Your question', value: typed.question, maxLength: 300 });
@@ -245,6 +300,66 @@
         } catch {
           pledgeNote = 'It did not go through — try again.';
         }
+        if (document.activeElement) document.activeElement.blur();
+        last = '';
+        load();
+      }
+
+      typed.wall = '';
+      let wallNote = '';
+      let photo = null;
+      let photoUrl = '';
+      let sending = false;
+
+      function setPhoto(blob) {
+        if (photoUrl) URL.revokeObjectURL(photoUrl);
+        photo = blob;
+        photoUrl = blob ? URL.createObjectURL(blob) : '';
+      }
+
+      // Photos are made smaller on the phone (quicker to send, easy on the venue network).
+      async function shrink(file) {
+        try {
+          const url = URL.createObjectURL(file);
+          const img = await new Promise((ok, fail) => {
+            const i = new Image();
+            i.onload = () => ok(i);
+            i.onerror = fail;
+            i.src = url;
+          });
+          URL.revokeObjectURL(url);
+          const scale = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.naturalWidth * scale);
+          c.height = Math.round(img.naturalHeight * scale);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          return await new Promise((ok) => c.toBlob(ok, 'image/jpeg', 0.85));
+        } catch {
+          alert('That picture could not be opened — try another.');
+          return null;
+        }
+      }
+
+      async function sendMessage(w) {
+        const text = typed.wall.trim();
+        if (!text && !photo) return alert('Please write a message' + (w.photos ? ' or add a photo.' : '.'));
+        const q = new URLSearchParams({ id: w.id, voter, name: typed.name.trim(), text });
+        sending = true;
+        last = '';
+        load();
+        try {
+          const r = await fetch('/api/message?' + q, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body: photo || '' });
+          if (r.status === 429) wallNote = 'Please wait a few seconds before sending another.';
+          else if (!r.ok) throw new Error();
+          else {
+            typed.wall = '';
+            setPhoto(null);
+            wallNote = 'Thank you — your message was sent!';
+          }
+        } catch {
+          wallNote = 'It did not send — try again.';
+        }
+        sending = false;
         if (document.activeElement) document.activeElement.blur();
         last = '';
         load();

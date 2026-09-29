@@ -18,6 +18,7 @@ import { lyricsGo, sections } from './lyrics';
 import { applyBrand } from './brand';
 import { repairPoll, resetPoll } from './poll';
 import { pledgeTo, raffleDraw, raffleEnter, withCelebration } from './audience';
+import { wallPost, wallRemove } from './wall';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -136,6 +137,12 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
 function raffleIn(s: Show, id: string) {
   const src = find(s, id);
   if (src.kind.type !== 'raffle') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a raffle' });
+  return src.kind;
+}
+
+function wallIn(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'wall') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a messages wall' });
   return src.kind;
 }
 
@@ -488,6 +495,55 @@ function apply(s: Show, a: Action, now: number) {
       return;
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
+      return;
+    case 'updateWall': {
+      const n = a.wall;
+      Object.assign(wallIn(s, a.id), {
+        title: n.title.slice(0, 80),
+        prompt: n.prompt.slice(0, 120),
+        photos: n.photos,
+        autoApprove: n.autoApprove,
+        style: n.style,
+        seconds: Math.min(60, Math.max(3, Math.round(n.seconds))),
+        joinUrl: n.joinUrl,
+        joinQr: n.joinQr,
+        showJoin: n.showJoin,
+      });
+      return;
+    }
+    case 'wallOpen':
+      wallIn(s, a.id).open = a.value;
+      return;
+    case 'wallPost': {
+      const w = wallIn(s, a.id);
+      if (!w.open) throw new Refused({ code: 'invalidValue', field: 'wall', reason: 'this wall is not taking messages' });
+      if (!wallPost(w, a.name, a.text, w.photos ? (a.photo ?? '') : '', w.autoApprove, now))
+        throw new Refused({ code: 'invalidValue', field: 'text', reason: 'a message needs some words or a photo' });
+      return;
+    }
+    case 'wallAdd':
+      if (!wallPost(wallIn(s, a.id), a.name, a.text, '', true, now))
+        throw new Refused({ code: 'invalidValue', field: 'text', reason: 'a message needs some words or a photo' });
+      return;
+    case 'wallApprove': {
+      const w = wallIn(s, a.id);
+      const m = w.messages.find((x) => x.id === a.message);
+      if (m) m.approved = a.value;
+      if (!a.value && w.pinned === a.message) w.pinned = null;
+      return;
+    }
+    case 'wallPin': {
+      const w = wallIn(s, a.id);
+      if (a.message !== undefined) {
+        const m = w.messages.find((x) => x.id === a.message);
+        if (!m) throw new Refused({ code: 'invalidValue', field: 'message', reason: 'that message is not on this wall' });
+        m.approved = true;
+      }
+      w.pinned = a.message ?? null;
+      return;
+    }
+    case 'wallRemove':
+      wallRemove(wallIn(s, a.id), a.message);
       return;
     case 'updateFundraiser': {
       const f = fundIn(s, a.id);

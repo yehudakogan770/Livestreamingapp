@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import type { EngineClient, RemoteStatus } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 import { eligible, money, raised } from '../engine/audience';
-import { FundraiserView, RaffleView } from '../components/AudienceViews';
+import { FundraiserView, RaffleView, WallView } from '../components/AudienceViews';
+import type { WallStyle } from '../engine/types/WallStyle';
 import type { Act } from './act';
 import './LyricsCard.css';
 import './AudienceCards.css';
@@ -298,6 +299,188 @@ export function FundraiserCard({ source, act, client, onClose }: { source: Sourc
                 </li>
               ))}
             </ul>
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const STYLES: { style: WallStyle; label: string }[] = [
+  { style: 'cards', label: 'One at a time' },
+  { style: 'grid', label: 'Newest six' },
+  { style: 'ticker', label: 'Ticker along the bottom' },
+];
+
+/** Run a messages wall: let messages and photos through, pick how they show. */
+export function WallCard({ source, act, client, onClose }: { source: Source; act: Act; client: EngineClient; onClose: () => void }) {
+  const w = source.kind.type === 'wall' ? source.kind : null;
+  const id = source.id;
+  const [setup, setSetup] = useState(() => (w ? { title: w.title, prompt: w.prompt } : null));
+  const [typed, setTyped] = useState({ name: '', text: '' });
+  const [filter, setFilter] = useState<'waiting' | 'shown' | 'all'>('all');
+  const { remote, address } = useAudienceLink(client, w, (joinUrl, joinQr) => w && act({ type: 'updateWall', id, wall: { ...w, joinUrl, joinQr } }));
+  useEsc(onClose);
+  if (!w || !setup) return null;
+  const update = (p: Partial<typeof w>) => act({ type: 'updateWall', id, wall: { ...w, ...p } });
+  const waiting = w.messages.filter((m) => !m.approved).length;
+  const add = () => {
+    if (!typed.text.trim()) return;
+    act({ type: 'wallAdd', id, name: typed.name, text: typed.text });
+    setTyped({ name: typed.name, text: '' });
+  };
+  const list = [...w.messages].reverse().filter((m) => (filter === 'waiting' ? !m.approved : filter === 'shown' ? m.approved : true));
+  return (
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Messages wall" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal__box lyc">
+        <header className="modal__head">
+          <h2>Messages wall · {source.name}</h2>
+          <button type="button" className="icon" aria-label="Close" onClick={onClose}>
+            ✕
+          </button>
+        </header>
+        <div className="lyc__body">
+          <section className="lyc__run">
+            <div className="lyc__stage">
+              <WallView w={w} url={(p) => client.mediaUrl(p)} />
+            </div>
+            <div className="lyc__bar">
+              <button type="button" className={`btn${w.open ? ' is-on' : ' btn--primary'}`} onClick={() => act({ type: 'wallOpen', id, value: !w.open })}>
+                {w.open ? '■ Stop taking messages' : '▶ Take messages from phones'}
+              </button>
+              {w.pinned !== null && (
+                <button type="button" className="btn" onClick={() => act({ type: 'wallPin', id })}>
+                  Let them take turns again
+                </button>
+              )}
+            </div>
+            <div className="lyc__bar" role="group" aria-label="How it looks">
+              {STYLES.map((s) => (
+                <button
+                  key={s.style}
+                  type="button"
+                  className={`btn btn--small${w.style === s.style ? ' is-on' : ''}`}
+                  onClick={() => update({ style: s.style })}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className="lyc__row">
+              <label className="check">
+                <input type="checkbox" checked={w.autoApprove} onChange={(e) => update({ autoApprove: e.target.checked })} /> Show messages from phones straight
+                away
+              </label>
+              <label className="check">
+                <input type="checkbox" checked={w.photos} onChange={(e) => update({ photos: e.target.checked })} /> Phones may send a photo
+              </label>
+              <label className="check">
+                <input type="checkbox" checked={w.showJoin} onChange={(e) => update({ showJoin: e.target.checked })} /> Show the code to scan
+              </label>
+            </div>
+            <RemoteNote remote={remote} url={address?.voteUrl} what="send messages" onTurnOn={() => void client.setRemote(true)} />
+            <details className="aud-card__setup">
+              <summary>Title, question and timing</summary>
+              <label className="field">
+                <span className="field__label">Title</span>
+                <input
+                  className="text"
+                  dir="auto"
+                  value={setup.title}
+                  onChange={(e) => setSetup({ ...setup, title: e.target.value })}
+                  onBlur={() => update(setup)}
+                />
+              </label>
+              <label className="field">
+                <span className="field__label">What people are asked on their phones</span>
+                <input
+                  className="text"
+                  dir="auto"
+                  value={setup.prompt}
+                  onChange={(e) => setSetup({ ...setup, prompt: e.target.value })}
+                  onBlur={() => update(setup)}
+                />
+              </label>
+              <label className="field">
+                <span className="field__label">Seconds on screen each (one at a time)</span>
+                <input
+                  className="text"
+                  type="number"
+                  min={3}
+                  max={60}
+                  value={w.seconds}
+                  onChange={(e) => update({ seconds: Math.min(60, Math.max(3, Number(e.target.value) || 8)) })}
+                />
+              </label>
+            </details>
+          </section>
+          <section className="lyc__edit">
+            <div className="aud-card__gift aud-card__gift--wall">
+              <input className="text" placeholder="From" value={typed.name} onChange={(e) => setTyped({ ...typed, name: e.target.value })} aria-label="From" />
+              <input
+                className="text"
+                dir="auto"
+                placeholder="Type a message or dedication"
+                value={typed.text}
+                maxLength={280}
+                onChange={(e) => setTyped({ ...typed, text: e.target.value })}
+                onKeyDown={(e) => e.key === 'Enter' && add()}
+                aria-label="Message"
+              />
+              <button type="button" className="btn btn--primary" onClick={add}>
+                + Add
+              </button>
+            </div>
+            <div className="lyc__bar" role="group" aria-label="Which messages">
+              {(
+                [
+                  ['all', `All ${w.messages.length}`],
+                  ['waiting', `Waiting ${waiting}`],
+                  ['shown', `On screen ${w.messages.length - waiting}`],
+                ] as const
+              ).map(([f, label]) => (
+                <button key={f} type="button" className={`btn btn--small${filter === f ? ' is-on' : ''}`} onClick={() => setFilter(f)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <ul className="aud-card__list aud-card__list--wall">
+              {list.length === 0 && <li className="aud-card__none">No messages yet.</li>}
+              {list.map((m) => (
+                <li key={m.id} className={`${m.approved ? '' : 'is-waiting'}${w.pinned === m.id ? ' is-winner' : ''}`}>
+                  {m.photo && <img src={client.mediaUrl(m.photo)} alt="" />}
+                  <span dir="auto">
+                    {m.name && <b>{m.name}: </b>}
+                    {m.text || <em>(a photo)</em>}
+                  </span>
+                  {!m.approved ? (
+                    <button type="button" className="btn btn--small btn--primary" onClick={() => act({ type: 'wallApprove', id, message: m.id, value: true })}>
+                      Let through
+                    </button>
+                  ) : (
+                    <button type="button" className="btn btn--small" onClick={() => act({ type: 'wallApprove', id, message: m.id, value: false })}>
+                      Hold back
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    className={`btn btn--small${w.pinned === m.id ? ' is-on' : ''}`}
+                    title="Keep this one on screen"
+                    onClick={() => act({ type: 'wallPin', id, message: w.pinned === m.id ? undefined : m.id })}
+                  >
+                    {w.pinned === m.id ? 'Showing' : 'Show now'}
+                  </button>
+                  <button type="button" className="icon" aria-label="Remove" onClick={() => act({ type: 'wallRemove', id, message: m.id })}>
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {w.messages.length > 0 && (
+              <button type="button" className="btn btn--small" onClick={() => confirm('Remove every message?') && act({ type: 'wallRemove', id })}>
+                Remove every message
+              </button>
+            )}
           </section>
         </div>
       </div>

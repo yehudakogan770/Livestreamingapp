@@ -52,3 +52,36 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+.aud-card__gift--wall {
+  grid-template-columns: 110px minmax(0, 1fr) auto;
+}
+.aud-card__list--wall {
+  max-height: none;
+}
+.aud-card__list--wall li {
+  align-items: center;
+}
+.aud-card__list--wall li > span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.aud-card__list--wall img {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.aud-card__none {
+  color: var(--text-faint);
+}
+.aud-card__setup summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-dim, #aab);
+}
+.aud-card__setup[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

@@ -146,6 +146,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SetSpeed { .. }
             | Action::QnaShow { .. }
             | Action::RaffleDraw { .. }
+            | Action::WallPin { .. }
             | Action::ShowComment { comment: None, .. }
             | Action::LyricsGo { .. }
             | Action::LyricsNext { .. }
@@ -197,6 +198,8 @@ struct Shared {
     votes: Mutex<HashMap<(String, u32), HashMap<String, usize>>>,
     /// When each phone last asked a question.
     asked: Mutex<HashMap<String, u64>>,
+    /// Where photos sent to a messages wall are kept.
+    photos: Option<PathBuf>,
 }
 
 impl Shared {
@@ -261,6 +264,7 @@ impl Remote {
                 next_phone: Mutex::new(0),
                 votes: Mutex::new(HashMap::new()),
                 asked: Mutex::new(HashMap::new()),
+                photos: dir.map(|d| d.join("wall-photos")),
             }),
             config: Mutex::new(config),
             running: Mutex::new(None),
@@ -544,6 +548,7 @@ fn handle(shared: &Shared, mut request: Request) {
                 "questions": show["qna"]["open"].as_bool().unwrap_or(false),
                 "raffles": open("raffle", &["title", "prize"]),
                 "fundraisers": open("fundraiser", &["title", "currency"]),
+                "walls": open("wall", &["title", "prompt", "photos"]),
                 "event": show["event"]["name"],
             });
             json(request, 200, &body.to_string());
@@ -555,6 +560,10 @@ fn handle(shared: &Shared, mut request: Request) {
         (Method::Post, "/api/pledge") => match pledge(shared, &mut request) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingPledges"}"#),
+        },
+        (Method::Post, "/api/message") => match post_message(shared, &mut request, query) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingMessages"}"#),
         },
         (Method::Post, "/api/ask") => match ask(shared, &mut request) {
             Ok(()) => json(request, 200, "{}"),
@@ -716,6 +725,73 @@ fn pledge(shared: &Shared, request: &mut Request) -> Result<(), u16> {
             message: p.message,
         })
         .map_err(|_| 409u16)?;
+    lock(&shared.asked).insert(key, now);
+    Ok(())
+}
+
+/// Biggest photo from a phone (the page makes them smaller first).
+const MAX_PHOTO: usize = 6_000_000;
+
+/// A message for a wall: the words in the address, a JPEG photo (if any) as
+/// the body. One every 20 seconds from each phone.
+fn post_message(shared: &Shared, request: &mut Request, query: &str) -> Result<(), u16> {
+    let q = crate::control::parse_query(query);
+    let get = |k: &str| {
+        q.iter()
+            .find(|(key, _)| key == k)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    };
+    let (id, voter, name, text) = (get("id"), get("voter"), get("name"), get("text"));
+    if voter.is_empty() || voter.len() > 64 || id.is_empty() {
+        return Err(400);
+    }
+    let key = format!("wall:{voter}");
+    let now = now_ms();
+    if lock(&shared.asked)
+        .get(&key)
+        .is_some_and(|&t| now.saturating_sub(t) < 20_000)
+    {
+        return Err(429);
+    }
+    let mut body = Vec::new();
+    request
+        .as_reader()
+        .take(MAX_PHOTO as u64 + 1)
+        .read_to_end(&mut body)
+        .map_err(|_| 400u16)?;
+    if body.len() > MAX_PHOTO {
+        return Err(413);
+    }
+    let photo = if body.is_empty() {
+        None
+    } else {
+        // Only JPEG pictures are kept.
+        if !body.starts_with(&[0xFF, 0xD8, 0xFF]) {
+            return Err(415);
+        }
+        let dir = shared.photos.as_ref().ok_or(503u16)?;
+        std::fs::create_dir_all(dir).map_err(|_| 507u16)?;
+        let file = dir.join(format!("{now}-{:04}.jpg", new_pin()));
+        std::fs::write(&file, &body).map_err(|_| 507u16)?;
+        Some(file.to_string_lossy().into_owned())
+    };
+    if text.trim().is_empty() && photo.is_none() {
+        return Err(400);
+    }
+    let saved = photo.clone();
+    let result = shared.backend.apply(Action::WallPost {
+        id: lumora_engine::model::SourceId::new(id),
+        name,
+        text,
+        photo,
+    });
+    if result.is_err() {
+        if let Some(f) = saved {
+            let _ = std::fs::remove_file(f);
+        }
+        return Err(409);
+    }
     lock(&shared.asked).insert(key, now);
     Ok(())
 }
@@ -1056,6 +1132,75 @@ mod tests {
             lock(&fake.engine).show().qna.questions[0].text,
             "When is the break?"
         );
+    }
+
+    #[test]
+    fn phones_send_messages_and_photos_to_an_open_wall() {
+        let fake = Arc::new(Fake {
+            engine: Mutex::new(Engine::new()),
+        });
+        let dir = std::env::temp_dir().join(format!("lumora-wall-{}", now_ms()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let first = PORT.fetch_add(PORTS_TO_TRY, Ordering::SeqCst);
+        let r = Remote::new(Some(&dir), first, Arc::clone(&fake));
+        let port = r.set_enabled(true).port.unwrap();
+        let wall = |f: &Fake| match &lock(&f.engine).show().sources[0].kind {
+            lumora_engine::SourceKind::Wall(w) => (**w).clone(),
+            _ => unreachable!(),
+        };
+        lock(&fake.engine)
+            .apply(
+                Action::AddSource {
+                    source: serde_json::from_value(serde_json::json!({
+                        "id": "w", "name": "Wall", "kind": {"type": "wall"}
+                    }))
+                    .unwrap(),
+                },
+                1,
+            )
+            .unwrap();
+        let path = "/api/message?id=w&voter=a&name=Ana&text=Mazel%20tov%21";
+        assert_eq!(request(port, "POST", path, "", "").0, 409, "closed");
+        lock(&fake.engine)
+            .apply(
+                Action::WallOpen {
+                    id: lumora_engine::model::SourceId::new("w"),
+                    value: true,
+                },
+                2,
+            )
+            .unwrap();
+        assert!(request(port, "GET", "/api/audience", "", "")
+            .1
+            .contains(r#""prompt":"Send a message""#));
+        assert_eq!(request(port, "POST", path, "", "").0, 200);
+        assert_eq!(request(port, "POST", path, "", "").0, 429, "too soon");
+        let w = wall(&fake);
+        assert_eq!(
+            (w.messages[0].name.as_str(), w.messages[0].text.as_str()),
+            ("Ana", "Mazel tov!")
+        );
+        assert!(!w.messages[0].approved, "waits for the operator");
+
+        let photo_to = "/api/message?id=w&voter=b&name=Ben&text=";
+        assert_eq!(request(port, "POST", photo_to, "", "not a picture").0, 415);
+        // A (tiny, pretend) JPEG.
+        let jpeg = [0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3];
+        let mut s = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        write!(
+            s,
+            "POST {photo_to} HTTP/1.1\r\nHost: x\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            jpeg.len()
+        )
+        .unwrap();
+        s.write_all(&jpeg).unwrap();
+        let mut reply = String::new();
+        s.read_to_string(&mut reply).unwrap();
+        assert!(reply.starts_with("HTTP/1.1 200"), "{reply}");
+        let saved = wall(&fake).messages[1].photo.clone();
+        assert!(saved.ends_with(".jpg"));
+        assert_eq!(std::fs::read(&saved).unwrap(), jpeg);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

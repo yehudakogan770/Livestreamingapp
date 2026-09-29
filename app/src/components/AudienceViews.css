@@ -203,3 +203,180 @@
   white-space: nowrap;
   animation: raf-win 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
+
+/* The messages wall (mirrored in compositor.ts wall()). */
+.wall__area {
+  position: absolute;
+  top: 24cqh;
+  bottom: 8cqh;
+  left: 7cqh;
+  right: 7cqh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wall__area--join {
+  right: 45cqh;
+}
+.wall__join {
+  position: absolute;
+  right: 7cqh;
+  top: 24cqh;
+  bottom: 8cqh;
+  width: 32cqh;
+  display: flex;
+  align-items: center;
+}
+.wall__empty {
+  margin: 0;
+  font-size: 4cqh;
+  color: #8f96a3;
+}
+.wall__card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4cqh;
+  width: 100%;
+  height: 100%;
+}
+.wall__photo {
+  flex: 0 0 auto;
+  width: min(50%, 88cqh);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wall__card--only {
+  flex-direction: column;
+  gap: 0;
+}
+.wall__card--only .wall__photo {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+}
+.wall__card--only .wall__name {
+  margin: 1.5cqh 0 0;
+  line-height: 4.25cqh;
+}
+.wall__photo img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 1.5cqh;
+  box-shadow: 0 1cqh 4cqh rgba(0, 0, 0, 0.5);
+}
+.wall__words {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+.wall__card--photo .wall__words {
+  text-align: start;
+}
+.wall__text {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.wall__name {
+  margin: 2.5cqh 0 0;
+  font-size: 3.4cqh;
+  font-weight: 700;
+  color: #f2b233;
+}
+.wall__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 2.4cqh;
+  width: 100%;
+  height: 100%;
+}
+.wall__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1cqh;
+  min-height: 0;
+  padding: 2.4cqh;
+  border-radius: 1.5cqh;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+}
+.wall__cell img {
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 1cqh;
+}
+.wall__celltext {
+  margin: 0;
+  font-size: 3cqh;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 6;
+  overflow-wrap: anywhere;
+}
+.wall__cell--photo .wall__celltext {
+  flex: 0 0 auto;
+  font-size: 2.6cqh;
+  -webkit-line-clamp: 2;
+}
+.wall__cellname {
+  margin: auto 0 0;
+  font-size: 2.2cqh;
+  font-weight: 700;
+  color: #f2b233;
+}
+.wall__cell--photo .wall__cellname {
+  margin-top: 0;
+}
+.wall--ticker {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+.wall__ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 87cqh;
+  height: 7cqh;
+  display: flex;
+  background: rgba(10, 12, 16, 0.85);
+  color: #fff;
+}
+.wall__label {
+  display: flex;
+  align-items: center;
+  padding: 0 2.5cqh;
+  background: #2f80ed;
+  font-size: 2.8cqh;
+  font-weight: 800;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.wall__run {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+.wall__run span {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin-top: -2.1cqh;
+  line-height: 4.2cqh;
+  font-size: 3.4cqh;
+  font-weight: 500;
+  white-space: pre;
+  will-change: transform;
+}

@@ -317,6 +317,49 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Change a messages wall's title, question and look (the messages stay).
+    UpdateWall {
+        id: SourceId,
+        wall: crate::wall::Wall,
+    },
+    /// Let phones send messages (or stop them).
+    WallOpen {
+        id: SourceId,
+        value: bool,
+    },
+    /// A message from a phone (sent by the app's server).
+    WallPost {
+        id: SourceId,
+        name: String,
+        text: String,
+        /// A photo saved by the app's server.
+        #[ts(optional)]
+        photo: Option<String>,
+    },
+    /// The operator types a message (shown straight away).
+    WallAdd {
+        id: SourceId,
+        name: String,
+        text: String,
+    },
+    /// Let a message through to the screen (or hold it back).
+    WallApprove {
+        id: SourceId,
+        message: u32,
+        value: bool,
+    },
+    /// Keep one message on screen, or (with none) let them take turns again.
+    WallPin {
+        id: SourceId,
+        #[ts(optional)]
+        message: Option<u32>,
+    },
+    /// Take one message out, or (with none) all of them.
+    WallRemove {
+        id: SourceId,
+        #[ts(optional)]
+        message: Option<u32>,
+    },
     /// Start or stop taking audience questions.
     QnaOpen {
         value: bool,

@@ -410,3 +410,9 @@ inputs (the page itself), stream inputs from internet addresses, and streaming o
 20. ✅ **PTZ camera control** (vMix, ATEM).
 21. ✅ **Raffles** — entries from phones or typed in, the draw on screen with the winner revealed.
 22. ✅ **Fundraisers** — goal, total and donors on screen, pledges from phones (no payments taken).
+23. ✅ **Messages wall** — messages, dedications and photos from phones; the operator lets each through (or all straight away) and they show one at a time, the newest six, or as a ticker over the picture (Slido, social walls).
+24. ⬜ **Live auction** — bids from phones, the highest bid on screen.
+25. ⬜ **Hebrew date and zmanim** — candle-lighting countdown.
+26. ⬜ **Tanach and Tehillim library** on screen.
+27. ⬜ **Trivia game** with a leaderboard, answers from phones.
+28. ⬜ **Table finder** — guests type their name, their table shows.

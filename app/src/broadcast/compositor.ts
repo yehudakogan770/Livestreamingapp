@@ -28,6 +28,8 @@ import type { Poll } from '../engine/types/Poll';
 import type { CommentCard } from '../engine/types/CommentCard';
 import type { Raffle } from '../engine/types/Raffle';
 import type { Fundraiser } from '../engine/types/Fundraiser';
+import type { Wall } from '../engine/types/Wall';
+import { cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { shares } from '../engine/poll';
 import type { Scoreboard } from '../engine/types/Scoreboard';
@@ -510,6 +512,173 @@ export class ProgramCompositor {
     ctx.restore();
   }
 
+  /** A messages wall (mirrors WallView and its CSS). */
+  private wall(wl: Wall, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    if (wl.style === 'ticker') {
+      const top = 87 * u;
+      const bh = 7 * u;
+      ctx.fillStyle = 'rgba(10,12,16,0.85)';
+      ctx.fillRect(0, top, w, bh);
+      ctx.font = font(2.8, 800);
+      const label = wl.title.toUpperCase();
+      const lw = ctx.measureText(label).width + 5 * u;
+      ctx.fillStyle = '#2f80ed';
+      ctx.fillRect(0, top, lw, bh);
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'left';
+      ctx.fillText(label, 2.5 * u, top + bh / 2);
+      const words = wallTicker(wl);
+      ctx.font = font(3.4, 500);
+      const area = w - lw;
+      const shift = tickerShift(now, area / h, ctx.measureText(words).width / h);
+      ctx.beginPath();
+      ctx.rect(lw, top, area, bh);
+      ctx.clip();
+      ctx.fillText(words, lw + area - shift * h, top + bh / 2);
+      ctx.restore();
+      return;
+    }
+    const join = wl.showJoin && wl.open && wl.joinQr;
+    this.audienceBase(wl.title, join ? wl.prompt : '', w, h);
+    const top = 24 * u;
+    const bottom = h - 8 * u;
+    const left = 7 * u;
+    const right = w - (join ? 45 * u : 7 * u);
+    const aw = right - left;
+    const ah = bottom - top;
+    const card = wl.style === 'cards' ? wallCard(wl, now) : null;
+    const grid = wl.style === 'grid' ? wallGrid(wl) : [];
+    ctx.textBaseline = 'middle';
+    if (!card && !grid.length) {
+      ctx.fillStyle = '#8f96a3';
+      ctx.font = font(4, 400);
+      ctx.textAlign = 'center';
+      ctx.fillText(join ? 'Be the first — scan the code' : 'Messages will appear here', left + aw / 2, top + ah / 2);
+    }
+    const contain = (img: HTMLImageElement, x: number, y: number, bw: number, bh: number, radius: number) => {
+      const s = Math.min(bw / img.naturalWidth, bh / img.naturalHeight);
+      const iw = img.naturalWidth * s;
+      const ih = img.naturalHeight * s;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(x + (bw - iw) / 2, y + (bh - ih) / 2, iw, ih, radius);
+      ctx.clip();
+      ctx.drawImage(img, x + (bw - iw) / 2, y + (bh - ih) / 2, iw, ih);
+      ctx.restore();
+    };
+    if (card) {
+      const m = card.m;
+      ctx.globalAlpha = card.alpha;
+      let tx = left;
+      let tw = aw;
+      const img = m.photo ? this.picture(m.photo) : null;
+      const ready = !!img?.complete && !!img.naturalWidth;
+      if (m.photo && !m.text) {
+        // A photo on its own, with who sent it underneath.
+        const ph = ah - (m.name ? 5.75 * u : 0);
+        if (img && ready) contain(img, left, top, aw, ph, 1.5 * u);
+        if (m.name) {
+          ctx.fillStyle = '#f2b233';
+          ctx.font = font(3.4, 700);
+          ctx.textAlign = 'center';
+          ctx.fillText(`— ${m.name}`, left + aw / 2, top + ph + 1.5 * u + 2.125 * u, aw);
+        }
+      } else if (m.photo) {
+        const pw = Math.min(aw * 0.5, 88 * u);
+        if (img && ready) contain(img, left, top, pw, ah, 1.5 * u);
+        tx = left + pw + 4 * u;
+        tw = right - tx;
+      }
+      if (m.text || (m.name && !m.photo)) {
+        const size = cardSize(m.text, !!m.photo);
+        ctx.font = font(size, 600);
+        const lines = m.text ? this.wrap(`“${m.text}”`, tw) : [];
+        const lh = size * 1.25 * u;
+        const block = lines.length * lh + (m.name ? (lines.length ? 2.5 * u : 0) + 3.4 * 1.25 * u : 0);
+        let y = top + (ah - block) / 2;
+        const photoSide = !!m.photo && tw < aw;
+        ctx.textAlign = photoSide ? 'left' : 'center';
+        const x = photoSide ? tx : left + aw / 2;
+        ctx.fillStyle = '#fff';
+        for (const line of lines) {
+          ctx.fillText(line, x, y + lh / 2);
+          y += lh;
+        }
+        if (m.name) {
+          if (lines.length) y += 2.5 * u;
+          ctx.fillStyle = '#f2b233';
+          ctx.font = font(3.4, 700);
+          ctx.fillText(`— ${m.name}`, x, y + 3.4 * 0.625 * u, tw);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (grid.length) {
+      const gap = 2.4 * u;
+      const cw = (aw - gap * 2) / 3;
+      const ch = (ah - gap) / 2;
+      grid.forEach((m, i) => {
+        const cx = left + (i % 3) * (cw + gap);
+        const cy = top + Math.floor(i / 3) * (ch + gap);
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        ctx.beginPath();
+        ctx.roundRect(cx, cy, cw, ch, 1.5 * u);
+        ctx.fill();
+        ctx.clip();
+        const pad = 2.4 * u;
+        const iw = cw - pad * 2;
+        let y = cy + pad;
+        const size = m.photo ? 2.6 : 3;
+        ctx.font = font(size, 400);
+        const lines = m.text ? this.wrap(m.text, iw).slice(0, m.photo ? 2 : 6) : [];
+        const lh = size * 1.25 * u;
+        const nameH = m.name ? 2.2 * 1.25 * u : 0;
+        if (m.photo) {
+          const textH = lines.length * lh + (lines.length ? u : 0) + (m.name ? nameH + u : 0);
+          const ph = ch - pad * 2 - textH;
+          const img = this.picture(m.photo);
+          if (img?.complete && img.naturalWidth && ph > 0) {
+            const s = Math.max(iw / img.naturalWidth, ph / img.naturalHeight);
+            const sw = iw / s;
+            const sh = ph / s;
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(cx + pad, y, iw, ph, u);
+            ctx.clip();
+            ctx.drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, cx + pad, y, iw, ph);
+            ctx.restore();
+          }
+          y += ph + u;
+        }
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#fff';
+        ctx.font = font(size, 400);
+        for (const line of lines) {
+          ctx.fillText(line, cx + pad, y + lh / 2, iw);
+          y += lh;
+        }
+        if (m.name) {
+          ctx.fillStyle = '#f2b233';
+          ctx.font = font(2.2, 700);
+          const ny = m.photo ? y + u : cy + ch - pad - nameH;
+          ctx.fillText(m.name, cx + pad, ny + nameH / 2, iw);
+        }
+        ctx.restore();
+      });
+    }
+    if (join) {
+      ctx.fillStyle = '#fff';
+      this.joinCode(wl.joinUrl, wl.joinQr, 'Scan to send', w - 7 * u - 16 * u, top + ah / 2, u);
+    }
+    ctx.restore();
+  }
+
   /** A chat comment on its card (mirrors CommentView and its CSS). */
   private comment(c: CommentCard, now: number, w: number, h: number) {
     const m = c.comment;
@@ -916,6 +1085,9 @@ export class ProgramCompositor {
         return;
       case 'fundraiser':
         this.fundraiser(k, now, w, h);
+        return;
+      case 'wall':
+        this.wall(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));
