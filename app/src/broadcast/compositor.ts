@@ -17,6 +17,7 @@ import { ChromaKeyer, needsProcessing } from '../engine/chroma';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
 import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
+import { browserInfo } from '../engine/browser';
 import { logoRect, VisualsPlayer } from '../visuals/player';
 import { isRtl, withAlpha } from '../engine/text';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
@@ -49,6 +50,9 @@ export class ProgramCompositor {
   private readonly keyers = new Map<string, ChromaKeyer>();
   private show: Show | null = null;
   private lastSync = 0;
+  /** Web pages: the newest captured frame of each, fetched as they come. */
+  private readonly pages = new Map<string, { n: number; frame: ImageBitmap | null; busy: boolean; seen: number }>();
+  private pageInfo: { port: number | null; captured: boolean } | null = null;
   /** One 3D logo renderer per 3D logo input (false: no WebGL here). */
   private readonly logos = new Map<
     string,
@@ -192,6 +196,15 @@ export class ProgramCompositor {
       }
       case 'microphone':
         return;
+      case 'browser': {
+        const frame = this.pageFrame(src.id);
+        if (frame) this.fit(frame, src.fit, w, h);
+        else if (!k.transparent) {
+          ctx.fillStyle = '#101216';
+          ctx.fillRect(0, 0, w, h);
+        }
+        return;
+      }
       case 'logo3d': {
         const path = k.path || event.logo;
         const url = path ? this.client.mediaUrl(path) : null;
@@ -338,6 +351,37 @@ export class ProgramCompositor {
   }
 
   /** Draw a picture filling the frame (contain: whole picture; cover: no bars). */
+  /** The newest frame of a web page (and ask for the next one). */
+  private pageFrame(id: string): ImageBitmap | null {
+    if (!this.pageInfo) {
+      void browserInfo(() => this.client.browserInfo()).then((i) => (this.pageInfo = i));
+      return null;
+    }
+    const { port, captured } = this.pageInfo;
+    if (!captured || !port) return null;
+    let p = this.pages.get(id);
+    if (!p) {
+      p = { n: 0, frame: null, busy: false, seen: 0 };
+      this.pages.set(id, p);
+    }
+    p.seen = performance.now();
+    if (!p.busy) {
+      const page = p;
+      page.busy = true;
+      void fetch(`http://127.0.0.1:${port}/frame/${encodeURIComponent(id)}?after=${page.n}`)
+        .then(async (r) => {
+          if (r.status !== 200) return;
+          page.n = Number(r.headers.get('X-Frame') ?? page.n);
+          const bmp = await createImageBitmap(await r.blob());
+          page.frame?.close();
+          page.frame = bmp;
+        })
+        .catch(() => undefined)
+        .finally(() => (page.busy = false));
+    }
+    return p.frame;
+  }
+
   /** This frame of the stage visuals (drawn once however many places show it). */
   private visualsFrame(now: number): HTMLCanvasElement | null {
     if (this.visuals === false || !this.show) return null;
@@ -359,7 +403,7 @@ export class ProgramCompositor {
     return v.canvas;
   }
 
-  private fit(el: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement, fit: Source['fit'], w: number, h: number) {
+  private fit(el: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement | ImageBitmap, fit: Source['fit'], w: number, h: number) {
     const iw = el instanceof HTMLVideoElement ? el.videoWidth : el instanceof HTMLImageElement ? el.naturalWidth : el.width;
     const ih = el instanceof HTMLVideoElement ? el.videoHeight : el instanceof HTMLImageElement ? el.naturalHeight : el.height;
     const ready = el instanceof HTMLVideoElement ? el.readyState >= 2 : el instanceof HTMLImageElement ? el.complete : true;

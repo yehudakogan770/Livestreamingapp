@@ -25,6 +25,7 @@ import type { Preset } from './types/Preset';
 import type { Step } from './types/Step';
 import { mainCountdown } from './countdowns';
 import * as vis from './visuals';
+import { cleanUrl } from './browser';
 
 const MIN_TRANSITION_MS = 100;
 const MAX_COUNTDOWN_MS = 24 * 60 * 60 * 1000;
@@ -635,6 +636,14 @@ function apply(s: Show, a: Action, now: number) {
     }
     case 'relinkMedia':
       return;
+    case 'updateBrowser': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'browser') throw new Refused({ code: 'invalidValue', field: 'browser', reason: 'that input is not a web page' });
+      const url = cleanUrl(a.browser.url);
+      if (!url) throw new Refused({ code: 'invalidValue', field: 'url', reason: 'that is not a web address' });
+      src.kind = { type: 'browser', ...structuredClone(a.browser), url, zoom: Math.min(400, Math.max(25, a.browser.zoom)) };
+      return;
+    }
     case 'updateText': {
       const src = find(s, a.id);
       if (src.kind.type !== 'text') throw new Refused({ code: 'invalidValue', field: 'text', reason: 'that input is not a text input' });

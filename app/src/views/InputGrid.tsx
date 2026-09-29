@@ -14,6 +14,7 @@ import { SlideshowEditor } from './SlideshowEditor';
 import { SaveToLibrary } from './LibraryDialog';
 import { GreenScreenDialog } from './GreenScreenDialog';
 import { InputSettings } from './InputSettings';
+import { BrowserCard } from './BrowserCard';
 import { isAdjusted } from '../engine/chroma';
 import { inputItem } from '../engine/library';
 
@@ -32,6 +33,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   slideshow: 'Slideshow',
   visuals: 'Stage visuals',
   logo3d: '3D logo',
+  browser: 'Web page',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -58,6 +60,7 @@ export function InputGrid({
   const editingText = show.sources.find((x) => x.id === editing && x.kind.type === 'text');
   const editingSplit = show.sources.find((x) => x.id === editing && x.kind.type === 'split');
   const editingSlides = show.sources.find((x) => x.id === editing && x.kind.type === 'slideshow');
+  const editingPage = show.sources.find((x) => x.id === editing && x.kind.type === 'browser');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -133,6 +136,7 @@ export function InputGrid({
         Add input
       </button>
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
+      {editingPage && <BrowserCard show={show} source={editingPage} act={act} client={client} onClose={() => setEditing(null)} />}
       {adjustSource && <InputSettings show={show} source={adjustSource} act={act} client={client} onSwitch={setAdjusting} onClose={() => setAdjusting(null)} />}
       {keySource && <GreenScreenDialog show={show} source={keySource} act={act} client={client} onClose={() => setKeying(null)} />}
       {keepSource && <SaveToLibrary client={client} item={inputItem(keepSource, '')} onClose={() => setKeeping(null)} />}
@@ -251,7 +255,7 @@ function TileMenu({
           Edit 3D logo…
         </button>
       )}
-      {(k === 'text' || k === 'split' || k === 'slideshow') && (
+      {(k === 'text' || k === 'split' || k === 'slideshow' || k === 'browser') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -260,7 +264,7 @@ function TileMenu({
             onEditText();
           }}
         >
-          {k === 'text' ? 'Edit text…' : k === 'split' ? 'Edit split screen…' : 'Edit slides…'}
+          {k === 'text' ? 'Edit text…' : k === 'split' ? 'Edit split screen…' : k === 'browser' ? 'Control web page…' : 'Edit slides…'}
         </button>
       )}
       <button

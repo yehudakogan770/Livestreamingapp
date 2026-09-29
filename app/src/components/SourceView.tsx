@@ -14,6 +14,7 @@ import { TextView } from './TextView';
 import { CreditsView } from './CreditsView';
 import { VisualsView } from './VisualsView';
 import { Logo3dView } from './Logo3dView';
+import { BrowserView } from './BrowserView';
 import type { Logo3d } from '../engine/types/Logo3d';
 import { defaultVisuals } from '../engine/visuals';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
@@ -110,6 +111,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <VisualsInput thumb={thumb} audience={audience} />;
     case 'logo3d':
       return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
+    case 'browser':
+      return <BrowserView id={source.id} page={k} client={client} fit={fit} thumb={thumb} audience={audience} />;
     case 'countdown':
       return <CountdownInput timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':

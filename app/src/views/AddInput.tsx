@@ -1,3 +1,4 @@
+import { cleanUrl, defaultBrowser } from '../engine/browser';
 import { sendCommand } from './commands';
 import { useEffect, useState } from 'react';
 import { defaultCountdown, type EngineClient } from '../engine/client';
@@ -31,6 +32,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'credits', name: 'Credits / thank-you', hint: 'Rolling names at the end' },
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
+  { kind: 'browser', name: 'Web page', hint: 'A website: scores, live results, social wall…' },
   { kind: 'logo3d', name: '3D logo', hint: 'Your logo in 3D, turning (the logo maker)' },
   { kind: 'visuals', name: 'Stage visuals', hint: 'Music visuals on the beat, for the Back Screen' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
@@ -138,6 +140,10 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'browser': {
+        const url = cleanUrl(words);
+        return url ? { name: n || url.replace(/^https?:\/\//, '').split('/')[0] || 'Web page', kind: { type: 'browser', ...defaultBrowser(), url } } : null;
+      }
       case 'countdown':
         return { name: n || 'Countdown', kind: { type: 'countdown', background: color, timer: defaultCountdown() } };
       case 'text': {
@@ -281,6 +287,23 @@ export function AddInput({
               <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
             )}
 
+            {kind === 'browser' && (
+              <label className="field">
+                <span className="field__label">Web address</span>
+                <input
+                  className="text"
+                  value={words}
+                  placeholder="e.g. scores.example.com"
+                  onChange={(e) => setWords(e.target.value)}
+                  aria-label="Web address"
+                  autoFocus
+                />
+                <span className="field__note">
+                  The page opens in its own window, where you can click on it and log in; the screens show it live. It needs the internet (or a page on this
+                  network).
+                </span>
+              </label>
+            )}
             {kind === 'credits' && (
               <label className="field">
                 <span className="field__label">Names (one per line, or paste from a spreadsheet)</span>

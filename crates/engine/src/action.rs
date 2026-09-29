@@ -5,6 +5,7 @@ use thiserror::Error;
 use ts_rs::TS;
 
 use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch};
+use crate::browser::BrowserInput;
 use crate::credits::Credits;
 use crate::cues::Cue;
 use crate::event::EventPatch;
@@ -417,6 +418,14 @@ pub enum Action {
     RelinkMedia {
         from: String,
         to: String,
+    },
+
+    // ----- web page -----
+    /// Change a web page input (address, size, zoom…). The address is
+    /// cleaned up (`example.com` → `https://example.com`).
+    UpdateBrowser {
+        id: SourceId,
+        browser: BrowserInput,
     },
 
     // ----- 3D logo -----

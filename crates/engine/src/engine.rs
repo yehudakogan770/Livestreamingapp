@@ -1059,6 +1059,24 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             crate::media::relink(s, &from, &to);
             Ok(())
         }
+        Action::UpdateBrowser { id, browser } => {
+            let url = crate::browser::clean_url(&browser.url)
+                .ok_or_else(|| ActionError::invalid("url", "that is not a web address"))?;
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !matches!(src.kind, SourceKind::Browser(_)) {
+                return Err(ActionError::invalid(
+                    "browser",
+                    "that input is not a web page",
+                ));
+            }
+            let mut b = browser;
+            b.url = url;
+            b.repair();
+            src.kind = SourceKind::Browser(Box::new(b));
+            Ok(())
+        }
         Action::UpdateLogo3d { id, logo } => {
             let src = s
                 .source_mut(&id)
@@ -1654,6 +1672,12 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         SourceKind::Logo3d(mut l) => {
             l.repair();
             SourceKind::Logo3d(l)
+        }
+        SourceKind::Browser(mut b) => {
+            b.url = crate::browser::clean_url(&b.url)
+                .ok_or_else(|| ActionError::invalid("url", "that is not a web address"))?;
+            b.repair();
+            SourceKind::Browser(b)
         }
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
         SourceKind::Slideshow(mut sh) => {

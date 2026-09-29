@@ -21,6 +21,12 @@ tauri-plugin-dialog = "2"
 tiny_http = "0.12"
 if-addrs = "0.15"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
+jpeg-encoder = "0.7"
+png = "0.18"
+
+# Web page inputs are captured with the Windows Graphics Capture API.
+[target.'cfg(windows)'.dependencies]
+windows-capture = "2"
 
 [lints.rust]
 unsafe_code = "forbid"

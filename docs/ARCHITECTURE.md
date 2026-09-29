@@ -165,4 +165,13 @@ they opened.
     and the green screen in one WebGL pass, on the screens and in the
     recording; `InputSettings.tsx` (tile ⋯ → Adjust picture…) with looks,
     before / after split and a histogram). Still to come: LUT files.
+    Web page input: **done** (`crates/engine/src/browser.rs`; `src-tauri/src/browser.rs`:
+    each page is open in its own undecorated page window (behind the others;
+    brought to the front to click on it). On Windows it is captured with the
+    Windows Graphics Capture API (`windows-capture`), each frame JPEG (PNG when
+    see-through) and served on 127.0.0.1 only: `/stream/<id>` (multipart) for
+    the screens, `/frame/<id>?after=n` for the recorder. Elsewhere the screens
+    embed the page directly. `BrowserCard.tsx`: address, back / forward /
+    reload, zoom, size, auto refresh, view only). Windows-only code is
+    checked with `cargo clippy --target x86_64-pc-windows-msvc`.
 11. Installer, auto-update, rehearsal / soak testing, release.

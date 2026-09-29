@@ -1,5 +1,6 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
+mod browser;
 mod capture;
 mod events;
 mod export;
@@ -31,6 +32,7 @@ struct AppState {
     library: library::Library,
     media: media::Media,
     exports: export::Exports,
+    browsers: browser::Browsers,
     ffmpeg: Option<std::path::PathBuf>,
 }
 
@@ -104,6 +106,7 @@ fn apply(app: &tauri::AppHandle, state: &AppState, action: Action) -> Result<(),
 /// Save a new version of the show and send it to every window and phone.
 fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.store.save(snapshot.show.clone());
+    state.browsers.sync(&snapshot.show);
     let _ = app.emit("show-changed", snapshot);
     if let Ok(json) = serde_json::to_string(snapshot) {
         state.remote.broadcast(&json);
@@ -392,6 +395,24 @@ fn export_cancel(session: u64, state: State<'_, AppState>) {
     state.exports.cancel(session);
 }
 
+/// Where web page frames are served, and whether pages are captured here.
+#[tauri::command]
+fn browser_info(state: State<'_, AppState>) -> browser::BrowserInfo {
+    state.browsers.info
+}
+
+/// Bring a web page's window to the front (to click on it) or send it back.
+#[tauri::command]
+async fn browser_page(id: String, front: bool, app: tauri::AppHandle) -> Result<(), String> {
+    browser::show_page(&app, &id, front)
+}
+
+/// Back, forward or reload a web page.
+#[tauri::command]
+async fn browser_nav(id: String, how: String, app: tauri::AppHandle) -> Result<(), String> {
+    browser::navigate(&app, &id, &how)
+}
+
 /// Every few seconds, copy in any file the show still uses from elsewhere
 /// (older events, library items, an event opened from a USB stick) while
 /// it is still there, and point the show at the copy.
@@ -489,6 +510,13 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .on_window_event(|window, event| {
+            // A web page's window stays open while its input exists (closing it
+            // would stop the picture); it goes away when the input is removed.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label().starts_with("page-") {
+                    api.prevent_close();
+                }
+            }
             if let WindowEvent::Destroyed = event {
                 let app = window.app_handle();
                 if window.label() == "control" {
@@ -532,6 +560,8 @@ pub fn run() {
                 });
             let library = library::Library::new(&dir);
             let media = media::Media::new(&dir);
+            let browsers = browser::Browsers::new(app.handle().clone());
+            browsers.sync(&show);
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -542,6 +572,7 @@ pub fn run() {
                 library,
                 media,
                 exports: export::Exports::default(),
+                browsers,
                 ffmpeg,
             });
             heartbeat(app.handle().clone());
@@ -578,6 +609,9 @@ pub fn run() {
             export_frame,
             export_finish,
             export_cancel,
+            browser_info,
+            browser_page,
+            browser_nav,
             library_items,
             save_library,
             export_library,

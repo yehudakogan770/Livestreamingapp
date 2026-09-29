@@ -206,6 +206,8 @@ pub enum SourceKind {
     Visuals,
     /// A logo in 3D, turning.
     Logo3d(Box<crate::logo3d::Logo3d>),
+    /// A web page.
+    Browser(Box<crate::browser::BrowserInput>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,

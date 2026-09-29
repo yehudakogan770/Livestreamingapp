@@ -192,6 +192,13 @@ export interface EngineClient {
   /** Resolves the finished file's path. */
   exportFinish(session: number): Promise<string>;
   exportCancel(session: number): Promise<void>;
+
+  // ----- web pages -----
+  /** Where web page frames are served; `captured` false: show pages directly. */
+  browserInfo(): Promise<{ port: number | null; captured: boolean }>;
+  /** Bring a web page's window to the front to click on it (or send it back). */
+  browserPage(id: string, front: boolean): Promise<void>;
+  browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void>;
 }
 
 export type VideoFormat = 'mp4' | 'mov' | 'webm';
@@ -544,6 +551,26 @@ class TauriClient implements EngineClient {
     await invoke('export_cancel', { session });
   }
 
+  browserInfo(): Promise<{ port: number | null; captured: boolean }> {
+    return invoke('browser_info');
+  }
+
+  async browserPage(id: string, front: boolean): Promise<void> {
+    try {
+      await invoke('browser_page', { id, front });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void> {
+    try {
+      await invoke('browser_nav', { id, how });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
   async importLibrary(): Promise<LibraryItem[]> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({ multiple: false, directory: false, filters: [{ name: 'Lumora library', extensions: ['lumora-library', 'json'] }] });
@@ -816,6 +843,18 @@ export class DemoClient implements EngineClient {
   }
 
   exportCancel(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  browserInfo(): Promise<{ port: number | null; captured: boolean }> {
+    return Promise.resolve({ port: null, captured: false });
+  }
+
+  browserPage(): Promise<void> {
+    return Promise.reject(new Error('In the Lumora app the page opens in its own window, to click on.'));
+  }
+
+  browserNav(): Promise<void> {
     return Promise.resolve();
   }
 
