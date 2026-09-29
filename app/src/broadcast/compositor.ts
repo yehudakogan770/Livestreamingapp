@@ -13,6 +13,7 @@ import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
+import { ChromaKeyer } from '../engine/chroma';
 import { isRtl, withAlpha } from '../engine/text';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
@@ -40,6 +41,8 @@ export class ProgramCompositor {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly media = new Map<string, Media>();
   private readonly pictures = new Map<string, Media>();
+  /** One green-screen keyer per keyed input. */
+  private readonly keyers = new Map<string, ChromaKeyer>();
   private show: Show | null = null;
   private lastSync = 0;
 
@@ -226,8 +229,6 @@ export class ProgramCompositor {
           ctx.beginPath();
           ctx.rect(0, 0, bw, bh);
           ctx.clip();
-          ctx.fillStyle = '#000';
-          ctx.fillRect(0, 0, bw, bh);
           if (inner && inner.kind.type !== 'split') this.drawSource(inner, event, now, bw, bh);
           if (k.border) {
             ctx.strokeStyle = k.borderColor;
@@ -243,6 +244,21 @@ export class ProgramCompositor {
       case 'camera': {
         const m = this.media.get(src.id);
         if (!m || m.failed) return this.safeScreen(event, 'failure', w, h);
+        if (src.key.enabled) {
+          // Green screen: key the frame on the graphics card, then draw the keyed copy.
+          const el = m.el;
+          const iw = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
+          const ih = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
+          let keyer = this.keyers.get(src.id);
+          if (!keyer) {
+            keyer = new ChromaKeyer();
+            this.keyers.set(src.id, keyer);
+          }
+          if (keyer.works && (el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete) && keyer.draw(el, iw, ih, src.key)) {
+            this.fit(keyer.canvas, src.fit, w, h);
+            return;
+          }
+        }
         this.fit(m.el, src.fit, w, h);
         return;
       }
@@ -250,10 +266,10 @@ export class ProgramCompositor {
   }
 
   /** Draw a picture filling the frame (contain: whole picture; cover: no bars). */
-  private fit(el: HTMLVideoElement | HTMLImageElement, fit: Source['fit'], w: number, h: number) {
-    const iw = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
-    const ih = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
-    const ready = el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete;
+  private fit(el: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement, fit: Source['fit'], w: number, h: number) {
+    const iw = el instanceof HTMLVideoElement ? el.videoWidth : el instanceof HTMLImageElement ? el.naturalWidth : el.width;
+    const ih = el instanceof HTMLVideoElement ? el.videoHeight : el instanceof HTMLImageElement ? el.naturalHeight : el.height;
+    const ready = el instanceof HTMLVideoElement ? el.readyState >= 2 : el instanceof HTMLImageElement ? el.complete : true;
     if (!ready || !iw || !ih) return;
     const scale = fit === 'cover' ? Math.max(w / iw, h / ih) : Math.min(w / iw, h / ih);
     const dw = iw * scale;

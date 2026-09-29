@@ -11,6 +11,7 @@ import { TextEditor } from './TextEditor';
 import { SplitEditor } from './SplitEditor';
 import { SlideshowEditor } from './SlideshowEditor';
 import { SaveToLibrary } from './LibraryDialog';
+import { GreenScreenDialog } from './GreenScreenDialog';
 import { inputItem } from '../engine/library';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
@@ -53,6 +54,8 @@ export function InputGrid({
   const editingSplit = show.sources.find((x) => x.id === editing && x.kind.type === 'split');
   const editingSlides = show.sources.find((x) => x.id === editing && x.kind.type === 'slideshow');
   const [keeping, setKeeping] = useState<string | null>(null);
+  const [keying, setKeying] = useState<string | null>(null);
+  const keySource = show.sources.find((x) => x.id === keying);
   const keepSource = show.sources.find((x) => x.id === keeping);
   const textOnly = screen === 'monitor';
   return (
@@ -105,7 +108,14 @@ export function InputGrid({
               ⋯
             </button>
             {menu === src.id && (
-              <TileMenu source={src} act={act} onClose={() => setMenu(null)} onEditText={() => setEditing(src.id)} onKeep={() => setKeeping(src.id)} />
+              <TileMenu
+                source={src}
+                act={act}
+                onClose={() => setMenu(null)}
+                onEditText={() => setEditing(src.id)}
+                onKeep={() => setKeeping(src.id)}
+                onKey={() => setKeying(src.id)}
+              />
             )}
           </div>
         );
@@ -115,6 +125,7 @@ export function InputGrid({
         Add input
       </button>
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
+      {keySource && <GreenScreenDialog show={show} source={keySource} act={act} client={client} onClose={() => setKeying(null)} />}
       {keepSource && <SaveToLibrary client={client} item={inputItem(keepSource, '')} onClose={() => setKeeping(null)} />}
       {editingSlides && <SlideshowEditor source={editingSlides} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingSplit && <SplitEditor source={editingSplit} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
@@ -122,7 +133,21 @@ export function InputGrid({
   );
 }
 
-function TileMenu({ source, act, onClose, onEditText, onKeep }: { source: Source; act: Act; onClose: () => void; onEditText: () => void; onKeep: () => void }) {
+function TileMenu({
+  source,
+  act,
+  onClose,
+  onEditText,
+  onKeep,
+  onKey,
+}: {
+  source: Source;
+  act: Act;
+  onClose: () => void;
+  onEditText: () => void;
+  onKeep: () => void;
+  onKey: () => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [confirm, setConfirm] = useState(false);
   // Everything is changed here first and applied on Done; clicking away or Esc cancels.
@@ -225,6 +250,18 @@ function TileMenu({ source, act, onClose, onEditText, onKeep }: { source: Source
       >
         Save to library…
       </button>
+      {(k === 'camera' || k === 'video' || k === 'image') && (
+        <button
+          type="button"
+          className={`btn menu__wide${source.key.enabled ? ' is-on' : ''}`}
+          onClick={() => {
+            onClose();
+            onKey();
+          }}
+        >
+          Green screen{source.key.enabled ? ' (on)' : ''}…
+        </button>
+      )}
       <div className="menu__foot">
         <button type="button" className="btn" onClick={onClose}>
           Cancel

@@ -125,4 +125,10 @@ they opened.
     inputs, presets and runs of show kept on this computer in library.json,
     categories and search, use in any event (links to missing inputs left
     out), export / import to a .lumora-library file).
+    Green screen: **done** (`Source.key`, a `ChromaKey` on cameras, videos and
+    pictures; `app/src/engine/chroma.ts` keys by chroma distance in a WebGL
+    shader, with soft edge and green-spill removal, on the screens and in the
+    recorder's compositor; `GreenScreenDialog.tsx`: pick the colour from the
+    picture, preview over any input, "make a scene" adds a split with the
+    keyed input over a background).
 11. Installer, auto-update, rehearsal / soak testing, release.

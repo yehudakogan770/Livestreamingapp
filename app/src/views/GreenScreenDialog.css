@@ -1,0 +1,78 @@
+.gs {
+  width: min(1180px, calc(100vw - 48px));
+}
+.gs__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  min-height: 0;
+  overflow: auto;
+}
+.gs__main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+.gs__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #000;
+}
+.gs__stage--checker {
+  background: repeating-conic-gradient(#3a3f49 0 25%, #2a2e36 0 50%) 0 0 / 24px 24px;
+}
+.gs__stage.is-picking {
+  cursor: crosshair;
+  outline: 2px solid var(--accent);
+}
+.gs__subject {
+  position: absolute;
+  inset: 0;
+}
+.gs__hint {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  font-size: 12px;
+  pointer-events: none;
+}
+.gs__props {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-left: 1px solid var(--border);
+}
+.gs__props input[type='range'] {
+  accent-color: var(--accent);
+}
+.gs__colours {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.gs__colours .seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gs__colours i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.gs__colours input[type='color'] {
+  width: 40px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+}

@@ -6,6 +6,8 @@ import { syncMedia } from '../engine/mediaSync';
 import { useStage } from '../engine/CountdownContext';
 import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
+import { ChromaKeyer } from '../engine/chroma';
+import type { ChromaKey } from '../engine/types/ChromaKey';
 import { PesukimView } from './PesukimView';
 import { TextView } from './TextView';
 import { CreditsView } from './CreditsView';
@@ -51,6 +53,21 @@ const Who = createContext<{ id: string; name: string; kind: Source['kind']['type
 function SourceBody({ source, client, thumb = false, reportDuration = false, audience = false }: SourceViewProps) {
   const fit = source.fit === 'cover' ? 'cover' : 'contain';
   const k = source.kind;
+  const keyed = source.key.enabled && (k.type === 'image' || k.type === 'camera' || k.type === 'video');
+  if (keyed) {
+    // Green screen: the picture is drawn through the keyer.
+    return (
+      <Keyed keyCfg={source.key} fit={fit} audience={audience}>
+        <SourceBody
+          source={{ ...source, key: { ...source.key, enabled: false } }}
+          client={client}
+          thumb={thumb}
+          reportDuration={reportDuration}
+          audience={audience}
+        />
+      </Keyed>
+    );
+  }
   switch (k.type) {
     case 'color':
       return <div style={{ ...fill, background: k.color }} data-kind="color" />;
@@ -150,7 +167,6 @@ function SplitInput({ source, client, thumb, audience }: { source: Source; clien
               width: `${b.frame.w}%`,
               height: `${b.frame.h}%`,
               overflow: 'hidden',
-              background: '#000',
               boxShadow: sp.border ? `inset 0 0 0 2px ${sp.borderColor}` : undefined,
               transition: 'left 0.5s ease, top 0.5s ease, width 0.5s ease, height 0.5s ease',
             }}
@@ -193,6 +209,56 @@ export function SafeScreenView({ reason = 'failure' }: { reason?: 'failure' | 'p
   return (
     <div style={{ ...fill, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }} data-failed>
       {logo && stage && <img src={stage.mediaUrl(logo)} alt="" draggable={false} style={{ maxWidth: '50%', maxHeight: '50%', objectFit: 'contain' }} />}
+    </div>
+  );
+}
+
+/**
+ * Green screen: the video or picture inside is hidden and drawn again on a
+ * canvas with its key colour taken out, every frame, on the graphics card.
+ * Without WebGL the picture shows as it is (and the operator is told).
+ */
+function Keyed({ keyCfg, fit, audience, children }: { keyCfg: ChromaKey; fit: 'cover' | 'contain'; audience: boolean; children: React.ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
+  const [works, setWorks] = useState(true);
+  const latest = useRef(keyCfg);
+  latest.current = keyCfg;
+  const who = useContext(Who);
+  useReportProblem(
+    !works && !audience && who
+      ? {
+          key: `key:${who.id}`,
+          level: 'warning',
+          title: `${who.name}: green screen can’t work on this computer`,
+          detail: 'It needs the graphics card (WebGL), which isn’t available here, so the picture shows with its green.',
+          fix: 'On Windows this works on almost every computer; update the graphics driver if it doesn’t.',
+          sourceId: who.id,
+        }
+      : null,
+  );
+  useEffect(() => {
+    const c = canvas.current;
+    if (!c) return;
+    const keyer = new ChromaKeyer(c);
+    if (!keyer.works) {
+      setWorks(false);
+      return;
+    }
+    let id = 0;
+    const frame = () => {
+      const el = box.current?.querySelector('video, img');
+      if (el instanceof HTMLVideoElement && el.readyState >= 2) keyer.draw(el, el.videoWidth, el.videoHeight, latest.current);
+      else if (el instanceof HTMLImageElement && el.complete) keyer.draw(el, el.naturalWidth, el.naturalHeight, latest.current);
+      id = requestAnimationFrame(frame);
+    };
+    id = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(id);
+  }, []);
+  return (
+    <div ref={box} className={works ? 'keyed' : undefined} style={fill}>
+      {children}
+      <canvas ref={canvas} style={{ ...fill, objectFit: fit, pointerEvents: 'none' }} />
     </div>
   );
 }
