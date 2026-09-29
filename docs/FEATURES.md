@@ -393,7 +393,7 @@ inputs (the page itself), stream inputs from internet addresses, and streaming o
 5. 🔶 **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs). YouTube and Twitch done; ⬜ Facebook.
 6. 🔶 **Audio filters** — noise suppression, noise gate, compressor, limiter,
    EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter. ⬜ VST plugins.
-7. ⬜ **Instant replay** with slow motion and highlights reel (vMix, Wirecast).
+7. ✅ **Instant replay** with slow motion (vMix, Wirecast). ⬜ Highlights reel.
 8. ⬜ **Virtual camera** and **NDI in / out** (OBS, vMix, Ecamm).
 9. 🔶 **Song lyrics and Bible library** with presentations, themes, stage display
    of the next lines (ProPresenter). Done: songs and next lines on the stage monitor. ⬜ A Bible library.
@@ -401,8 +401,8 @@ inputs (the page itself), stream inputs from internet addresses, and streaming o
 11. ✅ **Stingers** (a video transition with a cut point) (vMix, OBS). ⬜ Luma wipes still to do.
 12. ✅ **Scoreboards and timers** (vMix, Wirecast). ⬜ Data from spreadsheets still to do.
 13. 🔶 **Animated title designer** with templates (vMix GT, Wirecast) — 6 designs and build-on done; a free-layout designer to come.
-14. ⬜ **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames).
-15. ⬜ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
+14. 🔶 **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames). Stats done (processor, memory, frames, dropped, data rates); ⬜ GPU, per-output size.
+15. ✅ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
 16. ✅ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
 17. 🔶 **Audience polls and Q&A** shown on screen (Zoom Events, Restream). Polls done; ⬜ Q&A.
 18. ✅ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
