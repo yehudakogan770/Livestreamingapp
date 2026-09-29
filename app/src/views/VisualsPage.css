@@ -1,0 +1,394 @@
+/* Stage visuals: a full-window page over the control screen. */
+.vis-modal {
+  padding: 12px;
+}
+.modal__box.vis {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+}
+.vis__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.vis__head h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.vis__spacer {
+  flex: 1 1 auto;
+}
+.vis__tempo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vis__bpm {
+  min-width: 84px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.vis__bpm b {
+  font-size: 22px;
+  color: var(--text);
+  margin-right: 3px;
+}
+.vis__dots {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 6px;
+}
+.vis__dots i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2c3038;
+}
+.vis__dots i.is-lit {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.vis__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(300px, 1.05fr) minmax(360px, 1.6fr) minmax(260px, 0.9fr);
+}
+.vis__left,
+.vis__mid,
+.vis__right {
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.vis__mid,
+.vis__right {
+  border-left: 1px solid var(--border);
+}
+.vis__live {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: #000;
+  flex: 0 0 auto;
+}
+.vis__air,
+.vis__now,
+.vis__mode {
+  position: absolute;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--text-dim);
+}
+.vis__air {
+  left: 8px;
+  top: 8px;
+}
+.vis__air.is-on {
+  background: var(--program);
+  color: #fff;
+}
+.vis__now {
+  left: 8px;
+  bottom: 8px;
+  color: #fff;
+}
+.vis__mode {
+  right: 8px;
+  bottom: 8px;
+}
+.vis__pads {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.vis__pad {
+  height: 48px;
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--button);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+}
+.vis__pad small {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+.vis__pad.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.vis__pad:active {
+  background: #e4e5e7;
+  color: #15171b;
+}
+.vis__pad:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.vis__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.vis__energy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.vis__energy input {
+  flex: 1 1 auto;
+  accent-color: var(--accent);
+}
+.vis__energy em {
+  font-style: normal;
+  min-width: 64px;
+  color: var(--text);
+}
+.vis__dim {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.vis__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.vis .btn.is-on {
+  border-color: var(--accent);
+  background: var(--accent-deep);
+  color: #fff;
+}
+.vis__slots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+.vis__slot {
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+  background: transparent;
+  color: var(--text-faint);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.vis__slot b {
+  font-size: 12px;
+}
+.vis__slot em {
+  font-style: normal;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.vis__slot.is-full {
+  border-style: solid;
+  background: var(--button);
+  color: #fff;
+}
+.vis__slot.is-saving {
+  border-color: var(--accent);
+}
+.vis__slot:disabled {
+  cursor: default;
+}
+.vis__banks {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.vis__bank {
+  height: 44px;
+  padding: 0 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: #fff;
+  cursor: pointer;
+  min-width: 0;
+}
+.vis__bank b {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.vis__bank em {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--text-faint);
+}
+.vis__bank.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.vis__desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  flex: 1 1 200px;
+}
+.vis .vis__favbtn.is-on {
+  border-color: #ffd166;
+  background: #3a2f12;
+  color: #ffd166;
+}
+.vis__scenes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  grid-auto-rows: 78px;
+  gap: 8px;
+  flex: 1 1 auto;
+  align-content: start;
+}
+.vis__scene {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+}
+.vis__scene.is-live {
+  border-color: var(--program);
+}
+.vis__pick {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.vis__pick:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.vis__badge {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--program);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.vis__star {
+  position: absolute;
+  right: 4px;
+  top: 3px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+  cursor: pointer;
+}
+.vis__star.is-on {
+  color: #ffd166;
+}
+.vis__name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 3px 6px;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+  pointer-events: none;
+}
+.vis__name em {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.6);
+}
+.vis__tabs {
+  display: flex;
+}
+.vis__tabs .seg {
+  flex: 1 1 0;
+}
+.vis__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.vis__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vis__group select,
+.vis__group .text {
+  width: 100%;
+}
+.vis__slider,
+.vis__select {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.vis__slider input {
+  accent-color: var(--accent);
+  width: 100%;
+}
+.vis__group .segs {
+  flex-wrap: wrap;
+}

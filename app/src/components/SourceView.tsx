@@ -11,6 +11,8 @@ import type { ChromaKey } from '../engine/types/ChromaKey';
 import { PesukimView } from './PesukimView';
 import { TextView } from './TextView';
 import { CreditsView } from './CreditsView';
+import { VisualsView } from './VisualsView';
+import { defaultVisuals } from '../engine/visuals';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 
 // ---- views ----
@@ -101,6 +103,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <SplitInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'pesukim':
       return <PesukimInput source={source} client={client} thumb={thumb} audience={audience} />;
+    case 'visuals':
+      return <VisualsInput thumb={thumb} audience={audience} />;
     case 'countdown':
       return <CountdownInput timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':
@@ -212,6 +216,36 @@ export function SafeScreenView({ reason = 'failure' }: { reason?: 'failure' | 'p
     </div>
   );
 }
+
+/** The stage visuals, from the show (all visuals inputs show the same). */
+function VisualsInput({ thumb, audience }: { thumb: boolean; audience: boolean }) {
+  const stage = useStage();
+  const who = useContext(Who);
+  const [failed, setFailed] = useState(false);
+  useReportProblem(
+    failed && !audience && who
+      ? {
+          key: `visuals:${who.id}`,
+          level: 'warning',
+          title: 'Stage visuals can’t be drawn on this computer',
+          detail: 'They need the graphics card (WebGL), which isn’t available here.',
+          fix: 'Update the graphics driver; on Windows this works on almost every computer.',
+          sourceId: who.id,
+        }
+      : null,
+  );
+  const logo = stage?.event.logo;
+  return (
+    <VisualsView
+      v={stage?.visuals ?? DEFAULT_VISUALS}
+      logoUrl={logo ? stage.mediaUrl(logo) : null}
+      thumb={thumb}
+      audience={audience}
+      onFail={() => setFailed(true)}
+    />
+  );
+}
+const DEFAULT_VISUALS = defaultVisuals();
 
 /**
  * Green screen: the video or picture inside is hidden and drawn again on a

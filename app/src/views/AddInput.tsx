@@ -30,6 +30,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'credits', name: 'Credits / thank-you', hint: 'Rolling names at the end' },
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
+  { kind: 'visuals', name: 'Stage visuals', hint: 'Music visuals on the beat, for the Back Screen' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
@@ -130,6 +131,8 @@ export function AddInput({
           : null;
       case 'pattern':
         return { name: n || 'Test pattern', kind: { type: 'pattern' } };
+      case 'visuals':
+        return { name: n || 'Stage visuals', kind: { type: 'visuals' } };
       case 'countdown':
         return { name: n || 'Countdown', kind: { type: 'countdown', background: color, timer: defaultCountdown() } };
       case 'text': {

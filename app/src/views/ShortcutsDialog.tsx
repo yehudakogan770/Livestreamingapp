@@ -24,6 +24,18 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     ],
   },
   {
+    title: 'Stage visuals (while its page is open)',
+    keys: [
+      ['1 – 9, 0', 'Start scene 1 – 10 of the music type shown'],
+      ['Shift + 1 – 9, 0 · ↑ ↓', 'Choose the music type'],
+      ['Space · →  /  ←', 'Next / previous scene'],
+      ['T · S · + −', 'Tap tempo · Sync to 1 · Faster / slower'],
+      ['Z (hold) · X · B', 'Strobe · Flash · Blackout'],
+      ['Q · I · L', 'Freeze · Invert · Text on / off'],
+      ['R · E · C', 'Randomize · Reset effects · Next colours'],
+    ],
+  },
+  {
     title: 'Safety',
     keys: [['Double-click PANIC', 'Everything black (or your logo); one click brings it back']],
   },

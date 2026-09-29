@@ -16,6 +16,7 @@ use crate::slideshow::Slideshow;
 use crate::split::Split;
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 use crate::text::TextInput;
+use crate::visuals::{SceneRef, VisualsPatch};
 
 /// A new source as requested by the UI. The engine fills in and cleans up the
 /// rest (id, limits, play state).
@@ -378,6 +379,32 @@ pub enum Action {
     UpdateText {
         id: SourceId,
         text: TextInput,
+    },
+
+    // ----- stage visuals -----
+    /// Start a scene (on the next beat or bar, as set).
+    VisualsScene {
+        scene: SceneRef,
+    },
+    /// Next (1) or previous (-1) scene in the same music type.
+    VisualsStep {
+        #[ts(type = "number")]
+        step: i64,
+    },
+    VisualsTempo {
+        bpm: f64,
+    },
+    /// Now is beat 1.
+    VisualsSync,
+    /// One white flash.
+    VisualsFlash,
+    UpdateVisuals {
+        patch: VisualsPatch,
+    },
+    /// Keep the scene and effects in a slot (0 – 7), or bring them back.
+    VisualsLook {
+        slot: usize,
+        store: bool,
     },
 
     // ----- slideshow -----

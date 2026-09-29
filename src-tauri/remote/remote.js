@@ -190,6 +190,18 @@
     return SOUND_EXT.includes(path.split('.').pop()?.toLowerCase() ?? '');
   }
 
+  /** Stage visuals scene names, fetched once: [music type][scene] → name. @type {string[][]} */
+  let sceneNames = [];
+  fetch('banks.json')
+    .then((r) => r.json())
+    .then((/** @type {{ banks: { name: string, scenes: [string][] }[] }} */ lib) => {
+      sceneNames = lib.banks.map((b) => b.scenes.map((s) => `${b.name} · ${s[0]}`));
+      if (show) render();
+    })
+    .catch(() => undefined);
+  /** @type {number[]} */
+  let taps = [];
+
   /** @param {string | null} id */
   function kindOf(id) {
     return source(id)?.kind.type ?? null;
@@ -312,6 +324,18 @@
       $('sli-tag').textContent = sliId === sc.program ? 'ON AIR' : 'NEXT';
       $('sli-tag').className = sliId === sc.program ? 'tag tag--air' : 'tag tag--next';
       $('sli-where').textContent = `Slide ${Math.min(sli.current + 1, sli.slides.length)} of ${sli.slides.length}`;
+    }
+
+    // Stage visuals on air (or in Next) here: next scene, tempo, flash.
+    const visId = kindOf(sc.program) === 'visuals' ? sc.program : kindOf(sc.preview) === 'visuals' ? sc.preview : null;
+    $('vis').hidden = !visId;
+    if (visId) {
+      const v = show.visuals;
+      $('vis-tag').textContent = visId === sc.program ? 'ON AIR' : 'NEXT';
+      $('vis-tag').className = visId === sc.program ? 'tag tag--air' : 'tag tag--next';
+      $('vis-where').textContent = `${sceneNames[v.scene.bank]?.[v.scene.scene] ?? `Scene ${v.scene.scene + 1}`} · ${Math.round(v.bpm)} BPM`;
+      $('vis-black').classList.toggle('is-on', v.blackout);
+      $('vis-looks').innerHTML = v.looks.map((l, i) => (l ? `<button type="button" class="btn" data-look="${i}">Look ${i + 1}</button>` : '')).join('');
     }
 
     // The 12 Pesukim, when on air (or in Next) here: one big button for the next word.
@@ -518,6 +542,21 @@
     on('sli-back', () => {
       const id = sliId();
       if (id) void send({ type: 'slidePrevious', id });
+    });
+    on('vis-go', () => void send({ type: 'visualsStep', step: 1 }));
+    on('vis-sync', () => void send({ type: 'visualsSync' }));
+    on('vis-flash', () => void send({ type: 'visualsFlash' }));
+    on('vis-black', () => void send({ type: 'updateVisuals', patch: { blackout: !show?.visuals.blackout } }));
+    on('vis-tap', () => {
+      // Tap along: the tempo is worked out here, from the taps' spacing.
+      const t = performance.now();
+      if (taps.length && t - (taps[taps.length - 1] ?? 0) > 2000) taps = [];
+      taps = [...taps, t].slice(-8);
+      if (taps.length >= 3) void send({ type: 'visualsTempo', bpm: 60000 / ((t - (taps[0] ?? t)) / (taps.length - 1)) });
+    });
+    $('vis-looks').addEventListener('click', (e) => {
+      const el = /** @type {HTMLElement} */ (e.target).closest('[data-look]');
+      if (el) void send({ type: 'visualsLook', slot: Number(/** @type {HTMLElement} */ (el).dataset.look), store: false });
     });
     on('sli-first', () => {
       const id = sliId();

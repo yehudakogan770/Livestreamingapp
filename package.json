@@ -14,8 +14,11 @@
     "check": "npm run typecheck && npm run test && cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace"
   },
   "dependencies": {
+    "@fontsource/bebas-neue": "^5.3.0",
+    "@fontsource/chakra-petch": "^5.3.0",
     "@fontsource/david-libre": "^5.3.0",
     "@fontsource/frank-ruhl-libre": "^5.3.0",
+    "@fontsource/great-vibes": "^5.3.0",
     "@fontsource/heebo": "^5.3.0",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.8.0",

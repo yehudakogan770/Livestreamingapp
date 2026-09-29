@@ -111,6 +111,7 @@ impl Engine {
             .map(|src| src.id.clone())
             .collect();
         let cue_due = self.show.run.due(now);
+        let visuals_due = self.show.visuals.due(now);
         let slides_due: Vec<SourceId> = self
             .show
             .sources
@@ -128,6 +129,7 @@ impl Engine {
             && words_due.is_empty()
             && overlays_due.is_empty()
             && slides_due.is_empty()
+            && !visuals_due
         {
             return Outcome::Unchanged;
         }
@@ -145,6 +147,9 @@ impl Engine {
         }
         for id in &slides_due {
             let _ = apply_slideshow(&mut next, Action::SlideNext { id: id.clone() }, now);
+        }
+        if visuals_due {
+            next.visuals.auto_change(now);
         }
         for &i in &overlays_due {
             next.overlays[i].set_on(false, now);
@@ -278,6 +283,7 @@ pub(crate) fn can_be_behind(kind: &SourceKind) -> bool {
             | SourceKind::Image { .. }
             | SourceKind::Color { .. }
             | SourceKind::Pattern
+            | SourceKind::Visuals
     )
 }
 
@@ -369,6 +375,35 @@ fn go_to_slide(s: &mut Show, id: &SourceId, index: usize, now: Millis) -> Result
 }
 
 /// The slideshow actions.
+fn apply_visuals(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    let v = &mut s.visuals;
+    match action {
+        Action::VisualsScene { scene } => {
+            if !scene.exists() {
+                return Err(ActionError::invalid("scene", "there is no such scene"));
+            }
+            v.launch(scene, now);
+        }
+        Action::VisualsStep { step } => v.step(step.signum(), now),
+        Action::VisualsTempo { bpm } => v.set_bpm(finite(bpm, "bpm")?, now),
+        Action::VisualsSync => v.sync_to_one(now),
+        Action::VisualsFlash => v.flash_at = now,
+        Action::UpdateVisuals { patch } => v.apply_patch(patch, now),
+        Action::VisualsLook { slot, store } => {
+            if slot >= crate::visuals::LOOK_SLOTS {
+                return Err(ActionError::invalid("slot", "there are 8 looks"));
+            }
+            if store {
+                v.store_look(slot);
+            } else if !v.recall_look(slot, now) {
+                return Err(ActionError::invalid("slot", "nothing is saved there"));
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 fn apply_slideshow(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     match action {
         Action::SlideNext { id } => {
@@ -1035,6 +1070,13 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             src.kind = SourceKind::Text(Box::new(t));
             Ok(())
         }
+        a @ (Action::VisualsScene { .. }
+        | Action::VisualsStep { .. }
+        | Action::VisualsTempo { .. }
+        | Action::VisualsSync
+        | Action::VisualsFlash
+        | Action::UpdateVisuals { .. }
+        | Action::VisualsLook { .. }) => apply_visuals(s, a, now),
         a @ (Action::SetOverlaySource { .. }
         | Action::UpdateOverlay { .. }
         | Action::SetOverlayOn { .. }
@@ -1578,6 +1620,7 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
             color: clean_color(&color)?,
         },
         SourceKind::Pattern => SourceKind::Pattern,
+        SourceKind::Visuals => SourceKind::Visuals,
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
         SourceKind::Slideshow(mut sh) => {
             sh.current = 0;

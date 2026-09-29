@@ -27,6 +27,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   credits: 'Credits',
   split: 'Split screen',
   slideshow: 'Slideshow',
+  visuals: 'Stage visuals',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */

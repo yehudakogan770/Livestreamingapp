@@ -10,7 +10,7 @@ import type { Act } from './act';
 import './SplitEditor.css';
 import './TextEditor.css';
 
-const CAN_GO_IN = ['camera', 'video', 'image', 'color', 'pattern', 'countdown', 'text', 'pesukim', 'credits'];
+const CAN_GO_IN = ['camera', 'video', 'image', 'color', 'pattern', 'countdown', 'text', 'pesukim', 'credits', 'visuals'];
 
 /** Choose the layout and what goes in each box. */
 export function SplitPicker({ split, sources, onChange }: { split: Split; sources: Source[]; onChange: (s: Split) => void }) {

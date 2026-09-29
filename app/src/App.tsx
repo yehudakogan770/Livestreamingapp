@@ -190,6 +190,17 @@ function ControlApp() {
             disabled: !run?.cues.length,
           },
     ];
+    const vis = show?.visuals;
+    const visuals: MenuItem[] = [
+      { label: 'Stage visuals…', onClick: () => sendCommand({ type: 'visuals' }) },
+      null,
+      { label: 'Next scene', onClick: () => void client.dispatch({ type: 'visualsStep', step: 1 }).catch(fail) },
+      { label: 'One flash', onClick: () => void client.dispatch({ type: 'visualsFlash' }).catch(fail) },
+      {
+        label: vis?.blackout ? 'Bring the visuals back' : 'Visuals to black',
+        onClick: () => void client.dispatch({ type: 'updateVisuals', patch: { blackout: !vis?.blackout } }).catch(fail),
+      },
+    ];
     const help: MenuItem[] = [{ label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) }];
     return {
       Event: event,
@@ -202,10 +213,26 @@ function ControlApp() {
       Slideshow: slideshow,
       '12 Pesukim': pesukimMenu,
       Timer: timer,
+      Visuals: visuals,
       Settings: settings,
       Help: help,
     };
-  }, [files, open, saveAs, textSize, remote, openBroadcast, show?.sources, show?.overlays, show?.presets.length, show?.run, controlling, client, fail]);
+  }, [
+    files,
+    open,
+    saveAs,
+    textSize,
+    remote,
+    openBroadcast,
+    show?.sources,
+    show?.overlays,
+    show?.presets.length,
+    show?.run,
+    show?.visuals,
+    controlling,
+    client,
+    fail,
+  ]);
 
   return (
     <div className="app">
@@ -219,7 +246,7 @@ function ControlApp() {
         {show ? (
           <SafeBoundary audience={false}>
             <SoundProvider show={show} client={client}>
-              <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources }}>
+              <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals }}>
                 <BroadcastProvider show={show} client={client}>
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
@@ -241,7 +268,7 @@ function ControlApp() {
         )}
       </main>
       {showSetup && show && (
-        <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources }}>
+        <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals }}>
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
       )}

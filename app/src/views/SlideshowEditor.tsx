@@ -10,8 +10,8 @@ import './SlideshowEditor.css';
 import './TextEditor.css';
 import './PesukimCard.css';
 
-const AS_SLIDE = ['camera', 'video', 'image', 'color', 'pattern', 'countdown', 'text', 'pesukim', 'credits', 'split'];
-const BEHIND = ['camera', 'video', 'image', 'color', 'pattern'];
+const AS_SLIDE = ['camera', 'video', 'image', 'color', 'pattern', 'countdown', 'text', 'pesukim', 'credits', 'split', 'visuals'];
+const BEHIND = ['camera', 'video', 'image', 'color', 'pattern', 'visuals'];
 
 /** The slides (add, reorder, remove) and how the slideshow looks. */
 export function SlideshowSetup({

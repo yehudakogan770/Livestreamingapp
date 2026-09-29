@@ -42,14 +42,14 @@ export function OutputView({ screen }: { screen: ScreenId }) {
   return (
     <div className="output" onDoubleClick={toggleFull}>
       <SafeBoundary audience>
-        <StageContext.Provider value={show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources } : null}>
-        {show &&
-          (screen === 'monitor' ? (
-            <MonitorScreen show={show} />
-          ) : (
-            // Only the Live output plays sound; it is the one that goes to the stream.
-            <ProgramView show={show} screen={screen} client={client} audience />
-          ))}
+        <StageContext.Provider value={show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals } : null}>
+          {show &&
+            (screen === 'monitor' ? (
+              <MonitorScreen show={show} />
+            ) : (
+              // Only the Live output plays sound; it is the one that goes to the stream.
+              <ProgramView show={show} screen={screen} client={client} audience />
+            ))}
         </StageContext.Provider>
       </SafeBoundary>
     </div>

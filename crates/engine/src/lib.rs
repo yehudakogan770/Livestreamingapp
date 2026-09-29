@@ -26,6 +26,7 @@ pub mod split;
 pub mod stage;
 pub mod text;
 pub mod timing;
+pub mod visuals;
 
 pub use action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
 pub use audio::{

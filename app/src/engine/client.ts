@@ -4,6 +4,7 @@
 // UI is opened in a plain browser (design work, UI tests), a demo engine that
 // follows the same rules is used so every screen can be tried out.
 
+import { defaultVisuals } from './visuals';
 import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
 import type { ScreenId } from './types/ScreenId';
@@ -255,6 +256,7 @@ export function emptyShow(): Show {
     },
     run: emptyRun(),
     overlays: channels(),
+    visuals: defaultVisuals(),
     settings: {
       displays: { live: null, back: null, monitor: null },
       autoPlayOnTake: true,

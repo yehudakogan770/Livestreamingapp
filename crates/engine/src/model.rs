@@ -202,6 +202,8 @@ pub enum SourceKind {
     Split(Box<crate::split::Split>),
     /// A slideshow: pictures, PDF pages and other inputs as slides.
     Slideshow(Box<crate::slideshow::Slideshow>),
+    /// The stage visuals (one shared state in `Show.visuals`).
+    Visuals,
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,
@@ -404,6 +406,10 @@ pub struct Show {
     /// Overlay channels 1 – 4 (always four).
     #[serde(default = "crate::overlays::channels")]
     pub overlays: Vec<crate::overlays::Overlay>,
+    /// The stage visuals: tempo, scene and effects, drawn by every
+    /// Stage visuals input.
+    #[serde(default)]
+    pub visuals: crate::visuals::Visuals,
     pub settings: Settings,
 }
 
@@ -431,6 +437,7 @@ impl Default for Show {
             monitor: Monitor::default(),
             run: crate::cues::RunOfShow::default(),
             overlays: crate::overlays::channels(),
+            visuals: crate::visuals::Visuals::default(),
             settings: Settings::default(),
         }
     }

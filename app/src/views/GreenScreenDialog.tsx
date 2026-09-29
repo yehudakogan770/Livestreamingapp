@@ -12,7 +12,7 @@ const COLOURS = [
   { name: 'Green screen', color: '#00b140' },
   { name: 'Blue screen', color: '#0047bb' },
 ];
-const BEHIND = ['camera', 'video', 'image', 'color', 'pattern', 'slideshow'];
+const BEHIND = ['camera', 'video', 'image', 'color', 'pattern', 'slideshow', 'visuals'];
 
 /**
  * Green screen for a camera, video or picture: turn it on, pick the colour

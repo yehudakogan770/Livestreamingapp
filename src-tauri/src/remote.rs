@@ -39,6 +39,8 @@ const PING: Duration = Duration::from_secs(10);
 const PAGE: &str = include_str!("../remote/index.html");
 const SCRIPT: &str = include_str!("../remote/remote.js");
 const STYLE: &str = include_str!("../remote/remote.css");
+/// Scene names for the stage visuals (the same file the screens use).
+const BANKS: &str = include_str!("../../app/src/visuals/banks.json");
 
 /// What the remote needs from the app.
 pub trait Backend: Send + Sync + 'static {
@@ -93,6 +95,14 @@ pub struct RemoteStatus {
 /// Can a phone do this? Only running the show: nothing that adds, removes
 /// or rearranges, and nothing about this computer's settings.
 pub fn allowed(action: &Action) -> bool {
+    // Of the visuals settings, a phone may only black them out.
+    if let Action::UpdateVisuals { patch } = action {
+        return *patch
+            == lumora_engine::visuals::VisualsPatch {
+                blackout: patch.blackout,
+                ..Default::default()
+            };
+    }
     matches!(
         action,
         Action::SetPreview { .. }
@@ -134,6 +144,12 @@ pub fn allowed(action: &Action) -> bool {
             | Action::PesukimGo { .. }
             | Action::PesukimWhole { .. }
             | Action::PesukimBlank { .. }
+            | Action::VisualsScene { .. }
+            | Action::VisualsStep { .. }
+            | Action::VisualsTempo { .. }
+            | Action::VisualsSync
+            | Action::VisualsFlash
+            | Action::VisualsLook { store: false, .. }
     )
 }
 
@@ -447,6 +463,7 @@ fn handle(shared: &Shared, mut request: Request) {
             respond(request, 200, "text/javascript; charset=utf-8", SCRIPT)
         }
         (Method::Get, "/remote.css") => respond(request, 200, "text/css; charset=utf-8", STYLE),
+        (Method::Get, "/banks.json") => respond(request, 200, "application/json", BANKS),
         (method, "/api/check" | "/api/show" | "/api/events" | "/api/action") => {
             if !authorised(shared, &request, query) {
                 // Slow down anyone guessing.
@@ -606,6 +623,34 @@ mod tests {
             .map(|(_, b)| b.to_owned())
             .unwrap_or_default();
         (status, body)
+    }
+
+    #[test]
+    fn a_phone_may_black_out_the_visuals_but_not_change_their_settings() {
+        use lumora_engine::visuals::VisualsPatch;
+        let black = Action::UpdateVisuals {
+            patch: VisualsPatch {
+                blackout: Some(true),
+                ..VisualsPatch::default()
+            },
+        };
+        assert!(allowed(&black));
+        let more = Action::UpdateVisuals {
+            patch: VisualsPatch {
+                blackout: Some(true),
+                strobe: Some(true),
+                ..VisualsPatch::default()
+            },
+        };
+        assert!(!allowed(&more));
+        assert!(allowed(&Action::VisualsLook {
+            slot: 0,
+            store: false
+        }));
+        assert!(!allowed(&Action::VisualsLook {
+            slot: 0,
+            store: true
+        }));
     }
 
     #[test]

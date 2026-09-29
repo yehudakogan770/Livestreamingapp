@@ -131,4 +131,15 @@ they opened.
     recorder's compositor; `GreenScreenDialog.tsx`: pick the colour from the
     picture, preview over any input, "make a scene" adds a split with the
     keyed input over a background).
+    Stage visuals: **done** (`crates/engine/src/visuals.rs`: one shared state in
+    `Show.visuals` — tempo and beat anchor, scene and fade, effects, text,
+    logo, 8 saved looks, favourites, safe mode; autopilot changes scene on
+    the heartbeat. The 13 music types / 261 scenes live in
+    `app/src/visuals/banks.json`, read by the engine, the screens and the
+    phone. `app/src/visuals/` holds the original shaders unchanged, a typed
+    renderer and the player (engine state + clock → frame), so every window
+    and the recorder draw the same beat. A `visuals` input shows it on any
+    screen; `VisualsPage.tsx` is the control page with the live keyboard;
+    the phone has next / tap / sync / flash / blackout / looks).
+    Still to come for visuals: MIDI keyboard control and "listen to the room".
 11. Installer, auto-update, rehearsal / soak testing, release.

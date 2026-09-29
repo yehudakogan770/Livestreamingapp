@@ -21,7 +21,7 @@ const TEXT_COLOURS = [
   { name: 'Light blue', color: '#9fe0ff' },
 ];
 const FONTS = ['Frank Ruhl Libre', 'David Libre', 'Heebo'];
-const BEHIND_KINDS = ['camera', 'video', 'image', 'color', 'pattern'];
+const BEHIND_KINDS = ['camera', 'video', 'image', 'color', 'pattern', 'visuals'];
 
 /** Type or paste the twelve pesukim and the children's names, and choose the look. Applied on Done. */
 export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; id: string; act: Act; onClose: () => void; client?: EngineClient }) {

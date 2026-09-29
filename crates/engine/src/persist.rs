@@ -156,6 +156,9 @@ pub fn repair(mut s: Show) -> Show {
     repair_sound(&mut s);
     repair_presets(&mut s);
     repair_stage(&mut s);
+    s.visuals.repair();
+    // A held strobe never survives a restart.
+    s.visuals.strobe = false;
 
     s.transition = s.transition.clamped();
     if !s.master_volume.is_finite() {

@@ -24,6 +24,7 @@ import type { Countdown } from './types/Countdown';
 import type { Preset } from './types/Preset';
 import type { Step } from './types/Step';
 import { mainCountdown } from './countdowns';
+import * as vis from './visuals';
 
 const MIN_TRANSITION_MS = 100;
 const MAX_COUNTDOWN_MS = 24 * 60 * 60 * 1000;
@@ -250,7 +251,8 @@ function apply(s: Show, a: Action, now: number) {
         src.kind.logo = p.logo.trim() ? p.logo : undefined;
       }
       if (p.key !== undefined) {
-        if (!['camera', 'video', 'image'].includes(src.kind.type)) throw new Refused({ code: 'invalidValue', field: 'key', reason: 'green screen works on cameras, videos and pictures' });
+        if (!['camera', 'video', 'image'].includes(src.kind.type))
+          throw new Refused({ code: 'invalidValue', field: 'key', reason: 'green screen works on cameras, videos and pictures' });
         src.key = { ...p.key };
       }
       if (p.audio !== undefined) {
@@ -700,7 +702,7 @@ function apply(s: Show, a: Action, now: number) {
         if (b !== null) {
           const src = s.sources.find((x) => x.id === b);
           if (!src) throw new Refused({ code: 'unknownSource', id: b });
-          if (b === a.id || !['camera', 'video', 'image', 'color', 'pattern'].includes(src.kind.type))
+          if (b === a.id || !['camera', 'video', 'image', 'color', 'pattern', 'visuals'].includes(src.kind.type))
             throw new Refused({
               code: 'invalidValue',
               field: 'behind',
@@ -713,6 +715,33 @@ function apply(s: Show, a: Action, now: number) {
       repairPesukim(p);
       return;
     }
+    case 'visualsScene':
+      if (!vis.sceneExists(a.scene)) throw new Refused({ code: 'invalidValue', field: 'scene', reason: 'there is no such scene' });
+      vis.launch(s.visuals, a.scene, now);
+      return;
+    case 'visualsStep':
+      vis.step(s.visuals, a.step, now);
+      return;
+    case 'visualsTempo':
+      if (!Number.isFinite(a.bpm)) throw new Refused({ code: 'invalidValue', field: 'bpm', reason: 'must be a number' });
+      vis.setBpm(s.visuals, a.bpm, now);
+      return;
+    case 'visualsSync':
+      vis.syncToOne(s.visuals, now);
+      return;
+    case 'visualsFlash':
+      s.visuals.flashAt = now;
+      return;
+    case 'updateVisuals':
+      vis.applyPatch(s.visuals, a.patch, now);
+      return;
+    case 'visualsLook':
+      try {
+        vis.look(s.visuals, a.slot, a.store, now);
+      } catch (e) {
+        throw new Refused({ code: 'invalidValue', field: 'slot', reason: e instanceof Error ? e.message : String(e) });
+      }
+      return;
     case 'countdownTo': {
       if (a.at <= now) throw new Refused({ code: 'invalidValue', field: 'at', reason: 'that time has already passed' });
       const left = countdownMs(a.at - now, 'at');
@@ -852,13 +881,15 @@ export function demoTick(show: Show, now: number): Show | null {
     .map(({ i }) => i);
   const slidesDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'slideshow' && slideDue(x.kind, now)).map((x) => x.id);
   const cue = cueDue(show.run, now);
-  if (due.length === 0 && cue === null && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0 && slidesDue.length === 0) return null;
+  const visualsDue = vis.visualsDue(show.visuals, now);
+  if (due.length === 0 && cue === null && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0 && slidesDue.length === 0 && !visualsDue) return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
   for (const id of due) atZero(next, id, now);
   if (cue !== null) fireCue(next, cue, now);
   if (stepsDue) runSteps(next, now);
   for (const id of wordsDue) nextWord(pesukimIn(next, id), now);
+  if (visualsDue) vis.autoChange(next.visuals, now);
   for (const i of overlaysDue) setOverlayOn(next.overlays[i]!, false, now);
   for (const id of slidesDue) {
     const i = nextSlideIndex(slideshowIn(next, id));

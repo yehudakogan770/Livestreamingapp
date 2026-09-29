@@ -11,6 +11,7 @@ import type { ScreenState } from "./ScreenState";
 import type { Settings } from "./Settings";
 import type { Source } from "./Source";
 import type { Transition } from "./Transition";
+import type { Visuals } from "./Visuals";
 
 /**
  * The whole show. This is the single source of truth.
@@ -65,4 +66,9 @@ run: RunOfShow,
 /**
  * Overlay channels 1 – 4 (always four).
  */
-overlays: Array<Overlay>, settings: Settings, };
+overlays: Array<Overlay>, 
+/**
+ * The stage visuals: tempo, scene and effects, drawn by every
+ * Stage visuals input.
+ */
+visuals: Visuals, settings: Settings, };

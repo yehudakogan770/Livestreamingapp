@@ -14,6 +14,8 @@ import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer } from '../engine/chroma';
+import { makeRenderer, type Renderer } from '../visuals/renderer';
+import { logoRect, VisualsPlayer } from '../visuals/player';
 import { isRtl, withAlpha } from '../engine/text';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
@@ -45,6 +47,8 @@ export class ProgramCompositor {
   private readonly keyers = new Map<string, ChromaKeyer>();
   private show: Show | null = null;
   private lastSync = 0;
+  /** The stage visuals, drawn once a frame at full size (null: not needed yet, false: no WebGL). */
+  private visuals: { canvas: HTMLCanvasElement; r: Renderer; player: VisualsPlayer; at: number } | null | false = null;
 
   constructor(
     private readonly client: EngineClient,
@@ -70,6 +74,8 @@ export class ProgramCompositor {
   }
 
   dispose(): void {
+    if (this.visuals) this.visuals.r.dispose();
+    this.visuals = null;
     for (const m of [...this.media.values(), ...this.pictures.values()]) this.drop(m);
     this.media.clear();
     this.pictures.clear();
@@ -172,6 +178,21 @@ export class ProgramCompositor {
       }
       case 'microphone':
         return;
+      case 'visuals': {
+        const v = this.visualsFrame(now);
+        if (v) ctx.drawImage(v, 0, 0, w, h);
+        else {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, w, h);
+        }
+        const vis = this.show?.visuals;
+        const logo = vis?.logo.on && !vis.blackout && event.logo ? this.picture(event.logo) : null;
+        if (vis && logo?.naturalWidth && this.visuals) {
+          const b = logoRect(vis.logo, this.visuals.player.beatPulse, w, h, logo.naturalWidth / logo.naturalHeight);
+          ctx.drawImage(logo, b.x, b.y, b.w, b.h);
+        }
+        return;
+      }
       case 'countdown':
         this.countdown(k.timer, k.background, k.logo ?? event.logo, now, w, h);
         return;
@@ -266,6 +287,27 @@ export class ProgramCompositor {
   }
 
   /** Draw a picture filling the frame (contain: whole picture; cover: no bars). */
+  /** This frame of the stage visuals (drawn once however many places show it). */
+  private visualsFrame(now: number): HTMLCanvasElement | null {
+    if (this.visuals === false || !this.show) return null;
+    if (this.visuals === null) {
+      const canvas = document.createElement('canvas');
+      const r = makeRenderer(canvas);
+      if (!r) {
+        this.visuals = false;
+        return null;
+      }
+      void document.fonts?.ready.then(() => r.refreshText());
+      this.visuals = { canvas, r, player: new VisualsPlayer(), at: -1 };
+    }
+    const v = this.visuals;
+    if (v.at !== now) {
+      v.r.draw(v.player.frame(this.show.visuals, now), this.canvas.width, this.canvas.height);
+      v.at = now;
+    }
+    return v.canvas;
+  }
+
   private fit(el: HTMLVideoElement | HTMLImageElement | HTMLCanvasElement, fit: Source['fit'], w: number, h: number) {
     const iw = el instanceof HTMLVideoElement ? el.videoWidth : el instanceof HTMLImageElement ? el.naturalWidth : el.width;
     const ih = el instanceof HTMLVideoElement ? el.videoHeight : el instanceof HTMLImageElement ? el.naturalHeight : el.height;
