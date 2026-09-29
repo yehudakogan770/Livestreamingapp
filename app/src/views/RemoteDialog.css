@@ -87,3 +87,33 @@
 .remote__spacer {
   flex: 1;
 }
+
+.remote__api {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.remote__api summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+}
+.remote__apitable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.remote__apitable td {
+  padding: 3px 4px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.remote__apitable td:first-child {
+  white-space: nowrap;
+  color: var(--text-dim);
+}
+.remote__apitable code {
+  font-family: var(--mono);
+  font-size: 11px;
+  word-break: break-all;
+}

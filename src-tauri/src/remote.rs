@@ -137,6 +137,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SlideNext { .. }
             | Action::SlidePrevious { .. }
             | Action::SlideGo { .. }
+            | Action::PlaylistGo { .. }
             | Action::CreditsPlay { .. }
             | Action::CreditsRestart { .. }
             | Action::CreditsSpeed { .. }
@@ -476,6 +477,44 @@ fn handle(shared: &Shared, mut request: Request) {
         }
         (Method::Get, "/remote.css") => respond(request, 200, "text/css; charset=utf-8", STYLE),
         (Method::Get, "/banks.json") => respond(request, 200, "application/json", BANKS),
+        (method, p) if p == "/api/tally" || p.starts_with("/api/do/") => {
+            if !authorised(shared, &request, query) {
+                std::thread::sleep(Duration::from_millis(500));
+                return json(request, 401, r#"{"code":"wrongPin"}"#);
+            }
+            if !matches!(method, Method::Get | Method::Post) {
+                return json(request, 405, r#"{"code":"wrongMethod"}"#);
+            }
+            let Some(show) = shared
+                .backend
+                .snapshot()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                .map(|mut v| v["show"].take())
+            else {
+                return json(request, 503, r#"{"code":"starting"}"#);
+            };
+            if p == "/api/tally" {
+                return json(request, 200, &crate::control::tally(&show).to_string());
+            }
+            let q = crate::control::parse_query(query);
+            let result = crate::control::command(&show, &p["/api/do/".len()..], &q).and_then(|a| {
+                if !allowed(&a) {
+                    return Err("that is not allowed from outside".to_owned());
+                }
+                shared
+                    .backend
+                    .apply(a)
+                    .map_err(|e| serde_json::to_string(&e).unwrap_or_default())
+            });
+            match result {
+                Ok(()) => json(request, 200, r#"{"ok":true}"#),
+                Err(e) => json(
+                    request,
+                    400,
+                    &serde_json::json!({"ok": false, "error": e}).to_string(),
+                ),
+            }
+        }
         (method, "/api/check" | "/api/show" | "/api/events" | "/api/action") => {
             if !authorised(shared, &request, query) {
                 // Slow down anyone guessing.

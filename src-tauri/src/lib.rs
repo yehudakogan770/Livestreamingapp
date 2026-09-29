@@ -2,6 +2,7 @@
 
 mod browser;
 mod capture;
+mod control;
 mod events;
 mod export;
 mod library;

@@ -81,6 +81,7 @@ export function RemoteDialog({ client, status, onClose }: { client: EngineClient
               <p className="field__note">
                 If Windows asks whether to allow Lumora on the network, choose <strong>Allow access</strong>.
               </p>
+              {address && <ControlHelp base={address.url.replace(/\/$/, '')} pin={status.pin} />}
             </>
           ) : (
             status.enabled &&
@@ -118,5 +119,57 @@ export function RemoteDialog({ client, status, onClose }: { client: EngineClient
         </footer>
       </div>
     </div>
+  );
+}
+
+const EXAMPLES: [string, string][] = [
+  ['TAKE (Live)', 'take?screen=live'],
+  ['CUT', 'cut'],
+  ['Input 3 to Next', 'preview?input=3'],
+  ['Input 3 straight to air', 'cutto?input=3'],
+  ['TAKE with a wipe', 'take?transition=wipe&ms=800'],
+  ['Overlay 1 on / off', 'overlay?channel=1&state=toggle'],
+  ['Blank Live on / off', 'blank?screen=live'],
+  ['Fade to black', 'ftb?screen=live'],
+  ['Next cue', 'nextcue'],
+  ['Play / pause input 2', 'playpause?input=2'],
+  ['Playlist on input 2: next video', 'playlist?input=2&item=next'],
+  ['Next slide on input 4', 'slide?input=4&to=next'],
+  ['PANIC on / off', 'panic'],
+];
+
+/** Addresses for Stream Deck (Companion), tally lights and scripts. */
+function ControlHelp({ base, pin }: { base: string; pin: string }) {
+  const [open, setOpen] = useState(false);
+  const copy = (text: string) => void navigator.clipboard?.writeText(text).catch(() => {});
+  return (
+    <details className="remote__api" open={open} onToggle={(e) => setOpen((e.target as HTMLDetailsElement).open)}>
+      <summary>Stream Deck, Companion and tally lights</summary>
+      <p className="field__note">
+        In Bitfocus Companion use the “Generic HTTP” connection (or a Stream Deck “web request” button) with these addresses. Tally lights read{' '}
+        <code>{`${base}/api/tally?pin=${pin}`}</code>.
+      </p>
+      <table className="remote__apitable">
+        <tbody>
+          {EXAMPLES.map(([what, cmd]) => {
+            const url = `${base}/api/do/${cmd}${cmd.includes('?') ? '&' : '?'}pin=${pin}`;
+            return (
+              <tr key={cmd}>
+                <td>{what}</td>
+                <td>
+                  <code>{url}</code>
+                </td>
+                <td>
+                  <button type="button" className="btn btn--small" onClick={() => copy(url)} aria-label={`Copy address for ${what}`}>
+                    Copy
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="field__note">Inputs can also be named: name=Camera 1. Screens: live or back. States: on, off or toggle.</p>
+    </details>
   );
 }

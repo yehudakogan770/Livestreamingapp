@@ -1,0 +1,424 @@
+//! Control from other gear: simple web addresses for Bitfocus Companion,
+//! Stream Deck (with a web request button), tally lights and scripts. Served
+//! by the phone remote's server, with the same PIN:
+//!
+//! - `GET /api/do/take?screen=live&pin=1234` (every command also takes POST)
+//! - `GET /api/tally?pin=1234`: what is on air and in Next, for tally lights.
+//!
+//! Inputs are named by their number as shown on the tiles (`input=3`) or by
+//! name (`name=Camera%201`). Screens are `live` (the default) or `back`.
+
+use lumora_engine::action::Action;
+use serde_json::{json, Value};
+
+/// The commands, for the help page and for errors.
+pub const COMMANDS: &[(&str, &str)] = &[
+    ("take", "screen, transition (fade, dip, wipe…), ms"),
+    ("cut", "screen"),
+    ("preview", "input or name, screen"),
+    ("cutto", "input or name, screen"),
+    ("playnow", "input or name, screen, transition, ms"),
+    ("blank", "screen, state (on, off, toggle)"),
+    ("ftb", "screen"),
+    ("overlay", "channel (1 – 4), state (on, off, toggle)"),
+    ("overlaysoff", ""),
+    ("play", "input or name"),
+    ("pause", "input or name"),
+    ("playpause", "input or name"),
+    ("restart", "input or name"),
+    ("playlist", "input or name, item (1, 2… or next, previous)"),
+    ("nextcue", ""),
+    ("preset", "number"),
+    ("nextpreset", ""),
+    ("previouspreset", ""),
+    ("panic", "state (on, off, toggle)"),
+    ("flash", ""),
+    ("slide", "input or name, to (next, previous or a number)"),
+];
+
+fn get<'a>(q: &'a [(String, String)], key: &str) -> Option<&'a str> {
+    q.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
+}
+
+/// Split a query string into decoded pairs.
+#[must_use]
+pub fn parse_query(query: &str) -> Vec<(String, String)> {
+    query
+        .split('&')
+        .filter(|kv| !kv.is_empty())
+        .map(|kv| {
+            let (k, v) = kv.split_once('=').unwrap_or((kv, ""));
+            (decode(k), decode(v))
+        })
+        .collect()
+}
+
+fn decode(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'+' => out.push(b' '),
+            b'%' if i + 2 < b.len() => {
+                match std::str::from_utf8(&b[i + 1..i + 3])
+                    .ok()
+                    .and_then(|h| u8::from_str_radix(h, 16).ok())
+                    .ok_or(())
+                {
+                    Ok(v) => {
+                        out.push(v);
+                        i += 2;
+                    }
+                    Err(_) => out.push(b'%'),
+                }
+            }
+            c => out.push(c),
+        }
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+fn screen(q: &[(String, String)]) -> Result<&'static str, String> {
+    match get(q, "screen")
+        .unwrap_or("live")
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "live" | "1" => Ok("live"),
+        "back" | "2" => Ok("back"),
+        other => Err(format!("unknown screen \"{other}\" (live or back)")),
+    }
+}
+
+fn sources(show: &Value) -> &[Value] {
+    show["sources"].as_array().map_or(&[], Vec::as_slice)
+}
+
+/// The id of the input named by `input=N` or `name=…`.
+fn input(show: &Value, q: &[(String, String)]) -> Result<String, String> {
+    let all = sources(show);
+    let found = if let Some(n) = get(q, "input") {
+        let n: usize = n
+            .trim()
+            .parse()
+            .map_err(|_| format!("input must be a number, not \"{n}\""))?;
+        n.checked_sub(1).and_then(|i| all.get(i))
+    } else if let Some(name) = get(q, "name") {
+        let name = name.trim().to_lowercase();
+        all.iter().find(|s| {
+            s["name"]
+                .as_str()
+                .is_some_and(|n| n.trim().to_lowercase() == name)
+        })
+    } else {
+        return Err("say which input: input=3 or name=Camera 1".to_owned());
+    };
+    found
+        .and_then(|s| s["id"].as_str())
+        .map(str::to_owned)
+        .ok_or_else(|| "there is no such input".to_owned())
+}
+
+/// on / off / toggle against the current value.
+fn state(q: &[(String, String)], now: bool) -> Result<bool, String> {
+    match get(q, "state")
+        .unwrap_or("toggle")
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "on" | "1" | "true" => Ok(true),
+        "off" | "0" | "false" => Ok(false),
+        "toggle" | "" => Ok(!now),
+        other => Err(format!("state must be on, off or toggle, not \"{other}\"")),
+    }
+}
+
+fn transition(q: &[(String, String)], v: &mut Value) -> Result<(), String> {
+    if let Some(t) = get(q, "transition") {
+        // Checked by turning it into the engine's own type.
+        serde_json::from_value::<lumora_engine::model::TransitionKind>(json!(t))
+            .map_err(|_| format!("unknown transition \"{t}\""))?;
+        v["transition"] = json!(t);
+    }
+    if let Some(ms) = get(q, "ms") {
+        v["durationMs"] = json!(ms
+            .parse::<u32>()
+            .map_err(|_| "ms must be a number".to_owned())?);
+    }
+    Ok(())
+}
+
+/// The action a command asks for, given the show as it is now.
+///
+/// # Errors
+/// A message saying what is wrong with the command.
+pub fn command(show: &Value, cmd: &str, q: &[(String, String)]) -> Result<Action, String> {
+    let v = match cmd.to_ascii_lowercase().as_str() {
+        "take" => {
+            let mut v = json!({"type": "take", "screen": screen(q)?});
+            transition(q, &mut v)?;
+            v
+        }
+        "cut" => json!({"type": "take", "screen": screen(q)?, "transition": "cut"}),
+        "preview" => {
+            json!({"type": "setPreview", "screen": screen(q)?, "sourceId": input(show, q)?})
+        }
+        "cutto" => json!({"type": "cutTo", "screen": screen(q)?, "sourceId": input(show, q)?}),
+        "playnow" => {
+            let t = &show["transition"];
+            let mut v = json!({"type": "take"});
+            transition(q, &mut v)?;
+            json!({
+                "type": "playNow",
+                "screen": screen(q)?,
+                "sourceId": input(show, q)?,
+                "transition": {
+                    "kind": v.get("transition").unwrap_or(&t["kind"]),
+                    "durationMs": v.get("durationMs").unwrap_or(&t["durationMs"]),
+                },
+            })
+        }
+        "blank" => {
+            let sc = screen(q)?;
+            let now = show["screens"][sc]["blank"].as_bool().unwrap_or(false);
+            json!({"type": "setBlank", "screens": [sc], "value": state(q, now)?})
+        }
+        "ftb" => json!({"type": "fadeToBlack", "screen": screen(q)?}),
+        "overlay" => {
+            let n: usize = get(q, "channel")
+                .unwrap_or("1")
+                .parse()
+                .map_err(|_| "channel must be 1 – 4".to_owned())?;
+            let ch = n
+                .checked_sub(1)
+                .filter(|&c| c < 4)
+                .ok_or("channel must be 1 – 4")?;
+            let now = show["overlays"][ch]["on"].as_bool().unwrap_or(false);
+            json!({"type": "setOverlayOn", "channel": ch, "value": state(q, now)?})
+        }
+        "overlaysoff" => json!({"type": "overlaysOff"}),
+        "play" => json!({"type": "play", "id": input(show, q)?}),
+        "pause" => json!({"type": "pause", "id": input(show, q)?}),
+        "playpause" => {
+            let id = input(show, q)?;
+            let playing = sources(show)
+                .iter()
+                .find(|s| s["id"] == json!(id))
+                .and_then(|s| s["kind"]["playback"]["playing"].as_bool())
+                .unwrap_or(false);
+            json!({"type": if playing { "pause" } else { "play" }, "id": id})
+        }
+        "restart" => json!({"type": "seek", "id": input(show, q)?, "posS": 0.0}),
+        "playlist" => {
+            let id = input(show, q)?;
+            let src = sources(show).iter().find(|s| s["id"] == json!(id));
+            let list = src
+                .map(|s| &s["playlist"])
+                .filter(|p| p.is_object())
+                .ok_or("that input is not a playlist")?;
+            let len = list["items"].as_array().map_or(0, Vec::len);
+            let cur = list["current"].as_u64().unwrap_or(0) as usize;
+            let item = match get(q, "item").unwrap_or("next") {
+                "next" => (cur + 1) % len.max(1),
+                "previous" | "prev" => (cur + len.max(1) - 1) % len.max(1),
+                n => n
+                    .parse::<usize>()
+                    .ok()
+                    .and_then(|n| n.checked_sub(1))
+                    .ok_or("item must be next, previous or a number")?,
+            };
+            json!({"type": "playlistGo", "id": id, "index": item})
+        }
+        "nextcue" => json!({"type": "nextCue"}),
+        "preset" => {
+            let n: usize = get(q, "number")
+                .unwrap_or("")
+                .parse()
+                .map_err(|_| "number must be a preset number (1, 2…)".to_owned())?;
+            let p = show["presets"]
+                .as_array()
+                .and_then(|a| n.checked_sub(1).and_then(|i| a.get(i)))
+                .and_then(|p| p["id"].as_str())
+                .ok_or("there is no such preset")?;
+            json!({"type": "pickPreset", "id": p})
+        }
+        "nextpreset" => json!({"type": "nextPreset"}),
+        "previouspreset" => json!({"type": "previousPreset"}),
+        "panic" => {
+            let now = show["panic"].as_bool().unwrap_or(false);
+            json!({"type": "panic", "value": state(q, now)?})
+        }
+        "flash" => json!({"type": "monitorFlash"}),
+        "slide" => {
+            let id = input(show, q)?;
+            match get(q, "to").unwrap_or("next") {
+                "next" => json!({"type": "slideNext", "id": id}),
+                "previous" | "prev" => json!({"type": "slidePrevious", "id": id}),
+                n => {
+                    let i = n
+                        .parse::<usize>()
+                        .ok()
+                        .and_then(|n| n.checked_sub(1))
+                        .ok_or("to must be next, previous or a number")?;
+                    json!({"type": "slideGo", "id": id, "index": i})
+                }
+            }
+        }
+        other => {
+            let names: Vec<&str> = COMMANDS.iter().map(|(n, _)| *n).collect();
+            return Err(format!(
+                "unknown command \"{other}\"; try: {}",
+                names.join(", ")
+            ));
+        }
+    };
+    serde_json::from_value(v).map_err(|e| format!("could not make that command: {e}"))
+}
+
+/// What is on air and in Next on each screen, and each input's tally.
+#[must_use]
+pub fn tally(show: &Value) -> Value {
+    let on = |sc: &str, key: &str| show["screens"][sc][key].as_str().map(str::to_owned);
+    let number = |id: &Option<String>| {
+        id.as_ref()
+            .and_then(|id| {
+                sources(show)
+                    .iter()
+                    .position(|s| s["id"].as_str() == Some(id))
+            })
+            .map(|i| i + 1)
+    };
+    let name = |id: &Option<String>| {
+        id.as_ref()
+            .and_then(|id| sources(show).iter().find(|s| s["id"].as_str() == Some(id)))
+            .and_then(|s| s["name"].as_str())
+            .map(str::to_owned)
+    };
+    let screen = |sc: &str| {
+        let (p, n) = (on(sc, "program"), on(sc, "preview"));
+        json!({
+            "program": number(&p), "programName": name(&p),
+            "preview": number(&n), "previewName": name(&n),
+            "blank": show["screens"][sc]["blank"].as_bool().unwrap_or(false),
+        })
+    };
+    let programs = [on("live", "program"), on("back", "program")];
+    let previews = [on("live", "preview"), on("back", "preview")];
+    let inputs: Vec<Value> = sources(show)
+        .iter()
+        .enumerate()
+        .map(|(i, s)| {
+            let id = s["id"].as_str().map(str::to_owned);
+            let program = programs.contains(&id);
+            json!({
+                "number": i + 1,
+                "name": s["name"],
+                "program": program,
+                "preview": !program && previews.contains(&id),
+            })
+        })
+        .collect();
+    let overlays: Vec<bool> = show["overlays"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .map(|o| o["on"].as_bool().unwrap_or(false))
+                .collect()
+        })
+        .unwrap_or_default();
+    json!({
+        "live": screen("live"),
+        "back": screen("back"),
+        "inputs": inputs,
+        "overlays": overlays,
+        "panic": show["panic"].as_bool().unwrap_or(false),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn show() -> Value {
+        json!({
+            "sources": [
+                {"id": "a", "name": "Camera 1", "kind": {"type": "camera"}},
+                {"id": "b", "name": "Intro", "kind": {"type": "video", "playback": {"playing": true}}, "playlist": {"items": [{}, {}, {}], "current": 2}},
+            ],
+            "screens": {"live": {"program": "a", "preview": "b", "blank": false}, "back": {"program": null, "preview": null, "blank": true}},
+            "overlays": [{"on": false}, {"on": true}, {"on": false}, {"on": false}],
+            "transition": {"kind": "fade", "durationMs": 800},
+            "presets": [{"id": "p1"}],
+            "panic": false,
+        })
+    }
+
+    fn cmd(c: &str, q: &str) -> Result<Value, String> {
+        command(&show(), c, &parse_query(q)).map(|a| serde_json::to_value(a).unwrap())
+    }
+
+    #[test]
+    fn commands_become_engine_actions() {
+        let take = cmd("take", "").unwrap();
+        assert_eq!(
+            (&take["type"], &take["screen"]),
+            (&json!("take"), &json!("live"))
+        );
+        assert_eq!(
+            cmd("take", "screen=back&transition=wipe&ms=500").unwrap()["durationMs"],
+            json!(500)
+        );
+        assert!(cmd("take", "transition=sparkles")
+            .unwrap_err()
+            .contains("sparkles"));
+        assert_eq!(cmd("preview", "input=2").unwrap()["sourceId"], json!("b"));
+        assert_eq!(
+            cmd("cutto", "name=camera%201").unwrap()["sourceId"],
+            json!("a")
+        );
+        assert_eq!(
+            cmd("CutTo", "name=Camera+1").unwrap()["sourceId"],
+            json!("a")
+        );
+        assert!(cmd("preview", "input=9").is_err());
+        assert_eq!(cmd("blank", "").unwrap()["value"], json!(true));
+        assert_eq!(cmd("blank", "screen=back").unwrap()["value"], json!(false));
+        assert_eq!(
+            cmd("overlay", "channel=2").unwrap(),
+            json!({"type": "setOverlayOn", "channel": 1, "value": false})
+        );
+        assert!(cmd("overlay", "channel=5").is_err());
+        assert_eq!(cmd("playpause", "input=2").unwrap()["type"], json!("pause"));
+        assert_eq!(cmd("playlist", "input=2").unwrap()["index"], json!(0));
+        assert_eq!(
+            cmd("playlist", "input=2&item=previous").unwrap()["index"],
+            json!(1)
+        );
+        assert!(cmd("playlist", "input=1").is_err());
+        assert_eq!(cmd("preset", "number=1").unwrap()["id"], json!("p1"));
+        assert_eq!(
+            cmd("playnow", "input=2").unwrap()["transition"],
+            json!({"kind": "fade", "durationMs": 800})
+        );
+        assert!(cmd("dance", "").unwrap_err().contains("take"));
+    }
+
+    #[test]
+    fn tally_says_what_is_on_air_and_next() {
+        let t = tally(&show());
+        assert_eq!(t["live"]["program"], json!(1));
+        assert_eq!(t["live"]["previewName"], json!("Intro"));
+        assert_eq!(t["inputs"][0]["program"], json!(true));
+        assert_eq!(t["inputs"][1]["preview"], json!(true));
+        assert_eq!(t["overlays"], json!([false, true, false, false]));
+        assert_eq!(t["back"]["blank"], json!(true));
+    }
+
+    #[test]
+    fn decodes_addresses() {
+        assert_eq!(decode("a%20b+c%2"), "a b c%2");
+        assert_eq!(decode("%D7%A9"), "ש");
+    }
+}
