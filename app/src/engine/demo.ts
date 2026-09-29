@@ -621,6 +621,14 @@ function apply(s: Show, a: Action, now: number) {
     case 'goCue':
       fireCue(s, a.index, now);
       return;
+    case 'updateLogo3d': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'logo3d') throw new Refused({ code: 'invalidValue', field: 'logo', reason: 'that input is not a 3D logo' });
+      src.kind = { type: 'logo3d', ...structuredClone(a.logo) };
+      return;
+    }
+    case 'relinkMedia':
+      return;
     case 'updateText': {
       const src = find(s, a.id);
       if (src.kind.type !== 'text') throw new Refused({ code: 'invalidValue', field: 'text', reason: 'that input is not a text input' });

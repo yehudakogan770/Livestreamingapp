@@ -12,6 +12,8 @@ import { PesukimView } from './PesukimView';
 import { TextView } from './TextView';
 import { CreditsView } from './CreditsView';
 import { VisualsView } from './VisualsView';
+import { Logo3dView } from './Logo3dView';
+import type { Logo3d } from '../engine/types/Logo3d';
 import { defaultVisuals } from '../engine/visuals';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 
@@ -105,6 +107,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <PesukimInput source={source} client={client} thumb={thumb} audience={audience} />;
     case 'visuals':
       return <VisualsInput thumb={thumb} audience={audience} />;
+    case 'logo3d':
+      return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
     case 'countdown':
       return <CountdownInput timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':
@@ -246,6 +250,48 @@ function VisualsInput({ thumb, audience }: { thumb: boolean; audience: boolean }
   );
 }
 const DEFAULT_VISUALS = defaultVisuals();
+
+/** A 3D logo: its own picture, or the event logo. */
+function Logo3dInput({ logo, thumb, audience }: { logo: Logo3d; thumb: boolean; audience: boolean }) {
+  const stage = useStage();
+  const who = useContext(Who);
+  const [problem, setProblem] = useState<string | null>(null);
+  const path = logo.path || stage?.event.logo || null;
+  const url = path ? (stage?.mediaUrl(path) ?? null) : null;
+  useReportProblem(
+    problem && !audience && who
+      ? { key: `logo3d:${who.id}`, level: 'warning', title: `${who.name}: ${problem}`, detail: 'The 3D logo shows a stand-in instead.', sourceId: who.id }
+      : null,
+  );
+  if (thumb) {
+    // A still, tilted picture: the grid never spends the graphics card on thumbnails.
+    return (
+      <div
+        style={{
+          ...fill,
+          background: logo.background === 'colour' ? logo.bgColor : '#101216',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          perspective: 300,
+        }}
+        data-kind="logo3d"
+      >
+        {url ? (
+          <img
+            src={url}
+            alt=""
+            draggable={false}
+            style={{ maxWidth: '60%', maxHeight: '60%', transform: 'rotateY(-25deg)', filter: 'drop-shadow(4px 3px 0 rgba(0,0,0,.6))' }}
+          />
+        ) : (
+          <b style={{ color: '#b8c0c8', transform: 'rotateY(-25deg)', fontSize: 14 }}>3D LOGO</b>
+        )}
+      </div>
+    );
+  }
+  return <Logo3dView logo={logo} url={url} audience={audience} onFail={setProblem} />;
+}
 
 /**
  * Green screen: the video or picture inside is hidden and drawn again on a

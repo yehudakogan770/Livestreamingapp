@@ -157,7 +157,10 @@ function ControlApp() {
         disabled: !show?.overlays.some((o) => o.on),
       },
     ];
-    const inputs: MenuItem[] = [{ label: 'Add input…', onClick: () => sendCommand({ type: 'addInput' }) }];
+    const inputs: MenuItem[] = [
+      { label: 'Add input…', onClick: () => sendCommand({ type: 'addInput' }) },
+      { label: '3D logo maker…', onClick: () => sendCommand({ type: 'logoMaker' }) },
+    ];
     const text: MenuItem[] = TEXT_TEMPLATES.map((t, i) => ({
       label: `Add a ${t.name.toLowerCase()}…`,
       hint: t.hint,

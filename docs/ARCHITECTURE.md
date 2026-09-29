@@ -147,4 +147,14 @@ they opened.
     so deleting or moving the original never breaks an event; a background
     keeper copies in files older events still use from elsewhere, never
     swapping a file that is on air — `lumora_engine::media`).
+    3D logo maker: **done** (`crates/engine/src/logo3d.rs`: a `logo3d` input —
+    depth, bevel, metal / glass / gloss / matte, colour or the logo's own,
+    light, full spin / back and forth (ease, pause, bounce) / float, camera,
+    see-through / colour / stage-visuals loop behind. `app/src/logo3d/`: the
+    picture's outline becomes a 16-bit distance field, drawn as slices
+    through the thickness with a rounded bevel and lit by the field's edge
+    direction. `LogoMaker.tsx` (Inputs → 3D logo maker…) adds or edits the
+    input and exports any length frame by frame to `src-tauri/src/export.rs`:
+    FFmpeg makes MP4 (H.264), MOV (ProRes 4444, see-through) or WebM (VP9,
+    see-through)).
 11. Installer, auto-update, rehearsal / soak testing, release.

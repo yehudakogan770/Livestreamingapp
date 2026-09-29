@@ -1,3 +1,4 @@
+import { sendCommand } from './commands';
 import { useEffect, useRef, useState } from 'react';
 import { isSoundFile, type EngineClient } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
@@ -229,6 +230,18 @@ function TileMenu({
             <input type="checkbox" checked={draft.muted} onChange={(e) => set({ muted: e.target.checked })} /> Mute
           </label>
         </>
+      )}
+      {k === 'logo3d' && (
+        <button
+          type="button"
+          className="btn menu__wide"
+          onClick={() => {
+            onClose();
+            sendCommand({ type: 'logoMaker', id: source.id });
+          }}
+        >
+          Edit 3D logo…
+        </button>
       )}
       {(k === 'text' || k === 'split' || k === 'slideshow') && (
         <button

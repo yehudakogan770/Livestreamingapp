@@ -1,0 +1,235 @@
+.modal__box.lm {
+  width: min(1240px, calc(100vw - 24px));
+  height: min(860px, calc(100vh - 24px));
+  max-height: none;
+}
+.lm__name {
+  margin-left: 12px;
+  width: 220px;
+}
+.lm__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.lm__left,
+.lm__right {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lm__right {
+  border-left: 1px solid var(--border);
+}
+.lm__import {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px dashed #3a3f48;
+  border-radius: var(--radius);
+}
+.lm__file {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.lm__file b {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--button);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.lm__file span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lm__file em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.lm__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+  flex: 0 0 auto;
+}
+.lm__tag {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.lm__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lm__row .lm__slider {
+  flex: 1 1 auto;
+}
+.lm__slider {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.lm__slider input {
+  accent-color: var(--accent);
+  width: 100%;
+}
+.lm__slider em {
+  font-style: normal;
+  text-align: right;
+  color: var(--text);
+}
+.lm__label {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.lm__sub {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.lm__export {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.lm__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.lm__grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.lm__segs {
+  display: flex;
+}
+.lm__segs .seg {
+  flex: 1 1 auto;
+  white-space: nowrap;
+}
+.lm__materials {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.lm__mat {
+  height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--button);
+  color: #d4d5d8;
+  font-size: 12px;
+  cursor: pointer;
+}
+.lm__mat.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+  color: #fff;
+}
+.lm__mat i {
+  width: 28px;
+  height: 14px;
+  border-radius: 3px;
+}
+.lm__mat--metal i {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(0, 0, 0, 0.35)) !important;
+  background-blend-mode: overlay;
+}
+.lm__mat--glass i {
+  opacity: 0.5;
+  box-shadow: inset 0 0 0 1px #fff;
+}
+.lm__mat--gloss i {
+  box-shadow: inset 6px -3px 6px rgba(255, 255, 255, 0.6);
+}
+.lm__mat--matte i {
+  filter: saturate(0.7) brightness(0.85);
+}
+.lm__colours {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.lm__swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+}
+.lm__swatch--wide {
+  width: 36px;
+}
+.lm__swatch.is-on {
+  border-color: #fff;
+}
+.lm .btn.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.lm__progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.lm__progress progress {
+  flex: 1 1 auto;
+  accent-color: var(--accent);
+}
+.lm__summary {
+  font-size: 12px;
+  color: var(--text-dim);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

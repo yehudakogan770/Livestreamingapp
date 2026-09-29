@@ -63,6 +63,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(300px, 1.05fr) minmax(360px, 1.6fr) minmax(260px, 0.9fr);
+  grid-template-rows: minmax(0, 1fr);
 }
 .vis__left,
 .vis__mid,

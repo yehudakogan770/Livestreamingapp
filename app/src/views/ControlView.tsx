@@ -15,6 +15,7 @@ import { ShortcutsDialog } from './ShortcutsDialog';
 import { CueBar, RunOfShowDialog } from './RunOfShow';
 import { LibraryDialog } from './LibraryDialog';
 import { VisualsPage } from './VisualsPage';
+import { LogoMaker } from './LogoMaker';
 import { useCopying } from '../engine/copying';
 import { CreditsCard, creditsTarget } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
@@ -62,6 +63,8 @@ export function ControlView({
   const [runOpen, setRunOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [visualsOpen, setVisualsOpen] = useState(false);
+  /** The 3D logo maker: the input being changed (null: a new one). */
+  const [logoMaker, setLogoMaker] = useState<{ id: string | null } | null>(null);
   useCommands(
     useCallback((c: Command) => {
       if (c.type === 'addInput') {
@@ -71,6 +74,7 @@ export function ControlView({
       else if (c.type === 'runOfShow') setRunOpen(true);
       else if (c.type === 'library') setLibraryOpen(true);
       else if (c.type === 'visuals') setVisualsOpen(true);
+      else if (c.type === 'logoMaker') setLogoMaker({ id: c.id ?? null });
     }, []),
   );
   const [outputsOpen, setOutputsOpen] = useState(false);
@@ -136,7 +140,7 @@ export function ControlView({
   // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · Shift+1–4 overlays · B blank this screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (adding || outputsOpen || runOpen || libraryOpen || visualsOpen || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (adding || outputsOpen || runOpen || libraryOpen || visualsOpen || logoMaker || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
       const sc = show.screens[screen];
       if (e.key === 'Enter' && screen !== 'monitor' && sc.preview !== null && sc.preview !== sc.program) {
         e.preventDefault();
@@ -157,7 +161,7 @@ export function ControlView({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [act, adding, outputsOpen, runOpen, libraryOpen, visualsOpen, screen, show]);
+  }, [act, adding, outputsOpen, runOpen, libraryOpen, visualsOpen, logoMaker, screen, show]);
 
   const sc = show.screens[screen];
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
@@ -306,6 +310,15 @@ export function ControlView({
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
+      {logoMaker && (
+        <LogoMaker
+          show={show}
+          client={client}
+          act={act}
+          source={show.sources.find((s) => s.id === logoMaker.id && s.kind.type === 'logo3d') ?? null}
+          onClose={() => setLogoMaker(null)}
+        />
+      )}
       {visualsOpen && <VisualsPage show={show} act={act} client={client} onClose={() => setVisualsOpen(false)} />}
       {libraryOpen && <LibraryDialog show={show} client={client} act={act} onClose={() => setLibraryOpen(false)} />}
       {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}

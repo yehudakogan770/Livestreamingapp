@@ -2,6 +2,7 @@
 
 mod capture;
 mod events;
+mod export;
 mod library;
 mod media;
 mod outputs;
@@ -29,6 +30,8 @@ struct AppState {
     capture: capture::Capture,
     library: library::Library,
     media: media::Media,
+    exports: export::Exports,
+    ffmpeg: Option<std::path::PathBuf>,
 }
 
 /// A version of the show together with its revision number.
@@ -343,6 +346,52 @@ async fn keep_media(path: String, app: tauri::AppHandle) -> Result<String, Strin
     .map_err(|e| e.to_string())?
 }
 
+/// Start exporting a video (the 3D logo maker). Returns the session.
+#[tauri::command]
+fn export_start(
+    settings: export::ExportSettings,
+    state: State<'_, AppState>,
+) -> Result<u64, String> {
+    state.exports.start(state.ffmpeg.as_deref(), &settings)
+}
+
+/// One frame (raw RGBA; the session is a header). Off the main thread: FFmpeg
+/// may make it wait, and the screens must never wait with it.
+#[tauri::command]
+async fn export_frame(
+    request: tauri::ipc::Request<'_>,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let bytes = bytes.clone();
+    let session: u64 = request
+        .headers()
+        .get("session")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse().ok())
+        .ok_or("no session")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        app.state::<AppState>().exports.frame(session, &bytes)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Every frame sent: wait for the file. Returns its path.
+#[tauri::command]
+async fn export_finish(session: u64, app: tauri::AppHandle) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || app.state::<AppState>().exports.finish(session))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn export_cancel(session: u64, state: State<'_, AppState>) {
+    state.exports.cancel(session);
+}
+
 /// Every few seconds, copy in any file the show still uses from elsewhere
 /// (older events, library items, an event opened from a USB stick) while
 /// it is still there, and point the show at the copy.
@@ -477,9 +526,10 @@ pub fn run() {
             let ffmpeg = capture::find_ffmpeg();
             eprintln!("lumora: ffmpeg {ffmpeg:?}");
             let handle = app.handle().clone();
-            let capture = capture::Capture::new(Some(&dir), videos, ffmpeg, move |status| {
-                let _ = handle.emit("capture-changed", status);
-            });
+            let capture =
+                capture::Capture::new(Some(&dir), videos, ffmpeg.clone(), move |status| {
+                    let _ = handle.emit("capture-changed", status);
+                });
             let library = library::Library::new(&dir);
             let media = media::Media::new(&dir);
             app.manage(AppState {
@@ -491,6 +541,8 @@ pub fn run() {
                 capture,
                 library,
                 media,
+                exports: export::Exports::default(),
+                ffmpeg,
             });
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
@@ -522,6 +574,10 @@ pub fn run() {
             capture_stop,
             save_slide,
             keep_media,
+            export_start,
+            export_frame,
+            export_finish,
+            export_cancel,
             library_items,
             save_library,
             export_library,

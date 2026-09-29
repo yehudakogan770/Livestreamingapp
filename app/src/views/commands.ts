@@ -9,7 +9,8 @@ export type Command =
   | { type: 'shortcuts' }
   | { type: 'runOfShow' }
   | { type: 'library' }
-  | { type: 'visuals' };
+  | { type: 'visuals' }
+  | { type: 'logoMaker'; id?: string };
 
 const bus = new EventTarget();
 

@@ -182,7 +182,20 @@ export interface EngineClient {
   exportLibrary(items: LibraryItem[]): Promise<boolean>;
   /** Read items from a file the operator chooses. Resolves [] if cancelled. */
   importLibrary(): Promise<LibraryItem[]>;
+
+  // ----- video export (the 3D logo maker) -----
+  /** Ask where to save a video. Resolves null if cancelled. */
+  chooseVideoFile(name: string, format: VideoFormat): Promise<string | null>;
+  exportStart(settings: { path: string; width: number; height: number; fps: number; format: VideoFormat }): Promise<number>;
+  /** One frame of raw RGBA pixels. */
+  exportFrame(session: number, rgba: Uint8ClampedArray): Promise<void>;
+  /** Resolves the finished file's path. */
+  exportFinish(session: number): Promise<string>;
+  exportCancel(session: number): Promise<void>;
 }
+
+export type VideoFormat = 'mp4' | 'mov' | 'webm';
+const VIDEO_NAMES: Record<VideoFormat, string> = { mp4: 'MP4 video', mov: 'MOV video (keeps transparency)', webm: 'WebM video' };
 
 /** An action the engine refused, with the engine's reason. */
 export class EngineError extends Error {
@@ -498,6 +511,39 @@ class TauriClient implements EngineClient {
     }
   }
 
+  async chooseVideoFile(name: string, format: VideoFormat): Promise<string | null> {
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    return save({ filters: [{ name: VIDEO_NAMES[format], extensions: [format] }], defaultPath: `${name}.${format}` });
+  }
+
+  async exportStart(settings: { path: string; width: number; height: number; fps: number; format: VideoFormat }): Promise<number> {
+    try {
+      return await invoke<number>('export_start', { settings });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async exportFrame(session: number, rgba: Uint8ClampedArray): Promise<void> {
+    try {
+      await invoke('export_frame', new Uint8Array(rgba.buffer, rgba.byteOffset, rgba.byteLength), { headers: { session: String(session) } });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async exportFinish(session: number): Promise<string> {
+    try {
+      return await invoke<string>('export_finish', { session });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async exportCancel(session: number): Promise<void> {
+    await invoke('export_cancel', { session });
+  }
+
   async importLibrary(): Promise<LibraryItem[]> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({ multiple: false, directory: false, filters: [{ name: 'Lumora library', extensions: ['lumora-library', 'json'] }] });
@@ -751,6 +797,26 @@ export class DemoClient implements EngineClient {
     a.download = 'Lumora library.lumora-library';
     a.click();
     return Promise.resolve(true);
+  }
+
+  chooseVideoFile(name: string, format: VideoFormat): Promise<string | null> {
+    return Promise.resolve(`${name}.${format}`);
+  }
+
+  exportStart(): Promise<number> {
+    return Promise.reject(new Error('Exporting video works in the Lumora app (it uses FFmpeg).'));
+  }
+
+  exportFrame(): Promise<void> {
+    return Promise.reject(new Error('That export has stopped.'));
+  }
+
+  exportFinish(): Promise<string> {
+    return Promise.reject(new Error('That export has stopped.'));
+  }
+
+  exportCancel(): Promise<void> {
+    return Promise.resolve();
   }
 
   importLibrary(): Promise<LibraryItem[]> {

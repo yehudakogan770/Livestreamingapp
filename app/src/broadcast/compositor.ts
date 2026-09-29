@@ -15,6 +15,8 @@ import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesuk
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer } from '../engine/chroma';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
+import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
+import { loopVisuals } from '../logo3d/background';
 import { logoRect, VisualsPlayer } from '../visuals/player';
 import { isRtl, withAlpha } from '../engine/text';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
@@ -47,6 +49,11 @@ export class ProgramCompositor {
   private readonly keyers = new Map<string, ChromaKeyer>();
   private show: Show | null = null;
   private lastSync = 0;
+  /** One 3D logo renderer per 3D logo input (false: no WebGL here). */
+  private readonly logos = new Map<
+    string,
+    { url: string | null; fg: HTMLCanvasElement; r: Logo3dRenderer; bg: HTMLCanvasElement; loop: Renderer | null; player: VisualsPlayer } | false
+  >();
   /** The stage visuals, drawn once a frame at full size (null: not needed yet, false: no WebGL). */
   private visuals: { canvas: HTMLCanvasElement; r: Renderer; player: VisualsPlayer; at: number } | null | false = null;
 
@@ -75,6 +82,13 @@ export class ProgramCompositor {
 
   dispose(): void {
     if (this.visuals) this.visuals.r.dispose();
+    for (const l of this.logos.values()) {
+      if (l) {
+        l.r.dispose();
+        l.loop?.dispose();
+      }
+    }
+    this.logos.clear();
     this.visuals = null;
     for (const m of [...this.media.values(), ...this.pictures.values()]) this.drop(m);
     this.media.clear();
@@ -178,6 +192,43 @@ export class ProgramCompositor {
       }
       case 'microphone':
         return;
+      case 'logo3d': {
+        const path = k.path || event.logo;
+        const url = path ? this.client.mediaUrl(path) : null;
+        let l = this.logos.get(src.id);
+        if (l === undefined || (l && l.url !== url)) {
+          if (l) l.r.dispose();
+          const fg = document.createElement('canvas');
+          const r = Logo3dRenderer.create(fg);
+          if (!r) {
+            this.logos.set(src.id, false);
+            return;
+          }
+          const made = { url, fg, r, bg: document.createElement('canvas'), loop: null as Renderer | null, player: new VisualsPlayer() };
+          r.setLogo(placeholderLogo());
+          if (url)
+            void loadLogo(url).then(
+              (p) => made.r.setLogo(p),
+              () => undefined,
+            );
+          this.logos.set(src.id, made);
+          l = made;
+        }
+        if (!l) return;
+        if (k.background === 'colour') {
+          ctx.fillStyle = k.bgColor;
+          ctx.fillRect(0, 0, w, h);
+        } else if (k.background === 'loop') {
+          l.loop ??= makeRenderer(l.bg);
+          if (l.loop) {
+            l.loop.draw(l.player.frame(loopVisuals(k.bgScene), now), w * 0.6, h * 0.6);
+            ctx.drawImage(l.bg, 0, 0, w, h);
+          }
+        }
+        l.r.draw(k, now, w, h);
+        ctx.drawImage(l.fg, 0, 0, w, h);
+        return;
+      }
       case 'visuals': {
         const v = this.visualsFrame(now);
         if (v) ctx.drawImage(v, 0, 0, w, h);
