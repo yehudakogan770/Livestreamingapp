@@ -239,6 +239,10 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Set the event's look and put it on every title, song and scoreboard.
+    ApplyBrand {
+        brand: crate::event::Brand,
+    },
     /// Change a song's words, title and look (the slide showing is kept if it still exists).
     UpdateLyrics {
         id: SourceId,

@@ -15,6 +15,7 @@ import { repairOverlay, setOverlayOn } from './overlays';
 import { stingerSlot } from './timing';
 import { repairScoreboard, runClock, setClock } from './score';
 import { lyricsGo, sections } from './lyrics';
+import { applyBrand } from './brand';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -409,6 +410,9 @@ function apply(s: Show, a: Action, now: number) {
     }
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
+      return;
+    case 'applyBrand':
+      applyBrand(s, a.brand);
       return;
     case 'updateLyrics': {
       const l = song(s, a.id);

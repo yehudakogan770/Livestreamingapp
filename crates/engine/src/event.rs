@@ -32,6 +32,75 @@ pub struct EventInfo {
     pub panic_shows: SafeScreen,
     /// The setup questions have been answered (or skipped).
     pub set_up: bool,
+    /// The event's look: colours and font for every title.
+    pub brand: Brand,
+}
+
+/// The event's look, applied to all titles, songs and scoreboards at once.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct Brand {
+    pub font: String,
+    pub text_color: String,
+    /// Bars, lines and name boxes.
+    pub accent: String,
+    pub box_color: String,
+    /// 0 – 100.
+    pub box_opacity: u32,
+    pub design: crate::text::TextDesign,
+}
+
+impl Default for Brand {
+    fn default() -> Self {
+        Brand {
+            font: "Segoe UI".to_owned(),
+            text_color: "#ffffff".to_owned(),
+            accent: "#2f80ed".to_owned(),
+            box_color: "#101216".to_owned(),
+            box_opacity: 80,
+            design: crate::text::TextDesign::Box,
+        }
+    }
+}
+
+fn is_color(c: &str) -> bool {
+    c.len() == 7 && c.starts_with('#') && c[1..].chars().all(|c| c.is_ascii_hexdigit())
+}
+
+impl Brand {
+    #[must_use]
+    pub fn cleaned(mut self) -> Self {
+        let d = Brand::default();
+        self.font = self.font.trim().chars().take(60).collect();
+        if self.font.is_empty() {
+            self.font = d.font;
+        }
+        for (c, f) in [
+            (&mut self.text_color, d.text_color),
+            (&mut self.accent, d.accent),
+            (&mut self.box_color, d.box_color),
+        ] {
+            if !is_color(c) {
+                *c = f;
+            }
+        }
+        self.box_opacity = self.box_opacity.min(100);
+        self
+    }
+
+    /// Put the look on a title's style.
+    pub fn apply_to(&self, s: &mut crate::text::TextStyle) {
+        s.font.clone_from(&self.font);
+        s.color.clone_from(&self.text_color);
+        s.accent.clone_from(&self.accent);
+        s.box_color.clone_from(&self.box_color);
+        #[allow(clippy::cast_precision_loss)]
+        {
+            s.box_opacity = self.box_opacity as f32 / 100.0;
+        }
+        s.design = self.design;
+    }
 }
 
 /// Changes to the event. Fields left out stay as they are.

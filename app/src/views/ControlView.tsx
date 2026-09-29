@@ -1,3 +1,4 @@
+import { branded, hasBrand } from '../engine/brand';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EngineError, defaultCountdown, isSoundFile, type EngineClient } from '../engine/client';
 import type { Action } from '../engine/types/Action';
@@ -149,8 +150,12 @@ export function ControlView({
     });
   };
 
-  const add = (src: NewSource) => {
+  const add = (added: NewSource) => {
     const id = `src-${Date.now().toString(36)}`;
+    // New titles come in the event's look.
+    const brand = show.event.brand;
+    const src: NewSource =
+      added.kind.type === 'text' && hasBrand(brand) ? { ...added, kind: { ...added.kind, style: branded(added.kind.style, brand) } } : added;
     setAdding(false);
     void client
       .dispatch({ type: 'addSource', source: { ...src, id } })

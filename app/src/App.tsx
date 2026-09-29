@@ -10,6 +10,7 @@ import { ScreenSelector } from './components/ScreenSelector';
 import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
 import { EventSetup } from './views/EventSetup';
+import { BrandDialog } from './views/BrandDialog';
 import { RemoteDialog } from './views/RemoteDialog';
 import { defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
@@ -58,6 +59,7 @@ function ControlApp() {
   );
   // The event setup opens by itself until it has been answered once, and from the Event menu.
   const [setupOpen, setSetupOpen] = useState(false);
+  const [brandOpen, setBrandOpen] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);
   const showSetup = !!show && (setupOpen || (!show.event.setUp && !setupDismissed));
   const closeSetup = useCallback(() => {
@@ -115,6 +117,7 @@ function ControlApp() {
   const menus = useMemo(() => {
     const event: MenuItem[] = [
       { label: 'Event setup…', onClick: () => setSetupOpen(true) },
+      { label: 'Event look (branding)…', onClick: () => setBrandOpen(true) },
       null,
       { label: 'New event', onClick: () => setConfirmNew(true) },
       { label: 'Open event…', onClick: () => open() },
@@ -280,6 +283,7 @@ function ControlApp() {
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
       )}
+      {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       {confirmNew && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="New event">

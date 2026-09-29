@@ -1,3 +1,4 @@
+import { defaultBrand } from './brand';
 // Talks to the Lumora engine.
 //
 // Inside the Lumora app this goes through Tauri to the Rust engine. When the
@@ -288,7 +289,7 @@ export function emptyShow(): Show {
     panicChangedAt: 0,
     masterVolume: 1,
     backFollowsLive: false,
-    event: { name: '', logo: null, onFailure: 'black', panicShows: 'black', setUp: false },
+    event: { name: '', logo: null, onFailure: 'black', panicShows: 'black', setUp: false, brand: defaultBrand() },
     presets: [],
     activePreset: null,
     running: [],
