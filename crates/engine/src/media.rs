@@ -10,6 +10,11 @@ pub fn for_each_path(show: &mut Show, mut f: impl FnMut(&mut String)) {
     if let Some(logo) = &mut show.event.logo {
         f(logo);
     }
+    for st in &mut show.settings.stingers {
+        if !st.path.is_empty() {
+            f(&mut st.path);
+        }
+    }
     for src in &mut show.sources {
         match &mut src.kind {
             SourceKind::Video { path, .. } | SourceKind::Image { path } => f(path),

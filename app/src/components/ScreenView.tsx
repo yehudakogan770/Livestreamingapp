@@ -3,7 +3,7 @@ import type { EngineClient } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { TransitionKind } from '../engine/types/TransitionKind';
-import { fadeAmount, mixAt, transitionProgress, BLANK_FADE_MS, type Mix, type Shape } from '../engine/timing';
+import { fadeAmount, mixAt, stingerSlot, transitionProgress, BLANK_FADE_MS, type Mix, type Shape } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { SafeScreenView, SourceView } from './SourceView';
 import { OverlaysView } from './OverlaysView';
@@ -34,7 +34,18 @@ export function layerTransform(l: { shift?: number; shiftY?: number; scale?: num
  * what is on air. Layers are keyed by source id so a video element carries on
  * playing when it moves from "incoming" to "on air".
  */
-export function programLayers(show: Show, screen: ScreenId, now: number): { layers: Layer[]; black: number; white: number } {
+/** A stinger playing over a screen's switch. */
+export interface StingerPlay {
+  path: string;
+  /** When it started (the transition's start). */
+  startedAt: number;
+}
+
+export function programLayers(
+  show: Show,
+  screen: ScreenId,
+  now: number,
+): { layers: Layer[]; black: number; white: number; stinger?: StingerPlay } {
   const sc = show.screens[screen];
   const layers: Layer[] = [];
   let white = 0;
@@ -56,12 +67,21 @@ export function programLayers(show: Show, screen: ScreenId, now: number): { laye
     return m.black;
   };
   const p = transitionProgress(sc, now);
+  const slot = sc.transition ? stingerSlot(sc.transition.kind) : null;
+  const st = slot === null ? undefined : show.settings.stingers?.[slot];
+  if (p < 1 && sc.transition && st?.path) {
+    // Under the stinger the pictures simply change at its cut point.
+    const cut = now - sc.transition.startedAt >= st.cutMs;
+    if (!cut && sc.previous !== null) layers.push({ id: sc.previous, opacity: 1 });
+    else if (sc.program !== null) layers.push({ id: sc.program, opacity: 1 });
+    return { layers, black: 0, white: 0, stinger: { path: st.path, startedAt: sc.transition.startedAt } };
+  }
   if (p < 1 && sc.transition && sc.previous !== null) {
     const black = pair(sc.previous, sc.program, mixAt(sc.transition.kind, p));
     return { layers, black, white };
   }
   if (sc.tbar > 0 && sc.preview !== null && sc.preview !== sc.program) {
-    const kind: TransitionKind = show.transition.kind === 'cut' ? 'fade' : show.transition.kind;
+    const kind: TransitionKind = show.transition.kind === 'cut' || stingerSlot(show.transition.kind) !== null ? 'fade' : show.transition.kind;
     const black = pair(sc.program, sc.preview, mixAt(kind, sc.tbar));
     return { layers, black, white };
   }
@@ -123,7 +143,8 @@ export function transitionKeyframes(kind: TransitionKind, side: 'in' | 'out' | '
 function useTransitionAnimation(box: React.RefObject<HTMLDivElement | null>, show: Show, screen: ScreenId): boolean {
   const sc = show.screens[screen];
   const t = sc.transition;
-  const running = canAnimate && !!t && sc.previous !== null && transitionProgress(sc, Date.now()) < 1;
+  // Stingers cut under their video, so React draws them.
+  const running = canAnimate && !!t && stingerSlot(t.kind) === null && sc.previous !== null && transitionProgress(sc, Date.now()) < 1;
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   const key = running && t ? `${t.startedAt}:${t.kind}:${t.durationMs}:${sc.previous}:${sc.program}` : null;
   useLayoutEffect(() => {
@@ -189,7 +210,7 @@ export function ProgramView({
   useNow(moving);
   // The ticker above only asks for redraws; each one is drawn for this very moment.
   const now = Date.now();
-  const { layers, black, white } = programLayers(show, screen, now);
+  const { layers, black, white, stinger } = programLayers(show, screen, now);
   const sc = show.screens[screen];
   const blank = fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs);
   // PANIC shows black or the event logo, as chosen in the event setup.
@@ -219,6 +240,7 @@ export function ProgramView({
         );
       })}
       <OverlaysView show={show} screen={screen} client={client} audience={audience} />
+      {stinger && <StingerVideo key={stinger.startedAt} play={stinger} client={client} />}
       {(black > 0 || animating) && <div style={{ ...box, background: '#000', opacity: black, zIndex: 2 }} data-dip />}
       {(white > 0 || animating) && <div style={{ ...box, background: '#fff', opacity: white, zIndex: 2 }} data-flash />}
       {blank > 0 && <div style={{ ...box, background: '#000', opacity: blank, zIndex: 4 }} data-blank />}
@@ -229,6 +251,33 @@ export function ProgramView({
       )}
       {children}
     </div>
+  );
+}
+
+/** The stinger video, from where it should be now. */
+function StingerVideo({ play, client }: { play: StingerPlay; client: EngineClient }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useLayoutEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const start = () => {
+      v.currentTime = Math.max(0, (Date.now() - play.startedAt) / 1000);
+      void v.play().catch(() => {});
+    };
+    if (v.readyState >= 1) start();
+    else v.addEventListener('loadedmetadata', start, { once: true });
+  }, [play.startedAt]);
+  return (
+    <video
+      ref={ref}
+      src={client.mediaUrl(play.path)}
+      muted
+      playsInline
+      preload="auto"
+      crossOrigin="anonymous"
+      style={{ ...box, background: 'transparent', width: '100%', height: '100%', objectFit: 'cover', zIndex: 3, pointerEvents: 'none' }}
+      data-stinger
+    />
   );
 }
 

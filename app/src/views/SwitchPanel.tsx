@@ -27,13 +27,25 @@ export const KINDS: { kind: TransitionKind; name: string }[] = [
   { kind: 'zoomOut', name: 'Zoom out' },
   { kind: 'blur', name: 'Blur' },
   { kind: 'flash', name: 'Flash' },
+  { kind: 'stinger1', name: 'Stinger 1' },
+  { kind: 'stinger2', name: 'Stinger 2' },
 ];
 
 /** The ones with their own button; the rest are under "More". */
 const MAIN = 6;
 
 /** Buttons for the usual transitions and a list with all the others. */
-function KindPicker({ value, onPick, label }: { value: TransitionKind; onPick: (k: TransitionKind) => void; label: string }) {
+function KindPicker({
+  value,
+  onPick,
+  label,
+  onStingers,
+}: {
+  value: TransitionKind;
+  onPick: (k: TransitionKind) => void;
+  label: string;
+  onStingers?: () => void;
+}) {
   const more = KINDS.slice(MAIN);
   const inMore = more.some((k) => k.kind === value);
   return (
@@ -47,7 +59,10 @@ function KindPicker({ value, onPick, label }: { value: TransitionKind; onPick: (
         className={`switch__more${inMore ? ' is-on' : ''}`}
         aria-label={`More ${label.toLowerCase()}s`}
         value={inMore ? value : ''}
-        onChange={(e) => e.target.value && onPick(e.target.value as TransitionKind)}
+        onChange={(e) => {
+          if (e.target.value === 'setup') onStingers?.();
+          else if (e.target.value) onPick(e.target.value as TransitionKind);
+        }}
       >
         <option value="">More…</option>
         {more.map((k) => (
@@ -55,6 +70,7 @@ function KindPicker({ value, onPick, label }: { value: TransitionKind; onPick: (
             {k.name}
           </option>
         ))}
+        {onStingers && <option value="setup">Set up stingers…</option>}
       </select>
     </div>
   );
@@ -65,7 +81,7 @@ export const DURATIONS = [300, 500, 800, 1200, 2000, 3000];
 const secs = (ms: number) => `${(ms / 1000).toFixed(ms % 1000 === 0 ? 0 : 1)}s`;
 
 /** TAKE, CUT, transition choice and the T-bar for the screen being controlled. */
-export function SwitchPanel({ show, screen, act }: { show: Show; screen: ScreenId; act: Act }) {
+export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; screen: ScreenId; act: Act; onStingers?: () => void }) {
   const sc = show.screens[screen];
   const t = show.transition;
   const hasPreview = sc.preview !== null && sc.preview !== sc.program;
@@ -89,7 +105,7 @@ export function SwitchPanel({ show, screen, act }: { show: Show; screen: ScreenI
       >
         CUT
       </button>
-      <KindPicker label="Transition" value={t.kind} onPick={(kind) => act({ type: 'setTransition', kind })} />
+      <KindPicker label="Transition" value={t.kind} onPick={(kind) => act({ type: 'setTransition', kind })} onStingers={onStingers} />
       <div className="switch__durations" role="radiogroup" aria-label="Transition length">
         {DURATIONS.map((d) => (
           <button

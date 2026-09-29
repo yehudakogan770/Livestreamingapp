@@ -8,7 +8,7 @@ import type { Countdown } from '../engine/types/Countdown';
 import type { EventInfo } from '../engine/types/EventInfo';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
-import { programLayers } from '../components/ScreenView';
+import { programLayers, type StingerPlay } from '../components/ScreenView';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
@@ -50,6 +50,8 @@ export class ProgramCompositor {
   private readonly keyers = new Map<string, ChromaKeyer>();
   private show: Show | null = null;
   private lastSync = 0;
+  /** The stinger video being played, if any. */
+  private sting: { path: string; el: HTMLVideoElement; startedAt: number } | null = null;
   /** Web pages: the newest captured frame of each, fetched as they come. */
   private readonly pages = new Map<string, { n: number; frame: ImageBitmap | null; busy: boolean; seen: number }>();
   private pageInfo: { port: number | null; captured: boolean } | null = null;
@@ -87,6 +89,7 @@ export class ProgramCompositor {
   }
 
   dispose(): void {
+    this.stopSting();
     if (this.visuals) this.visuals.r.dispose();
     for (const l of this.logos.values()) {
       if (l) {
@@ -113,7 +116,7 @@ export class ProgramCompositor {
     if (!show) return;
 
     const sc = show.screens[this.screen];
-    const { layers, black, white } = programLayers(show, this.screen, now);
+    const { layers, black, white, stinger } = programLayers(show, this.screen, now);
     // Also open what is behind a Pesukim input on air.
     const behind = layers.map((l) => pesukimOf(show, l.id)?.look.behind ?? null);
     // And what is inside a split screen on air.
@@ -159,6 +162,7 @@ export class ProgramCompositor {
     this.overlay('#000', black, w, h);
     this.overlay('#fff', white, w, h);
     for (const { o } of overlays) this.drawOverlay(o, show, now, w, h);
+    this.drawSting(stinger, now, w, h);
     this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), w, h);
     const panic = fadeAmount(show.panic, show.panicChangedAt, now);
     if (panic > 0) {
@@ -168,6 +172,39 @@ export class ProgramCompositor {
       ctx.restore();
     }
     ctx.globalAlpha = 1;
+  }
+
+  private drawSting(play: StingerPlay | undefined, now: number, w: number, h: number) {
+    if (!play) {
+      this.stopSting();
+      return;
+    }
+    if (!this.sting || this.sting.path !== play.path) {
+      this.stopSting();
+      const el = document.createElement('video');
+      el.crossOrigin = 'anonymous';
+      el.muted = true;
+      el.playsInline = true;
+      el.preload = 'auto';
+      el.src = this.client.mediaUrl(play.path);
+      this.sting = { path: play.path, el, startedAt: -1 };
+    }
+    const s = this.sting;
+    const at = Math.max(0, (now - play.startedAt) / 1000);
+    if (s.startedAt !== play.startedAt || Math.abs(s.el.currentTime - at) > 0.15) {
+      s.startedAt = play.startedAt;
+      if (s.el.readyState >= 1) s.el.currentTime = at;
+      if (s.el.paused) void s.el.play().catch(() => {});
+    }
+    if (s.el.readyState >= 2) this.ctx.drawImage(s.el, 0, 0, w, h);
+  }
+
+  private stopSting() {
+    if (!this.sting) return;
+    this.sting.el.pause();
+    this.sting.el.removeAttribute('src');
+    this.sting.el.load();
+    this.sting = null;
   }
 
   private overlay(color: string, amount: number, w: number, h: number) {

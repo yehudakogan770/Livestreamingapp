@@ -16,6 +16,7 @@ import { CueBar, RunOfShowDialog } from './RunOfShow';
 import { LibraryDialog } from './LibraryDialog';
 import { VisualsPage } from './VisualsPage';
 import { LogoMaker } from './LogoMaker';
+import { StingerDialog } from './StingerDialog';
 import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
 import { snapshot, snapshotName } from '../broadcast/snapshot';
@@ -68,6 +69,7 @@ export function ControlView({
   const [triggersOpen, setTriggersOpen] = useState(false);
   /** The 3D logo maker: the input being changed (null: a new one). */
   const [logoMaker, setLogoMaker] = useState<{ id: string | null } | null>(null);
+  const [stingers, setStingers] = useState(false);
   useCommands(
     useCallback((c: Command) => {
       if (c.type === 'addInput') {
@@ -230,7 +232,7 @@ export function ControlView({
                 <Transport source={find(sc.preview)} act={act} label="Next" />
               </div>
               <div className="centre">
-                <SwitchPanel show={show} screen={screen} act={act} />
+                <SwitchPanel show={show} screen={screen} act={act} onStingers={() => setStingers(true)} />
                 <div className="centre__more">
                   {pesukimTarget(show, screen) ? (
                     <PesukimCard show={show} act={act} screen={screen} client={client} />
@@ -368,6 +370,7 @@ export function ControlView({
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
+      {stingers && <StingerDialog show={show} act={act} client={client} onClose={() => setStingers(false)} />}
       {logoMaker && (
         <LogoMaker
           show={show}

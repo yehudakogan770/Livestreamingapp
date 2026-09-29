@@ -306,6 +306,10 @@ export function emptyShow(): Show {
       audioOutputs: { master: null, a: null, b: null, headphones: null },
       fadeToBlackMs: 2000,
       multiview: { display: null, layout: 'classic' },
+      stingers: [
+        { path: '', durationMs: 0, cutMs: 0 },
+        { path: '', durationMs: 0, cutMs: 0 },
+      ],
       favouriteTransitions: [
         { kind: 'fade', durationMs: 800 },
         { kind: 'dip', durationMs: 1500 },

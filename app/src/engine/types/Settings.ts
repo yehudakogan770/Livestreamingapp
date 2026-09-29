@@ -2,6 +2,7 @@
 import type { AudioOutputs } from "./AudioOutputs";
 import type { Multiview } from "./Multiview";
 import type { PerScreen } from "./PerScreen";
+import type { Stinger } from "./Stinger";
 import type { Transition } from "./Transition";
 
 /**
@@ -31,4 +32,8 @@ favouriteTransitions: Array<Transition>,
 /**
  * The multiview screen: which display it goes to, and its layout.
  */
-multiview: Multiview, };
+multiview: Multiview, 
+/**
+ * The stinger transitions.
+ */
+stingers: Array<Stinger>, };

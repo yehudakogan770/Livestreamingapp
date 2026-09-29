@@ -831,6 +831,15 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::SetStinger { index, mut stinger } => {
+            if index >= s.settings.stingers.len() {
+                return Err(ActionError::invalid("index", "there are 2 stingers"));
+            }
+            stinger.duration_ms = stinger.duration_ms.clamp(MIN_TRANSITION_MS, 30_000);
+            stinger.cut_ms = stinger.cut_ms.min(stinger.duration_ms);
+            s.settings.stingers[index] = stinger;
+            Ok(())
+        }
         Action::SetFadeToBlackLength { ms } => {
             s.settings.fade_to_black_ms = ms.clamp(100, 10_000);
             Ok(())
@@ -1535,6 +1544,7 @@ fn follow_live(s: &mut Show, live_before: &ScreenState, was_following: bool, now
         return;
     }
     let live = s.screens.live.clone();
+    let t = resolve_stinger(s, s.transition);
     let back = &mut s.screens.back;
     if !was_following {
         if back.program != live.program {
@@ -1543,7 +1553,6 @@ fn follow_live(s: &mut Show, live_before: &ScreenState, was_following: bool, now
                 .clone()
                 .filter(|b| Some(b) != live.program.as_ref());
             back.program.clone_from(&live.program);
-            let t = s.transition;
             back.transition = Some(ActiveTransition {
                 kind: t.kind,
                 duration_ms: t.duration_ms,
@@ -1561,7 +1570,25 @@ fn follow_live(s: &mut Show, live_before: &ScreenState, was_following: bool, now
 
 // ---------- switching ----------
 
+/// A stinger runs for the length of its video; one not set up is a fade.
+fn resolve_stinger(s: &Show, t: Transition) -> Transition {
+    match t.kind.stinger() {
+        None => t,
+        Some(i) => match s.settings.stingers.get(i) {
+            Some(st) if !st.path.is_empty() => Transition {
+                kind: t.kind,
+                duration_ms: st.duration_ms.max(MIN_TRANSITION_MS),
+            },
+            _ => Transition {
+                kind: TransitionKind::Fade,
+                duration_ms: t.duration_ms,
+            },
+        },
+    }
+}
+
 fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()> {
+    let t = resolve_stinger(s, t);
     let sc = s.screens.get(screen);
     let Some(incoming) = sc.preview.clone() else {
         return Err(ActionError::NothingInPreview { screen });

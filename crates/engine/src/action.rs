@@ -228,6 +228,11 @@ pub enum Action {
     SetMultiview {
         multiview: crate::model::Multiview,
     },
+    /// Set up stinger slot 0 or 1 (an empty path clears it).
+    SetStinger {
+        index: usize,
+        stinger: crate::model::Stinger,
+    },
     /// How long Fade to black takes.
     SetFadeToBlackLength {
         ms: u32,

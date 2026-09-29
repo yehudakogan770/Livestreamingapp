@@ -151,11 +151,20 @@ function mixOf(kind: TransitionKind, x: number): Mix {
       return { inOpacity: e, outOpacity: 1, black: 0, inScale: 0.6 + 0.4 * e };
     case 'zoomOut':
       return { inOpacity: 1, outOpacity: 1 - e, black: 0, outScale: 1 + 0.6 * e, outOnTop: true };
+    case 'stinger1':
+    case 'stinger2':
+      // The stinger covers the switch; programLayers cuts at its own point.
+      return { inOpacity: x >= 0.5 ? 1 : 0, outOpacity: 1, black: 0 };
     case 'blur': {
       const b = Math.sin(Math.PI * x) * BLUR;
       return { inOpacity: smooth(Math.min(1, Math.max(0, (x - 0.3) / 0.4))), outOpacity: 1, black: 0, inBlur: b, outBlur: b };
     }
   }
+}
+
+/** Which stinger slot a transition plays, or null. */
+export function stingerSlot(kind: TransitionKind): number | null {
+  return kind === 'stinger1' ? 0 : kind === 'stinger2' ? 1 : null;
 }
 
 export function mixAt(kind: TransitionKind, p: number): Mix {

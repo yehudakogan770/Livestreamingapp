@@ -115,6 +115,42 @@ pub enum TransitionKind {
     Blur,
     /// A flash of white, then the new source.
     Flash,
+    /// A stinger video plays over the switch (the two set up in Settings).
+    Stinger1,
+    Stinger2,
+}
+
+impl TransitionKind {
+    /// Which stinger slot this plays, if it is a stinger.
+    #[must_use]
+    pub fn stinger(self) -> Option<usize> {
+        match self {
+            TransitionKind::Stinger1 => Some(0),
+            TransitionKind::Stinger2 => Some(1),
+            _ => None,
+        }
+    }
+}
+
+/// A stinger: a short video (usually with see-through parts) that covers the
+/// switch. The pictures change under it at the cut point.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct Stinger {
+    /// The video file ("" when not set up).
+    pub path: String,
+    /// Its length, ms.
+    pub duration_ms: u32,
+    /// When the pictures change underneath, ms from the start.
+    pub cut_ms: u32,
+}
+
+/// How many stinger slots there are.
+pub const STINGERS: usize = 2;
+
+fn default_stingers() -> Vec<Stinger> {
+    vec![Stinger::default(); STINGERS]
 }
 
 /// A transition type together with its length.
@@ -404,6 +440,9 @@ pub struct Settings {
     /// The multiview screen: which display it goes to, and its layout.
     #[serde(default)]
     pub multiview: Multiview,
+    /// The stinger transitions.
+    #[serde(default = "default_stingers")]
+    pub stingers: Vec<Stinger>,
 }
 
 /// How the multiview screen is laid out.
@@ -455,6 +494,7 @@ impl Default for Settings {
             audio_outputs: AudioOutputs::default(),
             fade_to_black_ms: default_ftb(),
             favourite_transitions: default_favourites(),
+            stingers: default_stingers(),
             multiview: Multiview::default(),
         }
     }

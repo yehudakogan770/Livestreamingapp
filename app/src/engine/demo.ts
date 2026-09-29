@@ -11,6 +11,7 @@ import { applyLayout } from './split';
 import { creditsPosition } from './credits';
 import type { Credits } from './types/Credits';
 import { repairOverlay, setOverlayOn } from './overlays';
+import { stingerSlot } from './timing';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
 import type { Action } from './types/Action';
@@ -117,7 +118,16 @@ function startIfVideo(s: Show, id: string, now: number) {
   src.kind.playback = { playing: true, posS: ended ? 0 : sourcePosition(src, now), at: now };
 }
 
-function take(s: Show, screen: ScreenId, kind: Show['transition']['kind'], durationMs: number, now: number) {
+/** A stinger runs for the length of its video; one not set up is a fade. */
+export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; durationMs: number }) {
+  const i = stingerSlot(t.kind);
+  if (i === null) return t;
+  const st = s.settings.stingers?.[i];
+  return st?.path ? { kind: t.kind, durationMs: Math.max(MIN_TRANSITION_MS, st.durationMs) } : { kind: 'fade' as const, durationMs: t.durationMs };
+}
+
+function take(s: Show, screen: ScreenId, kind0: Show['transition']['kind'], durationMs0: number, now: number) {
+  const { kind, durationMs } = resolveStinger(s, { kind: kind0, durationMs: durationMs0 });
   const sc = s.screens[screen];
   const incoming = sc.preview;
   if (incoming === null) throw new Refused({ code: 'nothingInPreview', screen });
@@ -192,7 +202,7 @@ function followLive(s: Show, liveBefore: ScreenState, wasFollowing: boolean, now
     if (back.program !== live.program) {
       back.previous = back.program !== live.program ? back.program : null;
       back.program = live.program;
-      back.transition = { ...s.transition, startedAt: now };
+      back.transition = { ...resolveStinger(s, s.transition), startedAt: now };
     }
     back.tbar = 0;
   } else if (!sameScreen(live, liveBefore)) {
@@ -374,6 +384,13 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'setStinger': {
+      if (a.index < 0 || a.index > 1) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 2 stingers' });
+      const durationMs = Math.min(30_000, Math.max(MIN_TRANSITION_MS, a.stinger.durationMs));
+      s.settings.stingers ??= [0, 1].map(() => ({ path: '', durationMs: 0, cutMs: 0 }));
+      s.settings.stingers[a.index] = { path: a.stinger.path, durationMs, cutMs: Math.min(durationMs, a.stinger.cutMs) };
+      return;
+    }
     case 'setFadeToBlackLength':
       s.settings.fadeToBlackMs = Math.min(10_000, Math.max(100, a.ms));
       return;
