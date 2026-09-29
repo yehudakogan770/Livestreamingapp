@@ -850,6 +850,38 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::UpdateScoreboard { id, scoreboard } => {
+            let sb = scoreboard_mut(s, &id)?;
+            let (home, away, clock) = (sb.home.score, sb.away.score, sb.clock.clone());
+            let mut next = scoreboard;
+            next.repair();
+            next.home.score = home;
+            next.away.score = away;
+            next.clock.since = clock.since;
+            next.clock.run_ms = clock.run_ms;
+            *sb = next;
+            Ok(())
+        }
+        Action::Score { id, side, delta } => {
+            let t = scoreboard_mut(s, &id)?.team_mut(side);
+            t.score = t.score.saturating_add(delta).clamp(-999, 9999);
+            Ok(())
+        }
+        Action::ScoreReset { id } => {
+            let sb = scoreboard_mut(s, &id)?;
+            sb.home.score = 0;
+            sb.away.score = 0;
+            Ok(())
+        }
+        Action::ScoreClock { id, run } => {
+            scoreboard_mut(s, &id)?.clock.run(run, now);
+            Ok(())
+        }
+        Action::ScoreClockSet { id, ms } => {
+            let c = &mut scoreboard_mut(s, &id)?.clock;
+            c.set(ms.min(24 * 3_600_000), now);
+            Ok(())
+        }
         Action::SetStinger { index, mut stinger } => {
             if index >= s.settings.stingers.len() {
                 return Err(ActionError::invalid("index", "there are 2 stingers"));
@@ -1653,6 +1685,16 @@ fn resolve_stinger(s: &Show, t: Transition) -> Transition {
     }
 }
 
+fn scoreboard_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::score::Scoreboard> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Scoreboard(sb) => Ok(sb),
+        _ => Err(ActionError::invalid("id", "that input is not a scoreboard")),
+    }
+}
+
 fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()> {
     let t = resolve_stinger(s, t);
     let sc = s.screens.get(screen);
@@ -1887,6 +1929,11 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         SourceKind::Logo3d(mut l) => {
             l.repair();
             SourceKind::Logo3d(l)
+        }
+        SourceKind::Scoreboard(mut sb) => {
+            sb.repair();
+            sb.clock.since = None;
+            SourceKind::Scoreboard(sb)
         }
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {

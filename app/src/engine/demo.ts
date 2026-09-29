@@ -12,6 +12,7 @@ import { creditsPosition } from './credits';
 import type { Credits } from './types/Credits';
 import { repairOverlay, setOverlayOn } from './overlays';
 import { stingerSlot } from './timing';
+import { repairScoreboard, runClock, setClock } from './score';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -125,6 +126,12 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
   if (i === null) return t;
   const st = s.settings.stingers?.[i];
   return st?.path ? { kind: t.kind, durationMs: Math.max(MIN_TRANSITION_MS, st.durationMs) } : { kind: 'fade' as const, durationMs: t.durationMs };
+}
+
+function scoreboard(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'scoreboard') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a scoreboard' });
+  return src.kind;
 }
 
 function take(s: Show, screen: ScreenId, kind0: Show['transition']['kind'], durationMs0: number, now: number) {
@@ -384,6 +391,34 @@ function apply(s: Show, a: Action, now: number) {
     }
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
+      return;
+    case 'updateScoreboard': {
+      const sb = scoreboard(s, a.id);
+      const next = structuredClone(a.scoreboard);
+      repairScoreboard(next);
+      next.home.score = sb.home.score;
+      next.away.score = sb.away.score;
+      next.clock.since = sb.clock.since;
+      next.clock.runMs = sb.clock.runMs;
+      Object.assign(sb, next);
+      return;
+    }
+    case 'score': {
+      const t = scoreboard(s, a.id)[a.side];
+      t.score = Math.min(9999, Math.max(-999, t.score + a.delta));
+      return;
+    }
+    case 'scoreReset': {
+      const sb = scoreboard(s, a.id);
+      sb.home.score = 0;
+      sb.away.score = 0;
+      return;
+    }
+    case 'scoreClock':
+      runClock(scoreboard(s, a.id).clock, a.run, now);
+      return;
+    case 'scoreClockSet':
+      setClock(scoreboard(s, a.id).clock, Math.min(24 * 3_600_000, a.ms), now);
       return;
     case 'setStinger': {
       if (a.index < 0 || a.index > 1) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 2 stingers' });

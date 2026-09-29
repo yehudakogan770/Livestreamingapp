@@ -1,3 +1,4 @@
+import { ScoreboardView } from './ScoreboardView';
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useReportProblem } from '../problems/problems';
 import type { EngineClient } from '../engine/client';
@@ -111,6 +112,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <VisualsInput thumb={thumb} audience={audience} />;
     case 'logo3d':
       return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
+    case 'scoreboard':
+      return <ScoreboardView sb={k} />;
     case 'stream':
       return <StreamView id={source.id} client={client} fit={fit} audience={audience} />;
     case 'browser':

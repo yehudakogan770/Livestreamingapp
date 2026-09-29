@@ -34,6 +34,12 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("panic", "state (on, off, toggle)"),
     ("flash", ""),
     ("slide", "input or name, to (next, previous or a number)"),
+    (
+        "score",
+        "input or name, team (home or away), add (1, -1, 3…)",
+    ),
+    ("scorereset", "input or name"),
+    ("clock", "input or name, state (on, off, toggle)"),
 ];
 
 fn get<'a>(q: &'a [(String, String)], key: &str) -> Option<&'a str> {
@@ -265,6 +271,32 @@ pub fn command(show: &Value, cmd: &str, q: &[(String, String)]) -> Result<Action
                     json!({"type": "slideGo", "id": id, "index": i})
                 }
             }
+        }
+        "score" => {
+            let id = input(show, q)?;
+            let side = match get(q, "team")
+                .unwrap_or("home")
+                .to_ascii_lowercase()
+                .as_str()
+            {
+                "home" | "1" => "home",
+                "away" | "2" => "away",
+                t => return Err(format!("team must be home or away, not \"{t}\"")),
+            };
+            let delta: i32 = get(q, "add")
+                .unwrap_or("1")
+                .parse()
+                .map_err(|_| "add must be a number".to_owned())?;
+            json!({"type": "score", "id": id, "side": side, "delta": delta})
+        }
+        "scorereset" => json!({"type": "scoreReset", "id": input(show, q)?}),
+        "clock" => {
+            let id = input(show, q)?;
+            let running = sources(show)
+                .iter()
+                .find(|s| s["id"] == json!(id))
+                .is_some_and(|s| !s["kind"]["clock"]["since"].is_null());
+            json!({"type": "scoreClock", "id": id, "run": state(q, running)?})
         }
         other => {
             let names: Vec<&str> = COMMANDS.iter().map(|(n, _)| *n).collect();

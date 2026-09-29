@@ -1,3 +1,4 @@
+import { defaultScoreboard } from '../engine/score';
 import { cleanStreamUrl, streamName } from '../engine/stream';
 import { cleanUrl, defaultBrowser } from '../engine/browser';
 import { sendCommand } from './commands';
@@ -34,6 +35,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'scoreboard', name: 'Scoreboard', hint: 'Teams, scores, period and game clock' },
   { kind: 'browser', name: 'Web page', hint: 'A website: scores, live results, social wall…' },
   { kind: 'logo3d', name: '3D logo', hint: 'Your logo in 3D, turning (the logo maker)' },
   { kind: 'visuals', name: 'Stage visuals', hint: 'Music visuals on the beat, for the Back Screen' },
@@ -142,6 +144,8 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'scoreboard':
+        return { name: n || 'Scoreboard', kind: { type: 'scoreboard', ...defaultScoreboard() } };
       case 'stream': {
         const url = cleanStreamUrl(words);
         return url ? { name: n || streamName(url), kind: { type: 'stream', url, bufferMs: 500 } } : null;

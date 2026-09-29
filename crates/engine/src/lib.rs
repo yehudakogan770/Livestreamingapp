@@ -26,6 +26,7 @@ pub mod persist;
 pub mod pesukim;
 pub mod playlist;
 pub mod presets;
+pub mod score;
 pub mod slideshow;
 pub mod split;
 pub mod stage;

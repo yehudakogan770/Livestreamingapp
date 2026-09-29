@@ -20,6 +20,8 @@ import { loopVisuals } from '../logo3d/background';
 import { browserInfo } from '../engine/browser';
 import { logoRect, VisualsPlayer } from '../visuals/player';
 import { buildAt, isRtl, withAlpha } from '../engine/text';
+import { clockShown, formatGameClock } from '../engine/score';
+import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
 import type { TextInput } from '../engine/types/TextInput';
@@ -217,6 +219,140 @@ export class ProgramCompositor {
     this.sting = null;
   }
 
+  /** A scoreboard (mirrors ScoreboardView and its CSS). */
+  private scoreboard(sb: Scoreboard, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const k = h / 1080;
+    const clock = formatGameClock(clockShown(sb.clock, now), sb.clock.countDown);
+    const font = (px: number, weight = 800) => `${weight} ${px * k}px "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    if (sb.style === 'full') {
+      const g = ctx.createRadialGradient(w / 2, h * 0.3, 0, w / 2, h * 0.3, Math.hypot(w, h) * 0.6);
+      g.addColorStop(0, '#1d2430');
+      g.addColorStop(1, '#07080b');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      if (sb.title) {
+        ctx.fillStyle = '#c9ccd2';
+        ctx.font = font(48, 700);
+        ctx.fillText(sb.title, w / 2, 70 * k + 30 * k);
+      }
+      const side = (t: Scoreboard['home'], cx: number) => {
+        const cy = h * 0.54;
+        ctx.fillStyle = t.color;
+        ctx.fillRect(cx - w * 0.14, cy - 230 * k, w * 0.28, 12 * k);
+        ctx.fillStyle = '#fff';
+        ctx.font = font(64, 700);
+        ctx.fillText(t.name, cx, cy - 170 * k);
+        ctx.font = font(260);
+        ctx.fillText(String(t.score), cx, cy + 20 * k);
+      };
+      side(sb.home, w * 0.24);
+      side(sb.away, w * 0.76);
+      ctx.fillStyle = '#fff';
+      if (sb.showClock) {
+        ctx.font = font(96);
+        ctx.fillText(clock, w / 2, h * 0.5);
+      }
+      if (sb.period) {
+        ctx.fillStyle = '#c9ccd2';
+        ctx.font = font(44, 600);
+        ctx.fillText(sb.period, w / 2, h * 0.5 + 90 * k);
+      }
+      ctx.restore();
+      return;
+    }
+    const bar = sb.style === 'bar';
+    const bh = (bar ? 76 : 56) * k;
+    const nameSize = bar ? 34 : 28;
+    const scoreSize = bar ? 46 : 34;
+    const strip = (bar ? 10 : 8) * k;
+    const pad = (bar ? 20 : 14) * k;
+    const scoreW = (bar ? 84 : 60) * k;
+    const clockSize = bar ? 34 : 28;
+    const periodSize = bar ? 22 : 18;
+    const measure = (t: string, px: number, weight = 800) => {
+      ctx.font = font(px, weight);
+      return ctx.measureText(t).width;
+    };
+    const teamW = (t: Scoreboard['home']) => strip + pad * 2 + measure(bar ? t.name : t.short || t.name, nameSize) + Math.max(scoreW, measure(String(t.score), scoreSize) + pad);
+    const hasInfo = !!sb.period || sb.showClock;
+    const cw = sb.showClock ? measure(clock, clockSize) : 0;
+    const pw = sb.period ? measure(sb.period, periodSize, 600) : 0;
+    const infoW = !hasInfo ? 0 : bar ? Math.max(cw, pw) + pad * 2 : cw + pw + pad * (sb.showClock && sb.period ? 3 : 2);
+    const total = teamW(sb.home) + teamW(sb.away) + infoW;
+    const x0 = bar ? (w - total) / 2 : w * 0.035;
+    const y0 = bar ? h * 0.93 - bh : h * 0.05;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 16 * k;
+    ctx.shadowOffsetY = 4 * k;
+    ctx.fillStyle = 'rgba(13,15,19,0.92)';
+    ctx.beginPath();
+    ctx.roundRect(x0, y0, total, bh, 6 * k);
+    ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x0, y0, total, bh, 6 * k);
+    ctx.clip();
+    const cy = y0 + bh / 2;
+    const team = (t: Scoreboard['home'], x: number, end: boolean) => {
+      const tw = teamW(t);
+      const sw = tw - strip - pad * 2 - measure(bar ? t.name : t.short || t.name, nameSize);
+      // Strip, name, score (reversed for the away team on the bar).
+      const stripX = end ? x + tw - strip : x;
+      const scoreX = end ? x : x + tw - sw;
+      const nameX = end ? x + sw + pad + (tw - sw - strip - pad * 2) / 2 : x + strip + pad + (tw - sw - strip - pad * 2) / 2;
+      ctx.fillStyle = t.color;
+      ctx.fillRect(stripX, y0, strip, bh);
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(scoreX, y0, sw, bh);
+      ctx.fillStyle = '#fff';
+      ctx.font = font(nameSize);
+      ctx.fillText(bar ? t.name : t.short || t.name, nameX, cy);
+      ctx.font = font(scoreSize);
+      ctx.fillText(String(t.score), scoreX + sw / 2, cy);
+      return x + tw;
+    };
+    const info = (x: number) => {
+      if (!hasInfo) return x;
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fillRect(x, y0, infoW, bh);
+      if (bar) {
+        const both = sb.showClock && sb.period;
+        ctx.fillStyle = '#fff';
+        ctx.font = font(clockSize);
+        if (sb.showClock) ctx.fillText(clock, x + infoW / 2, both ? cy - periodSize * 0.55 * k : cy);
+        ctx.fillStyle = '#c9ccd2';
+        ctx.font = font(periodSize, 600);
+        if (sb.period) ctx.fillText(sb.period, x + infoW / 2, both ? cy + clockSize * 0.55 * k : cy);
+      } else {
+        let cx = x + pad;
+        if (sb.showClock) {
+          ctx.fillStyle = '#fff';
+          ctx.font = font(clockSize);
+          ctx.fillText(clock, cx + cw / 2, cy);
+          cx += cw + pad;
+        }
+        if (sb.period) {
+          ctx.fillStyle = '#c9ccd2';
+          ctx.font = font(periodSize, 600);
+          ctx.fillText(sb.period, cx + pw / 2, cy);
+        }
+      }
+      return x + infoW;
+    };
+    let x = team(sb.home, x0, false);
+    if (bar) x = info(x);
+    x = team(sb.away, x, bar);
+    if (!bar) info(x);
+    ctx.restore();
+    ctx.restore();
+  }
+
   /** When this source started being drawn, without a break. */
   private since(id: string, now: number): number {
     if (!this.drawnBefore.has(id) && !this.drawnNow.has(id)) this.starts.set(id, now);
@@ -328,6 +464,9 @@ export class ProgramCompositor {
         return;
       case 'pesukim':
         this.pesukim(k, event, now, w, h);
+        return;
+      case 'scoreboard':
+        this.scoreboard(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

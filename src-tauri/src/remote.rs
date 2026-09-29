@@ -138,6 +138,10 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SlidePrevious { .. }
             | Action::SlideGo { .. }
             | Action::PlaylistGo { .. }
+            | Action::Score { .. }
+            | Action::ScoreReset { .. }
+            | Action::ScoreClock { .. }
+            | Action::ScoreClockSet { .. }
             | Action::CreditsPlay { .. }
             | Action::CreditsRestart { .. }
             | Action::CreditsSpeed { .. }

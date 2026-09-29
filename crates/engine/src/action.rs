@@ -239,6 +239,32 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Change a scoreboard's teams, colours, period and look (scores and clock stay).
+    UpdateScoreboard {
+        id: SourceId,
+        scoreboard: crate::score::Scoreboard,
+    },
+    /// Add to (or take from) a team's score.
+    Score {
+        id: SourceId,
+        side: crate::score::Side,
+        delta: i32,
+    },
+    /// Set both scores back to 0.
+    ScoreReset {
+        id: SourceId,
+    },
+    /// Start or stop the game clock.
+    ScoreClock {
+        id: SourceId,
+        run: bool,
+    },
+    /// Make the game clock show this time.
+    ScoreClockSet {
+        id: SourceId,
+        #[ts(type = "number")]
+        ms: u64,
+    },
     /// Set up stinger slot 0 or 1 (an empty path clears it).
     SetStinger {
         index: usize,

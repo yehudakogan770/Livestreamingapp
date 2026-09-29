@@ -273,6 +273,8 @@ pub enum SourceKind {
     Browser(Box<crate::browser::BrowserInput>),
     /// A live video link (SRT, RTMP, RTSP, HLS…).
     Stream(Box<crate::stream::StreamInput>),
+    /// A scoreboard: teams, scores, period and game clock.
+    Scoreboard(Box<crate::score::Scoreboard>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,

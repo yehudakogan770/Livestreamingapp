@@ -1,0 +1,88 @@
+.modal__box.scc {
+  width: min(960px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+.scc__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+}
+.scc__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-height: 34vh;
+  align-self: center;
+  width: 100%;
+  max-width: calc(34vh * 16 / 9);
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2e5a3a, #173020);
+}
+.scc__teams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .scc__teams {
+    grid-template-columns: 1fr;
+  }
+}
+.scc__team,
+.scc__clock {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-top-width: 4px;
+  border-radius: 8px;
+}
+.scc__clock {
+  border-top-color: var(--border);
+}
+.scc__tname {
+  font-weight: 700;
+  text-align: center;
+}
+.scc__score,
+.scc__time {
+  text-align: center;
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.scc__time {
+  font-size: 44px;
+}
+.scc__btns {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.scc__btns .btn {
+  height: 40px;
+  font-size: 16px;
+  font-weight: 800;
+}
+.scc__row,
+.scc__look,
+.scc__periods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.scc__row .text {
+  flex: 1 1 60px;
+  min-width: 0;
+}
+.scc__short {
+  width: 70px;
+  flex: 0 0 auto;
+}
