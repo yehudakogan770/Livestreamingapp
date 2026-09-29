@@ -1962,6 +1962,24 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
     Ok(())
 }
 
+/// A new song, screen capture or scoreboard: valid, from its start.
+fn fresh(mut kind: SourceKind) -> SourceKind {
+    match &mut kind {
+        SourceKind::Lyrics(l) => {
+            l.current = 0;
+            l.blank = false;
+            l.repair();
+        }
+        SourceKind::Screen(c) => c.repair(),
+        SourceKind::Scoreboard(sb) => {
+            sb.repair();
+            sb.clock.since = None;
+        }
+        _ => {}
+    }
+    kind
+}
+
 fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
     Ok(match kind {
         SourceKind::Camera { device_id, label } => SourceKind::Camera { device_id, label },
@@ -1989,21 +2007,7 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
             l.repair();
             SourceKind::Logo3d(l)
         }
-        SourceKind::Lyrics(mut l) => {
-            l.current = 0;
-            l.blank = false;
-            l.repair();
-            SourceKind::Lyrics(l)
-        }
-        SourceKind::Screen(mut c) => {
-            c.repair();
-            SourceKind::Screen(c)
-        }
-        SourceKind::Scoreboard(mut sb) => {
-            sb.repair();
-            sb.clock.since = None;
-            SourceKind::Scoreboard(sb)
-        }
+        k @ (SourceKind::Lyrics(_) | SourceKind::Screen(_) | SourceKind::Scoreboard(_)) => fresh(k),
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {
                 ActionError::invalid(
