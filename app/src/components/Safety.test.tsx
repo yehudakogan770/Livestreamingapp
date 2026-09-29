@@ -1,3 +1,4 @@
+import { defaultFilters } from '../engine/audio';
 import { defaultAdjust } from '../engine/chroma';
 import { act, fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -17,7 +18,7 @@ const picture: Source = {
   muted: false,
   looping: false,
   fit: 'contain',
-  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
   adjust: defaultAdjust(),
 };
@@ -29,7 +30,7 @@ const video: Source = {
   muted: false,
   looping: false,
   fit: 'contain',
-  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
   adjust: defaultAdjust(),
 };

@@ -1,3 +1,4 @@
+import { defaultFilters } from '../engine/audio';
 import { defaultScoreboard } from '../engine/score';
 import { cleanStreamUrl, streamName } from '../engine/stream';
 import { cleanUrl, defaultBrowser } from '../engine/browser';
@@ -134,7 +135,7 @@ export function AddInput({
               kind: { type: 'video', path, durationS: 0, playback: { playing: false, posS: 0, at: 0 } },
               looping,
               // Music and effects are heard whenever they play, not only "on air".
-              audio: { follow: false, toMaster: true, toA: true, toB: true, delayMs: 0 },
+              audio: { follow: false, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
             }
           : null;
       case 'pattern':
@@ -184,7 +185,7 @@ export function AddInput({
         muted: true,
         looping: false,
         fit: 'contain' as const,
-        audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+        audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
         ...ready,
       }
     : null;

@@ -1,3 +1,4 @@
+import { defaultFilters } from './audio';
 import type { TransitionKind } from './types/TransitionKind';
 import { defaultAdjust } from './chroma';
 import { describe, expect, it } from 'vitest';
@@ -13,7 +14,7 @@ const video = (durationS: number, looping: boolean, playing: boolean, posS: numb
   muted: false,
   looping,
   fit: 'contain',
-  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+  audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
   adjust: defaultAdjust(),
 });

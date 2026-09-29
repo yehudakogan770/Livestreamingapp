@@ -4,9 +4,15 @@
 
 import type { Show } from './types/Show';
 import type { Source } from './types/Source';
+import type { AudioFilters } from './types/AudioFilters';
 import { fadeAmount, mixAt, transitionProgress } from './timing';
 
 export type Mix = 'master' | 'a' | 'b';
+
+/** No filters: the sound as it comes in. */
+export function defaultFilters(): AudioFilters {
+  return { lowCut: false, bassDb: 0, midDb: 0, trebleDb: 0, gate: false, gateDb: -50, compressor: false, noiseSuppression: false };
+}
 
 /**
  * How much a source is on air on the Live Screen (the stream): 1 on air,

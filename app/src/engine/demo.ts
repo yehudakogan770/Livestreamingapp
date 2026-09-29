@@ -1,3 +1,4 @@
+import { defaultFilters } from './audio';
 // A small stand-in for the Rust engine, used only when the screens are opened
 // in a plain browser (design work, automated UI tests). It follows the same
 // rules as crates/engine for the actions the screens use. Inside Lumora the
@@ -254,7 +255,7 @@ function apply(s: Show, a: Action, now: number) {
         looping: a.source.looping ?? false,
         fit: a.source.fit ?? 'contain',
         audio: {
-          ...(a.source.audio ?? { follow: kind.type !== 'microphone', toMaster: true, toA: true, toB: true, delayMs: 0 }),
+          ...(a.source.audio ?? { follow: kind.type !== 'microphone', toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() }),
           delayMs: Math.min(5000, Math.max(0, a.source.audio?.delayMs ?? 0)),
         },
       });
@@ -290,6 +291,16 @@ function apply(s: Show, a: Action, now: number) {
         if (q.toA !== undefined) au.toA = q.toA;
         if (q.toB !== undefined) au.toB = q.toB;
         if (q.delayMs !== undefined) au.delayMs = Math.min(5000, Math.max(0, q.delayMs));
+        if (q.filters !== undefined) {
+          const c = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, Math.round(v)));
+          au.filters = {
+            ...q.filters,
+            bassDb: c(q.filters.bassDb, -12, 12),
+            midDb: c(q.filters.midDb, -12, 12),
+            trebleDb: c(q.filters.trebleDb, -12, 12),
+            gateDb: c(q.filters.gateDb, -80, 0),
+          };
+        }
       }
       if (p.color !== undefined) {
         if (src.kind.type === 'color') src.kind.color = p.color;

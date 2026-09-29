@@ -29,6 +29,56 @@ pub struct SourceAudio {
     pub to_b: bool,
     /// Sound delay, to line up with the picture.
     pub delay_ms: u32,
+    /// EQ, gate, compressor and noise removal.
+    pub filters: AudioFilters,
+}
+
+/// A channel's sound filters, in the order the sound goes through them.
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct AudioFilters {
+    /// Cut rumble and handling noise below 100 Hz.
+    pub low_cut: bool,
+    /// EQ in dB, −12 to 12: bass (120 Hz), middle (1 kHz), treble (8 kHz).
+    pub bass_db: i32,
+    pub mid_db: i32,
+    pub treble_db: i32,
+    /// Noise gate: silent below `gate_db`.
+    pub gate: bool,
+    /// −80 to 0.
+    pub gate_db: i32,
+    /// Evens out loud and quiet (voice).
+    pub compressor: bool,
+    /// Take out background hiss and hum (microphones).
+    pub noise_suppression: bool,
+}
+
+impl Default for AudioFilters {
+    fn default() -> Self {
+        AudioFilters {
+            low_cut: false,
+            bass_db: 0,
+            mid_db: 0,
+            treble_db: 0,
+            gate: false,
+            gate_db: -50,
+            compressor: false,
+            noise_suppression: false,
+        }
+    }
+}
+
+impl AudioFilters {
+    #[must_use]
+    pub fn clamped(mut self) -> Self {
+        self.bass_db = self.bass_db.clamp(-12, 12);
+        self.mid_db = self.mid_db.clamp(-12, 12);
+        self.treble_db = self.treble_db.clamp(-12, 12);
+        self.gate_db = self.gate_db.clamp(-80, 0);
+        self
+    }
 }
 
 impl Default for SourceAudio {
@@ -39,6 +89,7 @@ impl Default for SourceAudio {
             to_a: true,
             to_b: true,
             delay_ms: 0,
+            filters: AudioFilters::default(),
         }
     }
 }
@@ -73,6 +124,9 @@ pub struct SourceAudioPatch {
     #[serde(default)]
     #[ts(optional)]
     pub delay_ms: Option<u32>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub filters: Option<AudioFilters>,
 }
 
 impl SourceAudio {
@@ -91,6 +145,9 @@ impl SourceAudio {
         }
         if let Some(v) = p.delay_ms {
             self.delay_ms = v.min(MAX_AUDIO_DELAY_MS);
+        }
+        if let Some(f) = p.filters {
+            self.filters = f.clamped();
         }
     }
 }

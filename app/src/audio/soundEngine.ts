@@ -1,7 +1,7 @@
 // The sound engine. It runs in the control window only (output windows are
 // silent), so every sound is played exactly once:
 //
-//   source → delay → fader ─┬→ send → Stream mix → speakers (or chosen device)
+//   source → delay → filters (low cut, EQ, gate, compressor) → fader ─┬→ send → Stream mix → limiter → speakers
 //                           ├→ send → Hall mix   → chosen device
 //                           ├→ send → Recording  → chosen device
 //                           └→ meter
@@ -13,7 +13,7 @@
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
-import { channelLevel, mixSend, soundSources, type Mix } from '../engine/audio';
+import { channelLevel, defaultFilters, mixSend, soundSources, type Mix } from '../engine/audio';
 import { syncMedia } from '../engine/mediaSync';
 
 type OutputName = Mix | 'phones';
@@ -24,6 +24,14 @@ interface Channel {
   stream: MediaStream | null;
   input: AudioNode | null;
   delay: DelayNode;
+  lowCut: BiquadFilterNode;
+  bass: BiquadFilterNode;
+  mid: BiquadFilterNode;
+  treble: BiquadFilterNode;
+  /** Measures the sound before the gate, to open and close it. */
+  gateMeter: AnalyserNode;
+  gate: GainNode;
+  comp: DynamicsCompressorNode;
   fader: GainNode;
   meter: AnalyserNode;
   sends: Record<Mix, GainNode>;
@@ -32,6 +40,8 @@ interface Channel {
 }
 
 interface Output {
+  /** Channels send into this; it goes through the limiter to `gain`. */
+  input: GainNode;
   gain: GainNode;
   meter: AnalyserNode;
   /** Plays the mix on a chosen device (Hall, Recording, Headphones). */
@@ -45,7 +55,12 @@ export function canChooseSpeakers(): boolean {
 }
 
 const channelKey = (s: Source) =>
-  s.kind.type === 'video' ? `file:${s.kind.path}` : s.kind.type === 'microphone' ? `mic:${s.kind.deviceId}` : '';
+  s.kind.type === 'video'
+    ? `file:${s.kind.path}`
+    : s.kind.type === 'microphone'
+      ? // Noise removal is set when the microphone opens.
+        `mic:${s.kind.deviceId}:${s.audio.filters?.noiseSuppression ? 'ns' : ''}`
+      : '';
 
 function peak(a: AnalyserNode, buf: Float32Array<ArrayBuffer>): number {
   a.getFloatTimeDomainData(buf);
@@ -70,18 +85,28 @@ export class SoundEngine {
   constructor(private readonly client: EngineClient) {
     this.ctx = new AudioContext({ latencyHint: 'interactive' });
     const make = (name: OutputName): Output => {
+      // A limiter on every mix: nothing ever clips, whatever is pushed up.
+      const input = this.ctx.createGain();
+      const limiter = this.ctx.createDynamicsCompressor();
+      limiter.threshold.value = -1.5;
+      limiter.knee.value = 0;
+      limiter.ratio.value = 20;
+      limiter.attack.value = 0.002;
+      limiter.release.value = 0.12;
+      input.connect(limiter);
       const gain = this.ctx.createGain();
+      limiter.connect(gain);
       const meter = this.ctx.createAnalyser();
       meter.fftSize = 512;
       gain.connect(meter);
       if (name === 'master') gain.connect(this.ctx.destination);
-      return { gain, meter, player: null, device: undefined };
+      return { input, gain, meter, player: null, device: undefined };
     };
     this.outputs = { master: make('master'), a: make('a'), b: make('b'), phones: make('phones') };
     // With nothing soloed, the headphones hear the Stream mix.
     this.phonesFromStream = this.ctx.createGain();
     this.outputs.master.gain.connect(this.phonesFromStream);
-    this.phonesFromStream.connect(this.outputs.phones.gain);
+    this.phonesFromStream.connect(this.outputs.phones.input);
     this.timer = setInterval(() => this.tick(), 33);
     // Browsers only start sound after the operator touches something.
     const wake = () => void this.ctx.resume().catch(() => {});
@@ -155,25 +180,68 @@ export class SoundEngine {
   private add(src: Source) {
     const ctx = this.ctx;
     const delay = ctx.createDelay(5);
+    const lowCut = ctx.createBiquadFilter();
+    lowCut.type = 'highpass';
+    lowCut.frequency.value = 10;
+    const bass = ctx.createBiquadFilter();
+    bass.type = 'lowshelf';
+    bass.frequency.value = 120;
+    const mid = ctx.createBiquadFilter();
+    mid.type = 'peaking';
+    mid.frequency.value = 1000;
+    mid.Q.value = 0.8;
+    const treble = ctx.createBiquadFilter();
+    treble.type = 'highshelf';
+    treble.frequency.value = 8000;
+    const gateMeter = ctx.createAnalyser();
+    gateMeter.fftSize = 512;
+    const gate = ctx.createGain();
+    const comp = ctx.createDynamicsCompressor();
     const fader = ctx.createGain();
     const meter = ctx.createAnalyser();
     meter.fftSize = 512;
     const solo = ctx.createGain();
     fader.gain.value = 0;
     solo.gain.value = 0;
-    delay.connect(fader);
-    delay.connect(solo);
+    delay.connect(lowCut);
+    lowCut.connect(bass);
+    bass.connect(mid);
+    mid.connect(treble);
+    treble.connect(gateMeter);
+    treble.connect(gate);
+    gate.connect(comp);
+    comp.connect(fader);
+    comp.connect(solo);
+    this.setFilters({ lowCut, bass, mid, treble, comp }, src);
     fader.connect(meter);
-    solo.connect(this.outputs.phones.gain);
+    solo.connect(this.outputs.phones.input);
     const sends = {} as Record<Mix, GainNode>;
     for (const mix of ['master', 'a', 'b'] as const) {
       const g = ctx.createGain();
       g.gain.value = 0;
       fader.connect(g);
-      g.connect(this.outputs[mix].gain);
+      g.connect(this.outputs[mix].input);
       sends[mix] = g;
     }
-    const ch: Channel = { key: channelKey(src), el: null, stream: null, input: null, delay, fader, meter, sends, solo, failed: false };
+    const ch: Channel = {
+      key: channelKey(src),
+      el: null,
+      stream: null,
+      input: null,
+      delay,
+      lowCut,
+      bass,
+      mid,
+      treble,
+      gateMeter,
+      gate,
+      comp,
+      fader,
+      meter,
+      sends,
+      solo,
+      failed: false,
+    };
     this.channels.set(src.id, ch);
 
     if (src.kind.type === 'video') {
@@ -197,7 +265,12 @@ export class SoundEngine {
       const deviceId = src.kind.deviceId;
       navigator.mediaDevices
         ?.getUserMedia({
-          audio: { deviceId: deviceId ? { exact: deviceId } : undefined, echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+          audio: {
+            deviceId: deviceId ? { exact: deviceId } : undefined,
+            echoCancellation: false,
+            noiseSuppression: !!src.audio.filters?.noiseSuppression,
+            autoGainControl: false,
+          },
         })
         .then((stream) => {
           if (this.channels.get(src.id) !== ch) return stream.getTracks().forEach((t) => t.stop());
@@ -227,7 +300,38 @@ export class SoundEngine {
     ch.el?.pause();
     if (ch.el) ch.el.src = '';
     ch.stream?.getTracks().forEach((t) => t.stop());
-    for (const n of [ch.input, ch.delay, ch.fader, ch.meter, ch.solo, ...Object.values(ch.sends)]) n?.disconnect();
+    for (const n of [
+      ch.input,
+      ch.delay,
+      ch.lowCut,
+      ch.bass,
+      ch.mid,
+      ch.treble,
+      ch.gateMeter,
+      ch.gate,
+      ch.comp,
+      ch.fader,
+      ch.meter,
+      ch.solo,
+      ...Object.values(ch.sends),
+    ])
+      n?.disconnect();
+  }
+
+  /** Set EQ, low cut and compressor from the input's settings. */
+  private setFilters(n: Pick<Channel, 'lowCut' | 'bass' | 'mid' | 'treble' | 'comp'>, src: Source) {
+    const f = src.audio.filters ?? defaultFilters();
+    const t = this.ctx.currentTime;
+    n.lowCut.frequency.setTargetAtTime(f.lowCut ? 100 : 10, t, 0.02);
+    n.bass.gain.setTargetAtTime(f.bassDb, t, 0.02);
+    n.mid.gain.setTargetAtTime(f.midDb, t, 0.02);
+    n.treble.gain.setTargetAtTime(f.trebleDb, t, 0.02);
+    // Voice compression when on; otherwise it lets everything through.
+    n.comp.threshold.setTargetAtTime(f.compressor ? -24 : 0, t, 0.02);
+    n.comp.ratio.setTargetAtTime(f.compressor ? 4 : 1, t, 0.02);
+    n.comp.knee.value = f.compressor ? 10 : 0;
+    n.comp.attack.value = 0.005;
+    n.comp.release.value = 0.2;
   }
 
   // ---- speakers ----
@@ -281,6 +385,14 @@ export class SoundEngine {
       if (!ch) continue;
       if (ch.el) syncMedia(ch.el, src, now);
       ch.delay.delayTime.setTargetAtTime(src.audio.delayMs / 1000, t, 0.05);
+      this.setFilters(ch, src);
+      // The gate opens fast on sound and closes gently below the threshold.
+      const f = src.audio.filters;
+      if (f?.gate) {
+        const level = peak(ch.gateMeter, this.buf);
+        const open = level > 0 && 20 * Math.log10(level) > f.gateDb;
+        ch.gate.gain.setTargetAtTime(open ? 1 : 0, t, open ? 0.003 : 0.08);
+      } else ch.gate.gain.setTargetAtTime(1, t, 0.01);
       ch.fader.gain.setTargetAtTime(channelLevel(show, src, now), t, smooth);
       for (const mix of ['master', 'a', 'b'] as const) ch.sends[mix].gain.setTargetAtTime(mixSend(show, src, mix), t, smooth);
       ch.solo.gain.setTargetAtTime(solo === src.id ? 1 : 0, t, smooth);

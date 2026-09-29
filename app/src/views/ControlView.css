@@ -1389,10 +1389,21 @@ button.strip__name:hover {
   border-color: #2f6a73;
 }
 .strip__menu {
-  top: 26px;
+  top: auto;
+  bottom: 100%;
   left: 0;
   right: auto;
-  width: 250px;
+  width: 270px;
+  max-height: min(560px, 80vh);
+  overflow: auto;
+}
+.strip__section {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .menu__hint {
   font-size: 11px;

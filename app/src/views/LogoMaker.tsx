@@ -1,3 +1,4 @@
+import { defaultFilters } from '../engine/audio';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient, VideoFormat } from '../engine/client';
 import type { Logo3d } from '../engine/types/Logo3d';
@@ -131,7 +132,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
     fit: 'contain',
     key: defaultKey(),
     adjust: defaultAdjust(),
-    audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+    audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
   });
   const addOrSave = () => {
     if (source) {
