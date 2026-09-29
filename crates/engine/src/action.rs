@@ -239,6 +239,12 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Set (or, with none, forget) where a camera's PTZ control is.
+    SetPtz {
+        id: SourceId,
+        #[ts(optional)]
+        ptz: Option<crate::ptz::Ptz>,
+    },
     /// Change a poll's question, answers and look (new answers start the votes again).
     UpdatePoll {
         id: SourceId,

@@ -9,6 +9,7 @@ mod export;
 mod library;
 mod media;
 mod outputs;
+mod ptz;
 mod remote;
 mod store;
 mod streams;
@@ -466,6 +467,14 @@ fn browser_info(state: State<'_, AppState>) -> browser::BrowserInfo {
     state.browsers.info
 }
 
+/// Make a PTZ camera move, zoom or go to a preset.
+#[tauri::command]
+async fn ptz_command(ptz: lumora_engine::ptz::Ptz, command: ptz::PtzCommand) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || ptz::send(&ptz, command))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 /// The displays and windows a screen capture input can show.
 #[tauri::command]
 async fn capture_choices() -> Vec<browser::CaptureChoice> {
@@ -714,6 +723,7 @@ pub fn run() {
             browser_nav,
             stream_status,
             capture_choices,
+            ptz_command,
             library_items,
             save_library,
             export_library,

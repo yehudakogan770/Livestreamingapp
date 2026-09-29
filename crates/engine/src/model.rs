@@ -329,6 +329,10 @@ pub struct Source {
     /// Light, colour, crop and effects (cameras, videos, pictures).
     #[serde(default)]
     pub adjust: crate::adjust::Adjust,
+    /// A camera that can be moved over the network (PTZ).
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub ptz: Option<crate::ptz::Ptz>,
     /// A video input playing a list of videos.
     #[serde(default)]
     #[ts(optional = nullable)]

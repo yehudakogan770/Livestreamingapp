@@ -332,6 +332,61 @@ pub fn command(show: &Value, cmd: &str, q: &[(String, String)]) -> Result<Action
     serde_json::from_value(v).map_err(|e| format!("could not make that command: {e}"))
 }
 
+/// A PTZ camera and what to make it do.
+///
+/// # Errors
+/// A message saying what is wrong with the command.
+pub fn ptz(
+    show: &Value,
+    q: &[(String, String)],
+) -> Result<(lumora_engine::ptz::Ptz, crate::ptz::PtzCommand), String> {
+    use crate::ptz::PtzCommand as C;
+    let id = input(show, q)?;
+    let cam = sources(show)
+        .iter()
+        .find(|s| s["id"] == json!(id))
+        .and_then(|s| serde_json::from_value::<lumora_engine::ptz::Ptz>(s["ptz"].clone()).ok())
+        .ok_or("that input is not set up as a PTZ camera")?;
+    #[allow(clippy::cast_precision_loss)]
+    let speed = get(q, "speed")
+        .and_then(|v| v.parse::<u32>().ok())
+        .map_or(0.5, |v| v.min(100) as f32 / 100.0);
+    let cmd = if let Some(n) = get(q, "preset") {
+        let n: u8 = n
+            .parse()
+            .ok()
+            .filter(|n| (1..=128).contains(n))
+            .ok_or("preset must be 1 – 128")?;
+        if get(q, "store") == Some("1") {
+            C::Store { preset: n - 1 }
+        } else {
+            C::Recall { preset: n - 1 }
+        }
+    } else if let Some(m) = get(q, "move") {
+        let (pan, tilt) = match m {
+            "up" => (0.0, 1.0),
+            "down" => (0.0, -1.0),
+            "left" => (-1.0, 0.0),
+            "right" => (1.0, 0.0),
+            "stop" => return Ok((cam, C::Stop)),
+            "home" => return Ok((cam, C::Home)),
+            _ => return Err("move must be up, down, left, right, stop or home".to_owned()),
+        };
+        C::Move { pan, tilt, speed }
+    } else if let Some(z) = get(q, "zoom") {
+        let dir = match z {
+            "in" => 1,
+            "out" => -1,
+            "stop" => 0,
+            _ => return Err("zoom must be in, out or stop".to_owned()),
+        };
+        C::Zoom { dir, speed }
+    } else {
+        return Err("say what to do: preset=1, move=left or zoom=in".to_owned());
+    };
+    Ok((cam, cmd))
+}
+
 /// What is on air and in Next on each screen, and each input's tally.
 #[must_use]
 pub fn tally(show: &Value) -> Value {
@@ -469,6 +524,35 @@ mod tests {
         assert_eq!(t["inputs"][1]["preview"], json!(true));
         assert_eq!(t["overlays"], json!([false, true, false, false]));
         assert_eq!(t["back"]["blank"], json!(true));
+    }
+
+    #[test]
+    fn ptz_commands_need_a_ptz_camera() {
+        let mut s = show();
+        assert!(ptz(&s, &parse_query("input=1&preset=2"))
+            .unwrap_err()
+            .contains("PTZ"));
+        s["sources"][0]["ptz"] =
+            json!({"host": "10.0.0.9", "port": 0, "protocol": "viscaUdp", "presets": []});
+        let (cam, cmd) = ptz(&s, &parse_query("input=1&preset=2")).unwrap();
+        assert_eq!(cam.host, "10.0.0.9");
+        assert_eq!(cmd, crate::ptz::PtzCommand::Recall { preset: 1 });
+        assert_eq!(
+            ptz(&s, &parse_query("input=1&preset=2&store=1")).unwrap().1,
+            crate::ptz::PtzCommand::Store { preset: 1 }
+        );
+        assert_eq!(
+            ptz(&s, &parse_query("input=1&move=stop")).unwrap().1,
+            crate::ptz::PtzCommand::Stop
+        );
+        assert!(matches!(
+            ptz(&s, &parse_query("input=1&zoom=in&speed=100"))
+                .unwrap()
+                .1,
+            crate::ptz::PtzCommand::Zoom { dir: 1, .. }
+        ));
+        assert!(ptz(&s, &parse_query("input=1&preset=0")).is_err());
+        assert!(ptz(&s, &parse_query("input=1")).is_err());
     }
 
     #[test]

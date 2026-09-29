@@ -1,3 +1,4 @@
+import type { Ptz } from './types/Ptz';
 import { defaultBrand } from './brand';
 // Talks to the Lumora engine.
 //
@@ -72,6 +73,16 @@ export interface RemoteStatus {
 // ----- recording and streaming (mirrors src-tauri/src/capture.rs) -----
 
 export type CaptureKind = 'record' | 'stream';
+
+/** What to make a PTZ camera do (mirrors src-tauri/src/ptz.rs). */
+export type PtzCommand =
+  | { type: 'move'; pan: number; tilt: number; speed: number }
+  | { type: 'stop' }
+  | { type: 'zoom'; dir: -1 | 0 | 1; speed: number }
+  | { type: 'home' }
+  | { type: 'recall'; preset: number }
+  | { type: 'store'; preset: number }
+  | { type: 'autoFocus' };
 
 /** A display or window this computer can capture. */
 export interface CaptureChoice {
@@ -218,6 +229,8 @@ export interface EngineClient {
   browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void>;
   /** How each stream input is doing. */
   streamStatus(): Promise<Record<string, { live: boolean; problem: string | null }>>;
+  /** Move, zoom or recall a PTZ camera. */
+  ptz(ptz: Ptz, command: PtzCommand): Promise<void>;
   /** Displays and windows a screen capture input can show (none outside the Windows app). */
   captureChoices(): Promise<CaptureChoice[]>;
 }
@@ -626,6 +639,14 @@ class TauriClient implements EngineClient {
     return invoke<CaptureChoice[]>('capture_choices').catch(() => []);
   }
 
+  async ptz(ptz: Ptz, command: PtzCommand): Promise<void> {
+    try {
+      await invoke('ptz_command', { ptz, command });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
   async browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void> {
     try {
       await invoke('browser_nav', { id, how });
@@ -950,6 +971,10 @@ export class DemoClient implements EngineClient {
 
   captureChoices(): Promise<CaptureChoice[]> {
     return Promise.resolve([]);
+  }
+
+  ptz(): Promise<void> {
+    return Promise.reject(new Error('PTZ cameras are moved by the Lumora app.'));
   }
 
   importLibrary(): Promise<LibraryItem[]> {

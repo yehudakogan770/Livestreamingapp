@@ -531,6 +531,19 @@ fn handle(shared: &Shared, mut request: Request) {
                 return json(request, 200, &crate::control::tally(&show).to_string());
             }
             let q = crate::control::parse_query(query);
+            // PTZ goes straight to the camera, not through the show.
+            if &p["/api/do/".len()..] == "ptz" {
+                return match crate::control::ptz(&show, &q)
+                    .and_then(|(cam, cmd)| crate::ptz::send(&cam, cmd))
+                {
+                    Ok(()) => json(request, 200, r#"{"ok":true}"#),
+                    Err(e) => json(
+                        request,
+                        400,
+                        &serde_json::json!({"ok": false, "error": e}).to_string(),
+                    ),
+                };
+            }
             let result = crate::control::command(&show, &p["/api/do/".len()..], &q).and_then(|a| {
                 if !allowed(&a) {
                     return Err("that is not allowed from outside".to_owned());

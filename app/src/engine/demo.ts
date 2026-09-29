@@ -418,6 +418,12 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'setPtz': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'camera') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'only cameras can be PTZ cameras' });
+      src.ptz = a.ptz ? structuredClone(a.ptz) : null;
+      return;
+    }
     case 'updatePoll': {
       const p = pollIn(s, a.id);
       const next = structuredClone(a.poll);

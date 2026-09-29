@@ -1,0 +1,89 @@
+.modal__box.ptz {
+  width: min(1000px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+.ptz__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+  gap: 16px;
+  padding: 14px;
+}
+@media (max-width: 760px) {
+  .ptz__body {
+    grid-template-columns: 1fr;
+  }
+}
+.ptz__left,
+.ptz__right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.ptz__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #000;
+}
+.ptz__addr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ptz__addr .field {
+  flex: 1 1 160px;
+}
+.ptz__addr .ptz__port {
+  flex: 0 0 90px;
+}
+.ptz__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 64px);
+  grid-template-rows: repeat(3, 64px);
+  gap: 6px;
+  justify-content: center;
+}
+.ptz__btn {
+  width: 100%;
+  height: 100%;
+  min-width: 48px;
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--button);
+  color: var(--text);
+  font-size: 22px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+.ptz__btn:active {
+  background: var(--selected);
+  border-color: var(--accent);
+}
+.ptz__zoom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.ptz__zoom .ptz__btn {
+  width: 56px;
+  height: 48px;
+}
+.ptz__presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.ptz__presets .seg {
+  height: 40px;
+}
+.ptz__presets .seg.is-storing {
+  border-color: var(--program);
+}

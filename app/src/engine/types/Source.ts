@@ -3,6 +3,7 @@ import type { Adjust } from "./Adjust";
 import type { ChromaKey } from "./ChromaKey";
 import type { Fit } from "./Fit";
 import type { Playlist } from "./Playlist";
+import type { Ptz } from "./Ptz";
 import type { SourceAudio } from "./SourceAudio";
 import type { SourceId } from "./SourceId";
 import type { SourceKind } from "./SourceKind";
@@ -27,6 +28,10 @@ key: ChromaKey,
  * Light, colour, crop and effects (cameras, videos, pictures).
  */
 adjust: Adjust, 
+/**
+ * A camera that can be moved over the network (PTZ).
+ */
+ptz?: Ptz | null, 
 /**
  * A video input playing a list of videos.
  */

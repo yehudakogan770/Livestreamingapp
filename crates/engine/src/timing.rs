@@ -78,6 +78,7 @@ mod tests {
             key: crate::model::ChromaKey::default(),
             adjust: crate::adjust::Adjust::default(),
             playlist: None,
+            ptz: None,
         }
     }
 

@@ -850,6 +850,22 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::SetPtz { id, ptz } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !matches!(src.kind, SourceKind::Camera { .. }) {
+                return Err(ActionError::invalid(
+                    "id",
+                    "only cameras can be PTZ cameras",
+                ));
+            }
+            src.ptz = ptz.map(|mut p| {
+                p.repair();
+                p
+            });
+            Ok(())
+        }
         Action::UpdatePoll { id, poll } => {
             let p = poll_mut(s, &id)?;
             let mut next = poll;
@@ -1945,6 +1961,7 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         }),
         adjust: crate::adjust::Adjust::default(),
         playlist: None,
+        ptz: None,
     };
     s.sources.push(src);
     Ok(())

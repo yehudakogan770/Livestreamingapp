@@ -1,3 +1,4 @@
+import { PtzCard } from './PtzCard';
 import { PollCard } from './PollCard';
 import { LyricsCard } from './LyricsCard';
 import { ScreenCard } from './ScreenCard';
@@ -83,6 +84,8 @@ export function InputGrid({
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
+  const [steering, setSteering] = useState<string | null>(null);
+  const ptzSource = show.sources.find((x) => x.id === steering);
   const adjustSource = show.sources.find((x) => x.id === adjusting);
   const keySource = show.sources.find((x) => x.id === keying);
   const keepSource = show.sources.find((x) => x.id === keeping);
@@ -146,6 +149,7 @@ export function InputGrid({
                 onKeep={() => setKeeping(src.id)}
                 onKey={() => setKeying(src.id)}
                 onAdjust={() => setAdjusting(src.id)}
+                onPtz={() => setSteering(src.id)}
                 playNow={
                   textOnly || soundOnly
                     ? null
@@ -164,6 +168,7 @@ export function InputGrid({
         <span className="tile--add__plus">+</span>
         Add input
       </button>
+      {ptzSource && <PtzCard source={ptzSource} act={act} client={client} onClose={() => setSteering(null)} />}
       {editingPoll && <PollCard source={editingPoll} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingSong && <LyricsCard source={editingSong} act={act} onClose={() => setEditing(null)} />}
       {editingScreen && <ScreenCard source={editingScreen} act={act} client={client} onClose={() => setEditing(null)} />}
@@ -190,6 +195,7 @@ function TileMenu({
   onKeep,
   onKey,
   onAdjust,
+  onPtz,
   playNow,
   favourites,
 }: {
@@ -200,6 +206,7 @@ function TileMenu({
   onKeep: () => void;
   onKey: () => void;
   onAdjust: () => void;
+  onPtz: () => void;
   /** Quick play: straight to air with this transition (null: can't go on air). */
   playNow: ((t: Transition) => void) | null;
   favourites: Transition[];
@@ -354,6 +361,18 @@ function TileMenu({
       >
         Save to library…
       </button>
+      {k === 'camera' && (
+        <button
+          type="button"
+          className={`btn menu__wide${source.ptz ? ' is-on' : ''}`}
+          onClick={() => {
+            onClose();
+            onPtz();
+          }}
+        >
+          {source.ptz ? 'Move the camera (PTZ)…' : 'PTZ camera control…'}
+        </button>
+      )}
       {k === 'video' && (
         <button
           type="button"
