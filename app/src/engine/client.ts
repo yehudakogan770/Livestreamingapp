@@ -318,6 +318,7 @@ export function emptyShow(): Show {
       layout: 'full',
       showClock: true,
       showTimer: true,
+      showLyrics: true,
       textSize: 'l',
       clock24h: false,
       quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'],

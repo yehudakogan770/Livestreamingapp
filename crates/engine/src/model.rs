@@ -273,6 +273,8 @@ pub enum SourceKind {
     Browser(Box<crate::browser::BrowserInput>),
     /// A live video link (SRT, RTMP, RTSP, HLS…).
     Stream(Box<crate::stream::StreamInput>),
+    /// A live chat comment shown on screen.
+    Comment(Box<crate::chat::CommentCard>),
     /// An audience poll, voted from phones.
     Poll(Box<crate::poll::Poll>),
     /// Song lyrics, one slide at a time.

@@ -58,6 +58,9 @@ pub struct Monitor {
     pub layout: MonitorLayout,
     pub show_clock: bool,
     pub show_timer: bool,
+    /// A song on air on the Live Screen shows its words here too (the crew
+    /// can turn this off).
+    pub show_lyrics: bool,
     pub text_size: TextSize,
     /// 24-hour clock (19:42) instead of 12-hour (7:42 PM).
     pub clock_24h: bool,
@@ -73,6 +76,7 @@ impl Default for Monitor {
             layout: MonitorLayout::Full,
             show_clock: true,
             show_timer: true,
+            show_lyrics: true,
             text_size: TextSize::L,
             clock_24h: false,
             quick: default_quick(),

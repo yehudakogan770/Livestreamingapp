@@ -19,7 +19,9 @@ export function OutputView({ screen }: { screen: ScreenId }) {
 
   useEffect(() => {
     document.title = `Lumora — ${screen} output`;
-    if (!isInsideLumora()) return;
+    // The stage monitor is only for the crew to talk to the stage: nothing
+    // there (a tap, a key) changes it. The crew opens and closes it in Outputs.
+    if (!isInsideLumora() || screen === 'monitor') return;
     const w = getCurrentWindow();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') void w.setFullscreen(false);
@@ -33,7 +35,7 @@ export function OutputView({ screen }: { screen: ScreenId }) {
   }, [screen]);
 
   const toggleFull = () => {
-    if (!isInsideLumora()) return;
+    if (!isInsideLumora() || screen === 'monitor') return;
     const w = getCurrentWindow();
     void w.isFullscreen().then((f) => w.setFullscreen(!f));
   };

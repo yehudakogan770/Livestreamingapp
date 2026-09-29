@@ -1,0 +1,117 @@
+.chat {
+  position: fixed;
+  top: 44px;
+  right: 8px;
+  bottom: 8px;
+  z-index: 60;
+  width: min(360px, calc(100vw - 16px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel, #16191e);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.chat__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chat__head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+.chat__connect {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chat__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chat__row .text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chat__dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #555b64;
+}
+.chat__dot--on {
+  background: #3fbf5a;
+}
+.chat__dot--connecting {
+  background: #f2b233;
+}
+.chat__dot--error {
+  background: #e0473b;
+}
+.chat__key summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.chat__key .text {
+  width: 100%;
+  margin-top: 4px;
+}
+.chat__target {
+  display: flex;
+  gap: 6px;
+}
+.chat__target select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chat__list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.chat__empty {
+  padding: 20px 6px;
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 13px;
+}
+.chat__msg {
+  position: relative;
+  padding: 6px 70px 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+}
+.chat__msg.is-on {
+  outline: 2px solid var(--program);
+}
+.chat__who {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.chat__who small {
+  font-weight: 500;
+  color: var(--text-faint);
+}
+.chat__text {
+  overflow-wrap: anywhere;
+}
+.chat__show {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  translate: 0 -50%;
+}

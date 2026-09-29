@@ -14,6 +14,7 @@ pub mod action;
 pub mod adjust;
 pub mod audio;
 pub mod browser;
+pub mod chat;
 pub mod credits;
 pub mod cues;
 pub mod engine;

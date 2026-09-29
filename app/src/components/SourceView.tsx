@@ -1,3 +1,4 @@
+import { CommentView } from './CommentView';
 import { PollView } from './PollView';
 import { LyricsView } from './LyricsView';
 import { ScoreboardView } from './ScoreboardView';
@@ -116,6 +117,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
     case 'scoreboard':
       return <ScoreboardView sb={k} />;
+    case 'comment':
+      return <CommentView c={k} />;
     case 'poll':
       return <PollView p={k} thumb={thumb} />;
     case 'lyrics':

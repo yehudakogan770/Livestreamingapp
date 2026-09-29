@@ -132,6 +132,12 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
   return st?.path ? { kind: t.kind, durationMs: Math.max(MIN_TRANSITION_MS, st.durationMs) } : { kind: 'fade' as const, durationMs: t.durationMs };
 }
 
+function commentIn(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'comment') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not for chat comments' });
+  return src.kind;
+}
+
 function pollIn(s: Show, id: string) {
   const src = find(s, id);
   if (src.kind.type !== 'poll') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a poll' });
@@ -418,6 +424,18 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'showComment': {
+      const c = commentIn(s, a.id);
+      c.comment = a.comment ? { ...a.comment, author: [...a.comment.author].slice(0, 60).join(''), text: [...a.comment.text].slice(0, 400).join('') } : null;
+      c.changedAt = now;
+      return;
+    }
+    case 'updateCommentCard': {
+      const c = commentIn(s, a.id);
+      c.place = a.place;
+      c.accent = /^#[0-9a-fA-F]{6}$/.test(a.accent) ? a.accent : '#2f80ed';
+      return;
+    }
     case 'setPtz': {
       const src = find(s, a.id);
       if (src.kind.type !== 'camera') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'only cameras can be PTZ cameras' });
@@ -692,6 +710,7 @@ function apply(s: Show, a: Action, now: number) {
       if (p.layout !== undefined) m.layout = p.layout;
       if (p.showClock !== undefined) m.showClock = p.showClock;
       if (p.showTimer !== undefined) m.showTimer = p.showTimer;
+      if (p.showLyrics !== undefined) m.showLyrics = p.showLyrics;
       if (p.textSize !== undefined) m.textSize = p.textSize;
       if (p.clock24h !== undefined) m.clock24h = p.clock24h;
       return;

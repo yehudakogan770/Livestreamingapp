@@ -13,7 +13,12 @@ message: string,
 /**
  * Whether the message is on the monitor right now.
  */
-messageOn: boolean, layout: MonitorLayout, showClock: boolean, showTimer: boolean, textSize: TextSize, 
+messageOn: boolean, layout: MonitorLayout, showClock: boolean, showTimer: boolean, 
+/**
+ * A song on air on the Live Screen shows its words here too (the crew
+ * can turn this off).
+ */
+showLyrics: boolean, textSize: TextSize, 
 /**
  * 24-hour clock (19:42) instead of 12-hour (7:42 PM).
  */

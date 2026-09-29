@@ -850,6 +850,20 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::ShowComment { id, comment } => {
+            let c = comment_mut(s, &id)?;
+            c.comment = comment;
+            c.changed_at = now;
+            c.repair();
+            Ok(())
+        }
+        Action::UpdateCommentCard { id, place, accent } => {
+            let c = comment_mut(s, &id)?;
+            c.place = place;
+            c.accent = accent;
+            c.repair();
+            Ok(())
+        }
         Action::SetPtz { id, ptz } => {
             let src = s
                 .source_mut(&id)
@@ -1702,6 +1716,9 @@ fn update_monitor(s: &mut Show, p: MonitorPatch) {
     if let Some(v) = p.show_timer {
         m.show_timer = v;
     }
+    if let Some(v) = p.show_lyrics {
+        m.show_lyrics = v;
+    }
     if let Some(v) = p.text_size {
         m.text_size = v;
     }
@@ -1805,6 +1822,19 @@ fn resolve_stinger(s: &Show, t: Transition) -> Transition {
                 duration_ms: t.duration_ms,
             },
         },
+    }
+}
+
+fn comment_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::chat::CommentCard> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Comment(c) => Ok(c),
+        _ => Err(ActionError::invalid(
+            "id",
+            "that input is not for chat comments",
+        )),
     }
 }
 
@@ -2056,6 +2086,7 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             l.repair();
         }
         SourceKind::Screen(c) => c.repair(),
+        SourceKind::Comment(c) => c.repair(),
         SourceKind::Poll(p) => {
             p.repair();
             p.open = false;
@@ -2100,7 +2131,8 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         k @ (SourceKind::Lyrics(_)
         | SourceKind::Screen(_)
         | SourceKind::Scoreboard(_)
-        | SourceKind::Poll(_)) => fresh(k),
+        | SourceKind::Poll(_)
+        | SourceKind::Comment(_)) => fresh(k),
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {
                 ActionError::invalid(

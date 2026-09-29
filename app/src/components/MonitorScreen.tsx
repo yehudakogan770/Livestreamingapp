@@ -70,7 +70,7 @@ export function MonitorScreen({ show }: { show: Show }) {
 
   // A song on air on the Live Screen: the singers see these words and what comes next.
   const songSrc = show.sources.find((x) => x.id === show.screens.live.program)?.kind;
-  const song = songSrc?.type === 'lyrics' ? songSrc : null;
+  const song = (m.showLyrics ?? true) && songSrc?.type === 'lyrics' ? songSrc : null;
   const slides = song ? sections(song.text) : [];
   const message = m.messageOn && m.message ? m.message : song ? (song.blank ? '—' : (slides[song.current] ?? '')) : null;
   const nextLines = song && !(m.messageOn && m.message) ? slides[song.current + (song.blank ? 0 : 1)] : undefined;

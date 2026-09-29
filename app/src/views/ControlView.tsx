@@ -19,6 +19,7 @@ import { VisualsPage } from './VisualsPage';
 import { LogoMaker } from './LogoMaker';
 import { StingerDialog } from './StingerDialog';
 import { MidiDialog, useMidiControl } from './MidiDialog';
+import { ChatPanel } from './ChatPanel';
 import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
 import { snapshot, snapshotName } from '../broadcast/snapshot';
@@ -73,6 +74,7 @@ export function ControlView({
   const [logoMaker, setLogoMaker] = useState<{ id: string | null } | null>(null);
   const [stingers, setStingers] = useState(false);
   const [midiOpen, setMidiOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
   useCommands(
     useCallback((c: Command) => {
       if (c.type === 'addInput') {
@@ -84,6 +86,7 @@ export function ControlView({
       else if (c.type === 'visuals') setVisualsOpen(true);
       else if (c.type === 'triggers') setTriggersOpen(true);
       else if (c.type === 'midi') setMidiOpen(true);
+      else if (c.type === 'chat') setChatOpen((o) => !o);
       else if (c.type === 'logoMaker') setLogoMaker({ id: c.id ?? null });
     }, []),
   );
@@ -379,6 +382,7 @@ export function ControlView({
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
+      {chatOpen && <ChatPanel show={show} act={act} onAdd={add} onClose={() => setChatOpen(false)} />}
       {midiOpen && <MidiDialog onClose={() => setMidiOpen(false)} />}
       {stingers && <StingerDialog show={show} act={act} client={client} onClose={() => setStingers(false)} />}
       {logoMaker && (

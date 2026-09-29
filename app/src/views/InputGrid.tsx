@@ -48,6 +48,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   screen: 'Screen capture',
   lyrics: 'Song',
   poll: 'Poll',
+  comment: 'Chat comment',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */

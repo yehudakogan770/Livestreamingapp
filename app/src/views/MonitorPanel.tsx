@@ -105,12 +105,7 @@ export function MonitorPanel({ show, act }: { show: Show; act: Act }) {
             </button>
           </form>
           <div className="mpanel__actions">
-            <button
-              type="button"
-              className="btn"
-              disabled={!m.messageOn}
-              onClick={() => act({ type: 'updateMonitor', patch: { messageOn: false } })}
-            >
+            <button type="button" className="btn" disabled={!m.messageOn} onClick={() => act({ type: 'updateMonitor', patch: { messageOn: false } })}>
               Clear message
             </button>
             <button type="button" className="btn" onClick={() => act({ type: 'monitorFlash' })}>
@@ -149,12 +144,7 @@ export function MonitorPanel({ show, act }: { show: Show; act: Act }) {
                   <button type="button" className="mpanel__qtext" disabled={!q} onClick={() => send(q)}>
                     {q || 'Empty'}
                   </button>
-                  <button
-                    type="button"
-                    className="mpanel__qpen"
-                    aria-label={`Edit quick message ${i + 1}`}
-                    onClick={() => (setEditing(i), setEditText(q))}
-                  >
+                  <button type="button" className="mpanel__qpen" aria-label={`Edit quick message ${i + 1}`} onClick={() => (setEditing(i), setEditText(q))}>
                     ✎
                   </button>
                 </div>
@@ -165,28 +155,17 @@ export function MonitorPanel({ show, act }: { show: Show; act: Act }) {
 
         <div className="mpanel__row">
           <label className="check">
-            <input
-              type="checkbox"
-              checked={m.showClock}
-              onChange={(e) => act({ type: 'updateMonitor', patch: { showClock: e.target.checked } })}
-            />{' '}
-            Clock
+            <input type="checkbox" checked={m.showClock} onChange={(e) => act({ type: 'updateMonitor', patch: { showClock: e.target.checked } })} /> Clock
           </label>
           <label className="check">
-            <input
-              type="checkbox"
-              checked={m.clock24h}
-              onChange={(e) => act({ type: 'updateMonitor', patch: { clock24h: e.target.checked } })}
-            />{' '}
-            24-hour
+            <input type="checkbox" checked={m.clock24h} onChange={(e) => act({ type: 'updateMonitor', patch: { clock24h: e.target.checked } })} /> 24-hour
           </label>
           <label className="check">
-            <input
-              type="checkbox"
-              checked={m.showTimer}
-              onChange={(e) => act({ type: 'updateMonitor', patch: { showTimer: e.target.checked } })}
-            />{' '}
-            Countdown
+            <input type="checkbox" checked={m.showTimer} onChange={(e) => act({ type: 'updateMonitor', patch: { showTimer: e.target.checked } })} /> Countdown
+          </label>
+          <label className="check" title="When a song is on air on the Live Screen, its words (and the next lines) show here">
+            <input type="checkbox" checked={m.showLyrics ?? true} onChange={(e) => act({ type: 'updateMonitor', patch: { showLyrics: e.target.checked } })} />{' '}
+            Song words
           </label>
         </div>
 

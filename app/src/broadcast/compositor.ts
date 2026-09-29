@@ -24,6 +24,7 @@ import { clockShown, formatGameClock } from '../engine/score';
 import { LYRICS_FADE_MS, sections } from '../engine/lyrics';
 import type { Lyrics } from '../engine/types/Lyrics';
 import type { Poll } from '../engine/types/Poll';
+import type { CommentCard } from '../engine/types/CommentCard';
 import { shares } from '../engine/poll';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
@@ -297,6 +298,72 @@ export class ProgramCompositor {
       ctx.font = font(2.2, 500);
       ctx.fillText(p.joinUrl.replace(/^http:\/\//, ''), qx + qrW / 2, qy + qrW + 6.5 * u);
     }
+    ctx.restore();
+  }
+
+  /** A chat comment on its card (mirrors CommentView and its CSS). */
+  private comment(c: CommentCard, now: number, w: number, h: number) {
+    const m = c.comment;
+    if (!m) return;
+    const ctx = this.ctx;
+    const u = h / 100;
+    const t = Math.min(1, Math.max(0, (now - c.changedAt) / 450));
+    const e = 1 - (1 - t) ** 3;
+    const middle = c.place === 'middle';
+    const textSize = (middle ? 5 : 3.6) * u;
+    const font = (px: number, weight: number) => `${weight} ${px}px "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    ctx.globalAlpha *= e;
+    ctx.textBaseline = 'middle';
+    ctx.font = font(textSize, 600);
+    const maxW = (middle ? 0.76 : 0.62) * w - 2 * 2.8 * u - u;
+    const lines = this.wrap(m.text, maxW);
+    ctx.font = font(2.8 * u, 700);
+    const headW = 4.4 * u + 1.2 * u + ctx.measureText(m.author).width + 12 * u;
+    ctx.font = font(textSize, 600);
+    const textW = Math.max(...lines.map((l) => ctx.measureText(l).width));
+    const cw = Math.min(maxW, Math.max(headW, textW)) + 2 * 2.8 * u + u;
+    const ch = 2 * 2.2 * u + 4.4 * u + u + lines.length * textSize * 1.3;
+    const x = middle ? (w - cw) / 2 : 0.05 * w;
+    const y = (middle ? (h - ch) / 2 : h - 10 * u - ch) + (1 - e) * 3 * u;
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 2 * u;
+    ctx.shadowOffsetY = 0.6 * u;
+    ctx.fillStyle = 'rgba(13,15,19,0.92)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, cw, ch, u);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = c.accent;
+    ctx.beginPath();
+    ctx.roundRect(x, y, u, ch, [u, 0, 0, u]);
+    ctx.fill();
+    const left = x + u + 2.8 * u;
+    const headY = y + 2.2 * u + 2.2 * u;
+    ctx.beginPath();
+    ctx.arc(left + 2.2 * u, headY, 2.2 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.font = font(2.4 * u, 800);
+    ctx.fillText([...m.author.trim()][0]?.toUpperCase() ?? '?', left + 2.2 * u, headY);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#dfe3e8';
+    ctx.font = font(2.8 * u, 700);
+    ctx.fillText(m.author, left + 5.6 * u, headY);
+    const via = { youtube: 'YouTube', twitch: 'Twitch', other: '' }[m.platform];
+    if (via) {
+      const nw = ctx.measureText(m.author).width;
+      ctx.fillStyle = '#9aa0a8';
+      ctx.font = font(2 * u, 400);
+      ctx.fillText(via, left + 5.6 * u + nw + 1.2 * u, headY);
+    }
+    ctx.fillStyle = '#fff';
+    ctx.font = font(textSize, 600);
+    ctx.direction = isRtl(m.text) ? 'rtl' : 'ltr';
+    ctx.textAlign = isRtl(m.text) ? 'right' : 'left';
+    const tx = isRtl(m.text) ? x + cw - 2.8 * u : left;
+    lines.forEach((l, i) => ctx.fillText(l, tx, y + 2.2 * u + 4.4 * u + u + textSize * 1.3 * (i + 0.5)));
     ctx.restore();
   }
 
@@ -614,6 +681,9 @@ export class ProgramCompositor {
         return;
       case 'poll':
         this.poll(k, w, h);
+        return;
+      case 'comment':
+        this.comment(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

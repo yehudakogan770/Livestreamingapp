@@ -40,6 +40,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'comment', name: 'Chat comments', hint: 'Comments from the YouTube or Twitch live chat, on screen' },
   { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
   { kind: 'lyrics', name: 'Song lyrics', hint: 'The words of a song, a verse at a time' },
   { kind: 'screen', name: 'Screen capture', hint: 'A display or one window of this computer' },
@@ -153,6 +154,8 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'comment':
+        return { name: n || 'Chat comments', kind: { type: 'comment', comment: null, changedAt: 0, place: 'low', accent: '#2f80ed' } };
       case 'poll': {
         const options = subWords
           .split('\n')

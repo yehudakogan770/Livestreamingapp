@@ -168,11 +168,15 @@ function ControlApp() {
       { label: 'Add input…', onClick: () => sendCommand({ type: 'addInput' }) },
       { label: '3D logo maker…', onClick: () => sendCommand({ type: 'logoMaker' }) },
     ];
-    const text: MenuItem[] = TEXT_TEMPLATES.map((t, i) => ({
-      label: `Add a ${t.name.toLowerCase()}…`,
-      hint: t.hint,
-      onClick: () => sendCommand({ type: 'addInput', kind: 'text', template: i }),
-    }));
+    const text: MenuItem[] = [
+      ...TEXT_TEMPLATES.map((t, i) => ({
+        label: `Add a ${t.name.toLowerCase()}…`,
+        hint: t.hint,
+        onClick: () => sendCommand({ type: 'addInput', kind: 'text', template: i }),
+      })),
+      null,
+      { label: 'Live chat comments (YouTube, Twitch)…', onClick: () => sendCommand({ type: 'chat' }) },
+    ];
     const slides = show?.sources.filter((x) => x.kind.type === 'slideshow') ?? [];
     const slideshow: MenuItem[] = [
       { label: 'Add a slideshow…', onClick: () => sendCommand({ type: 'addInput', kind: 'slideshow' }) },

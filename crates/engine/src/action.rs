@@ -118,6 +118,9 @@ pub struct MonitorPatch {
     pub show_timer: Option<bool>,
     #[serde(default)]
     #[ts(optional)]
+    pub show_lyrics: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
     pub text_size: Option<TextSize>,
     #[serde(default)]
     #[ts(optional)]
@@ -238,6 +241,18 @@ pub enum Action {
     PlaylistGo {
         id: SourceId,
         index: usize,
+    },
+    /// Show a chat comment (or, with none, take it off).
+    ShowComment {
+        id: SourceId,
+        #[ts(optional)]
+        comment: Option<crate::chat::ChatComment>,
+    },
+    /// Change how a comment input looks.
+    UpdateCommentCard {
+        id: SourceId,
+        place: crate::chat::CommentPlace,
+        accent: String,
     },
     /// Set (or, with none, forget) where a camera's PTZ control is.
     SetPtz {

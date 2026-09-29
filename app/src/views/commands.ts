@@ -12,7 +12,8 @@ export type Command =
   | { type: 'visuals' }
   | { type: 'logoMaker'; id?: string }
   | { type: 'triggers' }
-  | { type: 'midi' };
+  | { type: 'midi' }
+  | { type: 'chat' };
 
 const bus = new EventTarget();
 

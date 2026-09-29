@@ -5,4 +5,4 @@ import type { TextSize } from "./TextSize";
 /**
  * Changes to the stage monitor. Fields left out stay as they are.
  */
-export type MonitorPatch = { message?: string, messageOn?: boolean, layout?: MonitorLayout, showClock?: boolean, showTimer?: boolean, textSize?: TextSize, clock24h?: boolean, };
+export type MonitorPatch = { message?: string, messageOn?: boolean, layout?: MonitorLayout, showClock?: boolean, showTimer?: boolean, showLyrics?: boolean, textSize?: TextSize, clock24h?: boolean, };

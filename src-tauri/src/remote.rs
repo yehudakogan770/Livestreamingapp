@@ -143,6 +143,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SlidePrevious { .. }
             | Action::SlideGo { .. }
             | Action::PlaylistGo { .. }
+            | Action::ShowComment { comment: None, .. }
             | Action::LyricsGo { .. }
             | Action::LyricsNext { .. }
             | Action::LyricsPrevious { .. }
