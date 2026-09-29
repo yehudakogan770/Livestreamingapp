@@ -1,3 +1,4 @@
+import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
 import { CapturePicker } from './CapturePicker';
 import type { ScreenCapture } from '../engine/types/ScreenCapture';
@@ -39,6 +40,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
   { kind: 'lyrics', name: 'Song lyrics', hint: 'The words of a song, a verse at a time' },
   { kind: 'screen', name: 'Screen capture', hint: 'A display or one window of this computer' },
   { kind: 'scoreboard', name: 'Scoreboard', hint: 'Teams, scores, period and game clock' },
@@ -151,6 +153,16 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'poll': {
+        const options = subWords
+          .split('\n')
+          .map((o) => o.trim())
+          .filter(Boolean)
+          .slice(0, 8);
+        return words.trim() && options.length >= 2
+          ? { name: n || words.trim().slice(0, 40), kind: { type: 'poll', ...defaultPoll(), question: words.trim(), options, votes: options.map(() => 0) } }
+          : null;
+      }
       case 'lyrics':
         return sections(words).length
           ? { name: n || words.trim().split('\n')[0]!.slice(0, 40), kind: { type: 'lyrics', ...defaultLyrics(), title: n, text: words } }
@@ -315,6 +327,22 @@ export function AddInput({
               <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
             )}
 
+            {kind === 'poll' && (
+              <>
+                <label className="field">
+                  <span className="field__label">Question</span>
+                  <input className="text" dir="auto" value={words} onChange={(e) => setWords(e.target.value)} aria-label="Question" autoFocus />
+                </label>
+                <label className="field">
+                  <span className="field__label">Answers, one on each line (2 – 8)</span>
+                  <textarea className="text" dir="auto" rows={5} value={subWords} onChange={(e) => setSubWords(e.target.value)} aria-label="Answers" />
+                </label>
+                <span className="field__note">
+                  People vote from their phones on the venue Wi-Fi — the phone remote has to be on (Settings → Phone remote). The code to scan shows on screen
+                  while voting is open.
+                </span>
+              </>
+            )}
             {kind === 'lyrics' && (
               <label className="field">
                 <span className="field__label">The words (a blank line starts the next slide)</span>

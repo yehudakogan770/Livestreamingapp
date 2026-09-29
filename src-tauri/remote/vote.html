@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0f1114" />
+    <title>Vote</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1114;
+        --card: #1a1d22;
+        --line: #2b3038;
+        --text: #f2f3f5;
+        --dim: #9aa0a8;
+        --accent: #2f80ed;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font: 17px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      main {
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+      h1 {
+        margin: 0 0 18px;
+        font-size: 24px;
+        line-height: 1.25;
+      }
+      .poll + .poll {
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+      button {
+        display: block;
+        width: 100%;
+        margin: 0 0 10px;
+        padding: 16px;
+        border: 2px solid var(--line);
+        border-radius: 12px;
+        background: var(--card);
+        color: var(--text);
+        font: inherit;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+      }
+      button.is-mine {
+        border-color: var(--accent);
+        background: #16263d;
+      }
+      button.is-mine::after {
+        content: ' ✓';
+        color: var(--accent);
+      }
+      .note {
+        color: var(--dim);
+        font-size: 14px;
+      }
+      .empty {
+        margin-top: 30vh;
+        text-align: center;
+        color: var(--dim);
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"><p class="empty">Waiting for a question…</p></main>
+    <script>
+      // Each phone is one voter (a random name kept on the phone).
+      let voter = '';
+      try {
+        voter = localStorage.getItem('lumora.voter') || '';
+        if (!voter) {
+          voter = Math.random().toString(36).slice(2) + Date.now().toString(36);
+          localStorage.setItem('lumora.voter', voter);
+        }
+      } catch {
+        voter = Math.random().toString(36).slice(2);
+      }
+      const mine = {};
+      const app = document.getElementById('app');
+      let last = '';
+
+      function draw(polls) {
+        const key = JSON.stringify(polls) + JSON.stringify(mine);
+        if (key === last) return;
+        last = key;
+        app.textContent = '';
+        if (!polls.length) {
+          const p = document.createElement('p');
+          p.className = 'empty';
+          p.textContent = 'Waiting for a question…';
+          app.append(p);
+          return;
+        }
+        for (const poll of polls) {
+          const box = document.createElement('section');
+          box.className = 'poll';
+          const h = document.createElement('h1');
+          h.textContent = poll.question;
+          box.append(h);
+          const chosen = mine[poll.id + ':' + poll.round];
+          poll.options.forEach((text, i) => {
+            const b = document.createElement('button');
+            b.textContent = text;
+            if (chosen === i) b.className = 'is-mine';
+            b.onclick = () => vote(poll, i);
+            box.append(b);
+          });
+          const n = document.createElement('p');
+          n.className = 'note';
+          n.textContent = chosen === undefined ? 'Tap your answer.' : 'Thank you! You can change your answer while voting is open.';
+          box.append(n);
+          app.append(box);
+        }
+      }
+
+      async function load() {
+        try {
+          const r = await fetch('/api/polls', { cache: 'no-store' });
+          if (r.ok) draw(await r.json());
+        } catch {
+          // The venue network dropped for a moment; try again.
+        }
+      }
+
+      async function vote(poll, option) {
+        const k = poll.id + ':' + poll.round;
+        const before = mine[k];
+        mine[k] = option;
+        load();
+        try {
+          const r = await fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: poll.id, round: poll.round, option, voter }),
+          });
+          if (!r.ok) throw new Error();
+        } catch {
+          mine[k] = before;
+          last = '';
+          load();
+        }
+      }
+
+      load();
+      setInterval(load, 2000);
+    </script>
+  </body>
+</html>

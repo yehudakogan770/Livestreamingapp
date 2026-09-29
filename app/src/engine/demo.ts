@@ -16,6 +16,7 @@ import { stingerSlot } from './timing';
 import { repairScoreboard, runClock, setClock } from './score';
 import { lyricsGo, sections } from './lyrics';
 import { applyBrand } from './brand';
+import { repairPoll, resetPoll } from './poll';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -129,6 +130,12 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
   if (i === null) return t;
   const st = s.settings.stingers?.[i];
   return st?.path ? { kind: t.kind, durationMs: Math.max(MIN_TRANSITION_MS, st.durationMs) } : { kind: 'fade' as const, durationMs: t.durationMs };
+}
+
+function pollIn(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'poll') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a poll' });
+  return src.kind;
 }
 
 function song(s: Show, id: string) {
@@ -411,6 +418,32 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'updatePoll': {
+      const p = pollIn(s, a.id);
+      const next = structuredClone(a.poll);
+      repairPoll(next);
+      const same = JSON.stringify(next.options) === JSON.stringify(p.options);
+      Object.assign(p, { ...next, votes: p.votes, round: p.round, open: p.open });
+      if (!same) resetPoll(p);
+      return;
+    }
+    case 'pollOpen':
+      pollIn(s, a.id).open = a.value;
+      return;
+    case 'pollShowResults':
+      pollIn(s, a.id).showResults = a.value;
+      return;
+    case 'pollReset':
+      resetPoll(pollIn(s, a.id));
+      return;
+    case 'pollVote': {
+      const p = pollIn(s, a.id);
+      if (!p.open || a.round !== p.round || a.option >= p.votes.length)
+        throw new Refused({ code: 'invalidValue', field: 'poll', reason: 'this poll is not taking votes' });
+      if (a.previous !== undefined && a.previous < p.votes.length) p.votes[a.previous] = Math.max(0, p.votes[a.previous]! - 1);
+      p.votes[a.option]! += 1;
+      return;
+    }
     case 'applyBrand':
       applyBrand(s, a.brand);
       return;

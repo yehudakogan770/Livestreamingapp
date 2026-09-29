@@ -1,3 +1,4 @@
+import { PollView } from './PollView';
 import { LyricsView } from './LyricsView';
 import { ScoreboardView } from './ScoreboardView';
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -115,6 +116,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
     case 'scoreboard':
       return <ScoreboardView sb={k} />;
+    case 'poll':
+      return <PollView p={k} thumb={thumb} />;
     case 'lyrics':
       return <LyricsView l={k} />;
     case 'screen':

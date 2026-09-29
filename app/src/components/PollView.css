@@ -1,0 +1,99 @@
+/* Mirrored in the recorder: broadcast/compositor.ts poll(). Sizes in cqh of a 1080 frame. */
+.poll {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: radial-gradient(ellipse at 30% 20%, #1c2433, #07080b);
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+.poll__body {
+  position: absolute;
+  inset: 9cqh 7cqh;
+  display: flex;
+  gap: 6cqh;
+  align-items: center;
+}
+.poll__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.poll__q {
+  margin: 0 0 4cqh;
+  font-size: 6.4cqh;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.poll__opts {
+  display: flex;
+  flex-direction: column;
+  gap: 2cqh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.poll__opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 9cqh;
+  padding: 0 3cqh;
+  border-radius: 1.2cqh;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  font-size: 4.2cqh;
+  font-weight: 700;
+}
+.poll__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #2f80ed, #56a0ff);
+  transition: width 600ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+.poll__label,
+.poll__pct {
+  position: relative;
+}
+.poll__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.poll__pct {
+  margin-left: 2cqh;
+  font-variant-numeric: tabular-nums;
+}
+.poll__total {
+  margin: 2.5cqh 0 0;
+  font-size: 3cqh;
+  color: #b8bec8;
+}
+.poll__join {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2cqh;
+  font-size: 3.4cqh;
+  font-weight: 700;
+}
+.poll__join small {
+  font-size: 2.2cqh;
+  font-weight: 500;
+  color: #b8bec8;
+}
+.poll__qr {
+  width: 34cqh;
+  height: 34cqh;
+  padding: 1.5cqh;
+  border-radius: 1.5cqh;
+  background: #fff;
+}
+.poll__qr svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

@@ -26,6 +26,7 @@ pub mod overlays;
 pub mod persist;
 pub mod pesukim;
 pub mod playlist;
+pub mod poll;
 pub mod presets;
 pub mod score;
 pub mod screen;

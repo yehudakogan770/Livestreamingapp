@@ -9,8 +9,8 @@ const on: RemoteStatus = {
   pin: '4821',
   port: 8765,
   addresses: [
-    { url: 'http://192.168.1.20:8765', qr: '<svg/>' },
-    { url: 'http://10.0.0.5:8765', qr: '<svg/>' },
+    { url: 'http://192.168.1.20:8765', qr: '<svg/>', voteUrl: 'http://192.168.1.20:8765/vote', voteQr: '<svg/>' },
+    { url: 'http://10.0.0.5:8765', qr: '<svg/>', voteUrl: 'http://10.0.0.5:8765/vote', voteQr: '<svg/>' },
   ],
   phones: 2,
   error: null,

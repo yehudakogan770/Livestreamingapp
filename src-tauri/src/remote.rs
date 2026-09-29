@@ -13,6 +13,7 @@
 //!   matches the screens to the second.
 
 use std::collections::hash_map::RandomState;
+use std::collections::HashMap;
 use std::hash::{BuildHasher, Hasher};
 use std::io::{Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpStream};
@@ -40,6 +41,7 @@ const PAGE: &str = include_str!("../remote/index.html");
 const SCRIPT: &str = include_str!("../remote/remote.js");
 const STYLE: &str = include_str!("../remote/remote.css");
 /// Scene names for the stage visuals (the same file the screens use).
+const VOTE_PAGE: &str = include_str!("../remote/vote.html");
 const BANKS: &str = include_str!("../../app/src/visuals/banks.json");
 
 /// What the remote needs from the app.
@@ -75,6 +77,9 @@ pub struct RemoteAddress {
     pub url: String,
     /// The QR code as an SVG picture.
     pub qr: String,
+    /// The audience voting page, and its QR code.
+    pub vote_url: String,
+    pub vote_qr: String,
 }
 
 /// What the control window shows about the remote.
@@ -184,6 +189,8 @@ struct Shared {
     pin: Mutex<String>,
     phones: Mutex<Vec<Phone>>,
     next_phone: Mutex<u64>,
+    /// Each phone's vote in each poll round, so a phone votes once (and may change it).
+    votes: Mutex<HashMap<(String, u32), HashMap<String, usize>>>,
 }
 
 impl Shared {
@@ -246,6 +253,7 @@ impl Remote {
                 pin: Mutex::new(config.pin.clone()),
                 phones: Mutex::new(Vec::new()),
                 next_phone: Mutex::new(0),
+                votes: Mutex::new(HashMap::new()),
             }),
             config: Mutex::new(config),
             running: Mutex::new(None),
@@ -393,8 +401,11 @@ fn addresses(port: u16) -> Vec<RemoteAddress> {
     ips.into_iter()
         .map(|ip| {
             let url = format!("http://{ip}:{port}");
+            let vote_url = format!("{url}/vote");
             RemoteAddress {
                 qr: qr_svg(&url),
+                vote_qr: qr_svg(&vote_url),
+                vote_url,
                 url,
             }
         })
@@ -485,6 +496,21 @@ fn handle(shared: &Shared, mut request: Request) {
         }
         (Method::Get, "/remote.css") => respond(request, 200, "text/css; charset=utf-8", STYLE),
         (Method::Get, "/banks.json") => respond(request, 200, "application/json", BANKS),
+        // The audience: no PIN, and they can only see open polls and vote.
+        (Method::Get, "/vote") => respond(request, 200, "text/html; charset=utf-8", VOTE_PAGE),
+        (Method::Get, "/api/polls") => {
+            let polls = shared
+                .backend
+                .snapshot()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                .map(|v| open_polls(&v["show"]))
+                .unwrap_or_default();
+            json(request, 200, &serde_json::Value::Array(polls).to_string());
+        }
+        (Method::Post, "/api/vote") => match vote(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingVotes"}"#),
+        },
         (method, p) if p == "/api/tally" || p.starts_with("/api/do/") => {
             if !authorised(shared, &request, query) {
                 std::thread::sleep(Duration::from_millis(500));
@@ -549,6 +575,66 @@ fn handle(shared: &Shared, mut request: Request) {
         }
         _ => respond(request, 404, "text/plain; charset=utf-8", "Not found"),
     }
+}
+
+/// The polls taking votes: only what a voter needs to see.
+fn open_polls(show: &serde_json::Value) -> Vec<serde_json::Value> {
+    show["sources"]
+        .as_array()
+        .map(|all| {
+            all.iter()
+                .filter(|s| s["kind"]["type"] == "poll" && s["kind"]["open"] == true)
+                .map(|s| {
+                    serde_json::json!({
+                        "id": s["id"],
+                        "round": s["kind"]["round"],
+                        "question": s["kind"]["question"],
+                        "options": s["kind"]["options"],
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+#[derive(Deserialize)]
+struct Vote {
+    id: String,
+    round: u32,
+    option: usize,
+    voter: String,
+}
+
+fn vote(shared: &Shared, request: &mut Request) -> Result<(), u16> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| 400u16)?;
+    let v: Vote = serde_json::from_str(&body).map_err(|_| 400u16)?;
+    if v.voter.is_empty() || v.voter.len() > 64 {
+        return Err(400);
+    }
+    let mut votes = lock(&shared.votes);
+    let round = votes.entry((v.id.clone(), v.round)).or_default();
+    let previous = round.get(&v.voter).copied();
+    if previous == Some(v.option) {
+        return Ok(());
+    }
+    // Keep the memory small: a very big crowd still fits.
+    if previous.is_none() && round.len() >= 100_000 {
+        return Err(429);
+    }
+    let action = Action::PollVote {
+        id: lumora_engine::model::SourceId::new(v.id),
+        round: v.round,
+        option: v.option,
+        previous,
+    };
+    shared.backend.apply(action).map_err(|_| 409u16)?;
+    round.insert(v.voter, v.option);
+    Ok(())
 }
 
 fn authorised(shared: &Shared, request: &Request, query: &str) -> bool {
@@ -710,6 +796,66 @@ mod tests {
             slot: 0,
             store: true
         }));
+    }
+
+    #[test]
+    fn the_audience_votes_once_each_without_the_pin() {
+        let (r, fake) = remote();
+        let st = r.set_enabled(true);
+        let port = st.port.unwrap();
+        let poll = lumora_engine::poll::Poll::default();
+        {
+            let mut e = lock(&fake.engine);
+            e.apply(
+                Action::AddSource {
+                    source: serde_json::from_value(serde_json::json!({
+                        "id": "p", "name": "Poll", "kind": {"type": "poll"}
+                    }))
+                    .unwrap(),
+                },
+                1,
+            )
+            .unwrap();
+        }
+        let body = |option: usize, voter: &str| {
+            format!(
+                r#"{{"id":"p","round":{},"option":{option},"voter":"{voter}"}}"#,
+                poll.round + 1
+            )
+        };
+        // Closed: nothing shown, votes refused.
+        assert_eq!(request(port, "GET", "/api/polls", "", "").1, "[]");
+        assert_eq!(request(port, "POST", "/api/vote", "", &body(0, "a")).0, 409);
+        lock(&fake.engine)
+            .apply(
+                Action::PollOpen {
+                    id: lumora_engine::model::SourceId::new("p"),
+                    value: true,
+                },
+                2,
+            )
+            .unwrap();
+        let (code, list) = request(port, "GET", "/api/polls", "", "");
+        assert_eq!(code, 200);
+        assert!(list.contains("What should we play next?") && !list.contains("votes"));
+        assert_eq!(request(port, "POST", "/api/vote", "", &body(0, "a")).0, 200);
+        assert_eq!(
+            request(port, "POST", "/api/vote", "", &body(0, "a")).0,
+            200,
+            "same vote again: counted once"
+        );
+        assert_eq!(
+            request(port, "POST", "/api/vote", "", &body(2, "a")).0,
+            200,
+            "changed their mind"
+        );
+        assert_eq!(request(port, "POST", "/api/vote", "", &body(2, "b")).0, 200);
+        let votes = match &lock(&fake.engine).show().sources[0].kind {
+            lumora_engine::SourceKind::Poll(p) => p.votes.clone(),
+            _ => unreachable!(),
+        };
+        assert_eq!(votes, vec![0, 0, 2]);
+        assert_eq!(request(port, "GET", "/vote", "", "").0, 200);
     }
 
     #[test]

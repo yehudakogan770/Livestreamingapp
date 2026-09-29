@@ -239,6 +239,33 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Change a poll's question, answers and look (new answers start the votes again).
+    UpdatePoll {
+        id: SourceId,
+        poll: crate::poll::Poll,
+    },
+    /// Open or close a poll for votes.
+    PollOpen {
+        id: SourceId,
+        value: bool,
+    },
+    /// Show or hide a poll's results on screen.
+    PollShowResults {
+        id: SourceId,
+        value: bool,
+    },
+    /// Start a poll's votes again.
+    PollReset {
+        id: SourceId,
+    },
+    /// A vote from a phone (sent by the app's server, never by the operator).
+    PollVote {
+        id: SourceId,
+        round: u32,
+        option: usize,
+        #[ts(optional)]
+        previous: Option<usize>,
+    },
     /// Set the event's look and put it on every title, song and scoreboard.
     ApplyBrand {
         brand: crate::event::Brand,

@@ -1,3 +1,4 @@
+import { PollCard } from './PollCard';
 import { LyricsCard } from './LyricsCard';
 import { ScreenCard } from './ScreenCard';
 import { ScoreCard } from './ScoreCard';
@@ -45,6 +46,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   scoreboard: 'Scoreboard',
   screen: 'Screen capture',
   lyrics: 'Song',
+  poll: 'Poll',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -77,6 +79,7 @@ export function InputGrid({
   const editingScore = show.sources.find((x) => x.id === editing && x.kind.type === 'scoreboard');
   const editingScreen = show.sources.find((x) => x.id === editing && x.kind.type === 'screen');
   const editingSong = show.sources.find((x) => x.id === editing && x.kind.type === 'lyrics');
+  const editingPoll = show.sources.find((x) => x.id === editing && x.kind.type === 'poll');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -161,6 +164,7 @@ export function InputGrid({
         <span className="tile--add__plus">+</span>
         Add input
       </button>
+      {editingPoll && <PollCard source={editingPoll} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingSong && <LyricsCard source={editingSong} act={act} onClose={() => setEditing(null)} />}
       {editingScreen && <ScreenCard source={editingScreen} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingScore && <ScoreCard source={editingScore} act={act} onClose={() => setEditing(null)} />}
@@ -304,7 +308,15 @@ function TileMenu({
           Edit 3D logo…
         </button>
       )}
-      {(k === 'text' || k === 'split' || k === 'slideshow' || k === 'browser' || k === 'stream' || k === 'scoreboard' || k === 'screen' || k === 'lyrics') && (
+      {(k === 'text' ||
+        k === 'split' ||
+        k === 'slideshow' ||
+        k === 'browser' ||
+        k === 'stream' ||
+        k === 'scoreboard' ||
+        k === 'screen' ||
+        k === 'lyrics' ||
+        k === 'poll') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -327,7 +339,9 @@ function TileMenu({
                       ? 'Change what is captured…'
                       : k === 'lyrics'
                         ? 'Run the song…'
-                        : 'Edit slides…'}
+                        : k === 'poll'
+                          ? 'Run the poll…'
+                          : 'Edit slides…'}
         </button>
       )}
       <button

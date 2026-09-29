@@ -62,7 +62,7 @@ export interface RemoteStatus {
   pin: string;
   port: number | null;
   /** Addresses phones can open, each with a QR code (SVG). */
-  addresses: { url: string; qr: string }[];
+  addresses: { url: string; qr: string; voteUrl: string; voteQr: string }[];
   /** Phones connected now. */
   phones: number;
   /** Why it could not start. */

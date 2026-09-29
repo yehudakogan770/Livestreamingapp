@@ -23,6 +23,8 @@ import { buildAt, isRtl, withAlpha } from '../engine/text';
 import { clockShown, formatGameClock } from '../engine/score';
 import { LYRICS_FADE_MS, sections } from '../engine/lyrics';
 import type { Lyrics } from '../engine/types/Lyrics';
+import type { Poll } from '../engine/types/Poll';
+import { shares } from '../engine/poll';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
@@ -219,6 +221,94 @@ export class ProgramCompositor {
     this.sting.el.removeAttribute('src');
     this.sting.el.load();
     this.sting = null;
+  }
+
+  /** A poll (mirrors PollView and its CSS; sizes are % of the frame height). */
+  private poll(p: Poll, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const g = ctx.createRadialGradient(w * 0.3, h * 0.2, 0, w * 0.3, h * 0.2, Math.hypot(w, h) * 0.8);
+    g.addColorStop(0, '#1c2433');
+    g.addColorStop(1, '#07080b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    const join = p.showJoin && p.open && p.joinQr ? this.qr(p.joinQr) : null;
+    const left = 7 * u;
+    const qrW = join ? 34 * u : 0;
+    const right = w - 7 * u - (join ? qrW + 6 * u : 0);
+    const share = shares(p);
+    const total = p.votes.reduce((a, b) => a + b, 0);
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.font = font(6.4, 800);
+    const qLines = this.wrap(p.question, right - left);
+    const qH = qLines.length * 6.4 * 1.15 * u;
+    const optsH = p.options.length * 9 * u + Math.max(0, p.options.length - 1) * 2 * u;
+    const blockH = qH + 4 * u + optsH + (p.showResults ? 5.5 * u : 0);
+    let y = Math.max(9 * u, (h - blockH) / 2);
+    qLines.forEach((line, i) => ctx.fillText(line, left, y + (i + 0.5) * 6.4 * 1.15 * u));
+    y += qH + 4 * u;
+    p.options.forEach((o, i) => {
+      const ow = right - left;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(left, y, ow, 9 * u, 1.2 * u);
+      ctx.clip();
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(left, y, ow, 9 * u);
+      if (p.showResults) {
+        const bg = ctx.createLinearGradient(left, 0, left + ow, 0);
+        bg.addColorStop(0, '#2f80ed');
+        bg.addColorStop(1, '#56a0ff');
+        ctx.fillStyle = bg;
+        ctx.fillRect(left, y, ow * (share[i] ?? 0), 9 * u);
+      }
+      ctx.fillStyle = '#fff';
+      ctx.font = font(4.2, 700);
+      ctx.textAlign = 'left';
+      ctx.fillText(o, left + 3 * u, y + 4.5 * u, ow - 16 * u);
+      if (p.showResults) {
+        ctx.textAlign = 'right';
+        ctx.fillText(`${Math.round((share[i] ?? 0) * 100)}%`, left + ow - 3 * u, y + 4.5 * u);
+      }
+      ctx.restore();
+      y += 11 * u;
+    });
+    if (p.showResults) {
+      ctx.fillStyle = '#b8bec8';
+      ctx.font = font(3, 400);
+      ctx.textAlign = 'left';
+      ctx.fillText(`${total} ${total === 1 ? 'vote' : 'votes'}`, left, y + 2 * u);
+    }
+    if (join) {
+      const qx = w - 7 * u - qrW;
+      const qy = (h - qrW - 8 * u) / 2;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.roundRect(qx, qy, qrW, qrW, 1.5 * u);
+      ctx.fill();
+      if (join.complete && join.naturalWidth) ctx.drawImage(join, qx + 1.5 * u, qy + 1.5 * u, qrW - 3 * u, qrW - 3 * u);
+      ctx.textAlign = 'center';
+      ctx.font = font(3.4, 700);
+      ctx.fillText('Scan to vote', qx + qrW / 2, qy + qrW + 3 * u);
+      ctx.fillStyle = '#b8bec8';
+      ctx.font = font(2.2, 500);
+      ctx.fillText(p.joinUrl.replace(/^http:\/\//, ''), qx + qrW / 2, qy + qrW + 6.5 * u);
+    }
+    ctx.restore();
+  }
+
+  /** A QR code (SVG) as a picture, made once. */
+  private qr(svg: string): HTMLImageElement | null {
+    const key = `qr:${svg.length}:${svg.slice(-64)}`;
+    let m = this.pictures.get(key);
+    if (!m) {
+      m = this.image(key, `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+      this.pictures.set(key, m);
+    }
+    return m.failed ? null : (m.el as HTMLImageElement);
   }
 
   /** A song's current slide (mirrors LyricsView and its CSS). */
@@ -521,6 +611,9 @@ export class ProgramCompositor {
         return;
       case 'lyrics':
         this.lyrics(k, now, w, h);
+        return;
+      case 'poll':
+        this.poll(k, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

@@ -850,6 +850,47 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::UpdatePoll { id, poll } => {
+            let p = poll_mut(s, &id)?;
+            let mut next = poll;
+            next.repair();
+            let same = next.options == p.options;
+            next.votes.clone_from(&p.votes);
+            next.round = p.round;
+            next.open = p.open;
+            if !same {
+                next.reset();
+            }
+            *p = next;
+            Ok(())
+        }
+        Action::PollOpen { id, value } => {
+            poll_mut(s, &id)?.open = value;
+            Ok(())
+        }
+        Action::PollShowResults { id, value } => {
+            poll_mut(s, &id)?.show_results = value;
+            Ok(())
+        }
+        Action::PollReset { id } => {
+            poll_mut(s, &id)?.reset();
+            Ok(())
+        }
+        Action::PollVote {
+            id,
+            round,
+            option,
+            previous,
+        } => {
+            if poll_mut(s, &id)?.vote(round, option, previous) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid(
+                    "poll",
+                    "this poll is not taking votes",
+                ))
+            }
+        }
         Action::ApplyBrand { brand } => {
             let b = brand.cleaned();
             for src in &mut s.sources {
@@ -1751,6 +1792,16 @@ fn resolve_stinger(s: &Show, t: Transition) -> Transition {
     }
 }
 
+fn poll_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::poll::Poll> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Poll(p) => Ok(p),
+        _ => Err(ActionError::invalid("id", "that input is not a poll")),
+    }
+}
+
 fn lyrics_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::lyrics::Lyrics> {
     let src = s
         .source_mut(id)
@@ -1988,6 +2039,11 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             l.repair();
         }
         SourceKind::Screen(c) => c.repair(),
+        SourceKind::Poll(p) => {
+            p.repair();
+            p.open = false;
+            p.reset();
+        }
         SourceKind::Scoreboard(sb) => {
             sb.repair();
             sb.clock.since = None;
@@ -2024,7 +2080,10 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
             l.repair();
             SourceKind::Logo3d(l)
         }
-        k @ (SourceKind::Lyrics(_) | SourceKind::Screen(_) | SourceKind::Scoreboard(_)) => fresh(k),
+        k @ (SourceKind::Lyrics(_)
+        | SourceKind::Screen(_)
+        | SourceKind::Scoreboard(_)
+        | SourceKind::Poll(_)) => fresh(k),
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {
                 ActionError::invalid(
