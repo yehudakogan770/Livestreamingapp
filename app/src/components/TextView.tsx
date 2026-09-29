@@ -46,13 +46,73 @@ export function TextView({ t }: { t: TextInput }) {
     title: { inset: '8%', justifyContent: 'center', alignItems: 'center' },
     fullScreen: { inset: '6%', justifyContent: 'center', alignItems: 'center' },
   };
+  const d = s.design ?? 'box';
+  const accent = s.accent ?? '#2f80ed';
+  const end = s.align === 'right';
+  const anim = s.animate ?? false;
+  const fill = s.boxOn ? withAlpha(s.boxColor, s.boxOpacity) : 'transparent';
+  const pad = s.boxOn ? u(s.padding) : 0;
+  const cls = `txd txd--${d}${anim ? ' txd--anim' : ''}${end ? ' txd--end' : ''}`;
+  const vars = { '--txd-accent': accent, alignItems: place[t.layout].alignItems } as CSSProperties;
+  const words = (
+    <>
+      <div className="txd__text">{main}</div>
+      {d === 'underline' && <i className="txd__line" style={{ height: u(6), margin: `${u(10)} 0` }} />}
+      {sub && <div className="txd__sub">{sub}</div>}
+    </>
+  );
+  let body;
+  if (d === 'split') {
+    body = (
+      <div className={cls} style={{ ...text, ...vars }} dir="auto">
+        <div className="txd__box" style={{ background: accent, padding: u(s.padding), borderRadius: u(s.radius) }}>
+          <div className="txd__text">{main}</div>
+        </div>
+        {sub && (
+          <div className="txd__box txd__box--sub" style={{ background: withAlpha(s.boxColor, s.boxOpacity), padding: `${u(s.padding * 0.45)} ${u(s.padding * 0.8)}`, borderRadius: u(s.radius) }}>
+            <div className="txd__sub">{sub}</div>
+          </div>
+        )}
+      </div>
+    );
+  } else if (d === 'underline') {
+    body = (
+      <div className={cls} style={{ ...text, ...vars }} dir="auto">
+        {words}
+      </div>
+    );
+  } else {
+    const bg =
+      d === 'gradient'
+        ? `linear-gradient(${end ? 270 : 90}deg, ${accent} 0%, ${withAlpha(s.boxColor, s.boxOpacity)} 75%)`
+        : d === 'glass'
+          ? 'rgba(255,255,255,0.14)'
+          : fill;
+    const bar = d === 'bar' ? u(10) : 0;
+    body = (
+      <div className={cls} style={{ ...text, ...vars }} dir="auto">
+        <div
+          className="txd__box"
+          style={{
+            background: d === 'glass' || d === 'gradient' || s.boxOn ? bg : 'transparent',
+            padding: d === 'glass' || d === 'gradient' ? u(s.padding) : pad,
+            paddingLeft: !end && bar ? `calc(${pad || '0px'} + ${bar})` : undefined,
+            paddingRight: end && bar ? `calc(${pad || '0px'} + ${bar})` : undefined,
+            borderRadius: u(s.radius),
+            border: d === 'glass' ? `${u(1.5)} solid rgba(255,255,255,0.35)` : undefined,
+            backdropFilter: d === 'glass' ? `blur(${u(18)})` : undefined,
+          }}
+        >
+          {d === 'bar' && <i className="txd__bar" style={{ width: bar }} />}
+          {words}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="txt" data-kind="text">
       <div className="txt__place" style={place[t.layout]}>
-        <div style={{ ...text, ...box }} dir="auto">
-          {main}
-          {sub}
-        </div>
+        {body}
       </div>
     </div>
   );

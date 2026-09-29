@@ -3,6 +3,7 @@
 import type { TextInput } from './types/TextInput';
 import type { TextLayout } from './types/TextLayout';
 import type { TextStyle } from './types/TextStyle';
+import type { TextDesign } from './types/TextDesign';
 
 export function defaultTextStyle(): TextStyle {
   return {
@@ -22,6 +23,44 @@ export function defaultTextStyle(): TextStyle {
     lineHeight: 1.2,
     letterSpacing: 0,
     speed: 160,
+    design: 'box',
+    accent: '#2f80ed',
+    animate: true,
+  };
+}
+
+/** How long the build-on animation takes, ms. */
+export const BUILD_MS = 800;
+
+/** The looks a lower third or title can have. */
+export const TEXT_DESIGNS: { id: TextDesign; name: string; hint: string }[] = [
+  { id: 'box', name: 'Box', hint: 'One box behind both lines' },
+  { id: 'bar', name: 'Accent bar', hint: 'A box with a coloured bar at its side' },
+  { id: 'split', name: 'Two-tone', hint: 'The name on the accent colour, the title under it' },
+  { id: 'underline', name: 'Underline', hint: 'No box; a coloured line between the lines' },
+  { id: 'gradient', name: 'Gradient', hint: 'A box fading from the accent colour' },
+  { id: 'glass', name: 'Glass', hint: 'Frosted glass' },
+];
+
+/** Accent colours to pick from quickly. */
+export const ACCENTS = ['#2f80ed', '#e0473b', '#f2b233', '#27ae60', '#9b51e0', '#ffffff'];
+
+const ease = (x: number) => 1 - (1 - x) ** 3;
+const span = (t: number, from: number, to: number) => ease(Math.min(1, Math.max(0, (t - from) / (to - from))));
+
+/**
+ * How far each part of a build-on is at `ms` after it came on (1 = done):
+ * the box opens, the bar and line grow, then the words rise in.
+ */
+export function buildAt(ms: number, animate: boolean): { box: number; subBox: number; bar: number; line: number; text: number; sub: number } {
+  if (!animate) return { box: 1, subBox: 1, bar: 1, line: 1, text: 1, sub: 1 };
+  return {
+    bar: span(ms, 0, 300),
+    box: span(ms, 80, 480),
+    subBox: span(ms, 300, 700),
+    line: span(ms, 150, 550),
+    text: span(ms, 250, 650),
+    sub: span(ms, 400, BUILD_MS),
   };
 }
 

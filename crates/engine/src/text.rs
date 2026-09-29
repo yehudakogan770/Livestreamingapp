@@ -35,6 +35,26 @@ pub enum TextAlign {
     Right,
 }
 
+/// The design of the text's background.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum TextDesign {
+    /// One box behind both lines.
+    #[default]
+    Box,
+    /// A box with an accent-coloured bar at its side.
+    Bar,
+    /// The name on the accent colour, the title on the box colour under it.
+    Split,
+    /// No box: an accent line between the two lines.
+    Underline,
+    /// A box fading from the accent colour.
+    Gradient,
+    /// Frosted glass.
+    Glass,
+}
+
 /// How the text looks. Sizes are in pixels of a 1920 × 1080 frame (they scale).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
@@ -63,6 +83,11 @@ pub struct TextStyle {
     pub letter_spacing: f32,
     /// Ticker speed, px per second.
     pub speed: u32,
+    pub design: TextDesign,
+    /// The accent colour (bar, line, name box).
+    pub accent: String,
+    /// Builds on with an animation when it comes on.
+    pub animate: bool,
 }
 
 impl Default for TextStyle {
@@ -84,6 +109,9 @@ impl Default for TextStyle {
             line_height: 1.2,
             letter_spacing: 0.0,
             speed: 160,
+            design: TextDesign::Box,
+            accent: "#2f80ed".to_owned(),
+            animate: true,
         }
     }
 }
@@ -151,6 +179,7 @@ impl TextInput {
             (&mut s.color, d.color),
             (&mut s.outline_color, d.outline_color),
             (&mut s.box_color, d.box_color),
+            (&mut s.accent, d.accent),
         ] {
             if !is_color(c) {
                 *c = fallback;

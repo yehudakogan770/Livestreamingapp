@@ -40,3 +40,90 @@
     transform: translateX(0);
   }
 }
+
+/* Designs (mirrored in the recorder: broadcast/compositor.ts text()). */
+.txd {
+  display: flex;
+  flex-direction: column;
+}
+.txd__box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.txd__bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--txd-accent);
+  transform-origin: bottom;
+}
+.txd--end .txd__bar {
+  left: auto;
+  right: 0;
+}
+.txd__line {
+  display: block;
+  width: 100%;
+  background: var(--txd-accent);
+  transform-origin: left;
+}
+.txd--end .txd__line {
+  transform-origin: right;
+}
+/* The build: the box opens, the bar and line grow, then the words rise in (text.ts buildAt). */
+.txd--anim .txd__box {
+  animation: txd-open 400ms cubic-bezier(0.33, 1, 0.68, 1) 80ms both;
+}
+.txd--anim.txd--end .txd__box {
+  animation-name: txd-open-end;
+}
+.txd--anim .txd__box--sub {
+  animation-delay: 300ms;
+}
+.txd--anim .txd__bar {
+  animation: txd-grow-y 300ms cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+.txd--anim .txd__line {
+  animation: txd-grow-x 400ms cubic-bezier(0.33, 1, 0.68, 1) 150ms both;
+}
+.txd--anim .txd__text {
+  animation: txd-rise 400ms cubic-bezier(0.33, 1, 0.68, 1) 250ms both;
+}
+.txd--anim .txd__sub {
+  animation: txd-rise 400ms cubic-bezier(0.33, 1, 0.68, 1) 400ms both;
+}
+@keyframes txd-open {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes txd-open-end {
+  from {
+    clip-path: inset(0 0 0 100%);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes txd-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+}
+@keyframes txd-grow-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes txd-rise {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
+  }
+}

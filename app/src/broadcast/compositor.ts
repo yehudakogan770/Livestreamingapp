@@ -19,7 +19,7 @@ import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
 import { browserInfo } from '../engine/browser';
 import { logoRect, VisualsPlayer } from '../visuals/player';
-import { isRtl, withAlpha } from '../engine/text';
+import { buildAt, isRtl, withAlpha } from '../engine/text';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
 import type { TextInput } from '../engine/types/TextInput';
@@ -50,6 +50,10 @@ export class ProgramCompositor {
   private readonly keyers = new Map<string, ChromaKeyer>();
   private show: Show | null = null;
   private lastSync = 0;
+  /** When each source started being drawn (for build-on animations). */
+  private starts = new Map<string, number>();
+  private drawnBefore = new Set<string>();
+  private drawnNow = new Set<string>();
   /** The stinger video being played, if any. */
   private sting: { path: string; el: HTMLVideoElement; startedAt: number } | null = null;
   /** Web pages: the newest captured frame of each, fetched as they come. */
@@ -114,6 +118,9 @@ export class ProgramCompositor {
     ctx.fillRect(0, 0, w, h);
     const show = this.show;
     if (!show) return;
+    this.drawnBefore = this.drawnNow;
+    this.drawnNow = new Set();
+    for (const id of this.starts.keys()) if (!this.drawnBefore.has(id)) this.starts.delete(id);
 
     const sc = show.screens[this.screen];
     const { layers, black, white, stinger } = programLayers(show, this.screen, now);
@@ -205,6 +212,13 @@ export class ProgramCompositor {
     this.sting.el.removeAttribute('src');
     this.sting.el.load();
     this.sting = null;
+  }
+
+  /** When this source started being drawn, without a break. */
+  private since(id: string, now: number): number {
+    if (!this.drawnBefore.has(id) && !this.drawnNow.has(id)) this.starts.set(id, now);
+    this.drawnNow.add(id);
+    return this.starts.get(id) ?? now;
   }
 
   private overlay(color: string, amount: number, w: number, h: number) {
@@ -313,7 +327,7 @@ export class ProgramCompositor {
         this.pesukim(k, event, now, w, h);
         return;
       case 'text':
-        this.text(k, now, w, h);
+        this.text(k, now, w, h, this.since(src.id, now));
         return;
       case 'credits':
         this.credits(k, now, w, h);
@@ -637,7 +651,7 @@ export class ProgramCompositor {
   }
 
   /** A text input (mirrors TextView and its CSS): transparent except the text and its box. */
-  private text(t: TextInput, now: number, w: number, h: number) {
+  private text(t: TextInput, now: number, w: number, h: number, start = now - 10_000) {
     const ctx = this.ctx;
     const s = t.style;
     const k = h / 1080;
@@ -699,32 +713,134 @@ export class ProgramCompositor {
       return;
     }
 
+    const b = buildAt(now - start, s.animate ?? false);
+    const d = s.design ?? 'box';
+    const accent = s.accent ?? '#2f80ed';
+    const end = s.align === 'right';
     ctx.font = font(s.size, s.weight);
     const mainW = ctx.measureText(t.text).width;
     ctx.font = font(subSize, Math.max(300, s.weight - 200));
     const subW = t.sub ? ctx.measureText(t.sub).width : 0;
-    const contentW = Math.max(mainW, subW);
-    const contentH = lineH + (t.sub ? subH : 0);
-    const bw = contentW + 2 * pad;
-    const bh = contentH + 2 * pad;
-    let bx: number;
-    let by: number;
-    if (t.layout === 'lowerThird') {
-      const left = w * 0.05;
-      const right = w * 0.95;
-      bx = s.align === 'center' ? (w - bw) / 2 : s.align === 'right' ? right - bw : left;
-      by = h * 0.9 - bh;
-    } else {
-      bx = (w - bw) / 2;
-      by = (h - bh) / 2;
-    }
-    box(bx, by, bw, bh, s.radius * k);
-    // Lines line up by the chosen alignment inside the box (left and right
-    // are absolute, as in the screens' CSS, for Hebrew too).
-    const ax = s.align === 'center' ? bx + bw / 2 : s.align === 'right' ? bx + bw - pad : bx + pad;
+    const r = s.radius * k;
+    // Where a block of size bw × bh goes for this layout.
+    const place = (bw: number, bh: number) => {
+      if (t.layout === 'lowerThird') {
+        const x = s.align === 'center' ? (w - bw) / 2 : end ? w * 0.95 - bw : w * 0.05;
+        return { x, y: h * 0.9 - bh };
+      }
+      return { x: (w - bw) / 2, y: (h - bh) / 2 };
+    };
+    // Reveal a box from its start side as it opens.
+    const opened = (x: number, y: number, bw: number, bh: number, p: number) => {
+      ctx.beginPath();
+      if (end) ctx.rect(x + bw * (1 - p), y, bw * p, bh);
+      else ctx.rect(x, y, bw * p, bh);
+      ctx.clip();
+    };
+    const fillBox = (x: number, y: number, bw: number, bh: number, style: string | CanvasGradient) => {
+      ctx.save();
+      ctx.shadowColor = 'transparent';
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = style;
+      ctx.beginPath();
+      ctx.roundRect(x, y, bw, bh, r);
+      ctx.fill();
+      ctx.restore();
+    };
+    // The words rise in (40% of a line) and fade up.
+    const words = (str: string, x: number, y: number, size: number, weight: number, alpha: number, p: number, lh: number) => {
+      if (p <= 0) return;
+      paint(str, x, y + 0.4 * lh * (1 - p), size, weight, alpha * p);
+    };
+    const ax = (x: number, bw: number, padL: number, padR: number) => (s.align === 'center' ? x + (padL + bw - padR) / 2 : end ? x + bw - padR : x + padL);
     ctx.textAlign = s.align;
-    paint(t.text, ax, by + pad + lineH / 2, s.size, s.weight);
-    if (t.sub) paint(t.sub, ax, by + pad + lineH + subH / 2, subSize, Math.max(300, s.weight - 200), 0.9);
+
+    if (d === 'split') {
+      const p = s.padding * k;
+      const spx = s.padding * 0.8 * k;
+      const spy = s.padding * 0.45 * k;
+      const mw = mainW + 2 * p;
+      const mh = lineH + 2 * p;
+      const sw = subW + 2 * spx;
+      const sh = t.sub ? subH + 2 * spy : 0;
+      const whole = place(Math.max(mw, sw), mh + sh);
+      const mx = s.align === 'center' ? whole.x + (Math.max(mw, sw) - mw) / 2 : end ? whole.x + Math.max(mw, sw) - mw : whole.x;
+      const sx = s.align === 'center' ? whole.x + (Math.max(mw, sw) - sw) / 2 : end ? whole.x + Math.max(mw, sw) - sw : whole.x;
+      ctx.save();
+      opened(mx, whole.y, mw, mh, b.box);
+      fillBox(mx, whole.y, mw, mh, accent);
+      words(t.text, ax(mx, mw, p, p), whole.y + p + lineH / 2, s.size, s.weight, 1, b.text, lineH);
+      ctx.restore();
+      if (t.sub) {
+        const sy = whole.y + mh;
+        ctx.save();
+        opened(sx, sy, sw, sh, b.subBox);
+        fillBox(sx, sy, sw, sh, withAlpha(s.boxColor, s.boxOpacity));
+        words(t.sub, ax(sx, sw, spx, spx), sy + spy + subH / 2, subSize, Math.max(300, s.weight - 200), 0.9, b.sub, subH);
+        ctx.restore();
+      }
+      ctx.restore();
+      return;
+    }
+
+    if (d === 'underline') {
+      const lh = 6 * k;
+      const gap = 10 * k;
+      const cw = Math.max(mainW, subW);
+      const ch = lineH + lh + 2 * gap + (t.sub ? subH : 0);
+      const { x, y } = place(cw, ch);
+      words(t.text, ax(x, cw, 0, 0), y + lineH / 2, s.size, s.weight, 1, b.text, lineH);
+      ctx.save();
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = accent;
+      const lw = cw * b.line;
+      ctx.fillRect(end ? x + cw - lw : x, y + lineH + gap, lw, lh);
+      ctx.restore();
+      if (t.sub) words(t.sub, ax(x, cw, 0, 0), y + lineH + lh + 2 * gap + subH / 2, subSize, Math.max(300, s.weight - 200), 0.9, b.sub, subH);
+      ctx.restore();
+      return;
+    }
+
+    // Box, bar, gradient and glass: one box behind both lines.
+    const framed = d === 'glass' || d === 'gradient';
+    const p = framed || s.boxOn ? s.padding * k : 0;
+    const bar = d === 'bar' ? 10 * k : 0;
+    const padL = p + (end ? 0 : bar);
+    const padR = p + (end ? bar : 0);
+    const contentW = Math.max(mainW, subW);
+    const bw = contentW + padL + padR;
+    const bh = lineH + (t.sub ? subH : 0) + 2 * p;
+    const { x: bx, y: by } = place(bw, bh);
+    ctx.save();
+    opened(bx, by, bw, bh, b.box);
+    if (d === 'gradient') {
+      const g = ctx.createLinearGradient(end ? bx + bw : bx, 0, end ? bx + bw - bw * 0.75 : bx + bw * 0.75, 0);
+      g.addColorStop(0, accent);
+      g.addColorStop(1, withAlpha(s.boxColor, s.boxOpacity));
+      fillBox(bx, by, bw, bh, g);
+    } else if (d === 'glass') {
+      fillBox(bx, by, bw, bh, 'rgba(255,255,255,0.14)');
+      ctx.save();
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1.5 * k;
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, r);
+      ctx.stroke();
+      ctx.restore();
+    } else if (s.boxOn) fillBox(bx, by, bw, bh, withAlpha(s.boxColor, s.boxOpacity));
+    const tx = ax(bx, bw, padL, padR);
+    words(t.text, tx, by + p + lineH / 2, s.size, s.weight, 1, b.text, lineH);
+    if (t.sub) words(t.sub, tx, by + p + lineH + subH / 2, subSize, Math.max(300, s.weight - 200), 0.9, b.sub, subH);
+    ctx.restore();
+    if (bar) {
+      ctx.save();
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = accent;
+      const barH = bh * b.bar;
+      ctx.fillRect(end ? bx + bw - bar : bx, by + bh - barH, bar, barH);
+      ctx.restore();
+    }
     ctx.restore();
   }
 

@@ -70,3 +70,45 @@
   border-radius: 6px;
   background: none;
 }
+
+.txed__designs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.txed__design {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--button);
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+}
+.txed__design[aria-checked='true'] {
+  border-color: var(--accent);
+  background: var(--selected);
+  color: var(--text);
+}
+.txed__mini {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #2c3a4f, #151a22);
+  pointer-events: none;
+}
+.txed__swatch {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.txed__swatch[aria-pressed='true'] {
+  border-color: var(--text);
+}

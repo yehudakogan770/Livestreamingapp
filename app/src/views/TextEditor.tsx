@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Source } from '../engine/types/Source';
 import type { TextInput } from '../engine/types/TextInput';
 import type { TextStyle } from '../engine/types/TextStyle';
-import { TEXT_FONTS, TEXT_TEMPLATES } from '../engine/text';
+import { ACCENTS, TEXT_DESIGNS, TEXT_FONTS, TEXT_TEMPLATES } from '../engine/text';
 import { TextView } from '../components/TextView';
 import type { Act } from './act';
 import './TextEditor.css';
@@ -20,6 +20,7 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
   const start = source.kind.type === 'text' ? source.kind : null;
   const [t, setT] = useState<TextInput>(() => structuredClone({ layout: start!.layout, text: start!.text, sub: start!.sub, style: start!.style }));
   const [behind, setBehind] = useState<'dark' | 'checker' | 'light'>('dark');
+  const [replay, setReplay] = useState(0);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
@@ -59,7 +60,7 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
         <div className="txed__body">
           <section className="txed__main">
             <div className={`txed__stage txed__stage--${behind}`}>
-              <TextView t={t} />
+              <TextView key={`${replay}:${t.style.design}`} t={t} />
             </div>
             <div className="txed__behind">
               Preview over
@@ -117,6 +118,54 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
           </section>
 
           <section className="txed__props" aria-label="Style">
+            {t.layout !== 'ticker' && (
+              <>
+                <span className="field__label">Design</span>
+                <div className="txed__designs" role="radiogroup" aria-label="Design">
+                  {TEXT_DESIGNS.map((x) => (
+                    <button
+                      key={x.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={(s.design ?? 'box') === x.id}
+                      className="txed__design"
+                      title={x.hint}
+                      onClick={() => style({ design: x.id })}
+                    >
+                      <span className="txed__mini">
+                        <TextView t={{ ...t, layout: 'lowerThird', style: { ...s, design: x.id, animate: false, boxOn: true } }} />
+                      </span>
+                      {x.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="txed__row">
+                  <span className="field__label">Accent</span>
+                  {ACCENTS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      className="txed__swatch"
+                      style={{ background: c }}
+                      aria-label={`Accent ${c}`}
+                      aria-pressed={s.accent === c}
+                      onClick={() => style({ accent: c })}
+                    />
+                  ))}
+                  <input type="color" value={s.accent ?? '#2f80ed'} onChange={(e) => style({ accent: e.target.value })} aria-label="Accent colour" />
+                </div>
+                <div className="txed__row">
+                  <label className="check">
+                    <input type="checkbox" checked={s.animate ?? false} onChange={(e) => style({ animate: e.target.checked })} /> Animate on
+                  </label>
+                  {s.animate && (
+                    <button type="button" className="btn" onClick={() => setReplay((n) => n + 1)}>
+                      ↻ Replay
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
             <label className="field">
               <span className="field__label">Font</span>
               <select value={s.font} onChange={(e) => style({ font: e.target.value })} aria-label="Font">
