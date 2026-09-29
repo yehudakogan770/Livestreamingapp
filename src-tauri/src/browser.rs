@@ -82,6 +82,40 @@ impl Frames {
     }
 }
 
+/// Live sound (raw 48 kHz stereo 16-bit) from stream inputs, handed to
+/// everyone listening. Nothing is kept: late listeners hear from now on.
+/// One listener's feed of sound pieces.
+type Feed = mpsc::SyncSender<Arc<Vec<u8>>>;
+
+#[derive(Default)]
+pub struct Sounds {
+    listeners: Mutex<HashMap<String, Vec<Feed>>>,
+}
+
+impl Sounds {
+    pub fn put(&self, id: &str, bytes: Vec<u8>) {
+        let mut all = lock(&self.listeners);
+        if let Some(list) = all.get_mut(id) {
+            let chunk = Arc::new(bytes);
+            // A listener that fell far behind or left is dropped.
+            list.retain(|tx| tx.try_send(Arc::clone(&chunk)).is_ok());
+        }
+    }
+
+    pub fn listen(&self, id: &str) -> mpsc::Receiver<Arc<Vec<u8>>> {
+        let (tx, rx) = mpsc::sync_channel(64);
+        lock(&self.listeners)
+            .entry(id.to_owned())
+            .or_default()
+            .push(tx);
+        rx
+    }
+
+    pub fn remove(&self, id: &str) {
+        lock(&self.listeners).remove(id);
+    }
+}
+
 /// Encode a frame of RGBA pixels: JPEG normally, PNG when see-through.
 #[cfg_attr(not(windows), allow(dead_code))] // only Windows captures pages
 pub fn encode(
@@ -122,13 +156,14 @@ pub struct FrameServer {
 }
 
 impl FrameServer {
-    pub fn start(frames: Arc<Frames>) -> Option<FrameServer> {
+    pub fn start(frames: Arc<Frames>, sounds: Arc<Sounds>) -> Option<FrameServer> {
         let server = tiny_http::Server::http("127.0.0.1:0").ok()?;
         let port = server.server_addr().to_ip()?.port();
         thread::spawn(move || {
             for request in server.incoming_requests() {
                 let frames = Arc::clone(&frames);
-                thread::spawn(move || serve(&frames, request));
+                let sounds = Arc::clone(&sounds);
+                thread::spawn(move || serve(&frames, &sounds, request));
             }
         });
         Some(FrameServer { port })
@@ -139,10 +174,29 @@ fn header(name: &str, value: &str) -> tiny_http::Header {
     tiny_http::Header::from_bytes(name.as_bytes(), value.as_bytes()).expect("valid header")
 }
 
-fn serve(frames: &Frames, request: tiny_http::Request) {
+fn serve(frames: &Frames, sounds: &Sounds, request: tiny_http::Request) {
     let url = request.url().to_owned();
     let (path, query) = url.split_once('?').unwrap_or((&url, ""));
-    if let Some(id) = path.strip_prefix("/frame/") {
+    if let Some(id) = path.strip_prefix("/audio/") {
+        // Raw sound, as it arrives, until the listener goes away.
+        let rx = sounds.listen(id);
+        let mut w = request.into_writer();
+        let head = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nAccess-Control-Allow-Origin: *\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n";
+        if w.write_all(head.as_bytes()).is_err() {
+            return;
+        }
+        loop {
+            match rx.recv_timeout(Duration::from_secs(5)) {
+                Ok(chunk) => {
+                    if w.write_all(&chunk).is_err() || w.flush().is_err() {
+                        return;
+                    }
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Disconnected) => return,
+            }
+        }
+    } else if let Some(id) = path.strip_prefix("/frame/") {
         let after = query
             .split('&')
             .find_map(|kv| kv.strip_prefix("after="))
@@ -236,18 +290,22 @@ pub struct Browsers {
     pub info: BrowserInfo,
     /// Shared with stream inputs: they serve their pictures the same way.
     pub frames: Arc<Frames>,
+    /// Stream inputs' sound, served next to their pictures.
+    pub sounds: Arc<Sounds>,
 }
 
 impl Browsers {
     pub fn new(app: AppHandle) -> Browsers {
         let frames = Arc::new(Frames::default());
-        let server = FrameServer::start(Arc::clone(&frames));
+        let sounds = Arc::new(Sounds::default());
+        let server = FrameServer::start(Arc::clone(&frames), Arc::clone(&sounds));
         let (tx, rx) = mpsc::channel();
         let f2 = Arc::clone(&frames);
         thread::spawn(move || manage(&app, &rx, &f2));
         Browsers {
             tx: Mutex::new(tx),
             frames,
+            sounds,
             info: BrowserInfo {
                 port: server.map(|s| s.port),
                 captured: cfg!(windows),
@@ -591,7 +649,7 @@ mod tests {
     #[test]
     fn the_server_hands_out_the_next_frame_and_streams() {
         let frames = Arc::new(Frames::default());
-        let server = FrameServer::start(Arc::clone(&frames)).unwrap();
+        let server = FrameServer::start(Arc::clone(&frames), Arc::default()).unwrap();
         frames.put("a", vec![1, 2, 3], "image/jpeg");
         let get = |path: &str| {
             let mut s = std::net::TcpStream::connect(("127.0.0.1", server.port)).unwrap();

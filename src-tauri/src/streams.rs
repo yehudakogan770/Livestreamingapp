@@ -16,7 +16,7 @@ use lumora_engine::stream::StreamInput;
 use lumora_engine::{Show, SourceKind};
 use serde::Serialize;
 
-use crate::browser::Frames;
+use crate::browser::{Frames, Sounds};
 
 fn lock<T>(m: &Mutex<T>) -> std::sync::MutexGuard<'_, T> {
     m.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -102,6 +102,83 @@ pub fn reader_args(input: &[String], buffer_ms: u32) -> Vec<String> {
     a
 }
 
+/// FFmpeg's arguments for reading a stream's sound as raw 48 kHz stereo.
+pub fn sound_args(input: &[String], buffer_ms: u32) -> Vec<String> {
+    let mut a: Vec<String> = ["-hide_banner", "-loglevel", "error", "-nostdin"]
+        .iter()
+        .map(|s| (*s).to_owned())
+        .collect();
+    let url = input.last().map(String::as_str).unwrap_or_default();
+    if url.starts_with("rtsp") {
+        a.extend(["-rtsp_transport", "tcp"].map(str::to_owned));
+    }
+    if buffer_ms < 200 {
+        a.extend(["-fflags", "nobuffer", "-flags", "low_delay"].map(str::to_owned));
+    }
+    a.extend(input.iter().cloned());
+    a.extend(["-vn", "-ac", "2", "-ar", "48000", "-f", "s16le", "pipe:1"].map(str::to_owned));
+    a
+}
+
+/// Read a stream's sound until told to stop. A stream without sound is
+/// tried again now and then (it may start sending sound later).
+#[allow(clippy::needless_pass_by_value)] // owned by its thread
+fn run_sound(
+    ffmpeg: PathBuf,
+    id: String,
+    input: Vec<String>,
+    buffer_ms: u32,
+    sounds: Arc<Sounds>,
+    stop: Arc<AtomicBool>,
+    slot: Arc<Mutex<Option<Child>>>,
+) {
+    let mut wait = Duration::from_secs(1);
+    while !stop.load(Ordering::Relaxed) {
+        let Ok(mut child) = Command::new(&ffmpeg)
+            .args(sound_args(&input, buffer_ms))
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+        else {
+            return;
+        };
+        let mut out = child.stdout.take().expect("piped");
+        *lock(&slot) = Some(child);
+        // 20 ms pieces (48000 × 2 channels × 2 bytes × 0.02 s), whole samples only.
+        let mut buf = vec![0u8; 3840];
+        let mut carry: Vec<u8> = Vec::new();
+        loop {
+            match out.read(&mut buf) {
+                Ok(0) | Err(_) => break,
+                Ok(n) => {
+                    wait = Duration::from_secs(1);
+                    carry.extend_from_slice(&buf[..n]);
+                    let whole = carry.len() - carry.len() % 4;
+                    if whole > 0 {
+                        let rest = carry.split_off(whole);
+                        sounds.put(&id, std::mem::replace(&mut carry, rest));
+                    }
+                }
+            }
+        }
+        if let Some(mut c) = lock(&slot).take() {
+            let _ = c.kill();
+            let _ = c.wait();
+        }
+        if stop.load(Ordering::Relaxed) {
+            break;
+        }
+        // Sleep in small steps so stopping is quick.
+        let until = std::time::Instant::now() + wait;
+        while std::time::Instant::now() < until && !stop.load(Ordering::Relaxed) {
+            thread::sleep(Duration::from_millis(200));
+        }
+        wait = (wait * 2).min(Duration::from_secs(30));
+    }
+    sounds.remove(&id);
+}
+
 fn explain(ffmpeg_said: &str, url: &str) -> String {
     let s = ffmpeg_said.to_ascii_lowercase();
     if s.contains("connection refused")
@@ -130,13 +207,16 @@ struct Reader {
     buffer_ms: u32,
     stop: Arc<AtomicBool>,
     child: Arc<Mutex<Option<Child>>>,
+    sound: Arc<Mutex<Option<Child>>>,
 }
 
 impl Reader {
     fn stop(&self) {
         self.stop.store(true, Ordering::Relaxed);
-        if let Some(c) = lock(&self.child).as_mut() {
-            let _ = c.kill();
+        for slot in [&self.child, &self.sound] {
+            if let Some(c) = lock(slot).as_mut() {
+                let _ = c.kill();
+            }
         }
     }
 }
@@ -250,11 +330,11 @@ pub struct Streams {
 }
 
 impl Streams {
-    pub fn new(ffmpeg: Option<PathBuf>, frames: Arc<Frames>) -> Streams {
+    pub fn new(ffmpeg: Option<PathBuf>, frames: Arc<Frames>, sounds: Arc<Sounds>) -> Streams {
         let (tx, rx) = mpsc::channel();
         let status = Arc::new(Mutex::new(HashMap::new()));
         let s2 = Arc::clone(&status);
-        thread::spawn(move || manage(ffmpeg.as_deref(), &rx, &frames, &s2));
+        thread::spawn(move || manage(ffmpeg.as_deref(), &rx, &frames, &sounds, &s2));
         Streams {
             tx: Mutex::new(tx),
             status,
@@ -271,6 +351,7 @@ fn manage(
     ffmpeg: Option<&Path>,
     rx: &Receiver<Show>,
     frames: &Arc<Frames>,
+    sounds: &Arc<Sounds>,
     status: &Arc<Mutex<HashMap<String, StreamStatus>>>,
 ) {
     let mut readers: HashMap<String, Reader> = HashMap::new();
@@ -336,6 +417,16 @@ fn manage(
                     slot: ch,
                 });
             });
+            let sound = Arc::new(Mutex::new(None));
+            let (ff, id2, input, snd, st2, sl) = (
+                ffmpeg.to_path_buf(),
+                id.clone(),
+                vec!["-i".to_owned(), st.url.clone()],
+                Arc::clone(sounds),
+                Arc::clone(&stop),
+                Arc::clone(&sound),
+            );
+            thread::spawn(move || run_sound(ff, id2, input, buffer, snd, st2, sl));
             readers.insert(
                 id,
                 Reader {
@@ -343,6 +434,7 @@ fn manage(
                     buffer_ms: st.buffer_ms,
                     stop,
                     child,
+                    sound,
                 },
             );
         }
@@ -373,6 +465,45 @@ mod tests {
         assert!(a.contains(&"nobuffer".to_owned()));
         let b = reader_args(&["-i".into(), "srt://x:9000".into()], 1000);
         assert!(!b.contains(&"-rtsp_transport".to_owned()) && !b.contains(&"nobuffer".to_owned()));
+    }
+
+    #[test]
+    fn a_live_source_becomes_sound() {
+        let Some(ffmpeg) = crate::capture::find_ffmpeg() else {
+            return;
+        };
+        let sounds = Arc::new(Sounds::default());
+        let rx = sounds.listen("cam");
+        let stop = Arc::new(AtomicBool::new(false));
+        let slot = Arc::new(Mutex::new(None));
+        let input = [
+            "-re",
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=44100",
+        ]
+        .map(str::to_owned)
+        .to_vec();
+        let (s2, st, sl) = (Arc::clone(&sounds), Arc::clone(&stop), Arc::clone(&slot));
+        let t = thread::spawn(move || run_sound(ffmpeg, "cam".into(), input, 500, s2, st, sl));
+        let mut got = 0;
+        while got < 48_000 {
+            let chunk = rx.recv_timeout(Duration::from_secs(10)).expect("sound");
+            assert_eq!(chunk.len() % 4, 0, "whole stereo samples");
+            got += chunk.len();
+        }
+        stop.store(true, Ordering::Relaxed);
+        if let Some(c) = lock(&slot).as_mut() {
+            let _ = c.kill();
+        }
+        t.join().unwrap();
+        let a = sound_args(&["-i".to_owned(), "rtsp://cam/1".to_owned()], 100);
+        assert!(
+            a.contains(&"s16le".to_owned())
+                && a.contains(&"tcp".to_owned())
+                && a.contains(&"-vn".to_owned())
+        );
     }
 
     #[test]

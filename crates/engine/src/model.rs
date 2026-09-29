@@ -296,7 +296,7 @@ impl SourceKind {
     pub fn has_sound(&self) -> bool {
         matches!(
             self,
-            SourceKind::Video { .. } | SourceKind::Microphone { .. }
+            SourceKind::Video { .. } | SourceKind::Microphone { .. } | SourceKind::Stream(_)
         )
     }
 }

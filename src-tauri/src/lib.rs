@@ -637,8 +637,11 @@ pub fn run() {
             let media = media::Media::new(&dir);
             let browsers = browser::Browsers::new(app.handle().clone());
             browsers.sync(&show);
-            let streams =
-                streams::Streams::new(ffmpeg.clone(), std::sync::Arc::clone(&browsers.frames));
+            let streams = streams::Streams::new(
+                ffmpeg.clone(),
+                std::sync::Arc::clone(&browsers.frames),
+                std::sync::Arc::clone(&browsers.sounds),
+            );
             streams.sync(&show);
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
