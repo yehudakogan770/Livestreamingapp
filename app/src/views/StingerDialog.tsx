@@ -34,7 +34,9 @@ export function StingerDialog({ show, act, client, onClose }: { show: Show; act:
     const v = video.current;
     if (!v || !Number.isFinite(v.duration)) return;
     const durationMs = Math.round(v.duration * 1000);
-    setDraft((d) => (d.durationMs === durationMs ? d : { ...d, durationMs, cutMs: d.cutMs > 0 && d.cutMs <= durationMs ? d.cutMs : Math.round(durationMs / 2) }));
+    setDraft((d) =>
+      d.durationMs === durationMs ? d : { ...d, durationMs, cutMs: d.cutMs > 0 && d.cutMs <= durationMs ? d.cutMs : Math.round(durationMs / 2) },
+    );
   };
   const seek = (ms: number) => {
     setDraft((d) => ({ ...d, cutMs: ms }));
@@ -87,7 +89,9 @@ export function StingerDialog({ show, act, client, onClose }: { show: Show; act:
                 onLoadedData={() => video.current && (video.current.currentTime = draft.cutMs / 1000)}
               />
             ) : (
-              <p className="stg__empty">A stinger is a short video that sweeps over the screen — a logo wipe, a splash of colour. The switch happens hidden behind it.</p>
+              <p className="stg__empty">
+                A stinger is a short video that sweeps over the screen — a logo wipe, a splash of colour. The switch happens hidden behind it.
+              </p>
             )}
           </div>
           <div className="stg__row">
@@ -110,13 +114,22 @@ export function StingerDialog({ show, act, client, onClose }: { show: Show; act:
           </div>
           {draft.path && draft.durationMs > 0 && (
             <label className="field">
-              <span className="field__label">
-                Cut point — {secs(draft.cutMs)} (move it to the moment the video covers the whole screen)
-              </span>
-              <input type="range" min={0} max={draft.durationMs} step={10} value={draft.cutMs} onChange={(e) => seek(Number(e.target.value))} aria-label="Cut point" />
+              <span className="field__label">Cut point — {secs(draft.cutMs)} (move it to the moment the video covers the whole screen)</span>
+              <input
+                type="range"
+                min={0}
+                max={draft.durationMs}
+                step={10}
+                value={draft.cutMs}
+                onChange={(e) => seek(Number(e.target.value))}
+                aria-label="Cut point"
+              />
             </label>
           )}
-          <p className="field__note">See-through videos (.mov ProRes 4444 or .webm with alpha) show the pictures around the sweep. Choose Stinger 1 or 2 under “More…” next to the transitions.</p>
+          <p className="field__note">
+            See-through videos (.mov ProRes 4444 or .webm with alpha) show the pictures around the sweep. Choose Stinger 1 or 2 under “More…” next to the
+            transitions.
+          </p>
         </div>
         <footer className="modal__foot">
           <button type="button" className="btn" onClick={onClose}>

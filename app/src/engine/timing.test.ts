@@ -78,8 +78,27 @@ describe('mixAt', () => {
 
   it('every transition starts on the old picture and ends on the new one', () => {
     const kinds: TransitionKind[] = [
-      'fade', 'merge', 'dip', 'flash', 'wipe', 'wipeLeft', 'wipeDown', 'wipeUp', 'split', 'splitVertical',
-      'iris', 'diamond', 'slide', 'slideRight', 'slideDown', 'slideUp', 'cover', 'reveal', 'zoom', 'zoomOut', 'blur',
+      'fade',
+      'merge',
+      'dip',
+      'flash',
+      'wipe',
+      'wipeLeft',
+      'wipeDown',
+      'wipeUp',
+      'split',
+      'splitVertical',
+      'iris',
+      'diamond',
+      'slide',
+      'slideRight',
+      'slideDown',
+      'slideUp',
+      'cover',
+      'reveal',
+      'zoom',
+      'zoomOut',
+      'blur',
     ];
     for (const k of kinds) {
       const end = mixAt(k, 1);
@@ -93,7 +112,12 @@ describe('mixAt', () => {
       // The old picture is gone or covered.
       if (end.outOnTop) expect(end.outOpacity === 0 || Math.abs(end.outShift ?? 0) >= 100, k).toBe(true);
       const start = mixAt(k, 0);
-      const hidden = start.inOpacity === 0 || Math.abs(start.inShift ?? 0) >= 100 || Math.abs(start.inShiftY ?? 0) >= 100 || !!start.inShape;
+      const hidden =
+        (start.outOnTop && start.outOpacity === 1 && !start.outShift) ||
+        start.inOpacity === 0 ||
+        Math.abs(start.inShift ?? 0) >= 100 ||
+        Math.abs(start.inShiftY ?? 0) >= 100 ||
+        !!start.inShape;
       expect(hidden, k).toBe(true);
     }
     expect(mixAt('iris', 0.5).inClip).toMatch(/^circle\(/);

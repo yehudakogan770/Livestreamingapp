@@ -69,7 +69,10 @@ export function TextView({ t }: { t: TextInput }) {
           <div className="txd__text">{main}</div>
         </div>
         {sub && (
-          <div className="txd__box txd__box--sub" style={{ background: withAlpha(s.boxColor, s.boxOpacity), padding: `${u(s.padding * 0.45)} ${u(s.padding * 0.8)}`, borderRadius: u(s.radius) }}>
+          <div
+            className="txd__box txd__box--sub"
+            style={{ background: withAlpha(s.boxColor, s.boxOpacity), padding: `${u(s.padding * 0.45)} ${u(s.padding * 0.8)}`, borderRadius: u(s.radius) }}
+          >
             <div className="txd__sub">{sub}</div>
           </div>
         )}

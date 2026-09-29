@@ -41,11 +41,7 @@ export interface StingerPlay {
   startedAt: number;
 }
 
-export function programLayers(
-  show: Show,
-  screen: ScreenId,
-  now: number,
-): { layers: Layer[]; black: number; white: number; stinger?: StingerPlay } {
+export function programLayers(show: Show, screen: ScreenId, now: number): { layers: Layer[]; black: number; white: number; stinger?: StingerPlay } {
   const sc = show.screens[screen];
   const layers: Layer[] = [];
   let white = 0;

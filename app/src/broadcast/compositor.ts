@@ -277,7 +277,8 @@ export class ProgramCompositor {
       ctx.font = font(px, weight);
       return ctx.measureText(t).width;
     };
-    const teamW = (t: Scoreboard['home']) => strip + pad * 2 + measure(bar ? t.name : t.short || t.name, nameSize) + Math.max(scoreW, measure(String(t.score), scoreSize) + pad);
+    const teamW = (t: Scoreboard['home']) =>
+      strip + pad * 2 + measure(bar ? t.name : t.short || t.name, nameSize) + Math.max(scoreW, measure(String(t.score), scoreSize) + pad);
     const hasInfo = !!sb.period || sb.showClock;
     const cw = sb.showClock ? measure(clock, clockSize) : 0;
     const pw = sb.period ? measure(sb.period, periodSize, 600) : 0;

@@ -123,7 +123,9 @@ export function MidiDialog({ onClose }: { onClose: () => void }) {
                     {f.name}
                     {f.kind === 'fader' && <em> fader</em>}
                   </span>
-                  <span className="midi__key">{learning === f.id ? (f.kind === 'fader' ? 'Move the fader…' : 'Press the button…') : map[f.id] ? keyName(map[f.id]!) : '—'}</span>
+                  <span className="midi__key">
+                    {learning === f.id ? (f.kind === 'fader' ? 'Move the fader…' : 'Press the button…') : map[f.id] ? keyName(map[f.id]!) : '—'}
+                  </span>
                   <button type="button" className={`btn btn--small${learning === f.id ? ' is-on' : ''}`} onClick={() => learn(f.id)}>
                     {learning === f.id ? 'Cancel' : 'Learn'}
                   </button>

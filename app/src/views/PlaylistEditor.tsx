@@ -72,7 +72,8 @@ export function PlaylistEditor({ source, act, client, onClose }: { source: Sourc
               + Add videos…
             </button>
             <label className="check">
-              <input type="checkbox" checked={draft.autoNext} onChange={(e) => setDraft({ ...draft, autoNext: e.target.checked })} /> Play the next one by itself
+              <input type="checkbox" checked={draft.autoNext} onChange={(e) => setDraft({ ...draft, autoNext: e.target.checked })} /> Play the next one by
+              itself
             </label>
             <label className="check">
               <input type="checkbox" checked={draft.loopAll} onChange={(e) => setDraft({ ...draft, loopAll: e.target.checked })} /> Start again after the last
@@ -114,7 +115,13 @@ export function PlaylistEditor({ source, act, client, onClose }: { source: Sourc
                   <button type="button" className="icon" aria-label={`Move ${it.name} up`} disabled={i === 0} onClick={() => move(i, i - 1)}>
                     ↑
                   </button>
-                  <button type="button" className="icon" aria-label={`Move ${it.name} down`} disabled={i === draft.items.length - 1} onClick={() => move(i, i + 1)}>
+                  <button
+                    type="button"
+                    className="icon"
+                    aria-label={`Move ${it.name} down`}
+                    disabled={i === draft.items.length - 1}
+                    onClick={() => move(i, i + 1)}
+                  >
                     ↓
                   </button>
                   <button type="button" className="icon" aria-label={`Remove ${it.name}`} onClick={() => remove(i)}>

@@ -86,11 +86,22 @@ export function ScoreCard({ source, act, onClose }: { source: Source; act: Act; 
             {points('home')}
             <div className="scc__clock">
               <div className="scc__time">{formatGameClock(shown, live.clock.countDown)}</div>
-              <button type="button" className={`btn btn--big${running ? ' is-on' : ' btn--primary'}`} onClick={() => act({ type: 'scoreClock', id, run: !running })}>
+              <button
+                type="button"
+                className={`btn btn--big${running ? ' is-on' : ' btn--primary'}`}
+                onClick={() => act({ type: 'scoreClock', id, run: !running })}
+              >
                 {running ? '❚❚ Stop clock' : '▶ Start clock'}
               </button>
               <div className="scc__row">
-                <input className="text" placeholder="mm:ss" value={setTo} onChange={(e) => setSetTo(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && applyTime()} aria-label="Set the clock" />
+                <input
+                  className="text"
+                  placeholder="mm:ss"
+                  value={setTo}
+                  onChange={(e) => setSetTo(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && applyTime()}
+                  aria-label="Set the clock"
+                />
                 <button type="button" className="btn" onClick={applyTime} disabled={!setTo}>
                   Set
                 </button>
@@ -121,12 +132,8 @@ export function ScoreCard({ source, act, onClose }: { source: Source; act: Act; 
               <input type="checkbox" checked={draft.showClock} onChange={(e) => set({ showClock: e.target.checked })} /> Show the clock
             </label>
             <label className="check">
-              <input
-                type="checkbox"
-                checked={draft.clock.countDown}
-                onChange={(e) => set({ clock: { ...draft.clock, countDown: e.target.checked } })}
-              />{' '}
-              Count down from
+              <input type="checkbox" checked={draft.clock.countDown} onChange={(e) => set({ clock: { ...draft.clock, countDown: e.target.checked } })} /> Count
+              down from
             </label>
             <input
               className="text scc__short"
