@@ -380,7 +380,7 @@ inputs, overlays, cues and sound · ✅ Video playlists · ✅ Scoreboards with 
 ✅ 720p – 4K, 30 / 60 fps and vertical 9:16 output, bitrates to 40 Mbps · ✅ Library · ✅ Multiview · ✅ Keeps imported files · ✅ Crash-safe saving.
 
 ### To build (most important first)
-1. ✅ **Sound from stream and web page inputs** into the mixer.
+1. 🔶 **Sound from stream and web page inputs** into the mixer. Streams done; ⬜ web pages.
 2. ✅ **Screen capture** — this computer's screens or one window (OBS, vMix).
 3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM).
 4. ⬜ **Guests by link** — up to 8 people join from a browser, with their own
