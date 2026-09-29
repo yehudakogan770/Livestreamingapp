@@ -10,7 +10,7 @@ use crate::credits::Credits;
 use crate::cues::Cue;
 use crate::event::EventPatch;
 use crate::logo3d::Logo3d;
-use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
+use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, Transition, TransitionKind};
 use crate::overlays::OverlayPatch;
 use crate::pesukim::{Pasuk, PesukimLook};
 use crate::presets::{Preset, Step};
@@ -188,6 +188,13 @@ pub enum Action {
         screen: ScreenId,
         source_id: SourceId,
     },
+    /// Quick play: send an input to air now with its own transition (what is
+    /// lined up in Next stays there).
+    PlayNow {
+        screen: ScreenId,
+        source_id: SourceId,
+        transition: Transition,
+    },
     /// Move the manual fader (0.0 – 1.0). Reaching the end completes the take.
     SetTbar {
         screen: ScreenId,
@@ -207,6 +214,23 @@ pub enum Action {
     SetBlank {
         screens: Vec<ScreenId>,
         value: bool,
+        /// How long to fade (Fade to black); left out: the usual quick fade.
+        #[serde(default)]
+        #[ts(optional)]
+        fade_ms: Option<u32>,
+    },
+    /// Fade to black (or back) on a screen, taking the chosen length.
+    FadeToBlack {
+        screen: ScreenId,
+    },
+    /// How long Fade to black takes.
+    SetFadeToBlackLength {
+        ms: u32,
+    },
+    /// Change one of the four favourite transition buttons (0 – 3).
+    SetFavouriteTransition {
+        index: usize,
+        transition: Transition,
     },
     /// Everything black except the monitor, which dims.
     Panic {

@@ -779,7 +779,11 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.transition = s.transition.clamped();
             Ok(())
         }
-        Action::SetBlank { screens, value } => {
+        Action::SetBlank {
+            screens,
+            value,
+            fade_ms,
+        } => {
             if screens.is_empty() {
                 return Err(ActionError::invalid(
                     "screens",
@@ -791,7 +795,47 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 if sc.blank != value {
                     sc.blank = value;
                     sc.blank_changed_at = now;
+                    sc.blank_fade_ms = fade_ms.map_or(0, |ms| ms.clamp(100, 10_000));
                 }
+            }
+            Ok(())
+        }
+        Action::FadeToBlack { screen } => {
+            not_monitor(screen)?;
+            let ms = s.settings.fade_to_black_ms;
+            let sc = s.screens.get_mut(screen);
+            sc.blank = !sc.blank;
+            sc.blank_changed_at = now;
+            sc.blank_fade_ms = ms;
+            Ok(())
+        }
+        Action::SetFadeToBlackLength { ms } => {
+            s.settings.fade_to_black_ms = ms.clamp(100, 10_000);
+            Ok(())
+        }
+        Action::SetFavouriteTransition { index, transition } => {
+            let slot = s
+                .settings
+                .favourite_transitions
+                .get_mut(index)
+                .ok_or_else(|| {
+                    ActionError::invalid("index", "there are 4 favourite transitions")
+                })?;
+            *slot = transition.clamped();
+            Ok(())
+        }
+        Action::PlayNow {
+            screen,
+            source_id,
+            transition,
+        } => {
+            not_monitor(screen)?;
+            require_picture(s, &source_id)?;
+            let keep = s.screens.get(screen).preview.clone();
+            s.screens.get_mut(screen).preview = Some(source_id);
+            take(s, screen, transition.clamped(), now)?;
+            if keep.is_some() {
+                s.screens.get_mut(screen).preview = keep;
             }
             Ok(())
         }
@@ -1271,7 +1315,11 @@ fn step_action(step: Step, main: Option<&SourceId>) -> Option<Action> {
             duration_ms: None,
         },
         Step::CutTo { screen, source_id } => Action::CutTo { screen, source_id },
-        Step::Blank { screens, value } => Action::SetBlank { screens, value },
+        Step::Blank { screens, value } => Action::SetBlank {
+            screens,
+            value,
+            fade_ms: None,
+        },
         Step::MonitorMessage { text } => Action::UpdateMonitor {
             patch: MonitorPatch {
                 message: Some(text),

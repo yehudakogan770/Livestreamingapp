@@ -72,6 +72,103 @@ export function SwitchPanel({ show, screen, act }: { show: Show; screen: ScreenI
         ))}
       </div>
       <TBar show={show} screen={screen} act={act} disabled={!hasPreview} />
+      <Favourites show={show} screen={screen} act={act} disabled={!hasPreview} />
+      <FadeToBlack show={show} screen={screen} act={act} />
+    </div>
+  );
+}
+
+export const transitionName = (t: { kind: TransitionKind; durationMs: number }) =>
+  `${KINDS.find((k) => k.kind === t.kind)?.name ?? t.kind}${t.kind === 'cut' ? '' : ` ${secs(t.durationMs)}`}`;
+
+/** Four favourite transitions: one click takes Next to air with that one. ✎ changes it. */
+function Favourites({ show, screen, act, disabled }: { show: Show; screen: ScreenId; act: Act; disabled: boolean }) {
+  const [editing, setEditing] = useState<number | null>(null);
+  const favs = show.settings.favouriteTransitions;
+  const f = editing === null ? null : favs[editing];
+  return (
+    <div className="switch__favs">
+      <span className="switch__label">Favourites</span>
+      <div className="switch__favrow">
+        {favs.map((t, i) => (
+          <div key={i} className="switch__fav">
+            <button
+              type="button"
+              className="seg"
+              disabled={disabled}
+              title={`TAKE with ${transitionName(t)} (Ctrl+${i + 1})`}
+              onClick={() => act({ type: 'take', screen, transition: t.kind, durationMs: t.durationMs })}
+            >
+              {transitionName(t)}
+            </button>
+            <button type="button" className="switch__favedit" aria-label={`Change favourite ${i + 1}`} onClick={() => setEditing(editing === i ? null : i)}>
+              ✎
+            </button>
+          </div>
+        ))}
+      </div>
+      {f && editing !== null && (
+        <div className="switch__favpick" role="group" aria-label={`Favourite ${editing + 1}`}>
+          <div className="switch__kinds">
+            {KINDS.map((k) => (
+              <button
+                key={k.kind}
+                type="button"
+                className="seg"
+                aria-pressed={f.kind === k.kind}
+                onClick={() => act({ type: 'setFavouriteTransition', index: editing, transition: { ...f, kind: k.kind } })}
+              >
+                {k.name}
+              </button>
+            ))}
+          </div>
+          <div className="switch__durations">
+            {DURATIONS.map((d) => (
+              <button
+                key={d}
+                type="button"
+                className="seg seg--small"
+                aria-pressed={f.durationMs === d}
+                disabled={f.kind === 'cut'}
+                onClick={() => act({ type: 'setFavouriteTransition', index: editing, transition: { ...f, durationMs: d } })}
+              >
+                {secs(d)}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn" onClick={() => setEditing(null)}>
+            Done
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const FTB_LENGTHS = [1000, 2000, 3000, 5000];
+
+/** Fade to black slowly (and back), with its own length. Blank is the quick one. */
+function FadeToBlack({ show, screen, act }: { show: Show; screen: ScreenId; act: Act }) {
+  if (screen === 'monitor') return null;
+  const black = show.screens[screen].blank;
+  const ms = show.settings.fadeToBlackMs;
+  return (
+    <div className="switch__ftb">
+      <button
+        type="button"
+        className={`btn switch__ftbbtn${black ? ' is-on' : ''}`}
+        onClick={() => act({ type: 'fadeToBlack', screen })}
+        title={black ? 'Fade back up from black' : 'Fade this screen slowly to black'}
+      >
+        {black ? 'Fade back up' : 'Fade to black'}
+      </button>
+      <select value={ms} onChange={(e) => act({ type: 'setFadeToBlackLength', ms: Number(e.target.value) })} aria-label="Fade to black length">
+        {(FTB_LENGTHS.includes(ms) ? FTB_LENGTHS : [...FTB_LENGTHS, ms].sort((a, b) => a - b)).map((d) => (
+          <option key={d} value={d}>
+            {secs(d)}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

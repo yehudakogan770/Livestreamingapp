@@ -160,6 +160,14 @@ pub fn repair(mut s: Show) -> Show {
     repair_presets(&mut s);
     repair_stage(&mut s);
     s.visuals.repair();
+    let st = &mut s.settings;
+    st.fade_to_black_ms = st.fade_to_black_ms.clamp(100, 10_000);
+    if st.favourite_transitions.len() != 4 {
+        st.favourite_transitions = crate::model::default_favourites();
+    }
+    for t in &mut st.favourite_transitions {
+        *t = t.clamped();
+    }
     // A held strobe never survives a restart.
     s.visuals.strobe = false;
 

@@ -434,6 +434,7 @@ fn blank_and_panic_are_recorded_with_their_time() {
         Action::SetBlank {
             screens: vec![ScreenId::Back, ScreenId::Live],
             value: true,
+            fade_ms: None,
         },
         700,
     )
@@ -714,6 +715,7 @@ fn back_keeps_its_own_preview_and_blank_while_following() {
         Action::SetBlank {
             screens: vec![ScreenId::Back],
             value: true,
+            fade_ms: None,
         },
         0,
     )

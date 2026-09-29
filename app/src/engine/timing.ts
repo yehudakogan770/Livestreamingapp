@@ -39,9 +39,9 @@ export function transitionProgress(screen: ScreenState, now: number): number {
   return Math.min(1, Math.max(0, (now - t.startedAt) / t.durationMs));
 }
 
-/** 0 → 1 as a blank (or panic) fades in; 1 → 0 as it fades out. */
-export function fadeAmount(on: boolean, changedAt: number, now: number): number {
-  const k = Math.min(1, Math.max(0, (now - changedAt) / BLANK_FADE_MS));
+/** 0 → 1 as a blank (or panic) fades in; 1 → 0 as it fades out. `ms`: its length (0: the usual). */
+export function fadeAmount(on: boolean, changedAt: number, now: number, ms = 0): number {
+  const k = Math.min(1, Math.max(0, (now - changedAt) / (ms || BLANK_FADE_MS)));
   return on ? k : 1 - k;
 }
 

@@ -109,6 +109,8 @@ pub fn allowed(action: &Action) -> bool {
             | Action::Take { .. }
             | Action::CutTo { .. }
             | Action::SetBlank { .. }
+            | Action::FadeToBlack { .. }
+            | Action::PlayNow { .. }
             | Action::Panic { .. }
             | Action::MonitorFlash
             | Action::Play { .. }

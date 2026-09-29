@@ -319,6 +319,8 @@ pub struct ScreenState {
     pub blank: bool,
     #[ts(type = "number")]
     pub blank_changed_at: Millis,
+    /// How long the last blank fades, ms (0: the usual quick fade).
+    pub blank_fade_ms: u32,
     #[ts(type = "number")]
     pub flash_at: Millis,
 }
@@ -364,6 +366,29 @@ pub struct Settings {
     pub auto_play_on_take: bool,
     /// Which sound device each mix plays on.
     pub audio_outputs: AudioOutputs,
+    /// How long "Fade to black" takes, ms.
+    #[serde(default = "default_ftb")]
+    pub fade_to_black_ms: u32,
+    /// The four favourite transition buttons.
+    #[serde(default = "default_favourites")]
+    pub favourite_transitions: Vec<Transition>,
+}
+
+fn default_ftb() -> u32 {
+    2000
+}
+
+/// The favourite transition buttons to start with.
+pub fn default_favourites() -> Vec<Transition> {
+    [
+        (TransitionKind::Fade, 800),
+        (TransitionKind::Dip, 1500),
+        (TransitionKind::Wipe, 1000),
+        (TransitionKind::Slide, 600),
+    ]
+    .into_iter()
+    .map(|(kind, duration_ms)| Transition { kind, duration_ms })
+    .collect()
 }
 
 impl Default for Settings {
@@ -372,6 +397,8 @@ impl Default for Settings {
             displays: PerScreen::default(),
             auto_play_on_take: true,
             audio_outputs: AudioOutputs::default(),
+            fade_to_black_ms: default_ftb(),
+            favourite_transitions: default_favourites(),
         }
     }
 }

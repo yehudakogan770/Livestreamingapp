@@ -25,6 +25,7 @@ const screen = (over: Partial<ScreenState> = {}): ScreenState => ({
   tbar: 0,
   blank: false,
   blankChangedAt: 0,
+  blankFadeMs: 0,
   flashAt: 0,
   ...over,
 });

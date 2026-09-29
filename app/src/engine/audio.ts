@@ -38,7 +38,7 @@ export function channelLevel(show: Show, src: Source, now: number): number {
     level *= onAirAmount(show, src.id, now);
     // Blank and PANIC take the picture's sound down with it.
     const live = show.screens.live;
-    level *= 1 - Math.max(fadeAmount(live.blank, live.blankChangedAt, now), fadeAmount(show.panic, show.panicChangedAt, now));
+    level *= 1 - Math.max(fadeAmount(live.blank, live.blankChangedAt, now, live.blankFadeMs), fadeAmount(show.panic, show.panicChangedAt, now));
   }
   return level;
 }

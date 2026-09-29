@@ -7,6 +7,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
       ['1 – 9, 0', 'Line up input 1 – 10 in Next'],
       ['Enter', 'TAKE (with the chosen transition)'],
       ['Shift + Enter', 'CUT straight to Next'],
+      ['Ctrl + 1 – 4', 'TAKE with favourite transition 1 – 4'],
       ['B', 'Blank the screen you control (Pesukim on air: hide its words)'],
       ['F1 · F2 · F3', 'Control the Live Screen · Back Screen · Monitor'],
     ],

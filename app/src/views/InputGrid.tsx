@@ -1,3 +1,5 @@
+import type { Transition } from '../engine/types/Transition';
+import { transitionName } from './SwitchPanel';
 import { sendCommand } from './commands';
 import { useEffect, useRef, useState } from 'react';
 import { isSoundFile, type EngineClient } from '../engine/client';
@@ -126,6 +128,15 @@ export function InputGrid({
                 onKeep={() => setKeeping(src.id)}
                 onKey={() => setKeying(src.id)}
                 onAdjust={() => setAdjusting(src.id)}
+                playNow={
+                  textOnly || soundOnly
+                    ? null
+                    : (t) => {
+                        setMenu(null);
+                        act({ type: 'playNow', screen, sourceId: src.id, transition: t });
+                      }
+                }
+                favourites={show.settings.favouriteTransitions}
               />
             )}
           </div>
@@ -154,6 +165,8 @@ function TileMenu({
   onKeep,
   onKey,
   onAdjust,
+  playNow,
+  favourites,
 }: {
   source: Source;
   act: Act;
@@ -162,6 +175,9 @@ function TileMenu({
   onKeep: () => void;
   onKey: () => void;
   onAdjust: () => void;
+  /** Quick play: straight to air with this transition (null: can't go on air). */
+  playNow: ((t: Transition) => void) | null;
+  favourites: Transition[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [confirm, setConfirm] = useState(false);
@@ -204,6 +220,18 @@ function TileMenu({
   const k = source.kind.type;
   return (
     <div ref={ref} className="menu" role="dialog" aria-label={`Options for ${source.name}`}>
+      {playNow && (
+        <div className="menu__row menu__play">
+          Play now
+          <span className="segs">
+            {favourites.map((t, i) => (
+              <button key={i} type="button" className="seg" title={`Straight to air with ${transitionName(t)}`} onClick={() => playNow(t)}>
+                {transitionName(t)}
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
       <label className="menu__row">
         Name
         <input value={draft.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && done()} />

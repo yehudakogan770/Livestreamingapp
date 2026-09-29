@@ -69,7 +69,7 @@ export function MonitorScreen({ show }: { show: Show }) {
   const msgBox = useRef<HTMLDivElement>(null);
   const msgText = useRef<HTMLDivElement | null>(null);
   useFitText(msgBox, msgText.current, `${message}|${m.textSize}|${m.layout}|${m.showClock}|${m.showTimer}`);
-  const dark = Math.max(fadeAmount(sc.blank, sc.blankChangedAt, now), fadeAmount(show.panic, show.panicChangedAt, now) * 0.6);
+  const dark = Math.max(fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), fadeAmount(show.panic, show.panicChangedAt, now) * 0.6);
   const flash = now - sc.flashAt < FLASH_MS && Math.floor((now - sc.flashAt) / 300) % 2 === 0;
 
   const clock = m.showClock && (

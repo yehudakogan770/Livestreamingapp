@@ -357,9 +357,37 @@ function apply(s: Show, a: Action, now: number) {
         if (sc.blank !== a.value) {
           sc.blank = a.value;
           sc.blankChangedAt = now;
+          sc.blankFadeMs = a.fadeMs ? Math.min(10_000, Math.max(100, a.fadeMs)) : 0;
         }
       }
       return;
+    case 'fadeToBlack': {
+      notMonitor(a.screen);
+      const sc = s.screens[a.screen];
+      sc.blank = !sc.blank;
+      sc.blankChangedAt = now;
+      sc.blankFadeMs = s.settings.fadeToBlackMs;
+      return;
+    }
+    case 'setFadeToBlackLength':
+      s.settings.fadeToBlackMs = Math.min(10_000, Math.max(100, a.ms));
+      return;
+    case 'setFavouriteTransition':
+      if (a.index < 0 || a.index > 3) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 4 favourite transitions' });
+      s.settings.favouriteTransitions[a.index] = {
+        kind: a.transition.kind,
+        durationMs: Math.min(MAX_TRANSITION_MS, Math.max(MIN_TRANSITION_MS, a.transition.durationMs)),
+      };
+      return;
+    case 'playNow': {
+      notMonitor(a.screen);
+      picture(s, a.sourceId);
+      const keep = s.screens[a.screen].preview;
+      s.screens[a.screen].preview = a.sourceId;
+      take(s, a.screen, a.transition.kind, Math.min(MAX_TRANSITION_MS, Math.max(MIN_TRANSITION_MS, a.transition.durationMs)), now);
+      if (keep !== null) s.screens[a.screen].preview = keep;
+      return;
+    }
     case 'panic':
       if (s.panic !== a.value) {
         s.panic = a.value;

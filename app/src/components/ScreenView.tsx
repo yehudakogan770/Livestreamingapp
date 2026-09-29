@@ -61,7 +61,7 @@ export function screenMoving(show: Show, screen: ScreenId, now: number): boolean
 /** A blank or PANIC fade is running. */
 function fading(show: Show, screen: ScreenId, now: number): boolean {
   const sc = show.screens[screen];
-  return now - sc.blankChangedAt < BLANK_FADE_MS + 50 || now - show.panicChangedAt < BLANK_FADE_MS + 50;
+  return now - sc.blankChangedAt < (sc.blankFadeMs || BLANK_FADE_MS) + 50 || now - show.panicChangedAt < BLANK_FADE_MS + 50;
 }
 
 /** The browser can run animations itself (smooth even when the page is busy). */
@@ -168,7 +168,7 @@ export function ProgramView({
   const now = Date.now();
   const { layers, black } = programLayers(show, screen, now);
   const sc = show.screens[screen];
-  const blank = fadeAmount(sc.blank, sc.blankChangedAt, now);
+  const blank = fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs);
   // PANIC shows black or the event logo, as chosen in the event setup.
   const panic = fadeAmount(show.panic, show.panicChangedAt, now);
   return (

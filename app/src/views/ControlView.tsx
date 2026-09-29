@@ -140,6 +140,26 @@ export function ControlView({
   // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · Shift+1–4 overlays · B blank this screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Ctrl + 1 – 4: TAKE with a favourite transition.
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && /^Digit[1-4]$/.test(e.code) && !typing(e.target)) {
+        const t = show.settings.favouriteTransitions[Number(e.code.slice(5)) - 1];
+        const sc = show.screens[screen];
+        if (
+          t &&
+          screen !== 'monitor' &&
+          sc.preview !== null &&
+          sc.preview !== sc.program &&
+          !adding &&
+          !runOpen &&
+          !libraryOpen &&
+          !visualsOpen &&
+          !logoMaker
+        ) {
+          e.preventDefault();
+          act({ type: 'take', screen, transition: t.kind, durationMs: t.durationMs });
+        }
+        return;
+      }
       if (adding || outputsOpen || runOpen || libraryOpen || visualsOpen || logoMaker || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
       const sc = show.screens[screen];
       if (e.key === 'Enter' && screen !== 'monitor' && sc.preview !== null && sc.preview !== sc.program) {

@@ -21,4 +21,8 @@ previous: SourceId | null, transition: ActiveTransition | null,
 /**
  * Manual fader position, 0.0 – 1.0.
  */
-tbar: number, blank: boolean, blankChangedAt: number, flashAt: number, };
+tbar: number, blank: boolean, blankChangedAt: number, 
+/**
+ * How long the last blank fades, ms (0: the usual quick fade).
+ */
+blankFadeMs: number, flashAt: number, };

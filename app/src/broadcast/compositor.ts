@@ -152,7 +152,7 @@ export class ProgramCompositor {
     }
     this.overlay('#000', black, w, h);
     for (const { o } of overlays) this.drawOverlay(o, show, now, w, h);
-    this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now), w, h);
+    this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), w, h);
     const panic = fadeAmount(show.panic, show.panicChangedAt, now);
     if (panic > 0) {
       ctx.save();

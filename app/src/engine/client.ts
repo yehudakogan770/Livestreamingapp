@@ -256,6 +256,7 @@ export function emptyShow(): Show {
     tbar: 0,
     blank: false,
     blankChangedAt: 0,
+    blankFadeMs: 0,
     flashAt: 0,
   };
   return {
@@ -294,6 +295,13 @@ export function emptyShow(): Show {
       displays: { live: null, back: null, monitor: null },
       autoPlayOnTake: true,
       audioOutputs: { master: null, a: null, b: null, headphones: null },
+      fadeToBlackMs: 2000,
+      favouriteTransitions: [
+        { kind: 'fade', durationMs: 800 },
+        { kind: 'dip', durationMs: 1500 },
+        { kind: 'wipe', durationMs: 1000 },
+        { kind: 'slide', durationMs: 600 },
+      ],
     },
   };
 }
