@@ -273,6 +273,10 @@ pub enum SourceKind {
     Browser(Box<crate::browser::BrowserInput>),
     /// A live video link (SRT, RTMP, RTSP, HLS…).
     Stream(Box<crate::stream::StreamInput>),
+    /// A raffle: the audience enters from their phones, the draw is on screen.
+    Raffle(Box<crate::audience::Raffle>),
+    /// A fundraiser: goal, total and donors on screen; pledges from phones.
+    Fundraiser(Box<crate::audience::Fundraiser>),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

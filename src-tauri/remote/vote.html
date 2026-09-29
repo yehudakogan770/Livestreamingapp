@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0f1114" />
+    <link rel="icon" href="data:," />
     <title>Join in</title>
     <style>
       :root {
@@ -144,14 +145,16 @@
       }
 
       function draw(a) {
-        const key = JSON.stringify(a) + JSON.stringify(mine) + sentNote;
+        const key = JSON.stringify(a) + JSON.stringify(mine) + sentNote + pledgeNote + JSON.stringify(joined);
         if (key === last) return;
         // Never redraw under someone typing.
         if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
         last = key;
         app.textContent = '';
         if (a.event) app.append(el('p', { className: 'event', textContent: a.event }));
-        const open = a.polls.length || a.questions;
+        const raffles = a.raffles || [];
+        const funds = a.fundraisers || [];
+        const open = a.polls.length || a.questions || raffles.length || funds.length;
         if (!open) {
           app.append(el('p', { className: 'empty', textContent: 'Nothing to join right now — this page updates by itself.' }));
           return;
@@ -167,6 +170,30 @@
           box.append(el('p', { className: 'note', textContent: chosen === undefined ? 'Tap your answer.' : 'Thank you! You can change your answer while voting is open.' }));
           app.append(box);
         }
+        for (const r of raffles) {
+          const box = el('section', { className: 'poll' }, el('h1', { textContent: r.title || 'Raffle' }));
+          if (r.prize) box.append(el('p', { className: 'note', textContent: 'Prize: ' + r.prize }));
+          if (joined[r.id]) {
+            box.append(el('p', { textContent: "You're in, " + joined[r.id] + '! Good luck.' }));
+          } else {
+            const go = el('button', { className: 'send', textContent: 'Enter the raffle' });
+            go.onclick = () => enter(r);
+            box.append(nameBox(), go);
+          }
+          app.append(box);
+        }
+        for (const f of funds) {
+          const amount = el('input', { type: 'number', inputMode: 'numeric', min: 1, placeholder: 'Amount (' + (f.currency || '') + ')', value: typed.amount });
+          amount.oninput = () => (typed.amount = amount.value);
+          const msg = el('input', { placeholder: 'A message (optional)', value: typed.message, maxLength: 140 });
+          msg.oninput = () => (typed.message = msg.value);
+          const go = el('button', { className: 'send', textContent: 'Pledge' });
+          go.onclick = () => pledgeIt(f);
+          app.append(
+            el('section', { className: 'poll' }, el('h1', { textContent: f.title || 'Fundraiser' }), nameBox(), amount, msg, go,
+              el('p', { className: 'note', textContent: pledgeNote || 'A pledge is a promise: the hosts will tell you how to give.' })),
+          );
+        }
         if (a.questions) {
           const q = el('textarea', { placeholder: 'Your question', value: typed.question, maxLength: 300 });
           q.oninput = () => (typed.question = q.value);
@@ -174,6 +201,53 @@
           send.onclick = () => askIt();
           app.append(el('section', { className: 'poll' }, el('h1', { textContent: 'Ask a question' }), nameBox(), q, send, el('p', { className: 'note', textContent: sentNote || 'The hosts choose which questions go on screen.' })));
         }
+      }
+
+      const joined = {};
+      typed.amount = '';
+      typed.message = '';
+      let pledgeNote = '';
+
+      async function enter(r) {
+        const name = typed.name.trim();
+        if (!name) return alert('Please type your name first.');
+        try {
+          const res = await fetch('/api/raffle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: r.id, name, voter }),
+          });
+          if (!res.ok) throw new Error();
+          joined[r.id] = name;
+        } catch {
+          alert('It did not go through — try again.');
+        }
+        last = '';
+        load();
+      }
+
+      async function pledgeIt(f) {
+        const amount = Math.floor(Number(typed.amount));
+        if (!(amount > 0)) return alert('Please type an amount.');
+        try {
+          const res = await fetch('/api/pledge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: f.id, name: typed.name.trim(), amount, message: typed.message.trim(), voter }),
+          });
+          if (res.status === 429) pledgeNote = 'Please wait a few seconds before pledging again.';
+          else if (!res.ok) throw new Error();
+          else {
+            pledgeNote = 'Thank you for your pledge of ' + (f.currency || '') + amount.toLocaleString() + '!';
+            typed.amount = '';
+            typed.message = '';
+          }
+        } catch {
+          pledgeNote = 'It did not go through — try again.';
+        }
+        if (document.activeElement) document.activeElement.blur();
+        last = '';
+        load();
       }
 
       async function askIt() {

@@ -1,0 +1,54 @@
+.aud-card__winners {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.aud-card__list {
+  flex: 1 1 auto;
+  min-height: 80px;
+  max-height: 320px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.aud-card__list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+}
+.aud-card__list li > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aud-card__list li.is-winner {
+  outline: 1px solid #f2b233;
+}
+.aud-card__list li.is-waiting {
+  outline: 1px dashed #f2b233;
+}
+.aud-card__gift {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px minmax(0, 1fr) auto;
+  gap: 6px;
+}
+.aud-card__gift .text {
+  min-width: 0;
+}
+@media (max-width: 820px) {
+  .aud-card__gift {
+    grid-template-columns: 1fr 1fr;
+  }
+}

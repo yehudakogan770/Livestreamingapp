@@ -25,6 +25,9 @@ import { LYRICS_FADE_MS, sections } from '../engine/lyrics';
 import type { Lyrics } from '../engine/types/Lyrics';
 import type { Poll } from '../engine/types/Poll';
 import type { CommentCard } from '../engine/types/CommentCard';
+import type { Raffle } from '../engine/types/Raffle';
+import type { Fundraiser } from '../engine/types/Fundraiser';
+import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { shares } from '../engine/poll';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
@@ -297,6 +300,192 @@ export class ProgramCompositor {
       ctx.fillStyle = '#b8bec8';
       ctx.font = font(2.2, 500);
       ctx.fillText(p.joinUrl.replace(/^http:\/\//, ''), qx + qrW / 2, qy + qrW + 6.5 * u);
+    }
+    ctx.restore();
+  }
+
+  /** The dark background, title (and subtitle) that raffles and fundraisers share (mirrors AudienceViews.css). */
+  private audienceBase(title: string, sub: string, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const g = ctx.createRadialGradient(w * 0.3, h * 0.2, 0, w * 0.3, h * 0.2, Math.hypot(w, h) * 0.8);
+    g.addColorStop(0, '#1c2433');
+    g.addColorStop(1, '#07080b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.font = `800 ${6.4 * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.fillText(title, w / 2, 7 * u + 3.7 * u, w - 14 * u);
+    if (sub) {
+      ctx.fillStyle = '#c9ccd2';
+      ctx.font = `400 ${3.6 * u}px "Segoe UI", system-ui, sans-serif`;
+      ctx.fillText(sub, w / 2, 7 * u + 7.4 * u + 1.5 * u + 2 * u, w - 14 * u);
+    }
+  }
+
+  private joinCode(url: string, qr: string, label: string, cx: number, cy: number, u: number) {
+    const img = this.qr(qr);
+    const ctx = this.ctx;
+    const size = 32 * u;
+    const x = cx - size / 2;
+    const y = cy - (size + 8 * u) / 2;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.roundRect(x, y, size, size, 1.5 * u);
+    ctx.fill();
+    if (img?.complete && img.naturalWidth) ctx.drawImage(img, x + 1.5 * u, y + 1.5 * u, size - 3 * u, size - 3 * u);
+    ctx.textAlign = 'center';
+    ctx.font = `700 ${3.4 * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.fillText(label, cx, y + size + 3 * u);
+    ctx.fillStyle = '#b8bec8';
+    ctx.font = `500 ${2.2 * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.fillText(url.replace(/^http:\/\//, ''), cx, y + size + 6.5 * u);
+  }
+
+  private confettiDraw(t: number, w: number, h: number) {
+    if (t <= 0 || t >= 1) return;
+    const ctx = this.ctx;
+    for (const c of confetti(90, t)) {
+      ctx.save();
+      ctx.translate(c.x * w, c.y * h);
+      ctx.rotate(c.r);
+      ctx.fillStyle = `hsl(${c.hue} 85% 60%)`;
+      ctx.fillRect(0, 0, c.size * h, c.size * 0.6 * h);
+      ctx.restore();
+    }
+  }
+
+  /** A raffle (mirrors RaffleView). */
+  private raffle(r: Raffle, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    ctx.save();
+    this.audienceBase(r.title, r.prize, w, h);
+    const d = drawAt(r, now);
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    if (d) {
+      const cy = (26 * u + (h - 12 * u)) / 2;
+      ctx.fillStyle = '#c9ccd2';
+      ctx.font = font(4, 400);
+      ctx.fillText(d.done ? 'THE WINNER IS' : 'DRAWING…', w / 2, cy - 12 * u);
+      ctx.font = font(11, 800);
+      const tw = Math.min(w - 14 * u, ctx.measureText(d.name).width + 12 * u);
+      const bh = 17 * u;
+      if (d.done) {
+        const g = ctx.createLinearGradient(w / 2 - tw / 2, 0, w / 2 + tw / 2, 0);
+        g.addColorStop(0, '#f2b233');
+        g.addColorStop(1, '#e0473b');
+        ctx.fillStyle = g;
+      } else ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.roundRect(w / 2 - tw / 2, cy + 3 * u - bh / 2, tw, bh, 2 * u);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.fillText(d.name, w / 2, cy + 3 * u, tw - 12 * u);
+    } else {
+      const join = r.showJoin && r.open && r.joinQr;
+      const cx = join ? w * 0.35 : w / 2;
+      const cy = (26 * u + (h - 12 * u)) / 2;
+      ctx.fillStyle = '#fff';
+      ctx.font = font(22, 700);
+      ctx.fillText(String(r.entries.length), cx, cy - 3 * u);
+      ctx.fillStyle = '#c9ccd2';
+      ctx.font = font(4, 400);
+      ctx.fillText(r.entries.length === 1 ? 'entry' : 'entries', cx, cy + 11 * u);
+      if (join) {
+        ctx.fillStyle = '#fff';
+        this.joinCode(r.joinUrl, r.joinQr, 'Scan to enter', w * 0.66, cy, u);
+      }
+    }
+    const done = d?.done ?? false;
+    const earlier = r.winners.slice(0, done ? -1 : r.winners.length - (d ? 1 : 0));
+    if (earlier.length) {
+      ctx.fillStyle = '#b8bec8';
+      ctx.font = font(3, 400);
+      const names = earlier.map((id) => r.entries.find((e) => e.id === id)?.name ?? '').join(' · ');
+      ctx.fillText(`Winners so far: ${names}`, w / 2, h - 6.5 * u, w - 14 * u);
+    }
+    if (done && r.draw) this.confettiDraw((now - r.draw.startedAt - r.draw.durationMs) / 5000, w, h);
+    ctx.restore();
+  }
+
+  /** A fundraiser (mirrors FundraiserView). */
+  private fundraiser(f: Fundraiser, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    ctx.save();
+    this.audienceBase(f.title, '', w, h);
+    const total = raised(f);
+    const pct = Math.min(100, (total / Math.max(1, f.goal)) * 100);
+    const join = f.showJoin && f.open && f.joinQr;
+    const left = 7 * u;
+    const right = w - 7 * u - (join ? 32 * u + 6 * u : 0);
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    const donors = f.showDonors
+      ? f.pledges
+          .filter((p) => p.approved)
+          .slice(-4)
+          .reverse()
+      : [];
+    const blockH = 14 * u + 3.5 * u + 8 * u + (donors.length ? 3.5 * u + donors.length * 4.4 * u : 0);
+    let y = 22 * u + (h - 30 * u - blockH) / 2;
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#fff';
+    ctx.font = font(14, 700);
+    const amount = money(f, total);
+    ctx.fillText(amount, left, y + 7 * u);
+    const aw = ctx.measureText(amount).width;
+    ctx.fillStyle = '#c9ccd2';
+    ctx.font = font(4, 400);
+    ctx.fillText(`raised of ${money(f, f.goal)}`, left + aw + 2.5 * u, y + 9 * u);
+    y += 14 * u + 3.5 * u;
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.beginPath();
+    ctx.roundRect(left, y, right - left, 8 * u, 4 * u);
+    ctx.fill();
+    const g = ctx.createLinearGradient(left, 0, right, 0);
+    g.addColorStop(0, '#27ae60');
+    g.addColorStop(1, '#6fdc8c');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.roundRect(left, y, Math.max(8 * u, ((right - left) * pct) / 100), 8 * u, 4 * u);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = font(3.6, 800);
+    ctx.textAlign = 'right';
+    ctx.fillText(`${Math.floor(pct)}%`, right - 2.5 * u, y + 4 * u);
+    ctx.textAlign = 'left';
+    y += 8 * u + 3.5 * u;
+    for (const p of donors) {
+      ctx.fillStyle = '#fff';
+      ctx.font = font(3.2, 700);
+      const n = p.name || 'Anonymous';
+      ctx.fillText(n, left, y + 2 * u);
+      const nw = ctx.measureText(`${n} `).width;
+      ctx.font = font(3.2, 400);
+      const rest = `${money(f, p.amount)}${p.message ? ` · ${p.message}` : ''}`;
+      ctx.fillText(rest, left + nw, y + 2 * u, right - left - nw);
+      y += 4.4 * u;
+    }
+    if (join) {
+      ctx.fillStyle = '#fff';
+      this.joinCode(f.joinUrl, f.joinQr, 'Scan to pledge', w - 7 * u - 16 * u, 22 * u + (h - 30 * u) / 2, u);
+    }
+    const t = (now - f.celebratedAt) / CELEBRATE_MS;
+    if (t > 0 && t < 1) {
+      const text = pct >= 100 ? 'Goal reached! Thank you!' : `${Math.floor(pct / 25) * 25}% of the goal!`;
+      ctx.font = font(4.4, 800);
+      ctx.textAlign = 'center';
+      const tw = ctx.measureText(text).width + 8 * u;
+      ctx.fillStyle = '#f2b233';
+      ctx.beginPath();
+      ctx.roundRect(w / 2 - tw / 2, 16 * u, tw, 6.8 * u, 3.4 * u);
+      ctx.fill();
+      ctx.fillStyle = '#1a1206';
+      ctx.fillText(text, w / 2, 16 * u + 3.4 * u);
+      this.confettiDraw(t, w, h);
     }
     ctx.restore();
   }
@@ -689,6 +878,12 @@ export class ProgramCompositor {
         return;
       case 'comment':
         this.comment(k, now, w, h);
+        return;
+      case 'raffle':
+        this.raffle(k, now, w, h);
+        return;
+      case 'fundraiser':
+        this.fundraiser(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

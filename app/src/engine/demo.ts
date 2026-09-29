@@ -17,6 +17,7 @@ import { repairScoreboard, runClock, setClock } from './score';
 import { lyricsGo, sections } from './lyrics';
 import { applyBrand } from './brand';
 import { repairPoll, resetPoll } from './poll';
+import { pledgeTo, raffleDraw, raffleEnter, withCelebration } from './audience';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -130,6 +131,18 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
   if (i === null) return t;
   const st = s.settings.stingers?.[i];
   return st?.path ? { kind: t.kind, durationMs: Math.max(MIN_TRANSITION_MS, st.durationMs) } : { kind: 'fade' as const, durationMs: t.durationMs };
+}
+
+function raffleIn(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'raffle') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a raffle' });
+  return src.kind;
+}
+
+function fundIn(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'fundraiser') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a fundraiser' });
+  return src.kind;
 }
 
 /** The audience questions (an older saved show has none yet). */
@@ -436,6 +449,88 @@ function apply(s: Show, a: Action, now: number) {
       v.kind.playback = { ...v.kind.playback, posS: pos, at: now };
       const speed = Math.min(2, Math.max(0.25, finite(a.speed, 'speed')));
       v.speed = Math.abs(speed - 1) > 0.001 ? speed : null;
+      return;
+    }
+    case 'updateRaffle': {
+      const r = raffleIn(s, a.id);
+      const n = a.raffle;
+      Object.assign(r, {
+        title: n.title.slice(0, 80),
+        prize: n.prize.slice(0, 120),
+        repeatWinners: n.repeatWinners,
+        joinUrl: n.joinUrl,
+        joinQr: n.joinQr,
+        showJoin: n.showJoin,
+      });
+      return;
+    }
+    case 'raffleOpen':
+      raffleIn(s, a.id).open = a.value;
+      return;
+    case 'raffleJoin': {
+      const r = raffleIn(s, a.id);
+      if (!r.open || !raffleEnter(r, a.name)) throw new Refused({ code: 'invalidValue', field: 'raffle', reason: 'this raffle is not taking names' });
+      return;
+    }
+    case 'raffleAdd': {
+      const r = raffleIn(s, a.id);
+      for (const n of a.names) raffleEnter(r, n);
+      return;
+    }
+    case 'raffleRemove': {
+      const r = raffleIn(s, a.id);
+      if (a.entry === undefined) Object.assign(r, { entries: [], winners: [], draw: null });
+      else r.entries = r.entries.filter((e) => e.id !== a.entry);
+      return;
+    }
+    case 'raffleDraw':
+      if (!raffleDraw(raffleIn(s, a.id), now)) throw new Refused({ code: 'invalidValue', field: 'raffle', reason: 'nobody left to draw' });
+      return;
+    case 'raffleReset':
+      Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
+      return;
+    case 'updateFundraiser': {
+      const f = fundIn(s, a.id);
+      const n = a.fundraiser;
+      withCelebration(f, now, () =>
+        Object.assign(f, {
+          title: n.title.slice(0, 80),
+          currency: n.currency.slice(0, 4),
+          goal: Math.max(1, Math.floor(n.goal)),
+          starting: Math.max(0, Math.floor(n.starting)),
+          autoApprove: n.autoApprove,
+          showDonors: n.showDonors,
+          joinUrl: n.joinUrl,
+          joinQr: n.joinQr,
+          showJoin: n.showJoin,
+        }),
+      );
+      return;
+    }
+    case 'fundraiserOpen':
+      fundIn(s, a.id).open = a.value;
+      return;
+    case 'pledge': {
+      const f = fundIn(s, a.id);
+      if (!f.open || !pledgeTo(f, a.name, a.amount, a.message, f.autoApprove, now))
+        throw new Refused({ code: 'invalidValue', field: 'fundraiser', reason: 'this fundraiser is not taking pledges' });
+      return;
+    }
+    case 'addDonation':
+      if (!pledgeTo(fundIn(s, a.id), a.name, a.amount, a.message, true, now))
+        throw new Refused({ code: 'invalidValue', field: 'amount', reason: 'the amount must be more than 0 and not huge' });
+      return;
+    case 'pledgeApprove': {
+      const f = fundIn(s, a.id);
+      withCelebration(f, now, () => {
+        const p = f.pledges.find((x) => x.id === a.pledge);
+        if (p) p.approved = a.value;
+      });
+      return;
+    }
+    case 'pledgeRemove': {
+      const f = fundIn(s, a.id);
+      f.pledges = f.pledges.filter((p) => p.id !== a.pledge);
       return;
     }
     case 'qnaOpen':

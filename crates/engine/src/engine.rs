@@ -862,6 +862,19 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             src.speed = ((speed - 1.0).abs() > 0.001).then_some(speed);
             Ok(())
         }
+        a @ (Action::UpdateRaffle { .. }
+        | Action::RaffleOpen { .. }
+        | Action::RaffleJoin { .. }
+        | Action::RaffleAdd { .. }
+        | Action::RaffleRemove { .. }
+        | Action::RaffleDraw { .. }
+        | Action::RaffleReset { .. }) => apply_raffle(s, a, now),
+        a @ (Action::UpdateFundraiser { .. }
+        | Action::FundraiserOpen { .. }
+        | Action::Pledge { .. }
+        | Action::AddDonation { .. }
+        | Action::PledgeApprove { .. }
+        | Action::PledgeRemove { .. }) => apply_fundraiser(s, a, now),
         Action::QnaOpen { value } => {
             s.qna.open = value;
             Ok(())
@@ -1887,6 +1900,145 @@ fn resolve_stinger(s: &Show, t: Transition) -> Transition {
     }
 }
 
+fn raffle_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::audience::Raffle> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Raffle(r) => Ok(r),
+        _ => Err(ActionError::invalid("id", "that input is not a raffle")),
+    }
+}
+
+fn fundraiser_mut<'a>(
+    s: &'a mut Show,
+    id: &SourceId,
+) -> Result<&'a mut crate::audience::Fundraiser> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Fundraiser(f) => Ok(f),
+        _ => Err(ActionError::invalid("id", "that input is not a fundraiser")),
+    }
+}
+
+fn apply_raffle(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    match action {
+        Action::UpdateRaffle { id, raffle } => {
+            let r = raffle_mut(s, &id)?;
+            let mut next = raffle;
+            next.repair();
+            r.title = next.title;
+            r.prize = next.prize;
+            r.repeat_winners = next.repeat_winners;
+            r.join_url = next.join_url;
+            r.join_qr = next.join_qr;
+            r.show_join = next.show_join;
+        }
+        Action::RaffleOpen { id, value } => raffle_mut(s, &id)?.open = value,
+        Action::RaffleJoin { id, name } => {
+            let r = raffle_mut(s, &id)?;
+            if !r.open || r.enter(&name).is_none() {
+                return Err(ActionError::invalid(
+                    "raffle",
+                    "this raffle is not taking names",
+                ));
+            }
+        }
+        Action::RaffleAdd { id, names } => {
+            let r = raffle_mut(s, &id)?;
+            for n in names {
+                r.enter(&n);
+            }
+        }
+        Action::RaffleRemove { id, entry } => {
+            let r = raffle_mut(s, &id)?;
+            if let Some(e) = entry {
+                r.entries.retain(|x| x.id != e);
+            } else {
+                r.entries.clear();
+                r.winners.clear();
+                r.draw = None;
+            }
+        }
+        Action::RaffleDraw { id } => {
+            if !raffle_mut(s, &id)?.start_draw(now) {
+                return Err(ActionError::invalid("raffle", "nobody left to draw"));
+            }
+        }
+        Action::RaffleReset { id } => {
+            let r = raffle_mut(s, &id)?;
+            r.winners.clear();
+            r.draw = None;
+        }
+        _ => unreachable!("only raffle actions come here"),
+    }
+    Ok(())
+}
+
+fn apply_fundraiser(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    let too_big = || ActionError::invalid("amount", "the amount must be more than 0 and not huge");
+    match action {
+        Action::UpdateFundraiser { id, fundraiser } => {
+            let f = fundraiser_mut(s, &id)?;
+            let mut next = fundraiser;
+            next.repair();
+            f.with_celebration(now, |f| {
+                f.title = next.title;
+                f.currency = next.currency;
+                f.goal = next.goal;
+                f.starting = next.starting;
+                f.auto_approve = next.auto_approve;
+                f.show_donors = next.show_donors;
+                f.join_url = next.join_url;
+                f.join_qr = next.join_qr;
+                f.show_join = next.show_join;
+            });
+        }
+        Action::FundraiserOpen { id, value } => fundraiser_mut(s, &id)?.open = value,
+        Action::Pledge {
+            id,
+            name,
+            amount,
+            message,
+        } => {
+            let f = fundraiser_mut(s, &id)?;
+            if !f.open {
+                return Err(ActionError::invalid(
+                    "fundraiser",
+                    "this fundraiser is not taking pledges",
+                ));
+            }
+            let approved = f.auto_approve;
+            f.pledge(&name, amount, &message, approved, now)
+                .ok_or_else(too_big)?;
+        }
+        Action::AddDonation {
+            id,
+            name,
+            amount,
+            message,
+        } => {
+            fundraiser_mut(s, &id)?
+                .pledge(&name, amount, &message, true, now)
+                .ok_or_else(too_big)?;
+        }
+        Action::PledgeApprove { id, pledge, value } => {
+            fundraiser_mut(s, &id)?.with_celebration(now, |f| {
+                if let Some(p) = f.pledges.iter_mut().find(|p| p.id == pledge) {
+                    p.approved = value;
+                }
+            });
+        }
+        Action::PledgeRemove { id, pledge } => {
+            fundraiser_mut(s, &id)?.pledges.retain(|p| p.id != pledge);
+        }
+        _ => unreachable!("only fundraiser actions come here"),
+    }
+    Ok(())
+}
+
 fn comment_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::chat::CommentCard> {
     let src = s
         .source_mut(id)
@@ -2162,6 +2314,15 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
         }
         SourceKind::Screen(c) => c.repair(),
         SourceKind::Comment(c) => c.repair(),
+        SourceKind::Raffle(r) => {
+            r.repair();
+            r.open = false;
+            r.draw = None;
+        }
+        SourceKind::Fundraiser(f) => {
+            f.repair();
+            f.open = false;
+        }
         SourceKind::Poll(p) => {
             p.repair();
             p.open = false;
@@ -2207,7 +2368,9 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         | SourceKind::Screen(_)
         | SourceKind::Scoreboard(_)
         | SourceKind::Poll(_)
-        | SourceKind::Comment(_)) => fresh(k),
+        | SourceKind::Comment(_)
+        | SourceKind::Raffle(_)
+        | SourceKind::Fundraiser(_)) => fresh(k),
         SourceKind::Guest(g) => clean_guest(g)?,
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {

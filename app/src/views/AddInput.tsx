@@ -1,3 +1,4 @@
+import { defaultFundraiser, defaultRaffle } from '../engine/audience';
 import { newRoom } from '../engine/guest';
 import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
@@ -41,6 +42,8 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'raffle', name: 'Raffle', hint: 'People enter from their phones; the draw is on screen' },
+  { kind: 'fundraiser', name: 'Fundraiser', hint: 'Goal, total and donors on screen; pledges from phones' },
   { kind: 'guest', name: 'Guest by link', hint: 'Someone joins from their phone or computer, anywhere' },
   { kind: 'comment', name: 'Chat comments', hint: 'Comments from the YouTube or Twitch live chat, on screen' },
   { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
@@ -156,6 +159,15 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'raffle':
+        return { name: n || 'Raffle', kind: { type: 'raffle', ...defaultRaffle(), title: n || 'Raffle', prize: words.trim() } };
+      case 'fundraiser': {
+        const goal = Math.floor(Number(subWords.replace(/[^0-9.]/g, '')));
+        return {
+          name: n || 'Fundraiser',
+          kind: { type: 'fundraiser', ...defaultFundraiser(), title: words.trim() || defaultFundraiser().title, goal: goal > 0 ? goal : 10_000 },
+        };
+      }
       case 'guest':
         return { name: n || 'Guest', kind: { type: 'guest', room: newRoom(), reload: 0 } };
       case 'comment':
@@ -334,6 +346,31 @@ export function AddInput({
               <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
             )}
 
+            {kind === 'raffle' && (
+              <label className="field">
+                <span className="field__label">The prize (optional; the name above is the raffle's title)</span>
+                <input className="text" dir="auto" value={words} onChange={(e) => setWords(e.target.value)} aria-label="Prize" autoFocus />
+              </label>
+            )}
+            {kind === 'fundraiser' && (
+              <>
+                <label className="field">
+                  <span className="field__label">What it is for (shown as the title)</span>
+                  <input className="text" dir="auto" value={words} onChange={(e) => setWords(e.target.value)} aria-label="Cause" autoFocus />
+                </label>
+                <label className="field">
+                  <span className="field__label">The goal</span>
+                  <input
+                    className="text"
+                    inputMode="numeric"
+                    value={subWords}
+                    placeholder="10,000"
+                    onChange={(e) => setSubWords(e.target.value)}
+                    aria-label="Goal"
+                  />
+                </label>
+              </>
+            )}
             {kind === 'guest' && (
               <p className="field__note">
                 Give the guest a name above. After adding, open the guest's ⋯ menu → “Guest link…” and send them the link. They open it on their phone or

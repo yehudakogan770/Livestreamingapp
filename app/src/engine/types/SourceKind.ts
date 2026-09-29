@@ -3,12 +3,14 @@ import type { BrowserInput } from "./BrowserInput";
 import type { CommentCard } from "./CommentCard";
 import type { Countdown } from "./Countdown";
 import type { Credits } from "./Credits";
+import type { Fundraiser } from "./Fundraiser";
 import type { Guest } from "./Guest";
 import type { Logo3d } from "./Logo3d";
 import type { Lyrics } from "./Lyrics";
 import type { Pesukim } from "./Pesukim";
 import type { Playback } from "./Playback";
 import type { Poll } from "./Poll";
+import type { Raffle } from "./Raffle";
 import type { Scoreboard } from "./Scoreboard";
 import type { ScreenCapture } from "./ScreenCapture";
 import type { Slideshow } from "./Slideshow";
@@ -28,4 +30,4 @@ logo?: string,
  * This input's own timer: each countdown input counts on its own,
  * so the next one can be prepared while another is on air.
  */
-timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "split" } & Split | { "type": "slideshow" } & Slideshow | { "type": "visuals" } | { "type": "logo3d" } & Logo3d | { "type": "browser" } & BrowserInput | { "type": "stream" } & StreamInput | { "type": "guest" } & Guest | { "type": "comment" } & CommentCard | { "type": "poll" } & Poll | { "type": "lyrics" } & Lyrics | { "type": "screen" } & ScreenCapture | { "type": "scoreboard" } & Scoreboard | { "type": "microphone", deviceId: string, label: string, };
+timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "split" } & Split | { "type": "slideshow" } & Slideshow | { "type": "visuals" } | { "type": "logo3d" } & Logo3d | { "type": "browser" } & BrowserInput | { "type": "stream" } & StreamInput | { "type": "raffle" } & Raffle | { "type": "fundraiser" } & Fundraiser | { "type": "guest" } & Guest | { "type": "comment" } & CommentCard | { "type": "poll" } & Poll | { "type": "lyrics" } & Lyrics | { "type": "screen" } & ScreenCapture | { "type": "scoreboard" } & Scoreboard | { "type": "microphone", deviceId: string, label: string, };

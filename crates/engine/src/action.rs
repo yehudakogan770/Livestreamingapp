@@ -247,6 +247,76 @@ pub enum Action {
         id: SourceId,
         speed: f32,
     },
+    /// Change a raffle's title, prize and look (entries and winners stay).
+    UpdateRaffle {
+        id: SourceId,
+        raffle: crate::audience::Raffle,
+    },
+    /// Let phones enter a raffle (or stop them).
+    RaffleOpen {
+        id: SourceId,
+        value: bool,
+    },
+    /// Someone entered from their phone (sent by the app's server).
+    RaffleJoin {
+        id: SourceId,
+        name: String,
+    },
+    /// The operator adds names (one each).
+    RaffleAdd {
+        id: SourceId,
+        names: Vec<String>,
+    },
+    /// Take one entry out, or (with none) start the raffle again from nobody.
+    RaffleRemove {
+        id: SourceId,
+        #[ts(optional)]
+        entry: Option<u32>,
+    },
+    /// Draw a winner (shown after the spin).
+    RaffleDraw {
+        id: SourceId,
+    },
+    /// Forget the winners (everyone can win again).
+    RaffleReset {
+        id: SourceId,
+    },
+    /// Change a fundraiser's title, goal and look (pledges stay).
+    UpdateFundraiser {
+        id: SourceId,
+        fundraiser: crate::audience::Fundraiser,
+    },
+    /// Let phones pledge (or stop them).
+    FundraiserOpen {
+        id: SourceId,
+        value: bool,
+    },
+    /// A pledge from a phone (sent by the app's server).
+    Pledge {
+        id: SourceId,
+        name: String,
+        #[ts(type = "number")]
+        amount: u64,
+        message: String,
+    },
+    /// The operator adds a donation (counted straight away).
+    AddDonation {
+        id: SourceId,
+        name: String,
+        #[ts(type = "number")]
+        amount: u64,
+        message: String,
+    },
+    /// Count a pledge in the total (or not).
+    PledgeApprove {
+        id: SourceId,
+        pledge: u32,
+        value: bool,
+    },
+    PledgeRemove {
+        id: SourceId,
+        pledge: u32,
+    },
     /// Start or stop taking audience questions.
     QnaOpen {
         value: bool,

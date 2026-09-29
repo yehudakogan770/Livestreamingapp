@@ -1,3 +1,4 @@
+import { FundraiserView, RaffleView } from './AudienceViews';
 import { guestPage } from '../engine/guest';
 import { CommentView } from './CommentView';
 import { PollView } from './PollView';
@@ -118,6 +119,10 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
     case 'scoreboard':
       return <ScoreboardView sb={k} />;
+    case 'raffle':
+      return <RaffleView r={k} thumb={thumb} />;
+    case 'fundraiser':
+      return <FundraiserView f={k} thumb={thumb} />;
     case 'guest':
       // Shown directly (outside the Windows app) in every window, so silent there: the mixer isn't fed that way.
       return (

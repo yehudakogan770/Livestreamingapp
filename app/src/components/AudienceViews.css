@@ -1,0 +1,205 @@
+/* Mirrored in the recorder: broadcast/compositor.ts raffle() and fundraiser(). Sizes in cqh of the frame height. */
+.aud {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: radial-gradient(ellipse at 30% 20%, #1c2433, #07080b);
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+.aud__head {
+  position: absolute;
+  top: 7cqh;
+  left: 7cqh;
+  right: 7cqh;
+  text-align: center;
+}
+.aud__title {
+  margin: 0;
+  font-size: 6.4cqh;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.aud__sub {
+  margin: 1.5cqh 0 0;
+  font-size: 3.6cqh;
+  color: #c9ccd2;
+}
+.aud__join {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2cqh;
+  font-size: 3.4cqh;
+  font-weight: 700;
+}
+.aud__join small {
+  font-size: 2.2cqh;
+  font-weight: 500;
+  color: #b8bec8;
+}
+.aud__qr {
+  width: 32cqh;
+  height: 32cqh;
+  padding: 1.5cqh;
+  border-radius: 1.5cqh;
+  background: #fff;
+}
+.aud__qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.aud__confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.aud__confetti i {
+  position: absolute;
+  border-radius: 0.2cqh;
+}
+.raf__wait,
+.raf__stage {
+  position: absolute;
+  inset: 26cqh 7cqh 12cqh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10cqh;
+}
+.raf__stage {
+  flex-direction: column;
+  gap: 3cqh;
+}
+.raf__count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.raf__count b {
+  font-size: 22cqh;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.raf__count span {
+  font-size: 4cqh;
+  color: #c9ccd2;
+}
+.raf__label {
+  font-size: 4cqh;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #c9ccd2;
+}
+.raf__name {
+  max-width: 100%;
+  padding: 3cqh 6cqh;
+  border-radius: 2cqh;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 11cqh;
+  font-weight: 800;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.raf__stage.is-done .raf__name {
+  background: linear-gradient(135deg, #f2b233, #e0473b);
+  box-shadow: 0 0 8cqh rgba(242, 178, 51, 0.5);
+  animation: raf-win 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes raf-win {
+  from {
+    transform: scale(0.7);
+  }
+}
+.raf__earlier {
+  position: absolute;
+  left: 7cqh;
+  right: 7cqh;
+  bottom: 5cqh;
+  margin: 0;
+  text-align: center;
+  font-size: 3cqh;
+  color: #b8bec8;
+}
+.fund__body {
+  position: absolute;
+  inset: 22cqh 7cqh 8cqh;
+  display: flex;
+  align-items: center;
+  gap: 6cqh;
+}
+.fund__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3.5cqh;
+}
+.fund__total {
+  display: flex;
+  align-items: baseline;
+  gap: 2.5cqh;
+  flex-wrap: wrap;
+}
+.fund__total b {
+  font-size: 14cqh;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.fund__total span {
+  font-size: 4cqh;
+  color: #c9ccd2;
+}
+.fund__bar {
+  position: relative;
+  height: 8cqh;
+  border-radius: 4cqh;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.fund__bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 4cqh;
+  background: linear-gradient(90deg, #27ae60, #6fdc8c);
+  transition: width 1200ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+.fund__bar span {
+  position: absolute;
+  right: 2.5cqh;
+  top: 50%;
+  translate: 0 -50%;
+  font-size: 3.6cqh;
+  font-weight: 800;
+}
+.fund__donors {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 3.2cqh;
+}
+.fund__donors em {
+  font-style: normal;
+  color: #b8bec8;
+}
+.fund__cheer {
+  position: absolute;
+  left: 50%;
+  top: 16cqh;
+  translate: -50% 0;
+  padding: 1.2cqh 4cqh;
+  border-radius: 99cqh;
+  background: #f2b233;
+  color: #1a1206;
+  font-size: 4.4cqh;
+  font-weight: 800;
+  white-space: nowrap;
+  animation: raf-win 600ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}

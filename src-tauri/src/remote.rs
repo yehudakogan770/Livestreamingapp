@@ -145,6 +145,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::PlaylistGo { .. }
             | Action::SetSpeed { .. }
             | Action::QnaShow { .. }
+            | Action::RaffleDraw { .. }
             | Action::ShowComment { comment: None, .. }
             | Action::LyricsGo { .. }
             | Action::LyricsNext { .. }
@@ -521,13 +522,40 @@ fn handle(shared: &Shared, mut request: Request) {
                 .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
                 .map(|mut v| v["show"].take())
                 .unwrap_or_default();
+            let open = |kind: &str, fields: &[&str]| -> Vec<serde_json::Value> {
+                show["sources"]
+                    .as_array()
+                    .map(|all| {
+                        all.iter()
+                            .filter(|s| s["kind"]["type"] == kind && s["kind"]["open"] == true)
+                            .map(|s| {
+                                let mut o = serde_json::json!({ "id": s["id"] });
+                                for f in fields {
+                                    o[*f] = s["kind"][*f].clone();
+                                }
+                                o
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            };
             let body = serde_json::json!({
                 "polls": open_polls(&show),
                 "questions": show["qna"]["open"].as_bool().unwrap_or(false),
+                "raffles": open("raffle", &["title", "prize"]),
+                "fundraisers": open("fundraiser", &["title", "currency"]),
                 "event": show["event"]["name"],
             });
             json(request, 200, &body.to_string());
         }
+        (Method::Post, "/api/raffle") => match join_raffle(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingNames"}"#),
+        },
+        (Method::Post, "/api/pledge") => match pledge(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingPledges"}"#),
+        },
         (Method::Post, "/api/ask") => match ask(shared, &mut request) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingQuestions"}"#),
@@ -613,6 +641,83 @@ fn handle(shared: &Shared, mut request: Request) {
         }
         _ => respond(request, 404, "text/plain; charset=utf-8", "Not found"),
     }
+}
+
+#[derive(Deserialize)]
+struct Join {
+    id: String,
+    name: String,
+    voter: String,
+}
+
+/// Enter a raffle: once per phone per raffle.
+fn join_raffle(shared: &Shared, request: &mut Request) -> Result<(), u16> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| 400u16)?;
+    let j: Join = serde_json::from_str(&body).map_err(|_| 400u16)?;
+    if j.voter.is_empty() || j.voter.len() > 64 || j.name.trim().is_empty() {
+        return Err(400);
+    }
+    let key = format!("raffle:{}:{}", j.id, j.voter);
+    if lock(&shared.asked).contains_key(&key) {
+        // Already in: that is fine.
+        return Ok(());
+    }
+    shared
+        .backend
+        .apply(Action::RaffleJoin {
+            id: lumora_engine::model::SourceId::new(j.id),
+            name: j.name,
+        })
+        .map_err(|_| 409u16)?;
+    lock(&shared.asked).insert(key, now_ms());
+    Ok(())
+}
+
+#[derive(Deserialize)]
+struct PledgeIn {
+    id: String,
+    name: String,
+    amount: u64,
+    message: String,
+    voter: String,
+}
+
+/// A pledge from a phone: one every 10 seconds from each phone.
+fn pledge(shared: &Shared, request: &mut Request) -> Result<(), u16> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| 400u16)?;
+    let p: PledgeIn = serde_json::from_str(&body).map_err(|_| 400u16)?;
+    if p.voter.is_empty() || p.voter.len() > 64 || p.amount == 0 {
+        return Err(400);
+    }
+    let key = format!("pledge:{}", p.voter);
+    let now = now_ms();
+    if lock(&shared.asked)
+        .get(&key)
+        .is_some_and(|&t| now.saturating_sub(t) < 10_000)
+    {
+        return Err(429);
+    }
+    shared
+        .backend
+        .apply(Action::Pledge {
+            id: lumora_engine::model::SourceId::new(p.id),
+            name: p.name,
+            amount: p.amount,
+            message: p.message,
+        })
+        .map_err(|_| 409u16)?;
+    lock(&shared.asked).insert(key, now);
+    Ok(())
 }
 
 #[derive(Deserialize)]
