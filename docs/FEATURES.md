@@ -355,3 +355,45 @@ messages and countdown · hype countdown with actions at zero · 12 Pesukim ·
 beat-synced stage visuals with keyboard control · Back = Live · simple words
 everywhere · the audience never sees an error.
 
+
+## 28. Everything the others have (market checklist)
+
+Rule: **whatever any comparable app has, Lumora has too**, done more simply.
+Compared: vMix, OBS Studio, Wirecast, ProPresenter, StreamYard, Restream Studio,
+Streamlabs, Ecamm Live, Resolume, Blackmagic ATEM software, Zoom Events.
+✅ = in Lumora now · ⬜ = still to build (in this order).
+
+### Done
+✅ Program / preview, TAKE, CUT, T-bar, 6 transitions, favourite transitions, Play now ·
+✅ Fade to black · ✅ Overlays 1–4 with animations · ✅ Split screen / PiP / custom layers ·
+✅ Titles, lower thirds, tickers · ✅ Credits · ✅ Countdown and stage monitor ·
+✅ Slideshow (pictures, PDF) · ✅ Green screen · ✅ Colour correction, crop, rotate, effects ·
+✅ Web page input · ✅ Stream inputs (SRT / RTMP / RTSP / HLS) · ✅ 3D logo maker ·
+✅ Beat-synced stage visuals · ✅ Recording and multi-site streaming · ✅ Snapshot ·
+✅ Audio mixer with buses, follow video, solo, delay · ✅ Presets, run of show, triggers ·
+✅ Phone remote · ✅ Library · ✅ Multiview · ✅ Keeps imported files · ✅ Crash-safe saving.
+
+### To build (most important first)
+1. ⬜ **Sound from stream and web page inputs** into the mixer.
+2. ⬜ **Screen capture** — this computer's screens or one window (OBS, vMix).
+3. ⬜ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM).
+4. ⬜ **Guests by link** — up to 8 people join from a browser, with their own
+   mix-minus (StreamYard, Restream, vMix Call, Ecamm).
+5. ⬜ **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs).
+6. ⬜ **Audio filters** — noise suppression, noise gate, compressor, limiter,
+   EQ per input, VST plugins (OBS, vMix).
+7. ⬜ **Instant replay** with slow motion and highlights reel (vMix, Wirecast).
+8. ⬜ **Virtual camera** and **NDI in / out** (OBS, vMix, Ecamm).
+9. ⬜ **Song lyrics and Bible library** with presentations, themes, stage display
+   of the next lines (ProPresenter).
+10. ⬜ **Video playlists / show loops** with auto-advance and shuffle (vMix, ProPresenter).
+11. ⬜ **Stingers** (a video transition with a cut point) and **luma wipes** (vMix, OBS).
+12. ⬜ **Scoreboards and timers** templates with data from spreadsheets (vMix, Wirecast).
+13. ⬜ **Animated title designer** with templates (vMix GT, Wirecast).
+14. ⬜ **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames).
+15. ⬜ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
+16. ⬜ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
+17. ⬜ **Audience polls and Q&A** shown on screen (Zoom Events, Restream).
+18. ⬜ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
+19. ⬜ **Video delay per input** to line up cameras with sound (vMix).
+20. ⬜ **PTZ camera control** (vMix, ATEM).
