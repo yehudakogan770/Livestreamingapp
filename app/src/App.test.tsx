@@ -432,7 +432,7 @@ describe('Overlays', () => {
   it('sets up overlay 1, puts it on air over the picture, and Shift+1 takes it off', async () => {
     await start();
     await addColour('#c7372f');
-    fireEvent.click(screen.getByRole('button', { name: 'Edit overlay 1' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Set up overlay 1' }));
     const ed = screen.getByRole('dialog', { name: 'Overlays' });
     const input = within(ed).getByLabelText('Overlay input');
     const colour = within(input).getByRole('option', { name: '#c7372f' }) as HTMLOptionElement;

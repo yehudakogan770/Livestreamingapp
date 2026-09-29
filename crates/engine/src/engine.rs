@@ -76,6 +76,7 @@ impl Engine {
         let was_following = next.back_follows_live;
         apply_to(&mut next, action, now)?;
         follow_live(&mut next, &live_before, was_following, now);
+        fire_triggers(&self.show, &mut next, now);
         if next == self.show {
             return Ok(Outcome::Unchanged);
         }
@@ -130,6 +131,7 @@ impl Engine {
             && overlays_due.is_empty()
             && slides_due.is_empty()
             && !visuals_due
+            && !crate::triggers::clock_due(&self.show, now)
         {
             return Outcome::Unchanged;
         }
@@ -160,12 +162,28 @@ impl Engine {
             }
         }
         follow_live(&mut next, &live_before, was_following, now);
+        fire_triggers(&self.show, &mut next, now);
         if next == self.show {
             return Outcome::Unchanged;
         }
         self.show = next;
         self.revision += 1;
         Outcome::Changed
+    }
+}
+
+/// Run every trigger set off by the change from `before` to `next`, or due by
+/// the clock. Their own effects don't set off more triggers (no loops).
+fn fire_triggers(before: &Show, next: &mut Show, now: Millis) {
+    for i in crate::triggers::due(before, next, now) {
+        let Some(t) = next.triggers.get_mut(i) else {
+            continue;
+        };
+        t.last_fired = now;
+        let (name, steps) = (t.name.clone(), t.steps.clone());
+        if !steps.is_empty() {
+            let _ = apply_to(next, Action::RunSteps { name, steps }, now);
+        }
     }
 }
 
@@ -1099,6 +1117,38 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::PauseShow { .. }
         | Action::NextCue
         | Action::GoCue { .. }) => apply_run(s, a, now),
+        Action::SetTriggers { triggers } => {
+            if triggers.len() > crate::triggers::MAX_TRIGGERS {
+                return Err(ActionError::invalid("triggers", "at most 100 triggers"));
+            }
+            let mut clean = Vec::with_capacity(triggers.len());
+            for mut t in triggers {
+                t.steps = clean_steps(t.steps)?;
+                t.repair();
+                clean.push(t);
+            }
+            s.triggers = clean;
+            Ok(())
+        }
+        Action::FireTrigger { id } => {
+            let t = s
+                .triggers
+                .iter()
+                .find(|t| t.id == id)
+                .cloned()
+                .ok_or_else(|| ActionError::invalid("id", "there is no such trigger"))?;
+            if t.steps.is_empty() {
+                return Ok(());
+            }
+            apply_to(
+                s,
+                Action::RunSteps {
+                    name: t.name,
+                    steps: t.steps,
+                },
+                now,
+            )
+        }
         Action::RelinkMedia { from, to } => {
             crate::media::relink(s, &from, &to);
             Ok(())

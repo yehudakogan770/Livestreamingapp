@@ -26,6 +26,7 @@ import type { Step } from './types/Step';
 import { mainCountdown } from './countdowns';
 import * as vis from './visuals';
 import { cleanUrl } from './browser';
+import { triggersDue } from './triggers';
 
 const MIN_TRANSITION_MS = 100;
 const MAX_COUNTDOWN_MS = 24 * 60 * 60 * 1000;
@@ -664,6 +665,16 @@ function apply(s: Show, a: Action, now: number) {
     }
     case 'relinkMedia':
       return;
+    case 'setTriggers':
+      if (a.triggers.length > 100) throw new Refused({ code: 'invalidValue', field: 'triggers', reason: 'at most 100 triggers' });
+      s.triggers = structuredClone(a.triggers);
+      return;
+    case 'fireTrigger': {
+      const t = s.triggers.find((x) => x.id === a.id);
+      if (!t) throw new Refused({ code: 'invalidValue', field: 'id', reason: 'there is no such trigger' });
+      if (t.steps.length) apply(s, { type: 'runSteps', name: t.name, steps: structuredClone(t.steps) }, now);
+      return;
+    }
     case 'updateBrowser': {
       const src = find(s, a.id);
       if (src.kind.type !== 'browser') throw new Refused({ code: 'invalidValue', field: 'browser', reason: 'that input is not a web page' });
@@ -933,7 +944,18 @@ export function demoTick(show: Show, now: number): Show | null {
   const slidesDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'slideshow' && slideDue(x.kind, now)).map((x) => x.id);
   const cue = cueDue(show.run, now);
   const visualsDue = vis.visualsDue(show.visuals, now);
-  if (due.length === 0 && cue === null && !stepsDue && wordsDue.length === 0 && overlaysDue.length === 0 && slidesDue.length === 0 && !visualsDue) return null;
+  const clockTriggers = triggersDue(show, show, now).length > 0;
+  if (
+    due.length === 0 &&
+    cue === null &&
+    !stepsDue &&
+    wordsDue.length === 0 &&
+    overlaysDue.length === 0 &&
+    slidesDue.length === 0 &&
+    !visualsDue &&
+    !clockTriggers
+  )
+    return null;
   const next = structuredClone(show);
   const liveBefore = structuredClone(show.screens.live);
   for (const id of due) atZero(next, id, now);
@@ -947,6 +969,7 @@ export function demoTick(show: Show, now: number): Show | null {
     if (i !== null) goToSlide(next, id, i, now);
   }
   followLive(next, liveBefore, show.backFollowsLive, now);
+  fireTriggers(show, next, now);
   return next;
 }
 
@@ -990,5 +1013,21 @@ export function demoApply(show: Show, action: Action, now: number): Show {
     throw e;
   }
   followLive(next, liveBefore, wasFollowing, now);
+  fireTriggers(show, next, now);
   return next;
+}
+
+/** Run the triggers set off by the change from `before` to `next` (mirrors fire_triggers). */
+function fireTriggers(before: Show, next: Show, now: number) {
+  for (const i of triggersDue(before, next, now)) {
+    const t = next.triggers[i]!;
+    t.lastFired = now;
+    if (t.steps.length) {
+      try {
+        apply(next, { type: 'runSteps', name: t.name, steps: structuredClone(t.steps) }, now);
+      } catch {
+        // A step that no longer fits (an input was removed): skipped.
+      }
+    }
+  }
 }

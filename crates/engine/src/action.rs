@@ -18,6 +18,7 @@ use crate::slideshow::Slideshow;
 use crate::split::Split;
 use crate::stage::{AtZero, MonitorLayout, TextSize, TimerFormat};
 use crate::text::TextInput;
+use crate::triggers::Trigger;
 use crate::visuals::{SceneRef, VisualsPatch};
 
 /// A new source as requested by the UI. The engine fills in and cleans up the
@@ -442,6 +443,16 @@ pub enum Action {
     RelinkMedia {
         from: String,
         to: String,
+    },
+
+    // ----- triggers -----
+    /// Replace the triggers.
+    SetTriggers {
+        triggers: Vec<Trigger>,
+    },
+    /// Run a trigger's steps now (to try it).
+    FireTrigger {
+        id: String,
     },
 
     // ----- web page -----

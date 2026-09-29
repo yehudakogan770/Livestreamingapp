@@ -16,6 +16,7 @@ import { CueBar, RunOfShowDialog } from './RunOfShow';
 import { LibraryDialog } from './LibraryDialog';
 import { VisualsPage } from './VisualsPage';
 import { LogoMaker } from './LogoMaker';
+import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
 import { CreditsCard, creditsTarget } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
@@ -63,6 +64,7 @@ export function ControlView({
   const [runOpen, setRunOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [visualsOpen, setVisualsOpen] = useState(false);
+  const [triggersOpen, setTriggersOpen] = useState(false);
   /** The 3D logo maker: the input being changed (null: a new one). */
   const [logoMaker, setLogoMaker] = useState<{ id: string | null } | null>(null);
   useCommands(
@@ -74,6 +76,7 @@ export function ControlView({
       else if (c.type === 'runOfShow') setRunOpen(true);
       else if (c.type === 'library') setLibraryOpen(true);
       else if (c.type === 'visuals') setVisualsOpen(true);
+      else if (c.type === 'triggers') setTriggersOpen(true);
       else if (c.type === 'logoMaker') setLogoMaker({ id: c.id ?? null });
     }, []),
   );
@@ -160,7 +163,8 @@ export function ControlView({
         }
         return;
       }
-      if (adding || outputsOpen || runOpen || libraryOpen || visualsOpen || logoMaker || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (adding || outputsOpen || runOpen || libraryOpen || visualsOpen || logoMaker || triggersOpen || typing(e.target) || e.ctrlKey || e.metaKey || e.altKey)
+        return;
       const sc = show.screens[screen];
       if (e.key === 'Enter' && screen !== 'monitor' && sc.preview !== null && sc.preview !== sc.program) {
         e.preventDefault();
@@ -181,8 +185,9 @@ export function ControlView({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [act, adding, outputsOpen, runOpen, libraryOpen, visualsOpen, logoMaker, screen, show]);
+  }, [act, adding, outputsOpen, runOpen, libraryOpen, visualsOpen, logoMaker, triggersOpen, screen, show]);
 
+  const work = useFitLayout();
   const sc = show.screens[screen];
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
   const name = SCREENS.find((s) => s.id === screen)?.name ?? '';
@@ -191,7 +196,7 @@ export function ControlView({
     <div className="control">
       <div className="control__main">
         <PresetsPanel show={show} client={client} act={act} />
-        <div className="control__work">
+        <div className="control__work" ref={work}>
           {screen === 'monitor' ? (
             <MonitorPanel show={show} act={act} />
           ) : (
@@ -200,45 +205,53 @@ export function ControlView({
                 <div className="mon__head">
                   <span className="dot dot--pvw" /> Next <em>{find(sc.preview)?.name ?? 'nothing lined up'}</em>
                 </div>
-                <div className="mon__screen">
-                  <PreviewView show={show} screen={screen} client={client} />
-                  {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+                <div className="mon__fit">
+                  <div className="mon__screen">
+                    <PreviewView show={show} screen={screen} client={client} />
+                    {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+                  </div>
                 </div>
                 <Transport source={find(sc.preview)} act={act} label="Next" />
               </div>
               <div className="centre">
                 <SwitchPanel show={show} screen={screen} act={act} />
-                {pesukimTarget(show, screen) ? (
-                  <PesukimCard show={show} act={act} screen={screen} client={client} />
-                ) : slideshowTarget(show, screen) ? (
-                  <SlideshowCard show={show} act={act} screen={screen} client={client} />
-                ) : creditsTarget(show, screen) ? (
-                  <CreditsCard show={show} act={act} screen={screen} />
-                ) : (
-                  <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
-                )}
+                <div className="centre__more">
+                  {pesukimTarget(show, screen) ? (
+                    <PesukimCard show={show} act={act} screen={screen} client={client} />
+                  ) : slideshowTarget(show, screen) ? (
+                    <SlideshowCard show={show} act={act} screen={screen} client={client} />
+                  ) : creditsTarget(show, screen) ? (
+                    <CreditsCard show={show} act={act} screen={screen} />
+                  ) : (
+                    <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
+                  )}
+                </div>
               </div>
               <div className="mon mon--pgm">
                 <div className="mon__head">
                   <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
                   <span className="mon__tag">{name.toUpperCase()}</span>
                 </div>
-                <div className="mon__screen">
-                  <ProgramView show={show} screen={screen} client={client} reportDuration />
-                  {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
-                  {(sc.blank || show.panic) && (
-                    <span className="mon__blanked">
-                      {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
-                      <small>
-                        {show.panic
-                          ? 'Click PANIC (bottom right) to bring the screens back'
-                          : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
-                      </small>
-                    </span>
-                  )}
+                <div className="mon__fit">
+                  <div className="mon__screen">
+                    <ProgramView show={show} screen={screen} client={client} reportDuration />
+                    {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
+                    {(sc.blank || show.panic) && (
+                      <span className="mon__blanked">
+                        {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
+                        <small>
+                          {show.panic
+                            ? 'Click PANIC (bottom right) to bring the screens back'
+                            : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
+                        </small>
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <Transport source={find(sc.program)} act={act} label="On air" />
-                <OverlayBar show={show} screen={screen} act={act} client={client} />
+                <div className="mon__foot">
+                  <Transport source={find(sc.program)} act={act} label="On air" />
+                  <OverlayBar show={show} screen={screen} act={act} client={client} />
+                </div>
               </div>
             </section>
           )}
@@ -339,6 +352,7 @@ export function ControlView({
           onClose={() => setLogoMaker(null)}
         />
       )}
+      {triggersOpen && <TriggersDialog show={show} act={act} onClose={() => setTriggersOpen(false)} />}
       {visualsOpen && <VisualsPage show={show} act={act} client={client} onClose={() => setVisualsOpen(false)} />}
       {libraryOpen && <LibraryDialog show={show} client={client} act={act} onClose={() => setLibraryOpen(false)} />}
       {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}
@@ -366,4 +380,59 @@ function PanicButton({ on, act }: { on: boolean; act: Act }) {
       {on ? 'PANIC ON · click to undo' : hint ? 'Double-click to confirm' : 'PANIC'}
     </button>
   );
+}
+
+/**
+ * Shares the height between the top (monitors, switch buttons and the card
+ * under them) and the inputs and mixer, from what they need: the top gets
+ * the larger of the monitors' natural height and the switch panel plus its
+ * card, never so much that the inputs lose their room. Re-measured when the
+ * window or what is shown changes.
+ */
+function useFitLayout() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const w = ref.current;
+    if (!w) return;
+    let last = '';
+    const measure = () => {
+      const H = w.clientHeight;
+      const W = w.clientWidth;
+      const centre = w.querySelector<HTMLElement>('.stage > .centre');
+      if (!centre) {
+        w.style.removeProperty('--stage-h');
+        return;
+      }
+      const sw = centre.querySelector<HTMLElement>('.switch');
+      const card = centre.querySelector<HTMLElement>('.centre__more > *');
+      const switchH = sw?.offsetHeight ?? 0;
+      const cardH = card ? card.scrollHeight : 0;
+      const col = sw?.offsetWidth || 262;
+      const monH = (centreW: number) => ((W - centreW - 48) / 2) * (9 / 16) + 86;
+      const inputsMin = Math.min(260, Math.max(150, H * 0.26));
+      const room = H - inputsMin;
+      // Stacked: the card under the switch buttons (bigger monitors).
+      const stacked = Math.max(monH(col), 20 + switchH + (cardH ? 10 + cardH : 0));
+      // Side by side: the card beside the switch buttons (shorter).
+      const side = Math.max(monH(col * 2 + 10), 20 + Math.max(switchH, cardH));
+      const useSide = cardH > 0 && stacked > room && side < stacked;
+      const h = Math.round(Math.max(120, Math.min(useSide ? side : stacked, room)));
+      const key = `${h}|${useSide}`;
+      if (key !== last) {
+        last = key;
+        w.style.setProperty('--stage-h', `${h}px`);
+        w.classList.toggle('is-side', useSide);
+      }
+    };
+    measure();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+    ro?.observe(w);
+    // Cards change (countdown, slides, pesukim…): check a few times a second.
+    const id = setInterval(measure, 400);
+    return () => {
+      ro?.disconnect();
+      clearInterval(id);
+    };
+  }, []);
+  return ref;
 }

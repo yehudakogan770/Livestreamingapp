@@ -1,9 +1,10 @@
-/* ---- overlay buttons under the On air picture ---- */
+/* ---- overlay buttons, beside the On air label ---- */
 .ovbar {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
+  margin-left: auto;
 }
 .ovbar__label {
   font-size: 10px;
@@ -11,24 +12,32 @@
   letter-spacing: 0.08em;
   color: var(--text-faint);
   text-transform: uppercase;
-  padding-right: 2px;
+  padding-right: 3px;
 }
 .ovbar__ch {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 150px;
   display: flex;
 }
 .ovbar__btn {
-  flex: 1;
-  min-width: 0;
-  height: 30px;
-  padding: 0 6px;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 7px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.ovbar__ch:not(.is-empty) .ovbar__btn {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
-  font-size: 12px;
+}
+.ovbar__ch.is-empty .ovbar__btn {
+  color: var(--text-faint);
+  border-style: dashed;
+  background: transparent;
 }
 .ovbar__btn b {
   font-family: var(--mono);
@@ -52,13 +61,13 @@
   border-color: var(--preview-bright);
 }
 .ovbar__edit {
-  width: 22px;
-  height: 30px;
+  width: 20px;
+  height: 24px;
   border: 1px solid var(--border);
   border-left: 0;
   border-radius: 0 var(--radius) var(--radius) 0;
   background: var(--button);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 /* ---- the editor ---- */

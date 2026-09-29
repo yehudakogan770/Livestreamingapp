@@ -291,6 +291,7 @@ export function emptyShow(): Show {
     run: emptyRun(),
     overlays: channels(),
     visuals: defaultVisuals(),
+    triggers: [],
     settings: {
       displays: { live: null, back: null, monitor: null },
       autoPlayOnTake: true,

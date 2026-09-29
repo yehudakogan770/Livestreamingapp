@@ -1805,3 +1805,181 @@ button.strip__name:hover {
   white-space: nowrap;
   font-size: 11px;
 }
+
+/* ---- one screen, everything visible, at any window size ----
+   The top gets the monitors' own height (from the window's width); the
+   switch buttons always show, and the card under them (countdown, slides…)
+   scrolls if there is no room. The inputs and mixer take the rest, never
+   less than --inputs-min. On short windows the monitors shrink instead. */
+.control__work {
+  container-type: size;
+  --inputs-min: clamp(150px, 24cqh, 260px);
+}
+.control__work > .stage {
+  /* Measured by useFitLayout. */
+  flex: 0 0 auto;
+  height: var(--stage-h, calc(100cqh - var(--inputs-min)));
+  grid-template-rows: minmax(0, 1fr);
+}
+.stage > .mon {
+  min-height: 0;
+  /* The monitor's own size decides how big the picture can be. */
+  container-type: size;
+}
+.mon__fit {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+}
+.mon__fit > .mon__screen {
+  /* Head, gaps and the line under the picture take about 64px. */
+  width: min(100cqw, calc((100cqh - 64px) * 16 / 9));
+  max-height: none;
+  flex: 0 0 auto;
+}
+.mon__foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 26px;
+}
+.mon__foot > :first-child {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.stage > .centre {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.centre__more {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  /* Never makes the top taller: it takes the room that is left. */
+  contain: size;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.centre__more:empty {
+  display: none;
+}
+.control__work > .inputs-area {
+  flex: 1 1 0;
+  min-height: var(--inputs-min);
+}
+
+/* Shorter windows (laptops): the same controls, a little smaller. */
+@container (max-height: 760px) {
+  .switch {
+    gap: 5px;
+  }
+  .switch__take {
+    height: 46px;
+    font-size: 17px;
+  }
+  .switch__cut {
+    height: 32px;
+  }
+  .switch .seg {
+    height: 26px;
+  }
+  .switch .seg--small {
+    height: 22px;
+  }
+  .switch .tbar__track {
+    height: 24px;
+  }
+  .switch__favedit {
+    height: 26px;
+  }
+  .switch .switch__ftb .btn,
+  .switch .switch__ftb select {
+    height: 28px;
+  }
+  .centre__more .btn {
+    height: 28px;
+  }
+}
+/* Narrow windows: a slimmer presets column, so the monitors keep their size. */
+@media (max-width: 1280px) {
+  .presets {
+    width: 168px;
+  }
+}
+
+/* Side by side: on short windows the card sits beside the switch buttons. */
+.control__work.is-side > .stage {
+  grid-template-columns: minmax(0, 1fr) 534px minmax(0, 1fr);
+}
+.control__work.is-side .stage > .centre {
+  flex-direction: row;
+  align-items: stretch;
+}
+.control__work.is-side .stage > .centre > .switch {
+  flex: 0 0 262px;
+  width: 262px;
+}
+.control__work.is-side .centre__more {
+  flex: 0 0 262px;
+  padding-top: 28px;
+}
+
+/* Short windows: the top and bottom bars and the input tiles a little smaller. */
+@media (max-height: 820px) {
+  .selector {
+    height: 48px;
+  }
+  .selector__tab {
+    height: 38px;
+  }
+  .bar {
+    height: 44px;
+  }
+  .bar .btn {
+    height: 30px;
+  }
+}
+@container (max-height: 640px) {
+  .control__work > .inputs-area {
+    padding: 4px 12px 6px;
+  }
+  .inputs {
+    grid-auto-rows: minmax(88px, auto);
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+  .tile__thumb {
+    min-height: 44px;
+  }
+  .tile__name {
+    padding-top: 4px;
+    font-size: 12px;
+  }
+  .tile__kind {
+    padding-bottom: 5px;
+  }
+}
+
+/* Narrow monitors: the label tag and the overlay buttons shrink and wrap
+   instead of spilling over the edge. */
+.stage .mon__head {
+  min-width: 0;
+}
+.stage .mon__tag {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mon__foot {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.mon__foot .ovbar {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}

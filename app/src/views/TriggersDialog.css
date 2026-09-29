@@ -1,0 +1,69 @@
+.modal__box.trg {
+  width: min(1100px, calc(100vw - 24px));
+  height: min(760px, calc(100vh - 24px));
+  max-height: none;
+}
+.trg__why {
+  margin-left: 12px;
+  flex: 1 1 auto;
+}
+.trg__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.4fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.trg__list,
+.trg__edit {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trg__edit {
+  border-left: 1px solid var(--border);
+}
+.trg__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.trg__item.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.trg__item.is-off {
+  opacity: 0.6;
+}
+.trg__item > button {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.trg__item em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trg__foot {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+}

@@ -11,6 +11,7 @@ import type { ScreenState } from "./ScreenState";
 import type { Settings } from "./Settings";
 import type { Source } from "./Source";
 import type { Transition } from "./Transition";
+import type { Trigger } from "./Trigger";
 import type { Visuals } from "./Visuals";
 
 /**
@@ -71,4 +72,8 @@ overlays: Array<Overlay>,
  * The stage visuals: tempo, scene and effects, drawn by every
  * Stage visuals input.
  */
-visuals: Visuals, settings: Settings, };
+visuals: Visuals, 
+/**
+ * "When this happens, do that."
+ */
+triggers: Array<Trigger>, settings: Settings, };

@@ -444,6 +444,9 @@ pub struct Show {
     /// Stage visuals input.
     #[serde(default)]
     pub visuals: crate::visuals::Visuals,
+    /// "When this happens, do that."
+    #[serde(default)]
+    pub triggers: Vec<crate::triggers::Trigger>,
     pub settings: Settings,
 }
 
@@ -472,6 +475,7 @@ impl Default for Show {
             run: crate::cues::RunOfShow::default(),
             overlays: crate::overlays::channels(),
             visuals: crate::visuals::Visuals::default(),
+            triggers: Vec::new(),
             settings: Settings::default(),
         }
     }

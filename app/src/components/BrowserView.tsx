@@ -74,6 +74,7 @@ function PageFrame({ page }: { page: BrowserInput }) {
     if (!box) return;
     const fit = () => setScale(Math.min(box.clientWidth / page.width, box.clientHeight / page.height) || 1);
     fit();
+    if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(fit);
     ro.observe(box);
     return () => ro.disconnect();

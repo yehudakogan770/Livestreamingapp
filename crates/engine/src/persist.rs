@@ -160,6 +160,10 @@ pub fn repair(mut s: Show) -> Show {
     repair_presets(&mut s);
     repair_stage(&mut s);
     s.visuals.repair();
+    s.triggers.truncate(crate::triggers::MAX_TRIGGERS);
+    for t in &mut s.triggers {
+        t.repair();
+    }
     let st = &mut s.settings;
     st.fade_to_black_ms = st.fade_to_black_ms.clamp(100, 10_000);
     if st.favourite_transitions.len() != 4 {
