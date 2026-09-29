@@ -132,6 +132,7 @@ function ControlApp() {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
       },
+      { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       null,
       ...TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) })),
     ];

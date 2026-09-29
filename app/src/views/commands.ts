@@ -10,7 +10,9 @@ export type Command =
   | { type: 'runOfShow' }
   | { type: 'library' }
   | { type: 'visuals' }
-  | { type: 'logoMaker'; id?: string } | { type: 'triggers' };
+  | { type: 'logoMaker'; id?: string }
+  | { type: 'triggers' }
+  | { type: 'midi' };
 
 const bus = new EventTarget();
 

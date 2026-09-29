@@ -1,0 +1,46 @@
+.modal__box.midi {
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+.midi__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+}
+.midi__group h3 {
+  margin: 4px 0;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.midi__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+.midi__row.is-learning {
+  background: var(--selected);
+  outline: 1px solid var(--accent);
+}
+.midi__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+}
+.midi__name em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.midi__key {
+  flex: 0 0 150px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}

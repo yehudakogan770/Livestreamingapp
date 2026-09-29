@@ -17,6 +17,7 @@ import { LibraryDialog } from './LibraryDialog';
 import { VisualsPage } from './VisualsPage';
 import { LogoMaker } from './LogoMaker';
 import { StingerDialog } from './StingerDialog';
+import { MidiDialog, useMidiControl } from './MidiDialog';
 import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
 import { snapshot, snapshotName } from '../broadcast/snapshot';
@@ -70,6 +71,7 @@ export function ControlView({
   /** The 3D logo maker: the input being changed (null: a new one). */
   const [logoMaker, setLogoMaker] = useState<{ id: string | null } | null>(null);
   const [stingers, setStingers] = useState(false);
+  const [midiOpen, setMidiOpen] = useState(false);
   useCommands(
     useCallback((c: Command) => {
       if (c.type === 'addInput') {
@@ -80,6 +82,7 @@ export function ControlView({
       else if (c.type === 'library') setLibraryOpen(true);
       else if (c.type === 'visuals') setVisualsOpen(true);
       else if (c.type === 'triggers') setTriggersOpen(true);
+      else if (c.type === 'midi') setMidiOpen(true);
       else if (c.type === 'logoMaker') setLogoMaker({ id: c.id ?? null });
     }, []),
   );
@@ -114,6 +117,7 @@ export function ControlView({
   }, []);
 
   const act: Act = useCallback((a: Action) => void client.dispatch(a).catch(fail), [client, fail]);
+  useMidiControl(show, screen, act);
 
   useEffect(() => client.watchOutputs(setOpen), [client]);
 
@@ -370,6 +374,7 @@ export function ControlView({
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
+      {midiOpen && <MidiDialog onClose={() => setMidiOpen(false)} />}
       {stingers && <StingerDialog show={show} act={act} client={client} onClose={() => setStingers(false)} />}
       {logoMaker && (
         <LogoMaker
