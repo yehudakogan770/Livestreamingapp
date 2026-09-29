@@ -361,7 +361,7 @@ everywhere · the audience never sees an error.
 Rule: **whatever any comparable app has, Lumora has too**, done more simply.
 Compared: vMix, OBS Studio, Wirecast, ProPresenter, StreamYard, Restream Studio,
 Streamlabs, Ecamm Live, Resolume, Blackmagic ATEM software, Zoom Events.
-✅ = in Lumora now · ⬜ = still to build (in this order).
+✅ = in Lumora now · 🔶 = partly there · ⬜ = still to build (in this order).
 
 ### Done
 ✅ Program / preview, TAKE, CUT, T-bar, 22 transitions (wipes and pushes every way, doors, circle, diamond,
@@ -372,31 +372,34 @@ zoom, blur, flash), 2 stingers with cut point, favourite transitions, Play now �
 ✅ Web page input · ✅ Stream inputs (SRT / RTMP / RTSP / HLS) · ✅ 3D logo maker ·
 ✅ Beat-synced stage visuals · ✅ Recording and multi-site streaming · ✅ Snapshot ·
 ✅ Audio mixer with buses, follow video, solo, delay · ✅ Presets, run of show, triggers ·
+✅ Screen capture (display or window) · ✅ Song lyrics with next lines on the stage monitor ·
+✅ Audience polls from phones · ✅ PTZ cameras (VISCA) · ✅ Branding kit · ✅ Sound filters (EQ, gate,
+compressor, noise removal) and a limiter on every mix · ✅ Sound from stream inputs ·
 ✅ Phone remote · ✅ Stream Deck / Companion web API and tally feed · ✅ MIDI learn for switching,
 inputs, overlays, cues and sound · ✅ Video playlists · ✅ Scoreboards with game clock ·
 ✅ 720p – 4K, 30 / 60 fps and vertical 9:16 output, bitrates to 40 Mbps · ✅ Library · ✅ Multiview · ✅ Keeps imported files · ✅ Crash-safe saving.
 
 ### To build (most important first)
-1. ⬜ **Sound from stream and web page inputs** into the mixer.
-2. ⬜ **Screen capture** — this computer's screens or one window (OBS, vMix).
+1. ✅ **Sound from stream and web page inputs** into the mixer.
+2. ✅ **Screen capture** — this computer's screens or one window (OBS, vMix).
 3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM).
 4. ⬜ **Guests by link** — up to 8 people join from a browser, with their own
    mix-minus (StreamYard, Restream, vMix Call, Ecamm).
 5. ⬜ **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs).
-6. ⬜ **Audio filters** — noise suppression, noise gate, compressor, limiter,
-   EQ per input, VST plugins (OBS, vMix).
+6. 🔶 **Audio filters** — noise suppression, noise gate, compressor, limiter,
+   EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter. ⬜ VST plugins.
 7. ⬜ **Instant replay** with slow motion and highlights reel (vMix, Wirecast).
 8. ⬜ **Virtual camera** and **NDI in / out** (OBS, vMix, Ecamm).
-9. ⬜ **Song lyrics and Bible library** with presentations, themes, stage display
-   of the next lines (ProPresenter).
+9. 🔶 **Song lyrics and Bible library** with presentations, themes, stage display
+   of the next lines (ProPresenter). Done: songs and next lines on the stage monitor. ⬜ A Bible library.
 10. ✅ **Video playlists / show loops** with auto-advance and shuffle (vMix, ProPresenter).
 11. ✅ **Stingers** (a video transition with a cut point) (vMix, OBS). ⬜ Luma wipes still to do.
 12. ✅ **Scoreboards and timers** (vMix, Wirecast). ⬜ Data from spreadsheets still to do.
 13. 🔶 **Animated title designer** with templates (vMix GT, Wirecast) — 6 designs and build-on done; a free-layout designer to come.
 14. ⬜ **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames).
 15. ⬜ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
-16. ⬜ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
-17. ⬜ **Audience polls and Q&A** shown on screen (Zoom Events, Restream).
+16. ✅ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
+17. 🔶 **Audience polls and Q&A** shown on screen (Zoom Events, Restream). Polls done; ⬜ Q&A.
 18. ✅ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
 19. ⬜ **Video delay per input** to line up cameras with sound (vMix).
-20. ⬜ **PTZ camera control** (vMix, ATEM).
+20. ✅ **PTZ camera control** (vMix, ATEM).
