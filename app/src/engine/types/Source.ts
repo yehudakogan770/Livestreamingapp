@@ -29,6 +29,10 @@ key: ChromaKey,
  */
 adjust: Adjust, 
 /**
+ * Playback speed of a video (None: normal). 0.25 – 2.
+ */
+speed?: number | null, 
+/**
  * A camera that can be moved over the network (PTZ).
  */
 ptz?: Ptz | null, 

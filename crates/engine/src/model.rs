@@ -337,6 +337,10 @@ pub struct Source {
     /// Light, colour, crop and effects (cameras, videos, pictures).
     #[serde(default)]
     pub adjust: crate::adjust::Adjust,
+    /// Playback speed of a video (None: normal). 0.25 – 2.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub speed: Option<f32>,
     /// A camera that can be moved over the network (PTZ).
     #[serde(default)]
     #[ts(optional = nullable)]

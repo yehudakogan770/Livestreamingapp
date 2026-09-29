@@ -7,6 +7,7 @@ import type { CaptureKind, CaptureRunning, CaptureSettings, EngineClient, Qualit
 import type { Show } from '../engine/types/Show';
 import type { SoundEngine } from '../audio/soundEngine';
 import { ProgramCompositor } from './compositor';
+import { ReplayBuffer, type Piece } from './replay';
 
 export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number; kbps: number }> = {
   '720p': { name: '720p (1280 × 720), 30 frames a second', width: 1280, height: 720, fps: 30, kbps: 3000 },
@@ -97,7 +98,7 @@ export class Broadcaster {
     } catch (e) {
       await this.client.captureStop(running.session);
       this.release(video, audio);
-      if (this.live.size === 0) this.run(0);
+      if (this.live.size === 0 && !this.replay) this.run(0);
       throw new Error(`The video encoder could not start: ${e instanceof Error ? e.message : String(e)}`);
     }
     const live: Live = {
@@ -135,7 +136,7 @@ export class Broadcaster {
     await live.sending;
     await this.client.captureStop(live.running.session).catch(() => {});
     this.release(live.video, live.audio);
-    if (this.live.size === 0) this.run(0);
+    if (this.live.size === 0 && !this.replay) this.run(0);
   }
 
   /** The app ended this session by itself (it failed): stop encoding for it. */
@@ -143,7 +144,51 @@ export class Broadcaster {
     if (this.live.get(kind)?.running.session === session) void this.stop(kind);
   }
 
+  // ---- instant replay ----
+
+  private replay: { buffer: ReplayBuffer; video: MediaStream; audio: MediaStream | null } | null = null;
+
+  get replaying(): boolean {
+    return this.replay !== null;
+  }
+
+  /** Keep the last minute of the Live Screen for replays. */
+  startReplay(): void {
+    if (this.replay) return;
+    if (!this.compositor) {
+      const q = QUALITIES['1080p'];
+      this.compositor = new ProgramCompositor(this.client, q.width, q.height);
+      if (this.show) this.compositor.setShow(this.show);
+    }
+    this.run(Math.max(30, this.fps));
+    const video = this.compositor.canvas.captureStream(30);
+    const audio = this.sound ? this.sound.mixStream('master') : null;
+    const stream = new MediaStream([...video.getVideoTracks(), ...(audio?.getAudioTracks() ?? [])]);
+    try {
+      this.replay = { buffer: new ReplayBuffer(stream), video, audio };
+    } catch (e) {
+      this.release(video, audio);
+      if (this.live.size === 0) this.run(0);
+      throw e;
+    }
+  }
+
+  stopReplay(): void {
+    const r = this.replay;
+    if (!r) return;
+    this.replay = null;
+    r.buffer.stop();
+    this.release(r.video, r.audio);
+    if (this.live.size === 0) this.run(0);
+  }
+
+  /** The last `seconds` as pieces (empty if replay is off). */
+  async takeReplay(seconds: number): Promise<Piece[]> {
+    return this.replay ? this.replay.buffer.take(seconds * 1000) : [];
+  }
+
   dispose(): void {
+    this.stopReplay();
     for (const kind of [...this.live.keys()]) void this.stop(kind);
     this.run(0);
     this.compositor?.dispose();

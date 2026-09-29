@@ -850,6 +850,18 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::SetSpeed { id, speed } => {
+            let speed = finite(speed, "speed")?.clamp(0.25, 2.0);
+            let src = video_mut(s, &id)?;
+            // Carry on from where it is now, at the new speed.
+            let pos = crate::timing::source_position(src, now);
+            if let SourceKind::Video { playback, .. } = &mut src.kind {
+                playback.pos_s = pos;
+                playback.at = now;
+            }
+            src.speed = ((speed - 1.0).abs() > 0.001).then_some(speed);
+            Ok(())
+        }
         Action::ReloadGuest { id } => {
             let src = s
                 .source_mut(&id)
@@ -2002,6 +2014,7 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         adjust: crate::adjust::Adjust::default(),
         playlist: None,
         ptz: None,
+        speed: None,
     };
     s.sources.push(src);
     Ok(())

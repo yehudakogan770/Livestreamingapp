@@ -121,3 +121,12 @@
   flex-direction: column;
   gap: 8px;
 }
+
+.bc-replay {
+  display: inline-flex;
+  gap: 4px;
+}
+.bc-replay .bc-btn.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}

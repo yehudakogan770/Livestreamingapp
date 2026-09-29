@@ -371,6 +371,38 @@ fn capture_stop(session: u64, state: State<'_, AppState>) {
     state.capture.stop(session);
 }
 
+/// Keep a replay piece (a few seconds of what was on air) with the app's files.
+#[tauri::command]
+fn save_replay(
+    request: tauri::ipc::Request<'_>,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let name = request
+        .headers()
+        .get("name")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("replay.webm");
+    // Only a plain file name, never a path.
+    let safe: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '.' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let dir = state.dir.join("replays");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("Could not keep the replay: {e}"))?;
+    let path = dir.join(safe.trim_start_matches('.'));
+    std::fs::write(&path, bytes).map_err(|e| format!("Could not keep the replay: {e}"))?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 /// Keep a slide picture (a PDF page, rendered by the control window) with
 /// the app's files. The bytes are the body; the file name a header. Returns
 /// the path to use.
@@ -718,6 +750,7 @@ pub fn run() {
             capture_chunk,
             capture_stop,
             save_slide,
+            save_replay,
             save_snapshot,
             keep_media,
             export_start,

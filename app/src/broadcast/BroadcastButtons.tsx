@@ -81,6 +81,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         <i className="bc-dot" />
         {live ? `LIVE ${liveTime}` : reconnecting ? 'Reconnecting…' : 'GO LIVE'}
       </button>
+      <ReplayButtons />
 
       {saved && (
         <div className="bc-saved" role="status">
@@ -132,5 +133,51 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         </div>
       )}
     </>
+  );
+}
+
+/** Instant replay: keep the last minute, then replay the last few seconds (slow motion or not). */
+function ReplayButtons() {
+  const b = useBroadcast();
+  const [slow, setSlow] = useState(true);
+  const [making, setMaking] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  if (!b) return null;
+  if (!b.replayOn)
+    return (
+      <button type="button" className="btn bc-btn" title="Keep the last minute of the Live Screen, ready to replay" onClick={() => b.setReplay(true)}>
+        ⟲ REPLAY
+      </button>
+    );
+  const make = (s: number) => {
+    setMaking(true);
+    setNote(null);
+    b.makeReplay(s, slow ? 0.5 : 1)
+      .then(() => setNote(`Replay of the last ${s}s is in Next — TAKE it.`))
+      .catch((e: unknown) => setNote(e instanceof Error ? e.message : String(e)))
+      .finally(() => {
+        setMaking(false);
+        setTimeout(() => setNote(null), 5000);
+      });
+  };
+  return (
+    <span className="bc-replay" role="group" aria-label="Instant replay">
+      {[5, 10, 20].map((s) => (
+        <button key={s} type="button" className="btn bc-btn" disabled={making} title={`Replay the last ${s} seconds (to Next)`} onClick={() => make(s)}>
+          ⟲ {s}s
+        </button>
+      ))}
+      <button type="button" className={`btn bc-btn${slow ? ' is-on' : ''}`} aria-pressed={slow} title="Slow motion (half speed)" onClick={() => setSlow(!slow)}>
+        ½×
+      </button>
+      <button type="button" className="btn bc-btn" title="Stop keeping replays" aria-label="Stop instant replay" onClick={() => b.setReplay(false)}>
+        ■
+      </button>
+      {note && (
+        <span className="bc-saved" role="status">
+          {note}
+        </span>
+      )}
+    </span>
   );
 }

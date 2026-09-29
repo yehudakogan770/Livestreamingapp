@@ -424,6 +424,14 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'setSpeed': {
+      const v = video(s, a.id);
+      const pos = sourcePosition(v, now);
+      v.kind.playback = { ...v.kind.playback, posS: pos, at: now };
+      const speed = Math.min(2, Math.max(0.25, finite(a.speed, 'speed')));
+      v.speed = Math.abs(speed - 1) > 0.001 ? speed : null;
+      return;
+    }
     case 'reloadGuest': {
       const src = find(s, a.id);
       if (src.kind.type !== 'guest') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a guest' });

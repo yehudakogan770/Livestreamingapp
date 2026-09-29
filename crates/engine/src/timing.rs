@@ -13,8 +13,9 @@ pub fn source_position(src: &Source, now: Millis) -> f64 {
     else {
         return 0.0;
     };
+    let speed = f64::from(src.speed.unwrap_or(1.0));
     let mut pos = if playback.playing {
-        playback.pos_s + now.saturating_sub(playback.at) as f64 / 1000.0
+        playback.pos_s + now.saturating_sub(playback.at) as f64 / 1000.0 * speed
     } else {
         playback.pos_s
     };
@@ -79,7 +80,23 @@ mod tests {
             adjust: crate::adjust::Adjust::default(),
             playlist: None,
             ptz: None,
+            speed: None,
         }
+    }
+
+    #[test]
+    fn slow_motion_moves_at_its_speed() {
+        let mut v = video(
+            30.0,
+            false,
+            Playback {
+                playing: true,
+                pos_s: 2.0,
+                at: 1_000,
+            },
+        );
+        v.speed = Some(0.5);
+        assert!((source_position(&v, 5_000) - 4.0).abs() < 1e-9);
     }
 
     #[test]

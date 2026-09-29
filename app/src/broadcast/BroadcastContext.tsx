@@ -18,6 +18,11 @@ interface Broadcast {
   reconnecting: { attempt: number; message: string } | null;
   /** Starting or stopping right now. */
   busy: Record<CaptureKind, boolean>;
+  /** Instant replay is keeping the last minute. */
+  replayOn: boolean;
+  setReplay(on: boolean): void;
+  /** Make a replay of the last `seconds` and line it up in Next. Resolves its input's id. */
+  makeReplay(seconds: number, speed: number): Promise<string>;
 }
 
 const Ctx = createContext<Broadcast | null>(null);
@@ -225,9 +230,57 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     [client],
   );
 
+  const [replayOn, setReplayOn] = useState(false);
+  const setReplay = useCallback(
+    (on: boolean) => {
+      if (!broadcaster) return;
+      try {
+        if (on) broadcaster.startReplay();
+        else broadcaster.stopReplay();
+        setReplayOn(broadcaster.replaying);
+      } catch (e) {
+        setStartError({ kind: 'record', message: e instanceof Error ? e.message : String(e) });
+      }
+    },
+    [broadcaster],
+  );
+  const makeReplay = useCallback(
+    async (seconds: number, speed: number) => {
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const pieces = await broadcaster.takeReplay(seconds);
+      if (!pieces.length) throw new Error('Nothing to replay yet: wait a few seconds.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await Promise.all(
+        pieces.map(async (p, i) => ({
+          path: await client.saveReplay(p.blob, `replay-${tag}-${i + 1}.webm`),
+          name: `Replay ${stamp} (${i + 1})`,
+          durationS: (p.end - p.start) / 1000,
+        })),
+      );
+      const id = `replay-${tag}`;
+      const first = items[0]!;
+      await client.dispatch({
+        type: 'addSource',
+        source: {
+          id,
+          name: `Replay ${stamp}`,
+          kind: { type: 'video', path: first.path, durationS: first.durationS, playback: { playing: false, posS: 0, at: 0 } },
+          // Slow-motion sound is rarely wanted: the replay starts muted.
+          muted: speed !== 1,
+        },
+      });
+      await client.dispatch({ type: 'setPlaylist', id, playlist: { items, current: 0, autoNext: true, loopAll: false } });
+      if (speed !== 1) await client.dispatch({ type: 'setSpeed', id, speed });
+      await client.dispatch({ type: 'setPreview', screen: 'live', sourceId: id });
+      return id;
+    },
+    [broadcaster, client],
+  );
+
   const value = useMemo<Broadcast>(
-    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy }),
-    [status, settings, saveSettings, start, stop, reconnecting, busy],
+    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay }),
+    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

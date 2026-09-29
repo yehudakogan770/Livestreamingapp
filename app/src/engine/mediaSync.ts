@@ -20,6 +20,7 @@ export function syncMedia(el: HTMLMediaElement, src: Source, now: number): void 
     return;
   }
   if (el.paused) void el.play().catch(() => {});
+  const speed = src.speed ?? 1;
   let drift = want - el.currentTime;
   // Across the loop point, measure the short way round.
   if (src.looping && durationS > 0) {
@@ -28,10 +29,10 @@ export function syncMedia(el: HTMLMediaElement, src: Source, now: number): void 
   }
   if (Math.abs(drift) > 0.5) {
     el.currentTime = want;
-    el.playbackRate = 1;
+    el.playbackRate = speed;
   } else if (Math.abs(drift) > 0.03) {
-    el.playbackRate = 1 + Math.max(-0.08, Math.min(0.08, drift * 0.8));
+    el.playbackRate = speed * (1 + Math.max(-0.08, Math.min(0.08, drift * 0.8)));
   } else {
-    el.playbackRate = 1;
+    el.playbackRate = speed;
   }
 }

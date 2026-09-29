@@ -17,7 +17,8 @@ export const FLASH_MS = 2400;
 export function sourcePosition(src: Source, now: number): number {
   if (src.kind.type !== 'video') return 0;
   const { durationS, playback } = src.kind;
-  let pos = playback.playing ? playback.posS + Math.max(0, now - playback.at) / 1000 : playback.posS;
+  const speed = src.speed ?? 1;
+  let pos = playback.playing ? playback.posS + (Math.max(0, now - playback.at) / 1000) * speed : playback.posS;
   if (durationS > 0) {
     pos = src.looping ? ((pos % durationS) + durationS) % durationS : Math.min(pos, durationS);
   }

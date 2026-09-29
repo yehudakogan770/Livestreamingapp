@@ -202,6 +202,8 @@ export interface EngineClient {
   saveSlide(png: Blob, name: string): Promise<string>;
   /** Keep a snapshot picture (in the Snapshots folder next to the recordings); resolves where. */
   saveSnapshot(png: Blob, name: string): Promise<string>;
+  /** Keep a replay piece with the app's files; resolves its path. */
+  saveReplay(video: Blob, name: string): Promise<string>;
 
   // ----- library (kept on this computer) -----
   libraryItems(): Promise<LibraryItem[]>;
@@ -554,6 +556,14 @@ class TauriClient implements EngineClient {
   async saveSnapshot(png: Blob, name: string): Promise<string> {
     try {
       return await invoke<string>('save_snapshot', new Uint8Array(await png.arrayBuffer()), { headers: { name } });
+    } catch (e) {
+      throw new Error(String(e));
+    }
+  }
+
+  async saveReplay(video: Blob, name: string): Promise<string> {
+    try {
+      return await invoke<string>('save_replay', new Uint8Array(await video.arrayBuffer()), { headers: { name } });
     } catch (e) {
       throw new Error(String(e));
     }
@@ -915,6 +925,11 @@ export class DemoClient implements EngineClient {
       /* private browsing: kept until the page closes */
     }
     return Promise.resolve();
+  }
+
+  saveReplay(video: Blob): Promise<string> {
+    // In a browser the replay lives in memory.
+    return Promise.resolve(URL.createObjectURL(video));
   }
 
   saveSnapshot(png: Blob, name: string): Promise<string> {

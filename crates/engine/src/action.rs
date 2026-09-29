@@ -242,6 +242,11 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Play a video faster or slower (0.25 – 2; 1 is normal).
+    SetSpeed {
+        id: SourceId,
+        speed: f32,
+    },
     /// Reload a guest's picture (if it froze or they rejoined).
     ReloadGuest {
         id: SourceId,
