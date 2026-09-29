@@ -6,6 +6,7 @@ mod control;
 mod desktop;
 mod events;
 mod export;
+mod iso;
 mod library;
 mod media;
 mod outputs;
@@ -45,6 +46,7 @@ struct AppState {
     browsers: browser::Browsers,
     streams: streams::Streams,
     desktop: desktop::Desktop,
+    isos: iso::Isos,
     ffmpeg: Option<std::path::PathBuf>,
 }
 
@@ -369,6 +371,51 @@ fn capture_chunk(
 #[tauri::command]
 fn capture_stop(session: u64, state: State<'_, AppState>) {
     state.capture.stop(session);
+}
+
+/// Start recording a camera to its own file (ISO), next to the recording.
+#[tauri::command]
+fn iso_start(
+    recording: String,
+    camera: String,
+    ext: String,
+    state: State<'_, AppState>,
+) -> Result<(u64, String), String> {
+    state
+        .isos
+        .start(&state.capture.folder(), &recording, &camera, &ext)
+        .map(|(id, p)| (id, p.to_string_lossy().into_owned()))
+}
+
+/// More of a camera's recording: the bytes are the body, the id a header.
+#[tauri::command]
+fn iso_chunk(request: tauri::ipc::Request<'_>, state: State<'_, AppState>) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let id = request
+        .headers()
+        .get("id")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse().ok())
+        .ok_or("no id")?;
+    state.isos.chunk(id, bytes)
+}
+
+#[tauri::command]
+fn iso_stop(id: u64, state: State<'_, AppState>) {
+    state.isos.stop(id);
+}
+
+/// Save the chapter list (what was on air when) next to the recording.
+#[tauri::command]
+fn save_chapters(
+    recording: String,
+    text: String,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    iso::save_chapters(&state.capture.folder(), &recording, &text)
+        .map(|p| p.to_string_lossy().into_owned())
 }
 
 /// Keep a replay piece (a few seconds of what was on air) with the app's files.
@@ -716,6 +763,7 @@ pub fn run() {
                 browsers,
                 streams,
                 desktop,
+                isos: iso::Isos::default(),
                 ffmpeg,
             });
             heartbeat(app.handle().clone());
@@ -751,6 +799,10 @@ pub fn run() {
             capture_stop,
             save_slide,
             save_replay,
+            iso_start,
+            iso_chunk,
+            iso_stop,
+            save_chapters,
             save_snapshot,
             keep_media,
             export_start,

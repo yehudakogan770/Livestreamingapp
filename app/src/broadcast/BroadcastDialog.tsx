@@ -143,6 +143,14 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                 <option value="recording">The Recording mix (mix B in the mixer)</option>
               </select>
             </label>
+            <label className="check">
+              <input type="checkbox" checked={draft.iso ?? false} onChange={(e) => set({ iso: e.target.checked })} /> Also record each camera to its own file
+              (for editing afterwards)
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={draft.chapters ?? true} onChange={(e) => set({ chapters: e.target.checked })} /> Save a chapter list with each
+              recording (what was on air when — paste it into the YouTube description)
+            </label>
             {b.status.lastRecording && !b.status.lastRecording.startsWith('blob:') && (
               <p className="field__note">
                 Last recording: <span className="bcd__path">{b.status.lastRecording}</span>

@@ -123,6 +123,10 @@ pub struct CaptureSettings {
     /// Sound bitrate in kbit/s.
     pub audio_kbps: u32,
     pub record_mix: RecordMix,
+    /// Also record each camera to its own file.
+    pub iso: bool,
+    /// Save a chapter list (what was on air when) with each recording.
+    pub chapters: bool,
     pub destinations: Vec<Destination>,
 }
 
@@ -134,6 +138,8 @@ impl Default for CaptureSettings {
             video_kbps: 6000,
             audio_kbps: 160,
             record_mix: RecordMix::Stream,
+            iso: false,
+            chapters: true,
             destinations: Vec::new(),
         }
     }

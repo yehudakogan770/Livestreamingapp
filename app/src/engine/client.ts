@@ -112,6 +112,10 @@ export interface CaptureSettings {
   audioKbps: number;
   /** Which mix a recording hears: the same as the stream, or mix B. */
   recordMix: 'stream' | 'recording';
+  /** Also record each camera to its own file. */
+  iso: boolean;
+  /** Save a chapter list with each recording. */
+  chapters: boolean;
   destinations: Destination[];
 }
 
@@ -137,7 +141,7 @@ export interface CaptureStatus {
 }
 
 export function defaultCaptureSettings(): CaptureSettings {
-  return { folder: null, quality: '1080p', videoKbps: 6000, audioKbps: 160, recordMix: 'stream', destinations: [] };
+  return { folder: null, quality: '1080p', videoKbps: 6000, audioKbps: 160, recordMix: 'stream', iso: false, chapters: true, destinations: [] };
 }
 
 export interface EngineClient {
@@ -202,6 +206,12 @@ export interface EngineClient {
   saveSlide(png: Blob, name: string): Promise<string>;
   /** Keep a snapshot picture (in the Snapshots folder next to the recordings); resolves where. */
   saveSnapshot(png: Blob, name: string): Promise<string>;
+  /** Start a camera's own file next to the recording (null where that isn't possible). */
+  isoStart(recording: string, camera: string, ext: 'mkv' | 'webm'): Promise<number | null>;
+  isoChunk(id: number, bytes: ArrayBuffer): Promise<void>;
+  isoStop(id: number): Promise<void>;
+  /** Save the chapter list next to the recording (null where that isn't possible). */
+  saveChapters(recording: string, text: string): Promise<string | null>;
   /** Keep a replay piece with the app's files; resolves its path. */
   saveReplay(video: Blob, name: string): Promise<string>;
 
@@ -559,6 +569,23 @@ class TauriClient implements EngineClient {
     } catch (e) {
       throw new Error(String(e));
     }
+  }
+
+  async isoStart(recording: string, camera: string, ext: 'mkv' | 'webm'): Promise<number | null> {
+    const [id] = await invoke<[number, string]>('iso_start', { recording, camera, ext });
+    return id;
+  }
+
+  isoChunk(id: number, bytes: ArrayBuffer): Promise<void> {
+    return invoke('iso_chunk', new Uint8Array(bytes), { headers: { id: String(id) } });
+  }
+
+  isoStop(id: number): Promise<void> {
+    return invoke('iso_stop', { id });
+  }
+
+  saveChapters(recording: string, text: string): Promise<string | null> {
+    return invoke<string>('save_chapters', { recording, text });
   }
 
   async saveReplay(video: Blob, name: string): Promise<string> {
@@ -925,6 +952,23 @@ export class DemoClient implements EngineClient {
       /* private browsing: kept until the page closes */
     }
     return Promise.resolve();
+  }
+
+  isoStart(): Promise<number | null> {
+    // A browser can only save the one recording.
+    return Promise.resolve(null);
+  }
+
+  isoChunk(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  isoStop(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  saveChapters(): Promise<string | null> {
+    return Promise.resolve(null);
   }
 
   saveReplay(video: Blob): Promise<string> {
