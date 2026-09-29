@@ -404,7 +404,9 @@ inputs (the page itself), stream inputs from internet addresses, and streaming o
 14. 🔶 **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames). Stats done (processor, memory, frames, dropped, data rates); ⬜ GPU, per-output size.
 15. ✅ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
 16. ✅ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
-17. 🔶 **Audience polls and Q&A** shown on screen (Zoom Events, Restream). Polls done; ⬜ Q&A.
+17. ✅ **Audience polls and Q&A** shown on screen (Zoom Events, Restream).
 18. ✅ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
 19. ⬜ **Video delay per input** to line up cameras with sound (vMix).
 20. ✅ **PTZ camera control** (vMix, ATEM).
+21. ✅ **Raffles** — entries from phones or typed in, the draw on screen with the winner revealed.
+22. ✅ **Fundraisers** — goal, total and donors on screen, pledges from phones (no payments taken).
