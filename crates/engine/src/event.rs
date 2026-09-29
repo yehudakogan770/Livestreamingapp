@@ -34,6 +34,47 @@ pub struct EventInfo {
     pub set_up: bool,
     /// The event's look: colours and font for every title.
     pub brand: Brand,
+    /// The guests' Wi-Fi, shown as a code to join it next to the audience page's code.
+    pub wifi: GuestWifi,
+}
+
+/// A Wi-Fi network guests join by scanning a code (for halls where the
+/// audience page is only on the local network).
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct GuestWifi {
+    pub name: String,
+    pub password: String,
+    /// The code phones scan to join (SVG), made by the app.
+    pub qr: String,
+    /// Show it on screen before the audience page's code.
+    pub show: bool,
+}
+
+impl GuestWifi {
+    #[must_use]
+    pub fn cleaned(mut self) -> Self {
+        self.name = self
+            .name
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(32)
+            .collect();
+        self.password = self
+            .password
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(63)
+            .collect();
+        if self.name.trim().is_empty()
+            || self.qr.len() > 200_000
+            || !self.qr.trim_start().starts_with("<svg")
+        {
+            self.qr.clear();
+        }
+        self
+    }
 }
 
 /// The event's look, applied to all titles, songs and scoreboards at once.
@@ -124,4 +165,7 @@ pub struct EventPatch {
     #[serde(default)]
     #[ts(optional)]
     pub set_up: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub wifi: Option<GuestWifi>,
 }

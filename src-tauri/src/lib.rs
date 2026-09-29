@@ -15,6 +15,7 @@ mod ptz;
 mod remote;
 mod store;
 mod streams;
+mod tunnel;
 
 /// The same browser settings for every Lumora window (Windows needs them to
 /// match): sound and video may play without a click first — the screens,
@@ -264,6 +265,24 @@ fn remote_status(state: State<'_, AppState>) -> remote::RemoteStatus {
 #[tauri::command]
 fn set_remote(on: bool, state: State<'_, AppState>, app: tauri::AppHandle) -> remote::RemoteStatus {
     let status = state.remote.set_enabled(on);
+    let _ = app.emit("remote-changed", &status);
+    status
+}
+
+/// A QR code (SVG) for some text: the guests' Wi-Fi, a link.
+#[tauri::command]
+fn qr_code(text: String) -> String {
+    remote::qr_svg(&text)
+}
+
+/// Put the audience page on the internet, for phones on any network (or take it off).
+#[tauri::command]
+fn set_audience_internet(
+    on: bool,
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> remote::RemoteStatus {
+    let status = state.remote.set_internet(on);
     let _ = app.emit("remote-changed", &status);
     status
 }
@@ -799,6 +818,8 @@ pub fn run() {
             remote_status,
             set_remote,
             new_remote_pin,
+            set_audience_internet,
+            qr_code,
             capture_status,
             capture_settings,
             set_capture_settings,

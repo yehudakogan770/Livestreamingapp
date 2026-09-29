@@ -14,6 +14,7 @@ const on: RemoteStatus = {
   ],
   phones: 2,
   error: null,
+  internet: { on: false, phase: 'off', voteUrl: null, voteQr: null, error: null },
 };
 
 describe('Phone remote dialog', () => {

@@ -1358,6 +1358,9 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             if let Some(v) = patch.set_up {
                 ev.set_up = v;
             }
+            if let Some(w) = patch.wifi {
+                ev.wifi = w.cleaned();
+            }
             Ok(())
         }
         Action::UpdateMonitor { patch } => {

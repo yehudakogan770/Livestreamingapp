@@ -894,6 +894,22 @@ function apply(s: Show, a: Action, now: number) {
       if (p.onFailure !== undefined) ev.onFailure = p.onFailure;
       if (p.panicShows !== undefined) ev.panicShows = p.panicShows;
       if (p.setUp !== undefined) ev.setUp = p.setUp;
+      if (p.wifi !== undefined) {
+        const w = p.wifi;
+        const name = [...w.name]
+          .filter((c) => c >= ' ')
+          .slice(0, 32)
+          .join('');
+        ev.wifi = {
+          name,
+          password: [...w.password]
+            .filter((c) => c >= ' ')
+            .slice(0, 63)
+            .join(''),
+          qr: name.trim() && w.qr.trim().startsWith('<svg') ? w.qr : '',
+          show: w.show,
+        };
+      }
       return;
     }
     case 'updateMonitor': {

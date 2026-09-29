@@ -6,6 +6,8 @@ import { useEffect, useRef } from 'react';
 import { approved, cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { useNow } from '../engine/useNow';
+import { useStage } from '../engine/CountdownContext';
+import { joinShown, takesTurns } from '../engine/join';
 import './AudienceViews.css';
 
 /** Confetti over the whole frame (the recorder draws the same pieces). */
@@ -31,11 +33,14 @@ function Confetti({ t }: { t: number }) {
 }
 
 function Join({ url, qr, label }: { url: string; qr: string; label: string }) {
+  const wifi = useStage()?.event.wifi;
+  const now = useNow(false, takesTurns(url, wifi) ? 1000 : 60_000);
+  const j = joinShown(url, qr, label, wifi, now);
   return (
     <div className="aud__join">
-      <div className="aud__qr" dangerouslySetInnerHTML={{ __html: qr }} />
-      <span>{label}</span>
-      <small>{url.replace(/^http:\/\//, '')}</small>
+      <div className="aud__qr" dangerouslySetInnerHTML={{ __html: j.qr }} />
+      <span>{j.label}</span>
+      <small>{j.sub}</small>
     </div>
   );
 }

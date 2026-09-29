@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import type { EngineClient, RemoteStatus } from '../engine/client';
+import type { EngineClient } from '../engine/client';
+import { JoinSetup, useAudienceLink } from './JoinSetup';
+import './AudienceCards.css';
 import type { Poll } from '../engine/types/Poll';
 import type { Source } from '../engine/types/Source';
 import { PollView } from '../components/PollView';
@@ -10,19 +12,13 @@ import './LyricsCard.css';
 export function PollCard({ source, act, client, onClose }: { source: Source; act: Act; client: EngineClient; onClose: () => void }) {
   const live = source.kind.type === 'poll' ? source.kind : null;
   const [draft, setDraft] = useState<Poll | null>(() => (live ? structuredClone(live) : null));
-  const [remote, setRemote] = useState<RemoteStatus | null>(null);
-  useEffect(() => client.watchRemote(setRemote), [client]);
+  // Keep the code on screen pointing at the current address.
+  const { remote } = useAudienceLink(client, live, (joinUrl, joinQr) => live && act({ type: 'updatePoll', id: source.id, poll: { ...live, joinUrl, joinQr } }));
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [onClose]);
-  // Keep the code on screen pointing at this computer's current address.
-  const address = remote?.running ? remote.addresses[0] : undefined;
-  useEffect(() => {
-    if (!live || !address || (live.joinUrl === address.voteUrl && live.joinQr === address.voteQr)) return;
-    act({ type: 'updatePoll', id: source.id, poll: { ...live, joinUrl: address.voteUrl, joinQr: address.voteQr } });
-  }, [address?.voteUrl]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!live || !draft) return null;
 
   const id = source.id;
@@ -67,18 +63,10 @@ export function PollCard({ source, act, client, onClose }: { source: Source; act
                 Show the code to scan
               </label>
             </div>
-            {!remote?.running ? (
-              <p className="field__note field__note--warn">
-                Phones vote through the phone remote, which is off.{' '}
-                <button type="button" className="btn btn--small" onClick={() => void client.setRemote(true)}>
-                  Turn it on
-                </button>
-              </p>
-            ) : (
-              <p className="field__note">
-                Phones on this network vote at <b>{address?.voteUrl}</b> — no PIN needed. {total} {total === 1 ? 'vote' : 'votes'} so far.
-              </p>
-            )}
+            <p className="field__note">
+              {total} {total === 1 ? 'vote' : 'votes'} so far.
+            </p>
+            <JoinSetup remote={remote} what="vote" client={client} act={act} />
           </section>
           <section className="lyc__edit" aria-label="Question">
             <label className="field">

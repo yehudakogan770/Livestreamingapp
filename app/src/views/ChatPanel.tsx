@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { audienceAddress } from './JoinSetup';
 import type { Show } from '../engine/types/Show';
 import { chat, useChat, type ChatMessage } from '../engine/chat';
 import type { Act } from './act';
@@ -203,7 +204,7 @@ function Questions({ show, act, card, remote, onRemote }: { show: Show; act: Act
           Clear all
         </button>
       </div>
-      {!remote?.running ? (
+      {!audienceAddress(remote) ? (
         <p className="field__note field__note--warn">
           Phones send questions through the phone remote, which is off.{' '}
           <button type="button" className="btn btn--small" onClick={onRemote}>
@@ -212,7 +213,7 @@ function Questions({ show, act, card, remote, onRemote }: { show: Show; act: Act
         </p>
       ) : (
         <p className="field__note">
-          People send questions at <b>{remote.addresses[0]?.voteUrl}</b> (the same page as polls; show its code with a poll input).
+          People send questions at <b>{audienceAddress(remote)?.voteUrl}</b> (the same page as polls; show its code with a poll input).
         </p>
       )}
       {!card && <p className="field__note field__note--warn">Make a chat comments input (Live chat tab) to show questions on screen.</p>}

@@ -59,6 +59,8 @@ pub trait Backend: Send + Sync + 'static {
 pub struct RemoteConfig {
     pub enabled: bool,
     pub pin: String,
+    /// The audience page is also on the internet.
+    pub internet: bool,
 }
 
 impl Default for RemoteConfig {
@@ -66,6 +68,7 @@ impl Default for RemoteConfig {
         RemoteConfig {
             enabled: false,
             pin: new_pin(),
+            internet: false,
         }
     }
 }
@@ -94,6 +97,21 @@ pub struct RemoteStatus {
     pub addresses: Vec<RemoteAddress>,
     pub phones: usize,
     /// Why it could not start.
+    pub error: Option<String>,
+    /// The audience page on the internet.
+    pub internet: InternetStatus,
+}
+
+/// The audience page's internet address (for phones on any network).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InternetStatus {
+    /// Switched on (it may still be connecting).
+    pub on: bool,
+    pub phase: crate::tunnel::Phase,
+    /// The audience page's address and its QR code, once connected.
+    pub vote_url: Option<String>,
+    pub vote_qr: Option<String>,
     pub error: Option<String>,
 }
 
@@ -245,6 +263,9 @@ pub struct Remote {
     running: Mutex<Option<Running>>,
     error: Mutex<Option<String>>,
     first_port: u16,
+    /// The audience-only server the internet link leads to.
+    public: Mutex<Option<Running>>,
+    tunnel: Arc<crate::tunnel::Tunnel>,
 }
 
 impl Remote {
@@ -270,10 +291,15 @@ impl Remote {
             running: Mutex::new(None),
             error: Mutex::new(None),
             first_port,
+            public: Mutex::new(None),
+            tunnel: Arc::default(),
         };
         remote.save();
         if lock(&remote.config).enabled {
             remote.start();
+        }
+        if lock(&remote.config).internet {
+            remote.set_internet(true);
         }
         remote
     }
@@ -289,7 +315,59 @@ impl Remote {
             addresses: port.map(addresses).unwrap_or_default(),
             phones: self.shared.phone_count(),
             error: lock(&self.error).clone(),
+            internet: self.internet(config.internet),
         }
+    }
+
+    fn internet(&self, on: bool) -> InternetStatus {
+        let t = self.tunnel.state();
+        let vote_url = t.url.map(|u| format!("{u}/vote"));
+        InternetStatus {
+            on,
+            phase: t.phase,
+            vote_qr: vote_url.as_deref().map(qr_svg),
+            vote_url,
+            error: t.error,
+        }
+    }
+
+    /// Put the audience page on the internet (or take it off).
+    pub fn set_internet(&self, on: bool) -> RemoteStatus {
+        lock(&self.config).internet = on;
+        self.save();
+        if on {
+            let mut public = lock(&self.public);
+            if public.is_none() {
+                // Only this computer can reach it; the tunnel takes it to the internet.
+                match Server::http(("127.0.0.1", 0)) {
+                    Ok(server) => {
+                        let server = Arc::new(server);
+                        let port = server.server_addr().to_ip().map_or(0, |a| a.port());
+                        serve_as(Arc::clone(&server), Arc::clone(&self.shared), true);
+                        *public = Some(Running { server, port });
+                    }
+                    Err(e) => {
+                        *lock(&self.error) =
+                            Some(format!("The internet link could not start: {e}"));
+                        return self.status();
+                    }
+                }
+            }
+            let port = public.as_ref().map_or(0, |r| r.port);
+            drop(public);
+            let shared = Arc::clone(&self.shared);
+            self.tunnel.start(
+                self.dir.clone(),
+                port,
+                Arc::new(move || shared.backend.phones_changed()),
+            );
+        } else {
+            self.tunnel.stop();
+            if let Some(Running { server, .. }) = lock(&self.public).take() {
+                server.unblock();
+            }
+        }
+        self.status()
     }
 
     /// Switch the remote on or off.
@@ -387,6 +465,10 @@ impl Remote {
 
 impl Drop for Remote {
     fn drop(&mut self) {
+        self.tunnel.stop();
+        if let Some(Running { server, .. }) = lock(&self.public).take() {
+            server.unblock();
+        }
         self.stop();
     }
 }
@@ -423,7 +505,7 @@ fn addresses(port: u16) -> Vec<RemoteAddress> {
         .collect()
 }
 
-fn qr_svg(text: &str) -> String {
+pub fn qr_svg(text: &str) -> String {
     qrcode::QrCode::new(text.as_bytes())
         .map(|code| {
             code.render::<qrcode::render::svg::Color>()
@@ -452,6 +534,11 @@ fn show_event(snapshot: &str) -> String {
 // The web server
 
 fn serve(server: Arc<Server>, shared: Arc<Shared>) {
+    serve_as(server, shared, false);
+}
+
+/// `public`: the internet link's server, which answers only the audience page.
+fn serve_as(server: Arc<Server>, shared: Arc<Shared>, public: bool) {
     let pinger = Arc::downgrade(&server);
     let pinger_shared = Arc::clone(&shared);
     std::thread::Builder::new()
@@ -472,7 +559,16 @@ fn serve(server: Arc<Server>, shared: Arc<Shared>) {
                 // Each request on its own thread: a phone's live updates never end.
                 let _ = std::thread::Builder::new()
                     .name("lumora-remote-request".into())
-                    .spawn(move || handle(&shared, request));
+                    .spawn(move || {
+                        let path = request.url().split('?').next().unwrap_or_default();
+                        if public && path == "/" {
+                            respond(request, 200, "text/html; charset=utf-8", VOTE_PAGE);
+                        } else if public && !audience_path(path) {
+                            respond(request, 404, "text/plain; charset=utf-8", "Not found");
+                        } else {
+                            handle(&shared, request);
+                        }
+                    });
             }
         })
         .ok();
@@ -492,6 +588,21 @@ fn respond(request: Request, status: u16, content_type: &str, body: &str) {
 
 fn json(request: Request, status: u16, body: &str) {
     respond(request, status, "application/json; charset=utf-8", body);
+}
+
+/// What the audience may open (all the internet link answers).
+fn audience_path(path: &str) -> bool {
+    matches!(
+        path,
+        "/vote"
+            | "/api/polls"
+            | "/api/audience"
+            | "/api/vote"
+            | "/api/ask"
+            | "/api/raffle"
+            | "/api/pledge"
+            | "/api/message"
+    )
 }
 
 fn handle(shared: &Shared, mut request: Request) {
@@ -1201,6 +1312,35 @@ mod tests {
         assert!(saved.ends_with(".jpg"));
         assert_eq!(std::fs::read(&saved).unwrap(), jpeg);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn the_internet_link_answers_only_the_audience_page() {
+        let (r, _) = remote();
+        r.set_enabled(true);
+        let st = r.set_internet(true);
+        assert!(st.internet.on);
+        let port = lock(&r.public).as_ref().unwrap().port;
+        let (code, page) = request(port, "GET", "/", "", "");
+        assert_eq!(code, 200);
+        assert!(
+            page.contains("Join in"),
+            "the audience page, not the operator's"
+        );
+        assert_eq!(request(port, "GET", "/api/audience", "", "").0, 200);
+        let pin = st.pin;
+        for path in [
+            "/index.html",
+            "/remote.js",
+            "/api/show",
+            "/api/tally",
+            "/api/do/cut",
+        ] {
+            assert_eq!(request(port, "GET", path, &pin, "").0, 404, "{path}");
+        }
+        assert_eq!(request(port, "POST", "/api/action", &pin, "{}").0, 404);
+        assert!(!r.set_internet(false).internet.on);
+        assert!(lock(&r.public).is_none());
     }
 
     #[test]

@@ -85,3 +85,32 @@
   flex-direction: column;
   gap: 8px;
 }
+.join {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.join__row,
+.join__wifirow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+.join__wifirow .text {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.join__phase {
+  font-size: 12px;
+  color: #f2b233;
+}
+.join__wifi summary {
+  cursor: pointer;
+  font-size: 13px;
+}
+.join__wifi[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

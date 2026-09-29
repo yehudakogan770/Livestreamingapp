@@ -32,6 +32,7 @@ import type { Wall } from '../engine/types/Wall';
 import { cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { shares } from '../engine/poll';
+import { joinShown } from '../engine/join';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
@@ -258,7 +259,8 @@ export class ProgramCompositor {
     g.addColorStop(1, '#07080b');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
-    const join = p.showJoin && p.open && p.joinQr ? this.qr(p.joinQr) : null;
+    const shown = joinShown(p.joinUrl, p.joinQr, 'Scan to vote', this.show?.event.wifi, Date.now());
+    const join = p.showJoin && p.open && p.joinQr ? this.qr(shown.qr) : null;
     const left = 7 * u;
     const qrW = join ? 34 * u : 0;
     const right = w - 7 * u - (join ? qrW + 6 * u : 0);
@@ -318,10 +320,10 @@ export class ProgramCompositor {
       if (join.complete && join.naturalWidth) ctx.drawImage(join, qx + 1.5 * u, qy + 1.5 * u, qrW - 3 * u, qrW - 3 * u);
       ctx.textAlign = 'center';
       ctx.font = font(3.4, 700);
-      ctx.fillText('Scan to vote', qx + qrW / 2, qy + qrW + 3 * u);
+      ctx.fillText(shown.label, qx + qrW / 2, qy + qrW + 3 * u, qrW + 8 * u);
       ctx.fillStyle = '#b8bec8';
       ctx.font = font(2.2, 500);
-      ctx.fillText(p.joinUrl.replace(/^http:\/\//, ''), qx + qrW / 2, qy + qrW + 6.5 * u);
+      ctx.fillText(shown.sub, qx + qrW / 2, qy + qrW + 6.5 * u, qrW + 8 * u);
     }
     ctx.restore();
   }
@@ -348,7 +350,8 @@ export class ProgramCompositor {
   }
 
   private joinCode(url: string, qr: string, label: string, cx: number, cy: number, u: number) {
-    const img = this.qr(qr);
+    const j = joinShown(url, qr, label, this.show?.event.wifi, Date.now());
+    const img = this.qr(j.qr);
     const ctx = this.ctx;
     const size = 32 * u;
     const x = cx - size / 2;
@@ -360,10 +363,10 @@ export class ProgramCompositor {
     if (img?.complete && img.naturalWidth) ctx.drawImage(img, x + 1.5 * u, y + 1.5 * u, size - 3 * u, size - 3 * u);
     ctx.textAlign = 'center';
     ctx.font = `700 ${3.4 * u}px "Segoe UI", system-ui, sans-serif`;
-    ctx.fillText(label, cx, y + size + 3 * u);
+    ctx.fillText(j.label, cx, y + size + 3 * u, size + 8 * u);
     ctx.fillStyle = '#b8bec8';
     ctx.font = `500 ${2.2 * u}px "Segoe UI", system-ui, sans-serif`;
-    ctx.fillText(url.replace(/^http:\/\//, ''), cx, y + size + 6.5 * u);
+    ctx.fillText(j.sub, cx, y + size + 6.5 * u, size + 8 * u);
   }
 
   private confettiDraw(t: number, w: number, h: number) {

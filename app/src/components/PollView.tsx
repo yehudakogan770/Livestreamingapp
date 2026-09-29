@@ -1,6 +1,22 @@
 import type { Poll } from '../engine/types/Poll';
 import { shares } from '../engine/poll';
+import { useStage } from '../engine/CountdownContext';
+import { joinShown, takesTurns } from '../engine/join';
+import { useNow } from '../engine/useNow';
 import './PollView.css';
+
+function PollJoin({ url, qr }: { url: string; qr: string }) {
+  const wifi = useStage()?.event.wifi;
+  const now = useNow(false, takesTurns(url, wifi) ? 1000 : 60_000);
+  const j = joinShown(url, qr, 'Scan to vote', wifi, now);
+  return (
+    <div className="poll__join">
+      <div className="poll__qr" dangerouslySetInnerHTML={{ __html: j.qr }} />
+      <span>{j.label}</span>
+      <small>{j.sub}</small>
+    </div>
+  );
+}
 
 /** A poll on screen: the question, the answers with live bars, and how to vote. Mirrored in compositor.ts poll(). */
 export function PollView({ p, thumb = false }: { p: Poll; thumb?: boolean }) {
@@ -31,13 +47,7 @@ export function PollView({ p, thumb = false }: { p: Poll; thumb?: boolean }) {
             </p>
           )}
         </div>
-        {join && (
-          <div className="poll__join">
-            <div className="poll__qr" dangerouslySetInnerHTML={{ __html: p.joinQr }} />
-            <span>Scan to vote</span>
-            <small>{p.joinUrl.replace(/^http:\/\//, '')}</small>
-          </div>
-        )}
+        {join && <PollJoin url={p.joinUrl} qr={p.joinQr} />}
       </div>
     </div>
   );

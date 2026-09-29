@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import type { EngineClient, RemoteStatus } from '../engine/client';
+import type { EngineClient } from '../engine/client';
+import { JoinSetup, useAudienceLink } from './JoinSetup';
 import type { Source } from '../engine/types/Source';
 import { eligible, money, raised } from '../engine/audience';
 import { FundraiserView, RaffleView, WallView } from '../components/AudienceViews';
@@ -7,33 +8,6 @@ import type { WallStyle } from '../engine/types/WallStyle';
 import type { Act } from './act';
 import './LyricsCard.css';
 import './AudienceCards.css';
-
-/** The phone remote's audience page: kept on the input so its code can show on screen. */
-function useAudienceLink(client: EngineClient, has: { joinUrl: string; joinQr: string } | null, save: (url: string, qr: string) => void) {
-  const [remote, setRemote] = useState<RemoteStatus | null>(null);
-  useEffect(() => client.watchRemote(setRemote), [client]);
-  const address = remote?.running ? remote.addresses[0] : undefined;
-  useEffect(() => {
-    if (!has || !address || (has.joinUrl === address.voteUrl && has.joinQr === address.voteQr)) return;
-    save(address.voteUrl, address.voteQr);
-  }, [address?.voteUrl]); // eslint-disable-line react-hooks/exhaustive-deps
-  return { remote, address };
-}
-
-function RemoteNote({ remote, url, what, onTurnOn }: { remote: RemoteStatus | null; url?: string; what: string; onTurnOn: () => void }) {
-  return !remote?.running ? (
-    <p className="field__note field__note--warn">
-      Phones {what} through the phone remote, which is off.{' '}
-      <button type="button" className="btn btn--small" onClick={onTurnOn}>
-        Turn it on
-      </button>
-    </p>
-  ) : (
-    <p className="field__note">
-      Phones on this network {what} at <b>{url}</b> — no PIN needed.
-    </p>
-  );
-}
 
 function useEsc(onClose: () => void) {
   useEffect(() => {
@@ -50,7 +24,7 @@ export function RaffleCard({ source, act, client, onClose }: { source: Source; a
   const [title, setTitle] = useState(r?.title ?? '');
   const [prize, setPrize] = useState(r?.prize ?? '');
   const [names, setNames] = useState('');
-  const { remote, address } = useAudienceLink(client, r, (joinUrl, joinQr) => r && act({ type: 'updateRaffle', id, raffle: { ...r, joinUrl, joinQr } }));
+  const { remote } = useAudienceLink(client, r, (joinUrl, joinQr) => r && act({ type: 'updateRaffle', id, raffle: { ...r, joinUrl, joinQr } }));
   useEsc(onClose);
   if (!r) return null;
   const update = (p: Partial<typeof r>) => act({ type: 'updateRaffle', id, raffle: { ...r, ...p } });
@@ -97,7 +71,7 @@ export function RaffleCard({ source, act, client, onClose }: { source: Source; a
                 </button>
               </div>
             )}
-            <RemoteNote remote={remote} url={address?.voteUrl} what="enter" onTurnOn={() => void client.setRemote(true)} />
+            <JoinSetup remote={remote} what="enter" client={client} act={act} />
           </section>
           <section className="lyc__edit">
             <label className="field">
@@ -155,11 +129,7 @@ export function FundraiserCard({ source, act, client, onClose }: { source: Sourc
   const id = source.id;
   const [setup, setSetup] = useState(() => (f ? { title: f.title, currency: f.currency, goal: String(f.goal), starting: String(f.starting) } : null));
   const [gift, setGift] = useState({ name: '', amount: '', message: '' });
-  const { remote, address } = useAudienceLink(
-    client,
-    f,
-    (joinUrl, joinQr) => f && act({ type: 'updateFundraiser', id, fundraiser: { ...f, joinUrl, joinQr } }),
-  );
+  const { remote } = useAudienceLink(client, f, (joinUrl, joinQr) => f && act({ type: 'updateFundraiser', id, fundraiser: { ...f, joinUrl, joinQr } }));
   useEsc(onClose);
   if (!f || !setup) return null;
   const update = (p: Partial<typeof f>) => act({ type: 'updateFundraiser', id, fundraiser: { ...f, ...p } });
@@ -209,7 +179,7 @@ export function FundraiserCard({ source, act, client, onClose }: { source: Sourc
               {money(f, raised(f))} of {money(f, f.goal)} · {f.pledges.length} gifts{waiting ? ` · ${waiting} waiting for you to count them` : ''}. Lumora takes
               no payments: pledges are promises, collected the usual way.
             </p>
-            <RemoteNote remote={remote} url={address?.voteUrl} what="pledge" onTurnOn={() => void client.setRemote(true)} />
+            <JoinSetup remote={remote} what="pledge" client={client} act={act} />
             <div className="aud-card__gift">
               <input
                 className="text"
@@ -319,7 +289,7 @@ export function WallCard({ source, act, client, onClose }: { source: Source; act
   const [setup, setSetup] = useState(() => (w ? { title: w.title, prompt: w.prompt } : null));
   const [typed, setTyped] = useState({ name: '', text: '' });
   const [filter, setFilter] = useState<'waiting' | 'shown' | 'all'>('all');
-  const { remote, address } = useAudienceLink(client, w, (joinUrl, joinQr) => w && act({ type: 'updateWall', id, wall: { ...w, joinUrl, joinQr } }));
+  const { remote } = useAudienceLink(client, w, (joinUrl, joinQr) => w && act({ type: 'updateWall', id, wall: { ...w, joinUrl, joinQr } }));
   useEsc(onClose);
   if (!w || !setup) return null;
   const update = (p: Partial<typeof w>) => act({ type: 'updateWall', id, wall: { ...w, ...p } });
@@ -378,7 +348,7 @@ export function WallCard({ source, act, client, onClose }: { source: Source; act
                 <input type="checkbox" checked={w.showJoin} onChange={(e) => update({ showJoin: e.target.checked })} /> Show the code to scan
               </label>
             </div>
-            <RemoteNote remote={remote} url={address?.voteUrl} what="send messages" onTurnOn={() => void client.setRemote(true)} />
+            <JoinSetup remote={remote} what="send messages" client={client} act={act} />
             <details className="aud-card__setup">
               <summary>Title, question and timing</summary>
               <label className="field">

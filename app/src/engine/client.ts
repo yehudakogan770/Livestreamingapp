@@ -68,6 +68,14 @@ export interface RemoteStatus {
   phones: number;
   /** Why it could not start. */
   error: string | null;
+  /** The audience page on the internet, for phones on any network. */
+  internet: {
+    on: boolean;
+    phase: 'off' | 'getting' | 'starting' | 'on' | 'retrying';
+    voteUrl: string | null;
+    voteQr: string | null;
+    error: string | null;
+  };
 }
 
 // ----- recording and streaming (mirrors src-tauri/src/capture.rs) -----
@@ -187,6 +195,10 @@ export interface EngineClient {
   setRemote(on: boolean): Promise<RemoteStatus>;
   /** A new PIN; connected phones have to type it again. */
   newRemotePin(): Promise<RemoteStatus>;
+  /** Put the audience page on the internet (or take it off). */
+  setAudienceInternet(on: boolean): Promise<RemoteStatus>;
+  /** A QR code (SVG) for this text. */
+  qrCode(text: string): Promise<string>;
 
   // ----- recording and streaming -----
   /** Called with the recording/streaming status, now and on every change. */
@@ -324,7 +336,15 @@ export function emptyShow(): Show {
     panicChangedAt: 0,
     masterVolume: 1,
     backFollowsLive: false,
-    event: { name: '', logo: null, onFailure: 'black', panicShows: 'black', setUp: false, brand: defaultBrand() },
+    event: {
+      name: '',
+      logo: null,
+      onFailure: 'black',
+      panicShows: 'black',
+      setUp: false,
+      brand: defaultBrand(),
+      wifi: { name: '', password: '', qr: '', show: false },
+    },
     presets: [],
     activePreset: null,
     running: [],
@@ -504,6 +524,14 @@ class TauriClient implements EngineClient {
 
   newRemotePin(): Promise<RemoteStatus> {
     return invoke<RemoteStatus>('new_remote_pin');
+  }
+
+  setAudienceInternet(on: boolean): Promise<RemoteStatus> {
+    return invoke<RemoteStatus>('set_audience_internet', { on });
+  }
+
+  qrCode(text: string): Promise<string> {
+    return invoke<string>('qr_code', { text });
   }
 
   watchCapture(onChange: (s: CaptureStatus) => void): () => void {
@@ -840,7 +868,16 @@ export class DemoClient implements EngineClient {
   }
 
   watchRemote(onChange: (s: RemoteStatus) => void): () => void {
-    onChange({ enabled: false, running: false, pin: '', port: null, addresses: [], phones: 0, error: null });
+    onChange({
+      enabled: false,
+      running: false,
+      pin: '',
+      port: null,
+      addresses: [],
+      phones: 0,
+      error: null,
+      internet: { on: false, phase: 'off', voteUrl: null, voteQr: null, error: null },
+    });
     return () => {};
   }
 
@@ -850,6 +887,18 @@ export class DemoClient implements EngineClient {
 
   newRemotePin(): Promise<RemoteStatus> {
     return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  setAudienceInternet(): Promise<RemoteStatus> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  /** A stand-in picture (real codes are made by the Lumora app). */
+  qrCode(text: string): Promise<string> {
+    const label = text.startsWith('WIFI:') ? 'Wi-Fi' : 'QR';
+    return Promise.resolve(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#fff"/><rect width="4" height="4"/><rect x="6" y="6" width="4" height="4"/><text x="5" y="5.6" font-size="2" text-anchor="middle">${label}</text></svg>`,
+    );
   }
 
   // Recording in the browser demo keeps the file in memory and offers it as a

@@ -383,6 +383,11 @@ inputs, overlays, cues and sound · ✅ Video playlists · ✅ Scoreboards with 
 Lumora works offline. Only these reach the internet, and only while they are in use:
 live chat (while connected), guests by link (while a guest input exists), web page
 inputs (the page itself), stream inputs from internet addresses, and streaming out.
+The audience page (votes, questions, raffles, pledges, messages) can also be put on the
+internet with one switch ("Anyone with internet"), through a free Cloudflare link — only
+that page, never the operator's controls. Without internet, phones join the same Wi-Fi
+(a travel router or a phone's hotspot works), and a "join the Wi-Fi" code can take turns
+on screen with the page's code.
 
 ### To build (most important first)
 1. ✅ **Sound from stream and web page inputs** into the mixer.
