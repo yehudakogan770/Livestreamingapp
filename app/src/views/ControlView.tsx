@@ -18,6 +18,7 @@ import { VisualsPage } from './VisualsPage';
 import { LogoMaker } from './LogoMaker';
 import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
+import { snapshot, snapshotName } from '../broadcast/snapshot';
 import { CreditsCard, creditsTarget } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
 import { slideshowTarget } from '../engine/slideshow';
@@ -88,6 +89,21 @@ export function ControlView({
   const onlyInputs = !showAll && activePreset && activePreset.sources.length > 0 ? activePreset.sources : null;
   const nextToast = useRef(1);
 
+  const say = useCallback((text: string) => {
+    const id = nextToast.current++;
+    setToasts((t) => [...t.slice(-2), { id, text }]);
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 6000);
+  }, []);
+  const [snapping, setSnapping] = useState(false);
+  const snap = () => {
+    if (screen === 'monitor' || snapping) return;
+    setSnapping(true);
+    const name = snapshotName(screen);
+    void snapshot(client, show, screen)
+      .then((png) => client.saveSnapshot(png, name))
+      .then((where) => say(`Snapshot saved: ${where}`), fail)
+      .finally(() => setSnapping(false));
+  };
   const fail = useCallback((e: unknown) => {
     const text = e instanceof EngineError ? e.message : e instanceof Error ? e.message : String(e);
     const id = nextToast.current++;
@@ -230,6 +246,15 @@ export function ControlView({
               <div className="mon mon--pgm">
                 <div className="mon__head">
                   <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
+                  <button
+                    type="button"
+                    className="mon__snap"
+                    onClick={snap}
+                    disabled={snapping}
+                    title="Snapshot: save a picture of this screen as the audience sees it"
+                  >
+                    {snapping ? '…' : '📷'}
+                  </button>
                   <span className="mon__tag">{name.toUpperCase()}</span>
                 </div>
                 <div className="mon__fit">

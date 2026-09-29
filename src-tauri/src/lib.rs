@@ -276,6 +276,48 @@ fn set_capture_settings(
     state.capture.set_settings(settings)
 }
 
+/// Keep a snapshot (a PNG made by the control window) in the Snapshots
+/// folder next to the recordings. The bytes are the body; the file name a
+/// header. Returns where it was saved.
+#[tauri::command]
+fn save_snapshot(
+    request: tauri::ipc::Request<'_>,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let name = request
+        .headers()
+        .get("name")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("Snapshot.png");
+    let safe = snapshot_name(name);
+    let dir = state.capture.folder().join("Snapshots");
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Could not make the Snapshots folder: {e}"))?;
+    let path = dir.join(safe);
+    std::fs::write(&path, bytes).map_err(|e| format!("Could not save the snapshot: {e}"))?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// A plain file name (never a path), ending in .png.
+fn snapshot_name(name: &str) -> String {
+    let base: String = name
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || " -_.()".contains(c) {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let base = base.trim_start_matches('.').trim();
+    let base = base.strip_suffix(".png").unwrap_or(base);
+    format!("{}.png", if base.is_empty() { "Snapshot" } else { base })
+}
+
 /// The folder recordings go to.
 #[tauri::command]
 fn capture_folder(state: State<'_, AppState>) -> String {
@@ -623,6 +665,7 @@ pub fn run() {
             capture_chunk,
             capture_stop,
             save_slide,
+            save_snapshot,
             keep_media,
             export_start,
             export_frame,
@@ -680,4 +723,20 @@ fn smoke_test(app: tauri::AppHandle) {
         eprintln!("lumora smoke test: outputs open {open:?}");
         app.exit(i32::from(open.len() != ScreenId::ALL.len()));
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::snapshot_name;
+
+    #[test]
+    fn snapshot_names_are_plain_files() {
+        assert_eq!(
+            snapshot_name("Live Screen 2026-09-29 21.14.05.png"),
+            "Live Screen 2026-09-29 21.14.05.png"
+        );
+        let odd = snapshot_name("../../etc/passwd");
+        assert!(!odd.contains('/') && !odd.starts_with('.'), "{odd}");
+        assert_eq!(snapshot_name(""), "Snapshot.png");
+    }
 }

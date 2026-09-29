@@ -1983,3 +1983,18 @@ button.strip__name:hover {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+
+.mon__snap {
+  margin-left: auto;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--button);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mon__snap + .mon__tag {
+  margin-left: 0;
+}

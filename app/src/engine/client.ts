@@ -178,6 +178,8 @@ export interface EngineClient {
   mediaUrl(path: string): string;
   /** Keep a picture made here (a PDF page) with the app's files; resolves its path. */
   saveSlide(png: Blob, name: string): Promise<string>;
+  /** Keep a snapshot picture (in the Snapshots folder next to the recordings); resolves where. */
+  saveSnapshot(png: Blob, name: string): Promise<string>;
 
   // ----- library (kept on this computer) -----
   libraryItems(): Promise<LibraryItem[]>;
@@ -514,6 +516,14 @@ class TauriClient implements EngineClient {
     const out: { path: string; name: string }[] = [];
     for (const path of picked) out.push({ path: await keep(path), name: baseName(path) });
     return out;
+  }
+
+  async saveSnapshot(png: Blob, name: string): Promise<string> {
+    try {
+      return await invoke<string>('save_snapshot', new Uint8Array(await png.arrayBuffer()), { headers: { name } });
+    } catch (e) {
+      throw new Error(String(e));
+    }
   }
 
   async saveSlide(png: Blob, name: string): Promise<string> {
@@ -856,6 +866,15 @@ export class DemoClient implements EngineClient {
       /* private browsing: kept until the page closes */
     }
     return Promise.resolve();
+  }
+
+  saveSnapshot(png: Blob, name: string): Promise<string> {
+    // In a browser the picture is downloaded.
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(png);
+    a.download = name;
+    a.click();
+    return Promise.resolve(name);
   }
 
   exportLibrary(items: LibraryItem[]): Promise<boolean> {

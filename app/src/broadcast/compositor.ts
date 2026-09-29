@@ -65,6 +65,8 @@ export class ProgramCompositor {
     private readonly client: EngineClient,
     width = 1920,
     height = 1080,
+    /** Which screen it draws (the recording is always the Live Screen). */
+    private readonly screen: 'live' | 'back' = 'live',
   ) {
     this.canvas = document.createElement('canvas');
     this.canvas.width = width;
@@ -110,8 +112,8 @@ export class ProgramCompositor {
     const show = this.show;
     if (!show) return;
 
-    const sc = show.screens.live;
-    const { layers, black } = programLayers(show, 'live', now);
+    const sc = show.screens[this.screen];
+    const { layers, black } = programLayers(show, this.screen, now);
     // Also open what is behind a Pesukim input on air.
     const behind = layers.map((l) => pesukimOf(show, l.id)?.look.behind ?? null);
     // And what is inside a split screen on air.
@@ -124,7 +126,7 @@ export class ProgramCompositor {
         if (slide?.type === 'input') behind.push(slide.sourceId);
       }
     }
-    const overlays = overlaysOn(show.overlays, 'live', now);
+    const overlays = overlaysOn(show.overlays, this.screen, now);
     this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
     if (now - this.lastSync > 150) {
       this.lastSync = now;
