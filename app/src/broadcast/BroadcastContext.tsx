@@ -21,6 +21,8 @@ interface Broadcast {
   /** Instant replay is keeping the last minute. */
   replayOn: boolean;
   setReplay(on: boolean): void;
+  /** The recording picture's frame rate and dropped frames (null when not drawing). */
+  frameStats(): { fps: number; target: number; dropped: number } | null;
   /** Make a replay of the last `seconds` and line it up in Next. Resolves its input's id. */
   makeReplay(seconds: number, speed: number): Promise<string>;
 }
@@ -278,9 +280,10 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     [broadcaster, client],
   );
 
+  const frameStats = useCallback(() => broadcaster?.frameStats() ?? null, [broadcaster]);
   const value = useMemo<Broadcast>(
-    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay }),
-    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay],
+    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, frameStats }),
+    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, frameStats],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

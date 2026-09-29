@@ -672,6 +672,29 @@
   background: var(--bar);
   border-top: 1px solid var(--border);
 }
+/* PANIC and the Blank buttons never give way: the spacer and the cue area shrink first. */
+.bar > .btn,
+.bar > .btn--panic {
+  flex-shrink: 0;
+}
+.bar > .grow {
+  flex: 1 1 0;
+  min-width: 0;
+}
+@media (max-width: 1439px) {
+  .bar {
+    gap: 5px;
+    padding: 0 8px;
+  }
+  .bar .bar__label {
+    display: none;
+  }
+  .bar .bc-btn,
+  .bar > .btn {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
 .bar__label {
   color: var(--text-faint);
   font-size: 12px;

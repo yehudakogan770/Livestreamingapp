@@ -293,16 +293,39 @@ export class Broadcaster {
     if (audio) this.sound?.endMixStream(audio);
   }
 
+  /** When each of the last frames was drawn, and how many came late. */
+  private drawn: number[] = [];
+  private late = 0;
+
+  /** Frames drawn in the last second and frames late (dropped) since drawing began; null when not drawing. */
+  frameStats(): { fps: number; target: number; dropped: number } | null {
+    if (!this.fps) return null;
+    const now = performance.now();
+    return { fps: this.drawn.filter((t) => now - t <= 1000).length, target: this.fps, dropped: this.late };
+  }
+
   /** Draw `fps` frames a second (0: stop drawing). */
   private run(fps: number) {
     if (fps === this.fps) return;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
     this.fps = fps;
+    this.drawn = [];
+    this.late = 0;
     const c = this.compositor;
     if (fps > 0 && c) {
-      c.draw(Date.now());
-      this.timer = setInterval(() => c.draw(Date.now()), 1000 / fps);
+      const frame = 1000 / fps;
+      const draw = () => {
+        const t = performance.now();
+        const last = this.drawn[this.drawn.length - 1];
+        // A frame that comes much later than it should means pictures were missed.
+        if (last !== undefined && t - last > frame * 1.8) this.late += Math.round((t - last) / frame) - 1;
+        c.draw(Date.now());
+        this.drawn.push(t);
+        if (this.drawn.length > fps * 2) this.drawn.splice(0, this.drawn.length - fps * 2);
+      };
+      draw();
+      this.timer = setInterval(draw, frame);
     }
   }
 }

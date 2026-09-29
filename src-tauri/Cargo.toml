@@ -23,6 +23,7 @@ if-addrs = "0.15"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 jpeg-encoder = "0.7"
 png = "0.18"
+sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 
 # Web page inputs are captured with the Windows Graphics Capture API.
 [target.'cfg(windows)'.dependencies]

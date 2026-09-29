@@ -20,6 +20,7 @@ import { LogoMaker } from './LogoMaker';
 import { StingerDialog } from './StingerDialog';
 import { MidiDialog, useMidiControl } from './MidiDialog';
 import { ChatPanel } from './ChatPanel';
+import { PerfChip } from '../broadcast/PerfChip';
 import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
 import { snapshot, snapshotName } from '../broadcast/snapshot';
@@ -337,6 +338,7 @@ export function ControlView({
           Back = Live
         </button>
         <BroadcastButtons onSettings={onBroadcastSettings ?? (() => {})} />
+        <PerfChip client={client} />
         <CueBar show={show} act={act} onOpen={() => setRunOpen(true)} />
         <span className="grow" />
         <span className="bar__label">Blank</span>

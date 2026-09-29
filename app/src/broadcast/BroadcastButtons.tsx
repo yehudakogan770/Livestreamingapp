@@ -140,6 +140,8 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
 function ReplayButtons() {
   const b = useBroadcast();
   const [slow, setSlow] = useState(true);
+  const [secs, setSecs] = useState(10);
+  const [menu, setMenu] = useState(false);
   const [making, setMaking] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   if (!b) return null;
@@ -149,11 +151,11 @@ function ReplayButtons() {
         ⟲ REPLAY
       </button>
     );
-  const make = (s: number) => {
+  const make = () => {
     setMaking(true);
     setNote(null);
-    b.makeReplay(s, slow ? 0.5 : 1)
-      .then(() => setNote(`Replay of the last ${s}s is in Next — TAKE it.`))
+    b.makeReplay(secs, slow ? 0.5 : 1)
+      .then(() => setNote(`Replay of the last ${secs}s is in Next — TAKE it.`))
       .catch((e: unknown) => setNote(e instanceof Error ? e.message : String(e)))
       .finally(() => {
         setMaking(false);
@@ -162,17 +164,43 @@ function ReplayButtons() {
   };
   return (
     <span className="bc-replay" role="group" aria-label="Instant replay">
-      {[5, 10, 20].map((s) => (
-        <button key={s} type="button" className="btn bc-btn" disabled={making} title={`Replay the last ${s} seconds (to Next)`} onClick={() => make(s)}>
-          ⟲ {s}s
-        </button>
-      ))}
-      <button type="button" className={`btn bc-btn${slow ? ' is-on' : ''}`} aria-pressed={slow} title="Slow motion (half speed)" onClick={() => setSlow(!slow)}>
-        ½×
+      <button
+        type="button"
+        className="btn bc-btn bc-btn--replay"
+        disabled={making}
+        title={`Replay the last ${secs} seconds${slow ? ' in slow motion' : ''} (to Next)`}
+        onClick={make}
+      >
+        ⟲ {secs}s{slow ? ' ½×' : ''}
       </button>
-      <button type="button" className="btn bc-btn" title="Stop keeping replays" aria-label="Stop instant replay" onClick={() => b.setReplay(false)}>
-        ■
+      <button type="button" className="btn bc-btn bc-replay__more" aria-label="Replay options" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+        ▾
       </button>
+      {menu && (
+        <div className="bc-replay__menu" role="dialog" aria-label="Replay options">
+          <span className="field__label">Replay the last</span>
+          <div className="bc-replay__row">
+            {[5, 10, 20, 30].map((s) => (
+              <button key={s} type="button" className="seg" aria-pressed={secs === s} onClick={() => setSecs(s)}>
+                {s}s
+              </button>
+            ))}
+          </div>
+          <label className="check">
+            <input type="checkbox" checked={slow} onChange={(e) => setSlow(e.target.checked)} /> Slow motion (half speed)
+          </label>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setMenu(false);
+              b.setReplay(false);
+            }}
+          >
+            Stop keeping replays
+          </button>
+        </div>
+      )}
       {note && (
         <span className="bc-saved" role="status">
           {note}

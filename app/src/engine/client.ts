@@ -84,6 +84,14 @@ export type PtzCommand =
   | { type: 'store'; preset: number }
   | { type: 'autoFocus' };
 
+/** How hard the computer is working (mirrors src-tauri/src/perf.rs). */
+export interface PerfStats {
+  cpu: number;
+  memUsedMb: number;
+  memTotalMb: number;
+  appMemMb: number;
+}
+
 /** A display or window this computer can capture. */
 export interface CaptureChoice {
   kind: 'display' | 'window';
@@ -212,6 +220,8 @@ export interface EngineClient {
   isoStop(id: number): Promise<void>;
   /** Save the chapter list next to the recording (null where that isn't possible). */
   saveChapters(recording: string, text: string): Promise<string | null>;
+  /** How hard the computer is working (null where it can't be measured). */
+  perfStats(): Promise<PerfStats | null>;
   /** Keep a replay piece with the app's files; resolves its path. */
   saveReplay(video: Blob, name: string): Promise<string>;
 
@@ -586,6 +596,10 @@ class TauriClient implements EngineClient {
 
   saveChapters(recording: string, text: string): Promise<string | null> {
     return invoke<string>('save_chapters', { recording, text });
+  }
+
+  perfStats(): Promise<PerfStats | null> {
+    return invoke<PerfStats>('perf_stats').catch(() => null);
   }
 
   async saveReplay(video: Blob, name: string): Promise<string> {
@@ -968,6 +982,10 @@ export class DemoClient implements EngineClient {
   }
 
   saveChapters(): Promise<string | null> {
+    return Promise.resolve(null);
+  }
+
+  perfStats(): Promise<PerfStats | null> {
     return Promise.resolve(null);
   }
 

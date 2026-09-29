@@ -10,6 +10,7 @@ mod iso;
 mod library;
 mod media;
 mod outputs;
+mod perf;
 mod ptz;
 mod remote;
 mod store;
@@ -47,6 +48,7 @@ struct AppState {
     streams: streams::Streams,
     desktop: desktop::Desktop,
     isos: iso::Isos,
+    perf: perf::Perf,
     ffmpeg: Option<std::path::PathBuf>,
 }
 
@@ -418,6 +420,12 @@ fn save_chapters(
         .map(|p| p.to_string_lossy().into_owned())
 }
 
+/// How hard the computer is working (processor, memory).
+#[tauri::command]
+async fn perf_stats(state: State<'_, AppState>) -> Result<perf::PerfStats, String> {
+    Ok(state.perf.sample())
+}
+
 /// Keep a replay piece (a few seconds of what was on air) with the app's files.
 #[tauri::command]
 fn save_replay(
@@ -764,6 +772,7 @@ pub fn run() {
                 streams,
                 desktop,
                 isos: iso::Isos::default(),
+                perf: perf::Perf::default(),
                 ffmpeg,
             });
             heartbeat(app.handle().clone());
@@ -803,6 +812,7 @@ pub fn run() {
             iso_chunk,
             iso_stop,
             save_chapters,
+            perf_stats,
             save_snapshot,
             keep_media,
             export_start,
