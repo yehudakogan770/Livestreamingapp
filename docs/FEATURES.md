@@ -379,13 +379,18 @@ compressor, noise removal) and a limiter on every mix · ✅ Sound from stream i
 inputs, overlays, cues and sound · ✅ Video playlists · ✅ Scoreboards with game clock ·
 ✅ 720p – 4K, 30 / 60 fps and vertical 9:16 output, bitrates to 40 Mbps · ✅ Library · ✅ Multiview · ✅ Keeps imported files · ✅ Crash-safe saving.
 
+### What uses the internet
+Lumora works offline. Only these reach the internet, and only while they are in use:
+live chat (while connected), guests by link (while a guest input exists), web page
+inputs (the page itself), stream inputs from internet addresses, and streaming out.
+
 ### To build (most important first)
-1. 🔶 **Sound from stream and web page inputs** into the mixer. Streams done; ⬜ web pages.
+1. ✅ **Sound from stream and web page inputs** into the mixer.
 2. ✅ **Screen capture** — this computer's screens or one window (OBS, vMix).
 3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM).
-4. ⬜ **Guests by link** — up to 8 people join from a browser, with their own
+4. ✅ **Guests by link** (through VDO.Ninja, free, no account; ⬜ several guests in one room, mix-minus) — up to 8 people join from a browser, with their own
    mix-minus (StreamYard, Restream, vMix Call, Ecamm).
-5. ⬜ **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs).
+5. 🔶 **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs). YouTube and Twitch done; ⬜ Facebook.
 6. 🔶 **Audio filters** — noise suppression, noise gate, compressor, limiter,
    EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter. ⬜ VST plugins.
 7. ⬜ **Instant replay** with slow motion and highlights reel (vMix, Wirecast).
