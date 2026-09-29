@@ -13,7 +13,7 @@ import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
-import { ChromaKeyer } from '../engine/chroma';
+import { ChromaKeyer, needsProcessing } from '../engine/chroma';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
 import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
@@ -316,7 +316,7 @@ export class ProgramCompositor {
       case 'camera': {
         const m = this.media.get(src.id);
         if (!m || m.failed) return this.safeScreen(event, 'failure', w, h);
-        if (src.key.enabled) {
+        if (needsProcessing(src.key, src.adjust)) {
           // Green screen: key the frame on the graphics card, then draw the keyed copy.
           const el = m.el;
           const iw = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
@@ -326,7 +326,7 @@ export class ProgramCompositor {
             keyer = new ChromaKeyer();
             this.keyers.set(src.id, keyer);
           }
-          if (keyer.works && (el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete) && keyer.draw(el, iw, ih, src.key)) {
+          if (keyer.works && (el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete) && keyer.draw(el, iw, ih, src.key, src.adjust)) {
             this.fit(keyer.canvas, src.fit, w, h);
             return;
           }

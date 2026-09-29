@@ -5,7 +5,7 @@ import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { Logo3dView } from '../components/Logo3dView';
 import { defaultLogo3d } from '../engine/logo3d';
-import { defaultKey } from '../engine/chroma';
+import { defaultAdjust, defaultKey } from '../engine/chroma';
 import { inputItem } from '../engine/library';
 import { LOOPS } from '../logo3d/background';
 import { exportLogoVideo, keepsTransparency } from '../logo3d/export';
@@ -130,6 +130,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
     looping: false,
     fit: 'contain',
     key: defaultKey(),
+    adjust: defaultAdjust(),
     audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
   });
   const addOrSave = () => {

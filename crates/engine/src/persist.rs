@@ -95,6 +95,7 @@ pub fn repair(mut s: Show) -> Show {
 
     for src in &mut s.sources {
         src.key.repair();
+        src.adjust.repair();
         if !src.volume.is_finite() {
             src.volume = 1.0;
         }

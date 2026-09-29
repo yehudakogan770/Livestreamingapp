@@ -157,4 +157,12 @@ they opened.
     input and exports any length frame by frame to `src-tauri/src/export.rs`:
     FFmpeg makes MP4 (H.264), MOV (ProRes 4444, see-through) or WebM (VP9,
     see-through)).
+    Picture adjustments: **done** (`crates/engine/src/adjust.rs`: `Source.adjust`
+    on cameras, videos and pictures — exposure, brightness, contrast,
+    highlights, shadows, gamma, white balance (temperature, tint, auto),
+    saturation, sharpness; crop, zoom, move, rotate, mirror / flip; blur,
+    vignette, black & white, film grain. `app/src/engine/chroma.ts` does it
+    and the green screen in one WebGL pass, on the screens and in the
+    recording; `InputSettings.tsx` (tile ⋯ → Adjust picture…) with looks,
+    before / after split and a histogram). Still to come: LUT files.
 11. Installer, auto-update, rehearsal / soak testing, release.

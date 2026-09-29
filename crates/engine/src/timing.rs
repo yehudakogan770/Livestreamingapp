@@ -76,6 +76,7 @@ mod tests {
             fit: Fit::Contain,
             audio: crate::audio::SourceAudio::default(),
             key: crate::model::ChromaKey::default(),
+            adjust: crate::adjust::Adjust::default(),
         }
     }
 

@@ -13,6 +13,8 @@ import { SplitEditor } from './SplitEditor';
 import { SlideshowEditor } from './SlideshowEditor';
 import { SaveToLibrary } from './LibraryDialog';
 import { GreenScreenDialog } from './GreenScreenDialog';
+import { InputSettings } from './InputSettings';
+import { isAdjusted } from '../engine/chroma';
 import { inputItem } from '../engine/library';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
@@ -58,6 +60,8 @@ export function InputGrid({
   const editingSlides = show.sources.find((x) => x.id === editing && x.kind.type === 'slideshow');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
+  const [adjusting, setAdjusting] = useState<string | null>(null);
+  const adjustSource = show.sources.find((x) => x.id === adjusting);
   const keySource = show.sources.find((x) => x.id === keying);
   const keepSource = show.sources.find((x) => x.id === keeping);
   const textOnly = screen === 'monitor';
@@ -118,6 +122,7 @@ export function InputGrid({
                 onEditText={() => setEditing(src.id)}
                 onKeep={() => setKeeping(src.id)}
                 onKey={() => setKeying(src.id)}
+                onAdjust={() => setAdjusting(src.id)}
               />
             )}
           </div>
@@ -128,6 +133,7 @@ export function InputGrid({
         Add input
       </button>
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
+      {adjustSource && <InputSettings show={show} source={adjustSource} act={act} client={client} onSwitch={setAdjusting} onClose={() => setAdjusting(null)} />}
       {keySource && <GreenScreenDialog show={show} source={keySource} act={act} client={client} onClose={() => setKeying(null)} />}
       {keepSource && <SaveToLibrary client={client} item={inputItem(keepSource, '')} onClose={() => setKeeping(null)} />}
       {editingSlides && <SlideshowEditor source={editingSlides} sources={show.sources} act={act} client={client} onClose={() => setEditing(null)} />}
@@ -143,6 +149,7 @@ function TileMenu({
   onEditText,
   onKeep,
   onKey,
+  onAdjust,
 }: {
   source: Source;
   act: Act;
@@ -150,6 +157,7 @@ function TileMenu({
   onEditText: () => void;
   onKeep: () => void;
   onKey: () => void;
+  onAdjust: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [confirm, setConfirm] = useState(false);
@@ -275,6 +283,18 @@ function TileMenu({
           }}
         >
           Green screen{source.key.enabled ? ' (on)' : ''}…
+        </button>
+      )}
+      {(k === 'camera' || k === 'video' || k === 'image') && (
+        <button
+          type="button"
+          className={`btn menu__wide${isAdjusted(source.adjust) ? ' is-on' : ''}`}
+          onClick={() => {
+            onClose();
+            onAdjust();
+          }}
+        >
+          Adjust picture{isAdjusted(source.adjust) ? ' (on)' : ''}…
         </button>
       )}
       <div className="menu__foot">

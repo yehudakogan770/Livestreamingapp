@@ -84,6 +84,10 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub key: Option<crate::model::ChromaKey>,
+    /// Light, colour, crop and effects (cameras, videos and pictures).
+    #[serde(default)]
+    #[ts(optional)]
+    pub adjust: Option<crate::adjust::Adjust>,
     /// Only for countdown inputs: the event logo picture ("" removes it).
     #[serde(default)]
     #[ts(optional)]

@@ -1,0 +1,223 @@
+.modal__box.is {
+  width: min(1240px, calc(100vw - 24px));
+  height: min(820px, calc(100vh - 24px));
+  max-height: none;
+}
+.is .modal__head select {
+  margin-right: 10px;
+}
+.is__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(320px, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.is__left,
+.is__right {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.is__right {
+  border-left: 1px solid var(--border);
+  padding-top: 0;
+}
+.is__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.is__label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.is__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: #000;
+  flex: 0 0 auto;
+}
+.is__after,
+.is__before {
+  position: absolute;
+  inset: 0;
+}
+.is__line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+}
+.is__tag {
+  position: absolute;
+  top: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.65);
+  font-size: 11px;
+  font-weight: 700;
+}
+.is__tag--l {
+  left: 8px;
+}
+.is__tag--r {
+  right: 8px;
+}
+.is__under {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 14px;
+  align-items: end;
+}
+.is__lookrow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 6px;
+}
+.is__look {
+  height: 34px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.is__look.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.is__hist {
+  height: 80px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 6px;
+  border-radius: var(--radius);
+  background: var(--well);
+}
+.is__hist i {
+  flex: 1 1 0;
+  background: #6a717b;
+  border-radius: 1px;
+}
+.is__tabs {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  gap: 2px;
+  padding-top: 12px;
+  background: var(--bar);
+  border-bottom: 1px solid var(--border);
+}
+.is__tab {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.is__tab.is-on {
+  border-color: var(--border);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.is__props {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.is__head {
+  padding-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #b4b8bf;
+}
+.is__row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 62px 26px;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.is__row input {
+  accent-color: var(--accent);
+  width: 100%;
+}
+.is__row em {
+  font-style: normal;
+  text-align: right;
+  font-family: var(--mono);
+  color: var(--text);
+}
+.is__row em.is-changed {
+  color: #8fd3db;
+}
+.is__fx .is__row {
+  grid-template-columns: 110px minmax(0, 1fr) 62px;
+}
+.is__reset {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--button);
+  color: var(--text);
+  cursor: pointer;
+}
+.is__reset:disabled {
+  color: #5a5c62;
+  cursor: default;
+}
+.is__flip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.is__flip > span {
+  width: 110px;
+}
+.is .btn.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.is__fx {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: #1a1d22;
+  border: 1px solid var(--border);
+}
+.is__fx.is-on {
+  background: var(--panel);
+  border-color: #2f5a60;
+}

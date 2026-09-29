@@ -1,3 +1,4 @@
+import { defaultAdjust } from '../engine/chroma';
 import { act, fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SourceView } from './SourceView';
@@ -18,6 +19,7 @@ const picture: Source = {
   fit: 'contain',
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
+  adjust: defaultAdjust(),
 };
 const video: Source = {
   id: 'v',
@@ -29,6 +31,7 @@ const video: Source = {
   fit: 'contain',
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
+  adjust: defaultAdjust(),
 };
 
 describe('when a source fails', () => {

@@ -251,6 +251,9 @@ pub struct Source {
     /// Green / blue screen: the key colour taken out (cameras, videos, pictures).
     #[serde(default)]
     pub key: ChromaKey,
+    /// Light, colour, crop and effects (cameras, videos, pictures).
+    #[serde(default)]
+    pub adjust: crate::adjust::Adjust,
 }
 
 /// Green screen: a colour taken out of the picture so what is behind shows.

@@ -3,7 +3,7 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
-import { defaultKey } from './chroma';
+import { defaultAdjust, defaultKey } from './chroma';
 import { cueDue, nextCueIndex } from './cues';
 import { nextSlideIndex, slideDue } from './slideshow';
 import type { Slideshow } from './types/Slideshow';
@@ -227,6 +227,7 @@ function apply(s: Show, a: Action, now: number) {
         name: a.source.name.trim() || 'Untitled',
         kind,
         key: { ...defaultKey(), ...a.source.key },
+        adjust: defaultAdjust(),
         volume: clamp01(a.source.volume ?? 1),
         muted: a.source.muted ?? false,
         looping: a.source.looping ?? false,
@@ -254,6 +255,11 @@ function apply(s: Show, a: Action, now: number) {
         if (!['camera', 'video', 'image'].includes(src.kind.type))
           throw new Refused({ code: 'invalidValue', field: 'key', reason: 'green screen works on cameras, videos and pictures' });
         src.key = { ...p.key };
+      }
+      if (p.adjust !== undefined) {
+        if (!['camera', 'video', 'image'].includes(src.kind.type))
+          throw new Refused({ code: 'invalidValue', field: 'adjust', reason: 'adjustments work on cameras, videos and pictures' });
+        src.adjust = structuredClone(p.adjust);
       }
       if (p.audio !== undefined) {
         const q = p.audio;

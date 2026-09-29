@@ -11,6 +11,7 @@
 //! - Time is passed in, never read, so behaviour is reproducible and testable.
 
 pub mod action;
+pub mod adjust;
 pub mod audio;
 pub mod credits;
 pub mod cues;

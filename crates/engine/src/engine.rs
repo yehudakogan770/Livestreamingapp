@@ -1542,6 +1542,7 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
             k.repair();
             k
         }),
+        adjust: crate::adjust::Adjust::default(),
     };
     s.sources.push(src);
     Ok(())
@@ -1610,6 +1611,19 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
         }
         k.repair();
         src.key = k;
+    }
+    if let Some(mut a) = patch.adjust {
+        if !matches!(
+            src.kind,
+            SourceKind::Camera { .. } | SourceKind::Video { .. } | SourceKind::Image { .. }
+        ) {
+            return Err(ActionError::invalid(
+                "adjust",
+                "adjustments work on cameras, videos and pictures",
+            ));
+        }
+        a.repair();
+        src.adjust = a;
     }
     Ok(())
 }
