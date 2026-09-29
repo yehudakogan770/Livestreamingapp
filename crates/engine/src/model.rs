@@ -572,6 +572,9 @@ pub struct Show {
     /// "When this happens, do that."
     #[serde(default)]
     pub triggers: Vec<crate::triggers::Trigger>,
+    /// Audience questions.
+    #[serde(default)]
+    pub qna: crate::qna::Qna,
     pub settings: Settings,
 }
 
@@ -601,6 +604,7 @@ impl Default for Show {
             overlays: crate::overlays::channels(),
             visuals: crate::visuals::Visuals::default(),
             triggers: Vec::new(),
+            qna: crate::qna::Qna::default(),
             settings: Settings::default(),
         }
     }

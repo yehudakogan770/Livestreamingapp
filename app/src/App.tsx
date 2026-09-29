@@ -175,7 +175,7 @@ function ControlApp() {
         onClick: () => sendCommand({ type: 'addInput', kind: 'text', template: i }),
       })),
       null,
-      { label: 'Live chat comments (YouTube, Twitch)…', onClick: () => sendCommand({ type: 'chat' }) },
+      { label: 'Live chat and audience questions…', onClick: () => sendCommand({ type: 'chat' }) },
     ];
     const slides = show?.sources.filter((x) => x.kind.type === 'slideshow') ?? [];
     const slideshow: MenuItem[] = [

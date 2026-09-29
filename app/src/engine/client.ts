@@ -348,6 +348,7 @@ export function emptyShow(): Show {
     run: emptyRun(),
     overlays: channels(),
     visuals: defaultVisuals(),
+    qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
     settings: {
       displays: { live: null, back: null, monitor: null },

@@ -2,7 +2,8 @@
   position: fixed;
   top: 44px;
   right: 8px;
-  bottom: 8px;
+  /* Always above the bottom bar: PANIC stays reachable. */
+  bottom: 60px;
   z-index: 60;
   width: min(360px, calc(100vw - 16px));
   display: flex;
@@ -114,4 +115,21 @@
   top: 50%;
   right: 6px;
   translate: 0 -50%;
+}
+
+.chat__tabs {
+  display: flex;
+  gap: 4px;
+}
+.chat__tabs .seg[aria-selected='true'] {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.chat__msg.is-shown {
+  opacity: 0.6;
+}
+.chat__show {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }

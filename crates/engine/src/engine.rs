@@ -862,6 +862,46 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             src.speed = ((speed - 1.0).abs() > 0.001).then_some(speed);
             Ok(())
         }
+        Action::QnaOpen { value } => {
+            s.qna.open = value;
+            Ok(())
+        }
+        Action::QnaAsk { author, text } => {
+            if s.qna.ask(&author, &text, now) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid("question", "questions are closed"))
+            }
+        }
+        Action::QnaShow { question, id } => {
+            let q = s
+                .qna
+                .questions
+                .iter_mut()
+                .find(|q| q.id == question)
+                .ok_or_else(|| ActionError::invalid("question", "there is no such question"))?;
+            q.shown = true;
+            let comment = crate::chat::ChatComment {
+                author: if q.author.is_empty() {
+                    "Question".to_owned()
+                } else {
+                    q.author.clone()
+                },
+                text: q.text.clone(),
+                platform: crate::chat::ChatPlatform::Other,
+            };
+            let c = comment_mut(s, &id)?;
+            c.comment = Some(comment);
+            c.changed_at = now;
+            Ok(())
+        }
+        Action::QnaRemove { question } => {
+            match question {
+                Some(q) => s.qna.questions.retain(|x| x.id != q),
+                None => s.qna.questions.clear(),
+            }
+            Ok(())
+        }
         Action::ReloadGuest { id } => {
             let src = s
                 .source_mut(&id)

@@ -247,6 +247,25 @@ pub enum Action {
         id: SourceId,
         speed: f32,
     },
+    /// Start or stop taking audience questions.
+    QnaOpen {
+        value: bool,
+    },
+    /// A question from a phone (sent by the app's server, never by the operator).
+    QnaAsk {
+        author: String,
+        text: String,
+    },
+    /// Put a question on screen through a chat comments input.
+    QnaShow {
+        question: u32,
+        id: SourceId,
+    },
+    /// Forget one question, or (with none) all of them.
+    QnaRemove {
+        #[ts(optional)]
+        question: Option<u32>,
+    },
     /// Reload a guest's picture (if it froze or they rejoined).
     ReloadGuest {
         id: SourceId,

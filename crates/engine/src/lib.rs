@@ -30,6 +30,7 @@ pub mod playlist;
 pub mod poll;
 pub mod presets;
 pub mod ptz;
+pub mod qna;
 pub mod score;
 pub mod screen;
 pub mod slideshow;

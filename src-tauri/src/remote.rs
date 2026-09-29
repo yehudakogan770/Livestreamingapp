@@ -144,6 +144,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SlideGo { .. }
             | Action::PlaylistGo { .. }
             | Action::SetSpeed { .. }
+            | Action::QnaShow { .. }
             | Action::ShowComment { comment: None, .. }
             | Action::LyricsGo { .. }
             | Action::LyricsNext { .. }
@@ -193,6 +194,8 @@ struct Shared {
     next_phone: Mutex<u64>,
     /// Each phone's vote in each poll round, so a phone votes once (and may change it).
     votes: Mutex<HashMap<(String, u32), HashMap<String, usize>>>,
+    /// When each phone last asked a question.
+    asked: Mutex<HashMap<String, u64>>,
 }
 
 impl Shared {
@@ -256,6 +259,7 @@ impl Remote {
                 phones: Mutex::new(Vec::new()),
                 next_phone: Mutex::new(0),
                 votes: Mutex::new(HashMap::new()),
+                asked: Mutex::new(HashMap::new()),
             }),
             config: Mutex::new(config),
             running: Mutex::new(None),
@@ -509,6 +513,25 @@ fn handle(shared: &Shared, mut request: Request) {
                 .unwrap_or_default();
             json(request, 200, &serde_json::Value::Array(polls).to_string());
         }
+        (Method::Get, "/api/audience") => {
+            // Everything the audience page shows: open polls, and whether questions are taken.
+            let show = shared
+                .backend
+                .snapshot()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                .map(|mut v| v["show"].take())
+                .unwrap_or_default();
+            let body = serde_json::json!({
+                "polls": open_polls(&show),
+                "questions": show["qna"]["open"].as_bool().unwrap_or(false),
+                "event": show["event"]["name"],
+            });
+            json(request, 200, &body.to_string());
+        }
+        (Method::Post, "/api/ask") => match ask(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingQuestions"}"#),
+        },
         (Method::Post, "/api/vote") => match vote(shared, &mut request) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingVotes"}"#),
@@ -590,6 +613,47 @@ fn handle(shared: &Shared, mut request: Request) {
         }
         _ => respond(request, 404, "text/plain; charset=utf-8", "Not found"),
     }
+}
+
+#[derive(Deserialize)]
+struct Ask {
+    author: String,
+    text: String,
+    voter: String,
+}
+
+fn ask(shared: &Shared, request: &mut Request) -> Result<(), u16> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| 400u16)?;
+    let a: Ask = serde_json::from_str(&body).map_err(|_| 400u16)?;
+    if a.voter.is_empty() || a.voter.len() > 64 || a.text.trim().is_empty() {
+        return Err(400);
+    }
+    // One question every 15 seconds from each phone.
+    let now = now_ms();
+    if lock(&shared.asked)
+        .get(&a.voter)
+        .is_some_and(|&t| now.saturating_sub(t) < 15_000)
+    {
+        return Err(429);
+    }
+    shared
+        .backend
+        .apply(Action::QnaAsk {
+            author: a.author,
+            text: a.text,
+        })
+        .map_err(|_| 409u16)?;
+    let mut last = lock(&shared.asked);
+    if last.len() > 50_000 {
+        last.clear();
+    }
+    last.insert(a.voter, now);
+    Ok(())
 }
 
 /// The polls taking votes: only what a voter needs to see.
@@ -871,6 +935,22 @@ mod tests {
         };
         assert_eq!(votes, vec![0, 0, 2]);
         assert_eq!(request(port, "GET", "/vote", "", "").0, 200);
+
+        // Questions: only while open, and not too often from one phone.
+        let q = r#"{"author":"Ana","text":"When is the break?","voter":"a"}"#;
+        assert_eq!(request(port, "POST", "/api/ask", "", q).0, 409);
+        lock(&fake.engine)
+            .apply(Action::QnaOpen { value: true }, 3)
+            .unwrap();
+        assert!(request(port, "GET", "/api/audience", "", "")
+            .1
+            .contains(r#""questions":true"#));
+        assert_eq!(request(port, "POST", "/api/ask", "", q).0, 200);
+        assert_eq!(request(port, "POST", "/api/ask", "", q).0, 429, "too soon");
+        assert_eq!(
+            lock(&fake.engine).show().qna.questions[0].text,
+            "When is the break?"
+        );
     }
 
     #[test]

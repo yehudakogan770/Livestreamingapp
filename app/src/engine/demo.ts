@@ -132,6 +132,12 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
   return st?.path ? { kind: t.kind, durationMs: Math.max(MIN_TRANSITION_MS, st.durationMs) } : { kind: 'fade' as const, durationMs: t.durationMs };
 }
 
+/** The audience questions (an older saved show has none yet). */
+function qnaOf(s: Show) {
+  s.qna ??= { open: false, questions: [], nextId: 0 };
+  return s.qna;
+}
+
 function commentIn(s: Show, id: string) {
   const src = find(s, id);
   if (src.kind.type !== 'comment') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not for chat comments' });
@@ -432,6 +438,29 @@ function apply(s: Show, a: Action, now: number) {
       v.speed = Math.abs(speed - 1) > 0.001 ? speed : null;
       return;
     }
+    case 'qnaOpen':
+      qnaOf(s).open = a.value;
+      return;
+    case 'qnaAsk': {
+      const text = [...a.text.trim()].slice(0, 300).join('');
+      if (!qnaOf(s).open || !text) throw new Refused({ code: 'invalidValue', field: 'question', reason: 'questions are closed' });
+      s.qna.nextId += 1;
+      s.qna.questions.push({ id: s.qna.nextId, author: [...a.author.trim()].slice(0, 40).join(''), text, at: now, shown: false });
+      if (s.qna.questions.length > 300) s.qna.questions.splice(0, s.qna.questions.length - 300);
+      return;
+    }
+    case 'qnaShow': {
+      const q = s.qna.questions.find((x) => x.id === a.question);
+      if (!q) throw new Refused({ code: 'invalidValue', field: 'question', reason: 'there is no such question' });
+      const c = commentIn(s, a.id);
+      q.shown = true;
+      c.comment = { author: q.author || 'Question', text: q.text, platform: 'other' };
+      c.changedAt = now;
+      return;
+    }
+    case 'qnaRemove':
+      s.qna.questions = a.question === undefined ? [] : s.qna.questions.filter((x) => x.id !== a.question);
+      return;
     case 'reloadGuest': {
       const src = find(s, a.id);
       if (src.kind.type !== 'guest') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a guest' });

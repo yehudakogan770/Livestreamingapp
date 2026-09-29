@@ -384,7 +384,7 @@ export function ControlView({
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
-      {chatOpen && <ChatPanel show={show} act={act} onAdd={add} onClose={() => setChatOpen(false)} />}
+      {chatOpen && <ChatPanel show={show} act={act} client={client} onAdd={add} onClose={() => setChatOpen(false)} />}
       {midiOpen && <MidiDialog onClose={() => setMidiOpen(false)} />}
       {stingers && <StingerDialog show={show} act={act} client={client} onClose={() => setStingers(false)} />}
       {logoMaker && (

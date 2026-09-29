@@ -5,6 +5,7 @@ import type { Monitor } from "./Monitor";
 import type { Overlay } from "./Overlay";
 import type { PerScreen } from "./PerScreen";
 import type { Preset } from "./Preset";
+import type { Qna } from "./Qna";
 import type { RunOfShow } from "./RunOfShow";
 import type { RunningSteps } from "./RunningSteps";
 import type { ScreenState } from "./ScreenState";
@@ -76,4 +77,8 @@ visuals: Visuals,
 /**
  * "When this happens, do that."
  */
-triggers: Array<Trigger>, settings: Settings, };
+triggers: Array<Trigger>, 
+/**
+ * Audience questions.
+ */
+qna: Qna, settings: Settings, };
