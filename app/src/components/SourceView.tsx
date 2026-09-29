@@ -301,7 +301,10 @@ function ImageView({ url, fit, audience }: { url: string; fit: 'cover' | 'contai
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [url]);
   if (failed) return <Missing text="Picture file not found" audience={audience} />;
-  return <img src={url} alt="" draggable={false} style={{ ...fill, objectFit: fit }} data-kind="image" onError={() => setFailed(true)} />;
+  // crossOrigin: so the green screen may read the picture (the app's file server allows it).
+  return (
+    <img src={url} alt="" crossOrigin="anonymous" draggable={false} style={{ ...fill, objectFit: fit }} data-kind="image" onError={() => setFailed(true)} />
+  );
 }
 
 function CameraView({ deviceId, fit, audience }: { deviceId: string; fit: 'cover' | 'contain'; audience: boolean }) {
@@ -363,6 +366,7 @@ function VideoView({
     <video
       ref={ref}
       src={client.mediaUrl(path)}
+      crossOrigin="anonymous"
       preload={thumb ? 'metadata' : 'auto'}
       muted
       playsInline

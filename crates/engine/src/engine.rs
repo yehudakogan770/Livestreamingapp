@@ -1055,6 +1055,22 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::PauseShow { .. }
         | Action::NextCue
         | Action::GoCue { .. }) => apply_run(s, a, now),
+        Action::RelinkMedia { from, to } => {
+            crate::media::relink(s, &from, &to);
+            Ok(())
+        }
+        Action::UpdateLogo3d { id, logo } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !matches!(src.kind, SourceKind::Logo3d(_)) {
+                return Err(ActionError::invalid("logo", "that input is not a 3D logo"));
+            }
+            let mut l = logo;
+            l.repair();
+            src.kind = SourceKind::Logo3d(Box::new(l));
+            Ok(())
+        }
         Action::UpdateText { id, text } => {
             let src = s
                 .source_mut(&id)
@@ -1621,6 +1637,10 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         },
         SourceKind::Pattern => SourceKind::Pattern,
         SourceKind::Visuals => SourceKind::Visuals,
+        SourceKind::Logo3d(mut l) => {
+            l.repair();
+            SourceKind::Logo3d(l)
+        }
         SourceKind::Microphone { device_id, label } => SourceKind::Microphone { device_id, label },
         SourceKind::Slideshow(mut sh) => {
             sh.current = 0;

@@ -204,6 +204,8 @@ pub enum SourceKind {
     Slideshow(Box<crate::slideshow::Slideshow>),
     /// The stage visuals (one shared state in `Show.visuals`).
     Visuals,
+    /// A logo in 3D, turning.
+    Logo3d(Box<crate::logo3d::Logo3d>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,

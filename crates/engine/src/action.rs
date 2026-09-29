@@ -8,6 +8,7 @@ use crate::audio::{AudioOutputId, BusId, BusPatch, SourceAudio, SourceAudioPatch
 use crate::credits::Credits;
 use crate::cues::Cue;
 use crate::event::EventPatch;
+use crate::logo3d::Logo3d;
 use crate::model::{Fit, Millis, ScreenId, SourceId, SourceKind, TransitionKind};
 use crate::overlays::OverlayPatch;
 use crate::pesukim::{Pasuk, PesukimLook};
@@ -405,6 +406,20 @@ pub enum Action {
     VisualsLook {
         slot: usize,
         store: bool,
+    },
+
+    // ----- files -----
+    /// A file now lives somewhere else (the app's own copy): use it there.
+    RelinkMedia {
+        from: String,
+        to: String,
+    },
+
+    // ----- 3D logo -----
+    /// Replace a 3D logo's look and motion.
+    UpdateLogo3d {
+        id: SourceId,
+        logo: Logo3d,
     },
 
     // ----- slideshow -----

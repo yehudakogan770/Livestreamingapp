@@ -123,6 +123,7 @@ pub fn repair(mut s: Show) -> Show {
             SourceKind::Credits(c) => c.repair(),
             SourceKind::Split(sp) => sp.repair(),
             SourceKind::Slideshow(sh) => sh.repair(),
+            SourceKind::Logo3d(l) => l.repair(),
             SourceKind::Pesukim(p) => {
                 p.repair();
                 let defaults = crate::pesukim::PesukimLook::default();

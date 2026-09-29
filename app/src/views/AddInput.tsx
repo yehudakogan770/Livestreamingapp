@@ -133,6 +133,9 @@ export function AddInput({
         return { name: n || 'Test pattern', kind: { type: 'pattern' } };
       case 'visuals':
         return { name: n || 'Stage visuals', kind: { type: 'visuals' } };
+      case 'logo3d':
+        // Made in the 3D logo maker.
+        return null;
       case 'countdown':
         return { name: n || 'Countdown', kind: { type: 'countdown', background: color, timer: defaultCountdown() } };
       case 'text': {

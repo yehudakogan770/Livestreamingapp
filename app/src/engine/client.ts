@@ -4,6 +4,7 @@
 // UI is opened in a plain browser (design work, UI tests), a demo engine that
 // follows the same rules is used so every screen can be tried out.
 
+import { whileCopying } from './copying';
 import { defaultVisuals } from './visuals';
 import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
@@ -16,6 +17,18 @@ import { demoApply, demoTick } from './demo';
 import { channels } from './overlays';
 import { emptyRun } from './cues';
 import type { LibraryItem } from './library';
+
+/**
+ * Lumora keeps its own copy of every imported file, so the event still works
+ * when the original is moved or deleted. Resolves the copy's path.
+ */
+async function keep(path: string): Promise<string> {
+  try {
+    return await whileCopying(baseName(path), () => invoke<string>('keep_media', { path }));
+  } catch (e) {
+    throw new Error(String(e));
+  }
+}
 
 export interface ShowSnapshot {
   revision: number;
@@ -440,7 +453,7 @@ class TauriClient implements EngineClient {
   async pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const path = await open({ multiple: false, directory: false, filters: [FILTERS[kind]] });
-    return typeof path === 'string' ? { path, name: baseName(path) } : null;
+    return typeof path === 'string' ? { path: await keep(path), name: baseName(path) } : null;
   }
 
   mediaUrl(path: string): string {
@@ -451,7 +464,10 @@ class TauriClient implements EngineClient {
   async pickFiles(kind: MediaKind): Promise<{ path: string; name: string }[]> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const paths = await open({ multiple: true, directory: false, filters: [FILTERS[kind]] });
-    return (Array.isArray(paths) ? paths : paths ? [paths] : []).map((path) => ({ path, name: baseName(path) }));
+    const picked = Array.isArray(paths) ? paths : paths ? [paths] : [];
+    const out: { path: string; name: string }[] = [];
+    for (const path of picked) out.push({ path: await keep(path), name: baseName(path) });
+    return out;
   }
 
   async saveSlide(png: Blob, name: string): Promise<string> {

@@ -28,6 +28,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   split: 'Split screen',
   slideshow: 'Slideshow',
   visuals: 'Stage visuals',
+  logo3d: '3D logo',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */

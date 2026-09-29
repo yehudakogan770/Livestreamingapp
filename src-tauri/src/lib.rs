@@ -3,6 +3,7 @@
 mod capture;
 mod events;
 mod library;
+mod media;
 mod outputs;
 mod remote;
 mod store;
@@ -27,6 +28,7 @@ struct AppState {
     remote: remote::Remote,
     capture: capture::Capture,
     library: library::Library,
+    media: media::Media,
 }
 
 /// A version of the show together with its revision number.
@@ -325,6 +327,58 @@ fn save_slide(
     Ok(path.to_string_lossy().into_owned())
 }
 
+/// Import a file: the app keeps its own copy and the show uses that, so the
+/// original can be moved or deleted. Returns the copy's path.
+#[tauri::command]
+async fn keep_media(path: String, app: tauri::AppHandle) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let state = app.state::<AppState>();
+        state
+            .media
+            .keep(std::path::Path::new(&path))
+            .map(|p| p.to_string_lossy().into_owned())
+            .map_err(|e| format!("Could not copy the file into Lumora: {e}"))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Every few seconds, copy in any file the show still uses from elsewhere
+/// (older events, library items, an event opened from a USB stick) while
+/// it is still there, and point the show at the copy.
+fn media_keeper(app: tauri::AppHandle) {
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        let state = app.state::<AppState>();
+        let (paths, on_air) = {
+            let engine = lock(&state);
+            let show = engine.show();
+            (
+                lumora_engine::media::paths(show),
+                lumora_engine::media::on_air_paths(show),
+            )
+        };
+        for from in paths {
+            let p = std::path::Path::new(&from);
+            // Never swap a file under something the audience is watching.
+            if from.contains("://")
+                || state.media.is_kept(p)
+                || on_air.contains(&from)
+                || !p.is_file()
+            {
+                continue;
+            }
+            match state.media.keep(p) {
+                Ok(to) => {
+                    let to = to.to_string_lossy().into_owned();
+                    let _ = apply(&app, &state, Action::RelinkMedia { from, to });
+                }
+                Err(e) => eprintln!("lumora: could not keep {from}: {e}"),
+            }
+        }
+    });
+}
+
 /// The library: things kept on this computer for later events.
 #[tauri::command]
 fn library_items(state: State<'_, AppState>) -> serde_json::Value {
@@ -427,6 +481,7 @@ pub fn run() {
                 let _ = handle.emit("capture-changed", status);
             });
             let library = library::Library::new(&dir);
+            let media = media::Media::new(&dir);
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -435,8 +490,10 @@ pub fn run() {
                 remote,
                 capture,
                 library,
+                media,
             });
             heartbeat(app.handle().clone());
+            media_keeper(app.handle().clone());
             if std::env::var_os("LUMORA_SMOKE_TEST").is_some() {
                 smoke_test(app.handle().clone());
             }
@@ -464,6 +521,7 @@ pub fn run() {
             capture_chunk,
             capture_stop,
             save_slide,
+            keep_media,
             library_items,
             save_library,
             export_library,

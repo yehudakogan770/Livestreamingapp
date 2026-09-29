@@ -142,4 +142,9 @@ they opened.
     screen; `VisualsPage.tsx` is the control page with the live keyboard;
     the phone has next / tap / sync / flash / blackout / looks).
     Still to come for visuals: MIDI keyboard control and "listen to the room".
+    Imported files: **kept** (`src-tauri/src/media.rs`: every imported file is
+    copied into `media/` in the app's data folder and the show uses the copy,
+    so deleting or moving the original never breaks an event; a background
+    keeper copies in files older events still use from elsewhere, never
+    swapping a file that is on air — `lumora_engine::media`).
 11. Installer, auto-update, rehearsal / soak testing, release.

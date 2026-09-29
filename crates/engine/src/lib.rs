@@ -16,6 +16,8 @@ pub mod credits;
 pub mod cues;
 pub mod engine;
 pub mod event;
+pub mod logo3d;
+pub mod media;
 pub mod model;
 pub mod overlays;
 pub mod persist;

@@ -15,6 +15,7 @@ import { ShortcutsDialog } from './ShortcutsDialog';
 import { CueBar, RunOfShowDialog } from './RunOfShow';
 import { LibraryDialog } from './LibraryDialog';
 import { VisualsPage } from './VisualsPage';
+import { useCopying } from '../engine/copying';
 import { CreditsCard, creditsTarget } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
 import { slideshowTarget } from '../engine/slideshow';
@@ -54,6 +55,7 @@ export function ControlView({
   onBroadcastSettings?: () => void;
 }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const copying = useCopying();
   const [adding, setAdding] = useState(false);
   const [addStart, setAddStart] = useState<{ kind?: string; template?: number }>({});
   const [shortcuts, setShortcuts] = useState(false);
@@ -280,6 +282,11 @@ export function ControlView({
       <OutputWatcher show={show} client={client} open={open} onOpenOutputs={openOutputs} />
       <ProblemToasts />
       <div className="toasts" role="status" aria-live="polite">
+        {copying.map((name, i) => (
+          <div key={`copy-${i}`} className="toast">
+            Copying “{name}” into Lumora… (so it keeps working even if the original is deleted)
+          </div>
+        ))}
         {toasts.map((t) => (
           <div key={t.id} className="toast">
             {t.text}
