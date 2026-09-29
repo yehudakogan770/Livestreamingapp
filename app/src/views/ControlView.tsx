@@ -8,7 +8,7 @@ import type { Show } from '../engine/types/Show';
 import { PreviewView, ProgramView } from '../components/ScreenView';
 import { SCREENS } from '../components/ScreenSelector';
 import { MonitorPanel } from './MonitorPanel';
-import { CountdownCard } from './CountdownCard';
+import { CountdownCard, CountdownMini } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
 import { OverlayBar } from './OverlayBar';
 import { useCommands, type Command } from './commands';
@@ -254,7 +254,7 @@ export function ControlView({
                   ) : creditsTarget(show, screen) ? (
                     <CreditsCard show={show} act={act} screen={screen} />
                   ) : (
-                    <CountdownCard show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
+                    <CountdownMini show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
                   )}
                 </div>
               </div>

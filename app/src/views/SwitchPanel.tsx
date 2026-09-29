@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { TransitionKind } from '../engine/types/TransitionKind';
@@ -86,11 +86,38 @@ export const DURATIONS = [300, 500, 800, 1200, 2000, 3000];
 
 const secs = (ms: number) => `${(ms / 1000).toFixed(ms % 1000 === 0 ? 0 : 1)}s`;
 
-/** TAKE, CUT, transition choice and the T-bar for the screen being controlled. */
+/**
+ * TAKE, CUT, the T-bar and the four favourite transitions — the everyday
+ * controls. The transition choice is one button that opens everything
+ * else (every transition, lengths, the favourites, Fade to black's length).
+ */
 export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; screen: ScreenId; act: Act; onStingers?: () => void }) {
   const sc = show.screens[screen];
   const t = show.transition;
   const hasPreview = sc.preview !== null && sc.preview !== sc.program;
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  // The panel floats over the page next to its button (the centre column scrolls and would cut it off).
+  const [at, setAt] = useState<React.CSSProperties>({});
+  useLayoutEffect(() => {
+    if (!open || !box.current) return;
+    const r = box.current.getBoundingClientRect();
+    const width = Math.max(r.width, 320);
+    const left = Math.min(r.left, window.innerWidth - width - 8);
+    const top = r.bottom + 6;
+    setAt({ position: 'fixed', left: Math.max(8, left), top, width, maxHeight: window.innerHeight - top - 70, overflowY: 'auto' });
+  }, [open]);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('pointerdown', away);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('pointerdown', away);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [open]);
   return (
     <div className="switch">
       <button
@@ -100,7 +127,7 @@ export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; scr
         onClick={() => act({ type: 'take', screen })}
         title="Send preview to air with the chosen transition (Enter)"
       >
-        TAKE <span>· {KINDS.find((k) => k.kind === t.kind)?.name}</span>
+        TAKE <span>· {transitionName(t)}</span>
       </button>
       <button
         type="button"
@@ -111,25 +138,45 @@ export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; scr
       >
         CUT
       </button>
-      <KindPicker label="Transition" value={t.kind} onPick={(kind) => act({ type: 'setTransition', kind })} onStingers={onStingers} />
-      <div className="switch__durations" role="radiogroup" aria-label="Transition length">
-        {DURATIONS.map((d) => (
-          <button
-            key={d}
-            type="button"
-            role="radio"
-            aria-checked={t.durationMs === d}
-            className="seg seg--small"
-            disabled={t.kind === 'cut'}
-            onClick={() => act({ type: 'setTransition', durationMs: d })}
-          >
-            {secs(d)}
-          </button>
-        ))}
+      <div className="switch__row" ref={box}>
+        <button
+          type="button"
+          className={`btn switch__trans${open ? ' is-on' : ''}`}
+          aria-expanded={open}
+          aria-label="Transition"
+          title="Choose the transition and its length"
+          onClick={() => setOpen(!open)}
+        >
+          <span>{transitionName(t)}</span> ▾
+        </button>
+        <FadeToBlack show={show} screen={screen} act={act} />
+        {open && (
+          <div className="switch__pop" role="dialog" aria-label="Transition choices" style={at}>
+            <span className="switch__label">Transition</span>
+            <KindPicker label="Transition" value={t.kind} onPick={(kind) => act({ type: 'setTransition', kind })} onStingers={onStingers} />
+            <span className="switch__label">Length</span>
+            <div className="switch__durations" role="radiogroup" aria-label="Transition length">
+              {DURATIONS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  role="radio"
+                  aria-checked={t.durationMs === d}
+                  className="seg seg--small"
+                  disabled={t.kind === 'cut'}
+                  onClick={() => act({ type: 'setTransition', durationMs: d })}
+                >
+                  {secs(d)}
+                </button>
+              ))}
+            </div>
+            <FavouritesEditor show={show} act={act} />
+            <FadeLength show={show} act={act} />
+          </div>
+        )}
       </div>
       <TBar show={show} screen={screen} act={act} disabled={!hasPreview} />
       <Favourites show={show} screen={screen} act={act} disabled={!hasPreview} />
-      <FadeToBlack show={show} screen={screen} act={act} />
     </div>
   );
 }
@@ -137,30 +184,46 @@ export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; scr
 export const transitionName = (t: { kind: TransitionKind; durationMs: number }) =>
   `${KINDS.find((k) => k.kind === t.kind)?.name ?? t.kind}${t.kind === 'cut' ? '' : ` ${secs(t.durationMs)}`}`;
 
-/** Four favourite transitions: one click takes Next to air with that one. ✎ changes it. */
+/** Four favourite transitions: one click takes Next to air with that one. */
 function Favourites({ show, screen, act, disabled }: { show: Show; screen: ScreenId; act: Act; disabled: boolean }) {
+  return (
+    <div className="switch__favrow" role="group" aria-label="Favourites">
+      {show.settings.favouriteTransitions.map((t, i) => (
+        <button
+          key={i}
+          type="button"
+          className="seg seg--small"
+          disabled={disabled}
+          title={`TAKE with ${transitionName(t)} (Ctrl+${i + 1}) — change these under the transition button`}
+          onClick={() => act({ type: 'take', screen, transition: t.kind, durationMs: t.durationMs })}
+        >
+          {transitionName(t)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Change the four favourite buttons. */
+function FavouritesEditor({ show, act }: { show: Show; act: Act }) {
   const [editing, setEditing] = useState<number | null>(null);
   const favs = show.settings.favouriteTransitions;
   const f = editing === null ? null : favs[editing];
   return (
     <div className="switch__favs">
-      <span className="switch__label">Favourites</span>
+      <span className="switch__label">Favourite buttons — click one to change it</span>
       <div className="switch__favrow">
         {favs.map((t, i) => (
-          <div key={i} className="switch__fav">
-            <button
-              type="button"
-              className="seg"
-              disabled={disabled}
-              title={`TAKE with ${transitionName(t)} (Ctrl+${i + 1})`}
-              onClick={() => act({ type: 'take', screen, transition: t.kind, durationMs: t.durationMs })}
-            >
-              {transitionName(t)}
-            </button>
-            <button type="button" className="switch__favedit" aria-label={`Change favourite ${i + 1}`} onClick={() => setEditing(editing === i ? null : i)}>
-              ✎
-            </button>
-          </div>
+          <button
+            key={i}
+            type="button"
+            className="seg seg--small"
+            aria-pressed={editing === i}
+            aria-label={`Change favourite ${i + 1}`}
+            onClick={() => setEditing(editing === i ? null : i)}
+          >
+            {transitionName(t)}
+          </button>
         ))}
       </div>
       {f && editing !== null && (
@@ -184,9 +247,6 @@ function Favourites({ show, screen, act, disabled }: { show: Show; screen: Scree
               </button>
             ))}
           </div>
-          <button type="button" className="btn" onClick={() => setEditing(null)}>
-            Done
-          </button>
         </div>
       )}
     </div>
@@ -195,21 +255,27 @@ function Favourites({ show, screen, act, disabled }: { show: Show; screen: Scree
 
 const FTB_LENGTHS = [1000, 2000, 3000, 5000];
 
-/** Fade to black slowly (and back), with its own length. Blank is the quick one. */
+/** Fade to black slowly (and back). Blank is the quick one; its length is under the transition button. */
 function FadeToBlack({ show, screen, act }: { show: Show; screen: ScreenId; act: Act }) {
   if (screen === 'monitor') return null;
   const black = show.screens[screen].blank;
+  return (
+    <button
+      type="button"
+      className={`btn switch__ftbbtn${black ? ' is-on' : ''}`}
+      onClick={() => act({ type: 'fadeToBlack', screen })}
+      title={black ? 'Fade back up from black' : `Fade this screen slowly to black (${secs(show.settings.fadeToBlackMs)})`}
+    >
+      {black ? 'Fade back up' : 'Fade to black'}
+    </button>
+  );
+}
+
+function FadeLength({ show, act }: { show: Show; act: Act }) {
   const ms = show.settings.fadeToBlackMs;
   return (
-    <div className="switch__ftb">
-      <button
-        type="button"
-        className={`btn switch__ftbbtn${black ? ' is-on' : ''}`}
-        onClick={() => act({ type: 'fadeToBlack', screen })}
-        title={black ? 'Fade back up from black' : 'Fade this screen slowly to black'}
-      >
-        {black ? 'Fade back up' : 'Fade to black'}
-      </button>
+    <label className="switch__ftblen">
+      <span className="switch__label">Fade to black takes</span>
       <select value={ms} onChange={(e) => act({ type: 'setFadeToBlackLength', ms: Number(e.target.value) })} aria-label="Fade to black length">
         {(FTB_LENGTHS.includes(ms) ? FTB_LENGTHS : [...FTB_LENGTHS, ms].sort((a, b) => a - b)).map((d) => (
           <option key={d} value={d}>
@@ -217,7 +283,7 @@ function FadeToBlack({ show, screen, act }: { show: Show; screen: ScreenId; act:
           </option>
         ))}
       </select>
-    </div>
+    </label>
   );
 }
 

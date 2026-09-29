@@ -173,6 +173,7 @@ describe('Stage monitor and countdown', () => {
       fireEvent.click(screen.getByRole('button', { name: /^TAKE/ }));
     });
     // The only countdown is on air, so Put in Next makes another one.
+    fireEvent.click(screen.getByRole('button', { name: 'All countdown controls' }));
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Put in Next' }));
     });
@@ -190,12 +191,14 @@ describe('Stage monitor and countdown', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Make one and put it in Next' }));
     });
+    if (!screen.queryByRole('button', { name: 'More…' })) fireEvent.click(screen.getByRole('button', { name: 'All countdown controls' }));
     fireEvent.click(screen.getByRole('button', { name: 'More…' }));
     fireEvent.change(screen.getByLabelText('Length'), {
       target: { value: '2' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByRole('button', { name: /5:00/ })).toBeInTheDocument();
+    if (!screen.queryByRole('button', { name: 'More…' })) fireEvent.click(screen.getByRole('button', { name: 'All countdown controls' }));
     fireEvent.click(screen.getByRole('button', { name: 'More…' }));
     fireEvent.change(screen.getByLabelText('Length'), {
       target: { value: '2' },

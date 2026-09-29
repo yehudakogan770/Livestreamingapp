@@ -119,16 +119,30 @@ export function CountdownCard({ show, act, screen = null, onPutInNext }: { show:
         onBlur={() => setScrub(null)}
       />
       <div className="cd__row">
-        <button type="button" className="seg" onClick={() => nudge(-MIN)}>−1 min</button>
-        <button type="button" className="seg" onClick={() => nudge(-10_000)}>−10 s</button>
-        <button type="button" className="seg" onClick={() => nudge(10_000)}>+10 s</button>
-        <button type="button" className="seg" onClick={() => nudge(MIN)}>+1 min</button>
+        <button type="button" className="seg" onClick={() => nudge(-MIN)}>
+          −1 min
+        </button>
+        <button type="button" className="seg" onClick={() => nudge(-10_000)}>
+          −10 s
+        </button>
+        <button type="button" className="seg" onClick={() => nudge(10_000)}>
+          +10 s
+        </button>
+        <button type="button" className="seg" onClick={() => nudge(MIN)}>
+          +1 min
+        </button>
       </div>
       <div className="cd__row cd__row--jump">
         <span className="cd__jumplabel">Go to last</span>
-        <button type="button" className="seg" title="Jump to the last minute" onClick={() => moveTo(MIN)}>1 min</button>
-        <button type="button" className="seg" title="Jump to the last 30 seconds" onClick={() => moveTo(30_000)}>30 s</button>
-        <button type="button" className="seg" title="Jump to the last 10 seconds" onClick={() => moveTo(10_000)}>10 s</button>
+        <button type="button" className="seg" title="Jump to the last minute" onClick={() => moveTo(MIN)}>
+          1 min
+        </button>
+        <button type="button" className="seg" title="Jump to the last 30 seconds" onClick={() => moveTo(30_000)}>
+          30 s
+        </button>
+        <button type="button" className="seg" title="Jump to the last 10 seconds" onClick={() => moveTo(10_000)}>
+          10 s
+        </button>
       </div>
       <div className="cd__row">
         {onPutInNext ? (
@@ -136,12 +150,68 @@ export function CountdownCard({ show, act, screen = null, onPutInNext }: { show:
             Put in Next
           </button>
         ) : (
-          <button type="button" className="seg" onClick={() => nudge(5 * MIN)}>+5 min</button>
+          <button type="button" className="seg" onClick={() => nudge(5 * MIN)}>
+            +5 min
+          </button>
         )}
-        <button type="button" className="seg" onClick={() => act({ type: 'resetCountdown', id })}>Reset</button>
-        <button type="button" className="seg" onClick={() => setSetup(true)}>More…</button>
+        <button type="button" className="seg" onClick={() => act({ type: 'resetCountdown', id })}>
+          Reset
+        </button>
+        <button type="button" className="seg" onClick={() => setSetup(true)}>
+          More…
+        </button>
       </div>
       {setup && <CountdownDialog show={show} id={id} act={act} onClose={() => setSetup(false)} />}
+    </div>
+  );
+}
+
+/**
+ * The countdown on the main page: one line (its time, start / pause), and
+ * ▾ opens the whole card. Nothing shows when there is no countdown (the
+ * Timer menu adds one).
+ */
+export function CountdownMini({ show, act, screen, onPutInNext }: { show: Show; act: Act; screen: ScreenId; onPutInNext?: () => void }) {
+  const target = countdownTarget(show, screen);
+  const c = target ? timerOf(show, target.id) : null;
+  const now = useNow(false, c?.endsAt != null ? 250 : 1000);
+  const [open, setOpen] = useState(false);
+  if (!target || !c)
+    return onPutInNext ? (
+      <button
+        type="button"
+        className="btn btn--small cdm__make"
+        aria-label="Make one and put it in Next"
+        title="Make a countdown and put it in Next"
+        onClick={onPutInNext}
+      >
+        ⏱ Countdown
+      </button>
+    ) : null;
+  const id = target.id;
+  const running = c.endsAt !== null;
+  const done = countdownFinished(c, now);
+  const shown = formatCountdown(countdownRemaining(c, now), c.format === 'auto' ? 'minSec' : c.format);
+  const name = show.sources.find((s) => s.id === id)?.name ?? 'Countdown';
+  const tag = target.where === 'next' ? 'NEXT' : target.where === 'onAir' ? 'ON AIR' : null;
+  return (
+    <div className="cdm" aria-label="Countdown">
+      <div className="cdm__row">
+        {tag && !open && <b className={`cd__tag cd__tag--${target.where}`}>{tag}</b>}
+        <span className="cdm__name">{c.label || name}</span>
+        <span className={`cdm__time${running ? ' is-running' : ''}`}>{shown}</span>
+        <button
+          type="button"
+          className="btn btn--small"
+          onClick={() => act(running && !done ? { type: 'pauseCountdown', id } : done ? { type: 'resetCountdown', id } : { type: 'startCountdown', id })}
+        >
+          {running && !done ? 'Pause' : done ? 'Reset' : 'Start'}
+        </button>
+        <button type="button" className="btn btn--small" aria-expanded={open} aria-label="All countdown controls" onClick={() => setOpen(!open)}>
+          {open ? '▴' : '▾'}
+        </button>
+      </div>
+      {open && <CountdownCard show={show} act={act} screen={screen} onPutInNext={onPutInNext} />}
     </div>
   );
 }
