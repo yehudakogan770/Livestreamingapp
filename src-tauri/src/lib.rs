@@ -9,6 +9,7 @@ mod media;
 mod outputs;
 mod remote;
 mod store;
+mod streams;
 
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -33,6 +34,7 @@ struct AppState {
     media: media::Media,
     exports: export::Exports,
     browsers: browser::Browsers,
+    streams: streams::Streams,
     ffmpeg: Option<std::path::PathBuf>,
 }
 
@@ -107,6 +109,7 @@ fn apply(app: &tauri::AppHandle, state: &AppState, action: Action) -> Result<(),
 fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.store.save(snapshot.show.clone());
     state.browsers.sync(&snapshot.show);
+    state.streams.sync(&snapshot.show);
     let _ = app.emit("show-changed", snapshot);
     if let Ok(json) = serde_json::to_string(snapshot) {
         state.remote.broadcast(&json);
@@ -459,6 +462,19 @@ fn browser_info(state: State<'_, AppState>) -> browser::BrowserInfo {
     state.browsers.info
 }
 
+/// How each stream input is doing (live, or why not).
+#[tauri::command]
+fn stream_status(
+    state: State<'_, AppState>,
+) -> std::collections::HashMap<String, streams::StreamStatus> {
+    state
+        .streams
+        .status
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone()
+}
+
 /// Bring a web page's window to the front (to click on it) or send it back.
 #[tauri::command]
 async fn browser_page(id: String, front: bool, app: tauri::AppHandle) -> Result<(), String> {
@@ -620,6 +636,9 @@ pub fn run() {
             let media = media::Media::new(&dir);
             let browsers = browser::Browsers::new(app.handle().clone());
             browsers.sync(&show);
+            let streams =
+                streams::Streams::new(ffmpeg.clone(), std::sync::Arc::clone(&browsers.frames));
+            streams.sync(&show);
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -631,6 +650,7 @@ pub fn run() {
                 media,
                 exports: export::Exports::default(),
                 browsers,
+                streams,
                 ffmpeg,
             });
             heartbeat(app.handle().clone());
@@ -674,6 +694,7 @@ pub fn run() {
             browser_info,
             browser_page,
             browser_nav,
+            stream_status,
             library_items,
             save_library,
             export_library,

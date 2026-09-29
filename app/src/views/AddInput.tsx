@@ -1,3 +1,4 @@
+import { cleanStreamUrl, streamName } from '../engine/stream';
 import { cleanUrl, defaultBrowser } from '../engine/browser';
 import { sendCommand } from './commands';
 import { useEffect, useState } from 'react';
@@ -32,6 +33,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'credits', name: 'Credits / thank-you', hint: 'Rolling names at the end' },
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
+  { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
   { kind: 'browser', name: 'Web page', hint: 'A website: scores, live results, social wall…' },
   { kind: 'logo3d', name: '3D logo', hint: 'Your logo in 3D, turning (the logo maker)' },
   { kind: 'visuals', name: 'Stage visuals', hint: 'Music visuals on the beat, for the Back Screen' },
@@ -140,9 +142,10 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
-      case 'stream':
-        // Not offered yet (the screens can't show streams yet).
-        return null;
+      case 'stream': {
+        const url = cleanStreamUrl(words);
+        return url ? { name: n || streamName(url), kind: { type: 'stream', url, bufferMs: 500 } } : null;
+      }
       case 'browser': {
         const url = cleanUrl(words);
         return url ? { name: n || url.replace(/^https?:\/\//, '').split('/')[0] || 'Web page', kind: { type: 'browser', ...defaultBrowser(), url } } : null;
@@ -290,6 +293,24 @@ export function AddInput({
               <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
             )}
 
+            {kind === 'stream' && (
+              <label className="field">
+                <span className="field__label">Stream address</span>
+                <input
+                  className="text"
+                  value={words}
+                  placeholder="srt://10.0.0.20:9000  ·  rtsp://camera.local/stream1  ·  https://…/live.m3u8"
+                  onChange={(e) => setWords(e.target.value)}
+                  aria-label="Stream address"
+                  spellCheck={false}
+                  autoFocus
+                />
+                <span className="field__note">
+                  From another computer, a phone app, an encoder or an IP camera. If it needs a password, put it in the address (rtsp://name:password@…). Sound
+                  from streams is coming.
+                </span>
+              </label>
+            )}
             {kind === 'browser' && (
               <label className="field">
                 <span className="field__label">Web address</span>

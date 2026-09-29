@@ -311,7 +311,17 @@ impl Remote {
             return;
         }
         let mut last_error = String::new();
-        for port in self.first_port..self.first_port.saturating_add(PORTS_TO_TRY) {
+        // Phones keep the address they were given, so wait a moment for the
+        // usual port: Windows can take a little while to free it after the
+        // remote was switched off. Only then try the next ones.
+        let first = self.first_port;
+        let tries = (0..15)
+            .map(|_| first)
+            .chain(first.saturating_add(1)..first.saturating_add(PORTS_TO_TRY));
+        for (i, port) in tries.enumerate() {
+            if i > 0 && port == first {
+                std::thread::sleep(Duration::from_millis(100));
+            }
             match Server::http(("0.0.0.0", port)) {
                 Ok(server) => {
                     let server = Arc::new(server);

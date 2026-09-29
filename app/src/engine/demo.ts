@@ -26,6 +26,7 @@ import type { Step } from './types/Step';
 import { mainCountdown } from './countdowns';
 import * as vis from './visuals';
 import { cleanUrl } from './browser';
+import { cleanStreamUrl } from './stream';
 import { triggersDue } from './triggers';
 
 const MIN_TRANSITION_MS = 100;
@@ -676,6 +677,14 @@ function apply(s: Show, a: Action, now: number) {
       const t = s.triggers.find((x) => x.id === a.id);
       if (!t) throw new Refused({ code: 'invalidValue', field: 'id', reason: 'there is no such trigger' });
       if (t.steps.length) apply(s, { type: 'runSteps', name: t.name, steps: structuredClone(t.steps) }, now);
+      return;
+    }
+    case 'updateStream': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'stream') throw new Refused({ code: 'invalidValue', field: 'stream', reason: 'that input is not a stream' });
+      const url = cleanStreamUrl(a.stream.url);
+      if (!url) throw new Refused({ code: 'invalidValue', field: 'url', reason: 'that is not a stream address' });
+      src.kind = { type: 'stream', url, bufferMs: Math.min(10_000, Math.max(0, a.stream.bufferMs)) };
       return;
     }
     case 'updateBrowser': {

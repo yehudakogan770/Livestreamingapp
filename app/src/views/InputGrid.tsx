@@ -9,7 +9,7 @@ import type { Source } from '../engine/types/Source';
 import type { SourcePatch } from '../engine/types/SourcePatch';
 import { SourceView } from '../components/SourceView';
 import type { Act } from './act';
-import { useProblems } from '../problems/problems';
+import { useProblems, useReportProblem } from '../problems/problems';
 import { TextEditor } from './TextEditor';
 import { SplitEditor } from './SplitEditor';
 import { SlideshowEditor } from './SlideshowEditor';
@@ -17,6 +17,7 @@ import { SaveToLibrary } from './LibraryDialog';
 import { GreenScreenDialog } from './GreenScreenDialog';
 import { InputSettings } from './InputSettings';
 import { BrowserCard } from './BrowserCard';
+import { StreamCard, useStreamStatus } from './StreamCard';
 import { isAdjusted } from '../engine/chroma';
 import { inputItem } from '../engine/library';
 
@@ -64,6 +65,7 @@ export function InputGrid({
   const editingSplit = show.sources.find((x) => x.id === editing && x.kind.type === 'split');
   const editingSlides = show.sources.find((x) => x.id === editing && x.kind.type === 'slideshow');
   const editingPage = show.sources.find((x) => x.id === editing && x.kind.type === 'browser');
+  const editingStream = show.sources.find((x) => x.id === editing && x.kind.type === 'stream');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -148,6 +150,8 @@ export function InputGrid({
         Add input
       </button>
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
+      {editingStream && <StreamCard show={show} source={editingStream} act={act} client={client} onClose={() => setEditing(null)} />}
+      <StreamProblems show={show} client={client} />
       {editingPage && <BrowserCard show={show} source={editingPage} act={act} client={client} onClose={() => setEditing(null)} />}
       {adjustSource && <InputSettings show={show} source={adjustSource} act={act} client={client} onSwitch={setAdjusting} onClose={() => setAdjusting(null)} />}
       {keySource && <GreenScreenDialog show={show} source={keySource} act={act} client={client} onClose={() => setKeying(null)} />}
@@ -284,7 +288,7 @@ function TileMenu({
           Edit 3D logo…
         </button>
       )}
-      {(k === 'text' || k === 'split' || k === 'slideshow' || k === 'browser') && (
+      {(k === 'text' || k === 'split' || k === 'slideshow' || k === 'browser' || k === 'stream') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -293,7 +297,15 @@ function TileMenu({
             onEditText();
           }}
         >
-          {k === 'text' ? 'Edit text…' : k === 'split' ? 'Edit split screen…' : k === 'browser' ? 'Control web page…' : 'Edit slides…'}
+          {k === 'text'
+            ? 'Edit text…'
+            : k === 'split'
+              ? 'Edit split screen…'
+              : k === 'browser'
+                ? 'Control web page…'
+                : k === 'stream'
+                  ? 'Stream settings…'
+                  : 'Edit slides…'}
         </button>
       )}
       <button
@@ -353,4 +365,33 @@ function TileMenu({
       </button>
     </div>
   );
+}
+
+/** Tells the problem centre when a stream input isn't coming in. */
+function StreamProblems({ show, client }: { show: Show; client: EngineClient }) {
+  const streams = show.sources.filter((s) => s.kind.type === 'stream');
+  const status = useStreamStatus(client);
+  return (
+    <>
+      {streams.map((s) => (
+        <StreamProblem key={s.id} source={s} problem={status[s.id]?.live === false ? (status[s.id]?.problem ?? 'Not connected') : null} />
+      ))}
+    </>
+  );
+}
+
+function StreamProblem({ source, problem }: { source: Source; problem: string | null }) {
+  useReportProblem(
+    problem
+      ? {
+          key: `stream:${source.id}`,
+          level: 'warning',
+          title: `${source.name}: the stream isn’t coming in`,
+          detail: problem,
+          fix: 'Check the address (⋯ → Stream settings…) and that the stream is running. Lumora keeps trying by itself.',
+          sourceId: source.id,
+        }
+      : null,
+  );
+  return null;
 }

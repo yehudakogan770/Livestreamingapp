@@ -82,3 +82,7 @@
   border-color: var(--accent);
   background: var(--selected);
 }
+.brc__air--off {
+  background: var(--button);
+  color: var(--text-dim);
+}

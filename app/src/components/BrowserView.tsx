@@ -41,17 +41,7 @@ export function BrowserView({
   const info = useBrowserInfo(client);
   const blank = page.url === 'https://';
   if (!info || blank) return <div style={{ ...fill, background: audience ? 'transparent' : '#101216' }} data-kind="browser" />;
-  if (info.captured && info.port) {
-    return (
-      <img
-        src={`http://127.0.0.1:${info.port}/stream/${encodeURIComponent(id)}`}
-        alt=""
-        draggable={false}
-        style={{ ...fill, objectFit: fit }}
-        data-kind="browser"
-      />
-    );
-  }
+  if (info.captured && info.port) return <FramePicture port={info.port} id={id} fit={fit} kind="browser" />;
   if (thumb) {
     const host = page.url.replace(/^[a-z]+:\/\//i, '').split('/')[0];
     return (
@@ -64,6 +54,32 @@ export function BrowserView({
     );
   }
   return <PageFrame page={page} />;
+}
+
+/** Live pictures served by the app (web pages, stream inputs). */
+export function FramePicture({ port, id, fit, kind }: { port: number; id: string; fit: 'cover' | 'contain'; kind: string }) {
+  return (
+    <img src={`http://127.0.0.1:${port}/stream/${encodeURIComponent(id)}`} alt="" draggable={false} style={{ ...fill, objectFit: fit }} data-kind={kind} />
+  );
+}
+
+/** A stream input (SRT, RTMP, RTSP, HLS…): black until its pictures arrive. */
+export function StreamView({ id, client, fit, audience = false }: { id: string; client: EngineClient; fit: 'cover' | 'contain'; audience?: boolean }) {
+  const info = useBrowserInfo(client);
+  return (
+    <div style={{ ...fill, background: audience ? 'transparent' : '#000' }} data-kind="stream">
+      {info?.port ? (
+        <FramePicture port={info.port} id={id} fit={fit} kind="stream" />
+      ) : (
+        !audience &&
+        info && (
+          <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#8e9096', fontSize: 12 }}>
+            Streams show in the Lumora app
+          </span>
+        )
+      )}
+    </div>
+  );
 }
 
 /** The page itself, at its size and zoom, scaled to fill the box. */

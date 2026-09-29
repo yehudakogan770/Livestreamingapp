@@ -45,7 +45,6 @@ pub struct Frames {
 }
 
 impl Frames {
-    #[cfg_attr(not(windows), allow(dead_code))] // only Windows captures pages
     pub fn put(&self, id: &str, bytes: Vec<u8>, mime: &'static str) {
         let mut all = lock(&self.latest);
         let n = all.get(id).map_or(1, |f| f.n + 1);
@@ -235,6 +234,8 @@ pub struct BrowserInfo {
 pub struct Browsers {
     tx: Mutex<Sender<Show>>,
     pub info: BrowserInfo,
+    /// Shared with stream inputs: they serve their pictures the same way.
+    pub frames: Arc<Frames>,
 }
 
 impl Browsers {
@@ -246,6 +247,7 @@ impl Browsers {
         thread::spawn(move || manage(&app, &rx, &f2));
         Browsers {
             tx: Mutex::new(tx),
+            frames,
             info: BrowserInfo {
                 port: server.map(|s| s.port),
                 captured: cfg!(windows),
@@ -595,9 +597,18 @@ mod tests {
             let mut s = std::net::TcpStream::connect(("127.0.0.1", server.port)).unwrap();
             s.set_read_timeout(Some(Duration::from_secs(4))).unwrap();
             write!(s, "GET {path} HTTP/1.1\r\nHost: x\r\n\r\n").unwrap();
+            // Read until the headers are in (a read may be cut short or interrupted).
+            let mut got = Vec::new();
             let mut buf = vec![0; 4096];
-            let n = std::io::Read::read(&mut s, &mut buf).unwrap();
-            String::from_utf8_lossy(&buf[..n]).into_owned()
+            while !got.windows(4).any(|w| w == b"\r\n\r\n") {
+                match std::io::Read::read(&mut s, &mut buf) {
+                    Ok(0) => break,
+                    Ok(n) => got.extend_from_slice(&buf[..n]),
+                    Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
+                    Err(e) => panic!("{e}"),
+                }
+            }
+            String::from_utf8_lossy(&got).into_owned()
         };
         let r = get("/frame/a?after=0");
         assert!(r.starts_with("HTTP/1.1 200"), "{r}");

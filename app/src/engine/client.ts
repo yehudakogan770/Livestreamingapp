@@ -205,6 +205,8 @@ export interface EngineClient {
   /** Bring a web page's window to the front to click on it (or send it back). */
   browserPage(id: string, front: boolean): Promise<void>;
   browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void>;
+  /** How each stream input is doing. */
+  streamStatus(): Promise<Record<string, { live: boolean; problem: string | null }>>;
 }
 
 export type VideoFormat = 'mp4' | 'mov' | 'webm';
@@ -599,6 +601,10 @@ class TauriClient implements EngineClient {
     }
   }
 
+  streamStatus(): Promise<Record<string, { live: boolean; problem: string | null }>> {
+    return invoke('stream_status');
+  }
+
   async browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void> {
     try {
       await invoke('browser_nav', { id, how });
@@ -915,6 +921,10 @@ export class DemoClient implements EngineClient {
 
   browserNav(): Promise<void> {
     return Promise.resolve();
+  }
+
+  streamStatus(): Promise<Record<string, { live: boolean; problem: string | null }>> {
+    return Promise.resolve({});
   }
 
   importLibrary(): Promise<LibraryItem[]> {

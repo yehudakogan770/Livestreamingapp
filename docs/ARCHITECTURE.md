@@ -174,4 +174,8 @@ they opened.
     embed the page directly. `BrowserCard.tsx`: address, back / forward /
     reload, zoom, size, auto refresh, view only). Windows-only code is
     checked with `cargo clippy --target x86_64-pc-windows-msvc`.
+    Stream inputs: **done, picture** (`crates/engine/src/stream.rs`;
+    `src-tauri/src/streams.rs`: FFmpeg reads each SRT / RTMP / RTSP / HLS / UDP
+    link into JPEG pictures, served like web pages; it reconnects by itself and
+    says in plain words why a link isn't coming in). Sound from streams: next.
 11. Installer, auto-update, rehearsal / soak testing, release.

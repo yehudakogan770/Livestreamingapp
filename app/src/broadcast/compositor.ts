@@ -198,6 +198,11 @@ export class ProgramCompositor {
       }
       case 'microphone':
         return;
+      case 'stream': {
+        const frame = this.pageFrame(src.id, false);
+        if (frame) this.fit(frame, src.fit, w, h);
+        return;
+      }
       case 'browser': {
         const frame = this.pageFrame(src.id);
         if (frame) this.fit(frame, src.fit, w, h);
@@ -354,13 +359,13 @@ export class ProgramCompositor {
 
   /** Draw a picture filling the frame (contain: whole picture; cover: no bars). */
   /** The newest frame of a web page (and ask for the next one). */
-  private pageFrame(id: string): ImageBitmap | null {
+  private pageFrame(id: string, needsCapture = true): ImageBitmap | null {
     if (!this.pageInfo) {
       void browserInfo(() => this.client.browserInfo()).then((i) => (this.pageInfo = i));
       return null;
     }
     const { port, captured } = this.pageInfo;
-    if (!captured || !port) return null;
+    if ((needsCapture && !captured) || !port) return null;
     let p = this.pages.get(id);
     if (!p) {
       p = { n: 0, frame: null, busy: false, seen: 0 };
