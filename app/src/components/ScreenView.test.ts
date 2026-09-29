@@ -60,9 +60,9 @@ describe('transitionKeyframes', () => {
     expect(Math.max(...black)).toBeCloseTo(1);
     expect(black[black.length - 1]).toBeCloseTo(0);
     const wipe = transitionKeyframes('wipe', 'in');
-    expect(wipe[0]!.clipPath).toBe('inset(0 100.000% 0 0)');
-    expect(wipe[wipe.length - 1]!.clipPath).toBe('inset(0 0.000% 0 0)');
+    expect(wipe[0]!.clipPath).toBe('inset(0.000% 100.000% 0.000% 0.000%)');
+    expect(wipe[wipe.length - 1]!.clipPath).toBe('inset(0.000% 0.000% 0.000% 0.000%)');
     const out = transitionKeyframes('slide', 'out');
-    expect(out[out.length - 1]!.transform).toBe('translateX(-100%)');
+    expect(out[out.length - 1]!.transform).toBe('translate(-100%, 0%) scale(1)');
   });
 });

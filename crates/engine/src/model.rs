@@ -72,7 +72,7 @@ impl std::fmt::Display for SourceId {
 
 /// The kinds of transition between two sources.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum TransitionKind {
     /// Instant switch.
@@ -88,6 +88,33 @@ pub enum TransitionKind {
     Wipe,
     /// The new source slides in.
     Slide,
+    /// Wipes from the right, from the top, from the bottom.
+    WipeLeft,
+    WipeDown,
+    WipeUp,
+    /// Pushes from the left, from the top, from the bottom.
+    SlideRight,
+    SlideDown,
+    SlideUp,
+    /// The new source slides in over the old one.
+    Cover,
+    /// The old source slides away, uncovering the new one.
+    Reveal,
+    /// Opens from the middle like doors (sideways, up and down).
+    Split,
+    SplitVertical,
+    /// A circle opens from the middle.
+    Iris,
+    /// A diamond opens from the middle.
+    Diamond,
+    /// The new source grows from the middle while fading in.
+    Zoom,
+    /// The old source grows towards the viewer and fades away.
+    ZoomOut,
+    /// Blurs out and into the new source.
+    Blur,
+    /// A flash of white, then the new source.
+    Flash,
 }
 
 /// A transition type together with its length.

@@ -326,6 +326,21 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
 }
+.switch__more {
+  grid-column: 1 / -1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--button);
+  color: var(--text);
+  font-size: 12px;
+}
+.switch__more.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
 .switch__durations {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

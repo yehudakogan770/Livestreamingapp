@@ -24,7 +24,7 @@ import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '
 import type { Credits } from '../engine/types/Credits';
 import type { TextInput } from '../engine/types/TextInput';
 import type { Overlay } from '../engine/types/Overlay';
-import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, fadeAmount, formatCountdown, ZERO_HOLD_MS } from '../engine/timing';
+import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, fadeAmount, formatCountdown, ZERO_HOLD_MS, type Shape } from '../engine/timing';
 
 const FONT = '"Segoe UI", system-ui, sans-serif';
 const BARS = ['#c0c0c0', '#c0c000', '#00c0c0', '#00c000', '#c000c0', '#c00000', '#0000c0'];
@@ -113,7 +113,7 @@ export class ProgramCompositor {
     if (!show) return;
 
     const sc = show.screens[this.screen];
-    const { layers, black } = programLayers(show, this.screen, now);
+    const { layers, black, white } = programLayers(show, this.screen, now);
     // Also open what is behind a Pesukim input on air.
     const behind = layers.map((l) => pesukimOf(show, l.id)?.look.behind ?? null);
     // And what is inside a split screen on air.
@@ -136,23 +136,28 @@ export class ProgramCompositor {
       }
     }
 
-    for (const l of layers) {
+    for (const l of [...layers].sort((a, b) => Number(!!a.top) - Number(!!b.top))) {
       const src = show.sources.find((s) => s.id === l.id);
       if (!src || l.opacity <= 0) continue;
       ctx.save();
       ctx.globalAlpha = clamp01(l.opacity);
-      if (l.shift) ctx.translate((l.shift / 100) * w, 0);
-      // Wipe: the incoming picture is revealed from the left.
-      const wipe = l.clip && /inset\(0 ([\d.]+)% 0 0\)/.exec(l.clip);
-      if (wipe) {
+      if (l.shape) {
         ctx.beginPath();
-        ctx.rect(0, 0, w * (1 - Number(wipe[1]) / 100), h);
+        shapePath(ctx, l.shape, w, h);
         ctx.clip();
       }
+      if (l.shift || l.shiftY) ctx.translate(((l.shift ?? 0) / 100) * w, ((l.shiftY ?? 0) / 100) * h);
+      if (l.scale !== undefined && l.scale !== 1) {
+        ctx.translate(w / 2, h / 2);
+        ctx.scale(l.scale, l.scale);
+        ctx.translate(-w / 2, -h / 2);
+      }
+      if (l.blur) ctx.filter = `blur(${(l.blur * h).toFixed(2)}px)`;
       this.drawSource(src, show.event, now, w, h);
       ctx.restore();
     }
     this.overlay('#000', black, w, h);
+    this.overlay('#fff', white, w, h);
     for (const { o } of overlays) this.drawOverlay(o, show, now, w, h);
     this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), w, h);
     const panic = fadeAmount(show.panic, show.panicChangedAt, now);
@@ -935,5 +940,23 @@ function mediaKey(src: Source): string {
       return `camera:${k.deviceId}`;
     default:
       return k.type;
+  }
+}
+
+/** The outline of a transition's shape, in pixels. */
+export function shapePath(ctx: CanvasRenderingContext2D, s: Shape, w: number, h: number): void {
+  switch (s.type) {
+    case 'rect':
+      ctx.rect(s.l * w, s.t * h, w * (1 - s.l - s.r), h * (1 - s.t - s.b));
+      return;
+    case 'circle':
+      ctx.arc(w / 2, h / 2, (s.r * Math.hypot(w, h)) / 2, 0, Math.PI * 2);
+      return;
+    case 'diamond':
+      ctx.moveTo(w / 2, h * (0.5 - s.r));
+      ctx.lineTo(w * (0.5 + s.r), h / 2);
+      ctx.lineTo(w / 2, h * (0.5 + s.r));
+      ctx.lineTo(w * (0.5 - s.r), h / 2);
+      ctx.closePath();
   }
 }

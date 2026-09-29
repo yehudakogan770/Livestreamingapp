@@ -11,7 +11,54 @@ export const KINDS: { kind: TransitionKind; name: string }[] = [
   { kind: 'wipe', name: 'Wipe' },
   { kind: 'slide', name: 'Slide' },
   { kind: 'cut', name: 'Cut' },
+  { kind: 'wipeLeft', name: 'Wipe ←' },
+  { kind: 'wipeDown', name: 'Wipe ↓' },
+  { kind: 'wipeUp', name: 'Wipe ↑' },
+  { kind: 'slideRight', name: 'Slide →' },
+  { kind: 'slideDown', name: 'Slide ↓' },
+  { kind: 'slideUp', name: 'Slide ↑' },
+  { kind: 'cover', name: 'Cover' },
+  { kind: 'reveal', name: 'Reveal' },
+  { kind: 'split', name: 'Doors' },
+  { kind: 'splitVertical', name: 'Doors ↕' },
+  { kind: 'iris', name: 'Circle' },
+  { kind: 'diamond', name: 'Diamond' },
+  { kind: 'zoom', name: 'Zoom in' },
+  { kind: 'zoomOut', name: 'Zoom out' },
+  { kind: 'blur', name: 'Blur' },
+  { kind: 'flash', name: 'Flash' },
 ];
+
+/** The ones with their own button; the rest are under "More". */
+const MAIN = 6;
+
+/** Buttons for the usual transitions and a list with all the others. */
+function KindPicker({ value, onPick, label }: { value: TransitionKind; onPick: (k: TransitionKind) => void; label: string }) {
+  const more = KINDS.slice(MAIN);
+  const inMore = more.some((k) => k.kind === value);
+  return (
+    <div className="switch__kinds" role="radiogroup" aria-label={label}>
+      {KINDS.slice(0, MAIN).map((k) => (
+        <button key={k.kind} type="button" role="radio" aria-checked={value === k.kind} className="seg" onClick={() => onPick(k.kind)}>
+          {k.name}
+        </button>
+      ))}
+      <select
+        className={`switch__more${inMore ? ' is-on' : ''}`}
+        aria-label={`More ${label.toLowerCase()}s`}
+        value={inMore ? value : ''}
+        onChange={(e) => e.target.value && onPick(e.target.value as TransitionKind)}
+      >
+        <option value="">More…</option>
+        {more.map((k) => (
+          <option key={k.kind} value={k.kind}>
+            {k.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
 
 export const DURATIONS = [300, 500, 800, 1200, 2000, 3000];
 
@@ -42,20 +89,7 @@ export function SwitchPanel({ show, screen, act }: { show: Show; screen: ScreenI
       >
         CUT
       </button>
-      <div className="switch__kinds" role="radiogroup" aria-label="Transition">
-        {KINDS.map((k) => (
-          <button
-            key={k.kind}
-            type="button"
-            role="radio"
-            aria-checked={t.kind === k.kind}
-            className="seg"
-            onClick={() => act({ type: 'setTransition', kind: k.kind })}
-          >
-            {k.name}
-          </button>
-        ))}
-      </div>
+      <KindPicker label="Transition" value={t.kind} onPick={(kind) => act({ type: 'setTransition', kind })} />
       <div className="switch__durations" role="radiogroup" aria-label="Transition length">
         {DURATIONS.map((d) => (
           <button
@@ -109,19 +143,11 @@ function Favourites({ show, screen, act, disabled }: { show: Show; screen: Scree
       </div>
       {f && editing !== null && (
         <div className="switch__favpick" role="group" aria-label={`Favourite ${editing + 1}`}>
-          <div className="switch__kinds">
-            {KINDS.map((k) => (
-              <button
-                key={k.kind}
-                type="button"
-                className="seg"
-                aria-pressed={f.kind === k.kind}
-                onClick={() => act({ type: 'setFavouriteTransition', index: editing, transition: { ...f, kind: k.kind } })}
-              >
-                {k.name}
-              </button>
-            ))}
-          </div>
+          <KindPicker
+            label="Favourite transition"
+            value={f.kind}
+            onPick={(kind) => act({ type: 'setFavouriteTransition', index: editing, transition: { ...f, kind } })}
+          />
           <div className="switch__durations">
             {DURATIONS.map((d) => (
               <button

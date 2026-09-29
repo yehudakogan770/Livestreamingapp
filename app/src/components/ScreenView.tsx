@@ -3,16 +3,29 @@ import type { EngineClient } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { TransitionKind } from '../engine/types/TransitionKind';
-import { fadeAmount, mixAt, transitionProgress, BLANK_FADE_MS, type Mix } from '../engine/timing';
+import { fadeAmount, mixAt, transitionProgress, BLANK_FADE_MS, type Mix, type Shape } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { SafeScreenView, SourceView } from './SourceView';
 import { OverlaysView } from './OverlaysView';
 
-interface Layer {
+export interface Layer {
   id: string;
   opacity: number;
   clip?: string;
+  shape?: Shape;
   shift?: number;
+  shiftY?: number;
+  scale?: number;
+  /** Blur as a fraction of the frame height. */
+  blur?: number;
+  /** Drawn over the other layer. */
+  top?: boolean;
+}
+
+/** A layer's movement as a CSS transform. */
+export function layerTransform(l: { shift?: number; shiftY?: number; scale?: number }): string | undefined {
+  if (!l.shift && !l.shiftY && (l.scale ?? 1) === 1) return undefined;
+  return `translate(${l.shift ?? 0}%, ${l.shiftY ?? 0}%) scale(${l.scale ?? 1})`;
 }
 
 /**
@@ -21,36 +34,39 @@ interface Layer {
  * what is on air. Layers are keyed by source id so a video element carries on
  * playing when it moves from "incoming" to "on air".
  */
-export function programLayers(show: Show, screen: ScreenId, now: number): { layers: Layer[]; black: number } {
+export function programLayers(show: Show, screen: ScreenId, now: number): { layers: Layer[]; black: number; white: number } {
   const sc = show.screens[screen];
   const layers: Layer[] = [];
+  let white = 0;
   const pair = (outId: string | null, inId: string | null, m: Mix) => {
-    if (outId !== null) layers.push({ id: outId, opacity: m.outOpacity, shift: m.outShift });
+    if (outId !== null)
+      layers.push({ id: outId, opacity: m.outOpacity, shift: m.outShift, shiftY: m.outShiftY, scale: m.outScale, blur: m.outBlur, top: m.outOnTop });
     if (inId !== null && inId !== outId)
       layers.push({
         id: inId,
         opacity: m.inOpacity,
         clip: m.inClip,
+        shape: m.inShape,
         shift: m.inShift,
+        shiftY: m.inShiftY,
+        scale: m.inScale,
+        blur: m.inBlur,
       });
+    white = m.white ?? 0;
     return m.black;
   };
   const p = transitionProgress(sc, now);
   if (p < 1 && sc.transition && sc.previous !== null) {
-    return {
-      layers,
-      black: pair(sc.previous, sc.program, mixAt(sc.transition.kind, p)),
-    };
+    const black = pair(sc.previous, sc.program, mixAt(sc.transition.kind, p));
+    return { layers, black, white };
   }
   if (sc.tbar > 0 && sc.preview !== null && sc.preview !== sc.program) {
     const kind: TransitionKind = show.transition.kind === 'cut' ? 'fade' : show.transition.kind;
-    return {
-      layers,
-      black: pair(sc.program, sc.preview, mixAt(kind, sc.tbar)),
-    };
+    const black = pair(sc.program, sc.preview, mixAt(kind, sc.tbar));
+    return { layers, black, white };
   }
   if (sc.program !== null) layers.push({ id: sc.program, opacity: 1 });
-  return { layers, black: 0 };
+  return { layers, black: 0, white: 0 };
 }
 
 /** True while something on this screen is animating and needs every frame. */
@@ -71,24 +87,29 @@ const canAnimate = typeof Element !== 'undefined' && typeof Element.prototype.an
 const STEPS = 30;
 
 /** Keyframes for one side of a transition, sampled from {@link mixAt}. */
-export function transitionKeyframes(kind: TransitionKind, side: 'in' | 'out' | 'black'): Keyframe[] {
+export function transitionKeyframes(kind: TransitionKind, side: 'in' | 'out' | 'black' | 'white', height = 1080): Keyframe[] {
   const frames: Keyframe[] = [];
+  const move = (x = 0, y = 0, s = 1) => `translate(${x}%, ${y}%) scale(${s})`;
+  const blur = (b = 0) => `blur(${(b * height).toFixed(2)}px)`;
   for (let i = 0; i <= STEPS; i++) {
     const m = mixAt(kind, i / STEPS);
     const offset = i / STEPS;
     if (side === 'black') frames.push({ offset, opacity: m.black });
+    else if (side === 'white') frames.push({ offset, opacity: m.white ?? 0 });
     else if (side === 'in')
       frames.push({
         offset,
         opacity: m.inOpacity,
         clipPath: m.inClip ?? 'none',
-        transform: `translateX(${m.inShift ?? 0}%)`,
+        transform: move(m.inShift, m.inShiftY, m.inScale),
+        filter: blur(m.inBlur),
       });
     else
       frames.push({
         offset,
         opacity: m.outOpacity,
-        transform: `translateX(${m.outShift ?? 0}%)`,
+        transform: move(m.outShift, m.outShiftY, m.outScale),
+        filter: blur(m.outBlur),
       });
   }
   return frames;
@@ -114,9 +135,10 @@ function useTransitionAnimation(box: React.RefObject<HTMLDivElement | null>, sho
       easing: 'linear',
     };
     const anims: Animation[] = [];
-    const run = (el: Element | null | undefined, side: 'in' | 'out' | 'black') => {
+    const height = box.current.clientHeight || 1080;
+    const run = (el: Element | null | undefined, side: 'in' | 'out' | 'black' | 'white') => {
       if (!el) return;
-      const a = el.animate(transitionKeyframes(t.kind, side), timing);
+      const a = el.animate(transitionKeyframes(t.kind, side, height), timing);
       a.currentTime = Math.min(elapsed, t.durationMs);
       anims.push(a);
     };
@@ -124,6 +146,7 @@ function useTransitionAnimation(box: React.RefObject<HTMLDivElement | null>, sho
     run(root.querySelector(`[data-layer="${CSS.escape(sc.previous ?? '')}"]`), 'out');
     run(root.querySelector(`[data-layer="${CSS.escape(sc.program ?? '')}"]`), 'in');
     run(root.querySelector('[data-dip]'), 'black');
+    run(root.querySelector('[data-flash]'), 'white');
     // When it ends, draw the finished state (the outgoing picture goes away).
     const done = setTimeout(rerender, Math.max(0, t.durationMs - elapsed) + 20);
     return () => {
@@ -166,7 +189,7 @@ export function ProgramView({
   useNow(moving);
   // The ticker above only asks for redraws; each one is drawn for this very moment.
   const now = Date.now();
-  const { layers, black } = programLayers(show, screen, now);
+  const { layers, black, white } = programLayers(show, screen, now);
   const sc = show.screens[screen];
   const blank = fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs);
   // PANIC shows black or the event logo, as chosen in the event setup.
@@ -185,7 +208,9 @@ export function ProgramView({
               background: 'transparent',
               opacity: l.opacity,
               clipPath: l.clip,
-              transform: l.shift ? `translateX(${l.shift}%)` : undefined,
+              transform: layerTransform(l),
+              filter: l.blur ? `blur(${(l.blur * (ref.current?.clientHeight ?? 1080)).toFixed(2)}px)` : undefined,
+              zIndex: l.top ? 1 : undefined,
               willChange: animating ? 'opacity, transform' : undefined,
             }}
           >
@@ -194,7 +219,8 @@ export function ProgramView({
         );
       })}
       <OverlaysView show={show} screen={screen} client={client} audience={audience} />
-      {(black > 0 || animating) && <div style={{ ...box, background: '#000', opacity: black }} data-dip />}
+      {(black > 0 || animating) && <div style={{ ...box, background: '#000', opacity: black, zIndex: 2 }} data-dip />}
+      {(white > 0 || animating) && <div style={{ ...box, background: '#fff', opacity: white, zIndex: 2 }} data-flash />}
       {blank > 0 && <div style={{ ...box, background: '#000', opacity: blank, zIndex: 4 }} data-blank />}
       {panic > 0 && (
         <div style={{ ...box, opacity: panic, zIndex: 5 }} data-panic>

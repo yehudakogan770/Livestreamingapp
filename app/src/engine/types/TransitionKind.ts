@@ -3,4 +3,4 @@
 /**
  * The kinds of transition between two sources.
  */
-export type TransitionKind = "cut" | "fade" | "merge" | "dip" | "wipe" | "slide";
+export type TransitionKind = "cut" | "fade" | "merge" | "dip" | "wipe" | "slide" | "wipeLeft" | "wipeDown" | "wipeUp" | "slideRight" | "slideDown" | "slideUp" | "cover" | "reveal" | "split" | "splitVertical" | "iris" | "diamond" | "zoom" | "zoomOut" | "blur" | "flash";

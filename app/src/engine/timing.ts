@@ -47,6 +47,15 @@ export function fadeAmount(on: boolean, changedAt: number, now: number, ms = 0):
 
 const smooth = (x: number) => x * x * (3 - 2 * x);
 
+/** The part of the incoming picture that shows (fractions of the frame). */
+export type Shape =
+  /** A rectangle: how much is cut off at the top, right, bottom and left. */
+  | { type: 'rect'; t: number; r: number; b: number; l: number }
+  /** A circle from the middle; 1 covers the corners. */
+  | { type: 'circle'; r: number }
+  /** A diamond from the middle; 1 covers the corners. */
+  | { type: 'diamond'; r: number };
+
 /** How the incoming and outgoing pictures look at progress `p` of a transition. */
 export interface Mix {
   /** Opacity of the incoming picture. */
@@ -55,31 +64,104 @@ export interface Mix {
   outOpacity: number;
   /** Black drawn over both (dip). */
   black: number;
-  /** CSS clip-path for the incoming picture (wipe). */
+  /** White drawn over both (flash). */
+  white?: number;
+  /** The visible part of the incoming picture (wipes, iris…). */
+  inShape?: Shape;
+  /** The same as a CSS clip-path. */
   inClip?: string;
-  /** Horizontal offsets in % (slide). */
+  /** Offsets in % of the frame (slides). */
   inShift?: number;
   outShift?: number;
+  inShiftY?: number;
+  outShiftY?: number;
+  /** Size, 1 = as is (zooms). */
+  inScale?: number;
+  outScale?: number;
+  /** Blur, as a fraction of the frame height. */
+  inBlur?: number;
+  outBlur?: number;
+  /** The outgoing picture is drawn over the incoming one (reveal, zoom out). */
+  outOnTop?: boolean;
 }
 
-export function mixAt(kind: TransitionKind, p: number): Mix {
-  const x = Math.min(1, Math.max(0, p));
+const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
+
+/** A shape as a CSS clip-path. */
+export function clipPath(s: Shape): string {
+  switch (s.type) {
+    case 'rect':
+      return `inset(${pct(s.t)} ${pct(s.r)} ${pct(s.b)} ${pct(s.l)})`;
+    case 'circle':
+      // CSS measures circle radii against the diagonal ÷ √2; half the diagonal covers the corners.
+      return `circle(${pct(s.r * Math.SQRT1_2)} at 50% 50%)`;
+    case 'diamond':
+      return `polygon(50% ${pct(0.5 - s.r)}, ${pct(0.5 + s.r)} 50%, 50% ${pct(0.5 + s.r)}, ${pct(0.5 - s.r)} 50%)`;
+  }
+}
+
+const rect = (t: number, r: number, b: number, l: number): Shape => ({ type: 'rect', t, r, b, l });
+
+/** How blurred the pictures get in the middle of a blur transition. */
+const BLUR = 0.03;
+
+function mixOf(kind: TransitionKind, x: number): Mix {
+  const e = smooth(x);
+  const whole: Mix = { inOpacity: 1, outOpacity: 1, black: 0 };
   switch (kind) {
     case 'cut':
       return { inOpacity: x >= 1 ? 1 : 0, outOpacity: 1, black: 0 };
     case 'fade':
       return { inOpacity: x, outOpacity: 1, black: 0 };
     case 'merge':
-      return { inOpacity: smooth(x), outOpacity: 1 - smooth(x) * 0.35, black: 0 };
+      return { inOpacity: e, outOpacity: 1 - e * 0.35, black: 0 };
     case 'dip':
       return x < 0.5 ? { inOpacity: 0, outOpacity: 1, black: smooth(x * 2) } : { inOpacity: 1, outOpacity: 0, black: smooth((1 - x) * 2) };
+    case 'flash':
+      return x < 0.5 ? { inOpacity: 0, outOpacity: 1, black: 0, white: smooth(x * 2) } : { inOpacity: 1, outOpacity: 0, black: 0, white: smooth((1 - x) * 2) };
     case 'wipe':
-      return { inOpacity: 1, outOpacity: 1, black: 0, inClip: `inset(0 ${((1 - x) * 100).toFixed(3)}% 0 0)` };
-    case 'slide': {
-      const e = smooth(x);
-      return { inOpacity: 1, outOpacity: 1, black: 0, inShift: (1 - e) * 100, outShift: -e * 100 };
+      return { ...whole, inShape: rect(0, 1 - x, 0, 0) };
+    case 'wipeLeft':
+      return { ...whole, inShape: rect(0, 0, 0, 1 - x) };
+    case 'wipeDown':
+      return { ...whole, inShape: rect(0, 0, 1 - x, 0) };
+    case 'wipeUp':
+      return { ...whole, inShape: rect(1 - x, 0, 0, 0) };
+    case 'split':
+      return { ...whole, inShape: rect(0, (1 - x) / 2, 0, (1 - x) / 2) };
+    case 'splitVertical':
+      return { ...whole, inShape: rect((1 - x) / 2, 0, (1 - x) / 2, 0) };
+    case 'iris':
+      return { ...whole, inShape: { type: 'circle', r: e } };
+    case 'diamond':
+      return { ...whole, inShape: { type: 'diamond', r: e } };
+    case 'slide':
+      return { ...whole, inShift: (1 - e) * 100, outShift: -e * 100 };
+    case 'slideRight':
+      return { ...whole, inShift: -(1 - e) * 100, outShift: e * 100 };
+    case 'slideDown':
+      return { ...whole, inShiftY: -(1 - e) * 100, outShiftY: e * 100 };
+    case 'slideUp':
+      return { ...whole, inShiftY: (1 - e) * 100, outShiftY: -e * 100 };
+    case 'cover':
+      return { ...whole, inShift: (1 - e) * 100 };
+    case 'reveal':
+      return { ...whole, outShift: -e * 100, outOnTop: true };
+    case 'zoom':
+      return { inOpacity: e, outOpacity: 1, black: 0, inScale: 0.6 + 0.4 * e };
+    case 'zoomOut':
+      return { inOpacity: 1, outOpacity: 1 - e, black: 0, outScale: 1 + 0.6 * e, outOnTop: true };
+    case 'blur': {
+      const b = Math.sin(Math.PI * x) * BLUR;
+      return { inOpacity: smooth(Math.min(1, Math.max(0, (x - 0.3) / 0.4))), outOpacity: 1, black: 0, inBlur: b, outBlur: b };
     }
   }
+}
+
+export function mixAt(kind: TransitionKind, p: number): Mix {
+  const m = mixOf(kind, Math.min(1, Math.max(0, p)));
+  if (m.inShape) m.inClip = clipPath(m.inShape);
+  return m;
 }
 
 /** Format seconds as m:ss (or h:mm:ss). */

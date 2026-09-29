@@ -1,3 +1,4 @@
+import type { TransitionKind } from './types/TransitionKind';
 import { defaultAdjust } from './chroma';
 import { describe, expect, it } from 'vitest';
 import { clock, fadeAmount, mixAt, sourceEnded, sourcePosition, transitionProgress } from './timing';
@@ -71,8 +72,33 @@ describe('mixAt', () => {
     expect(late.outOpacity).toBe(0);
   });
   it('wipes and slides reach exactly the new picture at the end', () => {
-    expect(mixAt('wipe', 1).inClip).toBe('inset(0 0.000% 0 0)');
+    expect(mixAt('wipe', 1).inClip).toBe('inset(0.000% 0.000% 0.000% 0.000%)');
     expect(mixAt('slide', 1)).toMatchObject({ inShift: 0, outShift: -100 });
+  });
+
+  it('every transition starts on the old picture and ends on the new one', () => {
+    const kinds: TransitionKind[] = [
+      'fade', 'merge', 'dip', 'flash', 'wipe', 'wipeLeft', 'wipeDown', 'wipeUp', 'split', 'splitVertical',
+      'iris', 'diamond', 'slide', 'slideRight', 'slideDown', 'slideUp', 'cover', 'reveal', 'zoom', 'zoomOut', 'blur',
+    ];
+    for (const k of kinds) {
+      const end = mixAt(k, 1);
+      expect(end.inOpacity, k).toBeCloseTo(1);
+      expect(end.black, k).toBeCloseTo(0);
+      expect(end.white ?? 0, k).toBeCloseTo(0);
+      expect(end.inShift ?? 0, k).toBeCloseTo(0);
+      expect(end.inShiftY ?? 0, k).toBeCloseTo(0);
+      expect(end.inScale ?? 1, k).toBeCloseTo(1);
+      expect(end.inBlur ?? 0, k).toBeCloseTo(0);
+      // The old picture is gone or covered.
+      if (end.outOnTop) expect(end.outOpacity === 0 || Math.abs(end.outShift ?? 0) >= 100, k).toBe(true);
+      const start = mixAt(k, 0);
+      const hidden = start.inOpacity === 0 || Math.abs(start.inShift ?? 0) >= 100 || Math.abs(start.inShiftY ?? 0) >= 100 || !!start.inShape;
+      expect(hidden, k).toBe(true);
+    }
+    expect(mixAt('iris', 0.5).inClip).toMatch(/^circle\(/);
+    expect(mixAt('diamond', 1).inClip).toBe('polygon(50% -50.000%, 150.000% 50%, 50% 150.000%, -50.000% 50%)');
+    expect(mixAt('split', 0).inClip).toBe('inset(0.000% 50.000% 0.000% 50.000%)');
   });
   it('clamps out-of-range progress', () => {
     expect(mixAt('fade', 2).inOpacity).toBe(1);
