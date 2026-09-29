@@ -424,6 +424,12 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'reloadGuest': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'guest') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a guest' });
+      src.kind.reload += 1;
+      return;
+    }
     case 'showComment': {
       const c = commentIn(s, a.id);
       c.comment = a.comment ? { ...a.comment, author: [...a.comment.author].slice(0, 60).join(''), text: [...a.comment.text].slice(0, 400).join('') } : null;

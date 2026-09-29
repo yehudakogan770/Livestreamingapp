@@ -63,7 +63,8 @@ export function mixSend(show: Show, src: Source, mix: Mix): number {
 
 /** Sources that make sound, in mixer order. */
 export function soundSources(show: Show): Source[] {
-  return show.sources.filter((s) => s.kind.type === 'video' || s.kind.type === 'microphone' || s.kind.type === 'stream');
+  const heard = ['video', 'microphone', 'stream', 'browser', 'guest'];
+  return show.sources.filter((s) => heard.includes(s.kind.type));
 }
 
 /** True while levels are changing on their own (transitions, T-bar, fades). */

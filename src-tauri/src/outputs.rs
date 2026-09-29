@@ -83,6 +83,7 @@ pub fn open(app: &AppHandle, show: &Show, screen: ScreenId) -> tauri::Result<()>
         w
     } else {
         let w = WebviewWindowBuilder::new(app, &name, WebviewUrl::default())
+            .additional_browser_args(crate::BROWSER_ARGS)
             .title(format!("Lumora — {} output", screen.label()))
             .inner_size(960.0, 540.0)
             .min_inner_size(320.0, 180.0)
@@ -126,6 +127,7 @@ pub fn open_multiview(app: &AppHandle, show: &Show) -> tauri::Result<()> {
         w
     } else {
         WebviewWindowBuilder::new(app, MULTIVIEW, WebviewUrl::default())
+            .additional_browser_args(crate::BROWSER_ARGS)
             .title("Lumora — Multiview")
             .inner_size(1280.0, 720.0)
             .min_inner_size(480.0, 270.0)

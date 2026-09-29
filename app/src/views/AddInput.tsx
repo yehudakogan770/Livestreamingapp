@@ -1,3 +1,4 @@
+import { newRoom } from '../engine/guest';
 import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
 import { CapturePicker } from './CapturePicker';
@@ -40,6 +41,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'guest', name: 'Guest by link', hint: 'Someone joins from their phone or computer, anywhere' },
   { kind: 'comment', name: 'Chat comments', hint: 'Comments from the YouTube or Twitch live chat, on screen' },
   { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
   { kind: 'lyrics', name: 'Song lyrics', hint: 'The words of a song, a verse at a time' },
@@ -154,6 +156,8 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'guest':
+        return { name: n || 'Guest', kind: { type: 'guest', room: newRoom(), reload: 0 } };
       case 'comment':
         return { name: n || 'Chat comments', kind: { type: 'comment', comment: null, changedAt: 0, place: 'low', accent: '#2f80ed' } };
       case 'poll': {
@@ -330,6 +334,13 @@ export function AddInput({
               <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
             )}
 
+            {kind === 'guest' && (
+              <p className="field__note">
+                Give the guest a name above. After adding, open the guest's ⋯ menu → “Guest link…” and send them the link. They open it on their phone or
+                computer, allow the camera and microphone, and appear here with their sound in the mixer. This uses the internet (VDO.Ninja, free, no account),
+                only while the guest input exists.
+              </p>
+            )}
             {kind === 'poll' && (
               <>
                 <label className="field">

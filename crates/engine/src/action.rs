@@ -242,6 +242,10 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Reload a guest's picture (if it froze or they rejoined).
+    ReloadGuest {
+        id: SourceId,
+    },
     /// Show a chat comment (or, with none, take it off).
     ShowComment {
         id: SourceId,

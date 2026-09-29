@@ -850,6 +850,16 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::ReloadGuest { id } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            let SourceKind::Guest(g) = &mut src.kind else {
+                return Err(ActionError::invalid("id", "that input is not a guest"));
+            };
+            g.reload = g.reload.wrapping_add(1);
+            Ok(())
+        }
         Action::ShowComment { id, comment } => {
             let c = comment_mut(s, &id)?;
             c.comment = comment;
@@ -2077,6 +2087,18 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
     Ok(())
 }
 
+/// A new guest needs a proper room name (it is in their link).
+fn clean_guest(mut g: Box<crate::browser::Guest>) -> Result<SourceKind> {
+    g.repair();
+    if !g.valid() {
+        return Err(ActionError::invalid(
+            "room",
+            "a guest needs a room name of 6 or more letters and digits",
+        ));
+    }
+    Ok(SourceKind::Guest(g))
+}
+
 /// A new song, screen capture or scoreboard: valid, from its start.
 fn fresh(mut kind: SourceKind) -> SourceKind {
     match &mut kind {
@@ -2133,6 +2155,7 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         | SourceKind::Scoreboard(_)
         | SourceKind::Poll(_)
         | SourceKind::Comment(_)) => fresh(k),
+        SourceKind::Guest(g) => clean_guest(g)?,
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {
                 ActionError::invalid(

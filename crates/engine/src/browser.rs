@@ -77,3 +77,63 @@ impl BrowserInput {
         self.refresh_min = self.refresh_min.min(24 * 60);
     }
 }
+
+/// A guest who joins from their phone or computer by a link. They send
+/// their camera and microphone through VDO.Ninja (free, in the browser, no
+/// account); Lumora shows them like a web page input, sound included.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct Guest {
+    /// The private room name in both links (letters and digits only).
+    pub room: String,
+    /// Bumped to reload the guest's picture now.
+    pub reload: u32,
+}
+
+impl Guest {
+    /// Keep only letters and digits, 6 – 40 of them.
+    pub fn repair(&mut self) {
+        self.room = self
+            .room
+            .chars()
+            .filter(char::is_ascii_alphanumeric)
+            .take(40)
+            .collect();
+    }
+
+    #[must_use]
+    pub fn valid(&self) -> bool {
+        self.room.len() >= 6
+    }
+
+    /// The link the guest opens.
+    #[must_use]
+    pub fn invite_url(&self, name: &str) -> String {
+        let label: String = name
+            .chars()
+            .filter(char::is_ascii_alphanumeric)
+            .take(30)
+            .collect();
+        format!(
+            "https://vdo.ninja/?push={}&webcam&label={label}&quality=0",
+            self.room
+        )
+    }
+
+    /// The page Lumora opens to receive the guest.
+    #[must_use]
+    pub fn page(&self) -> BrowserInput {
+        BrowserInput {
+            url: format!(
+                "https://vdo.ninja/?view={}&cleanoutput&scale=100&noaudioprocessing",
+                self.room
+            ),
+            width: 1280,
+            height: 720,
+            view_only: true,
+            reload: self.reload,
+            ..BrowserInput::default()
+        }
+    }
+}

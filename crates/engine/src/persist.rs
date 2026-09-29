@@ -132,6 +132,7 @@ pub fn repair(mut s: Show) -> Show {
             SourceKind::Lyrics(l) => l.repair(),
             SourceKind::Poll(p) => p.repair(),
             SourceKind::Comment(c) => c.repair(),
+            SourceKind::Guest(g) => g.repair(),
             SourceKind::Pesukim(p) => {
                 p.repair();
                 let defaults = crate::pesukim::PesukimLook::default();

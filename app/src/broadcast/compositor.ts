@@ -606,6 +606,11 @@ export class ProgramCompositor {
         if (frame) this.fit(frame, src.fit, w, h);
         return;
       }
+      case 'guest': {
+        const frame = this.pageFrame(src.id, false);
+        if (frame) this.fit(frame, src.fit, w, h);
+        return;
+      }
       case 'browser': {
         const frame = this.pageFrame(src.id);
         if (frame) this.fit(frame, src.fit, w, h);

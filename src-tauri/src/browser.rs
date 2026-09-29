@@ -12,7 +12,7 @@
 //! Elsewhere (no capture) the screens show the page directly instead.
 
 use std::collections::HashMap;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
@@ -116,6 +116,28 @@ impl Sounds {
     }
 }
 
+/// `%xx` in an address back to the text.
+fn percent_decode(s: &str) -> String {
+    let b = s.as_bytes();
+    let mut out = Vec::with_capacity(b.len());
+    let mut i = 0;
+    while i < b.len() {
+        if b[i] == b'%' && i + 2 < b.len() {
+            if let Some(v) = std::str::from_utf8(&b[i + 1..i + 3])
+                .ok()
+                .and_then(|h| u8::from_str_radix(h, 16).ok())
+            {
+                out.push(v);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(b[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
 /// Encode a frame of RGBA pixels: JPEG normally, PNG when see-through.
 #[cfg_attr(not(windows), allow(dead_code))] // only Windows captures pages
 pub fn encode(
@@ -177,9 +199,40 @@ fn header(name: &str, value: &str) -> tiny_http::Header {
 fn serve(frames: &Frames, sounds: &Sounds, request: tiny_http::Request) {
     let url = request.url().to_owned();
     let (path, query) = url.split_once('?').unwrap_or((&url, ""));
+    let method = request.method().clone();
+    if let Some(id) = path.strip_prefix("/audio-in/") {
+        // Sound from a page window (see page_sound.js). Pages are on the web,
+        // so the browser asks first whether it may send here.
+        let id = id.to_owned();
+        let cors = |r: tiny_http::Response<std::io::Cursor<Vec<u8>>>| {
+            r.with_header(header("Access-Control-Allow-Origin", "*"))
+                .with_header(header("Access-Control-Allow-Methods", "POST"))
+                .with_header(header("Access-Control-Allow-Headers", "content-type"))
+                .with_header(header("Access-Control-Allow-Private-Network", "true"))
+        };
+        if method == tiny_http::Method::Post {
+            let mut request = request;
+            let mut body = Vec::new();
+            let _ =
+                std::io::Read::take(request.as_reader(), 4 * 1024 * 1024).read_to_end(&mut body);
+            body.truncate(body.len() - body.len() % 4);
+            let id = percent_decode(&id);
+            if !body.is_empty() {
+                sounds.put(&id, body);
+            }
+            let _ = request.respond(cors(
+                tiny_http::Response::from_data(Vec::new()).with_status_code(204),
+            ));
+        } else {
+            let _ = request.respond(cors(
+                tiny_http::Response::from_data(Vec::new()).with_status_code(204),
+            ));
+        }
+        return;
+    }
     if let Some(id) = path.strip_prefix("/audio/") {
         // Raw sound, as it arrives, until the listener goes away.
-        let rx = sounds.listen(id);
+        let rx = sounds.listen(&percent_decode(id));
         let mut w = request.into_writer();
         let head = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nAccess-Control-Allow-Origin: *\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n";
         if w.write_all(head.as_bytes()).is_err() {
@@ -301,7 +354,8 @@ impl Browsers {
         let server = FrameServer::start(Arc::clone(&frames), Arc::clone(&sounds));
         let (tx, rx) = mpsc::channel();
         let f2 = Arc::clone(&frames);
-        thread::spawn(move || manage(&app, &rx, &f2));
+        let port = server.as_ref().map(|s| s.port);
+        thread::spawn(move || manage(&app, &rx, &f2, port));
         Browsers {
             tx: Mutex::new(tx),
             frames,
@@ -321,7 +375,7 @@ impl Browsers {
 
 /// Runs on its own thread: windows are made and changed here, never while a
 /// command is waiting on the main thread.
-fn manage(app: &AppHandle, rx: &Receiver<Show>, frames: &Arc<Frames>) {
+fn manage(app: &AppHandle, rx: &Receiver<Show>, frames: &Arc<Frames>, port: Option<u16>) {
     let mut pages: HashMap<String, Page> = HashMap::new();
     loop {
         match rx.recv_timeout(Duration::from_secs(5)) {
@@ -330,7 +384,7 @@ fn manage(app: &AppHandle, rx: &Receiver<Show>, frames: &Arc<Frames>) {
                 while let Ok(newer) = rx.try_recv() {
                     show = newer;
                 }
-                apply(app, &mut pages, &show, frames);
+                apply(app, &mut pages, &show, frames, port);
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {}
             Err(mpsc::RecvTimeoutError::Disconnected) => return,
@@ -348,13 +402,23 @@ fn manage(app: &AppHandle, rx: &Receiver<Show>, frames: &Arc<Frames>) {
     }
 }
 
-fn apply(app: &AppHandle, pages: &mut HashMap<String, Page>, show: &Show, frames: &Arc<Frames>) {
-    let wanted: HashMap<String, (&str, &BrowserInput)> = show
+fn apply(
+    app: &AppHandle,
+    pages: &mut HashMap<String, Page>,
+    show: &Show,
+    frames: &Arc<Frames>,
+    port: Option<u16>,
+) {
+    let wanted: HashMap<String, (&str, BrowserInput)> = show
         .sources
         .iter()
         .filter_map(|s| match &s.kind {
             SourceKind::Browser(b) if b.url != BrowserInput::default().url => {
-                Some((s.id.as_str().to_owned(), (s.name.as_str(), &**b)))
+                Some((s.id.as_str().to_owned(), (s.name.as_str(), (**b).clone())))
+            }
+            // A guest is a page too: the one that receives them.
+            SourceKind::Guest(g) if g.valid() => {
+                Some((s.id.as_str().to_owned(), (s.name.as_str(), g.page())))
             }
             _ => None,
         })
@@ -377,6 +441,7 @@ fn apply(app: &AppHandle, pages: &mut HashMap<String, Page>, show: &Show, frames
         }
     }
     for (id, (name, input)) in wanted {
+        let input = &input;
         let open = pages.get(&id);
         let recreate = open.is_none_or(|p| p.input.transparent != input.transparent)
             || app.get_webview_window(&label(&id)).is_none();
@@ -389,7 +454,7 @@ fn apply(app: &AppHandle, pages: &mut HashMap<String, Page>, show: &Show, frames
             if let Some(w) = app.get_webview_window(&label(&id)) {
                 let _ = w.destroy();
             }
-            match open_page(app, &id, name, input, frames) {
+            match open_page(app, &id, name, input, frames, port) {
                 Ok(capture) => {
                     pages.insert(
                         id.clone(),
@@ -443,9 +508,12 @@ fn open_page(
     name: &str,
     input: &BrowserInput,
     frames: &Arc<Frames>,
+    port: Option<u16>,
 ) -> Result<Option<capture::Capture>, String> {
     let url = input.url.parse().map_err(|e| format!("{e}"))?;
     let w = WebviewWindowBuilder::new(app, label(id), WebviewUrl::External(url))
+        .additional_browser_args(crate::BROWSER_ARGS)
+        .initialization_script(sound_script(port, id))
         .title(format!("Lumora web page — {name}"))
         .decorations(false)
         .resizable(false)
@@ -471,6 +539,19 @@ fn open_page(
         Arc::clone(frames),
     ))
 }
+
+/// Runs in every page window: its sound (videos, music, a guest's voice) is
+/// sent to the app's mixer, and the window itself stays silent.
+fn sound_script(port: Option<u16>, id: &str) -> String {
+    let Some(port) = port else {
+        return String::new();
+    };
+    SOUND_SCRIPT
+        .replace("__PORT__", &port.to_string())
+        .replace("__ID__", &serde_json::to_string(id).unwrap_or_default())
+}
+
+const SOUND_SCRIPT: &str = include_str!("page_sound.js");
 
 /// Bring a page window to the front to click on it, or send it back.
 pub fn show_page(app: &AppHandle, id: &str, front: bool) -> Result<(), String> {
@@ -765,6 +846,31 @@ mod tests {
             encode(&rgba[..10], 64, 36, false).is_none(),
             "too few pixels"
         );
+    }
+
+    #[test]
+    fn page_sound_is_passed_to_listeners() {
+        let sounds = Arc::new(Sounds::default());
+        let server = FrameServer::start(Arc::default(), Arc::clone(&sounds)).unwrap();
+        let rx = sounds.listen("page 1");
+        let post = |method: &str, body: &[u8]| {
+            let mut s = std::net::TcpStream::connect(("127.0.0.1", server.port)).unwrap();
+            write!(
+                s,
+                "{method} /audio-in/page%201 HTTP/1.1\r\nHost: x\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                body.len()
+            )
+            .unwrap();
+            s.write_all(body).unwrap();
+            let mut text = String::new();
+            let _ = s.read_to_string(&mut text);
+            text
+        };
+        let asked = post("OPTIONS", b"");
+        assert!(asked.contains("Access-Control-Allow-Private-Network: true"));
+        post("POST", &[1, 2, 3, 4, 5, 6]);
+        let chunk = rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        assert_eq!(&chunk[..], &[1, 2, 3, 4], "whole stereo samples only");
     }
 
     #[test]

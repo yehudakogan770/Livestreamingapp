@@ -1,3 +1,4 @@
+import { guestPage } from '../engine/guest';
 import { CommentView } from './CommentView';
 import { PollView } from './PollView';
 import { LyricsView } from './LyricsView';
@@ -117,6 +118,18 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
     case 'scoreboard':
       return <ScoreboardView sb={k} />;
+    case 'guest':
+      // Shown directly (outside the Windows app) in every window, so silent there: the mixer isn't fed that way.
+      return (
+        <BrowserView
+          id={source.id}
+          page={{ ...guestPage(k), url: `${guestPage(k).url}&noaudio` }}
+          client={client}
+          fit={fit}
+          thumb={thumb}
+          audience={audience}
+        />
+      );
     case 'comment':
       return <CommentView c={k} />;
     case 'poll':

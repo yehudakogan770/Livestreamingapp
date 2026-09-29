@@ -273,6 +273,8 @@ pub enum SourceKind {
     Browser(Box<crate::browser::BrowserInput>),
     /// A live video link (SRT, RTMP, RTSP, HLS…).
     Stream(Box<crate::stream::StreamInput>),
+    /// A guest joining by link (camera and sound from their phone or computer).
+    Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.
     Comment(Box<crate::chat::CommentCard>),
     /// An audience poll, voted from phones.
@@ -304,7 +306,11 @@ impl SourceKind {
     pub fn has_sound(&self) -> bool {
         matches!(
             self,
-            SourceKind::Video { .. } | SourceKind::Microphone { .. } | SourceKind::Stream(_)
+            SourceKind::Video { .. }
+                | SourceKind::Microphone { .. }
+                | SourceKind::Stream(_)
+                | SourceKind::Browser(_)
+                | SourceKind::Guest(_)
         )
     }
 }

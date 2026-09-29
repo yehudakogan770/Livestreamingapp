@@ -14,6 +14,12 @@ mod remote;
 mod store;
 mod streams;
 
+/// The same browser settings for every Lumora window (Windows needs them to
+/// match): sound and video may play without a click first — the screens,
+/// web pages and guests have nobody to click them.
+pub const BROWSER_ARGS: &str =
+    "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required";
+
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 

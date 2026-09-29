@@ -59,12 +59,14 @@ export function canChooseSpeakers(): boolean {
 const channelKey = (s: Source) =>
   s.kind.type === 'stream'
     ? `stream:${s.kind.url}`
-    : s.kind.type === 'video'
-      ? `file:${s.kind.path}`
-      : s.kind.type === 'microphone'
-        ? // Noise removal is set when the microphone opens.
-          `mic:${s.kind.deviceId}:${s.audio.filters?.noiseSuppression ? 'ns' : ''}`
-        : '';
+    : s.kind.type === 'browser' || s.kind.type === 'guest'
+      ? `page:${s.id}`
+      : s.kind.type === 'video'
+        ? `file:${s.kind.path}`
+        : s.kind.type === 'microphone'
+          ? // Noise removal is set when the microphone opens.
+            `mic:${s.kind.deviceId}:${s.audio.filters?.noiseSuppression ? 'ns' : ''}`
+          : '';
 
 function peak(a: AnalyserNode, buf: Float32Array<ArrayBuffer>): number {
   a.getFloatTimeDomainData(buf);
@@ -266,8 +268,8 @@ export class SoundEngine {
         ch.failed = true;
         this.problems.add(src.id);
       }
-    } else if (src.kind.type === 'stream') {
-      // The app serves the stream's sound next to its pictures.
+    } else if (src.kind.type === 'stream' || src.kind.type === 'browser' || src.kind.type === 'guest') {
+      // The app serves the sound of streams, web pages and guests next to their pictures.
       const id = src.id;
       const url = () => this.client.browserInfo().then((i) => (i.port ? `http://127.0.0.1:${i.port}/audio/${encodeURIComponent(id)}` : null));
       ch.pcm = new PcmStream(ctx, url, delay);
