@@ -403,6 +403,12 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'updateScreenCapture': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'screen') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a screen capture' });
+      src.kind = { type: 'screen', ...structuredClone(a.capture) };
+      return;
+    }
     case 'updateScoreboard': {
       const sb = scoreboard(s, a.id);
       const next = structuredClone(a.scoreboard);

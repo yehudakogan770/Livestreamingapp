@@ -64,7 +64,19 @@ export function FramePicture({ port, id, fit, kind }: { port: number; id: string
 }
 
 /** A stream input (SRT, RTMP, RTSP, HLS…): black until its pictures arrive. */
-export function StreamView({ id, client, fit, audience = false }: { id: string; client: EngineClient; fit: 'cover' | 'contain'; audience?: boolean }) {
+export function StreamView({
+  id,
+  client,
+  fit,
+  audience = false,
+  note = 'Streams show in the Lumora app',
+}: {
+  id: string;
+  client: EngineClient;
+  fit: 'cover' | 'contain';
+  audience?: boolean;
+  note?: string;
+}) {
   const info = useBrowserInfo(client);
   return (
     <div style={{ ...fill, background: audience ? 'transparent' : '#000' }} data-kind="stream">
@@ -72,11 +84,7 @@ export function StreamView({ id, client, fit, audience = false }: { id: string; 
         <FramePicture port={info.port} id={id} fit={fit} kind="stream" />
       ) : (
         !audience &&
-        info && (
-          <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#8e9096', fontSize: 12 }}>
-            Streams show in the Lumora app
-          </span>
-        )
+        info && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#8e9096', fontSize: 12 }}>{note}</span>
       )}
     </div>
   );

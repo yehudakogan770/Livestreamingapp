@@ -1,3 +1,5 @@
+import { CapturePicker } from './CapturePicker';
+import type { ScreenCapture } from '../engine/types/ScreenCapture';
 import { defaultFilters } from '../engine/audio';
 import { defaultScoreboard } from '../engine/score';
 import { cleanStreamUrl, streamName } from '../engine/stream';
@@ -36,6 +38,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'screen', name: 'Screen capture', hint: 'A display or one window of this computer' },
   { kind: 'scoreboard', name: 'Scoreboard', hint: 'Teams, scores, period and game clock' },
   { kind: 'browser', name: 'Web page', hint: 'A website: scores, live results, social wall…' },
   { kind: 'logo3d', name: '3D logo', hint: 'Your logo in 3D, turning (the logo maker)' },
@@ -77,6 +80,7 @@ export function AddInput({
   const [cams, setCams] = useState<MediaDeviceInfo[] | null>(null);
   const [camErr, setCamErr] = useState<string | null>(null);
   const [cam, setCam] = useState<MediaDeviceInfo | null>(null);
+  const [screenCap, setScreenCap] = useState<ScreenCapture | null>(null);
   const deviceKind = kind === 'microphone' ? 'audioinput' : 'videoinput';
   const what = kind === 'microphone' ? 'microphones' : 'cameras';
 
@@ -145,6 +149,13 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'screen':
+        return screenCap
+          ? {
+              name: n || (screenCap.target.type === 'display' ? screenCap.target.name.replace(/ \(.*\)$/, '') : screenCap.target.title.slice(0, 40)),
+              kind: { type: 'screen', ...screenCap },
+            }
+          : null;
       case 'scoreboard':
         return { name: n || 'Scoreboard', kind: { type: 'scoreboard', ...defaultScoreboard() } };
       case 'stream': {
@@ -298,6 +309,7 @@ export function AddInput({
               <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
             )}
 
+            {kind === 'screen' && <CapturePicker client={client} value={screenCap} onChange={setScreenCap} />}
             {kind === 'stream' && (
               <label className="field">
                 <span className="field__label">Stream address</span>
@@ -311,8 +323,8 @@ export function AddInput({
                   autoFocus
                 />
                 <span className="field__note">
-                  From another computer, a phone app, an encoder or an IP camera. If it needs a password, put it in the address (rtsp://name:password@…). Sound
-                  from streams is coming.
+                  From another computer, a phone app, an encoder or an IP camera. If it needs a password, put it in the address (rtsp://name:password@…). Its
+                  sound comes into the mixer.
                 </span>
               </label>
             )}

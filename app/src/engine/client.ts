@@ -71,6 +71,14 @@ export interface RemoteStatus {
 // ----- recording and streaming (mirrors src-tauri/src/capture.rs) -----
 
 export type CaptureKind = 'record' | 'stream';
+
+/** A display or window this computer can capture. */
+export interface CaptureChoice {
+  kind: 'display' | 'window';
+  index: number;
+  name: string;
+  app: string;
+}
 export type Quality = '720p' | '720p60' | '1080p' | '1080p60' | '1440p' | '1440p60' | '2160p' | 'vertical';
 
 /** Where the stream goes. */
@@ -209,6 +217,8 @@ export interface EngineClient {
   browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void>;
   /** How each stream input is doing. */
   streamStatus(): Promise<Record<string, { live: boolean; problem: string | null }>>;
+  /** Displays and windows a screen capture input can show (none outside the Windows app). */
+  captureChoices(): Promise<CaptureChoice[]>;
 }
 
 export type VideoFormat = 'mp4' | 'mov' | 'webm';
@@ -611,6 +621,10 @@ class TauriClient implements EngineClient {
     return invoke('stream_status');
   }
 
+  captureChoices(): Promise<CaptureChoice[]> {
+    return invoke<CaptureChoice[]>('capture_choices').catch(() => []);
+  }
+
   async browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void> {
     try {
       await invoke('browser_nav', { id, how });
@@ -931,6 +945,10 @@ export class DemoClient implements EngineClient {
 
   streamStatus(): Promise<Record<string, { live: boolean; problem: string | null }>> {
     return Promise.resolve({});
+  }
+
+  captureChoices(): Promise<CaptureChoice[]> {
+    return Promise.resolve([]);
   }
 
   importLibrary(): Promise<LibraryItem[]> {

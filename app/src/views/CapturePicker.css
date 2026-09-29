@@ -1,0 +1,29 @@
+/* The display / window picker (Add input and the capture card). */
+.cap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cap__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow: auto;
+}
+.cap__item {
+  justify-content: flex-start;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cap__item small {
+  color: var(--text-faint);
+}
+.cap__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}

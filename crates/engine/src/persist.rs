@@ -128,6 +128,7 @@ pub fn repair(mut s: Show) -> Show {
             SourceKind::Browser(b) => b.repair(),
             SourceKind::Stream(st) => st.repair(),
             SourceKind::Scoreboard(sb) => sb.repair(),
+            SourceKind::Screen(c) => c.repair(),
             SourceKind::Pesukim(p) => {
                 p.repair();
                 let defaults = crate::pesukim::PesukimLook::default();

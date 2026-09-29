@@ -3,6 +3,7 @@
 mod browser;
 mod capture;
 mod control;
+mod desktop;
 mod events;
 mod export;
 mod library;
@@ -36,6 +37,7 @@ struct AppState {
     exports: export::Exports,
     browsers: browser::Browsers,
     streams: streams::Streams,
+    desktop: desktop::Desktop,
     ffmpeg: Option<std::path::PathBuf>,
 }
 
@@ -111,6 +113,7 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.store.save(snapshot.show.clone());
     state.browsers.sync(&snapshot.show);
     state.streams.sync(&snapshot.show);
+    state.desktop.sync(&snapshot.show);
     let _ = app.emit("show-changed", snapshot);
     if let Ok(json) = serde_json::to_string(snapshot) {
         state.remote.broadcast(&json);
@@ -463,6 +466,14 @@ fn browser_info(state: State<'_, AppState>) -> browser::BrowserInfo {
     state.browsers.info
 }
 
+/// The displays and windows a screen capture input can show.
+#[tauri::command]
+async fn capture_choices() -> Vec<browser::CaptureChoice> {
+    tauri::async_runtime::spawn_blocking(browser::capture::choices)
+        .await
+        .unwrap_or_default()
+}
+
 /// How each stream input is doing (live, or why not).
 #[tauri::command]
 fn stream_status(
@@ -643,6 +654,8 @@ pub fn run() {
                 std::sync::Arc::clone(&browsers.sounds),
             );
             streams.sync(&show);
+            let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
+            desktop.sync(&show);
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -655,6 +668,7 @@ pub fn run() {
                 exports: export::Exports::default(),
                 browsers,
                 streams,
+                desktop,
                 ffmpeg,
             });
             heartbeat(app.handle().clone());
@@ -699,6 +713,7 @@ pub fn run() {
             browser_page,
             browser_nav,
             stream_status,
+            capture_choices,
             library_items,
             save_library,
             export_library,

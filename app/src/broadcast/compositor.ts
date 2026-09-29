@@ -394,6 +394,7 @@ export class ProgramCompositor {
       }
       case 'microphone':
         return;
+      case 'screen':
       case 'stream': {
         const frame = this.pageFrame(src.id, false);
         if (frame) this.fit(frame, src.fit, w, h);

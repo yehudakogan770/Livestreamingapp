@@ -239,6 +239,11 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Change what a screen capture input captures.
+    UpdateScreenCapture {
+        id: SourceId,
+        capture: crate::screen::ScreenCapture,
+    },
     /// Change a scoreboard's teams, colours, period and look (scores and clock stay).
     UpdateScoreboard {
         id: SourceId,

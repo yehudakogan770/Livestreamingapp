@@ -850,6 +850,20 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::UpdateScreenCapture { id, mut capture } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !matches!(src.kind, SourceKind::Screen(_)) {
+                return Err(ActionError::invalid(
+                    "id",
+                    "that input is not a screen capture",
+                ));
+            }
+            capture.repair();
+            src.kind = SourceKind::Screen(Box::new(capture));
+            Ok(())
+        }
         Action::UpdateScoreboard { id, scoreboard } => {
             let sb = scoreboard_mut(s, &id)?;
             let (home, away, clock) = (sb.home.score, sb.away.score, sb.clock.clone());
@@ -1929,6 +1943,10 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         SourceKind::Logo3d(mut l) => {
             l.repair();
             SourceKind::Logo3d(l)
+        }
+        SourceKind::Screen(mut c) => {
+            c.repair();
+            SourceKind::Screen(c)
         }
         SourceKind::Scoreboard(mut sb) => {
             sb.repair();

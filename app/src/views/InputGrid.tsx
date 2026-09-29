@@ -1,3 +1,4 @@
+import { ScreenCard } from './ScreenCard';
 import { ScoreCard } from './ScoreCard';
 import { PlaylistEditor } from './PlaylistEditor';
 import type { Transition } from '../engine/types/Transition';
@@ -41,6 +42,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   browser: 'Web page',
   stream: 'Stream',
   scoreboard: 'Scoreboard',
+  screen: 'Screen capture',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -71,6 +73,7 @@ export function InputGrid({
   const editingStream = show.sources.find((x) => x.id === editing && x.kind.type === 'stream');
   const editingList = show.sources.find((x) => x.id === editing && x.kind.type === 'video');
   const editingScore = show.sources.find((x) => x.id === editing && x.kind.type === 'scoreboard');
+  const editingScreen = show.sources.find((x) => x.id === editing && x.kind.type === 'screen');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -155,6 +158,7 @@ export function InputGrid({
         <span className="tile--add__plus">+</span>
         Add input
       </button>
+      {editingScreen && <ScreenCard source={editingScreen} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingScore && <ScoreCard source={editingScore} act={act} onClose={() => setEditing(null)} />}
       {editingList && <PlaylistEditor source={editingList} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
@@ -296,7 +300,7 @@ function TileMenu({
           Edit 3D logo…
         </button>
       )}
-      {(k === 'text' || k === 'split' || k === 'slideshow' || k === 'browser' || k === 'stream' || k === 'scoreboard') && (
+      {(k === 'text' || k === 'split' || k === 'slideshow' || k === 'browser' || k === 'stream' || k === 'scoreboard' || k === 'screen') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -315,7 +319,9 @@ function TileMenu({
                   ? 'Stream settings…'
                   : k === 'scoreboard'
                     ? 'Scores and clock…'
-                    : 'Edit slides…'}
+                    : k === 'screen'
+                      ? 'Change what is captured…'
+                      : 'Edit slides…'}
         </button>
       )}
       <button

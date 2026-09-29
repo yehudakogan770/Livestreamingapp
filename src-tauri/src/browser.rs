@@ -504,21 +504,34 @@ pub fn navigate(app: &AppHandle, id: &str, how: &str) -> Result<(), String> {
 // ---------------------------------------------------------------------------
 // Capture
 
+/// A display or window this computer can capture.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CaptureChoice {
+    /// "display" or "window".
+    pub kind: &'static str,
+    pub index: u32,
+    pub name: String,
+    pub app: String,
+}
+
 #[cfg(windows)]
-mod capture {
+pub mod capture {
     use std::sync::Arc;
     use std::time::{Duration, Instant};
 
     use windows_capture::capture::{CaptureControl, Context, GraphicsCaptureApiHandler};
     use windows_capture::frame::Frame;
     use windows_capture::graphics_capture_api::InternalCaptureControl;
+    use windows_capture::monitor::Monitor;
+    use windows_capture::settings::GraphicsCaptureItemType;
     use windows_capture::settings::{
         ColorFormat, CursorCaptureSettings, DirtyRegionSettings, DrawBorderSettings,
         MinimumUpdateIntervalSettings, SecondaryWindowSettings, Settings,
     };
     use windows_capture::window::Window;
 
-    use super::{encode, Frames};
+    use super::{encode, CaptureChoice, Frames};
 
     type Flags = (String, bool, Arc<Frames>);
     type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -575,6 +588,87 @@ mod capture {
         pub fn stop(self) {
             let _ = self.0.stop();
         }
+
+        /// The captured window closed (or capture failed).
+        pub fn finished(&self) -> bool {
+            self.0.is_finished()
+        }
+    }
+
+    fn start_item<T: TryInto<GraphicsCaptureItemType> + Send + 'static>(
+        item: T,
+        id: &str,
+        cursor: bool,
+        frames: Arc<Frames>,
+    ) -> Option<Capture> {
+        let settings = Settings::new(
+            item,
+            if cursor {
+                CursorCaptureSettings::WithCursor
+            } else {
+                CursorCaptureSettings::WithoutCursor
+            },
+            DrawBorderSettings::WithoutBorder,
+            SecondaryWindowSettings::Default,
+            MinimumUpdateIntervalSettings::Custom(Duration::from_millis(30)),
+            DirtyRegionSettings::Default,
+            ColorFormat::Rgba8,
+            (id.to_owned(), false, frames),
+        );
+        Handler::start_free_threaded(settings).ok().map(Capture)
+    }
+
+    /// Capture display `index` (0 = the first).
+    pub fn start_display(
+        index: u32,
+        id: &str,
+        cursor: bool,
+        frames: Arc<Frames>,
+    ) -> Option<Capture> {
+        // windows-capture counts displays from 1.
+        let m = Monitor::from_index(index as usize + 1).ok()?;
+        start_item(m, id, cursor, frames)
+    }
+
+    /// Capture the window whose title contains `title`.
+    pub fn start_window(
+        title: &str,
+        id: &str,
+        cursor: bool,
+        frames: Arc<Frames>,
+    ) -> Option<Capture> {
+        let w = Window::from_contains_name(title).ok()?;
+        start_item(w, id, cursor, frames)
+    }
+
+    /// The displays and windows that can be captured.
+    pub fn choices() -> Vec<CaptureChoice> {
+        let mut out = Vec::new();
+        for (i, m) in Monitor::enumerate().unwrap_or_default().iter().enumerate() {
+            let size = match (m.width(), m.height()) {
+                (Ok(w), Ok(h)) => format!(" ({w} × {h})"),
+                _ => String::new(),
+            };
+            out.push(CaptureChoice {
+                kind: "display",
+                index: u32::try_from(i).unwrap_or(0),
+                name: format!("Display {}{size}", i + 1),
+                app: m.name().unwrap_or_default(),
+            });
+        }
+        for w in Window::enumerate().unwrap_or_default() {
+            let title = w.title().unwrap_or_default();
+            if title.trim().is_empty() || title.starts_with("Lumora") {
+                continue;
+            }
+            out.push(CaptureChoice {
+                kind: "window",
+                index: 0,
+                name: title,
+                app: w.process_name().unwrap_or_default(),
+            });
+        }
+        out
     }
 
     pub fn start(
@@ -605,16 +699,43 @@ mod capture {
 }
 
 #[cfg(not(windows))]
-mod capture {
+pub mod capture {
     use std::sync::Arc;
 
-    use super::Frames;
+    use super::{CaptureChoice, Frames};
 
     /// No window capture here: the screens show the page directly.
     pub struct Capture;
 
     impl Capture {
         pub fn stop(self) {}
+
+        pub fn finished(&self) -> bool {
+            true
+        }
+    }
+
+    pub fn start_display(
+        _index: u32,
+        _id: &str,
+        _cursor: bool,
+        _frames: Arc<Frames>,
+    ) -> Option<Capture> {
+        None
+    }
+
+    pub fn start_window(
+        _title: &str,
+        _id: &str,
+        _cursor: bool,
+        _frames: Arc<Frames>,
+    ) -> Option<Capture> {
+        None
+    }
+
+    /// Screen capture needs Windows.
+    pub fn choices() -> Vec<CaptureChoice> {
+        Vec::new()
     }
 
     pub fn start(
