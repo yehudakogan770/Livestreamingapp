@@ -364,19 +364,22 @@ Streamlabs, Ecamm Live, Resolume, Blackmagic ATEM software, Zoom Events.
 ✅ = in Lumora now · ⬜ = still to build (in this order).
 
 ### Done
-✅ Program / preview, TAKE, CUT, T-bar, 6 transitions, favourite transitions, Play now ·
+✅ Program / preview, TAKE, CUT, T-bar, 22 transitions (wipes and pushes every way, doors, circle, diamond,
+zoom, blur, flash), 2 stingers with cut point, favourite transitions, Play now ·
 ✅ Fade to black · ✅ Overlays 1–4 with animations · ✅ Split screen / PiP / custom layers ·
-✅ Titles, lower thirds, tickers · ✅ Credits · ✅ Countdown and stage monitor ·
+✅ Titles, lower thirds, tickers in 6 designs with accent colour and animated build-on · ✅ Credits · ✅ Countdown and stage monitor ·
 ✅ Slideshow (pictures, PDF) · ✅ Green screen · ✅ Colour correction, crop, rotate, effects ·
 ✅ Web page input · ✅ Stream inputs (SRT / RTMP / RTSP / HLS) · ✅ 3D logo maker ·
 ✅ Beat-synced stage visuals · ✅ Recording and multi-site streaming · ✅ Snapshot ·
 ✅ Audio mixer with buses, follow video, solo, delay · ✅ Presets, run of show, triggers ·
-✅ Phone remote · ✅ Library · ✅ Multiview · ✅ Keeps imported files · ✅ Crash-safe saving.
+✅ Phone remote · ✅ Stream Deck / Companion web API and tally feed · ✅ MIDI learn for switching,
+inputs, overlays, cues and sound · ✅ Video playlists · ✅ Scoreboards with game clock ·
+✅ 720p – 4K, 30 / 60 fps and vertical 9:16 output, bitrates to 40 Mbps · ✅ Library · ✅ Multiview · ✅ Keeps imported files · ✅ Crash-safe saving.
 
 ### To build (most important first)
 1. ⬜ **Sound from stream and web page inputs** into the mixer.
 2. ⬜ **Screen capture** — this computer's screens or one window (OBS, vMix).
-3. ⬜ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM).
+3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM).
 4. ⬜ **Guests by link** — up to 8 people join from a browser, with their own
    mix-minus (StreamYard, Restream, vMix Call, Ecamm).
 5. ⬜ **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs).
@@ -386,14 +389,14 @@ Streamlabs, Ecamm Live, Resolume, Blackmagic ATEM software, Zoom Events.
 8. ⬜ **Virtual camera** and **NDI in / out** (OBS, vMix, Ecamm).
 9. ⬜ **Song lyrics and Bible library** with presentations, themes, stage display
    of the next lines (ProPresenter).
-10. ⬜ **Video playlists / show loops** with auto-advance and shuffle (vMix, ProPresenter).
-11. ⬜ **Stingers** (a video transition with a cut point) and **luma wipes** (vMix, OBS).
-12. ⬜ **Scoreboards and timers** templates with data from spreadsheets (vMix, Wirecast).
-13. ⬜ **Animated title designer** with templates (vMix GT, Wirecast).
+10. ✅ **Video playlists / show loops** with auto-advance and shuffle (vMix, ProPresenter).
+11. ✅ **Stingers** (a video transition with a cut point) (vMix, OBS). ⬜ Luma wipes still to do.
+12. ✅ **Scoreboards and timers** (vMix, Wirecast). ⬜ Data from spreadsheets still to do.
+13. 🔶 **Animated title designer** with templates (vMix GT, Wirecast) — 6 designs and build-on done; a free-layout designer to come.
 14. ⬜ **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames).
 15. ⬜ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
 16. ⬜ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
 17. ⬜ **Audience polls and Q&A** shown on screen (Zoom Events, Restream).
-18. ⬜ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
+18. ✅ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
 19. ⬜ **Video delay per input** to line up cameras with sound (vMix).
 20. ⬜ **PTZ camera control** (vMix, ATEM).
