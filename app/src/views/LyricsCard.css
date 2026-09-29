@@ -1,0 +1,90 @@
+.modal__box.lyc {
+  width: min(1180px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+.lyc__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr);
+}
+@media (max-width: 820px) {
+  .lyc__body {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+}
+.lyc__run,
+.lyc__edit {
+  min-height: 0;
+  overflow: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lyc__edit {
+  border-left: 1px solid var(--border);
+}
+.lyc__bar,
+.lyc__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.lyc__hint {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.lyc__slides {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lyc__slide {
+  position: relative;
+  width: 100%;
+  min-height: 72px;
+  padding: 8px 10px 8px 30px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--button);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+  white-space: pre-line;
+  cursor: pointer;
+}
+.lyc__slide b {
+  position: absolute;
+  top: 8px;
+  left: 9px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.lyc__slide.is-on {
+  border-color: var(--program);
+  background: #3a1e1c;
+}
+.lyc__slide.is-hidden {
+  border-color: var(--program);
+  border-style: dashed;
+}
+.lyc__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #243042, #0e1117);
+}
+.lyc__text {
+  min-height: 180px;
+  flex: 0 0 auto;
+  resize: vertical;
+}

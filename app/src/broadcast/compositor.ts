@@ -21,6 +21,8 @@ import { browserInfo } from '../engine/browser';
 import { logoRect, VisualsPlayer } from '../visuals/player';
 import { buildAt, isRtl, withAlpha } from '../engine/text';
 import { clockShown, formatGameClock } from '../engine/score';
+import { LYRICS_FADE_MS, sections } from '../engine/lyrics';
+import type { Lyrics } from '../engine/types/Lyrics';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
@@ -217,6 +219,53 @@ export class ProgramCompositor {
     this.sting.el.removeAttribute('src');
     this.sting.el.load();
     this.sting = null;
+  }
+
+  /** A song's current slide (mirrors LyricsView and its CSS). */
+  private lyrics(l: Lyrics, now: number, w: number, h: number) {
+    const text = l.blank ? '' : (sections(l.text)[l.current] ?? '');
+    if (!text) return;
+    const ctx = this.ctx;
+    const s = l.style;
+    const k = h / 1080;
+    const lines = text.split('\n');
+    const size = s.size * k;
+    const lineH = size * s.lineHeight;
+    const pad = s.boxOn ? s.padding * k : 0;
+    ctx.save();
+    ctx.globalAlpha *= Math.min(1, Math.max(0, (now - l.changedAt) / LYRICS_FADE_MS));
+    ctx.font = `${s.weight} ${size}px "${s.font}", "Segoe UI", system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.direction = isRtl(text) ? 'rtl' : 'ltr';
+    const maxW = w * 0.88;
+    const tw = Math.min(maxW, Math.max(...lines.map((x) => ctx.measureText(x).width)));
+    const bw = tw + 2 * pad;
+    const bh = lines.length * lineH + 2 * pad;
+    const bx = (w - bw) / 2;
+    const by = l.place === 'low' ? h * 0.93 - bh : (h - bh) / 2;
+    if (s.boxOn) {
+      ctx.fillStyle = withAlpha(s.boxColor, s.boxOpacity);
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, bh, s.radius * k);
+      ctx.fill();
+    }
+    ctx.textAlign = s.align;
+    const ax = s.align === 'center' ? w / 2 : s.align === 'right' ? bx + bw - pad : bx + pad;
+    ctx.shadowColor = s.shadow ? 'rgba(0,0,0,0.75)' : 'transparent';
+    ctx.shadowBlur = s.shadow ? 14 * k : 0;
+    ctx.shadowOffsetY = s.shadow ? 3 * k : 0;
+    lines.forEach((line, i) => {
+      const y = by + pad + lineH * (i + 0.5);
+      if (s.outline > 0) {
+        ctx.lineWidth = s.outline * 2 * k;
+        ctx.strokeStyle = s.outlineColor;
+        ctx.lineJoin = 'round';
+        ctx.strokeText(line, ax, y, maxW);
+      }
+      ctx.fillStyle = s.color;
+      ctx.fillText(line, ax, y, maxW);
+    });
+    ctx.restore();
   }
 
   /** A scoreboard (mirrors ScoreboardView and its CSS). */
@@ -469,6 +518,9 @@ export class ProgramCompositor {
         return;
       case 'scoreboard':
         this.scoreboard(k, now, w, h);
+        return;
+      case 'lyrics':
+        this.lyrics(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

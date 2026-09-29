@@ -14,6 +14,7 @@ import type { Credits } from './types/Credits';
 import { repairOverlay, setOverlayOn } from './overlays';
 import { stingerSlot } from './timing';
 import { repairScoreboard, runClock, setClock } from './score';
+import { lyricsGo, sections } from './lyrics';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -127,6 +128,12 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
   if (i === null) return t;
   const st = s.settings.stingers?.[i];
   return st?.path ? { kind: t.kind, durationMs: Math.max(MIN_TRANSITION_MS, st.durationMs) } : { kind: 'fade' as const, durationMs: t.durationMs };
+}
+
+function song(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'lyrics') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a song' });
+  return src.kind;
 }
 
 function scoreboard(s: Show, id: string) {
@@ -403,6 +410,33 @@ function apply(s: Show, a: Action, now: number) {
     case 'setMultiview':
       s.settings.multiview = structuredClone(a.multiview);
       return;
+    case 'updateLyrics': {
+      const l = song(s, a.id);
+      const next = structuredClone(a.lyrics);
+      Object.assign(l, { ...next, current: Math.min(l.current, Math.max(0, sections(next.text).length - 1)), blank: l.blank, changedAt: l.changedAt });
+      return;
+    }
+    case 'lyricsGo':
+      lyricsGo(song(s, a.id), a.index, now);
+      return;
+    case 'lyricsNext': {
+      const l = song(s, a.id);
+      lyricsGo(l, l.current + 1, now);
+      return;
+    }
+    case 'lyricsPrevious': {
+      const l = song(s, a.id);
+      lyricsGo(l, l.current - 1, now);
+      return;
+    }
+    case 'lyricsBlank': {
+      const l = song(s, a.id);
+      if (l.blank !== a.value) {
+        l.blank = a.value;
+        l.changedAt = now;
+      }
+      return;
+    }
     case 'updateScreenCapture': {
       const src = find(s, a.id);
       if (src.kind.type !== 'screen') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a screen capture' });

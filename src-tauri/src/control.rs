@@ -272,6 +272,29 @@ pub fn command(show: &Value, cmd: &str, q: &[(String, String)]) -> Result<Action
                 }
             }
         }
+        "lyrics" => {
+            let id = input(show, q)?;
+            match get(q, "to").unwrap_or("next") {
+                "next" => json!({"type": "lyricsNext", "id": id}),
+                "previous" | "prev" => json!({"type": "lyricsPrevious", "id": id}),
+                "blank" => {
+                    let now = sources(show)
+                        .iter()
+                        .find(|s| s["id"] == json!(id))
+                        .and_then(|s| s["kind"]["blank"].as_bool())
+                        .unwrap_or(false);
+                    json!({"type": "lyricsBlank", "id": id, "value": !now})
+                }
+                n => {
+                    let i = n
+                        .parse::<usize>()
+                        .ok()
+                        .and_then(|n| n.checked_sub(1))
+                        .ok_or("to must be next, previous, blank or a number")?;
+                    json!({"type": "lyricsGo", "id": id, "index": i})
+                }
+            }
+        }
         "score" => {
             let id = input(show, q)?;
             let side = match get(q, "team")

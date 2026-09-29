@@ -239,6 +239,27 @@ pub enum Action {
         id: SourceId,
         index: usize,
     },
+    /// Change a song's words, title and look (the slide showing is kept if it still exists).
+    UpdateLyrics {
+        id: SourceId,
+        lyrics: crate::lyrics::Lyrics,
+    },
+    /// Show slide `index` of a song.
+    LyricsGo {
+        id: SourceId,
+        index: usize,
+    },
+    LyricsNext {
+        id: SourceId,
+    },
+    LyricsPrevious {
+        id: SourceId,
+    },
+    /// Hide (or bring back) a song's words.
+    LyricsBlank {
+        id: SourceId,
+        value: bool,
+    },
     /// Change what a screen capture input captures.
     UpdateScreenCapture {
         id: SourceId,

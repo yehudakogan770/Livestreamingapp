@@ -1,3 +1,4 @@
+import { LyricsView } from './LyricsView';
 import { ScoreboardView } from './ScoreboardView';
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useReportProblem } from '../problems/problems';
@@ -114,6 +115,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <Logo3dInput logo={k} thumb={thumb} audience={audience} />;
     case 'scoreboard':
       return <ScoreboardView sb={k} />;
+    case 'lyrics':
+      return <LyricsView l={k} />;
     case 'screen':
       return <StreamView id={source.id} client={client} fit={fit} audience={audience} note="Screen capture works in the Windows app" />;
     case 'stream':

@@ -850,6 +850,41 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.settings.multiview = multiview;
             Ok(())
         }
+        Action::UpdateLyrics { id, lyrics } => {
+            let l = lyrics_mut(s, &id)?;
+            let (current, blank, changed_at) = (l.current, l.blank, l.changed_at);
+            let mut next = lyrics;
+            next.current = current;
+            next.blank = blank;
+            next.changed_at = changed_at;
+            next.repair();
+            *l = next;
+            Ok(())
+        }
+        Action::LyricsGo { id, index } => {
+            lyrics_mut(s, &id)?.go(index, now);
+            Ok(())
+        }
+        Action::LyricsNext { id } => {
+            let l = lyrics_mut(s, &id)?;
+            let i = l.current + 1;
+            l.go(i, now);
+            Ok(())
+        }
+        Action::LyricsPrevious { id } => {
+            let l = lyrics_mut(s, &id)?;
+            let i = l.current.saturating_sub(1);
+            l.go(i, now);
+            Ok(())
+        }
+        Action::LyricsBlank { id, value } => {
+            let l = lyrics_mut(s, &id)?;
+            if l.blank != value {
+                l.blank = value;
+                l.changed_at = now;
+            }
+            Ok(())
+        }
         Action::UpdateScreenCapture { id, mut capture } => {
             let src = s
                 .source_mut(&id)
@@ -1699,6 +1734,16 @@ fn resolve_stinger(s: &Show, t: Transition) -> Transition {
     }
 }
 
+fn lyrics_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::lyrics::Lyrics> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Lyrics(l) => Ok(l),
+        _ => Err(ActionError::invalid("id", "that input is not a song")),
+    }
+}
+
 fn scoreboard_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::score::Scoreboard> {
     let src = s
         .source_mut(id)
@@ -1943,6 +1988,12 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         SourceKind::Logo3d(mut l) => {
             l.repair();
             SourceKind::Logo3d(l)
+        }
+        SourceKind::Lyrics(mut l) => {
+            l.current = 0;
+            l.blank = false;
+            l.repair();
+            SourceKind::Lyrics(l)
         }
         SourceKind::Screen(mut c) => {
             c.repair();

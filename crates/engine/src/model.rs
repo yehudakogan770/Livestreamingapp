@@ -273,6 +273,8 @@ pub enum SourceKind {
     Browser(Box<crate::browser::BrowserInput>),
     /// A live video link (SRT, RTMP, RTSP, HLS…).
     Stream(Box<crate::stream::StreamInput>),
+    /// Song lyrics, one slide at a time.
+    Lyrics(Box<crate::lyrics::Lyrics>),
     /// A display or window of this computer.
     Screen(Box<crate::screen::ScreenCapture>),
     /// A scoreboard: teams, scores, period and game clock.

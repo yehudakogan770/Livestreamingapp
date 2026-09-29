@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { sections } from '../engine/lyrics';
 import type { Show } from '../engine/types/Show';
 import type { TextSize } from '../engine/types/TextSize';
 import { FLASH_MS, countdownFinished, countdownRemaining, fadeAmount, formatCountdown } from '../engine/timing';
@@ -21,7 +22,9 @@ function useFitText(box: RefObject<HTMLDivElement | null>, text: HTMLDivElement 
       text.style.fontSize = '';
       const max = parseFloat(getComputedStyle(text).fontSize) || 16;
       // Leave a little room at the edges so text never touches the dividers.
-      const fits = () => text.scrollHeight <= b.clientHeight * 0.92 && text.scrollWidth <= b.clientWidth + 1;
+      // Whatever else is in the box (a song's next lines) keeps its room.
+      const others = [...b.children].reduce((h, c) => (c === text ? h : h + (c as HTMLElement).offsetHeight), 0);
+      const fits = () => text.scrollHeight <= (b.clientHeight - others) * 0.92 && text.scrollWidth <= b.clientWidth + 1;
       if (fits() || b.clientHeight === 0) return;
       let lo = 6;
       let hi = max;
@@ -65,10 +68,15 @@ export function MonitorScreen({ show }: { show: Show }) {
   const urgent = !!c && c.endsAt !== null && left < 60_000;
   const timerText = !c ? '' : done && c.atZero.type === 'showText' ? c.endText : formatCountdown(left, c.format === 'auto' ? 'minSec' : c.format);
 
-  const message = m.messageOn && m.message ? m.message : null;
+  // A song on air on the Live Screen: the singers see these words and what comes next.
+  const songSrc = show.sources.find((x) => x.id === show.screens.live.program)?.kind;
+  const song = songSrc?.type === 'lyrics' ? songSrc : null;
+  const slides = song ? sections(song.text) : [];
+  const message = m.messageOn && m.message ? m.message : song ? (song.blank ? '—' : (slides[song.current] ?? '')) : null;
+  const nextLines = song && !(m.messageOn && m.message) ? slides[song.current + (song.blank ? 0 : 1)] : undefined;
   const msgBox = useRef<HTMLDivElement>(null);
   const msgText = useRef<HTMLDivElement | null>(null);
-  useFitText(msgBox, msgText.current, `${message}|${m.textSize}|${m.layout}|${m.showClock}|${m.showTimer}`);
+  useFitText(msgBox, msgText.current, `${message}|${nextLines ?? ''}|${m.textSize}|${m.layout}|${m.showClock}|${m.showTimer}`);
   const dark = Math.max(fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), fadeAmount(show.panic, show.panicChangedAt, now) * 0.6);
   const flash = now - sc.flashAt < FLASH_MS && Math.floor((now - sc.flashAt) / 300) % 2 === 0;
 
@@ -88,10 +96,16 @@ export function MonitorScreen({ show }: { show: Show }) {
     </div>
   );
   const msg = (
-    <div ref={msgBox} className="mscreen__msgbox">
-      <div ref={msgText} className="mscreen__message" style={{ ['--size' as string]: SIZE[m.textSize] }}>
+    <div ref={msgBox} className={`mscreen__msgbox${nextLines ? ' mscreen__msgbox--song' : ''}`}>
+      <div ref={msgText} className="mscreen__message" style={{ ['--size' as string]: SIZE[m.textSize], whiteSpace: song ? 'pre-line' : undefined }}>
         {message ?? ''}
       </div>
+      {nextLines && (
+        <div className="mscreen__next" dir="auto">
+          <span className="mscreen__tag">NEXT</span>
+          {nextLines}
+        </div>
+      )}
     </div>
   );
 

@@ -1,3 +1,4 @@
+import { defaultLyrics, sections } from '../engine/lyrics';
 import { CapturePicker } from './CapturePicker';
 import type { ScreenCapture } from '../engine/types/ScreenCapture';
 import { defaultFilters } from '../engine/audio';
@@ -38,6 +39,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'lyrics', name: 'Song lyrics', hint: 'The words of a song, a verse at a time' },
   { kind: 'screen', name: 'Screen capture', hint: 'A display or one window of this computer' },
   { kind: 'scoreboard', name: 'Scoreboard', hint: 'Teams, scores, period and game clock' },
   { kind: 'browser', name: 'Web page', hint: 'A website: scores, live results, social wall…' },
@@ -149,6 +151,10 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'lyrics':
+        return sections(words).length
+          ? { name: n || words.trim().split('\n')[0]!.slice(0, 40), kind: { type: 'lyrics', ...defaultLyrics(), title: n, text: words } }
+          : null;
       case 'screen':
         return screenCap
           ? {
@@ -309,6 +315,22 @@ export function AddInput({
               <SlideshowSetup sh={slideshow} sources={sources.filter((x) => x.kind.type !== 'slideshow')} client={client} onChange={setSlideshow} />
             )}
 
+            {kind === 'lyrics' && (
+              <label className="field">
+                <span className="field__label">The words (a blank line starts the next slide)</span>
+                <textarea
+                  className="text"
+                  rows={10}
+                  dir="auto"
+                  value={words}
+                  placeholder={'Verse one, line one\nVerse one, line two\n\nChorus, line one\nChorus, line two'}
+                  onChange={(e) => setWords(e.target.value)}
+                  aria-label="Song words"
+                  autoFocus
+                />
+                <span className="field__note">{sections(words).length} slides. The name above is the song's title.</span>
+              </label>
+            )}
             {kind === 'screen' && <CapturePicker client={client} value={screenCap} onChange={setScreenCap} />}
             {kind === 'stream' && (
               <label className="field">
