@@ -33,7 +33,18 @@ const BITRATES = [
   { kbps: 4500, name: '4.5 Mbps' },
   { kbps: 6000, name: '6 Mbps — recommended for 1080p' },
   { kbps: 9000, name: '9 Mbps — 1080p60' },
-  { kbps: 12000, name: '12 Mbps — best (fast internet only)' },
+  { kbps: 12000, name: '12 Mbps — 1440p' },
+  { kbps: 18000, name: '18 Mbps — 1440p60' },
+  { kbps: 25000, name: '25 Mbps — 4K' },
+  { kbps: 40000, name: '40 Mbps — 4K, best (recording or very fast internet)' },
+];
+
+const AUDIO = [
+  { kbps: 128, name: '128 kbps' },
+  { kbps: 160, name: '160 kbps — recommended' },
+  { kbps: 192, name: '192 kbps' },
+  { kbps: 256, name: '256 kbps — music' },
+  { kbps: 320, name: '320 kbps — best' },
 ];
 
 /** Recording folder and quality, and where the stream goes. Changes apply on Done. */
@@ -144,7 +155,14 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
             <div className="bcd__row">
               <label className="field bcd__grow">
                 <span className="field__label">Picture</span>
-                <select value={draft.quality} onChange={(e) => set({ quality: e.target.value as Quality })}>
+                <select
+                  value={draft.quality}
+                  onChange={(e) => {
+                    // Each size comes with the bitrate that suits it (change it after if needed).
+                    const quality = e.target.value as Quality;
+                    set({ quality, videoKbps: QUALITIES[quality].kbps });
+                  }}
+                >
                   {(Object.keys(QUALITIES) as Quality[]).map((q) => (
                     <option key={q} value={q}>
                       {QUALITIES[q].name}
@@ -161,6 +179,16 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                     </option>
                   ))}
                   {!BITRATES.some((r) => r.kbps === draft.videoKbps) && <option value={draft.videoKbps}>{draft.videoKbps / 1000} Mbps</option>}
+                </select>
+              </label>
+              <label className="field bcd__grow">
+                <span className="field__label">Sound bitrate</span>
+                <select value={draft.audioKbps ?? 160} onChange={(e) => set({ audioKbps: Number(e.target.value) })}>
+                  {AUDIO.map((r) => (
+                    <option key={r.kbps} value={r.kbps}>
+                      {r.name}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>

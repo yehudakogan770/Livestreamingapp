@@ -8,25 +8,15 @@ import type { Show } from '../engine/types/Show';
 import type { SoundEngine } from '../audio/soundEngine';
 import { ProgramCompositor } from './compositor';
 
-export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number }> = {
-  '720p': {
-    name: '720p (1280 × 720), 30 frames a second',
-    width: 1280,
-    height: 720,
-    fps: 30,
-  },
-  '1080p': {
-    name: '1080p (1920 × 1080), 30 frames a second',
-    width: 1920,
-    height: 1080,
-    fps: 30,
-  },
-  '1080p60': {
-    name: '1080p, 60 frames a second (smoothest, needs a fast computer)',
-    width: 1920,
-    height: 1080,
-    fps: 60,
-  },
+export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number; kbps: number }> = {
+  '720p': { name: '720p (1280 × 720), 30 frames a second', width: 1280, height: 720, fps: 30, kbps: 3000 },
+  '720p60': { name: '720p, 60 frames a second', width: 1280, height: 720, fps: 60, kbps: 4500 },
+  '1080p': { name: '1080p (1920 × 1080), 30 frames a second', width: 1920, height: 1080, fps: 30, kbps: 6000 },
+  '1080p60': { name: '1080p, 60 frames a second (smoothest, needs a fast computer)', width: 1920, height: 1080, fps: 60, kbps: 9000 },
+  '1440p': { name: '1440p (2560 × 1440), 30 frames a second', width: 2560, height: 1440, fps: 30, kbps: 12000 },
+  '1440p60': { name: '1440p, 60 frames a second (fast computer)', width: 2560, height: 1440, fps: 60, kbps: 18000 },
+  '2160p': { name: '4K (3840 × 2160), 30 frames a second (recording; YouTube 4K)', width: 3840, height: 2160, fps: 30, kbps: 25000 },
+  vertical: { name: 'Vertical 1080 × 1920 — Shorts, Reels, TikTok (middle of the picture)', width: 1080, height: 1920, fps: 30, kbps: 6000 },
 };
 
 /** H.264 first: it goes to YouTube and into .mp4 files without re-encoding. */
@@ -100,7 +90,7 @@ export class Broadcaster {
       recorder = new MediaRecorder(stream, {
         mimeType: mime,
         videoBitsPerSecond: settings.videoKbps * 1000,
-        audioBitsPerSecond: 192_000,
+        audioBitsPerSecond: (settings.audioKbps || 160) * 1000,
         // A keyframe every 2 s, as streaming services ask (Chromium option).
         videoKeyFrameIntervalDuration: 2000,
       } as MediaRecorderOptions);

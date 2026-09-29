@@ -92,11 +92,12 @@
 }
 .bcd__row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
 .bcd__grow {
-  flex: 1;
+  flex: 1 1 180px;
   min-width: 0;
 }
 .bcd__path {

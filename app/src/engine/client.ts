@@ -71,7 +71,7 @@ export interface RemoteStatus {
 // ----- recording and streaming (mirrors src-tauri/src/capture.rs) -----
 
 export type CaptureKind = 'record' | 'stream';
-export type Quality = '720p' | '1080p' | '1080p60';
+export type Quality = '720p' | '720p60' | '1080p' | '1080p60' | '1440p' | '1440p60' | '2160p' | 'vertical';
 
 /** Where the stream goes. */
 export interface Destination {
@@ -88,6 +88,8 @@ export interface CaptureSettings {
   folder: string | null;
   quality: Quality;
   videoKbps: number;
+  /** Sound bitrate, kbit/s. */
+  audioKbps: number;
   /** Which mix a recording hears: the same as the stream, or mix B. */
   recordMix: 'stream' | 'recording';
   destinations: Destination[];
@@ -115,7 +117,7 @@ export interface CaptureStatus {
 }
 
 export function defaultCaptureSettings(): CaptureSettings {
-  return { folder: null, quality: '1080p', videoKbps: 6000, recordMix: 'stream', destinations: [] };
+  return { folder: null, quality: '1080p', videoKbps: 6000, audioKbps: 160, recordMix: 'stream', destinations: [] };
 }
 
 export interface EngineClient {

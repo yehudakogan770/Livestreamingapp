@@ -111,13 +111,16 @@ export class ProgramCompositor {
   /** Draw the Live Screen as it is at `now`. */
   draw(now: number): void {
     const { ctx, canvas } = this;
-    const w = canvas.width;
-    const h = canvas.height;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     const show = this.show;
     if (!show) return;
+    // A vertical frame shows the middle of the 16:9 picture.
+    const h = canvas.height;
+    const w = canvas.width > h ? canvas.width : Math.round((h * 16) / 9);
+    if (w !== canvas.width) ctx.translate(-(w - canvas.width) / 2, 0);
     this.drawnBefore = this.drawnNow;
     this.drawnNow = new Set();
     for (const id of this.starts.keys()) if (!this.drawnBefore.has(id)) this.starts.delete(id);

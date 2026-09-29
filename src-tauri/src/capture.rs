@@ -87,6 +87,17 @@ pub enum Quality {
     P1080,
     #[serde(rename = "1080p60")]
     P1080x60,
+    #[serde(rename = "720p60")]
+    P720x60,
+    #[serde(rename = "1440p")]
+    P1440,
+    #[serde(rename = "1440p60")]
+    P1440x60,
+    #[serde(rename = "2160p")]
+    P2160,
+    /// 1080 × 1920, for Shorts, Reels and TikTok.
+    #[serde(rename = "vertical")]
+    Vertical,
 }
 
 /// Which mix a recording hears.
@@ -109,6 +120,8 @@ pub struct CaptureSettings {
     pub quality: Quality,
     /// Video bitrate in kbit/s.
     pub video_kbps: u32,
+    /// Sound bitrate in kbit/s.
+    pub audio_kbps: u32,
     pub record_mix: RecordMix,
     pub destinations: Vec<Destination>,
 }
@@ -119,6 +132,7 @@ impl Default for CaptureSettings {
             folder: None,
             quality: Quality::P1080,
             video_kbps: 6000,
+            audio_kbps: 160,
             record_mix: RecordMix::Stream,
             destinations: Vec::new(),
         }
@@ -127,7 +141,8 @@ impl Default for CaptureSettings {
 
 impl CaptureSettings {
     fn cleaned(mut self) -> Self {
-        self.video_kbps = self.video_kbps.clamp(500, 50_000);
+        self.video_kbps = self.video_kbps.clamp(500, 80_000);
+        self.audio_kbps = self.audio_kbps.clamp(64, 320);
         self.folder = self.folder.filter(|f| !f.trim().is_empty());
         for (i, d) in self.destinations.iter_mut().enumerate() {
             if d.id.is_empty() {
@@ -487,7 +502,12 @@ impl Capture {
         }
         let targets: Vec<String> = dests.iter().map(|d| d.target()).collect();
         let mut child = Command::new(ffmpeg)
-            .args(stream_args(mime, settings.video_kbps, &targets))
+            .args(stream_args(
+                mime,
+                settings.video_kbps,
+                settings.audio_kbps,
+                &targets,
+            ))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -670,7 +690,7 @@ fn to_mp4(ffmpeg: &Path, path: &Path) -> Option<PathBuf> {
 }
 
 /// FFmpeg's arguments for streaming what arrives on stdin to every target.
-fn stream_args(mime: &str, video_kbps: u32, targets: &[String]) -> Vec<String> {
+fn stream_args(mime: &str, video_kbps: u32, audio_kbps: u32, targets: &[String]) -> Vec<String> {
     let h264 = mime.contains("avc1") || mime.contains("h264");
     let mut a: Vec<String> = [
         "-hide_banner",
@@ -717,12 +737,14 @@ fn stream_args(mime: &str, video_kbps: u32, targets: &[String]) -> Vec<String> {
             "+global_header".to_owned(),
         ]);
     }
+    a.extend([
+        "-c:a".to_owned(),
+        "aac".to_owned(),
+        "-b:a".to_owned(),
+        format!("{audio_kbps}k"),
+    ]);
     a.extend(
         [
-            "-c:a",
-            "aac",
-            "-b:a",
-            "160k",
             "-ar",
             "48000",
             "-ac",
@@ -955,12 +977,19 @@ mod tests {
         let args = stream_args(
             "video/x-matroska;codecs=avc1,opus",
             6000,
+            160,
             &["rtmp://x/a|b".into()],
         );
         assert!(args.windows(2).any(|w| w == ["-c:v", "copy"]));
         assert_eq!(args.last().unwrap(), "[f=flv:onfail=ignore]rtmp://x/a\\|b");
-        let vp8 = stream_args("video/webm;codecs=vp8,opus", 4000, &["rtmp://x/y".into()]);
+        let vp8 = stream_args(
+            "video/webm;codecs=vp8,opus",
+            4000,
+            128,
+            &["rtmp://x/y".into()],
+        );
         assert!(vp8.contains(&"libx264".to_owned()) && vp8.contains(&"4000k".to_owned()));
+        assert!(vp8.contains(&"128k".to_owned()));
     }
 
     #[test]
