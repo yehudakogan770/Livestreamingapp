@@ -36,6 +36,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   visuals: 'Stage visuals',
   logo3d: '3D logo',
   browser: 'Web page',
+  stream: 'Stream',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */

@@ -74,3 +74,14 @@ fn a_web_page_is_added_changed_and_goes_on_air() {
     )
     .unwrap();
 }
+
+#[test]
+fn stream_addresses() {
+    use lumora_engine::stream::clean_stream_url;
+    assert!(clean_stream_url("srt://10.0.0.2:9000?mode=caller").is_some());
+    assert!(clean_stream_url("rtsp://cam.local/stream1").is_some());
+    assert!(clean_stream_url("https://example.com/live/index.m3u8").is_some());
+    assert!(clean_stream_url("file:///etc/passwd").is_none());
+    assert!(clean_stream_url("srt://").is_none());
+    assert!(clean_stream_url("example.com").is_none());
+}

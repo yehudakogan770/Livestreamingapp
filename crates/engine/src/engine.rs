@@ -1157,6 +1157,25 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             crate::media::relink(s, &from, &to);
             Ok(())
         }
+        Action::UpdateStream { id, stream } => {
+            let url = crate::stream::clean_stream_url(&stream.url).ok_or_else(|| {
+                ActionError::invalid(
+                    "url",
+                    "that is not a stream address (srt://, rtmp://, rtsp://, https://…)",
+                )
+            })?;
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !matches!(src.kind, SourceKind::Stream(_)) {
+                return Err(ActionError::invalid("stream", "that input is not a stream"));
+            }
+            let mut st = stream;
+            st.url = url;
+            st.repair();
+            src.kind = SourceKind::Stream(Box::new(st));
+            Ok(())
+        }
         Action::UpdateBrowser { id, browser } => {
             let url = crate::browser::clean_url(&browser.url)
                 .ok_or_else(|| ActionError::invalid("url", "that is not a web address"))?;
@@ -1774,6 +1793,16 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         SourceKind::Logo3d(mut l) => {
             l.repair();
             SourceKind::Logo3d(l)
+        }
+        SourceKind::Stream(mut st) => {
+            st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {
+                ActionError::invalid(
+                    "url",
+                    "that is not a stream address (srt://, rtmp://, rtsp://, https://…)",
+                )
+            })?;
+            st.repair();
+            SourceKind::Stream(st)
         }
         SourceKind::Browser(mut b) => {
             b.url = crate::browser::clean_url(&b.url)

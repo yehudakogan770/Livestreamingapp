@@ -7,6 +7,7 @@ import type { Pesukim } from "./Pesukim";
 import type { Playback } from "./Playback";
 import type { Slideshow } from "./Slideshow";
 import type { Split } from "./Split";
+import type { StreamInput } from "./StreamInput";
 import type { TextInput } from "./TextInput";
 
 /**
@@ -21,4 +22,4 @@ logo?: string,
  * This input's own timer: each countdown input counts on its own,
  * so the next one can be prepared while another is on air.
  */
-timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "split" } & Split | { "type": "slideshow" } & Slideshow | { "type": "visuals" } | { "type": "logo3d" } & Logo3d | { "type": "browser" } & BrowserInput | { "type": "microphone", deviceId: string, label: string, };
+timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "split" } & Split | { "type": "slideshow" } & Slideshow | { "type": "visuals" } | { "type": "logo3d" } & Logo3d | { "type": "browser" } & BrowserInput | { "type": "stream" } & StreamInput | { "type": "microphone", deviceId: string, label: string, };

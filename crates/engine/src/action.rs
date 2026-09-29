@@ -459,6 +459,13 @@ pub enum Action {
         id: String,
     },
 
+    // ----- stream input -----
+    /// Change a stream input's address or buffer.
+    UpdateStream {
+        id: SourceId,
+        stream: crate::stream::StreamInput,
+    },
+
     // ----- web page -----
     /// Change a web page input (address, size, zoom…). The address is
     /// cleaned up (`example.com` → `https://example.com`).

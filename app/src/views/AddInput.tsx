@@ -140,6 +140,9 @@ export function AddInput({
       case 'logo3d':
         // Made in the 3D logo maker.
         return null;
+      case 'stream':
+        // Not offered yet (the screens can't show streams yet).
+        return null;
       case 'browser': {
         const url = cleanUrl(words);
         return url ? { name: n || url.replace(/^https?:\/\//, '').split('/')[0] || 'Web page', kind: { type: 'browser', ...defaultBrowser(), url } } : null;

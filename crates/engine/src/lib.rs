@@ -28,6 +28,7 @@ pub mod presets;
 pub mod slideshow;
 pub mod split;
 pub mod stage;
+pub mod stream;
 pub mod text;
 pub mod timing;
 pub mod triggers;

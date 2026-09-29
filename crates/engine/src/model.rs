@@ -208,6 +208,8 @@ pub enum SourceKind {
     Logo3d(Box<crate::logo3d::Logo3d>),
     /// A web page.
     Browser(Box<crate::browser::BrowserInput>),
+    /// A live video link (SRT, RTMP, RTSP, HLS…).
+    Stream(Box<crate::stream::StreamInput>),
     /// A sound-only input: microphone, line in, audio interface channel.
     Microphone {
         device_id: String,
