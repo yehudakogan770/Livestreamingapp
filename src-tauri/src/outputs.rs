@@ -117,6 +117,46 @@ pub fn place(
     Ok(())
 }
 
+/// The multiview window's label.
+pub const MULTIVIEW: &str = "output-multiview";
+
+/// Open (or bring forward) the multiview, on its display if one is chosen.
+pub fn open_multiview(app: &AppHandle, show: &Show) -> tauri::Result<()> {
+    let window = if let Some(w) = app.get_webview_window(MULTIVIEW) {
+        w
+    } else {
+        WebviewWindowBuilder::new(app, MULTIVIEW, WebviewUrl::default())
+            .title("Lumora — Multiview")
+            .inner_size(1280.0, 720.0)
+            .min_inner_size(480.0, 270.0)
+            .background_color(tauri::webview::Color(0, 0, 0, 255))
+            .build()?
+    };
+    let target = show
+        .settings
+        .multiview
+        .display
+        .as_deref()
+        .and_then(|id| displays(app).into_iter().find(|d| d.id == id));
+    match target {
+        Some(d) => {
+            window.set_fullscreen(false)?;
+            window.set_position(PhysicalPosition::new(d.x + 40, d.y + 40))?;
+            window.set_fullscreen(true)?;
+        }
+        None => window.set_fullscreen(false)?,
+    }
+    window.set_focus()?;
+    Ok(())
+}
+
+pub fn close_multiview(app: &AppHandle) -> tauri::Result<()> {
+    if let Some(w) = app.get_webview_window(MULTIVIEW) {
+        w.close()?;
+    }
+    Ok(())
+}
+
 pub fn close(app: &AppHandle, screen: ScreenId) -> tauri::Result<()> {
     if let Some(w) = app.get_webview_window(&label(screen)) {
         w.close()?;

@@ -1,4 +1,8 @@
 .titlebar {
+  /* Always above the rest of the window, so its menus are never hidden
+     behind the monitors or tiles (whatever the browser engine). */
+  position: relative;
+  z-index: 100;
   height: 34px;
   flex-shrink: 0;
   display: flex;
@@ -23,9 +27,10 @@
 .titlebar__menu {
   display: flex;
   gap: 2px;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden;
+  /* Visible: the menus hang below the bar. */
+  overflow: visible;
 }
 .titlebar__item {
   height: 26px;
@@ -47,13 +52,80 @@
   color: var(--text-dim);
   padding-left: 12px;
 }
-.titlebar__event { margin-left: auto; margin-right: 14px; font-size: 12px; font-weight: 600; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 30vw; }
-.titlebar__item:not(:disabled):hover { color: #fff; }
+.titlebar__event {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  padding-left: 12px;
+  margin-right: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 30vw;
+}
+.titlebar__item:not(:disabled):hover {
+  color: #fff;
+}
 
-.titlebar__slot { position: relative; }
-.titlebar__item.is-open { color: #fff; background: #2a2e36; border-radius: 4px; }
-.titlebar__drop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 80; min-width: 240px; padding: 4px; display: flex; flex-direction: column; border-radius: 8px; background: #23272e; border: 1px solid #3a3f48; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); }
-.titlebar__drop button { height: 30px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: var(--text); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.titlebar__drop button:hover:not(:disabled) { background: var(--selected); color: #fff; }
-.titlebar__drop button:disabled { color: var(--text-faint); cursor: default; }
-.titlebar__drop hr { width: 100%; margin: 4px 0; border: 0; border-top: 1px solid #3a3f48; }
+.titlebar__slot {
+  position: relative;
+}
+.titlebar__item.is-open {
+  color: #fff;
+  background: #2a2e36;
+  border-radius: 4px;
+}
+.titlebar__drop {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1000;
+  min-width: 240px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  background: #23272e;
+  border: 1px solid #3a3f48;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+}
+.titlebar__drop button {
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.titlebar__drop button:hover:not(:disabled) {
+  background: var(--selected);
+  color: #fff;
+}
+.titlebar__drop button:disabled {
+  color: var(--text-faint);
+  cursor: default;
+}
+.titlebar__drop hr {
+  width: 100%;
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid #3a3f48;
+}
+
+/* Narrow windows: the menu names close up so they all fit. */
+@media (max-width: 1200px) {
+  .titlebar__brand {
+    padding-right: 6px;
+  }
+  .titlebar__item {
+    padding: 0 5px;
+    font-size: 11.5px;
+  }
+}

@@ -217,6 +217,22 @@ fn open_output(
 }
 
 #[tauri::command]
+fn open_multiview(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), String> {
+    let show = lock(&state).show().clone();
+    outputs::open_multiview(&app, &show).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn close_multiview(app: tauri::AppHandle) -> Result<(), String> {
+    outputs::close_multiview(&app).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn multiview_open(app: tauri::AppHandle) -> bool {
+    app.get_webview_window(outputs::MULTIVIEW).is_some()
+}
+
+#[tauri::command]
 fn close_output(screen: ScreenId, app: tauri::AppHandle) -> Result<(), String> {
     outputs::close(&app, screen).map_err(|e| e.to_string())
 }
@@ -589,6 +605,9 @@ pub fn run() {
             open_outputs,
             open_output,
             close_output,
+            open_multiview,
+            close_multiview,
+            multiview_open,
             event_files,
             new_event,
             open_event,

@@ -131,6 +131,10 @@ export interface EngineClient {
   listDisplays(): Promise<Display[]>;
   openOutput(screen: ScreenId): Promise<void>;
   closeOutput(screen: ScreenId): Promise<void>;
+  /** The multiview window (every input and the screens, for the crew). */
+  openMultiview(): Promise<void>;
+  closeMultiview(): Promise<void>;
+  multiviewOpen(): Promise<boolean>;
   /** Called with the screens whose output window is open, now and on every change. */
   watchOutputs(onChange: (open: ScreenId[]) => void): () => void;
 
@@ -297,6 +301,7 @@ export function emptyShow(): Show {
       autoPlayOnTake: true,
       audioOutputs: { master: null, a: null, b: null, headphones: null },
       fadeToBlackMs: 2000,
+      multiview: { display: null, layout: 'classic' },
       favouriteTransitions: [
         { kind: 'fade', durationMs: 800 },
         { kind: 'dip', durationMs: 1500 },
@@ -344,6 +349,18 @@ class TauriClient implements EngineClient {
 
   async closeOutput(screen: ScreenId): Promise<void> {
     await invoke('close_output', { screen });
+  }
+
+  async openMultiview(): Promise<void> {
+    await invoke('open_multiview');
+  }
+
+  async closeMultiview(): Promise<void> {
+    await invoke('close_multiview');
+  }
+
+  multiviewOpen(): Promise<boolean> {
+    return invoke<boolean>('multiview_open');
   }
 
   watchOutputs(onChange: (open: ScreenId[]) => void): () => void {
@@ -668,6 +685,20 @@ export class DemoClient implements EngineClient {
 
   closeOutput(): Promise<void> {
     return Promise.resolve();
+  }
+
+  openMultiview(): Promise<void> {
+    // In a browser the multiview opens in its own tab.
+    window.open(`${location.pathname}?output=multiview`, '_blank');
+    return Promise.resolve();
+  }
+
+  closeMultiview(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  multiviewOpen(): Promise<boolean> {
+    return Promise.resolve(false);
   }
 
   watchOutputs(onChange: (open: ScreenId[]) => void): () => void {

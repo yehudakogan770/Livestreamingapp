@@ -370,6 +370,9 @@ function apply(s: Show, a: Action, now: number) {
       sc.blankFadeMs = s.settings.fadeToBlackMs;
       return;
     }
+    case 'setMultiview':
+      s.settings.multiview = structuredClone(a.multiview);
+      return;
     case 'setFadeToBlackLength':
       s.settings.fadeToBlackMs = Math.min(10_000, Math.max(100, a.ms));
       return;

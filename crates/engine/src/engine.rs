@@ -827,6 +827,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             sc.blank_fade_ms = ms;
             Ok(())
         }
+        Action::SetMultiview { multiview } => {
+            s.settings.multiview = multiview;
+            Ok(())
+        }
         Action::SetFadeToBlackLength { ms } => {
             s.settings.fade_to_black_ms = ms.clamp(100, 10_000);
             Ok(())

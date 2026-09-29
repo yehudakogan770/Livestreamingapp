@@ -1,0 +1,121 @@
+.mv {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  color: #fff;
+  font-family: var(--font);
+  overflow: hidden;
+  user-select: none;
+}
+.mv__grid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+}
+.mv__head {
+  flex: 0 0 auto;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.mv__clock {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 18px;
+}
+.mv__screens {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: grid;
+  gap: 6px;
+}
+.mv__screens--1 {
+  height: 58%;
+}
+.mv__screens--2 {
+  height: 60%;
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.mv__pair {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.mv__inputs {
+  flex: 1 1 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 30%), 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 6px;
+  overflow: hidden;
+}
+.mv__grid--inputs .mv__inputs {
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 45%), 1fr));
+}
+.mv__box {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 3px solid #2a2e36;
+  border-radius: 4px;
+  background: #0b0c0e;
+  overflow: hidden;
+}
+.mv__box--pgm {
+  border-color: #e0473b;
+}
+.mv__box--pvw {
+  border-color: #3fbf5a;
+}
+.mv__pic {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.mv__label {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.85);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mv__box--big .mv__label {
+  font-size: 16px;
+}
+.mv__label b {
+  font-family: var(--mono);
+  color: #a9abb0;
+}
+.mv__tag {
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.mv__tag--pgm {
+  background: #e0473b;
+  color: #fff;
+}
+.mv__tag--pvw {
+  background: #3fbf5a;
+  color: #04120a;
+}

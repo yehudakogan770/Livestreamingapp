@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { baseName, createEngineClient, type EventFiles, type RemoteStatus } from './engine/client';
 import { useShow } from './engine/useShow';
-import { outputScreen } from './engine/role';
+import { isMultiview, outputScreen } from './engine/role';
+import { MultiviewView } from './views/MultiviewView';
 import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar, type MenuItem } from './components/TitleBar';
 import { TEXT_SIZES, applyTextSize, loadTextSize, stepTextSize, type TextSize } from './components/textSize';
@@ -24,6 +25,8 @@ import './App.css';
 
 export function App() {
   const output = useMemo(outputScreen, []);
+  const multiview = useMemo(isMultiview, []);
+  if (multiview) return <MultiviewView />;
   return output ? <OutputView screen={output} /> : <Control />;
 }
 

@@ -372,6 +372,33 @@ pub struct Settings {
     /// The four favourite transition buttons.
     #[serde(default = "default_favourites")]
     pub favourite_transitions: Vec<Transition>,
+    /// The multiview screen: which display it goes to, and its layout.
+    #[serde(default)]
+    pub multiview: Multiview,
+}
+
+/// How the multiview screen is laid out.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum MultiviewLayout {
+    /// Next and On air of the Live Screen big, every input below.
+    #[default]
+    Classic,
+    /// The Live and Back Screens (Next and On air of each), inputs below.
+    BothScreens,
+    /// Every input the same size, with On air and Next marked.
+    Inputs,
+}
+
+/// The multiview screen: every input and the screens at once, for the crew.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct Multiview {
+    /// The display it fills (None: a window).
+    pub display: Option<String>,
+    pub layout: MultiviewLayout,
 }
 
 fn default_ftb() -> u32 {
@@ -399,6 +426,7 @@ impl Default for Settings {
             audio_outputs: AudioOutputs::default(),
             fade_to_black_ms: default_ftb(),
             favourite_transitions: default_favourites(),
+            multiview: Multiview::default(),
         }
     }
 }

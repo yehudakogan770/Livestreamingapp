@@ -42,13 +42,7 @@ export function OutputsDialog({
   const used = (id: string, except: ScreenId) => SCREENS.some((s) => s.id !== except && chosenAll[s.id] === id);
 
   return (
-    <div
-      className="modal"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Outputs"
-      onPointerDown={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className="modal" role="dialog" aria-modal="true" aria-label="Outputs" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box outputs">
         <header className="modal__head">
           <h2>Outputs</h2>
@@ -57,8 +51,8 @@ export function OutputsDialog({
           </button>
         </header>
         <p className="outputs__intro">
-          Pick the display each screen goes to. Lumora remembers it for next time. With a display chosen, the output fills it; with “Window”
-          it opens as a normal window you can move and resize.
+          Pick the display each screen goes to. Lumora remembers it for next time. With a display chosen, the output fills it; with “Window” it opens as a
+          normal window you can move and resize.
         </p>
         <div className="outputs__rows">
           {SCREENS.map((s) => {
@@ -100,6 +94,7 @@ export function OutputsDialog({
               </div>
             );
           })}
+          <MultiviewRow show={show} client={client} displays={displays} act={act} onError={onError} />
         </div>
         <footer className="modal__foot">
           <button type="button" className="linkbtn" onClick={refresh}>
@@ -117,6 +112,71 @@ export function OutputsDialog({
           </button>
         </footer>
       </div>
+    </div>
+  );
+}
+
+/** The multiview: every input and the screens on one extra display, for the crew. */
+function MultiviewRow({
+  show,
+  client,
+  displays,
+  act,
+  onError,
+}: {
+  show: Show;
+  client: EngineClient;
+  displays: Display[] | null;
+  act: Act;
+  onError: (e: unknown) => void;
+}) {
+  const [isOpen, setOpen] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const check = () =>
+      void client.multiviewOpen().then(
+        (o) => alive && setOpen(o),
+        () => undefined,
+      );
+    check();
+    const id = setInterval(check, 1000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [client]);
+  const mv = show.settings.multiview;
+  const set = (p: Partial<typeof mv>) => act({ type: 'setMultiview', multiview: { ...mv, ...p } });
+  return (
+    <div className="outputs__row">
+      <div className="outputs__screen">
+        <strong>Multiview</strong>
+        <span>Every input and the screens, for the crew</span>
+      </div>
+      <span className="outputs__mv">
+        <select aria-label="Display for the multiview" value={mv.display ?? ''} onChange={(e) => set({ display: e.target.value || null })}>
+          <option value="">Window (no display chosen)</option>
+          {displays?.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.id} · {d.width}×{d.height}
+              {d.primary ? ' · main screen' : ''}
+            </option>
+          ))}
+        </select>
+        <select aria-label="Multiview layout" value={mv.layout} onChange={(e) => set({ layout: e.target.value as typeof mv.layout })}>
+          <option value="classic">Next + On air big, inputs below</option>
+          <option value="bothScreens">Live and Back Screens, inputs below</option>
+          <option value="inputs">Only the inputs, all the same size</option>
+        </select>
+      </span>
+      <span className={`outputs__state${isOpen ? ' is-open' : ''}`}>{isOpen ? 'Open' : 'Closed'}</span>
+      <button
+        type="button"
+        className={`btn${isOpen ? '' : ' btn--primary'}`}
+        onClick={() => void (isOpen ? client.closeMultiview() : client.openMultiview()).then(() => setOpen(!isOpen), onError)}
+      >
+        {isOpen ? 'Close' : 'Open'}
+      </button>
     </div>
   );
 }

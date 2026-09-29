@@ -224,6 +224,10 @@ pub enum Action {
     FadeToBlack {
         screen: ScreenId,
     },
+    /// Where the multiview screen goes, and its layout.
+    SetMultiview {
+        multiview: crate::model::Multiview,
+    },
     /// How long Fade to black takes.
     SetFadeToBlackLength {
         ms: u32,
