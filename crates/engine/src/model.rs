@@ -115,6 +115,13 @@ pub enum TransitionKind {
     Blur,
     /// A flash of white, then the new source.
     Flash,
+    /// Luma wipes: the new source appears following a pattern's light and dark.
+    LumaClock,
+    LumaCircle,
+    LumaBlinds,
+    LumaDiagonal,
+    LumaSparkle,
+    LumaHeart,
     /// A stinger video plays over the switch (the two set up in Settings).
     Stinger1,
     Stinger2,

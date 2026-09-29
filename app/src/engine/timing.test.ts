@@ -100,6 +100,12 @@ describe('mixAt', () => {
       'zoom',
       'zoomOut',
       'blur',
+      'lumaClock',
+      'lumaCircle',
+      'lumaBlinds',
+      'lumaDiagonal',
+      'lumaSparkle',
+      'lumaHeart',
     ];
     for (const k of kinds) {
       const end = mixAt(k, 1);
@@ -118,7 +124,8 @@ describe('mixAt', () => {
         start.inOpacity === 0 ||
         Math.abs(start.inShift ?? 0) >= 100 ||
         Math.abs(start.inShiftY ?? 0) >= 100 ||
-        !!start.inShape;
+        !!start.inShape ||
+        !!start.inLuma;
       expect(hidden, k).toBe(true);
     }
     expect(mixAt('iris', 0.5).inClip).toMatch(/^circle\(/);
@@ -140,5 +147,24 @@ describe('helpers', () => {
     expect(clock(0)).toBe('0:00');
     expect(clock(75.9)).toBe('1:15');
     expect(clock(3725)).toBe('1:02:05');
+  });
+});
+
+describe('luma wipes', () => {
+  it('start with nothing of the new picture and end with all of it', async () => {
+    const { lumaAlpha, lumaValue } = await import('./luma');
+    for (const p of ['lumaClock', 'lumaCircle', 'lumaBlinds', 'lumaDiagonal', 'lumaSparkle', 'lumaHeart'] as const) {
+      for (const [u, v] of [
+        [0.1, 0.1],
+        [0.5, 0.5],
+        [0.9, 0.7],
+      ] as const) {
+        const l = lumaValue(p, u, v);
+        expect(l, p).toBeGreaterThanOrEqual(0);
+        expect(l, p).toBeLessThanOrEqual(1);
+        expect(lumaAlpha(l, 1), p).toBe(1);
+        if (l > 0.01) expect(lumaAlpha(l, 0), p).toBe(0);
+      }
+    }
   });
 });

@@ -27,6 +27,12 @@ export const KINDS: { kind: TransitionKind; name: string }[] = [
   { kind: 'zoomOut', name: 'Zoom out' },
   { kind: 'blur', name: 'Blur' },
   { kind: 'flash', name: 'Flash' },
+  { kind: 'lumaClock', name: 'Luma: clock' },
+  { kind: 'lumaCircle', name: 'Luma: circle' },
+  { kind: 'lumaBlinds', name: 'Luma: blinds' },
+  { kind: 'lumaDiagonal', name: 'Luma: diagonal' },
+  { kind: 'lumaSparkle', name: 'Luma: sparkle' },
+  { kind: 'lumaHeart', name: 'Luma: heart' },
   { kind: 'stinger1', name: 'Stinger 1' },
   { kind: 'stinger2', name: 'Stinger 2' },
 ];

@@ -3,6 +3,7 @@ import type { EngineClient } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { TransitionKind } from '../engine/types/TransitionKind';
+import { lumaMask, type LumaPattern } from '../engine/luma';
 import { fadeAmount, mixAt, stingerSlot, transitionProgress, BLANK_FADE_MS, type Mix, type Shape } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { SafeScreenView, SourceView } from './SourceView';
@@ -20,6 +21,15 @@ export interface Layer {
   blur?: number;
   /** Drawn over the other layer. */
   top?: boolean;
+  /** A luma wipe's mask. */
+  luma?: { pattern: LumaPattern; p: number };
+}
+
+/** A luma wipe's mask as CSS. */
+function maskCss(luma: Layer['luma']): CSSProperties {
+  const m = luma && lumaMask(luma.pattern, luma.p);
+  if (!m) return {};
+  return { maskImage: `url(${m.url})`, WebkitMaskImage: `url(${m.url})`, maskSize: '100% 100%', WebkitMaskSize: '100% 100%' };
 }
 
 /** A layer's movement as a CSS transform. */
@@ -54,6 +64,7 @@ export function programLayers(show: Show, screen: ScreenId, now: number): { laye
         opacity: m.inOpacity,
         clip: m.inClip,
         shape: m.inShape,
+        luma: m.inLuma,
         shift: m.inShift,
         shiftY: m.inShiftY,
         scale: m.inScale,
@@ -115,6 +126,7 @@ export function transitionKeyframes(kind: TransitionKind, side: 'in' | 'out' | '
     else if (side === 'in')
       frames.push({
         offset,
+        ...(m.inLuma ? (maskCss(m.inLuma) as Keyframe) : {}),
         opacity: m.inOpacity,
         clipPath: m.inClip ?? 'none',
         transform: move(m.inShift, m.inShiftY, m.inScale),
@@ -225,6 +237,7 @@ export function ProgramView({
               background: 'transparent',
               opacity: l.opacity,
               clipPath: l.clip,
+              ...maskCss(l.luma),
               transform: layerTransform(l),
               filter: l.blur ? `blur(${(l.blur * (ref.current?.clientHeight ?? 1080)).toFixed(2)}px)` : undefined,
               zIndex: l.top ? 1 : undefined,

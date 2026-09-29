@@ -9,6 +9,7 @@ import type { EventInfo } from '../engine/types/EventInfo';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { programLayers, type StingerPlay } from '../components/ScreenView';
+import { lumaMask } from '../engine/luma';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
@@ -53,7 +54,8 @@ const ease = (x: number) => 1 - (1 - clamp01(x)) ** 3;
 
 export class ProgramCompositor {
   readonly canvas: HTMLCanvasElement;
-  private readonly ctx: CanvasRenderingContext2D;
+  /** Where drawing goes (swapped for a spare canvas while a luma wipe draws the new source). */
+  private ctx: CanvasRenderingContext2D;
   private readonly media = new Map<string, Media>();
   private readonly pictures = new Map<string, Media>();
   /** One green-screen keyer per keyed input. */
@@ -176,7 +178,25 @@ export class ProgramCompositor {
         ctx.translate(-w / 2, -h / 2);
       }
       if (l.blur) ctx.filter = `blur(${(l.blur * h).toFixed(2)}px)`;
-      this.drawSource(src, show.event, now, w, h);
+      const mask = l.luma && lumaMask(l.luma.pattern, l.luma.p);
+      if (mask) {
+        // Draw the new source apart, keep it only where the mask shows, then put it on.
+        const off = this.offscreen(w, h);
+        const main = this.ctx;
+        const o = off.getContext('2d')!;
+        o.globalCompositeOperation = 'source-over';
+        o.clearRect(0, 0, w, h);
+        this.ctx = o;
+        try {
+          this.drawSource(src, show.event, now, w, h);
+        } finally {
+          this.ctx = main;
+        }
+        o.globalCompositeOperation = 'destination-in';
+        o.drawImage(mask.canvas, 0, 0, w, h);
+        o.globalCompositeOperation = 'source-over';
+        main.drawImage(off, 0, 0);
+      } else this.drawSource(src, show.event, now, w, h);
       ctx.restore();
     }
     this.overlay('#000', black, w, h);
@@ -747,6 +767,18 @@ export class ProgramCompositor {
     if (!bar) info(x);
     ctx.restore();
     ctx.restore();
+  }
+
+  private off: HTMLCanvasElement | null = null;
+
+  /** A spare canvas the size of the picture (luma wipes). */
+  private offscreen(w: number, h: number): HTMLCanvasElement {
+    if (!this.off) this.off = document.createElement('canvas');
+    if (this.off.width !== w || this.off.height !== h) {
+      this.off.width = w;
+      this.off.height = h;
+    }
+    return this.off;
   }
 
   /** When this source started being drawn, without a break. */

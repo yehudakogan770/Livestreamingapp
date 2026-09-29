@@ -3,4 +3,4 @@
 /**
  * The kinds of transition between two sources.
  */
-export type TransitionKind = "cut" | "fade" | "merge" | "dip" | "wipe" | "slide" | "wipeLeft" | "wipeDown" | "wipeUp" | "slideRight" | "slideDown" | "slideUp" | "cover" | "reveal" | "split" | "splitVertical" | "iris" | "diamond" | "zoom" | "zoomOut" | "blur" | "flash" | "stinger1" | "stinger2";
+export type TransitionKind = "cut" | "fade" | "merge" | "dip" | "wipe" | "slide" | "wipeLeft" | "wipeDown" | "wipeUp" | "slideRight" | "slideDown" | "slideUp" | "cover" | "reveal" | "split" | "splitVertical" | "iris" | "diamond" | "zoom" | "zoomOut" | "blur" | "flash" | "lumaClock" | "lumaCircle" | "lumaBlinds" | "lumaDiagonal" | "lumaSparkle" | "lumaHeart" | "stinger1" | "stinger2";

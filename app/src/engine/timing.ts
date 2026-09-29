@@ -5,6 +5,7 @@
 import type { ScreenState } from './types/ScreenState';
 import type { Source } from './types/Source';
 import type { TransitionKind } from './types/TransitionKind';
+import type { LumaPattern } from './luma';
 import type { Countdown } from './types/Countdown';
 import type { TimerFormat } from './types/TimerFormat';
 
@@ -84,6 +85,8 @@ export interface Mix {
   outBlur?: number;
   /** The outgoing picture is drawn over the incoming one (reveal, zoom out). */
   outOnTop?: boolean;
+  /** A luma wipe: the pattern and how far it is (0 – 1). */
+  inLuma?: { pattern: LumaPattern; p: number };
 }
 
 const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
@@ -152,6 +155,13 @@ function mixOf(kind: TransitionKind, x: number): Mix {
       return { inOpacity: e, outOpacity: 1, black: 0, inScale: 0.6 + 0.4 * e };
     case 'zoomOut':
       return { inOpacity: 1, outOpacity: 1 - e, black: 0, outScale: 1 + 0.6 * e, outOnTop: true };
+    case 'lumaClock':
+    case 'lumaCircle':
+    case 'lumaBlinds':
+    case 'lumaDiagonal':
+    case 'lumaSparkle':
+    case 'lumaHeart':
+      return { ...whole, inLuma: { pattern: kind, p: x } };
     case 'stinger1':
     case 'stinger2':
       // The stinger covers the switch; programLayers cuts at its own point.
