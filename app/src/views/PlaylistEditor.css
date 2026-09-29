@@ -1,0 +1,81 @@
+.modal__box.pl {
+  width: min(720px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+.pl__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 14px;
+  overflow: auto;
+}
+.pl__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.pl__total {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.pl__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pl__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel, #1a1d22);
+  cursor: grab;
+}
+.pl__item.is-current {
+  border-color: var(--program);
+}
+.pl__item.is-drag {
+  opacity: 0.5;
+}
+.pl__num {
+  width: 22px;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.pl__play {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--button);
+  color: var(--text);
+  cursor: pointer;
+}
+.pl__name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.pl__len {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.pl__now {
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--program);
+  color: #fff;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+}

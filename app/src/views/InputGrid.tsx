@@ -1,3 +1,4 @@
+import { PlaylistEditor } from './PlaylistEditor';
 import type { Transition } from '../engine/types/Transition';
 import { transitionName } from './SwitchPanel';
 import { sendCommand } from './commands';
@@ -66,6 +67,7 @@ export function InputGrid({
   const editingSlides = show.sources.find((x) => x.id === editing && x.kind.type === 'slideshow');
   const editingPage = show.sources.find((x) => x.id === editing && x.kind.type === 'browser');
   const editingStream = show.sources.find((x) => x.id === editing && x.kind.type === 'stream');
+  const editingList = show.sources.find((x) => x.id === editing && x.kind.type === 'video');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -106,6 +108,7 @@ export function InputGrid({
               <span className="tile__name">{src.name}</span>
               <span className="tile__kind">
                 {soundFile ? 'Sound' : KIND_NAME[src.kind.type]}
+                {src.kind.type === 'video' && src.playlist ? ` · ${src.playlist.current + 1}/${src.playlist.items.length}` : ''}
                 {src.kind.type === 'video' && src.looping ? ' · loop' : ''}
               </span>
             </button>
@@ -149,6 +152,7 @@ export function InputGrid({
         <span className="tile--add__plus">+</span>
         Add input
       </button>
+      {editingList && <PlaylistEditor source={editingList} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingText && <TextEditor source={editingText} act={act} onClose={() => setEditing(null)} />}
       {editingStream && <StreamCard show={show} source={editingStream} act={act} client={client} onClose={() => setEditing(null)} />}
       <StreamProblems show={show} client={client} />
@@ -318,6 +322,18 @@ function TileMenu({
       >
         Save to library…
       </button>
+      {k === 'video' && (
+        <button
+          type="button"
+          className={`btn menu__wide${source.playlist ? ' is-on' : ''}`}
+          onClick={() => {
+            onClose();
+            onEditText();
+          }}
+        >
+          {source.playlist ? `Playlist (${source.playlist.items.length} videos)…` : 'Make a playlist…'}
+        </button>
+      )}
       {(k === 'camera' || k === 'video' || k === 'image') && (
         <button
           type="button"

@@ -228,6 +228,17 @@ pub enum Action {
     SetMultiview {
         multiview: crate::model::Multiview,
     },
+    /// Make a video input a playlist, change its list, or (None) make it a single video again.
+    SetPlaylist {
+        id: SourceId,
+        #[ts(optional)]
+        playlist: Option<crate::playlist::Playlist>,
+    },
+    /// Play item `index` of a playlist from its start.
+    PlaylistGo {
+        id: SourceId,
+        index: usize,
+    },
     /// Set up stinger slot 0 or 1 (an empty path clears it).
     SetStinger {
         index: usize,

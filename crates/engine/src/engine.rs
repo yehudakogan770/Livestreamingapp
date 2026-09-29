@@ -121,6 +121,13 @@ impl Engine {
             .filter(|src| matches!(&src.kind, SourceKind::Slideshow(sh) if sh.due(now)))
             .map(|src| src.id.clone())
             .collect();
+        let lists_due: Vec<SourceId> = self
+            .show
+            .sources
+            .iter()
+            .filter(|src| crate::playlist::due(src, now))
+            .map(|src| src.id.clone())
+            .collect();
         let overlays_due: Vec<usize> = (0..self.show.overlays.len())
             .filter(|&i| overlay_due(&self.show, i, now))
             .collect();
@@ -130,6 +137,7 @@ impl Engine {
             && words_due.is_empty()
             && overlays_due.is_empty()
             && slides_due.is_empty()
+            && lists_due.is_empty()
             && !visuals_due
             && !crate::triggers::clock_due(&self.show, now)
         {
@@ -152,6 +160,17 @@ impl Engine {
         }
         if visuals_due {
             next.visuals.auto_change(now);
+        }
+        for id in &lists_due {
+            if let Some(src) = next.sources.iter_mut().find(|x| &x.id == id) {
+                if let Some(i) = src
+                    .playlist
+                    .as_ref()
+                    .and_then(crate::playlist::Playlist::next_index)
+                {
+                    crate::playlist::go(src, i, true, now);
+                }
+            }
         }
         for &i in &overlays_due {
             next.overlays[i].set_on(false, now);
@@ -912,10 +931,57 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 return Err(ActionError::invalid("durationS", "must be more than zero"));
             }
             let src = video_mut(s, &id)?;
-            let SourceKind::Video { duration_s, .. } = &mut src.kind else {
+            let SourceKind::Video {
+                duration_s, path, ..
+            } = &mut src.kind
+            else {
                 unreachable!()
             };
             *duration_s = d;
+            // A playlist remembers each video's length.
+            if let Some(p) = &mut src.playlist {
+                for item in p.items.iter_mut().filter(|i| &i.path == path) {
+                    item.duration_s = d;
+                }
+            }
+            Ok(())
+        }
+        Action::SetPlaylist { id, playlist } => {
+            let src = video_mut(s, &id)?;
+            match playlist {
+                None => src.playlist = None,
+                Some(mut p) => {
+                    p.repair();
+                    if p.items.is_empty() {
+                        return Err(ActionError::invalid("playlist", "add at least one video"));
+                    }
+                    let SourceKind::Video { path, .. } = &src.kind else {
+                        unreachable!()
+                    };
+                    // Keep playing what plays if it is still in the list.
+                    let keep = p.items.iter().position(|i| &i.path == path);
+                    let current = keep.unwrap_or(p.current);
+                    p.current = current;
+                    src.playlist = Some(p);
+                    if keep.is_none() {
+                        crate::playlist::go(src, current, false, now);
+                    }
+                }
+            }
+            Ok(())
+        }
+        Action::PlaylistGo { id, index } => {
+            let src = video_mut(s, &id)?;
+            let len = src.playlist.as_ref().map_or(0, |p| p.items.len());
+            if index >= len {
+                return Err(ActionError::invalid(
+                    "index",
+                    "there is no such video in the list",
+                ));
+            }
+            let playing =
+                matches!(&src.kind, SourceKind::Video { playback, .. } if playback.playing);
+            crate::playlist::go(src, index, playing, now);
             Ok(())
         }
         Action::SetMasterVolume { value } => {
@@ -1709,6 +1775,7 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
             k
         }),
         adjust: crate::adjust::Adjust::default(),
+        playlist: None,
     };
     s.sources.push(src);
     Ok(())

@@ -321,6 +321,10 @@ pub struct Source {
     /// Light, colour, crop and effects (cameras, videos, pictures).
     #[serde(default)]
     pub adjust: crate::adjust::Adjust,
+    /// A video input playing a list of videos.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub playlist: Option<crate::playlist::Playlist>,
 }
 
 /// Green screen: a colour taken out of the picture so what is behind shows.

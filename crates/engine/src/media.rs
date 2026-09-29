@@ -16,6 +16,11 @@ pub fn for_each_path(show: &mut Show, mut f: impl FnMut(&mut String)) {
         }
     }
     for src in &mut show.sources {
+        if let Some(p) = &mut src.playlist {
+            for item in &mut p.items {
+                f(&mut item.path);
+            }
+        }
         match &mut src.kind {
             SourceKind::Video { path, .. } | SourceKind::Image { path } => f(path),
             SourceKind::Countdown {

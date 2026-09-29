@@ -12,6 +12,7 @@ import { creditsPosition } from './credits';
 import type { Credits } from './types/Credits';
 import { repairOverlay, setOverlayOn } from './overlays';
 import { stingerSlot } from './timing';
+import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
 import type { Action } from './types/Action';
@@ -438,7 +439,31 @@ function apply(s: Show, a: Action, now: number) {
     case 'setDuration': {
       const d = finite(a.durationS, 'durationS');
       if (d <= 0) throw new Refused({ code: 'invalidValue', field: 'durationS', reason: 'must be more than zero' });
-      video(s, a.id).kind.durationS = d;
+      const v = video(s, a.id);
+      v.kind.durationS = d;
+      for (const item of v.playlist?.items ?? []) if (item.path === v.kind.path) item.durationS = d;
+      return;
+    }
+    case 'setPlaylist': {
+      const v = video(s, a.id);
+      if (!a.playlist) {
+        v.playlist = null;
+        return;
+      }
+      const p = structuredClone(a.playlist);
+      repairPlaylist(p);
+      if (p.items.length === 0) throw new Refused({ code: 'invalidValue', field: 'playlist', reason: 'add at least one video' });
+      const keep = p.items.findIndex((i) => i.path === v.kind.path);
+      p.current = keep >= 0 ? keep : p.current;
+      v.playlist = p;
+      if (keep < 0) playlistGo(v, p.current, false, now);
+      return;
+    }
+    case 'playlistGo': {
+      const v = video(s, a.id);
+      if (a.index < 0 || a.index >= (v.playlist?.items.length ?? 0))
+        throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there is no such video in the list' });
+      playlistGo(v, a.index, v.kind.playback.playing, now);
       return;
     }
     case 'setMasterMuted':
@@ -973,6 +998,7 @@ export function demoTick(show: Show, now: number): Show | null {
   const slidesDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'slideshow' && slideDue(x.kind, now)).map((x) => x.id);
   const cue = cueDue(show.run, now);
   const visualsDue = vis.visualsDue(show.visuals, now);
+  const listsDue = show.sources.filter((x) => playlistDue(x, now)).map((x) => x.id);
   const clockTriggers = triggersDue(show, show, now).length > 0;
   if (
     due.length === 0 &&
@@ -981,6 +1007,7 @@ export function demoTick(show: Show, now: number): Show | null {
     wordsDue.length === 0 &&
     overlaysDue.length === 0 &&
     slidesDue.length === 0 &&
+    listsDue.length === 0 &&
     !visualsDue &&
     !clockTriggers
   )
@@ -992,6 +1019,11 @@ export function demoTick(show: Show, now: number): Show | null {
   if (stepsDue) runSteps(next, now);
   for (const id of wordsDue) nextWord(pesukimIn(next, id), now);
   if (visualsDue) vis.autoChange(next.visuals, now);
+  for (const id of listsDue) {
+    const src = next.sources.find((x) => x.id === id);
+    const i = src?.playlist ? nextIndex(src.playlist) : null;
+    if (src && i !== null) playlistGo(src, i, true, now);
+  }
   for (const i of overlaysDue) setOverlayOn(next.overlays[i]!, false, now);
   for (const id of slidesDue) {
     const i = nextSlideIndex(slideshowIn(next, id));

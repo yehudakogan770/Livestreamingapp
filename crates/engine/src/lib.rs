@@ -24,6 +24,7 @@ pub mod model;
 pub mod overlays;
 pub mod persist;
 pub mod pesukim;
+pub mod playlist;
 pub mod presets;
 pub mod slideshow;
 pub mod split;

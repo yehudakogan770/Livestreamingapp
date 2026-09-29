@@ -2,6 +2,7 @@
 import type { Adjust } from "./Adjust";
 import type { ChromaKey } from "./ChromaKey";
 import type { Fit } from "./Fit";
+import type { Playlist } from "./Playlist";
 import type { SourceAudio } from "./SourceAudio";
 import type { SourceId } from "./SourceId";
 import type { SourceKind } from "./SourceKind";
@@ -25,4 +26,8 @@ key: ChromaKey,
 /**
  * Light, colour, crop and effects (cameras, videos, pictures).
  */
-adjust: Adjust, };
+adjust: Adjust, 
+/**
+ * A video input playing a list of videos.
+ */
+playlist?: Playlist | null, };

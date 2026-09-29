@@ -77,6 +77,7 @@ mod tests {
             audio: crate::audio::SourceAudio::default(),
             key: crate::model::ChromaKey::default(),
             adjust: crate::adjust::Adjust::default(),
+            playlist: None,
         }
     }
 
