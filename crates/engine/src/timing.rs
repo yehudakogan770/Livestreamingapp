@@ -75,6 +75,7 @@ mod tests {
             looping,
             fit: Fit::Contain,
             audio: crate::audio::SourceAudio::default(),
+            key: crate::model::ChromaKey::default(),
         }
     }
 

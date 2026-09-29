@@ -23,6 +23,7 @@ fn setup() -> Engine {
                 looping: None,
                 fit: None,
                 audio: None,
+                key: None,
             },
         },
         0,

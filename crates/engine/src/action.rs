@@ -45,6 +45,10 @@ pub struct NewSource {
     #[serde(default)]
     #[ts(optional)]
     pub audio: Option<SourceAudio>,
+    /// Green screen settings (off when left out).
+    #[serde(default)]
+    #[ts(optional)]
+    pub key: Option<crate::model::ChromaKey>,
 }
 
 /// Changes to an existing source. Fields left out stay as they are.
@@ -74,6 +78,10 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub audio: Option<SourceAudioPatch>,
+    /// Green screen settings (cameras, videos and pictures).
+    #[serde(default)]
+    #[ts(optional)]
+    pub key: Option<crate::model::ChromaKey>,
     /// Only for countdown inputs: the event logo picture ("" removes it).
     #[serde(default)]
     #[ts(optional)]

@@ -17,6 +17,7 @@ const picture: Source = {
   looping: false,
   fit: 'contain',
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+  key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
 };
 const video: Source = {
   id: 'v',
@@ -27,6 +28,7 @@ const video: Source = {
   looping: false,
   fit: 'contain',
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+  key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
 };
 
 describe('when a source fails', () => {

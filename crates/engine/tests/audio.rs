@@ -15,6 +15,7 @@ fn add(e: &mut Engine, id: &str, kind: SourceKind) {
                 looping: None,
                 fit: None,
                 audio: None,
+                key: None,
             },
         },
         0,

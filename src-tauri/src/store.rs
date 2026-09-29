@@ -165,6 +165,7 @@ mod tests {
             looping: None,
             fit: None,
             audio: None,
+            key: None,
         };
         e.apply(Action::AddSource { source }, 0).unwrap();
         e.show().clone()

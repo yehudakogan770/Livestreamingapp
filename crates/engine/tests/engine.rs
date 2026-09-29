@@ -16,6 +16,7 @@ fn color(name: &str) -> Action {
             looping: None,
             fit: None,
             audio: None,
+            key: None,
         },
     }
 }
@@ -35,6 +36,7 @@ fn video(name: &str, duration_s: f64) -> Action {
             looping: None,
             fit: None,
             audio: None,
+            key: None,
         },
     }
 }
@@ -103,6 +105,7 @@ fn duplicate_ids_are_refused() {
             looping: None,
             fit: None,
             audio: None,
+            key: None,
         },
     };
     e.apply(a.clone(), 0).unwrap();
@@ -128,6 +131,7 @@ fn bad_colours_are_refused_and_change_nothing() {
             looping: None,
             fit: None,
             audio: None,
+            key: None,
         },
     };
     assert!(matches!(

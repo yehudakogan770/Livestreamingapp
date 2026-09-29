@@ -3,6 +3,7 @@
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { defaultKey } from './chroma';
 import { cueDue, nextCueIndex } from './cues';
 import { nextSlideIndex, slideDue } from './slideshow';
 import type { Slideshow } from './types/Slideshow';
@@ -224,6 +225,7 @@ function apply(s: Show, a: Action, now: number) {
         id,
         name: a.source.name.trim() || 'Untitled',
         kind,
+        key: { ...defaultKey(), ...a.source.key },
         volume: clamp01(a.source.volume ?? 1),
         muted: a.source.muted ?? false,
         looping: a.source.looping ?? false,
@@ -246,6 +248,10 @@ function apply(s: Show, a: Action, now: number) {
       if (p.logo !== undefined) {
         if (src.kind.type !== 'countdown') throw new Refused({ code: 'invalidValue', field: 'logo', reason: 'only countdown inputs have an event logo' });
         src.kind.logo = p.logo.trim() ? p.logo : undefined;
+      }
+      if (p.key !== undefined) {
+        if (!['camera', 'video', 'image'].includes(src.kind.type)) throw new Refused({ code: 'invalidValue', field: 'key', reason: 'green screen works on cameras, videos and pictures' });
+        src.key = { ...p.key };
       }
       if (p.audio !== undefined) {
         const q = p.audio;

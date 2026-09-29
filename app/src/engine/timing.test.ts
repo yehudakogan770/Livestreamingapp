@@ -12,6 +12,7 @@ const video = (durationS: number, looping: boolean, playing: boolean, posS: numb
   looping,
   fit: 'contain',
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0 },
+  key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
 });
 
 const screen = (over: Partial<ScreenState> = {}): ScreenState => ({

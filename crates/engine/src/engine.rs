@@ -3,6 +3,7 @@
 use crate::action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
 use crate::audio::{SourceAudio, MAX_BUS_NAME_LEN};
 use crate::credits::Credits;
+use crate::model::ChromaKey;
 use crate::model::{
     ActiveTransition, Millis, Playback, ScreenId, ScreenState, Show, Source, SourceId, SourceKind,
     Transition, TransitionKind, MIN_TRANSITION_MS,
@@ -1479,6 +1480,10 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         looping: new.looping.unwrap_or(false),
         fit: new.fit.unwrap_or_default(),
         audio,
+        key: new.key.map_or_else(ChromaKey::default, |mut k| {
+            k.repair();
+            k
+        }),
     };
     s.sources.push(src);
     Ok(())
@@ -1534,6 +1539,19 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
     }
     if let Some(a) = patch.audio {
         src.audio.apply(&a);
+    }
+    if let Some(mut k) = patch.key {
+        if !matches!(
+            src.kind,
+            SourceKind::Camera { .. } | SourceKind::Video { .. } | SourceKind::Image { .. }
+        ) {
+            return Err(ActionError::invalid(
+                "key",
+                "green screen works on cameras, videos and pictures",
+            ));
+        }
+        k.repair();
+        src.key = k;
     }
     Ok(())
 }

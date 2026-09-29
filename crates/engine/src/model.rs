@@ -244,6 +244,53 @@ pub struct Source {
     /// How it is heard: audio follows video, which mixes, delay.
     #[serde(default)]
     pub audio: SourceAudio,
+    /// Green / blue screen: the key colour taken out (cameras, videos, pictures).
+    #[serde(default)]
+    pub key: ChromaKey,
+}
+
+/// Green screen: a colour taken out of the picture so what is behind shows.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct ChromaKey {
+    pub enabled: bool,
+    /// The colour taken out (usually the green of the screen).
+    pub color: String,
+    /// How close to the colour is taken out, 0 – 1.
+    pub similarity: f32,
+    /// How soft the edge is, 0 – 1.
+    pub smoothness: f32,
+    /// How much green reflected on people is taken away, 0 – 1.
+    pub spill: f32,
+}
+
+impl Default for ChromaKey {
+    fn default() -> Self {
+        ChromaKey {
+            enabled: false,
+            color: "#00b140".to_owned(),
+            similarity: 0.4,
+            smoothness: 0.08,
+            spill: 0.3,
+        }
+    }
+}
+
+impl ChromaKey {
+    pub fn repair(&mut self) {
+        let fix = |v: f32, d: f32| if v.is_finite() { v.clamp(0.0, 1.0) } else { d };
+        let d = ChromaKey::default();
+        self.similarity = fix(self.similarity, d.similarity);
+        self.smoothness = fix(self.smoothness, d.smoothness);
+        self.spill = fix(self.spill, d.spill);
+        let ok = self.color.len() == 7
+            && self.color.starts_with('#')
+            && self.color[1..].chars().all(|c| c.is_ascii_hexdigit());
+        if !ok {
+            self.color = d.color;
+        }
+    }
 }
 
 /// Everything about one output screen.

@@ -94,6 +94,7 @@ pub fn repair(mut s: Show) -> Show {
         .retain(|src| !src.id.as_str().trim().is_empty() && seen.insert(src.id.clone()));
 
     for src in &mut s.sources {
+        src.key.repair();
         if !src.volume.is_finite() {
             src.volume = 1.0;
         }
