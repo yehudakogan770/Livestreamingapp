@@ -12,6 +12,7 @@
 
 pub mod action;
 pub mod adjust;
+pub mod auction;
 pub mod audience;
 pub mod audio;
 pub mod browser;
