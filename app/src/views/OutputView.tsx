@@ -1,3 +1,4 @@
+import { useEventFonts } from '../engine/fonts';
 import { useEffect, useMemo } from 'react';
 import { dataValues } from '../engine/data';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -17,6 +18,7 @@ import './OutputView.css';
 export function OutputView({ screen }: { screen: ScreenId }) {
   const client = useMemo(createEngineClient, []);
   const { snapshot } = useShow(client);
+  useEventFonts(snapshot?.show.event.brand.fonts, client);
 
   useEffect(() => {
     document.title = `Lumora — ${screen} output`;

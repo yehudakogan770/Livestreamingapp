@@ -1,3 +1,4 @@
+import { useEventFonts } from '../engine/fonts';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { dataValues } from '../engine/data';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -19,6 +20,7 @@ import './MultiviewView.css';
 export function MultiviewView() {
   const client = useMemo(createEngineClient, []);
   const { snapshot } = useShow(client);
+  useEventFonts(snapshot?.show.event.brand.fonts, client);
   useEffect(() => {
     document.title = 'Lumora — Multiview';
     if (!isInsideLumora()) return;

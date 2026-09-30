@@ -48,7 +48,7 @@ export interface Display {
   primary: boolean;
 }
 
-export type MediaKind = 'video' | 'image' | 'audio' | 'pdf';
+export type MediaKind = 'video' | 'image' | 'audio' | 'pdf' | 'font';
 
 /** The open event's file and the recent list. */
 export interface EventFiles {
@@ -410,6 +410,7 @@ const FILTERS: Record<MediaKind, { name: string; extensions: string[] }> = {
   image: { name: 'Pictures', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'] },
   audio: { name: 'Sound and music', extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac', 'wma', 'opus'] },
   pdf: { name: 'PDF (save PowerPoint as PDF first)', extensions: ['pdf'] },
+  font: { name: 'Fonts', extensions: ['ttf', 'otf', 'woff', 'woff2'] },
 };
 
 /** A "video" source that is really a sound file (music, effects): heard, never shown. */

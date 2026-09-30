@@ -1,3 +1,4 @@
+import { useEventFonts } from './engine/fonts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { dataValues } from './engine/data';
 import { baseName, createEngineClient, type EventFiles, type RemoteStatus } from './engine/client';
@@ -47,6 +48,7 @@ function Control() {
 function ControlApp() {
   const client = useMemo(createEngineClient, []);
   const { snapshot, error } = useShow(client);
+  useEventFonts(snapshot?.show.event.brand.fonts, client);
   const [controlling, setControlling] = useState<ScreenId>('live');
   const select = useCallback((id: ScreenId) => setControlling(id), []);
   const show = snapshot?.show ?? null;
