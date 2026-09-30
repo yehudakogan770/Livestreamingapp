@@ -168,6 +168,9 @@ pub fn repair(mut s: Show) -> Show {
                 if !is_color(&p.look.text_color) {
                     p.look.text_color = defaults.text_color;
                 }
+                if !is_color(&p.look.outline_color) {
+                    p.look.outline_color = defaults.outline_color;
+                }
             }
             other => repair_audience(other),
         }
@@ -277,6 +280,29 @@ fn repair_links(s: &mut Show) {
                 .is_some_and(|b| !pictures.contains(b))
             {
                 p.look.behind = None;
+            }
+        }
+    }
+
+    // The 12 Pesukim are always a bar: one saved in Next or on air goes up as an overlay.
+    for screen in [ScreenId::Live, ScreenId::Back] {
+        for on in [false, true] {
+            let sc = s.screens.get(screen);
+            let id = if on {
+                sc.program.clone()
+            } else {
+                sc.preview.clone()
+            };
+            if let Some(id) = id
+                .filter(|id| matches!(s.source(id).map(|x| &x.kind), Some(SourceKind::Pesukim(_))))
+            {
+                crate::engine::pesukim_bar(s, screen, &id, on, 0);
+                let sc = s.screens.get_mut(screen);
+                if on {
+                    sc.program = None;
+                } else {
+                    sc.preview = None;
+                }
             }
         }
     }

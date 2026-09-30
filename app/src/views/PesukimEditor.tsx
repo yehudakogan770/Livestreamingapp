@@ -4,24 +4,16 @@ import type { PesukimLook } from '../engine/types/PesukimLook';
 import type { Pasuk } from '../engine/types/Pasuk';
 import { BAR_DESIGNS, glossesOf, PESUKIM, parsePaste, pesukimOf, standardPesukim, wordsOf, type PesukimData } from '../engine/pesukim';
 import { PesukimView } from '../components/PesukimView';
-import { SourceView } from '../components/SourceView';
 import type { EngineClient } from '../engine/client';
 import type { Act } from './act';
 import './PesukimCard.css';
 
-const BACKGROUNDS = [
-  { name: 'Night', color: '#15213a' },
-  { name: 'Gold', color: '#3a2d12' },
-  { name: 'Forest', color: '#12291f' },
-  { name: 'Black', color: '#050506' },
-];
 const TEXT_COLOURS = [
   { name: 'Gold', color: '#ffe39e' },
   { name: 'White', color: '#ffffff' },
   { name: 'Light blue', color: '#9fe0ff' },
 ];
 const FONTS = ['Frank Ruhl Libre', 'David Libre', 'Heebo'];
-const BEHIND_KINDS = ['camera', 'video', 'image', 'color', 'pattern', 'visuals'];
 
 /** The three lines don't have the same number of words. */
 function mismatch(p: Pasuk): string {
@@ -49,8 +41,6 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
 
   const set = (patch: Partial<PesukimLook>) => setLook((l) => ({ ...l, ...patch }));
   const setPasuk = (i: number, patch: Partial<Pasuk>) => setList((l) => l.map((p, j) => (j === i ? { ...p, ...patch } : p)));
-  const pictures = show.sources.filter((s) => BEHIND_KINDS.includes(s.kind.type));
-  const behind = look.behind ? show.sources.find((s) => s.id === look.behind) : undefined;
   const preview: PesukimData = { pesukim: list, look, place: { pasuk: previewAt, word: 1, whole: false, blank: false, intro: false, changedAt: 0 } };
   const fill = () => setList((l) => standardPesukim(l.map((p) => p.child)));
   const pickBar = async () => {
@@ -168,32 +158,8 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
 
           <section className="pked__look" aria-label="Look">
             <div className="pked__preview">
-              <PesukimView data={preview} behind={behind && client ? <SourceView source={behind} client={client} report={false} /> : null} />
+              <PesukimView data={preview} url={client ? (p) => client.mediaUrl(p) : undefined} />
             </div>
-            <span className="field__label">Show</span>
-            <div className="seg-group">
-              {(
-                [
-                  ['bar', 'Bar'],
-                  ['word', 'One word'],
-                  ['strip', 'Big word + line'],
-                  ['pasuk', 'Whole pasuk'],
-                ] as const
-              ).map(([m, name]) => (
-                <button
-                  key={m}
-                  type="button"
-                  className={`seg${look.mode === m ? ' is-on' : ''}`}
-                  aria-pressed={look.mode === m}
-                  onClick={() => set({ mode: m })}
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-            <label className="check">
-              <input type="checkbox" checked={look.keepSaid} onChange={(e) => set({ keepSaid: e.target.checked })} /> Keep words already said on screen
-            </label>
             <label className="check">
               <input type="checkbox" checked={look.showName} onChange={(e) => set({ showName: e.target.checked })} /> Show the child’s name before their pasuk
             </label>
@@ -238,7 +204,11 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                     </button>
                   ))}
                 </div>
-                {look.design === 'none' && !look.barImage && (
+                <label className="check">
+                  <input type="checkbox" checked={look.plain} onChange={(e) => set({ plain: e.target.checked })} /> Text only (no bar, the words in the same
+                  place)
+                </label>
+                {(look.plain || (look.design === 'none' && !look.barImage)) && (
                   <div className="bcd__row">
                     <label className="check">
                       Words <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Words colour" />
@@ -261,8 +231,7 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                   )}
                 </div>
                 <p className="field__note">
-                  Your own design: a picture made for the bar (a wide PNG, about 1650 × 240; see-through parts show the picture behind). The words go on top.
-                  Put this input on as an overlay over the camera, or choose the camera below.
+                  Your own design: a picture made for the bar (a wide PNG, about 1650 × 240; see-through parts show the camera behind). The words go on top.
                 </p>
               </>
             )}
@@ -281,33 +250,6 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                 aria-label="Seconds between words"
               />
               s
-            </label>
-
-            {look.mode !== 'bar' && <span className="field__label">Background</span>}
-            <div className="pked__swatches" hidden={look.mode === 'bar'}>
-              {BACKGROUNDS.map((b) => (
-                <button
-                  key={b.color}
-                  type="button"
-                  className={`pked__swatch${look.background === b.color ? ' is-on' : ''}`}
-                  style={{ background: b.color }}
-                  onClick={() => set({ background: b.color })}
-                >
-                  {b.name}
-                </button>
-              ))}
-              <input type="color" value={look.background} onChange={(e) => set({ background: e.target.value })} aria-label="Other background colour" />
-            </div>
-            <label className="field">
-              <span className="field__label">Behind the words</span>
-              <select value={look.behind ?? ''} onChange={(e) => set({ behind: e.target.value || null })}>
-                <option value="">Just the background colour</option>
-                {pictures.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
             </label>
 
             <span className="field__label">Text</span>
@@ -333,16 +275,7 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                   </option>
                 ))}
               </select>
-              <select value={look.wordChange} onChange={(e) => set({ wordChange: e.target.value as PesukimLook['wordChange'] })} aria-label="Word change">
-                <option value="fade">Words fade in</option>
-                <option value="pop">Words pop in</option>
-                <option value="cut">Words just change</option>
-              </select>
             </div>
-            <label className="field" hidden={look.mode === 'bar'}>
-              <span className="field__label">Word size</span>
-              <input type="range" min={8} max={40} value={look.size} onChange={(e) => set({ size: Number(e.target.value) })} aria-label="Word size" />
-            </label>
           </section>
         </div>
         <footer className="modal__foot">

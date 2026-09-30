@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { TextInput } from '../engine/types/TextInput';
-import { isRtl, withAlpha } from '../engine/text';
+import { isRtl, textShown, withAlpha } from '../engine/text';
 import './TextView.css';
 
 /**
@@ -8,13 +8,15 @@ import './TextView.css';
  * sits over whatever is behind it. Sizes are px of a 1080-high frame, drawn
  * in container units so every screen and preview matches.
  */
-export function TextView({ t }: { t: TextInput }) {
-  const s = t.style;
+export function TextView({ t: input }: { t: TextInput }) {
+  const s = input.style;
+  const t = textShown(input);
   const u = (px: number) => `${(px / 1080) * 100}cqh`;
   const rtl = isRtl(t.text + t.sub);
   const text: CSSProperties = {
     fontFamily: `"${s.font}", "Segoe UI", system-ui, sans-serif`,
     fontWeight: s.weight,
+    fontStyle: s.italic ? 'italic' : undefined,
     color: s.color,
     lineHeight: s.lineHeight,
     letterSpacing: u(s.letterSpacing),
@@ -23,9 +25,22 @@ export function TextView({ t }: { t: TextInput }) {
     WebkitTextStroke: s.outline ? `${u(s.outline)} ${s.outlineColor}` : undefined,
     paintOrder: 'stroke fill',
   };
-  const box: CSSProperties = s.boxOn ? { background: withAlpha(s.boxColor, s.boxOpacity), padding: u(s.padding), borderRadius: u(s.radius) } : {};
+  const border = s.border ? `${u(s.border)} solid ${s.borderColor}` : undefined;
+  const box: CSSProperties = s.boxOn ? { background: withAlpha(s.boxColor, s.boxOpacity), padding: u(s.padding), borderRadius: u(s.radius), border } : {};
   const main = <div style={{ fontSize: u(s.size) }}>{t.text}</div>;
-  const sub = t.sub ? <div style={{ fontSize: u(s.size * 0.6), fontWeight: Math.max(300, s.weight - 200), opacity: 0.9 }}>{t.sub}</div> : null;
+  const sub = t.sub ? (
+    <div
+      style={{
+        fontSize: u((s.size * (s.subSize || 60)) / 100),
+        fontWeight: Math.max(300, s.weight - 200),
+        opacity: s.subColor ? 1 : 0.9,
+        color: s.subColor || undefined,
+        fontFamily: s.subFont ? `"${s.subFont}", "Segoe UI", system-ui, sans-serif` : undefined,
+      }}
+    >
+      {t.sub}
+    </div>
+  ) : null;
 
   if (t.layout === 'ticker') {
     // One line moving right to left forever, at `speed` px a second.
@@ -42,7 +57,12 @@ export function TextView({ t }: { t: TextInput }) {
     );
   }
   const place: Record<Exclude<TextInput['layout'], 'ticker'>, CSSProperties> = {
-    lowerThird: { left: '5%', right: '5%', bottom: '10%', alignItems: s.align === 'center' ? 'center' : s.align === 'right' ? 'flex-end' : 'flex-start' },
+    lowerThird: {
+      left: `${s.x ?? 5}%`,
+      right: `${s.x ?? 5}%`,
+      bottom: `${s.y ?? 10}%`,
+      alignItems: s.align === 'center' ? 'center' : s.align === 'right' ? 'flex-end' : 'flex-start',
+    },
     title: { inset: '8%', justifyContent: 'center', alignItems: 'center' },
     fullScreen: { inset: '6%', justifyContent: 'center', alignItems: 'center' },
   };
@@ -52,7 +72,8 @@ export function TextView({ t }: { t: TextInput }) {
   const anim = s.animate ?? false;
   const fill = s.boxOn ? withAlpha(s.boxColor, s.boxOpacity) : 'transparent';
   const pad = s.boxOn ? u(s.padding) : 0;
-  const cls = `txd txd--${d}${anim ? ' txd--anim' : ''}${end ? ' txd--end' : ''}`;
+  const entrance = s.entrance ?? 'build';
+  const cls = `txd txd--${d}${anim ? (entrance === 'build' ? ' txd--anim' : ` txd--in txd--in-${entrance}`) : ''}${end ? ' txd--end' : ''}`;
   const vars = { '--txd-accent': accent, alignItems: place[t.layout].alignItems } as CSSProperties;
   const words = (
     <>
@@ -65,13 +86,18 @@ export function TextView({ t }: { t: TextInput }) {
   if (d === 'split') {
     body = (
       <div className={cls} style={{ ...text, ...vars }} dir="auto">
-        <div className="txd__box" style={{ background: accent, padding: u(s.padding), borderRadius: u(s.radius) }}>
+        <div className="txd__box" style={{ background: accent, padding: u(s.padding), borderRadius: u(s.radius), border }}>
           <div className="txd__text">{main}</div>
         </div>
         {sub && (
           <div
             className="txd__box txd__box--sub"
-            style={{ background: withAlpha(s.boxColor, s.boxOpacity), padding: `${u(s.padding * 0.45)} ${u(s.padding * 0.8)}`, borderRadius: u(s.radius) }}
+            style={{
+              background: withAlpha(s.boxColor, s.boxOpacity),
+              padding: `${u(s.padding * 0.45)} ${u(s.padding * 0.8)}`,
+              borderRadius: u(s.radius),
+              border,
+            }}
           >
             <div className="txd__sub">{sub}</div>
           </div>
@@ -102,7 +128,7 @@ export function TextView({ t }: { t: TextInput }) {
             paddingLeft: !end && bar ? `calc(${pad || '0px'} + ${bar})` : undefined,
             paddingRight: end && bar ? `calc(${pad || '0px'} + ${bar})` : undefined,
             borderRadius: u(s.radius),
-            border: d === 'glass' ? `${u(1.5)} solid rgba(255,255,255,0.35)` : undefined,
+            border: border && (d === 'glass' || d === 'gradient' || s.boxOn) ? border : d === 'glass' ? `${u(1.5)} solid rgba(255,255,255,0.35)` : undefined,
             backdropFilter: d === 'glass' ? `blur(${u(18)})` : undefined,
           }}
         >

@@ -33,6 +33,7 @@ export function defaultLook(): PesukimLook {
     barImage: '',
     barWords: 'one',
     outlineColor: '#000000',
+    plain: false,
     background: '#15213a',
     behind: null,
     textColor: '#ffe39e',
@@ -225,6 +226,9 @@ export function repairPesukim(p: PesukimData): void {
     x.english = (x.english ?? '').trim().slice(0, 1000);
     x.translation = (x.translation ?? '').trim().slice(0, 1000);
   }
+  // Always a bar over the picture.
+  p.look.mode = 'bar';
+  p.look.behind = null;
   p.look.size = Math.min(60, Math.max(4, p.look.size));
   if (p.look.autoMs !== null) p.look.autoMs = Math.min(60_000, Math.max(500, p.look.autoMs));
   if (!p.look.font.trim()) p.look.font = defaultLook().font;

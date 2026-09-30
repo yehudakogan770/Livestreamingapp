@@ -536,6 +536,43 @@ fn apply_credits(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     Ok(())
 }
 
+fn is_pesukim(s: &Show, id: &SourceId) -> bool {
+    matches!(s.source(id).map(|x| &x.kind), Some(SourceKind::Pesukim(_)))
+}
+
+/// Put a Pesukim input over the screen as a bar (an overlay filling the
+/// frame): ready in Next, or on air. It uses the overlay channel it is in,
+/// else the first empty one, else the last.
+pub(crate) fn pesukim_bar(s: &mut Show, screen: ScreenId, id: &SourceId, on: bool, now: Millis) {
+    let n = s.overlays.len();
+    if n == 0 {
+        return;
+    }
+    let channel = s
+        .overlays
+        .iter()
+        .position(|o| o.source_id.as_ref() == Some(id))
+        .or_else(|| s.overlays.iter().position(|o| o.source_id.is_none()))
+        .unwrap_or(n - 1);
+    let o = &mut s.overlays[channel];
+    if o.source_id.as_ref() != Some(id) {
+        o.source_id = Some(id.clone());
+        o.on = false;
+        o.changed_at = now;
+    }
+    o.frame = crate::overlays::Frame::default();
+    o.opacity = 1.0;
+    if !o.screens.contains(&screen) {
+        o.screens = vec![screen];
+    }
+    if on {
+        o.set_on(true, now);
+        o.in_next = false;
+    } else if !o.on {
+        o.in_next = true;
+    }
+}
+
 fn channel_mut(s: &mut Show, channel: usize) -> Result<&mut Overlay> {
     s.overlays
         .get_mut(channel)
@@ -762,6 +799,11 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             not_monitor(screen)?;
             if let Some(id) = &source_id {
                 require_picture(s, id)?;
+                // The 12 Pesukim are always a bar over the picture.
+                if is_pesukim(s, id) {
+                    pesukim_bar(s, screen, id, false, now);
+                    return Ok(());
+                }
             }
             let sc = s.screens.get_mut(screen);
             sc.preview = source_id;
@@ -784,6 +826,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         Action::CutTo { screen, source_id } => {
             not_monitor(screen)?;
             require_picture(s, &source_id)?;
+            if is_pesukim(s, &source_id) {
+                pesukim_bar(s, screen, &source_id, true, now);
+                return Ok(());
+            }
             let keep = s.screens.get(screen).preview.clone();
             s.screens.get_mut(screen).preview = Some(source_id);
             take(
@@ -1248,6 +1294,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         } => {
             not_monitor(screen)?;
             require_picture(s, &source_id)?;
+            if is_pesukim(s, &source_id) {
+                pesukim_bar(s, screen, &source_id, true, now);
+                return Ok(());
+            }
             let keep = s.screens.get(screen).preview.clone();
             s.screens.get_mut(screen).preview = Some(source_id);
             take(s, screen, transition.clamped(), now)?;

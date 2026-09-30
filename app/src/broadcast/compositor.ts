@@ -20,7 +20,7 @@ import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
 import { browserInfo } from '../engine/browser';
 import { logoRect, VisualsPlayer } from '../visuals/player';
-import { buildAt, isRtl, withAlpha } from '../engine/text';
+import { buildAt, ENTRANCE_MS, isRtl, textShown, withAlpha } from '../engine/text';
 import { clockShown, formatGameClock } from '../engine/score';
 import { LYRICS_FADE_MS, sections } from '../engine/lyrics';
 import type { Lyrics } from '../engine/types/Lyrics';
@@ -2113,14 +2113,19 @@ export class ProgramCompositor {
   }
 
   /** A text input (mirrors TextView and its CSS): transparent except the text and its box. */
-  private text(t: TextInput, now: number, w: number, h: number, start = now - 10_000) {
+  private text(input: TextInput, now: number, w: number, h: number, start = now - 10_000) {
     const ctx = this.ctx;
+    const t = textShown(input);
     const s = t.style;
     const k = h / 1080;
     const rtl = isRtl(t.text + t.sub);
-    const font = (size: number, weight: number) => `${weight} ${size * k}px "${s.font}", "Segoe UI", system-ui, sans-serif`;
+    const subSize = (s.size * (s.subSize || 60)) / 100;
+    // The second line may have its own font and colour.
+    const font = (size: number, weight: number, second = false) =>
+      `${s.italic ? 'italic ' : ''}${weight} ${size * k}px "${second && s.subFont ? s.subFont : s.font}", "Segoe UI", system-ui, sans-serif`;
+    // How see-through the whole title is (an overlay's opacity, the entrance).
+    let baseAlpha = ctx.globalAlpha;
     const lineH = s.size * s.lineHeight * k;
-    const subSize = s.size * 0.6;
     const subH = subSize * s.lineHeight * k;
     const pad = s.boxOn ? s.padding * k : 0;
     ctx.save();
@@ -2128,8 +2133,9 @@ export class ProgramCompositor {
     ctx.direction = rtl ? 'rtl' : 'ltr';
     this.spacing(s.letterSpacing * k);
     const paint = (str: string, x: number, y: number, size: number, weight: number, alpha = 1) => {
-      ctx.font = font(size, weight);
-      ctx.globalAlpha = alpha;
+      const second = !!t.sub && str === t.sub && str !== t.text;
+      ctx.font = font(size, weight, second);
+      ctx.globalAlpha = baseAlpha * alpha;
       ctx.shadowColor = s.shadow ? 'rgba(0,0,0,0.6)' : 'transparent';
       ctx.shadowBlur = s.shadow ? 12 * k : 0;
       ctx.shadowOffsetY = s.shadow ? 3 * k : 0;
@@ -2139,7 +2145,7 @@ export class ProgramCompositor {
         ctx.lineJoin = 'round';
         ctx.strokeText(str, x, y);
       }
-      ctx.fillStyle = s.color;
+      ctx.fillStyle = second && s.subColor ? s.subColor : s.color;
       ctx.fillText(str, x, y);
     };
     const box = (x: number, y: number, bw: number, bh: number, radius: number) => {
@@ -2175,20 +2181,39 @@ export class ProgramCompositor {
       return;
     }
 
-    const b = buildAt(now - start, s.animate ?? false);
+    // The build, or another entrance moving the whole title at once.
+    const entrance = s.entrance ?? 'build';
+    const b = buildAt(now - start, (s.animate ?? false) && entrance === 'build');
+    const inP = (s.animate ?? false) && entrance !== 'build' ? ease(clamp01((now - start) / ENTRANCE_MS)) : 1;
+    if (inP < 1) {
+      baseAlpha *= inP;
+      ctx.globalAlpha = baseAlpha;
+      if (entrance === 'slide') ctx.translate((s.align === 'right' ? 1 : -1) * (1 - inP) * w * 0.08, 0);
+      else if (entrance === 'rise') ctx.translate(0, (1 - inP) * h * 0.06);
+      else if (entrance === 'pop') {
+        const cx =
+          t.layout === 'lowerThird' ? (s.align === 'center' ? w / 2 : s.align === 'right' ? w * (1 - (s.x ?? 5) / 100) : w * ((s.x ?? 5) / 100)) : w / 2;
+        const cy = t.layout === 'lowerThird' ? h * (1 - (s.y ?? 10) / 100) : h / 2;
+        const sc = 0.85 + 0.15 * inP;
+        ctx.translate(cx, cy);
+        ctx.scale(sc, sc);
+        ctx.translate(-cx, -cy);
+      }
+    }
     const d = s.design ?? 'box';
     const accent = s.accent ?? '#2f80ed';
     const end = s.align === 'right';
     ctx.font = font(s.size, s.weight);
     const mainW = ctx.measureText(t.text).width;
-    ctx.font = font(subSize, Math.max(300, s.weight - 200));
+    ctx.font = font(subSize, Math.max(300, s.weight - 200), true);
     const subW = t.sub ? ctx.measureText(t.sub).width : 0;
     const r = s.radius * k;
     // Where a block of size bw × bh goes for this layout.
     const place = (bw: number, bh: number) => {
       if (t.layout === 'lowerThird') {
-        const x = s.align === 'center' ? (w - bw) / 2 : end ? w * 0.95 - bw : w * 0.05;
-        return { x, y: h * 0.9 - bh };
+        const side = (s.x ?? 5) / 100;
+        const x = s.align === 'center' ? (w - bw) / 2 : end ? w * (1 - side) - bw : w * side;
+        return { x, y: h * (1 - (s.y ?? 10) / 100) - bh };
       }
       return { x: (w - bw) / 2, y: (h - bh) / 2 };
     };
@@ -2202,11 +2227,19 @@ export class ProgramCompositor {
     const fillBox = (x: number, y: number, bw: number, bh: number, style: string | CanvasGradient) => {
       ctx.save();
       ctx.shadowColor = 'transparent';
-      ctx.globalAlpha = 1;
       ctx.fillStyle = style;
       ctx.beginPath();
       ctx.roundRect(x, y, bw, bh, r);
       ctx.fill();
+      if (s.border) {
+        // A line around the box, inside its edge (like the screens' CSS border).
+        const lw = s.border * k;
+        ctx.lineWidth = lw;
+        ctx.strokeStyle = s.borderColor;
+        ctx.beginPath();
+        ctx.roundRect(x + lw / 2, y + lw / 2, bw - lw, bh - lw, Math.max(0, r - lw / 2));
+        ctx.stroke();
+      }
       ctx.restore();
     };
     // The words rise in (40% of a line) and fade up.
@@ -2454,10 +2487,10 @@ export class ProgramCompositor {
     const bw = w - (L.left + L.right) * u;
     const bh = L.h * u;
     const y = h - L.bottom * u - bh;
-    const img = look.barImage ? this.picture(look.barImage) : null;
-    const pic = !!look.barImage;
+    const img = look.barImage && !look.plain ? this.picture(look.barImage) : null;
+    const pic = !!look.barImage && !look.plain;
     // No background: just the words, outlined in the second colour.
-    const bare = !pic && d.id === 'none';
+    const bare = look.plain || (!pic && d.id === 'none');
     ctx.save();
     ctx.beginPath();
     ctx.roundRect(x, y, bw, bh, d.radius * u);

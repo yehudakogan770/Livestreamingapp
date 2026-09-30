@@ -11,7 +11,7 @@ import type { Slideshow } from './types/Slideshow';
 import { applyLayout } from './split';
 import { creditsPosition } from './credits';
 import type { Credits } from './types/Credits';
-import { repairOverlay, setOverlayOn } from './overlays';
+import { pesukimBarIn, repairOverlay, setOverlayOn } from './overlays';
 import { stingerSlot } from './timing';
 import { repairScoreboard, runClock, setClock } from './score';
 import { lyricsGo, sections } from './lyrics';
@@ -413,6 +413,8 @@ function apply(s: Show, a: Action, now: number) {
     case 'setPreview':
       notMonitor(a.screen);
       if (a.sourceId !== null) picture(s, a.sourceId);
+      // The 12 Pesukim are always a bar over the picture.
+      if (a.sourceId !== null && isPesukim(s, a.sourceId)) return pesukimBarIn(s, a.screen, a.sourceId, false, now);
       s.screens[a.screen].preview = a.sourceId;
       s.screens[a.screen].tbar = 0;
       return;
@@ -423,6 +425,7 @@ function apply(s: Show, a: Action, now: number) {
     case 'cutTo': {
       notMonitor(a.screen);
       picture(s, a.sourceId);
+      if (isPesukim(s, a.sourceId)) return pesukimBarIn(s, a.screen, a.sourceId, true, now);
       const keep = s.screens[a.screen].preview;
       s.screens[a.screen].preview = a.sourceId;
       take(s, a.screen, 'cut', MIN_TRANSITION_MS, now);
@@ -921,6 +924,7 @@ function apply(s: Show, a: Action, now: number) {
     case 'playNow': {
       notMonitor(a.screen);
       picture(s, a.sourceId);
+      if (isPesukim(s, a.sourceId)) return pesukimBarIn(s, a.screen, a.sourceId, true, now);
       const keep = s.screens[a.screen].preview;
       s.screens[a.screen].preview = a.sourceId;
       take(s, a.screen, a.transition.kind, Math.min(MAX_TRANSITION_MS, Math.max(MIN_TRANSITION_MS, a.transition.durationMs)), now);
@@ -1569,6 +1573,8 @@ function runSteps(s: Show, now: number) {
 }
 
 /** Let time pass (mirrors Engine::tick): runs each countdown's at-zero action once, and button steps. */
+const isPesukim = (s: Show, id: string) => s.sources.some((x) => x.id === id && x.kind.type === 'pesukim');
+
 export function demoTick(show: Show, now: number): Show | null {
   const due = show.sources.filter((x) => x.kind.type === 'countdown' && !x.kind.timer.fired && countdownDue(x.kind.timer, now)).map((x) => x.id);
   const stepsDue = show.running.some((r) => r.resumeAt <= now);

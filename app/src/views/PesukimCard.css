@@ -326,5 +326,10 @@
 }
 
 .pk__row--small {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, auto);
+}
+
+/* The editor's preview: a stand-in for the camera behind the bar. */
+.pked__preview {
+  background: linear-gradient(135deg, #4a5670, #8d7468);
 }

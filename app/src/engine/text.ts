@@ -120,5 +120,11 @@ export function withAlpha(hex: string, a: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
 }
 
+/** The words as shown (in capitals when chosen). */
+export const textShown = (t: TextInput): TextInput => (t.style.uppercase ? { ...t, text: t.text.toUpperCase(), sub: t.sub.toUpperCase() } : t);
+
+/** How long the other entrances (fade, slide, rise, pop) take, ms. */
+export const ENTRANCE_MS = 600;
+
 /** Text in Hebrew (or another right-to-left script) reads right to left. */
 export const isRtl = (t: string) => /[֐-׿؀-ۿ]/.test(t);

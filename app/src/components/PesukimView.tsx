@@ -42,9 +42,9 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   const en = glossesOf(pasuk.english);
   const d = barDesign(look.design);
   const L = barLayout(look);
-  const image = look.barImage && url ? url(look.barImage) : '';
+  const image = look.barImage && url && !look.plain ? url(look.barImage) : '';
   // No background: just the words, in two colours (an outline keeps them readable).
-  const bare = !look.barImage && d.id === 'none';
+  const bare = look.plain || (!look.barImage && d.id === 'none');
   const [from, to] = barRange(data);
   const lit = (i: number) => (place.whole ? 'is-said' : i === place.word ? 'is-now' : i < place.word ? 'is-said' : '');
   const line = (words: string[], cls: string, size: number, dir: 'rtl' | 'ltr', font?: string) => (

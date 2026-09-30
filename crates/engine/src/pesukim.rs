@@ -107,6 +107,8 @@ pub struct PesukimLook {
     pub bar_words: BarWords,
     /// The outline around the words with no bar background (the second colour).
     pub outline_color: String,
+    /// Just the words, where the bar would be (the bar's design is kept for later).
+    pub plain: bool,
     /// Background colour.
     pub background: String,
     /// An input shown behind the words (a camera, usually).
@@ -133,6 +135,7 @@ impl Default for PesukimLook {
             bar_image: String::new(),
             bar_words: BarWords::One,
             outline_color: "#000000".to_owned(),
+            plain: false,
             background: "#15213a".to_owned(),
             behind: None,
             text_color: "#ffe39e".to_owned(),
@@ -294,6 +297,9 @@ impl Pesukim {
             p.translation = p.translation.trim().chars().take(MAX_PASUK_LEN).collect();
         }
         let l = &mut self.look;
+        // Always a bar over the picture.
+        l.mode = PesukimMode::Bar;
+        l.behind = None;
         l.size = l.size.clamp(4, 60);
         l.auto_ms = l.auto_ms.map(|ms| ms.clamp(500, 60_000));
         l.design = crate::engine::short_text(&l.design, 20);

@@ -5,6 +5,7 @@ import type { Frame } from './types/Frame';
 import type { Overlay } from './types/Overlay';
 import type { OverlayAnim } from './types/OverlayAnim';
 import type { ScreenId } from './types/ScreenId';
+import type { Show } from './types/Show';
 
 export const CHANNELS = 4;
 
@@ -51,6 +52,31 @@ export function setOverlayOn(o: Overlay, on: boolean, now: number): void {
     o.on = on;
     o.changedAt = now;
   }
+}
+
+/**
+ * Put a Pesukim input over the screen as a bar (an overlay filling the
+ * frame), ready in Next or on air (mirrors engine.rs pesukim_bar).
+ */
+export function pesukimBarIn(s: Show, screen: ScreenId, id: string, on: boolean, now: number): void {
+  const n = s.overlays.length;
+  if (!n) return;
+  let ch = s.overlays.findIndex((o) => o.sourceId === id);
+  if (ch < 0) ch = s.overlays.findIndex((o) => !o.sourceId);
+  if (ch < 0) ch = n - 1;
+  const o = s.overlays[ch]!;
+  if (o.sourceId !== id) {
+    o.sourceId = id;
+    o.on = false;
+    o.changedAt = now;
+  }
+  o.frame = { x: 0, y: 0, w: 100, h: 100 };
+  o.opacity = 1;
+  if (!o.screens.includes(screen)) o.screens = [screen];
+  if (on) {
+    setOverlayOn(o, true, now);
+    o.inNext = false;
+  } else if (!o.on) o.inNext = true;
 }
 
 /** On air, or still animating out. */

@@ -41,6 +41,10 @@ barWords: BarWords,
  */
 outlineColor: string, 
 /**
+ * Just the words, where the bar would be (the bar's design is kept for later).
+ */
+plain: boolean, 
+/**
  * Background colour.
  */
 background: string, 
