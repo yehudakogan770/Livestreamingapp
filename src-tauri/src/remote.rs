@@ -1065,7 +1065,7 @@ fn open_trivia(show: &serde_json::Value, q: &[(String, String)]) -> Vec<serde_js
             let q = t.questions.get(t.current);
             let shown = matches!(t.phase, TriviaPhase::Reveal | TriviaPhase::Leaderboard);
             let mut ranked: Vec<&lumora_engine::trivia::Player> = t.players.iter().collect();
-            ranked.sort_by(|a, b| b.score.cmp(&a.score));
+            ranked.sort_by_key(|p| std::cmp::Reverse(p.score));
             let place = ranked.iter().position(|p| p.key == voter);
             let mine = t.answers.iter().find(|a| a.key == voter);
             let asking = t.phase != TriviaPhase::Join;

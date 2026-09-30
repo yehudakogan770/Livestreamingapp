@@ -86,8 +86,7 @@ impl Seating {
             g.table = clean(&g.table, 30);
         }
         self.guests.retain(|g| !g.name.is_empty());
-        self.guests
-            .sort_by(|a, b| fold(&a.name).cmp(&fold(&b.name)));
+        self.guests.sort_by_cached_key(|g| fold(&g.name));
         self.seconds = self.seconds.clamp(3, 60);
         if !is_svg(&self.join_qr) {
             self.join_qr.clear();
