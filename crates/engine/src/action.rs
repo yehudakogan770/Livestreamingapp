@@ -317,6 +317,11 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Change the seating list and how it looks.
+    UpdateSeating {
+        id: SourceId,
+        seating: crate::seating::Seating,
+    },
     /// Change a trivia game's title, questions and look (players and scores stay).
     UpdateTrivia {
         id: SourceId,

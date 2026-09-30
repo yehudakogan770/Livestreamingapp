@@ -87,6 +87,20 @@ pub fn load_json(text: &str) -> Result<Show, LoadError> {
 }
 
 /// Fix anything that breaks the show's rules.
+/// The inputs the audience takes part in (raffles, games, walls…).
+fn repair_audience(kind: &mut SourceKind) {
+    match kind {
+        SourceKind::Raffle(r) => r.repair(),
+        SourceKind::Fundraiser(f) => f.repair(),
+        SourceKind::Wall(w) => w.repair(),
+        SourceKind::Auction(a) => a.repair(),
+        SourceKind::Scripture(s) => s.repair(),
+        SourceKind::Trivia(t) => t.repair(),
+        SourceKind::Seating(s) => s.repair(),
+        _ => {}
+    }
+}
+
 pub fn repair(mut s: Show) -> Show {
     // Drop sources with duplicate or empty ids (keep the first).
     let mut seen = HashSet::new();
@@ -133,12 +147,6 @@ pub fn repair(mut s: Show) -> Show {
             SourceKind::Poll(p) => p.repair(),
             SourceKind::Comment(c) => c.repair(),
             SourceKind::Guest(g) => g.repair(),
-            SourceKind::Raffle(r) => r.repair(),
-            SourceKind::Fundraiser(f) => f.repair(),
-            SourceKind::Wall(w) => w.repair(),
-            SourceKind::Auction(a) => a.repair(),
-            SourceKind::Scripture(s) => s.repair(),
-            SourceKind::Trivia(t) => t.repair(),
             SourceKind::Pesukim(p) => {
                 p.repair();
                 let defaults = crate::pesukim::PesukimLook::default();
@@ -149,7 +157,7 @@ pub fn repair(mut s: Show) -> Show {
                     p.look.text_color = defaults.text_color;
                 }
             }
-            _ => {}
+            other => repair_audience(other),
         }
     }
     repair_links(&mut s);

@@ -3,6 +3,7 @@ import { defaultWall } from '../engine/wall';
 import { defaultAuction } from '../engine/auction';
 import { defaultScripture } from '../engine/tanach';
 import { defaultTrivia } from '../engine/trivia';
+import { defaultSeating } from '../engine/seating';
 import { newRoom } from '../engine/guest';
 import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
@@ -48,6 +49,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
   { kind: 'raffle', name: 'Raffle', hint: 'People enter from their phones; the draw is on screen' },
   { kind: 'fundraiser', name: 'Fundraiser', hint: 'Goal, total and donors on screen; pledges from phones' },
+  { kind: 'seating', name: 'Table finder', hint: 'Guests type their name on their phone and see their table' },
   { kind: 'trivia', name: 'Trivia game', hint: 'Questions on screen, answers from phones, a leaderboard' },
   { kind: 'scripture', name: 'Tanach & Tehillim', hint: 'Any passage, a verse at a time, Hebrew and English (offline)' },
   { kind: 'zmanim', name: 'Hebrew date & zmanim', hint: 'Today’s zmanim, candle lighting countdown, the Hebrew date' },
@@ -177,6 +179,8 @@ export function AddInput({
           kind: { type: 'fundraiser', ...defaultFundraiser(), title: words.trim() || defaultFundraiser().title, goal: goal > 0 ? goal : 10_000 },
         };
       }
+      case 'seating':
+        return { name: n || 'Table finder', kind: { type: 'seating', ...defaultSeating() } };
       case 'trivia':
         return { name: n || 'Trivia', kind: { type: 'trivia', ...defaultTrivia(), title: n || 'Trivia' } };
       case 'scripture':

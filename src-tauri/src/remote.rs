@@ -603,6 +603,7 @@ fn audience_path(path: &str) -> bool {
         "/vote"
             | "/api/bid"
             | "/api/answer"
+            | "/api/seat"
             | "/api/polls"
             | "/api/audience"
             | "/api/vote"
@@ -670,6 +671,7 @@ fn handle(shared: &Shared, mut request: Request) {
                 "walls": open("wall", &["title", "prompt", "photos"]),
                 "auctions": open_auctions(&show),
                 "trivia": open_trivia(&show, &crate::control::parse_query(query)),
+                "seating": open("seating", &["title"]),
                 "now": now_ms(),
                 "event": show["event"]["name"],
             });
@@ -687,6 +689,38 @@ fn handle(shared: &Shared, mut request: Request) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingMessages"}"#),
         },
+        (Method::Get, "/api/seat") => {
+            // Only the names that match what was typed: the whole list is never sent.
+            let q = crate::control::parse_query(query);
+            let get = |k: &str| {
+                q.iter()
+                    .find(|(key, _)| key == k)
+                    .map(|(_, v)| v.as_str())
+                    .unwrap_or_default()
+            };
+            let (id, name) = (get("id"), get("name"));
+            let found = shared
+                .backend
+                .snapshot()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+                .and_then(|v| {
+                    v["show"]["sources"]
+                        .as_array()?
+                        .iter()
+                        .find(|s| s["id"] == id && s["kind"]["type"] == "seating")
+                        .cloned()
+                })
+                .and_then(|s| {
+                    serde_json::from_value::<lumora_engine::seating::Seating>(s["kind"].clone())
+                        .ok()
+                })
+                .filter(|s| s.open)
+                .map(|s| serde_json::to_string(&s.find(name, 8)).unwrap_or_default());
+            match found {
+                Some(list) => json(request, 200, &list),
+                None => json(request, 404, r#"{"code":"notOpen"}"#),
+            }
+        }
         (Method::Post, "/api/answer") => match answer(shared, &mut request) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingAnswers"}"#),
@@ -1646,6 +1680,41 @@ mod tests {
         assert!(
             shown.contains(r#""correct":1"#) && shown.contains(r#""place":1"#),
             "{shown}"
+        );
+    }
+
+    #[test]
+    fn phones_find_their_table_but_never_see_the_whole_list() {
+        let (r, fake) = remote();
+        let port = r.set_enabled(true).port.unwrap();
+        lock(&fake.engine)
+            .apply(
+                Action::AddSource {
+                    source: serde_json::from_value(serde_json::json!({
+                        "id": "s", "name": "Seats", "kind": {"type": "seating", "guests": [
+                            {"name": "Cohen, David", "table": "12"}, {"name": "Levi, Sarah", "table": "4"}
+                        ]}
+                    }))
+                    .unwrap(),
+                },
+                1,
+            )
+            .unwrap();
+        let aud = request(port, "GET", "/api/audience", "", "").1;
+        assert!(
+            aud.contains(r#""seating":[{"#) && !aud.contains("Cohen"),
+            "{aud}"
+        );
+        let (code, found) = request(port, "GET", "/api/seat?id=s&name=sarah", "", "");
+        assert_eq!(code, 200);
+        assert!(
+            found.contains(r#""table":"4""#) && !found.contains("Cohen"),
+            "{found}"
+        );
+        assert_eq!(
+            request(port, "GET", "/api/seat?id=s&name=x", "", "").1,
+            "[]",
+            "too short"
         );
     }
 

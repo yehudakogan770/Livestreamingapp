@@ -1,0 +1,105 @@
+/* Mirrored in the recorder: broadcast/compositor.ts seating(). Sizes in cqh of the frame height. */
+.seat {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: radial-gradient(ellipse at 50% 20%, #2b2233, #0c0a10);
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  text-align: center;
+}
+.seat__title {
+  position: absolute;
+  top: 5cqh;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 6.4cqh;
+  line-height: 8cqh;
+  font-weight: 800;
+  color: #f3dfb0;
+}
+.seat--scan .seat__title {
+  top: 9cqh;
+}
+.seat__join {
+  position: absolute;
+  top: 24cqh;
+  left: 50%;
+  width: 44cqh;
+  margin-left: -22cqh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1cqh;
+}
+.seat__qr {
+  width: 44cqh;
+  height: 44cqh;
+  padding: 2cqh;
+  border-radius: 2cqh;
+  background: #fff;
+}
+.seat__qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.seat__join b {
+  font-size: 4cqh;
+}
+.seat__join small {
+  font-size: 2.4cqh;
+  color: #cfc6d9;
+}
+.seat__soon {
+  position: absolute;
+  top: 44cqh;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 5cqh;
+}
+.seat__cols {
+  position: absolute;
+  top: 17cqh;
+  left: 6cqh;
+  right: 6cqh;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 5cqh;
+}
+.seat__cols ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.seat__cols li {
+  height: 5.6cqh;
+  display: flex;
+  align-items: center;
+  gap: 2cqh;
+  border-bottom: 0.15cqh solid rgba(255, 255, 255, 0.1);
+  font-size: 2.8cqh;
+  text-align: start;
+}
+.seat__cols span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.seat__cols b {
+  color: #f3dfb0;
+}
+.seat__page {
+  position: absolute;
+  bottom: 3.5cqh;
+  left: 0;
+  right: 0;
+  margin: 0;
+  font-size: 2.4cqh;
+  color: #a79fb4;
+}

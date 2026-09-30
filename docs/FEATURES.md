@@ -420,4 +420,4 @@ on screen with the page's code.
 25. ✅ **Hebrew date and zmanim** — worked out offline for the event's city: the day's zmanim and special days on screen (card, bottom line, or a countdown to candle lighting); the stage monitor is told in the last hour; the stream and recording can end by themselves before Shabbos and Yom Tov.
 26. ✅ **Tanach and Tehillim** — all of Tanach kept offline (Hebrew with nikkud and the 1917 JPS English, both public domain): any passage a verse at a time or whole, full screen or along the bottom; today's Tehillim (by the Hebrew date and the day of the week), often-said chapters, and finding words.
 27. ✅ **Trivia game** — questions on screen with a timer, everyone answers from their phone (more points for quicker right answers), the right answer and how many chose each, and a leaderboard (Kahoot).
-28. ⬜ **Table finder** — guests type their name, their table shows.
+28. ✅ **Table finder** — the guest list pasted or opened from a spreadsheet (CSV); guests type their name on their phone and see their table (the whole list is never sent to phones); on screen, the code to scan or the list a page at a time.

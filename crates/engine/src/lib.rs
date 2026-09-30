@@ -36,6 +36,7 @@ pub mod qna;
 pub mod score;
 pub mod screen;
 pub mod scripture;
+pub mod seating;
 pub mod slideshow;
 pub mod split;
 pub mod stage;

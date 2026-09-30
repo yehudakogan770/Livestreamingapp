@@ -33,6 +33,8 @@ import type { Auction } from '../engine/types/Auction';
 import type { ZmanimCard } from '../engine/types/ZmanimCard';
 import type { Scripture } from '../engine/types/Scripture';
 import type { Trivia } from '../engine/types/Trivia';
+import type { Seating } from '../engine/types/Seating';
+import { COLUMNS as SEAT_COLUMNS, pageAt, pages as seatPages, ROWS as SEAT_ROWS } from '../engine/seating';
 import { ANSWER_LOOK, counts, ranked, taking } from '../engine/trivia';
 import { fitSize, indexNow, reference } from '../engine/tanach';
 import { scriptureLayout, scriptureText } from '../components/ScriptureView';
@@ -522,6 +524,73 @@ export class ProgramCompositor {
       ctx.fillStyle = '#1a1206';
       ctx.fillText(text, w / 2, 16 * u + 3.4 * u);
       this.confettiDraw(t, w, h);
+    }
+    ctx.restore();
+  }
+
+  /** The table finder (mirrors SeatingView and its CSS). */
+  private seating(s: Seating, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    const g = ctx.createRadialGradient(w * 0.5, h * 0.2, 0, w * 0.5, h * 0.2, Math.hypot(w, h) * 0.8);
+    g.addColorStop(0, '#2b2233');
+    g.addColorStop(1, '#0c0a10');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f3dfb0';
+    ctx.font = font(6.4, 800);
+    const list = s.look === 'list';
+    ctx.fillText(s.title, w / 2, (list ? 5 : 9) * u + 4 * u, w - 14 * u);
+    if (list) {
+      const { page, guests } = pageAt(s, now);
+      const left = 6 * u;
+      const gap = 5 * u;
+      const cw = (w - 12 * u - gap * (SEAT_COLUMNS - 1)) / SEAT_COLUMNS;
+      guests.forEach((guest, i) => {
+        const c = Math.floor(i / SEAT_ROWS);
+        const r = i % SEAT_ROWS;
+        const x = left + c * (cw + gap);
+        const y = 17 * u + r * 5.6 * u;
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(x, y + 5.45 * u, cw, 0.15 * u);
+        ctx.font = font(2.8, 700);
+        const tw = ctx.measureText(guest.table).width;
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#f3dfb0';
+        ctx.fillText(guest.table, x + cw, y + 2.8 * u);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#fff';
+        ctx.font = font(2.8, 400);
+        ctx.fillText(guest.name, x, y + 2.8 * u, cw - tw - 2 * u);
+      });
+      ctx.textAlign = 'center';
+      if (seatPages(s) > 1) {
+        ctx.fillStyle = '#a79fb4';
+        ctx.font = font(2.4, 400);
+        ctx.fillText(`Page ${page + 1} of ${seatPages(s)}`, w / 2, h - 5.1 * u);
+      }
+    } else if (s.showJoin && s.open && s.joinQr) {
+      const j = joinShown(s.joinUrl, s.joinQr, 'Scan and type your name', this.show?.event.wifi, now);
+      const img = this.qr(j.qr);
+      const x = w / 2 - 22 * u;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.roundRect(x, 24 * u, 44 * u, 44 * u, 2 * u);
+      ctx.fill();
+      if (img?.complete && img.naturalWidth) ctx.drawImage(img, x + 2 * u, 26 * u, 40 * u, 40 * u);
+      ctx.font = font(4, 700);
+      ctx.fillText(j.label, w / 2, 72 * u, w - 14 * u);
+      ctx.fillStyle = '#cfc6d9';
+      ctx.font = font(2.4, 400);
+      ctx.fillText(j.sub, w / 2, 76.5 * u, w - 14 * u);
+    } else {
+      ctx.fillStyle = '#fff';
+      ctx.font = font(5, 400);
+      ctx.fillText(`${s.guests.length} guests`, w / 2, 47 * u);
     }
     ctx.restore();
   }
@@ -1623,6 +1692,9 @@ export class ProgramCompositor {
         return;
       case 'trivia':
         this.trivia(k, now, w, h);
+        return;
+      case 'seating':
+        this.seating(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

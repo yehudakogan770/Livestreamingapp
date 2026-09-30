@@ -876,6 +876,21 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::WallApprove { .. }
         | Action::WallPin { .. }
         | Action::WallRemove { .. }) => apply_wall(s, a, now),
+        Action::UpdateSeating { id, seating } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            let SourceKind::Seating(se) = &mut src.kind else {
+                return Err(ActionError::invalid(
+                    "id",
+                    "that input is not a table finder",
+                ));
+            };
+            let mut next = seating;
+            next.repair();
+            **se = next;
+            Ok(())
+        }
         a @ (Action::UpdateTrivia { .. }
         | Action::TriviaAsk { .. }
         | Action::TriviaReveal { .. }
@@ -2653,6 +2668,7 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             w.open = false;
         }
         SourceKind::Scripture(sc) => sc.repair(),
+        SourceKind::Seating(se) => se.repair(),
         SourceKind::Trivia(t) => {
             t.repair();
             t.phase = crate::trivia::TriviaPhase::Join;
@@ -2705,17 +2721,6 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
             l.repair();
             SourceKind::Logo3d(l)
         }
-        k @ (SourceKind::Lyrics(_)
-        | SourceKind::Screen(_)
-        | SourceKind::Scoreboard(_)
-        | SourceKind::Poll(_)
-        | SourceKind::Comment(_)
-        | SourceKind::Raffle(_)
-        | SourceKind::Fundraiser(_)
-        | SourceKind::Wall(_)
-        | SourceKind::Auction(_)
-        | SourceKind::Scripture(_)
-        | SourceKind::Trivia(_)) => fresh(k),
         SourceKind::Guest(g) => clean_guest(g)?,
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {
@@ -2779,6 +2784,9 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
                 ..timer
             },
         },
+        // Songs, captures, scoreboards and everything the audience takes part in:
+        // valid, and from their start.
+        other => fresh(other),
     })
 }
 

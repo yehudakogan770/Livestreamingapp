@@ -504,6 +504,18 @@ function apply(s: Show, a: Action, now: number) {
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
       return;
+    case 'updateSeating': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'seating') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a table finder' });
+      const n = a.seating;
+      const guests = n.guests
+        .map((g) => ({ name: g.name.trim().slice(0, 60), table: g.table.trim().slice(0, 30) }))
+        .filter((g) => g.name)
+        .slice(0, 5000)
+        .sort((x, y) => x.name.toLowerCase().localeCompare(y.name.toLowerCase()));
+      Object.assign(src.kind, { ...n, title: n.title.slice(0, 80), guests, seconds: Math.min(60, Math.max(3, n.seconds)) });
+      return;
+    }
     case 'updateTrivia':
     case 'triviaAsk':
     case 'triviaReveal':
@@ -517,14 +529,12 @@ function apply(s: Show, a: Action, now: number) {
         const n = a.trivia;
         t.title = n.title.slice(0, 80);
         if (t.phase !== 'asking') {
-          t.questions = n.questions
-            .slice(0, 200)
-            .map((q) => ({
-              ...q,
-              options: q.options.slice(0, 4),
-              correct: Math.min(q.correct, Math.max(0, q.options.length - 1)),
-              seconds: Math.min(120, Math.max(5, q.seconds)),
-            }));
+          t.questions = n.questions.slice(0, 200).map((q) => ({
+            ...q,
+            options: q.options.slice(0, 4),
+            correct: Math.min(q.correct, Math.max(0, q.options.length - 1)),
+            seconds: Math.min(120, Math.max(5, q.seconds)),
+          }));
           if (t.current >= t.questions.length) t.current = 0;
         }
         Object.assign(t, { joinUrl: n.joinUrl, joinQr: n.joinQr, showJoin: n.showJoin });

@@ -117,6 +117,20 @@
       button:disabled {
         opacity: 0.6;
       }
+      .seat {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 0 0 8px;
+        padding: 14px;
+        border-radius: 12px;
+        background: var(--card);
+        font-size: 18px;
+      }
+      .seat b {
+        color: #f2b233;
+        white-space: nowrap;
+      }
       .answer {
         border: 0;
         color: #fff;
@@ -209,9 +223,10 @@
         const walls = a.walls || [];
         const auctions = a.auctions || [];
         const games = a.trivia || [];
+        const seating = a.seating || [];
         if (a.now) clockOffset = a.now - Date.now();
         timers.length = 0;
-        const open = a.polls.length || a.questions || raffles.length || funds.length || walls.length || auctions.length || games.length;
+        const open = a.polls.length || a.questions || raffles.length || funds.length || walls.length || auctions.length || games.length || seating.length;
         if (!open) {
           app.append(el('p', { className: 'empty', textContent: 'Nothing to join right now — this page updates by itself.' }));
           return;
@@ -250,6 +265,18 @@
             el('section', { className: 'poll' }, el('h1', { textContent: f.title || 'Fundraiser' }), nameBox(), amount, msg, go,
               el('p', { className: 'note', textContent: pledgeNote || 'A pledge is a promise: the hosts will tell you how to give.' })),
           );
+        }
+        for (const st of seating) {
+          const box = el('section', { className: 'poll' }, el('h1', { textContent: st.title || 'Find your seat', dir: 'auto' }));
+          const q = el('input', { placeholder: 'Type your name', value: typed.seat, dir: 'auto', autocomplete: 'name' });
+          q.oninput = () => {
+            typed.seat = q.value;
+            clearTimeout(seatTimer);
+            seatTimer = setTimeout(() => findSeat(st, box), 350);
+          };
+          box.append(q, el('div', { className: 'seats' }));
+          app.append(box);
+          if (typed.seat.trim().length >= 2) findSeat(st, box);
         }
         const LOOK = [['#e0473b', '▲'], ['#2f80ed', '◆'], ['#d9a21b', '●'], ['#27ae60', '■']];
         for (const g of games) {
@@ -415,6 +442,26 @@
         }
       }
       setInterval(tickTimers, 500);
+
+      typed.seat = '';
+      let seatTimer = 0;
+      async function findSeat(st, box) {
+        const out = box.querySelector('.seats');
+        const name = typed.seat.trim();
+        if (name.length < 2) {
+          out.textContent = '';
+          return;
+        }
+        try {
+          const r = await fetch('/api/seat?id=' + encodeURIComponent(st.id) + '&name=' + encodeURIComponent(name), { cache: 'no-store' });
+          const list = r.ok ? await r.json() : [];
+          out.textContent = '';
+          if (!list.length) out.append(el('p', { className: 'note', textContent: 'No one by that name yet — try your family name.' }));
+          for (const g of list) out.append(el('p', { className: 'seat', dir: 'auto' }, el('span', { textContent: g.name }), el('b', { textContent: 'Table ' + g.table })));
+        } catch {
+          out.textContent = 'It did not load — try again.';
+        }
+      }
 
       async function answerIt(g, option) {
         try {
