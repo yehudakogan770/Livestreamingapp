@@ -117,6 +117,16 @@
       button:disabled {
         opacity: 0.6;
       }
+      .answer {
+        border: 0;
+        color: #fff;
+        font-size: 20px;
+        padding: 20px 16px;
+      }
+      .big-note {
+        font-size: 22px;
+        font-weight: 700;
+      }
       .big {
         margin: 0 0 6px;
         font-size: 40px;
@@ -198,9 +208,10 @@
         const funds = a.fundraisers || [];
         const walls = a.walls || [];
         const auctions = a.auctions || [];
+        const games = a.trivia || [];
         if (a.now) clockOffset = a.now - Date.now();
         timers.length = 0;
-        const open = a.polls.length || a.questions || raffles.length || funds.length || walls.length || auctions.length;
+        const open = a.polls.length || a.questions || raffles.length || funds.length || walls.length || auctions.length || games.length;
         if (!open) {
           app.append(el('p', { className: 'empty', textContent: 'Nothing to join right now — this page updates by itself.' }));
           return;
@@ -239,6 +250,39 @@
             el('section', { className: 'poll' }, el('h1', { textContent: f.title || 'Fundraiser' }), nameBox(), amount, msg, go,
               el('p', { className: 'note', textContent: pledgeNote || 'A pledge is a promise: the hosts will tell you how to give.' })),
           );
+        }
+        const LOOK = [['#e0473b', '▲'], ['#2f80ed', '◆'], ['#d9a21b', '●'], ['#27ae60', '■']];
+        for (const g of games) {
+          const box = el('section', { className: 'poll' }, el('p', { className: 'event', textContent: g.title || 'Trivia' }));
+          const mark = (i) => LOOK[i][1] + ' ' + (g.options ? g.options[i] : '');
+          const standing = g.place ? 'You are #' + g.place + ' with ' + Number(g.score).toLocaleString() + ' points.' : '';
+          if (g.phase === 'join' || !g.options) {
+            box.append(el('h1', { textContent: 'Get ready to play!' }), el('p', { className: 'note', textContent: 'Type your name — the first question is coming.' }), nameBox());
+          } else if (g.phase === 'asking') {
+            box.append(el('h1', { textContent: g.text, dir: 'auto' }));
+            if (g.answered !== null && g.answered !== undefined) {
+              box.append(el('p', { className: 'big-note', textContent: 'Answer in: ' + mark(g.answered) }), el('p', { className: 'note', textContent: 'Wait for the answer on the screen…' }));
+            } else if (!g.taking) {
+              box.append(el('p', { className: 'big-note', textContent: "Time's up!" }));
+            } else {
+              if (!typed.name.trim()) box.append(nameBox());
+              g.options.forEach((o, i) => {
+                const b = el('button', { className: 'answer', textContent: LOOK[i][1] + '  ' + o, dir: 'auto' });
+                b.style.background = LOOK[i][0];
+                b.onclick = () => answerIt(g, i);
+                box.append(b);
+              });
+            }
+          } else if (g.phase === 'reveal') {
+            const right = g.answered === g.correct;
+            box.append(
+              el('h1', { textContent: g.answered === null || g.answered === undefined ? 'The answer: ' + mark(g.correct) : right ? '✓ Right! +' + g.points : '✗ Not this time', dir: 'auto' }),
+              el('p', { className: 'note', textContent: (right || g.answered === null || g.answered === undefined ? '' : 'The answer was ' + mark(g.correct) + '. ') + standing }),
+            );
+          } else {
+            box.append(el('h1', { textContent: g.place ? '🏆 You are #' + g.place : '🏆 Leaderboard on the screen' }), el('p', { className: 'note', textContent: standing }));
+          }
+          app.append(box);
         }
         for (const au of auctions) {
           const it = au.item;
@@ -372,6 +416,20 @@
       }
       setInterval(tickTimers, 500);
 
+      async function answerIt(g, option) {
+        try {
+          await fetch('/api/answer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: g.id, question: g.question, option, name: typed.name.trim() || 'Player', voter }),
+          });
+        } catch {
+          // The next refresh shows whether it counted.
+        }
+        last = '';
+        load();
+      }
+
       async function placeBid(au, amount) {
         const name = typed.name.trim();
         if (!name) return alert('Please type your name first.');
@@ -482,7 +540,7 @@
 
       async function load() {
         try {
-          const r = await fetch('/api/audience', { cache: 'no-store' });
+          const r = await fetch('/api/audience?voter=' + encodeURIComponent(voter), { cache: 'no-store' });
           if (r.ok) draw(await r.json());
         } catch {
           // The venue network dropped for a moment; try again.

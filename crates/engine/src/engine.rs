@@ -876,6 +876,12 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::WallApprove { .. }
         | Action::WallPin { .. }
         | Action::WallRemove { .. }) => apply_wall(s, a, now),
+        a @ (Action::UpdateTrivia { .. }
+        | Action::TriviaAsk { .. }
+        | Action::TriviaReveal { .. }
+        | Action::TriviaBoard { .. }
+        | Action::TriviaAnswer { .. }
+        | Action::TriviaReset { .. }) => apply_trivia(s, a, now),
         a @ (Action::UpdateScripture { .. }
         | Action::ScriptureStep { .. }
         | Action::ScriptureGo { .. }
@@ -2076,6 +2082,86 @@ fn apply_fundraiser(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     Ok(())
 }
 
+fn apply_trivia(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    use crate::trivia::TriviaPhase;
+    let id = match &action {
+        Action::UpdateTrivia { id, .. }
+        | Action::TriviaAsk { id, .. }
+        | Action::TriviaReveal { id }
+        | Action::TriviaBoard { id, .. }
+        | Action::TriviaAnswer { id, .. }
+        | Action::TriviaReset { id, .. } => id.clone(),
+        _ => unreachable!("only trivia actions come here"),
+    };
+    let src = s
+        .source_mut(&id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    let SourceKind::Trivia(t) = &mut src.kind else {
+        return Err(ActionError::invalid(
+            "id",
+            "that input is not a trivia game",
+        ));
+    };
+    match action {
+        Action::UpdateTrivia { trivia, .. } => {
+            let mut next = trivia;
+            next.repair();
+            let asking = t.phase == TriviaPhase::Asking;
+            t.title = next.title;
+            // The question being answered stays as it is until it is revealed.
+            if !asking {
+                t.questions = next.questions;
+                if t.current >= t.questions.len() {
+                    t.current = 0;
+                }
+            }
+            t.join_url = next.join_url;
+            t.join_qr = next.join_qr;
+            t.show_join = next.show_join;
+        }
+        Action::TriviaAsk { index, .. } => {
+            if !t.ask(index, now) {
+                return Err(ActionError::invalid("index", "there is no such question"));
+            }
+        }
+        Action::TriviaReveal { .. } => {
+            t.reveal();
+        }
+        Action::TriviaBoard { value, .. } => {
+            if t.phase == TriviaPhase::Asking {
+                t.reveal();
+            }
+            t.phase = if value {
+                TriviaPhase::Leaderboard
+            } else {
+                TriviaPhase::Join
+            };
+        }
+        Action::TriviaAnswer {
+            key,
+            name,
+            question,
+            option,
+            ..
+        } => {
+            if !t.answer(&key, &name, question, option, now) {
+                return Err(ActionError::invalid(
+                    "trivia",
+                    "this question is not taking answers",
+                ));
+            }
+        }
+        Action::TriviaReset { players, .. } => {
+            t.reset();
+            if players {
+                t.players.clear();
+            }
+        }
+        _ => unreachable!("only trivia actions come here"),
+    }
+    Ok(())
+}
+
 fn apply_scripture(s: &mut Show, action: Action) -> Result<()> {
     let id = match &action {
         Action::UpdateScripture { id, .. }
@@ -2567,6 +2653,11 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             w.open = false;
         }
         SourceKind::Scripture(sc) => sc.repair(),
+        SourceKind::Trivia(t) => {
+            t.repair();
+            t.phase = crate::trivia::TriviaPhase::Join;
+            t.answers.clear();
+        }
         SourceKind::Auction(a) => {
             a.repair();
             a.open = false;
@@ -2623,7 +2714,8 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         | SourceKind::Fundraiser(_)
         | SourceKind::Wall(_)
         | SourceKind::Auction(_)
-        | SourceKind::Scripture(_)) => fresh(k),
+        | SourceKind::Scripture(_)
+        | SourceKind::Trivia(_)) => fresh(k),
         SourceKind::Guest(g) => clean_guest(g)?,
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {

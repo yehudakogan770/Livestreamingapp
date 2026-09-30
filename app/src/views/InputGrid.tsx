@@ -2,6 +2,7 @@ import { FundraiserCard, RaffleCard, WallCard } from './AudienceCards';
 import { AuctionCard } from './AuctionCard';
 import { ZmanimDialog } from './ZmanimDialog';
 import { ScriptureCard } from './ScriptureCard';
+import { TriviaCard } from './TriviaCard';
 import { GuestCard } from './GuestCard';
 import { PtzCard } from './PtzCard';
 import { PollCard } from './PollCard';
@@ -61,6 +62,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   auction: 'Auction',
   zmanim: 'Zmanim',
   scripture: 'Tanach',
+  trivia: 'Trivia',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -101,6 +103,7 @@ export function InputGrid({
   const editingAuction = show.sources.find((x) => x.id === editing && x.kind.type === 'auction');
   const editingZmanim = show.sources.find((x) => x.id === editing && x.kind.type === 'zmanim');
   const editingScripture = show.sources.find((x) => x.id === editing && x.kind.type === 'scripture');
+  const editingTrivia = show.sources.find((x) => x.id === editing && x.kind.type === 'trivia');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -189,6 +192,7 @@ export function InputGrid({
         Add input
       </button>
       {editingRaffle && <RaffleCard source={editingRaffle} act={act} client={client} onClose={() => setEditing(null)} />}
+      {editingTrivia && <TriviaCard source={editingTrivia} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingScripture && <ScriptureCard source={editingScripture} act={act} onClose={() => setEditing(null)} />}
       {editingZmanim && <ZmanimDialog show={show} act={act} source={editingZmanim} onClose={() => setEditing(null)} />}
       {editingAuction && <AuctionCard source={editingAuction} act={act} client={client} onClose={() => setEditing(null)} />}
@@ -357,7 +361,8 @@ function TileMenu({
         k === 'wall' ||
         k === 'auction' ||
         k === 'zmanim' ||
-        k === 'scripture') && (
+        k === 'scripture' ||
+        k === 'trivia') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -396,7 +401,9 @@ function TileMenu({
                                       ? 'Look, city and Shabbos…'
                                       : k === 'scripture'
                                         ? 'Choose the passage…'
-                                        : 'Edit slides…'}
+                                        : k === 'trivia'
+                                          ? 'Run the game…'
+                                          : 'Edit slides…'}
         </button>
       )}
       <button

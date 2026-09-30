@@ -317,6 +317,38 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Change a trivia game's title, questions and look (players and scores stay).
+    UpdateTrivia {
+        id: SourceId,
+        trivia: crate::trivia::Trivia,
+    },
+    /// Put a question on screen: phones answer.
+    TriviaAsk {
+        id: SourceId,
+        index: usize,
+    },
+    /// Show the right answer and give the points.
+    TriviaReveal {
+        id: SourceId,
+    },
+    /// Show who is winning (or, with false, the join screen).
+    TriviaBoard {
+        id: SourceId,
+        value: bool,
+    },
+    /// An answer from a phone (sent by the app's server).
+    TriviaAnswer {
+        id: SourceId,
+        key: String,
+        name: String,
+        question: usize,
+        option: usize,
+    },
+    /// Everyone's score back to 0 (or, with `players`, everyone out too).
+    TriviaReset {
+        id: SourceId,
+        players: bool,
+    },
     /// Choose the passage and how it looks.
     UpdateScripture {
         id: SourceId,

@@ -292,6 +292,8 @@ pub enum SourceKind {
     Zmanim(crate::zmanim::ZmanimCard),
     /// Tanach and Tehillim: a passage, a verse at a time or whole.
     Scripture(Box<crate::scripture::Scripture>),
+    /// A trivia game: questions, answers from phones, a leaderboard.
+    Trivia(Box<crate::trivia::Trivia>),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

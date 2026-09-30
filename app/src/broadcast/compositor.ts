@@ -32,6 +32,8 @@ import type { Wall } from '../engine/types/Wall';
 import type { Auction } from '../engine/types/Auction';
 import type { ZmanimCard } from '../engine/types/ZmanimCard';
 import type { Scripture } from '../engine/types/Scripture';
+import type { Trivia } from '../engine/types/Trivia';
+import { ANSWER_LOOK, counts, ranked, taking } from '../engine/trivia';
 import { fitSize, indexNow, reference } from '../engine/tanach';
 import { scriptureLayout, scriptureText } from '../components/ScriptureView';
 import { clockTime, countdownText, hasPlace, nextCandles, zmanimOn } from '../engine/zmanim';
@@ -521,6 +523,146 @@ export class ProgramCompositor {
       ctx.fillText(text, w / 2, 16 * u + 3.4 * u);
       this.confettiDraw(t, w, h);
     }
+    ctx.restore();
+  }
+
+  /** A trivia game (mirrors TriviaView and its CSS). */
+  private trivia(t: Trivia, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    const g = ctx.createRadialGradient(w * 0.3, h * 0.2, 0, w * 0.3, h * 0.2, Math.hypot(w, h) * 0.8);
+    g.addColorStop(0, '#2a1f4d');
+    g.addColorStop(1, '#0b0818');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    const q = t.questions[t.current];
+    if (t.phase === 'join' || !q) {
+      ctx.font = font(7, 800);
+      ctx.fillText(t.title, w / 2, 11.2 * u, w - 14 * u);
+      if (t.showJoin && t.joinQr) {
+        const j = joinShown(t.joinUrl, t.joinQr, 'Scan to play', this.show?.event.wifi, now);
+        const img = this.qr(j.qr);
+        const x = w / 2 - 20 * u;
+        ctx.beginPath();
+        ctx.roundRect(x, 22 * u, 40 * u, 40 * u, 2 * u);
+        ctx.fill();
+        if (img?.complete && img.naturalWidth) ctx.drawImage(img, x + 2 * u, 24 * u, 36 * u, 36 * u);
+        ctx.font = font(4, 700);
+        ctx.fillText(j.label, w / 2, 66 * u);
+        ctx.fillStyle = '#c8c0e0';
+        ctx.font = font(2.4, 400);
+        ctx.fillText(j.sub, w / 2, 70.5 * u, 60 * u);
+      } else {
+        ctx.font = font(5, 400);
+        ctx.fillText('Get your phones ready!', w / 2, 43 * u);
+      }
+      ctx.fillStyle = '#f2d27a';
+      ctx.font = font(4, 400);
+      ctx.fillText(`${t.players.length} ${t.players.length === 1 ? 'player' : 'players'}`, w / 2, h - 8.5 * u);
+      ctx.restore();
+      return;
+    }
+    if (t.phase === 'leaderboard') {
+      ctx.font = font(7, 800);
+      ctx.fillText('Leaderboard', w / 2, 11.2 * u);
+      const top = ranked(t).slice(0, 8);
+      const best = Math.max(1, top[0]?.score ?? 1);
+      const left = 30 * u;
+      const right = w - 30 * u;
+      top.forEach((p, i) => {
+        const cy = 20 * u + i * 8.5 * u + 3.5 * u;
+        ctx.font = font(3.6, 800);
+        ctx.fillStyle = '#f2d27a';
+        ctx.fillText(String(i + 1), left + 3 * u, cy);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#fff';
+        ctx.font = font(3.6, 400);
+        ctx.fillText(p.name, left + 8.5 * u, cy, 36 * u);
+        const bx = left + 8.5 * u + 36 * u + 2.5 * u;
+        const bw = right - 14 * u - 2.5 * u - bx;
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.beginPath();
+        ctx.roundRect(bx, cy - 1.5 * u, bw, 3 * u, 1.5 * u);
+        ctx.fill();
+        const gr = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+        gr.addColorStop(0, '#7b5cff');
+        gr.addColorStop(1, '#f2b233');
+        ctx.fillStyle = gr;
+        ctx.beginPath();
+        ctx.roundRect(bx, cy - 1.5 * u, Math.max(1.5 * u, (bw * p.score) / best), 3 * u, 1.5 * u);
+        ctx.fill();
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#fff';
+        ctx.font = font(3.6, 700);
+        ctx.fillText(p.score.toLocaleString('en-US'), right, cy);
+        ctx.textAlign = 'center';
+      });
+      ctx.restore();
+      return;
+    }
+    const reveal = t.phase === 'reveal';
+    ctx.fillStyle = '#c8c0e0';
+    ctx.font = font(2.8, 400);
+    ctx.fillText(`Question ${t.current + 1} of ${t.questions.length}`, w / 2, 5.8 * u);
+    ctx.fillStyle = '#fff';
+    ctx.font = font(5.6, 800);
+    const lines = this.wrap(q.text, w - 32 * u).slice(0, 3);
+    lines.forEach((l, i) => ctx.fillText(l, w / 2, 9 * u + 12 * u - ((lines.length - 1) * 7 * u) / 2 + i * 7 * u));
+    if (!reveal) {
+      const left = Math.max(0, Math.ceil((t.askedAt + q.seconds * 1000 - now) / 1000));
+      const open = taking(t, now);
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.arc(8.5 * u, 17.5 * u, 5.5 * u, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = font(open ? 5 : 2.2, 800);
+      ctx.fillText(open ? String(left) : "Time's up!", 8.5 * u, 17.5 * u, 10 * u);
+    }
+    ctx.fillStyle = '#c8c0e0';
+    ctx.font = font(2.6, 400);
+    ctx.fillText(`${t.answers.length} answered`, w - 9 * u, 15.7 * u, 12 * u);
+    const n = counts(t);
+    const top = 38 * u;
+    const gap = 2 * u;
+    const gw = (w - 10 * u - gap) / 2;
+    const rows = Math.ceil(q.options.length / 2);
+    const gh = (h - 5 * u - top - gap * (rows - 1)) / rows;
+    q.options.forEach((o, i) => {
+      const x = 5 * u + (i % 2) * (gw + gap);
+      const y = top + Math.floor(i / 2) * (gh + gap);
+      ctx.globalAlpha = reveal && i !== q.correct ? 0.28 : 1;
+      ctx.fillStyle = ANSWER_LOOK[i]!.color;
+      ctx.beginPath();
+      ctx.roundRect(x, y, gw, gh, 1.5 * u);
+      ctx.fill();
+      if (reveal && i === q.correct) {
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 0.8 * u;
+        ctx.beginPath();
+        ctx.roundRect(x - 0.4 * u, y - 0.4 * u, gw + 0.8 * u, gh + 0.8 * u, 1.9 * u);
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'left';
+      ctx.font = font(5, 400);
+      ctx.fillText(ANSWER_LOOK[i]!.shape, x + 3 * u, y + gh / 2);
+      ctx.font = font(4.4, 700);
+      const sw = 5 * u + 3 * u;
+      ctx.fillText(o, x + 3 * u + sw, y + gh / 2, gw - 6 * u - sw - (reveal ? 8 * u : 0));
+      if (reveal) {
+        ctx.textAlign = 'right';
+        ctx.font = font(5, 700);
+        ctx.fillText(String(n[i] ?? 0), x + gw - 3 * u, y + gh / 2);
+      }
+      ctx.textAlign = 'center';
+      ctx.globalAlpha = 1;
+    });
     ctx.restore();
   }
 
@@ -1478,6 +1620,9 @@ export class ProgramCompositor {
         return;
       case 'scripture':
         this.scripture(k, w, h);
+        return;
+      case 'trivia':
+        this.trivia(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

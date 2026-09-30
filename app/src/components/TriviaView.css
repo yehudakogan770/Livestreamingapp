@@ -1,0 +1,204 @@
+/* Mirrored in the recorder: broadcast/compositor.ts trivia(). Sizes in cqh of the frame height. */
+.trv {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: radial-gradient(ellipse at 30% 20%, #2a1f4d, #0b0818);
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  text-align: center;
+}
+.trv p,
+.trv h2,
+.trv ol {
+  margin: 0;
+}
+.trv__title {
+  position: absolute;
+  top: 7cqh;
+  left: 0;
+  right: 0;
+  font-size: 7cqh;
+  line-height: 8.4cqh;
+  font-weight: 800;
+}
+.trv__join {
+  position: absolute;
+  top: 22cqh;
+  left: 50%;
+  width: 40cqh;
+  margin-left: -20cqh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1cqh;
+}
+.trv__qr {
+  width: 40cqh;
+  height: 40cqh;
+  padding: 2cqh;
+  border-radius: 2cqh;
+  background: #fff;
+}
+.trv__qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.trv__join b {
+  font-size: 4cqh;
+}
+.trv__join small {
+  font-size: 2.4cqh;
+  color: #c8c0e0;
+}
+.trv__soon {
+  position: absolute;
+  top: 40cqh;
+  left: 0;
+  right: 0;
+  font-size: 5cqh;
+}
+.trv__players {
+  position: absolute;
+  bottom: 6cqh;
+  left: 0;
+  right: 0;
+  font-size: 4cqh;
+  color: #f2d27a;
+}
+.trv__count {
+  position: absolute;
+  top: 4cqh;
+  left: 0;
+  right: 0;
+  font-size: 2.8cqh;
+  color: #c8c0e0;
+}
+.trv__q {
+  position: absolute;
+  top: 9cqh;
+  left: 16cqh;
+  right: 16cqh;
+  height: 24cqh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5.6cqh;
+  line-height: 7cqh;
+  font-weight: 800;
+}
+.trv__timer {
+  position: absolute;
+  top: 12cqh;
+  left: 3cqh;
+  width: 11cqh;
+  height: 11cqh;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 5cqh;
+  font-weight: 800;
+}
+.trv__timer:empty {
+  display: none;
+}
+.trv__answered {
+  position: absolute;
+  top: 14cqh;
+  right: 3cqh;
+  width: 12cqh;
+  font-size: 2.6cqh;
+  line-height: 3.4cqh;
+  color: #c8c0e0;
+}
+.trv__opts {
+  position: absolute;
+  top: 38cqh;
+  left: 5cqh;
+  right: 5cqh;
+  bottom: 5cqh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 2cqh;
+}
+.trv__opt {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 3cqh;
+  padding: 0 3cqh;
+  border-radius: 1.5cqh;
+  text-align: start;
+  transition: opacity 0.3s;
+}
+.trv__opt.is-wrong {
+  opacity: 0.28;
+}
+.trv__opt.is-right {
+  box-shadow: 0 0 0 0.8cqh #fff;
+}
+.trv__shape {
+  font-size: 5cqh;
+}
+.trv__text {
+  flex: 1;
+  min-width: 0;
+  font-size: 4.4cqh;
+  line-height: 5.4cqh;
+  font-weight: 700;
+  overflow: hidden;
+}
+.trv__n {
+  font-size: 5cqh;
+}
+.trv__board {
+  position: absolute;
+  top: 20cqh;
+  left: 30cqh;
+  right: 30cqh;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5cqh;
+}
+.trv__board li {
+  height: 7cqh;
+  display: flex;
+  align-items: center;
+  gap: 2.5cqh;
+  font-size: 3.6cqh;
+}
+.trv__place {
+  width: 6cqh;
+  font-weight: 800;
+  color: #f2d27a;
+}
+.trv__name {
+  width: 36cqh;
+  text-align: start;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trv__barwrap {
+  flex: 1;
+  height: 3cqh;
+  border-radius: 1.5cqh;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+.trv__barwrap i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #7b5cff, #f2b233);
+}
+.trv__board b {
+  width: 14cqh;
+  text-align: end;
+}

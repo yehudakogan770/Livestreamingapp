@@ -43,6 +43,7 @@ pub mod stream;
 pub mod text;
 pub mod timing;
 pub mod triggers;
+pub mod trivia;
 pub mod visuals;
 pub mod wall;
 pub mod zmanim;

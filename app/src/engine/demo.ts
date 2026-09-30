@@ -20,6 +20,7 @@ import { repairPoll, resetPoll } from './poll';
 import { pledgeTo, raffleDraw, raffleEnter, withCelebration } from './audience';
 import { wallPost, wallRemove } from './wall';
 import { placeBid, removeItem, setItem } from './auction';
+import { answerIn as triviaAnswer, reveal as triviaReveal } from './trivia';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -503,6 +504,47 @@ function apply(s: Show, a: Action, now: number) {
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
       return;
+    case 'updateTrivia':
+    case 'triviaAsk':
+    case 'triviaReveal':
+    case 'triviaBoard':
+    case 'triviaAnswer':
+    case 'triviaReset': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'trivia') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a trivia game' });
+      const t = src.kind;
+      if (a.type === 'updateTrivia') {
+        const n = a.trivia;
+        t.title = n.title.slice(0, 80);
+        if (t.phase !== 'asking') {
+          t.questions = n.questions
+            .slice(0, 200)
+            .map((q) => ({
+              ...q,
+              options: q.options.slice(0, 4),
+              correct: Math.min(q.correct, Math.max(0, q.options.length - 1)),
+              seconds: Math.min(120, Math.max(5, q.seconds)),
+            }));
+          if (t.current >= t.questions.length) t.current = 0;
+        }
+        Object.assign(t, { joinUrl: n.joinUrl, joinQr: n.joinQr, showJoin: n.showJoin });
+      } else if (a.type === 'triviaAsk') {
+        if (a.index >= t.questions.length) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there is no such question' });
+        Object.assign(t, { current: a.index, phase: 'asking', askedAt: now, answers: [] });
+      } else if (a.type === 'triviaReveal') triviaReveal(t);
+      else if (a.type === 'triviaBoard') {
+        triviaReveal(t);
+        t.phase = a.value ? 'leaderboard' : 'join';
+      } else if (a.type === 'triviaAnswer') {
+        if (!triviaAnswer(t, a.key, a.name, a.question, a.option, now))
+          throw new Refused({ code: 'invalidValue', field: 'trivia', reason: 'this question is not taking answers' });
+      } else {
+        for (const p of t.players) p.score = 0;
+        Object.assign(t, { answers: [], phase: 'join', current: 0 });
+        if (a.players) t.players = [];
+      }
+      return;
+    }
     case 'updateScripture':
     case 'scriptureStep':
     case 'scriptureGo':

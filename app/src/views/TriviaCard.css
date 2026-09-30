@@ -1,0 +1,21 @@
+.trv-card__qs {
+  max-height: 240px;
+}
+.trv-card__opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.trv-card__opt .text {
+  flex: 1;
+  min-width: 0;
+}
+.trv-card__shape {
+  flex: 0 0 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 13px;
+}

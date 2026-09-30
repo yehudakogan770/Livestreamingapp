@@ -166,6 +166,9 @@ pub fn allowed(action: &Action) -> bool {
             | Action::RaffleDraw { .. }
             | Action::WallPin { .. }
             | Action::ScriptureStep { .. }
+            | Action::TriviaAsk { .. }
+            | Action::TriviaReveal { .. }
+            | Action::TriviaBoard { .. }
             | Action::ScriptureGo { .. }
             | Action::ScriptureBlank { .. }
             | Action::ShowComment { comment: None, .. }
@@ -599,6 +602,7 @@ fn audience_path(path: &str) -> bool {
         path,
         "/vote"
             | "/api/bid"
+            | "/api/answer"
             | "/api/polls"
             | "/api/audience"
             | "/api/vote"
@@ -665,6 +669,7 @@ fn handle(shared: &Shared, mut request: Request) {
                 "fundraisers": open("fundraiser", &["title", "currency"]),
                 "walls": open("wall", &["title", "prompt", "photos"]),
                 "auctions": open_auctions(&show),
+                "trivia": open_trivia(&show, &crate::control::parse_query(query)),
                 "now": now_ms(),
                 "event": show["event"]["name"],
             });
@@ -681,6 +686,10 @@ fn handle(shared: &Shared, mut request: Request) {
         (Method::Post, "/api/message") => match post_message(shared, &mut request, query) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingMessages"}"#),
+        },
+        (Method::Post, "/api/answer") => match answer(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingAnswers"}"#),
         },
         (Method::Post, "/api/bid") => match bid(shared, &mut request) {
             Ok(()) => json(request, 200, "{}"),
@@ -998,6 +1007,83 @@ fn bid(shared: &Shared, request: &mut Request) -> Result<(), (u16, String)> {
         })?;
     lock(&shared.asked).insert(key, now);
     Ok(())
+}
+
+/// Trivia games: the question and answers, the right one once it is shown,
+/// and (for the phone asking, `voter`) its score, place and answer.
+fn open_trivia(show: &serde_json::Value, q: &[(String, String)]) -> Vec<serde_json::Value> {
+    use lumora_engine::trivia::{Trivia, TriviaPhase};
+    let voter = q
+        .iter()
+        .find(|(k, _)| k == "voter")
+        .map(|(_, v)| v.as_str())
+        .unwrap_or_default();
+    let now = now_ms();
+    let Some(all) = show["sources"].as_array() else {
+        return Vec::new();
+    };
+    all.iter()
+        .filter(|s| s["kind"]["type"] == "trivia")
+        .filter_map(|s| {
+            let t: Trivia = serde_json::from_value(s["kind"].clone()).ok()?;
+            let q = t.questions.get(t.current);
+            let shown = matches!(t.phase, TriviaPhase::Reveal | TriviaPhase::Leaderboard);
+            let mut ranked: Vec<&lumora_engine::trivia::Player> = t.players.iter().collect();
+            ranked.sort_by(|a, b| b.score.cmp(&a.score));
+            let place = ranked.iter().position(|p| p.key == voter);
+            let mine = t.answers.iter().find(|a| a.key == voter);
+            let asking = t.phase != TriviaPhase::Join;
+            Some(serde_json::json!({
+                "id": s["id"],
+                "title": t.title,
+                "phase": t.phase,
+                "question": t.current,
+                "text": q.filter(|_| asking).map(|q| q.text.clone()),
+                "options": q.filter(|_| asking).map(|q| q.options.clone()),
+                "taking": t.taking(now),
+                "endsAt": q.map(|q| t.asked_at + u64::from(q.seconds) * 1000),
+                "correct": if shown { q.map(|q| q.correct) } else { None },
+                "players": t.players.len(),
+                "score": place.map(|i| ranked[i].score),
+                "place": place.map(|i| i + 1),
+                "answered": mine.map(|a| a.option),
+                "points": if shown { mine.map(|a| t.points(a)) } else { None },
+            }))
+        })
+        .collect()
+}
+
+#[derive(Deserialize)]
+struct AnswerIn {
+    id: String,
+    question: usize,
+    option: usize,
+    name: String,
+    voter: String,
+}
+
+/// An answer from a phone (the first one for each question counts).
+fn answer(shared: &Shared, request: &mut Request) -> Result<(), u16> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| 400u16)?;
+    let a: AnswerIn = serde_json::from_str(&body).map_err(|_| 400u16)?;
+    if a.voter.is_empty() || a.voter.len() > 64 {
+        return Err(400);
+    }
+    shared
+        .backend
+        .apply(Action::TriviaAnswer {
+            id: lumora_engine::model::SourceId::new(a.id),
+            key: a.voter,
+            name: a.name,
+            question: a.question,
+            option: a.option,
+        })
+        .map_err(|_| 409u16)
 }
 
 #[derive(Deserialize)]
@@ -1504,6 +1590,63 @@ mod tests {
         assert!(request(port, "GET", "/api/audience", "", "")
             .1
             .contains(r#""min":125"#));
+    }
+
+    #[test]
+    fn phones_play_trivia() {
+        let (r, fake) = remote();
+        let port = r.set_enabled(true).port.unwrap();
+        let id = lumora_engine::model::SourceId::new("t");
+        {
+            let mut e = lock(&fake.engine);
+            e.apply(
+                Action::AddSource {
+                    source: serde_json::from_value(serde_json::json!({
+                        "id": "t", "name": "Trivia", "kind": {"type": "trivia", "questions": [
+                            {"text": "How many days of Chanukah?", "options": ["7", "8"], "correct": 1, "seconds": 30}
+                        ]}
+                    }))
+                    .unwrap(),
+                },
+                1,
+            )
+            .unwrap();
+        }
+        let a = r#"{"id":"t","question":0,"option":1,"name":"Ana","voter":"a"}"#;
+        assert_eq!(
+            request(port, "POST", "/api/answer", "", a).0,
+            409,
+            "not asked yet"
+        );
+        let before = request(port, "GET", "/api/audience?voter=a", "", "").1;
+        assert!(
+            !before.contains("Chanukah"),
+            "the question stays hidden until asked"
+        );
+        lock(&fake.engine)
+            .apply(
+                Action::TriviaAsk {
+                    id: id.clone(),
+                    index: 0,
+                },
+                now_ms(),
+            )
+            .unwrap();
+        let asking = request(port, "GET", "/api/audience?voter=a", "", "").1;
+        assert!(
+            asking.contains("Chanukah") && asking.contains(r#""correct":null"#),
+            "{asking}"
+        );
+        assert_eq!(request(port, "POST", "/api/answer", "", a).0, 200);
+        assert_eq!(request(port, "POST", "/api/answer", "", a).0, 409, "once");
+        lock(&fake.engine)
+            .apply(Action::TriviaReveal { id }, now_ms())
+            .unwrap();
+        let shown = request(port, "GET", "/api/audience?voter=a", "", "").1;
+        assert!(
+            shown.contains(r#""correct":1"#) && shown.contains(r#""place":1"#),
+            "{shown}"
+        );
     }
 
     #[test]
