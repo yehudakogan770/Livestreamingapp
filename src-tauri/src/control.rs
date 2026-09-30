@@ -42,6 +42,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("clock", "input or name, state (on, off, toggle)"),
     ("datarow", "to (next, previous or a row number)"),
     ("verse", "input or name, to (next, previous, blank)"),
+    ("prompter", "do (start, stop, toggle, faster, slower, top)"),
 ];
 
 fn get<'a>(q: &'a [(String, String)], key: &str) -> Option<&'a str> {
@@ -272,6 +273,20 @@ pub fn command(show: &Value, cmd: &str, q: &[(String, String)]) -> Result<Action
                         .ok_or("to must be next, previous or a number")?;
                     json!({"type": "slideGo", "id": id, "index": i})
                 }
+            }
+        }
+        "prompter" => {
+            let p = &show["monitor"]["prompter"];
+            let running = !p["since"].is_null();
+            let speed = p["speed"].as_f64().unwrap_or(4.0);
+            match get(q, "do").unwrap_or("toggle") {
+                "start" => json!({"type": "prompterRun", "run": true}),
+                "stop" => json!({"type": "prompterRun", "run": false}),
+                "toggle" => json!({"type": "prompterRun", "run": !running}),
+                "faster" => json!({"type": "prompterSpeed", "speed": speed * 1.2}),
+                "slower" => json!({"type": "prompterSpeed", "speed": speed / 1.2}),
+                "top" => json!({"type": "prompterJump", "pos": 0.0}),
+                _ => return Err("do must be start, stop, toggle, faster, slower or top".into()),
             }
         }
         "datarow" => match get(q, "to").unwrap_or("next") {

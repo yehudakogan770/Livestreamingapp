@@ -5,6 +5,93 @@ import type { TextSize } from '../engine/types/TextSize';
 import { MonitorScreen } from '../components/MonitorScreen';
 import { CountdownCard } from './CountdownCard';
 import type { Act } from './act';
+import { prompterAt, prompterLength } from '../components/PrompterView';
+import { useNow } from '../engine/useNow';
+
+/** The teleprompter: small until opened; the script, run, speed and size. */
+function PrompterPanel({ show, act }: { show: Show; act: Act }) {
+  const p = show.monitor.prompter;
+  const [open, setOpen] = useState(p.on);
+  const [script, setScript] = useState(p.script);
+  const now = useNow(p.since !== null, 500);
+  const running = p.since !== null;
+  const save = (x: Partial<{ on: boolean; script: string; size: number; mirror: boolean }>) =>
+    act({ type: 'updatePrompter', on: p.on, script, size: p.size, mirror: p.mirror, ...x });
+  return (
+    <div className="field prompt">
+      <div className="mpanel__row">
+        <button type="button" className={`btn${p.on ? ' is-on' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)}>
+          📜 Teleprompter{p.on ? ' · on the monitor' : ''} {open ? '▴' : '▾'}
+        </button>
+        {p.on && (
+          <>
+            <button type="button" className="btn btn--primary" onClick={() => act({ type: 'prompterRun', run: !running })}>
+              {running ? '❚❚ Pause' : '▶ Scroll'}
+            </button>
+            <button type="button" className="btn" aria-label="Slower" onClick={() => act({ type: 'prompterSpeed', speed: p.speed / 1.2 })}>
+              −
+            </button>
+            <span className="mpanel__label">{p.speed.toFixed(1)}</span>
+            <button type="button" className="btn" aria-label="Faster" onClick={() => act({ type: 'prompterSpeed', speed: p.speed * 1.2 })}>
+              +
+            </button>
+          </>
+        )}
+      </div>
+      {open && (
+        <>
+          <textarea
+            className="text prompt__script"
+            dir="auto"
+            rows={6}
+            value={script}
+            placeholder="Paste the speaker's script here"
+            onChange={(e) => setScript(e.target.value)}
+            onBlur={() => save({ script })}
+            aria-label="Script"
+          />
+          <div className="mpanel__row">
+            <label className="check">
+              <input type="checkbox" checked={p.on} onChange={(e) => save({ on: e.target.checked })} /> Show on the stage monitor
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={p.mirror} onChange={(e) => save({ mirror: e.target.checked })} /> Mirror (glass prompter)
+            </label>
+            <button type="button" className="btn btn--small" onClick={() => act({ type: 'prompterJump', pos: 0 })}>
+              ⤒ Back to the start
+            </button>
+          </div>
+          <label className="mpanel__row">
+            <span className="mpanel__label">Where</span>
+            <input
+              type="range"
+              min={0}
+              max={prompterLength(p)}
+              step={0.5}
+              value={Math.min(prompterLength(p), prompterAt(p, now))}
+              onChange={(e) => act({ type: 'prompterJump', pos: Number(e.target.value) })}
+              aria-label="Where in the script"
+              style={{ flex: 1 }}
+            />
+          </label>
+          <label className="mpanel__row">
+            <span className="mpanel__label">Size</span>
+            <input
+              type="range"
+              min={3}
+              max={20}
+              step={0.5}
+              value={p.size}
+              onChange={(e) => save({ size: Number(e.target.value) })}
+              aria-label="Text size"
+              style={{ flex: 1 }}
+            />
+          </label>
+        </>
+      )}
+    </div>
+  );
+}
 
 const LAYOUTS: { id: MonitorLayout; name: string }[] = [
   { id: 'full', name: 'Full' },
@@ -169,6 +256,7 @@ export function MonitorPanel({ show, act }: { show: Show; act: Act }) {
           </label>
         </div>
 
+        <PrompterPanel show={show} act={act} />
         <CountdownCard show={show} act={act} />
       </div>
     </section>

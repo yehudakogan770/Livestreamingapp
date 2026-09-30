@@ -66,6 +66,8 @@ pub struct Monitor {
     pub clock_24h: bool,
     /// Messages one click away. Always exactly [`QUICK_MESSAGES`] entries.
     pub quick: Vec<String>,
+    /// The teleprompter.
+    pub prompter: crate::prompter::Prompter,
 }
 
 impl Default for Monitor {
@@ -80,6 +82,7 @@ impl Default for Monitor {
             text_size: TextSize::L,
             clock_24h: false,
             quick: default_quick(),
+            prompter: crate::prompter::Prompter::default(),
         }
     }
 }

@@ -745,6 +745,25 @@ pub enum Action {
     },
 
     // ----- stage monitor -----
+    /// Change the teleprompter's script and look (where it is stays).
+    UpdatePrompter {
+        on: bool,
+        script: String,
+        size: f32,
+        mirror: bool,
+    },
+    /// Start or stop the teleprompter scrolling.
+    PrompterRun {
+        run: bool,
+    },
+    /// Put the script at this point (0: the start).
+    PrompterJump {
+        pos: f32,
+    },
+    /// Scroll faster or slower.
+    PrompterSpeed {
+        speed: f32,
+    },
     UpdateMonitor {
         patch: MonitorPatch,
     },

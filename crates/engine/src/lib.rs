@@ -33,6 +33,7 @@ pub mod pesukim;
 pub mod playlist;
 pub mod poll;
 pub mod presets;
+pub mod prompter;
 pub mod ptz;
 pub mod qna;
 pub mod score;

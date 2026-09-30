@@ -1111,6 +1111,19 @@ function apply(s: Show, a: Action, now: number) {
       }
       return;
     }
+    case 'updatePrompter':
+    case 'prompterRun':
+    case 'prompterJump':
+    case 'prompterSpeed': {
+      const pr = s.monitor.prompter;
+      const at = pr.pos + (pr.since === null ? 0 : ((now - pr.since) / 1000) * pr.speed);
+      if (a.type === 'updatePrompter')
+        Object.assign(pr, { on: a.on, script: a.script.slice(0, 60_000), size: Math.min(20, Math.max(3, a.size)), mirror: a.mirror });
+      else if (a.type === 'prompterRun') Object.assign(pr, { pos: at, since: a.run ? now : null });
+      else if (a.type === 'prompterJump') Object.assign(pr, { pos: a.pos, since: pr.since === null ? null : now });
+      else Object.assign(pr, { pos: at, since: pr.since === null ? null : now, speed: Math.min(30, Math.max(0.5, a.speed)) });
+      return;
+    }
     case 'updateMonitor': {
       const p = a.patch;
       const m = s.monitor;

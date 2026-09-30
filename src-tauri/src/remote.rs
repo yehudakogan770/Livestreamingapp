@@ -167,6 +167,9 @@ pub fn allowed(action: &Action) -> bool {
             | Action::WallPin { .. }
             | Action::ScriptureStep { .. }
             | Action::DataStep { .. }
+            | Action::PrompterRun { .. }
+            | Action::PrompterJump { .. }
+            | Action::PrompterSpeed { .. }
             | Action::DataRow { .. }
             | Action::TriviaAsk { .. }
             | Action::TriviaReveal { .. }

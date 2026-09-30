@@ -6,6 +6,7 @@ import { FLASH_MS, countdownFinished, countdownRemaining, fadeAmount, formatCoun
 import { useNow } from '../engine/useNow';
 import { mainCountdown } from '../engine/countdowns';
 import { clockTime, hasPlace, zmanimOn } from '../engine/zmanim';
+import { PrompterView } from './PrompterView';
 import './MonitorScreen.css';
 
 const SIZE: Record<TextSize, number> = { s: 0.55, m: 0.75, l: 1, xl: 1.3 };
@@ -152,6 +153,9 @@ export function MonitorScreen({ show }: { show: Show }) {
         🕯 {toCandles > 0 ? `Candle lighting in ${Math.ceil(toCandles / 60_000)} min · ${clockTime(candles)}` : `Candle lighting was at ${clockTime(candles)}`}
       </div>
     ) : null;
+
+  // The teleprompter takes the whole monitor (the Shabbos band and blanking still show).
+  if (m.prompter?.on) body = <PrompterView p={m.prompter} />;
 
   return (
     <div className={`mscreen${flash ? ' mscreen--flash' : ''}${shabbos ? ' mscreen--shabbos' : ''}`} data-monitor>

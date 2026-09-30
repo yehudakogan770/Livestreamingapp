@@ -352,6 +352,7 @@ fn repair_stage(s: &mut Show) {
         s.event.logo = None;
     }
 
+    s.monitor.prompter.repair();
     // Monitor and countdown: bounded text, exactly 8 quick messages, sane times.
     let m = &mut s.monitor;
     m.message = crate::engine::short_text(&m.message, crate::stage::MAX_MESSAGE_LEN);

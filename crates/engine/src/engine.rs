@@ -876,6 +876,32 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::WallApprove { .. }
         | Action::WallPin { .. }
         | Action::WallRemove { .. }) => apply_wall(s, a, now),
+        Action::UpdatePrompter {
+            on,
+            script,
+            size,
+            mirror,
+        } => {
+            let p = &mut s.monitor.prompter;
+            p.on = on;
+            p.script = script;
+            p.size = size;
+            p.mirror = mirror;
+            p.repair();
+            Ok(())
+        }
+        Action::PrompterRun { run } => {
+            s.monitor.prompter.run(run, now);
+            Ok(())
+        }
+        Action::PrompterJump { pos } => {
+            s.monitor.prompter.jump(pos, now);
+            Ok(())
+        }
+        Action::PrompterSpeed { speed } => {
+            s.monitor.prompter.set_speed(speed, now);
+            Ok(())
+        }
         a @ (Action::SetDataFile { .. }
         | Action::DataRows { .. }
         | Action::DataRow { .. }
