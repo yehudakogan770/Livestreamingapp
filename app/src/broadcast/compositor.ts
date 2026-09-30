@@ -29,6 +29,8 @@ import type { CommentCard } from '../engine/types/CommentCard';
 import type { Raffle } from '../engine/types/Raffle';
 import type { Fundraiser } from '../engine/types/Fundraiser';
 import type { Wall } from '../engine/types/Wall';
+import type { Auction } from '../engine/types/Auction';
+import { amount, BID_FLASH_MS, clock, current, minimum, raisedAt, secondsLeft, SOLD_MS, top as top_ } from '../engine/auction';
 import { cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { shares } from '../engine/poll';
@@ -511,6 +513,171 @@ export class ProgramCompositor {
       ctx.fillStyle = '#1a1206';
       ctx.fillText(text, w / 2, 16 * u + 3.4 * u);
       this.confettiDraw(t, w, h);
+    }
+    ctx.restore();
+  }
+
+  /** An auction (mirrors AuctionView and its CSS). */
+  private auction(a: Auction, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    ctx.save();
+    const join = a.showJoin && a.open && a.joinQr;
+    this.audienceBase(a.title, '', w, h);
+    const top = 22 * u;
+    const bottom = h - 10 * u;
+    const left = 7 * u;
+    const right = w - (join ? 45 * u : 7 * u);
+    const aw = right - left;
+    const ah = bottom - top;
+    const it = current(a);
+    ctx.textBaseline = 'middle';
+    if (!it) {
+      ctx.fillStyle = '#8f96a3';
+      ctx.font = font(4, 400);
+      ctx.textAlign = 'center';
+      ctx.fillText('The first item will appear here', left + aw / 2, top + ah / 2);
+    } else {
+      let ix = left;
+      let iw = aw;
+      if (it.photo) {
+        const pw = Math.min(aw * 0.45, 70 * u);
+        const img = this.picture(it.photo);
+        if (img?.complete && img.naturalWidth) {
+          const sc = Math.min(pw / img.naturalWidth, ah / img.naturalHeight);
+          const dw = img.naturalWidth * sc;
+          const dh = img.naturalHeight * sc;
+          const dx = left + (pw - dw) / 2;
+          const dy = top + (ah - dh) / 2;
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(dx, dy, dw, dh, 1.5 * u);
+          ctx.clip();
+          ctx.drawImage(img, dx, dy, dw, dh);
+          ctx.restore();
+        }
+        ix = left + pw + 5 * u;
+        iw = right - ix;
+      }
+      const center = !it.photo;
+      const x = center ? ix + iw / 2 : ix;
+      ctx.textAlign = center ? 'center' : 'left';
+      const best = top_(it);
+      const sold = it.sold;
+      const left_ = secondsLeft(a, now);
+      ctx.font = font(6, 800);
+      const nameLines = this.wrap(it.name, iw).slice(0, 2);
+      const rows: { h: number; draw: (y: number) => void }[] = [];
+      rows.push({
+        h: nameLines.length * 7.2 * u,
+        draw: (y) => {
+          ctx.fillStyle = '#fff';
+          ctx.font = font(6, 800);
+          nameLines.forEach((l, i) => ctx.fillText(l, x, y + (i + 0.5) * 7.2 * u, iw));
+        },
+      });
+      if (it.detail)
+        rows.push({
+          h: 5.2 * u,
+          draw: (y) => {
+            ctx.fillStyle = '#c9ccd2';
+            ctx.font = font(3.2, 400);
+            ctx.fillText(it.detail, x, y + u + 2.1 * u, iw);
+          },
+        });
+      rows.push({
+        h: 7.6 * u,
+        draw: (y) => {
+          ctx.fillStyle = sold ? '#ff5a4e' : '#9aa3b2';
+          ctx.font = font(2.8, 700);
+          this.spacing(0.12 * 2.8 * u);
+          ctx.fillText((sold ? 'Sold for' : best ? 'Current bid' : 'Starting bid').toUpperCase(), x, y + 4 * u + 1.8 * u, iw);
+          this.spacing(0);
+        },
+      });
+      rows.push({
+        h: 14 * u,
+        draw: (y) => {
+          ctx.fillStyle = now - a.lastBidAt < BID_FLASH_MS ? '#f2b233' : '#fff';
+          ctx.font = font(13, 800);
+          ctx.fillText(amount(a, best ? best.amount : it.start), x, y + 7 * u, iw);
+        },
+      });
+      if (best)
+        rows.push({
+          h: 4.6 * u,
+          draw: (y) => {
+            ctx.fillStyle = '#f2b233';
+            ctx.font = font(3.6, 700);
+            const n = best.name || 'Anonymous';
+            ctx.fillText(sold ? `to ${n}` : n, x, y + 2.3 * u, iw);
+          },
+        });
+      if (!sold && best)
+        rows.push({
+          h: 5.5 * u,
+          draw: (y) => {
+            ctx.fillStyle = '#c9ccd2';
+            ctx.font = font(3, 400);
+            ctx.fillText(`Next bid: ${amount(a, minimum(it))}`, x, y + 1.5 * u + 2 * u, iw);
+          },
+        });
+      if (!sold && left_ !== null)
+        rows.push({
+          h: 8.5 * u,
+          draw: (y) => {
+            ctx.font = font(3.6, 800);
+            const text = left_ > 0 ? `⏱ ${clock(left_)}` : 'Time is up';
+            const tw = ctx.measureText(text).width + 5 * u;
+            const px = center ? x - tw / 2 : x;
+            ctx.fillStyle = left_ <= 10 ? '#e0473b' : 'rgba(255,255,255,0.1)';
+            ctx.beginPath();
+            ctx.roundRect(px, y + 2.5 * u, tw, 6 * u, 3 * u);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'left';
+            ctx.fillText(text, px + 2.5 * u, y + 2.5 * u + 3 * u);
+            ctx.textAlign = center ? 'center' : 'left';
+          },
+        });
+      let y = top + (ah - rows.reduce((n, r) => n + r.h, 0)) / 2;
+      for (const r of rows) {
+        r.draw(y);
+        y += r.h;
+      }
+      if (sold) {
+        ctx.save();
+        ctx.font = font(10, 900);
+        const sw = ctx.measureText('SOLD!').width + 8 * u + 2 * u;
+        const sh = 12 * u + 2 * u + 2 * u;
+        const sx = 9 * u;
+        const sy = h - 14 * u - sh;
+        ctx.translate(sx + sw / 2, sy + sh / 2);
+        ctx.rotate((-10 * Math.PI) / 180);
+        ctx.strokeStyle = '#ff5a4e';
+        ctx.lineWidth = u;
+        ctx.beginPath();
+        ctx.roundRect(-sw / 2 + u / 2, -sh / 2 + u / 2, sw - u, sh - u, 2 * u);
+        ctx.stroke();
+        ctx.fillStyle = '#ff5a4e';
+        ctx.textAlign = 'center';
+        ctx.fillText('SOLD!', 0, 0);
+        ctx.restore();
+        this.confettiDraw((now - a.soldAt) / SOLD_MS, w, h);
+      }
+    }
+    if (a.items.length) {
+      const raised = raisedAt(a);
+      ctx.fillStyle = '#9aa3b2';
+      ctx.font = font(2.6, 400);
+      ctx.textAlign = 'center';
+      const text = `Item ${Math.min(a.current + 1, a.items.length)} of ${a.items.length}${raised > 0 ? ` · Raised so far ${amount(a, raised)}` : ''}`;
+      ctx.fillText(text, w / 2, h - 3.5 * u - 1.7 * u, w - 14 * u);
+    }
+    if (join) {
+      ctx.fillStyle = '#fff';
+      this.joinCode(a.joinUrl, a.joinQr, 'Scan to bid', w - 7 * u - 16 * u, 24 * u + (h - 32 * u) / 2, u);
     }
     ctx.restore();
   }
@@ -1091,6 +1258,9 @@ export class ProgramCompositor {
         return;
       case 'wall':
         this.wall(k, now, w, h);
+        return;
+      case 'auction':
+        this.auction(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

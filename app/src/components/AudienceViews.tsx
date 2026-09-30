@@ -1,6 +1,8 @@
 import type { Fundraiser } from '../engine/types/Fundraiser';
 import type { Raffle } from '../engine/types/Raffle';
 import type { Wall } from '../engine/types/Wall';
+import type { Auction } from '../engine/types/Auction';
+import { amount, BID_FLASH_MS, clock, current, minimum, raisedAt, secondsLeft, SOLD_MS, top } from '../engine/auction';
 import type { WallMessage } from '../engine/types/WallMessage';
 import { useEffect, useRef } from 'react';
 import { approved, cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
@@ -261,6 +263,63 @@ export function WallView({ w, url, thumb = false }: { w: Wall; url: Url; thumb?:
           <Join url={w.joinUrl} qr={w.joinQr} label="Scan to send" />
         </div>
       )}
+    </div>
+  );
+}
+
+/** An auction on screen: the item, the highest bid and who, the next bid, the countdown, "Sold!". */
+export function AuctionView({ a, url, thumb = false }: { a: Auction; url: Url; thumb?: boolean }) {
+  const lively = a.endsAt !== null || Date.now() - a.lastBidAt < BID_FLASH_MS || Date.now() - a.soldAt < SOLD_MS;
+  const now = useNow(lively && !thumb, 1000);
+  const it = current(a);
+  const join = a.showJoin && a.open && a.joinQr && !thumb;
+  const best = it ? top(it) : null;
+  const left = secondsLeft(a, now);
+  const flash = now - a.lastBidAt < BID_FLASH_MS;
+  const sold = !!it?.sold;
+  const t = (now - a.soldAt) / SOLD_MS;
+  return (
+    <div className="aud auc" data-kind="auction">
+      <div className="aud__head">
+        <h2 className="aud__title" dir="auto">
+          {a.title}
+        </h2>
+      </div>
+      <div className={`auc__area${join ? ' auc__area--join' : ''}`}>
+        {!it ? (
+          <p className="wall__empty">The first item will appear here</p>
+        ) : (
+          <>
+            {it.photo && (
+              <div className="auc__photo">
+                <img src={url(it.photo)} alt="" />
+              </div>
+            )}
+            <div className={`auc__info${it.photo ? '' : ' auc__info--center'}`} dir="auto">
+              <p className="auc__name">{it.name}</p>
+              {it.detail && <p className="auc__detail">{it.detail}</p>}
+              <p className={`auc__label${sold ? ' is-sold' : ''}`}>{sold ? 'Sold for' : best ? 'Current bid' : 'Starting bid'}</p>
+              <p className={`auc__amount${flash ? ' is-new' : ''}`}>{amount(a, best ? best.amount : it.start)}</p>
+              {best && <p className="auc__who">{sold ? `to ${best.name || 'Anonymous'}` : best.name || 'Anonymous'}</p>}
+              {!sold && best && <p className="auc__next">Next bid: {amount(a, minimum(it))}</p>}
+              {!sold && left !== null && <p className={`auc__timer${left <= 10 ? ' is-late' : ''}`}>{left > 0 ? `⏱ ${clock(left)}` : 'Time is up'}</p>}
+            </div>
+          </>
+        )}
+      </div>
+      {sold && <div className="auc__stamp">SOLD!</div>}
+      {a.items.length > 0 && (
+        <p className="auc__foot">
+          Item {Math.min(a.current + 1, a.items.length)} of {a.items.length}
+          {raisedAt(a) > 0 && ` · Raised so far ${amount(a, raisedAt(a))}`}
+        </p>
+      )}
+      {join && (
+        <div className="wall__join">
+          <Join url={a.joinUrl} qr={a.joinQr} label="Scan to bid" />
+        </div>
+      )}
+      {sold && <Confetti t={t} />}
     </div>
   );
 }

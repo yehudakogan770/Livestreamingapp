@@ -595,6 +595,7 @@ fn audience_path(path: &str) -> bool {
     matches!(
         path,
         "/vote"
+            | "/api/bid"
             | "/api/polls"
             | "/api/audience"
             | "/api/vote"
@@ -660,6 +661,8 @@ fn handle(shared: &Shared, mut request: Request) {
                 "raffles": open("raffle", &["title", "prize"]),
                 "fundraisers": open("fundraiser", &["title", "currency"]),
                 "walls": open("wall", &["title", "prompt", "photos"]),
+                "auctions": open_auctions(&show),
+                "now": now_ms(),
                 "event": show["event"]["name"],
             });
             json(request, 200, &body.to_string());
@@ -675,6 +678,14 @@ fn handle(shared: &Shared, mut request: Request) {
         (Method::Post, "/api/message") => match post_message(shared, &mut request, query) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingMessages"}"#),
+        },
+        (Method::Post, "/api/bid") => match bid(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err((status, why)) => json(
+                request,
+                status,
+                &serde_json::json!({ "code": "notTakingBids", "reason": why }).to_string(),
+            ),
         },
         (Method::Post, "/api/ask") => match ask(shared, &mut request) {
             Ok(()) => json(request, 200, "{}"),
@@ -903,6 +914,85 @@ fn post_message(shared: &Shared, request: &mut Request, query: &str) -> Result<(
         }
         return Err(409);
     }
+    lock(&shared.asked).insert(key, now);
+    Ok(())
+}
+
+/// Auctions taking bids, with only what a bidder needs: the item being sold,
+/// its highest bid and the least the next may be.
+fn open_auctions(show: &serde_json::Value) -> Vec<serde_json::Value> {
+    let Some(all) = show["sources"].as_array() else {
+        return Vec::new();
+    };
+    all.iter()
+        .filter(|s| s["kind"]["type"] == "auction" && s["kind"]["open"] == true)
+        .filter_map(|s| {
+            let k: lumora_engine::auction::Auction =
+                serde_json::from_value(s["kind"].clone()).ok()?;
+            let it = k.items.get(k.current)?;
+            let top = it.top();
+            Some(serde_json::json!({
+                "id": s["id"],
+                "title": k.title,
+                "currency": k.currency,
+                "item": {
+                    "id": it.id,
+                    "name": it.name,
+                    "detail": it.detail,
+                    "top": top.map(|b| b.amount),
+                    "topName": top.map(|b| b.name.clone()),
+                    "min": it.minimum(),
+                    "step": it.step,
+                    "sold": it.sold,
+                    "endsAt": k.ends_at,
+                },
+            }))
+        })
+        .collect()
+}
+
+#[derive(Deserialize)]
+struct BidIn {
+    id: String,
+    item: u32,
+    name: String,
+    amount: u64,
+    voter: String,
+}
+
+/// A bid from a phone: one every 3 seconds from each phone.
+fn bid(shared: &Shared, request: &mut Request) -> Result<(), (u16, String)> {
+    let bad = |why: &str| (400u16, why.to_owned());
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| bad("unreadable"))?;
+    let b: BidIn = serde_json::from_str(&body).map_err(|_| bad("unreadable"))?;
+    if b.voter.is_empty() || b.voter.len() > 64 || b.name.trim().is_empty() {
+        return Err(bad("please type your name"));
+    }
+    let key = format!("bid:{}", b.voter);
+    let now = now_ms();
+    if lock(&shared.asked)
+        .get(&key)
+        .is_some_and(|&t| now.saturating_sub(t) < 3000)
+    {
+        return Err((429, "please wait a moment".to_owned()));
+    }
+    shared
+        .backend
+        .apply(Action::AuctionBid {
+            id: lumora_engine::model::SourceId::new(b.id),
+            item: b.item,
+            name: b.name,
+            amount: b.amount,
+        })
+        .map_err(|e| match e {
+            ActionError::InvalidValue { reason, .. } => (409, reason),
+            _ => (409, "bidding is closed".to_owned()),
+        })?;
     lock(&shared.asked).insert(key, now);
     Ok(())
 }
@@ -1341,6 +1431,76 @@ mod tests {
         assert_eq!(request(port, "POST", "/api/action", &pin, "{}").0, 404);
         assert!(!r.set_internet(false).internet.on);
         assert!(lock(&r.public).is_none());
+    }
+
+    #[test]
+    fn phones_bid_on_the_item_being_sold() {
+        let (r, fake) = remote();
+        let port = r.set_enabled(true).port.unwrap();
+        let id = lumora_engine::model::SourceId::new("a");
+        {
+            let mut e = lock(&fake.engine);
+            e.apply(
+                Action::AddSource {
+                    source: serde_json::from_value(serde_json::json!({
+                        "id": "a", "name": "Auction", "kind": {"type": "auction"}
+                    }))
+                    .unwrap(),
+                },
+                1,
+            )
+            .unwrap();
+            e.apply(
+                Action::AuctionSetItem {
+                    id: id.clone(),
+                    item: lumora_engine::auction::AuctionItem {
+                        name: "Kiddush cup".into(),
+                        start: 100,
+                        step: 25,
+                        ..Default::default()
+                    },
+                },
+                2,
+            )
+            .unwrap();
+        }
+        let item = match &lock(&fake.engine).show().sources[0].kind {
+            lumora_engine::SourceKind::Auction(a) => a.items[0].id,
+            _ => unreachable!(),
+        };
+        let body = |amount: u64, voter: &str| {
+            format!(
+                r#"{{"id":"a","item":{item},"name":"Ana","amount":{amount},"voter":"{voter}"}}"#
+            )
+        };
+        assert_eq!(
+            request(port, "POST", "/api/bid", "", &body(100, "a")).0,
+            409,
+            "closed"
+        );
+        lock(&fake.engine)
+            .apply(Action::AuctionOpen { id, value: true }, 3)
+            .unwrap();
+        let aud = request(port, "GET", "/api/audience", "", "").1;
+        assert!(
+            aud.contains("Kiddush cup") && aud.contains(r#""min":100"#),
+            "{aud}"
+        );
+        assert_eq!(
+            request(port, "POST", "/api/bid", "", &body(100, "a")).0,
+            200
+        );
+        assert_eq!(
+            request(port, "POST", "/api/bid", "", &body(500, "a")).0,
+            429,
+            "too soon"
+        );
+        let (code, why) = request(port, "POST", "/api/bid", "", &body(110, "b"));
+        assert_eq!(code, 409);
+        assert!(why.contains("at least 125"), "{why}");
+        assert!(request(port, "GET", "/api/audience", "", "")
+            .1
+            .contains(r#""min":125"#));
     }
 
     #[test]

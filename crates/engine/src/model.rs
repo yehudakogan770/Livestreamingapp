@@ -286,6 +286,8 @@ pub enum SourceKind {
     Fundraiser(Box<crate::audience::Fundraiser>),
     /// Messages, dedications and photos from phones, shown on screen.
     Wall(Box<crate::wall::Wall>),
+    /// A live auction: items, bids from phones or the room, the highest bid on screen.
+    Auction(Box<crate::auction::Auction>),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

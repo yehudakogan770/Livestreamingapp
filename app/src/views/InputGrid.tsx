@@ -1,4 +1,5 @@
 import { FundraiserCard, RaffleCard, WallCard } from './AudienceCards';
+import { AuctionCard } from './AuctionCard';
 import { GuestCard } from './GuestCard';
 import { PtzCard } from './PtzCard';
 import { PollCard } from './PollCard';
@@ -55,6 +56,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   raffle: 'Raffle',
   fundraiser: 'Fundraiser',
   wall: 'Messages wall',
+  auction: 'Auction',
 };
 
 /** Every input as a tile. Click lines it up next; double-click sends it straight to air. */
@@ -92,6 +94,7 @@ export function InputGrid({
   const editingRaffle = show.sources.find((x) => x.id === editing && x.kind.type === 'raffle');
   const editingFund = show.sources.find((x) => x.id === editing && x.kind.type === 'fundraiser');
   const editingWall = show.sources.find((x) => x.id === editing && x.kind.type === 'wall');
+  const editingAuction = show.sources.find((x) => x.id === editing && x.kind.type === 'auction');
   const [keeping, setKeeping] = useState<string | null>(null);
   const [keying, setKeying] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState<string | null>(null);
@@ -180,6 +183,7 @@ export function InputGrid({
         Add input
       </button>
       {editingRaffle && <RaffleCard source={editingRaffle} act={act} client={client} onClose={() => setEditing(null)} />}
+      {editingAuction && <AuctionCard source={editingAuction} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingWall && <WallCard source={editingWall} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingFund && <FundraiserCard source={editingFund} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingGuest && <GuestCard source={editingGuest} act={act} client={client} onClose={() => setEditing(null)} />}
@@ -342,7 +346,8 @@ function TileMenu({
         k === 'guest' ||
         k === 'raffle' ||
         k === 'fundraiser' ||
-        k === 'wall') && (
+        k === 'wall' ||
+        k === 'auction') && (
         <button
           type="button"
           className="btn menu__wide"
@@ -375,7 +380,9 @@ function TileMenu({
                                 ? 'Run the fundraiser…'
                                 : k === 'wall'
                                   ? 'Run the messages wall…'
-                                  : 'Edit slides…'}
+                                  : k === 'auction'
+                                    ? 'Run the auction…'
+                                    : 'Edit slides…'}
         </button>
       )}
       <button

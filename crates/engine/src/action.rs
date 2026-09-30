@@ -317,6 +317,62 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Change an auction's title, currency and look (items and bids stay).
+    UpdateAuction {
+        id: SourceId,
+        auction: crate::auction::Auction,
+    },
+    /// Add an item (id 0) or change one (its bids stay).
+    AuctionSetItem {
+        id: SourceId,
+        item: crate::auction::AuctionItem,
+    },
+    AuctionRemoveItem {
+        id: SourceId,
+        item: u32,
+    },
+    /// Sell this item now (by its place in the list).
+    AuctionGo {
+        id: SourceId,
+        index: usize,
+    },
+    /// Let phones bid (or stop them).
+    AuctionOpen {
+        id: SourceId,
+        value: bool,
+    },
+    /// Bidding on this item ends in this many seconds, or (with none) when the operator says "Sold".
+    AuctionTimer {
+        id: SourceId,
+        #[ts(optional)]
+        seconds: Option<u32>,
+    },
+    /// A bid from a phone (sent by the app's server) on the item being sold.
+    AuctionBid {
+        id: SourceId,
+        item: u32,
+        name: String,
+        #[ts(type = "number")]
+        amount: u64,
+    },
+    /// A bid taken in the room (a raised hand), typed by the operator.
+    AuctionRoomBid {
+        id: SourceId,
+        name: String,
+        #[ts(type = "number")]
+        amount: u64,
+    },
+    /// Sold to the highest bid (or take that back).
+    AuctionSold {
+        id: SourceId,
+        value: bool,
+    },
+    /// Take a bid out (a mistake, a joke).
+    AuctionRemoveBid {
+        id: SourceId,
+        item: u32,
+        bid: u32,
+    },
     /// Change a messages wall's title, question and look (the messages stay).
     UpdateWall {
         id: SourceId,

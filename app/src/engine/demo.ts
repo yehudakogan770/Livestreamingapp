@@ -19,6 +19,7 @@ import { applyBrand } from './brand';
 import { repairPoll, resetPoll } from './poll';
 import { pledgeTo, raffleDraw, raffleEnter, withCelebration } from './audience';
 import { wallPost, wallRemove } from './wall';
+import { placeBid, removeItem, setItem } from './auction';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
@@ -137,6 +138,12 @@ export function resolveStinger(s: Show, t: { kind: Show['transition']['kind']; d
 function raffleIn(s: Show, id: string) {
   const src = find(s, id);
   if (src.kind.type !== 'raffle') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a raffle' });
+  return src.kind;
+}
+
+function auctionIn(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'auction') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not an auction' });
   return src.kind;
 }
 
@@ -496,6 +503,61 @@ function apply(s: Show, a: Action, now: number) {
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
       return;
+    case 'updateAuction': {
+      const n = a.auction;
+      Object.assign(auctionIn(s, a.id), {
+        title: n.title.slice(0, 80),
+        currency: n.currency.slice(0, 4),
+        joinUrl: n.joinUrl,
+        joinQr: n.joinQr,
+        showJoin: n.showJoin,
+      });
+      return;
+    }
+    case 'auctionSetItem':
+      if (!setItem(auctionIn(s, a.id), a.item))
+        throw new Refused({ code: 'invalidValue', field: 'item', reason: 'that item is not in this auction (or the list is full)' });
+      return;
+    case 'auctionRemoveItem':
+      removeItem(auctionIn(s, a.id), a.item);
+      return;
+    case 'auctionGo': {
+      const au = auctionIn(s, a.id);
+      if (a.index >= au.items.length) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there is no such item' });
+      Object.assign(au, { current: a.index, endsAt: null, soldAt: 0 });
+      return;
+    }
+    case 'auctionOpen':
+      auctionIn(s, a.id).open = a.value;
+      return;
+    case 'auctionTimer':
+      auctionIn(s, a.id).endsAt = a.seconds === undefined ? null : now + Math.min(3600, Math.max(5, a.seconds)) * 1000;
+      return;
+    case 'auctionBid':
+    case 'auctionRoomBid': {
+      const au = auctionIn(s, a.id);
+      const item = a.type === 'auctionBid' ? a.item : (au.items[au.current]?.id ?? -1);
+      const why = placeBid(au, item, a.name, a.amount, a.type === 'auctionBid', now);
+      if (why) throw new Refused({ code: 'invalidValue', field: 'amount', reason: why });
+      return;
+    }
+    case 'auctionSold': {
+      const au = auctionIn(s, a.id);
+      const it = au.items[au.current];
+      if (!it || (a.value && !it.bids.length)) throw new Refused({ code: 'invalidValue', field: 'item', reason: 'nobody has bid on this item yet' });
+      it.sold = a.value;
+      au.soldAt = a.value ? now : 0;
+      au.endsAt = null;
+      return;
+    }
+    case 'auctionRemoveBid': {
+      const it = auctionIn(s, a.id).items.find((x) => x.id === a.item);
+      if (it) {
+        it.bids = it.bids.filter((b) => b.id !== a.bid);
+        if (!it.bids.length) it.sold = false;
+      }
+      return;
+    }
     case 'updateWall': {
       const n = a.wall;
       Object.assign(wallIn(s, a.id), {

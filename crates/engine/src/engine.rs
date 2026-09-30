@@ -876,6 +876,16 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::WallApprove { .. }
         | Action::WallPin { .. }
         | Action::WallRemove { .. }) => apply_wall(s, a, now),
+        a @ (Action::UpdateAuction { .. }
+        | Action::AuctionSetItem { .. }
+        | Action::AuctionRemoveItem { .. }
+        | Action::AuctionGo { .. }
+        | Action::AuctionOpen { .. }
+        | Action::AuctionTimer { .. }
+        | Action::AuctionBid { .. }
+        | Action::AuctionRoomBid { .. }
+        | Action::AuctionSold { .. }
+        | Action::AuctionRemoveBid { .. }) => apply_auction(s, a, now),
         a @ (Action::UpdateFundraiser { .. }
         | Action::FundraiserOpen { .. }
         | Action::Pledge { .. }
@@ -2049,6 +2059,89 @@ fn apply_fundraiser(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     Ok(())
 }
 
+fn auction_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::auction::Auction> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Auction(a) => Ok(a),
+        _ => Err(ActionError::invalid("id", "that input is not an auction")),
+    }
+}
+
+fn apply_auction(s: &mut Show, action: Action, now: Millis) -> Result<()> {
+    let refused = |r: crate::auction::BidRefused| ActionError::invalid("amount", &r.reason());
+    match action {
+        Action::UpdateAuction { id, auction } => {
+            let a = auction_mut(s, &id)?;
+            let mut next = auction;
+            next.repair();
+            a.title = next.title;
+            a.currency = next.currency;
+            a.join_url = next.join_url;
+            a.join_qr = next.join_qr;
+            a.show_join = next.show_join;
+        }
+        Action::AuctionSetItem { id, item } => {
+            if !auction_mut(s, &id)?.set_item(item) {
+                return Err(ActionError::invalid(
+                    "item",
+                    "that item is not in this auction (or the list is full)",
+                ));
+            }
+        }
+        Action::AuctionRemoveItem { id, item } => auction_mut(s, &id)?.remove_item(item),
+        Action::AuctionGo { id, index } => {
+            if !auction_mut(s, &id)?.go(index) {
+                return Err(ActionError::invalid("index", "there is no such item"));
+            }
+        }
+        Action::AuctionOpen { id, value } => auction_mut(s, &id)?.open = value,
+        Action::AuctionTimer { id, seconds } => {
+            auction_mut(s, &id)?.ends_at =
+                seconds.map(|sec| now + Millis::from(sec.clamp(5, 3600)) * 1000);
+        }
+        Action::AuctionBid {
+            id,
+            item,
+            name,
+            amount,
+        } => {
+            auction_mut(s, &id)?
+                .bid(item, &name, amount, true, now)
+                .map_err(refused)?;
+        }
+        Action::AuctionRoomBid { id, name, amount } => {
+            let a = auction_mut(s, &id)?;
+            let item = a
+                .items
+                .get(a.current)
+                .map(|it| it.id)
+                .ok_or_else(|| ActionError::invalid("item", "add an item first"))?;
+            a.bid(item, &name, amount, false, now).map_err(refused)?;
+        }
+        Action::AuctionSold { id, value } => {
+            if !auction_mut(s, &id)?.sell(value, now) {
+                return Err(ActionError::invalid(
+                    "item",
+                    "nobody has bid on this item yet",
+                ));
+            }
+        }
+        Action::AuctionRemoveBid { id, item, bid } => {
+            let a = auction_mut(s, &id)?;
+            if let Some(it) = a.items.iter_mut().find(|x| x.id == item) {
+                it.bids.retain(|b| b.id != bid);
+                if it.bids.is_empty() {
+                    it.sold = false;
+                }
+            }
+        }
+        _ => unreachable!("only auction actions come here"),
+    }
+    Ok(())
+}
+
 fn wall_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::wall::Wall> {
     let src = s
         .source_mut(id)
@@ -2420,6 +2513,11 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             w.repair();
             w.open = false;
         }
+        SourceKind::Auction(a) => {
+            a.repair();
+            a.open = false;
+            a.ends_at = None;
+        }
         SourceKind::Poll(p) => {
             p.repair();
             p.open = false;
@@ -2468,7 +2566,8 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         | SourceKind::Comment(_)
         | SourceKind::Raffle(_)
         | SourceKind::Fundraiser(_)
-        | SourceKind::Wall(_)) => fresh(k),
+        | SourceKind::Wall(_)
+        | SourceKind::Auction(_)) => fresh(k),
         SourceKind::Guest(g) => clean_guest(g)?,
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {
