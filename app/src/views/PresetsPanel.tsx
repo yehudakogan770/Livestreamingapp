@@ -26,8 +26,11 @@ export function PresetsPanel({ show, client, act }: { show: Show; client: Engine
       )}
       <ol className="presets__list">
         {show.presets.length === 0 && (
-          <li className="presets__empty">
-            A preset is a part of the event (Opening, Speaker, Video…): its inputs, transition and buttons. Add one to run the show in order.
+          <li
+            className="presets__empty"
+            title="A preset is a part of the event (Opening, Speaker, Video…): its inputs, transition and buttons. Add one to run the show in order."
+          >
+            No presets yet.
           </li>
         )}
         {list.map(({ p, n }) => {
@@ -51,14 +54,16 @@ export function PresetsPanel({ show, client, act }: { show: Show; client: Engine
           );
         })}
       </ol>
-      <div className="presets__nav">
-        <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'previousPreset' })}>
-          ◀ Prev
-        </button>
-        <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'nextPreset' })}>
-          Next ▶
-        </button>
-      </div>
+      {show.presets.length > 0 && (
+        <div className="presets__nav">
+          <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'previousPreset' })}>
+            ◀ Prev
+          </button>
+          <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'nextPreset' })}>
+            Next ▶
+          </button>
+        </div>
+      )}
       {editing && <PresetEditor show={show} client={client} act={act} preset={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
     </aside>
   );

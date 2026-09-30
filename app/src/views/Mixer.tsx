@@ -32,11 +32,7 @@ export function Mixer({ show, act }: { show: Show; act: Act }) {
         </button>
       </div>
       <div className="mixer__strips">
-        {sources.length === 0 && (
-          <div className="mixer__empty">
-            Videos and microphones get a channel here. Add a microphone with <strong>+ Add input</strong>.
-          </div>
-        )}
+        {sources.length === 0 && <div className="mixer__empty">No channels yet — videos and microphones appear here.</div>}
         {sources.map((src) => (
           <Strip key={src.id} src={src} show={show} act={act} problem={!!sound?.problems.has(src.id)} />
         ))}

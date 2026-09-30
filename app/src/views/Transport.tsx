@@ -4,12 +4,13 @@ import { useNow } from '../engine/useNow';
 import type { Act } from './act';
 
 /** Play / pause / skip and time for the video under a monitor. Empty for other sources. */
-export function Transport({ source, act, label }: { source: Source | undefined; act: Act; label: string }) {
+export function Transport({ source, act }: { source: Source | undefined; act: Act; label?: string }) {
   const now = useNow(false, 250);
   if (!source || source.kind.type !== 'video') {
     return (
       <div className="transport transport--empty">
-        <span className="transport__what">{source ? `${label} · ${source.name}` : `${label} · nothing`}</span>
+        {/* Its name is already above the picture: nothing to repeat here. */}
+        <span className="transport__what" aria-hidden />
       </div>
     );
   }

@@ -197,7 +197,7 @@ function Favourites({ show, screen, act, disabled }: { show: Show; screen: Scree
           title={`TAKE with ${transitionName(t)} (Ctrl+${i + 1}) — change these under the transition button`}
           onClick={() => act({ type: 'take', screen, transition: t.kind, durationMs: t.durationMs })}
         >
-          {transitionName(t)}
+          {KINDS.find((k) => k.kind === t.kind)?.name ?? t.kind}
         </button>
       ))}
     </div>

@@ -217,7 +217,7 @@ describe('Audio mixer', () => {
     expect(within(mixer).getByText('Stream')).toBeInTheDocument();
     expect(within(mixer).getByText('Hall')).toBeInTheDocument();
     expect(within(mixer).getByText('Recording')).toBeInTheDocument();
-    expect(within(mixer).getByText(/Add a microphone/)).toBeInTheDocument();
+    expect(within(mixer).getByText(/No channels yet/)).toBeInTheDocument();
   });
 
   it('muting the Stream mix is one click', async () => {
