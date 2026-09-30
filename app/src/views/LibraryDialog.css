@@ -1,6 +1,6 @@
 .lib {
   width: min(1000px, calc(100vw - 48px));
-  height: min(720px, calc(100vh - 48px));
+  height: min(720px, calc(100vh - 58px));
 }
 .lib__body {
   flex: 1;

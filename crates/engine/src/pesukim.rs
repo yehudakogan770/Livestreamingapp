@@ -21,6 +21,10 @@ pub struct Pasuk {
     pub child: String,
     /// The words, separated by spaces. A hyphen (-) joins two words shown together.
     pub text: String,
+    /// How each word sounds, word for word (the same spaces and hyphens).
+    pub translit: String,
+    /// What each word means, word for word; "_" for a word with none.
+    pub english: String,
 }
 
 impl Pasuk {
@@ -43,8 +47,11 @@ pub fn words_of(text: &str) -> Vec<String> {
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum PesukimMode {
-    /// Just the word being said, big.
+    /// A bar along the bottom, over the picture: the words in Hebrew, how
+    /// they sound and what they mean, the word being said lit.
     #[default]
+    Bar,
+    /// Just the word being said, big.
     Word,
     /// The word big, with the whole pasuk in a bar at the bottom.
     Strip,
@@ -64,6 +71,7 @@ pub enum WordChange {
 }
 
 /// How the pesukim look.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 #[ts(export)]
@@ -71,8 +79,16 @@ pub struct PesukimLook {
     pub mode: PesukimMode,
     /// Words already said stay on screen (the pasuk builds up).
     pub keep_said: bool,
-    /// The child's name in the corner.
+    /// The child's name comes up before their pasuk.
     pub show_name: bool,
+    /// How the words sound, under the Hebrew.
+    pub show_translit: bool,
+    /// What the words mean, under that.
+    pub show_english: bool,
+    /// The bar's design (one of the built-in ones), when no picture is chosen.
+    pub design: String,
+    /// A picture of your own for the bar (a file on this computer), or empty.
+    pub bar_image: String,
     /// Background colour.
     pub background: String,
     /// An input shown behind the words (a camera, usually).
@@ -90,9 +106,13 @@ pub struct PesukimLook {
 impl Default for PesukimLook {
     fn default() -> Self {
         PesukimLook {
-            mode: PesukimMode::Word,
+            mode: PesukimMode::Bar,
             keep_said: false,
             show_name: true,
+            show_translit: true,
+            show_english: true,
+            design: "gold".to_owned(),
+            bar_image: String::new(),
             background: "#15213a".to_owned(),
             behind: None,
             text_color: "#ffe39e".to_owned(),
@@ -116,6 +136,8 @@ pub struct PesukimPlace {
     pub whole: bool,
     /// Words hidden; the background stays.
     pub blank: bool,
+    /// The child's name, before the first word of their pasuk.
+    pub intro: bool,
     /// When the word last changed (for the word animation and auto-advance).
     #[ts(type = "number")]
     pub changed_at: Millis,
@@ -143,6 +165,15 @@ impl Default for Pesukim {
 }
 
 impl Pesukim {
+    /// This pasuk starts with the child's name.
+    fn intro_for(&self, pasuk: usize) -> bool {
+        self.look.show_name
+            && self
+                .pesukim
+                .get(pasuk)
+                .is_some_and(|p| !p.child.trim().is_empty())
+    }
+
     fn word_count(&self, pasuk: usize) -> usize {
         self.pesukim.get(pasuk).map_or(0, |p| p.words().len())
     }
@@ -150,6 +181,14 @@ impl Pesukim {
     /// Next word; after the last word, the first word of the next pasuk.
     /// Returns false at the very end.
     pub fn next(&mut self, now: Millis) -> bool {
+        if self.place.intro {
+            self.place.intro = false;
+            self.place.whole = false;
+            self.place.blank = false;
+            self.place.changed_at = now;
+            return true;
+        }
+        let intro = self.intro_for(self.place.pasuk + 1);
         let p = &mut self.place;
         let len = self.pesukim.get(p.pasuk).map_or(0, |x| x.words().len());
         let moved = if p.word + 1 < len {
@@ -158,6 +197,7 @@ impl Pesukim {
         } else if p.pasuk + 1 < PESUKIM {
             p.pasuk += 1;
             p.word = 0;
+            p.intro = intro;
             true
         } else {
             false
@@ -172,7 +212,17 @@ impl Pesukim {
 
     /// Back a word; before the first word, the last word of the pasuk before.
     pub fn back(&mut self, now: Millis) {
-        if self.place.word > 0 {
+        if self.place.intro {
+            self.place.intro = false;
+            if self.place.pasuk == 0 {
+                self.place.changed_at = now;
+                return;
+            }
+            self.place.pasuk -= 1;
+            self.place.word = self.word_count(self.place.pasuk).saturating_sub(1);
+        } else if self.place.word == 0 && self.intro_for(self.place.pasuk) {
+            self.place.intro = true;
+        } else if self.place.word > 0 {
             self.place.word -= 1;
         } else if self.place.pasuk > 0 {
             self.place.pasuk -= 1;
@@ -189,11 +239,14 @@ impl Pesukim {
     pub fn go(&mut self, pasuk: usize, word: usize, now: Millis) {
         let pasuk = pasuk.min(PESUKIM - 1);
         let last = self.word_count(pasuk).saturating_sub(1);
+        let word = word.min(last);
         self.place = PesukimPlace {
             pasuk,
-            word: word.min(last),
+            word,
             whole: false,
             blank: false,
+            // A new pasuk starts with the child's name (not a jump within one).
+            intro: word == 0 && pasuk != self.place.pasuk && self.intro_for(pasuk),
             changed_at: now,
         };
     }
@@ -216,10 +269,16 @@ impl Pesukim {
         for p in &mut self.pesukim {
             p.child = crate::engine::short_text(&p.child, MAX_CHILD_LEN);
             p.text = p.text.trim().chars().take(MAX_PASUK_LEN).collect();
+            p.translit = p.translit.trim().chars().take(MAX_PASUK_LEN).collect();
+            p.english = p.english.trim().chars().take(MAX_PASUK_LEN).collect();
         }
         let l = &mut self.look;
         l.size = l.size.clamp(4, 60);
         l.auto_ms = l.auto_ms.map(|ms| ms.clamp(500, 60_000));
+        l.design = crate::engine::short_text(&l.design, 20);
+        if l.design.is_empty() {
+            l.design = PesukimLook::default().design;
+        }
         if l.font.trim().is_empty() {
             l.font = PesukimLook::default().font;
         }

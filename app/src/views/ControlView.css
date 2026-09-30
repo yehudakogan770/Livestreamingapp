@@ -488,6 +488,13 @@
   border-radius: 4px;
   background: linear-gradient(90deg, rgba(79, 179, 191, 0.25), rgba(79, 179, 191, 0.55));
 }
+/* Springing back to the left after a mix. */
+.tbar__track.is-resting .tbar__handle,
+.tbar__track.is-resting .tbar__fill {
+  transition:
+    left 0.35s cubic-bezier(0.2, 0.8, 0.3, 1),
+    right 0.35s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
 .tbar__handle {
   position: absolute;
   top: 2px;
@@ -818,11 +825,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Below the title bar (it stays on top, with its menus). */
+  padding-top: 34px;
   background: rgba(8, 9, 11, 0.7);
 }
 .modal__box {
   width: min(880px, calc(100vw - 48px));
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - 58px);
   display: flex;
   flex-direction: column;
   border-radius: 10px;

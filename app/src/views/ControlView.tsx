@@ -24,10 +24,8 @@ import { PerfChip } from '../broadcast/PerfChip';
 import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
 import { snapshot, snapshotName } from '../broadcast/snapshot';
-import { CreditsCard, creditsTarget } from './CreditsCard';
+import { CreditsCard } from './CreditsCard';
 import { SlideshowCard } from './SlideshowCard';
-import { slideshowTarget } from '../engine/slideshow';
-import { pesukimTarget } from '../engine/pesukim';
 import { Mixer } from './Mixer';
 import { PresetsPanel } from './PresetsPanel';
 import { PresetButtons } from './PresetButtons';
@@ -223,6 +221,13 @@ export function ControlView({
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
   const name = SCREENS.find((s) => s.id === screen)?.name ?? '';
 
+  // The controls for what is in Next (as soon as it is lined up), else for what is on air.
+  const cardFor = (id: string | null) => {
+    const k = find(id)?.kind.type;
+    return k === 'pesukim' || k === 'slideshow' || k === 'credits' || k === 'countdown' ? k : null;
+  };
+  const card = screen === 'monitor' ? null : ((sc.preview !== sc.program ? cardFor(sc.preview) : null) ?? cardFor(sc.program));
+
   return (
     <div className="control">
       <div className="control__main">
@@ -247,11 +252,11 @@ export function ControlView({
               <div className="centre">
                 <SwitchPanel show={show} screen={screen} act={act} onStingers={() => setStingers(true)} />
                 <div className="centre__more">
-                  {pesukimTarget(show, screen) ? (
+                  {card === 'pesukim' ? (
                     <PesukimCard show={show} act={act} screen={screen} client={client} />
-                  ) : slideshowTarget(show, screen) ? (
+                  ) : card === 'slideshow' ? (
                     <SlideshowCard show={show} act={act} screen={screen} client={client} />
-                  ) : creditsTarget(show, screen) ? (
+                  ) : card === 'credits' ? (
                     <CreditsCard show={show} act={act} screen={screen} />
                   ) : (
                     <CountdownMini show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />

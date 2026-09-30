@@ -296,7 +296,7 @@ function apply(s: Show, a: Action, now: number) {
             ? {
                 ...structuredClone(a.source.kind),
                 look: { ...a.source.kind.look, behind: null },
-                place: { pasuk: 0, word: 0, whole: false, blank: false, changedAt: 0 },
+                place: { pasuk: 0, word: 0, whole: false, blank: false, intro: false, changedAt: 0 },
               }
             : a.source.kind;
       if (kind.type === 'pesukim') repairPesukim(kind);
@@ -1371,7 +1371,10 @@ function apply(s: Show, a: Action, now: number) {
     case 'pesukimWhole': {
       const pl = pesukimIn(s, a.id).place;
       pl.whole = a.value;
-      if (a.value) pl.blank = false;
+      if (a.value) {
+        pl.blank = false;
+        pl.intro = false;
+      }
       pl.changedAt = now;
       return;
     }

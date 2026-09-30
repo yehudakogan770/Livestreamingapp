@@ -33,7 +33,7 @@ A feature only counts as finished when **all** of these are true:
 - ★ Screens assigned to physical displays once in Settings, remembered for every event
 - ★ Preview and Program monitors per screen, with source name and resolution
 - ★ **TAKE** plays the chosen transition; **CUT** switches instantly
-- ★ **T-bar** that drags side to side, with a live crossfade, and stays where it lands (broadcast style)
+- ★ **T-bar** that drags from the left with a live crossfade, stays where it lands mid-mix, and springs back to the left once the mix is complete
 - ★ Transitions: Cut, Fade, Merge, Dip to black, Wipe, Slide — duration adjustable per button
 - ★ As many transition buttons as needed, each with its own type and length
 - ★ Double-click an input to send it straight to air
@@ -68,7 +68,7 @@ A feature only counts as finished when **all** of these are true:
 
 ## 3. Auto controls
 
-- ★ When a **countdown, 12 Pesukim, slideshow, credits or browser** goes on air, its controls open automatically above the inputs
+- ★ When a **countdown, 12 Pesukim, slideshow, credits or browser** is lined up in Next (or goes on air), its controls open automatically
 - ★ They close when it leaves the air; can be dismissed with ×
 - ◆ Every source type can define its own quick controls
 
@@ -142,8 +142,11 @@ A feature only counts as finished when **all** of these are true:
 - ★ **One word at a time** — the child says it, the crowd repeats it
 - ★ Next word (Space / clicker / remote), back a word, whole pasuk, next pasuk, blank
 - ★ Word strip to jump to any word; next word always visible
-- ★ Display modes: one word / word + pasuk bar / whole pasuk
-- ★ Child's name per pasuk; words editable; hyphen joins two words
+- ★ **The 12 Pesukim built in** — Hebrew with nikkud, how each word sounds and what each word means, ready the moment the input is added
+- ★ **Bar along the bottom** over the camera (or as an overlay): Hebrew, transliteration and English together, the word being said lit on all three lines
+- ★ Bar designs (gold frame, royal blue, glass, night sky, simple dark), or **your own design** as a picture
+- ★ Display modes: bar / one word / big word + line / whole pasuk
+- ★ The child's name comes up **before** their pasuk (not the whole time); words editable; hyphen joins two words
 - ★ Backgrounds or camera behind; fonts, sizes, colours
 - ◆ Auto-advance timing; videos between pesukim
 - ◆ Presenter clicker support

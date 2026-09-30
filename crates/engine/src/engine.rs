@@ -626,6 +626,7 @@ fn apply_pesukim(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             p.place.whole = value;
             if value {
                 p.place.blank = false;
+                p.place.intro = false;
             }
             p.place.changed_at = now;
             Ok(())

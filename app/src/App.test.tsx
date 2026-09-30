@@ -394,7 +394,7 @@ describe('Recording and streaming', () => {
 });
 
 describe('12 Pesukim', () => {
-  it('pastes the pesukim, then Space and the clicker keys move word by word; B hides only the words', async () => {
+  it('comes filled in; pasting changes them, then Space and the clicker keys move word by word; B hides only the words', async () => {
     await start();
     fireEvent.click(screen.getAllByRole('button', { name: /Add input/ })[0]!);
     const add = screen.getByRole('dialog', { name: 'Add input' });
@@ -402,7 +402,10 @@ describe('12 Pesukim', () => {
     await act(async () => {
       fireEvent.click(within(add).getByRole('button', { name: 'Add input' }));
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Type or paste the 12 pesukim' }));
+    // The twelve come filled in, with how each word sounds and what it means.
+    expect(screen.getByTestId('pesukim-now').textContent).toBe('תּוֹרָה');
+    expect(document.querySelector('.pk__sound')?.textContent).toBe('Torah · The Torah');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit…' }));
     const ed = screen.getByRole('dialog', { name: '12 Pesukim' });
     fireEvent.click(within(ed).getByRole('button', { name: 'Paste all 12…' }));
     fireEvent.change(within(ed).getByLabelText('Paste the pesukim'), { target: { value: 'Mendel: תּוֹרָה צִוָּה לָנוּ\nשְׁמַע יִשְׂרָאֵל' } });

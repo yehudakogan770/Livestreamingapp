@@ -41,9 +41,10 @@ export function slideDue(sh: Slideshow, now: number): boolean {
 export function slideshowTarget(show: Show, screen: ScreenId): { id: string; where: 'onAir' | 'next'; sh: Slideshow } | null {
   if (screen === 'monitor') return null;
   const sc = show.screens[screen];
+  // What is in Next first: its controls come up as soon as it is lined up.
   for (const [id, where] of [
+    [sc.preview, sc.preview === sc.program ? 'onAir' : 'next'],
     [sc.program, 'onAir'],
-    [sc.preview, 'next'],
   ] as const) {
     const k = show.sources.find((s) => s.id === id)?.kind;
     if (id && k?.type === 'slideshow') return { id, where, sh: k };

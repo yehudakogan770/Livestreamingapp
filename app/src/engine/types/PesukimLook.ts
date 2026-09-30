@@ -12,9 +12,25 @@ export type PesukimLook = { mode: PesukimMode,
  */
 keepSaid: boolean, 
 /**
- * The child's name in the corner.
+ * The child's name comes up before their pasuk.
  */
 showName: boolean, 
+/**
+ * How the words sound, under the Hebrew.
+ */
+showTranslit: boolean, 
+/**
+ * What the words mean, under that.
+ */
+showEnglish: boolean, 
+/**
+ * The bar's design (one of the built-in ones), when no picture is chosen.
+ */
+design: string, 
+/**
+ * A picture of your own for the bar (a file on this computer), or empty.
+ */
+barImage: string, 
 /**
  * Background colour.
  */

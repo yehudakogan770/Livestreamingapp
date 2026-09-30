@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { PesukimLook } from '../engine/types/PesukimLook';
 import type { Pasuk } from '../engine/types/Pasuk';
-import { PESUKIM, parsePaste, pesukimOf, wordsOf, type PesukimData } from '../engine/pesukim';
+import { BAR_DESIGNS, glossesOf, PESUKIM, parsePaste, pesukimOf, standardPesukim, wordsOf, type PesukimData } from '../engine/pesukim';
 import { PesukimView } from '../components/PesukimView';
 import { SourceView } from '../components/SourceView';
 import type { EngineClient } from '../engine/client';
@@ -23,6 +23,16 @@ const TEXT_COLOURS = [
 const FONTS = ['Frank Ruhl Libre', 'David Libre', 'Heebo'];
 const BEHIND_KINDS = ['camera', 'video', 'image', 'color', 'pattern', 'visuals'];
 
+/** The three lines don't have the same number of words. */
+function mismatch(p: Pasuk): string {
+  const he = wordsOf(p.text).length;
+  const tr = wordsOf(p.translit).length;
+  const en = glossesOf(p.english).length;
+  if (!he) return '';
+  const off = [tr && tr !== he ? `how it sounds has ${tr} words` : '', en && en !== he ? `English has ${en}` : ''].filter(Boolean);
+  return off.length ? `The Hebrew has ${he} words; ${off.join(', ')}.` : '';
+}
+
 /** Type or paste the twelve pesukim and the children's names, and choose the look. Applied on Done. */
 export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; id: string; act: Act; onClose: () => void; client?: EngineClient }) {
   const current = pesukimOf(show, id);
@@ -41,14 +51,20 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
   const setPasuk = (i: number, patch: Partial<Pasuk>) => setList((l) => l.map((p, j) => (j === i ? { ...p, ...patch } : p)));
   const pictures = show.sources.filter((s) => BEHIND_KINDS.includes(s.kind.type));
   const behind = look.behind ? show.sources.find((s) => s.id === look.behind) : undefined;
-  const preview: PesukimData = { pesukim: list, look, place: { pasuk: previewAt, word: 0, whole: false, blank: false, changedAt: 0 } };
+  const preview: PesukimData = { pesukim: list, look, place: { pasuk: previewAt, word: 1, whole: false, blank: false, intro: false, changedAt: 0 } };
+  const fill = () => setList((l) => standardPesukim(l.map((p) => p.child)));
+  const pickBar = async () => {
+    if (!client) return;
+    const [f] = await client.pickFiles('image');
+    if (f) set({ barImage: f.path });
+  };
   const done = () => {
     act({ type: 'updatePesukim', id, pesukim: list, look });
     onClose();
   };
   const applyPaste = () => {
     const rows = parsePaste(pasting ?? '');
-    setList((l) => l.map((p, i) => (rows[i] ? { child: rows[i]!.child || p.child, text: rows[i]!.text } : p)));
+    setList((l) => l.map((p, i) => (rows[i] ? { ...p, child: rows[i]!.child || p.child, text: rows[i]!.text } : p)));
     setPasting(null);
   };
 
@@ -65,9 +81,14 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
           <section className="pked__list" aria-label="The pesukim">
             <div className="pked__listhead">
               <span className="field__label">Pesukim and children</span>
-              <button type="button" className="btn" onClick={() => setPasting('')}>
-                Paste all 12…
-              </button>
+              <span className="bcd__row">
+                <button type="button" className="btn" onClick={fill} title="The Hebrew, how it sounds and what it means (the children's names stay)">
+                  Fill in the 12 Pesukim
+                </button>
+                <button type="button" className="btn" onClick={() => setPasting('')}>
+                  Paste all 12…
+                </button>
+              </span>
             </div>
             {pasting !== null && (
               <div className="pked__paste">
@@ -103,19 +124,39 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                   onChange={(e) => setPasuk(i, { child: e.target.value })}
                   aria-label={`Child for pasuk ${i + 1}`}
                 />
-                <textarea
-                  className="text pked__text"
-                  dir="auto"
-                  rows={2}
-                  value={p.text}
-                  placeholder="The words of the pasuk"
-                  onChange={(e) => setPasuk(i, { text: e.target.value })}
-                  aria-label={`Pasuk ${i + 1}`}
-                />
+                <div className="pked__texts">
+                  <textarea
+                    className="text pked__text"
+                    dir="auto"
+                    rows={2}
+                    value={p.text}
+                    placeholder="The words of the pasuk (Hebrew)"
+                    onChange={(e) => setPasuk(i, { text: e.target.value })}
+                    aria-label={`Pasuk ${i + 1}`}
+                  />
+                  <input
+                    className="text"
+                    value={p.translit}
+                    placeholder="How it sounds, word for word"
+                    onChange={(e) => setPasuk(i, { translit: e.target.value })}
+                    aria-label={`Pasuk ${i + 1} transliteration`}
+                  />
+                  <input
+                    className="text"
+                    value={p.english}
+                    placeholder="What it means, word for word"
+                    onChange={(e) => setPasuk(i, { english: e.target.value })}
+                    aria-label={`Pasuk ${i + 1} English`}
+                  />
+                  {mismatch(p) && <span className="field__note pked__warn">{mismatch(p)}</span>}
+                </div>
                 <span className="pked__count">{wordsOf(p.text).length || ''}</span>
               </div>
             ))}
-            <p className="field__note">Each space starts a new word. To show two words together, join them with a hyphen (e.g. ה׳-אֱלֹקֵינוּ).</p>
+            <p className="field__note">
+              Each space starts a new word. To show two words together, join them with a hyphen (e.g. ה׳-אֱלֹקֵינוּ). Keep the same number of words on all three
+              lines, so the right words light up together; use _ for a word with no English.
+            </p>
           </section>
 
           <section className="pked__look" aria-label="Look">
@@ -126,8 +167,9 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
             <div className="seg-group">
               {(
                 [
+                  ['bar', 'Bar'],
                   ['word', 'One word'],
-                  ['strip', 'Word + pasuk bar'],
+                  ['strip', 'Big word + line'],
                   ['pasuk', 'Whole pasuk'],
                 ] as const
               ).map(([m, name]) => (
@@ -146,8 +188,46 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
               <input type="checkbox" checked={look.keepSaid} onChange={(e) => set({ keepSaid: e.target.checked })} /> Keep words already said on screen
             </label>
             <label className="check">
-              <input type="checkbox" checked={look.showName} onChange={(e) => set({ showName: e.target.checked })} /> Show the child’s name
+              <input type="checkbox" checked={look.showName} onChange={(e) => set({ showName: e.target.checked })} /> Show the child’s name before their pasuk
             </label>
+            <label className="check">
+              <input type="checkbox" checked={look.showTranslit} onChange={(e) => set({ showTranslit: e.target.checked })} /> How it sounds (transliteration)
+            </label>
+            <label className="check">
+              <input type="checkbox" checked={look.showEnglish} onChange={(e) => set({ showEnglish: e.target.checked })} /> What it means (English)
+            </label>
+            {look.mode === 'bar' && (
+              <>
+                <span className="field__label">Bar design</span>
+                <div className="pked__swatches">
+                  {BAR_DESIGNS.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      className={`pked__swatch pked__design${!look.barImage && look.design === d.id ? ' is-on' : ''}`}
+                      style={{ background: `linear-gradient(${d.top}, ${d.bottom})`, borderColor: d.edge }}
+                      onClick={() => set({ design: d.id, barImage: '' })}
+                    >
+                      {d.name}
+                    </button>
+                  ))}
+                </div>
+                <div className="bcd__row">
+                  <button type="button" className={`btn${look.barImage ? ' is-on' : ''}`} onClick={() => void pickBar()} disabled={!client}>
+                    {look.barImage ? '✓ My own picture — change' : '🖼 Use my own design (a picture)'}
+                  </button>
+                  {look.barImage && (
+                    <button type="button" className="btn btn--small" onClick={() => set({ barImage: '' })}>
+                      Remove
+                    </button>
+                  )}
+                </div>
+                <p className="field__note">
+                  Your own design: a picture made for the bar (a wide PNG, about 1650 × 240; see-through parts show the picture behind). The words go on top.
+                  Put this input on as an overlay over the camera, or choose the camera below.
+                </p>
+              </>
+            )}
             <label className="check">
               <input type="checkbox" checked={look.autoMs !== null} onChange={(e) => set({ autoMs: e.target.checked ? 3000 : null })} /> Next word by itself
               every
@@ -165,8 +245,8 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
               s
             </label>
 
-            <span className="field__label">Background</span>
-            <div className="pked__swatches">
+            {look.mode !== 'bar' && <span className="field__label">Background</span>}
+            <div className="pked__swatches" hidden={look.mode === 'bar'}>
               {BACKGROUNDS.map((b) => (
                 <button
                   key={b.color}
@@ -221,7 +301,7 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                 <option value="cut">Words just change</option>
               </select>
             </div>
-            <label className="field">
+            <label className="field" hidden={look.mode === 'bar'}>
               <span className="field__label">Word size</span>
               <input type="range" min={8} max={40} value={look.size} onChange={(e) => set({ size: Number(e.target.value) })} aria-label="Word size" />
             </label>

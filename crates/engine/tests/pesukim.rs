@@ -36,6 +36,7 @@ fn pasuk(child: &str, text: &str) -> Pasuk {
     Pasuk {
         child: child.into(),
         text: text.into(),
+        ..Pasuk::default()
     }
 }
 
@@ -90,6 +91,58 @@ fn next_goes_word_by_word_then_on_to_the_next_pasuk() {
         (0, 2),
         "back from the first word: the last word before"
     );
+}
+
+#[test]
+fn the_childs_name_comes_before_their_pasuk_only() {
+    let mut e = setup();
+    let next = Action::PesukimNext { id: id("p") };
+    for t in 1..=3 {
+        apply(&mut e, next.clone(), t);
+    }
+    let p = e.show().pesukim(&id("p")).unwrap();
+    assert_eq!((p.place.pasuk, p.place.word, p.place.intro), (1, 0, true));
+    apply(&mut e, next.clone(), 4);
+    let p = e.show().pesukim(&id("p")).unwrap();
+    assert_eq!((p.place.pasuk, p.place.word, p.place.intro), (1, 0, false));
+    apply(&mut e, Action::PesukimBack { id: id("p") }, 5);
+    assert!(
+        e.show().pesukim(&id("p")).unwrap().place.intro,
+        "back to the name"
+    );
+    // Jumping to the first word of the same pasuk: straight to it.
+    apply(
+        &mut e,
+        Action::PesukimGo {
+            id: id("p"),
+            pasuk: 1,
+            word: 0,
+        },
+        6,
+    );
+    assert!(!e.show().pesukim(&id("p")).unwrap().place.intro);
+    // Another pasuk: the name first.
+    apply(
+        &mut e,
+        Action::PesukimGo {
+            id: id("p"),
+            pasuk: 0,
+            word: 0,
+        },
+        6,
+    );
+    assert!(e.show().pesukim(&id("p")).unwrap().place.intro);
+    // A pasuk with no child's name goes straight to the words.
+    apply(
+        &mut e,
+        Action::PesukimGo {
+            id: id("p"),
+            pasuk: 5,
+            word: 0,
+        },
+        6,
+    );
+    assert!(!e.show().pesukim(&id("p")).unwrap().place.intro);
 }
 
 #[test]

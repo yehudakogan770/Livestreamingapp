@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { EngineClient } from '../engine/client';
-import { PESUKIM, pesukimOf, pesukimTarget, wordsOf } from '../engine/pesukim';
+import { glossesOf, PESUKIM, pesukimOf, pesukimTarget, standardPesukim, wordsOf } from '../engine/pesukim';
 import { PesukimEditor } from './PesukimEditor';
 import type { Act } from './act';
 import './PesukimCard.css';
@@ -56,10 +56,19 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
 
   if (!target || !data) return null;
   const id = target.id;
-  const { pasuk, word, whole, blank } = data.place;
+  const { pasuk, word, whole, blank, intro } = data.place;
   const words = wordsOf(data.pesukim[pasuk]?.text ?? '');
-  const atEnd = word >= words.length - 1;
-  const nextWord = atEnd ? (pasuk + 1 < PESUKIM ? `(pasuk ${pasuk + 2})` : '(the end)') : words[word + 1];
+  const atEnd = !intro && word >= words.length - 1;
+  const nextChild = data.pesukim[pasuk + 1]?.child.trim();
+  const nextWord = intro
+    ? words[0]
+    : atEnd
+      ? pasuk + 1 < PESUKIM
+        ? `(pasuk ${pasuk + 2}${data.look.showName && nextChild ? ` · ${nextChild}’s name` : ''})`
+        : '(the end)'
+      : words[word + 1];
+  const sound = wordsOf(data.pesukim[pasuk]?.translit ?? '')[word];
+  const meaning = glossesOf(data.pesukim[pasuk]?.english ?? '')[word];
   const child = data.pesukim[pasuk]?.child;
   const filled = data.pesukim.filter((p) => p.text.trim()).length;
   const font = `"${data.look.font}", "Frank Ruhl Libre", serif`;
@@ -83,14 +92,38 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
       </div>
 
       {filled === 0 ? (
-        <button type="button" className="btn btn--primary pk__empty" onClick={() => setEditing(true)}>
-          Type or paste the 12 pesukim
-        </button>
+        <div className="pk__row">
+          <button
+            type="button"
+            className="btn btn--primary pk__empty"
+            onClick={() => act({ type: 'updatePesukim', id, pesukim: standardPesukim(data.pesukim.map((p) => p.child)) })}
+          >
+            Fill in the 12 Pesukim
+          </button>
+          <button type="button" className="btn" onClick={() => setEditing(true)}>
+            Type my own…
+          </button>
+        </div>
       ) : (
         <>
           <div className="pk__now" dir="auto" style={{ fontFamily: font }} data-testid="pesukim-now">
-            {blank ? <span className="pk__off">words hidden</span> : whole ? words.join(' ') : (words[word] ?? '—')}
+            {blank ? (
+              <span className="pk__off">words hidden</span>
+            ) : intro ? (
+              <span className="pk__intro">Showing {child ? `${child}’s name` : 'the name'}</span>
+            ) : whole ? (
+              words.join(' ')
+            ) : (
+              (words[word] ?? '—')
+            )}
           </div>
+          {!intro && !whole && !blank && (sound || meaning) && (
+            <div className="pk__sound">
+              {sound && <i>{sound}</i>}
+              {sound && meaning && ' · '}
+              {meaning}
+            </div>
+          )}
           <div className="pk__next" dir="auto">
             Next: <span style={{ fontFamily: font }}>{nextWord}</span>
           </div>
@@ -99,7 +132,7 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
               ‹ Back
             </button>
             <button type="button" className="btn btn--primary pk__go" onClick={() => act({ type: 'pesukimNext', id })} title="Space, → or the clicker">
-              {atEnd && pasuk + 1 < PESUKIM ? 'Next pasuk ›' : 'Next word ›'}
+              {intro ? 'First word ›' : atEnd && pasuk + 1 < PESUKIM ? 'Next pasuk ›' : 'Next word ›'}
               <kbd>Space</kbd>
             </button>
           </div>
@@ -141,7 +174,7 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
                 <button
                   key={i}
                   type="button"
-                  className={i === word ? 'is-now' : i < word ? 'is-said' : ''}
+                  className={intro ? '' : i === word ? 'is-now' : i < word ? 'is-said' : ''}
                   style={{ fontFamily: font }}
                   onClick={() => act({ type: 'pesukimGo', id, pasuk, word: i })}
                   ref={i === word ? (el) => el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }) : undefined}

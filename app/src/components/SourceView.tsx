@@ -260,6 +260,7 @@ function PesukimInput({ source, client, thumb, audience }: { source: Source; cli
   return (
     <PesukimView
       data={source.kind}
+      url={(p) => client.mediaUrl(p)}
       behind={behind && behind.kind.type !== 'pesukim' ? <SourceBody source={behind} client={client} thumb={thumb} audience={audience} /> : null}
     />
   );

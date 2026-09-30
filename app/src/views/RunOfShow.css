@@ -44,7 +44,7 @@
 /* ---- the window ---- */
 .ros {
   width: min(1320px, calc(100vw - 48px));
-  height: min(860px, calc(100vh - 48px));
+  height: min(860px, calc(100vh - 58px));
 }
 .ros__run {
   display: flex;

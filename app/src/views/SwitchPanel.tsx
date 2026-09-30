@@ -288,20 +288,17 @@ function FadeLength({ show, act }: { show: Show; act: Act }) {
 }
 
 /**
- * The manual fader. It works from whichever end it is resting at, like a real
- * vision mixer: push it across to complete the mix, and next time pull it back.
+ * The manual fader. Push it across from the left to mix to Next; when the
+ * mix is complete it springs back to the left, ready for the next one.
  */
 function TBar({ show, screen, act, disabled }: { show: Show; screen: ScreenId; act: Act; disabled: boolean }) {
   const track = useRef<HTMLDivElement>(null);
-  const [home, setHome] = useState<Record<ScreenId, 0 | 1>>({ live: 0, back: 0, monitor: 0 });
   const [drag, setDrag] = useState<number | null>(null);
   const pending = useRef<number | null>(null);
   const frame = useRef(0);
   // Set once a drag has completed the mix, so it is completed exactly once.
   const done = useRef(false);
-  const h = home[screen];
-  const value = drag ?? show.screens[screen].tbar;
-  const pos = h === 0 ? value : 1 - value;
+  const pos = drag ?? show.screens[screen].tbar;
 
   const send = useCallback(
     (v: number) => {
@@ -321,25 +318,24 @@ function TBar({ show, screen, act, disabled }: { show: Show; screen: ScreenId; a
   const valueAt = (clientX: number) => {
     const r = track.current?.getBoundingClientRect();
     if (!r || r.width === 0) return 0;
-    const x = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
-    return h === 0 ? x : 1 - x;
+    return Math.min(1, Math.max(0, (clientX - r.left) / r.width));
   };
 
   return (
     <div className="tbar">
       <div className="tbar__labels">
-        <span>{h === 0 ? 'On air' : 'Next'}</span>
+        <span>On air</span>
         <span>drag to mix</span>
-        <span>{h === 0 ? 'Next' : 'On air'}</span>
+        <span>Next</span>
       </div>
       <div
         ref={track}
-        className={`tbar__track${disabled ? ' is-disabled' : ''}`}
+        className={`tbar__track${disabled ? ' is-disabled' : ''}${drag === null ? ' is-resting' : ''}`}
         role="slider"
         aria-label="T-bar"
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={Math.round(value * 100)}
+        aria-valuenow={Math.round(pos * 100)}
         tabIndex={disabled ? -1 : 0}
         onPointerDown={(e) => {
           if (disabled) return;
@@ -354,10 +350,9 @@ function TBar({ show, screen, act, disabled }: { show: Show; screen: ScreenId; a
           const v = valueAt(e.clientX);
           if (v >= 0.995) {
             // All the way across: the mix is complete. The engine finishes the
-            // take; the fader now rests at this end for the next one.
+            // take, and the fader springs back to the left.
             done.current = true;
             send(1);
-            setHome((m) => ({ ...m, [screen]: h === 0 ? 1 : 0 }));
             setDrag(null);
             return;
           }
@@ -367,7 +362,7 @@ function TBar({ show, screen, act, disabled }: { show: Show; screen: ScreenId; a
         onPointerUp={() => setDrag(null)}
         onPointerCancel={() => setDrag(null)}
       >
-        <div className="tbar__fill" style={{ left: h === 0 ? 0 : `${pos * 100}%`, right: h === 0 ? `${(1 - pos) * 100}%` : 0 }} />
+        <div className="tbar__fill" style={{ left: 0, right: `${(1 - pos) * 100}%` }} />
         <div className="tbar__handle" style={{ left: `${pos * 100}%` }} />
       </div>
     </div>

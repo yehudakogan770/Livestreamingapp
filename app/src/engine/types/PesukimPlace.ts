@@ -17,6 +17,10 @@ whole: boolean,
  */
 blank: boolean, 
 /**
+ * The child's name, before the first word of their pasuk.
+ */
+intro: boolean, 
+/**
  * When the word last changed (for the word animation and auto-advance).
  */
 changedAt: number, };

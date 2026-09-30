@@ -12,7 +12,7 @@ import { programLayers, type StingerPlay } from '../components/ScreenView';
 import { lumaMask } from '../engine/luma';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
-import { pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
+import { barChunks, barDesign, barLayout, glossesOf, pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
@@ -2333,10 +2333,17 @@ export class ProgramCompositor {
   private pesukim(data: PesukimData, event: EventInfo, now: number, w: number, h: number) {
     const ctx = this.ctx;
     const { look, place } = data;
-    ctx.fillStyle = look.background;
-    ctx.fillRect(0, 0, w, h);
+    const bar = look.mode === 'bar';
+    if (!bar) {
+      ctx.fillStyle = look.background;
+      ctx.fillRect(0, 0, w, h);
+    }
     const behind = look.behind ? this.show?.sources.find((s) => s.id === look.behind) : undefined;
     if (behind && behind.kind.type !== 'pesukim') this.drawSource(behind, event, now, w, h);
+    if (bar) {
+      this.pesukimBar(data, now, w, h);
+      return;
+    }
 
     const pasuk = data.pesukim[place.pasuk];
     const words = wordsOf(pasuk?.text ?? '');
@@ -2348,13 +2355,11 @@ export class ProgramCompositor {
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur = h * 0.03;
     ctx.shadowOffsetY = h * 0.006;
-    if (look.showName && pasuk?.child && !place.blank) {
-      ctx.font = `600 ${h * 0.034}px "Segoe UI", system-ui, sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.direction = 'ltr';
-      ctx.fillText(`Pasuk ${place.pasuk + 1} · ${pasuk.child}`, w * 0.04, h * 0.04);
+    if (place.intro && pasuk && !place.blank) {
+      ctx.fillStyle = look.textColor;
+      this.pesukimIntro(place.pasuk + 1, pasuk.child, (look.size * 0.6 * h) / 100, w / 2, h / 2, now - place.changedAt);
+      ctx.restore();
+      return;
     }
     if (text) {
       // Each new word makes its entrance (fade or pop), like the screens.
@@ -2376,11 +2381,163 @@ export class ProgramCompositor {
       ctx.scale(scale, scale);
       ctx.translate(-w / 2, -areaH / 2);
       lines.forEach((line, i) => ctx.fillText(line, w / 2, top + i * lineH));
+      // How the word sounds and what it means, under it.
+      const tr = !whole && look.showTranslit ? (wordsOf(pasuk?.translit ?? '')[place.word] ?? '') : '';
+      const en = !whole && look.showEnglish ? (glossesOf(pasuk?.english ?? '')[place.word] ?? '') : '';
+      let y = top + (lines.length - 1) * lineH + size * 0.62;
+      ctx.direction = 'ltr';
+      ctx.textBaseline = 'top';
+      if (tr) {
+        const ts = (look.size * 0.3 * h) / 100;
+        ctx.font = `italic 600 ${ts}px "Segoe UI", system-ui, sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.92)';
+        y += h * 0.015;
+        ctx.fillText(tr, w / 2, y);
+        y += ts * 1.25;
+      }
+      if (en) {
+        const es = (look.size * 0.24 * h) / 100;
+        ctx.font = `500 ${es}px "Segoe UI", system-ui, sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.fillText(en, w / 2, y + h * 0.006);
+      }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = 1;
     }
     ctx.restore();
     if (strip) this.pesukimStrip(words, place.word, look.textColor, font, w, h);
+  }
+
+  /** "Pasuk 3" and the child's name, centred on (x, y). */
+  private pesukimIntro(n: number, child: string, big: number, x: number, y: number, since: number) {
+    const ctx = this.ctx;
+    const t = ease(clamp01(since / 400));
+    ctx.save();
+    ctx.globalAlpha *= t;
+    ctx.translate(x, y);
+    ctx.scale(0.82 + 0.18 * t, 0.82 + 0.18 * t);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.direction = isRtl(child) ? 'rtl' : 'ltr';
+    const small = big * 0.45;
+    const total = small * 1.15 + big * 1.15;
+    ctx.font = `600 ${small}px "Segoe UI", system-ui, sans-serif`;
+    ctx.globalAlpha *= 0.8;
+    if ('letterSpacing' in ctx) ctx.letterSpacing = `${small * 0.12}px`;
+    ctx.fillText(`PASUK ${n}`, 0, -total / 2 + (small * 1.15) / 2);
+    if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+    ctx.globalAlpha /= 0.8;
+    ctx.font = `800 ${big}px "Segoe UI", system-ui, sans-serif`;
+    ctx.fillText(child, 0, total / 2 - (big * 1.15) / 2);
+    ctx.restore();
+  }
+
+  /** The bar along the bottom (mirrors PesukimView's PesukimBar and its CSS). */
+  private pesukimBar(data: PesukimData, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const { look, place } = data;
+    const pasuk = data.pesukim[place.pasuk];
+    const he = wordsOf(pasuk?.text ?? '');
+    if (place.blank || !pasuk || (!he.length && !place.intro)) return;
+    const u = h / 100;
+    const d = barDesign(look.design);
+    const L = barLayout(look);
+    const x = L.left * u;
+    const bw = w - (L.left + L.right) * u;
+    const bh = L.h * u;
+    const y = h - L.bottom * u - bh;
+    const img = look.barImage ? this.picture(look.barImage) : null;
+    const pic = !!look.barImage;
+    ctx.save();
+    ctx.beginPath();
+    ctx.roundRect(x, y, bw, bh, d.radius * u);
+    if (pic) {
+      ctx.clip();
+      if (img?.complete && img.naturalWidth) ctx.drawImage(img, x, y, bw, bh);
+    } else {
+      ctx.shadowColor = 'rgba(0,0,0,0.45)';
+      ctx.shadowBlur = 4 * u;
+      ctx.shadowOffsetY = u;
+      const g = ctx.createLinearGradient(0, y, 0, y + bh);
+      g.addColorStop(0, d.top);
+      g.addColorStop(1, d.bottom);
+      ctx.fillStyle = g;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.clip();
+      ctx.fillStyle = d.edge;
+      if (d.frame) {
+        ctx.lineWidth = 0.7 * u;
+        ctx.strokeStyle = d.edge;
+        ctx.stroke();
+      } else ctx.fillRect(x, y, bw, 0.5 * u);
+      // The pasuk's number in a circle, at the Hebrew end.
+      const r = (L.badge * u) / 2;
+      const cx = x + bw - 2.2 * u - r;
+      ctx.beginPath();
+      ctx.arc(cx, y + bh / 2, r, 0, Math.PI * 2);
+      ctx.fillStyle = d.badge;
+      ctx.fill();
+      ctx.fillStyle = d.badgeText;
+      ctx.font = `800 ${4.4 * u}px "Segoe UI", system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(place.pasuk + 1), cx, y + bh / 2);
+    }
+    const left = x + 3 * u;
+    const right = x + bw - 13 * u;
+    const mid = (left + right) / 2;
+    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+    ctx.shadowBlur = 0.8 * u;
+    ctx.shadowOffsetY = 0.2 * u;
+    ctx.fillStyle = '#fff';
+    if (place.intro) {
+      this.pesukimIntro(place.pasuk + 1, pasuk.child, 7.2 * u, mid, y + bh / 2, now - place.changedAt);
+      ctx.restore();
+      return;
+    }
+    const chunks = barChunks(pasuk);
+    const [from, to] = chunks.find(([, b]) => place.word < b) ?? chunks[0] ?? [0, 0];
+    const rows: { words: string[]; font: string; size: number; rtl: boolean }[] = [
+      { words: he, font: `700 ${L.he * u}px "${look.font}", "Frank Ruhl Libre", serif`, size: L.he, rtl: true },
+    ];
+    const tr = wordsOf(pasuk.translit);
+    const en = glossesOf(pasuk.english);
+    if (look.showTranslit && tr.length) rows.push({ words: tr, font: `italic 600 ${L.tr * u}px "Segoe UI", system-ui, sans-serif`, size: L.tr, rtl: false });
+    if (look.showEnglish && en.length) rows.push({ words: en, font: `500 ${L.en * u}px "Segoe UI", system-ui, sans-serif`, size: L.en, rtl: false });
+    const total = rows.reduce((n, r) => n + r.size * 1.3 * u, 0) + (rows.length - 1) * 0.2 * u;
+    let top = y + bh / 2 - total / 2;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.direction = 'ltr';
+    for (const row of rows) {
+      ctx.font = row.font;
+      ctx.direction = row.rtl ? 'rtl' : 'ltr';
+      const gap = row.size * u * 0.55;
+      const items = row.words
+        .slice(from, to)
+        .map((t, j) => ({ t, i: from + j, ww: t ? ctx.measureText(t).width : 0 }))
+        .filter((it) => it.t);
+      const width = items.reduce((n, it) => n + it.ww, 0) + gap * Math.max(0, items.length - 1);
+      // Too wide for the bar: squeeze to fit.
+      const room = right - left;
+      const squeeze = width > room ? room / width : 1;
+      const cy = top + (row.size * 1.3 * u) / 2;
+      ctx.save();
+      ctx.translate(mid, cy);
+      ctx.scale(squeeze, 1);
+      let cx = row.rtl ? width / 2 : -width / 2;
+      for (const it of items) {
+        if (row.rtl) cx -= it.ww;
+        ctx.fillStyle = place.whole || it.i < place.word ? 'rgba(255,255,255,0.95)' : it.i === place.word ? look.textColor : 'rgba(255,255,255,0.5)';
+        ctx.fillText(it.t, cx, 0);
+        if (row.rtl) cx -= gap;
+        else cx += it.ww + gap;
+      }
+      ctx.restore();
+      top += row.size * 1.3 * u + 0.2 * u;
+    }
+    ctx.restore();
   }
 
   /** The whole pasuk along the bottom, the word being said lit. */
