@@ -476,10 +476,15 @@ function useFitLayout() {
     measure();
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
     ro?.observe(w);
-    // Cards change (countdown, slides, pesukim…): check a few times a second.
+    // A card comes or goes (countdown, slides, pesukim…): placed before the
+    // screen is drawn, so it never shows in the wrong place first.
+    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(measure);
+    mo?.observe(w, { childList: true, subtree: true });
+    // Cards that grow or shrink as they run: check a few times a second.
     const id = setInterval(measure, 400);
     return () => {
       ro?.disconnect();
+      mo?.disconnect();
       clearInterval(id);
     };
   }, []);
