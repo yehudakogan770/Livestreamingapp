@@ -29,7 +29,7 @@ import { Logo3dView } from './Logo3dView';
 import { BrowserView, StreamView } from './BrowserView';
 import type { Logo3d } from '../engine/types/Logo3d';
 import { defaultVisuals } from '../engine/visuals';
-import { acquireCamera, releaseCamera } from '../engine/cameras';
+import { acquireCamera, releaseCamera, setCameraValues, type CameraValues } from '../engine/cameras';
 import { FrameDelay } from '../engine/frameDelay';
 
 // ---- views ----
@@ -114,7 +114,7 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
     case 'image':
       return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
-      return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} delayMs={source.videoDelayMs ?? 0} />;
+      return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} delayMs={source.videoDelayMs ?? 0} values={source.camera?.values} />;
     case 'text':
       return <DataText t={k} />;
     case 'credits':
@@ -431,8 +431,24 @@ function ImageView({ url, fit, audience }: { url: string; fit: 'cover' | 'contai
   );
 }
 
-function CameraView({ deviceId, fit, audience, delayMs = 0 }: { deviceId: string; fit: 'cover' | 'contain'; audience: boolean; delayMs?: number }) {
+function CameraView({
+  deviceId,
+  fit,
+  audience,
+  delayMs = 0,
+  values,
+}: {
+  deviceId: string;
+  fit: 'cover' | 'contain';
+  audience: boolean;
+  delayMs?: number;
+  values?: CameraValues;
+}) {
   const ref = useRef<HTMLVideoElement>(null);
+  // The camera's own settings (zoom, focus…), kept with the event.
+  useEffect(() => {
+    if (values) setCameraValues(deviceId, values);
+  }, [deviceId, values]);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
   const delayed = delayMs > 0;

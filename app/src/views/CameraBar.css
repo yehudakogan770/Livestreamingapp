@@ -1,0 +1,165 @@
+.cambar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  min-width: 0;
+}
+.cambar__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  padding-right: 3px;
+}
+.cambar__btn,
+.cambar__auto,
+.cambar__gear {
+  height: 24px;
+  padding: 0 7px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+}
+.cambar__btn {
+  max-width: 140px;
+  min-width: 0;
+}
+.cambar__btn b {
+  font-family: var(--mono);
+}
+.cambar__btn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+.cambar .cambar__btn.is-on {
+  background: var(--program);
+  border-color: var(--program-bright);
+}
+.cambar .cambar__btn.is-next {
+  border-color: var(--preview-bright, #3ecf6e);
+  box-shadow: inset 0 0 0 1px var(--preview-bright, #3ecf6e);
+}
+.cambar .cambar__btn.is-on span,
+.cambar .cambar__btn.is-next span {
+  color: #fff;
+}
+.cambar__btn.is-auto b::after {
+  content: '•';
+  margin-left: 2px;
+  color: var(--accent);
+}
+.cambar .cambar__auto.is-on {
+  background: #1d3b40;
+  border-color: var(--accent);
+  color: #fff;
+  animation: cambar-auto 1.6s ease-in-out infinite;
+}
+@keyframes cambar-auto {
+  50% {
+    box-shadow: 0 0 0 3px rgba(79, 179, 191, 0.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cambar .cambar__auto.is-on {
+    animation: none;
+  }
+}
+
+/* ---- the camera control window ---- */
+.camd {
+  width: min(1100px, calc(100vw - 48px));
+  height: min(760px, calc(100vh - 58px));
+}
+.camd__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 14px 0;
+}
+.camd__body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px 14px;
+}
+.camd__side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow: auto;
+}
+.camd__view {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #000;
+  container-type: size;
+}
+.camd__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+.camd__setting {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.camd__setting input[type='range'] {
+  width: 100%;
+}
+.camd__pad {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(3, 32px);
+  gap: 4px;
+}
+.camd__pad button {
+  height: 32px;
+  padding: 0;
+}
+.camd__shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.camd__shot {
+  display: flex;
+}
+.camd__shot .btn:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.camd__shot .btn + .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  padding: 0 6px;
+  color: var(--text-faint);
+}
+.camd__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.camd__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.camd__num {
+  width: 64px;
+}

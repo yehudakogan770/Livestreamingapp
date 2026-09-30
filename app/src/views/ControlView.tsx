@@ -12,6 +12,7 @@ import { CountdownCard, CountdownMini } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
 import { pesukimBar } from '../engine/pesukim';
 import { OverlayBar } from './OverlayBar';
+import { CameraBar } from './CameraBar';
 import { useCommands, type Command } from './commands';
 import { ShortcutsDialog } from './ShortcutsDialog';
 import { CueBar, RunOfShowDialog } from './RunOfShow';
@@ -264,7 +265,10 @@ export function ControlView({
                     {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
                   </div>
                 </div>
-                <Transport source={find(sc.preview)} act={act} label="Next" />
+                <div className="mon__foot">
+                  <Transport source={find(sc.preview)} act={act} label="Next" />
+                  <CameraBar show={show} screen={screen} act={act} client={client} />
+                </div>
               </div>
               <div className="centre">
                 <SwitchPanel show={show} screen={screen} act={act} onStingers={() => setStingers(true)} />
