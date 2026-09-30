@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { EFFECTS } from '../engine/effects';
+import type { TextEntrance } from '../engine/types/TextEntrance';
 import { FontPicker } from '../components/FontPicker';
 import type { Source } from '../engine/types/Source';
 import type { TextInput } from '../engine/types/TextInput';
@@ -161,9 +163,25 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
                     <input type="checkbox" checked={s.animate ?? false} onChange={(e) => style({ animate: e.target.checked })} /> Animate on
                   </label>
                   {s.animate && (
-                    <button type="button" className="btn" onClick={() => setReplay((n) => n + 1)}>
-                      ↻ Replay
-                    </button>
+                    <>
+                      <select
+                        value={s.entrance ?? 'build'}
+                        onChange={(e) => {
+                          style({ entrance: e.target.value as TextEntrance });
+                          setReplay((n) => n + 1);
+                        }}
+                        aria-label="How it comes on"
+                      >
+                        {EFFECTS.map(([v, name]) => (
+                          <option key={v} value={v}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                      <button type="button" className="btn" onClick={() => setReplay((n) => n + 1)}>
+                        ↻ Replay
+                      </button>
+                    </>
                   )}
                 </div>
               </>

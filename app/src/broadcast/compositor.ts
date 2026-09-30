@@ -13,6 +13,7 @@ import { lumaMask } from '../engine/luma';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { loadFontFor } from '../engine/fonts';
+import { effectAt, wordEffect, type EffectState } from '../engine/effects';
 import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
@@ -21,7 +22,7 @@ import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
 import { browserInfo } from '../engine/browser';
 import { logoRect, VisualsPlayer } from '../visuals/player';
-import { buildAt, ENTRANCE_MS, isRtl, textShown, withAlpha } from '../engine/text';
+import { buildAt, isRtl, textShown, withAlpha } from '../engine/text';
 import { clockShown, formatGameClock } from '../engine/score';
 import { LYRICS_FADE_MS, sections } from '../engine/lyrics';
 import type { Lyrics } from '../engine/types/Lyrics';
@@ -2128,7 +2129,37 @@ export class ProgramCompositor {
   }
 
   /** A text input (mirrors TextView and its CSS): transparent except the text and its box. */
+  private textRect: { x: number; y: number; w: number; h: number } | null = null;
+
+  /** A text input, with the effect it comes on with (and the shine's light). */
   private text(input: TextInput, now: number, w: number, h: number, start = now - 10_000) {
+    const st = input.style;
+    const entrance = st.animate ? (st.entrance ?? 'build') : 'none';
+    const letters = [...(input.text + input.sub)].length;
+    const fx = entrance === 'build' || input.layout === 'ticker' ? null : effectAt(entrance, now - start, letters);
+    this.textRect = null;
+    this.textBody(input, now, w, h, start, fx);
+    const r = this.textRect as { x: number; y: number; w: number; h: number } | null;
+    if (fx?.shine != null && r) {
+      const ctx = this.ctx;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(r.x, r.y, r.w, r.h);
+      ctx.clip();
+      const bandW = r.w * 0.45;
+      const bx = r.x + (fx.shine * 1.6 - 0.6) * r.w;
+      const g = ctx.createLinearGradient(bx, 0, bx + bandW, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g;
+      ctx.fillRect(bx, r.y, bandW, r.h);
+      ctx.restore();
+    }
+  }
+
+  private textBody(input: TextInput, now: number, w: number, h: number, start: number, fx: EffectState | null) {
     const ctx = this.ctx;
     const t = textShown(input);
     const s = t.style;
@@ -2196,25 +2227,8 @@ export class ProgramCompositor {
       return;
     }
 
-    // The build, or another entrance moving the whole title at once.
-    const entrance = s.entrance ?? 'build';
-    const b = buildAt(now - start, (s.animate ?? false) && entrance === 'build');
-    const inP = (s.animate ?? false) && entrance !== 'build' ? ease(clamp01((now - start) / ENTRANCE_MS)) : 1;
-    if (inP < 1) {
-      baseAlpha *= inP;
-      ctx.globalAlpha = baseAlpha;
-      if (entrance === 'slide') ctx.translate((s.align === 'right' ? 1 : -1) * (1 - inP) * w * 0.08, 0);
-      else if (entrance === 'rise') ctx.translate(0, (1 - inP) * h * 0.06);
-      else if (entrance === 'pop') {
-        const cx =
-          t.layout === 'lowerThird' ? (s.align === 'center' ? w / 2 : s.align === 'right' ? w * (1 - (s.x ?? 5) / 100) : w * ((s.x ?? 5) / 100)) : w / 2;
-        const cy = t.layout === 'lowerThird' ? h * (1 - (s.y ?? 10) / 100) : h / 2;
-        const sc = 0.85 + 0.15 * inP;
-        ctx.translate(cx, cy);
-        ctx.scale(sc, sc);
-        ctx.translate(-cx, -cy);
-      }
-    }
+    // The design's own build (the other effects move the whole title, below).
+    const b = buildAt(now - start, fx === null);
     const d = s.design ?? 'box';
     const accent = s.accent ?? '#2f80ed';
     const end = s.align === 'right';
@@ -2232,6 +2246,35 @@ export class ProgramCompositor {
       }
       return { x: (w - bw) / 2, y: (h - bh) / 2 };
     };
+    // The effect it comes on with, about the whole title (its size worked out
+    // before drawing, as the screens' CSS does).
+    {
+      const bwA = Math.max(mainW, subW) + 2 * s.padding * k + (d === 'bar' ? 10 * k : 0);
+      const bhA = lineH + (t.sub ? subSize * s.lineHeight * k : 0) + 2 * s.padding * k;
+      const { x: bx0, y: by0 } = place(bwA, bhA);
+      this.textRect = { x: bx0, y: by0, w: bwA, h: bhA };
+      if (fx) {
+        const dir = end ? -1 : 1;
+        const cx = bx0 + bwA / 2;
+        const cy = by0 + bhA / 2;
+        baseAlpha *= fx.alpha;
+        ctx.globalAlpha = baseAlpha;
+        ctx.translate(fx.dx * dir * w, fx.dy * h);
+        if (fx.scale !== 1 || fx.scaleY !== 1 || fx.rotate) {
+          ctx.translate(cx, cy);
+          if (fx.rotate) ctx.rotate((fx.rotate * dir * Math.PI) / 180);
+          ctx.scale(fx.scale, fx.scale * fx.scaleY);
+          ctx.translate(-cx, -cy);
+        }
+        if (fx.blur) ctx.filter = `blur(${fx.blur * h}px)`;
+        if (fx.reveal < 1) {
+          ctx.beginPath();
+          if (end) ctx.rect(bx0 + bwA * (1 - fx.reveal), 0, w, h);
+          else ctx.rect(0, 0, bx0 + bwA * fx.reveal, h);
+          ctx.clip();
+        }
+      }
+    }
     // Reveal a box from its start side as it opens.
     const opened = (x: number, y: number, bw: number, bh: number, p: number) => {
       ctx.beginPath();
@@ -2373,7 +2416,10 @@ export class ProgramCompositor {
     ctx.beginPath();
     ctx.rect(0, 0, bw * look.reveal, bh);
     ctx.clip();
+    // What it shows can have its own entrance (the Pesukim bar), from when it came on.
+    this.onSince = o.changedAt;
     this.drawSource(src, show.event, now, bw, bh);
+    this.onSince = null;
     ctx.restore();
   }
 
@@ -2489,6 +2535,23 @@ export class ProgramCompositor {
   }
 
   /** The bar along the bottom (mirrors PesukimView's PesukimBar and its CSS). */
+  /** When the overlay being drawn came on (for its content's own entrance). */
+  private onSince: number | null = null;
+
+  /** Apply an effect's move, size, turn and blur about (cx, cy). */
+  private applyEffect(fx: EffectState, cx: number, cy: number, w: number, h: number) {
+    const ctx = this.ctx;
+    ctx.globalAlpha *= fx.alpha;
+    ctx.translate(fx.dx * w, fx.dy * h);
+    if (fx.scale !== 1 || fx.scaleY !== 1 || fx.rotate) {
+      ctx.translate(cx, cy);
+      if (fx.rotate) ctx.rotate((fx.rotate * Math.PI) / 180);
+      ctx.scale(fx.scale, fx.scale * fx.scaleY);
+      ctx.translate(-cx, -cy);
+    }
+    if (fx.blur) ctx.filter = `blur(${fx.blur * h}px)`;
+  }
+
   private pesukimBar(data: PesukimData, now: number, w: number, h: number) {
     const ctx = this.ctx;
     const { look, place } = data;
@@ -2507,6 +2570,14 @@ export class ProgramCompositor {
     // No background: just the words, outlined in the second colour.
     const bare = look.plain || (!pic && d.id === 'none');
     ctx.save();
+    // How the bar comes on.
+    const barFx = effectAt(look.barIn ?? 'rise', now - (this.onSince ?? now - 10_000));
+    this.applyEffect(barFx, x + bw / 2, y + bh / 2, w, h);
+    if (barFx.reveal < 1) {
+      ctx.beginPath();
+      ctx.rect(0, 0, x + bw * barFx.reveal, h);
+      ctx.clip();
+    }
     ctx.beginPath();
     ctx.roundRect(x, y, bw, bh, d.radius * u);
     if (pic) {
@@ -2557,8 +2628,10 @@ export class ProgramCompositor {
       return;
     }
     const [from, to] = barRange(data);
-    // Each new word fades in, like the screens.
-    ctx.globalAlpha *= ease(clamp01((now - place.changedAt) / 300));
+    // Each new word comes on with its effect, like the screens.
+    const letters = [...(he[place.word] ?? '')].length || 6;
+    const wordFx = effectAt(wordEffect(look.wordChange), now - place.changedAt, letters);
+    this.applyEffect(wordFx, x + bw / 2, y + bh / 2, w, h);
     const rows: { words: string[]; font: string; size: number; rtl: boolean }[] = [
       { words: he, font: `700 ${L.he * u}px "${look.font}", "Frank Ruhl Libre", serif`, size: L.he, rtl: true },
     ];
@@ -2571,6 +2644,18 @@ export class ProgramCompositor {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.direction = 'ltr';
+    if (wordFx.reveal < 1) {
+      // Letter by letter, across the words themselves (Hebrew from the right).
+      let widest = 0;
+      for (const row of rows) {
+        ctx.font = row.font;
+        widest = Math.max(widest, ctx.measureText(row.words.slice(from, to).filter(Boolean).join('  ')).width);
+      }
+      const r0 = mid + widest / 2;
+      ctx.beginPath();
+      ctx.rect(r0 - widest * wordFx.reveal, 0, widest * wordFx.reveal + 2 * u, h);
+      ctx.clip();
+    }
     for (const row of rows) {
       ctx.font = row.font;
       ctx.direction = row.rtl ? 'rtl' : 'ltr';

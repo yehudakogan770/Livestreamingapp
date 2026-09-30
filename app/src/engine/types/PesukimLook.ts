@@ -2,6 +2,7 @@
 import type { BarWords } from "./BarWords";
 import type { PesukimMode } from "./PesukimMode";
 import type { SourceId } from "./SourceId";
+import type { TextEntrance } from "./TextEntrance";
 import type { WordChange } from "./WordChange";
 
 /**
@@ -44,6 +45,10 @@ outlineColor: string,
  * Just the words, where the bar would be (the bar's design is kept for later).
  */
 plain: boolean, 
+/**
+ * How the bar comes on.
+ */
+barIn: TextEntrance, 
 /**
  * Background colour.
  */

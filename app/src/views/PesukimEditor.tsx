@@ -1,4 +1,15 @@
 import { useEffect, useState } from 'react';
+import { EFFECTS } from '../engine/effects';
+
+const WORD_EFFECTS: [PesukimLook['wordChange'], string][] = [
+  ['fade', 'Fade'],
+  ['rise', 'Rise'],
+  ['pop', 'Pop'],
+  ['zoom', 'Zoom'],
+  ['blur', 'Focus'],
+  ['typewriter', 'Typewriter'],
+  ['cut', 'Just change'],
+];
 import { FontPicker } from '../components/FontPicker';
 import type { Show } from '../engine/types/Show';
 import type { PesukimLook } from '../engine/types/PesukimLook';
@@ -267,6 +278,32 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                 </button>
               ))}
               <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Other text colour" />
+            </div>
+            <div className="bcd__row">
+              <label className="field bcd__grow">
+                <span className="field__label">The bar comes on</span>
+                <select value={look.barIn} onChange={(e) => set({ barIn: e.target.value as PesukimLook['barIn'] })} aria-label="How the bar comes on">
+                  {EFFECTS.filter(([v]) => v !== 'build').map(([v, name]) => (
+                    <option key={v} value={v}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field bcd__grow">
+                <span className="field__label">Each word</span>
+                <select
+                  value={look.wordChange}
+                  onChange={(e) => set({ wordChange: e.target.value as PesukimLook['wordChange'] })}
+                  aria-label="Each word comes on"
+                >
+                  {WORD_EFFECTS.map(([v, name]) => (
+                    <option key={v} value={v}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
             <div className="bcd__row">
               <FontPicker value={look.font} onChange={(font) => set({ font })} added={show.event.brand.fonts.map((f) => f.name)} />

@@ -3,4 +3,4 @@
 /**
  * How the next word appears.
  */
-export type WordChange = "fade" | "pop" | "cut";
+export type WordChange = "fade" | "pop" | "cut" | "rise" | "blur" | "zoom" | "typewriter";

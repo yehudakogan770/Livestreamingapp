@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { effectAt, effectStyle, useEffectClock, wordEffect } from '../engine/effects';
 import { barDesign, barLayout, barRange, glossesOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import './PesukimView.css';
 
@@ -37,6 +38,11 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   const { look, place } = data;
   const pasuk = data.pesukim[place.pasuk];
   const he = wordsOf(pasuk?.text ?? '');
+  // How the bar comes on (when it is first shown), and each new word.
+  const barFx = effectAt(look.barIn ?? 'rise', useEffectClock(look.barIn ?? 'rise'));
+  const wordKind = wordEffect(look.wordChange);
+  const wordLetters = [...(he[place.word] ?? '')].length || 6;
+  const wordFx = effectAt(wordKind, useEffectClock(wordKind, wordLetters, `${place.pasuk}:${place.word}:${place.intro}:${place.whole}`), wordLetters);
   if (place.blank || !pasuk || (!he.length && !place.intro)) return null;
   const tr = wordsOf(pasuk.translit);
   const en = glossesOf(pasuk.english);
@@ -63,6 +69,7 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
       className={`pes__bar${d.frame ? ' pes__bar--frame' : ''}${bare ? ' pes__bar--bare' : ''}`}
       data-design={image ? 'picture' : d.id}
       style={{
+        ...effectStyle(barFx),
         left: `${L.left}cqh`,
         right: `${L.right}cqh`,
         bottom: `${L.bottom}cqh`,
@@ -78,16 +85,18 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
           {place.pasuk + 1}
         </div>
       )}
-      <div className="pes__lines" key={`${place.pasuk}:${from}:${place.intro}`}>
-        {place.intro ? (
-          <Intro n={place.pasuk + 1} child={pasuk.child} big={7.2} />
-        ) : (
-          <>
-            {line(he, 'pes__he', L.he, 'rtl', `"${look.font}", "Frank Ruhl Libre", serif`)}
-            {look.showTranslit && tr.length > 0 && line(tr, 'pes__tr', L.tr, 'ltr')}
-            {look.showEnglish && en.length > 0 && line(en, 'pes__en', L.en, 'ltr')}
-          </>
-        )}
+      <div className="pes__lines">
+        <div className="pes__in" style={effectStyle(wordFx, true)}>
+          {place.intro ? (
+            <Intro n={place.pasuk + 1} child={pasuk.child} big={7.2} />
+          ) : (
+            <>
+              {line(he, 'pes__he', L.he, 'rtl', `"${look.font}", "Frank Ruhl Libre", serif`)}
+              {look.showTranslit && tr.length > 0 && line(tr, 'pes__tr', L.tr, 'ltr')}
+              {look.showEnglish && en.length > 0 && line(en, 'pes__en', L.en, 'ltr')}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

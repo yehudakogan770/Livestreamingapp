@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { TextInput } from '../engine/types/TextInput';
 import { isRtl, textShown, withAlpha } from '../engine/text';
+import { effectAt, effectStyle, STILL, useEffectClock } from '../engine/effects';
 import './TextView.css';
 
 /**
@@ -11,6 +12,11 @@ import './TextView.css';
 export function TextView({ t: input }: { t: TextInput }) {
   const s = input.style;
   const t = textShown(input);
+  // How it comes on (the build is done by the design's own CSS).
+  const entrance = s.animate ? (s.entrance ?? 'build') : 'none';
+  const letters = [...(t.text + t.sub)].length;
+  const clock = useEffectClock(entrance === 'build' ? 'none' : entrance, letters);
+  const fx = entrance === 'build' ? STILL : effectAt(entrance, clock, letters);
   const u = (px: number) => `${(px / 1080) * 100}cqh`;
   const rtl = isRtl(t.text + t.sub);
   const text: CSSProperties = {
@@ -72,8 +78,7 @@ export function TextView({ t: input }: { t: TextInput }) {
   const anim = s.animate ?? false;
   const fill = s.boxOn ? withAlpha(s.boxColor, s.boxOpacity) : 'transparent';
   const pad = s.boxOn ? u(s.padding) : 0;
-  const entrance = s.entrance ?? 'build';
-  const cls = `txd txd--${d}${anim ? (entrance === 'build' ? ' txd--anim' : ` txd--in txd--in-${entrance}`) : ''}${end ? ' txd--end' : ''}`;
+  const cls = `txd txd--${d}${anim && entrance === 'build' ? ' txd--anim' : ''}${end ? ' txd--end' : ''}`;
   const vars = { '--txd-accent': accent, alignItems: place[t.layout].alignItems } as CSSProperties;
   const words = (
     <>
@@ -141,7 +146,10 @@ export function TextView({ t: input }: { t: TextInput }) {
   return (
     <div className="txt" data-kind="text">
       <div className="txt__place" style={place[t.layout]}>
-        {body}
+        <div className={`txt__fx${fx.shine !== null ? ' is-shining' : ''}`} style={{ ...effectStyle(fx, end), alignItems: place[t.layout].alignItems }}>
+          {body}
+          {fx.shine !== null && <i className="txt__shine" style={{ left: `${fx.shine * 160 - 60}%` }} />}
+        </div>
       </div>
     </div>
   );

@@ -70,6 +70,24 @@ pub enum TextEntrance {
     Rise,
     /// Grows in.
     Pop,
+    /// Drops in from above.
+    Drop,
+    /// Shrinks in from big.
+    Zoom,
+    /// Flips up into place.
+    Flip,
+    /// Comes into focus.
+    Blur,
+    /// Revealed from its side.
+    Wipe,
+    /// Letter by letter.
+    Typewriter,
+    /// Rises with a bounce.
+    Bounce,
+    /// Spins in.
+    Spin,
+    /// Fades in, then a light sweeps across it.
+    Shine,
 }
 
 /// How the text looks. Sizes are in pixels of a 1920 × 1080 frame (they scale).

@@ -2,10 +2,10 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Brand } from '../engine/types/Brand';
 import type { Show } from '../engine/types/Show';
-import type { TextEntrance } from '../engine/types/TextEntrance';
 import { branded, cleanBrand, defaultBrand, LOOKS } from '../engine/brand';
 import { ACCENTS, defaultTextStyle, TEXT_DESIGNS } from '../engine/text';
 import { FontPicker } from '../components/FontPicker';
+import { EFFECTS } from '../engine/effects';
 import { fontNameFrom } from '../engine/fonts';
 import { TextView } from '../components/TextView';
 import './BrandDialog.css';
@@ -24,13 +24,6 @@ const WEIGHTS: [number, string][] = [
   [600, 'Semi-bold'],
   [700, 'Bold'],
   [900, 'Black'],
-];
-const ENTRANCES: [TextEntrance, string][] = [
-  ['build', 'Build'],
-  ['fade', 'Fade'],
-  ['slide', 'Slide'],
-  ['rise', 'Rise'],
-  ['pop', 'Pop'],
 ];
 /** Quick places for name titles: side %, bottom %, alignment. */
 const SPOTS: { name: string; x: number; y: number; align: Brand['align'] }[] = [
@@ -253,7 +246,7 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
             <label className="check">
               <input type="checkbox" checked={b.animate} onChange={(e) => set({ animate: e.target.checked })} /> Animate
             </label>
-            {b.animate && segs(ENTRANCES, b.entrance, (entrance) => set({ entrance }), 'Entrance')}
+            {b.animate && segs(EFFECTS, b.entrance, (entrance) => set({ entrance }), 'Entrance')}
             <button type="button" className="btn btn--small" onClick={() => setReplay((n) => n + 1)} disabled={!b.animate}>
               ▶ Show me
             </button>

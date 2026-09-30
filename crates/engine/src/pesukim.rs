@@ -82,6 +82,14 @@ pub enum WordChange {
     Fade,
     Pop,
     Cut,
+    /// Rises into place.
+    Rise,
+    /// Comes into focus.
+    Blur,
+    /// Shrinks in from big.
+    Zoom,
+    /// Letter by letter.
+    Typewriter,
 }
 
 /// How the pesukim look.
@@ -109,6 +117,8 @@ pub struct PesukimLook {
     pub outline_color: String,
     /// Just the words, where the bar would be (the bar's design is kept for later).
     pub plain: bool,
+    /// How the bar comes on.
+    pub bar_in: crate::text::TextEntrance,
     /// Background colour.
     pub background: String,
     /// An input shown behind the words (a camera, usually).
@@ -136,6 +146,7 @@ impl Default for PesukimLook {
             bar_words: BarWords::One,
             outline_color: "#000000".to_owned(),
             plain: false,
+            bar_in: crate::text::TextEntrance::Rise,
             background: "#15213a".to_owned(),
             behind: None,
             text_color: "#ffe39e".to_owned(),

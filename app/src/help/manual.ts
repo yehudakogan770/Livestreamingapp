@@ -93,7 +93,7 @@ export const MANUAL: Topic[] = [
       '• Hide (B): hides the words (the camera stays).',
       '• Text only: no bar, just the words in the same place, in two colours so they are easy to read on anything.',
       '• The row of words: click any word to jump to it. The picker at the top jumps to any pasuk.',
-      'In Edit…: one word at a time or the whole line with the word lit, the bar design (or your own picture), the colours, which lines show, and next word by itself every few seconds.',
+      'In Edit…: how the bar comes on and how each word comes on (fade, rise, pop, zoom, focus, typewriter…), one word at a time or the whole line with the word lit, the bar design (or your own picture), the colours, which lines show, and next word by itself every few seconds.',
     ],
   },
   {
@@ -107,7 +107,7 @@ export const MANUAL: Topic[] = [
       '• Ready-made: click a look, then change anything.',
       '• Words: font, size, thickness, italic, CAPITALS, colours, outline, shadow, spacing, and the second line’s own colour, size and font.',
       '• Box: design, colour, see-through, accent colour, corners, room, border.',
-      '• Place & motion: where name titles go, and how they come on (build, fade, slide, rise, pop).',
+      '• Place & motion: where name titles go, and how they come on — 14 effects: build, fade, slide, rise, drop, pop, zoom, flip, focus, wipe, typewriter, bounce, spin and shine.',
       '• Fonts: 500 fonts are built in (58 with Hebrew), shown in groups with a search. Add your own font files too, or type the name of any font on the computer.',
       'Apply to everything changes every title now, and new titles come in that look.',
     ],
