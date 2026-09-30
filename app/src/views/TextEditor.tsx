@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FontPicker } from '../components/FontPicker';
 import type { Source } from '../engine/types/Source';
 import type { TextInput } from '../engine/types/TextInput';
 import type { TextStyle } from '../engine/types/TextStyle';
@@ -169,13 +170,7 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
             )}
             <label className="field">
               <span className="field__label">Font</span>
-              <select value={s.font} onChange={(e) => style({ font: e.target.value })} aria-label="Font">
-                {TEXT_FONTS.map((f) => (
-                  <option key={f} value={f} style={{ fontFamily: f }}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+              <FontPicker value={s.font} onChange={(font) => style({ font })} />
             </label>
             {range('Size', 'size', 16, 220)}
             <span className="field__label">Weight</span>

@@ -4,7 +4,8 @@ import type { Brand } from '../engine/types/Brand';
 import type { Show } from '../engine/types/Show';
 import type { TextEntrance } from '../engine/types/TextEntrance';
 import { branded, cleanBrand, defaultBrand, LOOKS } from '../engine/brand';
-import { ACCENTS, defaultTextStyle, TEXT_DESIGNS, TEXT_FONTS } from '../engine/text';
+import { ACCENTS, defaultTextStyle, TEXT_DESIGNS } from '../engine/text';
+import { FontPicker } from '../components/FontPicker';
 import { fontNameFrom } from '../engine/fonts';
 import { TextView } from '../components/TextView';
 import './BrandDialog.css';
@@ -63,7 +64,6 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
     sub: 'Title or role',
     style: branded({ ...defaultTextStyle(), animate }, look),
   });
-  const fonts = [...TEXT_FONTS, ...b.fonts.map((f) => f.name).filter((n) => !TEXT_FONTS.includes(n))];
   const apply = () =>
     void client
       .dispatch({ type: 'applyBrand', brand: cleanBrand(b) })
@@ -99,15 +99,7 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
     </div>
   );
   const fontSelect = (value: string, onChange: (v: string) => void, label: string, same?: string) => (
-    <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}>
-      {same !== undefined && <option value="">{same}</option>}
-      {!fonts.includes(value) && value && <option value={value}>{value}</option>}
-      {fonts.map((f) => (
-        <option key={f} value={f} style={{ fontFamily: f }}>
-          {f}
-        </option>
-      ))}
-    </select>
+    <FontPicker value={value} onChange={onChange} label={label} sameLabel={same} added={b.fonts.map((f) => f.name)} />
   );
 
   let body: ReactNode;
@@ -133,10 +125,6 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
         <label className="field">
           <span className="field__label">Font</span>
           {fontSelect(b.font, (font) => set({ font }), 'Font')}
-        </label>
-        <label className="field">
-          <span className="field__label">Or a font on this computer (its name)</span>
-          <input className="text" value={b.font} onChange={(e) => set({ font: e.target.value })} aria-label="Font name" />
         </label>
         {slider('Size (name titles)', b.size, 24, 140, (size) => set({ size }))}
         <div className="field">
@@ -308,7 +296,9 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
             <span className="field__note">They are kept with the event and work on every screen and in the recording.</span>
           </div>
         </div>
-        <p className="field__note brd__wide">Any font installed on this computer works too: type its name under Words → “Or a font on this computer”.</p>
+        <p className="field__note brd__wide">
+          Hundreds of fonts are built in (Words → Font). Any font installed on this computer works too: type its name in the font search and choose “Use …”.
+        </p>
       </div>
     );
   }

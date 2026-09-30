@@ -1,0 +1,104 @@
+.fpk__btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--well, #0f1115);
+  color: var(--text);
+  font-size: 15px;
+  text-align: left;
+}
+.fpk__btn span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fpk__btn i {
+  font-style: normal;
+  color: var(--text-faint);
+  font-family: system-ui;
+}
+.fpk {
+  position: fixed;
+  z-index: 200;
+  width: 460px;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--bar, #1b1e24);
+  border: 1px solid #3a3f48;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+.fpk__groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.fpk__group {
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.fpk__group.is-on {
+  border-color: var(--accent);
+  background: #1d3b40;
+  color: #fff;
+}
+.fpk__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 4px;
+}
+.fpk__font {
+  /* Only fonts scrolled into view are drawn (and so loaded). */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 54px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: var(--button);
+  color: var(--text);
+  text-align: left;
+}
+.fpk__font:hover {
+  border-color: var(--border);
+}
+.fpk__font.is-on {
+  border-color: var(--accent);
+  background: #1d3b40;
+}
+.fpk__font b {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 400;
+}
+.fpk__font span {
+  font-size: 13px;
+  color: var(--text-dim);
+}

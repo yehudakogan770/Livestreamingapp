@@ -108,7 +108,7 @@ export const MANUAL: Topic[] = [
       '• Words: font, size, thickness, italic, CAPITALS, colours, outline, shadow, spacing, and the second line’s own colour, size and font.',
       '• Box: design, colour, see-through, accent colour, corners, room, border.',
       '• Place & motion: where name titles go, and how they come on (build, fade, slide, rise, pop).',
-      '• Fonts: add your own font files, or type the name of any font on the computer.',
+      '• Fonts: 500 fonts are built in (58 with Hebrew), shown in groups with a search. Add your own font files too, or type the name of any font on the computer.',
       'Apply to everything changes every title now, and new titles come in that look.',
     ],
   },

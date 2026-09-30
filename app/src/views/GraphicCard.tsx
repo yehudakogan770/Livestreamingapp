@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { FontPicker } from '../components/FontPicker';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 import type { Element } from '../engine/types/Element';
@@ -231,13 +232,7 @@ export function GraphicCard({ source, act, client, onClose }: { source: Source; 
                     <div className="grc__row">
                       <label className="field" style={{ flex: 2 }}>
                         <span className="field__label">Font</span>
-                        <select className="text" value={el.font} onChange={(e) => change({ font: e.target.value })}>
-                          {TEXT_FONTS.map((f) => (
-                            <option key={f} value={f}>
-                              {f}
-                            </option>
-                          ))}
-                        </select>
+                        <FontPicker value={el.font} onChange={(font) => change({ font })} />
                       </label>
                       {num('size', 'Size', 0.5, 50)}
                       <label className="field grc__num">

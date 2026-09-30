@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FontPicker } from '../components/FontPicker';
 import type { Show } from '../engine/types/Show';
 import type { PesukimLook } from '../engine/types/PesukimLook';
 import type { Pasuk } from '../engine/types/Pasuk';
@@ -268,13 +269,7 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
               <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Other text colour" />
             </div>
             <div className="bcd__row">
-              <select value={look.font} onChange={(e) => set({ font: e.target.value })} aria-label="Font" className="bcd__grow">
-                {FONTS.map((f) => (
-                  <option key={f} value={f} style={{ fontFamily: f }}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+              <FontPicker value={look.font} onChange={(font) => set({ font })} added={show.event.brand.fonts.map((f) => f.name)} />
             </div>
           </section>
         </div>

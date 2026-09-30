@@ -12,6 +12,7 @@ import { programLayers, type StingerPlay } from '../components/ScreenView';
 import { lumaMask } from '../engine/luma';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
+import { loadFontFor } from '../engine/fonts';
 import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
@@ -113,6 +114,20 @@ export class ProgramCompositor {
     this.canvas.height = height;
     const ctx = this.canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('This computer cannot draw the picture for recording.');
+    // Every font it draws with is loaded (the built-in fonts load only when used).
+    const fontProp = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, 'font');
+    if (fontProp?.get && fontProp.set) {
+      const { get, set } = fontProp;
+      Object.defineProperty(ctx, 'font', {
+        get() {
+          return get.call(this);
+        },
+        set(v: string) {
+          set.call(this, v);
+          loadFontFor(v);
+        },
+      });
+    }
     this.ctx = ctx;
   }
 

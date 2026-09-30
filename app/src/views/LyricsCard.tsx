@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FontPicker } from '../components/FontPicker';
 import type { Source } from '../engine/types/Source';
 import type { Lyrics } from '../engine/types/Lyrics';
 import type { TextStyle } from '../engine/types/TextStyle';
@@ -101,13 +102,7 @@ export function LyricsCard({ source, act, onClose }: { source: Source; act: Act;
               />
             </label>
             <div className="lyc__row">
-              <select value={draft.style.font} onChange={(e) => style({ font: e.target.value })} aria-label="Font">
-                {TEXT_FONTS.map((f) => (
-                  <option key={f} value={f}>
-                    {f}
-                  </option>
-                ))}
-              </select>
+              <FontPicker value={draft.style.font} onChange={(font) => style({ font })} />
               <input type="color" value={draft.style.color} onChange={(e) => style({ color: e.target.value })} aria-label="Words colour" />
               <label className="check">
                 <input type="checkbox" checked={draft.style.boxOn} onChange={(e) => style({ boxOn: e.target.checked })} /> Box behind

@@ -38,3 +38,57 @@ export const fontNameFrom = (file: string) =>
     .replace(/[-_]+/g, ' ')
     .trim()
     .slice(0, 60);
+
+// ----- the built-in fonts (app/public/fonts, made by scripts/fetch_fonts.py) -----
+
+export type FontCategory = 'Sans Serif' | 'Serif' | 'Display' | 'Handwriting' | 'Monospace' | 'System' | 'Added';
+export interface FontInfo {
+  family: string;
+  category: FontCategory;
+  hebrew: boolean;
+}
+
+/** Fonts on every Windows computer (and those Lumora had before). */
+export const SYSTEM_FONTS: FontInfo[] = [
+  ['Segoe UI', false],
+  ['Arial', false],
+  ['Georgia', false],
+  ['Impact', false],
+  ['Consolas', false],
+  ['Times New Roman', true],
+  ['Verdana', false],
+  ['Tahoma', true],
+  ['Trebuchet MS', false],
+  ['Calibri', false],
+  ['Cambria', false],
+  ['David', true],
+  ['Miriam', true],
+  ['Narkisim', true],
+  ['Bebas Neue', false],
+  ['Great Vibes', false],
+  ['Chakra Petch', false],
+].map(([family, hebrew]) => ({ family: family as string, category: 'System' as const, hebrew: hebrew as boolean }));
+
+let catalogue: Promise<FontInfo[]> | null = null;
+
+/** Every built-in font (loaded once). */
+export function builtInFonts(): Promise<FontInfo[]> {
+  const base = typeof location !== 'undefined' && location.protocol.startsWith('http') ? '' : '.';
+  catalogue ??= fetch(`${base}/fonts/fonts.json`)
+    .then((r) => r.json() as Promise<FontInfo[]>)
+    .catch(() => []);
+  return catalogue;
+}
+
+const asked = new Set<string>();
+
+/**
+ * Make sure the font in a canvas font string is loaded (fonts load only when
+ * used; a canvas does not ask by itself). The first frame may draw with the
+ * fallback; the next ones have it.
+ */
+export function loadFontFor(font: string): void {
+  if (asked.has(font) || typeof document === 'undefined' || !document.fonts) return;
+  asked.add(font);
+  if (!document.fonts.check(font, 'Aא')) void document.fonts.load(font, 'Aaא').catch(() => {});
+}

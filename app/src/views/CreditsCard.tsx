@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { FontPicker } from '../components/FontPicker';
 import type { Credits } from '../engine/types/Credits';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
@@ -156,11 +157,7 @@ function CreditsEditor({ c, name, onSave, onClose }: { c: Credits; name: string;
               <input type="range" min={24} max={120} value={draft.size} onChange={(e) => set({ size: Number(e.target.value) })} aria-label="Name size" />
             </label>
             <div className="txed__row">
-              <select value={draft.font} onChange={(e) => set({ font: e.target.value })} aria-label="Font">
-                {TEXT_FONTS.map((f) => (
-                  <option key={f}>{f}</option>
-                ))}
-              </select>
+              <FontPicker value={draft.font} onChange={(font) => set({ font })} />
               <label className="check">
                 Text <input type="color" value={draft.color} onChange={(e) => set({ color: e.target.value })} aria-label="Text colour" />
               </label>
