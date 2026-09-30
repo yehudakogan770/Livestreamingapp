@@ -398,7 +398,7 @@ on screen with the page's code.
 5. 🔶 **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs). YouTube and Twitch done; ⬜ Facebook.
 6. 🔶 **Audio filters** — noise suppression, noise gate, compressor, limiter,
    EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter. ⬜ VST plugins.
-7. ✅ **Instant replay** with slow motion (vMix, Wirecast). ⬜ Highlights reel.
+7. ✅ **Instant replay** with slow motion (vMix, Wirecast), and a **highlights reel**: "Keep as a highlight" adds the last seconds to one video input that plays them all.
 8. ⬜ **Virtual camera** and **NDI in / out** (OBS, vMix, Ecamm).
 9. ✅ **Song lyrics and Bible library** with presentations, themes, stage display
    of the next lines (ProPresenter). Songs, next lines on the stage monitor, and all of Tanach (see 26).

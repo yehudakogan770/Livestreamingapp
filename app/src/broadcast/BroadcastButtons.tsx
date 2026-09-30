@@ -189,6 +189,25 @@ function ReplayButtons() {
           <label className="check">
             <input type="checkbox" checked={slow} onChange={(e) => setSlow(e.target.checked)} /> Slow motion (half speed)
           </label>
+          <span className="field__label">Highlights reel</span>
+          <button
+            type="button"
+            className="btn"
+            disabled={making}
+            title={`Keep the last ${secs} seconds: every highlight goes into one video input that plays them one after another`}
+            onClick={() => {
+              setMaking(true);
+              b.saveHighlight(secs)
+                .then((n) => setNote(`Kept — ${n} ${n === 1 ? 'highlight' : 'highlights'} in “Highlights reel”.`))
+                .catch((e: unknown) => setNote(e instanceof Error ? e.message : String(e)))
+                .finally(() => {
+                  setMaking(false);
+                  setTimeout(() => setNote(null), 5000);
+                });
+            }}
+          >
+            ★ Keep as a highlight
+          </button>
           <button
             type="button"
             className="btn"

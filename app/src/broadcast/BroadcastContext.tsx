@@ -5,6 +5,9 @@ import { useSound } from '../audio/SoundContext';
 import { useReportProblem } from '../problems/problems';
 import { Broadcaster } from './recorder';
 
+/** The highlights reel's input. */
+export const HIGHLIGHTS = 'highlights-reel';
+
 /** Waits between attempts to bring a dropped stream back (then every 30 s). */
 const RETRY_MS = [2000, 4000, 8000, 15000, 30000];
 
@@ -25,6 +28,8 @@ interface Broadcast {
   frameStats(): { fps: number; target: number; dropped: number } | null;
   /** Make a replay of the last `seconds` and line it up in Next. Resolves its input's id. */
   makeReplay(seconds: number, speed: number): Promise<string>;
+  /** Keep the last `seconds` in the highlights reel (a video input that plays them all). Resolves how many it holds. */
+  saveHighlight(seconds: number): Promise<number>;
 }
 
 const Ctx = createContext<Broadcast | null>(null);
@@ -280,10 +285,44 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     [broadcaster, client],
   );
 
+  const saveHighlight = useCallback(
+    async (seconds: number) => {
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const pieces = await broadcaster.takeReplay(seconds);
+      if (!pieces.length) throw new Error('Nothing to keep yet: wait a few seconds.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await Promise.all(
+        pieces.map(async (p, i) => ({
+          path: await client.saveReplay(p.blob, `highlight-${tag}-${i + 1}.webm`),
+          name: `Highlight ${stamp}`,
+          durationS: (p.end - p.start) / 1000,
+        })),
+      );
+      const reel = showRef.current.sources.find((s) => s.id === HIGHLIGHTS);
+      const before = reel?.playlist?.items ?? [];
+      const all = [...before, ...items];
+      if (!reel) {
+        const first = items[0]!;
+        await client.dispatch({
+          type: 'addSource',
+          source: {
+            id: HIGHLIGHTS,
+            name: 'Highlights reel',
+            kind: { type: 'video', path: first.path, durationS: first.durationS, playback: { playing: false, posS: 0, at: 0 } },
+          },
+        });
+      }
+      await client.dispatch({ type: 'setPlaylist', id: HIGHLIGHTS, playlist: { items: all, current: 0, autoNext: true, loopAll: false } });
+      return new Set(all.map((x) => x.name)).size;
+    },
+    [broadcaster, client],
+  );
+
   const frameStats = useCallback(() => broadcaster?.frameStats() ?? null, [broadcaster]);
   const value = useMemo<Broadcast>(
-    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, frameStats }),
-    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, frameStats],
+    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats }),
+    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
