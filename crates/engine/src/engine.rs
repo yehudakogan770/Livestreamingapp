@@ -876,6 +876,13 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::WallApprove { .. }
         | Action::WallPin { .. }
         | Action::WallRemove { .. }) => apply_wall(s, a, now),
+        a @ (Action::SetDataFile { .. }
+        | Action::DataRows { .. }
+        | Action::DataRow { .. }
+        | Action::DataStep { .. }) => {
+            apply_data(s, a, now);
+            Ok(())
+        }
         Action::UpdateSeating { id, seating } => {
             let src = s
                 .source_mut(&id)
@@ -2095,6 +2102,53 @@ fn apply_fundraiser(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         _ => unreachable!("only fundraiser actions come here"),
     }
     Ok(())
+}
+
+fn apply_data(s: &mut Show, action: Action, now: Millis) {
+    let d = &mut s.data;
+    match action {
+        Action::SetDataFile { path, every_ms } => {
+            if path != d.path {
+                d.headers.clear();
+                d.rows.clear();
+                d.row = 0;
+                d.error.clear();
+            }
+            d.path = path.trim().chars().take(1000).collect();
+            d.every_ms = every_ms;
+        }
+        Action::DataRows {
+            headers,
+            rows,
+            error,
+        } => {
+            d.headers = headers;
+            d.rows = rows;
+            d.error = error;
+            d.updated_at = now;
+        }
+        Action::DataRow { row } => d.row = row,
+        Action::DataStep { delta } => {
+            let last = d.rows.len().saturating_sub(1);
+            d.row = if delta < 0 {
+                d.row.saturating_sub(1)
+            } else {
+                (d.row + 1).min(last)
+            };
+        }
+        _ => unreachable!("only data actions come here"),
+    }
+    d.repair();
+    // Linked scoreboards follow the data.
+    let values = s.data.values();
+    for src in &mut s.sources {
+        if let SourceKind::Scoreboard(sb) = &mut src.kind {
+            if sb.link.linked() {
+                let link = sb.link.clone();
+                link.apply(sb, &values);
+            }
+        }
+    }
 }
 
 fn apply_trivia(s: &mut Show, action: Action, now: Millis) -> Result<()> {

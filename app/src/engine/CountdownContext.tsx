@@ -12,6 +12,8 @@ export interface Stage {
   sources?: Source[];
   /** The stage visuals (tempo, scene, effects). */
   visuals?: Visuals;
+  /** The data file's values ({Column} in titles). */
+  data?: Record<string, string>;
 }
 
 export const StageContext = createContext<Stage | null>(null);

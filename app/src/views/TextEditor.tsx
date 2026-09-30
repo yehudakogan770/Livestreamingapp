@@ -115,6 +115,7 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
                 aria-label="Second line"
               />
             </label>
+            <p className="field__note">Tip: a column name in braces, like {'{Name}'}, takes its words from the data file (Text menu → Data file).</p>
           </section>
 
           <section className="txed__props" aria-label="Style">

@@ -21,6 +21,7 @@ import type { Adjust } from '../engine/types/Adjust';
 import type { ChromaKey } from '../engine/types/ChromaKey';
 import { PesukimView } from './PesukimView';
 import { TextView } from './TextView';
+import { withData } from '../engine/data';
 import { CreditsView } from './CreditsView';
 import { VisualsView } from './VisualsView';
 import { Logo3dView } from './Logo3dView';
@@ -30,6 +31,11 @@ import { defaultVisuals } from '../engine/visuals';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 
 // ---- views ----
+
+/** A title with its {Column}s filled from the data file. */
+function DataText({ t }: { t: import('../engine/types/TextInput').TextInput }) {
+  return <TextView t={withData(t, useStage()?.data)} />;
+}
 
 const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%' };
 
@@ -108,7 +114,7 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
     case 'camera':
       return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
     case 'text':
-      return <TextView t={k} />;
+      return <DataText t={k} />;
     case 'credits':
       return <CreditsView c={k} />;
     case 'slideshow':

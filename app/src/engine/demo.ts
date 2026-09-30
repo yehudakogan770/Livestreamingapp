@@ -19,6 +19,7 @@ import { applyBrand } from './brand';
 import { repairPoll, resetPoll } from './poll';
 import { pledgeTo, raffleDraw, raffleEnter, withCelebration } from './audience';
 import { wallPost, wallRemove } from './wall';
+import { dataValues } from './data';
 import { placeBid, removeItem, setItem } from './auction';
 import { answerIn as triviaAnswer, reveal as triviaReveal } from './trivia';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
@@ -1032,6 +1033,36 @@ function apply(s: Show, a: Action, now: number) {
     case 'stopSteps':
       s.running = [];
       return;
+    case 'setDataFile':
+    case 'dataRows':
+    case 'dataRow':
+    case 'dataStep': {
+      const d = s.data;
+      if (a.type === 'setDataFile') {
+        if (a.path !== d.path) Object.assign(d, { headers: [], rows: [], row: 0, error: '' });
+        Object.assign(d, { path: a.path.trim(), everyMs: Math.min(60_000, Math.max(250, a.everyMs)) });
+      } else if (a.type === 'dataRows') Object.assign(d, { headers: a.headers.slice(0, 40), rows: a.rows.slice(0, 1000), error: a.error, updatedAt: now });
+      else if (a.type === 'dataRow') d.row = a.row;
+      else d.row = a.delta < 0 ? Math.max(0, d.row - 1) : Math.min(Math.max(0, d.rows.length - 1), d.row + 1);
+      if (d.row >= d.rows.length) d.row = 0;
+      const values = dataValues(d);
+      for (const src of s.sources) {
+        if (src.kind.type !== 'scoreboard') continue;
+        const sb = src.kind;
+        const l = sb.link;
+        const get = (c: string) => (c && c in values ? values[c]! : null);
+        const num = (c: string) => {
+          const v = get(c);
+          return v !== null && /^\s*-?\d+\s*$/.test(v) ? Number(v) : null;
+        };
+        sb.home.name = get(l.homeName) ?? sb.home.name;
+        sb.away.name = get(l.awayName) ?? sb.away.name;
+        sb.home.score = num(l.homeScore) ?? sb.home.score;
+        sb.away.score = num(l.awayScore) ?? sb.away.score;
+        sb.period = get(l.period) ?? sb.period;
+      }
+      return;
+    }
     case 'updateEvent': {
       const p = a.patch;
       const ev = s.event;

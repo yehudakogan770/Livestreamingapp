@@ -160,6 +160,7 @@ pub fn repair(mut s: Show) -> Show {
             other => repair_audience(other),
         }
     }
+    s.data.repair();
     repair_links(&mut s);
     s.run.repair();
 

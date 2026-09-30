@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { dataValues } from './engine/data';
 import { baseName, createEngineClient, type EventFiles, type RemoteStatus } from './engine/client';
 import { useShow } from './engine/useShow';
 import { isMultiview, outputScreen } from './engine/role';
@@ -13,6 +14,7 @@ import { EventSetup } from './views/EventSetup';
 import { BrandDialog } from './views/BrandDialog';
 import { ZmanimDialog } from './views/ZmanimDialog';
 import { ShabbosGuard } from './views/ShabbosGuard';
+import { DataDialog, DataWatcher } from './views/DataDialog';
 import { RemoteDialog } from './views/RemoteDialog';
 import { defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
@@ -63,6 +65,7 @@ function ControlApp() {
   const [setupOpen, setSetupOpen] = useState(false);
   const [brandOpen, setBrandOpen] = useState(false);
   const [zmanimOpen, setZmanimOpen] = useState(false);
+  const [dataOpen, setDataOpen] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);
   const showSetup = !!show && (setupOpen || (!show.event.setUp && !setupDismissed));
   const closeSetup = useCallback(() => {
@@ -180,6 +183,7 @@ function ControlApp() {
       })),
       null,
       { label: 'Live chat and audience questions…', onClick: () => sendCommand({ type: 'chat' }) },
+      { label: 'Data file (spreadsheet)…', hint: 'Titles and scoreboards take their words from a CSV or JSON file', onClick: () => setDataOpen(true) },
     ];
     const slides = show?.sources.filter((x) => x.kind.type === 'slideshow') ?? [];
     const slideshow: MenuItem[] = [
@@ -265,10 +269,13 @@ function ControlApp() {
         {show ? (
           <SafeBoundary audience={false}>
             <SoundProvider show={show} client={client}>
-              <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals }}>
+              <StageContext.Provider
+                value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals, data: dataValues(show.data) }}
+              >
                 <BroadcastProvider show={show} client={client}>
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
                   <ShabbosGuard show={show} />
+                  <DataWatcher show={show} client={client} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
                   {overlaysOpen && (
                     <OverlayEditor
@@ -288,10 +295,13 @@ function ControlApp() {
         )}
       </main>
       {showSetup && show && (
-        <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals }}>
+        <StageContext.Provider
+          value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals, data: dataValues(show.data) }}
+        >
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
       )}
+      {dataOpen && show && <DataDialog show={show} client={client} onClose={() => setDataOpen(false)} />}
       {zmanimOpen && show && <ZmanimDialog show={show} act={(a) => void client.dispatch(a).catch(fail)} onClose={() => setZmanimOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}

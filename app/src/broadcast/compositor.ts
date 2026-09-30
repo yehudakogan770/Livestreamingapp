@@ -46,6 +46,7 @@ import { cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { shares } from '../engine/poll';
 import { joinShown } from '../engine/join';
+import { dataValues, withData } from '../engine/data';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
@@ -1697,7 +1698,7 @@ export class ProgramCompositor {
         this.seating(k, now, w, h);
         return;
       case 'text':
-        this.text(k, now, w, h, this.since(src.id, now));
+        this.text(this.show ? withData(k, dataValues(this.show.data)) : k, now, w, h, this.since(src.id, now));
         return;
       case 'credits':
         this.credits(k, now, w, h);

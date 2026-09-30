@@ -196,6 +196,10 @@ export interface EngineClient {
   setRemote(on: boolean): Promise<RemoteStatus>;
   /** A new PIN; connected phones have to type it again. */
   newRemotePin(): Promise<RemoteStatus>;
+  /** Choose a data file (CSV or JSON) where it is: it is read again as it changes. Null if cancelled. */
+  pickDataFile(): Promise<string | null>;
+  /** Read the data file's text. */
+  readDataFile(path: string): Promise<string>;
   /** Put the audience page on the internet (or take it off). */
   setAudienceInternet(on: boolean): Promise<RemoteStatus>;
   /** A QR code (SVG) for this text. */
@@ -370,6 +374,7 @@ export function emptyShow(): Show {
     run: emptyRun(),
     overlays: channels(),
     visuals: defaultVisuals(),
+    data: { path: '', everyMs: 1000, headers: [], rows: [], row: 0, error: '', updatedAt: 0 },
     qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
     settings: {
@@ -530,6 +535,16 @@ class TauriClient implements EngineClient {
 
   setAudienceInternet(on: boolean): Promise<RemoteStatus> {
     return invoke<RemoteStatus>('set_audience_internet', { on });
+  }
+
+  async pickDataFile(): Promise<string | null> {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const path = await open({ multiple: false, directory: false, filters: [{ name: 'Spreadsheet (CSV) or JSON', extensions: ['csv', 'json', 'txt'] }] });
+    return typeof path === 'string' ? path : null;
+  }
+
+  readDataFile(path: string): Promise<string> {
+    return invoke<string>('read_data_file', { path });
   }
 
   qrCode(text: string): Promise<string> {
@@ -893,6 +908,29 @@ export class DemoClient implements EngineClient {
 
   setAudienceInternet(): Promise<RemoteStatus> {
     return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  /** Files chosen in the browser demo (read once; a browser can't read them again). */
+  private dataFiles = new Map<string, string>();
+
+  pickDataFile(): Promise<string | null> {
+    return new Promise((resolve) => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.csv,.json,.txt';
+      input.onchange = async () => {
+        const f = input.files?.[0];
+        if (!f) return resolve(null);
+        this.dataFiles.set(f.name, await f.text());
+        resolve(f.name);
+      };
+      input.click();
+    });
+  }
+
+  readDataFile(path: string): Promise<string> {
+    const t = this.dataFiles.get(path);
+    return t === undefined ? Promise.reject(new Error('choose the file again (the browser demo cannot read files by itself)')) : Promise.resolve(t);
   }
 
   /** A stand-in picture (real codes are made by the Lumora app). */

@@ -598,6 +598,9 @@ pub struct Show {
     /// Audience questions.
     #[serde(default)]
     pub qna: crate::qna::Qna,
+    /// The data file titles and scoreboards take their words from.
+    #[serde(default)]
+    pub data: crate::data::DataFeed,
     pub settings: Settings,
 }
 
@@ -628,6 +631,7 @@ impl Default for Show {
             visuals: crate::visuals::Visuals::default(),
             triggers: Vec::new(),
             qna: crate::qna::Qna::default(),
+            data: crate::data::DataFeed::default(),
             settings: Settings::default(),
         }
     }

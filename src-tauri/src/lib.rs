@@ -428,6 +428,22 @@ fn iso_stop(id: u64, state: State<'_, AppState>) {
     state.isos.stop(id);
 }
 
+/// Read the data file titles take their words from (a CSV or JSON file, up to 4 MB).
+#[tauri::command]
+async fn read_data_file(path: String) -> Result<String, String> {
+    let meta = std::fs::metadata(&path).map_err(|_| "the file is not there".to_owned())?;
+    if meta.len() > 4_000_000 {
+        return Err("the file is too big (over 4 MB)".to_owned());
+    }
+    let bytes = std::fs::read(&path).map_err(|e| {
+        format!("it could not be read ({e}) — is it open and locked in another program?")
+    })?;
+    // Excel saves CSV as UTF-8 with a mark at the start, or in the old Windows code page.
+    let text = String::from_utf8(bytes.clone())
+        .unwrap_or_else(|_| bytes.iter().map(|&b| char::from(b)).collect());
+    Ok(text.trim_start_matches('\u{feff}').to_owned())
+}
+
 /// Save the chapter list (what was on air when) next to the recording.
 #[tauri::command]
 fn save_chapters(
@@ -819,6 +835,7 @@ pub fn run() {
             set_remote,
             new_remote_pin,
             set_audience_internet,
+            read_data_file,
             qr_code,
             capture_status,
             capture_settings,

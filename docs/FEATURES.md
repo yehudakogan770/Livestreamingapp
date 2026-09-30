@@ -400,11 +400,11 @@ on screen with the page's code.
    EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter. ⬜ VST plugins.
 7. ✅ **Instant replay** with slow motion (vMix, Wirecast). ⬜ Highlights reel.
 8. ⬜ **Virtual camera** and **NDI in / out** (OBS, vMix, Ecamm).
-9. 🔶 **Song lyrics and Bible library** with presentations, themes, stage display
-   of the next lines (ProPresenter). Done: songs and next lines on the stage monitor. ⬜ A Bible library.
+9. ✅ **Song lyrics and Bible library** with presentations, themes, stage display
+   of the next lines (ProPresenter). Songs, next lines on the stage monitor, and all of Tanach (see 26).
 10. ✅ **Video playlists / show loops** with auto-advance and shuffle (vMix, ProPresenter).
-11. ✅ **Stingers** (a video transition with a cut point) (vMix, OBS). ⬜ Luma wipes still to do.
-12. ✅ **Scoreboards and timers** (vMix, Wirecast). ⬜ Data from spreadsheets still to do.
+11. ✅ **Stingers** (a video transition with a cut point) (vMix, OBS).
+12. ✅ **Scoreboards and timers** (vMix, Wirecast), and **data from spreadsheets**: a CSV or JSON file read again as it changes; titles show {Column} values from the chosen row (next row by button, Stream Deck or phone), and scoreboards can follow its columns (vMix data sources).
 13. 🔶 **Animated title designer** with templates (vMix GT, Wirecast) — 6 designs and build-on done; a free-layout designer to come.
 14. 🔶 **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames). Stats done (processor, memory, frames, dropped, data rates); ⬜ GPU, per-output size.
 15. ✅ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).

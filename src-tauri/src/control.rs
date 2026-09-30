@@ -40,6 +40,8 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ),
     ("scorereset", "input or name"),
     ("clock", "input or name, state (on, off, toggle)"),
+    ("datarow", "to (next, previous or a row number)"),
+    ("verse", "input or name, to (next, previous, blank)"),
 ];
 
 fn get<'a>(q: &'a [(String, String)], key: &str) -> Option<&'a str> {
@@ -270,6 +272,34 @@ pub fn command(show: &Value, cmd: &str, q: &[(String, String)]) -> Result<Action
                         .ok_or("to must be next, previous or a number")?;
                     json!({"type": "slideGo", "id": id, "index": i})
                 }
+            }
+        }
+        "datarow" => match get(q, "to").unwrap_or("next") {
+            "next" => json!({"type": "dataStep", "delta": 1}),
+            "previous" | "prev" => json!({"type": "dataStep", "delta": -1}),
+            n => {
+                let row = n
+                    .parse::<usize>()
+                    .ok()
+                    .and_then(|n| n.checked_sub(1))
+                    .ok_or("to must be next, previous or a row number")?;
+                json!({"type": "dataRow", "row": row})
+            }
+        },
+        "verse" => {
+            let id = input(show, q)?;
+            match get(q, "to").unwrap_or("next") {
+                "next" => json!({"type": "scriptureStep", "id": id, "delta": 1}),
+                "previous" | "prev" => json!({"type": "scriptureStep", "id": id, "delta": -1}),
+                "blank" => {
+                    let now = sources(show)
+                        .iter()
+                        .find(|s| s["id"] == json!(id))
+                        .and_then(|s| s["kind"]["blank"].as_bool())
+                        .unwrap_or(false);
+                    json!({"type": "scriptureBlank", "id": id, "value": !now})
+                }
+                _ => return Err("to must be next, previous or blank".into()),
             }
         }
         "lyrics" => {

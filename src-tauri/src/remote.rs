@@ -166,6 +166,8 @@ pub fn allowed(action: &Action) -> bool {
             | Action::RaffleDraw { .. }
             | Action::WallPin { .. }
             | Action::ScriptureStep { .. }
+            | Action::DataStep { .. }
+            | Action::DataRow { .. }
             | Action::TriviaAsk { .. }
             | Action::TriviaReveal { .. }
             | Action::TriviaBoard { .. }

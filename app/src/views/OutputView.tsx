@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { dataValues } from '../engine/data';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createEngineClient, isInsideLumora } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
@@ -44,7 +45,11 @@ export function OutputView({ screen }: { screen: ScreenId }) {
   return (
     <div className="output" onDoubleClick={toggleFull}>
       <SafeBoundary audience>
-        <StageContext.Provider value={show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals } : null}>
+        <StageContext.Provider
+          value={
+            show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals, data: dataValues(show.data) } : null
+          }
+        >
           {show &&
             (screen === 'monitor' ? (
               <MonitorScreen show={show} />

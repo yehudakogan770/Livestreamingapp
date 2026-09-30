@@ -12,6 +12,7 @@ export function defaultScoreboard(): Scoreboard {
     showClock: true,
     style: 'bug',
     title: '',
+    link: { homeName: '', homeScore: '', awayName: '', awayScore: '', period: '' },
   };
 }
 

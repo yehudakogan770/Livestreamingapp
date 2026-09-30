@@ -1,4 +1,5 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
+import { dataValues } from '../engine/data';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { createEngineClient, isInsideLumora, isSoundFile, type EngineClient } from '../engine/client';
 import { useShow } from '../engine/useShow';
@@ -41,7 +42,11 @@ export function MultiviewView() {
   return (
     <div className="mv" onDoubleClick={toggleFull}>
       <SafeBoundary audience>
-        <StageContext.Provider value={show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals } : null}>
+        <StageContext.Provider
+          value={
+            show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals, data: dataValues(show.data) } : null
+          }
+        >
           {show && <Multiview show={show} client={client} />}
         </StageContext.Provider>
       </SafeBoundary>

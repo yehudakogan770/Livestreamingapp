@@ -133,6 +133,8 @@ pub struct Scoreboard {
     pub style: ScoreStyle,
     /// A line over the full-screen board (the match or event).
     pub title: String,
+    /// Columns of the data file this board follows.
+    pub link: crate::data::ScoreLink,
 }
 
 impl Default for Scoreboard {
@@ -150,6 +152,7 @@ impl Default for Scoreboard {
             show_clock: true,
             style: ScoreStyle::Bug,
             title: String::new(),
+            link: crate::data::ScoreLink::default(),
         }
     }
 }

@@ -1,0 +1,55 @@
+.modal__box.dat {
+  width: min(960px, calc(100vw - 24px));
+}
+.dat__file {
+  align-items: flex-end;
+}
+.dat__path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  align-self: center;
+}
+.dat__every {
+  width: 110px;
+}
+.dat__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.dat__table {
+  max-height: 300px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.dat__table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.dat__table th,
+.dat__table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  white-space: nowrap;
+}
+.dat__table th {
+  position: sticky;
+  top: 0;
+  background: var(--panel, #1b1e24);
+}
+.dat__table tbody tr {
+  cursor: pointer;
+}
+.dat__table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.dat__table tr.is-on {
+  background: rgba(47, 128, 237, 0.2);
+}

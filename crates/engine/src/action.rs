@@ -317,6 +317,25 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Choose the data file (empty: none) and how often it is read.
+    SetDataFile {
+        path: String,
+        every_ms: u32,
+    },
+    /// What the data file holds now (sent by the app as it reads it).
+    DataRows {
+        headers: Vec<String>,
+        rows: Vec<Vec<String>>,
+        error: String,
+    },
+    /// Titles take their words from this row (from 0).
+    DataRow {
+        row: usize,
+    },
+    /// The next (1) or previous (-1) row.
+    DataStep {
+        delta: i32,
+    },
     /// Change the seating list and how it looks.
     UpdateSeating {
         id: SourceId,
