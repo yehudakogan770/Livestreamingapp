@@ -62,7 +62,8 @@ export function PerfChip({ client }: { client: EngineClient }) {
   if (!s) return null;
   const cpu = s.perf ? Math.round(s.perf.cpu) : null;
   const fr = s.frames;
-  const busy = (cpu !== null && cpu > 85) || (fr !== null && fr.fps < fr.target * 0.85);
+  const gpu = s.perf?.gpu != null ? Math.round(s.perf.gpu) : null;
+  const busy = (cpu !== null && cpu > 85) || (gpu !== null && gpu > 90) || (fr !== null && fr.fps < fr.target * 0.85);
   const label = [cpu !== null ? `CPU ${cpu}%` : null, fr ? `${fr.fps} fps` : null].filter(Boolean).join(' · ') || `${s.uiFps} fps`;
   const mb = (n: number) => (n >= 1024 ? `${(n / 1024).toFixed(1)} GB` : `${n} MB`);
   return (
@@ -86,6 +87,12 @@ export function PerfChip({ client }: { client: EngineClient }) {
                     <th>Processor</th>
                     <td>{cpu}%</td>
                   </tr>
+                  {gpu !== null && (
+                    <tr>
+                      <th>Graphics card</th>
+                      <td>{gpu}%</td>
+                    </tr>
+                  )}
                   <tr>
                     <th>Memory</th>
                     <td>

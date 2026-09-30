@@ -99,6 +99,8 @@ export interface PerfStats {
   memUsedMb: number;
   memTotalMb: number;
   appMemMb: number;
+  /** The graphics card's 3D use, 0 – 100 (null where it can't be measured). */
+  gpu: number | null;
 }
 
 /** A display or window this computer can capture. */

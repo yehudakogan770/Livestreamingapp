@@ -406,7 +406,7 @@ on screen with the page's code.
 11. ✅ **Stingers** (a video transition with a cut point) (vMix, OBS).
 12. ✅ **Scoreboards and timers** (vMix, Wirecast), and **data from spreadsheets**: a CSV or JSON file read again as it changes; titles show {Column} values from the chosen row (next row by button, Stream Deck or phone), and scoreboards can follow its columns (vMix data sources).
 13. 🔶 **Animated title designer** with templates (vMix GT, Wirecast) — 6 designs and build-on done; a free-layout designer to come.
-14. 🔶 **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames). Stats done (processor, memory, frames, dropped, data rates); ⬜ GPU, per-output size.
+14. 🔶 **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames). Stats done (processor, graphics card, memory, frames, dropped, data rates); ⬜ per-output size.
 15. ✅ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
 16. ✅ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
 17. ✅ **Audience polls and Q&A** shown on screen (Zoom Events, Restream).
