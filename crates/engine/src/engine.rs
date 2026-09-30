@@ -1101,7 +1101,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             let b = brand.cleaned();
             for src in &mut s.sources {
                 match &mut src.kind {
-                    SourceKind::Text(t) => b.apply_to(&mut t.style),
+                    SourceKind::Text(t) => {
+                        let name_title = t.layout == crate::text::TextLayout::LowerThird;
+                        b.apply_to(&mut t.style, name_title);
+                    }
                     SourceKind::Lyrics(l) => {
                         // Songs keep their own box and design; they take the font and colour.
                         l.style.font.clone_from(&b.font);

@@ -157,7 +157,9 @@ export function ControlView({
     // New titles come in the event's look.
     const brand = show.event.brand;
     const src: NewSource =
-      added.kind.type === 'text' && hasBrand(brand) ? { ...added, kind: { ...added.kind, style: branded(added.kind.style, brand) } } : added;
+      added.kind.type === 'text' && hasBrand(brand)
+        ? { ...added, kind: { ...added.kind, style: branded(added.kind.style, brand, added.kind.layout === 'lowerThird') } }
+        : added;
     setAdding(false);
     void client
       .dispatch({ type: 'addSource', source: { ...src, id } })
@@ -221,12 +223,23 @@ export function ControlView({
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
   const name = SCREENS.find((s) => s.id === screen)?.name ?? '';
 
-  // The controls for what is in Next (as soon as it is lined up), else for what is on air.
+  // The controls for what is on air (they stay while it runs), and for what is
+  // lined up in Next (as soon as it is there).
   const cardFor = (id: string | null) => {
     const k = find(id)?.kind.type;
     return k === 'pesukim' || k === 'slideshow' || k === 'credits' || k === 'countdown' ? k : null;
   };
-  const card = screen === 'monitor' ? null : ((sc.preview !== sc.program ? cardFor(sc.preview) : null) ?? cardFor(sc.program));
+  const cards = [...new Set([cardFor(sc.program), sc.preview !== sc.program ? cardFor(sc.preview) : null].filter((c) => c !== null))];
+  const cardView = (card: (typeof cards)[number] | 'none') =>
+    card === 'pesukim' ? (
+      <PesukimCard key={card} show={show} act={act} screen={screen} client={client} />
+    ) : card === 'slideshow' ? (
+      <SlideshowCard key={card} show={show} act={act} screen={screen} client={client} />
+    ) : card === 'credits' ? (
+      <CreditsCard key={card} show={show} act={act} screen={screen} />
+    ) : (
+      <CountdownMini key="countdown" show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
+    );
 
   return (
     <div className="control">
@@ -251,17 +264,7 @@ export function ControlView({
               </div>
               <div className="centre">
                 <SwitchPanel show={show} screen={screen} act={act} onStingers={() => setStingers(true)} />
-                <div className="centre__more">
-                  {card === 'pesukim' ? (
-                    <PesukimCard show={show} act={act} screen={screen} client={client} />
-                  ) : card === 'slideshow' ? (
-                    <SlideshowCard show={show} act={act} screen={screen} client={client} />
-                  ) : card === 'credits' ? (
-                    <CreditsCard show={show} act={act} screen={screen} />
-                  ) : (
-                    <CountdownMini show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
-                  )}
-                </div>
+                <div className="centre__more">{cards.length ? cards.map(cardView) : cardView('none')}</div>
               </div>
               <div className="mon mon--pgm">
                 <div className="mon__head">
@@ -453,9 +456,10 @@ function useFitLayout() {
         return;
       }
       const sw = centre.querySelector<HTMLElement>('.switch');
-      const card = centre.querySelector<HTMLElement>('.centre__more > *');
+      // Every card there (the one on air and the one in Next), with the gap between.
+      const shown = [...centre.querySelectorAll<HTMLElement>('.centre__more > *')];
       const switchH = sw?.offsetHeight ?? 0;
-      const cardH = card ? card.scrollHeight : 0;
+      const cardH = shown.reduce((n, c, i) => n + c.scrollHeight + (i ? 10 : 0), 0);
       const col = sw?.offsetWidth || 262;
       const monH = (centreW: number) => ((W - centreW - 48) / 2) * (9 / 16) + 86;
       const inputsMin = Math.min(260, Math.max(150, H * 0.26));

@@ -55,7 +55,25 @@ pub enum TextDesign {
     Glass,
 }
 
+/// How a title comes on (when it builds on).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum TextEntrance {
+    /// The box opens, then the words rise in.
+    #[default]
+    Build,
+    Fade,
+    /// Slides in from its side.
+    Slide,
+    /// Rises up from below.
+    Rise,
+    /// Grows in.
+    Pop,
+}
+
 /// How the text looks. Sizes are in pixels of a 1920 × 1080 frame (they scale).
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 #[ts(export)]
@@ -88,6 +106,24 @@ pub struct TextStyle {
     pub accent: String,
     /// Builds on with an animation when it comes on.
     pub animate: bool,
+    /// How it comes on (when it animates).
+    pub entrance: TextEntrance,
+    pub italic: bool,
+    /// ALL CAPITALS.
+    pub uppercase: bool,
+    /// The second line's colour ("" for the same as the first).
+    pub sub_color: String,
+    /// The second line's size, in % of the first.
+    pub sub_size: u32,
+    /// The second line's font ("" for the same as the first).
+    pub sub_font: String,
+    /// A line around the box, px (0: none).
+    pub border: u32,
+    pub border_color: String,
+    /// A lower third's distance from the side of the screen, % of the width.
+    pub x: u32,
+    /// A lower third's distance from the bottom of the screen, % of the height.
+    pub y: u32,
 }
 
 impl Default for TextStyle {
@@ -112,6 +148,16 @@ impl Default for TextStyle {
             design: TextDesign::Box,
             accent: "#2f80ed".to_owned(),
             animate: true,
+            entrance: TextEntrance::Build,
+            italic: false,
+            uppercase: false,
+            sub_color: String::new(),
+            sub_size: 60,
+            sub_font: String::new(),
+            border: 0,
+            border_color: "#ffffff".to_owned(),
+            x: 5,
+            y: 10,
         }
     }
 }
@@ -160,6 +206,14 @@ impl TextInput {
         s.padding = s.padding.min(120);
         s.radius = s.radius.min(60);
         s.speed = s.speed.clamp(20, 1000);
+        s.sub_size = s.sub_size.clamp(20, 150);
+        s.border = s.border.min(20);
+        s.x = s.x.min(45);
+        s.y = s.y.min(90);
+        s.sub_font = s.sub_font.trim().chars().take(60).collect();
+        if !s.sub_color.is_empty() && !is_color(&s.sub_color) {
+            s.sub_color.clear();
+        }
         s.box_opacity = if s.box_opacity.is_finite() {
             s.box_opacity.clamp(0.0, 1.0)
         } else {
@@ -180,6 +234,7 @@ impl TextInput {
             (&mut s.outline_color, d.outline_color),
             (&mut s.box_color, d.box_color),
             (&mut s.accent, d.accent),
+            (&mut s.border_color, d.border_color),
         ] {
             if !is_color(c) {
                 *c = fallback;

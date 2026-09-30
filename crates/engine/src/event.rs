@@ -80,6 +80,7 @@ impl GuestWifi {
 }
 
 /// The event's look, applied to all titles, songs and scoreboards at once.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 #[ts(export)]
@@ -92,6 +93,45 @@ pub struct Brand {
     /// 0 – 100.
     pub box_opacity: u32,
     pub design: crate::text::TextDesign,
+    /// Name titles' (lower thirds') text size, px of a 1080 frame.
+    pub size: u32,
+    pub weight: u32,
+    pub italic: bool,
+    pub uppercase: bool,
+    pub align: crate::text::TextAlign,
+    pub outline: u32,
+    pub outline_color: String,
+    pub shadow: bool,
+    /// A box behind the words (Box, Accent bar).
+    pub box_on: bool,
+    pub padding: u32,
+    pub radius: u32,
+    /// Line height, % of the size.
+    pub line_height: u32,
+    /// Letter spacing, px.
+    pub letter_spacing: i32,
+    /// The second line: colour ("" same), size (% of the first), font ("" same).
+    pub sub_color: String,
+    pub sub_size: u32,
+    pub sub_font: String,
+    pub border: u32,
+    pub border_color: String,
+    /// Where name titles sit: % from the side and from the bottom.
+    pub x: u32,
+    pub y: u32,
+    pub animate: bool,
+    pub entrance: crate::text::TextEntrance,
+    /// Font files added for this event.
+    pub fonts: Vec<CustomFont>,
+}
+
+/// A font from a file (TTF, OTF, WOFF), usable by name like an installed one.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct CustomFont {
+    pub name: String,
+    pub path: String,
 }
 
 impl Default for Brand {
@@ -103,6 +143,29 @@ impl Default for Brand {
             box_color: "#101216".to_owned(),
             box_opacity: 80,
             design: crate::text::TextDesign::Box,
+            size: 54,
+            weight: 600,
+            italic: false,
+            uppercase: false,
+            align: crate::text::TextAlign::Left,
+            outline: 0,
+            outline_color: "#000000".to_owned(),
+            shadow: true,
+            box_on: true,
+            padding: 24,
+            radius: 6,
+            line_height: 120,
+            letter_spacing: 0,
+            sub_color: String::new(),
+            sub_size: 60,
+            sub_font: String::new(),
+            border: 0,
+            border_color: "#ffffff".to_owned(),
+            x: 5,
+            y: 10,
+            animate: true,
+            entrance: crate::text::TextEntrance::Build,
+            fonts: Vec::new(),
         }
     }
 }
@@ -123,17 +186,47 @@ impl Brand {
             (&mut self.text_color, d.text_color),
             (&mut self.accent, d.accent),
             (&mut self.box_color, d.box_color),
+            (&mut self.outline_color, d.outline_color),
+            (&mut self.border_color, d.border_color),
         ] {
             if !is_color(c) {
                 *c = f;
             }
         }
+        if !self.sub_color.is_empty() && !is_color(&self.sub_color) {
+            self.sub_color.clear();
+        }
+        self.sub_font = self.sub_font.trim().chars().take(60).collect();
         self.box_opacity = self.box_opacity.min(100);
+        self.size = self.size.clamp(12, 400);
+        self.weight = (self.weight.clamp(300, 900) / 100) * 100;
+        self.outline = self.outline.min(20);
+        self.padding = self.padding.min(120);
+        self.radius = self.radius.min(60);
+        self.line_height = self.line_height.clamp(80, 300);
+        self.letter_spacing = self.letter_spacing.clamp(-10, 40);
+        self.sub_size = self.sub_size.clamp(20, 150);
+        self.border = self.border.min(20);
+        self.x = self.x.min(45);
+        self.y = self.y.min(90);
+        self.fonts.truncate(40);
+        for f in &mut self.fonts {
+            f.name = f
+                .name
+                .trim()
+                .chars()
+                .filter(|c| !c.is_control() && *c != '"')
+                .take(60)
+                .collect();
+        }
+        self.fonts
+            .retain(|f| !f.name.is_empty() && !f.path.trim().is_empty());
         self
     }
 
-    /// Put the look on a title's style.
-    pub fn apply_to(&self, s: &mut crate::text::TextStyle) {
+    /// Put the look on a title's style. Size, alignment and place only go on
+    /// name titles (lower thirds): big titles and tickers keep theirs.
+    pub fn apply_to(&self, s: &mut crate::text::TextStyle, name_title: bool) {
         s.font.clone_from(&self.font);
         s.color.clone_from(&self.text_color);
         s.accent.clone_from(&self.accent);
@@ -141,8 +234,32 @@ impl Brand {
         #[allow(clippy::cast_precision_loss)]
         {
             s.box_opacity = self.box_opacity as f32 / 100.0;
+            s.line_height = self.line_height as f32 / 100.0;
+            s.letter_spacing = self.letter_spacing as f32;
         }
         s.design = self.design;
+        s.weight = self.weight;
+        s.italic = self.italic;
+        s.uppercase = self.uppercase;
+        s.outline = self.outline;
+        s.outline_color.clone_from(&self.outline_color);
+        s.shadow = self.shadow;
+        s.padding = self.padding;
+        s.radius = self.radius;
+        s.sub_color.clone_from(&self.sub_color);
+        s.sub_size = self.sub_size;
+        s.sub_font.clone_from(&self.sub_font);
+        s.border = self.border;
+        s.border_color.clone_from(&self.border_color);
+        s.animate = self.animate;
+        s.entrance = self.entrance;
+        if name_title {
+            s.box_on = self.box_on;
+            s.size = self.size;
+            s.align = self.align;
+            s.x = self.x;
+            s.y = self.y;
+        }
     }
 }
 

@@ -26,6 +26,16 @@ export function defaultTextStyle(): TextStyle {
     design: 'box',
     accent: '#2f80ed',
     animate: true,
+    entrance: 'build',
+    italic: false,
+    uppercase: false,
+    subColor: '',
+    subSize: 60,
+    subFont: '',
+    border: 0,
+    borderColor: '#ffffff',
+    x: 5,
+    y: 10,
   };
 }
 
