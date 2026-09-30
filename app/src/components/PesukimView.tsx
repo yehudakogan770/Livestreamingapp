@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { effectAt, effectStyle, useEffectClock, wordEffect } from '../engine/effects';
+import { useRef, type ReactNode } from 'react';
+import { effectAt, effectStyle, useEffectClock, WORD_OUT_MS, WORD_SPEED, wordEffect } from '../engine/effects';
 import { barDesign, barLayout, barRange, glossesOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import './PesukimView.css';
 
@@ -38,32 +38,58 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   const { look, place } = data;
   const pasuk = data.pesukim[place.pasuk];
   const he = wordsOf(pasuk?.text ?? '');
-  // How the bar comes on (when it is first shown), and each new word.
+  const [from, to] = barRange(data);
+  // How the bar comes on (when it is first shown), and each new word. With
+  // the whole line showing, only a new line comes on (the lit word just moves).
   const barFx = effectAt(look.barIn ?? 'rise', useEffectClock(look.barIn ?? 'rise'));
   const wordKind = wordEffect(look.wordChange);
   const wordLetters = [...(he[place.word] ?? '')].length || 6;
-  const wordFx = effectAt(wordKind, useEffectClock(wordKind, wordLetters, `${place.pasuk}:${place.word}:${place.intro}:${place.whole}`), wordLetters);
+  const oneWord = look.barWords !== 'line' && !place.whole;
+  const key = `${place.pasuk}:${oneWord ? place.word : from}:${place.intro}:${place.whole}`;
+  const clock = useEffectClock(wordKind, wordLetters, key, WORD_SPEED);
+  const wordFx = effectAt(wordKind, clock, wordLetters);
+  // What was showing before: it fades away while the new one comes on (no blink).
+  const last = useRef<{ key: string; place: PesukimData['place'] } | null>(null);
+  const before = useRef<{ key: string; place: PesukimData['place'] } | null>(null);
+  if (last.current && last.current.key !== key) before.current = last.current;
+  last.current = { key, place };
+  const outAlpha = before.current && wordKind !== 'none' ? Math.max(0, 1 - (clock * WORD_SPEED) / WORD_OUT_MS) : 0;
   if (place.blank || !pasuk || (!he.length && !place.intro)) return null;
-  const tr = wordsOf(pasuk.translit);
-  const en = glossesOf(pasuk.english);
   const d = barDesign(look.design);
   const L = barLayout(look);
   const image = look.barImage && url && !look.plain ? url(look.barImage) : '';
   // No background: just the words, in two colours (an outline keeps them readable).
   const bare = look.plain || (!look.barImage && d.id === 'none');
-  const [from, to] = barRange(data);
-  const lit = (i: number) => (place.whole ? 'is-said' : i === place.word ? 'is-now' : i < place.word ? 'is-said' : '');
-  const line = (words: string[], cls: string, size: number, dir: 'rtl' | 'ltr', font?: string) => (
-    <div className={`pes__line ${cls}`} dir={dir} style={{ fontSize: `${size}cqh`, fontFamily: font }}>
-      {words.slice(from, to).map((w, j) =>
-        w ? (
-          <span key={j} className={lit(from + j)} style={lit(from + j) === 'is-now' ? { color: look.textColor } : undefined}>
-            {w}
-          </span>
-        ) : null,
-      )}
-    </div>
-  );
+
+  /** The lines for a moment of the pasuk (now, or the one going away). */
+  const lines = (pl: PesukimData['place']) => {
+    const ps = data.pesukim[pl.pasuk];
+    if (!ps) return null;
+    if (pl.intro) return <Intro n={pl.pasuk + 1} child={ps.child} big={7.2} />;
+    const [a, z] = barRange({ ...data, place: pl });
+    const lit = (i: number) => (pl.whole ? 'is-said' : i === pl.word ? 'is-now' : i < pl.word ? 'is-said' : '');
+    const line = (words: string[], cls: string, size: number, dir: 'rtl' | 'ltr', font?: string) => (
+      <div className={`pes__line ${cls}`} dir={dir} style={{ fontSize: `${size}cqh`, fontFamily: font }}>
+        {words.slice(a, z).map((w, j) =>
+          w ? (
+            <span key={j} className={lit(a + j)} style={lit(a + j) === 'is-now' ? { color: look.textColor } : undefined}>
+              {w}
+            </span>
+          ) : null,
+        )}
+      </div>
+    );
+    const tr = wordsOf(ps.translit);
+    const en = glossesOf(ps.english);
+    return (
+      <>
+        {line(wordsOf(ps.text), 'pes__he', L.he, 'rtl', `"${look.font}", "Frank Ruhl Libre", serif`)}
+        {look.showTranslit && tr.length > 0 && line(tr, 'pes__tr', L.tr, 'ltr')}
+        {look.showEnglish && en.length > 0 && line(en, 'pes__en', L.en, 'ltr')}
+      </>
+    );
+  };
+
   return (
     <div
       className={`pes__bar${d.frame ? ' pes__bar--frame' : ''}${bare ? ' pes__bar--bare' : ''}${look.showNumber && !bare && !image ? ' pes__bar--num' : ''}`}
@@ -86,16 +112,15 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
         </div>
       )}
       <div className="pes__lines">
-        <div className="pes__in" style={effectStyle(wordFx, true)}>
-          {place.intro ? (
-            <Intro n={place.pasuk + 1} child={pasuk.child} big={7.2} />
-          ) : (
-            <>
-              {line(he, 'pes__he', L.he, 'rtl', `"${look.font}", "Frank Ruhl Libre", serif`)}
-              {look.showTranslit && tr.length > 0 && line(tr, 'pes__tr', L.tr, 'ltr')}
-              {look.showEnglish && en.length > 0 && line(en, 'pes__en', L.en, 'ltr')}
-            </>
+        <div className="pes__stack">
+          {outAlpha > 0 && before.current && (
+            <div className="pes__in pes__in--out" style={{ opacity: outAlpha }} aria-hidden>
+              {lines(before.current.place)}
+            </div>
           )}
+          <div className="pes__in" style={effectStyle(wordFx, true)}>
+            {lines(place)}
+          </div>
         </div>
       </div>
     </div>

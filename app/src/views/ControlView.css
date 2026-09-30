@@ -915,19 +915,23 @@ select {
 
 .addinput__body {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 330px minmax(0, 1fr);
   min-height: 0;
   overflow: auto;
 }
 .addinput__kinds {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px;
+  /* Every kind at once, in two columns (the description shows on the right). */
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-content: start;
+  gap: 4px;
+  padding: 12px;
   border-right: 1px solid var(--border);
 }
 .addinput__kind {
-  padding: 10px 12px;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 13px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--panel);
@@ -936,9 +940,18 @@ select {
   flex-direction: column;
   gap: 2px;
 }
-.addinput__kind span {
-  font-size: 11px;
-  color: var(--text-faint);
+.addinput__kind strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.addinput__what {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.addinput__what b {
+  color: var(--text);
 }
 .addinput__kind[aria-pressed='true'] {
   border-color: var(--accent);
@@ -2140,4 +2153,11 @@ button.strip__name:hover {
 }
 .cdm__make {
   align-self: flex-start;
+}
+
+/* Short windows: a smaller preview in Add input, so its settings fit without scrolling. */
+@media (max-height: 820px) {
+  .addinput__preview {
+    max-height: 22vh;
+  }
 }

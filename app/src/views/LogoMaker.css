@@ -1,6 +1,6 @@
 .modal__box.lm {
   width: min(1240px, calc(100vw - 24px));
-  height: min(860px, calc(100vh - 24px));
+  height: min(860px, calc(100vh - 58px));
   max-height: none;
 }
 .lm__name {

@@ -1,6 +1,6 @@
 .modal__box.pl {
   width: min(720px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+  max-height: calc(100vh - 58px);
 }
 .pl__body {
   display: flex;

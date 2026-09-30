@@ -12,7 +12,7 @@
 .hlp__nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   padding: 12px;
   border-right: 1px solid var(--border);
   overflow: auto;
@@ -22,7 +22,8 @@
 }
 .hlp__topic {
   text-align: left;
-  padding: 7px 10px;
+  padding: 3px 10px;
+  line-height: 1.3;
   border-radius: 6px;
   border: 0;
   background: transparent;

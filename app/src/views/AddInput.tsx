@@ -281,6 +281,7 @@ export function AddInput({
                 key={k.kind}
                 type="button"
                 className="addinput__kind"
+                title={k.hint}
                 aria-pressed={kind === k.kind}
                 onClick={() => {
                   if (k.kind === 'logo3d') {
@@ -298,11 +299,13 @@ export function AddInput({
                 }}
               >
                 <strong>{k.name}</strong>
-                <span>{k.hint}</span>
               </button>
             ))}
           </nav>
           <div className="addinput__setup">
+            <p className="addinput__what">
+              <b>{KINDS.find((k) => k.kind === kind)?.name}</b> · {KINDS.find((k) => k.kind === kind)?.hint}
+            </p>
             <div className="addinput__preview">
               {previewSource ? (
                 <SourceView source={previewSource} client={client} report={false} />

@@ -147,6 +147,17 @@
   justify-content: center;
   gap: 0.2cqh;
 }
+.pes__stack {
+  /* The word going away and the new one, in the same place. */
+  display: grid;
+  max-width: 100%;
+}
+.pes__stack > * {
+  grid-area: 1 / 1;
+}
+.pes__in--out {
+  pointer-events: none;
+}
 .pes__in {
   display: flex;
   flex-direction: column;

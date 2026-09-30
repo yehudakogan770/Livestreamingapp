@@ -1,4 +1,5 @@
 import { AuctionView, FundraiserView, RaffleView, WallView } from './AudienceViews';
+import { eventLogo } from '../engine/brand';
 import { guestPage } from '../engine/guest';
 import { CommentView } from './CommentView';
 import { ZmanimView } from './ZmanimView';
@@ -268,17 +269,17 @@ function PesukimInput({ source, client, thumb, audience }: { source: Source; cli
 
 function CountdownInput({ timer, background, logoUrl, client }: { timer: Countdown; background: string; logoUrl: string | null; client: EngineClient }) {
   const stage = useStage();
-  // At the end: this countdown's own picture, or else the event logo.
-  const logo = logoUrl ?? stage?.event.logo ?? null;
-  return <CountdownView countdown={timer} background={background} logoUrl={logo ? client.mediaUrl(logo) : null} />;
+  // At the end: this countdown's own picture, or else the event logo (Lumora's until it has one).
+  const logo = logoUrl ?? eventLogo(stage?.event);
+  return <CountdownView countdown={timer} background={background} logoUrl={client.mediaUrl(logo)} />;
 }
 
-/** What the audience sees instead of something broken: black, or the event logo if chosen in the event setup. */
+/** What the audience sees instead of something broken: black, or the logo (the event's, else Lumora's) as chosen in the event setup. */
 export function SafeScreenView({ reason = 'failure' }: { reason?: 'failure' | 'panic' }) {
   const stage = useStage();
   const ev = stage?.event;
   const choice = reason === 'panic' ? ev?.panicShows : ev?.onFailure;
-  const logo = choice === 'logo' ? ev?.logo : null;
+  const logo = choice === 'logo' ? eventLogo(ev) : null;
   return (
     <div style={{ ...fill, background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }} data-failed>
       {logo && stage && <img src={stage.mediaUrl(logo)} alt="" draggable={false} style={{ maxWidth: '50%', maxHeight: '50%', objectFit: 'contain' }} />}

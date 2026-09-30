@@ -1,6 +1,6 @@
 .modal__box.trg {
   width: min(1100px, calc(100vw - 24px));
-  height: min(760px, calc(100vh - 24px));
+  height: min(760px, calc(100vh - 58px));
   max-height: none;
 }
 .trg__why {

@@ -4,7 +4,7 @@
   right: 8px;
   /* Always above the bottom bar: PANIC stays reachable. */
   bottom: 60px;
-  z-index: 60;
+  z-index: 35; /* above the page, below dialogs */
   width: min(360px, calc(100vw - 16px));
   display: flex;
   flex-direction: column;

@@ -1,11 +1,12 @@
 .modal__box.midi {
-  width: min(640px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+  width: min(1180px, calc(100vw - 48px));
+  max-height: calc(100vh - 58px);
 }
 .midi__body {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  /* The groups side by side, so nearly everything shows at once. */
+  display: block;
+  columns: 3 340px;
+  column-gap: 18px;
   min-height: 0;
   padding: 14px;
   overflow: auto;
@@ -43,4 +44,12 @@
   font-family: var(--mono);
   font-size: 11px;
   color: var(--text-dim);
+}
+
+.midi__body > * {
+  break-inside: avoid;
+  margin-bottom: 10px;
+}
+.midi__group .midi__row {
+  padding: 1px 6px;
 }

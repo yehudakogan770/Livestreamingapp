@@ -1,6 +1,6 @@
 .modal__box.scc {
   width: min(960px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+  max-height: calc(100vh - 58px);
 }
 .scc__body {
   display: flex;

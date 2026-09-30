@@ -244,7 +244,7 @@ describe('Event setup', () => {
     });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
     expect(within(dialog).getByText('If a camera or video stops working, that screen shows')).toBeInTheDocument();
-    fireEvent.click(within(dialog).getAllByRole('button', { name: /The event logo/ })[1]!);
+    fireEvent.click(within(dialog).getAllByRole('button', { name: /The logo/ })[1]!);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
     fireEvent.click(within(dialog).getByRole('button', { name: /Go to black/ }));
     await act(async () => {

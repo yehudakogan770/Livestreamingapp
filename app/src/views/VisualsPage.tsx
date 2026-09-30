@@ -25,7 +25,7 @@ const PADS = [
   { id: 'freeze', name: 'Freeze', key: 'Q', tip: 'Stop all movement' },
   { id: 'invert', name: 'Invert', key: 'I', tip: 'Swap the colours' },
   { id: 'text', name: 'Text', key: 'L', tip: 'Show your words on the visuals' },
-  { id: 'random', name: 'Randomize', key: 'R', tip: 'A random scene and effects' },
+  { id: 'random', name: 'Random', key: 'R', tip: 'A random scene and effects' },
   { id: 'reset', name: 'Reset effects', key: 'E', tip: 'Back to the scene as designed' },
   { id: 'colours', name: 'Colours', key: 'C', tip: 'Next colour set' },
   { id: 'next', name: 'Next scene', key: 'Space', tip: 'The next scene in this music type' },

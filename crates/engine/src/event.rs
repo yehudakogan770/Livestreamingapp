@@ -12,9 +12,9 @@ pub const MAX_EVENT_NAME_LEN: usize = 80;
 #[serde(rename_all = "lowercase")]
 #[ts(export)]
 pub enum SafeScreen {
-    #[default]
     Black,
-    /// The event logo on black (black if there is no logo).
+    /// The event logo on black (Lumora's logo until the event has its own).
+    #[default]
     Logo,
 }
 

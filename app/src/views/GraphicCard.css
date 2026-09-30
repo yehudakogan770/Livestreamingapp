@@ -1,6 +1,6 @@
 .modal__box.grc {
   width: min(1320px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+  max-height: calc(100vh - 58px);
   display: flex;
   flex-direction: column;
 }

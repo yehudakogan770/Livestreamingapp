@@ -1,6 +1,6 @@
 .modal__box.stg {
   width: min(760px, calc(100vw - 24px));
-  max-height: calc(100vh - 24px);
+  max-height: calc(100vh - 58px);
 }
 .stg__body {
   display: flex;

@@ -13,7 +13,8 @@ import { lumaMask } from '../engine/luma';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { loadFontFor } from '../engine/fonts';
-import { effectAt, wordEffect, type EffectState } from '../engine/effects';
+import { eventLogo } from '../engine/brand';
+import { effectAt, WORD_OUT_MS, WORD_SPEED, wordEffect, type EffectState } from '../engine/effects';
 import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
@@ -1740,7 +1741,7 @@ export class ProgramCompositor {
         return;
       }
       case 'countdown':
-        this.countdown(k.timer, k.background, k.logo ?? event.logo, now, w, h);
+        this.countdown(k.timer, k.background, k.logo ?? eventLogo(event), now, w, h);
         return;
       case 'pesukim':
         this.pesukim(k, event, now, w, h);
@@ -1965,8 +1966,9 @@ export class ProgramCompositor {
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, w, h);
     const choice = reason === 'panic' ? event.panicShows : event.onFailure;
-    if (choice !== 'logo' || !event.logo) return;
-    const logo = this.picture(event.logo);
+    if (choice !== 'logo') return;
+    // The event's logo, or Lumora's until it has one.
+    const logo = this.picture(eventLogo(event));
     if (logo) this.centred(logo, w * 0.5, h * 0.5, w, h);
   }
 
@@ -2624,16 +2626,55 @@ export class ProgramCompositor {
     ctx.shadowBlur = 0.8 * u;
     ctx.shadowOffsetY = 0.2 * u;
     ctx.fillStyle = '#fff';
+    // The word going away fades while the new one comes on (no blink). With
+    // the whole line showing, only a new line comes on; the lit word just moves.
+    const [from0] = barRange(data);
+    const oneWord = look.barWords !== 'line' && !place.whole;
+    const key = `${place.pasuk}:${oneWord ? place.word : from0}:${place.intro}:${place.whole}`;
+    const slot = this.pesukimSlot;
+    if (!slot || slot.key !== key) this.pesukimSlot = { key, place, since: place.changedAt, before: slot?.place ?? null };
+    const cur = this.pesukimSlot!;
+    const g = { x, y, bw, bh, u, left, right, mid, bare, L };
+    const kind = wordEffect(look.wordChange);
+    const out = cur.before && kind !== 'none' ? Math.max(0, 1 - (now - cur.since) / WORD_OUT_MS) : 0;
+    if (out > 0 && cur.before) {
+      ctx.save();
+      ctx.globalAlpha *= out;
+      this.pesukimWords(data, cur.before, null, now, g, w, h);
+      ctx.restore();
+    }
+    const letters = [...(he[place.word] ?? '')].length || 6;
+    this.pesukimWords(data, place, effectAt(kind, (now - cur.since) / WORD_SPEED, letters), now, g, w, h);
+    ctx.restore();
+  }
+
+  /** The last Pesukim word shown (for the fade between words). */
+  private pesukimSlot: { key: string; place: PesukimData['place']; since: number; before: PesukimData['place'] | null } | null = null;
+
+  /** The bar's words for a moment of the pasuk, with its effect (mirrors PesukimView). */
+  private pesukimWords(
+    data: PesukimData,
+    place: PesukimData['place'],
+    wordFx: EffectState | null,
+    now: number,
+    g: { x: number; y: number; bw: number; bh: number; u: number; left: number; right: number; mid: number; bare: boolean; L: ReturnType<typeof barLayout> },
+    w: number,
+    h: number,
+  ) {
+    const ctx = this.ctx;
+    const { look } = data;
+    const { x, y, bw, bh, u, left, right, mid, bare, L } = g;
+    const pasuk = data.pesukim[place.pasuk];
+    if (!pasuk) return;
+    const he = wordsOf(pasuk.text);
+    ctx.save();
     if (place.intro) {
-      this.pesukimIntro(place.pasuk + 1, pasuk.child, 7.2 * u, mid, y + bh / 2, now - place.changedAt);
+      this.pesukimIntro(place.pasuk + 1, pasuk.child, 7.2 * u, mid, y + bh / 2, wordFx ? now - place.changedAt : 10_000);
       ctx.restore();
       return;
     }
-    const [from, to] = barRange(data);
-    // Each new word comes on with its effect, like the screens.
-    const letters = [...(he[place.word] ?? '')].length || 6;
-    const wordFx = effectAt(wordEffect(look.wordChange), now - place.changedAt, letters);
-    this.applyEffect(wordFx, x + bw / 2, y + bh / 2, w, h);
+    const [from, to] = barRange({ ...data, place });
+    if (wordFx) this.applyEffect(wordFx, x + bw / 2, y + bh / 2, w, h);
     const rows: { words: string[]; font: string; size: number; rtl: boolean }[] = [
       { words: he, font: `700 ${L.he * u}px "${look.font}", "Frank Ruhl Libre", serif`, size: L.he, rtl: true },
     ];
@@ -2646,7 +2687,7 @@ export class ProgramCompositor {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.direction = 'ltr';
-    if (wordFx.reveal < 1) {
+    if (wordFx && wordFx.reveal < 1) {
       // Letter by letter, across the words themselves (Hebrew from the right).
       let widest = 0;
       for (const row of rows) {

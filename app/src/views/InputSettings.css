@@ -1,6 +1,6 @@
 .modal__box.is {
   width: min(1240px, calc(100vw - 24px));
-  height: min(820px, calc(100vh - 24px));
+  height: min(820px, calc(100vh - 58px));
   max-height: none;
 }
 .is .modal__head select {

@@ -99,23 +99,25 @@ export function effectAt(kind: EffectKind, t: number, letters = 12): EffectState
   }
 }
 
-/** Milliseconds since this was first shown, updated every frame while an effect runs. */
-export function useEffectClock(kind: EffectKind, letters = 12, restart: unknown = null): number {
-  const [t, setT] = useState(0);
-  const start = useRef(0);
+/**
+ * Milliseconds since this was first shown (or since `restart` last changed),
+ * redrawn every frame while an effect runs. The start is taken in the same
+ * render as the change, so a new word never shows at full strength first.
+ */
+export function useEffectClock(kind: EffectKind, letters = 12, restart: unknown = null, speed = 1): number {
+  const start = useRef<{ key: unknown; at: number } | null>(null);
+  if (start.current === null || start.current.key !== restart) start.current = { key: restart, at: performance.now() };
+  const [, redraw] = useState(0);
   useEffect(() => {
-    const dur = effectMs(kind, letters);
-    start.current = performance.now();
-    setT(0);
+    const dur = effectMs(kind, letters) * speed;
     if (!dur) return;
     let raf = requestAnimationFrame(function tick() {
-      const now = performance.now() - start.current;
-      setT(now);
-      if (now < dur) raf = requestAnimationFrame(tick);
+      redraw((n) => n + 1);
+      if (performance.now() - (start.current?.at ?? 0) < dur) raf = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(raf);
-  }, [kind, letters, restart]);
-  return t;
+  }, [kind, letters, restart, speed]);
+  return (performance.now() - start.current.at) / speed;
 }
 
 /**
@@ -141,6 +143,12 @@ export function effectStyle(s: EffectState, fromEnd = false): React.CSSPropertie
     clipPath: s.reveal < 1 ? (fromEnd ? `inset(0 0 0 ${hide})` : `inset(0 ${hide} 0 0)`) : undefined,
   };
 }
+
+/** How long the word going away takes to fade, ms. */
+export const WORD_OUT_MS = 180;
+
+/** Word changes run at twice the speed (a word every second or two). */
+export const WORD_SPEED = 0.5;
 
 /** The effect a word change uses (the Pesukim's words). */
 export const wordEffect = (w: string): EffectKind => (w === 'cut' ? 'none' : (w as EffectKind));

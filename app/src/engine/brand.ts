@@ -4,6 +4,17 @@ import type { Brand } from './types/Brand';
 import type { Show } from './types/Show';
 import type { TextStyle } from './types/TextStyle';
 
+/**
+ * Lumora's own logo (app/public/brand): shown when something breaks, during
+ * PANIC and at the end of a countdown, until an event sets its own logo.
+ */
+export function appLogo(): string {
+  return typeof document === 'undefined' ? 'brand/lumora-logo.png' : new URL('brand/lumora-logo.png', document.baseURI).href;
+}
+
+/** The event's own logo, or Lumora's until it has one. */
+export const eventLogo = (ev: { logo?: string | null } | undefined | null): string => ev?.logo || appLogo();
+
 export function defaultBrand(): Brand {
   return {
     font: 'Segoe UI',

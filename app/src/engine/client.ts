@@ -346,8 +346,8 @@ export function emptyShow(): Show {
     event: {
       name: '',
       logo: null,
-      onFailure: 'black',
-      panicShows: 'black',
+      onFailure: 'logo',
+      panicShows: 'logo',
       setUp: false,
       brand: defaultBrand(),
       wifi: { name: '', password: '', qr: '', show: false },
@@ -611,7 +611,7 @@ class TauriClient implements EngineClient {
   }
 
   mediaUrl(path: string): string {
-    if (/^(blob:|data:|https?:)/.test(path)) return path;
+    if (/^(blob:|data:|https?:|tauri:)/.test(path)) return path;
     return convertFileSrc(path);
   }
 
