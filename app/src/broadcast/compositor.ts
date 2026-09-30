@@ -31,6 +31,9 @@ import type { Fundraiser } from '../engine/types/Fundraiser';
 import type { Wall } from '../engine/types/Wall';
 import type { Auction } from '../engine/types/Auction';
 import type { ZmanimCard } from '../engine/types/ZmanimCard';
+import type { Scripture } from '../engine/types/Scripture';
+import { fitSize, indexNow, reference } from '../engine/tanach';
+import { scriptureLayout, scriptureText } from '../components/ScriptureView';
 import { clockTime, countdownText, hasPlace, nextCandles, zmanimOn } from '../engine/zmanim';
 import { formatHebrew, formatHebrewHe } from '../engine/hebcal';
 import { civilDate, zmanimRows } from '../components/ZmanimView';
@@ -517,6 +520,68 @@ export class ProgramCompositor {
       ctx.fillStyle = '#1a1206';
       ctx.fillText(text, w / 2, 16 * u + 3.4 * u);
       this.confettiDraw(t, w, h);
+    }
+    ctx.restore();
+  }
+
+  /** Tanach (mirrors ScriptureView and its CSS). */
+  private scripture(s: Scripture, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const t = scriptureText(s);
+    const L = scriptureLayout(s);
+    ctx.save();
+    if (!L.lower) {
+      const g = ctx.createRadialGradient(w * 0.5, h * 0.3, 0, w * 0.5, h * 0.3, Math.hypot(w, h) * 0.7);
+      g.addColorStop(0, '#13233a');
+      g.addColorStop(1, '#04060b');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    }
+    if (!t.count) {
+      ctx.restore();
+      return;
+    }
+    if (L.lower) {
+      ctx.fillStyle = 'rgba(8,12,20,0.88)';
+      ctx.beginPath();
+      ctx.roundRect(5 * u, 67 * u, w - 10 * u, h - 71 * u, 1.2 * u);
+      ctx.fill();
+      ctx.fillStyle = '#c9a24a';
+      ctx.fillRect(5 * u, 67 * u, 0.8 * u, h - 71 * u);
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const block = (text: string, box: { top: number; h: number }, size: number, fontCss: string, color: string, rtl: boolean) => {
+      ctx.font = fontCss.replace('SIZE', `${size * u}px`);
+      ctx.direction = rtl ? 'rtl' : 'ltr';
+      const lines = this.wrap(text, L.width * u);
+      const lh = size * 1.4 * u;
+      let y = box.top * u + (box.h * u - lines.length * lh) / 2 + lh / 2;
+      ctx.fillStyle = color;
+      for (const line of lines) {
+        ctx.fillText(line, w / 2, y);
+        y += lh;
+      }
+      ctx.direction = 'ltr';
+    };
+    if (s.lang !== 'en')
+      block(
+        t.he,
+        L.he,
+        fitSize(t.he.length, L.width, L.he.h, L.lower ? 4.6 : 7.5),
+        '700 SIZE "Frank Ruehl CLM", David, "Times New Roman", serif',
+        '#f4e7c5',
+        true,
+      );
+    if (s.lang !== 'he')
+      block(t.en, L.en, fitSize(t.en.length, L.width, L.en.h, L.lower ? 3.6 : 5.2), '400 SIZE Georgia, "Times New Roman", serif', '#e8ecf3', false);
+    if (s.showRef) {
+      const ref = reference(s, indexNow()?.[s.book]?.he);
+      const size = L.lower ? 2.2 : 2.8;
+      ctx.font = `400 ${size * u}px "Segoe UI", system-ui, sans-serif`;
+      ctx.fillStyle = '#c9a24a';
+      ctx.fillText(`${ref.en} · ${ref.he}`, w / 2, L.ref * u + 1.8 * u, w - 14 * u);
     }
     ctx.restore();
   }
@@ -1410,6 +1475,9 @@ export class ProgramCompositor {
         return;
       case 'zmanim':
         this.zmanim(k, now, w, h);
+        return;
+      case 'scripture':
+        this.scripture(k, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

@@ -290,6 +290,8 @@ pub enum SourceKind {
     Auction(Box<crate::auction::Auction>),
     /// The Hebrew date, the day's zmanim, the countdown to candle lighting.
     Zmanim(crate::zmanim::ZmanimCard),
+    /// Tanach and Tehillim: a passage, a verse at a time or whole.
+    Scripture(Box<crate::scripture::Scripture>),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

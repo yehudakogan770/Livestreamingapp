@@ -503,6 +503,32 @@ function apply(s: Show, a: Action, now: number) {
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
       return;
+    case 'updateScripture':
+    case 'scriptureStep':
+    case 'scriptureGo':
+    case 'scriptureBlank': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'scripture') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a Tanach passage' });
+      const k = src.kind;
+      if (a.type === 'updateScripture') {
+        const n = a.scripture;
+        const from = Math.min(200, Math.max(1, n.from));
+        const to = Math.min(200, Math.max(from, n.to));
+        Object.assign(k, {
+          ...n,
+          book: Math.min(38, Math.max(0, n.book)),
+          chapter: Math.min(150, Math.max(1, n.chapter)),
+          from,
+          to,
+          current: Math.min(to, Math.max(from, n.current)),
+        });
+      } else if (a.type === 'scriptureStep') {
+        const next = k.current + Math.sign(a.delta);
+        if (next >= k.from && next <= k.to) Object.assign(k, { current: next, blank: false });
+      } else if (a.type === 'scriptureGo') Object.assign(k, { current: Math.min(k.to, Math.max(k.from, a.verse)), blank: false });
+      else k.blank = a.value;
+      return;
+    }
     case 'updateZmanim': {
       const src = find(s, a.id);
       if (src.kind.type !== 'zmanim') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not zmanim' });

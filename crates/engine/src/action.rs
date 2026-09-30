@@ -317,6 +317,26 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Choose the passage and how it looks.
+    UpdateScripture {
+        id: SourceId,
+        scripture: crate::scripture::Scripture,
+    },
+    /// The next (1) or previous (-1) verse.
+    ScriptureStep {
+        id: SourceId,
+        delta: i32,
+    },
+    /// Show this verse of the passage.
+    ScriptureGo {
+        id: SourceId,
+        verse: u16,
+    },
+    /// Nothing on screen for now (or back again).
+    ScriptureBlank {
+        id: SourceId,
+        value: bool,
+    },
     /// Change how the zmanim input looks.
     UpdateZmanim {
         id: SourceId,

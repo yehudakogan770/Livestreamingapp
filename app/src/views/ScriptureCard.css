@@ -1,0 +1,77 @@
+.scr-card__verses {
+  flex: 1 1 auto;
+  min-height: 80px;
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.scr-card__verses button {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  text-align: start;
+  cursor: pointer;
+}
+.scr-card__verses button.is-on {
+  border-color: #c9a24a;
+  background: rgba(201, 162, 74, 0.14);
+}
+.scr-card__verses b {
+  flex: 0 0 26px;
+  color: var(--text-faint);
+}
+.scr-card__verses span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Frank Ruehl CLM', 'David', 'Times New Roman', serif;
+  font-size: 16px;
+}
+.scr-card__gap {
+  flex: 0 0 10px;
+}
+.scr-card__tehillim {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.scr-card__what,
+.scr-card__range {
+  font-size: 13px;
+  color: var(--text-dim, #aab);
+}
+.scr-card__hits {
+  max-height: 240px;
+}
+.scr-card__hit {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

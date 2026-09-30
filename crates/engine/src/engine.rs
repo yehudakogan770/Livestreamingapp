@@ -876,6 +876,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::WallApprove { .. }
         | Action::WallPin { .. }
         | Action::WallRemove { .. }) => apply_wall(s, a, now),
+        a @ (Action::UpdateScripture { .. }
+        | Action::ScriptureStep { .. }
+        | Action::ScriptureGo { .. }
+        | Action::ScriptureBlank { .. }) => apply_scripture(s, a),
         Action::UpdateZmanim { id, zmanim } => {
             let src = s
                 .source_mut(&id)
@@ -2072,6 +2076,42 @@ fn apply_fundraiser(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     Ok(())
 }
 
+fn apply_scripture(s: &mut Show, action: Action) -> Result<()> {
+    let id = match &action {
+        Action::UpdateScripture { id, .. }
+        | Action::ScriptureStep { id, .. }
+        | Action::ScriptureGo { id, .. }
+        | Action::ScriptureBlank { id, .. } => id.clone(),
+        _ => unreachable!("only scripture actions come here"),
+    };
+    let src = s
+        .source_mut(&id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    let SourceKind::Scripture(sc) = &mut src.kind else {
+        return Err(ActionError::invalid(
+            "id",
+            "that input is not a Tanach passage",
+        ));
+    };
+    match action {
+        Action::UpdateScripture { scripture, .. } => {
+            let mut next = scripture;
+            next.repair();
+            **sc = next;
+        }
+        Action::ScriptureStep { delta, .. } => {
+            sc.step(delta.signum());
+        }
+        Action::ScriptureGo { verse, .. } => {
+            sc.current = verse.clamp(sc.from, sc.to);
+            sc.blank = false;
+        }
+        Action::ScriptureBlank { value, .. } => sc.blank = value,
+        _ => unreachable!("only scripture actions come here"),
+    }
+    Ok(())
+}
+
 fn auction_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::auction::Auction> {
     let src = s
         .source_mut(id)
@@ -2526,6 +2566,7 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             w.repair();
             w.open = false;
         }
+        SourceKind::Scripture(sc) => sc.repair(),
         SourceKind::Auction(a) => {
             a.repair();
             a.open = false;
@@ -2581,7 +2622,8 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         | SourceKind::Raffle(_)
         | SourceKind::Fundraiser(_)
         | SourceKind::Wall(_)
-        | SourceKind::Auction(_)) => fresh(k),
+        | SourceKind::Auction(_)
+        | SourceKind::Scripture(_)) => fresh(k),
         SourceKind::Guest(g) => clean_guest(g)?,
         SourceKind::Stream(mut st) => {
             st.url = crate::stream::clean_stream_url(&st.url).ok_or_else(|| {

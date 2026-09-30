@@ -1,0 +1,57 @@
+/* Mirrored in the recorder: broadcast/compositor.ts scripture(). Sizes in cqh of the frame height. */
+.scr {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  color: #fff;
+}
+.scr--full {
+  background: radial-gradient(ellipse at 50% 30%, #13233a, #04060b);
+}
+.scr__bar {
+  position: absolute;
+  left: 5cqh;
+  right: 5cqh;
+  top: 67cqh;
+  bottom: 4cqh;
+  border-radius: 1.2cqh;
+  background: rgba(8, 12, 20, 0.88);
+  border-left: 0.8cqh solid #c9a24a;
+}
+.scr__box {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.scr__box p {
+  margin: 0;
+  line-height: 1.4;
+}
+.scr__he {
+  font-family: 'Frank Ruehl CLM', 'David', 'Times New Roman', serif;
+  font-weight: 700;
+  color: #f4e7c5;
+}
+.scr__en {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #e8ecf3;
+}
+.scr__ref {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  text-align: center;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 2.8cqh;
+  line-height: 3.6cqh;
+  color: #c9a24a;
+}
+.scr--lower .scr__ref {
+  font-size: 2.2cqh;
+}

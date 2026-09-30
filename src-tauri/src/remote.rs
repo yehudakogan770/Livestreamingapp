@@ -165,6 +165,9 @@ pub fn allowed(action: &Action) -> bool {
             | Action::QnaShow { .. }
             | Action::RaffleDraw { .. }
             | Action::WallPin { .. }
+            | Action::ScriptureStep { .. }
+            | Action::ScriptureGo { .. }
+            | Action::ScriptureBlank { .. }
             | Action::ShowComment { comment: None, .. }
             | Action::LyricsGo { .. }
             | Action::LyricsNext { .. }

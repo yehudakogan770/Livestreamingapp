@@ -418,6 +418,6 @@ on screen with the page's code.
 23. ✅ **Messages wall** — messages, dedications and photos from phones; the operator lets each through (or all straight away) and they show one at a time, the newest six, or as a ticker over the picture (Slido, social walls).
 24. ✅ **Live auction** — items one by one, bids from phones (one tap) or the room, the highest bid and bidder on screen, a countdown with extra time for late bids, "Sold!" and the total raised.
 25. ✅ **Hebrew date and zmanim** — worked out offline for the event's city: the day's zmanim and special days on screen (card, bottom line, or a countdown to candle lighting); the stage monitor is told in the last hour; the stream and recording can end by themselves before Shabbos and Yom Tov.
-26. ⬜ **Tanach and Tehillim library** on screen.
+26. ✅ **Tanach and Tehillim** — all of Tanach kept offline (Hebrew with nikkud and the 1917 JPS English, both public domain): any passage a verse at a time or whole, full screen or along the bottom; today's Tehillim (by the Hebrew date and the day of the week), often-said chapters, and finding words.
 27. ⬜ **Trivia game** with a leaderboard, answers from phones.
 28. ⬜ **Table finder** — guests type their name, their table shows.

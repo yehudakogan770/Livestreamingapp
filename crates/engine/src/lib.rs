@@ -35,6 +35,7 @@ pub mod ptz;
 pub mod qna;
 pub mod score;
 pub mod screen;
+pub mod scripture;
 pub mod slideshow;
 pub mod split;
 pub mod stage;

@@ -1,6 +1,7 @@
 import { defaultFundraiser, defaultRaffle } from '../engine/audience';
 import { defaultWall } from '../engine/wall';
 import { defaultAuction } from '../engine/auction';
+import { defaultScripture } from '../engine/tanach';
 import { newRoom } from '../engine/guest';
 import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
@@ -46,6 +47,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
   { kind: 'raffle', name: 'Raffle', hint: 'People enter from their phones; the draw is on screen' },
   { kind: 'fundraiser', name: 'Fundraiser', hint: 'Goal, total and donors on screen; pledges from phones' },
+  { kind: 'scripture', name: 'Tanach & Tehillim', hint: 'Any passage, a verse at a time, Hebrew and English (offline)' },
   { kind: 'zmanim', name: 'Hebrew date & zmanim', hint: 'Today’s zmanim, candle lighting countdown, the Hebrew date' },
   { kind: 'auction', name: 'Live auction', hint: 'Items, bids from phones or the room, the highest bid on screen' },
   { kind: 'wall', name: 'Messages wall', hint: 'Messages, dedications and photos from phones, on screen' },
@@ -173,6 +175,8 @@ export function AddInput({
           kind: { type: 'fundraiser', ...defaultFundraiser(), title: words.trim() || defaultFundraiser().title, goal: goal > 0 ? goal : 10_000 },
         };
       }
+      case 'scripture':
+        return { name: n || 'Tehillim', kind: { type: 'scripture', ...defaultScripture() } };
       case 'zmanim':
         return { name: n || 'Zmanim', kind: { type: 'zmanim', style: 'card' } };
       case 'auction':

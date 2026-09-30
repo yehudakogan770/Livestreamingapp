@@ -1,0 +1,5 @@
+The Tanach in this folder is in the public domain:
+- Hebrew: "Tanach with Nikkud" — the Westminster Leningrad Codex (tanach.us).
+- English: "The Holy Scriptures: A New Translation" (Jewish Publication Society, 1917).
+Fetched once through Sefaria's open API by scripts/fetch_tanach.py; Lumora reads
+it from here, offline.
