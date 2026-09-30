@@ -7,6 +7,7 @@ export type Command =
   | { type: 'addInput'; kind?: string; template?: number }
   | { type: 'addPreset' }
   | { type: 'shortcuts' }
+  | { type: 'help' }
   | { type: 'runOfShow' }
   | { type: 'library' }
   | { type: 'visuals' }

@@ -15,6 +15,7 @@ import { OverlayBar } from './OverlayBar';
 import { CameraBar } from './CameraBar';
 import { useCommands, type Command } from './commands';
 import { ShortcutsDialog } from './ShortcutsDialog';
+import { HelpDialog } from './HelpDialog';
 import { CueBar, RunOfShowDialog } from './RunOfShow';
 import { LibraryDialog } from './LibraryDialog';
 import { VisualsPage } from './VisualsPage';
@@ -67,6 +68,7 @@ export function ControlView({
   const [adding, setAdding] = useState(false);
   const [addStart, setAddStart] = useState<{ kind?: string; template?: number }>({});
   const [shortcuts, setShortcuts] = useState(false);
+  const [help, setHelp] = useState(false);
   const [runOpen, setRunOpen] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [visualsOpen, setVisualsOpen] = useState(false);
@@ -82,6 +84,7 @@ export function ControlView({
         setAddStart({ kind: c.kind, template: c.template });
         setAdding(true);
       } else if (c.type === 'shortcuts') setShortcuts(true);
+      else if (c.type === 'help') setHelp(true);
       else if (c.type === 'runOfShow') setRunOpen(true);
       else if (c.type === 'library') setLibraryOpen(true);
       else if (c.type === 'visuals') setVisualsOpen(true);
@@ -399,6 +402,7 @@ export function ControlView({
         />
       )}
       {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
+      {help && <HelpDialog onClose={() => setHelp(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
       {chatOpen && <ChatPanel show={show} act={act} client={client} onAdd={add} onClose={() => setChatOpen(false)} />}
       {midiOpen && <MidiDialog onClose={() => setMidiOpen(false)} />}

@@ -248,7 +248,10 @@ function ControlApp() {
         onClick: () => void client.dispatch({ type: 'updateVisuals', patch: { blackout: !vis?.blackout } }).catch(fail),
       },
     ];
-    const help: MenuItem[] = [{ label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) }];
+    const help: MenuItem[] = [
+      { label: 'How to use Lumora', onClick: () => sendCommand({ type: 'help' }) },
+      { label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) },
+    ];
     return {
       Event: event,
       Presets: presets,
