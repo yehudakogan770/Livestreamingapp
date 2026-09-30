@@ -103,11 +103,12 @@ impl Engine {
         // Pesukim on auto-advance move on by themselves, only while on air.
         let on_air =
             [ScreenId::Live, ScreenId::Back].map(|sc| self.show.screens.get(sc).program.clone());
+        // (Also as a bar in an overlay that is on.)
         let words_due: Vec<SourceId> = self
             .show
             .sources
             .iter()
-            .filter(|src| on_air.contains(&Some(src.id.clone())))
+            .filter(|src| on_air.contains(&Some(src.id.clone())) || in_overlay(&self.show, &src.id))
             .filter(|src| matches!(&src.kind, SourceKind::Pesukim(p) if p.due(now)))
             .map(|src| src.id.clone())
             .collect();
@@ -277,6 +278,13 @@ fn timer_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::stage:
 }
 
 // One arm per action keeps every rule of the show in a single, readable place.
+/// Showing in an overlay that is on.
+fn in_overlay(s: &Show, id: &SourceId) -> bool {
+    s.overlays
+        .iter()
+        .any(|o| o.on && o.source_id.as_ref() == Some(id))
+}
+
 fn pesukim_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Pesukim> {
     let src = s
         .sources

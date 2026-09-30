@@ -1557,7 +1557,9 @@ export function demoTick(show: Show, now: number): Show | null {
   const stepsDue = show.running.some((r) => r.resumeAt <= now);
   // Pesukim on auto-advance move on by themselves, only while on air.
   const onAir = [show.screens.live.program, show.screens.back.program];
-  const wordsDue = show.sources.filter((x) => onAir.includes(x.id) && x.kind.type === 'pesukim' && wordDue(x.kind, now)).map((x) => x.id);
+  // (Also as a bar in an overlay that is on.)
+  const inOverlay = (id: string) => show.overlays.some((o) => o.on && o.sourceId === id);
+  const wordsDue = show.sources.filter((x) => (onAir.includes(x.id) || inOverlay(x.id)) && x.kind.type === 'pesukim' && wordDue(x.kind, now)).map((x) => x.id);
   // Overlays go off by themselves: auto-hide, or a video that ended.
   const overlaysDue = show.overlays
     .map((o, i) => ({ o, i }))

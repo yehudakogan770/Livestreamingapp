@@ -10,6 +10,7 @@ import { SCREENS } from '../components/ScreenSelector';
 import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard, CountdownMini } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
+import { pesukimBar } from '../engine/pesukim';
 import { OverlayBar } from './OverlayBar';
 import { useCommands, type Command } from './commands';
 import { ShortcutsDialog } from './ShortcutsDialog';
@@ -229,7 +230,10 @@ export function ControlView({
     const k = find(id)?.kind.type;
     return k === 'pesukim' || k === 'slideshow' || k === 'credits' || k === 'countdown' ? k : null;
   };
-  const cards = [...new Set([cardFor(sc.program), sc.preview !== sc.program ? cardFor(sc.preview) : null].filter((c) => c !== null))];
+  const bar = screen === 'monitor' ? null : pesukimBar(show, screen);
+  const cards = [
+    ...new Set([cardFor(sc.program), bar ? ('pesukim' as const) : null, sc.preview !== sc.program ? cardFor(sc.preview) : null].filter((c) => c !== null)),
+  ];
   const cardView = (card: (typeof cards)[number] | 'none') =>
     card === 'pesukim' ? (
       <PesukimCard key={card} show={show} act={act} screen={screen} client={client} />

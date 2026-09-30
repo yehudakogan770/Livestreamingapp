@@ -280,3 +280,11 @@
   color: var(--text-dim);
   text-align: center;
 }
+.pk__bar {
+  width: 100%;
+  font-weight: 700;
+}
+.pk__bar--on {
+  border-color: var(--pgm, #e0473b);
+  color: #ffb4ae;
+}

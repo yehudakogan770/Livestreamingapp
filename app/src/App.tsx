@@ -16,7 +16,7 @@ import { ZmanimDialog } from './views/ZmanimDialog';
 import { ShabbosGuard } from './views/ShabbosGuard';
 import { DataDialog, DataWatcher } from './views/DataDialog';
 import { RemoteDialog } from './views/RemoteDialog';
-import { defaultPesukim } from './engine/pesukim';
+import { barActions, defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { BroadcastDialog } from './broadcast/BroadcastDialog';
 import { OverlayEditor } from './views/OverlayEditor';
@@ -150,16 +150,38 @@ function ControlApp() {
     const screen = controlling === 'monitor' ? 'live' : controlling;
     const pesukim = show?.sources.filter((x) => x.kind.type === 'pesukim') ?? [];
     const putInNext = (id: string) => void client.dispatch({ type: 'setPreview', screen, sourceId: id }).catch(fail);
+    // The 12 Pesukim go as a bar over the Live screen (an overlay), so the camera stays on.
+    const runAll = async (acts: Action[]) => {
+      for (const x of acts) await client.dispatch(x);
+    };
+    const barOn = (id: string, onAir: boolean) => void runAll(barActions(show!, id, screen, onAir)).catch(fail);
     const pesukimMenu: MenuItem[] = pesukim.length
-      ? pesukim.map((x) => ({ label: `Put “${x.name}” in Next`, onClick: () => putInNext(x.id) }))
+      ? pesukim.flatMap((x) => {
+          const ch = show!.overlays.findIndex((o) => o.sourceId === x.id);
+          const on = ch >= 0 && show!.overlays[ch]!.on;
+          const name = pesukim.length > 1 ? ` (${x.name})` : '';
+          return [
+            on
+              ? {
+                  label: `Take the Pesukim bar off${name}`,
+                  onClick: () => void client.dispatch({ type: 'setOverlayOn', channel: ch, value: false }).catch(fail),
+                }
+              : { label: `Show the Pesukim bar on the screen${name}`, onClick: () => barOn(x.id, true) },
+            { label: `Get the Pesukim bar ready in Next${name}`, onClick: () => barOn(x.id, false) },
+          ];
+        })
       : [
           {
-            label: 'Add 12 Pesukim and put it in Next',
+            label: 'Add the 12 Pesukim bar (ready in Next)',
             onClick: () => {
               const id = `pesukim-${Date.now().toString(36)}`;
               void client
                 .dispatch({ type: 'addSource', source: { id, name: '12 Pesukim', kind: { type: 'pesukim', ...defaultPesukim() } } })
-                .then(() => putInNext(id), fail);
+                .then(async () => {
+                  const fresh = await client.getShow();
+                  await runAll(barActions(fresh.show, id, screen, false));
+                })
+                .catch(fail);
             },
           },
         ];

@@ -6,6 +6,7 @@ import type { PesukimLook } from './types/PesukimLook';
 import type { ScreenId } from './types/ScreenId';
 import type { Show } from './types/Show';
 import type { Pasuk } from './types/Pasuk';
+import type { Action } from './types/Action';
 import { TWELVE_PESUKIM } from './pesukimText';
 
 export const PESUKIM = 12;
@@ -217,12 +218,51 @@ export function pesukimOf(show: Show, id: string | null): PesukimData | null {
  * The Pesukim input the controls work on for a screen: in Next, else on
  * air. Null when neither is a Pesukim input (the card is not shown).
  */
-export function pesukimTarget(show: Show, screen: ScreenId): { id: string; where: 'onAir' | 'next' } | null {
+export function pesukimTarget(show: Show, screen: ScreenId): { id: string; where: 'onAir' | 'next'; channel?: number } | null {
   if (screen === 'monitor') return null;
   const sc = show.screens[screen];
   if (sc.preview !== sc.program && pesukimOf(show, sc.preview)) return { id: sc.preview!, where: 'next' };
   if (pesukimOf(show, sc.program)) return { id: sc.program!, where: 'onAir' };
+  const bar = pesukimBar(show, screen);
+  if (bar) return { id: bar.id, where: bar.on ? 'onAir' : 'next', channel: bar.channel };
   return null;
+}
+
+/**
+ * The Pesukim bar over this screen: an overlay channel holding a Pesukim
+ * input, on air or shown in Next.
+ */
+export function pesukimBar(show: Show, screen: ScreenId): { channel: number; id: string; on: boolean } | null {
+  const i = show.overlays.findIndex((o) => o.sourceId && pesukimOf(show, o.sourceId) && o.screens.includes(screen) && (o.on || o.inNext));
+  const o = show.overlays[i];
+  return o?.sourceId ? { channel: i, id: o.sourceId, on: o.on } : null;
+}
+
+/** The overlay channel for a Pesukim bar: the one it is in, else the first empty one (else the last). */
+export function barChannel(show: Show, id: string): number {
+  const mine = show.overlays.findIndex((o) => o.sourceId === id);
+  if (mine >= 0) return mine;
+  const empty = show.overlays.findIndex((o) => !o.sourceId);
+  return empty >= 0 ? empty : show.overlays.length - 1;
+}
+
+/**
+ * The steps to put a Pesukim input over the screen as a bar (the whole
+ * frame, see-through except the bar), shown in Next or straight on air.
+ */
+export function barActions(show: Show, id: string, screen: ScreenId, onAir: boolean): Action[] {
+  const channel = barChannel(show, id);
+  const p = pesukimOf(show, id);
+  const acts: Action[] = [];
+  if (p && p.look.mode !== 'bar') acts.push({ type: 'updatePesukim', id, look: { ...p.look, mode: 'bar', behind: null } });
+  if (show.overlays[channel]?.sourceId !== id) acts.push({ type: 'setOverlaySource', channel, sourceId: id });
+  acts.push({
+    type: 'updateOverlay',
+    channel,
+    patch: { frame: { x: 0, y: 0, w: 100, h: 100 }, opacity: 1, screens: [screen === 'monitor' ? 'live' : screen] },
+  });
+  acts.push(onAir ? { type: 'setOverlayOn', channel, value: true } : { type: 'setOverlayInNext', channel, value: true });
+  return acts;
 }
 
 /** What the big text shows now. */

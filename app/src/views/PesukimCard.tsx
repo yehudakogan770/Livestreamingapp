@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { EngineClient } from '../engine/client';
-import { glossesOf, PESUKIM, pesukimOf, pesukimTarget, standardPesukim, wordsOf } from '../engine/pesukim';
+import { barActions, glossesOf, PESUKIM, pesukimOf, pesukimTarget, standardPesukim, wordsOf } from '../engine/pesukim';
 import { PesukimEditor } from './PesukimEditor';
 import type { Act } from './act';
 import './PesukimCard.css';
@@ -90,6 +90,19 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
           Edit…
         </button>
       </div>
+      {target.channel !== undefined ? (
+        <button
+          type="button"
+          className={`btn pk__bar${target.where === 'onAir' ? ' pk__bar--on' : ' btn--primary'}`}
+          onClick={() => act({ type: 'setOverlayOn', channel: target.channel!, value: target.where !== 'onAir' })}
+        >
+          {target.where === 'onAir' ? 'Take the bar off the screen' : 'Show the bar on the screen'}
+        </button>
+      ) : (
+        <button type="button" className="btn pk__bar" onClick={() => barActions(show, id, screen, false).forEach((a) => act(a))}>
+          Make it a bar over the camera
+        </button>
+      )}
 
       {filled === 0 ? (
         <div className="pk__row">
