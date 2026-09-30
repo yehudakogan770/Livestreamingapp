@@ -15,4 +15,8 @@ translit: string,
 /**
  * What each word means, word for word; "_" for a word with none.
  */
-english: string, };
+english: string, 
+/**
+ * What the whole pasuk means (shown with the whole pasuk).
+ */
+translation: string, };

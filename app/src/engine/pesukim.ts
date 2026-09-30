@@ -204,13 +204,14 @@ export function wordDue(p: PesukimData, now: number): boolean {
 
 /** Keep everything in range after editing. */
 export function repairPesukim(p: PesukimData): void {
-  while (p.pesukim.length < PESUKIM) p.pesukim.push({ child: '', text: '', translit: '', english: '' });
+  while (p.pesukim.length < PESUKIM) p.pesukim.push({ child: '', text: '', translit: '', english: '', translation: '' });
   p.pesukim.length = PESUKIM;
   for (const x of p.pesukim) {
     x.child = x.child.split(/\s+/).filter(Boolean).join(' ').slice(0, 60);
     x.text = x.text.trim().slice(0, 1000);
     x.translit = (x.translit ?? '').trim().slice(0, 1000);
     x.english = (x.english ?? '').trim().slice(0, 1000);
+    x.translation = (x.translation ?? '').trim().slice(0, 1000);
   }
   p.look.size = Math.min(60, Math.max(4, p.look.size));
   if (p.look.autoMs !== null) p.look.autoMs = Math.min(60_000, Math.max(500, p.look.autoMs));
@@ -284,6 +285,20 @@ export function shownText(p: PesukimData): { text: string; whole: boolean } {
   if (p.place.whole || p.look.mode === 'pasuk') return { text: words.join(' '), whole: true };
   if (p.look.keepSaid) return { text: words.slice(0, p.place.word + 1).join(' '), whole: true };
   return { text: words[p.place.word] ?? '', whole: false };
+}
+
+/**
+ * How the words sound and what they mean, for what is shown: the word being
+ * said, or with the whole pasuk all of it (its translation, else the words'
+ * meanings joined).
+ */
+export function soundAndMeaning(p: PesukimData, whole: boolean): { sound: string; meaning: string } {
+  const pasuk = p.pesukim[p.place.pasuk];
+  if (!pasuk) return { sound: '', meaning: '' };
+  const tr = wordsOf(pasuk.translit);
+  const en = glossesOf(pasuk.english);
+  if (whole) return { sound: tr.join(' '), meaning: pasuk.translation?.trim() || en.filter(Boolean).join(' ') };
+  return { sound: tr[p.place.word] ?? '', meaning: en[p.place.word] ?? '' };
 }
 
 /** Parse a paste of all the pesukim: one per line; "Name: text" sets the child's name. */

@@ -12,7 +12,7 @@ import { programLayers, type StingerPlay } from '../components/ScreenView';
 import { lumaMask } from '../engine/luma';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
-import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
+import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
@@ -2382,24 +2382,32 @@ export class ProgramCompositor {
       ctx.translate(-w / 2, -areaH / 2);
       lines.forEach((line, i) => ctx.fillText(line, w / 2, top + i * lineH));
       // How the word sounds and what it means, under it.
-      const tr = !whole && look.showTranslit ? (wordsOf(pasuk?.translit ?? '')[place.word] ?? '') : '';
-      const en = !whole && look.showEnglish ? (glossesOf(pasuk?.english ?? '')[place.word] ?? '') : '';
+      const said = soundAndMeaning(data, whole);
+      const tr = look.showTranslit ? said.sound : '';
+      const en = look.showEnglish ? said.meaning : '';
+      const small = whole ? 0.5 : 1;
       let y = top + (lines.length - 1) * lineH + size * 0.62;
       ctx.direction = 'ltr';
       ctx.textBaseline = 'top';
       if (tr) {
-        const ts = (look.size * 0.3 * h) / 100;
+        const ts = (look.size * 0.3 * small * h) / 100;
         ctx.font = `italic 600 ${ts}px "Segoe UI", system-ui, sans-serif`;
         ctx.fillStyle = 'rgba(255,255,255,0.92)';
         y += h * 0.015;
-        ctx.fillText(tr, w / 2, y);
-        y += ts * 1.25;
+        for (const l of this.wrap(tr, w * 0.9)) {
+          ctx.fillText(l, w / 2, y);
+          y += ts * 1.25;
+        }
       }
       if (en) {
-        const es = (look.size * 0.24 * h) / 100;
+        const es = (look.size * 0.24 * small * h) / 100;
         ctx.font = `500 ${es}px "Segoe UI", system-ui, sans-serif`;
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
-        ctx.fillText(en, w / 2, y + h * 0.006);
+        y += h * 0.006;
+        for (const l of this.wrap(en, w * 0.9)) {
+          ctx.fillText(l, w / 2, y);
+          y += es * 1.25;
+        }
       }
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.globalAlpha = 1;

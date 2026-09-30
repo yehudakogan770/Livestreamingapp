@@ -148,6 +148,13 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                     onChange={(e) => setPasuk(i, { english: e.target.value })}
                     aria-label={`Pasuk ${i + 1} English`}
                   />
+                  <input
+                    className="text"
+                    value={p.translation}
+                    placeholder="What the whole pasuk means (shown with the whole pasuk)"
+                    onChange={(e) => setPasuk(i, { translation: e.target.value })}
+                    aria-label={`Pasuk ${i + 1} translation`}
+                  />
                   {mismatch(p) && <span className="field__note pked__warn">{mismatch(p)}</span>}
                 </div>
                 <span className="pked__count">{wordsOf(p.text).length || ''}</span>

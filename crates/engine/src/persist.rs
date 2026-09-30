@@ -102,6 +102,17 @@ fn repair_audience(kind: &mut SourceKind) {
     }
 }
 
+/// Cameras: the auto-switch list and each camera's settings.
+fn repair_cameras(s: &mut Show) {
+    let sources = s.sources.clone();
+    s.auto_switch.repair(&sources);
+    for src in &mut s.sources {
+        if let Some(c) = &mut src.camera {
+            c.repair();
+        }
+    }
+}
+
 pub fn repair(mut s: Show) -> Show {
     // Drop sources with duplicate or empty ids (keep the first).
     let mut seen = HashSet::new();
@@ -162,6 +173,7 @@ pub fn repair(mut s: Show) -> Show {
         }
     }
     s.data.repair();
+    repair_cameras(&mut s);
     repair_links(&mut s);
     s.run.repair();
 

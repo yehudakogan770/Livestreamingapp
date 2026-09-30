@@ -88,6 +88,7 @@ impl Engine {
     /// Let time pass: runs anything due at `now` — the countdown's at-zero
     /// action, and preset-button steps waiting to resume. Call it a few
     /// times a second.
+    #[allow(clippy::too_many_lines)]
     pub fn tick(&mut self, now: Millis) -> Outcome {
         // Each countdown lands on 0, holds a moment, then its at-zero action runs.
         let due: Vec<SourceId> = self
@@ -141,6 +142,7 @@ impl Engine {
             && lists_due.is_empty()
             && !visuals_due
             && !crate::triggers::clock_due(&self.show, now)
+            && !crate::cameras::switch_due(&self.show, now)
         {
             return Outcome::Unchanged;
         }
@@ -155,6 +157,9 @@ impl Engine {
         }
         if steps_due {
             run_steps(&mut next, now);
+        }
+        if let Some(a) = crate::cameras::switch_action(&mut next, now) {
+            let _ = apply_to(&mut next, a, now);
         }
         for id in &slides_due {
             let _ = apply_slideshow(&mut next, Action::SlideNext { id: id.clone() }, now);
@@ -277,13 +282,14 @@ fn timer_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::stage:
     }
 }
 
-// One arm per action keeps every rule of the show in a single, readable place.
 /// Showing in an overlay that is on.
 fn in_overlay(s: &Show, id: &SourceId) -> bool {
     s.overlays
         .iter()
         .any(|o| o.on && o.source_id.as_ref() == Some(id))
 }
+
+// One arm per action keeps every rule of the show in a single, readable place.
 
 fn pesukim_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Pesukim> {
     let src = s
@@ -688,6 +694,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         Action::RemoveSource { id } => {
             let index = index_of(s, &id)?;
             s.sources.remove(index);
+            s.auto_switch.cameras.retain(|x| x != &id);
+            if s.auto_switch.cameras.len() < 2 {
+                s.auto_switch.on = false;
+            }
             for p in &mut s.presets {
                 p.sources.retain(|x| x != &id);
             }
@@ -1670,6 +1680,31 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::SetOverlayOn { .. }
         | Action::SetOverlayInNext { .. }
         | Action::OverlaysOff) => apply_overlay(s, a, now),
+        Action::UpdateAutoSwitch { auto } => {
+            let was_on = s.auto_switch.on;
+            let seed = s.auto_switch.seed;
+            let next_at = s.auto_switch.next_at;
+            let mut a = auto;
+            a.seed = seed;
+            a.next_at = next_at;
+            a.repair(&s.sources);
+            if a.on && !was_on {
+                a.schedule(now);
+            }
+            s.auto_switch = a;
+            Ok(())
+        }
+        Action::SetCameraControls { id, mut controls } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            if !crate::cameras::is_camera(&src.kind) {
+                return Err(ActionError::invalid("id", "that input is not a camera"));
+            }
+            controls.repair();
+            src.camera = Some(controls);
+            Ok(())
+        }
         a @ (Action::PesukimNext { .. }
         | Action::PesukimBack { .. }
         | Action::PesukimGo { .. }
@@ -2655,6 +2690,7 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         ptz: None,
         speed: None,
         video_delay_ms: None,
+        camera: None,
     };
     s.sources.push(src);
     Ok(())

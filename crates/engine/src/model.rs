@@ -378,6 +378,10 @@ pub struct Source {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub video_delay_ms: Option<u32>,
+    /// A camera's own settings (zoom, focus, exposure…) and saved shots.
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub camera: Option<crate::cameras::CameraControls>,
 }
 
 /// Green screen: a colour taken out of the picture so what is behind shows.
@@ -607,6 +611,9 @@ pub struct Show {
     /// The data file titles and scoreboards take their words from.
     #[serde(default)]
     pub data: crate::data::DataFeed,
+    /// Going through the cameras by itself.
+    #[serde(default)]
+    pub auto_switch: crate::cameras::AutoSwitch,
     pub settings: Settings,
 }
 
@@ -638,6 +645,7 @@ impl Default for Show {
             triggers: Vec::new(),
             qna: crate::qna::Qna::default(),
             data: crate::data::DataFeed::default(),
+            auto_switch: crate::cameras::AutoSwitch::default(),
             settings: Settings::default(),
         }
     }

@@ -378,6 +378,7 @@ export function emptyShow(): Show {
     overlays: channels(),
     visuals: defaultVisuals(),
     data: { path: '', everyMs: 1000, headers: [], rows: [], row: 0, error: '', updatedAt: 0 },
+    autoSwitch: { on: false, cameras: [], minS: 6, maxS: 10, random: false, mix: false, nextAt: 0, seed: 1 },
     qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
     settings: {

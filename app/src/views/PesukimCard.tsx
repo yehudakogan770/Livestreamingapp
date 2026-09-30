@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { EngineClient } from '../engine/client';
-import { barActions, glossesOf, PESUKIM, pesukimOf, pesukimTarget, standardPesukim, wordsOf } from '../engine/pesukim';
+import { barActions, PESUKIM, pesukimOf, pesukimTarget, soundAndMeaning, standardPesukim, wordsOf } from '../engine/pesukim';
 import { PesukimEditor } from './PesukimEditor';
 import type { Act } from './act';
 import './PesukimCard.css';
@@ -67,8 +67,7 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
         ? `(pasuk ${pasuk + 2}${data.look.showName && nextChild ? ` · ${nextChild}’s name` : ''})`
         : '(the end)'
       : words[word + 1];
-  const sound = wordsOf(data.pesukim[pasuk]?.translit ?? '')[word];
-  const meaning = glossesOf(data.pesukim[pasuk]?.english ?? '')[word];
+  const { sound, meaning } = soundAndMeaning(data, whole);
   const child = data.pesukim[pasuk]?.child;
   const filled = data.pesukim.filter((p) => p.text.trim()).length;
   const font = `"${data.look.font}", "Frank Ruhl Libre", serif`;
@@ -77,32 +76,24 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
     <div className="pk" aria-label="12 Pesukim">
       <div className="pk__head">
         <b className={`cd__tag cd__tag--${target.where}`}>{target.where === 'next' ? 'NEXT' : 'ON AIR'}</b>
-        <span className="pk__where">
-          Pasuk {pasuk + 1} of 12{child ? ` · ${child}` : ''}
-          {words.length > 0 && (
-            <em>
-              {' '}
-              · word {Math.min(word + 1, words.length)} of {words.length}
-            </em>
-          )}
-        </span>
+        <select
+          className="pk__goto"
+          aria-label="Go to pasuk"
+          value={pasuk}
+          onChange={(e) => act({ type: 'pesukimGo', id, pasuk: Number(e.target.value), word: 0 })}
+        >
+          {data.pesukim.map((p, i) => (
+            <option key={i} value={i}>
+              Pasuk {i + 1}
+              {p.child ? ` · ${p.child}` : ''}
+              {p.text.trim() ? '' : ' (empty)'}
+            </option>
+          ))}
+        </select>
         <button type="button" className="btn pk__edit" onClick={() => setEditing(true)}>
           Edit…
         </button>
       </div>
-      {target.channel !== undefined ? (
-        <button
-          type="button"
-          className={`btn pk__bar${target.where === 'onAir' ? ' pk__bar--on' : ' btn--primary'}`}
-          onClick={() => act({ type: 'setOverlayOn', channel: target.channel!, value: target.where !== 'onAir' })}
-        >
-          {target.where === 'onAir' ? 'Take the bar off the screen' : 'Show the bar on the screen'}
-        </button>
-      ) : (
-        <button type="button" className="btn pk__bar" onClick={() => barActions(show, id, screen, false).forEach((a) => act(a))}>
-          Make it a bar over the camera
-        </button>
-      )}
 
       {filled === 0 ? (
         <div className="pk__row">
@@ -119,68 +110,76 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
         </div>
       ) : (
         <>
-          <div className="pk__now" dir="auto" style={{ fontFamily: font }} data-testid="pesukim-now">
-            {blank ? (
-              <span className="pk__off">words hidden</span>
-            ) : intro ? (
-              <span className="pk__intro">Showing {child ? `${child}’s name` : 'the name'}</span>
-            ) : whole ? (
-              words.join(' ')
-            ) : (
-              (words[word] ?? '—')
+          <div className="pk__now" dir="auto">
+            <span className="pk__word" style={{ fontFamily: font }} data-testid="pesukim-now">
+              {blank ? (
+                <span className="pk__off">words hidden</span>
+              ) : intro ? (
+                <span className="pk__intro">Showing {child ? `${child}’s name` : 'the name'}</span>
+              ) : whole ? (
+                <span className="pk__intro">Whole pasuk on the screen</span>
+              ) : (
+                (words[word] ?? '—')
+              )}
+            </span>
+            {!intro && !blank && !whole && (sound || meaning) && (
+              <span className="pk__sound">
+                {sound && <i>{sound}</i>}
+                {sound && meaning && ' · '}
+                {meaning}
+              </span>
             )}
-          </div>
-          {!intro && !whole && !blank && (sound || meaning) && (
-            <div className="pk__sound">
-              {sound && <i>{sound}</i>}
-              {sound && meaning && ' · '}
-              {meaning}
-            </div>
-          )}
-          <div className="pk__next" dir="auto">
-            Next: <span style={{ fontFamily: font }}>{nextWord}</span>
           </div>
           <div className="pk__row pk__row--main">
             <button type="button" className="btn" onClick={() => act({ type: 'pesukimBack', id })} title="Back a word (←)">
               ‹ Back
             </button>
             <button type="button" className="btn btn--primary pk__go" onClick={() => act({ type: 'pesukimNext', id })} title="Space, → or the clicker">
-              {intro ? 'First word ›' : atEnd && pasuk + 1 < PESUKIM ? 'Next pasuk ›' : 'Next word ›'}
-              <kbd>Space</kbd>
+              <span className="pk__go-what">{intro ? 'First word ›' : atEnd && pasuk + 1 < PESUKIM ? 'Next pasuk ›' : 'Next word ›'}</span>
+              <span className="pk__go-next" dir="auto" style={{ fontFamily: font }}>
+                {nextWord}
+              </span>
             </button>
           </div>
-          <div className="pk__row">
+          <div className="pk__row pk__row--small">
+            {target.channel !== undefined ? (
+              <button
+                type="button"
+                className={`btn${target.where === 'onAir' ? ' pk__bar--on' : ' btn--primary'}`}
+                onClick={() => act({ type: 'setOverlayOn', channel: target.channel!, value: target.where !== 'onAir' })}
+                title={target.where === 'onAir' ? 'Take the bar off the screen' : 'Show the bar on the screen'}
+              >
+                {target.where === 'onAir' ? 'Bar off' : 'Bar on'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn"
+                onClick={() => barActions(show, id, screen, false).forEach((a) => act(a))}
+                title="Make it a bar over the camera (the camera stays on)"
+              >
+                As a bar
+              </button>
+            )}
             <button
               type="button"
               className={`btn${whole ? ' is-on' : ''}`}
               aria-pressed={whole}
               onClick={() => act({ type: 'pesukimWhole', id, value: !whole })}
+              title="Whole pasuk (P)"
             >
-              Whole pasuk <kbd>P</kbd>
+              Whole <kbd>P</kbd>
             </button>
             <button
               type="button"
               className={`btn${blank ? ' is-on' : ''}`}
               aria-pressed={blank}
               onClick={() => act({ type: 'pesukimBlank', id, value: !blank })}
+              title="Hide the words (B)"
             >
-              Hide words <kbd>B</kbd>
+              Hide <kbd>B</kbd>
             </button>
           </div>
-          <select
-            className="pk__goto"
-            aria-label="Go to pasuk"
-            value={pasuk}
-            onChange={(e) => act({ type: 'pesukimGo', id, pasuk: Number(e.target.value), word: 0 })}
-          >
-            {data.pesukim.map((p, i) => (
-              <option key={i} value={i}>
-                Pasuk {i + 1}
-                {p.child ? ` · ${p.child}` : ''}
-                {p.text.trim() ? '' : ' (empty)'}
-              </option>
-            ))}
-          </select>
           {words.length > 0 && (
             <div className="pk__strip" dir="rtl" aria-label="Words: click to jump">
               {words.map((w, i) => (
@@ -190,7 +189,6 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
                   className={intro ? '' : i === word ? 'is-now' : i < word ? 'is-said' : ''}
                   style={{ fontFamily: font }}
                   onClick={() => act({ type: 'pesukimGo', id, pasuk, word: i })}
-                  ref={i === word ? (el) => el?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }) : undefined}
                 >
                   {w}
                 </button>

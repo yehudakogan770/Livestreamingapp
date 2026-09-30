@@ -424,7 +424,7 @@ describe('12 Pesukim', () => {
     await act(async () => {
       fireEvent.keyDown(window, { key: 'ArrowRight' });
     });
-    expect(screen.getByText(/Pasuk 2 of 12/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Go to pasuk')).toHaveValue('1');
     await act(async () => {
       fireEvent.keyDown(window, { key: 'b' });
     });

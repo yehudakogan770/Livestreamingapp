@@ -951,6 +951,17 @@ pub enum Action {
         speed: u32,
     },
 
+    // ----- cameras -----
+    /// Going through the cameras by itself: which, how long, in order or mixed up.
+    UpdateAutoSwitch {
+        auto: crate::cameras::AutoSwitch,
+    },
+    /// A camera's own settings and saved shots.
+    SetCameraControls {
+        id: SourceId,
+        controls: crate::cameras::CameraControls,
+    },
+
     // ----- overlays (channels 0 – 3, shown as 1 – 4) -----
     /// Choose the input on an overlay channel (`null` empties it).
     SetOverlaySource {

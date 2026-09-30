@@ -16,6 +16,7 @@ pub mod auction;
 pub mod audience;
 pub mod audio;
 pub mod browser;
+pub mod cameras;
 pub mod chat;
 pub mod credits;
 pub mod cues;

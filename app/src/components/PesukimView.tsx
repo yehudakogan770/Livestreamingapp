@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { barDesign, barLayout, barRange, glossesOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
+import { barDesign, barLayout, barRange, glossesOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import './PesukimView.css';
 
 /**
@@ -97,8 +97,11 @@ function PesukimBig({ data }: { data: PesukimData }) {
   const { text, whole } = shownText(data);
   const strip = look.mode === 'strip' && !place.whole && !place.blank && !place.intro && words.length > 0;
   const size = whole ? look.size * 0.42 : look.size;
-  const tr = !whole && look.showTranslit ? (wordsOf(pasuk?.translit ?? '')[place.word] ?? '') : '';
-  const en = !whole && look.showEnglish ? (glossesOf(pasuk?.english ?? '')[place.word] ?? '') : '';
+  const said = soundAndMeaning(data, whole);
+  const tr = look.showTranslit ? said.sound : '';
+  const en = look.showEnglish ? said.meaning : '';
+  // The whole pasuk's lines are longer: smaller.
+  const small = whole ? 0.5 : 1;
   if (place.intro && pasuk && !place.blank) {
     return (
       <div className="pes__words" style={{ bottom: 0, color: look.textColor }}>
@@ -120,12 +123,12 @@ function PesukimBig({ data }: { data: PesukimData }) {
               {text}
             </div>
             {tr && (
-              <div className="pes__big-tr" style={{ fontSize: `${look.size * 0.3}cqh` }}>
+              <div className="pes__big-tr" style={{ fontSize: `${look.size * 0.3 * small}cqh` }}>
                 {tr}
               </div>
             )}
             {en && (
-              <div className="pes__big-en" style={{ fontSize: `${look.size * 0.24}cqh` }}>
+              <div className="pes__big-en" style={{ fontSize: `${look.size * 0.24 * small}cqh` }}>
                 {en}
               </div>
             )}

@@ -24,6 +24,7 @@ import { placeBid, removeItem, setItem } from './auction';
 import { answerIn as triviaAnswer, reveal as triviaReveal } from './trivia';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
+import { repairAutoSwitch, repairControls, schedule, switchAction, switchDue } from './autoswitch';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
 import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
@@ -373,6 +374,8 @@ function apply(s: Show, a: Action, now: number) {
     case 'removeSource': {
       find(s, a.id);
       s.sources = s.sources.filter((x) => x.id !== a.id);
+      s.autoSwitch.cameras = s.autoSwitch.cameras.filter((x) => x !== a.id);
+      if (s.autoSwitch.cameras.length < 2) s.autoSwitch.on = false;
       if (s.audio.solo === a.id) s.audio.solo = null;
       for (const p of s.presets) p.sources = p.sources.filter((x) => x !== a.id);
       for (const src of s.sources) {
@@ -424,6 +427,20 @@ function apply(s: Show, a: Action, now: number) {
       s.screens[a.screen].preview = a.sourceId;
       take(s, a.screen, 'cut', MIN_TRANSITION_MS, now);
       if (keep !== null) s.screens[a.screen].preview = keep;
+      return;
+    }
+    case 'updateAutoSwitch': {
+      const auto = { ...structuredClone(a.auto), seed: s.autoSwitch.seed, nextAt: s.autoSwitch.nextAt };
+      repairAutoSwitch(auto, s);
+      if (auto.on && !s.autoSwitch.on) schedule(auto, now);
+      s.autoSwitch = auto;
+      return;
+    }
+    case 'setCameraControls': {
+      const src = s.sources.find((x) => x.id === a.id);
+      if (!src) throw new Refused({ code: 'unknownSource', id: a.id });
+      if (src.kind.type !== 'camera') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a camera' });
+      src.camera = repairControls(a.controls);
       return;
     }
     case 'setTbar': {
@@ -1575,6 +1592,7 @@ export function demoTick(show: Show, now: number): Show | null {
   const visualsDue = vis.visualsDue(show.visuals, now);
   const listsDue = show.sources.filter((x) => playlistDue(x, now)).map((x) => x.id);
   const clockTriggers = triggersDue(show, show, now).length > 0;
+  const camerasDue = switchDue(show, now);
   if (
     due.length === 0 &&
     cue === null &&
@@ -1584,7 +1602,8 @@ export function demoTick(show: Show, now: number): Show | null {
     slidesDue.length === 0 &&
     listsDue.length === 0 &&
     !visualsDue &&
-    !clockTriggers
+    !clockTriggers &&
+    !camerasDue
   )
     return null;
   const next = structuredClone(show);
@@ -1592,6 +1611,8 @@ export function demoTick(show: Show, now: number): Show | null {
   for (const id of due) atZero(next, id, now);
   if (cue !== null) fireCue(next, cue, now);
   if (stepsDue) runSteps(next, now);
+  const cut = switchAction(next, now);
+  if (cut) apply(next, cut, now);
   for (const id of wordsDue) nextWord(pesukimIn(next, id), now);
   if (visualsDue) vis.autoChange(next.visuals, now);
   for (const id of listsDue) {

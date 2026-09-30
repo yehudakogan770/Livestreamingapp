@@ -102,20 +102,21 @@
   opacity: 0.8;
 }
 .pk__strip {
+  /* All the words, wrapping onto more lines (no scroll bar in the way). */
   display: flex;
+  flex-wrap: wrap;
   gap: 3px;
-  overflow-x: auto;
-  scrollbar-width: thin;
 }
 .pk__strip button {
   flex: 0 0 auto;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
   border: 1px solid var(--border);
   background: var(--button);
   color: var(--text-dim);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 1.35;
 }
 .pk__strip .is-said {
   color: var(--text);
@@ -275,10 +276,45 @@
     sans-serif;
   color: var(--accent);
 }
+.pk__now {
+  flex-direction: column;
+  gap: 2px;
+}
 .pk__sound {
-  font-size: 13px;
+  font:
+    500 12px 'Segoe UI',
+    system-ui,
+    sans-serif;
   color: var(--text-dim);
   text-align: center;
+}
+.pk__intro {
+  font-size: 15px;
+}
+.pk__go {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+}
+.pk__go-what {
+  font-size: 14px;
+}
+.pk__go-next {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+.pk__row--small .btn {
+  flex: 1;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 13px;
+}
+.pk__goto {
+  flex: 1;
+  min-width: 0;
 }
 .pk__bar {
   width: 100%;
@@ -287,4 +323,8 @@
 .pk__bar--on {
   border-color: var(--pgm, #e0473b);
   color: #ffb4ae;
+}
+
+.pk__row--small {
+  grid-template-columns: repeat(3, 1fr);
 }

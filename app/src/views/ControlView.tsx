@@ -463,7 +463,7 @@ function useFitLayout() {
       // Every card there (the one on air and the one in Next), with the gap between.
       const shown = [...centre.querySelectorAll<HTMLElement>('.centre__more > *')];
       const switchH = sw?.offsetHeight ?? 0;
-      const cardH = shown.reduce((n, c, i) => n + c.scrollHeight + (i ? 10 : 0), 0);
+      const cardH = shown.length ? shown.reduce((n, c, i) => n + c.scrollHeight + (i ? 10 : 0), 0) + 4 : 0;
       const col = sw?.offsetWidth || 262;
       const monH = (centreW: number) => ((W - centreW - 48) / 2) * (9 / 16) + 86;
       const inputsMin = Math.min(260, Math.max(150, H * 0.26));
@@ -471,7 +471,8 @@ function useFitLayout() {
       // Stacked: the card under the switch buttons (bigger monitors).
       const stacked = Math.max(monH(col), 20 + switchH + (cardH ? 10 + cardH : 0));
       // Side by side: the card beside the switch buttons (shorter).
-      const side = Math.max(monH(col * 2 + 10), 20 + Math.max(switchH, cardH));
+      // (the card column starts 28px down, level with the switch buttons)
+      const side = Math.max(monH(col * 2 + 10), 20 + Math.max(switchH, cardH + 28));
       const useSide = cardH > 0 && stacked > room && side < stacked;
       const h = Math.round(Math.max(120, Math.min(useSide ? side : stacked, room)));
       const key = `${h}|${useSide}`;

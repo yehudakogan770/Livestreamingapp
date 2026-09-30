@@ -25,6 +25,8 @@ pub struct Pasuk {
     pub translit: String,
     /// What each word means, word for word; "_" for a word with none.
     pub english: String,
+    /// What the whole pasuk means (shown with the whole pasuk).
+    pub translation: String,
 }
 
 impl Pasuk {
@@ -286,6 +288,7 @@ impl Pesukim {
             p.text = p.text.trim().chars().take(MAX_PASUK_LEN).collect();
             p.translit = p.translit.trim().chars().take(MAX_PASUK_LEN).collect();
             p.english = p.english.trim().chars().take(MAX_PASUK_LEN).collect();
+            p.translation = p.translation.trim().chars().take(MAX_PASUK_LEN).collect();
         }
         let l = &mut self.look;
         l.size = l.size.clamp(4, 60);
