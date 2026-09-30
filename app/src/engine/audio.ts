@@ -11,8 +11,17 @@ export type Mix = 'master' | 'a' | 'b';
 
 /** No filters: the sound as it comes in. */
 export function defaultFilters(): AudioFilters {
-  return { lowCut: false, bassDb: 0, midDb: 0, trebleDb: 0, gate: false, gateDb: -50, compressor: false, noiseSuppression: false };
+  return { lowCut: false, bassDb: 0, midDb: 0, trebleDb: 0, gate: false, gateDb: -50, compressor: false, noiseSuppression: false, duck: false, duckDb: -15 };
 }
+
+/** Ducking stays this long after the last word, ms (so it doesn't pump between words). */
+export const DUCK_HOLD_MS = 700;
+
+/** One step (33 ms) of ducking: in quickly when someone speaks, out gently after. 0 – 1. */
+export const duckStep = (ducked: number, talking: boolean) => (talking ? ducked + (1 - ducked) * 0.35 : ducked * 0.94);
+
+/** The gain of a channel that ducks by `db`, `ducked` of the way in. */
+export const duckGain = (db: number, ducked: number) => 10 ** ((db * ducked) / 20);
 
 /**
  * How much a source is on air on the Live Screen (the stream): 1 on air,

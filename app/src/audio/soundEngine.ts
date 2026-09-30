@@ -13,7 +13,7 @@
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
-import { channelLevel, defaultFilters, mixSend, soundSources, type Mix } from '../engine/audio';
+import { channelLevel, defaultFilters, DUCK_HOLD_MS, duckGain, duckStep, mixSend, soundSources, type Mix } from '../engine/audio';
 import { syncMedia } from '../engine/mediaSync';
 import { PcmStream } from './pcmStream';
 
@@ -385,9 +385,32 @@ export class SoundEngine {
 
   // ---- every 33 ms ----
 
+  /** How far music is ducked now (1: not at all, 0: fully), eased in and out. */
+  private ducked = 0;
+  /** When a microphone last had someone talking. */
+  private talkedAt = 0;
+
+  /** The gain for a channel that ducks by `db` while someone talks. */
+  private duckGain(db: number): number {
+    return duckGain(db, this.ducked);
+  }
+
+  /** Is anyone talking into a microphone (after its fader, so a closed mic never ducks)? */
+  private updateTalking(show: Show, now: number) {
+    let loud = false;
+    for (const src of soundSources(show)) {
+      if (src.kind.type !== 'microphone') continue;
+      const lv = this.levels.get(src.id) ?? 0;
+      if (lv > 0.03) loud = true; // about −30 dB
+    }
+    if (loud) this.talkedAt = now;
+    this.ducked = duckStep(this.ducked, now - this.talkedAt < DUCK_HOLD_MS);
+  }
+
   private tick() {
     const show = this.show;
     if (!show) return;
+    this.updateTalking(show, Date.now());
     const now = Date.now();
     const t = this.ctx.currentTime;
     const smooth = 0.012;
@@ -406,7 +429,8 @@ export class SoundEngine {
         const open = level > 0 && 20 * Math.log10(level) > f.gateDb;
         ch.gate.gain.setTargetAtTime(open ? 1 : 0, t, open ? 0.003 : 0.08);
       } else ch.gate.gain.setTargetAtTime(1, t, 0.01);
-      ch.fader.gain.setTargetAtTime(channelLevel(show, src, now), t, smooth);
+      const duck = src.audio.filters?.duck ? this.duckGain(src.audio.filters.duckDb) : 1;
+      ch.fader.gain.setTargetAtTime(channelLevel(show, src, now) * duck, t, smooth);
       for (const mix of ['master', 'a', 'b'] as const) ch.sends[mix].gain.setTargetAtTime(mixSend(show, src, mix), t, smooth);
       ch.solo.gain.setTargetAtTime(solo === src.id ? 1 : 0, t, smooth);
       this.levels.set(src.id, ch.failed ? 0 : peak(ch.meter, this.buf));

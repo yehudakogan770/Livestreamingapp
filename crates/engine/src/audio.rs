@@ -53,6 +53,10 @@ pub struct AudioFilters {
     pub compressor: bool,
     /// Take out background hiss and hum (microphones).
     pub noise_suppression: bool,
+    /// Quieter while someone talks into a microphone (music beds, videos).
+    pub duck: bool,
+    /// How much quieter, dB (−40 to −3).
+    pub duck_db: i32,
 }
 
 impl Default for AudioFilters {
@@ -66,6 +70,8 @@ impl Default for AudioFilters {
             gate_db: -50,
             compressor: false,
             noise_suppression: false,
+            duck: false,
+            duck_db: -15,
         }
     }
 }
@@ -77,6 +83,7 @@ impl AudioFilters {
         self.mid_db = self.mid_db.clamp(-12, 12);
         self.treble_db = self.treble_db.clamp(-12, 12);
         self.gate_db = self.gate_db.clamp(-80, 0);
+        self.duck_db = self.duck_db.clamp(-40, -3);
         self
     }
 }

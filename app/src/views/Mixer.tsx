@@ -184,6 +184,20 @@ function StripMenu({ src, onDone, onCancel }: { src: Source; onDone: (p: SourceA
       <label className="menu__row menu__row--check">
         <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Only heard when on air (audio follows video)
       </label>
+      {src.kind.type !== 'microphone' && (
+        <>
+          <label className="menu__row menu__row--check">
+            <input type="checkbox" checked={f.duck} onChange={(e) => ff({ duck: e.target.checked })} /> Quieter while someone talks (music under speeches)
+          </label>
+          {f.duck && (
+            <label className="menu__row">
+              How much quieter
+              <input type="range" min={-40} max={-3} step={1} value={f.duckDb} onChange={(e) => ff({ duckDb: Number(e.target.value) })} />
+              <em>{f.duckDb} dB</em>
+            </label>
+          )}
+        </>
+      )}
       <span className="menu__hint strip__section">Filters</span>
       {src.kind.type === 'microphone' && (
         <label className="menu__row menu__row--check">

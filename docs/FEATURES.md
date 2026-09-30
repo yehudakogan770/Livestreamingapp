@@ -422,3 +422,4 @@ on screen with the page's code.
 27. ✅ **Trivia game** — questions on screen with a timer, everyone answers from their phone (more points for quicker right answers), the right answer and how many chose each, and a leaderboard (Kahoot).
 28. ✅ **Table finder** — the guest list pasted or opened from a spreadsheet (CSV); guests type their name on their phone and see their table (the whole list is never sent to phones); on screen, the code to scan or the list a page at a time.
 29. ✅ **Teleprompter** on the stage monitor — the script scrolls past a reading line; the operator (or Stream Deck, or the phone remote) starts, pauses, speeds up and slows down; size and a mirrored picture for glass prompters.
+30. ✅ **Music ducking** — music and videos get quieter by themselves while someone talks into a microphone, and come back up gently after (per channel, how much quieter is adjustable).

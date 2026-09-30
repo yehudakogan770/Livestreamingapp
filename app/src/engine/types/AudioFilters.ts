@@ -27,4 +27,12 @@ compressor: boolean,
 /**
  * Take out background hiss and hum (microphones).
  */
-noiseSuppression: boolean, };
+noiseSuppression: boolean, 
+/**
+ * Quieter while someone talks into a microphone (music beds, videos).
+ */
+duck: boolean, 
+/**
+ * How much quieter, dB (−40 to −3).
+ */
+duckDb: number, };

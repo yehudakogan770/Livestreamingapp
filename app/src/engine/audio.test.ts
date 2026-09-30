@@ -8,8 +8,14 @@ import type { Show } from './types/Show';
 const setup = (): Show =>
   (
     [
-      { type: 'addSource', source: { id: 'a', name: 'Clip A', kind: { type: 'video', path: 'a.mp4', durationS: 10, playback: { playing: false, posS: 0, at: 0 } } } },
-      { type: 'addSource', source: { id: 'b', name: 'Clip B', kind: { type: 'video', path: 'b.mp4', durationS: 10, playback: { playing: false, posS: 0, at: 0 } } } },
+      {
+        type: 'addSource',
+        source: { id: 'a', name: 'Clip A', kind: { type: 'video', path: 'a.mp4', durationS: 10, playback: { playing: false, posS: 0, at: 0 } } },
+      },
+      {
+        type: 'addSource',
+        source: { id: 'b', name: 'Clip B', kind: { type: 'video', path: 'b.mp4', durationS: 10, playback: { playing: false, posS: 0, at: 0 } } },
+      },
       { type: 'addSource', source: { id: 'mic', name: 'Mic', kind: { type: 'microphone', deviceId: 'm', label: 'Mic' } } },
       { type: 'addSource', source: { id: 'red', name: 'Red', kind: { type: 'color', color: '#ff0000' } } },
       { type: 'cutTo', screen: 'live', sourceId: 'a' },
@@ -79,5 +85,19 @@ describe('channel levels', () => {
 
   it('a microphone can never be put on a screen', () => {
     expect(() => demoApply(setup(), { type: 'setPreview', screen: 'live', sourceId: 'mic' }, 0)).toThrow();
+  });
+});
+
+describe('ducking', () => {
+  it('goes in quickly and comes back gently', async () => {
+    const { duckGain, duckStep } = await import('./audio');
+    let d = 0;
+    for (let i = 0; i < 6; i++) d = duckStep(d, true);
+    expect(d).toBeGreaterThan(0.9); // about 0.2 s
+    expect(duckGain(-15, d)).toBeLessThan(0.25);
+    for (let i = 0; i < 6; i++) d = duckStep(d, false);
+    expect(d).toBeGreaterThan(0.6); // still low 0.2 s later
+    for (let i = 0; i < 60; i++) d = duckStep(d, false);
+    expect(duckGain(-15, d)).toBeGreaterThan(0.95); // back up after about 2 s
   });
 });
