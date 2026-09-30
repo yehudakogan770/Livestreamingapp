@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backWord, barChunks, defaultPesukim, glossesOf, goTo, nextWord, wordsOf } from './pesukim';
+import { backWord, barChunks, barRange, defaultPesukim, glossesOf, goTo, nextWord, wordsOf } from './pesukim';
 import { TWELVE_PESUKIM } from './pesukimText';
 
 describe('the 12 Pesukim', () => {
@@ -42,5 +42,18 @@ describe('the 12 Pesukim', () => {
     expect(p.place.intro).toBe(true);
     goTo(p, 1, 0, 7);
     expect(p.place.intro).toBe(false);
+  });
+});
+
+describe('the bar', () => {
+  it('shows one word at a time, or the line when chosen for the event', () => {
+    const p = defaultPesukim();
+    p.place.word = 2;
+    expect(barRange(p)).toEqual([2, 3]);
+    p.look.barWords = 'line';
+    expect(barRange(p)).toEqual([0, 7]);
+    p.look.barWords = 'one';
+    p.place.whole = true;
+    expect(barRange(p)[0]).toBe(0);
   });
 });

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { barChunks, barDesign, barLayout, glossesOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
+import { barDesign, barLayout, barRange, glossesOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import './PesukimView.css';
 
 /**
@@ -43,8 +43,7 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   const d = barDesign(look.design);
   const L = barLayout(look);
   const image = look.barImage && url ? url(look.barImage) : '';
-  const chunks = barChunks(pasuk);
-  const [from, to] = chunks.find(([, b]) => place.word < b) ?? chunks[0] ?? [0, 0];
+  const [from, to] = barRange(data);
   const lit = (i: number) => (place.whole ? 'is-said' : i === place.word ? 'is-now' : i < place.word ? 'is-said' : '');
   const line = (words: string[], cls: string, size: number, dir: 'rtl' | 'ltr', font?: string) => (
     <div className={`pes__line ${cls}`} dir={dir} style={{ fontSize: `${size}cqh`, fontFamily: font }}>

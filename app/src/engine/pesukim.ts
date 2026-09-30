@@ -31,6 +31,7 @@ export function defaultLook(): PesukimLook {
     showEnglish: true,
     design: 'gold',
     barImage: '',
+    barWords: 'one',
     background: '#15213a',
     behind: null,
     textColor: '#ffe39e',
@@ -89,6 +90,17 @@ export function barChunks(pasuk: Pasuk | undefined): [number, number][] {
   return chunks;
 }
 
+/**
+ * The words the bar shows: just the word being said (one at a time), or a
+ * line of the pasuk around it (chosen per event, and always for "whole pasuk").
+ */
+export function barRange(p: PesukimData): [number, number] {
+  const { place } = p;
+  if (!place.whole && p.look.barWords !== 'line') return [place.word, place.word + 1];
+  const chunks = barChunks(p.pesukim[place.pasuk]);
+  return chunks.find(([, b]) => place.word < b) ?? chunks[0] ?? [0, 0];
+}
+
 /** The bar's built-in designs. Mirrored in PesukimView.css and the recorder. */
 export const BAR_DESIGNS = [
   { id: 'gold', name: 'Gold frame', top: '#2a1d06', bottom: '#120c02', edge: '#e8c877', frame: true, radius: 1.8, badge: '#e8c877', badgeText: '#241802' },
@@ -125,9 +137,9 @@ export const barDesign = (id: string): BarDesign => BAR_DESIGNS.find((d) => d.id
 export function barLayout(look: PesukimLook) {
   const tr = look.showTranslit;
   const en = look.showEnglish;
-  const he = 6.4;
-  const h = 3.2 + he * 1.3 + (tr ? 4.2 * 1.3 : 0) + (en ? 3.8 * 1.3 : 0) + 1.6;
-  return { left: 7, right: 7, bottom: 4.5, h, he, tr: 4.2, en: 3.8, badge: 9 };
+  const he = 7.4;
+  const h = 3.2 + he * 1.3 + (tr ? 4.4 * 1.3 : 0) + (en ? 4 * 1.3 : 0) + 1.6;
+  return { left: 7, right: 7, bottom: 4.5, h, he, tr: 4.4, en: 4, badge: 9 };
 }
 
 /** Next word, then the next pasuk. Returns false at the very end. */

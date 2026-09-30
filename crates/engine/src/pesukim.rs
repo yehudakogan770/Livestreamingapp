@@ -59,6 +59,18 @@ pub enum PesukimMode {
     Pasuk,
 }
 
+/// What the bar shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub enum BarWords {
+    /// Only the word being said.
+    #[default]
+    One,
+    /// A line of the pasuk, the word being said lit.
+    Line,
+}
+
 /// How the next word appears.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -89,6 +101,8 @@ pub struct PesukimLook {
     pub design: String,
     /// A picture of your own for the bar (a file on this computer), or empty.
     pub bar_image: String,
+    /// One word at a time, or a line with the word lit.
+    pub bar_words: BarWords,
     /// Background colour.
     pub background: String,
     /// An input shown behind the words (a camera, usually).
@@ -113,6 +127,7 @@ impl Default for PesukimLook {
             show_english: true,
             design: "gold".to_owned(),
             bar_image: String::new(),
+            bar_words: BarWords::One,
             background: "#15213a".to_owned(),
             behind: None,
             text_color: "#ffe39e".to_owned(),

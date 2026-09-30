@@ -198,6 +198,25 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
             </label>
             {look.mode === 'bar' && (
               <>
+                <span className="field__label">The bar shows</span>
+                <div className="seg-group">
+                  {(
+                    [
+                      ['one', 'One word at a time'],
+                      ['line', 'The line, the word lit'],
+                    ] as const
+                  ).map(([v, name]) => (
+                    <button
+                      key={v}
+                      type="button"
+                      className={`seg${look.barWords === v ? ' is-on' : ''}`}
+                      aria-pressed={look.barWords === v}
+                      onClick={() => set({ barWords: v })}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
                 <span className="field__label">Bar design</span>
                 <div className="pked__swatches">
                   {BAR_DESIGNS.map((d) => (

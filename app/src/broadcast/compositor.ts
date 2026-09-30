@@ -12,7 +12,7 @@ import { programLayers, type StingerPlay } from '../components/ScreenView';
 import { lumaMask } from '../engine/luma';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
-import { barChunks, barDesign, barLayout, glossesOf, pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
+import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
@@ -2496,8 +2496,9 @@ export class ProgramCompositor {
       ctx.restore();
       return;
     }
-    const chunks = barChunks(pasuk);
-    const [from, to] = chunks.find(([, b]) => place.word < b) ?? chunks[0] ?? [0, 0];
+    const [from, to] = barRange(data);
+    // Each new word fades in, like the screens.
+    ctx.globalAlpha *= ease(clamp01((now - place.changedAt) / 300));
     const rows: { words: string[]; font: string; size: number; rtl: boolean }[] = [
       { words: he, font: `700 ${L.he * u}px "${look.font}", "Frank Ruhl Libre", serif`, size: L.he, rtl: true },
     ];
