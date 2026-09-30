@@ -47,7 +47,9 @@ import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audienc
 import { shares } from '../engine/poll';
 import { joinShown } from '../engine/join';
 import { FrameDelay } from '../engine/frameDelay';
-import { dataValues, withData } from '../engine/data';
+import { dataValues, fill as fillData, withData } from '../engine/data';
+import type { Graphic } from '../engine/types/Graphic';
+import { entranceAt } from '../engine/graphic';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
 import type { Credits } from '../engine/types/Credits';
@@ -532,6 +534,67 @@ export class ProgramCompositor {
       this.confettiDraw(t, w, h);
     }
     ctx.restore();
+  }
+
+  /** A designed graphic (mirrors GraphicView). */
+  private graphic(g: Graphic, now: number, since: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const values = this.show ? dataValues(this.show.data) : undefined;
+    for (const e of g.elements) {
+      const look = entranceAt(e, now - since);
+      const alpha = e.opacity * look.alpha;
+      if (alpha <= 0) continue;
+      const ew = (e.w / 100) * w;
+      const eh = (e.h / 100) * h;
+      const x = (e.x / 100) * w + (look.dx / 100) * w;
+      const y = (e.y / 100) * h + (look.dy / 100) * h;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x + ew / 2, y + eh / 2);
+      ctx.scale(look.scale, look.scale);
+      ctx.translate(-ew / 2, -eh / 2);
+      if (e.kind === 'box') {
+        if (e.shadow) {
+          ctx.shadowColor = 'rgba(0,0,0,0.5)';
+          ctx.shadowBlur = 0.02 * h;
+          ctx.shadowOffsetY = 0.006 * h;
+        }
+        ctx.fillStyle = e.color;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, ew, eh, Math.min((e.radius / 100) * h, ew / 2, eh / 2));
+        ctx.fill();
+      } else if (e.kind === 'image') {
+        const img = e.path ? this.picture(e.path) : null;
+        if (img?.complete && img.naturalWidth) {
+          const s = Math.min(ew / img.naturalWidth, eh / img.naturalHeight);
+          const dw = img.naturalWidth * s;
+          const dh = img.naturalHeight * s;
+          ctx.drawImage(img, (ew - dw) / 2, (eh - dh) / 2, dw, dh);
+        }
+      } else {
+        const size = (e.size / 100) * h;
+        ctx.font = `${e.italic ? 'italic ' : ''}${e.weight} ${size}px "${e.font}", "Segoe UI", system-ui, sans-serif`;
+        ctx.fillStyle = e.color;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = e.align;
+        if (e.shadow) {
+          ctx.shadowColor = 'rgba(0,0,0,0.7)';
+          ctx.shadowBlur = 0.012 * h;
+          ctx.shadowOffsetY = 0.003 * h;
+        }
+        const lines = fillData(e.text, values)
+          .split('\n')
+          .flatMap((l) => this.wrap(l, ew));
+        const lh = size * 1.2;
+        const tx = e.align === 'center' ? ew / 2 : e.align === 'right' ? ew : 0;
+        let ty = (eh - lines.length * lh) / 2 + lh / 2;
+        for (const l of lines) {
+          ctx.fillText(l, tx, ty);
+          ty += lh;
+        }
+      }
+      ctx.restore();
+    }
   }
 
   /** The table finder (mirrors SeatingView and its CSS). */
@@ -1701,6 +1764,9 @@ export class ProgramCompositor {
         return;
       case 'seating':
         this.seating(k, now, w, h);
+        return;
+      case 'graphic':
+        this.graphic(k, now, this.since(src.id, now), w, h);
         return;
       case 'text':
         this.text(this.show ? withData(k, dataValues(this.show.data)) : k, now, w, h, this.since(src.id, now));

@@ -510,6 +510,12 @@ function apply(s: Show, a: Action, now: number) {
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
       return;
+    case 'updateGraphic': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'graphic') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a designed graphic' });
+      Object.assign(src.kind, structuredClone(a.graphic));
+      return;
+    }
     case 'updateSeating': {
       const src = find(s, a.id);
       if (src.kind.type !== 'seating') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a table finder' });

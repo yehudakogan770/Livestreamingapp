@@ -883,6 +883,21 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             apply_data(s, a, now);
             Ok(())
         }
+        Action::UpdateGraphic { id, graphic } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            let SourceKind::Graphic(g) = &mut src.kind else {
+                return Err(ActionError::invalid(
+                    "id",
+                    "that input is not a designed graphic",
+                ));
+            };
+            let mut next = graphic;
+            next.repair();
+            **g = next;
+            Ok(())
+        }
         Action::UpdateSeating { id, seating } => {
             let src = s
                 .source_mut(&id)
@@ -2733,6 +2748,7 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
         }
         SourceKind::Scripture(sc) => sc.repair(),
         SourceKind::Seating(se) => se.repair(),
+        SourceKind::Graphic(g) => g.repair(),
         SourceKind::Trivia(t) => {
             t.repair();
             t.phase = crate::trivia::TriviaPhase::Join;

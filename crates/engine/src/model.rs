@@ -296,6 +296,8 @@ pub enum SourceKind {
     Trivia(Box<crate::trivia::Trivia>),
     /// A table finder: guests find their table from their phones.
     Seating(Box<crate::seating::Seating>),
+    /// A free-layout graphic made in the title designer.
+    Graphic(Box<crate::graphic::Graphic>),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

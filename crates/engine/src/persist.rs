@@ -97,6 +97,7 @@ fn repair_audience(kind: &mut SourceKind) {
         SourceKind::Scripture(s) => s.repair(),
         SourceKind::Trivia(t) => t.repair(),
         SourceKind::Seating(s) => s.repair(),
+        SourceKind::Graphic(g) => g.repair(),
         _ => {}
     }
 }

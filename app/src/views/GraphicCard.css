@@ -1,0 +1,116 @@
+.modal__box.grc {
+  width: min(1320px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  display: flex;
+  flex-direction: column;
+}
+.grc__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(300px, 1fr);
+}
+@media (max-width: 900px) {
+  .grc__body {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+}
+.grc__left,
+.grc__props {
+  min-width: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+}
+.grc__props {
+  border-left: 1px solid var(--border);
+}
+.grc__tools,
+.grc__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 6px 8px;
+}
+.grc__tpl {
+  width: auto;
+}
+.grc__stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  overflow: hidden;
+  touch-action: none;
+  background: repeating-conic-gradient(#3a3f49 0 25%, #2a2e36 0 50%) 0 0 / 24px 24px;
+  container-type: size;
+}
+.grc__stage .grfx__el {
+  cursor: move;
+}
+.grc__sel {
+  position: absolute;
+  z-index: 4;
+  outline: 2px dashed #2f80ed;
+  outline-offset: 1px;
+  cursor: move;
+}
+.grc__handle {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #2f80ed;
+  border: 2px solid #fff;
+  cursor: nwse-resize;
+}
+.grc__guide {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.12);
+}
+.grc__guide--v {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+.grc__guide--h {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+.grc__num {
+  width: 84px;
+}
+.grc__layers {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.grc__layers button {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.grc__layers button.is-on {
+  border-color: #2f80ed;
+}

@@ -321,6 +321,11 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Change a designed graphic.
+    UpdateGraphic {
+        id: SourceId,
+        graphic: crate::graphic::Graphic,
+    },
     /// Choose the data file (empty: none) and how often it is read.
     SetDataFile {
         path: String,

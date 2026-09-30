@@ -22,6 +22,7 @@ pub mod cues;
 pub mod data;
 pub mod engine;
 pub mod event;
+pub mod graphic;
 pub mod logo3d;
 pub mod lyrics;
 pub mod media;

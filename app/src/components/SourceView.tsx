@@ -5,6 +5,7 @@ import { ZmanimView } from './ZmanimView';
 import { ScriptureView } from './ScriptureView';
 import { TriviaView } from './TriviaView';
 import { SeatingView } from './SeatingView';
+import { GraphicView } from './GraphicView';
 import { PollView } from './PollView';
 import { LyricsView } from './LyricsView';
 import { ScoreboardView } from './ScoreboardView';
@@ -134,6 +135,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <RaffleView r={k} thumb={thumb} />;
     case 'fundraiser':
       return <FundraiserView f={k} thumb={thumb} />;
+    case 'graphic':
+      return <GraphicView g={k} url={(p) => client.mediaUrl(p)} thumb={thumb} />;
     case 'seating':
       return <SeatingView s={k} thumb={thumb} />;
     case 'trivia':
