@@ -337,6 +337,34 @@ export function InputSettings({
                       </button>
                     </div>
                   </div>
+                  {source.kind.type === 'camera' && (
+                    <div
+                      className="is__row"
+                      title="When the sound arrives later than the picture (a sound desk, wireless microphones), hold the picture back to match"
+                    >
+                      <span>Picture delay</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={1000}
+                        step={10}
+                        value={source.videoDelayMs ?? 0}
+                        aria-label="Picture delay"
+                        onChange={(e) => act({ type: 'updateSource', id: source.id, patch: { videoDelayMs: Number(e.target.value) } })}
+                      />
+                      <em className={source.videoDelayMs ? 'is-changed' : undefined}>{source.videoDelayMs ?? 0} ms</em>
+                      <button
+                        type="button"
+                        className="is__reset"
+                        aria-label="Reset Picture delay"
+                        title="Reset"
+                        disabled={!source.videoDelayMs}
+                        onClick={() => act({ type: 'updateSource', id: source.id, patch: { videoDelayMs: 0 } })}
+                      >
+                        ↺
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
               {tab === 'effects' && (

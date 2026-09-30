@@ -2601,6 +2601,7 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         playlist: None,
         ptz: None,
         speed: None,
+        video_delay_ms: None,
     };
     s.sources.push(src);
     Ok(())
@@ -2682,6 +2683,15 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
         }
         a.repair();
         src.adjust = a;
+    }
+    if let Some(ms) = patch.video_delay_ms {
+        if !matches!(src.kind, SourceKind::Camera { .. }) {
+            return Err(ActionError::invalid(
+                "videoDelayMs",
+                "only a camera's picture can be held back",
+            ));
+        }
+        src.video_delay_ms = Some(ms.min(1000)).filter(|&ms| ms > 0);
     }
     Ok(())
 }

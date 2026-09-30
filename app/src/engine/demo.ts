@@ -339,6 +339,11 @@ function apply(s: Show, a: Action, now: number) {
           throw new Refused({ code: 'invalidValue', field: 'adjust', reason: 'adjustments work on cameras, videos and pictures' });
         src.adjust = structuredClone(p.adjust);
       }
+      if (p.videoDelayMs !== undefined) {
+        if (src.kind.type !== 'camera') throw new Refused({ code: 'invalidValue', field: 'videoDelayMs', reason: "only a camera's picture can be held back" });
+        const ms = Math.min(1000, Math.max(0, Math.round(p.videoDelayMs)));
+        src.videoDelayMs = ms > 0 ? ms : null;
+      }
       if (p.audio !== undefined) {
         const q = p.audio;
         const au = src.audio;

@@ -94,6 +94,10 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub logo: Option<String>,
+    /// Only for cameras: hold the picture back this long, ms (0: not at all).
+    #[serde(default)]
+    #[ts(optional)]
+    pub video_delay_ms: Option<u32>,
 }
 
 /// Changes to the stage monitor. Fields left out stay as they are.

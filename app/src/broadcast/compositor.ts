@@ -46,6 +46,7 @@ import { cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
 import { shares } from '../engine/poll';
 import { joinShown } from '../engine/join';
+import { FrameDelay } from '../engine/frameDelay';
 import { dataValues, withData } from '../engine/data';
 import type { Scoreboard } from '../engine/types/Scoreboard';
 import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '../engine/credits';
@@ -95,6 +96,8 @@ export class ProgramCompositor {
   >();
   /** The stage visuals, drawn once a frame at full size (null: not needed yet, false: no WebGL). */
   private visuals: { canvas: HTMLCanvasElement; r: Renderer; player: VisualsPlayer; at: number } | null | false = null;
+  /** Cameras held back to line up with late sound. */
+  private delays = new Map<string, FrameDelay & { el: HTMLVideoElement }>();
 
   constructor(
     private readonly client: EngineClient,
@@ -132,6 +135,8 @@ export class ProgramCompositor {
     }
     this.logos.clear();
     this.visuals = null;
+    for (const d of this.delays.values()) d.dispose();
+    this.delays.clear();
     for (const m of [...this.media.values(), ...this.pictures.values()]) this.drop(m);
     this.media.clear();
     this.pictures.clear();
@@ -1778,10 +1783,30 @@ export class ProgramCompositor {
             return;
           }
         }
-        this.fit(m.el, src.fit, w, h);
+        const held = src.kind.type === 'camera' && m.el instanceof HTMLVideoElement ? this.delayed(src.id, m.el, src.videoDelayMs ?? 0) : null;
+        this.fit(held ?? m.el, src.fit, w, h);
         return;
       }
     }
+  }
+
+  /** A camera held back (see FrameDelay); null when it isn't. */
+  private delayed(id: string, el: HTMLVideoElement, ms: number): ImageBitmap | null {
+    let d = this.delays.get(id);
+    if (ms <= 0) {
+      if (d) {
+        d.dispose();
+        this.delays.delete(id);
+      }
+      return null;
+    }
+    if (!d || d.el !== el) {
+      d?.dispose();
+      d = Object.assign(new FrameDelay(el, ms), { el });
+      this.delays.set(id, d);
+    }
+    d.setDelay(ms);
+    return d.frame();
   }
 
   /** Draw a picture filling the frame (contain: whole picture; cover: no bars). */

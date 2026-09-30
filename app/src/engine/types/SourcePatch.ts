@@ -23,4 +23,8 @@ adjust?: Adjust,
 /**
  * Only for countdown inputs: the event logo picture ("" removes it).
  */
-logo?: string, };
+logo?: string, 
+/**
+ * Only for cameras: hold the picture back this long, ms (0: not at all).
+ */
+videoDelayMs?: number, };

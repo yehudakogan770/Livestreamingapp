@@ -411,7 +411,7 @@ on screen with the page's code.
 16. ✅ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
 17. ✅ **Audience polls and Q&A** shown on screen (Zoom Events, Restream).
 18. ✅ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
-19. ⬜ **Video delay per input** to line up cameras with sound (vMix).
+19. ✅ **Video delay per input** to line up cameras with sound (vMix): each camera's picture can be held back up to 1 second (input settings → Crop & position), on every screen and in the recording.
 20. ✅ **PTZ camera control** (vMix, ATEM).
 21. ✅ **Raffles** — entries from phones or typed in, the draw on screen with the winner revealed.
 22. ✅ **Fundraisers** — goal, total and donors on screen, pledges from phones (no payments taken).

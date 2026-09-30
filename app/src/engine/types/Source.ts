@@ -39,4 +39,8 @@ ptz?: Ptz | null,
 /**
  * A video input playing a list of videos.
  */
-playlist?: Playlist | null, };
+playlist?: Playlist | null, 
+/**
+ * A camera's picture held back this long, ms (to line up with sound that arrives late).
+ */
+videoDelayMs?: number | null, };

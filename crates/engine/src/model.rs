@@ -372,6 +372,10 @@ pub struct Source {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub playlist: Option<crate::playlist::Playlist>,
+    /// A camera's picture held back this long, ms (to line up with sound that arrives late).
+    #[serde(default)]
+    #[ts(optional = nullable)]
+    pub video_delay_ms: Option<u32>,
 }
 
 /// Green screen: a colour taken out of the picture so what is behind shows.

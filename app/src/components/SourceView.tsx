@@ -29,6 +29,7 @@ import { BrowserView, StreamView } from './BrowserView';
 import type { Logo3d } from '../engine/types/Logo3d';
 import { defaultVisuals } from '../engine/visuals';
 import { acquireCamera, releaseCamera } from '../engine/cameras';
+import { FrameDelay } from '../engine/frameDelay';
 
 // ---- views ----
 
@@ -112,7 +113,7 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
     case 'image':
       return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
-      return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} />;
+      return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} delayMs={source.videoDelayMs ?? 0} />;
     case 'text':
       return <DataText t={k} />;
     case 'credits':
@@ -426,9 +427,34 @@ function ImageView({ url, fit, audience }: { url: string; fit: 'cover' | 'contai
   );
 }
 
-function CameraView({ deviceId, fit, audience }: { deviceId: string; fit: 'cover' | 'contain'; audience: boolean }) {
+function CameraView({ deviceId, fit, audience, delayMs = 0 }: { deviceId: string; fit: 'cover' | 'contain'; audience: boolean; delayMs?: number }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const canvas = useRef<HTMLCanvasElement>(null);
   const [failed, setFailed] = useState(false);
+  const delayed = delayMs > 0;
+  // Held back: the camera plays hidden and its frames from `delayMs` ago are drawn.
+  useEffect(() => {
+    const v = ref.current;
+    const c = canvas.current;
+    if (!delayed || !v || !c) return;
+    const d = new FrameDelay(v, delayMs);
+    let raf = requestAnimationFrame(function draw() {
+      const f = d.frame();
+      const g = c.getContext('2d');
+      if (f && g) {
+        if (c.width !== f.width || c.height !== f.height) {
+          c.width = f.width;
+          c.height = f.height;
+        }
+        g.drawImage(f, 0, 0);
+      }
+      raf = requestAnimationFrame(draw);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      d.dispose();
+    };
+  }, [delayed, delayMs]);
   useEffect(() => {
     let alive = true;
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -453,7 +479,20 @@ function CameraView({ deviceId, fit, audience }: { deviceId: string; fit: 'cover
     };
   }, [deviceId]);
   if (failed) return <Missing text="Camera not found or unplugged" audience={audience} />;
-  return <video ref={ref} muted playsInline autoPlay style={{ ...fill, objectFit: fit, background: '#000' }} data-kind="camera" />;
+  // One video element either way, so turning the delay on or off keeps the camera.
+  return (
+    <>
+      <video
+        ref={ref}
+        muted
+        playsInline
+        autoPlay
+        style={delayed ? { ...fill, opacity: 0 } : { ...fill, objectFit: fit, background: '#000' }}
+        data-kind={delayed ? undefined : 'camera'}
+      />
+      {delayed && <canvas ref={canvas} style={{ ...fill, objectFit: fit, background: '#000' }} data-kind="camera" />}
+    </>
+  );
 }
 
 function VideoView({

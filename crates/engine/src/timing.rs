@@ -81,6 +81,7 @@ mod tests {
             playlist: None,
             ptz: None,
             speed: None,
+            video_delay_ms: None,
         }
     }
 
