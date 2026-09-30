@@ -19,7 +19,7 @@ pub enum SafeScreen {
 }
 
 /// The event and its emergency plan.
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 #[ts(export)]
 pub struct EventInfo {
@@ -38,6 +38,23 @@ pub struct EventInfo {
     pub wifi: GuestWifi,
     /// Where the event is (Hebrew date, zmanim, candle lighting).
     pub place: crate::zmanim::Place,
+}
+
+impl Default for EventInfo {
+    /// Something broken shows the logo (Lumora's until the event has its own);
+    /// PANIC shows nothing at all: black.
+    fn default() -> Self {
+        EventInfo {
+            name: String::new(),
+            logo: None,
+            on_failure: SafeScreen::Logo,
+            panic_shows: SafeScreen::Black,
+            set_up: false,
+            brand: Brand::default(),
+            wifi: GuestWifi::default(),
+            place: crate::zmanim::Place::default(),
+        }
+    }
 }
 
 /// A Wi-Fi network guests join by scanning a code (for halls where the

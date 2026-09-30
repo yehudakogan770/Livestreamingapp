@@ -6,7 +6,7 @@ import type { SafeScreen } from '../engine/types/SafeScreen';
 import type { Show } from '../engine/types/Show';
 import './EventSetup.css';
 
-type Ending = 'logo' | 'showText' | 'blank' | 'hold';
+type Ending = 'takeNext' | 'logo' | 'showText' | 'blank' | 'hold';
 
 /**
  * Asked when an event starts (and from the Event menu): the event's name and
@@ -121,6 +121,12 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
     <div className="evs__step" key="countdown">
       <h3>When the countdown finishes</h3>
       <div className="evs__choices evs__choices--4">
+        <Choice
+          on={ending === 'takeNext'}
+          onPick={() => setEnding('takeNext')}
+          title="Go to what is in Next"
+          preview={<span className="evs__black evs__words">Next ›</span>}
+        />
         <Choice on={ending === 'logo'} onPick={() => setEnding('logo')} title="Numbers go, logo appears" preview={withLogo}>
           The background stays
         </Choice>

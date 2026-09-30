@@ -4,4 +4,4 @@ import type { SourceId } from "./SourceId";
 /**
  * What happens when the countdown reaches zero.
  */
-export type AtZero = { "type": "hold" } | { "type": "showText" } | { "type": "hide" } | { "type": "blank" } | { "type": "cutTo", sourceId: SourceId, };
+export type AtZero = { "type": "hold" } | { "type": "showText" } | { "type": "hide" } | { "type": "takeNext" } | { "type": "blank" } | { "type": "cutTo", sourceId: SourceId, };

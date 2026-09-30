@@ -317,7 +317,7 @@ export function defaultCountdown(): Countdown {
     label: 'Starting soon',
     endText: 'Welcome!',
     format: 'auto',
-    atZero: { type: 'hide' },
+    atZero: { type: 'takeNext' },
     fired: false,
   };
 }
@@ -347,7 +347,7 @@ export function emptyShow(): Show {
       name: '',
       logo: null,
       onFailure: 'logo',
-      panicShows: 'logo',
+      panicShows: 'black',
       setUp: false,
       brand: defaultBrand(),
       wifi: { name: '', password: '', qr: '', show: false },

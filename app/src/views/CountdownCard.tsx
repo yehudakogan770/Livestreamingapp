@@ -70,7 +70,7 @@ export function CountdownCard({ show, act, screen = null, onPutInNext }: { show:
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                const ms = parseLength(typing.includes(':') ? typing : `0:${typing}`);
+                const ms = typedTime(typing);
                 if (ms !== null) moveTo(ms);
                 setTyping(null);
               }}
@@ -79,7 +79,7 @@ export function CountdownCard({ show, act, screen = null, onPutInNext }: { show:
                 className="cd__type"
                 autoFocus
                 value={typing}
-                aria-label="Time left (m:ss)"
+                aria-label="Time left (m:ss, or minutes)"
                 onChange={(e) => setTyping(e.target.value)}
                 onBlur={() => setTyping(null)}
                 onKeyDown={(e) => e.key === 'Escape' && setTyping(null)}
@@ -171,11 +171,19 @@ export function CountdownCard({ show, act, screen = null, onPutInNext }: { show:
  * ▾ opens the whole card. Nothing shows when there is no countdown (the
  * Timer menu adds one).
  */
+/** A time typed in: "3:00", "1:15:00", or just minutes ("5"). */
+export function typedTime(s: string): number | null {
+  const t = s.trim();
+  if (/^\d+(\.\d+)?$/.test(t)) return Math.round(Number(t) * 60_000);
+  return parseLength(t);
+}
+
 export function CountdownMini({ show, act, screen, onPutInNext }: { show: Show; act: Act; screen: ScreenId; onPutInNext?: () => void }) {
   const target = countdownTarget(show, screen);
   const c = target ? timerOf(show, target.id) : null;
   const now = useNow(false, c?.endsAt != null ? 250 : 1000);
   const [open, setOpen] = useState(false);
+  const [typing, setTyping] = useState<string | null>(null);
   if (!target || !c)
     return onPutInNext ? (
       <button
@@ -199,7 +207,31 @@ export function CountdownMini({ show, act, screen, onPutInNext }: { show: Show; 
       <div className="cdm__row">
         {tag && !open && <b className={`cd__tag cd__tag--${target.where}`}>{tag}</b>}
         <span className="cdm__name">{c.label || name}</span>
-        <span className={`cdm__time${running ? ' is-running' : ''}`}>{shown}</span>
+        {typing === null ? (
+          <button type="button" className={`cdm__time${running ? ' is-running' : ''}`} title="Click to type a time to go to" onClick={() => setTyping(shown)}>
+            {shown}
+          </button>
+        ) : (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const ms = typedTime(typing);
+              if (ms !== null) act({ type: 'setCountdownRemaining', id, ms: Math.max(0, ms) });
+              setTyping(null);
+            }}
+          >
+            <input
+              className="cdm__type"
+              autoFocus
+              value={typing}
+              aria-label="Go to this time (m:ss, or minutes)"
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setTyping(e.target.value)}
+              onBlur={() => setTyping(null)}
+              onKeyDown={(e) => e.key === 'Escape' && setTyping(null)}
+            />
+          </form>
+        )}
         <button
           type="button"
           className="btn btn--small"

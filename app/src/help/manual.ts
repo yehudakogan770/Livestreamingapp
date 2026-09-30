@@ -129,7 +129,9 @@ export const MANUAL: Topic[] = [
     keywords: 'countdown timer starting soon clock minutes',
     body: [
       '1. Timer → Add a countdown… : how long, the words, the look, and what happens at zero.',
-      '2. Put it in Next: its controls come up (Start, pause, add a minute, set the time). Take it on air.',
+      '2. Put it in Next: its controls come up (Start, pause, add a minute). Take it on air.',
+      '• To go to a time: click the time and type it (3:00, 1:15:00, or just 5 for five minutes), then Enter.',
+      '• At zero it goes to what is in Next, so line up the next thing (the opening video, a camera). Timer settings can change this: stay on 0, show words, the logo, or black.',
       'Tip: The stage Monitor can show the time left to the people on stage.',
     ],
   },
@@ -228,10 +230,10 @@ export const MANUAL: Topic[] = [
     title: 'When something goes wrong',
     keywords: 'problem error panic blank black help broken frozen cpu all good',
     body: [
-      '• PANIC (double-click): everything black, or your logo. One click brings it back.',
+      '• PANIC (double-click): the audience sees nothing (black). One click brings it back. Your on-air picture shows a small “PANIC on” tag.',
+      '• If a camera or video stops working, the screen shows the logo (the event’s, or Lumora’s until you choose one) instead of freezing.',
       '• Blank Live / Back / Monitor: that screen goes black (B for the one you control).',
       '• All good (bottom left) turns yellow or red when something needs attention; click it to see what.',
-      '• A camera or video that stops: the screen shows your chosen safe picture instead of freezing.',
       '• CPU and graphics use are shown at the bottom; if they are high, close other programs.',
     ],
   },

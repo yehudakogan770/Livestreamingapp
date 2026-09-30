@@ -242,6 +242,21 @@ fn run_at_zero(next: &mut Show, id: &SourceId, now: Millis) {
         .collect();
     match at_zero {
         AtZero::Hold | AtZero::ShowText | AtZero::Hide => {}
+        AtZero::TakeNext => {
+            // The screens it is on (the Live Screen if none) go to what is in Next.
+            let screens = if showing.is_empty() {
+                vec![ScreenId::Live]
+            } else {
+                showing
+            };
+            for screen in screens {
+                let sc = next.screens.get(screen);
+                if sc.preview.is_some() && sc.preview.as_ref() != Some(id) {
+                    let t = next.transition.clamped();
+                    let _ = take(next, screen, t, now);
+                }
+            }
+        }
         AtZero::Blank => {
             for sc in showing {
                 let st = next.screens.get_mut(sc);

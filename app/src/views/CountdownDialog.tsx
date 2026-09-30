@@ -13,7 +13,10 @@ const BACKGROUNDS = ['#0b2545', '#1f6f79', '#3b1c32', '#1a1d22', '#000000', '#5a
 
 /** Parse "5", "5:30", "1:05:00" into ms. */
 export function parseLength(text: string): number | null {
-  const parts = text.trim().split(':').map((p) => (p === '' ? NaN : Number(p)));
+  const parts = text
+    .trim()
+    .split(':')
+    .map((p) => (p === '' ? NaN : Number(p)));
   if (parts.length === 0 || parts.length > 3 || parts.some((p) => !Number.isFinite(p) || p < 0)) return null;
   const [a = 0, b = 0, c = 0] = parts;
   const ms = parts.length === 1 ? a * MIN : parts.length === 2 ? (a * 60 + b) * 1000 : (a * 3600 + b * 60 + c) * 1000;
@@ -31,6 +34,7 @@ export function nextClockTime(hhmm: string, now: Date): number | null {
 }
 
 const ENDINGS: { type: AtZero['type']; name: string }[] = [
+  { type: 'takeNext', name: 'Go to what is in Next' },
   { type: 'hide', name: 'Numbers go, event logo appears (background stays)' },
   { type: 'showText', name: 'Show the end text' },
   { type: 'hold', name: 'Stay on 0' },
@@ -108,13 +112,19 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
       <div className="modal__box cdset">
         <header className="modal__head">
           <h2>Countdown · {src?.name ?? 'Countdown'}</h2>
-          <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>✕</button>
+          <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
+            ✕
+          </button>
         </header>
         <div className="cdset__body">
           <div className="cdset__col">
             <div className="segs">
-              <button type="button" className="seg" aria-pressed={mode === 'length'} onClick={() => setMode('length')}>Count down a length</button>
-              <button type="button" className="seg" aria-pressed={mode === 'clock'} onClick={() => setMode('clock')}>Count down to a time</button>
+              <button type="button" className="seg" aria-pressed={mode === 'length'} onClick={() => setMode('length')}>
+                Count down a length
+              </button>
+              <button type="button" className="seg" aria-pressed={mode === 'clock'} onClick={() => setMode('clock')}>
+                Count down to a time
+              </button>
             </div>
             {mode === 'length' ? (
               <div className="field">
@@ -127,7 +137,9 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
                   ))}
                 </div>
                 <input className="text" placeholder="Or type it, e.g. 7:30" value={length} onChange={(e) => setLength(e.target.value)} aria-label="Length" />
-                <span className="field__note">{lengthMs === null ? 'Type minutes, or m:ss, or h:mm:ss.' : 'Setting a new length stops the countdown, ready to start.'}</span>
+                <span className="field__note">
+                  {lengthMs === null ? 'Type minutes, or m:ss, or h:mm:ss.' : 'Setting a new length stops the countdown, ready to start.'}
+                </span>
               </div>
             ) : (
               <div className="field">
@@ -144,7 +156,9 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
               <span className="field__label">How the time is written</span>
               <div className="segs">
                 {FORMATS.map((f) => (
-                  <button key={f.f} type="button" className="seg" aria-pressed={format === f.f} onClick={() => setFormat(f.f)}>{f.name}</button>
+                  <button key={f.f} type="button" className="seg" aria-pressed={format === f.f} onClick={() => setFormat(f.f)}>
+                    {f.name}
+                  </button>
                 ))}
               </div>
             </div>
@@ -157,7 +171,15 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
               <span className="field__label">Background</span>
               <div className="addinput__swatches">
                 {BACKGROUNDS.map((b) => (
-                  <button key={b} type="button" className="swatch" aria-label={b} aria-pressed={background === b} style={{ background: b }} onClick={() => setBackground(b)} />
+                  <button
+                    key={b}
+                    type="button"
+                    className="swatch"
+                    aria-label={b}
+                    aria-pressed={background === b}
+                    style={{ background: b }}
+                    onClick={() => setBackground(b)}
+                  />
                 ))}
                 <input type="color" aria-label="Any colour" value={background} onChange={(e) => setBackground(e.target.value)} />
               </div>
@@ -175,14 +197,20 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
                 }}
               >
                 {ENDINGS.map((z) => (
-                  <option key={z.type} value={z.type} disabled={z.type === 'cutTo' && !cutSource}>{z.name}</option>
+                  <option key={z.type} value={z.type} disabled={z.type === 'cutTo' && !cutSource}>
+                    {z.name}
+                  </option>
                 ))}
               </select>
               {atZero.type === 'cutTo' && (
                 <select aria-label="Switch to" value={atZero.sourceId} onChange={(e) => setAtZero({ type: 'cutTo', sourceId: e.target.value })}>
-                  {show.sources.filter((s) => s.kind.type !== 'microphone').map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
-                  ))}
+                  {show.sources
+                    .filter((s) => s.kind.type !== 'microphone')
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
                 </select>
               )}
             </div>
@@ -196,8 +224,12 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
           </div>
         </div>
         <footer className="modal__foot">
-          <button type="button" className="btn" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn btn--primary" disabled={!valid} onClick={done}>Done</button>
+          <button type="button" className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn--primary" disabled={!valid} onClick={done}>
+            Done
+          </button>
         </footer>
       </div>
     </div>

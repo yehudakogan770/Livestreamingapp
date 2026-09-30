@@ -295,14 +295,17 @@ export function ControlView({
                   <div className="mon__screen">
                     <ProgramView show={show} screen={screen} client={client} reportDuration />
                     {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
+                    {/* A small tag, not words over the picture: the monitor shows just what the audience sees. */}
                     {(sc.blank || show.panic) && (
-                      <span className="mon__blanked">
-                        {show.panic ? 'PANIC — everything is black' : 'BLANKED — the audience sees black'}
-                        <small>
-                          {show.panic
+                      <span
+                        className="mon__state"
+                        title={
+                          show.panic
                             ? 'Click PANIC (bottom right) to bring the screens back'
-                            : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`}
-                        </small>
+                            : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`
+                        }
+                      >
+                        {show.panic ? 'PANIC on' : 'Blanked'}
                       </span>
                     )}
                   </div>

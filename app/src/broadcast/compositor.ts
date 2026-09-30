@@ -2060,7 +2060,7 @@ export class ProgramCompositor {
       ctx.shadowBlur = h * 0.04;
       ctx.fillText(timer.endText, w / 2, h / 2);
     }
-    if (due && timer.atZero.type === 'hide' && logoPath && appear > 0) {
+    if (due && (timer.atZero.type === 'hide' || timer.atZero.type === 'takeNext') && logoPath && appear > 0) {
       const logo = this.picture(logoPath);
       ctx.shadowBlur = 0;
       ctx.globalAlpha = appear;
@@ -2559,7 +2559,12 @@ export class ProgramCompositor {
     const { look, place } = data;
     const pasuk = data.pesukim[place.pasuk];
     const he = wordsOf(pasuk?.text ?? '');
-    if (place.blank || !pasuk || (!he.length && !place.intro)) return;
+    if (!pasuk || (!he.length && !place.intro)) return;
+    // Hide fades the bar out, and showing it again fades it in (like the screens).
+    if (!this.pesukimHide || this.pesukimHide.blank !== place.blank) this.pesukimHide = { blank: place.blank, at: this.pesukimHide ? place.changedAt : 0 };
+    const hideT = clamp01((now - this.pesukimHide.at) / 350);
+    const shown = place.blank ? 1 - hideT : this.pesukimHide.at ? hideT : 1;
+    if (shown <= 0) return;
     const u = h / 100;
     const d = barDesign(look.design);
     const L = barLayout(look);
@@ -2572,6 +2577,7 @@ export class ProgramCompositor {
     // No background: just the words, outlined in the second colour.
     const bare = look.plain || (!pic && d.id === 'none');
     ctx.save();
+    ctx.globalAlpha *= shown;
     // How the bar comes on.
     const barFx = effectAt(look.barIn ?? 'rise', now - (this.onSince ?? now - 10_000));
     this.applyEffect(barFx, x + bw / 2, y + bh / 2, w, h);
@@ -2648,6 +2654,9 @@ export class ProgramCompositor {
     ctx.restore();
   }
 
+  /** When the Pesukim words were last hidden or shown (for the fade). */
+  private pesukimHide: { blank: boolean; at: number } | null = null;
+
   /** The last Pesukim word shown (for the fade between words). */
   private pesukimSlot: { key: string; place: PesukimData['place']; since: number; before: PesukimData['place'] | null } | null = null;
 
@@ -2675,71 +2684,90 @@ export class ProgramCompositor {
     }
     const [from, to] = barRange({ ...data, place });
     if (wordFx) this.applyEffect(wordFx, x + bw / 2, y + bh / 2, w, h);
-    const rows: { words: string[]; font: string; size: number; rtl: boolean }[] = [
-      { words: he, font: `700 ${L.he * u}px "${look.font}", "Frank Ruhl Libre", serif`, size: L.he, rtl: true },
-    ];
+    // First line: how it sounds and the Hebrew, side by side; the English under them.
+    type Group = { words: string[]; font: string; size: number; rtl: boolean };
+    const heG: Group = { words: he, font: `700 ${L.he * u}px "${look.font}", "Frank Ruhl Libre", serif`, size: L.he, rtl: true };
     const tr = wordsOf(pasuk.translit);
     const en = glossesOf(pasuk.english);
-    if (look.showTranslit && tr.length) rows.push({ words: tr, font: `italic 600 ${L.tr * u}px "Segoe UI", system-ui, sans-serif`, size: L.tr, rtl: false });
-    if (look.showEnglish && en.length) rows.push({ words: en, font: `500 ${L.en * u}px "Segoe UI", system-ui, sans-serif`, size: L.en, rtl: false });
-    const total = rows.reduce((n, r) => n + r.size * 1.3 * u, 0) + (rows.length - 1) * 0.2 * u;
+    const lines: Group[][] = [
+      look.showTranslit && tr.length ? [{ words: tr, font: `italic 600 ${L.tr * u}px "Segoe UI", system-ui, sans-serif`, size: L.tr, rtl: false }, heG] : [heG],
+    ];
+    if (look.showEnglish && en.length) lines.push([{ words: en, font: `500 ${L.en * u}px "Segoe UI", system-ui, sans-serif`, size: L.en, rtl: false }]);
+    const lineH = (line: Group[]) => Math.max(...line.map((g) => g.size)) * 1.3 * u;
+    const total = lines.reduce((n, l) => n + lineH(l), 0) + (lines.length - 1) * 0.2 * u;
     let top = y + bh / 2 - total / 2;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.direction = 'ltr';
+    const sep = 3.2 * u;
+    const measure = (g: Group) => {
+      ctx.font = g.font;
+      const gap = g.size * u * 0.55;
+      const items = g.words
+        .slice(from, to)
+        .map((t, j) => ({ t, i: from + j, ww: t ? ctx.measureText(t).width : 0 }))
+        .filter((it) => it.t);
+      return { g, gap, items, width: items.reduce((n, it) => n + it.ww, 0) + gap * Math.max(0, items.length - 1) };
+    };
+    const laid = lines.map((line) => {
+      const groups = line.map(measure).filter((m) => m.items.length);
+      return { line, groups, width: groups.reduce((n, m) => n + m.width, 0) + sep * Math.max(0, groups.length - 1) };
+    });
     if (wordFx && wordFx.reveal < 1) {
       // Letter by letter, across the words themselves (Hebrew from the right).
-      let widest = 0;
-      for (const row of rows) {
-        ctx.font = row.font;
-        widest = Math.max(widest, ctx.measureText(row.words.slice(from, to).filter(Boolean).join('  ')).width);
-      }
+      const widest = Math.max(0, ...laid.map((l) => l.width));
       const r0 = mid + widest / 2;
       ctx.beginPath();
       ctx.rect(r0 - widest * wordFx.reveal, 0, widest * wordFx.reveal + 2 * u, h);
       ctx.clip();
     }
-    for (const row of rows) {
-      ctx.font = row.font;
-      ctx.direction = row.rtl ? 'rtl' : 'ltr';
-      const gap = row.size * u * 0.55;
-      const items = row.words
-        .slice(from, to)
-        .map((t, j) => ({ t, i: from + j, ww: t ? ctx.measureText(t).width : 0 }))
-        .filter((it) => it.t);
-      const width = items.reduce((n, it) => n + it.ww, 0) + gap * Math.max(0, items.length - 1);
+    for (const l of laid) {
       // Too wide for the bar: squeeze to fit.
       const room = right - left;
-      const squeeze = width > room ? room / width : 1;
-      const cy = top + (row.size * 1.3 * u) / 2;
+      const squeeze = l.width > room ? room / l.width : 1;
+      const cy = top + lineH(l.line) / 2;
       ctx.save();
       ctx.translate(mid, cy);
       ctx.scale(squeeze, 1);
-      let cx = row.rtl ? width / 2 : -width / 2;
-      for (const it of items) {
-        if (row.rtl) cx -= it.ww;
-        ctx.fillStyle =
-          place.whole || it.i < place.word
-            ? 'rgba(255,255,255,0.95)'
-            : it.i === place.word
-              ? look.textColor
-              : bare
-                ? 'rgba(255,255,255,0.75)'
-                : 'rgba(255,255,255,0.5)';
-        if (bare) {
+      let gx = -l.width / 2;
+      l.groups.forEach((m, gi) => {
+        if (gi > 0) {
+          // A thin line between how it sounds and the Hebrew.
           ctx.save();
-          ctx.lineWidth = 1.1 * u;
-          ctx.lineJoin = 'round';
-          ctx.strokeStyle = look.outlineColor;
-          ctx.strokeText(it.t, cx, 0);
+          ctx.shadowColor = 'transparent';
+          ctx.fillStyle = bare ? look.outlineColor : 'rgba(255,255,255,0.35)';
+          ctx.fillRect(gx - sep / 2 - 0.15 * u, -m.g.size * 0.45 * u, 0.3 * u, m.g.size * 0.9 * u);
           ctx.restore();
         }
-        ctx.fillText(it.t, cx, 0);
-        if (row.rtl) cx -= gap;
-        else cx += it.ww + gap;
-      }
+        ctx.font = m.g.font;
+        ctx.direction = m.g.rtl ? 'rtl' : 'ltr';
+        let cx = m.g.rtl ? gx + m.width : gx;
+        for (const it of m.items) {
+          if (m.g.rtl) cx -= it.ww;
+          ctx.fillStyle =
+            place.whole || it.i < place.word
+              ? 'rgba(255,255,255,0.95)'
+              : it.i === place.word
+                ? look.textColor
+                : bare
+                  ? 'rgba(255,255,255,0.75)'
+                  : 'rgba(255,255,255,0.5)';
+          if (bare) {
+            ctx.save();
+            ctx.lineWidth = 1.1 * u;
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = look.outlineColor;
+            ctx.strokeText(it.t, cx, 0);
+            ctx.restore();
+          }
+          ctx.fillText(it.t, cx, 0);
+          if (m.g.rtl) cx -= m.gap;
+          else cx += it.ww + m.gap;
+        }
+        gx += m.width + sep;
+      });
       ctx.restore();
-      top += row.size * 1.3 * u + 0.2 * u;
+      top += lineH(l.line) + 0.2 * u;
     }
     ctx.restore();
   }

@@ -131,8 +131,11 @@ pub enum AtZero {
     ShowText,
     /// Take the numbers off; the countdown's background stays and its event
     /// logo (if it has one) fades in.
-    #[default]
     Hide,
+    /// Go to what is lined up in Next, with the chosen transition (with
+    /// nothing in Next, the numbers just go, like Hide).
+    #[default]
+    TakeNext,
     /// Blank the screens the countdown is on.
     Blank,
     /// Cut the Live Screen to a source (e.g. the opening video).
@@ -175,7 +178,7 @@ impl Default for Countdown {
             label: "Starting soon".to_owned(),
             end_text: "Welcome!".to_owned(),
             format: TimerFormat::Auto,
-            at_zero: AtZero::Hide,
+            at_zero: AtZero::TakeNext,
             fired: false,
         }
     }

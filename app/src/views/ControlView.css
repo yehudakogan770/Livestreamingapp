@@ -212,6 +212,21 @@
   color: var(--text-faint);
   font-size: 12px;
 }
+.mon__state {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 2;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 4px;
+  background: var(--program, #c0392b);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  pointer-events: auto;
+}
 .mon__blanked {
   position: absolute;
   inset: 0;
@@ -2144,9 +2159,28 @@ button.strip__name:hover {
   color: var(--text-dim);
 }
 .cdm__time {
+  padding: 0 4px;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
   font-family: var(--mono);
   font-size: 18px;
   font-weight: 700;
+  cursor: text;
+}
+.cdm__time:hover {
+  border-color: var(--border);
+}
+.cdm__type {
+  width: 80px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: var(--well);
+  color: var(--text);
+  font: 700 16px var(--mono);
 }
 .cdm__time.is-running {
   color: #6fdc8c;

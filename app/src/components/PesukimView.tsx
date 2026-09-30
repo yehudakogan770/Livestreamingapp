@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import { effectAt, effectStyle, useEffectClock, WORD_OUT_MS, WORD_SPEED, wordEffect } from '../engine/effects';
+import { effectAt, effectStyle, STILL, useEffectClock, WORD_OUT_MS, WORD_SPEED, wordEffect } from '../engine/effects';
 import { barDesign, barLayout, barRange, glossesOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
 import './PesukimView.css';
 
@@ -54,7 +54,8 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   if (last.current && last.current.key !== key) before.current = last.current;
   last.current = { key, place };
   const outAlpha = before.current && wordKind !== 'none' ? Math.max(0, 1 - (clock * WORD_SPEED) / WORD_OUT_MS) : 0;
-  if (place.blank || !pasuk || (!he.length && !place.intro)) return null;
+  // Hide fades the bar out (and back in): it stays drawn, see-through.
+  if (!pasuk || (!he.length && !place.intro)) return null;
   const d = barDesign(look.design);
   const L = barLayout(look);
   const image = look.barImage && url && !look.plain ? url(look.barImage) : '';
@@ -81,10 +82,14 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
     );
     const tr = wordsOf(ps.translit);
     const en = glossesOf(ps.english);
+    // How it sounds and the Hebrew side by side; the English under them.
     return (
       <>
-        {line(wordsOf(ps.text), 'pes__he', L.he, 'rtl', `"${look.font}", "Frank Ruhl Libre", serif`)}
-        {look.showTranslit && tr.length > 0 && line(tr, 'pes__tr', L.tr, 'ltr')}
+        <div className="pes__pair">
+          {look.showTranslit && tr.length > 0 && line(tr, 'pes__tr', L.tr, 'ltr')}
+          {look.showTranslit && tr.length > 0 && <i className="pes__sep" />}
+          {line(wordsOf(ps.text), 'pes__he', L.he, 'rtl', `"${look.font}", "Frank Ruhl Libre", serif`)}
+        </div>
         {look.showEnglish && en.length > 0 && line(en, 'pes__en', L.en, 'ltr')}
       </>
     );
@@ -94,8 +99,11 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
     <div
       className={`pes__bar${d.frame ? ' pes__bar--frame' : ''}${bare ? ' pes__bar--bare' : ''}${look.showNumber && !bare && !image ? ' pes__bar--num' : ''}`}
       data-design={image ? 'picture' : d.id}
+      data-hidden={place.blank || undefined}
       style={{
         ...effectStyle(barFx),
+        ...(place.blank ? { opacity: 0 } : {}),
+        transition: barFx === STILL ? 'opacity 0.35s ease' : 'none',
         left: `${L.left}cqh`,
         right: `${L.right}cqh`,
         bottom: `${L.bottom}cqh`,

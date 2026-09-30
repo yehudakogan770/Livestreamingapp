@@ -84,7 +84,8 @@ export function barChunks(pasuk: Pasuk | undefined): [number, number][] {
   he.forEach((w, i) => {
     const add = [letters(w) + 1, (tr[i]?.length ?? 0) + 1, (en[i]?.length ?? 0) + 1];
     const next = size.map((n, j) => n + add[j]!);
-    if (i > from && (next[0]! > 36 || next[1]! > 58 || next[2]! > 64)) {
+    // The Hebrew and how it sounds share one line.
+    if (i > from && (next[0]! + next[1]! * 0.65 > 44 || next[2]! > 64)) {
       chunks.push([from, i]);
       from = i;
       size = add;
@@ -150,11 +151,11 @@ export const barDesign = (id: string): BarDesign => BAR_DESIGNS.find((d) => d.id
 
 /** Where the bar sits, in % of the frame height (the frame is 177.8 wide). */
 export function barLayout(look: PesukimLook) {
-  const tr = look.showTranslit;
   const en = look.showEnglish;
+  // The Hebrew and how it sounds share the first line; the English is under them.
   const he = 7.4;
-  const h = 3.2 + he * 1.3 + (tr ? 4.4 * 1.3 : 0) + (en ? 4 * 1.3 : 0) + 1.6;
-  return { left: 7, right: 7, bottom: 4.5, h, he, tr: 4.4, en: 4, badge: 9 };
+  const h = 3.2 + he * 1.3 + (en ? 4.4 * 1.3 : 0) + 1.6;
+  return { left: 7, right: 7, bottom: 4.5, h, he, tr: 5.2, en: 4.4, badge: 9 };
 }
 
 /** Next word, then the next pasuk. Returns false at the very end. */

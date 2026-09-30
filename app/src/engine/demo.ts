@@ -1649,6 +1649,12 @@ function atZero(next: Show, id: string, now: number) {
         next.screens[sc].blankChangedAt = now;
       }
     }
+  } else if (z.type === 'takeNext') {
+    // The screens it is on (the Live Screen if none) go to what is in Next.
+    for (const screen of showing.length ? showing : (['live'] as const)) {
+      const sc = next.screens[screen];
+      if (sc.preview !== null && sc.preview !== id) take(next, screen, next.transition.kind, next.transition.durationMs, now);
+    }
   } else if (z.type === 'cutTo') {
     for (const screen of showing.length ? showing : (['live'] as const)) {
       try {

@@ -323,6 +323,44 @@ fn at_zero_cuts_the_screen_it_is_on_once() {
 }
 
 #[test]
+fn at_zero_goes_to_what_is_in_next_by_default() {
+    let mut e = with_countdown();
+    add(&mut e, "opening", SourceKind::Pattern);
+    apply(
+        &mut e,
+        cd(|id| Action::SetCountdownLength {
+            id,
+            length_ms: 5_000,
+        }),
+        0,
+    );
+    apply(
+        &mut e,
+        Action::CutTo {
+            screen: ScreenId::Live,
+            source_id: id("cd"),
+        },
+        0,
+    );
+    apply(
+        &mut e,
+        Action::SetPreview {
+            screen: ScreenId::Live,
+            source_id: Some(id("opening")),
+        },
+        0,
+    );
+    apply(&mut e, cd(|id| Action::StartCountdown { id }), 0);
+    e.tick(6_500);
+    e.tick(9_000);
+    assert_eq!(
+        e.show().screens.live.program,
+        Some(id("opening")),
+        "Next went on air"
+    );
+}
+
+#[test]
 fn at_zero_blanks_the_screens_the_countdown_is_on() {
     let mut e = with_countdown();
     apply(
@@ -512,7 +550,11 @@ fn old_shows_move_the_shared_countdown_into_their_countdown_inputs() {
             .at_zero,
         AtZero::Hide
     );
-    assert_eq!(Countdown::default().at_zero, AtZero::Hide);
+    assert_eq!(
+        Countdown::default().at_zero,
+        AtZero::TakeNext,
+        "new timers go to Next at zero"
+    );
 }
 
 #[test]

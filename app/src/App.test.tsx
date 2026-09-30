@@ -98,15 +98,15 @@ describe('Main screen', () => {
 
   it('tells the operator when the screen they control is blanked', async () => {
     await start();
-    expect(screen.queryByText(/BLANKED/)).toBeNull();
+    expect(screen.queryByText(/^Blanked$/)).toBeNull();
     await act(async () => {
       fireEvent.keyDown(window, { key: 'b' });
     });
-    expect(screen.getByText(/BLANKED/)).toBeInTheDocument();
+    expect(screen.getByText(/^Blanked$/)).toBeInTheDocument();
     await act(async () => {
       fireEvent.keyDown(window, { key: 'b' });
     });
-    expect(screen.queryByText(/BLANKED/)).toBeNull();
+    expect(screen.queryByText(/^Blanked$/)).toBeNull();
   });
 
   it('PANIC needs a double-click, and one click brings the screens back', async () => {
@@ -182,7 +182,7 @@ describe('Stage monitor and countdown', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: '+1 min' }));
     });
-    expect(screen.getByRole('button', { name: /6:00/ })).toBeInTheDocument(); // the one in Next
+    expect(screen.getAllByRole('button', { name: /6:00/ }).length).toBeGreaterThan(0); // the one in Next
     expect(document.querySelector('.mon--pgm [data-countdown]')?.textContent).not.toMatch(/6:0/); // on air untouched
   });
 
@@ -197,7 +197,7 @@ describe('Stage monitor and countdown', () => {
       target: { value: '2' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    expect(screen.getByRole('button', { name: /5:00/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /5:00/ }).length).toBeGreaterThan(0);
     if (!screen.queryByRole('button', { name: 'More…' })) fireEvent.click(screen.getByRole('button', { name: 'All countdown controls' }));
     fireEvent.click(screen.getByRole('button', { name: 'More…' }));
     fireEvent.change(screen.getByLabelText('Length'), {
@@ -206,7 +206,7 @@ describe('Stage monitor and countdown', () => {
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     });
-    expect(screen.getByRole('button', { name: /2:00/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /2:00/ }).length).toBeGreaterThan(0);
   });
 });
 
