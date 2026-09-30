@@ -183,6 +183,24 @@
     system-ui,
     sans-serif;
 }
+.pes__bar--bare {
+  border-width: 0;
+  box-shadow: none;
+}
+.pes__bar--bare .pes__lines {
+  right: 3cqh;
+}
+.pes__bar--bare .pes__line {
+  -webkit-text-stroke: 1.1cqh var(--pes-outline);
+  paint-order: stroke fill;
+  text-shadow: 0 0.4cqh 1.2cqh rgba(0, 0, 0, 0.5);
+}
+.pes__bar--bare .pes__line span {
+  color: rgba(255, 255, 255, 0.75);
+}
+.pes__bar--bare .pes__line span.is-said {
+  color: #fff;
+}
 @keyframes pes-rise {
   from {
     opacity: 0;

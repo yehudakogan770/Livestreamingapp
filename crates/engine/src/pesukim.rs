@@ -105,6 +105,8 @@ pub struct PesukimLook {
     pub bar_image: String,
     /// One word at a time, or a line with the word lit.
     pub bar_words: BarWords,
+    /// The outline around the words with no bar background (the second colour).
+    pub outline_color: String,
     /// Background colour.
     pub background: String,
     /// An input shown behind the words (a camera, usually).
@@ -130,6 +132,7 @@ impl Default for PesukimLook {
             design: "gold".to_owned(),
             bar_image: String::new(),
             bar_words: BarWords::One,
+            outline_color: "#000000".to_owned(),
             background: "#15213a".to_owned(),
             behind: None,
             text_color: "#ffe39e".to_owned(),

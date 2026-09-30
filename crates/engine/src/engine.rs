@@ -311,6 +311,7 @@ fn pesukim_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Pesukim> {
 fn check_look(s: &Show, id: &SourceId, look: &PesukimLook) -> Result<()> {
     clean_color(&look.background)?;
     clean_color(&look.text_color)?;
+    clean_color(&look.outline_color)?;
     if let Some(behind) = &look.behind {
         let src = s
             .source(behind)
@@ -2916,6 +2917,7 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
         SourceKind::Pesukim(mut p) => {
             clean_color(&p.look.background)?;
             clean_color(&p.look.text_color)?;
+            clean_color(&p.look.outline_color)?;
             // Something to go behind is chosen after adding (it must exist).
             p.look.behind = None;
             p.place = crate::pesukim::PesukimPlace::default();

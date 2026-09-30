@@ -2456,12 +2456,16 @@ export class ProgramCompositor {
     const y = h - L.bottom * u - bh;
     const img = look.barImage ? this.picture(look.barImage) : null;
     const pic = !!look.barImage;
+    // No background: just the words, outlined in the second colour.
+    const bare = !pic && d.id === 'none';
     ctx.save();
     ctx.beginPath();
     ctx.roundRect(x, y, bw, bh, d.radius * u);
     if (pic) {
       ctx.clip();
       if (img?.complete && img.naturalWidth) ctx.drawImage(img, x, y, bw, bh);
+    } else if (bare) {
+      // Nothing behind the words.
     } else {
       ctx.shadowColor = 'rgba(0,0,0,0.45)';
       ctx.shadowBlur = 4 * u;
@@ -2493,7 +2497,7 @@ export class ProgramCompositor {
       ctx.fillText(String(place.pasuk + 1), cx, y + bh / 2);
     }
     const left = x + 3 * u;
-    const right = x + bw - 13 * u;
+    const right = x + bw - (bare ? 3 : 13) * u;
     const mid = (left + right) / 2;
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur = 0.8 * u;
@@ -2538,7 +2542,22 @@ export class ProgramCompositor {
       let cx = row.rtl ? width / 2 : -width / 2;
       for (const it of items) {
         if (row.rtl) cx -= it.ww;
-        ctx.fillStyle = place.whole || it.i < place.word ? 'rgba(255,255,255,0.95)' : it.i === place.word ? look.textColor : 'rgba(255,255,255,0.5)';
+        ctx.fillStyle =
+          place.whole || it.i < place.word
+            ? 'rgba(255,255,255,0.95)'
+            : it.i === place.word
+              ? look.textColor
+              : bare
+                ? 'rgba(255,255,255,0.75)'
+                : 'rgba(255,255,255,0.5)';
+        if (bare) {
+          ctx.save();
+          ctx.lineWidth = 1.1 * u;
+          ctx.lineJoin = 'round';
+          ctx.strokeStyle = look.outlineColor;
+          ctx.strokeText(it.t, cx, 0);
+          ctx.restore();
+        }
         ctx.fillText(it.t, cx, 0);
         if (row.rtl) cx -= gap;
         else cx += it.ww + gap;

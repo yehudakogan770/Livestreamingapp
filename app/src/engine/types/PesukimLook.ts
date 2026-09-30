@@ -37,6 +37,10 @@ barImage: string,
  */
 barWords: BarWords, 
 /**
+ * The outline around the words with no bar background (the second colour).
+ */
+outlineColor: string, 
+/**
  * Background colour.
  */
 background: string, 

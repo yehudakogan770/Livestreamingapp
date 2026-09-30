@@ -238,6 +238,18 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                     </button>
                   ))}
                 </div>
+                {look.design === 'none' && !look.barImage && (
+                  <div className="bcd__row">
+                    <label className="check">
+                      Words <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Words colour" />
+                    </label>
+                    <label className="check">
+                      Outline{' '}
+                      <input type="color" value={look.outlineColor} onChange={(e) => set({ outlineColor: e.target.value })} aria-label="Outline colour" />
+                    </label>
+                    <span className="field__note bcd__grow">Two colours keep the words easy to read over any picture.</span>
+                  </div>
+                )}
                 <div className="bcd__row">
                   <button type="button" className={`btn${look.barImage ? ' is-on' : ''}`} onClick={() => void pickBar()} disabled={!client}>
                     {look.barImage ? '✓ My own picture — change' : '🖼 Use my own design (a picture)'}

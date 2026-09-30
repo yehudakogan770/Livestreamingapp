@@ -32,6 +32,7 @@ export function defaultLook(): PesukimLook {
     design: 'gold',
     barImage: '',
     barWords: 'one',
+    outlineColor: '#000000',
     background: '#15213a',
     behind: null,
     textColor: '#ffe39e',
@@ -117,6 +118,17 @@ export const BAR_DESIGNS = [
     badgeText: '#15213a',
   },
   { id: 'night', name: 'Night sky', top: '#2a1552', bottom: '#0b0620', edge: '#b894ff', frame: false, radius: 1.2, badge: '#b894ff', badgeText: '#140a2c' },
+  {
+    id: 'none',
+    name: 'No background',
+    top: 'transparent',
+    bottom: 'transparent',
+    edge: 'transparent',
+    frame: false,
+    radius: 0,
+    badge: 'transparent',
+    badgeText: 'transparent',
+  },
   {
     id: 'simple',
     name: 'Simple dark',
@@ -217,6 +229,7 @@ export function repairPesukim(p: PesukimData): void {
   if (p.look.autoMs !== null) p.look.autoMs = Math.min(60_000, Math.max(500, p.look.autoMs));
   if (!p.look.font.trim()) p.look.font = defaultLook().font;
   p.look.design = p.look.design.trim().slice(0, 20) || defaultLook().design;
+  if (!/^#[0-9a-fA-F]{6}$/.test(p.look.outlineColor ?? '')) p.look.outlineColor = '#000000';
   p.place.pasuk = Math.min(PESUKIM - 1, p.place.pasuk);
   p.place.word = Math.min(p.place.word, Math.max(0, count(p, p.place.pasuk) - 1));
 }

@@ -43,6 +43,8 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   const d = barDesign(look.design);
   const L = barLayout(look);
   const image = look.barImage && url ? url(look.barImage) : '';
+  // No background: just the words, in two colours (an outline keeps them readable).
+  const bare = !look.barImage && d.id === 'none';
   const [from, to] = barRange(data);
   const lit = (i: number) => (place.whole ? 'is-said' : i === place.word ? 'is-now' : i < place.word ? 'is-said' : '');
   const line = (words: string[], cls: string, size: number, dir: 'rtl' | 'ltr', font?: string) => (
@@ -58,7 +60,7 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   );
   return (
     <div
-      className={`pes__bar${d.frame ? ' pes__bar--frame' : ''}`}
+      className={`pes__bar${d.frame ? ' pes__bar--frame' : ''}${bare ? ' pes__bar--bare' : ''}`}
       data-design={image ? 'picture' : d.id}
       style={{
         left: `${L.left}cqh`,
@@ -67,10 +69,11 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
         height: `${L.h}cqh`,
         borderRadius: `${d.radius}cqh`,
         borderColor: d.edge,
-        background: image ? `center / 100% 100% no-repeat url("${image}")` : `linear-gradient(${d.top}, ${d.bottom})`,
+        background: image ? `center / 100% 100% no-repeat url("${image}")` : bare ? 'none' : `linear-gradient(${d.top}, ${d.bottom})`,
+        ['--pes-outline' as string]: look.outlineColor,
       }}
     >
-      {!image && (
+      {!image && !bare && (
         <div className="pes__badge" style={{ background: d.badge, color: d.badgeText, width: `${L.badge}cqh`, height: `${L.badge}cqh` }}>
           {place.pasuk + 1}
         </div>
