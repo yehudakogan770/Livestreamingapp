@@ -46,6 +46,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
   { kind: 'raffle', name: 'Raffle', hint: 'People enter from their phones; the draw is on screen' },
   { kind: 'fundraiser', name: 'Fundraiser', hint: 'Goal, total and donors on screen; pledges from phones' },
+  { kind: 'zmanim', name: 'Hebrew date & zmanim', hint: 'Today’s zmanim, candle lighting countdown, the Hebrew date' },
   { kind: 'auction', name: 'Live auction', hint: 'Items, bids from phones or the room, the highest bid on screen' },
   { kind: 'wall', name: 'Messages wall', hint: 'Messages, dedications and photos from phones, on screen' },
   { kind: 'guest', name: 'Guest by link', hint: 'Someone joins from their phone or computer, anywhere' },
@@ -172,6 +173,8 @@ export function AddInput({
           kind: { type: 'fundraiser', ...defaultFundraiser(), title: words.trim() || defaultFundraiser().title, goal: goal > 0 ? goal : 10_000 },
         };
       }
+      case 'zmanim':
+        return { name: n || 'Zmanim', kind: { type: 'zmanim', style: 'card' } };
       case 'auction':
         return { name: n || 'Auction', kind: { type: 'auction', ...defaultAuction(), title: n || 'Live auction' } };
       case 'wall':

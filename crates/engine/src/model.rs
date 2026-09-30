@@ -288,6 +288,8 @@ pub enum SourceKind {
     Wall(Box<crate::wall::Wall>),
     /// A live auction: items, bids from phones or the room, the highest bid on screen.
     Auction(Box<crate::auction::Auction>),
+    /// The Hebrew date, the day's zmanim, the countdown to candle lighting.
+    Zmanim(crate::zmanim::ZmanimCard),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

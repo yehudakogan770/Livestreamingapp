@@ -5,6 +5,7 @@ import type { TextSize } from '../engine/types/TextSize';
 import { FLASH_MS, countdownFinished, countdownRemaining, fadeAmount, formatCountdown } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import { mainCountdown } from '../engine/countdowns';
+import { clockTime, hasPlace, zmanimOn } from '../engine/zmanim';
 import './MonitorScreen.css';
 
 const SIZE: Record<TextSize, number> = { s: 0.55, m: 0.75, l: 1, xl: 1.3 };
@@ -141,8 +142,20 @@ export function MonitorScreen({ show }: { show: Show }) {
     );
   }
 
+  // Before Shabbos and Yom Tov: the last hour before candle lighting.
+  const place = show.event.place;
+  const candles = hasPlace(place) && place.warnMonitor ? zmanimOn(now, place).candles : null;
+  const toCandles = candles === null ? null : candles - now;
+  const shabbos =
+    toCandles !== null && toCandles > -15 * 60_000 && toCandles <= 3_600_000 ? (
+      <div className={`mscreen__shabbos${toCandles <= 10 * 60_000 ? ' is-urgent' : ''}`}>
+        🕯 {toCandles > 0 ? `Candle lighting in ${Math.ceil(toCandles / 60_000)} min · ${clockTime(candles)}` : `Candle lighting was at ${clockTime(candles)}`}
+      </div>
+    ) : null;
+
   return (
-    <div className={`mscreen${flash ? ' mscreen--flash' : ''}`} data-monitor>
+    <div className={`mscreen${flash ? ' mscreen--flash' : ''}${shabbos ? ' mscreen--shabbos' : ''}`} data-monitor>
+      {shabbos}
       {body}
       {dark > 0 && <div className="mscreen__dark" style={{ opacity: dark }} />}
     </div>

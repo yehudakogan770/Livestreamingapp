@@ -58,3 +58,15 @@
 .stg input[type='range'] {
   width: 100%;
 }
+.zmd__today {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 6px;
+  background: rgba(242, 178, 51, 0.08);
+  border: 1px solid rgba(242, 178, 51, 0.35);
+}
+.zmd__today p {
+  margin: 0;
+}

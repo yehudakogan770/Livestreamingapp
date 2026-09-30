@@ -166,3 +166,28 @@
   display: block;
   margin-bottom: 0.5vh;
 }
+/* The last hour before candle lighting: a band across the top, everything else below it. */
+.mscreen__shabbos {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 10cqh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3b2a08;
+  color: #ffd98a;
+  font-size: 5.5cqh;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.mscreen__shabbos.is-urgent {
+  background: #b3261e;
+  color: #fff;
+}
+.mscreen--shabbos > .mscreen__full,
+.mscreen--shabbos > .mscreen__stack,
+.mscreen--shabbos > .mscreen__split {
+  top: 10cqh;
+}

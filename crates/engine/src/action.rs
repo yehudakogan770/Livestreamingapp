@@ -317,6 +317,11 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Change how the zmanim input looks.
+    UpdateZmanim {
+        id: SourceId,
+        zmanim: crate::zmanim::ZmanimCard,
+    },
     /// Change an auction's title, currency and look (items and bids stay).
     UpdateAuction {
         id: SourceId,

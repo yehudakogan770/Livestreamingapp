@@ -11,6 +11,8 @@ import { ControlView } from './views/ControlView';
 import { OutputView } from './views/OutputView';
 import { EventSetup } from './views/EventSetup';
 import { BrandDialog } from './views/BrandDialog';
+import { ZmanimDialog } from './views/ZmanimDialog';
+import { ShabbosGuard } from './views/ShabbosGuard';
 import { RemoteDialog } from './views/RemoteDialog';
 import { defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
@@ -60,6 +62,7 @@ function ControlApp() {
   // The event setup opens by itself until it has been answered once, and from the Event menu.
   const [setupOpen, setSetupOpen] = useState(false);
   const [brandOpen, setBrandOpen] = useState(false);
+  const [zmanimOpen, setZmanimOpen] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);
   const showSetup = !!show && (setupOpen || (!show.event.setUp && !setupDismissed));
   const closeSetup = useCallback(() => {
@@ -118,6 +121,7 @@ function ControlApp() {
     const event: MenuItem[] = [
       { label: 'Event setup…', onClick: () => setSetupOpen(true) },
       { label: 'Event look (branding)…', onClick: () => setBrandOpen(true) },
+      { label: 'Zmanim and Shabbos…', onClick: () => setZmanimOpen(true) },
       null,
       { label: 'New event', onClick: () => setConfirmNew(true) },
       { label: 'Open event…', onClick: () => open() },
@@ -264,6 +268,7 @@ function ControlApp() {
               <StageContext.Provider value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals }}>
                 <BroadcastProvider show={show} client={client}>
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
+                  <ShabbosGuard show={show} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
                   {overlaysOpen && (
                     <OverlayEditor
@@ -287,6 +292,7 @@ function ControlApp() {
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
       )}
+      {zmanimOpen && show && <ZmanimDialog show={show} act={(a) => void client.dispatch(a).catch(fail)} onClose={() => setZmanimOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       {confirmNew && (

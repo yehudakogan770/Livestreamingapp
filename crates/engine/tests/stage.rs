@@ -617,6 +617,7 @@ fn the_event_remembers_its_name_logo_and_emergency_plan() {
                 panic_shows: Some(SafeScreen::Logo),
                 set_up: Some(true),
                 wifi: None,
+                place: None,
             },
         },
         0,

@@ -1,0 +1,23 @@
+.shabbos {
+  position: fixed;
+  bottom: 64px;
+  left: 50%;
+  z-index: 60;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #3b2a08;
+  border: 1px solid #f2b233;
+  color: #ffe6ad;
+  font-size: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+}
+.shabbos--done {
+  background: #1f2a1a;
+  border-color: #6fdc8c;
+  color: #d9f7df;
+}

@@ -1,4 +1,5 @@
 import type { Ptz } from './types/Ptz';
+import { defaultPlace } from './zmanim';
 import { defaultBrand } from './brand';
 // Talks to the Lumora engine.
 //
@@ -344,6 +345,7 @@ export function emptyShow(): Show {
       setUp: false,
       brand: defaultBrand(),
       wifi: { name: '', password: '', qr: '', show: false },
+      place: defaultPlace(),
     },
     presets: [],
     activePreset: null,

@@ -876,6 +876,16 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::WallApprove { .. }
         | Action::WallPin { .. }
         | Action::WallRemove { .. }) => apply_wall(s, a, now),
+        Action::UpdateZmanim { id, zmanim } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            match &mut src.kind {
+                SourceKind::Zmanim(z) => *z = zmanim,
+                _ => return Err(ActionError::invalid("id", "that input is not zmanim")),
+            }
+            Ok(())
+        }
         a @ (Action::UpdateAuction { .. }
         | Action::AuctionSetItem { .. }
         | Action::AuctionRemoveItem { .. }
@@ -1370,6 +1380,9 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             }
             if let Some(w) = patch.wifi {
                 ev.wifi = w.cleaned();
+            }
+            if let Some(p) = patch.place {
+                ev.place = p.cleaned();
             }
             Ok(())
         }
@@ -2554,6 +2567,7 @@ fn clean_kind(kind: SourceKind) -> Result<SourceKind> {
             color: clean_color(&color)?,
         },
         SourceKind::Pattern => SourceKind::Pattern,
+        SourceKind::Zmanim(z) => SourceKind::Zmanim(z),
         SourceKind::Visuals => SourceKind::Visuals,
         SourceKind::Logo3d(mut l) => {
             l.repair();

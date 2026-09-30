@@ -30,6 +30,10 @@ import type { Raffle } from '../engine/types/Raffle';
 import type { Fundraiser } from '../engine/types/Fundraiser';
 import type { Wall } from '../engine/types/Wall';
 import type { Auction } from '../engine/types/Auction';
+import type { ZmanimCard } from '../engine/types/ZmanimCard';
+import { clockTime, countdownText, hasPlace, nextCandles, zmanimOn } from '../engine/zmanim';
+import { formatHebrew, formatHebrewHe } from '../engine/hebcal';
+import { civilDate, zmanimRows } from '../components/ZmanimView';
 import { amount, BID_FLASH_MS, clock, current, minimum, raisedAt, secondsLeft, SOLD_MS, top as top_ } from '../engine/auction';
 import { cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
@@ -514,6 +518,148 @@ export class ProgramCompositor {
       ctx.fillText(text, w / 2, 16 * u + 3.4 * u);
       this.confettiDraw(t, w, h);
     }
+    ctx.restore();
+  }
+
+  /** The zmanim (mirrors ZmanimView and its CSS). */
+  private zmanim(card: ZmanimCard, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    const u = h / 100;
+    const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
+    const place = this.show?.event.place;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const back = () => {
+      const g = ctx.createRadialGradient(w * 0.3, h * 0.2, 0, w * 0.3, h * 0.2, Math.hypot(w, h) * 0.8);
+      g.addColorStop(0, '#26203a');
+      g.addColorStop(1, '#09080d');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    };
+    if (!hasPlace(place)) {
+      if (card.style !== 'bar') back();
+      ctx.fillStyle = '#b8bec8';
+      ctx.font = font(4, 400);
+      ctx.fillText("Choose the event's city: Event → Zmanim and Shabbos…", w / 2, card.style === 'bar' ? h - 8 * u : 42 * u, w - 14 * u);
+      ctx.restore();
+      return;
+    }
+    const z = zmanimOn(now, place);
+    const he = formatHebrewHe(z.hebrew);
+    const en = formatHebrew(z.hebrew);
+    if (card.style === 'bar') {
+      const top = 87 * u;
+      ctx.fillStyle = 'rgba(14,10,24,0.86)';
+      ctx.fillRect(0, top, w, 7 * u);
+      ctx.fillStyle = '#f2b233';
+      ctx.fillRect(0, top, w, 0.3 * u);
+      ctx.textAlign = 'left';
+      ctx.direction = 'rtl';
+      ctx.font = font(3.6, 700);
+      const hw = ctx.measureText(he).width;
+      ctx.fillStyle = '#f2d27a';
+      ctx.textAlign = 'right';
+      ctx.fillText(he, 3 * u + hw, top + 3.5 * u);
+      ctx.direction = 'ltr';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fff';
+      ctx.font = font(3.2, 400);
+      const tail =
+        z.candles !== null && now < z.candles
+          ? `Candle lighting ${clockTime(z.candles)} · in ${countdownText(z.candles - now)}`
+          : `Sunset ${clockTime(z.sunset)}`;
+      ctx.fillText(`${en} · ${tail}`, 3 * u + hw + 3 * u, top + 3.5 * u, w - hw - 9 * u);
+      ctx.restore();
+      return;
+    }
+    back();
+    ctx.direction = 'rtl';
+    ctx.fillStyle = '#f2d27a';
+    ctx.font = font(8, 800);
+    ctx.fillText(he, w / 2, 13 * u, w - 14 * u);
+    ctx.direction = 'ltr';
+    if (card.style === 'countdown') {
+      const next = nextCandles(now, place);
+      const lit = z.candles !== null && now >= z.candles && now - z.candles < 3 * 3_600_000;
+      ctx.fillStyle = '#fff';
+      if (lit) {
+        ctx.font = font(22, 800);
+        ctx.fillText('Good Shabbos!', w / 2, 53 * u, w - 14 * u);
+      } else if (next !== null) {
+        ctx.fillStyle = '#d6d2e4';
+        ctx.font = font(5, 400);
+        ctx.fillText('Candle lighting in', w / 2, 35 * u);
+        ctx.fillStyle = '#fff';
+        ctx.font = font(22, 800);
+        ctx.fillText(countdownText(next - now), w / 2, 53 * u, w - 14 * u);
+        ctx.fillStyle = '#f2d27a';
+        ctx.font = font(4, 400);
+        ctx.fillText(`${new Date(next).toLocaleDateString('en-US', { weekday: 'long' })} ${clockTime(next)} · ${place.name}`, w / 2, 72.5 * u, w - 14 * u);
+      } else {
+        ctx.fillStyle = '#f2d27a';
+        ctx.font = font(4, 400);
+        ctx.fillText('No candle lighting this week', w / 2, 72.5 * u);
+      }
+      ctx.restore();
+      return;
+    }
+    ctx.fillStyle = '#d6d2e4';
+    ctx.font = font(3.6, 400);
+    ctx.fillText(`${en} · ${civilDate(now)}`, w / 2, 21.3 * u, w - 14 * u);
+    if (z.special.length) {
+      ctx.fillStyle = '#f2b233';
+      ctx.font = font(3, 700);
+      ctx.fillText(z.special.join(' · '), w / 2, 27 * u, w - 14 * u);
+    }
+    const gx = w / 2 - 55 * u;
+    const colW = (110 * u - 6 * u) / 2;
+    zmanimRows(z).forEach(([label, t], i) => {
+      const x = gx + (i % 2) * (colW + 6 * u);
+      const y = 33 * u + Math.floor(i / 2) * 8 * u;
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.fillRect(x, y + 7.8 * u, colW, 0.2 * u);
+      ctx.font = font(3.4, 400);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#c9c5d8';
+      ctx.fillText(label, x, y + 4 * u);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.font = font(3.4, 700);
+      ctx.fillText(clockTime(t), x + colW, y + 4 * u);
+    });
+    ctx.textAlign = 'center';
+    if (z.candles !== null) {
+      const bx = w / 2 - 55 * u;
+      ctx.fillStyle = 'rgba(242,178,51,0.16)';
+      ctx.strokeStyle = '#f2b233';
+      ctx.lineWidth = 0.3 * u;
+      ctx.beginPath();
+      ctx.roundRect(bx, 63 * u, 110 * u, 11 * u, 2 * u);
+      ctx.fill();
+      ctx.stroke();
+      const parts: [string, string, number][] = [
+        ['🕯 Candle lighting', '#fff', 400],
+        [clockTime(z.candles), '#fff', 700],
+      ];
+      if (now < z.candles) parts.push([`in ${countdownText(z.candles - now)}`, '#f2d27a', 400]);
+      const widths = parts.map(([t, , wt]) => {
+        ctx.font = font(4.2, wt);
+        return ctx.measureText(t).width;
+      });
+      let x = w / 2 - (widths.reduce((a, b) => a + b, 0) + 3 * u * (parts.length - 1)) / 2;
+      ctx.textAlign = 'left';
+      parts.forEach(([t, c, wt], i) => {
+        ctx.font = font(4.2, wt);
+        ctx.fillStyle = c;
+        ctx.fillText(t, x, 68.5 * u);
+        x += widths[i]! + 3 * u;
+      });
+      ctx.textAlign = 'center';
+    }
+    ctx.fillStyle = '#9a96ab';
+    ctx.font = font(2.6, 400);
+    ctx.fillText(place.name, w / 2, h - 7.5 * u);
     ctx.restore();
   }
 
@@ -1261,6 +1407,9 @@ export class ProgramCompositor {
         return;
       case 'auction':
         this.auction(k, now, w, h);
+        return;
+      case 'zmanim':
+        this.zmanim(k, now, w, h);
         return;
       case 'text':
         this.text(k, now, w, h, this.since(src.id, now));

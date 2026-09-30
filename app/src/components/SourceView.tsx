@@ -1,6 +1,7 @@
 import { AuctionView, FundraiserView, RaffleView, WallView } from './AudienceViews';
 import { guestPage } from '../engine/guest';
 import { CommentView } from './CommentView';
+import { ZmanimView } from './ZmanimView';
 import { PollView } from './PollView';
 import { LyricsView } from './LyricsView';
 import { ScoreboardView } from './ScoreboardView';
@@ -123,6 +124,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <RaffleView r={k} thumb={thumb} />;
     case 'fundraiser':
       return <FundraiserView f={k} thumb={thumb} />;
+    case 'zmanim':
+      return <ZmanimView z={k} />;
     case 'auction':
       return <AuctionView a={k} url={(p) => client.mediaUrl(p)} thumb={thumb} />;
     case 'wall':

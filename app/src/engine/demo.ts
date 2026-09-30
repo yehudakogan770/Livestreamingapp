@@ -503,6 +503,12 @@ function apply(s: Show, a: Action, now: number) {
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
       return;
+    case 'updateZmanim': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'zmanim') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not zmanim' });
+      src.kind.style = a.zmanim.style;
+      return;
+    }
     case 'updateAuction': {
       const n = a.auction;
       Object.assign(auctionIn(s, a.id), {
@@ -956,6 +962,17 @@ function apply(s: Show, a: Action, now: number) {
       if (p.onFailure !== undefined) ev.onFailure = p.onFailure;
       if (p.panicShows !== undefined) ev.panicShows = p.panicShows;
       if (p.setUp !== undefined) ev.setUp = p.setUp;
+      if (p.place !== undefined) {
+        const q = p.place;
+        ev.place = {
+          ...q,
+          name: q.name.slice(0, 60),
+          latMicro: Math.max(-90e6, Math.min(90e6, Math.round(q.latMicro))),
+          lonMicro: Math.max(-180e6, Math.min(180e6, Math.round(q.lonMicro))),
+          candleMinutes: Math.min(90, Math.max(0, Math.round(q.candleMinutes))),
+          stopMinutes: Math.min(120, Math.max(0, Math.round(q.stopMinutes))),
+        };
+      }
       if (p.wifi !== undefined) {
         const w = p.wifi;
         const name = [...w.name]

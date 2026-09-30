@@ -36,6 +36,8 @@ pub struct EventInfo {
     pub brand: Brand,
     /// The guests' Wi-Fi, shown as a code to join it next to the audience page's code.
     pub wifi: GuestWifi,
+    /// Where the event is (Hebrew date, zmanim, candle lighting).
+    pub place: crate::zmanim::Place,
 }
 
 /// A Wi-Fi network guests join by scanning a code (for halls where the
@@ -168,4 +170,7 @@ pub struct EventPatch {
     #[serde(default)]
     #[ts(optional)]
     pub wifi: Option<GuestWifi>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub place: Option<crate::zmanim::Place>,
 }

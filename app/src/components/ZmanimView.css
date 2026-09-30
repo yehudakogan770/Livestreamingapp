@@ -1,0 +1,150 @@
+/* Mirrored in the recorder: broadcast/compositor.ts zmanim(). Sizes in cqh of the frame height. */
+.zm {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  color: #fff;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  text-align: center;
+}
+.zm p {
+  margin: 0;
+}
+.zm--card,
+.zm--countdown {
+  background: radial-gradient(ellipse at 30% 20%, #26203a, #09080d);
+}
+.zm__none {
+  position: absolute;
+  inset: 40cqh 7cqh auto;
+  font-size: 4cqh;
+  color: #b8bec8;
+}
+.zm--bar .zm__none {
+  inset: auto 7cqh 6cqh;
+}
+.zm__he {
+  position: absolute;
+  top: 8cqh;
+  left: 0;
+  right: 0;
+  font-size: 8cqh;
+  line-height: 10cqh;
+  font-weight: 800;
+  color: #f2d27a;
+}
+.zm__en {
+  position: absolute;
+  top: 19cqh;
+  left: 0;
+  right: 0;
+  font-size: 3.6cqh;
+  line-height: 4.6cqh;
+  color: #d6d2e4;
+}
+.zm__special {
+  position: absolute;
+  top: 25cqh;
+  left: 0;
+  right: 0;
+  font-size: 3cqh;
+  line-height: 4cqh;
+  font-weight: 700;
+  color: #f2b233;
+}
+.zm__grid {
+  position: absolute;
+  top: 33cqh;
+  left: 50%;
+  width: 110cqh;
+  margin-left: -55cqh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 6cqh;
+}
+.zm__row {
+  display: flex;
+  justify-content: space-between;
+  height: 8cqh;
+  align-items: center;
+  border-bottom: 0.2cqh solid rgba(255, 255, 255, 0.12);
+  font-size: 3.4cqh;
+}
+.zm__row span {
+  color: #c9c5d8;
+}
+.zm__candles {
+  position: absolute;
+  top: 63cqh;
+  left: 50%;
+  width: 110cqh;
+  margin-left: -55cqh;
+  height: 11cqh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3cqh;
+  border-radius: 2cqh;
+  background: rgba(242, 178, 51, 0.16);
+  border: 0.3cqh solid #f2b233;
+  font-size: 4.2cqh;
+}
+.zm__candles em {
+  font-style: normal;
+  color: #f2d27a;
+}
+.zm__place {
+  position: absolute;
+  bottom: 6cqh;
+  left: 0;
+  right: 0;
+  font-size: 2.6cqh;
+  color: #9a96ab;
+}
+.zm__label {
+  position: absolute;
+  top: 32cqh;
+  left: 0;
+  right: 0;
+  font-size: 5cqh;
+  color: #d6d2e4;
+}
+.zm__big {
+  position: absolute;
+  top: 40cqh;
+  left: 0;
+  right: 0;
+  font-size: 22cqh;
+  line-height: 26cqh;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.zm__sub {
+  position: absolute;
+  top: 70cqh;
+  left: 0;
+  right: 0;
+  font-size: 4cqh;
+  color: #f2d27a;
+}
+.zm__bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 87cqh;
+  height: 7cqh;
+  display: flex;
+  align-items: center;
+  gap: 3cqh;
+  padding: 0 3cqh;
+  background: rgba(14, 10, 24, 0.86);
+  border-top: 0.3cqh solid #f2b233;
+  font-size: 3.2cqh;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.zm__bar b {
+  color: #f2d27a;
+  font-size: 3.6cqh;
+}

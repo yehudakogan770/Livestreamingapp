@@ -44,6 +44,7 @@ pub mod timing;
 pub mod triggers;
 pub mod visuals;
 pub mod wall;
+pub mod zmanim;
 
 pub use action::{Action, ActionError, CountdownPatch, MonitorPatch, NewSource, SourcePatch};
 pub use audio::{

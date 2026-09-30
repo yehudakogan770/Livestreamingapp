@@ -19,6 +19,7 @@ import type { Split } from "./Split";
 import type { StreamInput } from "./StreamInput";
 import type { TextInput } from "./TextInput";
 import type { Wall } from "./Wall";
+import type { ZmanimCard } from "./ZmanimCard";
 
 /**
  * What a source is, with the data that kind needs.
@@ -32,4 +33,4 @@ logo?: string,
  * This input's own timer: each countdown input counts on its own,
  * so the next one can be prepared while another is on air.
  */
-timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "split" } & Split | { "type": "slideshow" } & Slideshow | { "type": "visuals" } | { "type": "logo3d" } & Logo3d | { "type": "browser" } & BrowserInput | { "type": "stream" } & StreamInput | { "type": "raffle" } & Raffle | { "type": "fundraiser" } & Fundraiser | { "type": "wall" } & Wall | { "type": "auction" } & Auction | { "type": "guest" } & Guest | { "type": "comment" } & CommentCard | { "type": "poll" } & Poll | { "type": "lyrics" } & Lyrics | { "type": "screen" } & ScreenCapture | { "type": "scoreboard" } & Scoreboard | { "type": "microphone", deviceId: string, label: string, };
+timer: Countdown, } | { "type": "pesukim" } & Pesukim | { "type": "text" } & TextInput | { "type": "credits" } & Credits | { "type": "split" } & Split | { "type": "slideshow" } & Slideshow | { "type": "visuals" } | { "type": "logo3d" } & Logo3d | { "type": "browser" } & BrowserInput | { "type": "stream" } & StreamInput | { "type": "raffle" } & Raffle | { "type": "fundraiser" } & Fundraiser | { "type": "wall" } & Wall | { "type": "auction" } & Auction | { "type": "zmanim" } & ZmanimCard | { "type": "guest" } & Guest | { "type": "comment" } & CommentCard | { "type": "poll" } & Poll | { "type": "lyrics" } & Lyrics | { "type": "screen" } & ScreenCapture | { "type": "scoreboard" } & Scoreboard | { "type": "microphone", deviceId: string, label: string, };
