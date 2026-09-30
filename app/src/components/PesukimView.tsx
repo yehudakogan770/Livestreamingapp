@@ -66,7 +66,7 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   );
   return (
     <div
-      className={`pes__bar${d.frame ? ' pes__bar--frame' : ''}${bare ? ' pes__bar--bare' : ''}`}
+      className={`pes__bar${d.frame ? ' pes__bar--frame' : ''}${bare ? ' pes__bar--bare' : ''}${look.showNumber && !bare && !image ? ' pes__bar--num' : ''}`}
       data-design={image ? 'picture' : d.id}
       style={{
         ...effectStyle(barFx),
@@ -80,7 +80,7 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
         ['--pes-outline' as string]: look.outlineColor,
       }}
     >
-      {!image && !bare && (
+      {!image && !bare && look.showNumber && (
         <div className="pes__badge" style={{ background: d.badge, color: d.badgeText, width: `${L.badge}cqh`, height: `${L.badge}cqh` }}>
           {place.pasuk + 1}
         </div>

@@ -50,6 +50,10 @@ plain: boolean,
  */
 barIn: TextEntrance, 
 /**
+ * The pasuk's number in a circle at the end of the bar.
+ */
+showNumber: boolean, 
+/**
  * Background colour.
  */
 background: string, 

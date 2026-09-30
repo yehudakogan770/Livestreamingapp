@@ -2602,21 +2602,23 @@ export class ProgramCompositor {
         ctx.strokeStyle = d.edge;
         ctx.stroke();
       } else ctx.fillRect(x, y, bw, 0.5 * u);
-      // The pasuk's number in a circle, at the Hebrew end.
-      const r = (L.badge * u) / 2;
-      const cx = x + bw - 2.2 * u - r;
-      ctx.beginPath();
-      ctx.arc(cx, y + bh / 2, r, 0, Math.PI * 2);
-      ctx.fillStyle = d.badge;
-      ctx.fill();
-      ctx.fillStyle = d.badgeText;
-      ctx.font = `800 ${4.4 * u}px "Segoe UI", system-ui, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(place.pasuk + 1), cx, y + bh / 2);
+      // The pasuk's number in a circle, at the Hebrew end (when chosen).
+      if (look.showNumber) {
+        const r = (L.badge * u) / 2;
+        const cx = x + bw - 2.2 * u - r;
+        ctx.beginPath();
+        ctx.arc(cx, y + bh / 2, r, 0, Math.PI * 2);
+        ctx.fillStyle = d.badge;
+        ctx.fill();
+        ctx.fillStyle = d.badgeText;
+        ctx.font = `800 ${4.4 * u}px "Segoe UI", system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(place.pasuk + 1), cx, y + bh / 2);
+      }
     }
     const left = x + 3 * u;
-    const right = x + bw - (bare ? 3 : 13) * u;
+    const right = x + bw - (bare || !look.showNumber ? 3 : 13) * u;
     const mid = (left + right) / 2;
     ctx.shadowColor = 'rgba(0,0,0,0.6)';
     ctx.shadowBlur = 0.8 * u;

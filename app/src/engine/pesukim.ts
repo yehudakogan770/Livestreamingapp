@@ -35,6 +35,7 @@ export function defaultLook(): PesukimLook {
     outlineColor: '#000000',
     plain: false,
     barIn: 'rise',
+    showNumber: false,
     background: '#15213a',
     behind: null,
     textColor: '#ffe39e',

@@ -119,6 +119,8 @@ pub struct PesukimLook {
     pub plain: bool,
     /// How the bar comes on.
     pub bar_in: crate::text::TextEntrance,
+    /// The pasuk's number in a circle at the end of the bar.
+    pub show_number: bool,
     /// Background colour.
     pub background: String,
     /// An input shown behind the words (a camera, usually).
@@ -147,6 +149,7 @@ impl Default for PesukimLook {
             outline_color: "#000000".to_owned(),
             plain: false,
             bar_in: crate::text::TextEntrance::Rise,
+            show_number: false,
             background: "#15213a".to_owned(),
             behind: None,
             text_color: "#ffe39e".to_owned(),

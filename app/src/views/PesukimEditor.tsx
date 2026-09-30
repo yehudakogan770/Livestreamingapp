@@ -217,6 +217,9 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                   ))}
                 </div>
                 <label className="check">
+                  <input type="checkbox" checked={look.showNumber} onChange={(e) => set({ showNumber: e.target.checked })} /> Show the pasuk’s number on the bar
+                </label>
+                <label className="check">
                   <input type="checkbox" checked={look.plain} onChange={(e) => set({ plain: e.target.checked })} /> Text only (no bar, the words in the same
                   place)
                 </label>
