@@ -76,6 +76,26 @@ fn lock(state: &AppState) -> std::sync::MutexGuard<'_, Engine> {
         .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
+/// The control window has loaded: show it and close the loading window.
+#[tauri::command]
+fn app_ready(app: tauri::AppHandle) {
+    reveal(&app);
+}
+
+/// Show the control window (filling the screen) and close the loading window.
+fn reveal(app: &tauri::AppHandle) {
+    if let Some(w) = app.get_webview_window("control") {
+        if !w.is_visible().unwrap_or(true) {
+            let _ = w.maximize();
+            let _ = w.show();
+            let _ = w.set_focus();
+        }
+    }
+    if let Some(s) = app.get_webview_window("splash") {
+        let _ = s.close();
+    }
+}
+
 #[tauri::command]
 fn get_show(state: State<'_, AppState>) -> Snapshot {
     let engine = lock(&state);
@@ -749,7 +769,7 @@ pub fn run() {
                         state.capture.stop_all();
                     }
                     app.exit(0);
-                } else {
+                } else if window.label() != "splash" {
                     outputs::notify(app);
                 }
             }
@@ -810,6 +830,12 @@ pub fn run() {
                 perf: perf::Perf::default(),
                 ffmpeg,
             });
+            // If the control window never says it is ready, show it anyway.
+            let late = app.handle().clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_secs(20));
+                reveal(&late);
+            });
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
             if std::env::var_os("LUMORA_SMOKE_TEST").is_some() {
@@ -818,6 +844,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            app_ready,
             get_show,
             dispatch,
             list_displays,

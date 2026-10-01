@@ -405,6 +405,11 @@ export function isInsideLumora(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
+/** The control window has loaded: Lumora shows it and closes the loading window. */
+export function appReady(): void {
+  if (isInsideLumora()) void invoke('app_ready').catch(() => {});
+}
+
 const FILTERS: Record<MediaKind, { name: string; extensions: string[] }> = {
   video: { name: 'Videos', extensions: ['mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'wmv', 'mpg', 'mpeg'] },
   image: { name: 'Pictures', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'] },

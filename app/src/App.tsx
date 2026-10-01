@@ -1,7 +1,7 @@
 import { useEventFonts } from './engine/fonts';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { dataValues } from './engine/data';
-import { baseName, createEngineClient, type EventFiles, type RemoteStatus } from './engine/client';
+import { appReady, baseName, createEngineClient, type EventFiles, type RemoteStatus } from './engine/client';
 import { useShow } from './engine/useShow';
 import { isMultiview, outputScreen } from './engine/role';
 import { MultiviewView } from './views/MultiviewView';
@@ -53,6 +53,12 @@ function ControlApp() {
   const [controlling, setControlling] = useState<ScreenId>('live');
   const select = useCallback((id: ScreenId) => setControlling(id), []);
   const show = snapshot?.show ?? null;
+  // Once the event has loaded, the loading window gives way to this one.
+  // (Or if it could not load: the window shows what went wrong.)
+  const loaded = show !== null || !!error;
+  useEffect(() => {
+    if (loaded) appReady();
+  }, [loaded]);
   useReportProblem(
     error
       ? {
