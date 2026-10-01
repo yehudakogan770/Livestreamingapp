@@ -66,12 +66,15 @@ jobs:
         run: |
           # Spaces, line breaks or quotes picked up when pasting the key are
           # removed; a key that still can't be read builds without signing.
-          key=$(printf '%s' "$SIGNING_KEY_AS_PASTED" | tr -d " \t\r\n\"'")
-          inner=$( (printf '%s' "$key" | base64 -d 2>/dev/null | sed -n 2p | base64 -d 2>/dev/null || true) | wc -c | tr -d ' ')
+          key=$(printf '%s' "$SIGNING_KEY_AS_PASTED" | tr -d " \t\r\n\"'=")
+          # The "=" at the end is easy to miss when copying: put it back.
+          while [ $(( ${#key} % 4 )) -ne 0 ]; do key="$key="; done
           # A hint for fixing a bad paste (never the key itself): a good key
           # is 348 characters and starts with "dW50cnVzdGVk".
           echo "Signing key: ${#key} characters, starts like a key: $([ "${key:0:12}" = dW50cnVzdGVk ] && echo yes || echo no)"
-          if [ "$inner" = 158 ]; then
+          # A test signing with Tauri's own tool proves the key works.
+          echo test > "$RUNNER_TEMP/sign-test.txt"
+          if [ -n "$key" ] && TAURI_SIGNING_PRIVATE_KEY="$key" npx tauri signer sign "$RUNNER_TEMP/sign-test.txt" > /dev/null 2>&1; then
             echo "TAURI_SIGNING_PRIVATE_KEY=$key" >> "$GITHUB_ENV"
             echo "Signing key OK."
           else
