@@ -1,0 +1,142 @@
+/* Signing in, before Lumora opens. */
+.gate {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: auto;
+  background:
+    radial-gradient(700px 420px at 0% 100%, rgba(79, 179, 191, 0.16), transparent 70%),
+    radial-gradient(600px 380px at 100% 0%, rgba(224, 71, 59, 0.1), transparent 70%), #0e1013;
+}
+.gate__card {
+  width: min(440px, 100%);
+  padding: 34px 36px 30px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+.gate__brand img {
+  height: 44px;
+  margin: 0 0 22px -4px;
+}
+.gate h1 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+.gate__note {
+  margin: 0 0 18px;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.gate__form {
+  display: grid;
+  gap: 14px;
+}
+.gate__form .gate__note {
+  margin-bottom: 4px;
+}
+.gate__go {
+  height: 42px;
+  margin-top: 4px;
+  font-size: 15px;
+}
+.gate__msg {
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(79, 179, 191, 0.12);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.gate__msg.is-bad {
+  background: rgba(224, 71, 59, 0.14);
+  color: #ffb4ad;
+}
+.gate__switch {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.gate__row {
+  display: flex;
+  gap: 8px;
+}
+.linkish {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.linkish:hover {
+  text-decoration: underline;
+}
+
+/* The Lumora team's list of people */
+.people {
+  width: min(820px, calc(100vw - 48px));
+  max-height: calc(100vh - 58px);
+}
+.people__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 18px 16px;
+}
+.people__tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 18px 4px;
+}
+.people__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.people__who b {
+  display: block;
+}
+.people__who span {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.people__tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--button);
+}
+.people__tag--pending {
+  background: #5a4410;
+  color: #ffd98a;
+}
+.people__tag--approved {
+  background: #173f2a;
+  color: #8fe0b0;
+}
+.people__tag--blocked {
+  background: #4a1714;
+  color: #ffb4ad;
+}
+.people__acts {
+  display: flex;
+  gap: 6px;
+}
+.people__empty {
+  padding: 30px 0;
+  text-align: center;
+  color: var(--text-dim);
+}

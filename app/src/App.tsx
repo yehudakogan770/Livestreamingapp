@@ -7,6 +7,8 @@ import { isMultiview, outputScreen } from './engine/role';
 import { MultiviewView } from './views/MultiviewView';
 import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar, type MenuItem } from './components/TitleBar';
+import { Gate, useAccess } from './auth/Gate';
+import { PeopleDialog } from './auth/PeopleDialog';
 import { jewishToolsOn, loadJewishTools, saveJewishTools } from './engine/jewishTools';
 import { TEXT_SIZES, applyTextSize, loadTextSize, stepTextSize, type TextSize } from './components/textSize';
 import { ScreenSelector } from './components/ScreenSelector';
@@ -40,9 +42,11 @@ export function App() {
 function Control() {
   const [problems] = useState(() => new ProblemStore());
   return (
-    <ProblemsProvider store={problems}>
-      <ControlApp />
-    </ProblemsProvider>
+    <Gate>
+      <ProblemsProvider store={problems}>
+        <ControlApp />
+      </ProblemsProvider>
+    </Gate>
   );
 }
 
@@ -73,6 +77,9 @@ function ControlApp() {
   // The event setup opens by itself until it has been answered once, and from the Event menu.
   const [setupOpen, setSetupOpen] = useState(false);
   const [brandOpen, setBrandOpen] = useState(false);
+  // Signed in (when Lumora's sign-in is on): who, and the Lumora team's approvals.
+  const { access, signOut } = useAccess();
+  const [peopleOpen, setPeopleOpen] = useState(false);
   const [zmanimOpen, setZmanimOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);
@@ -156,6 +163,13 @@ function ControlApp() {
       },
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
+      ...(access
+        ? [
+            null,
+            ...(access.admin ? [{ label: 'People and approvals…', hint: 'Approve new accounts, or turn access off', onClick: () => setPeopleOpen(true) }] : []),
+            { label: `Sign out (${access.email})`, onClick: signOut },
+          ]
+        : []),
       null,
       ...TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) })),
       null,
@@ -292,6 +306,8 @@ function ControlApp() {
     textSize,
     jewish,
     jewishOn,
+    access,
+    signOut,
     remote,
     openBroadcast,
     show?.sources,
@@ -350,6 +366,7 @@ function ControlApp() {
       )}
       {dataOpen && show && <DataDialog show={show} client={client} onClose={() => setDataOpen(false)} />}
       {zmanimOpen && show && <ZmanimDialog show={show} act={(a) => void client.dispatch(a).catch(fail)} onClose={() => setZmanimOpen(false)} />}
+      {peopleOpen && <PeopleDialog onClose={() => setPeopleOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       {confirmNew && (
