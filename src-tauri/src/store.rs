@@ -176,7 +176,7 @@ mod tests {
         let dir = temp_dir("roundtrip");
         let (store, show, from) = Store::open(dir.clone());
         assert_eq!(from, LoadedFrom::Fresh);
-        assert!(show.sources.is_empty());
+        assert_eq!(show.sources.len(), 0);
 
         store.save(show_with("Camera 1"));
         wait_for(&dir.join(FILE), "Camera 1");

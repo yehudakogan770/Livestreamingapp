@@ -156,7 +156,7 @@ fn a_button_runs_its_steps_in_order_with_waits() {
     assert!(e.show().monitor.message_on);
     e.tick(6_000);
     assert_eq!(e.show().screens.live.program, Some(id("lower")));
-    assert!(e.show().running.is_empty(), "finished");
+    assert_eq!(e.show().running.len(), 0, "finished");
 }
 
 #[test]

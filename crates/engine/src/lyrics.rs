@@ -119,7 +119,7 @@ mod tests {
     fn blank_lines_make_slides() {
         let s = sections("Line one\nLine two\n\n\n  \nChorus a\nChorus b  \n");
         assert_eq!(s, vec!["Line one\nLine two", "Chorus a\nChorus b"]);
-        assert!(sections("").is_empty());
+        assert_eq!(sections("").len(), 0);
         let mut l = Lyrics {
             text: "a\n\nb\n\nc".into(),
             ..Lyrics::default()

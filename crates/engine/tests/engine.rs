@@ -138,7 +138,7 @@ fn bad_colours_are_refused_and_change_nothing() {
         e.apply(bad, 0),
         Err(ActionError::InvalidValue { .. })
     ));
-    assert!(e.show().sources.is_empty());
+    assert_eq!(e.show().sources.len(), 0);
     assert_eq!(e.revision(), 0);
 }
 

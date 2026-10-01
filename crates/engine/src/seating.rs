@@ -135,6 +135,6 @@ mod tests {
         assert_eq!(s.guests[0].name, "Cohen, David", "sorted");
         assert_eq!(s.find("cohen", 10).len(), 2);
         assert_eq!(s.find("sarah levi", 10)[0].table, "4");
-        assert!(s.find("c", 10).is_empty(), "too short");
+        assert_eq!(s.find("c", 10).len(), 0, "too short");
     }
 }
