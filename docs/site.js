@@ -601,8 +601,8 @@
   if (hero && !still) {
     const tilt = () => {
       const p = Math.min(1, Math.max(0, scrollY / (innerHeight * 0.55)));
-      hero.style.setProperty('--tilt', `${(10 * (1 - p)).toFixed(2)}deg`);
-      hero.style.setProperty('--sc', (0.95 + 0.05 * p).toFixed(3));
+      hero.style.setProperty('--tilt', `${(12 * (1 - p)).toFixed(2)}deg`);
+      hero.style.setProperty('--sc', (0.94 + 0.06 * p).toFixed(3));
     };
     tilt();
     addEventListener('scroll', tilt, { passive: true });
@@ -623,7 +623,7 @@
   };
   if (!still && 'IntersectionObserver' in window) {
     const items = document.querySelectorAll(
-      '.stats__item, .head, .feat__cols > div, .dev, .calm__grid > div, .split__win, .split__text, .sw, .tabs, #app .win, .fb__form, .dl__in, .dest__in',
+      '.head, .logos__row li, .card, .dev, .calm__grid > div, .split__win, .split__text, .sw, .ftabs, .fb__text, .fb__form, .dl__in',
     );
     items.forEach((el) => {
       const sibs = [...el.parentElement.children].filter((x) => x.classList.contains(el.classList[0]));
@@ -642,4 +642,20 @@
     );
     items.forEach((el) => rio.observe(el));
   }
+
+  // The top bar: clear over the picture, solid once you scroll.
+  const top = document.querySelector('[data-top]');
+  const solid = () => top?.classList.toggle('is-solid', scrollY > 40);
+  solid();
+  addEventListener('scroll', solid, { passive: true });
+
+  // Packed with features: the tabs.
+  const ftabs = document.querySelectorAll('[data-ftab]');
+  const fpanes = document.querySelectorAll('.fpane');
+  ftabs.forEach((t) =>
+    t.addEventListener('click', () => {
+      ftabs.forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+      fpanes.forEach((p, i) => p.classList.toggle('is-on', i === Number(t.dataset.ftab)));
+    }),
+  );
 })();
