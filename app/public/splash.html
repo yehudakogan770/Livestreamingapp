@@ -23,8 +23,8 @@
       body {
         position: relative;
         background:
-          radial-gradient(420px 260px at 0% 100%, rgba(79, 179, 191, 0.22), transparent 70%),
-          radial-gradient(320px 220px at 100% 0%, rgba(224, 71, 59, 0.12), transparent 70%), linear-gradient(160deg, #15171c, #0b0c0f 60%);
+          radial-gradient(75.000vw 46.429vw at 0% 100%, rgba(79, 179, 191, 0.22), transparent 70%),
+          radial-gradient(57.143vw 39.286vw at 100% 0%, rgba(224, 71, 59, 0.12), transparent 70%), linear-gradient(160deg, #15171c, #0b0c0f 60%);
         color: #f1efeb;
         font-family: 'Segoe UI', system-ui, sans-serif;
         border: 1px solid #2c3038;
@@ -39,31 +39,31 @@
       }
       .main {
         position: absolute;
-        left: 44px;
-        top: 70px;
+        left: 7.857vw;
+        top: 12.500vw;
         display: flex;
         align-items: center;
-        gap: 22px;
+        gap: 3.929vw;
       }
       .mark {
-        width: 92px;
-        height: 92px;
+        width: 16.429vw;
+        height: 16.429vw;
         overflow: visible;
       }
       /* The iris closes: each blade swings in from outside and settles. */
       .blade {
-        transform-origin: 24px 24px;
+        transform-origin: 4.286vw 4.286vw;
         animation: blade 1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
       }
       .blade:nth-child(1) {
-        --from: rotate(-70deg) translate(6px, -10px);
+        --from: rotate(-70deg) translate(1.071vw, -1.786vw);
       }
       .blade:nth-child(2) {
-        --from: rotate(-70deg) translate(0, 12px);
+        --from: rotate(-70deg) translate(0, 2.143vw);
         animation-delay: 0.08s;
       }
       .blade:nth-child(3) {
-        --from: rotate(-70deg) translate(-12px, -4px);
+        --from: rotate(-70deg) translate(-2.143vw, -0.714vw);
         animation-delay: 0.16s;
       }
       @keyframes blade {
@@ -74,7 +74,7 @@
       }
       /* The red centre lights up like an on-air light, then glows. */
       .live {
-        transform-origin: 24px 24px;
+        transform-origin: 4.286vw 4.286vw;
         animation:
           on 0.4s 0.75s ease-out both,
           glow 1.4s 1.2s ease-in-out infinite alternate;
@@ -87,7 +87,7 @@
       }
       @keyframes glow {
         to {
-          filter: drop-shadow(0 0 6px rgba(255, 80, 64, 0.9));
+          filter: drop-shadow(0 0 1.071vw rgba(255, 80, 64, 0.9));
         }
       }
       .name {
@@ -97,34 +97,34 @@
         display: block;
         font-family: 'Sora', 'Segoe UI', sans-serif;
         font-weight: 600;
-        font-size: 50px;
+        font-size: 8.929vw;
         line-height: 1;
         letter-spacing: -0.03em;
       }
       .name span {
         display: block;
-        margin-top: 8px;
-        font-size: 15px;
+        margin-top: 1.429vw;
+        font-size: 2.679vw;
         letter-spacing: 0.02em;
         color: #9a9ca3;
       }
       @keyframes rise {
         from {
           opacity: 0;
-          transform: translateX(-10px);
+          transform: translateX(-1.786vw);
         }
       }
       .foot {
         position: absolute;
-        left: 44px;
-        right: 44px;
-        bottom: 34px;
+        left: 7.857vw;
+        right: 7.857vw;
+        bottom: 6.071vw;
       }
       .status {
         position: relative;
-        height: 18px;
-        margin-bottom: 12px;
-        font-size: 13px;
+        height: 3.214vw;
+        margin-bottom: 2.143vw;
+        font-size: 2.321vw;
         color: #c6c5c1;
       }
       .status span {
@@ -147,7 +147,7 @@
       @keyframes say {
         0% {
           opacity: 0;
-          transform: translateY(6px);
+          transform: translateY(1.071vw);
         }
         25%,
         75% {
@@ -156,7 +156,7 @@
         }
         100% {
           opacity: 0;
-          transform: translateY(-6px);
+          transform: translateY(-1.071vw);
         }
       }
       @keyframes stay {
@@ -167,8 +167,8 @@
       }
       .bar {
         position: relative;
-        height: 3px;
-        border-radius: 2px;
+        height: 0.536vw;
+        border-radius: 0.357vw;
         background: rgba(255, 255, 255, 0.08);
         overflow: hidden;
       }
@@ -176,9 +176,9 @@
         position: absolute;
         inset: 0 auto 0 0;
         width: 0;
-        border-radius: 2px;
+        border-radius: 0.357vw;
         background: linear-gradient(90deg, #2c8f9b, #8fd3db);
-        box-shadow: 0 0 12px rgba(143, 211, 219, 0.6);
+        box-shadow: 0 0 2.143vw rgba(143, 211, 219, 0.6);
         animation: fill 2.4s 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
       }
       /* If it takes longer, the bar keeps gently moving at the end. */
@@ -210,8 +210,8 @@
       .meta {
         display: flex;
         justify-content: space-between;
-        margin-top: 12px;
-        font-size: 11px;
+        margin-top: 2.143vw;
+        font-size: 1.964vw;
         color: #6f727a;
         letter-spacing: 0.04em;
       }

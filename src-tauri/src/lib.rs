@@ -112,6 +112,35 @@ fn reveal(app: &tauri::AppHandle) {
     }
 }
 
+/// The loading window: a good size for the screen (about 45% of its width,
+/// 5:3), in the middle of it.
+fn place_splash(app: &tauri::AppHandle) {
+    let Some(w) = app.get_webview_window("splash") else {
+        return;
+    };
+    let monitor = w
+        .primary_monitor()
+        .ok()
+        .flatten()
+        .or_else(|| w.current_monitor().ok().flatten());
+    if let Some(m) = monitor {
+        let (sw, sh) = (f64::from(m.size().width), f64::from(m.size().height));
+        let width = (sw * 0.45).clamp(560.0, 1100.0).min(sw * 0.9);
+        let height = (width * 0.6).min(sh * 0.8);
+        let (x, y) = (
+            f64::from(m.position().x) + (sw - width) / 2.0,
+            f64::from(m.position().y) + (sh - height) / 2.0,
+        );
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        {
+            let _ = w.set_size(tauri::PhysicalSize::new(width as u32, height as u32));
+            let _ = w.set_position(tauri::PhysicalPosition::new(x as i32, y as i32));
+        }
+    } else {
+        let _ = w.center();
+    }
+}
+
 #[tauri::command]
 fn get_show(state: State<'_, AppState>) -> Snapshot {
     let engine = lock(&state);
@@ -792,6 +821,7 @@ pub fn run() {
         })
         .setup(|app| {
             STARTED.get_or_init(std::time::Instant::now);
+            place_splash(app.handle());
             let dir = app.path().app_data_dir()?;
             let (store, show, from) = Store::open(dir.clone());
             eprintln!("lumora: show loaded ({from:?})");
