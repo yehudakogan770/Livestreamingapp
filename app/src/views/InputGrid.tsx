@@ -141,7 +141,16 @@ export function InputGrid({
               onClick={() => act({ type: 'setPreview', screen, sourceId: src.id })}
               onDoubleClick={() => act({ type: 'cutTo', screen, sourceId: src.id })}
             >
-              <span className="tile__thumb">{soundFile ? <span className="tile__sound">♪</span> : <SourceView source={src} client={client} thumb />}</span>
+              <span className="tile__thumb">
+                {soundFile ? (
+                  <span className="tile__sound">♪</span>
+                ) : (
+                  // The picture keeps the screen's shape (16:9), so nothing in it is cut off.
+                  <span className="tile__frame">
+                    <SourceView source={src} client={client} thumb />
+                  </span>
+                )}
+              </span>
               <span className="tile__num">{i + 1}</span>
               {problemIds.has(src.id) && (
                 <span className="tile__warn" title="Something is wrong with this input: see the problem light">

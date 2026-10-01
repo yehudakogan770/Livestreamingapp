@@ -244,3 +244,46 @@
     animation: none;
   }
 }
+
+/* The whole pasuk (Whole): each part wraps onto as many lines as it needs. */
+.pes__whole {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8cqh;
+  width: 100%;
+  padding: 0 4cqh;
+  text-align: center;
+}
+.pes__whole p {
+  margin: 0;
+  max-width: 100%;
+  white-space: normal;
+  text-wrap: balance;
+  color: #fff;
+  text-shadow: 0 0.2cqh 0.8cqh rgba(0, 0, 0, 0.6);
+}
+.pes__whole-he {
+  font-weight: 700;
+  line-height: 1.22;
+}
+.pes__whole-tr {
+  font:
+    italic 600 1em 'Segoe UI',
+    system-ui,
+    sans-serif;
+  line-height: 1.3;
+  opacity: 0.9;
+}
+.pes__whole-en {
+  font:
+    500 1em 'Segoe UI',
+    system-ui,
+    sans-serif;
+  line-height: 1.3;
+  opacity: 0.9;
+}
+.pes__bar--bare .pes__whole p {
+  -webkit-text-stroke: 0.8cqh var(--pes-outline);
+  paint-order: stroke fill;
+}

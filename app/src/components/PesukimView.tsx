@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from 'react';
 import { effectAt, effectStyle, STILL, useEffectClock, WORD_OUT_MS, WORD_SPEED, wordEffect } from '../engine/effects';
-import { barDesign, barLayout, barRange, glossesOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
+import { barDesign, barLayout, barRange, glossesOf, shownText, soundAndMeaning, wholeLayout, wordsOf, type PesukimData } from '../engine/pesukim';
 import './PesukimView.css';
 
 /**
@@ -67,6 +67,27 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
     const ps = data.pesukim[pl.pasuk];
     if (!ps) return null;
     if (pl.intro) return <Intro n={pl.pasuk + 1} child={ps.child} big={7.2} />;
+    if (pl.whole) {
+      // The whole pasuk: the Hebrew, how it sounds and the translation, each wrapped.
+      const W = wholeLayout(ps, look);
+      return (
+        <div className="pes__whole">
+          <p className="pes__whole-he" dir="rtl" style={{ fontSize: `${W.heSize}cqh`, fontFamily: `"${look.font}", "Frank Ruhl Libre", serif` }}>
+            {W.he}
+          </p>
+          {W.tr && (
+            <p className="pes__whole-tr" style={{ fontSize: `${W.small}cqh` }}>
+              {W.tr}
+            </p>
+          )}
+          {W.en && (
+            <p className="pes__whole-en" style={{ fontSize: `${W.small}cqh` }}>
+              {W.en}
+            </p>
+          )}
+        </div>
+      );
+    }
     const [a, z] = barRange({ ...data, place: pl });
     const lit = (i: number) => (pl.whole ? 'is-said' : i === pl.word ? 'is-now' : i < pl.word ? 'is-said' : '');
     const line = (words: string[], cls: string, size: number, dir: 'rtl' | 'ltr', font?: string) => (
@@ -102,11 +123,12 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
       style={{
         ...effectStyle(barFx),
         ...(place.blank ? { opacity: 0 } : {}),
-        transition: barFx === STILL ? 'opacity 0.35s ease' : 'none',
+        transition: barFx === STILL ? 'opacity 0.35s ease, height 0.35s ease' : 'none',
         left: `${L.left}cqh`,
         right: `${L.right}cqh`,
         bottom: `${L.bottom}cqh`,
-        height: `${L.h}cqh`,
+        // The whole pasuk needs a taller bar (as tall as its lines).
+        height: `${place.whole && !place.intro ? wholeLayout(pasuk, look).h : L.h}cqh`,
         borderRadius: `${d.radius}cqh`,
         borderColor: d.edge,
         background: image ? `center / 100% 100% no-repeat url("${image}")` : bare ? 'none' : `linear-gradient(${d.top}, ${d.bottom})`,

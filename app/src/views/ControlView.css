@@ -2364,3 +2364,18 @@ button.strip__name:hover {
 .inputs-area__grid > .inputs .tile__thumb {
   min-height: 0;
 }
+
+/* A tile's picture keeps the screen's shape, centered in the tile. */
+.tile__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+.tile__frame {
+  position: relative;
+  display: block;
+  width: min(100cqw, calc(100cqh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}

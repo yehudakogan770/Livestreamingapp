@@ -15,7 +15,7 @@ import { syncMedia } from '../engine/mediaSync';
 import { loadFontFor } from '../engine/fonts';
 import { eventLogo } from '../engine/brand';
 import { effectAt, WORD_OUT_MS, WORD_SPEED, wordEffect, type EffectState } from '../engine/effects';
-import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundAndMeaning, wordsOf, type PesukimData } from '../engine/pesukim';
+import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundAndMeaning, wholeLayout, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
@@ -2570,7 +2570,8 @@ export class ProgramCompositor {
     const L = barLayout(look);
     const x = L.left * u;
     const bw = w - (L.left + L.right) * u;
-    const bh = L.h * u;
+    // The whole pasuk needs a taller bar (as tall as its lines, like the screens).
+    const bh = (place.whole && !place.intro ? wholeLayout(pasuk, look).h : L.h) * u;
     const y = h - L.bottom * u - bh;
     const img = look.barImage && !look.plain ? this.picture(look.barImage) : null;
     const pic = !!look.barImage && !look.plain;
@@ -2679,6 +2680,12 @@ export class ProgramCompositor {
     ctx.save();
     if (place.intro) {
       this.pesukimIntro(place.pasuk + 1, pasuk.child, 7.2 * u, mid, y + bh / 2, wordFx ? now - place.changedAt : 10_000);
+      ctx.restore();
+      return;
+    }
+    if (place.whole) {
+      if (wordFx) this.applyEffect(wordFx, x + bw / 2, y + bh / 2, w, h);
+      this.pesukimWhole(data, pasuk, g);
       ctx.restore();
       return;
     }
@@ -2810,6 +2817,53 @@ export class ProgramCompositor {
       }
     });
     ctx.restore();
+  }
+
+  /** The whole pasuk in the bar: the Hebrew, how it sounds and the translation, wrapped (mirrors PesukimView). */
+  private pesukimWhole(
+    data: PesukimData,
+    pasuk: PesukimData['pesukim'][number],
+    g: { y: number; bh: number; u: number; left: number; right: number; mid: number; bare: boolean },
+  ) {
+    const ctx = this.ctx;
+    const { look } = data;
+    const { y, bh, u, left, right, mid, bare } = g;
+    const W = wholeLayout(pasuk, look);
+    const max = right - left - 8 * u;
+    const parts: { lines: string[]; font: string; lineH: number; rtl: boolean }[] = [];
+    const add = (text: string, font: string, size: number, lh: number, rtl: boolean) => {
+      if (!text) return;
+      ctx.font = font;
+      parts.push({ lines: this.wrap(text, max), font, lineH: size * lh * u, rtl });
+    };
+    add(W.he, `700 ${W.heSize * u}px "${look.font}", "Frank Ruhl Libre", serif`, W.heSize, 1.22, true);
+    add(W.tr, `italic 600 ${W.small * u}px "Segoe UI", system-ui, sans-serif`, W.small, 1.3, false);
+    add(W.en, `500 ${W.small * u}px "Segoe UI", system-ui, sans-serif`, W.small, 1.3, false);
+    const gap = 0.8 * u;
+    const total = parts.reduce((n, p) => n + p.lines.length * p.lineH, 0) + gap * Math.max(0, parts.length - 1);
+    let top = y + bh / 2 - total / 2;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (const p of parts) {
+      ctx.font = p.font;
+      ctx.direction = p.rtl ? 'rtl' : 'ltr';
+      for (const line of p.lines) {
+        const cy = top + p.lineH / 2;
+        if (bare) {
+          ctx.save();
+          ctx.lineWidth = 0.8 * u;
+          ctx.lineJoin = 'round';
+          ctx.strokeStyle = look.outlineColor;
+          ctx.strokeText(line, mid, cy);
+          ctx.restore();
+        }
+        ctx.fillStyle = p.rtl ? '#fff' : 'rgba(255,255,255,0.9)';
+        ctx.fillText(line, mid, cy);
+        top += p.lineH;
+      }
+      top += gap;
+    }
+    ctx.direction = 'ltr';
   }
 
   /** Break text into lines no wider than `max` (with the current font). */

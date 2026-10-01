@@ -158,6 +158,32 @@ export function barLayout(look: PesukimLook) {
   return { left: 7, right: 7, bottom: 4.5, h, he, tr: 5.2, en: 4.4, badge: 9 };
 }
 
+/**
+ * The whole pasuk in the bar (Whole): the Hebrew, how it sounds and the full
+ * translation, each on as many lines as it needs. The biggest size that fits
+ * (the Hebrew on at most 3 lines) and the bar's height to hold it all, in
+ * hundredths of the frame's height. Shared by the screens and the recorder, so
+ * both break and size it the same way.
+ */
+export function wholeLayout(pasuk: Pasuk, look: PesukimLook) {
+  const he = wordsOf(pasuk.text).join(' ');
+  const tr = look.showTranslit ? wordsOf(pasuk.translit).join(' ') : '';
+  const en = look.showEnglish ? pasuk.translation.trim() || glossesOf(pasuk.english).filter(Boolean).join(' ') : '';
+  // The room across the bar (a 16:9 frame is 177.8 wide), less the padding.
+  const room = 177.8 - 14 - 8;
+  /** About how many lines, at this size (letters are about half as wide as tall). */
+  const lines = (text: string, size: number, wide: number) => (text ? Math.max(1, Math.ceil((text.length * size * wide) / room)) : 0);
+  for (const size of [6.4, 5.8, 5.2, 4.6, 4.1, 3.6, 3.2]) {
+    const small = Math.max(2.6, size * 0.6);
+    const heL = lines(he, size, 0.5);
+    const trL = lines(tr, small, 0.5);
+    const enL = lines(en, small, 0.48);
+    const h = 4 + heL * size * 1.22 + (trL ? 0.8 + trL * small * 1.3 : 0) + (enL ? 0.8 + enL * small * 1.3 : 0);
+    if ((heL <= 3 && h <= 46) || size === 3.2) return { he, tr, en, heSize: size, small, h: Math.min(h, 60) };
+  }
+  return { he, tr, en, heSize: 3.2, small: 2.6, h: 46 };
+}
+
 /** Next word, then the next pasuk. Returns false at the very end. */
 export function nextWord(p: PesukimData, now: number): boolean {
   const pl = p.place;
