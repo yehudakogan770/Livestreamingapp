@@ -9,6 +9,7 @@ import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar, type MenuItem } from './components/TitleBar';
 import { Gate, useAccess } from './auth/Gate';
 import { PeopleDialog } from './auth/PeopleDialog';
+import { UpdateBar, checkForUpdates } from './components/UpdateBar';
 import { jewishToolsOn, loadJewishTools, saveJewishTools } from './engine/jewishTools';
 import { TEXT_SIZES, applyTextSize, loadTextSize, stepTextSize, type TextSize } from './components/textSize';
 import { ScreenSelector } from './components/ScreenSelector';
@@ -284,6 +285,7 @@ function ControlApp() {
     const help: MenuItem[] = [
       { label: 'How to use Lumora', onClick: () => sendCommand({ type: 'help' }) },
       { label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) },
+      { label: 'Check for updates…', onClick: checkForUpdates },
     ];
     return {
       Event: event,
@@ -366,6 +368,7 @@ function ControlApp() {
       )}
       {dataOpen && show && <DataDialog show={show} client={client} onClose={() => setDataOpen(false)} />}
       {zmanimOpen && show && <ZmanimDialog show={show} act={(a) => void client.dispatch(a).catch(fail)} onClose={() => setZmanimOpen(false)} />}
+      <UpdateBar />
       {peopleOpen && <PeopleDialog onClose={() => setPeopleOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}

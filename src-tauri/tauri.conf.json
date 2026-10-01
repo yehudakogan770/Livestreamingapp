@@ -38,7 +38,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co asset: http://asset.localhost blob: http://127.0.0.1:* wss://irc-ws.chat.twitch.tv https://www.googleapis.com; img-src 'self' asset: http://asset.localhost data: blob: http://127.0.0.1:*; frame-src https: http:; media-src 'self' asset: http://asset.localhost blob: mediastream:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; worker-src 'self' blob:; script-src 'self' blob:",
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://*.supabase.co https://github.com https://objects.githubusercontent.com https://release-assets.githubusercontent.com wss://*.supabase.co asset: http://asset.localhost blob: http://127.0.0.1:* wss://irc-ws.chat.twitch.tv https://www.googleapis.com; img-src 'self' asset: http://asset.localhost data: blob: http://127.0.0.1:*; frame-src https: http:; media-src 'self' asset: http://asset.localhost blob: mediastream:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; worker-src 'self' blob:; script-src 'self' blob:",
       "assetProtocol": {
         "enable": true,
         "scope": ["**"]
@@ -55,6 +55,16 @@
     "windows": {
       "nsis": {
         "installMode": "perMachine"
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI1OThFREY0OEQxQ0ZCM0MKUldROCt4eU45TzJZSlNnMGxnZGF6MnEvV1ZhNXhOTFU1SXBIaE1pWlRRYmhXYTVBQkpOQkxBMEUK",
+      "endpoints": ["https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/latest.json"],
+      "windows": {
+        "installMode": "passive"
       }
     }
   }

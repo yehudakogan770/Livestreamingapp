@@ -2,10 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "What the Lumora windows are allowed to do.",
-  "windows": [
-    "control",
-    "output-*"
-  ],
+  "windows": ["control", "output-*"],
   "permissions": [
     "core:default",
     "core:window:allow-set-fullscreen",
@@ -13,6 +10,8 @@
     "core:window:allow-close",
     "dialog:allow-open",
     "dialog:allow-save",
-    "core:webview:allow-set-webview-zoom"
+    "core:webview:allow-set-webview-zoom",
+    "updater:default",
+    "process:allow-restart"
   ]
 }

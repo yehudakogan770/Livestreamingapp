@@ -1,0 +1,38 @@
+.upd {
+  position: fixed;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 10px 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: var(--panel);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  font-size: 13px;
+}
+.upd b {
+  color: var(--text);
+}
+.upd .btn {
+  height: 30px;
+  flex-shrink: 0;
+}
+.upd__bar {
+  position: relative;
+  width: 140px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--button);
+  overflow: hidden;
+}
+.upd__bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent);
+  transition: width 0.2s;
+}

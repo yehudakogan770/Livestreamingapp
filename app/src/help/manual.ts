@@ -253,6 +253,7 @@ export const MANUAL: Topic[] = [
       '• Space · → · Page Down: next slide · ← · Page Up: back',
       '• Ctrl + / Ctrl −: bigger / smaller text · Esc: close a window without saving',
       'Help → Keyboard shortcuts has the full list.',
+      'Help → Check for updates: when a new Lumora is out, click Update now (not during an event). It installs and opens again by itself. Lumora also checks a few seconds after it opens.',
     ],
   },
 ];
