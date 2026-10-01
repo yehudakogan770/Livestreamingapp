@@ -76,10 +76,26 @@ fn lock(state: &AppState) -> std::sync::MutexGuard<'_, Engine> {
         .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
-/// The control window has loaded: show it and close the loading window.
+/// When Lumora started, so the loading window shows long enough to be seen.
+static STARTED: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+/// The loading window stays at least this long.
+const SPLASH_MIN: std::time::Duration = std::time::Duration::from_millis(2500);
+
+/// The control window has loaded: show it and close the loading window (once
+/// the loading window has been up for a moment, so it never just flickers).
 #[tauri::command]
 fn app_ready(app: tauri::AppHandle) {
-    reveal(&app);
+    let shown = STARTED
+        .get()
+        .map_or(SPLASH_MIN, std::time::Instant::elapsed);
+    if shown >= SPLASH_MIN {
+        reveal(&app);
+    } else {
+        std::thread::spawn(move || {
+            std::thread::sleep(SPLASH_MIN - shown);
+            reveal(&app);
+        });
+    }
 }
 
 /// Show the control window (filling the screen) and close the loading window.
@@ -775,6 +791,7 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            STARTED.get_or_init(std::time::Instant::now);
             let dir = app.path().app_data_dir()?;
             let (store, show, from) = Store::open(dir.clone());
             eprintln!("lumora: show loaded ({from:?})");
