@@ -195,7 +195,7 @@ export function AuctionCard({ source, act, client, onClose }: { source: Source; 
               <input
                 className="text"
                 dir="auto"
-                placeholder="What is sold (Kiddush cup, a week in Jerusalem…)"
+                placeholder="What is sold (a signed print, a weekend away…)"
                 value={form.item.name}
                 onChange={(e) => setForm({ ...form, item: { ...form.item, name: e.target.value } })}
                 aria-label="Item"

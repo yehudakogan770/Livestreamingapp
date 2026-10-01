@@ -123,7 +123,7 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
               )}
             </span>
             {!intro && !blank && !whole && (sound || meaning) && (
-              <span className="pk__sound">
+              <span className="pk__sound" dir="ltr">
                 {sound && <i>{sound}</i>}
                 {sound && meaning && ' · '}
                 {meaning}

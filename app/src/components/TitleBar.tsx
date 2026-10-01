@@ -3,7 +3,7 @@ import type { ScreenId } from '../engine/types/ScreenId';
 import { LogoMark } from './Logo';
 import './TitleBar.css';
 
-const MENUS = ['Event', 'Presets', 'Cues', 'Library', 'Inputs', 'Overlays', 'Text', 'Slideshow', '12 Pesukim', 'Timer', 'Visuals', 'Settings', 'Help'];
+const MENUS = ['Event', 'Presets', 'Cues', 'Library', 'Inputs', 'Overlays', 'Text', 'Slideshow', 'Timer', 'Visuals', 'Settings', 'Help'];
 
 function useClock(): string {
   const [now, setNow] = useState(() => new Date());

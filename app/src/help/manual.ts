@@ -9,6 +9,8 @@ export interface Topic {
   /** Other words people might look for. */
   keywords: string;
   body: string[];
+  /** Part of the Jewish event tools (shown only when they are on). */
+  jewish?: boolean;
 }
 
 export const MANUAL: Topic[] = [
@@ -34,7 +36,7 @@ export const MANUAL: Topic[] = [
       '1. Event → Event setup…: the event’s name and logo, and what the screens show if something breaks.',
       '2. Outputs (bottom bar): choose which screen or projector shows the Live Screen, the Back Screen and the Monitor.',
       '3. Speakers… (in the audio mixer): where the sound goes — the stream, the hall speakers, the recording, headphones.',
-      '4. Event → Save event as…: keep everything (inputs, titles, looks, the 12 Pesukim, cameras’ settings) in one file. Event → Open event… brings it back next time.',
+      '4. Event → Save event as…: keep everything (inputs, titles, looks, cameras’ settings) in one file. Event → Open event… brings it back next time.',
       'Tip: Lumora keeps working without the internet. Only streaming and the audience internet link need it.',
     ],
   },
@@ -44,7 +46,7 @@ export const MANUAL: Topic[] = [
     keywords: 'add input camera video picture colour webcam capture card phone ip camera screen capture web page music microphone',
     body: [
       '1. Click + Add input (under the monitors) or Inputs → Add input….',
-      '2. Choose what it is: Camera, Video file, Picture, Colour, Countdown, 12 Pesukim, Text / title, Slideshow, Song lyrics, Microphone, Sound / music file, Web page, Screen capture, Stream / IP camera, Guest by link, and the audience features (poll, raffle, fundraiser, messages wall, auction, trivia, table finder).',
+      '2. Choose what it is: Camera, Video file, Picture, Colour, Countdown, Text / title, Slideshow, Song lyrics, Microphone, Sound / music file, Web page, Screen capture, Stream / IP camera, Guest by link, and the audience features (poll, raffle, fundraiser, messages wall, auction, trivia, table finder).',
       '3. Give it a name and click Add input. It is lined up in Next.',
       'Each input’s ⋯ menu has its settings: crop, colours, green screen, delay, playlist, and remove.',
       'Tip: Keys 1 – 9 and 0 line up input 1 – 10 in Next.',
@@ -74,8 +76,8 @@ export const MANUAL: Topic[] = [
       '1. Click ⚙ → Switching.',
       '2. Tick the cameras to use, how long each shot lasts (for example 6 to 10 seconds), In order or Mixed up, and Cut or Quick mix.',
       '3. Click Start switching by itself (or the Auto button under Next).',
-      'It only switches while one of those cameras is on the Live Screen. Put a video or title on and it waits, then carries on. Overlays (like the 12 Pesukim bar) stay on top.',
-      'Camera control (⚙ → a camera’s tab): zoom, pan and tilt, focus, light and colour — whatever that camera lets the computer change. Save shots (like “Rabbi close-up”) and click one to go back to it. It is all kept with the event.',
+      'It only switches while one of those cameras is on the Live Screen. Put a video or title on and it waits, then carries on. Overlays (like a logo or a title) stay on top.',
+      'Camera control (⚙ → a camera’s tab): zoom, pan and tilt, focus, light and colour — whatever that camera lets the computer change. Save shots (like “Speaker close-up”) and click one to go back to it. It is all kept with the event.',
       'Network cameras that move (PTZ) are set up in the input’s ⋯ menu, with their preset buttons.',
       'Tip: Cameras plugged into the computer must be seen by Windows. When running Lumora inside WSL, use the Windows installer instead for cameras.',
     ],
@@ -83,10 +85,11 @@ export const MANUAL: Topic[] = [
   {
     id: 'pesukim',
     title: '12 Pesukim',
+    jewish: true,
     keywords: 'pesukim pasuk kids children word hebrew transliteration english translation bar',
     body: [
       'The 12 Pesukim are built in: the Hebrew, how each word sounds, what each word means, and a translation of each whole pasuk.',
-      '1. 12 Pesukim → Add the 12 Pesukim bar (ready in Next). The bar goes over the Live Screen; the cameras keep switching underneath.',
+      '1. Inputs → Add the 12 Pesukim bar (ready in Next). The bar goes over the Live Screen; the cameras keep switching underneath.',
       '2. Click Edit… on the controls to type each child’s name (their name comes up just before their pasuk).',
       '3. Bar on shows it. Then Space (or →, Page Down, or a presenter clicker) goes to the next word; ← goes back.',
       '• Whole (P): the whole pasuk, with how it sounds and its translation.',
@@ -137,12 +140,11 @@ export const MANUAL: Topic[] = [
   },
   {
     id: 'slides',
-    title: 'Slideshows, songs, Tanach and credits',
-    keywords: 'slideshow powerpoint pdf slides song lyrics tehillim tanach credits',
+    title: 'Slideshows, songs and credits',
+    keywords: 'slideshow powerpoint pdf slides song lyrics credits',
     body: [
       '• Slideshow: pictures or a PDF (save PowerPoint as PDF first). Space or a clicker moves on.',
       '• Song lyrics: paste the words; each part comes up in turn.',
-      '• Tanach & Tehillim: any passage, a verse at a time or whole, in Hebrew and English; today’s Tehillim.',
       '• Credits / thank-you: names rolling at the end.',
       'Each one’s controls come up as soon as it is in Next, and stay while it is on air.',
     ],
@@ -198,8 +200,8 @@ export const MANUAL: Topic[] = [
     keywords: 'remote phone stream deck companion clicker presenter midi controller keyboard',
     body: [
       '• Settings → Phone remote…: control Lumora from a phone (with a PIN).',
-      '• Stream Deck / Companion: buttons for takes, overlays, the 12 Pesukim, the teleprompter and more.',
-      '• Presenter clickers move slides and Pesukim words.',
+      '• Stream Deck / Companion: buttons for takes, overlays, slides, the teleprompter and more.',
+      '• Presenter clickers move the slides (and the words of anything shown a part at a time).',
       '• Settings → MIDI controller…: faders and buttons on a MIDI desk.',
       'Help → Keyboard shortcuts lists every key.',
     ],
@@ -216,9 +218,11 @@ export const MANUAL: Topic[] = [
   },
   {
     id: 'zmanim',
-    title: 'Hebrew date, zmanim and Shabbos',
-    keywords: 'zmanim shabbos shabbat candle lighting hebrew date yom tov stop',
+    title: 'Tanach, Hebrew date, zmanim and Shabbos',
+    jewish: true,
+    keywords: 'zmanim shabbos shabbat candle lighting hebrew date yom tov stop tanach tehillim',
     body: [
+      '• Tanach & Tehillim (an input): any passage, a verse at a time or whole, in Hebrew and English; today’s Tehillim.',
       'Event → Zmanim and Shabbos…: the city of the event. Lumora works out the day’s zmanim offline.',
       '• Show the zmanim or the Hebrew date on screen (Hebrew date & zmanim input).',
       '• The stage Monitor is warned before candle lighting.',
@@ -244,18 +248,19 @@ export const MANUAL: Topic[] = [
     body: [
       '• 1 – 9, 0: line up input 1 – 10 in Next · Enter: TAKE · Shift + Enter: CUT',
       '• F1 · F2 · F3: control the Live Screen · Back Screen · Monitor',
-      '• Shift + 1 – 4: overlay 1 – 4 on / off · B: blank (Pesukim on air: hide the words)',
-      '• Space · → · Page Down: next slide / next word · ← · Page Up: back · P: whole pasuk',
+      '• Shift + 1 – 4: overlay 1 – 4 on / off · B: blank the screen you control',
+      '• Space · → · Page Down: next slide · ← · Page Up: back',
       '• Ctrl + / Ctrl −: bigger / smaller text · Esc: close a window without saving',
       'Help → Keyboard shortcuts has the full list.',
     ],
   },
 ];
 
-/** Topics matching a search (every word must be found), best first. */
-export function searchManual(q: string): Topic[] {
+/** Topics matching a search (every word must be found), best first. `jewish`: include the Jewish event tools. */
+export function searchManual(q: string, jewish = true): Topic[] {
+  const topics = jewish ? MANUAL : MANUAL.filter((t) => !t.jewish);
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-  if (!words.length) return MANUAL;
+  if (!words.length) return topics;
   const score = (t: Topic) => {
     const title = t.title.toLowerCase();
     const keys = t.keywords.toLowerCase();
@@ -269,7 +274,8 @@ export function searchManual(q: string): Topic[] {
     }
     return s;
   };
-  return MANUAL.map((t) => ({ t, s: score(t) }))
+  return topics
+    .map((t) => ({ t, s: score(t) }))
     .filter((x) => x.s > 0)
     .sort((a, b) => b.s - a.s)
     .map((x) => x.t);

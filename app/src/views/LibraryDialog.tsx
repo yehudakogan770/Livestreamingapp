@@ -51,7 +51,7 @@ export function SaveToLibrary({ client, item, onClose }: { client: EngineClient;
               list="lib-categories"
               value={category}
               maxLength={40}
-              placeholder="e.g. Chanukah, Lower thirds, Dinners"
+              placeholder="e.g. Graduation, Lower thirds, Dinners"
               onChange={(e) => setCategory(e.target.value)}
               aria-label="Category"
             />

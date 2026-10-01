@@ -23,6 +23,7 @@ import type { SourceKind } from '../engine/types/SourceKind';
 import type { Source } from '../engine/types/Source';
 import { SourceView } from '../components/SourceView';
 import { defaultPesukim } from '../engine/pesukim';
+import { JEWISH_KINDS, jewishToolsOn } from '../engine/jewishTools';
 import { TEXT_TEMPLATES } from '../engine/text';
 import { defaultCredits, parseNames } from '../engine/credits';
 import { SplitPicker } from './SplitEditor';
@@ -91,6 +92,8 @@ export function AddInput({
   initialTemplate?: number;
 }) {
   const [kind, setKind] = useState<Kind>(() => (KINDS.some((k) => k.kind === initialKind) ? (initialKind as Kind) : 'camera'));
+  // The Jewish event tools only when switched on (Settings) or already used.
+  const kinds = jewishToolsOn({ sources }) ? KINDS : KINDS.filter((k) => !JEWISH_KINDS.includes(k.kind) || k.kind === initialKind);
   const [name, setName] = useState('');
   const [path, setPath] = useState<string | null>(null);
   const [color, setColor] = useState('#1f6f79');
@@ -276,7 +279,7 @@ export function AddInput({
         </header>
         <div className="addinput__body">
           <nav className="addinput__kinds" aria-label="Input type">
-            {KINDS.map((k) => (
+            {kinds.map((k) => (
               <button
                 key={k.kind}
                 type="button"

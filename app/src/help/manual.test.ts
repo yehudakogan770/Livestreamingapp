@@ -13,4 +13,10 @@ describe('the manual', () => {
     expect(searchManual('zoom focus').map((t) => t.id)).toContain('cameras');
     expect(searchManual('nothing-like-this')).toHaveLength(0);
   });
+
+  it('leaves out the Jewish event tools unless they are on', () => {
+    expect(searchManual('', false).some((t) => t.id === 'pesukim' || t.id === 'zmanim')).toBe(false);
+    expect(searchManual('pesukim', false)).toHaveLength(0);
+    expect(searchManual('', true)).toHaveLength(MANUAL.length);
+  });
 });

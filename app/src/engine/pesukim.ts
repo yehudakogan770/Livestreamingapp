@@ -14,12 +14,12 @@ export const PESUKIM = 12;
 /** A Pesukim input's data (the input kind without its `type`). */
 export type PesukimData = Pesukim;
 
-/** The words shown one step at a time; a plain hyphen joins words shown together. */
+/** The words shown one step at a time; a plain hyphen joins words shown together (but "G-d" stays as it is). */
 export function wordsOf(text: string): string[] {
   return text
     .split(/\s+/)
     .filter(Boolean)
-    .map((w) => w.replace(/-/g, ' '));
+    .map((w) => w.replace(/G-d/g, 'G\0d').replace(/-/g, ' ').replace(/G\0d/g, 'G-d'));
 }
 
 export function defaultLook(): PesukimLook {

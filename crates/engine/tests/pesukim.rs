@@ -74,6 +74,7 @@ fn a_hyphen_joins_words_shown_together() {
     );
     // The Hebrew maqaf stays part of the word.
     assert_eq!(words_of("כָּל־הָעָם"), ["כָּל־הָעָם"]);
+    assert_eq!(words_of("G-d is-our-G-d"), ["G-d", "is our G-d"]);
 }
 
 #[test]

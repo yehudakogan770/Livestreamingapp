@@ -128,7 +128,7 @@ function SwitchTab({ show, cams, act }: { show: Show; cams: Source[]; act: Act }
         </div>
         <p className="field__note">
           It only switches while one of these cameras is on the Live Screen: put a video, a title or anything else on and it waits, then carries on when a
-          camera is back. Overlays (like the 12 Pesukim bar) stay on top. The camera buttons under Next switch straight to a camera at any time.
+          camera is back. Overlays (like a logo or a title) stay on top. The camera buttons under Next switch straight to a camera at any time.
         </p>
       </div>
     </div>
@@ -213,7 +213,7 @@ function CameraTab({ cam, act, client }: { cam: Source; act: Act; client: Engine
             className="text"
             style={{ flex: 1 }}
             value={shotName}
-            placeholder="Name this shot (e.g. Rabbi close-up)"
+            placeholder="Name this shot (e.g. Speaker close-up)"
             onChange={(e) => setShotName(e.target.value)}
           />
           <button

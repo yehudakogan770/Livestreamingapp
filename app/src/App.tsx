@@ -7,6 +7,7 @@ import { isMultiview, outputScreen } from './engine/role';
 import { MultiviewView } from './views/MultiviewView';
 import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar, type MenuItem } from './components/TitleBar';
+import { jewishToolsOn, loadJewishTools, saveJewishTools } from './engine/jewishTools';
 import { TEXT_SIZES, applyTextSize, loadTextSize, stepTextSize, type TextSize } from './components/textSize';
 import { ScreenSelector } from './components/ScreenSelector';
 import { ControlView } from './views/ControlView';
@@ -78,6 +79,8 @@ function ControlApp() {
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmNew, setConfirmNew] = useState(false);
   const [textSize, setTextSize] = useState<TextSize>(loadTextSize);
+  const [jewish, setJewish] = useState(loadJewishTools);
+  useEffect(() => saveJewishTools(jewish), [jewish]);
   useEffect(() => applyTextSize(textSize), [textSize]);
   // Ctrl + / Ctrl − / Ctrl 0, like any app.
   useEffect(() => {
@@ -122,11 +125,12 @@ function ControlApp() {
     () => void client.saveEventAs().then((p) => p && setNotice(`Saved. Lumora keeps “${baseName(p)}” up to date from now on.`), fail),
     [client, fail],
   );
+  const jewishOn = jewishToolsOn(show, jewish);
   const menus = useMemo(() => {
     const event: MenuItem[] = [
       { label: 'Event setup…', onClick: () => setSetupOpen(true) },
       { label: 'Event look (branding)…', onClick: () => setBrandOpen(true) },
-      { label: 'Zmanim and Shabbos…', onClick: () => setZmanimOpen(true) },
+      ...(jewishOn ? [{ label: 'Zmanim and Shabbos…', onClick: () => setZmanimOpen(true) }] : []),
       null,
       { label: 'New event', onClick: () => setConfirmNew(true) },
       { label: 'Open event…', onClick: () => open() },
@@ -147,6 +151,12 @@ function ControlApp() {
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       null,
       ...TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) })),
+      null,
+      {
+        label: `${jewish ? '● ' : '    '}Jewish event tools`,
+        hint: '12 Pesukim, Tanach & Tehillim, the Hebrew date and zmanim (hidden when off)',
+        onClick: () => setJewish((j) => !j),
+      },
     ];
     // 12 Pesukim: line one up in Next (making one if there is none); the card has the rest.
     const screen = controlling === 'monitor' ? 'live' : controlling;
@@ -198,6 +208,8 @@ function ControlApp() {
     const inputs: MenuItem[] = [
       { label: 'Add input…', onClick: () => sendCommand({ type: 'addInput' }) },
       { label: '3D logo maker…', onClick: () => sendCommand({ type: 'logoMaker' }) },
+      // The 12 Pesukim (only with the Jewish event tools on).
+      ...(jewishOn ? [null, ...pesukimMenu] : []),
     ];
     const text: MenuItem[] = [
       ...TEXT_TEMPLATES.map((t, i) => ({
@@ -261,7 +273,6 @@ function ControlApp() {
       Overlays: overlays,
       Text: text,
       Slideshow: slideshow,
-      '12 Pesukim': pesukimMenu,
       Timer: timer,
       Visuals: visuals,
       Settings: settings,
@@ -272,6 +283,8 @@ function ControlApp() {
     open,
     saveAs,
     textSize,
+    jewish,
+    jewishOn,
     remote,
     openBroadcast,
     show?.sources,

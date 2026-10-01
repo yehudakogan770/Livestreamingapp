@@ -11,6 +11,7 @@ import { MonitorPanel } from './MonitorPanel';
 import { CountdownCard, CountdownMini } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
 import { pesukimBar } from '../engine/pesukim';
+import { jewishToolsOn } from '../engine/jewishTools';
 import { OverlayBar } from './OverlayBar';
 import { CameraBar } from './CameraBar';
 import { useCommands, type Command } from './commands';
@@ -404,8 +405,8 @@ export function ControlView({
           initialTemplate={addStart.template}
         />
       )}
-      {shortcuts && <ShortcutsDialog onClose={() => setShortcuts(false)} />}
-      {help && <HelpDialog onClose={() => setHelp(false)} />}
+      {shortcuts && <ShortcutsDialog jewish={jewishToolsOn(show)} onClose={() => setShortcuts(false)} />}
+      {help && <HelpDialog jewish={jewishToolsOn(show)} onClose={() => setHelp(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}
       {chatOpen && <ChatPanel show={show} act={act} client={client} onAdd={add} onClose={() => setChatOpen(false)} />}
       {midiOpen && <MidiDialog onClose={() => setMidiOpen(false)} />}

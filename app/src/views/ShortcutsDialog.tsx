@@ -1,5 +1,16 @@
 import { useEffect } from 'react';
 
+/** With the Jewish event tools on (Settings). */
+const PESUKIM = {
+  title: '12 Pesukim (when on air or in Next)',
+  keys: [
+    ['Space · → · Page Down', 'Next word (presenter clickers too)'],
+    ['← · Page Up', 'Back a word'],
+    ['P', 'The whole pasuk'],
+    ['B', 'Hide the words (the camera stays)'],
+  ] as [string, string][],
+};
+
 const GROUPS: { title: string; keys: [string, string][] }[] = [
   {
     title: 'Switching',
@@ -8,7 +19,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
       ['Enter', 'TAKE (with the chosen transition)'],
       ['Shift + Enter', 'CUT straight to Next'],
       ['Ctrl + 1 – 4', 'TAKE with favourite transition 1 – 4'],
-      ['B', 'Blank the screen you control (Pesukim on air: hide its words)'],
+      ['B', 'Blank the screen you control'],
       ['F1 · F2 · F3', 'Control the Live Screen · Back Screen · Monitor'],
     ],
   },
@@ -17,11 +28,10 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     keys: [['Shift + 1 – 4', 'Overlay 1 – 4 on / off']],
   },
   {
-    title: 'Slideshow and 12 Pesukim (when on air or in Next)',
+    title: 'Slideshow (when on air or in Next)',
     keys: [
-      ['Space · → · Page Down', 'Next slide / next word (presenter clickers too)'],
+      ['Space · → · Page Down', 'Next slide (presenter clickers too)'],
       ['← · Page Up', 'Back'],
-      ['P', 'Pesukim: the whole pasuk'],
     ],
   },
   {
@@ -51,7 +61,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
 ];
 
 /** Every keyboard shortcut, in one place (Help → Keyboard shortcuts). */
-export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
+export function ShortcutsDialog({ onClose, jewish = false }: { onClose: () => void; jewish?: boolean }) {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
@@ -67,7 +77,7 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
           </button>
         </header>
         <div className="keys__body">
-          {GROUPS.map((g) => (
+          {(jewish ? [...GROUPS.slice(0, 3), PESUKIM, ...GROUPS.slice(3)] : GROUPS).map((g) => (
             <section key={g.title}>
               <h3 className="field__label">{g.title}</h3>
               <dl>

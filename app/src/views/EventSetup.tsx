@@ -75,7 +75,7 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
       <h3>Your event</h3>
       <label className="field">
         <span className="field__label">Name of the event</span>
-        <input className="text" autoFocus value={name} maxLength={80} placeholder="e.g. Chanukah Rally 2026" onChange={(e) => setName(e.target.value)} />
+        <input className="text" autoFocus value={name} maxLength={80} placeholder="e.g. Spring Gala 2026" onChange={(e) => setName(e.target.value)} />
       </label>
       <div className="field">
         <span className="field__label">Event logo</span>

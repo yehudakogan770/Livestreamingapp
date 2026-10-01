@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { App } from './App';
 import { emptyShow } from './engine/client';
 import { screenStatus } from './components/ScreenSelector';
@@ -239,7 +239,7 @@ describe('Event setup', () => {
   it('asks about the event, the logo and emergencies at the start, and applies on Done', async () => {
     await start({ keepSetup: true });
     const dialog = screen.getByRole('dialog', { name: 'Event setup' });
-    fireEvent.change(within(dialog).getByPlaceholderText(/Chanukah Rally/), {
+    fireEvent.change(within(dialog).getByPlaceholderText(/Spring Gala/), {
       target: { value: 'Chanukah Rally' },
     });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
@@ -394,7 +394,19 @@ describe('Recording and streaming', () => {
 });
 
 describe('12 Pesukim', () => {
+  afterEach(() => localStorage.removeItem('lumora.jewishTools'));
+
+  it('is hidden until the Jewish event tools are switched on in Settings', async () => {
+    await start();
+    expect(screen.queryByRole('button', { name: '12 Pesukim' })).toBeNull();
+    fireEvent.click(screen.getAllByRole('button', { name: /Add input/ })[0]!);
+    const add = screen.getByRole('dialog', { name: 'Add input' });
+    expect(within(add).queryByRole('button', { name: /^12 Pesukim/ })).toBeNull();
+    expect(within(add).queryByRole('button', { name: /Tanach/ })).toBeNull();
+  });
+
   it('comes filled in; pasting changes them, then Space and the clicker keys move word by word; B hides only the words', async () => {
+    localStorage.setItem('lumora.jewishTools', 'on');
     await start();
     fireEvent.click(screen.getAllByRole('button', { name: /Add input/ })[0]!);
     const add = screen.getByRole('dialog', { name: 'Add input' });

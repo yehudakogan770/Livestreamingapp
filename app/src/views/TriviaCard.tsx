@@ -14,10 +14,10 @@ const blank = (): TriviaQuestion => ({ text: '', options: ['', '', '', ''], corr
 
 /** Some questions to start with (they can be changed or removed). */
 const SAMPLES: TriviaQuestion[] = [
-  { text: 'How many nights is Chanukah?', options: ['7', '8', '9', '10'], correct: 1, seconds: 15 },
-  { text: 'Which book of Tanach does not mention Hashem’s name?', options: ['Rus', 'Esther', 'Yonah', 'Eichah'], correct: 1, seconds: 20 },
-  { text: 'How many books are in the Torah?', options: ['3', '5', '7', '10'], correct: 1, seconds: 10 },
-  { text: 'Who led the Jewish people after Moshe?', options: ['Aharon', 'Kalev', 'Yehoshua', 'Shmuel'], correct: 2, seconds: 15 },
+  { text: 'How many continents are there?', options: ['5', '6', '7', '8'], correct: 2, seconds: 15 },
+  { text: 'Which planet is closest to the sun?', options: ['Venus', 'Mercury', 'Mars', 'Earth'], correct: 1, seconds: 15 },
+  { text: 'How many sides does a hexagon have?', options: ['5', '6', '7', '8'], correct: 1, seconds: 10 },
+  { text: 'What is the largest ocean?', options: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], correct: 3, seconds: 15 },
 ];
 
 /** Run a trivia game: questions, answers from phones, the leaderboard. */

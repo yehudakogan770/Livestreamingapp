@@ -3,10 +3,10 @@ import { MANUAL, searchManual } from '../help/manual';
 import './HelpDialog.css';
 
 /** How to use Lumora: every topic in plain words, with a search. */
-export function HelpDialog({ onClose }: { onClose: () => void }) {
+export function HelpDialog({ onClose, jewish = false }: { onClose: () => void; jewish?: boolean }) {
   const [q, setQ] = useState('');
   const [id, setId] = useState(MANUAL[0]!.id);
-  const found = useMemo(() => searchManual(q), [q]);
+  const found = useMemo(() => searchManual(q, jewish), [q, jewish]);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
@@ -28,7 +28,7 @@ export function HelpDialog({ onClose }: { onClose: () => void }) {
               className="text"
               autoFocus
               value={q}
-              placeholder="Search (e.g. camera, pesukim, stream)"
+              placeholder="Search (e.g. camera, countdown, stream)"
               onChange={(e) => setQ(e.target.value)}
               aria-label="Search the manual"
             />

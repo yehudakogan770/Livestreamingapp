@@ -37,10 +37,14 @@ impl Pasuk {
 }
 
 /// Split a pasuk into the words shown one at a time. A plain hyphen joins
-/// words that go on screen together (the Hebrew maqaf ־ is kept as it is).
+/// words that go on screen together (the Hebrew maqaf ־ and "G-d" are kept as they are).
 pub fn words_of(text: &str) -> Vec<String> {
     text.split_whitespace()
-        .map(|w| w.replace('-', " "))
+        .map(|w| {
+            w.replace("G-d", "G\0d")
+                .replace('-', " ")
+                .replace("G\0d", "G-d")
+        })
         .collect()
 }
 

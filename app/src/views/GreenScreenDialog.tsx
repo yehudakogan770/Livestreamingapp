@@ -126,8 +126,7 @@ export function GreenScreenDialog({ show, source, act, client, onClose }: { show
             {slider('Soft edge', 'smoothness', 'Softens the edge around people and hair.')}
             {slider('Remove green glow', 'spill', 'Takes away green light reflected on people.')}
             <p className="field__note">
-              What shows through: whatever is behind this input — put it in a split screen or on an overlay, or behind the Pesukim or slides. Or make a scene
-              here:
+              What shows through: whatever is behind this input — put it in a split screen or on an overlay, or behind slides. Or make a scene here:
             </p>
           </section>
         </div>

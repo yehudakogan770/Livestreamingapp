@@ -14,6 +14,10 @@ describe('the 12 Pesukim', () => {
     expect(defaultPesukim().look.mode).toBe('bar');
   });
 
+  it('keep "G-d" whole while hyphens join other words', () => {
+    expect(glossesOf('Hear, O-Israel: G-d is-our-G-d')).toEqual(['Hear,', 'O Israel:', 'G-d', 'is our G-d']);
+  });
+
   it('show a long pasuk in stretches that hold every word once', () => {
     for (const p of TWELVE_PESUKIM) {
       const chunks = barChunks({ child: '', ...p });

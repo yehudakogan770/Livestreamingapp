@@ -62,3 +62,33 @@ jobs:
           name: Lumora-Setup-windows
           path: target/release/bundle/nsis/*.exe
           if-no-files-found: error
+
+  release:
+    name: Public download
+    runs-on: ubuntu-latest
+    needs: windows
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/festive-curie-637ic2')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lumora-Setup-windows
+          path: out
+      # One name that never changes, so the website's download link always works.
+      - name: Name the installer
+        run: |
+          mv out/*.exe out/Lumora-Setup.exe
+          echo "VERSION=$(jq -r .version src-tauri/tauri.conf.json)" >> "$GITHUB_ENV"
+      - name: Publish it (anyone can download, no account)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: Lumora ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          files: out/Lumora-Setup.exe
+          body: |
+            Lumora for Windows 10 and 11 (64-bit). Download Lumora-Setup.exe and run it.
+            The first time, Windows may say it doesn't recognise the app: click More info, then Run anyway.
