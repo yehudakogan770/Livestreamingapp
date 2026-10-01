@@ -536,7 +536,7 @@
 
   // Feedback: sent through Web3Forms, so nobody has to sign in to anything.
   // Put the access key from web3forms.com here (it only lets people send to you).
-  const FEEDBACK_KEY = 'PASTE-YOUR-WEB3FORMS-ACCESS-KEY-HERE';
+  const FEEDBACK_KEY = '62155090-df58-430c-9c77-2724a61adb72';
   const form = $('[data-feedback]');
   const status = $('[data-status]');
   form?.addEventListener('submit', async (e) => {
