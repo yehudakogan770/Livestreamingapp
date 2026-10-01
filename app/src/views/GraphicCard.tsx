@@ -249,7 +249,7 @@ export function GraphicCard({ source, act, client, onClose }: { source: Source; 
                     <div className="grc__row">
                       {(['left', 'center', 'right'] as const).map((a) => (
                         <button key={a} type="button" className={`btn btn--small${el.align === a ? ' is-on' : ''}`} onClick={() => change({ align: a })}>
-                          {a === 'left' ? '⯇ Left' : a === 'center' ? 'Centre' : 'Right ⯈'}
+                          {a === 'left' ? '⯇ Left' : a === 'center' ? 'Center' : 'Right ⯈'}
                         </button>
                       ))}
                       <label className="check">

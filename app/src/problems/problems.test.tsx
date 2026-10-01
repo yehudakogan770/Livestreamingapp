@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ProblemStore } from './problems';
 
-describe('problem centre', () => {
+describe('problem center', () => {
   it('a problem stays until everyone who reported it says it is fixed', () => {
     const s = new ProblemStore();
     const tile = Symbol('tile');

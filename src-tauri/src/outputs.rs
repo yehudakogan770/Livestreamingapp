@@ -1,6 +1,6 @@
 //! The three output windows (Live, Back, Monitor) and the displays they go to.
 //!
-//! Each output is an ordinary window labelled `output-<screen>`. The page
+//! Each output is an ordinary window labeled `output-<screen>`. The page
 //! inside reads its label to know which screen it shows. When the screen has a
 //! display assigned in the show settings, the window goes fullscreen there;
 //! otherwise it opens as a normal window that can be dragged anywhere.

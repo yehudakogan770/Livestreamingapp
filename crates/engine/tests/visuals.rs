@@ -1,4 +1,4 @@
-//! Behaviour tests for the stage visuals.
+//! Behavior tests for the stage visuals.
 
 use lumora_engine::visuals::{banks, Quantize, SceneRef, VisualsPatch, LOOK_SLOTS};
 use lumora_engine::*;

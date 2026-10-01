@@ -1,4 +1,4 @@
-//! Fade to black, favourite transitions and quick play.
+//! Fade to black, favorite transitions and quick play.
 
 use lumora_engine::*;
 

@@ -1,4 +1,4 @@
-//! Behaviour tests for split screens.
+//! Behavior tests for split screens.
 
 use lumora_engine::*;
 

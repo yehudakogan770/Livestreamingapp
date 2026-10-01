@@ -8,7 +8,7 @@
 //! Design rules (see `docs/ARCHITECTURE.md`):
 //! - One source of truth: nothing else keeps its own copy of show state.
 //! - An invalid action is refused with a clear [`ActionError`] and changes nothing.
-//! - Time is passed in, never read, so behaviour is reproducible and testable.
+//! - Time is passed in, never read, so behavior is reproducible and testable.
 
 pub mod action;
 pub mod adjust;

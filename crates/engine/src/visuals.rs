@@ -315,7 +315,7 @@ impl Default for VisualsLogo {
     }
 }
 
-/// Most favourite scenes.
+/// Most favorite scenes.
 pub const MAX_FAVOURITES: usize = 300;
 
 /// A saved look: a scene and every effect setting.

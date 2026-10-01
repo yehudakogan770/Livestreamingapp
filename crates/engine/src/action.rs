@@ -639,7 +639,7 @@ pub enum Action {
     SetFadeToBlackLength {
         ms: u32,
     },
-    /// Change one of the four favourite transition buttons (0 – 3).
+    /// Change one of the four favorite transition buttons (0 – 3).
     SetFavouriteTransition {
         index: usize,
         transition: Transition,

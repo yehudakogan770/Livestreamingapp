@@ -26,7 +26,7 @@ audioOutputs: AudioOutputs,
  */
 fadeToBlackMs: number, 
 /**
- * The four favourite transition buttons.
+ * The four favorite transition buttons.
  */
 favouriteTransitions: Array<Transition>, 
 /**

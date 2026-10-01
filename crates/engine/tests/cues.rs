@@ -1,4 +1,4 @@
-//! Behaviour tests for the run of show.
+//! Behavior tests for the run of show.
 
 use lumora_engine::cues::clock_seconds;
 use lumora_engine::*;

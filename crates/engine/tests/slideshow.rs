@@ -1,4 +1,4 @@
-//! Behaviour tests for slideshows.
+//! Behavior tests for slideshows.
 
 use lumora_engine::*;
 

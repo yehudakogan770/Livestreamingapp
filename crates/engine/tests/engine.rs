@@ -1,4 +1,4 @@
-//! Behaviour tests for the show engine.
+//! Behavior tests for the show engine.
 
 use lumora_engine::persist::{load_json, save_json};
 use lumora_engine::*;

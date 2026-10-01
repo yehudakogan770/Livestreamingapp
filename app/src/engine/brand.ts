@@ -126,7 +126,7 @@ export const LOOKS: { name: string; look: Partial<Brand> }[] = [
     look: { font: 'Segoe UI', design: 'underline', boxOn: false, weight: 700, outline: 0, shadow: true, accent: '#f2b233', entrance: 'fade' },
   },
   {
-    name: 'Centre stage',
+    name: 'Center stage',
     look: {
       font: 'David Libre',
       design: 'box',

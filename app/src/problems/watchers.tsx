@@ -1,5 +1,5 @@
 // Watch the parts of the app that can go wrong on their own (sound devices,
-// output windows, displays, the engine) and report to the problem centre.
+// output windows, displays, the engine) and report to the problem center.
 
 import { useEffect, useRef } from 'react';
 import type { EngineClient } from '../engine/client';
@@ -34,7 +34,10 @@ export function SoundWatcher({ show }: { show: Show }) {
             level: 'error',
             title: `${src.name}: no sound`,
             detail: src.kind.type === 'microphone' ? 'The microphone could not be opened, or it was unplugged.' : 'The sound in this file could not be played.',
-            fix: src.kind.type === 'microphone' ? 'Check its cable and that Lumora is allowed to use it, then choose it again with + Add input.' : 'Check the file still exists and plays in another program.',
+            fix:
+              src.kind.type === 'microphone'
+                ? 'Check its cable and that Lumora is allowed to use it, then choose it again with + Add input.'
+                : 'Check the file still exists and plays in another program.',
             sourceId: src.id,
           });
         } else store.clear(me, key);

@@ -51,7 +51,7 @@ export const TEMPLATES: { name: string; parts: Part[] }[] = [
     ],
   },
   {
-    name: 'Centre title',
+    name: 'Center title',
     parts: [
       { kind: 'box', x: 20, y: 38, w: 60, h: 24, color: '#000000', opacity: 0.6, radius: 2, entrance: 'grow' },
       { kind: 'text', x: 22, y: 40, w: 56, h: 12, text: 'Welcome', size: 9, align: 'center', weight: 800, shadow: true, entrance: 'rise', delayMs: 150 },

@@ -1,4 +1,4 @@
-//! Behaviour tests for overlay channels.
+//! Behavior tests for overlay channels.
 
 use lumora_engine::persist::{load_json, save_json};
 use lumora_engine::*;

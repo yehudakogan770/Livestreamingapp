@@ -1,4 +1,4 @@
-//! Behaviour tests for sound: channels, mixes, solo and outputs.
+//! Behavior tests for sound: channels, mixes, solo and outputs.
 
 use lumora_engine::persist::{load_json, save_json};
 use lumora_engine::*;

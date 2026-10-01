@@ -21,7 +21,7 @@ export const MIDI_FUNCTIONS: MidiFunction[] = [
   { id: 'take', name: 'TAKE', kind: 'button', group: 'Switching' },
   { id: 'cut', name: 'CUT', kind: 'button', group: 'Switching' },
   { id: 'tbar', name: 'T-bar', kind: 'fader', group: 'Switching' },
-  ...inputs(4, 'fav', (i) => `Favourite transition ${i}`, 'Switching'),
+  ...inputs(4, 'fav', (i) => `Favorite transition ${i}`, 'Switching'),
   { id: 'ftb', name: 'Fade to black', kind: 'button', group: 'Switching' },
   { id: 'blank', name: 'Blank on / off', kind: 'button', group: 'Switching' },
   ...inputs(12, 'next', (i) => `Input ${i} to Next`, 'Inputs'),

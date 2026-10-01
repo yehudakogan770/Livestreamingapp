@@ -207,7 +207,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
                 {logo.playing ? '❚❚' : '▶'}
               </button>
               <Slider
-                label={logo.playing && logo.motion === 'spin' ? 'Start angle' : logo.playing ? 'Centre angle' : 'Angle'}
+                label={logo.playing && logo.motion === 'spin' ? 'Start angle' : logo.playing ? 'Center angle' : 'Angle'}
                 value={logo.angle}
                 min={-180}
                 max={180}

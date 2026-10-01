@@ -1,4 +1,4 @@
-//! Behaviour tests for the stage monitor, the event, and countdown inputs.
+//! Behavior tests for the stage monitor, the event, and countdown inputs.
 
 use lumora_engine::persist::{load_json, save_json};
 use lumora_engine::*;

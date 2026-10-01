@@ -188,7 +188,7 @@ export function balanceGains(temperature: number, tint: number): [number, number
 
 /**
  * Auto white balance: the temperature and tint that make the average of
- * the picture grey. `rgb` is its average color (0 – 1).
+ * the picture gray. `rgb` is its average color (0 – 1).
  */
 export function autoBalance([r, g, b]: [number, number, number]): { temperature: number; tint: number } {
   if (r + b <= 0 || g <= 0) return { temperature: 5600, tint: 0 };

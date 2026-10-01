@@ -1,4 +1,4 @@
-//! Behaviour tests for web page inputs.
+//! Behavior tests for web page inputs.
 
 use lumora_engine::browser::{clean_url, BrowserInput};
 use lumora_engine::*;

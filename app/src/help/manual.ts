@@ -63,7 +63,7 @@ export const MANUAL: Topic[] = [
       '4. The fader: drag it from the left to mix by hand. Once the mix is complete it springs back to the left, ready for the next one.',
       '• Fade to black fades the screen out (and back).',
       '• Back = Live makes the Back Screen follow the Live Screen.',
-      'Tip: Ctrl + 1 – 4 takes with your favourite transitions.',
+      'Tip: Ctrl + 1 – 4 takes with your favorite transitions.',
     ],
   },
   {

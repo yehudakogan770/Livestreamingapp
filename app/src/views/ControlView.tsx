@@ -180,7 +180,7 @@ export function ControlView({
   // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · Shift+1–4 overlays · B blank this screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      // Ctrl + 1 – 4: TAKE with a favourite transition.
+      // Ctrl + 1 – 4: TAKE with a favorite transition.
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && /^Digit[1-4]$/.test(e.code) && !typing(e.target)) {
         const t = show.settings.favouriteTransitions[Number(e.code.slice(5)) - 1];
         const sc = show.screens[screen];
@@ -403,6 +403,7 @@ export function ControlView({
           sources={show.sources}
           initialKind={addStart.kind}
           initialTemplate={addStart.template}
+          screen={screen}
         />
       )}
       {shortcuts && <ShortcutsDialog jewish={jewishToolsOn(show)} onClose={() => setShortcuts(false)} />}
@@ -466,7 +467,7 @@ function useFitLayout() {
     const measure = () => {
       const H = w.clientHeight;
       const W = w.clientWidth;
-      const centre = w.querySelector<HTMLElement>('.stage > .centre');
+      const centre = w.querySelector<HTMLElement>('.stage > .center');
       if (!centre) {
         w.style.removeProperty('--stage-h');
         return;

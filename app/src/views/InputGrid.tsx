@@ -503,7 +503,7 @@ function TileMenu({
   );
 }
 
-/** Tells the problem centre when a stream input isn't coming in. */
+/** Tells the problem center when a stream input isn't coming in. */
 function StreamProblems({ show, client }: { show: Show; client: EngineClient }) {
   const streams = show.sources.filter((s) => s.kind.type === 'stream');
   const status = useStreamStatus(client);

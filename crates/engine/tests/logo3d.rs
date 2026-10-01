@@ -1,4 +1,4 @@
-//! Behaviour tests for 3D logos.
+//! Behavior tests for 3D logos.
 
 use lumora_engine::logo3d::{Logo3d, LogoMaterial};
 use lumora_engine::*;

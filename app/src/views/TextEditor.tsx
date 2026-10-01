@@ -203,7 +203,7 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
             <div className="seg-group">
               {(['left', 'center', 'right'] as const).map((a) => (
                 <button key={a} type="button" className="seg" aria-pressed={s.align === a} onClick={() => style({ align: a })}>
-                  {a === 'left' ? 'Left' : a === 'center' ? 'Centre' : 'Right'}
+                  {a === 'left' ? 'Left' : a === 'center' ? 'Center' : 'Right'}
                 </button>
               ))}
             </div>

@@ -495,7 +495,7 @@ pub struct Settings {
     /// How long "Fade to black" takes, ms.
     #[serde(default = "default_ftb")]
     pub fade_to_black_ms: u32,
-    /// The four favourite transition buttons.
+    /// The four favorite transition buttons.
     #[serde(default = "default_favourites")]
     pub favourite_transitions: Vec<Transition>,
     /// The multiview screen: which display it goes to, and its layout.
@@ -534,7 +534,7 @@ fn default_ftb() -> u32 {
     2000
 }
 
-/// The favourite transition buttons to start with.
+/// The favorite transition buttons to start with.
 pub fn default_favourites() -> Vec<Transition> {
     [
         (TransitionKind::Fade, 800),

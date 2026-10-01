@@ -83,7 +83,7 @@ describe('when a screen crashes', () => {
   });
 });
 
-describe('the problem centre hears about it at once', () => {
+describe('the problem center hears about it at once', () => {
   it('a picture that fails is listed with what to do, and the light turns red', () => {
     const store = new ProblemStore();
     const { container } = render(

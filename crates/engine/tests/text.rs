@@ -1,4 +1,4 @@
-//! Behaviour tests for text inputs (lower thirds, titles, tickers).
+//! Behavior tests for text inputs (lower thirds, titles, tickers).
 
 use lumora_engine::persist::{load_json, save_json};
 use lumora_engine::*;

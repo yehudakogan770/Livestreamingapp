@@ -1296,9 +1296,7 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 .settings
                 .favourite_transitions
                 .get_mut(index)
-                .ok_or_else(|| {
-                    ActionError::invalid("index", "there are 4 favourite transitions")
-                })?;
+                .ok_or_else(|| ActionError::invalid("index", "there are 4 favorite transitions"))?;
             *slot = transition.clamped();
             Ok(())
         }

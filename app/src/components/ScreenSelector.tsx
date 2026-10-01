@@ -23,7 +23,7 @@ export function screenStatus(show: Show | null, id: ScreenId): Status {
 
 const LABEL: Record<Status, string> = { 'on-air': 'ON AIR', following: 'FOLLOWS LIVE', blank: 'BLANK', dimmed: 'DIMMED', idle: 'EMPTY' };
 
-/** Choose which screen you are controlling. The centre of the design; F1–F3 work anywhere. */
+/** Choose which screen you are controlling. The center of the design; F1–F3 work anywhere. */
 export function ScreenSelector({ show, selected, onSelect }: { show: Show | null; selected: ScreenId; onSelect: (id: ScreenId) => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -43,14 +43,7 @@ export function ScreenSelector({ show, selected, onSelect }: { show: Show | null
       {SCREENS.map((s) => {
         const status = screenStatus(show, s.id);
         return (
-          <button
-            key={s.id}
-            type="button"
-            role="tab"
-            aria-selected={selected === s.id}
-            className="selector__tab"
-            onClick={() => onSelect(s.id)}
-          >
+          <button key={s.id} type="button" role="tab" aria-selected={selected === s.id} className="selector__tab" onClick={() => onSelect(s.id)}>
             <span className="selector__name">{s.name}</span>
             <span className="selector__meta">
               <span className={`selector__badge selector__badge--${status}`}>{LABEL[status]}</span>

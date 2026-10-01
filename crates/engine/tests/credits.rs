@@ -1,4 +1,4 @@
-//! Behaviour tests for credits.
+//! Behavior tests for credits.
 
 use lumora_engine::*;
 

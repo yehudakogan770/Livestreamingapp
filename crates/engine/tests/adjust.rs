@@ -1,4 +1,4 @@
-//! Behaviour tests for picture adjustments.
+//! Behavior tests for picture adjustments.
 
 use lumora_engine::adjust::Adjust;
 use lumora_engine::*;

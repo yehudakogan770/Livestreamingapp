@@ -915,7 +915,7 @@ function apply(s: Show, a: Action, now: number) {
       s.settings.fadeToBlackMs = Math.min(10_000, Math.max(100, a.ms));
       return;
     case 'setFavouriteTransition':
-      if (a.index < 0 || a.index > 3) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 4 favourite transitions' });
+      if (a.index < 0 || a.index > 3) throw new Refused({ code: 'invalidValue', field: 'index', reason: 'there are 4 favorite transitions' });
       s.settings.favouriteTransitions[a.index] = {
         kind: a.transition.kind,
         durationMs: Math.min(MAX_TRANSITION_MS, Math.max(MIN_TRANSITION_MS, a.transition.durationMs)),

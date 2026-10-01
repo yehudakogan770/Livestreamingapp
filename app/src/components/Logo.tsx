@@ -1,7 +1,7 @@
 import type { ScreenId } from '../engine/types/ScreenId';
 
 // The iris-blades mark. Three blades for the three screens; the lit blade is
-// the screen being controlled; the red centre is "on air".
+// the screen being controlled; the red center is "on air".
 const BLADES = [
   'M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z',
   'M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z',

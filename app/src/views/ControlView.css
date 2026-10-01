@@ -930,22 +930,43 @@ select {
 
 .addinput__body {
   display: grid;
-  grid-template-columns: 330px minmax(0, 1fr);
+  grid-template-columns: 480px minmax(0, 1fr);
   min-height: 0;
   overflow: auto;
 }
 .addinput__kinds {
-  /* Every kind at once, in two columns (the description shows on the right). */
+  /* Every kind at once, grouped by what it is for, in three columns (the description shows on the right). */
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-content: start;
-  gap: 4px;
-  padding: 12px;
+  gap: 3px 4px;
+  padding: 4px 12px 12px;
   border-right: 1px solid var(--border);
+}
+.addinput__group {
+  grid-column: 1 / -1;
+  margin: 8px 0 1px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.addinput__group--best {
+  color: var(--accent);
+}
+.addinput__note {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--well);
+  font-size: 12px;
+  color: var(--text-dim);
 }
 .addinput__kind {
   min-width: 0;
-  padding: 6px 8px;
+  padding: 5px 8px;
   font-size: 13px;
   border-radius: 6px;
   border: 1px solid var(--border);

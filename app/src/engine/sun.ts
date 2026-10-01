@@ -21,7 +21,7 @@ const transit = (ds: number, M: number, L: number) => J2000 + ds + 0.0053 * Math
 export interface SunDay {
   /** Midday (the sun at its highest), ms. */
   noon: number;
-  /** When the sun's centre is `deg` degrees below the horizon: morning and evening, ms (null if it never is). */
+  /** When the sun's center is `deg` degrees below the horizon: morning and evening, ms (null if it never is). */
   at(deg: number): { rise: number; set: number } | null;
 }
 

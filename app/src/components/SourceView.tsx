@@ -58,14 +58,14 @@ export interface SourceViewProps {
    * error message; the control window shows the warning instead.
    */
   audience?: boolean;
-  /** Report failures to the problem centre (off for previews of something not added yet). */
+  /** Report failures to the problem center (off for previews of something not added yet). */
   report?: boolean;
 }
 
 /** Draws one source filling its box. */
 export function SourceView(props: SourceViewProps) {
   const { source, report = true } = props;
-  // Lets a failure below say which input it is about (for the problem centre).
+  // Lets a failure below say which input it is about (for the problem center).
   return (
     <Who.Provider value={report ? { id: source.id, name: source.name, kind: source.kind.type } : null}>
       <SourceBody {...props} />

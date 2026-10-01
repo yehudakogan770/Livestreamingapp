@@ -28,7 +28,7 @@ const WEIGHTS: [number, string][] = [
 /** Quick places for name titles: side %, bottom %, alignment. */
 const SPOTS: { name: string; x: number; y: number; align: Brand['align'] }[] = [
   { name: 'Bottom left', x: 5, y: 10, align: 'left' },
-  { name: 'Bottom centre', x: 5, y: 8, align: 'center' },
+  { name: 'Bottom center', x: 5, y: 8, align: 'center' },
   { name: 'Bottom right', x: 5, y: 10, align: 'right' },
   { name: 'Top left', x: 5, y: 78, align: 'left' },
   { name: 'Top right', x: 5, y: 78, align: 'right' },
@@ -230,7 +230,7 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
           {segs<Brand['align']>(
             [
               ['left', 'Left'],
-              ['center', 'Centre'],
+              ['center', 'Center'],
               ['right', 'Right'],
             ],
             b.align,

@@ -1,4 +1,4 @@
-// Luma wipes: each pattern is a grey picture (0 black – 1 white); the new
+// Luma wipes: each pattern is a gray picture (0 black – 1 white); the new
 // source shows first where the pattern is darkest, spreading to the lightest.
 // The masks are made here once and used by the screens and the recorder.
 
@@ -8,7 +8,7 @@ export type LumaPattern = 'lumaClock' | 'lumaCircle' | 'lumaBlinds' | 'lumaDiago
 
 export const isLuma = (k: TransitionKind): k is LumaPattern => k.startsWith('luma');
 
-/** The pattern's grey value at (u, v), both 0 – 1 across the frame. */
+/** The pattern's gray value at (u, v), both 0 – 1 across the frame. */
 export function lumaValue(p: LumaPattern, u: number, v: number): number {
   const x = (u - 0.5) * (16 / 9);
   const y = v - 0.5;

@@ -355,7 +355,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
               <span className="vis__desc">{BANKS[bank]?.desc}</span>
               <span className="vis__spacer" />
               <button type="button" className={`btn vis__favbtn${favOnly ? ' is-on' : ''}`} onClick={() => setFavOnly(!favOnly)}>
-                ★ Favourites
+                ★ Favorites
               </button>
             </div>
             <div className="vis__scenes">
@@ -372,7 +372,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
                       <button
                         type="button"
                         className={`vis__star${favs.has(`${bank}:${i}`) ? ' is-on' : ''}`}
-                        aria-label={`Favourite ${s[0]}`}
+                        aria-label={`Favorite ${s[0]}`}
                         aria-pressed={favs.has(`${bank}:${i}`)}
                         onClick={() => toggleFav(ref)}
                       >
@@ -746,7 +746,7 @@ function LogoTab({ v, hasLogo, setLogo }: { v: Visuals; hasLogo: boolean; setLog
           {(
             [
               ['corner', 'Corner'],
-              ['centre', 'Centre'],
+              ['centre', 'Center'],
               ['bottom', 'Bottom'],
             ] as const
           ).map(([id, name]) => (

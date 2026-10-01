@@ -187,9 +187,9 @@ export interface EngineClient {
   eventFiles(): Promise<EventFiles>;
   watchEventFiles(onChange: (f: EventFiles) => void): () => void;
   newEvent(): Promise<void>;
-  /** Open an event file (asks which one when no path is given). Resolves false if cancelled. */
+  /** Open an event file (asks which one when no path is given). Resolves false if canceled. */
   openEvent(path?: string): Promise<boolean>;
-  /** Save the event to a file the operator chooses. Resolves the path, or null if cancelled. */
+  /** Save the event to a file the operator chooses. Resolves the path, or null if canceled. */
   saveEventAs(): Promise<string | null>;
 
   // ----- phone remote -----
@@ -198,7 +198,7 @@ export interface EngineClient {
   setRemote(on: boolean): Promise<RemoteStatus>;
   /** A new PIN; connected phones have to type it again. */
   newRemotePin(): Promise<RemoteStatus>;
-  /** Choose a data file (CSV or JSON) where it is: it is read again as it changes. Null if cancelled. */
+  /** Choose a data file (CSV or JSON) where it is: it is read again as it changes. Null if canceled. */
   pickDataFile(): Promise<string | null>;
   /** Read the data file's text. */
   readDataFile(path: string): Promise<string>;
@@ -214,7 +214,7 @@ export interface EngineClient {
   setCaptureSettings(s: CaptureSettings): Promise<CaptureSettings>;
   /** The folder recordings go to. */
   captureFolder(): Promise<string>;
-  /** Ask the operator for a folder. Resolves null if cancelled. */
+  /** Ask the operator for a folder. Resolves null if canceled. */
   pickFolder(): Promise<string | null>;
   /** Start a recording or stream of what the encoder makes (`mime`); `name` names the file. */
   captureStart(kind: CaptureKind, mime: string, name: string): Promise<CaptureRunning>;
@@ -223,9 +223,9 @@ export interface EngineClient {
   captureStop(session: number): Promise<void>;
 
   // ----- files -----
-  /** Ask the operator for a video or picture file. Resolves to its path, or null if cancelled. */
+  /** Ask the operator for a video or picture file. Resolves to its path, or null if canceled. */
   pickFile(kind: MediaKind): Promise<{ path: string; name: string } | null>;
-  /** Ask for several files at once (e.g. slides). Resolves [] if cancelled. */
+  /** Ask for several files at once (e.g. slides). Resolves [] if canceled. */
   pickFiles(kind: MediaKind): Promise<{ path: string; name: string }[]>;
   /** A URL the page can load a file path from. */
   mediaUrl(path: string): string;
@@ -247,13 +247,13 @@ export interface EngineClient {
   // ----- library (kept on this computer) -----
   libraryItems(): Promise<LibraryItem[]>;
   saveLibrary(items: LibraryItem[]): Promise<void>;
-  /** Save items to a file the operator chooses (to take to another computer). Resolves false if cancelled. */
+  /** Save items to a file the operator chooses (to take to another computer). Resolves false if canceled. */
   exportLibrary(items: LibraryItem[]): Promise<boolean>;
-  /** Read items from a file the operator chooses. Resolves [] if cancelled. */
+  /** Read items from a file the operator chooses. Resolves [] if canceled. */
   importLibrary(): Promise<LibraryItem[]>;
 
   // ----- video export (the 3D logo maker) -----
-  /** Ask where to save a video. Resolves null if cancelled. */
+  /** Ask where to save a video. Resolves null if canceled. */
   chooseVideoFile(name: string, format: VideoFormat): Promise<string | null>;
   exportStart(settings: { path: string; width: number; height: number; fps: number; format: VideoFormat }): Promise<number>;
   /** One frame of raw RGBA pixels. */

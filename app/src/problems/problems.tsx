@@ -1,4 +1,4 @@
-// The problem centre: anything wrong anywhere in the app is reported here the
+// The problem center: anything wrong anywhere in the app is reported here the
 // moment it happens, shown as a light on the bottom bar, a message, and a
 // list with what to do about it.
 

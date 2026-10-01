@@ -14,7 +14,7 @@ describe('picture adjustments', () => {
     expect(r).toBeGreaterThan(1);
     expect(b).toBeLessThan(1);
   });
-  it('auto white balance makes a color cast grey', () => {
+  it('auto white balance makes a color cast gray', () => {
     const cast: [number, number, number] = [0.6, 0.5, 0.4];
     const { temperature, tint } = autoBalance(cast);
     const g = balanceGains(temperature, tint);

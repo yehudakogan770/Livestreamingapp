@@ -297,7 +297,7 @@ export function InputSettings({
                     type="button"
                     className="btn"
                     onClick={autoWb}
-                    title="Makes the average of the picture neutral: point the camera at something white or grey first"
+                    title="Makes the average of the picture neutral: point the camera at something white or gray first"
                   >
                     Auto white balance
                   </button>

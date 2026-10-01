@@ -21,7 +21,7 @@ export interface ExportOptions {
 export const keepsTransparency = (f: VideoFormat) => f !== 'mp4';
 
 /**
- * Make the video. `onProgress` gets 0 – 1; `cancelled()` stops it (the
+ * Make the video. `onProgress` gets 0 – 1; `canceled()` stops it (the
  * half-made file is removed). Resolves the file's path.
  */
 export async function exportLogoVideo(
@@ -50,7 +50,7 @@ export async function exportLogoVideo(
     for (let i = 0; i < frames; i++) {
       if (cancelled()) {
         await client.exportCancel(session);
-        throw new Error('Export cancelled.');
+        throw new Error('Export canceled.');
       }
       const t = (i * 1000) / o.fps;
       g.clearRect(0, 0, o.width, o.height);

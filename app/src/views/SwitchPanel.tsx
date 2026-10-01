@@ -87,9 +87,9 @@ export const DURATIONS = [300, 500, 800, 1200, 2000, 3000];
 const secs = (ms: number) => `${(ms / 1000).toFixed(ms % 1000 === 0 ? 0 : 1)}s`;
 
 /**
- * TAKE, CUT, the T-bar and the four favourite transitions — the everyday
+ * TAKE, CUT, the T-bar and the four favorite transitions — the everyday
  * controls. The transition choice is one button that opens everything
- * else (every transition, lengths, the favourites, Fade to black's length).
+ * else (every transition, lengths, the favorites, Fade to black's length).
  */
 export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; screen: ScreenId; act: Act; onStingers?: () => void }) {
   const sc = show.screens[screen];
@@ -97,7 +97,7 @@ export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; scr
   const hasPreview = sc.preview !== null && sc.preview !== sc.program;
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  // The panel floats over the page next to its button (the centre column scrolls and would cut it off).
+  // The panel floats over the page next to its button (the center column scrolls and would cut it off).
   const [at, setAt] = useState<React.CSSProperties>({});
   useLayoutEffect(() => {
     if (!open || !box.current) return;
@@ -184,10 +184,10 @@ export function SwitchPanel({ show, screen, act, onStingers }: { show: Show; scr
 export const transitionName = (t: { kind: TransitionKind; durationMs: number }) =>
   `${KINDS.find((k) => k.kind === t.kind)?.name ?? t.kind}${t.kind === 'cut' ? '' : ` ${secs(t.durationMs)}`}`;
 
-/** Four favourite transitions: one click takes Next to air with that one. */
+/** Four favorite transitions: one click takes Next to air with that one. */
 function Favourites({ show, screen, act, disabled }: { show: Show; screen: ScreenId; act: Act; disabled: boolean }) {
   return (
-    <div className="switch__favrow" role="group" aria-label="Favourites">
+    <div className="switch__favrow" role="group" aria-label="Favorites">
       {show.settings.favouriteTransitions.map((t, i) => (
         <button
           key={i}
@@ -204,14 +204,14 @@ function Favourites({ show, screen, act, disabled }: { show: Show; screen: Scree
   );
 }
 
-/** Change the four favourite buttons. */
+/** Change the four favorite buttons. */
 function FavouritesEditor({ show, act }: { show: Show; act: Act }) {
   const [editing, setEditing] = useState<number | null>(null);
   const favs = show.settings.favouriteTransitions;
   const f = editing === null ? null : favs[editing];
   return (
     <div className="switch__favs">
-      <span className="switch__label">Favourite buttons — click one to change it</span>
+      <span className="switch__label">Favorite buttons — click one to change it</span>
       <div className="switch__favrow">
         {favs.map((t, i) => (
           <button
@@ -219,7 +219,7 @@ function FavouritesEditor({ show, act }: { show: Show; act: Act }) {
             type="button"
             className="seg seg--small"
             aria-pressed={editing === i}
-            aria-label={`Change favourite ${i + 1}`}
+            aria-label={`Change favorite ${i + 1}`}
             onClick={() => setEditing(editing === i ? null : i)}
           >
             {transitionName(t)}
@@ -227,9 +227,9 @@ function FavouritesEditor({ show, act }: { show: Show; act: Act }) {
         ))}
       </div>
       {f && editing !== null && (
-        <div className="switch__favpick" role="group" aria-label={`Favourite ${editing + 1}`}>
+        <div className="switch__favpick" role="group" aria-label={`Favorite ${editing + 1}`}>
           <KindPicker
-            label="Favourite transition"
+            label="Favorite transition"
             value={f.kind}
             onPick={(kind) => act({ type: 'setFavouriteTransition', index: editing, transition: { ...f, kind } })}
           />

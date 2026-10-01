@@ -1972,7 +1972,7 @@ export class ProgramCompositor {
     if (logo) this.centred(logo, w * 0.5, h * 0.5, w, h);
   }
 
-  /** Draw a picture centred, no bigger than maxW × maxH. */
+  /** Draw a picture centered, no bigger than maxW × maxH. */
   private centred(el: HTMLImageElement, maxW: number, maxH: number, w: number, h: number, scale = 1) {
     if (!el.complete || !el.naturalWidth) return;
     const s = Math.min(maxW / el.naturalWidth, maxH / el.naturalHeight, 1) * scale;
@@ -2512,7 +2512,7 @@ export class ProgramCompositor {
     if (strip) this.pesukimStrip(words, place.word, look.textColor, font, w, h);
   }
 
-  /** "Pasuk 3" and the child's name, centred on (x, y). */
+  /** "Pasuk 3" and the child's name, centered on (x, y). */
   private pesukimIntro(n: number, child: string, big: number, x: number, y: number, since: number) {
     const ctx = this.ctx;
     const t = ease(clamp01(since / 400));

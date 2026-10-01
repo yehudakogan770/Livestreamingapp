@@ -1,4 +1,4 @@
-//! Behaviour tests for presets and preset buttons.
+//! Behavior tests for presets and preset buttons.
 
 use lumora_engine::persist::{load_json, save_json};
 use lumora_engine::*;

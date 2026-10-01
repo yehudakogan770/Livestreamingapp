@@ -1,4 +1,4 @@
-//! Behaviour tests for the 12 Pesukim input.
+//! Behavior tests for the 12 Pesukim input.
 
 use lumora_engine::persist::{load_json, save_json};
 use lumora_engine::pesukim::words_of;

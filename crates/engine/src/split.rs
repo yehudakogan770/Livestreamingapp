@@ -36,7 +36,7 @@ impl SplitLayout {
         let half = (100.0 - 3.0 * g) / 2.0;
         match self {
             SplitLayout::SideBySide => {
-                // Two 16:9 pictures side by side, centred.
+                // Two 16:9 pictures side by side, centered.
                 let w = half;
                 let h = w * (16.0 / 9.0) * (9.0 / 16.0);
                 let y = (100.0 - h) / 2.0;

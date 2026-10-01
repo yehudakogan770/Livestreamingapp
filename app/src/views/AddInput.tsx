@@ -23,6 +23,7 @@ import type { SourceKind } from '../engine/types/SourceKind';
 import type { Source } from '../engine/types/Source';
 import { SourceView } from '../components/SourceView';
 import { defaultPesukim } from '../engine/pesukim';
+import type { ScreenId } from '../engine/types/ScreenId';
 import { JEWISH_KINDS, jewishToolsOn } from '../engine/jewishTools';
 import { TEXT_TEMPLATES } from '../engine/text';
 import { defaultCredits, parseNames } from '../engine/credits';
@@ -71,6 +72,28 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
 
+/** What each input is for: the list is shown in these groups. */
+const GROUPS: { name: string; kinds: Kind[] }[] = [
+  { name: 'Cameras and people', kinds: ['camera', 'stream', 'guest', 'screen'] },
+  { name: 'Videos, pictures and slides', kinds: ['video', 'image', 'slideshow', 'browser', 'color', 'pattern'] },
+  { name: 'Text and titles', kinds: ['text', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'pesukim', 'scripture', 'zmanim'] },
+  { name: 'The audience’s phones', kinds: ['poll', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
+  { name: 'Layouts and visuals', kinds: ['split', 'visuals', 'logo3d'] },
+  { name: 'Sound', kinds: ['microphone', 'sound'] },
+];
+
+/** For each screen: the best inputs for it (shown first), then the groups in the order that suits it. */
+const FOR_SCREEN: Record<ScreenId, { title: string; best: Kind[]; order: number[]; note?: string }> = {
+  live: { title: 'Best for the Live Screen', best: ['camera', 'text', 'countdown', 'guest', 'video', 'split'], order: [0, 2, 1, 4, 3, 5] },
+  back: { title: 'Best for the Back Screen', best: ['slideshow', 'visuals', 'video', 'image', 'countdown', 'wall'], order: [1, 4, 2, 3, 0, 5] },
+  monitor: {
+    title: 'Goes with the Monitor',
+    best: ['countdown', 'lyrics', 'text'],
+    order: [2, 1, 0, 3, 4, 5],
+    note: 'The Monitor shows words only (messages, the clock, the countdown, song lines). What you add here is ready for the Live and Back Screens.',
+  },
+};
+
 const SWATCHES = ['#000000', '#ffffff', '#1f6f79', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
 
 /** Choose what kind of input to add, set it up, and add it. */
@@ -81,6 +104,7 @@ export function AddInput({
   sources = [],
   initialKind,
   initialTemplate,
+  screen = 'live',
 }: {
   client: EngineClient;
   onAdd: (source: NewSource) => void;
@@ -90,10 +114,19 @@ export function AddInput({
   /** Open on this kind (from the menu bar). */
   initialKind?: string;
   initialTemplate?: number;
+  /** The screen being controlled: the inputs that suit it come first. */
+  screen?: ScreenId;
 }) {
-  const [kind, setKind] = useState<Kind>(() => (KINDS.some((k) => k.kind === initialKind) ? (initialKind as Kind) : 'camera'));
+  const forScreen = FOR_SCREEN[screen];
+  const [kind, setKind] = useState<Kind>(() => (KINDS.some((k) => k.kind === initialKind) ? (initialKind as Kind) : forScreen.best[0]!));
   // The Jewish event tools only when switched on (Settings) or already used.
   const kinds = jewishToolsOn({ sources }) ? KINDS : KINDS.filter((k) => !JEWISH_KINDS.includes(k.kind) || k.kind === initialKind);
+  // The best for this screen first, then each group (without repeating those).
+  const pick = (list: Kind[]) => list.map((id) => kinds.find((k) => k.kind === id)).filter((k) => k !== undefined);
+  const kindGroups = [
+    { name: forScreen.title, best: true, items: pick(forScreen.best) },
+    ...forScreen.order.map((g) => ({ name: GROUPS[g]!.name, best: false, items: pick(GROUPS[g]!.kinds.filter((x) => !forScreen.best.includes(x))) })),
+  ].filter((sec) => sec.items.length);
   const [name, setName] = useState('');
   const [path, setPath] = useState<string | null>(null);
   const [color, setColor] = useState('#1f6f79');
@@ -279,31 +312,37 @@ export function AddInput({
         </header>
         <div className="addinput__body">
           <nav className="addinput__kinds" aria-label="Input type">
-            {kinds.map((k) => (
-              <button
-                key={k.kind}
-                type="button"
-                className="addinput__kind"
-                title={k.hint}
-                aria-pressed={kind === k.kind}
-                onClick={() => {
-                  if (k.kind === 'logo3d') {
-                    // Made in its own window.
-                    onClose();
-                    sendCommand({ type: 'logoMaker' });
-                    return;
-                  }
-                  setKind(k.kind);
-                  setPath(null);
-                  setName('');
-                  setCams(null);
-                  setCam(null);
-                  setCamErr(null);
-                }}
-              >
-                <strong>{k.name}</strong>
-              </button>
-            ))}
+            {forScreen.note && <p className="addinput__note">{forScreen.note}</p>}
+            {kindGroups.map((sec) => [
+              <h3 key={sec.name} className={`addinput__group${sec.best ? ' addinput__group--best' : ''}`}>
+                {sec.name}
+              </h3>,
+              ...sec.items.map((k) => (
+                <button
+                  key={k.kind}
+                  type="button"
+                  className="addinput__kind"
+                  title={k.hint}
+                  aria-pressed={kind === k.kind}
+                  onClick={() => {
+                    if (k.kind === 'logo3d') {
+                      // Made in its own window.
+                      onClose();
+                      sendCommand({ type: 'logoMaker' });
+                      return;
+                    }
+                    setKind(k.kind);
+                    setPath(null);
+                    setName('');
+                    setCams(null);
+                    setCam(null);
+                    setCamErr(null);
+                  }}
+                >
+                  <strong>{k.name}</strong>
+                </button>
+              )),
+            ])}
           </nav>
           <div className="addinput__setup">
             <p className="addinput__what">
