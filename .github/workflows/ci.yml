@@ -48,7 +48,7 @@ jobs:
       LUMORA_VERSION: 0.1.${{ github.run_number }}
       # Signs the update so the app only installs real Lumora updates
       # (a repository secret; without it the installer is still made).
-      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      SIGNING_KEY_AS_PASTED: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
     steps:
       - uses: actions/checkout@v4
@@ -64,12 +64,33 @@ jobs:
       - name: Set the version (and signing)
         shell: bash
         run: |
+          # Spaces, line breaks or quotes picked up when pasting the key are
+          # removed; a key that still can't be read builds without signing.
+          key=$(printf '%s' "$SIGNING_KEY_AS_PASTED" | tr -d " \t\r\n\"'")
+          inner=$(printf '%s' "$key" | base64 -d 2>/dev/null | sed -n 2p | base64 -d 2>/dev/null | wc -c)
+          if [ "$inner" = 158 ]; then
+            echo "TAURI_SIGNING_PRIVATE_KEY=$key" >> "$GITHUB_ENV"
+            echo "Signing key OK."
+          else
+            [ -n "$SIGNING_KEY_AS_PASTED" ] && echo "::warning::The TAURI_SIGNING_PRIVATE_KEY secret can't be read; building without update signing."
+            echo "LUMORA_NO_SIGNING=1" >> "$GITHUB_ENV"
+          fi
           node -e "
             const fs = require('fs');
             const f = 'src-tauri/tauri.conf.json';
             const c = JSON.parse(fs.readFileSync(f, 'utf8'));
             c.version = process.env.LUMORA_VERSION;
-            if (!process.env.TAURI_SIGNING_PRIVATE_KEY) c.bundle.createUpdaterArtifacts = false;
+            fs.writeFileSync(f, JSON.stringify(c, null, 2));
+          "
+      - name: No signing key, so no update files
+        if: env.LUMORA_NO_SIGNING == '1'
+        shell: bash
+        run: |
+          node -e "
+            const fs = require('fs');
+            const f = 'src-tauri/tauri.conf.json';
+            const c = JSON.parse(fs.readFileSync(f, 'utf8'));
+            c.bundle.createUpdaterArtifacts = false;
             fs.writeFileSync(f, JSON.stringify(c, null, 2));
           "
       - name: Build the installer
