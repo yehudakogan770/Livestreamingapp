@@ -19,6 +19,7 @@ export const MANUAL: Topic[] = [
     title: 'Start here: the main screen',
     keywords: 'overview begin first time layout next on air',
     body: [
+      '• Settings → Arrange the screen…: drag a part (Next, On air, the TAKE buttons, the inputs, the mixer) onto another to swap them, drag the dividers to resize, and put Presets left, right or away. Lumora remembers it.',
       'Lumora runs up to three screens at once: the Live Screen (the stream and recording), the Back Screen (the projector behind the stage) and the Monitor (text for the people on stage). The tabs at the top choose which one you are controlling (or press F1, F2, F3).',
       '• Next (left, green) is what you are getting ready. Nobody sees it yet.',
       '• On air (right, red) is what everyone sees now.',

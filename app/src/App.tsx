@@ -155,6 +155,7 @@ function ControlApp() {
         onClick: () => setRemoteOpen(true),
       },
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
+      { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
       null,
       ...TEXT_SIZES.map((t) => ({ label: `${t.id === textSize ? '● ' : '    '}Text size: ${t.name}`, onClick: () => setTextSize(t.id) })),
       null,

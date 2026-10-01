@@ -1,5 +1,5 @@
 import { branded, hasBrand } from '../engine/brand';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { EngineError, defaultCountdown, isSoundFile, type EngineClient } from '../engine/client';
 import type { Action } from '../engine/types/Action';
 import type { NewSource } from '../engine/types/NewSource';
@@ -12,6 +12,7 @@ import { CountdownCard, CountdownMini } from './CountdownCard';
 import { PesukimCard } from './PesukimCard';
 import { pesukimBar } from '../engine/pesukim';
 import { jewishToolsOn } from '../engine/jewishTools';
+import { setLayout, swapped, useLayout, DEFAULT_LAYOUT, type BottomPart, type TopPart } from '../engine/layout';
 import { OverlayBar } from './OverlayBar';
 import { CameraBar } from './CameraBar';
 import { useCommands, type Command } from './commands';
@@ -79,6 +80,10 @@ export function ControlView({
   const [stingers, setStingers] = useState(false);
   const [midiOpen, setMidiOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  // Arranging the screen: parts can be swapped and resized (nothing else moves them).
+  const layout = useLayout();
+  const [arranging, setArranging] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);
   useCommands(
     useCallback((c: Command) => {
       if (c.type === 'addInput') {
@@ -92,6 +97,7 @@ export function ControlView({
       else if (c.type === 'triggers') setTriggersOpen(true);
       else if (c.type === 'midi') setMidiOpen(true);
       else if (c.type === 'chat') setChatOpen((o) => !o);
+      else if (c.type === 'arrange') setArranging(true);
       else if (c.type === 'logoMaker') setLogoMaker({ id: c.id ?? null });
     }, []),
   );
@@ -225,6 +231,31 @@ export function ControlView({
   }, [act, adding, outputsOpen, runOpen, libraryOpen, visualsOpen, logoMaker, triggersOpen, screen, show]);
 
   const work = useFitLayout();
+  const bottomRef = useRef<HTMLElement>(null);
+  /** Swap two parts of the same row (by dragging one onto the other, or clicking one then the other). */
+  const swap = (group: 'top' | 'bottom', a: string, b: string) => {
+    if (a === b) return;
+    if (group === 'top') setLayout((l) => ({ top: swapped(l.top, a as TopPart, b as TopPart) }));
+    else setLayout((l) => ({ bottom: swapped(l.bottom, a as BottomPart, b as BottomPart) }));
+  };
+  const arr = (group: 'top' | 'bottom', part: string, label: string) =>
+    arranging ? (
+      <Arrange
+        group={group}
+        part={part}
+        label={label}
+        picked={picked}
+        onPick={(key) => {
+          if (picked && picked !== key && picked.split(':')[0] === group) {
+            swap(group, picked.split(':')[1]!, part);
+            setPicked(null);
+          } else setPicked(picked === key ? null : key);
+        }}
+        onDrop={(from) => swap(group, from, part)}
+      />
+    ) : null;
+  const topOrder = (p: TopPart) => ({ order: layout.top.indexOf(p) * 2 });
+  const bottomOrder = (p: BottomPart) => layout.bottom.indexOf(p) * 2;
   const sc = show.screens[screen];
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
   const name = SCREENS.find((s) => s.id === screen)?.name ?? '';
@@ -252,14 +283,30 @@ export function ControlView({
 
   return (
     <div className="control">
-      <div className="control__main">
-        <PresetsPanel show={show} client={client} act={act} />
-        <div className="control__work" ref={work}>
+      {arranging && (
+        <ArrangeBar
+          onDone={() => {
+            setArranging(false);
+            setPicked(null);
+          }}
+        />
+      )}
+      <div className={`control__main${arranging ? ' is-arranging' : ''}`}>
+        {layout.presets !== 'hidden' && (
+          <div className={`part part--presets${layout.presets === 'right' ? ' is-right' : ''}`} style={{ order: layout.presets === 'right' ? 2 : 0 }}>
+            <PresetsPanel show={show} client={client} act={act} />
+          </div>
+        )}
+        <div className="control__work" ref={work} style={{ order: 1 }} data-stage={layout.stage ?? undefined}>
           {screen === 'monitor' ? (
             <MonitorPanel show={show} act={act} />
           ) : (
-            <section className="stage">
-              <div className="mon mon--pvw">
+            <section
+              className="stage"
+              style={{ gridTemplateColumns: layout.top.map((p) => (p === 'controls' ? 'var(--centre-w)' : 'minmax(0, 1fr)')).join(' ') }}
+            >
+              <div className="mon mon--pvw" style={topOrder('next')}>
+                {arr('top', 'next', 'Next')}
                 <div className="mon__head">
                   <span className="dot dot--pvw" /> Next <em>{find(sc.preview)?.name ?? 'nothing lined up'}</em>
                 </div>
@@ -274,11 +321,13 @@ export function ControlView({
                   <CameraBar show={show} screen={screen} act={act} client={client} />
                 </div>
               </div>
-              <div className="centre">
+              <div className="centre" style={topOrder('controls')}>
+                {arr('top', 'controls', 'TAKE, CUT and controls')}
                 <SwitchPanel show={show} screen={screen} act={act} onStingers={() => setStingers(true)} />
                 <div className="centre__more">{cards.length ? cards.map(cardView) : cardView('none')}</div>
               </div>
-              <div className="mon mon--pgm">
+              <div className="mon mon--pgm" style={topOrder('program')}>
+                {arr('top', 'program', 'On air')}
                 <div className="mon__head">
                   <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
                   <button
@@ -319,9 +368,19 @@ export function ControlView({
             </section>
           )}
 
+          {screen !== 'monitor' && arranging && (
+            <Splitter
+              dir="row"
+              onMove={(_, y) => {
+                const r = work.current?.getBoundingClientRect();
+                if (r) setLayout({ stage: (y - r.top) / r.height });
+              }}
+            />
+          )}
           {screen !== 'monitor' && (
-            <section className="inputs-area">
-              <div className="inputs-area__grid">
+            <section className="inputs-area" ref={bottomRef}>
+              <div className="inputs-area__grid" style={{ order: bottomOrder('inputs') }}>
+                {arr('bottom', 'inputs', 'Inputs')}
                 <PresetButtons show={show} act={act} showAll={showAll} onShowAll={setShowAll} />
                 <InputGrid
                   show={show}
@@ -335,7 +394,21 @@ export function ControlView({
                   only={onlyInputs}
                 />
               </div>
-              <Mixer show={show} act={act} />
+              {arranging && (
+                <Splitter
+                  dir="column"
+                  style={{ order: 1 }}
+                  onMove={(x) => {
+                    const r = bottomRef.current?.getBoundingClientRect();
+                    if (!r) return;
+                    setLayout((l) => ({ mixer: l.bottom[1] === 'mixer' ? r.right - x - 12 : x - r.left - 12 }));
+                  }}
+                />
+              )}
+              <div className={`part part--mixer${layout.mixer ? ' is-sized' : ''}`} style={{ order: bottomOrder('mixer'), width: layout.mixer ?? undefined }}>
+                {arr('bottom', 'mixer', 'Sound mixer')}
+                <Mixer show={show} act={act} />
+              </div>
             </section>
           )}
         </div>
@@ -467,7 +540,7 @@ function useFitLayout() {
     const measure = () => {
       const H = w.clientHeight;
       const W = w.clientWidth;
-      const centre = w.querySelector<HTMLElement>('.stage > .center');
+      const centre = w.querySelector<HTMLElement>('.stage > .centre');
       if (!centre) {
         w.style.removeProperty('--stage-h');
         return;
@@ -487,8 +560,12 @@ function useFitLayout() {
       // (the card column starts 28px down, level with the switch buttons)
       const side = Math.max(monH(col * 2 + 10), 20 + Math.max(switchH, cardH + 28));
       const useSide = cardH > 0 && stacked > room && side < stacked;
-      const h = Math.round(Math.max(120, Math.min(useSide ? side : stacked, room)));
-      const key = `${h}|${useSide}`;
+      // Chosen by hand (Arrange the screen), or worked out from what is shown.
+      const fixed = Number(w.dataset.stage);
+      // (Never taller than the monitors can use: no empty band under them.)
+      const natural = useSide ? side : stacked;
+      const h = Math.round(Math.max(120, fixed ? Math.min(H * fixed, H - 120, natural) : Math.min(natural, room)));
+      const key = `${h}|${useSide}|${fixed}`;
       if (key !== last) {
         last = key;
         w.style.setProperty('--stage-h', `${h}px`);
@@ -511,4 +588,103 @@ function useFitLayout() {
     };
   }, []);
   return ref;
+}
+
+/** A part of the screen while arranging: drag it onto another (or click one, then the other) to swap them. */
+function Arrange({
+  group,
+  part,
+  label,
+  picked,
+  onPick,
+  onDrop,
+}: {
+  group: 'top' | 'bottom';
+  part: string;
+  label: string;
+  picked: string | null;
+  onPick: (key: string) => void;
+  onDrop: (from: string) => void;
+}) {
+  const key = `${group}:${part}`;
+  const type = `application/x-lumora-${group}`;
+  const [over, setOver] = useState(false);
+  return (
+    <button
+      type="button"
+      className={`arr${picked === key ? ' is-picked' : ''}${over ? ' is-over' : ''}${picked && picked !== key && picked.startsWith(`${group}:`) ? ' is-target' : ''}`}
+      draggable
+      onClick={() => onPick(key)}
+      onDragStart={(e) => {
+        e.dataTransfer.setData(type, part);
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      onDragOver={(e) => {
+        if (!e.dataTransfer.types.includes(type)) return;
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        setOver(false);
+        const from = e.dataTransfer.getData(type);
+        if (from) onDrop(from);
+      }}
+    >
+      <span className="arr__label">⠿ {label}</span>
+      <span className="arr__hint">{picked === key ? 'Now click where it should go' : 'Drag onto another part to swap them'}</span>
+    </button>
+  );
+}
+
+/** A divider to drag while arranging: the monitors' height, or the mixer's width. */
+function Splitter({ dir, onMove, style }: { dir: 'row' | 'column'; onMove: (x: number, y: number) => void; style?: CSSProperties }) {
+  return (
+    <div
+      className={`splitter splitter--${dir}`}
+      style={style}
+      role="separator"
+      aria-orientation={dir === 'row' ? 'horizontal' : 'vertical'}
+      title="Drag to change the size"
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        e.preventDefault();
+      }}
+      onPointerMove={(e) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) onMove(e.clientX, e.clientY);
+      }}
+    >
+      <i />
+    </div>
+  );
+}
+
+/** What to do while arranging, along the top. */
+function ArrangeBar({ onDone }: { onDone: () => void }) {
+  const layout = useLayout();
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && onDone();
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [onDone]);
+  return (
+    <div className="arrange-bar" role="toolbar" aria-label="Arrange the screen">
+      <b>Arrange the screen</b>
+      <span>Drag a part onto another to swap them, and drag the dividers to change the size.</span>
+      <span className="arrange-bar__group">
+        Presets
+        {(['left', 'right', 'hidden'] as const).map((p) => (
+          <button key={p} type="button" className="seg" aria-pressed={layout.presets === p} onClick={() => setLayout({ presets: p })}>
+            {p === 'left' ? 'Left' : p === 'right' ? 'Right' : 'Hidden'}
+          </button>
+        ))}
+      </span>
+      <button type="button" className="btn" onClick={() => setLayout({ ...DEFAULT_LAYOUT })}>
+        Reset
+      </button>
+      <button type="button" className="btn btn--primary" onClick={onDone}>
+        Done
+      </button>
+    </div>
+  );
 }

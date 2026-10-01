@@ -119,8 +119,9 @@ export function InputGrid({
   const keySource = show.sources.find((x) => x.id === keying);
   const keepSource = show.sources.find((x) => x.id === keeping);
   const textOnly = screen === 'monitor';
+  const fill = useFillTiles();
   return (
-    <div className="inputs" aria-label="Inputs">
+    <div className="inputs" aria-label="Inputs" ref={fill}>
       {(only ? only.map((id) => show.sources.find((s) => s.id === id)).filter((s) => s !== undefined) : show.sources).map((src) => {
         const i = show.sources.indexOf(src);
         const onAir = sc.program === src.id;
@@ -530,4 +531,58 @@ function StreamProblem({ source, problem }: { source: Source; problem: string | 
       : null,
   );
   return null;
+}
+
+/**
+ * The tiles share out all the room they have: as many columns as keeps each
+ * tile about the shape of a picture with its name, then the rows and columns
+ * stretch to fill it. No gaps around them and never a scroll bar.
+ */
+function useFillTiles() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let last = '';
+    const fit = () => {
+      const n = el.querySelectorAll(':scope > .tile').length;
+      const W = el.clientWidth;
+      const H = el.clientHeight;
+      if (!n || !W || !H) return;
+      const gap = 8;
+      const shape = 1.45; // width / height of a tile
+      // As many rows as gives the biggest tiles of about that shape…
+      let rows = 1;
+      let best = 0;
+      for (let r = 1; r <= n; r++) {
+        const c = Math.ceil(n / r);
+        const w = Math.min((W - gap * (c - 1)) / c, ((H - gap * (r - 1)) / r) * shape);
+        if (w > best + 0.5) {
+          best = w;
+          rows = r;
+        }
+      }
+      // …not giant tiles when there are only a few (about 380px wide at most)…
+      let cols = Math.min(n, Math.max(Math.ceil(n / rows), Math.ceil((W + gap) / (380 + gap))));
+      rows = Math.ceil(n / cols);
+      // …and the rows evened out (5 tiles: 3 and 2, not 4 and 1). Each row
+      // stretches across, so there is no empty space.
+      cols = Math.ceil(n / rows);
+      const key = `${cols}x${rows}x${W}x${H}`;
+      if (key === last) return;
+      last = key;
+      el.style.setProperty('--tile-w', `${Math.floor((W - gap * (cols - 1)) / cols) - 1}px`);
+      el.style.setProperty('--tile-h', `${Math.floor((H - gap * (rows - 1)) / rows)}px`);
+    };
+    fit();
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
+    ro?.observe(el);
+    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(fit);
+    mo?.observe(el, { childList: true });
+    return () => {
+      ro?.disconnect();
+      mo?.disconnect();
+    };
+  }, []);
+  return ref;
 }
