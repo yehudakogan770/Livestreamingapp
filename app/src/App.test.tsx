@@ -1,8 +1,11 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { emptyShow } from './engine/client';
 import { screenStatus } from './components/ScreenSelector';
+
+// These test the app itself, so the sign-in lock is open.
+vi.mock('./auth/config', () => ({ AUTH_URL: '', AUTH_KEY: '', authOn: () => false }));
 
 async function start({ keepSetup = false } = {}) {
   render(<App />);
