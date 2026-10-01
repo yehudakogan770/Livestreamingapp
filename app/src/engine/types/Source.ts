@@ -10,7 +10,7 @@ import type { SourceId } from "./SourceId";
 import type { SourceKind } from "./SourceKind";
 
 /**
- * One input: a camera, a video, a picture, a colour…
+ * One input: a camera, a video, a picture, a color…
  */
 export type Source = { id: SourceId, name: string, kind: SourceKind, 
 /**
@@ -22,11 +22,11 @@ volume: number, muted: boolean, looping: boolean, fit: Fit,
  */
 audio: SourceAudio, 
 /**
- * Green / blue screen: the key colour taken out (cameras, videos, pictures).
+ * Green / blue screen: the key color taken out (cameras, videos, pictures).
  */
 key: ChromaKey, 
 /**
- * Light, colour, crop and effects (cameras, videos, pictures).
+ * Light, color, crop and effects (cameras, videos, pictures).
  */
 adjust: Adjust, 
 /**

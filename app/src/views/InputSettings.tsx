@@ -23,7 +23,7 @@ const ROWS: Record<'colour' | 'crop', ([string] | [NumKey, string, number, numbe
     ['highlights', 'Highlights', -100, 100, 1, sgn],
     ['shadows', 'Shadows', -100, 100, 1, sgn],
     ['gamma', 'Gamma', 0.5, 2, 0.01, (n) => n.toFixed(2)],
-    ['Colour'],
+    ['Color'],
     ['temperature', 'Temperature', 2500, 9000, 50, (n) => `${n} K`],
     ['tint', 'Tint', -100, 100, 1, sgn],
     ['saturation', 'Saturation', -100, 100, 1, sgn],
@@ -50,7 +50,7 @@ const EFFECTS: [FxKey, string, string][] = [
   ['grain', 'Film grain', 'Amount'],
 ];
 
-/** One-click looks (light and colour only; crop and position stay). */
+/** One-click looks (light and color only; crop and position stay). */
 const LOOKS: [string, Partial<Adjust>][] = [
   ['Neutral', {}],
   ['Warm stage', { temperature: 6600, saturation: 8, contrast: 6 }],
@@ -64,7 +64,7 @@ const LOOK_KEYS: NumKey[] = ['exposure', 'brightness', 'contrast', 'highlights',
 const PICTURE = ['camera', 'video', 'image'];
 
 /**
- * Input settings: light and colour, crop and position, and effects for a
+ * Input settings: light and color, crop and position, and effects for a
  * camera, video or picture. Everything applies live, wherever the input is
  * shown and in the recording.
  */
@@ -273,7 +273,7 @@ export function InputSettings({
             <div className="is__tabs" role="tablist">
               {(
                 [
-                  ['colour', 'Colour & light'],
+                  ['colour', 'Color & light'],
                   ['crop', 'Crop & position'],
                   ['effects', 'Effects'],
                 ] as const

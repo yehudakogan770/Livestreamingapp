@@ -166,7 +166,7 @@ export function PesukimCard({ show, act, screen, client }: { show: Show; act: Ac
               className={`btn${data.look.plain ? ' is-on' : ''}`}
               aria-pressed={data.look.plain}
               onClick={() => act({ type: 'updatePesukim', id, look: { ...data.look, plain: !data.look.plain } })}
-              title="Just the words where the bar is (in two colours, easy to read), or the bar"
+              title="Just the words where the bar is (in two colors, easy to read), or the bar"
             >
               Text only
             </button>

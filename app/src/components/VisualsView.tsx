@@ -8,7 +8,7 @@ const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', hei
 
 /**
  * The stage visuals, drawn live with WebGL on their own beat clock. Thumbnails
- * are a still card (the scene's colours and name) so the input grid never
+ * are a still card (the scene's colors and name) so the input grid never
  * uses up the graphics card's drawing contexts.
  */
 export function VisualsView({

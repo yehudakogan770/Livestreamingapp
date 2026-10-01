@@ -36,7 +36,7 @@ letterSpacing: number,
  */
 speed: number, design: TextDesign, 
 /**
- * The accent colour (bar, line, name box).
+ * The accent color (bar, line, name box).
  */
 accent: string, 
 /**
@@ -52,7 +52,7 @@ entrance: TextEntrance, italic: boolean,
  */
 uppercase: boolean, 
 /**
- * The second line's colour ("" for the same as the first).
+ * The second line's color ("" for the same as the first).
  */
 subColor: string, 
 /**

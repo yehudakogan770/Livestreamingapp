@@ -43,13 +43,13 @@ pub enum TextDesign {
     /// One box behind both lines.
     #[default]
     Box,
-    /// A box with an accent-coloured bar at its side.
+    /// A box with an accent-colored bar at its side.
     Bar,
-    /// The name on the accent colour, the title on the box colour under it.
+    /// The name on the accent color, the title on the box color under it.
     Split,
     /// No box: an accent line between the two lines.
     Underline,
-    /// A box fading from the accent colour.
+    /// A box fading from the accent color.
     Gradient,
     /// Frosted glass.
     Glass,
@@ -120,7 +120,7 @@ pub struct TextStyle {
     /// Ticker speed, px per second.
     pub speed: u32,
     pub design: TextDesign,
-    /// The accent colour (bar, line, name box).
+    /// The accent color (bar, line, name box).
     pub accent: String,
     /// Builds on with an animation when it comes on.
     pub animate: bool,
@@ -129,7 +129,7 @@ pub struct TextStyle {
     pub italic: bool,
     /// ALL CAPITALS.
     pub uppercase: bool,
-    /// The second line's colour ("" for the same as the first).
+    /// The second line's color ("" for the same as the first).
     pub sub_color: String,
     /// The second line's size, in % of the first.
     pub sub_size: u32,
@@ -209,7 +209,7 @@ fn is_color(c: &str) -> bool {
 }
 
 impl TextInput {
-    /// Keep everything in range (and colours valid).
+    /// Keep everything in range (and colors valid).
     pub fn repair(&mut self) {
         self.text = self.text.chars().take(MAX_TEXT_LEN).collect();
         self.sub = self.sub.chars().take(MAX_TEXT_LEN).collect();

@@ -15,7 +15,7 @@ const COLOURS = [
 const BEHIND = ['camera', 'video', 'image', 'color', 'pattern', 'slideshow', 'visuals'];
 
 /**
- * Green screen for a camera, video or picture: turn it on, pick the colour
+ * Green screen for a camera, video or picture: turn it on, pick the color
  * (or click it in the picture), tune the edge, and see it over a
  * background. "Make a scene" puts it in front of a background as a new
  * input, ready for Next and TAKE.
@@ -37,7 +37,7 @@ export function GreenScreenDialog({ show, source, act, client, onClose }: { show
   const preview: Source = { ...source, key };
   const save = () => act({ type: 'updateSource', id: source.id, patch: { key } });
 
-  // Click the green in the picture to take exactly that colour.
+  // Click the green in the picture to take exactly that color.
   const pick = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!picking) return;
     setPicking(false);
@@ -108,19 +108,19 @@ export function GreenScreenDialog({ show, source, act, client, onClose }: { show
           </section>
           <section className="gs__props">
             <label className="check">
-              <input type="checkbox" checked={key.enabled} onChange={(e) => set({ enabled: e.target.checked })} /> Take out the colour (green screen on)
+              <input type="checkbox" checked={key.enabled} onChange={(e) => set({ enabled: e.target.checked })} /> Take out the color (green screen on)
             </label>
-            <span className="field__label">Colour</span>
+            <span className="field__label">Color</span>
             <div className="gs__colours">
               {COLOURS.map((c) => (
                 <button key={c.color} type="button" className="seg" aria-pressed={key.color === c.color} onClick={() => set({ color: c.color })}>
                   <i style={{ background: c.color }} /> {c.name}
                 </button>
               ))}
-              <input type="color" value={key.color} onChange={(e) => set({ color: e.target.value })} aria-label="Key colour" />
+              <input type="color" value={key.color} onChange={(e) => set({ color: e.target.value })} aria-label="Key color" />
             </div>
             <button type="button" className={`btn${picking ? ' is-on' : ''}`} onClick={() => setPicking(!picking)}>
-              {picking ? 'Click in the picture…' : '⌖ Pick the colour from the picture'}
+              {picking ? 'Click in the picture…' : '⌖ Pick the color from the picture'}
             </button>
             {slider('How much is taken out', 'similarity', 'Raise it until all the green is gone; lower it if people start to disappear.')}
             {slider('Soft edge', 'smoothness', 'Softens the edge around people and hair.')}

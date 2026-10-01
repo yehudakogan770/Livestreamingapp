@@ -249,7 +249,7 @@ pub enum SourceKind {
         color: String,
     },
     Pattern,
-    /// The show's countdown, big, over a background colour. At zero the
+    /// The show's countdown, big, over a background color. At zero the
     /// numbers can give way to the event logo.
     Countdown {
         background: String,
@@ -340,7 +340,7 @@ impl SourceKind {
     }
 }
 
-/// One input: a camera, a video, a picture, a colour…
+/// One input: a camera, a video, a picture, a color…
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -356,10 +356,10 @@ pub struct Source {
     /// How it is heard: audio follows video, which mixes, delay.
     #[serde(default)]
     pub audio: SourceAudio,
-    /// Green / blue screen: the key colour taken out (cameras, videos, pictures).
+    /// Green / blue screen: the key color taken out (cameras, videos, pictures).
     #[serde(default)]
     pub key: ChromaKey,
-    /// Light, colour, crop and effects (cameras, videos, pictures).
+    /// Light, color, crop and effects (cameras, videos, pictures).
     #[serde(default)]
     pub adjust: crate::adjust::Adjust,
     /// Playback speed of a video (None: normal). 0.25 – 2.
@@ -384,15 +384,15 @@ pub struct Source {
     pub camera: Option<crate::cameras::CameraControls>,
 }
 
-/// Green screen: a colour taken out of the picture so what is behind shows.
+/// Green screen: a color taken out of the picture so what is behind shows.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 #[ts(export)]
 pub struct ChromaKey {
     pub enabled: bool,
-    /// The colour taken out (usually the green of the screen).
+    /// The color taken out (usually the green of the screen).
     pub color: String,
-    /// How close to the colour is taken out, 0 – 1.
+    /// How close to the color is taken out, 0 – 1.
     pub similarity: f32,
     /// How soft the edge is, 0 – 1.
     pub smoothness: f32,

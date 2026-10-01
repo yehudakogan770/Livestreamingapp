@@ -1,4 +1,4 @@
-// The picture processor: green screen, light and colour, crop and position,
+// The picture processor: green screen, light and color, crop and position,
 // and effects for cameras, videos and pictures, in one pass on the graphics
 // card (WebGL), so full-HD cameras run in real time. The same processor
 // serves the screens and the recorder.
@@ -86,7 +86,7 @@ uniform vec3 keyColor;
 uniform float similarity;
 uniform float smoothness;
 uniform float spill;
-// light and colour
+// light and color
 uniform float exposure;
 uniform float brightness;
 uniform float contrast;
@@ -139,7 +139,7 @@ void main() {
     rgb = rgb + (rgb - around) * sharpness * 2.0;
   }
 
-  // Green screen, on the colours as the camera saw them.
+  // Green screen, on the colors as the camera saw them.
   float alpha = c.a;
   if (keyOn > 0.5) {
     float d = distance(chroma(c.rgb), chroma(keyColor));
@@ -148,7 +148,7 @@ void main() {
     rgb = mix(rgb, vec3(luma(rgb)), (1.0 - sp) * spill);
   }
 
-  // Light and colour.
+  // Light and color.
   rgb *= balance;
   rgb *= exp2(exposure);
   rgb += brightness * 0.25;
@@ -188,7 +188,7 @@ export function balanceGains(temperature: number, tint: number): [number, number
 
 /**
  * Auto white balance: the temperature and tint that make the average of
- * the picture grey. `rgb` is its average colour (0 – 1).
+ * the picture grey. `rgb` is its average color (0 – 1).
  */
 export function autoBalance([r, g, b]: [number, number, number]): { temperature: number; tint: number } {
   if (r + b <= 0 || g <= 0) return { temperature: 5600, tint: 0 };

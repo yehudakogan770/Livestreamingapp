@@ -48,7 +48,7 @@ pub struct CommentCard {
     #[ts(type = "number")]
     pub changed_at: Millis,
     pub place: CommentPlace,
-    /// The card's colour.
+    /// The card's color.
     pub accent: String,
 }
 

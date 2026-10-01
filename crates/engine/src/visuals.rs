@@ -237,7 +237,7 @@ pub struct VisualsSettings {
     /// Movement speed, 0.25 – 2.
     pub speed: f32,
     pub bright: f32,
-    /// "scene" (each scene's own colours) or a colour set's key.
+    /// "scene" (each scene's own colors) or a color set's key.
     pub palette: String,
     /// Fade between scenes in beats; negative: the music type's own.
     pub fade: f64,

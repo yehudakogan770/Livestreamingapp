@@ -137,7 +137,7 @@ export function SlideshowSetup({
       <label className="field">
         <span className="field__label">Behind (and around) the slides</span>
         <select value={sh.behind ?? ''} onChange={(e) => set({ behind: e.target.value || null })} aria-label="Behind the slides">
-          <option value="">Just the background colour</option>
+          <option value="">Just the background color</option>
           {sources
             .filter((s) => BEHIND.includes(s.kind.type))
             .map((s) => (
@@ -155,7 +155,7 @@ export function SlideshowSetup({
           <input type="checkbox" checked={sh.fade} onChange={(e) => set({ fade: e.target.checked })} /> Fade between slides
         </label>
         <label className="check">
-          Background <input type="color" value={sh.background} onChange={(e) => set({ background: e.target.value })} aria-label="Background colour" />
+          Background <input type="color" value={sh.background} onChange={(e) => set({ background: e.target.value })} aria-label="Background color" />
         </label>
       </div>
       <div className="txed__row">

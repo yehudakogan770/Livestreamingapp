@@ -11,7 +11,7 @@ import './CameraBar.css';
 
 /**
  * Camera control: going through the cameras by itself, and each camera's
- * own settings — zoom, pan and tilt, focus, light, colour — with saved shots
+ * own settings — zoom, pan and tilt, focus, light, color — with saved shots
  * to go back to in one click. Everything is kept with the event.
  */
 export function CameraDialog({ show, act, client, onClose }: { show: Show; act: Act; client: EngineClient; onClose: () => void }) {

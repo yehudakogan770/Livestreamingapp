@@ -23,7 +23,7 @@ const setup = (): Show =>
   ).reduce((s, a) => demoApply(s, a, 0), emptyShow());
 
 describe('which inputs have sound', () => {
-  it('videos and microphones get a mixer channel; pictures and colours do not', () => {
+  it('videos and microphones get a mixer channel; pictures and colors do not', () => {
     expect(soundSources(setup()).map((s) => s.id)).toEqual(['a', 'b', 'mic']);
   });
 });

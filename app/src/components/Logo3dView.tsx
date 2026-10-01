@@ -9,7 +9,7 @@ const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', hei
 
 /**
  * A 3D logo, turning live. `url` is the logo picture (null: a stand-in).
- * The background (colour or a stage visuals loop) is drawn behind; when
+ * The background (color or a stage visuals loop) is drawn behind; when
  * see-through, whatever is behind this input shows.
  */
 export function Logo3dView({

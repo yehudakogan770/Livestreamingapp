@@ -68,7 +68,7 @@ pub struct Logo3d {
     /// Rounded edge, 0 – 20.
     pub bevel: f32,
     pub material: LogoMaterial,
-    /// One colour for the whole logo; None: the logo's own colours.
+    /// One color for the whole logo; None: the logo's own colors.
     pub color: Option<String>,
     /// Where the light comes from, -180 – 180 degrees.
     pub light_angle: f32,

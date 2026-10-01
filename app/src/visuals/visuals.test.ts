@@ -6,7 +6,7 @@ import { BANKS, PALETTES } from './data';
 import { beatAt, fadeMix, logoRect, VisualsPlayer } from './player';
 
 describe('stage visuals', () => {
-  it('has every music type and scene, each with a colour set that exists', () => {
+  it('has every music type and scene, each with a color set that exists', () => {
     expect(BANKS).toHaveLength(13);
     expect(BANKS.reduce((n, b) => n + b.scenes.length, 0)).toBe(261);
     for (const b of BANKS) for (const s of b.scenes) expect(PALETTES[s[2]], `${b.name} · ${s[0]}`).toBeDefined();

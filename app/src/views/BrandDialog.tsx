@@ -146,9 +146,9 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
         {slider('Size', b.subSize, 30, 120, (subSize) => set({ subSize }), `${b.subSize}%`, 5)}
         <div className="brd__row">
           <label className="check">
-            <input type="checkbox" checked={!!b.subColor} onChange={(e) => set({ subColor: e.target.checked ? b.accent : '' })} /> Own colour
+            <input type="checkbox" checked={!!b.subColor} onChange={(e) => set({ subColor: e.target.checked ? b.accent : '' })} /> Own color
           </label>
-          {b.subColor && color('Colour', b.subColor, (subColor) => set({ subColor }))}
+          {b.subColor && color('Color', b.subColor, (subColor) => set({ subColor }))}
           {fontSelect(b.subFont, (subFont) => set({ subFont }), 'Second line font', 'Same font')}
         </div>
       </div>
@@ -321,7 +321,7 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
           </div>
         </div>
         <p className="field__note brd__foot-note">
-          Applies to every title ({titles} now), the font and colour of songs, and the home team colour on scoreboards. New titles come in this look too.
+          Applies to every title ({titles} now), the font and color of songs, and the home team color on scoreboards. New titles come in this look too.
         </p>
         {error && (
           <p className="field__note field__note--warn" role="alert">

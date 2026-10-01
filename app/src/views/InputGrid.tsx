@@ -39,7 +39,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   camera: 'Camera',
   video: 'Video',
   image: 'Picture',
-  color: 'Colour',
+  color: 'Color',
   pattern: 'Test pattern',
   microphone: 'Microphone',
   countdown: 'Countdown',
@@ -309,7 +309,7 @@ function TileMenu({
       </label>
       {draft.color !== null && (
         <label className="menu__row">
-          {k === 'countdown' ? 'Background' : 'Colour'}
+          {k === 'countdown' ? 'Background' : 'Color'}
           <input type="color" value={draft.color} onChange={(e) => set({ color: e.target.value })} />
         </label>
       )}

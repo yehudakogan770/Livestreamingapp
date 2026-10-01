@@ -43,7 +43,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
       ['T · S · + −', 'Tap tempo · Sync to 1 · Faster / slower'],
       ['Z (hold) · X · B', 'Strobe · Flash · Blackout'],
       ['Q · I · L', 'Freeze · Invert · Text on / off'],
-      ['R · E · C', 'Randomize · Reset effects · Next colours'],
+      ['R · E · C', 'Randomize · Reset effects · Next colors'],
     ],
   },
   {

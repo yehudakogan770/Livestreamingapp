@@ -8,7 +8,7 @@
 
 import type { Logo3d } from '../engine/types/Logo3d';
 
-/** A logo ready to draw: its colours, and its distance field (16-bit, in R and G). */
+/** A logo ready to draw: its colors, and its distance field (16-bit, in R and G). */
 export interface PreparedLogo {
   pixels: ImageData;
   field: ImageData;
@@ -193,7 +193,7 @@ uniform vec3 uLight;    // towards the light
 uniform vec3 uEye;      // where the camera is
 uniform float uStrength;
 uniform int uMaterial;  // 0 metal, 1 glass, 2 gloss, 3 matte
-uniform int uOwn;       // 1: the logo's own colours
+uniform int uOwn;       // 1: the logo's own colors
 uniform vec3 uColor;
 uniform float uAlpha;
 // (Linear filtering of the two bytes is still exact: the value is linear in both.)
@@ -233,7 +233,7 @@ void main() {
   vec3 col;
   float alpha = uAlpha;
   if (uMaterial == 0) {
-    // Metal: a studio reflection (bright above, darker below, a soft band) tinted by the colour.
+    // Metal: a studio reflection (bright above, darker below, a soft band) tinted by the color.
     vec3 r = reflect(-V, n);
     float env = mix(0.18, 1.0, smoothstep(-0.35, 0.65, r.y)) + 0.35 * exp(-pow((r.y - 0.15) * 7.0, 2.0));
     float spec = pow(max(dot(n, H), 0.0), 40.0);
@@ -362,7 +362,7 @@ export class Logo3dRenderer {
     }
   }
 
-  /** Draw the logo at time `t` (ms) into a width × height picture. `clear`: a background colour, or null to stay see-through. */
+  /** Draw the logo at time `t` (ms) into a width × height picture. `clear`: a background color, or null to stay see-through. */
   draw(l: Logo3d, t: number, width: number, height: number, clear: [number, number, number] | null = null) {
     const { gl, canvas, u } = this;
     const W = Math.max(2, Math.round(width));
@@ -443,7 +443,7 @@ export class Logo3dRenderer {
       }
     };
     if (l.material === 'glass') {
-      // Glass: find the nearest surface first, then colour only that, see-through.
+      // Glass: find the nearest surface first, then color only that, see-through.
       gl.colorMask(false, false, false, false);
       gl.uniform1f(u.uAlpha!, 1);
       drawSlices();

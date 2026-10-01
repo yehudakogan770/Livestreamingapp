@@ -11,6 +11,6 @@ export type CommentCard = { comment: ChatComment | null,
  */
 changedAt: number, place: CommentPlace, 
 /**
- * The card's colour.
+ * The card's color.
  */
 accent: string, };

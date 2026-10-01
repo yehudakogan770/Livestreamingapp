@@ -90,7 +90,7 @@ export function StingerDialog({ show, act, client, onClose }: { show: Show; act:
               />
             ) : (
               <p className="stg__empty">
-                A stinger is a short video that sweeps over the screen — a logo wipe, a splash of colour. The switch happens hidden behind it.
+                A stinger is a short video that sweeps over the screen — a logo wipe, a splash of color. The switch happens hidden behind it.
               </p>
             )}
           </div>

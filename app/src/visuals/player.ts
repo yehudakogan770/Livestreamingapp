@@ -4,7 +4,7 @@
 //
 // Smoothness (as in the original): every scene runs on its own clock, so
 // speed changes and resyncs never make it jump; sliders glide instead of
-// snapping; colour-set changes blend.
+// snapping; color-set changes blend.
 
 import type { Visuals } from '../engine/types/Visuals';
 import type { VisualsFx } from '../engine/types/VisualsFx';

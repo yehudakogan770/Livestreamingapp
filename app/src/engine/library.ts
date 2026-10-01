@@ -27,7 +27,7 @@ export const KIND_NAMES: Record<string, string> = {
   camera: 'Camera',
   video: 'Video',
   image: 'Picture',
-  color: 'Colour',
+  color: 'Color',
   pattern: 'Test pattern',
   countdown: 'Countdown',
   pesukim: '12 Pesukim',

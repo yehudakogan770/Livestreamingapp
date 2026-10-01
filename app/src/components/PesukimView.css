@@ -169,23 +169,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.6cqh;
+  gap: 8cqh;
   max-width: 100%;
-}
-.pes__sep {
-  align-self: stretch;
-  width: 0.3cqh;
-  margin: 1cqh 0;
-  background: rgba(255, 255, 255, 0.35);
-}
-.pes__bar--bare .pes__sep {
-  background: var(--pes-outline);
 }
 .pes__line {
   display: flex;
   flex-wrap: nowrap;
   justify-content: center;
-  gap: 0 0.55em;
+  gap: 0 0.8em;
   white-space: nowrap;
   line-height: 1.3;
   text-shadow: 0 0.2cqh 0.8cqh rgba(0, 0, 0, 0.6);

@@ -56,7 +56,7 @@ export function ScoreCard({ source, act, onClose }: { source: Source; act: Act; 
           onChange={(e) => team(side, { short: e.target.value.toUpperCase() })}
           aria-label={`${side} short name`}
         />
-        <input type="color" value={draft[side].color} onChange={(e) => team(side, { color: e.target.value })} aria-label={`${side} colour`} />
+        <input type="color" value={draft[side].color} onChange={(e) => team(side, { color: e.target.value })} aria-label={`${side} color`} />
       </div>
     </div>
   );

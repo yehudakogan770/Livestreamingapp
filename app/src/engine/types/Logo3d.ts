@@ -22,7 +22,7 @@ depth: number,
  */
 bevel: number, material: LogoMaterial, 
 /**
- * One colour for the whole logo; None: the logo's own colours.
+ * One color for the whole logo; None: the logo's own colors.
  */
 color: string | null, 
 /**

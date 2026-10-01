@@ -5,7 +5,7 @@ import type { TriviaAnswer } from './types/TriviaAnswer';
 import type { Player } from './types/Player';
 
 export const POINTS = 1000;
-/** Each answer's colour and shape (on screen and on the phones). */
+/** Each answer's color and shape (on screen and on the phones). */
 export const ANSWER_LOOK = [
   { color: '#e0473b', shape: '▲' },
   { color: '#2f80ed', shape: '◆' },

@@ -9,7 +9,7 @@ import type { SourceAudioPatch } from "./SourceAudioPatch";
  */
 export type SourcePatch = { name?: string, volume?: number, muted?: boolean, looping?: boolean, fit?: Fit, 
 /**
- * Only for colour sources.
+ * Only for color sources.
  */
 color?: string, audio?: SourceAudioPatch, 
 /**
@@ -17,7 +17,7 @@ color?: string, audio?: SourceAudioPatch,
  */
 key?: ChromaKey, 
 /**
- * Light, colour, crop and effects (cameras, videos and pictures).
+ * Light, color, crop and effects (cameras, videos and pictures).
  */
 adjust?: Adjust, 
 /**

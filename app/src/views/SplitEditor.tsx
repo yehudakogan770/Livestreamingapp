@@ -84,7 +84,7 @@ export function SplitPicker({ split, sources, onChange }: { split: Split; source
         <label className="check">
           <input type="checkbox" checked={split.border} onChange={(e) => set({ border: e.target.checked })} /> Line around each
         </label>
-        {split.border && <input type="color" value={split.borderColor} onChange={(e) => set({ borderColor: e.target.value })} aria-label="Line colour" />}
+        {split.border && <input type="color" value={split.borderColor} onChange={(e) => set({ borderColor: e.target.value })} aria-label="Line color" />}
       </div>
     </div>
   );

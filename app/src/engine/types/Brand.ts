@@ -33,7 +33,7 @@ lineHeight: number,
  */
 letterSpacing: number, 
 /**
- * The second line: colour ("" same), size (% of the first), font ("" same).
+ * The second line: color ("" same), size (% of the first), font ("" same).
  */
 subColor: string, subSize: number, subFont: string, border: number, borderColor: string, 
 /**

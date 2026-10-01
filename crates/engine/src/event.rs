@@ -32,7 +32,7 @@ pub struct EventInfo {
     pub panic_shows: SafeScreen,
     /// The setup questions have been answered (or skipped).
     pub set_up: bool,
-    /// The event's look: colours and font for every title.
+    /// The event's look: colors and font for every title.
     pub brand: Brand,
     /// The guests' Wi-Fi, shown as a code to join it next to the audience page's code.
     pub wifi: GuestWifi,
@@ -127,7 +127,7 @@ pub struct Brand {
     pub line_height: u32,
     /// Letter spacing, px.
     pub letter_spacing: i32,
-    /// The second line: colour ("" same), size (% of the first), font ("" same).
+    /// The second line: color ("" same), size (% of the first), font ("" same).
     pub sub_color: String,
     pub sub_size: u32,
     pub sub_font: String,

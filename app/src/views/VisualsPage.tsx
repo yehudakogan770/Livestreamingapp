@@ -23,11 +23,11 @@ const PADS = [
   { id: 'flash', name: 'Flash', key: 'X', tip: 'One white flash' },
   { id: 'black', name: 'Blackout', key: 'B', tip: 'Fade to black' },
   { id: 'freeze', name: 'Freeze', key: 'Q', tip: 'Stop all movement' },
-  { id: 'invert', name: 'Invert', key: 'I', tip: 'Swap the colours' },
+  { id: 'invert', name: 'Invert', key: 'I', tip: 'Swap the colors' },
   { id: 'text', name: 'Text', key: 'L', tip: 'Show your words on the visuals' },
   { id: 'random', name: 'Random', key: 'R', tip: 'A random scene and effects' },
   { id: 'reset', name: 'Reset effects', key: 'E', tip: 'Back to the scene as designed' },
-  { id: 'colours', name: 'Colours', key: 'C', tip: 'Next colour set' },
+  { id: 'colours', name: 'Colors', key: 'C', tip: 'Next color set' },
   { id: 'next', name: 'Next scene', key: 'Space', tip: 'The next scene in this music type' },
 ] as const;
 type PadId = (typeof PADS)[number]['id'];
@@ -36,7 +36,7 @@ const same = (a: SceneRef, b: SceneRef) => a.bank === b.bank && a.scene === b.sc
 const pick = <T,>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)]!;
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA');
 
-/** Radial gradient of a colour set, for the scene pads. */
+/** Radial gradient of a color set, for the scene pads. */
 function swatch(c: [string, string, string]) {
   return `radial-gradient(circle at 50% 45%, ${c[1]} 0%, ${c[0]} 32%, ${c[2]} 68%, #05050a 100%)`;
 }
@@ -531,17 +531,17 @@ function LookTab({ v, setFx, setSettings }: FxProps) {
   return (
     <>
       <Group title="COLOURS">
-        <select value={v.settings.palette} onChange={(e) => setSettings({ palette: e.target.value })} aria-label="Colours">
-          <option value="scene">Scene’s own colours</option>
+        <select value={v.settings.palette} onChange={(e) => setSettings({ palette: e.target.value })} aria-label="Colors">
+          <option value="scene">Scene’s own colors</option>
           {Object.entries(PALETTES).map(([k, p]) => (
             <option key={k} value={k}>
               {p.name}
             </option>
           ))}
         </select>
-        <Slider label="Shift colours" value={f.hue} min={0} max={6.28} def={0} onChange={(x) => setFx({ hue: x })} />
-        <Slider label="Cycle colours with the beat" value={f.hueCycle} min={0} max={1} def={0} onChange={(x) => setFx({ hueCycle: x })} />
-        <Slider label="Colour strength" value={f.sat} min={0} max={2} def={1} onChange={(x) => setFx({ sat: x })} />
+        <Slider label="Shift colors" value={f.hue} min={0} max={6.28} def={0} onChange={(x) => setFx({ hue: x })} />
+        <Slider label="Cycle colors with the beat" value={f.hueCycle} min={0} max={1} def={0} onChange={(x) => setFx({ hueCycle: x })} />
+        <Slider label="Color strength" value={f.sat} min={0} max={2} def={1} onChange={(x) => setFx({ sat: x })} />
         <Slider label="Contrast" value={f.con} min={0.5} max={2} def={1} onChange={(x) => setFx({ con: x })} />
         <Slider label="Glow" value={f.glow} min={0} max={1.5} def={0} onChange={(x) => setFx({ glow: x })} />
       </Group>
@@ -720,7 +720,7 @@ function LayersTab({ v, setFx, setText }: { v: Visuals; setFx: (p: Partial<Visua
           </select>
         </label>
         <label className="vis__select">
-          <span>Colour</span>
+          <span>Color</span>
           <input type="color" value={t.color} onChange={(e) => setText({ color: e.target.value })} />
         </label>
         <Slider label="Size" value={t.size} min={0.2} max={1.2} def={0.6} onChange={(x) => setText({ size: x })} />

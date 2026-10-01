@@ -56,11 +56,11 @@ export const CAMERA_SETTINGS: { name: string; label: string; mode?: string; grou
   { name: 'exposureMode', label: 'Light by itself', mode: 'exposureTime', group: 'picture' },
   { name: 'exposureTime', label: 'Exposure', group: 'picture' },
   { name: 'exposureCompensation', label: 'Brighter / darker', group: 'picture' },
-  { name: 'whiteBalanceMode', label: 'Colour by itself', mode: 'colorTemperature', group: 'picture' },
+  { name: 'whiteBalanceMode', label: 'Color by itself', mode: 'colorTemperature', group: 'picture' },
   { name: 'colorTemperature', label: 'Warm / cool', group: 'picture' },
   { name: 'brightness', label: 'Brightness', group: 'picture' },
   { name: 'contrast', label: 'Contrast', group: 'picture' },
-  { name: 'saturation', label: 'Colour strength', group: 'picture' },
+  { name: 'saturation', label: 'Color strength', group: 'picture' },
   { name: 'sharpness', label: 'Sharpness', group: 'picture' },
 ];
 

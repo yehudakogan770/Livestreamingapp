@@ -45,14 +45,14 @@ export const BUILD_MS = 800;
 /** The looks a lower third or title can have. */
 export const TEXT_DESIGNS: { id: TextDesign; name: string; hint: string }[] = [
   { id: 'box', name: 'Box', hint: 'One box behind both lines' },
-  { id: 'bar', name: 'Accent bar', hint: 'A box with a coloured bar at its side' },
-  { id: 'split', name: 'Two-tone', hint: 'The name on the accent colour, the title under it' },
-  { id: 'underline', name: 'Underline', hint: 'No box; a coloured line between the lines' },
-  { id: 'gradient', name: 'Gradient', hint: 'A box fading from the accent colour' },
+  { id: 'bar', name: 'Accent bar', hint: 'A box with a colored bar at its side' },
+  { id: 'split', name: 'Two-tone', hint: 'The name on the accent color, the title under it' },
+  { id: 'underline', name: 'Underline', hint: 'No box; a colored line between the lines' },
+  { id: 'gradient', name: 'Gradient', hint: 'A box fading from the accent color' },
   { id: 'glass', name: 'Glass', hint: 'Frosted glass' },
 ];
 
-/** Accent colours to pick from quickly. */
+/** Accent colors to pick from quickly. */
 export const ACCENTS = ['#2f80ed', '#e0473b', '#f2b233', '#27ae60', '#9b51e0', '#ffffff'];
 
 const ease = (x: number) => 1 - (1 - x) ** 3;
@@ -114,7 +114,7 @@ export const TEXT_TEMPLATES: { layout: TextLayout; name: string; hint: string; m
 
 export const TEXT_FONTS = ['Segoe UI', 'Heebo', 'Frank Ruhl Libre', 'David Libre', 'Arial', 'Georgia', 'Impact', 'Consolas'];
 
-/** A colour with transparency, for the background box. */
+/** A color with transparency, for the background box. */
 export function withAlpha(hex: string, a: number): string {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;

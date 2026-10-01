@@ -103,7 +103,7 @@ export function LyricsCard({ source, act, onClose }: { source: Source; act: Act;
             </label>
             <div className="lyc__row">
               <FontPicker value={draft.style.font} onChange={(font) => style({ font })} />
-              <input type="color" value={draft.style.color} onChange={(e) => style({ color: e.target.value })} aria-label="Words colour" />
+              <input type="color" value={draft.style.color} onChange={(e) => style({ color: e.target.value })} aria-label="Words color" />
               <label className="check">
                 <input type="checkbox" checked={draft.style.boxOn} onChange={(e) => style({ boxOn: e.target.checked })} /> Box behind
               </label>

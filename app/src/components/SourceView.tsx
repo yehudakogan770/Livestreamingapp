@@ -361,7 +361,7 @@ function Logo3dInput({ logo, thumb, audience }: { logo: Logo3d; thumb: boolean; 
 
 /**
  * Green screen: the video or picture inside is hidden and drawn again on a
- * canvas with its key colour taken out, every frame, on the graphics card.
+ * canvas with its key color taken out, every frame, on the graphics card.
  * Without WebGL the picture shows as it is (and the operator is told).
  */
 function Keyed({

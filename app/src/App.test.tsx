@@ -18,8 +18,8 @@ async function start({ keepSetup = false } = {}) {
 async function addColour(name: string) {
   fireEvent.click(screen.getAllByRole('button', { name: /Add input/ })[0]!);
   const dialog = screen.getByRole('dialog', { name: 'Add input' });
-  fireEvent.click(within(dialog).getByRole('button', { name: /^Colour/ }));
-  fireEvent.change(within(dialog).getByPlaceholderText('Colour'), {
+  fireEvent.click(within(dialog).getByRole('button', { name: /^Color/ }));
+  fireEvent.change(within(dialog).getByPlaceholderText('Color'), {
     target: { value: name },
   });
   await act(async () => {

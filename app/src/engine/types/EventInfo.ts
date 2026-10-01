@@ -25,7 +25,7 @@ panicShows: SafeScreen,
  */
 setUp: boolean, 
 /**
- * The event's look: colours and font for every title.
+ * The event's look: colors and font for every title.
  */
 brand: Brand, 
 /**

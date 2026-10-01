@@ -59,7 +59,7 @@ fn a_3d_logo_is_added_repaired_and_changed() {
     )
     .unwrap();
     assert_eq!(logo(&e).material, LogoMaterial::Glass);
-    assert_eq!(logo(&e).color, None, "the logo's own colours");
+    assert_eq!(logo(&e).color, None, "the logo's own colors");
     e.apply(
         Action::CutTo {
             screen: ScreenId::Live,

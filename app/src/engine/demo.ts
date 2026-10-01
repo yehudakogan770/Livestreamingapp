@@ -367,7 +367,7 @@ function apply(s: Show, a: Action, now: number) {
       if (p.color !== undefined) {
         if (src.kind.type === 'color') src.kind.color = p.color;
         else if (src.kind.type === 'countdown') src.kind.background = p.color;
-        else throw new Refused({ code: 'invalidValue', field: 'color', reason: 'only colour sources have a colour' });
+        else throw new Refused({ code: 'invalidValue', field: 'color', reason: 'only color sources have a color' });
       }
       return;
     }
@@ -1416,7 +1416,7 @@ function apply(s: Show, a: Action, now: number) {
             throw new Refused({
               code: 'invalidValue',
               field: 'behind',
-              reason: 'only a camera, video, picture, colour or test pattern can go behind the words',
+              reason: 'only a camera, video, picture, color or test pattern can go behind the words',
             });
         }
         p.look = structuredClone(a.look);

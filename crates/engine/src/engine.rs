@@ -321,7 +321,7 @@ fn pesukim_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut Pesukim> {
     }
 }
 
-/// Colours must be colours; what is behind the words must be a picture that
+/// Colors must be colors; what is behind the words must be a picture that
 /// exists (not another text input, so nothing can draw itself forever).
 fn check_look(s: &Show, id: &SourceId, look: &PesukimLook) -> Result<()> {
     clean_color(&look.background)?;
@@ -334,7 +334,7 @@ fn check_look(s: &Show, id: &SourceId, look: &PesukimLook) -> Result<()> {
         if behind == id || !can_be_behind(&src.kind) {
             return Err(ActionError::invalid(
                 "behind",
-                "only a camera, video, picture, colour or test pattern can go behind the words",
+                "only a camera, video, picture, color or test pattern can go behind the words",
             ));
         }
     }
@@ -1186,7 +1186,7 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                         b.apply_to(&mut t.style, name_title);
                     }
                     SourceKind::Lyrics(l) => {
-                        // Songs keep their own box and design; they take the font and colour.
+                        // Songs keep their own box and design; they take the font and color.
                         l.style.font.clone_from(&b.font);
                         l.style.color.clone_from(&b.text_color);
                     }
@@ -2792,7 +2792,7 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
             _ => {
                 return Err(ActionError::invalid(
                     "color",
-                    "only colour sources have a colour",
+                    "only color sources have a color",
                 ))
             }
         }

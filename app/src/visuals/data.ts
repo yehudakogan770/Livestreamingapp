@@ -1,9 +1,9 @@
-// The built-in music types, scenes and colour sets (from Stage Visuals Live).
+// The built-in music types, scenes and color sets (from Stage Visuals Live).
 // The engine reads the same file, so tempos and scene counts always agree.
 
 import lib from './banks.json';
 
-/** [name, look (shader mode), colour set, speed, flash, bounce] */
+/** [name, look (shader mode), color set, speed, flash, bounce] */
 export type SceneRow = [string, number, string, number, number, number];
 export interface Bank {
   name: string;
@@ -23,7 +23,7 @@ export const BANKS = lib.banks as unknown as Bank[];
 export const hexRgb = (h: string): [number, number, number] => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255) as [number, number, number];
 
 const palCache = new Map<string, number[]>();
-/** A colour set as the 3×3 matrix the shaders take. */
+/** A color set as the 3×3 matrix the shaders take. */
 export function palMat(key: string): number[] {
   let m = palCache.get(key);
   if (!m) {
@@ -38,7 +38,7 @@ export function sceneRow(bank: number, scene: number): SceneRow {
   return BANKS[bank]?.scenes[scene] ?? BANKS[0]!.scenes[0]!;
 }
 
-/** The colours a scene shows with the palette setting ("scene": its own). */
+/** The colors a scene shows with the palette setting ("scene": its own). */
 export function sceneColours(row: SceneRow, palette: string): [string, string, string] {
   return (PALETTES[palette === 'scene' ? row[2] : palette] ?? PALETTES.afterhours!).c;
 }

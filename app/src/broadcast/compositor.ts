@@ -1984,7 +1984,7 @@ export class ProgramCompositor {
   /** The countdown input (mirrors CountdownView and its CSS). */
   private countdown(timer: Countdown, background: string, logoPath: string | null, now: number, w: number, h: number) {
     const ctx = this.ctx;
-    // Background: the colour glowing from the middle into black.
+    // Background: the color glowing from the middle into black.
     ctx.save();
     ctx.translate(w / 2, h / 2);
     ctx.scale(w / 2, h / 2);
@@ -2168,7 +2168,7 @@ export class ProgramCompositor {
     const k = h / 1080;
     const rtl = isRtl(t.text + t.sub);
     const subSize = (s.size * (s.subSize || 60)) / 100;
-    // The second line may have its own font and colour.
+    // The second line may have its own font and color.
     const font = (size: number, weight: number, second = false) =>
       `${s.italic ? 'italic ' : ''}${weight} ${size * k}px "${second && s.subFont ? s.subFont : s.font}", "Segoe UI", system-ui, sans-serif`;
     // How see-through the whole title is (an overlay's opacity, the entrance).
@@ -2574,7 +2574,7 @@ export class ProgramCompositor {
     const y = h - L.bottom * u - bh;
     const img = look.barImage && !look.plain ? this.picture(look.barImage) : null;
     const pic = !!look.barImage && !look.plain;
-    // No background: just the words, outlined in the second colour.
+    // No background: just the words, outlined in the second color.
     const bare = look.plain || (!pic && d.id === 'none');
     ctx.save();
     ctx.globalAlpha *= shown;
@@ -2699,10 +2699,11 @@ export class ProgramCompositor {
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     ctx.direction = 'ltr';
-    const sep = 3.2 * u;
+    // Room between how it sounds and the Hebrew (no line between them).
+    const sep = 8 * u;
     const measure = (g: Group) => {
       ctx.font = g.font;
-      const gap = g.size * u * 0.55;
+      const gap = g.size * u * 0.8;
       const items = g.words
         .slice(from, to)
         .map((t, j) => ({ t, i: from + j, ww: t ? ctx.measureText(t).width : 0 }))
@@ -2730,15 +2731,7 @@ export class ProgramCompositor {
       ctx.translate(mid, cy);
       ctx.scale(squeeze, 1);
       let gx = -l.width / 2;
-      l.groups.forEach((m, gi) => {
-        if (gi > 0) {
-          // A thin line between how it sounds and the Hebrew.
-          ctx.save();
-          ctx.shadowColor = 'transparent';
-          ctx.fillStyle = bare ? look.outlineColor : 'rgba(255,255,255,0.35)';
-          ctx.fillRect(gx - sep / 2 - 0.15 * u, -m.g.size * 0.45 * u, 0.3 * u, m.g.size * 0.9 * u);
-          ctx.restore();
-        }
+      l.groups.forEach((m) => {
         ctx.font = m.g.font;
         ctx.direction = m.g.rtl ? 'rtl' : 'ltr';
         let cx = m.g.rtl ? gx + m.width : gx;

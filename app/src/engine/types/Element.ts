@@ -17,7 +17,7 @@ text: string, font: string,
  */
 size: number, weight: number, italic: boolean, align: TextAlign, 
 /**
- * Text colour, or the box's colour.
+ * Text color, or the box's color.
  */
 color: string, 
 /**

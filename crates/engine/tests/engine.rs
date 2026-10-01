@@ -45,7 +45,7 @@ fn id(s: &str) -> SourceId {
     SourceId::new(s)
 }
 
-/// An engine with two colour sources (src-1, src-2) and src-1 on air on Live.
+/// An engine with two color sources (src-1, src-2) and src-1 on air on Live.
 fn on_air() -> Engine {
     let mut e = Engine::new();
     e.apply(color("Camera 1"), 0).unwrap();

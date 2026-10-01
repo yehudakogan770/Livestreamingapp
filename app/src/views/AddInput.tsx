@@ -40,8 +40,8 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'camera', name: 'Camera', hint: 'Webcam, capture card or phone' },
   { kind: 'video', name: 'Video file', hint: 'MP4, MOV, WebM…' },
   { kind: 'image', name: 'Picture', hint: 'PNG, JPG, logo…' },
-  { kind: 'color', name: 'Colour', hint: 'A solid colour' },
-  { kind: 'pattern', name: 'Test pattern', hint: 'Colour bars for setup' },
+  { kind: 'color', name: 'Color', hint: 'A solid color' },
+  { kind: 'pattern', name: 'Test pattern', hint: 'Color bars for setup' },
   { kind: 'countdown', name: 'Countdown', hint: 'The show countdown, big' },
   { kind: 'pesukim', name: '12 Pesukim', hint: 'One word at a time, the crowd repeats' },
   { kind: 'text', name: 'Text / title', hint: 'Lower third, title, ticker, message' },
@@ -155,7 +155,7 @@ export function AddInput({
       case 'image':
         return path ? { name: n || 'Picture', kind: { type: 'image', path } } : null;
       case 'color':
-        return { name: n || 'Colour', kind: { type: 'color', color } };
+        return { name: n || 'Color', kind: { type: 'color', color } };
       case 'microphone':
         return cam ? { name: n || cam.label || 'Microphone', kind: { type: 'microphone', deviceId: cam.deviceId, label: cam.label } } : null;
       case 'sound':
@@ -356,7 +356,7 @@ export function AddInput({
 
             {(kind === 'color' || kind === 'countdown') && (
               <div className="field">
-                <span className="field__label">{kind === 'countdown' ? 'Background' : 'Colour'}</span>
+                <span className="field__label">{kind === 'countdown' ? 'Background' : 'Color'}</span>
                 <div className="addinput__swatches">
                   {SWATCHES.map((c) => (
                     <button
@@ -369,7 +369,7 @@ export function AddInput({
                       onClick={() => setColor(c)}
                     />
                   ))}
-                  <input type="color" aria-label="Any colour" value={color} onChange={(e) => setColor(e.target.value)} />
+                  <input type="color" aria-label="Any color" value={color} onChange={(e) => setColor(e.target.value)} />
                 </div>
               </div>
             )}
@@ -538,7 +538,7 @@ export function AddInput({
                   />
                 )}
                 <span className="field__note">
-                  Fonts, colours, the box and more: “Edit text…” on its tile after adding. Put it on an overlay button to show it over what is on air.
+                  Fonts, colors, the box and more: “Edit text…” on its tile after adding. Put it on an overlay button to show it over what is on air.
                 </span>
               </div>
             )}

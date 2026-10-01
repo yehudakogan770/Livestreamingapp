@@ -29,7 +29,7 @@ fn color(c: &str, fallback: &str) -> String {
 pub enum ElementKind {
     #[default]
     Text,
-    /// A coloured box (a bar, a panel, a line).
+    /// A colored box (a bar, a panel, a line).
     Box,
     /// A picture file.
     Image,
@@ -80,7 +80,7 @@ pub struct Element {
     pub weight: u16,
     pub italic: bool,
     pub align: TextAlign,
-    /// Text colour, or the box's colour.
+    /// Text color, or the box's color.
     pub color: String,
     /// Box corners, in % of the frame height.
     pub radius: f32,

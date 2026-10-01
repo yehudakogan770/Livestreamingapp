@@ -12,7 +12,7 @@ export interface ChatMessage {
   platform: ChatPlatform;
   author: string;
   text: string;
-  /** The name's colour on Twitch. */
+  /** The name's color on Twitch. */
   color?: string;
   at: number;
 }

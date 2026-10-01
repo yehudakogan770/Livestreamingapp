@@ -1,4 +1,4 @@
-//! Picture adjustments for cameras, videos and pictures: light and colour,
+//! Picture adjustments for cameras, videos and pictures: light and color,
 //! crop and position, and effects. Drawn on the graphics card, together with
 //! the green screen, wherever the input is shown (and in the recording).
 
@@ -39,7 +39,7 @@ pub struct Adjust {
     pub shadows: f32,
     /// 0.5 – 2.
     pub gamma: f32,
-    // Colour
+    // Color
     /// White balance, 2500 – 9000 K; 5600 changes nothing, higher is warmer.
     pub temperature: f32,
     pub tint: f32,

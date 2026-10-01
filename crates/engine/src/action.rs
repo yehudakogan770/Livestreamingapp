@@ -75,7 +75,7 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub fit: Option<Fit>,
-    /// Only for colour sources.
+    /// Only for color sources.
     #[serde(default)]
     #[ts(optional)]
     pub color: Option<String>,
@@ -86,7 +86,7 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub key: Option<crate::model::ChromaKey>,
-    /// Light, colour, crop and effects (cameras, videos and pictures).
+    /// Light, color, crop and effects (cameras, videos and pictures).
     #[serde(default)]
     #[ts(optional)]
     pub adjust: Option<crate::adjust::Adjust>,
@@ -604,7 +604,7 @@ pub enum Action {
         id: SourceId,
         capture: crate::screen::ScreenCapture,
     },
-    /// Change a scoreboard's teams, colours, period and look (scores and clock stay).
+    /// Change a scoreboard's teams, colors, period and look (scores and clock stay).
     UpdateScoreboard {
         id: SourceId,
         scoreboard: crate::score::Scoreboard,

@@ -59,7 +59,7 @@ export function CameraBar({ show, screen, act, client }: { show: Show; screen: S
       <button
         type="button"
         className="btn cambar__gear"
-        title="Camera control: switching, zoom, focus, light, colour, shots"
+        title="Camera control: switching, zoom, focus, light, color, shots"
         aria-label="Camera control"
         onClick={() => setOpen(true)}
       >

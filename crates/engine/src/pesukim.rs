@@ -117,7 +117,7 @@ pub struct PesukimLook {
     pub bar_image: String,
     /// One word at a time, or a line with the word lit.
     pub bar_words: BarWords,
-    /// The outline around the words with no bar background (the second colour).
+    /// The outline around the words with no bar background (the second color).
     pub outline_color: String,
     /// Just the words, where the bar would be (the bar's design is kept for later).
     pub plain: bool,
@@ -125,7 +125,7 @@ pub struct PesukimLook {
     pub bar_in: crate::text::TextEntrance,
     /// The pasuk's number in a circle at the end of the bar.
     pub show_number: bool,
-    /// Background colour.
+    /// Background color.
     pub background: String,
     /// An input shown behind the words (a camera, usually).
     pub behind: Option<SourceId>,

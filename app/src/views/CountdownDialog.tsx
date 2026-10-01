@@ -181,7 +181,7 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
                     onClick={() => setBackground(b)}
                   />
                 ))}
-                <input type="color" aria-label="Any colour" value={background} onChange={(e) => setBackground(e.target.value)} />
+                <input type="color" aria-label="Any color" value={background} onChange={(e) => setBackground(e.target.value)} />
               </div>
             </div>
             <div className="field">

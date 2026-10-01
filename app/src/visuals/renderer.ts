@@ -1,4 +1,4 @@
-// Draws one frame of the stage visuals with WebGL: scenes → colour, glitch
+// Draws one frame of the stage visuals with WebGL: scenes → color, glitch
 // and trails → the screen with text and the master controls. A port of
 // Stage Visuals Live's makeRenderer; the shaders are unchanged.
 
@@ -262,7 +262,7 @@ export function makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas): Rende
     gl.uniform1f(a.uKal, u.kal);
     gl.uniform1f(a.uMirror, u.mirror);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    // pass 2: colour, glitch, trails
+    // pass 2: color, glitch, trails
     const nx = Cm[ci]!;
     const pv = Cm[1 - ci]!;
     gl.bindFramebuffer(gl.FRAMEBUFFER, nx.f);

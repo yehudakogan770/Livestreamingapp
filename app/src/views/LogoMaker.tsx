@@ -295,7 +295,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
                 </button>
               ))}
             </div>
-            <span className="lm__sub">Colour</span>
+            <span className="lm__sub">Color</span>
             <div className="lm__colours">
               {COLOURS.map(([c, n]) => (
                 <button
@@ -308,7 +308,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
                   onClick={() => set({ color: c })}
                 />
               ))}
-              <input type="color" value={logo.color ?? '#ffffff'} onChange={(e) => set({ color: e.target.value })} aria-label="Any colour" />
+              <input type="color" value={logo.color ?? '#ffffff'} onChange={(e) => set({ color: e.target.value })} aria-label="Any color" />
               <button type="button" className={`btn${logo.color === null ? ' is-on' : ''}`} onClick={() => set({ color: null })}>
                 Logo’s own
               </button>
@@ -384,7 +384,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
               value={logo.background}
               options={[
                 ['transparent', 'See-through'],
-                ['colour', 'Colour'],
+                ['colour', 'Color'],
                 ['loop', 'Moving loop'],
               ]}
               onPick={(v) => set({ background: v })}
@@ -402,7 +402,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
                     onClick={() => set({ bgColor: c })}
                   />
                 ))}
-                <input type="color" value={logo.bgColor} onChange={(e) => set({ bgColor: e.target.value })} aria-label="Any background colour" />
+                <input type="color" value={logo.bgColor} onChange={(e) => set({ bgColor: e.target.value })} aria-label="Any background color" />
               </div>
             )}
             {logo.background === 'loop' && (

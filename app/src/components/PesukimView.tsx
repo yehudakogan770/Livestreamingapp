@@ -6,7 +6,7 @@ import './PesukimView.css';
 /**
  * A 12 Pesukim input as the audience sees it. Usually a bar along the bottom
  * (over the picture, or as an overlay): the words in Hebrew, how they sound
- * and what they mean, the word being said lit. Or the word big over a colour
+ * and what they mean, the word being said lit. Or the word big over a color
  * (or a camera, passed in as `behind`). The child's name comes up before
  * their pasuk. Mirrored in compositor.ts pesukim().
  */
@@ -59,7 +59,7 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
   const d = barDesign(look.design);
   const L = barLayout(look);
   const image = look.barImage && url && !look.plain ? url(look.barImage) : '';
-  // No background: just the words, in two colours (an outline keeps them readable).
+  // No background: just the words, in two colors (an outline keeps them readable).
   const bare = look.plain || (!look.barImage && d.id === 'none');
 
   /** The lines for a moment of the pasuk (now, or the one going away). */
@@ -87,7 +87,6 @@ function PesukimBar({ data, url }: { data: PesukimData; url?: (path: string) => 
       <>
         <div className="pes__pair">
           {look.showTranslit && tr.length > 0 && line(tr, 'pes__tr', L.tr, 'ltr')}
-          {look.showTranslit && tr.length > 0 && <i className="pes__sep" />}
           {line(wordsOf(ps.text), 'pes__he', L.he, 'rtl', `"${look.font}", "Frank Ruhl Libre", serif`)}
         </div>
         {look.showEnglish && en.length > 0 && line(en, 'pes__en', L.en, 'ltr')}

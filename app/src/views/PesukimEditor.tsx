@@ -226,13 +226,13 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                 {(look.plain || (look.design === 'none' && !look.barImage)) && (
                   <div className="bcd__row">
                     <label className="check">
-                      Words <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Words colour" />
+                      Words <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Words color" />
                     </label>
                     <label className="check">
                       Outline{' '}
-                      <input type="color" value={look.outlineColor} onChange={(e) => set({ outlineColor: e.target.value })} aria-label="Outline colour" />
+                      <input type="color" value={look.outlineColor} onChange={(e) => set({ outlineColor: e.target.value })} aria-label="Outline color" />
                     </label>
-                    <span className="field__note bcd__grow">Two colours keep the words easy to read over any picture.</span>
+                    <span className="field__note bcd__grow">Two colors keep the words easy to read over any picture.</span>
                   </div>
                 )}
                 <div className="bcd__row">
@@ -280,7 +280,7 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                   {c.name}
                 </button>
               ))}
-              <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Other text colour" />
+              <input type="color" value={look.textColor} onChange={(e) => set({ textColor: e.target.value })} aria-label="Other text color" />
             </div>
             <div className="bcd__row">
               <label className="field bcd__grow">

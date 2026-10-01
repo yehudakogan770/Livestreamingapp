@@ -14,7 +14,7 @@ flash: number,
  */
 speed: number, bright: number, 
 /**
- * "scene" (each scene's own colours) or a colour set's key.
+ * "scene" (each scene's own colors) or a color set's key.
  */
 palette: string, 
 /**

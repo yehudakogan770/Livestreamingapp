@@ -266,8 +266,8 @@ export function GraphicCard({ source, act, client, onClose }: { source: Source; 
                 <div className="grc__row">
                   {el.kind !== 'image' && (
                     <label className="field grc__num">
-                      <span className="field__label">Colour</span>
-                      <input type="color" value={el.color} onChange={(e) => change({ color: e.target.value })} aria-label="Colour" />
+                      <span className="field__label">Color</span>
+                      <input type="color" value={el.color} onChange={(e) => change({ color: e.target.value })} aria-label="Color" />
                     </label>
                   )}
                   <label className="field" style={{ flex: 1 }}>

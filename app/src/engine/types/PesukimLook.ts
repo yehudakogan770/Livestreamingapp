@@ -38,7 +38,7 @@ barImage: string,
  */
 barWords: BarWords, 
 /**
- * The outline around the words with no bar background (the second colour).
+ * The outline around the words with no bar background (the second color).
  */
 outlineColor: string, 
 /**
@@ -54,7 +54,7 @@ barIn: TextEntrance,
  */
 showNumber: boolean, 
 /**
- * Background colour.
+ * Background color.
  */
 background: string, 
 /**

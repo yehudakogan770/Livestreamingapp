@@ -156,7 +156,7 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
                       onClick={() => style({ accent: c })}
                     />
                   ))}
-                  <input type="color" value={s.accent ?? '#2f80ed'} onChange={(e) => style({ accent: e.target.value })} aria-label="Accent colour" />
+                  <input type="color" value={s.accent ?? '#2f80ed'} onChange={(e) => style({ accent: e.target.value })} aria-label="Accent color" />
                 </div>
                 <div className="txed__row">
                   <label className="check">
@@ -209,8 +209,8 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
             </div>
             <div className="txed__row">
               <label className="field">
-                <span className="field__label">Colour</span>
-                <input type="color" value={s.color} onChange={(e) => style({ color: e.target.value })} aria-label="Text colour" />
+                <span className="field__label">Color</span>
+                <input type="color" value={s.color} onChange={(e) => style({ color: e.target.value })} aria-label="Text color" />
               </label>
               <label className="check">
                 <input type="checkbox" checked={s.shadow} onChange={(e) => style({ shadow: e.target.checked })} /> Shadow
@@ -219,14 +219,14 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
                 <input type="checkbox" checked={s.outline > 0} onChange={(e) => style({ outline: e.target.checked ? 3 : 0 })} /> Outline
               </label>
               {s.outline > 0 && (
-                <input type="color" value={s.outlineColor} onChange={(e) => style({ outlineColor: e.target.value })} aria-label="Outline colour" />
+                <input type="color" value={s.outlineColor} onChange={(e) => style({ outlineColor: e.target.value })} aria-label="Outline color" />
               )}
             </div>
             <div className="txed__row">
               <label className="check">
                 <input type="checkbox" checked={s.boxOn} onChange={(e) => style({ boxOn: e.target.checked })} /> Background box
               </label>
-              {s.boxOn && <input type="color" value={s.boxColor} onChange={(e) => style({ boxColor: e.target.value })} aria-label="Box colour" />}
+              {s.boxOn && <input type="color" value={s.boxColor} onChange={(e) => style({ boxColor: e.target.value })} aria-label="Box color" />}
             </div>
             {s.boxOn && (
               <>

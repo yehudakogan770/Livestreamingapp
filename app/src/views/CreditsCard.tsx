@@ -159,10 +159,10 @@ function CreditsEditor({ c, name, onSave, onClose }: { c: Credits; name: string;
             <div className="txed__row">
               <FontPicker value={draft.font} onChange={(font) => set({ font })} />
               <label className="check">
-                Text <input type="color" value={draft.color} onChange={(e) => set({ color: e.target.value })} aria-label="Text colour" />
+                Text <input type="color" value={draft.color} onChange={(e) => set({ color: e.target.value })} aria-label="Text color" />
               </label>
               <label className="check">
-                Background <input type="color" value={draft.background} onChange={(e) => set({ background: e.target.value })} aria-label="Background colour" />
+                Background <input type="color" value={draft.background} onChange={(e) => set({ background: e.target.value })} aria-label="Background color" />
               </label>
             </div>
           </section>
