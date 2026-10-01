@@ -633,10 +633,12 @@
     const rio = new IntersectionObserver(
       (es) =>
         es.forEach((e) => {
-          if (!e.isIntersecting) return;
-          e.target.classList.add('is-in');
-          e.target.querySelectorAll('[data-count]').forEach(count);
-          rio.unobserve(e.target);
+          // In view: it glides in. Out of view again: it resets, so it plays
+          // every time you scroll back to it (up or down).
+          if (e.isIntersecting) {
+            e.target.classList.add('is-in');
+            e.target.querySelectorAll('[data-count]').forEach(count);
+          } else e.target.classList.remove('is-in');
         }),
       { rootMargin: '0px 0px -12% 0px' },
     );
