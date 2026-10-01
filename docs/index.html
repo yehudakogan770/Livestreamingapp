@@ -52,13 +52,27 @@
             <div class="win__bar">
               <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora</span><i></i><i></i><i></i>
             </div>
-            <img
-              src="img/main.jpg"
-              width="1600"
-              height="900"
-              alt="The Lumora main screen: Next on the left, On air on the right, TAKE and CUT in the middle, inputs and the sound mixer below."
-            />
+            <div class="win__stage">
+              <img
+                src="img/main.jpg"
+                width="1600"
+                height="900"
+                alt="The Lumora main screen: Next on the left, On air on the right, TAKE and CUT in the middle, inputs and the sound mixer below."
+              />
+              <canvas class="hero__mon hero__mon--next" data-hero="next" width="640" height="360" aria-hidden="true"></canvas>
+              <canvas class="hero__mon hero__mon--pgm" data-hero="pgm" width="640" height="360" aria-hidden="true"></canvas>
+              <span class="hero__take" data-hero-take aria-hidden="true"></span>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="Lumora in numbers">
+        <div class="wrap stats__in">
+          <div class="stats__item"><b data-count="3">3</b><span>screens run at once</span></div>
+          <div class="stats__item"><b data-count="22">22</b><span>transitions</span></div>
+          <div class="stats__item"><b data-count="500">500</b><span>fonts built in</span></div>
+          <div class="stats__item"><b data-count="4" data-suffix="K">4K</b><span>streaming and recording</span></div>
         </div>
       </section>
 

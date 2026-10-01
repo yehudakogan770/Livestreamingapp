@@ -440,7 +440,7 @@
     const tc = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}:${pad(f)}`;
     tcs.forEach((el) => (el.textContent = tc));
     const d = new Date();
-    clock.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    clock.textContent = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     const r = Math.max(0, 299 - (s % 300));
     left.textContent = `${Math.floor(r / 60)}:${pad(r % 60)} left`;
   }
@@ -456,8 +456,39 @@
     }),
   );
   const screens = $('#screens');
+  const hero = $('.win--hero');
   io.observe(sw);
   io.observe(screens);
+  if (hero) io.observe(hero);
+
+  // The app at the top runs by itself: a shot waits in Next, then TAKE.
+  const hNext = $('[data-hero="next"]');
+  const hPgm = $('[data-hero="pgm"]');
+  const hTake = $('[data-hero-take]');
+  const hs = { pgm: 0, next: 1, from: null, at: 0, nextTake: performance.now() + 3200 };
+  const heroOrder = [0, 1, 2, 0, 3, 1];
+  let heroStep = 1;
+  function drawHero(now) {
+    if (now > hs.nextTake) {
+      hTake.classList.add('is-on');
+      setTimeout(() => hTake.classList.remove('is-on'), 450);
+      hs.from = hs.pgm;
+      hs.at = now + 150;
+      hs.pgm = hs.next;
+      heroStep = (heroStep + 1) % heroOrder.length;
+      hs.next = heroOrder[heroStep] === hs.pgm ? heroOrder[(heroStep + 1) % heroOrder.length] : heroOrder[heroStep];
+      hs.nextTake = now + 4200;
+    }
+    hNext.getContext('2d').drawImage(frames[hs.next], 0, 0, hNext.width, hNext.height);
+    const c = hPgm.getContext('2d');
+    const p = hs.from === null ? 1 : Math.min(1, Math.max(0, (now - hs.at) / 700));
+    c.globalAlpha = 1;
+    if (p < 1) c.drawImage(frames[hs.from], 0, 0, hPgm.width, hPgm.height);
+    c.globalAlpha = p;
+    c.drawImage(frames[hs.pgm], 0, 0, hPgm.width, hPgm.height);
+    c.globalAlpha = 1;
+    if (p >= 1) hs.from = null;
+  }
 
   let last = 0;
   function frame(now) {
@@ -469,6 +500,7 @@
     const t = now / 1000;
     SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d'), t));
     drawProgram(now);
+    if (hero && visible.has(hero)) drawHero(now);
     if (visible.has(sw)) {
       frames.forEach((f, i) => show(`src${i}`, f));
       show('next', frames[st.next]);
@@ -487,6 +519,7 @@
     SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d'), t));
     const redraw = () => {
       drawProgram(performance.now() + 1e4);
+      if (hero) drawHero(0);
       frames.forEach((f, i) => show(`src${i}`, f));
       show('next', frames[st.next]);
       show('program', program);
@@ -553,4 +586,60 @@
     }),
   );
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  // The headline, word by word.
+  const h1 = document.querySelector('.hero h1');
+  if (h1 && !still) {
+    h1.innerHTML = h1.textContent
+      .trim()
+      .split(/\s+/)
+      .map((w, i) => `<span class="w" style="--i:${i}">${w}</span>`)
+      .join(' ');
+  }
+
+  // The app window turns to face you as you scroll.
+  if (hero && !still) {
+    const tilt = () => {
+      const p = Math.min(1, Math.max(0, scrollY / (innerHeight * 0.55)));
+      hero.style.setProperty('--tilt', `${(10 * (1 - p)).toFixed(2)}deg`);
+      hero.style.setProperty('--sc', (0.95 + 0.05 * p).toFixed(3));
+    };
+    tilt();
+    addEventListener('scroll', tilt, { passive: true });
+  }
+
+  // Sections glide in; the numbers count up.
+  const count = (el) => {
+    const to = Number(el.dataset.count);
+    const suffix = el.dataset.suffix || '';
+    if (still) return;
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / 1400);
+      el.textContent = `${Math.round(to * (1 - (1 - p) ** 3))}${suffix}`;
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  if (!still && 'IntersectionObserver' in window) {
+    const items = document.querySelectorAll(
+      '.stats__item, .head, .feat__cols > div, .dev, .calm__grid > div, .split__win, .split__text, .sw, .tabs, #app .win, .fb__form, .dl__in, .dest__in',
+    );
+    items.forEach((el) => {
+      const sibs = [...el.parentElement.children].filter((x) => x.classList.contains(el.classList[0]));
+      el.style.setProperty('--d', `${Math.max(0, sibs.indexOf(el)) * 90}ms`);
+      el.classList.add('reveal');
+    });
+    const rio = new IntersectionObserver(
+      (es) =>
+        es.forEach((e) => {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('[data-count]').forEach(count);
+          rio.unobserve(e.target);
+        }),
+      { rootMargin: '0px 0px -12% 0px' },
+    );
+    items.forEach((el) => rio.observe(el));
+  }
 })();
