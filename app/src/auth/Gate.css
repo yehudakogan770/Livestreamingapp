@@ -140,3 +140,33 @@
   text-align: center;
   color: var(--text-dim);
 }
+
+/* My account: name and password side by side (fits 1280×760). */
+.account {
+  width: min(720px, calc(100vw - 48px));
+}
+.account__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 24px;
+  padding: 14px 18px 18px;
+  overflow: auto;
+}
+.account__who {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-dim);
+}
+.account__part {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+.account__part h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.account__part .btn {
+  align-self: flex-start;
+}

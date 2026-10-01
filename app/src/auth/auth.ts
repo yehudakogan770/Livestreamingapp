@@ -17,6 +17,8 @@ function say(e: unknown): Error {
   if (/already registered|already been registered/i.test(m)) return new Error('There is already an account with that email. Sign in instead.');
   if (/password should be at least/i.test(m)) return new Error('The password needs at least 6 characters.');
   if (/email not confirmed/i.test(m)) return new Error('Please confirm your email first (check your inbox), then sign in.');
+  if (/same.*(old|current)|different from the old/i.test(m)) return new Error('The new password must be different from the current one.');
+  if (/set_my_name|could not find the function/i.test(m)) return new Error('Changing names is not switched on yet on the Lumora account server.');
   if (/fetch|network|failed to/i.test(m)) return new Error('Lumora cannot reach the internet. Check the connection and try again.');
   return new Error(m);
 }
@@ -71,5 +73,23 @@ export async function listPeople(): Promise<Profile[]> {
 
 export async function setPerson(id: string, change: Partial<Pick<Profile, 'approved' | 'blocked'>>): Promise<void> {
   const { error } = await sb().from('profiles').update(change).eq('id', id);
+  if (error) throw say(error);
+}
+
+/** Change your own name (what the Lumora team sees). */
+export async function changeName(name: string): Promise<void> {
+  const clean = name.trim();
+  if (!clean) throw new Error('Type a name first.');
+  const { error } = await sb().rpc('set_my_name', { new_name: clean });
+  if (error) throw say(error);
+  await sb().auth.updateUser({ data: { name: clean } });
+}
+
+/** Change your password; the current one is checked first. */
+export async function changePassword(email: string, current: string, next: string): Promise<void> {
+  if (next.length < 6) throw new Error('The new password needs at least 6 characters.');
+  const check = await sb().auth.signInWithPassword({ email, password: current });
+  if (check.error) throw new Error('The current password is not right.');
+  const { error } = await sb().auth.updateUser({ password: next });
   if (error) throw say(error);
 }

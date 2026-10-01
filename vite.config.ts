@@ -11,6 +11,8 @@ export default defineConfig({
     outDir: '../dist',
     emptyOutDir: true,
     target: 'es2022',
+    // The shipped app carries no readable source: minified, with no source maps.
+    sourcemap: false,
   },
   test: {
     root: '.',

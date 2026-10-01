@@ -54,3 +54,12 @@ create trigger on_new_account after insert on auth.users
 revoke update on public.profiles from authenticated, anon;
 grant update (approved, blocked) on public.profiles to authenticated;
 grant select on public.profiles to authenticated;
+
+-- People can change their own name (and nothing else about their account).
+create or replace function public.set_my_name(new_name text) returns void
+  language sql security definer set search_path = public
+as $$
+  update public.profiles set name = left(trim(new_name), 80) where id = auth.uid()
+$$;
+revoke execute on function public.set_my_name(text) from public, anon;
+grant execute on function public.set_my_name(text) to authenticated;

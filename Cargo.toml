@@ -17,3 +17,5 @@ ts-rs = { version = "10", features = ["serde-compat"] }
 [profile.release]
 lto = "thin"
 codegen-units = 1
+# No names or debug info left in the shipped program (harder to pick apart).
+strip = true

@@ -9,6 +9,7 @@ import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar, type MenuItem } from './components/TitleBar';
 import { Gate, useAccess } from './auth/Gate';
 import { PeopleDialog } from './auth/PeopleDialog';
+import { AccountDialog } from './auth/AccountDialog';
 import { UpdateBar, checkForUpdates } from './components/UpdateBar';
 import { jewishToolsOn, loadJewishTools, saveJewishTools } from './engine/jewishTools';
 import { TEXT_SIZES, applyTextSize, loadTextSize, stepTextSize, type TextSize } from './components/textSize';
@@ -81,6 +82,7 @@ function ControlApp() {
   // Signed in (when Lumora's sign-in is on): who, and the Lumora team's approvals.
   const { access, signOut } = useAccess();
   const [peopleOpen, setPeopleOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [zmanimOpen, setZmanimOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);
@@ -168,6 +170,7 @@ function ControlApp() {
         ? [
             null,
             ...(access.admin ? [{ label: 'People and approvals…', hint: 'Approve new accounts, or turn access off', onClick: () => setPeopleOpen(true) }] : []),
+            { label: 'My account…', hint: 'Your name and password', onClick: () => setAccountOpen(true) },
             { label: `Sign out (${access.email})`, onClick: signOut },
           ]
         : []),
@@ -370,6 +373,7 @@ function ControlApp() {
       {zmanimOpen && show && <ZmanimDialog show={show} act={(a) => void client.dispatch(a).catch(fail)} onClose={() => setZmanimOpen(false)} />}
       <UpdateBar />
       {peopleOpen && <PeopleDialog onClose={() => setPeopleOpen(false)} />}
+      {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       {confirmNew && (
