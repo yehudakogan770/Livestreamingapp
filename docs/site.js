@@ -310,7 +310,7 @@
     c.fillText('Sarah Mitchell', x + 22, y + 32);
     c.fillStyle = '#8fd3db';
     c.font = `500 16px ${FONT}`;
-    c.fillText('Head of School', x + 22, y + 53);
+    c.fillText('Keynote speaker', x + 22, y + 53);
     c.restore();
   }
 
@@ -501,31 +501,46 @@
   } else requestAnimationFrame(frame);
   document.fonts?.ready.then(() => (last = 0));
 
-  // The run of show: the cue in the middle of the screen is on air.
-  const cues = [...document.querySelectorAll('[data-cue]')];
-  const cio = new IntersectionObserver(
-    (es) =>
-      es.forEach((e) => {
-        if (!e.isIntersecting) return;
-        cues.forEach((c) => c.classList.toggle('is-on', c === e.target));
-      }),
-    { rootMargin: '-45% 0px -45% 0px' },
-  );
-  cues.forEach((c) => cio.observe(c));
-  cues[0]?.classList.add('is-on');
-
-  // The big PANIC button: double-click and the page goes black.
-  const big = $('[data-bigpanic]');
-  big.addEventListener('dblclick', () => {
-    document.body.classList.add('is-panic');
-    big.setAttribute('aria-pressed', 'true');
-    big.querySelector('small').textContent = 'click to bring it back';
-  });
-  big.addEventListener('click', () => {
-    if (!document.body.classList.contains('is-panic')) return;
-    document.body.classList.remove('is-panic');
-    big.setAttribute('aria-pressed', 'false');
-    big.querySelector('small').textContent = 'double-click me';
+  // Feedback: sent through Web3Forms, so nobody has to sign in to anything.
+  // Put the access key from web3forms.com here (it only lets people send to you).
+  const FEEDBACK_KEY = 'PASTE-YOUR-WEB3FORMS-ACCESS-KEY-HERE';
+  const form = $('[data-feedback]');
+  const status = $('[data-status]');
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type=submit]');
+    const say = (text, cls) => {
+      status.textContent = text;
+      status.className = `fb__status ${cls || ''}`;
+    };
+    if (FEEDBACK_KEY.startsWith('PASTE')) return say('Feedback is not switched on yet. Please try again soon.', 'is-bad');
+    const data = Object.fromEntries(new FormData(form));
+    if (data.botcheck) return;
+    btn.disabled = true;
+    say('Sending…');
+    try {
+      const r = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: FEEDBACK_KEY,
+          subject: `Lumora feedback: ${data.topic}`,
+          from_name: data.name || 'Lumora website',
+          name: data.name,
+          email: data.email,
+          topic: data.topic,
+          message: data.message,
+        }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || j.success === false) throw new Error(j.message || 'not sent');
+      form.reset();
+      say('Thank you! Your message was sent.', 'is-ok');
+    } catch {
+      say('That did not go through. Please check your internet and try again.', 'is-bad');
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   // Screenshots.

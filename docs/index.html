@@ -9,13 +9,13 @@
       content="Free live production and streaming software for Windows. Switch cameras, add titles and slides, stream to YouTube and Facebook, and run every screen at your event from one laptop."
     />
     <meta property="og:title" content="Lumora" />
-    <meta property="og:description" content="Switch. Stream. Record. Free live production software for Windows." />
-    <meta property="og:image" content="img/main.jpg" />
+    <meta property="og:description" content="Run every screen at your event from one laptop. Free live production software for Windows." />
+    <meta property="og:image" content="img/hero.jpg" />
     <meta name="theme-color" content="#0b0c0f" />
     <link rel="icon" href="img/lumora-mark.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="site.css" />
   </head>
   <body>
@@ -23,36 +23,67 @@
       <div class="wrap top__in">
         <a class="brand" href="./" aria-label="Lumora home"><img src="img/lumora-mark.svg" alt="" width="26" height="26" />Lumora</a>
         <nav class="nav" aria-label="Sections">
+          <a href="#demo">Live demo</a>
           <a href="#features">Features</a>
-          <a href="#screens">Screens</a>
-          <a href="#night">For events</a>
-          <a href="#app">Screenshots</a>
+          <a href="#screens">Three screens</a>
+          <a href="#feedback">Feedback</a>
         </nav>
-        <span class="tally" aria-hidden="true"><i></i>ON AIR <b class="tc" data-tc>00:00:00:00</b></span>
-        <a class="btn btn--red" href="#download">Download</a>
+        <a class="btn btn--primary" href="#download">Download</a>
       </div>
     </header>
 
     <main>
       <section class="hero">
-        <div class="wrap">
-          <p class="kicker"><span>Live production &amp; streaming software</span><span>Windows</span><span>Free</span></p>
-          <h1>Switch.<br />Stream. <em>Record.</em></h1>
+        <div class="wrap hero__text">
+          <p class="pill"><span></span>Live production and streaming software for Windows</p>
+          <h1>Run every screen at your event from one laptop.</h1>
           <p class="lead">
-            Lumora turns your laptop into a complete live production studio. Switch between cameras, add titles and slides, stream to YouTube and Facebook, and
-            run the projector and the stage monitor, all from one app.
+            Switch between cameras, add titles and slides, stream to YouTube and Facebook, and run the projector and the stage monitor. All in one app, built
+            for one person running a live event.
           </p>
           <div class="hero__cta">
-            <a class="btn btn--red btn--big" href="#download">Download free for Windows</a>
-            <a class="btn btn--ghost btn--big" href="#try">Try the demo ↓</a>
+            <a class="btn btn--primary btn--big" href="#download">Download free for Windows</a>
+            <a class="btn btn--quiet btn--big" href="#demo">Try the live demo</a>
           </div>
+          <p class="fine">Free · Windows 10 and 11 · Works offline</p>
         </div>
+        <div class="hero__photo">
+          <img
+            src="img/hero.jpg"
+            width="2400"
+            height="1200"
+            alt="A laptop running Lumora at the back of a dark event hall, the stage lights glowing behind it."
+          />
+        </div>
+      </section>
 
-        <div class="wrap" id="try">
+      <section class="dest">
+        <div class="wrap dest__in">
+          <p>Stream to</p>
+          <ul>
+            <li>YouTube</li>
+            <li>Facebook</li>
+            <li>Vimeo</li>
+            <li>Twitch</li>
+            <li>Any RTMP server</li>
+          </ul>
+          <p>at the same time</p>
+        </div>
+      </section>
+
+      <section id="demo" class="demo">
+        <div class="wrap">
+          <div class="head">
+            <h2>Switch like a broadcast pro.</h2>
+            <p>
+              Line up the next shot where nobody sees it, then send it live with a smooth transition. This is Lumora's switcher, running right here. Give it a
+              try.
+            </p>
+          </div>
           <div class="sw" data-switcher>
             <div class="sw__bar">
-              <span class="sw__brand"><img src="img/lumora-mark.svg" alt="" width="18" height="18" />Lumora</span>
-              <span class="sw__hint">Try it: pick a shot, then hit <b>TAKE</b>. Keys work too: <kbd>1</kbd>–<kbd>4</kbd>, <kbd>Enter</kbd>, <kbd>T</kbd></span>
+              <span class="sw__brand"><img src="img/lumora-mark.svg" alt="" width="16" height="16" />Lumora</span>
+              <span class="sw__hint">Pick a shot, then press <b>TAKE</b>. Keys work too: <kbd>1</kbd>–<kbd>4</kbd>, <kbd>Enter</kbd>, <kbd>T</kbd></span>
               <span class="sw__tc" data-tc>00:00:00:00</span>
             </div>
             <div class="sw__mons">
@@ -88,72 +119,75 @@
               </button>
             </div>
           </div>
-          <p class="sw__cap">This is a live demo of Lumora's switcher, running right in your browser.</p>
         </div>
       </section>
 
-      <div class="ticker" aria-hidden="true">
-        <div class="ticker__in">
-          <span>22 transitions</span><span>500 fonts</span><span>Auto camera switching</span><span>PTZ cameras</span><span>Phones as cameras</span>
-          <span>Stream to several sites at once</span><span>Up to 4K</span><span>Instant replay</span><span>Audience polls</span><span>Stream Deck</span>
-          <span>MIDI</span><span>Green screen</span><span>Works offline</span> <span>22 transitions</span><span>500 fonts</span
-          ><span>Auto camera switching</span><span>PTZ cameras</span><span>Phones as cameras</span> <span>Stream to several sites at once</span
-          ><span>Up to 4K</span><span>Instant replay</span><span>Audience polls</span><span>Stream Deck</span> <span>MIDI</span><span>Green screen</span
-          ><span>Works offline</span>
-        </div>
-      </div>
-
-      <section class="dest">
-        <div class="wrap dest__in">
-          <p>Go live on</p>
-          <ul>
-            <li>YouTube</li>
-            <li>Facebook</li>
-            <li>Vimeo</li>
-            <li>Twitch</li>
-            <li>Any RTMP server</li>
-          </ul>
-          <p>all at the same time.</p>
+      <section class="split">
+        <div class="wrap split__in">
+          <figure class="split__photo">
+            <img
+              src="img/look-laptop.jpg"
+              width="1600"
+              height="1200"
+              loading="lazy"
+              alt="A laptop showing Lumora's Event look window with eight title designs."
+            />
+          </figure>
+          <div class="split__text">
+            <h2>Your brand on every title.</h2>
+            <p>
+              Set your colors, fonts and logo once in Event look. Every name, lower third, ticker, song and scoreboard follows it, so the whole event looks like
+              it was made by a design team.
+            </p>
+            <ul class="checks">
+              <li>Eight ready-made designs, or change every detail</li>
+              <li>500 fonts built in, and your own</li>
+              <li>14 ways for text to come on screen</li>
+              <li>Lower thirds, tickers, credits and a title designer</li>
+            </ul>
+          </div>
         </div>
       </section>
 
       <section id="features" class="feat">
         <div class="wrap">
-          <h2>Everything you need<br /><em>to go live.</em></h2>
-          <p class="intro">From your first camera to a full multi-screen show. No extra apps, no plugins, no subscriptions.</p>
+          <div class="head">
+            <h2>Everything you need to go live.</h2>
+            <p>From your first camera to a full multi-screen show. No extra apps, no plugins, no subscription.</p>
+          </div>
           <div class="feat__cols">
             <div>
               <p class="feat__label">Inputs</p>
               <h3>Every camera you own</h3>
-              <p>Plug in USB webcams and capture cards, add IP and PTZ cameras, or turn any phone into a wireless camera.</p>
+              <p>USB webcams, capture cards, IP and PTZ cameras, or any phone as a wireless camera.</p>
               <h3>Guests from anywhere</h3>
               <p>Send a link and up to 8 people join from their phone or computer. Nothing to install.</p>
               <h3>Videos, slides and more</h3>
               <p>Video playlists, pictures, PDFs, web pages, screen capture and song lyrics.</p>
               <h3>Scenes and layouts</h3>
-              <p>Picture in picture, split screen and green screen, set up in a few clicks.</p>
+              <p>Picture in picture, split screen and green screen in a few clicks.</p>
             </div>
             <div>
               <p class="feat__label">Produce</p>
               <h3>Switch like a pro</h3>
-              <p>Line up every shot before it goes live. 22 transitions, stingers and a T-bar fader.</p>
+              <p>Preview every shot first. 22 transitions, stingers and a T-bar fader.</p>
               <h3>Cameras on autopilot</h3>
-              <p>Let Lumora cut between your cameras every few seconds while you focus on the show.</p>
-              <h3>Titles that look the part</h3>
-              <p>Lower thirds, tickers and credits with 500 fonts and 14 animations, all in your event's colors.</p>
+              <p>Lumora cuts between your cameras by itself while you focus on the show.</p>
               <h3>Clean, balanced sound</h3>
-              <p>A full audio mixer with noise removal, gate and compressor, and a limiter on every output.</p>
+              <p>A full audio mixer with noise removal, gate, compressor and a limiter on every output.</p>
+              <h3>Instant replay</h3>
+              <p>Play back the best moment in slow motion and build a highlights reel as you go.</p>
             </div>
             <div>
               <p class="feat__label">Output</p>
               <h3>Stream everywhere at once</h3>
-              <p>YouTube, Facebook and Vimeo are built in, plus any RTMP server. Up to 4K.</p>
+              <p>YouTube, Facebook and Vimeo built in, plus any RTMP server. Up to 4K.</p>
               <h3>Record everything</h3>
-              <p>Every event is saved to your laptop as it happens, with instant replay in slow motion.</p>
+              <p>Every event is saved to your laptop as it happens.</p>
               <h3>Get the room involved</h3>
-              <p>Polls, raffles and trivia played on people's own phones, with live results on the big screen.</p>
+              <p>Polls, raffles and trivia on people's own phones, with live results on the big screen.</p>
               <h3>Control it your way</h3>
-              <p>Keyboard shortcuts, Stream Deck, MIDI controllers, presentation clickers or your phone.</p>
+              <p>Keyboard shortcuts, Stream Deck, MIDI, presentation clickers or your phone.</p>
             </div>
           </div>
         </div>
@@ -161,29 +195,31 @@
 
       <section id="screens" class="screens">
         <div class="wrap">
-          <h2>Run every screen<br /><em>in the room.</em></h2>
-          <p class="intro">
-            Other apps only handle the stream. Lumora also runs the projector behind the stage and the monitor your speakers read, so one person can run the
-            whole event. Switch between them with F1, F2 and F3.
-          </p>
+          <div class="head">
+            <h2>One operator. Three screens.</h2>
+            <p>
+              Most apps only handle the stream. Lumora also runs the projector behind the stage and the monitor your speakers read. What you put on air in the
+              demo above shows up here.
+            </p>
+          </div>
           <div class="venue">
             <article class="dev dev--back">
-              <header><kbd>F2</kbd> Back Screen <small>the projector behind the stage</small></header>
+              <header>Back Screen <small>The projector behind the stage</small></header>
               <div class="dev__screen dev__screen--wide"><canvas data-view="back" width="640" height="270"></canvas></div>
               <div class="dev__ctl">
                 <button type="button" class="chip" data-backlive aria-pressed="false">Back = Live</button>
-                <span>Show its own slides, video loops or music visuals, or mirror the stream with one click.</span>
+                <span>Its own slides, loops or music visuals, or a copy of the stream with one click.</span>
               </div>
             </article>
             <article class="dev dev--live">
-              <header><kbd>F1</kbd> Live Screen <small>the stream and the recording</small></header>
+              <header>Live Screen <small>The stream and the recording</small></header>
               <div class="dev__phone">
                 <div class="dev__screen"><canvas data-view="live" width="640" height="360"></canvas><span class="dev__live">LIVE</span></div>
               </div>
-              <p class="dev__note">What you TAKE in the demo above shows up here. This is what your viewers at home see, and what gets recorded.</p>
+              <p class="dev__note">What your viewers see at home, recorded at the same time.</p>
             </article>
             <article class="dev dev--mon">
-              <header><kbd>F3</kbd> Monitor <small>facing the people on stage</small></header>
+              <header>Monitor <small>Facing the people on stage</small></header>
               <div class="dev__wedge">
                 <div class="dev__screen dev__screen--mon" data-monitor>
                   <span class="mclock" data-clock>19:04</span>
@@ -195,133 +231,61 @@
                 <button type="button" class="chip" data-say="5 minutes left">5 minutes left</button>
                 <button type="button" class="chip" data-say="Please wrap up">Wrap up</button>
                 <button type="button" class="chip" data-say="Speak up a little">Speak up</button>
-                <button type="button" class="chip chip--flash" data-flash>Flash</button>
+                <button type="button" class="chip" data-flash>Flash</button>
               </div>
             </article>
           </div>
         </div>
       </section>
 
-      <section id="night" class="night">
-        <div class="wrap night__in">
-          <div class="night__head">
-            <h2>Made for<br /><em>live events.</em></h2>
-            <p>Graduations, award nights, galas, conferences, concerts. Here's how Lumora carries a typical evening, from doors open to goodnight.</p>
+      <section class="calm">
+        <div class="wrap">
+          <div class="head">
+            <h2>Built for the moments that count.</h2>
+            <p>Live events don't get a second take. Lumora is designed so the audience never sees a problem.</p>
           </div>
-          <ol class="ros">
-            <li data-cue>
-              <time>18:30</time>
-              <div>
-                <h3>Doors open</h3>
-                <p>A countdown fills the stream and the big screen. When it hits zero, Lumora goes straight to your next shot. No need to watch the clock.</p>
-                <ul>
-                  <li>Countdown timers</li>
-                  <li>Video loops</li>
-                  <li>Type the time to jump to</li>
-                </ul>
-              </div>
-            </li>
-            <li data-cue>
-              <time>19:00</time>
-              <div>
-                <h3>Welcome</h3>
-                <p>Your first speaker walks on. Their name appears in your event's colors, and the monitor at their feet counts down their five minutes.</p>
-                <ul>
-                  <li>Event look</li>
-                  <li>500 fonts</li>
-                  <li>14 text effects</li>
-                  <li>Stage monitor</li>
-                </ul>
-              </div>
-            </li>
-            <li data-cue>
-              <time>19:12</time>
-              <div>
-                <h3>The performance</h3>
-                <p>Set three cameras to switch on their own while you keep an eye on the sound. Noise removal takes the hum and hiss out of the mics.</p>
-                <ul>
-                  <li>Auto camera switching</li>
-                  <li>PTZ and phone cameras</li>
-                  <li>Noise removal</li>
-                  <li>Limiter</li>
-                </ul>
-              </div>
-            </li>
-            <li data-cue>
-              <time>19:40</time>
-              <div>
-                <h3>The year in photos</h3>
-                <p>Run a photo slideshow or a PDF from a presenter clicker at the side of the stage. Song lyrics go up on the stage monitor too.</p>
-                <ul>
-                  <li>Slideshows and PDFs</li>
-                  <li>Song lyrics</li>
-                  <li>Clickers and Stream Deck</li>
-                </ul>
-              </div>
-            </li>
-            <li data-cue>
-              <time>20:05</time>
-              <div>
-                <h3>The audience votes</h3>
-                <p>Guests scan a code and vote from their phones. The results build live on the big screen.</p>
-                <ul>
-                  <li>Polls</li>
-                  <li>Raffles</li>
-                  <li>Trivia</li>
-                  <li>Messages wall</li>
-                </ul>
-              </div>
-            </li>
-            <li data-cue>
-              <time>20:20</time>
-              <div>
-                <h3>Thank-yous</h3>
-                <p>Replay the best moment of the night in slow motion, then roll the credits for everyone who made it happen.</p>
-                <ul>
-                  <li>Instant replay</li>
-                  <li>Highlights reel</li>
-                  <li>Rolling credits</li>
-                </ul>
-              </div>
-            </li>
-            <li data-cue>
-              <time>20:45</time>
-              <div>
-                <h3>Goodnight</h3>
-                <p>End the stream on every site at once. Your recording is already saved and ready to share.</p>
-                <ul>
-                  <li>Stream to several sites</li>
-                  <li>Up to 4K</li>
-                  <li>Recording</li>
-                </ul>
-              </div>
-            </li>
-          </ol>
-        </div>
-      </section>
-
-      <section class="safe">
-        <div class="wrap safe__in">
-          <button type="button" class="bigpanic" data-bigpanic aria-pressed="false"><span>PANIC</span><small>double-click me</small></button>
-          <div>
-            <h2>Stay calm when <em>things go wrong.</em></h2>
-            <dl class="spec">
-              <dt>Panic button</dt>
-              <dd>Double-click and every screen goes black instantly. One click brings it all back.</dd>
-              <dt>No error screens</dt>
-              <dd>If a camera drops out or a video fails, your audience sees your logo, never an error message.</dd>
-              <dt>Auto-save</dt>
-              <dd>Everything saves as you go. If the laptop restarts, your event comes back exactly as it was.</dd>
-              <dt>Works offline</dt>
-              <dd>No internet needed during your event, except to stream.</dd>
-            </dl>
+          <div class="calm__grid">
+            <div>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v6M12 16.5v.5" />
+              </svg>
+              <h3>Panic button</h3>
+              <p>One double-click and every screen goes black. One click brings it back.</p>
+            </div>
+            <div>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="5" width="18" height="12" rx="2" />
+                <path d="M8 21h8M12 17v4" />
+              </svg>
+              <h3>No error screens</h3>
+              <p>If a camera drops out or a video fails, the audience sees your logo, never an error.</p>
+            </div>
+            <div>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 4h11l3 3v13H5z" />
+                <path d="M8 4v5h7V4M8 20v-6h8v6" />
+              </svg>
+              <h3>Saves as you go</h3>
+              <p>If the laptop restarts, your event comes back exactly as it was.</p>
+            </div>
+            <div>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 9a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0" />
+                <path d="M3 3l18 18" />
+              </svg>
+              <h3>Works offline</h3>
+              <p>No internet needed during your event, except to stream.</p>
+            </div>
           </div>
         </div>
       </section>
 
       <section id="app" class="app">
         <div class="wrap">
-          <h2>See it <em>in action.</em></h2>
+          <div class="head">
+            <h2>See the app.</h2>
+          </div>
           <div class="tabs" role="tablist" aria-label="Screenshots">
             <button type="button" role="tab" aria-selected="true" data-shot="0">Main screen</button>
             <button type="button" role="tab" aria-selected="false" data-shot="1">Event look</button>
@@ -344,58 +308,51 @@
               <img src="img/manual.jpg" width="1600" height="900" loading="lazy" alt="The How to use Lumora manual inside the app." />
             </div>
           </div>
-          <div class="more">
-            <h3>Also in the box</h3>
-            <ul>
-              <li>Picture in picture and split screen</li>
-              <li>Green screen</li>
-              <li>Scoreboards with a game clock</li>
-              <li>Lower thirds and tickers</li>
-              <li>Title designer</li>
-              <li>3D logo maker</li>
-              <li>Guests join by link</li>
-              <li>YouTube and Twitch chat on screen</li>
-              <li>Web pages and screen capture</li>
-              <li>SRT, RTMP and IP cameras</li>
-              <li>Phone and tablet remote</li>
-              <li>Triggers: when this, do that</li>
-              <li>Table finder</li>
-              <li>Live auctions and fundraisers</li>
-              <li>Teleprompter</li>
-              <li>A manual inside the app</li>
-            </ul>
+        </div>
+      </section>
+
+      <section id="feedback" class="fb">
+        <div class="wrap fb__in">
+          <div class="head head--left">
+            <h2>Tell us what you think.</h2>
+            <p>Found a problem, or have an idea for Lumora? Send it here. No account and no sign-in. Only the Lumora team sees what you write.</p>
           </div>
+          <form class="fb__form" data-feedback>
+            <div class="fb__row">
+              <label>Your name <small>(optional)</small><input name="name" autocomplete="name" /></label>
+              <label>Email <small>(optional, if you'd like a reply)</small><input name="email" type="email" autocomplete="email" /></label>
+            </div>
+            <label
+              >What is it about?
+              <select name="topic">
+                <option>An idea</option>
+                <option>Something isn't working</option>
+                <option>A question</option>
+                <option>Something else</option>
+              </select>
+            </label>
+            <label>Your message<textarea name="message" rows="5" required></textarea></label>
+            <input type="checkbox" name="botcheck" class="fb__trap" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="fb__send">
+              <button type="submit" class="btn btn--primary">Send</button>
+              <span class="fb__status" data-status role="status"></span>
+            </div>
+          </form>
         </div>
       </section>
 
       <section id="download" class="dl">
+        <div class="dl__bg" aria-hidden="true"></div>
         <div class="wrap dl__in">
-          <div>
-            <h2>Download Lumora.<br /><em>It's free.</em></h2>
-            <p>No subscription, no account, no watermark. Install it, plug in your cameras and you're ready for your next event.</p>
-            <a class="btn btn--red btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe"
-              >Download for Windows</a
-            >
-            <p class="fine">
-              Windows 10 or 11, 64-bit. The first time, Windows may say it doesn't recognize the app. Click <b>More info</b>, then <b>Run anyway</b>.<br />
-              <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">Earlier versions and what changed</a>
-            </p>
-          </div>
-          <dl class="spec spec--box">
-            <dt>Windows</dt>
-            <dd>10 or 11, 64-bit</dd>
-            <dt>Computer</dt>
-            <dd>A recent laptop. 8 GB memory, 16 GB for 4K or lots of cameras</dd>
-            <dt>Screens</dt>
-            <dd>Your laptop plus a projector, a stage monitor or a TV, by HDMI or a USB display adapter</dd>
-            <dt>Internet</dt>
-            <dd>Only for streaming</dd>
-            <dt>Help</dt>
-            <dd>
-              Help → How to use Lumora, in the app. Problems and ideas:
-              <a href="https://github.com/yehudakogan770/Livestreamingapp/issues/new">tell us on GitHub</a> (public, free account)
-            </dd>
-          </dl>
+          <h2>Download Lumora. It's free.</h2>
+          <p>No subscription, no account, no watermark. Install it, plug in your cameras and you're ready for your next event.</p>
+          <a class="btn btn--primary btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe"
+            >Download for Windows</a
+          >
+          <p class="fine">
+            Windows 10 or 11, 64-bit · 8 GB memory recommended. The first time, Windows may say it doesn't recognize the app: click <b>More info</b>, then
+            <b>Run anyway</b>.
+          </p>
         </div>
       </section>
     </main>
@@ -403,8 +360,12 @@
     <footer class="foot">
       <div class="wrap foot__in">
         <span class="brand"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora</span>
-        <span class="tc" data-tc>00:00:00:00</span>
-        <span>© <span id="year">2026</span></span>
+        <nav aria-label="Footer">
+          <a href="#features">Features</a>
+          <a href="#feedback">Feedback</a>
+          <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">All versions</a>
+        </nav>
+        <span>© <span id="year">2026</span> Lumora</span>
       </div>
     </footer>
 
