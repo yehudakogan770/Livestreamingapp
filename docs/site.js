@@ -630,19 +630,29 @@
       el.style.setProperty('--d', `${Math.max(0, sibs.indexOf(el)) * 90}ms`);
       el.classList.add('reveal');
     });
+    // Plays once a part is well inside the screen, scrolling down or up.
     const rio = new IntersectionObserver(
       (es) =>
         es.forEach((e) => {
-          // In view: it glides in. Out of view again: it resets, so it plays
-          // every time you scroll back to it (up or down).
-          if (e.isIntersecting) {
-            e.target.classList.add('is-in');
-            e.target.querySelectorAll('[data-count]').forEach(count);
-          } else e.target.classList.remove('is-in');
+          if (!e.isIntersecting || e.target.classList.contains('is-in')) return;
+          e.target.classList.add('is-in');
+          e.target.querySelectorAll('[data-count]').forEach(count);
         }),
-      { rootMargin: '0px 0px -12% 0px' },
+      { rootMargin: '-10% 0px -10% 0px' },
     );
-    items.forEach((el) => rio.observe(el));
+    // Resets only when fully off the screen (never while you can see it), and
+    // remembers which side it left by, so it glides back in from that side.
+    const out = new IntersectionObserver((es) =>
+      es.forEach((e) => {
+        if (e.isIntersecting) return;
+        e.target.classList.remove('is-in');
+        e.target.dataset.from = e.boundingClientRect.top < 0 ? 'above' : 'below';
+      }),
+    );
+    items.forEach((el) => {
+      rio.observe(el);
+      out.observe(el);
+    });
   }
 
   // The top bar: clear over the picture, solid once you scroll.
