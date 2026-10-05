@@ -246,51 +246,129 @@ void main() {
   }
 }`;
 
-/** One program for each effect; each reads the layer and writes it changed. */
-export const EFFECT_FS: Record<string, string> = {
-  basic: `${HEAD}
-uniform float uExposure, uContrast, uHighlights, uShadows, uWhites, uBlacks, uTemp, uTint, uSat, uVib;
-void main() {
-  vec4 src = texture(uTex, vUv);
-  vec3 c = unpre(src);
-  c *= pow(2.0, uExposure);
-  c = c * vec3(1.0 + uTemp * 0.25 + uTint * 0.1, 1.0 - uTint * 0.2, 1.0 - uTemp * 0.25 + uTint * 0.1);
+/**
+ * The color corrections, shared by the color effects and the grade's nodes so
+ * the two always look the same. (The same math is in grade.ts for checking.)
+ */
+const COLOR_LIB = `
+// a: exposure, contrast, pivot, highlights; b: shadows, whites, blacks, temperature; c: tint, saturation, vibrance.
+vec3 gradeBasic(vec3 c, vec4 a, vec4 b, vec3 t) {
+  c *= pow(2.0, a.x);
+  c = c * vec3(1.0 + b.w * 0.25 + t.x * 0.1, 1.0 - t.x * 0.2, 1.0 - b.w * 0.25 + t.x * 0.1);
   float l = luma(c);
   float hw = smoothstep(0.35, 1.0, l);
   float sw = 1.0 - smoothstep(0.0, 0.65, l);
-  c += c * uHighlights * 0.6 * hw;
-  c += uShadows * 0.35 * sw * (1.0 - c);
+  c += c * a.w * 0.6 * hw;
+  c += b.x * 0.35 * sw * (1.0 - c);
   // Whites and blacks move the ends of the range.
-  float lo = -uBlacks * 0.15;
-  float hi = 1.0 - uWhites * 0.2;
+  float lo = -b.z * 0.15;
+  float hi = 1.0 - b.y * 0.2;
   c = (c - lo) / max(0.05, hi - lo);
-  c = (c - 0.5) * (1.0 + uContrast) + 0.5;
+  c = (c - a.z) * (1.0 + a.y) + a.z;
   l = luma(c);
   float s = max(max(c.r, c.g), c.b) - min(min(c.r, c.g), c.b);
-  float vib = 1.0 + uVib * (1.0 - s);
-  c = mix(vec3(l), c, uSat * vib);
-  c = max(c, vec3(0.0));
-  outColor = vec4(c * src.a, src.a);
-}`,
-  wheels: `${HEAD}
-uniform vec3 uLift, uGamma, uGain;
+  float vib = 1.0 + t.z * (1.0 - s);
+  c = mix(vec3(l), c, t.y * vib);
+  return max(c, vec3(0.0));
+}
+vec3 gradeWheels(vec3 c, vec3 lift, vec3 gamma, vec3 gain) {
+  c = c * gain + lift * (1.0 - c);
+  return pow(max(c, vec3(0.0)), 1.0 / max(gamma, vec3(0.05)));
+}
+vec3 gradeCurves(vec3 c, sampler2D curve, float amount) {
+  c = clamp(c, 0.0, 1.0);
+  vec3 o = vec3(texture(curve, vec2(c.r * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).r,
+                texture(curve, vec2(c.g * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).g,
+                texture(curve, vec2(c.b * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).b);
+  return mix(c, o, amount);
+}
+// a: which hue, how wide, hue shift, saturation (hues as 0–1 turns).
+vec3 gradeHsl(vec3 c, vec4 a, float light) {
+  vec3 h = rgb2hsv(c);
+  float d = abs(fract(h.x - a.x + 0.5) - 0.5);
+  float w = (1.0 - smoothstep(a.y * 0.5, a.y, d)) * smoothstep(0.05, 0.2, h.y);
+  h.x = fract(h.x + a.z * w);
+  h.y = clamp(h.y * (1.0 + a.w * w), 0.0, 1.0);
+  h.z = clamp(h.z * (1.0 + light * w), 0.0, 4.0);
+  return hsv2rgb(h);
+}
+`;
+
+/**
+ * One node of a clip's grade: its corrections, limited by its qualifier and
+ * window (the matte), mixed over uBase (its own input, or the nodes under it
+ * in a layer mix). With uShowMatte it draws the matte in black and white.
+ */
+export const GRADE_FS = `${HEAD}${COLOR_LIB}
+uniform sampler2D uBase, uCurve;
+uniform float uUseBasic, uUseWheels, uUseCurves, uUseHsl, uUseHue, uUseQual, uUseWin, uShowMatte;
+uniform vec4 uBasicA, uBasicB, uBasicC, uHslA, uQHue, uQBand, uWin;
+uniform vec3 uLift, uGamma, uGain, uOffset, uWinOpt;
+uniform float uCurveMix, uHslLight;
+float band(float v, float lo, float hi, float s) { return smoothstep(lo - s, lo, v) * (1.0 - smoothstep(hi, hi + s, v)); }
+// An HSL key on the node's input: hue (center, half width, softness, invert) and saturation and brightness ranges.
+float qualify(vec3 c) {
+  c = clamp(c, 0.0, 1.0);
+  vec3 h = rgb2hsv(c);
+  float s = max(uQHue.z, 1e-4);
+  float d = abs(fract(h.x - uQHue.x + 0.5) - 0.5);
+  float hk = uQHue.y >= 0.5 ? 1.0 : 1.0 - smoothstep(uQHue.y, uQHue.y + s, d);
+  float q = hk * band(h.y, uQBand.x, uQBand.y, s) * band(luma(c), uQBand.z, uQBand.w, s);
+  return uQHue.w > 0.5 ? 1.0 - q : q;
+}
+// A circle or rectangle (center and half size in frame heights), soft inside its edge.
+float windowed(vec2 p) {
+  vec2 d = vec2((p.x - uWin.x) * uSize.x / uSize.y, p.y - uWin.y) / uWin.zw;
+  float e = uWinOpt.x > 0.5 ? max(abs(d.x), abs(d.y)) - 1.0 : length(d) - 1.0;
+  float a = smoothstep(0.0, 1.0, -e / max(uWinOpt.y, 1e-4));
+  return uWinOpt.z > 0.5 ? 1.0 - a : a;
+}
 void main() {
   vec4 src = texture(uTex, vUv);
   vec3 c = unpre(src);
-  c = c * uGain + uLift * (1.0 - c);
-  c = pow(max(c, vec3(0.0)), 1.0 / max(uGamma, vec3(0.05)));
+  float m = 1.0;
+  if (uUseQual > 0.5) m *= qualify(c);
+  if (uUseWin > 0.5) m *= windowed(vec2(vUv.x, 1.0 - vUv.y));
+  if (uShowMatte > 0.5) { outColor = vec4(vec3(m) * src.a, src.a); return; }
+  if (uUseBasic > 0.5) c = gradeBasic(c, uBasicA, uBasicB, uBasicC.xyz);
+  if (uUseWheels > 0.5) c = gradeWheels(c, uLift, uGamma, uGain) + uOffset;
+  if (uUseCurves > 0.5) c = gradeCurves(c, uCurve, uCurveMix);
+  if (uUseHsl > 0.5) c = gradeHsl(c, uHslA, uHslLight);
+  if (uUseHue > 0.5) { vec3 h = rgb2hsv(max(c, vec3(0.0))); h.x = fract(h.x + uBasicC.w); c = hsv2rgb(h); }
+  vec3 b = unpre(texture(uBase, vUv));
+  outColor = vec4(mix(b, c, m) * src.a, src.a);
+}`;
+
+/** Parallel nodes: each node's change from the input (uBase) added to what is there so far. */
+export const GRADE_ADD_FS = `${HEAD}
+uniform sampler2D uOther, uBase;
+void main() {
+  vec4 a = texture(uTex, vUv);
+  vec4 b = texture(uBase, vUv);
+  outColor = vec4(max(a.rgb + texture(uOther, vUv).rgb - b.rgb, vec3(0.0)), b.a);
+}`;
+
+/** One program for each effect; each reads the layer and writes it changed. */
+export const EFFECT_FS: Record<string, string> = {
+  basic: `${HEAD}${COLOR_LIB}
+uniform float uExposure, uContrast, uHighlights, uShadows, uWhites, uBlacks, uTemp, uTint, uSat, uVib;
+void main() {
+  vec4 src = texture(uTex, vUv);
+  vec3 c = gradeBasic(unpre(src), vec4(uExposure, uContrast, 0.5, uHighlights), vec4(uShadows, uWhites, uBlacks, uTemp), vec3(uTint, uSat, uVib));
   outColor = vec4(c * src.a, src.a);
 }`,
-  curves: `${HEAD}
+  wheels: `${HEAD}${COLOR_LIB}
+uniform vec3 uLift, uGamma, uGain;
+void main() {
+  vec4 src = texture(uTex, vUv);
+  outColor = vec4(gradeWheels(unpre(src), uLift, uGamma, uGain) * src.a, src.a);
+}`,
+  curves: `${HEAD}${COLOR_LIB}
 uniform sampler2D uCurve;
 uniform float uMix;
 void main() {
   vec4 src = texture(uTex, vUv);
-  vec3 c = clamp(unpre(src), 0.0, 1.0);
-  vec3 o = vec3(texture(uCurve, vec2(c.r * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).r,
-                texture(uCurve, vec2(c.g * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).g,
-                texture(uCurve, vec2(c.b * 255.0 / 256.0 + 0.5 / 256.0, 0.5)).b);
-  outColor = vec4(mix(c, o, uMix) * src.a, src.a);
+  outColor = vec4(gradeCurves(unpre(src), uCurve, uMix) * src.a, src.a);
 }`,
   lut: `${HEAD}
 uniform highp sampler3D uLut;
@@ -301,18 +379,11 @@ void main() {
   vec3 o = texture(uLut, c * (uLutSize - 1.0) / uLutSize + 0.5 / uLutSize).rgb;
   outColor = vec4(mix(c, o, uMix) * src.a, src.a);
 }`,
-  hsl: `${HEAD}
+  hsl: `${HEAD}${COLOR_LIB}
 uniform float uHue, uRange, uShift, uSatS, uLight;
 void main() {
   vec4 src = texture(uTex, vUv);
-  vec3 c = unpre(src);
-  vec3 h = rgb2hsv(c);
-  float d = abs(fract(h.x - uHue + 0.5) - 0.5);
-  float w = (1.0 - smoothstep(uRange * 0.5, uRange, d)) * smoothstep(0.05, 0.2, h.y);
-  h.x = fract(h.x + uShift * w);
-  h.y = clamp(h.y * (1.0 + uSatS * w), 0.0, 1.0);
-  h.z = clamp(h.z * (1.0 + uLight * w), 0.0, 4.0);
-  outColor = vec4(hsv2rgb(h) * src.a, src.a);
+  outColor = vec4(gradeHsl(unpre(src), vec4(uHue, uRange, uShift, uSatS), uLight) * src.a, src.a);
 }`,
   vignette: `${HEAD}
 uniform float uAmount, uVSize, uFeather;

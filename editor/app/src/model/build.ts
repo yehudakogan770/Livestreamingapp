@@ -2,6 +2,7 @@
 // clip, the live switching as the first edit), from older Lumora Edit
 // projects, and adding media to a sequence.
 import type { EventFile } from './event';
+import { migrateProject } from './grade';
 import { current, editSeq, rate } from './seq';
 import { placeClips } from './edit';
 import {
@@ -328,7 +329,8 @@ export function readProject(text: string): Project {
   if (raw.version === 2) {
     const p = raw as Project;
     if (!Array.isArray(p.sequences) || p.sequences.length === 0) throw new Error('This Lumora Edit project is damaged.');
-    return p;
+    // Color effects from before node grading become nodes (they look the same).
+    return migrateProject(p);
   }
   return fromV1(raw as V1);
 }

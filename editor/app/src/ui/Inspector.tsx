@@ -4,6 +4,7 @@ import { GENERATORS, timecode } from '../model/build';
 import { valueAt } from '../model/anim';
 import { setAngle, setTransition, updateMarker, removeMarker, withLinked } from '../model/edit';
 import { effectDef, TRANSITIONS, type ParamDef } from '../model/effects';
+import { allNodes, gradeOf } from '../model/grade';
 import { current, end, mediaOf, rate } from '../model/seq';
 import { NO_MOTION, type BlendMode, type Clip, type Effect, type Motion, type Param, type TextAnim, type TextData } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
@@ -611,6 +612,14 @@ function EffectSection({
             Choose .cube file…
           </button>
           <span className="insp__note">{typeof effect.d?.name === 'string' && effect.d.name ? effect.d.name : 'None yet'}</span>
+        </div>
+      )}
+      {effect.type === 'grade' && (
+        <div className="insp__row">
+          <span className="insp__note">{allNodes(gradeOf(effect)).length} node(s)</span>
+          <button type="button" className="btn btn--sm" onClick={() => ui.set({ page: 'color' })}>
+            Edit the nodes on the Color page
+          </button>
         </div>
       )}
       {effect.type === 'curves' && (

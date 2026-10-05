@@ -431,7 +431,7 @@ export function Editor({
           </div>
           <Splitter ui={ui} which="bottom" />
           <div className="page__bottom">
-            <ColorPanel doc={doc} engine={engine} actions={actions} />
+            <ColorPanel doc={doc} engine={engine} actions={actions} ui={ui} />
           </div>
         </div>
       )}

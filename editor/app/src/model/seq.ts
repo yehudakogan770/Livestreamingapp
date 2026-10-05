@@ -1,4 +1,5 @@
 import { scaleKeys, shiftKeys } from './anim';
+import { gradeOf, mapGradeParams } from './grade';
 import { exactRate, type Clip, type MediaItem, type Motion, type Project, type Sequence, type Track } from './types';
 
 export const end = (c: Clip): number => c.start + c.length;
@@ -93,7 +94,12 @@ export function mapParams(c: Clip, f: (p: Motion['x']) => Motion['x']): Clip {
     motion: mapMotion(c.motion, f),
     gain: f(c.gain),
     pan: f(c.pan),
-    effects: c.effects.map((e) => ({ ...e, p: Object.fromEntries(Object.entries(e.p).map(([k, v]) => [k, f(v)])) })),
+    effects: c.effects.map((e) => ({
+      ...e,
+      p: Object.fromEntries(Object.entries(e.p).map(([k, v]) => [k, f(v)])),
+      // A node grade's keyframes move too.
+      ...(e.type === 'grade' ? { d: mapGradeParams(gradeOf(e), f) as unknown as Record<string, unknown> } : {}),
+    })),
   };
 }
 

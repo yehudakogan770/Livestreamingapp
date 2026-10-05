@@ -76,6 +76,16 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
         >
           ⊡
         </button>
+        {u.page === 'color' && (
+          <button
+            type="button"
+            className={`tbtn${u.showMatte ? ' is-on' : ''}`}
+            title="Show the chosen grade node's matte (white: where the node changes the picture)"
+            onClick={() => ui.set({ showMatte: !u.showMatte })}
+          >
+            Matte
+          </button>
+        )}
       </div>
       <div className="vmon__screen" ref={boxRef}>
         <div className="vmon__frame" style={{ width: fitW, height: fitH }}>

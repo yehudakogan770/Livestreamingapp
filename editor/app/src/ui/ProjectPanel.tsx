@@ -341,7 +341,7 @@ function EffectsTab({ doc, actions }: { doc: Doc; actions: Actions }) {
   const [search, setSearch] = useState('');
   const q = search.trim().toLowerCase();
   const ids = selectedIds(selection);
-  const groups = [...new Set(EFFECTS.map((e) => e.group))];
+  const groups = [...new Set(EFFECTS.filter((e) => !e.hidden).map((e) => e.group))];
   return (
     <div className="fxlist">
       <input
@@ -380,7 +380,7 @@ function EffectsTab({ doc, actions }: { doc: Doc; actions: Actions }) {
         );
       })}
       {groups.map((g) => {
-        const list = EFFECTS.filter((e) => e.group === g && (!q || e.name.toLowerCase().includes(q)));
+        const list = EFFECTS.filter((e) => !e.hidden && e.group === g && (!q || e.name.toLowerCase().includes(q)));
         if (!list.length) return null;
         return (
           <div key={g} className="fxlist__group">

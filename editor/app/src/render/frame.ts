@@ -3,6 +3,7 @@
 // while editing and when the film is made.
 import { valueAt } from '../model/anim';
 import { end, onTrack, rate, seqLength } from '../model/seq';
+import { gradeAt, gradeOf, type GradeNow } from '../model/grade';
 import type { BlendMode, Clip, MediaItem, Project, Sequence, TextData } from '../model/types';
 
 export type LayerSource =
@@ -37,6 +38,8 @@ export interface EffectNow {
   type: string;
   p: Record<string, number>;
   d: Record<string, unknown>;
+  /** A node grade's numbers at this frame. */
+  grade?: GradeNow;
 }
 
 export interface Layer {
@@ -90,7 +93,13 @@ export function effectsAt(c: Clip, local: number, kind: 'video' | 'audio', isAud
   const t = Math.max(0, Math.min(c.length - 1, local));
   return c.effects
     .filter((e) => e.on && isAudio(e.type) === (kind === 'audio'))
-    .map((e) => ({ id: e.id, type: e.type, p: Object.fromEntries(Object.entries(e.p).map(([k, v]) => [k, valueAt(v, t)])), d: e.d ?? {} }));
+    .map((e) => ({
+      id: e.id,
+      type: e.type,
+      p: Object.fromEntries(Object.entries(e.p).map(([k, v]) => [k, valueAt(v, t)])),
+      d: e.d ?? {},
+      ...(e.type === 'grade' ? { grade: gradeAt(gradeOf(e), t) } : {}),
+    }));
 }
 
 const AUDIO_EFFECTS = new Set(['eq', 'compressor', 'denoise', 'deess', 'limiter', 'voice']);
