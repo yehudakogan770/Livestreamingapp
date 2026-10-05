@@ -46,6 +46,7 @@ import { OutputsDialog } from './OutputsDialog';
 import type { Act } from './act';
 import { screenInputs } from '../engine/screenInputs';
 import { CloseConfirm } from './CloseConfirm';
+import { VisualsCard } from './VisualsCard';
 import './ControlView.css';
 
 interface Toast {
@@ -275,7 +276,7 @@ export function ControlView({
   // lined up in Next (as soon as it is there).
   const cardFor = (id: string | null) => {
     const k = find(id)?.kind.type;
-    return k === 'pesukim' || k === 'slideshow' || k === 'credits' || k === 'countdown' ? k : null;
+    return k === 'pesukim' || k === 'slideshow' || k === 'credits' || k === 'countdown' || k === 'visuals' ? k : null;
   };
   const bar = screen === 'monitor' ? null : pesukimBar(show, screen);
   const cards = [
@@ -288,6 +289,8 @@ export function ControlView({
       <SlideshowCard key={card} show={show} act={act} screen={screen} client={client} />
     ) : card === 'credits' ? (
       <CreditsCard key={card} show={show} act={act} screen={screen} />
+    ) : card === 'visuals' ? (
+      <VisualsCard key={card} show={show} act={act} screen={screen} />
     ) : (
       <CountdownMini key="countdown" show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
     );

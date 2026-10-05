@@ -15,7 +15,8 @@ import { PlaylistEditor } from './PlaylistEditor';
 import type { Transition } from '../engine/types/Transition';
 import { transitionName } from './SwitchPanel';
 import { sendCommand } from './commands';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { isSoundFile, type EngineClient } from '../engine/client';
 import { OVERLAY_KINDS, overlayActions } from '../engine/overlays';
 import { inList, LIST_SCREENS, screenInputs } from '../engine/screenInputs';
@@ -310,6 +311,36 @@ function TileMenu({
   favourites: Transition[];
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  // Where the menu opens: the menu floats above everything (never cut off by
+  // the inputs area), under its card, or above it when there is no room below.
+  const spot = useRef<HTMLSpanElement>(null);
+  const [place, setPlace] = useState<CSSProperties>({ visibility: 'hidden' });
+  useLayoutEffect(() => {
+    const fit = () => {
+      const card = spot.current?.parentElement?.getBoundingClientRect();
+      const menu = ref.current;
+      if (!card || !menu) return;
+      const gap = 8;
+      const h = menu.scrollHeight;
+      const below = window.innerHeight - card.top - 30 - gap;
+      const above = card.bottom - 30 - gap;
+      const left = Math.min(Math.max(gap, card.right - 4 - menu.offsetWidth), window.innerWidth - menu.offsetWidth - gap);
+      const down = h <= below || below >= above;
+      setPlace({
+        position: 'fixed',
+        left,
+        right: 'auto',
+        top: down ? card.top + 30 : 'auto',
+        bottom: down ? 'auto' : window.innerHeight - card.bottom + 30,
+        maxHeight: Math.max(160, down ? below : above),
+        overflowY: 'auto',
+        zIndex: 1000,
+      });
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
   const [confirm, setConfirm] = useState(false);
   // Everything is changed here first and applied on Done; clicking away or Esc cancels.
   const colour = source.kind.type === 'color' ? source.kind.color : source.kind.type === 'countdown' ? source.kind.background : null;
@@ -352,239 +383,256 @@ function TileMenu({
 
   const k = source.kind.type;
   return (
-    <div ref={ref} className="menu" role="dialog" aria-label={`Options for ${source.name}`}>
-      {playNow && (
-        <div className="menu__row menu__play">
-          Play now
-          <span className="segs">
-            {favourites.map((t, i) => (
-              <button key={i} type="button" className="seg" title={`Straight to air with ${transitionName(t)}`} onClick={() => playNow(t)}>
-                {transitionName(t)}
-              </button>
-            ))}
-          </span>
-        </div>
-      )}
-      <label className="menu__row">
-        Name
-        <input value={draft.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && done()} />
-      </label>
-      <div className="menu__row">
-        In the inputs of
-        <span className="segs">
-          {LIST_SCREENS.map((x) => (
+    <span ref={spot} hidden>
+      {createPortal(
+        <div ref={ref} className="menu" style={place} role="dialog" aria-label={`Options for ${source.name}`}>
+          {playNow && (
+            <div className="menu__row menu__play">
+              Play now
+              <span className="segs">
+                {favourites.map((t, i) => (
+                  <button key={i} type="button" className="seg" title={`Straight to air with ${transitionName(t)}`} onClick={() => playNow(t)}>
+                    {transitionName(t)}
+                  </button>
+                ))}
+              </span>
+            </div>
+          )}
+          <label className="menu__row">
+            Name
+            <input value={draft.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && done()} />
+          </label>
+          <div className="menu__row">
+            In the inputs of
+            <span className="segs">
+              {LIST_SCREENS.map((x) => (
+                <button
+                  key={x.id}
+                  type="button"
+                  className="seg"
+                  aria-pressed={draft.lists.includes(x.id)}
+                  title={draft.lists.includes(x.id) ? `Take it out of ${x.name}’s inputs` : `Also show it in ${x.name}’s inputs`}
+                  onClick={() => {
+                    const has = draft.lists.includes(x.id);
+                    const next = has
+                      ? draft.lists.filter((id) => id !== x.id)
+                      : LIST_SCREENS.map((l) => l.id).filter((id) => id === x.id || draft.lists.includes(id));
+                    if (next.length) set({ lists: next });
+                  }}
+                >
+                  {x.name}
+                </button>
+              ))}
+            </span>
+          </div>
+          {draft.color !== null && (
+            <label className="menu__row">
+              {k === 'countdown' ? 'Background' : 'Color'}
+              <input type="color" value={draft.color} onChange={(e) => set({ color: e.target.value })} />
+            </label>
+          )}
+          {(k === 'video' || k === 'image' || k === 'camera') && (
+            <div className="menu__row">
+              Picture
+              <span className="segs">
+                <button type="button" className="seg" aria-pressed={draft.fit === 'contain'} onClick={() => set({ fit: 'contain' })}>
+                  Whole
+                </button>
+                <button type="button" className="seg" aria-pressed={draft.fit === 'cover'} onClick={() => set({ fit: 'cover' })}>
+                  Fill
+                </button>
+              </span>
+            </div>
+          )}
+          {k === 'video' && (
+            <label className="menu__row menu__row--check">
+              <input type="checkbox" checked={draft.looping} onChange={(e) => set({ looping: e.target.checked })} /> Loop at the end
+            </label>
+          )}
+          {(k === 'video' || k === 'microphone') && (
+            <>
+              <label className="menu__row">
+                Volume
+                <input type="range" min={0} max={100} value={Math.round(draft.volume * 100)} onChange={(e) => set({ volume: Number(e.target.value) / 100 })} />
+              </label>
+              <label className="menu__row menu__row--check">
+                <input type="checkbox" checked={draft.muted} onChange={(e) => set({ muted: e.target.checked })} /> Mute
+              </label>
+            </>
+          )}
+          {k === 'visuals' && (
             <button
-              key={x.id}
               type="button"
-              className="seg"
-              aria-pressed={draft.lists.includes(x.id)}
-              title={draft.lists.includes(x.id) ? `Take it out of ${x.name}’s inputs` : `Also show it in ${x.name}’s inputs`}
+              className="btn menu__wide"
               onClick={() => {
-                const has = draft.lists.includes(x.id);
-                const next = has
-                  ? draft.lists.filter((id) => id !== x.id)
-                  : LIST_SCREENS.map((l) => l.id).filter((id) => id === x.id || draft.lists.includes(id));
-                if (next.length) set({ lists: next });
+                onClose();
+                sendCommand({ type: 'visuals' });
               }}
             >
-              {x.name}
+              Stage visuals controls…
             </button>
-          ))}
-        </span>
-      </div>
-      {draft.color !== null && (
-        <label className="menu__row">
-          {k === 'countdown' ? 'Background' : 'Color'}
-          <input type="color" value={draft.color} onChange={(e) => set({ color: e.target.value })} />
-        </label>
-      )}
-      {(k === 'video' || k === 'image' || k === 'camera') && (
-        <div className="menu__row">
-          Picture
-          <span className="segs">
-            <button type="button" className="seg" aria-pressed={draft.fit === 'contain'} onClick={() => set({ fit: 'contain' })}>
-              Whole
+          )}
+          {k === 'logo3d' && (
+            <button
+              type="button"
+              className="btn menu__wide"
+              onClick={() => {
+                onClose();
+                sendCommand({ type: 'logoMaker', id: source.id });
+              }}
+            >
+              Edit 3D logo…
             </button>
-            <button type="button" className="seg" aria-pressed={draft.fit === 'cover'} onClick={() => set({ fit: 'cover' })}>
-              Fill
+          )}
+          {(k === 'text' ||
+            k === 'split' ||
+            k === 'slideshow' ||
+            k === 'browser' ||
+            k === 'stream' ||
+            k === 'scoreboard' ||
+            k === 'screen' ||
+            k === 'lyrics' ||
+            k === 'poll' ||
+            k === 'guest' ||
+            k === 'raffle' ||
+            k === 'fundraiser' ||
+            k === 'wall' ||
+            k === 'auction' ||
+            k === 'zmanim' ||
+            k === 'scripture' ||
+            k === 'trivia' ||
+            k === 'seating' ||
+            k === 'graphic') && (
+            <button
+              type="button"
+              className="btn menu__wide"
+              onClick={() => {
+                onClose();
+                onEditText();
+              }}
+            >
+              {k === 'text'
+                ? 'Edit text…'
+                : k === 'split'
+                  ? 'Edit split screen…'
+                  : k === 'browser'
+                    ? 'Control web page…'
+                    : k === 'stream'
+                      ? 'Stream settings…'
+                      : k === 'scoreboard'
+                        ? 'Scores and clock…'
+                        : k === 'screen'
+                          ? 'Change what is captured…'
+                          : k === 'lyrics'
+                            ? 'Run the song…'
+                            : k === 'poll'
+                              ? 'Run the poll…'
+                              : k === 'guest'
+                                ? 'Guest link…'
+                                : k === 'raffle'
+                                  ? 'Run the raffle…'
+                                  : k === 'fundraiser'
+                                    ? 'Run the fundraiser…'
+                                    : k === 'wall'
+                                      ? 'Run the messages wall…'
+                                      : k === 'auction'
+                                        ? 'Run the auction…'
+                                        : k === 'zmanim'
+                                          ? 'Look, city and Shabbos…'
+                                          : k === 'scripture'
+                                            ? 'Choose the passage…'
+                                            : k === 'trivia'
+                                              ? 'Run the game…'
+                                              : k === 'seating'
+                                                ? 'Guest list and tables…'
+                                                : k === 'graphic'
+                                                  ? 'Design…'
+                                                  : 'Edit slides…'}
             </button>
-          </span>
-        </div>
+          )}
+          <button
+            type="button"
+            className="btn menu__wide"
+            onClick={() => {
+              onClose();
+              onKeep();
+            }}
+          >
+            Save to library…
+          </button>
+          {k === 'camera' && (
+            <button
+              type="button"
+              className={`btn menu__wide${source.ptz ? ' is-on' : ''}`}
+              onClick={() => {
+                onClose();
+                onPtz();
+              }}
+            >
+              {source.ptz ? 'Move the camera (PTZ)…' : 'PTZ camera control…'}
+            </button>
+          )}
+          {k === 'video' && (
+            <button
+              type="button"
+              className={`btn menu__wide${source.playlist ? ' is-on' : ''}`}
+              onClick={() => {
+                onClose();
+                onEditText();
+              }}
+            >
+              {source.playlist ? `Playlist (${source.playlist.items.length} videos)…` : 'Make a playlist…'}
+            </button>
+          )}
+          {(k === 'camera' || k === 'video' || k === 'image') && (
+            <button
+              type="button"
+              className={`btn menu__wide${source.key.enabled ? ' is-on' : ''}`}
+              onClick={() => {
+                onClose();
+                onKey();
+              }}
+            >
+              Green screen{source.key.enabled ? ' (on)' : ''}…
+            </button>
+          )}
+          {(k === 'camera' || k === 'video' || k === 'image') && (
+            <button
+              type="button"
+              className={`btn menu__wide${isAdjusted(source.adjust) ? ' is-on' : ''}`}
+              onClick={() => {
+                onClose();
+                onAdjust();
+              }}
+            >
+              Adjust picture{isAdjusted(source.adjust) ? ' (on)' : ''}…
+            </button>
+          )}
+          <div className="menu__foot">
+            <button type="button" className="btn" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn--primary" onClick={done}>
+              Done
+            </button>
+          </div>
+          <button
+            type="button"
+            className={`menu__remove${confirm ? ' is-armed' : ''}`}
+            onClick={() => {
+              if (!confirm) setConfirm(true);
+              else {
+                act({ type: 'removeSource', id: source.id });
+                onClose();
+              }
+            }}
+          >
+            {confirm ? 'Click again to remove' : 'Remove input'}
+          </button>
+        </div>,
+        document.body,
       )}
-      {k === 'video' && (
-        <label className="menu__row menu__row--check">
-          <input type="checkbox" checked={draft.looping} onChange={(e) => set({ looping: e.target.checked })} /> Loop at the end
-        </label>
-      )}
-      {(k === 'video' || k === 'microphone') && (
-        <>
-          <label className="menu__row">
-            Volume
-            <input type="range" min={0} max={100} value={Math.round(draft.volume * 100)} onChange={(e) => set({ volume: Number(e.target.value) / 100 })} />
-          </label>
-          <label className="menu__row menu__row--check">
-            <input type="checkbox" checked={draft.muted} onChange={(e) => set({ muted: e.target.checked })} /> Mute
-          </label>
-        </>
-      )}
-      {k === 'logo3d' && (
-        <button
-          type="button"
-          className="btn menu__wide"
-          onClick={() => {
-            onClose();
-            sendCommand({ type: 'logoMaker', id: source.id });
-          }}
-        >
-          Edit 3D logo…
-        </button>
-      )}
-      {(k === 'text' ||
-        k === 'split' ||
-        k === 'slideshow' ||
-        k === 'browser' ||
-        k === 'stream' ||
-        k === 'scoreboard' ||
-        k === 'screen' ||
-        k === 'lyrics' ||
-        k === 'poll' ||
-        k === 'guest' ||
-        k === 'raffle' ||
-        k === 'fundraiser' ||
-        k === 'wall' ||
-        k === 'auction' ||
-        k === 'zmanim' ||
-        k === 'scripture' ||
-        k === 'trivia' ||
-        k === 'seating' ||
-        k === 'graphic') && (
-        <button
-          type="button"
-          className="btn menu__wide"
-          onClick={() => {
-            onClose();
-            onEditText();
-          }}
-        >
-          {k === 'text'
-            ? 'Edit text…'
-            : k === 'split'
-              ? 'Edit split screen…'
-              : k === 'browser'
-                ? 'Control web page…'
-                : k === 'stream'
-                  ? 'Stream settings…'
-                  : k === 'scoreboard'
-                    ? 'Scores and clock…'
-                    : k === 'screen'
-                      ? 'Change what is captured…'
-                      : k === 'lyrics'
-                        ? 'Run the song…'
-                        : k === 'poll'
-                          ? 'Run the poll…'
-                          : k === 'guest'
-                            ? 'Guest link…'
-                            : k === 'raffle'
-                              ? 'Run the raffle…'
-                              : k === 'fundraiser'
-                                ? 'Run the fundraiser…'
-                                : k === 'wall'
-                                  ? 'Run the messages wall…'
-                                  : k === 'auction'
-                                    ? 'Run the auction…'
-                                    : k === 'zmanim'
-                                      ? 'Look, city and Shabbos…'
-                                      : k === 'scripture'
-                                        ? 'Choose the passage…'
-                                        : k === 'trivia'
-                                          ? 'Run the game…'
-                                          : k === 'seating'
-                                            ? 'Guest list and tables…'
-                                            : k === 'graphic'
-                                              ? 'Design…'
-                                              : 'Edit slides…'}
-        </button>
-      )}
-      <button
-        type="button"
-        className="btn menu__wide"
-        onClick={() => {
-          onClose();
-          onKeep();
-        }}
-      >
-        Save to library…
-      </button>
-      {k === 'camera' && (
-        <button
-          type="button"
-          className={`btn menu__wide${source.ptz ? ' is-on' : ''}`}
-          onClick={() => {
-            onClose();
-            onPtz();
-          }}
-        >
-          {source.ptz ? 'Move the camera (PTZ)…' : 'PTZ camera control…'}
-        </button>
-      )}
-      {k === 'video' && (
-        <button
-          type="button"
-          className={`btn menu__wide${source.playlist ? ' is-on' : ''}`}
-          onClick={() => {
-            onClose();
-            onEditText();
-          }}
-        >
-          {source.playlist ? `Playlist (${source.playlist.items.length} videos)…` : 'Make a playlist…'}
-        </button>
-      )}
-      {(k === 'camera' || k === 'video' || k === 'image') && (
-        <button
-          type="button"
-          className={`btn menu__wide${source.key.enabled ? ' is-on' : ''}`}
-          onClick={() => {
-            onClose();
-            onKey();
-          }}
-        >
-          Green screen{source.key.enabled ? ' (on)' : ''}…
-        </button>
-      )}
-      {(k === 'camera' || k === 'video' || k === 'image') && (
-        <button
-          type="button"
-          className={`btn menu__wide${isAdjusted(source.adjust) ? ' is-on' : ''}`}
-          onClick={() => {
-            onClose();
-            onAdjust();
-          }}
-        >
-          Adjust picture{isAdjusted(source.adjust) ? ' (on)' : ''}…
-        </button>
-      )}
-      <div className="menu__foot">
-        <button type="button" className="btn" onClick={onClose}>
-          Cancel
-        </button>
-        <button type="button" className="btn btn--primary" onClick={done}>
-          Done
-        </button>
-      </div>
-      <button
-        type="button"
-        className={`menu__remove${confirm ? ' is-armed' : ''}`}
-        onClick={() => {
-          if (!confirm) setConfirm(true);
-          else {
-            act({ type: 'removeSource', id: source.id });
-            onClose();
-          }
-        }}
-      >
-        {confirm ? 'Click again to remove' : 'Remove input'}
-      </button>
-    </div>
+    </span>
   );
 }
 
