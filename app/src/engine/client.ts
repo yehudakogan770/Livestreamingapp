@@ -435,6 +435,33 @@ export function appReady(): void {
   if (isInsideLumora()) void invoke('app_ready').catch(() => {});
 }
 
+/**
+ * The close button was pressed: `onAsk` shows "Close Lumora?". Lumora
+ * closes by itself if the window does not answer within a few seconds.
+ */
+export function watchCloseRequests(onAsk: () => void): () => void {
+  if (!isInsideLumora()) return () => {};
+  let stop: (() => void) | null = null;
+  let cancelled = false;
+  void listen<number>('close-requested', (e) => {
+    void invoke('close_seen', { request: e.payload }).catch(() => {});
+    onAsk();
+  }).then((unlisten) => {
+    if (cancelled) unlisten();
+    else stop = unlisten;
+  });
+  return () => {
+    cancelled = true;
+    stop?.();
+  };
+}
+
+/** Close Lumora for good (after the person confirmed). */
+export function closeApp(): void {
+  if (isInsideLumora()) void invoke('close_app').catch(() => {});
+  else window.close();
+}
+
 const FILTERS: Record<MediaKind, { name: string; extensions: string[] }> = {
   video: { name: 'Videos', extensions: ['mp4', 'm4v', 'mov', 'webm', 'mkv', 'avi', 'wmv', 'mpg', 'mpeg'] },
   image: { name: 'Pictures', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg'] },

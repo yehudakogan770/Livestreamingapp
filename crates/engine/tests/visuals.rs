@@ -265,6 +265,7 @@ fn a_visuals_input_goes_on_air_and_behind_the_pesukim() {
                 fit: None,
                 audio: None,
                 key: None,
+                screens: None,
             },
         },
         0,

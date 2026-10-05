@@ -53,6 +53,10 @@ pub struct NewSource {
     #[serde(default)]
     #[ts(optional)]
     pub key: Option<crate::model::ChromaKey>,
+    /// The screens whose input list it is in (left out: every screen's).
+    #[serde(default)]
+    #[ts(optional)]
+    pub screens: Option<Vec<ScreenId>>,
 }
 
 /// Changes to an existing source. Fields left out stay as they are.
@@ -106,6 +110,10 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub auto_frame: Option<crate::vision::AutoFrame>,
+    /// The screens whose input list it is in (empty: every screen's).
+    #[serde(default)]
+    #[ts(optional)]
+    pub screens: Option<Vec<ScreenId>>,
 }
 
 /// Changes to the stage monitor. Fields left out stay as they are.

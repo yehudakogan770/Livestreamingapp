@@ -1,4 +1,5 @@
 import { branded, hasBrand } from '../engine/brand';
+import { OVERLAY_KINDS, overlayActions } from '../engine/overlays';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { EngineError, defaultCountdown, isSoundFile, type EngineClient } from '../engine/client';
 import type { Action } from '../engine/types/Action';
@@ -43,6 +44,8 @@ import { InputGrid } from './InputGrid';
 import { AddInput } from './AddInput';
 import { OutputsDialog } from './OutputsDialog';
 import type { Act } from './act';
+import { screenInputs } from '../engine/screenInputs';
+import { CloseConfirm } from './CloseConfirm';
 import './ControlView.css';
 
 interface Toast {
@@ -173,11 +176,19 @@ export function ControlView({
         ? { ...added, kind: { ...added.kind, style: branded(added.kind.style, brand, added.kind.layout === 'lowerThird') } }
         : added;
     setAdding(false);
+    // Sound-only inputs (microphones, music) go to the mixer only.
+    const soundOnly = src.kind.type === 'microphone' || (src.kind.type === 'video' && isSoundFile(src.kind.path));
     void client
-      .dispatch({ type: 'addSource', source: { ...src, id } })
-      .then(() => {
-        // Line up new pictures next; sound-only inputs (microphones, music) go to the mixer only.
-        const soundOnly = src.kind.type === 'microphone' || (src.kind.type === 'video' && isSoundFile(src.kind.path));
+      // It goes in the list of the screen being controlled (sound is in the mixer for every screen).
+      .dispatch({ type: 'addSource', source: { ...src, id, ...(screen === 'monitor' || soundOnly ? {} : { screens: [screen] }) } })
+      .then(async () => {
+        // Names, titles and scoreboards go over the picture: ready in Next on an overlay.
+        if (OVERLAY_KINDS.has(src.kind.type)) {
+          const fresh = await client.getShow();
+          for (const a of overlayActions(fresh.show, id, screen, false)) await client.dispatch(a);
+          return;
+        }
+        // Line up new pictures next.
         return screen === 'monitor' || soundOnly ? undefined : client.dispatch({ type: 'setPreview', screen, sourceId: id });
       })
       .catch(fail);
@@ -218,7 +229,7 @@ export function ControlView({
         const o = show.overlays[ch];
         if (o?.sourceId) act({ type: 'setOverlayOn', channel: ch, value: !o.on });
       } else if (/^[0-9]$/.test(e.key) && screen !== 'monitor') {
-        const src = show.sources[e.key === '0' ? 9 : Number(e.key) - 1];
+        const src = screenInputs(show, screen)[e.key === '0' ? 9 : Number(e.key) - 1];
         if (src) act({ type: 'setPreview', screen, sourceId: src.id });
       } else if ((e.key === 'n' || e.key === 'N') && show.run.cues.length > 0) {
         act({ type: 'nextCue' });
@@ -479,6 +490,7 @@ export function ControlView({
           screen={screen}
         />
       )}
+      <CloseConfirm />
       {shortcuts && <ShortcutsDialog jewish={jewishToolsOn(show)} onClose={() => setShortcuts(false)} />}
       {help && <HelpDialog jewish={jewishToolsOn(show)} onClose={() => setHelp(false)} />}
       {runOpen && <RunOfShowDialog show={show} act={act} client={client} onClose={() => setRunOpen(false)} />}

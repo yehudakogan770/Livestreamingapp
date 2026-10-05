@@ -2662,6 +2662,20 @@ fn take(s: &mut Show, screen: ScreenId, t: Transition, now: Millis) -> Result<()
     sc.tbar = 0.0;
     start_if_video(s, &incoming, now);
     start_if_countdown(s, &incoming, now);
+    // Overlays waiting in Next for this screen go on air with the picture.
+    let mut staged = Vec::new();
+    for o in &mut s.overlays {
+        if o.in_next && o.screens.contains(&screen) {
+            if let Some(id) = o.source_id.clone() {
+                o.set_on(true, now);
+                o.in_next = false;
+                staged.push(id);
+            }
+        }
+    }
+    for id in &staged {
+        start_if_video(s, id, now);
+    }
     // Credits roll from the top when they go on air.
     if let Ok(c) = credits_mut(s, &incoming) {
         if !c.playing {
@@ -2767,9 +2781,24 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         camera: None,
         background: crate::vision::Background::default(),
         auto_frame: crate::vision::AutoFrame::default(),
+        screens: clean_screens(new.screens.unwrap_or_default()),
     };
     s.sources.push(src);
     Ok(())
+}
+
+/// Each screen once, in order; all three is the same as every screen.
+fn clean_screens(mut screens: Vec<ScreenId>) -> Vec<ScreenId> {
+    let mut seen = Vec::new();
+    screens.retain(|x| {
+        let fresh = !seen.contains(x);
+        seen.push(*x);
+        fresh
+    });
+    if screens.len() >= 3 {
+        screens.clear();
+    }
+    screens
 }
 
 fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> {
@@ -2778,6 +2807,9 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
         .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
     if let Some(name) = patch.name {
         src.name = clean_name(&name);
+    }
+    if let Some(screens) = patch.screens {
+        src.screens = clean_screens(screens);
     }
     if let Some(v) = patch.volume {
         src.volume = finite(v, "volume")?.clamp(0.0, 1.0);

@@ -17,6 +17,8 @@ import { transitionName } from './SwitchPanel';
 import { sendCommand } from './commands';
 import { useEffect, useRef, useState } from 'react';
 import { isSoundFile, type EngineClient } from '../engine/client';
+import { OVERLAY_KINDS, overlayActions } from '../engine/overlays';
+import { inList, LIST_SCREENS, screenInputs } from '../engine/screenInputs';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
@@ -122,16 +124,26 @@ export function InputGrid({
   const keepSource = show.sources.find((x) => x.id === keeping);
   const textOnly = screen === 'monitor';
   const fill = useFillTiles();
+  // This screen's own inputs (Live and Back each have their own list).
+  const mine = screenInputs(show, screen);
   return (
     <div className="inputs" aria-label="Inputs" ref={fill}>
-      {(only ? only.map((id) => show.sources.find((s) => s.id === id)).filter((s) => s !== undefined) : show.sources).map((src) => {
-        const i = show.sources.indexOf(src);
+      {(only ? only.map((id) => show.sources.find((s) => s.id === id)).filter((s) => s !== undefined) : mine).map((src) => {
+        const i = mine.indexOf(src);
         const onAir = sc.program === src.id;
         const next = sc.preview === src.id && !onAir;
         // Microphones and music files are heard, never shown: they live in the mixer.
         const soundFile = src.kind.type === 'video' && isSoundFile(src.kind.path);
         const soundOnly = soundFile || src.kind.type === 'microphone';
         const playing = src.kind.type === 'video' && src.kind.playback.playing;
+        // Names, titles and scoreboards go over the picture, on an overlay.
+        const asOverlay = OVERLAY_KINDS.has(src.kind.type);
+        const ch = show.overlays.findIndex((o) => o.sourceId === src.id);
+        const overlayOn = ch >= 0 && !!show.overlays[ch]?.on;
+        const overlay = (onAir: boolean) => {
+          if (overlayOn) return act({ type: 'setOverlayOn', channel: ch, value: false });
+          for (const a of overlayActions(show, src.id, screen, onAir)) act(a);
+        };
         return (
           <div key={src.id} className={`tile${onAir ? ' tile--pgm' : ''}${next ? ' tile--pvw' : ''}`}>
             <button
@@ -139,9 +151,17 @@ export function InputGrid({
               className="tile__pick"
               disabled={textOnly || soundOnly}
               aria-label={`${i + 1} ${src.name}`}
-              title={soundOnly ? 'Sound only: use the mixer' : 'Click: line up next · Double-click: straight to air'}
-              onClick={() => act({ type: 'setPreview', screen, sourceId: src.id })}
-              onDoubleClick={() => act({ type: 'cutTo', screen, sourceId: src.id })}
+              title={
+                soundOnly
+                  ? 'Sound only: use the mixer'
+                  : asOverlay
+                    ? overlayOn
+                      ? 'On air over the picture · Click: take it off'
+                      : 'Goes over the picture · Click: ready in Next · Double-click: straight on air'
+                    : 'Click: line up next · Double-click: straight to air'
+              }
+              onClick={() => (asOverlay ? overlay(false) : act({ type: 'setPreview', screen, sourceId: src.id }))}
+              onDoubleClick={() => (asOverlay ? !overlayOn && overlay(true) : act({ type: 'cutTo', screen, sourceId: src.id }))}
               onContextMenu={(e) => {
                 e.preventDefault();
                 setMenu(src.id);
@@ -170,6 +190,8 @@ export function InputGrid({
                 </span>
               )}
               {onAir && <span className="tile__badge tile__badge--pgm">ON AIR</span>}
+              {asOverlay && overlayOn && !onAir && <span className="tile__badge tile__badge--pgm">ON AIR · OVER</span>}
+              {asOverlay && !overlayOn && ch >= 0 && show.overlays[ch]?.inNext && <span className="tile__badge tile__badge--pvw">NEXT · OVER</span>}
               {next && <span className="tile__badge tile__badge--pvw">NEXT</span>}
               <span className="tile__name">{src.name}</span>
               <span className="tile__kind">
@@ -298,6 +320,7 @@ function TileMenu({
     looping: source.looping,
     volume: source.volume,
     muted: source.muted,
+    lists: LIST_SCREENS.map((x) => x.id).filter((id) => inList(source, id)),
   });
   const set = (p: Partial<typeof draft>) => setDraft((d) => ({ ...d, ...p }));
   useEffect(() => {
@@ -321,6 +344,8 @@ function TileMenu({
     if (draft.looping !== source.looping) patch.looping = draft.looping;
     if (draft.volume !== source.volume) patch.volume = draft.volume;
     if (draft.muted !== source.muted) patch.muted = draft.muted;
+    const was = LIST_SCREENS.map((x) => x.id).filter((id) => inList(source, id));
+    if (draft.lists.join() !== was.join()) patch.screens = draft.lists;
     if (Object.keys(patch).length) act({ type: 'updateSource', id: source.id, patch });
     onClose();
   };
@@ -344,6 +369,29 @@ function TileMenu({
         Name
         <input value={draft.name} maxLength={60} onChange={(e) => set({ name: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && done()} />
       </label>
+      <div className="menu__row">
+        In the inputs of
+        <span className="segs">
+          {LIST_SCREENS.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              className="seg"
+              aria-pressed={draft.lists.includes(x.id)}
+              title={draft.lists.includes(x.id) ? `Take it out of ${x.name}’s inputs` : `Also show it in ${x.name}’s inputs`}
+              onClick={() => {
+                const has = draft.lists.includes(x.id);
+                const next = has
+                  ? draft.lists.filter((id) => id !== x.id)
+                  : LIST_SCREENS.map((l) => l.id).filter((id) => id === x.id || draft.lists.includes(id));
+                if (next.length) set({ lists: next });
+              }}
+            >
+              {x.name}
+            </button>
+          ))}
+        </span>
+      </div>
       {draft.color !== null && (
         <label className="menu__row">
           {k === 'countdown' ? 'Background' : 'Color'}

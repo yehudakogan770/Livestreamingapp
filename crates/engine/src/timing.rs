@@ -85,6 +85,7 @@ mod tests {
             camera: None,
             background: crate::vision::Background::default(),
             auto_frame: crate::vision::AutoFrame::default(),
+            screens: Vec::new(),
         }
     }
 

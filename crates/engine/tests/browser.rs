@@ -19,6 +19,7 @@ fn add(e: &mut Engine, url: &str) -> Result<Outcome, ActionError> {
                 fit: None,
                 audio: None,
                 key: None,
+                screens: None,
             },
         },
         0,

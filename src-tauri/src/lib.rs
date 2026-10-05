@@ -83,6 +83,47 @@ static STARTED: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::n
 /// The loading window stays at least this long.
 const SPLASH_MIN: std::time::Duration = std::time::Duration::from_millis(2500);
 
+/// Close requests the control window has not answered yet.
+static CLOSE_ASKED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static CLOSE_ANSWERED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+/// How long the control window has to show "Close Lumora?" before it closes anyway.
+const CLOSE_ANSWER: std::time::Duration = std::time::Duration::from_secs(3);
+
+/// Ask the control window to confirm closing; if it does not answer (it is
+/// still loading, or stuck), close it so the app can always be closed.
+fn ask_to_close(window: &tauri::Window) {
+    use std::sync::atomic::Ordering;
+    let n = CLOSE_ASKED.fetch_add(1, Ordering::SeqCst) + 1;
+    if window.emit("close-requested", n).is_err() {
+        let _ = window.destroy();
+        return;
+    }
+    let w = window.clone();
+    std::thread::spawn(move || {
+        std::thread::sleep(CLOSE_ANSWER);
+        if CLOSE_ANSWERED.load(Ordering::SeqCst) < n {
+            let _ = w.destroy();
+        }
+    });
+}
+
+/// The control window is showing "Close Lumora?" for this request.
+#[tauri::command]
+fn close_seen(request: u64) {
+    CLOSE_ANSWERED.fetch_max(request, std::sync::atomic::Ordering::SeqCst);
+}
+
+/// The person confirmed: close Lumora (the stream and recording end).
+#[tauri::command]
+fn close_app(app: tauri::AppHandle) {
+    match app.get_webview_window("control") {
+        Some(w) => {
+            let _ = w.destroy();
+        }
+        None => app.exit(0),
+    }
+}
+
 /// The control window has loaded: show it and close the loading window (once
 /// the loading window has been up for a moment, so it never just flickers).
 #[tauri::command]
@@ -847,6 +888,11 @@ pub fn run() {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 if window.label().starts_with("page-") {
                     api.prevent_close();
+                } else if window.label() == "control" {
+                    // Lumora asks before it closes (a stream or recording
+                    // would end). A window that cannot answer still closes.
+                    api.prevent_close();
+                    ask_to_close(window);
                 }
             }
             if let WindowEvent::Destroyed = event {
@@ -936,6 +982,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            close_seen,
+            close_app,
             captions_model,
             ndi_sources,
             captions_send,

@@ -4,6 +4,7 @@ import type { AutoFrame } from './AutoFrame';
 import type { Background } from './Background';
 import type { ChromaKey } from './ChromaKey';
 import type { Fit } from './Fit';
+import type { ScreenId } from './ScreenId';
 import type { SourceAudioPatch } from './SourceAudioPatch';
 
 /**
@@ -44,4 +45,8 @@ export type SourcePatch = {
    * Auto-framing (cameras and videos).
    */
   autoFrame?: AutoFrame;
+  /**
+   * The screens whose input list it is in (empty: every screen's).
+   */
+  screens?: Array<ScreenId>;
 };

@@ -17,6 +17,7 @@ fn color(name: &str) -> Action {
             fit: None,
             audio: None,
             key: None,
+            screens: None,
         },
     }
 }
@@ -37,6 +38,7 @@ fn video(name: &str, duration_s: f64) -> Action {
             fit: None,
             audio: None,
             key: None,
+            screens: None,
         },
     }
 }
@@ -106,6 +108,7 @@ fn duplicate_ids_are_refused() {
             fit: None,
             audio: None,
             key: None,
+            screens: None,
         },
     };
     e.apply(a.clone(), 0).unwrap();
@@ -132,6 +135,7 @@ fn bad_colours_are_refused_and_change_nothing() {
             fit: None,
             audio: None,
             key: None,
+            screens: None,
         },
     };
     assert!(matches!(

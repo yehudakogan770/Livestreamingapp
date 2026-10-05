@@ -16,6 +16,7 @@ fn add(e: &mut Engine, id: &str, kind: SourceKind) {
                 fit: None,
                 audio: None,
                 key: None,
+                screens: None,
             },
         },
         0,

@@ -205,6 +205,14 @@ function take(s: Show, screen: ScreenId, kind0: Show['transition']['kind'], dura
   sc.transition = { kind, durationMs, startedAt: now };
   sc.tbar = 0;
   startIfVideo(s, incoming, now);
+  // Overlays waiting in Next for this screen go on air with the picture.
+  for (const o of s.overlays) {
+    if (o.inNext && o.sourceId !== null && o.screens.includes(screen)) {
+      setOverlayOn(o, true, now);
+      o.inNext = false;
+      startIfVideo(s, o.sourceId, now);
+    }
+  }
   // A countdown waits in Next and starts counting when it goes on air.
   const k = s.sources.find((x) => x.id === incoming)?.kind;
   if (k?.type === 'countdown' && k.timer.endsAt === null) startTimer(k.timer, now);
@@ -279,6 +287,12 @@ function followLive(s: Show, liveBefore: ScreenState, wasFollowing: boolean, now
   }
 }
 
+/** Each screen once; all three is the same as every screen (mirrors engine.rs clean_screens). */
+function cleanScreens(screens: ScreenId[]): ScreenId[] {
+  const once = [...new Set(screens)];
+  return once.length >= 3 ? [] : once;
+}
+
 function nextId(s: Show): string {
   let n = s.sources.length + 1;
   while (s.sources.some((x) => x.id === `src-${n}`)) n++;
@@ -317,6 +331,7 @@ function apply(s: Show, a: Action, now: number) {
           ...(a.source.audio ?? { follow: kind.type !== 'microphone', toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() }),
           delayMs: Math.min(5000, Math.max(0, a.source.audio?.delayMs ?? 0)),
         },
+        ...(a.source.screens ? { screens: cleanScreens(a.source.screens) } : {}),
       });
       return;
     }
@@ -324,6 +339,7 @@ function apply(s: Show, a: Action, now: number) {
       const src = find(s, a.id);
       const p = a.patch;
       if (p.name !== undefined) src.name = p.name.trim() || 'Untitled';
+      if (p.screens !== undefined) src.screens = cleanScreens(p.screens);
       if (p.volume !== undefined) src.volume = clamp01(finite(p.volume, 'volume'));
       if (p.muted !== undefined) src.muted = p.muted;
       if (p.looping !== undefined) src.looping = p.looping;

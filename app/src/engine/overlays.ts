@@ -1,6 +1,7 @@
 // Overlay channels (mirrors crates/engine/src/overlays.rs): defaults, the
 // rules the demo engine follows, and how each animation looks.
 
+import type { Action } from './types/Action';
 import type { Frame } from './types/Frame';
 import type { Overlay } from './types/Overlay';
 import type { OverlayAnim } from './types/OverlayAnim';
@@ -158,4 +159,39 @@ export function overlayLook(o: Overlay, now: number): { opacity: number; dx: num
 /** Overlays showing on a screen, in channel order (4 on top). */
 export function overlaysOn(overlays: Overlay[], screen: ScreenId, now: number): { channel: number; o: Overlay }[] {
   return overlays.map((o, channel) => ({ channel, o })).filter(({ o }) => o.screens.includes(screen) && overlayShowing(o, now));
+}
+
+/** Inputs that go over the picture (names, scoreboards…), never instead of it. */
+export const OVERLAY_KINDS: ReadonlySet<string> = new Set(['text', 'scoreboard', 'graphic', 'comment', 'lyrics']);
+
+/** The overlay channel for an input: the one it is in, else an empty one, else one not on air (else the last). */
+export function overlayChannel(show: Show, id: string): number {
+  const mine = show.overlays.findIndex((o) => o.sourceId === id);
+  if (mine >= 0) return mine;
+  const empty = show.overlays.findIndex((o) => !o.sourceId);
+  if (empty >= 0) return empty;
+  const free = show.overlays.findIndex((o) => !o.on);
+  return free >= 0 ? free : show.overlays.length - 1;
+}
+
+/** How long a name stays on air before it goes away by itself. */
+export const NAME_HOLD_MS = 6000;
+
+/** The steps to put an input over a screen: ready in Next, or straight on air. */
+export function overlayActions(show: Show, id: string, screen: ScreenId, onAir: boolean): Action[] {
+  const channel = overlayChannel(show, id);
+  const acts: Action[] = [];
+  const fresh = show.overlays[channel]?.sourceId !== id;
+  if (fresh) acts.push({ type: 'setOverlaySource', channel, sourceId: id });
+  // A name goes away by itself after a few seconds; a scoreboard stays.
+  // Once placed, the seconds set in the overlay's settings are kept.
+  const kind = show.sources.find((s) => s.id === id)?.kind.type;
+  const hide = fresh ? { autoHideMs: kind === 'text' ? NAME_HOLD_MS : 0 } : {};
+  acts.push({
+    type: 'updateOverlay',
+    channel,
+    patch: { frame: { x: 0, y: 0, w: 100, h: 100 }, opacity: 1, screens: [screen === 'monitor' ? 'live' : screen], ...hide },
+  });
+  acts.push(onAir ? { type: 'setOverlayOn', channel, value: true } : { type: 'setOverlayInNext', channel, value: true });
+  return acts;
 }

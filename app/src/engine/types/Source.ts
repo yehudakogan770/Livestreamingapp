@@ -7,6 +7,7 @@ import type { ChromaKey } from './ChromaKey';
 import type { Fit } from './Fit';
 import type { Playlist } from './Playlist';
 import type { Ptz } from './Ptz';
+import type { ScreenId } from './ScreenId';
 import type { SourceAudio } from './SourceAudio';
 import type { SourceId } from './SourceId';
 import type { SourceKind } from './SourceKind';
@@ -65,4 +66,8 @@ export type Source = {
    * A wide camera that zooms in on and follows the people in it.
    */
   autoFrame: AutoFrame;
+  /**
+   * The screens whose input list it is in (empty: every screen's).
+   */
+  screens?: Array<ScreenId>;
 };

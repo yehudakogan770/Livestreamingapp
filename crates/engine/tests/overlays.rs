@@ -25,6 +25,7 @@ fn add(e: &mut Engine, sid: &str, kind: SourceKind) {
                 fit: None,
                 audio: None,
                 key: None,
+                screens: None,
             },
         },
         0,
@@ -276,4 +277,51 @@ fn old_shows_without_overlays_get_four_channels() {
     let mut v: serde_json::Value = serde_json::from_str(&save_json(e.show())).unwrap();
     v.as_object_mut().unwrap().remove("overlays");
     assert_eq!(load_json(&v.to_string()).unwrap().overlays.len(), 4);
+}
+
+#[test]
+fn an_overlay_in_next_goes_on_air_with_the_camera_and_hides_by_itself() {
+    let mut e = setup();
+    apply(
+        &mut e,
+        Action::UpdateOverlay {
+            channel: 0,
+            patch: OverlayPatch {
+                auto_hide_ms: Some(6000),
+                ..OverlayPatch::default()
+            },
+        },
+        0,
+    );
+    apply(
+        &mut e,
+        Action::SetOverlayInNext {
+            channel: 0,
+            value: true,
+        },
+        0,
+    );
+    apply(
+        &mut e,
+        Action::SetPreview {
+            screen: ScreenId::Live,
+            source_id: Some(id("cam")),
+        },
+        0,
+    );
+    apply(
+        &mut e,
+        Action::Take {
+            screen: ScreenId::Live,
+            transition: None,
+            duration_ms: None,
+        },
+        1000,
+    );
+    assert_eq!(e.show().screens.live.program, Some(id("cam")));
+    assert!(on(&e, 0) && !e.show().overlays[0].in_next);
+    assert_eq!(e.show().overlays[0].changed_at, 1000);
+    assert_eq!(e.tick(6000), Outcome::Unchanged);
+    assert_eq!(e.tick(7000), Outcome::Changed);
+    assert!(!on(&e, 0));
 }

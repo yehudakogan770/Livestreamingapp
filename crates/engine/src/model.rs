@@ -388,6 +388,10 @@ pub struct Source {
     /// A wide camera that zooms in on and follows the people in it.
     #[serde(default)]
     pub auto_frame: crate::vision::AutoFrame,
+    /// The screens whose input list it is in (empty: every screen's).
+    #[serde(default)]
+    #[ts(as = "Option<Vec<ScreenId>>", optional)]
+    pub screens: Vec<ScreenId>,
 }
 
 /// Green screen: a color taken out of the picture so what is behind shows.
