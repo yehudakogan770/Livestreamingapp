@@ -5,7 +5,7 @@
 use std::collections::HashMap;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::process::{Child, Command, Stdio};
+use std::process::{Child, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
@@ -134,7 +134,7 @@ fn run_sound(
 ) {
     let mut wait = Duration::from_secs(1);
     while !stop.load(Ordering::Relaxed) {
-        let Ok(mut child) = Command::new(&ffmpeg)
+        let Ok(mut child) = crate::capture::quiet(&ffmpeg)
             .args(sound_args(&input, buffer_ms))
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
@@ -248,7 +248,7 @@ fn run(job: Job) {
     } = job;
     let mut wait = Duration::from_secs(1);
     while !stop.load(Ordering::Relaxed) {
-        let spawned = Command::new(&ffmpeg)
+        let spawned = crate::capture::quiet(&ffmpeg)
             .args(reader_args(&input, buffer_ms))
             .stdin(Stdio::null())
             .stdout(Stdio::piped())

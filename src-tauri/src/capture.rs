@@ -571,7 +571,7 @@ impl Capture {
         } else {
             dests.iter().map(|d| d.target()).collect()
         };
-        let mut child = Command::new(ffmpeg)
+        let mut child = quiet(ffmpeg)
             .args(stream_args(
                 mime,
                 settings.video_kbps,
@@ -645,7 +645,7 @@ impl Capture {
         let settings = self.settings();
         let (w, h, fps) = ndi_size(settings.quality);
         let sender = Arc::new(Mutex::new(crate::ndi::Sender::new(&settings.ndi_name)?));
-        let mut video = Command::new(ffmpeg)
+        let mut video = quiet(ffmpeg)
             .args(ndi_video_args(w, h))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -671,7 +671,7 @@ impl Capture {
         let mut children = vec![video];
         // The sound, if there is any (a picture-only NDI source is fine).
         let mut audio_in = None;
-        if let Ok(mut audio) = Command::new(ffmpeg)
+        if let Ok(mut audio) = quiet(ffmpeg)
             .args(ndi_audio_args())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -916,7 +916,7 @@ fn to_mp4(ffmpeg: &Path, path: &Path) -> Option<PathBuf> {
     } else {
         out
     };
-    let ok = Command::new(ffmpeg)
+    let ok = quiet(ffmpeg)
         .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
         .arg(path)
         .args(["-map", "0", "-c", "copy", "-movflags", "+faststart"])
@@ -1139,6 +1139,19 @@ fn unique_path(folder: &Path, name: &str, ext: &str) -> PathBuf {
         .unwrap_or(first)
 }
 
+/// A command that never flashes a console window on Windows (FFmpeg is a
+/// console program; Lumora is not).
+pub fn quiet(program: impl AsRef<std::ffi::OsStr>) -> Command {
+    #[allow(unused_mut)]
+    let mut cmd = Command::new(program);
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x0800_0000);
+    }
+    cmd
+}
+
 /// FFmpeg next to Lumora, or on the computer.
 pub fn find_ffmpeg() -> Option<PathBuf> {
     let exe = if cfg!(windows) {
@@ -1151,7 +1164,7 @@ pub fn find_ffmpeg() -> Option<PathBuf> {
         .and_then(|p| p.parent().map(|d| d.join(exe)))
         .filter(|p| p.is_file());
     beside.or_else(|| {
-        let ok = Command::new(exe)
+        let ok = quiet(exe)
             .arg("-version")
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -1195,7 +1208,7 @@ mod tests {
     /// A short real video (H.264 + Opus in Matroska, like the WebView makes).
     fn sample(ffmpeg: &Path, dir: &Path) -> Option<Vec<u8>> {
         let out = dir.join("sample.mkv");
-        let ok = Command::new(ffmpeg)
+        let ok = quiet(ffmpeg)
             .args([
                 "-hide_banner",
                 "-loglevel",

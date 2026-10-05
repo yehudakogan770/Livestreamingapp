@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
-import { isInsideLumora } from '../engine/client';
 import './UpdateBar.css';
+
+const isInsideLumora = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
 /** Ask for a check now (Help → Check for updates). */
 export function checkForUpdates(): void {
@@ -23,7 +24,7 @@ type State =
  * installs it and opens Lumora again. Never by itself, so it never happens in
  * the middle of an event. Checks a little after Lumora opens (when online).
  */
-export function UpdateBar() {
+export function UpdateBar({ product = 'Lumora' }: { product?: string }) {
   const [st, setSt] = useState<State>({ s: 'idle' });
   const [hidden, setHidden] = useState(false);
   const run = useCallback((asked: boolean) => {
@@ -65,10 +66,13 @@ export function UpdateBar() {
   if (hidden || st.s === 'idle' || (st.s === 'checking' && !st.asked)) return null;
   return (
     <div className="upd" role="status">
-      {st.s === 'checking' && <span>Looking for a newer Lumora…</span>}
+      {st.s === 'checking' && <span>Looking for a newer {product}…</span>}
       {st.s === 'none' && (
         <>
-          <span>You have the newest Lumora{current ? ` (${current})` : ''}.</span>
+          <span>
+            You have the newest {product}
+            {current ? ` (${current})` : ''}.
+          </span>
           <button type="button" className="btn" onClick={() => setHidden(true)}>
             OK
           </button>
@@ -77,7 +81,8 @@ export function UpdateBar() {
       {st.s === 'ready' && (
         <>
           <span>
-            <b>A new Lumora is ready</b> ({st.update.version}). It takes a minute and Lumora opens again by itself. Not during an event.
+            <b>A new {product} is ready</b> ({st.update.version}). It takes a minute and {product} opens again by itself.
+            {product === 'Lumora' ? ' Not during an event.' : ''}
           </span>
           <button type="button" className="btn btn--primary" onClick={() => install(st.update)}>
             Update now

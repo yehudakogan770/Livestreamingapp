@@ -19,13 +19,14 @@ function typingIn(t: EventTarget | null): boolean {
   return t instanceof HTMLElement && (t.isContentEditable || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
 }
 
-export function lockDown(): void {
+/** `allow`: Ctrl+ keys the program uses itself (Lumora Edit saves with Ctrl+S). */
+export function lockDown(allow: string[] = []): void {
   if (!import.meta.env.PROD || !inApp()) return;
   window.addEventListener('contextmenu', (e) => !typingIn(e.target) && e.preventDefault(), { capture: true });
   window.addEventListener(
     'keydown',
     (e) => {
-      if (blockedKey(e)) {
+      if (blockedKey(e) && !((e.ctrlKey || e.metaKey) && allow.includes(e.key.toLowerCase()))) {
         e.preventDefault();
         e.stopPropagation();
       }

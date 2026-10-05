@@ -1,0 +1,74 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lumora Edit",
+  "mainBinaryName": "Lumora Edit",
+  "version": "0.1.0",
+  "identifier": "app.lumora.edit",
+  "build": {
+    "beforeDevCommand": "npm --prefix .. run edit:ui:dev",
+    "devUrl": "http://localhost:1421",
+    "beforeBuildCommand": "npm --prefix .. run edit:ui:build",
+    "frontendDist": "../../dist-edit"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Lumora Edit",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1280,
+        "minHeight": 760,
+        "backgroundColor": "#15171b",
+        "center": true,
+        "dragDropEnabled": true,
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --autoplay-policy=no-user-gesture-required"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://*.supabase.co wss://*.supabase.co https://github.com https://objects.githubusercontent.com https://release-assets.githubusercontent.com asset: http://asset.localhost; img-src 'self' asset: http://asset.localhost data: blob:; media-src 'self' asset: http://asset.localhost blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Lumora",
+    "category": "Video",
+    "shortDescription": "Edit the whole event, every camera",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "fileAssociations": [
+      {
+        "ext": ["lumora"],
+        "name": "Lumora event",
+        "description": "Lumora event recording",
+        "role": "Editor"
+      },
+      {
+        "ext": ["lumoraedit"],
+        "name": "Lumora Edit project",
+        "description": "Lumora Edit project",
+        "role": "Editor"
+      }
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine",
+        "installerIcon": "icons/icon.ico"
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI1OThFREY0OEQxQ0ZCM0MKUldROCt4eU45TzJZSlNnMGxnZGF6MnEvV1ZhNXhOTFU1SXBIaE1pWlRRYmhXYTVBQkpOQkxBMEUK",
+      "endpoints": ["https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/latest-edit.json"],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

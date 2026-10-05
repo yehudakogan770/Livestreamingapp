@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { appReady } from '../engine/client';
+import { invoke } from '@tauri-apps/api/core';
 import { authOn } from './config';
 import type { Access } from './access';
 import { checkAccess, onSignInChange, signIn, signOut, signUp } from './auth';
@@ -7,6 +7,11 @@ import '../views/ControlView.css';
 import './Gate.css';
 
 /** Who is signed in (null while the lock is off). */
+/** The loading window gives way (Lumora and Lumora Edit both answer this). */
+function appReady(): void {
+  if ('__TAURI_INTERNALS__' in window) void invoke('app_ready').catch(() => {});
+}
+
 const AccessCtx = createContext<{ access: Access | null; signOut: () => void }>({ access: null, signOut: () => {} });
 export const useAccess = () => useContext(AccessCtx);
 

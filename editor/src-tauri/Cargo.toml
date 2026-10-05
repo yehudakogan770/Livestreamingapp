@@ -1,0 +1,28 @@
+[package]
+name = "lumora-edit"
+description = "Lumora Edit — edit the whole event, every camera"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "lumora_edit"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+serde.workspace = true
+serde_json.workspace = true
+tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+base64 = "0.22"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

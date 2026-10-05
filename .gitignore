@@ -1,6 +1,12 @@
 /target
 node_modules/
 dist/
+dist-edit/
 src-tauri/gen/
 /app/public/mediapipe/
 /app/public/ort/
+editor/app/public/demo/
+ffmpeg-cache/
+src-tauri/binaries/
+editor/src-tauri/binaries/
+editor/src-tauri/gen/

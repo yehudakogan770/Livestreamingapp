@@ -6,7 +6,7 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, Command, Stdio};
+use std::process::{Child, ChildStdin, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
@@ -118,7 +118,7 @@ impl Exports {
         if path.extension().and_then(|e| e.to_str()) != Some(s.format.extension()) {
             path.set_extension(s.format.extension());
         }
-        let mut child = Command::new(ffmpeg)
+        let mut child = crate::capture::quiet(ffmpeg)
             .args(["-hide_banner", "-loglevel", "error", "-y"])
             .args(["-f", "rawvideo", "-pix_fmt", "rgba"])
             .args(["-s", &format!("{}x{}", s.width, s.height)])
@@ -219,7 +219,7 @@ mod tests {
     }
 
     fn probe(path: &str) -> String {
-        let out = Command::new("ffprobe")
+        let out = crate::capture::quiet("ffprobe")
             .args([
                 "-v",
                 "error",

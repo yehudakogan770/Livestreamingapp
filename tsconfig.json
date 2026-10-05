@@ -16,5 +16,5 @@
     "allowJs": true,
     "types": ["vite/client"]
   },
-  "include": ["app/src", "vite.config.ts", "src-tauri/remote"]
+  "include": ["app/src", "vite.config.ts", "src-tauri/remote", "editor/app/src", "editor/vite.config.ts"]
 }

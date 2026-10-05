@@ -58,47 +58,16 @@ jobs:
           cache: npm
       - uses: dtolnay/rust-toolchain@1.98.1
       - uses: Swatinem/rust-cache@v2
+      - uses: actions/cache@v4
+        with:
+          path: ffmpeg-cache
+          key: ffmpeg-win64-7.1-v1
       - run: npm ci
       - name: Engine tests on Windows
         run: cargo test --workspace
-      - name: Set the version (and signing)
+      - name: Version, signing and FFmpeg
         shell: bash
-        run: |
-          # Spaces, line breaks or quotes picked up when pasting the key are
-          # removed; a key that still can't be read builds without signing.
-          key=$(printf '%s' "$SIGNING_KEY_AS_PASTED" | tr -d " \t\r\n\"'=")
-          # The "=" at the end is easy to miss when copying: put it back.
-          while [ $(( ${#key} % 4 )) -ne 0 ]; do key="$key="; done
-          # A hint for fixing a bad paste (never the key itself): a good key
-          # is 348 characters and starts with "dW50cnVzdGVk".
-          echo "Signing key: ${#key} characters, starts like a key: $([ "${key:0:12}" = dW50cnVzdGVk ] && echo yes || echo no)"
-          # A test signing with Tauri's own tool proves the key works.
-          echo test > "$RUNNER_TEMP/sign-test.txt"
-          if [ -n "$key" ] && TAURI_SIGNING_PRIVATE_KEY="$key" npx tauri signer sign "$RUNNER_TEMP/sign-test.txt" > /dev/null 2>&1; then
-            echo "TAURI_SIGNING_PRIVATE_KEY=$key" >> "$GITHUB_ENV"
-            echo "Signing key OK."
-          else
-            [ -n "$SIGNING_KEY_AS_PASTED" ] && echo "::warning::The TAURI_SIGNING_PRIVATE_KEY secret can't be read; building without update signing."
-            echo "LUMORA_NO_SIGNING=1" >> "$GITHUB_ENV"
-          fi
-          node -e "
-            const fs = require('fs');
-            const f = 'src-tauri/tauri.conf.json';
-            const c = JSON.parse(fs.readFileSync(f, 'utf8'));
-            c.version = process.env.LUMORA_VERSION;
-            fs.writeFileSync(f, JSON.stringify(c, null, 2));
-          "
-      - name: No signing key, so no update files
-        if: env.LUMORA_NO_SIGNING == '1'
-        shell: bash
-        run: |
-          node -e "
-            const fs = require('fs');
-            const f = 'src-tauri/tauri.conf.json';
-            const c = JSON.parse(fs.readFileSync(f, 'utf8'));
-            c.bundle.createUpdaterArtifacts = false;
-            fs.writeFileSync(f, JSON.stringify(c, null, 2));
-          "
+        run: scripts/ci-windows.sh src-tauri/tauri.conf.json src-tauri
       - name: Build the installer
         run: npm run build
       - name: Upload installer
@@ -106,14 +75,49 @@ jobs:
         with:
           name: Lumora-Setup-windows
           path: |
-            target/release/bundle/nsis/*.exe
-            target/release/bundle/nsis/*.sig
+            target/release/bundle/nsis/Lumora_*.exe
+            target/release/bundle/nsis/Lumora_*.sig
+          if-no-files-found: error
+
+  windows-edit:
+    name: Lumora Edit installer
+    runs-on: windows-latest
+    needs: checks
+    env:
+      LUMORA_VERSION: 0.1.${{ github.run_number }}
+      SIGNING_KEY_AS_PASTED: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@1.98.1
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/cache@v4
+        with:
+          path: ffmpeg-cache
+          key: ffmpeg-win64-7.1-v1
+      - run: npm ci
+      - name: Version, signing and FFmpeg
+        shell: bash
+        run: scripts/ci-windows.sh editor/src-tauri/tauri.conf.json editor/src-tauri
+      - name: Build the installer
+        run: npm run edit:build
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lumora-Edit-Setup-windows
+          path: |
+            target/release/bundle/nsis/Lumora Edit_*.exe
+            target/release/bundle/nsis/Lumora Edit_*.sig
           if-no-files-found: error
 
   release:
     name: Public download and update
     runs-on: ubuntu-latest
-    needs: windows
+    needs: [windows, windows-edit]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/claude/festive-curie-637ic2')
     permissions:
       contents: write
@@ -123,19 +127,29 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: Lumora-Setup-windows
-          path: out
-      # One name that never changes, so the website's download link always works.
-      - name: Name the installer, and say where the update is
+          path: lumora
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lumora-Edit-Setup-windows
+          path: edit
+      # Names that never change, so the website's download links always work.
+      - name: Name the installers, and say where the updates are
         run: |
-          sig=$(ls out/*.sig 2>/dev/null | head -1 || true)
-          mv "$(ls out/*.exe | head -1)" out/Lumora-Setup.exe
-          if [ -n "$sig" ]; then
-            jq -n --arg v "$VERSION" --arg s "$(cat "$sig")" \
-              --arg u "https://github.com/${{ github.repository }}/releases/download/v$VERSION/Lumora-Setup.exe" \
-              --arg d "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-              '{version: $v, notes: "A new version of Lumora.", pub_date: $d, platforms: {"windows-x86_64": {signature: $s, url: $u}}}' > out/latest.json
-            rm "$sig"
-          fi
+          mkdir -p out
+          publish() { # folder, installer name, update file, notes
+            local sig exe
+            sig=$(ls "$1"/*.sig 2>/dev/null | head -1 || true)
+            exe=$(ls "$1"/*.exe | head -1)
+            mv "$exe" "out/$2"
+            if [ -n "$sig" ]; then
+              jq -n --arg v "$VERSION" --arg s "$(cat "$sig")" \
+                --arg u "https://github.com/${{ github.repository }}/releases/download/v$VERSION/$2" \
+                --arg d "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --arg n "$4" \
+                '{version: $v, notes: $n, pub_date: $d, platforms: {"windows-x86_64": {signature: $s, url: $u}}}' > "out/$3"
+            fi
+          }
+          publish lumora Lumora-Setup.exe latest.json "A new version of Lumora."
+          publish edit Lumora-Edit-Setup.exe latest-edit.json "A new version of Lumora Edit."
           ls -la out
       - name: Publish it (anyone can download, no account)
         uses: softprops/action-gh-release@v2
@@ -146,8 +160,10 @@ jobs:
           make_latest: true
           files: |
             out/Lumora-Setup.exe
-            out/latest.json
+            out/Lumora-Edit-Setup.exe
+            out/latest*.json
           body: |
             Lumora for Windows 10 and 11 (64-bit). Download Lumora-Setup.exe and run it.
+            Lumora Edit (for editing recorded events): download Lumora-Edit-Setup.exe.
             Already have Lumora? Use Help → Check for updates in the app.
             The first time, Windows may say it doesn't recognize the app: click More info, then Run anyway.
