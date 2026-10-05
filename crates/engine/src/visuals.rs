@@ -478,6 +478,15 @@ impl Visuals {
             self.from = Some(self.scene);
         }
         self.scene = to;
+        // Each scene starts with its own look: the effects go back to as
+        // designed (the overlay layer stays; tempo, colors, energy, words
+        // and logo are for the whole show).
+        self.fx = VisualsFx {
+            ov: self.fx.ov,
+            ov_mode: self.fx.ov_mode,
+            ov_scene: self.fx.ov_scene,
+            ..VisualsFx::default()
+        };
         self.fade_start = at;
         self.fade_len = if self.settings.fade < 0.0 {
             banks()[to.bank].fade
@@ -597,8 +606,9 @@ impl Visuals {
         let Some(Some(l)) = self.looks.get(slot).cloned() else {
             return false;
         };
-        self.fx = l.fx;
+        // After the change (which resets the effects), the look's own.
         self.launch(l.scene, now);
+        self.fx = l.fx;
         true
     }
 

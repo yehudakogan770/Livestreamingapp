@@ -61,6 +61,8 @@ function VisualsCanvas({ v, logoUrl, audience, onFail }: { v: Visuals; logoUrl: 
   const latest = useRef(v);
   latest.current = v;
   const [works, setWorks] = useState(true);
+  // A new canvas after the graphics card drops the old one (a few tries).
+  const [tries, setTries] = useState(0);
   const failed = useRef(onFail);
   failed.current = onFail;
   useEffect(() => {
@@ -73,7 +75,8 @@ function VisualsCanvas({ v, logoUrl, audience, onFail }: { v: Visuals; logoUrl: 
     c.dataset.kind = 'visuals';
     host.prepend(c);
     const r = makeRenderer(c);
-    if (!r) {
+    if (!r || tries > 3) {
+      r?.dispose();
       c.remove();
       setWorks(false);
       failed.current?.();
@@ -82,12 +85,19 @@ function VisualsCanvas({ v, logoUrl, audience, onFail }: { v: Visuals; logoUrl: 
     // Fonts for the words arrive after the first frames.
     void document.fonts?.ready.then(() => r.refreshText());
     const player = new VisualsPlayer();
-    // Screens the audience sees get full detail; the control window's
-    // monitors draw smaller (and are stretched), so the graphics card's
-    // time goes to the outputs.
+    // Screens the audience sees get every pixel of the screen; the control
+    // window's monitors draw at their size on the page (no more), so the
+    // graphics card's time goes to the outputs.
     let raf = 0;
+    let retry = 0;
+    const lost = (e: Event) => {
+      e.preventDefault();
+      cancelAnimationFrame(raf);
+      retry = window.setTimeout(() => setTries((n) => n + 1), 1000);
+    };
+    c.addEventListener('webglcontextlost', lost);
     const loop = () => {
-      const dpr = audience ? Math.min(window.devicePixelRatio || 1, 1.5) : Math.min(0.6, 640 / Math.max(1, c.clientWidth));
+      const dpr = audience ? window.devicePixelRatio || 1 : Math.min(window.devicePixelRatio || 1, 1);
       const cur = latest.current;
       r.draw(player.frame(cur, Date.now()), c.clientWidth * dpr, c.clientHeight * dpr);
       const img = logo.current;
@@ -104,10 +114,12 @@ function VisualsCanvas({ v, logoUrl, audience, onFail }: { v: Visuals; logoUrl: 
     raf = requestAnimationFrame(loop);
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(retry);
+      c.removeEventListener('webglcontextlost', lost);
       r.dispose();
       c.remove();
     };
-  }, [audience]);
+  }, [audience, tries]);
   if (!works) return audience ? <div style={{ ...fill, background: '#000' }} /> : <VisualsCard v={v} />;
   return (
     <>

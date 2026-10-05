@@ -3,7 +3,9 @@ import { demoApply, demoTick } from '../engine/demo';
 import { emptyShow } from '../engine/client';
 import { defaultVisuals } from '../engine/visuals';
 import { BANKS, PALETTES } from './data';
-import { beatAt, fadeMix, logoRect, VisualsPlayer } from './player';
+import { beatAt, defaultFx, fadeMix, logoRect, VisualsPlayer } from './player';
+import { SCENE_MODES, sceneShader } from './renderer';
+import { SCENE_FS } from './shaders';
 
 describe('stage visuals', () => {
   it('has every music type and scene, each with a color set that exists', () => {
@@ -52,6 +54,37 @@ describe('stage visuals', () => {
     expect(() => demoApply(s, { type: 'visualsLook', slot: 0, store: false }, 0)).toThrow();
     const kept = demoApply(s, { type: 'visualsLook', slot: 0, store: true }, 0);
     expect(kept.visuals.looks[0]?.scene).toEqual(s.visuals.scene);
+  });
+
+  it('builds each scene program with only the scenes on (cut from the full shader)', () => {
+    // Every scene in the music types has its own block, except star drift (19), the last "else" one.
+    const used = [...new Set(BANKS.flatMap((b) => b.scenes.map((s) => s[1])))];
+    expect(used.filter((m) => !SCENE_MODES.includes(m))).toEqual([19]);
+    expect(sceneShader(19, -1, -1)).toContain('// star drift');
+    // One scene: one block, no long chain, no scene(uM…) calls left.
+    const one = sceneShader(3, -1, -1);
+    expect(one).toContain('const int m=3;');
+    expect(one).toContain('// spiral');
+    expect(one).not.toContain('// neon rings');
+    expect(one).not.toContain('scene(uM');
+    expect(one.length).toBeLessThan(SCENE_FS.length / 3);
+    // Fading and an overlay: three layers.
+    const three = sceneShader(0, 3, 5);
+    for (const name of ['// neon rings', '// spiral', '// hex tunnel']) expect(three).toContain(name);
+  });
+
+  it('a new scene starts with its own look; a saved look brings back its own (like the engine)', () => {
+    let s = emptyShow();
+    const fx = { ...defaultFx(), zoom: 2, kal: 6, ov: 0.4, ovScene: { bank: 2, scene: 3 } };
+    s = demoApply(s, { type: 'updateVisuals', patch: { fx, settings: { ...s.visuals.settings, speed: 1.5 } } }, 0);
+    s = demoApply(s, { type: 'visualsLook', slot: 0, store: true }, 0);
+    const first = s.visuals.scene;
+    s = demoApply(s, { type: 'visualsScene', scene: { bank: 1, scene: 4 } }, 0);
+    expect(s.visuals.fx).toEqual({ ...defaultFx(), ov: 0.4, ovMode: fx.ovMode, ovScene: { bank: 2, scene: 3 } });
+    expect(s.visuals.settings.speed).toBe(1.5);
+    s = demoApply(s, { type: 'visualsLook', slot: 0, store: false }, 4000);
+    expect(s.visuals.scene).toEqual(first);
+    expect(s.visuals.fx.kal).toBe(6);
   });
 
   it('builds frames with every number set', () => {

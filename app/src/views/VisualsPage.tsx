@@ -12,6 +12,7 @@ import type { SceneRef } from '../engine/types/SceneRef';
 import { VisualsView } from '../components/VisualsView';
 import { BANKS, PALETTES, sceneColours, sceneRow } from '../visuals/data';
 import { beatAt, defaultFx, resetFx } from '../visuals/player';
+import { useSceneStill } from '../visuals/stills';
 import type { Act } from './act';
 import { useNow } from '../engine/useNow';
 import './VisualsPage.css';
@@ -277,11 +278,12 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
               })}
             </div>
             <div className="vis__row">
-              <label className="vis__energy">
+              <div className="vis__energy">
                 <span>Energy</span>
                 <input type="range" min={0} max={100} value={energy} onChange={(e) => setEnergy(Number(e.target.value))} aria-label="Energy" />
+                <NumberBox label="Energy" value={energy} min={0} max={100} step={1} onChange={setEnergy} />
                 <em>{energy < 30 ? 'Calm' : energy < 70 ? 'Lively' : 'Full power'}</em>
-              </label>
+              </div>
             </div>
             <div className="vis__row">
               <button
@@ -366,7 +368,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
                   const live = same(v.scene, ref);
                   const coming = live && v.fadeStart > beatAt(v, now);
                   return (
-                    <div key={i} className={`vis__scene${live ? ' is-live' : ''}`} style={{ background: swatch(sceneColours(s, v.settings.palette)) }}>
+                    <SceneTile key={i} bank={bank} scene={i} palette={v.settings.palette} live={live}>
                       <button type="button" className="vis__pick" aria-label={s[0]} onClick={() => launch(ref)} />
                       {live && <span className="vis__badge">{coming ? 'NEXT' : 'LIVE'}</span>}
                       <button
@@ -382,7 +384,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
                         {s[0]}
                         <em>{i + 1}</em>
                       </span>
-                    </div>
+                    </SceneTile>
                   );
                 })}
             </div>
@@ -448,6 +450,17 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
   );
 }
 
+/** A scene button: a still of the scene itself (its colors until the still is made). */
+function SceneTile({ bank, scene, palette, live, children }: { bank: number; scene: number; palette: string; live: boolean; children: React.ReactNode }) {
+  const still = useSceneStill(bank, scene, palette);
+  const colors = swatch(sceneColours(sceneRow(bank, scene), palette));
+  return (
+    <div className={`vis__scene${live ? ' is-live' : ''}`} style={{ background: still ? `center / cover no-repeat url(${still}), ${colors}` : colors }}>
+      {children}
+    </div>
+  );
+}
+
 /** The four beats of the bar, lit on the beat. */
 function BeatDots({ v }: { v: Visuals }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -497,7 +510,7 @@ function Slider({
   onChange: (v: number) => void;
 }) {
   return (
-    <label className="vis__slider" title={def !== undefined ? 'Double-click to reset' : undefined}>
+    <div className="vis__slider" title={def !== undefined ? 'Double-click to reset' : undefined}>
       <span>{label}</span>
       <input
         type="range"
@@ -509,7 +522,67 @@ function Slider({
         onChange={(e) => onChange(Number(e.target.value))}
         onDoubleClick={() => def !== undefined && onChange(def)}
       />
-    </label>
+      <NumberBox label={label} value={value} min={min} max={max} step={step} onChange={onChange} />
+    </div>
+  );
+}
+
+/**
+ * The value of a slider, to type in: Enter or leaving the box sets it (kept
+ * within the slider's range), Escape puts it back, the arrow keys step it
+ * (Shift: ten steps).
+ */
+function NumberBox({
+  label,
+  value,
+  min,
+  max,
+  step,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (v: number) => void;
+}) {
+  const places = Math.max(0, Math.min(3, Math.ceil(-Math.log10(step) - 1e-9)));
+  const shown = Number(value.toFixed(places)).toString();
+  const [draft, setDraft] = useState<string | null>(null);
+  const fit = (x: number) => Number(Math.min(max, Math.max(min, Math.round(x / step) * step)).toFixed(places));
+  const apply = () => {
+    if (draft === null) return;
+    const x = Number(draft.replace(',', '.'));
+    if (draft.trim() !== '' && Number.isFinite(x)) onChange(fit(x));
+    setDraft(null);
+  };
+  return (
+    <input
+      className="vis__num"
+      type="text"
+      inputMode="decimal"
+      aria-label={`${label} (type a value)`}
+      value={draft ?? shown}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={apply}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          apply();
+          e.currentTarget.select();
+        } else if (e.key === 'Escape') {
+          // Put it back (and keep the visuals page open).
+          e.stopPropagation();
+          setDraft(null);
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const from = draft !== null && Number.isFinite(Number(draft)) ? Number(draft) : value;
+          onChange(fit(from + (e.key === 'ArrowUp' ? 1 : -1) * step * (e.shiftKey ? 10 : 1)));
+          setDraft(null);
+        }
+      }}
+    />
   );
 }
 

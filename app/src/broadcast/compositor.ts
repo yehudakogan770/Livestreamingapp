@@ -122,6 +122,8 @@ export class ProgramCompositor {
   >();
   /** The stage visuals, drawn once a frame at full size (null: not needed yet, false: no WebGL). */
   private visuals: { canvas: HTMLCanvasElement; r: Renderer; player: VisualsPlayer; at: number } | null | false = null;
+  /** How many times the stage visuals' drawing context was lost. */
+  private visualsLost = 0;
   /** Cameras held back to line up with late sound. */
   private delays = new Map<string, FrameDelay & { el: HTMLVideoElement }>();
 
@@ -1993,6 +1995,12 @@ export class ProgramCompositor {
       this.visuals = { canvas, r, player: new VisualsPlayer(), at: -1 };
     }
     const v = this.visuals;
+    // The graphics card dropped the context: start again next frame (a few times).
+    if (v.r.lost()) {
+      v.r.dispose();
+      this.visuals = ++this.visualsLost > 3 ? false : null;
+      return null;
+    }
     if (v.at !== now) {
       v.r.draw(v.player.frame(this.show.visuals, now), this.canvas.width, this.canvas.height);
       v.at = now;

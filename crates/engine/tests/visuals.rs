@@ -342,3 +342,87 @@ fn favourites_are_kept_once_and_only_if_they_exist() {
     .unwrap();
     assert_eq!(e.show().visuals.favourites, vec![sc(0, 1)]);
 }
+
+#[test]
+fn a_new_scene_starts_with_its_own_look() {
+    let mut e = at120();
+    let v = &e.show().visuals;
+    let mut fx = v.fx;
+    fx.zoom = 2.0;
+    fx.kal = 6;
+    fx.hue = 1.0;
+    fx.trail = 0.5;
+    fx.ov = 0.4;
+    fx.ov_scene = sc(2, 3);
+    let mut st = v.settings.clone();
+    st.speed = 1.5;
+    st.palette = "ice".into();
+    let mut text = v.text.clone();
+    text.on = true;
+    e.apply(
+        Action::UpdateVisuals {
+            patch: VisualsPatch {
+                fx: Some(fx),
+                settings: Some(st),
+                text: Some(text),
+                ..VisualsPatch::default()
+            },
+        },
+        0,
+    )
+    .unwrap();
+    // A look kept on this scene, with its effects.
+    let first = e.show().visuals.scene;
+    e.apply(
+        Action::VisualsLook {
+            slot: 0,
+            store: true,
+        },
+        0,
+    )
+    .unwrap();
+    e.apply(Action::VisualsScene { scene: sc(1, 4) }, 0)
+        .unwrap();
+    let v = &e.show().visuals;
+    // The effects as designed; the overlay layer and the whole show's settings stay.
+    assert_eq!(
+        v.fx,
+        lumora_engine::visuals::VisualsFx {
+            ov: 0.4,
+            ov_scene: sc(2, 3),
+            ..lumora_engine::visuals::VisualsFx::default()
+        }
+    );
+    assert!((v.settings.speed - 1.5).abs() < 1e-6);
+    assert_eq!(v.settings.palette, "ice");
+    assert!(v.text.on);
+    assert!((v.bpm - 120.0).abs() < 1e-9);
+    // The next scene too.
+    let mut fx = v.fx;
+    fx.spin = 1.0;
+    e.apply(
+        Action::UpdateVisuals {
+            patch: VisualsPatch {
+                fx: Some(fx),
+                ..VisualsPatch::default()
+            },
+        },
+        2000,
+    )
+    .unwrap();
+    e.apply(Action::VisualsStep { step: 1 }, 2000).unwrap();
+    assert!(e.show().visuals.fx.spin.abs() < 1e-6);
+    // A saved look comes back with its own effects.
+    e.apply(
+        Action::VisualsLook {
+            slot: 0,
+            store: false,
+        },
+        4000,
+    )
+    .unwrap();
+    let v = &e.show().visuals;
+    assert_eq!(v.scene, first);
+    assert_eq!(v.fx.kal, 6);
+    assert!((v.fx.zoom - 2.0).abs() < 1e-6);
+}

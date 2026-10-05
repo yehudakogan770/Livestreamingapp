@@ -59,6 +59,8 @@ export interface Frame {
 export interface Renderer {
   /** Draw at this size in pixels. */
   draw(u: Frame, width: number, height: number): void;
+  /** The graphics card dropped the drawing context (make a new renderer). */
+  lost(): boolean;
   /** Fonts arrived: redraw the words. */
   refreshText(): void;
   dispose(): void;
@@ -66,9 +68,62 @@ export interface Renderer {
 
 type Target = { t: WebGLTexture; f: WebGLFramebuffer };
 
+// The scene shader has every scene in one long if/else chain, and each frame
+// ran it up to three times (scene, next scene, overlay). On Windows WebGL
+// goes through Direct3D, whose shader compiler chokes on that: it takes so
+// long, or makes every pixel work out every scene, that the graphics card
+// stops and the app crashes. So each program is built with only the scenes
+// on now (the same code, cut out of the chain).
+const SIG = 'vec3 scene(int m, vec2 uv, float tb, float spd, float pu, mat3 P){';
+const CHAIN_END = '\n  }\n\n  if(m<=5){ col*=';
+const MAIN = '\nvoid main(){';
+const parts = (() => {
+  const src = SCENE_FS;
+  const sig = src.indexOf(SIG);
+  const start = src.indexOf('\n  if(m==0){');
+  const end = src.indexOf(CHAIN_END);
+  const main = src.indexOf(MAIN);
+  if (sig < 0 || start < sig || end < start || main < end) throw new Error('stage visuals: the scene shader has changed shape');
+  const chain = src.slice(start, end);
+  // One block per scene: "if(m==3){", "} else if(m==32||m==33){" … "} else {".
+  const re = /\n {2}(?:\} else )?if\(((?:m==\d+)(?:\|\|m==\d+)*)\)\{|\n {2}\} else \{/g;
+  const heads = [...chain.matchAll(re)];
+  const blocks = heads.map((h, i) => ({
+    modes: h[1] ? h[1].split('||').map((x) => Number(x.slice(3))) : null,
+    body: chain.slice(h.index + h[0].length, i + 1 < heads.length ? heads[i + 1]!.index : chain.length),
+  }));
+  return {
+    common: src.slice(0, sig),
+    prelude: src.slice(sig + SIG.length, start),
+    after: src.slice(end + 4, main),
+    main: src.slice(main),
+    blocks,
+  };
+})();
+
+/** The scene modes the shader knows (the rest draw the last, "else" scene). */
+export const SCENE_MODES: readonly number[] = parts.blocks.flatMap((b) => b.modes ?? []);
+
+/** One layer's scene function, holding only scene `m` (-1: a layer not shown). */
+function sceneFn(n: number, m: number): string {
+  const sig = `vec3 scene${n}(vec2 uv, float tb, float spd, float pu, mat3 P){`;
+  if (m < 0) return `${sig}return vec3(0.);}\n`;
+  const b = parts.blocks.find((x) => x.modes?.includes(m)) ?? parts.blocks.find((x) => !x.modes)!;
+  return `${sig}\n  const int m=${Math.round(m)};${parts.prelude}\n  {${b.body}\n  }${parts.after}\n`;
+}
+
+/** The scene shader for these three layers' scenes (-1: that layer is off). */
+export function sceneShader(m0: number, m1: number, m2: number): string {
+  const main = parts.main.replace('scene(uM0,', 'scene0(').replace('scene(uM1,', 'scene1(').replace('scene(uM2,', 'scene2(');
+  return parts.common + sceneFn(0, m0) + sceneFn(1, m1) + sceneFn(2, m2) + main;
+}
+
+/** Most scene programs kept ready on one drawing context. */
+const KEEP = 12;
+
 export function makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas): Renderer | null {
   const gl = canvas.getContext('webgl', { antialias: false, alpha: false, preserveDrawingBuffer: false }) as WebGLRenderingContext | null;
-  if (!gl) return null;
+  if (!gl || gl.isContextLost()) return null;
   const compile = (type: number, src: string) => {
     const o = gl.createShader(type)!;
     gl.shaderSource(o, src);
@@ -79,16 +134,18 @@ export function makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas): Rende
   const vs = compile(gl.VERTEX_SHADER, VS);
   const mk = <N extends string>(fs: string, names: readonly N[]) => {
     const pr = gl.createProgram()!;
+    const f = compile(gl.FRAGMENT_SHADER, fs);
     gl.attachShader(pr, vs);
-    gl.attachShader(pr, compile(gl.FRAGMENT_SHADER, fs));
+    gl.attachShader(pr, f);
     gl.bindAttribLocation(pr, 0, 'p');
     gl.linkProgram(pr);
+    gl.deleteShader(f);
     if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(pr));
     const U = {} as Record<N, WebGLUniformLocation | null>;
     for (const n of names) U[n] = gl.getUniformLocation(pr, n);
     return { pr, U };
   };
-  const A = mk(SCENE_FS, [
+  const SCENE_U = [
     'uRes',
     'uBeat',
     'uB0',
@@ -118,7 +175,22 @@ export function makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas): Rende
     'uPan',
     'uKal',
     'uMirror',
-  ] as const);
+  ] as const;
+  // Scene programs by the scenes they hold, least recently used first.
+  const scenes = new Map<string, ReturnType<typeof mk<(typeof SCENE_U)[number]>>>();
+  const sceneProg = (m0: number, m1: number, m2: number) => {
+    const key = `${m0},${m1},${m2}`;
+    let p = scenes.get(key);
+    if (p) scenes.delete(key);
+    else p = mk(sceneShader(m0, m1, m2), SCENE_U);
+    scenes.set(key, p);
+    if (scenes.size > KEEP) {
+      const [old, o] = scenes.entries().next().value!;
+      gl.deleteProgram(o.pr);
+      scenes.delete(old);
+    }
+    return p;
+  };
   const B = mk(COMP_FS, ['uScene', 'uPrev', 'uRes', 'uTrail', 'uEcho', 'uEchoRot', 'uRGB', 'uPix', 'uHue', 'uSat', 'uCon', 'uGlow', 'uPost'] as const);
   const C = mk(FINAL_FS, [
     'uComp',
@@ -208,6 +280,7 @@ export function makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas): Rende
   };
 
   const draw = (u: Frame, width: number, height: number) => {
+    if (gl.isContextLost()) return;
     const W = Math.max(2, Math.floor(width));
     const H = Math.max(2, Math.floor(height));
     if (canvas.width !== W || canvas.height !== H) {
@@ -227,7 +300,8 @@ export function makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas): Rende
       th = h;
     }
     updateText(u.text.str, u.text.font);
-    // pass 1: scenes
+    // pass 1: scenes (only the layers being shown)
+    const A = sceneProg(u.mix < 1 ? u.m0 : -1, u.mix > 0 ? u.m1 : -1, u.ov > 0 ? u.m2 : -1);
     gl.bindFramebuffer(gl.FRAMEBUFFER, Sc.f);
     gl.viewport(0, 0, w, h);
     gl.useProgram(A.pr);
@@ -314,10 +388,13 @@ export function makeRenderer(canvas: HTMLCanvasElement | OffscreenCanvas): Rende
   };
   return {
     draw,
+    lost: () => gl.isContextLost(),
     refreshText: () => {
       textKey = null;
     },
     dispose: () => {
+      for (const p of scenes.values()) gl.deleteProgram(p.pr);
+      scenes.clear();
       free(Sc);
       free(Cm[0]);
       free(Cm[1]);

@@ -84,6 +84,8 @@ export function launch(v: Visuals, to: SceneRef, now: number) {
   const at = q === 'now' ? beat : q === 'beat' ? Math.ceil(beat) : Math.ceil(beat / 4) * 4;
   if (!pending) v.from = { ...v.scene };
   v.scene = { ...to };
+  // Each scene starts with its own look (mirrors Visuals::launch).
+  v.fx = { ...defaultFx(), ov: v.fx.ov, ovMode: v.fx.ovMode, ovScene: { ...v.fx.ovScene } };
   v.fadeStart = at;
   v.fadeLen = v.settings.fade < 0 ? BANKS[to.bank]!.fade : v.settings.fade;
   v.nextAuto = null;
@@ -140,6 +142,7 @@ export function look(v: Visuals, slot: number, store: boolean, now: number) {
   }
   const l = v.looks[slot];
   if (!l) throw new Error('nothing is saved there');
-  v.fx = structuredClone(l.fx);
+  // After the change (which resets the effects), the look's own.
   launch(v, l.scene, now);
+  v.fx = structuredClone(l.fx);
 }

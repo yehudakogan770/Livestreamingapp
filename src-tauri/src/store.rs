@@ -166,6 +166,7 @@ mod tests {
             fit: None,
             audio: None,
             key: None,
+            screens: None,
         };
         e.apply(Action::AddSource { source }, 0).unwrap();
         e.show().clone()
