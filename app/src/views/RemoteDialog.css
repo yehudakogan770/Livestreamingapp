@@ -22,7 +22,7 @@
   width: 200px;
   height: 200px;
   flex: none;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #fff;
 }
 .remote__steps {
@@ -45,7 +45,7 @@
   display: inline-block;
   margin-left: 6px;
   padding: 2px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--well);
   font-family: var(--mono);
   font-size: 1.6em;

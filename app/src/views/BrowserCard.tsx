@@ -110,7 +110,7 @@ export function BrowserCard({ show, source, act, client, onClose }: { show: Show
             )}
           </section>
           <section className="brc__side">
-            <span className="brc__label">CLICKING ON THE PAGE</span>
+            <span className="brc__label">Clicking on the page</span>
             {info?.captured ? (
               <>
                 <button type="button" className={`btn${clicking ? ' is-on' : ''}`} onClick={() => click(!clicking)} disabled={page.viewOnly}>
@@ -125,7 +125,7 @@ export function BrowserCard({ show, source, act, client, onClose }: { show: Show
               <input type="checkbox" checked={page.viewOnly} onChange={(e) => set({ viewOnly: e.target.checked })} /> View only (clicks are blocked)
             </label>
 
-            <span className="brc__label">PAGE</span>
+            <span className="brc__label">Page</span>
             <div className="brc__row">
               <span>Zoom</span>
               <button

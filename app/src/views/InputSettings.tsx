@@ -222,7 +222,7 @@ export function InputSettings({
         <div className="is__body">
           <section className="is__left">
             <div className="is__bar">
-              <span className="is__label">PREVIEW</span>
+              <span className="is__label">Preview</span>
               <span className="field__note">Changes apply live</span>
               <span className="remote__spacer" />
               <div className="segs" role="group" aria-label="Compare">
@@ -254,7 +254,7 @@ export function InputSettings({
             </div>
             <div className="is__under">
               <div className="is__looks">
-                <span className="is__label">LOOKS</span>
+                <span className="is__label">Looks</span>
                 <div className="is__lookrow">
                   {LOOKS.map(([name, p]) => (
                     <button

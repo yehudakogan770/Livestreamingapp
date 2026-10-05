@@ -60,7 +60,7 @@ export function StreamCard({ source, act, client, onClose }: { show: Show; sourc
             )}
           </section>
           <section className="brc__side">
-            <span className="brc__label">BUFFER</span>
+            <span className="brc__label">Buffer</span>
             <select value={st.bufferMs} onChange={(e) => save({ bufferMs: Number(e.target.value) })} aria-label="Buffer">
               <option value={0}>None — as fast as possible</option>
               <option value={500}>Half a second (usual)</option>
@@ -68,7 +68,7 @@ export function StreamCard({ source, act, client, onClose }: { show: Show; sourc
               <option value={5000}>5 seconds — very shaky internet</option>
             </select>
             <span className="field__note">A buffer rides out a shaky connection, at the cost of a little delay.</span>
-            <span className="brc__label">ADDRESSES THAT WORK</span>
+            <span className="brc__label">Addresses that work</span>
             <span className="field__note">
               srt://computer:9000 · rtmp://server/live/key · rtsp://camera/stream1 (IP cameras; add name:password@ if needed) · https://…/playlist.m3u8 (HLS) ·
               udp://@:1234

@@ -20,7 +20,7 @@
   display: flex;
   justify-content: space-between;
   padding: 7px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid transparent;
   background: none;
   color: var(--text);
@@ -63,7 +63,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--panel);
   border: 1px solid var(--border);
 }

@@ -15,20 +15,21 @@
 }
 .demo-flag {
   position: fixed;
-  left: 12px;
-  bottom: 60px;
+  left: 10px;
+  bottom: 54px;
   z-index: 60;
   height: 18px;
   padding: 0 8px;
-  border-radius: 3px;
-  background: #5a4a17;
-  color: #ffe7a3;
+  border-radius: var(--radius-sm);
+  background: var(--warning-bg);
+  color: var(--warning);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 18px;
+  letter-spacing: 0.04em;
+  line-height: 16px;
   text-transform: uppercase;
   pointer-events: none;
+  border: 1px solid #6a5222;
 }
 .confirm {
   width: min(480px, calc(100vw - 48px));
@@ -46,12 +47,12 @@
   transform: translateX(-50%);
   z-index: 90;
   max-width: 560px;
-  padding: 10px 16px;
-  border-radius: 6px;
-  background: #1d3a40;
-  border: 1px solid #2f6a73;
-  color: #e4f4f6;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  background: var(--raised);
+  border: 1px solid var(--border-strong);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
 }
 .keys {
   width: min(1100px, calc(100vw - 48px));
@@ -82,8 +83,8 @@
 }
 .keys kbd {
   padding: 1px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
   background: var(--well);
   font: 12px var(--mono);
 }

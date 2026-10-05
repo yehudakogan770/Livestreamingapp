@@ -15,9 +15,9 @@
   position: relative;
   align-self: start;
   aspect-ratio: 16 / 9;
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
-  background: linear-gradient(135deg, #4a5670, #151a22 60%, #8d7468);
+  background: var(--well);
   container-type: size;
 }
 .brd__side {
@@ -93,7 +93,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--button);
   color: var(--text);
@@ -107,9 +107,9 @@
   position: relative;
   display: block;
   aspect-ratio: 16 / 9;
-  border-radius: 4px;
+  border-radius: var(--radius);
   overflow: hidden;
-  background: linear-gradient(135deg, #4a5670, #151a22 60%, #8d7468);
+  background: var(--well);
   container-type: size;
 }
 .brd__fonts {

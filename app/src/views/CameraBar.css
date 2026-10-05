@@ -6,11 +6,10 @@
   min-width: 0;
 }
 .cambar__label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: none;
   padding-right: 3px;
 }
 .cambar__btn,
@@ -43,8 +42,8 @@
   border-color: var(--program-bright);
 }
 .cambar .cambar__btn.is-next {
-  border-color: var(--preview-bright, #3ecf6e);
-  box-shadow: inset 0 0 0 1px var(--preview-bright, #3ecf6e);
+  border-color: var(--preview-bright);
+  box-shadow: inset 0 0 0 1px var(--preview-bright);
 }
 .cambar .cambar__btn.is-on span,
 .cambar .cambar__btn.is-next span {
@@ -56,14 +55,14 @@
   color: var(--accent);
 }
 .cambar .cambar__auto.is-on {
-  background: #1d3b40;
+  background: var(--selected);
   border-color: var(--accent);
   color: #fff;
   animation: cambar-auto 1.6s ease-in-out infinite;
 }
 @keyframes cambar-auto {
   50% {
-    box-shadow: 0 0 0 3px rgba(79, 179, 191, 0.25);
+    box-shadow: 0 0 0 3px rgba(90, 143, 208, 0.25);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -102,7 +101,7 @@
 .camd__view {
   position: relative;
   aspect-ratio: 16 / 9;
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
   background: #000;
   container-type: size;

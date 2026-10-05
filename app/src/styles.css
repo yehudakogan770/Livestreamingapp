@@ -1,25 +1,38 @@
 /* Lumora design tokens — taken from the approved designs in /design. */
 :root {
-  --bg: #15171b;
-  --bar: #1a1d22;
-  --panel: #1e2127;
-  --button: #2a2e36;
-  --border: #2c3038;
-  --well: #101216;
-  --text: #e4e5e7;
-  --text-dim: #a9abb0;
-  --text-faint: #8e9096;
-  --accent: #4fb3bf;
-  --accent-deep: #1f6f79;
-  --selected: #243039;
-  --program: #c7372f;
-  --program-bright: #e0473b;
-  --preview: #2f8f4e;
-  --preview-bright: #3fbf5a;
-  --on-air: #e5483c;
-  --radius: 6px;
-  --font: 'Segoe UI', system-ui, sans-serif;
-  --mono: Consolas, 'Cascadia Mono', monospace;
+  /* Lumora's look: neutral graphite surfaces, one restrained accent for selection
+     and focus, and broadcast colors that mean only one thing each:
+     red = on air / recording, green = next (preview), amber = warning. */
+  --bg: #19191a; /* the workspace */
+  --bar: #202021; /* title bar, tabs strip, bottom bar, side columns */
+  --panel: #242426; /* panels and dialog bodies */
+  --raised: #2b2b2e; /* menus, dialog headers, popovers */
+  --button: #323235;
+  --button-hover: #3b3b3f;
+  --button-active: #2a2a2c;
+  --border: #333336; /* 1px dividers */
+  --border-strong: #454549; /* control outlines */
+  --well: #111112; /* fields, meters, picture surrounds */
+  --text: #e6e6e6;
+  --text-dim: #a8a8ac;
+  --text-faint: #7c7c81;
+  --accent: #5a8fd0; /* selection and focus only */
+  --accent-deep: #2f62a6; /* the primary button */
+  --accent-hover: #386fb6;
+  --selected: #2a3646;
+  --program: #c4302b;
+  --program-bright: #e23c35;
+  --preview: #23843e;
+  --preview-bright: #34b153;
+  --on-air: #e23c35;
+  --warning: #e3a33a;
+  --warning-bg: #3a2d14;
+  --danger: #e2615a; /* destructive text and outlines (never a fill) */
+  --radius: 3px;
+  --radius-sm: 2px;
+  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.45); /* menus and dialogs only */
+  --font: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --mono: 'Cascadia Mono', Consolas, 'SF Mono', 'Liberation Mono', monospace;
   color-scheme: dark;
 }
 
@@ -47,9 +60,28 @@ button {
   color: inherit;
   cursor: pointer;
 }
-button:focus-visible {
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+/* Native controls follow the accent; thin, quiet scrollbars. */
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'],
+progress {
+  accent-color: var(--accent);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #48484c transparent;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
 }
 ::selection {
   background: var(--selected);

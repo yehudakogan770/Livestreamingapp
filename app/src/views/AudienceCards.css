@@ -22,7 +22,7 @@
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  border-radius: 5px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.04);
   font-size: 13px;
 }
@@ -34,10 +34,10 @@
   white-space: nowrap;
 }
 .aud-card__list li.is-winner {
-  outline: 1px solid #f2b233;
+  outline: 1px solid var(--warning);
 }
 .aud-card__list li.is-waiting {
-  outline: 1px dashed #f2b233;
+  outline: 1px dashed var(--warning);
 }
 .aud-card__gift {
   display: grid;
@@ -70,7 +70,7 @@
   width: 44px;
   height: 44px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 .aud-card__none {
   color: var(--text-faint);
@@ -103,7 +103,7 @@
 }
 .join__phase {
   font-size: 12px;
-  color: #f2b233;
+  color: var(--warning);
 }
 .join__wifi summary {
   cursor: pointer;
@@ -124,7 +124,7 @@
   margin: 0;
   padding: 8px 10px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .auc-card__form legend {
   padding: 0 4px;

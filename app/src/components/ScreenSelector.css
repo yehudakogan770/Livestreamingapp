@@ -1,10 +1,10 @@
 .selector {
-  height: 60px;
+  height: 48px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 12px;
+  gap: 4px;
+  padding: 0 10px;
   background: var(--bar);
   border-bottom: 1px solid var(--border);
 }
@@ -14,27 +14,30 @@
   padding-right: 4px;
 }
 .selector__tab {
-  height: 48px;
-  min-width: 230px;
-  padding: 0 14px;
+  height: 38px;
+  min-width: 210px;
+  padding: 0 12px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  gap: 2px;
-  border-radius: 8px;
-  border: 2px solid var(--border);
-  background: var(--panel);
+  gap: 1px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--button-active);
   text-align: left;
+}
+.selector__tab:hover {
+  background: var(--button);
 }
 .selector__tab[aria-selected='true'] {
   border-color: var(--accent);
   background: var(--selected);
 }
 .selector__name {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
 }
 .selector__meta {
   display: flex;
@@ -48,23 +51,25 @@
   font-size: 10px;
   padding: 0 4px;
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: var(--radius);
   color: var(--text-faint);
 }
 .selector__badge {
   height: 15px;
   padding: 0 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   line-height: 15px;
-  color: #fff;
-  background: #343944;
+  color: var(--text-dim);
+  background: var(--button-hover);
 }
 .selector__badge--on-air {
   background: var(--program);
+  color: #fff;
 }
 .selector__badge--following {
-  background: var(--accent-deep);
+  background: var(--selected);
+  color: var(--text);
 }

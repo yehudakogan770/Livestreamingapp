@@ -17,12 +17,12 @@
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: #000;
 }
 .gs__stage--checker {
-  background: repeating-conic-gradient(#3a3f49 0 25%, #2a2e36 0 50%) 0 0 / 24px 24px;
+  background: repeating-conic-gradient(var(--border-strong) 0 25%, var(--button) 0 50%) 0 0 / 24px 24px;
 }
 .gs__stage.is-picking {
   cursor: crosshair;
@@ -38,7 +38,7 @@
   top: 10px;
   transform: translateX(-50%);
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: rgba(0, 0, 0, 0.75);
   font-size: 12px;
   pointer-events: none;
@@ -66,13 +66,13 @@
 .gs__colours i {
   width: 12px;
   height: 12px;
-  border-radius: 3px;
+  border-radius: var(--radius);
 }
 .gs__colours input[type='color'] {
   width: 40px;
   height: 30px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: none;
 }

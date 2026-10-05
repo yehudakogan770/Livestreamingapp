@@ -60,7 +60,7 @@
 .ros__run kbd {
   margin-left: 6px;
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   border: 1px solid rgba(255, 255, 255, 0.25);
   font: 10px var(--mono);
 }
@@ -86,7 +86,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 13px;
 }
@@ -98,11 +98,10 @@
 }
 .ros__row--head {
   cursor: default;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: none;
 }
 .ros__row:not(.ros__row--head):hover {
   background: var(--panel);
@@ -132,15 +131,14 @@
 }
 .ros__section {
   margin: 10px 0 2px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--accent);
-  text-transform: uppercase;
+  text-transform: none;
 }
 .ros__tag {
   padding: 0 5px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   font: normal 700 9px var(--font);
   letter-spacing: 0.06em;
   color: #fff;

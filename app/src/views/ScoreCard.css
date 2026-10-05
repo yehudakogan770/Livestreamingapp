@@ -17,9 +17,9 @@
   align-self: center;
   width: 100%;
   max-width: calc(34vh * 16 / 9);
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
-  background: linear-gradient(135deg, #2e5a3a, #173020);
+  background: #22382a;
 }
 .scc__teams {
   display: grid;
@@ -40,7 +40,7 @@
   padding: 10px;
   border: 1px solid var(--border);
   border-top-width: 4px;
-  border-radius: 8px;
+  border-radius: var(--radius);
 }
 .scc__clock {
   border-top-color: var(--border);
@@ -52,8 +52,8 @@
 .scc__score,
 .scc__time {
   text-align: center;
-  font-size: 56px;
-  font-weight: 800;
+  font-size: 48px;
+  font-weight: 700;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
@@ -68,7 +68,7 @@
 .scc__btns .btn {
   height: 40px;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
 }
 .scc__row,
 .scc__look,

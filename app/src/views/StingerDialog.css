@@ -18,9 +18,9 @@
   aspect-ratio: 16 / 9;
   max-height: 50vh;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: repeating-conic-gradient(#3a3f49 0 25%, #2a2e36 0 50%) 0 0 / 24px 24px;
+  background: repeating-conic-gradient(var(--border-strong) 0 25%, var(--button) 0 50%) 0 0 / 24px 24px;
 }
 .stg__stage video {
   position: absolute;
@@ -63,7 +63,7 @@
   flex-direction: column;
   gap: 4px;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: rgba(242, 178, 51, 0.08);
   border: 1px solid rgba(242, 178, 51, 0.35);
 }

@@ -25,7 +25,7 @@
   max-height: 300px;
   overflow: auto;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .dat__table table {
   width: 100%;
@@ -42,7 +42,7 @@
 .dat__table th {
   position: sticky;
   top: 0;
-  background: var(--panel, #1b1e24);
+  background: var(--panel);
 }
 .dat__table tbody tr {
   cursor: pointer;

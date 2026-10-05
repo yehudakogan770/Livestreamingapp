@@ -218,7 +218,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
               />
             </div>
             <div className="lm__export">
-              <span className="lm__label">EXPORT A VIDEO</span>
+              <span className="lm__label">Export a video</span>
               <div className="lm__grid">
                 <label>
                   Length (seconds)
@@ -280,7 +280,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
           </section>
 
           <section className="lm__right">
-            <span className="lm__label">LOOK</span>
+            <span className="lm__label">Look</span>
             <Slider label="Depth" value={logo.depth} min={0} max={60} show={String(Math.round(logo.depth))} onChange={(v) => set({ depth: v })} />
             <Slider label="Bevel" value={logo.bevel} min={0} max={20} show={String(Math.round(logo.bevel))} onChange={(v) => set({ bevel: v })} />
             <span className="lm__sub">Material</span>
@@ -333,7 +333,7 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
               onChange={(v) => set({ lightStrength: v })}
             />
 
-            <span className="lm__label">MOTION & CAMERA</span>
+            <span className="lm__label">Motion and camera</span>
             <Seg
               label="Rotation"
               value={logo.motion}

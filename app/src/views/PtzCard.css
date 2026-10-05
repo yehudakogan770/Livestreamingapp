@@ -27,7 +27,7 @@
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: #000;
 }
 .ptz__addr {
@@ -54,7 +54,7 @@
   min-width: 48px;
   min-height: 48px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--button);
   color: var(--text);
   font-size: 22px;

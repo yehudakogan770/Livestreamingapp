@@ -32,10 +32,9 @@
   gap: 10px;
 }
 .is__label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
 }
 .is__stage {
   position: relative;
@@ -65,7 +64,7 @@
   position: absolute;
   top: 8px;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: rgba(0, 0, 0, 0.65);
   font-size: 11px;
   font-weight: 700;
@@ -112,8 +111,8 @@
 }
 .is__hist i {
   flex: 1 1 0;
-  background: #6a717b;
-  border-radius: 1px;
+  background: #6a6a6f;
+  border-radius: var(--radius-sm);
 }
 .is__tabs {
   position: sticky;
@@ -130,7 +129,7 @@
   padding: 0 12px;
   border: 1px solid transparent;
   border-bottom: 0;
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   margin-bottom: -1px;
   background: transparent;
   color: var(--text-dim);
@@ -153,7 +152,7 @@
   padding-top: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #b4b8bf;
+  color: var(--text-dim);
 }
 .is__row {
   display: grid;
@@ -174,7 +173,7 @@
   color: var(--text);
 }
 .is__row em.is-changed {
-  color: #8fd3db;
+  color: var(--accent);
 }
 .is__fx .is__row {
   grid-template-columns: 110px minmax(0, 1fr) 62px;
@@ -183,14 +182,14 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  border-radius: 4px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--button);
   color: var(--text);
   cursor: pointer;
 }
 .is__reset:disabled {
-  color: #5a5c62;
+  color: var(--text-faint);
   cursor: default;
 }
 .is__flip {
@@ -214,20 +213,19 @@
   gap: 10px;
   padding: 12px 14px;
   border-radius: var(--radius);
-  background: #1a1d22;
+  background: var(--bar);
   border: 1px solid var(--border);
 }
 .is__fx.is-on {
   background: var(--panel);
-  border-color: #2f5a60;
+  border-color: var(--accent-deep);
 }
 
 /* Background & framing */
 .is__group {
   margin: 12px 0 2px;
   font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--text-dim);
 }
 .is__group:first-child {
@@ -244,18 +242,18 @@
   gap: 3px;
   padding: 4px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: transparent;
   color: inherit;
   font-size: 11px;
   cursor: pointer;
 }
 .is__set[aria-pressed='true'] {
-  border-color: var(--accent, #4fb3bf);
-  box-shadow: 0 0 0 1px var(--accent, #4fb3bf);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 .is__set canvas {
   width: 100%;
   height: auto;
-  border-radius: 3px;
+  border-radius: var(--radius);
 }

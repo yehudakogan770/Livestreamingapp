@@ -37,49 +37,49 @@
   top: 50%;
   width: 4px;
   height: 1px;
-  background: #3a3f48;
+  background: var(--border-strong);
 }
 .fader__track {
   position: relative;
-  width: 6px;
+  width: 4px;
   margin-right: 9px;
-  border-radius: 3px;
-  background: #0c0d10;
-  box-shadow: inset 0 0 0 1px #2a2e36;
+  border-radius: 0;
+  background: #000;
+  box-shadow: inset 0 0 0 1px var(--border-strong);
 }
 .fader__fill {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  border-radius: 3px;
-  background: rgba(79, 179, 191, 0.45);
+  border-radius: 0;
+  background: #6a6a70;
   pointer-events: none;
 }
 .fader__handle {
   position: absolute;
   left: 50%;
   width: 26px;
-  height: 16px;
+  height: 14px;
   margin-left: -13px;
   transform: translateY(50%);
-  border-radius: 3px;
-  background: linear-gradient(#d9dadd, #a9abb0 45%, #8e9096 55%, #c4c6ca);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius-sm);
+  background: #cfcfd2;
+  border: 1px solid #000;
   cursor: grab;
 }
 .fader__handle::after {
   content: '';
   position: absolute;
-  left: 3px;
-  right: 3px;
-  top: 7px;
+  left: 2px;
+  right: 2px;
+  top: 5px;
   height: 2px;
-  background: #1a1d22;
-  border-radius: 1px;
+  background: #1a1a1b;
+  border-radius: 0;
   pointer-events: none;
 }
 .fader.is-dragging .fader__handle {
   cursor: grabbing;
-  background: linear-gradient(#e8f6f8, #9fd3d9 45%, #7fc1c9 55%, #cfeef2);
+  background: #f0f0f2;
 }

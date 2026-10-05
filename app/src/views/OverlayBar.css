@@ -7,11 +7,10 @@
   margin-left: auto;
 }
 .ovbar__label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  text-transform: none;
   padding-right: 3px;
 }
 .ovbar__ch {
@@ -22,7 +21,7 @@
 }
 .ovbar__btn {
   min-width: 26px;
-  height: 24px;
+  height: 22px;
   padding: 0 7px;
   display: flex;
   align-items: center;
@@ -62,8 +61,8 @@
 }
 .ovbar__edit {
   width: 20px;
-  height: 24px;
-  border: 1px solid var(--border);
+  height: 22px;
+  border: 1px solid var(--border-strong);
   border-left: 0;
   border-radius: 0 var(--radius) var(--radius) 0;
   background: var(--button);
@@ -83,8 +82,8 @@
 .oved__chs {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 14px;
+  gap: 2px;
+  padding: 10px;
   border-right: 1px solid var(--border);
 }
 .oved__chbtn {
@@ -92,10 +91,10 @@
   grid-template-columns: 20px minmax(0, 1fr);
   align-items: center;
   gap: 2px 8px;
-  padding: 8px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--panel);
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--text);
   text-align: left;
 }
@@ -113,10 +112,10 @@
   grid-column: 2;
   justify-self: start;
   padding: 0 5px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   background: var(--program);
   font: normal 700 9px var(--font);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   color: #fff;
 }
 .oved__stagewrap {
@@ -130,7 +129,7 @@
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: #000;
   border: 1px solid var(--border);
   touch-action: none;
@@ -183,7 +182,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font: 700 10px var(--mono);
+  font: 400 11px var(--mono);
   color: var(--text-faint);
 }
 .oved__num .text {

@@ -7,9 +7,9 @@
   min-width: 0;
   height: 32px;
   padding: 0 10px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: var(--well, #0f1115);
+  background: var(--well);
   color: var(--text);
   font-size: 15px;
   text-align: left;
@@ -34,10 +34,10 @@
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  border-radius: 8px;
-  background: var(--bar, #1b1e24);
-  border: 1px solid #3a3f48;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  border-radius: var(--radius);
+  background: var(--bar);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-pop);
 }
 .fpk__groups {
   display: flex;
@@ -47,7 +47,7 @@
 .fpk__group {
   height: 24px;
   padding: 0 8px;
-  border-radius: 12px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-dim);
@@ -55,7 +55,7 @@
 }
 .fpk__group.is-on {
   border-color: var(--accent);
-  background: #1d3b40;
+  background: var(--selected);
   color: #fff;
 }
 .fpk__list {
@@ -77,7 +77,7 @@
   gap: 2px;
   min-width: 0;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid transparent;
   background: var(--button);
   color: var(--text);
@@ -88,7 +88,7 @@
 }
 .fpk__font.is-on {
   border-color: var(--accent);
-  background: #1d3b40;
+  background: var(--selected);
 }
 .fpk__font b {
   max-width: 100%;

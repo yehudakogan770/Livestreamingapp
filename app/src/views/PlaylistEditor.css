@@ -35,8 +35,8 @@
   gap: 6px;
   padding: 4px 6px;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--panel, #1a1d22);
+  border-radius: var(--radius);
+  background: var(--panel);
   cursor: grab;
 }
 .pl__item.is-current {
@@ -72,10 +72,10 @@
 }
 .pl__now {
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   background: var(--program);
   color: #fff;
   font-size: 10px;
   font-style: normal;
-  font-weight: 800;
+  font-weight: 700;
 }

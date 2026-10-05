@@ -24,7 +24,7 @@
   height: 28px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: none;
 }
 .spled {
@@ -41,7 +41,7 @@
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   align-self: start;
 }
