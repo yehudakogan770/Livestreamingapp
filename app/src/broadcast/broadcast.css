@@ -3,13 +3,13 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
 }
 .bc-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--text-faint);
 }
@@ -25,8 +25,9 @@
   animation: bc-blink 1.2s steps(1) infinite;
 }
 .bc-btn--warn {
-  background: #6b5a12;
-  border-color: #d4b23a;
+  background: var(--warning-bg);
+  border-color: var(--warning);
+  color: var(--warning);
 }
 @keyframes bc-blink {
   50% {
@@ -44,17 +45,18 @@
   gap: 8px;
   max-width: calc(100vw - 48px);
   padding: 8px 8px 8px 14px;
-  border-radius: 6px;
-  background: #16302a;
-  border: 1px solid #2f8f4e;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border-radius: var(--radius);
+  background: var(--raised);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-pop);
+  border-left: 3px solid var(--preview-bright);
 }
 .bc-saved a {
   color: var(--accent);
 }
 .bc-saved__edit {
   flex: none;
-  color: #b9e3c6;
+  color: var(--text-dim);
   white-space: nowrap;
 }
 .bc-saved__path {
@@ -78,8 +80,8 @@
 .bcd__body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
   overflow: auto;
 }
 .bcd__intro {
@@ -94,7 +96,10 @@
 }
 .bcd__section h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
 }
 .bcd__row {
   display: flex;
@@ -116,7 +121,7 @@
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: var(--bar);
 }
 .bcd__dest.is-off {
   opacity: 0.6;
@@ -147,10 +152,10 @@
   gap: 8px;
   width: 240px;
   padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel, #16191e);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
 }
 .bc-replay__row {
   display: flex;
@@ -169,8 +174,8 @@
   font-size: 12px;
 }
 .perf__chip--busy {
-  border-color: #f2b233;
-  color: #f2b233;
+  border-color: var(--warning);
+  color: var(--warning);
 }
 .perf__panel {
   position: absolute;
@@ -179,10 +184,10 @@
   z-index: 70;
   width: min(420px, calc(100vw - 24px));
   padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel, #16191e);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
   font-size: 12px;
 }
 .perf__panel table {
@@ -207,12 +212,12 @@
   padding-inline: 8px;
 }
 .bc-btn--rehearse {
-  background: #7a4a00;
-  border-color: #c98a1f;
-  color: #ffe2b0;
+  background: var(--warning-bg);
+  border-color: var(--warning);
+  color: var(--warning);
 }
 .bc-btn--rehearse .bc-dot {
-  background: #ffb547;
+  background: var(--warning);
 }
 .bc-report {
   margin: 8px 0;
@@ -226,9 +231,10 @@
   gap: 6px 8px;
   margin: 0 16px 8px;
   padding: 10px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius);
+  background: var(--bar);
   font-size: 13px;
+  border: 1px solid var(--border);
 }
 .bc-later .text {
   width: auto;

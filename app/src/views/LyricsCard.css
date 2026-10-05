@@ -53,7 +53,7 @@
   min-height: 72px;
   padding: 8px 10px 8px 30px;
   border: 2px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--button);
   color: var(--text);
   font-size: 13px;
@@ -81,9 +81,9 @@
 .lyc__stage {
   position: relative;
   aspect-ratio: 16 / 9;
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
-  background: linear-gradient(135deg, #243042, #0e1117);
+  background: var(--well);
 }
 .lyc__text {
   min-height: 180px;

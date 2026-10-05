@@ -13,17 +13,16 @@
 }
 .midi__group h3 {
   margin: 4px 0;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  font-size: 12px;
+  text-transform: none;
+  color: var(--text-dim);
 }
 .midi__row {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 3px 6px;
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 .midi__row.is-learning {
   background: var(--selected);

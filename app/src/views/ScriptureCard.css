@@ -17,7 +17,7 @@
   align-items: baseline;
   padding: 5px 8px;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.04);
   color: var(--text);
   font: inherit;
@@ -26,8 +26,8 @@
   cursor: pointer;
 }
 .scr-card__verses button.is-on {
-  border-color: #c9a24a;
-  background: rgba(201, 162, 74, 0.14);
+  border-color: var(--accent);
+  background: var(--selected);
 }
 .scr-card__verses b {
   flex: 0 0 26px;
@@ -51,7 +51,7 @@
   gap: 6px;
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .scr-card__what,
 .scr-card__range {

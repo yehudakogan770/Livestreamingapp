@@ -4,7 +4,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: var(--panel);
   border: 1px solid var(--border);
 }
@@ -41,7 +41,7 @@
   align-items: center;
   justify-content: center;
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--well);
   font-size: 26px;
   font-weight: 700;
@@ -96,7 +96,7 @@
 }
 .pk kbd {
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   border: 1px solid rgba(255, 255, 255, 0.25);
   font: 10px var(--mono);
   opacity: 0.8;
@@ -110,7 +110,7 @@
 .pk__strip button {
   flex: 0 0 auto;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--button);
   color: var(--text-dim);
@@ -123,7 +123,7 @@
 }
 .pk__strip .is-now {
   border-color: var(--accent);
-  background: #1d3b40;
+  background: var(--selected);
   color: #fff;
 }
 
@@ -157,7 +157,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--accent);
   background: var(--panel);
 }
@@ -176,7 +176,7 @@
   gap: 6px;
   align-items: start;
   padding: 4px;
-  border-radius: 6px;
+  border-radius: var(--radius);
 }
 .pked__pasuk.is-on {
   background: var(--selected);
@@ -202,7 +202,7 @@
 .pked__preview {
   position: relative;
   aspect-ratio: 16 / 9;
-  border-radius: 6px;
+  border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid var(--border);
   flex: 0 0 auto;
@@ -222,14 +222,14 @@
 .pked__swatch {
   flex: 1;
   height: 36px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 2px solid var(--border);
   color: #fff;
   font-size: 12px;
   font-weight: 600;
 }
 .pked__swatch--text {
-  background: #101216;
+  background: var(--well);
 }
 .pked__swatch.is-on {
   border-color: var(--accent);
@@ -239,7 +239,7 @@
   height: 36px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: none;
 }
 .pked__secs {
@@ -256,7 +256,7 @@
   min-width: 0;
 }
 .pked__warn {
-  color: var(--warn, #f2c14e);
+  color: var(--warn);
 }
 .pked__swatches:has(.pked__design) {
   flex-wrap: wrap;
@@ -329,8 +329,8 @@
   font-weight: 700;
 }
 .pk__bar--on {
-  border-color: var(--pgm, #e0473b);
-  color: #ffb4ae;
+  border-color: var(--pgm);
+  color: var(--danger);
 }
 
 .pk__row--small {
@@ -339,5 +339,5 @@
 
 /* The editor's preview: a stand-in for the camera behind the bar. */
 .pked__preview {
-  background: linear-gradient(135deg, #4a5670, #8d7468);
+  background: var(--border-strong);
 }

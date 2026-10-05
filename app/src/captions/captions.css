@@ -16,15 +16,15 @@
   color: var(--text-dim);
 }
 .cap__state.is-listening {
-  color: #8fe0b0;
+  color: var(--preview-bright);
 }
 .cap__state.is-failed {
-  color: #ffb4ad;
+  color: var(--danger);
 }
 .cap__preview {
   min-height: 64px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: var(--radius);
   background: #000;
   color: #fff;
   font-weight: 600;
@@ -39,8 +39,7 @@
 .cap__h {
   margin: 6px 0 0;
   font-size: 13px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  text-transform: none;
   color: var(--text-dim);
 }
 .cap__row {

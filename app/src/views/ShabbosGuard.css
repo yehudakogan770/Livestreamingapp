@@ -9,15 +9,16 @@
   gap: 8px;
   max-width: calc(100vw - 24px);
   padding: 8px 14px;
-  border-radius: 8px;
-  background: #3b2a08;
-  border: 1px solid #f2b233;
-  color: #ffe6ad;
+  border-radius: var(--radius);
+  background: var(--raised);
+  border: 1px solid var(--warning);
+  color: var(--text);
+  border-left-width: 3px;
   font-size: 14px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-pop);
 }
 .shabbos--done {
-  background: #1f2a1a;
-  border-color: #6fdc8c;
-  color: #d9f7df;
+  background: var(--raised);
+  border-color: var(--preview-bright);
+  color: var(--text);
 }

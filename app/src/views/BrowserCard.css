@@ -5,7 +5,7 @@
 .brc__air {
   margin-right: 8px;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: var(--program);
   color: #fff;
   font-size: 11px;
@@ -48,7 +48,7 @@
   overflow: hidden;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  background: repeating-conic-gradient(#2a2e36 0 25%, #22252b 0 50%) 0 0 / 20px 20px;
+  background: repeating-conic-gradient(var(--button) 0 25%, var(--raised) 0 50%) 0 0 / 20px 20px;
 }
 .brc__status {
   display: flex;
@@ -58,10 +58,9 @@
 }
 .brc__label {
   margin-top: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
 }
 .brc__row {
   display: flex;

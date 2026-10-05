@@ -17,7 +17,7 @@
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
 }
 .txed__stage--dark {
@@ -27,7 +27,7 @@
   background: #d9dce3;
 }
 .txed__stage--checker {
-  background: repeating-conic-gradient(#2a2e36 0 25%, #1e2127 0 50%) 0 0 / 24px 24px;
+  background: repeating-conic-gradient(var(--button) 0 25%, var(--panel) 0 50%) 0 0 / 24px 24px;
 }
 .txed__behind {
   display: flex;
@@ -67,7 +67,7 @@
   height: 30px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: none;
 }
 
@@ -82,7 +82,7 @@
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--button);
   color: var(--text-dim);
   font-size: 11px;
@@ -97,8 +97,8 @@
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  border-radius: 3px;
-  background: linear-gradient(135deg, #2c3a4f, #151a22);
+  border-radius: var(--radius);
+  background: var(--well);
   pointer-events: none;
 }
 .txed__swatch {

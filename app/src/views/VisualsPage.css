@@ -54,11 +54,11 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #2c3038;
+  background: var(--border);
 }
 .vis__dots i.is-lit {
   background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
+  box-shadow: none;
 }
 .vis__body {
   flex: 1 1 auto;
@@ -94,7 +94,7 @@
 .vis__mode {
   position: absolute;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   font-size: 11px;
   font-weight: 700;
   background: rgba(0, 0, 0, 0.6);
@@ -152,8 +152,8 @@
   background: var(--selected);
 }
 .vis__pad:active {
-  background: #e4e5e7;
-  color: #15171b;
+  background: var(--text);
+  color: var(--bg);
 }
 .vis__pad:disabled {
   opacity: 0.4;
@@ -189,10 +189,9 @@
   color: var(--text-dim);
 }
 .vis__label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
 }
 .vis .btn.is-on {
   border-color: var(--accent);
@@ -283,9 +282,9 @@
   flex: 1 1 200px;
 }
 .vis .vis__favbtn.is-on {
-  border-color: #ffd166;
-  background: #3a2f12;
-  color: #ffd166;
+  border-color: var(--warning);
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 .vis__scenes {
   display: grid;
@@ -320,7 +319,7 @@
   left: 4px;
   top: 4px;
   padding: 1px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius);
   background: var(--program);
   color: #fff;
   font-size: 10px;
@@ -342,7 +341,7 @@
   cursor: pointer;
 }
 .vis__star.is-on {
-  color: #ffd166;
+  color: var(--warning);
 }
 .vis__name {
   position: absolute;
@@ -407,7 +406,7 @@
   color: var(--text);
   background: var(--bg, transparent);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 4px;
+  border-radius: var(--radius);
 }
 .vis__num:focus {
   outline: none;

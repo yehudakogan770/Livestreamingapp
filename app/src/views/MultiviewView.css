@@ -12,8 +12,8 @@
   inset: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 6px;
+  gap: 4px;
+  padding: 4px;
 }
 .mv__head {
   flex: 0 0 auto;
@@ -22,8 +22,8 @@
   align-items: center;
   gap: 10px;
   padding: 0 6px;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
 }
 .mv__clock {
   margin-left: auto;
@@ -34,7 +34,7 @@
   flex: 0 1 auto;
   min-height: 0;
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 .mv__screens--1 {
   height: 58%;
@@ -47,7 +47,7 @@
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 4px;
 }
 .mv__inputs {
   flex: 1 1 0;
@@ -55,7 +55,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(260px, 30%), 1fr));
   grid-auto-rows: minmax(0, 1fr);
-  gap: 6px;
+  gap: 4px;
   overflow: hidden;
 }
 .mv__grid--inputs .mv__inputs {
@@ -67,16 +67,16 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border: 3px solid #2a2e36;
-  border-radius: 4px;
-  background: #0b0c0e;
+  border: 2px solid #2a2a2c;
+  border-radius: 0;
+  background: #000;
   overflow: hidden;
 }
 .mv__box--pgm {
-  border-color: #e0473b;
+  border-color: var(--program-bright);
 }
 .mv__box--pvw {
-  border-color: #3fbf5a;
+  border-color: var(--preview-bright);
 }
 .mv__pic {
   position: relative;
@@ -88,34 +88,53 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 8px;
-  background: rgba(0, 0, 0, 0.85);
-  font-size: 14px;
-  font-weight: 600;
+  padding: 2px 8px;
+  background: #111;
+  font-size: 13px;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border-top: 1px solid #2a2a2c;
 }
 .mv__box--big .mv__label {
   font-size: 16px;
 }
 .mv__label b {
   font-family: var(--mono);
-  color: #a9abb0;
+  color: var(--text-dim);
 }
 .mv__tag {
   padding: 1px 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font-style: normal;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.05em;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 .mv__tag--pgm {
-  background: #e0473b;
+  background: var(--program-bright);
   color: #fff;
 }
 .mv__tag--pvw {
-  background: #3fbf5a;
+  background: var(--preview-bright);
   color: #04120a;
+}
+/* Tally: the name strip under a picture takes the tally color, like a hardware multiviewer. */
+.mv__box--pgm .mv__label {
+  background: var(--program);
+  border-top-color: var(--program);
+}
+.mv__box--pvw .mv__label {
+  background: var(--preview);
+  border-top-color: var(--preview);
+}
+.mv__box--pgm .mv__label b,
+.mv__box--pvw .mv__label b {
+  color: rgba(255, 255, 255, 0.8);
+}
+.mv__box--pgm .mv__tag,
+.mv__box--pvw .mv__tag {
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
 }

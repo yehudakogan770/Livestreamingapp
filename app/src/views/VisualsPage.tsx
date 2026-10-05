@@ -310,7 +310,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
             </div>
             <div className="vis__looks">
               <div className="vis__row">
-                <span className="vis__label">SAVED LOOKS</span>
+                <span className="vis__label">Saved looks</span>
                 <span className="vis__spacer" />
                 <button type="button" className={`btn${saving ? ' is-on' : ''}`} onClick={() => setSaving(!saving)}>
                   {saving ? 'Choose a slot…' : 'Save look'}
@@ -389,7 +389,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
                 })}
             </div>
             <div className="vis__row">
-              <span className="vis__label">CHANGE SCENE</span>
+              <span className="vis__label">Change scene</span>
               <div className="segs">
                 {(
                   [
@@ -403,7 +403,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
                   </button>
                 ))}
               </div>
-              <span className="vis__label">FADE</span>
+              <span className="vis__label">Fade</span>
               <div className="segs">
                 {(
                   [
@@ -603,7 +603,7 @@ function LookTab({ v, setFx, setSettings }: FxProps) {
   const mirror = f.kal ? 'kal' : String(f.mirror);
   return (
     <>
-      <Group title="COLOURS">
+      <Group title="Colors">
         <select value={v.settings.palette} onChange={(e) => setSettings({ palette: e.target.value })} aria-label="Colors">
           <option value="scene">Scene’s own colors</option>
           {Object.entries(PALETTES).map(([k, p]) => (
@@ -618,14 +618,14 @@ function LookTab({ v, setFx, setSettings }: FxProps) {
         <Slider label="Contrast" value={f.con} min={0.5} max={2} def={1} onChange={(x) => setFx({ con: x })} />
         <Slider label="Glow" value={f.glow} min={0} max={1.5} def={0} onChange={(x) => setFx({ glow: x })} />
       </Group>
-      <Group title="CAMERA">
+      <Group title="Camera">
         <Slider label="Zoom" value={f.zoom} min={0.5} max={3} def={1} onChange={(x) => setFx({ zoom: x })} />
         <Slider label="Spin (with the beat)" value={f.spin} min={-2} max={2} def={0} onChange={(x) => setFx({ spin: x })} />
         <Slider label="Move left / right" value={f.panX} min={-0.6} max={0.6} def={0} onChange={(x) => setFx({ panX: x })} />
         <Slider label="Move up / down" value={f.panY} min={-0.4} max={0.4} def={0} onChange={(x) => setFx({ panY: x })} />
         <Slider label="Zoom kick on the beat" value={f.pump} min={0} max={1} def={0} onChange={(x) => setFx({ pump: x })} />
       </Group>
-      <Group title="MIRROR">
+      <Group title="Mirror">
         <div className="segs">
           {(
             [
@@ -657,7 +657,7 @@ function LookTab({ v, setFx, setSettings }: FxProps) {
           </div>
         )}
       </Group>
-      <Group title="MOTION & OUTPUT">
+      <Group title="Motion and output">
         <Slider label="Speed" value={v.settings.speed} min={0.25} max={2} def={1} onChange={(x) => setSettings({ speed: x })} />
         <Slider label="Beat flash" value={v.settings.flash} min={0} max={1} def={1} onChange={(x) => setSettings({ flash: x })} />
         <Slider label="Brightness" value={v.settings.bright} min={0} max={1.5} def={1} onChange={(x) => setSettings({ bright: x })} />
@@ -671,13 +671,13 @@ function EffectsTab({ v, setFx, setSettings }: FxProps) {
   const st = v.settings;
   return (
     <>
-      <Group title="TRAILS">
+      <Group title="Trails">
         <Slider label="Trails" value={f.trail} min={0} max={0.97} def={D.trail} onChange={(x) => setFx({ trail: x })} />
         <Slider label="Trail zoom" value={f.echo} min={-0.05} max={0.05} step={0.001} def={0} onChange={(x) => setFx({ echo: x })} />
         <Slider label="Trail spin" value={f.echoRot} min={-0.05} max={0.05} step={0.001} def={0} onChange={(x) => setFx({ echoRot: x })} />
         <Slider label="RGB split" value={f.rgb} min={0} max={1} def={0} onChange={(x) => setFx({ rgb: x })} />
       </Group>
-      <Group title="RETRO">
+      <Group title="Retro">
         <Slider label="Pixelate" value={f.pix} min={0} max={24} step={1} def={0} onChange={(x) => setFx({ pix: x })} />
         <Slider label="TV lines" value={f.scan} min={0} max={1} def={0} onChange={(x) => setFx({ scan: x })} />
         <Slider label="Dark edges" value={f.vig} min={0} max={1} def={0} onChange={(x) => setFx({ vig: x })} />
@@ -692,7 +692,7 @@ function EffectsTab({ v, setFx, setSettings }: FxProps) {
           </select>
         </label>
       </Group>
-      <Group title="TIMING & QUALITY">
+      <Group title="Timing and quality">
         <label className="vis__select">
           <span>Beat flash happens</span>
           <select value={st.flashEvery} onChange={(e) => setSettings({ flashEvery: Number(e.target.value) })}>
@@ -741,7 +741,7 @@ function LayersTab({ v, setFx, setText }: { v: Visuals; setFx: (p: Partial<Visua
   const t = v.text;
   return (
     <>
-      <Group title="OVERLAY SCENE">
+      <Group title="Overlay scene">
         <label className="vis__select">
           <span>Music type</span>
           <select value={f.ovScene.bank} onChange={(e) => setFx({ ovScene: { bank: Number(e.target.value), scene: 0 } })} aria-label="Overlay music type">
@@ -771,7 +771,7 @@ function LayersTab({ v, setFx, setText }: { v: Visuals; setFx: (p: Partial<Visua
           ))}
         </div>
       </Group>
-      <Group title="TEXT ON SCREEN">
+      <Group title="Text on screen">
         <input
           className="text"
           value={t.words}
@@ -808,13 +808,13 @@ function LogoTab({ v, hasLogo, setLogo }: { v: Visuals; hasLogo: boolean; setLog
   const l = v.logo;
   return (
     <>
-      <Group title="EVENT LOGO">
+      <Group title="Event logo">
         {!hasLogo && <p className="field__note">Add the event logo first (Event menu → Event setup…).</p>}
         <label className="check">
           <input type="checkbox" checked={l.on} disabled={!hasLogo} onChange={(e) => setLogo({ on: e.target.checked })} /> Show the logo on the visuals
         </label>
       </Group>
-      <Group title="POSITION">
+      <Group title="Position">
         <div className="segs">
           {(
             [

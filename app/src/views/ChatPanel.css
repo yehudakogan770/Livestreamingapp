@@ -11,9 +11,9 @@
   gap: 8px;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel, #16191e);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow-pop);
 }
 .chat__head {
   display: flex;
@@ -43,16 +43,16 @@
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #555b64;
+  background: var(--text-faint);
 }
 .chat__dot--on {
-  background: #3fbf5a;
+  background: var(--preview-bright);
 }
 .chat__dot--connecting {
-  background: #f2b233;
+  background: var(--warning);
 }
 .chat__dot--error {
-  background: #e0473b;
+  background: var(--program-bright);
 }
 .chat__key summary {
   cursor: pointer;
@@ -91,7 +91,7 @@
 .chat__msg {
   position: relative;
   padding: 6px 70px 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: rgba(255, 255, 255, 0.04);
   font-size: 13px;
 }

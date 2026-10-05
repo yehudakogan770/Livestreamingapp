@@ -6,55 +6,69 @@
   place-items: center;
   padding: 24px;
   overflow: auto;
-  background:
-    radial-gradient(700px 420px at 0% 100%, rgba(79, 179, 191, 0.16), transparent 70%),
-    radial-gradient(600px 380px at 100% 0%, rgba(224, 71, 59, 0.1), transparent 70%), #0e1013;
+  background: var(--bg);
 }
 .gate__card {
-  width: min(440px, 100%);
-  padding: 34px 36px 30px;
-  border-radius: 16px;
-  border: 1px solid var(--border);
+  width: min(400px, 100%);
+  padding: 0 28px 24px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  border-top: 0;
   background: var(--panel);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-pop);
+}
+.gate__brand {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  margin: 0 -28px 20px;
+  padding: 0 16px;
+  background: var(--raised);
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 .gate__brand img {
-  height: 44px;
-  margin: 0 0 22px -4px;
+  display: block;
+  height: 26px;
 }
 .gate h1 {
-  margin: 0 0 8px;
-  font-size: 22px;
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 600;
 }
 .gate__note {
-  margin: 0 0 18px;
+  margin: 0 0 16px;
   color: var(--text-dim);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.5;
 }
 .gate__form {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 .gate__form .gate__note {
   margin-bottom: 4px;
 }
 .gate__go {
-  height: 42px;
+  height: 34px;
   margin-top: 4px;
-  font-size: 15px;
+  font-size: 13px;
+  justify-content: center;
 }
 .gate__msg {
   margin: 0;
   padding: 9px 12px;
-  border-radius: 8px;
-  background: rgba(79, 179, 191, 0.12);
+  border-radius: var(--radius);
+  background: var(--raised);
   font-size: 13px;
   line-height: 1.45;
+  border: 1px solid var(--border-strong);
 }
 .gate__msg.is-bad {
-  background: rgba(224, 71, 59, 0.14);
-  color: #ffb4ad;
+  background: var(--raised);
+  color: var(--text);
+  border-color: var(--danger);
 }
 .gate__switch {
   margin: 0;
@@ -72,7 +86,7 @@
   background: none;
   color: var(--accent);
   font: inherit;
-  font-weight: 600;
+  font-weight: 400;
   cursor: pointer;
 }
 .linkish:hover {
@@ -111,25 +125,25 @@
   color: var(--text-dim);
 }
 .people__tag {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
   background: var(--button);
 }
 .people__tag--pending {
-  background: #5a4410;
-  color: #ffd98a;
+  background: var(--warning-bg);
+  color: var(--warning);
 }
 .people__tag--approved {
-  background: #173f2a;
-  color: #8fe0b0;
+  background: #1d3324;
+  color: #7fcf95;
 }
 .people__tag--blocked {
-  background: #4a1714;
-  color: #ffb4ad;
+  background: #3a1a18;
+  color: var(--danger);
 }
 .people__acts {
   display: flex;
