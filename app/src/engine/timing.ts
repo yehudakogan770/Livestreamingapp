@@ -239,3 +239,20 @@ export function countdownDue(c: Countdown, now: number): boolean {
 export function countdownVisible(c: Countdown, now: number): boolean {
   return !(countdownDue(c, now) && c.atZero.type !== 'hold' && c.atZero.type !== 'showText');
 }
+
+/**
+ * Whether a finished countdown shows its logo (drawing only, no engine
+ * mirror). "Numbers go, logo appears" always does. "Go to what is in Next"
+ * only when nothing was in Next, so it is still on air once the engine has
+ * acted; never while it fades out to what came next.
+ */
+export function countdownShowsLogo(c: Countdown, now: number, onAir: boolean): boolean {
+  if (!countdownDue(c, now)) return false;
+  if (c.atZero.type === 'hide') return true;
+  return c.atZero.type === 'takeNext' && c.fired && onAir;
+}
+
+/** Whether an input is on air (program) on the Live or Back Screen. */
+export function onAir(screens: { live: ScreenState; back: ScreenState } | undefined, id: string): boolean {
+  return !!screens && (screens.live.program === id || screens.back.program === id);
+}

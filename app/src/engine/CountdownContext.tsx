@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { EventInfo } from './types/EventInfo';
+import type { Show } from './types/Show';
 import type { Source } from './types/Source';
 import type { Visuals } from './types/Visuals';
 
@@ -14,6 +15,8 @@ export interface Stage {
   visuals?: Visuals;
   /** The data file's values ({Column} in titles). */
   data?: Record<string, string>;
+  /** What each screen shows (a countdown fading off air hides its logo). */
+  screens?: Show['screens'];
 }
 
 export const StageContext = createContext<Stage | null>(null);

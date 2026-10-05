@@ -16,6 +16,7 @@ import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
 import { syncMedia } from '../engine/mediaSync';
 import { useStage } from '../engine/CountdownContext';
+import { onAir } from '../engine/timing';
 import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
 import { ChromaKeyer, defaultAdjust, defaultAutoFrame, defaultBackground, needsProcessing, type Smarts } from '../engine/chroma';
@@ -204,7 +205,7 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
     case 'browser':
       return <BrowserView id={source.id} page={k} client={client} fit={fit} thumb={thumb} audience={audience} />;
     case 'countdown':
-      return <CountdownInput timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
+      return <CountdownInput id={source.id} timer={k.timer} background={k.background} logoUrl={k.logo ?? null} client={client} />;
     case 'microphone':
       return (
         <div
@@ -296,11 +297,23 @@ function PesukimInput({ source, client, thumb, audience }: { source: Source; cli
   );
 }
 
-function CountdownInput({ timer, background, logoUrl, client }: { timer: Countdown; background: string; logoUrl: string | null; client: EngineClient }) {
+function CountdownInput({
+  id,
+  timer,
+  background,
+  logoUrl,
+  client,
+}: {
+  id: string;
+  timer: Countdown;
+  background: string;
+  logoUrl: string | null;
+  client: EngineClient;
+}) {
   const stage = useStage();
   // At the end: this countdown's own picture, or else the event logo (Lumora's until it has one).
   const logo = logoUrl ?? eventLogo(stage?.event);
-  return <CountdownView countdown={timer} background={background} logoUrl={client.mediaUrl(logo)} />;
+  return <CountdownView countdown={timer} background={background} logoUrl={client.mediaUrl(logo)} onAir={onAir(stage?.screens, id)} />;
 }
 
 /** What the audience sees instead of something broken: black, or the logo (the event's, else Lumora's) as chosen in the event setup. */

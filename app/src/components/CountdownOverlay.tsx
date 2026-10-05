@@ -1,5 +1,5 @@
 import type { Countdown } from '../engine/types/Countdown';
-import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, formatCountdown } from '../engine/timing';
+import { countdownDue, countdownFinished, countdownRemaining, countdownShowsLogo, countdownVisible, formatCountdown } from '../engine/timing';
 import { useNow } from '../engine/useNow';
 import './CountdownOverlay.css';
 
@@ -8,7 +8,18 @@ import './CountdownOverlay.css';
  * preview). In the last ten seconds every second lands with a pulse; at zero
  * it holds 0, shows the end text, or takes the numbers off, as chosen.
  */
-export function CountdownView({ countdown, background, logoUrl }: { countdown: Countdown; background: string; logoUrl?: string | null }) {
+export function CountdownView({
+  countdown,
+  background,
+  logoUrl,
+  onAir = false,
+}: {
+  countdown: Countdown;
+  background: string;
+  logoUrl?: string | null;
+  /** Still on air on the Live or Back Screen (not taken off at zero). */
+  onAir?: boolean;
+}) {
   const now = useNow(false, 100);
   const left = countdownRemaining(countdown, now);
   const done = countdownFinished(countdown, now);
@@ -33,9 +44,7 @@ export function CountdownView({ countdown, background, logoUrl }: { countdown: C
         </div>
       </div>
       {words && <div className="hype__end hype__time hype__time--text">{countdown.endText}</div>}
-      {after && (countdown.atZero.type === 'hide' || countdown.atZero.type === 'takeNext') && logoUrl && (
-        <img className="hype__logo" src={logoUrl} alt="" draggable={false} />
-      )}
+      {countdownShowsLogo(countdown, now, onAir) && logoUrl && <img className="hype__logo" src={logoUrl} alt="" draggable={false} />}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { demoApply, demoTick } from './demo';
 import { countdownTarget, mainCountdown, timerOf } from './countdowns';
 import { defaultCountdown, emptyShow } from './client';
-import { countdownRemaining, countdownVisible, formatCountdown } from './timing';
+import { countdownRemaining, countdownShowsLogo, countdownVisible, formatCountdown, onAir } from './timing';
 import { nextClockTime, parseLength } from '../views/CountdownDialog';
 import type { Action } from './types/Action';
 import type { Show } from './types/Show';
@@ -55,6 +55,31 @@ describe('countdown rules (same as the engine)', () => {
     expect(s.screens.live.program).toBe('open');
     expect(demoTick(s, 8_000)).toBeNull();
     expect(countdownVisible(t(s), 8_000)).toBe(false);
+  });
+
+  it('“go to Next” fades straight to Next: no logo on the countdown as it goes', () => {
+    let s = withCd([
+      [{ type: 'addSource', source: { id: 'open', name: 'Opening', kind: { type: 'pattern' } } }, 0],
+      [{ type: 'setCountdownLength', id: 'cd', lengthMs: 5_000 }, 0],
+      [{ type: 'cutTo', screen: 'live', sourceId: 'cd' }, 0],
+      [{ type: 'setPreview', screen: 'live', sourceId: 'open' }, 0],
+    ]);
+    s = demoTick(s, 6_500)!;
+    expect(s.screens.live.program).toBe('open');
+    expect(s.screens.live.previous).toBe('cd');
+    // Mid-fade and after: the outgoing countdown never shows the logo.
+    expect(countdownShowsLogo(t(s), 7_500, onAir(s.screens, 'cd'))).toBe(false);
+  });
+
+  it('“go to Next” with nothing in Next stays on air and shows the logo, like “numbers go”', () => {
+    let s = withCd([
+      [{ type: 'setCountdownLength', id: 'cd', lengthMs: 5_000 }, 0],
+      [{ type: 'cutTo', screen: 'live', sourceId: 'cd' }, 0],
+    ]);
+    expect(countdownShowsLogo(t(s), 6_500, onAir(s.screens, 'cd'))).toBe(false); // the engine has not acted yet
+    s = demoTick(s, 6_500)!;
+    expect(s.screens.live.program).toBe('cd');
+    expect(countdownShowsLogo(t(s), 7_500, onAir(s.screens, 'cd'))).toBe(true);
   });
 
   it('“go to black” at zero blanks only the screens showing that countdown', () => {

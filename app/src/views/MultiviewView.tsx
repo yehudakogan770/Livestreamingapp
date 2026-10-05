@@ -46,7 +46,16 @@ export function MultiviewView() {
       <SafeBoundary audience>
         <StageContext.Provider
           value={
-            show ? { event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals, data: dataValues(show.data) } : null
+            show
+              ? {
+                  event: show.event,
+                  mediaUrl: (p) => client.mediaUrl(p),
+                  sources: show.sources,
+                  visuals: show.visuals,
+                  data: dataValues(show.data),
+                  screens: show.screens,
+                }
+              : null
           }
         >
           {show && <Multiview show={show} client={client} />}

@@ -60,7 +60,18 @@ import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '
 import type { Credits } from '../engine/types/Credits';
 import type { TextInput } from '../engine/types/TextInput';
 import type { Overlay } from '../engine/types/Overlay';
-import { countdownDue, countdownFinished, countdownRemaining, countdownVisible, fadeAmount, formatCountdown, ZERO_HOLD_MS, type Shape } from '../engine/timing';
+import {
+  countdownDue,
+  countdownFinished,
+  countdownRemaining,
+  countdownShowsLogo,
+  countdownVisible,
+  fadeAmount,
+  formatCountdown,
+  onAir,
+  ZERO_HOLD_MS,
+  type Shape,
+} from '../engine/timing';
 
 const FONT = '"Segoe UI", system-ui, sans-serif';
 const BARS = ['#c0c0c0', '#c0c000', '#00c0c0', '#00c000', '#c000c0', '#c00000', '#0000c0'];
@@ -1751,7 +1762,7 @@ export class ProgramCompositor {
         return;
       }
       case 'countdown':
-        this.countdown(k.timer, k.background, k.logo ?? eventLogo(event), now, w, h);
+        this.countdown(k.timer, k.background, k.logo ?? eventLogo(event), onAir(this.show?.screens, src.id), now, w, h);
         return;
       case 'pesukim':
         this.pesukim(k, event, now, w, h);
@@ -2026,7 +2037,7 @@ export class ProgramCompositor {
   }
 
   /** The countdown input (mirrors CountdownView and its CSS). */
-  private countdown(timer: Countdown, background: string, logoPath: string | null, now: number, w: number, h: number) {
+  private countdown(timer: Countdown, background: string, logoPath: string | null, live: boolean, now: number, w: number, h: number) {
     const ctx = this.ctx;
     // Background: the color glowing from the middle into black.
     ctx.save();
@@ -2104,7 +2115,7 @@ export class ProgramCompositor {
       ctx.shadowBlur = h * 0.04;
       ctx.fillText(timer.endText, w / 2, h / 2);
     }
-    if (due && (timer.atZero.type === 'hide' || timer.atZero.type === 'takeNext') && logoPath && appear > 0) {
+    if (countdownShowsLogo(timer, now, live) && logoPath && appear > 0) {
       const logo = this.picture(logoPath);
       ctx.shadowBlur = 0;
       ctx.globalAlpha = appear;

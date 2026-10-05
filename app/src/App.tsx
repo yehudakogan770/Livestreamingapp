@@ -376,7 +376,14 @@ function ControlApp() {
           <SafeBoundary audience={false}>
             <SoundProvider show={show} client={client}>
               <StageContext.Provider
-                value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals, data: dataValues(show.data) }}
+                value={{
+                  event: show.event,
+                  mediaUrl: (p) => client.mediaUrl(p),
+                  sources: show.sources,
+                  visuals: show.visuals,
+                  data: dataValues(show.data),
+                  screens: show.screens,
+                }}
               >
                 <BroadcastProvider show={show} client={client}>
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
@@ -414,7 +421,14 @@ function ControlApp() {
       </main>
       {showSetup && show && (
         <StageContext.Provider
-          value={{ event: show.event, mediaUrl: (p) => client.mediaUrl(p), sources: show.sources, visuals: show.visuals, data: dataValues(show.data) }}
+          value={{
+            event: show.event,
+            mediaUrl: (p) => client.mediaUrl(p),
+            sources: show.sources,
+            visuals: show.visuals,
+            data: dataValues(show.data),
+            screens: show.screens,
+          }}
         >
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
