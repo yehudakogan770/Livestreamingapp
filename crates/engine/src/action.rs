@@ -965,6 +965,12 @@ pub enum Action {
         captions: crate::captions::Captions,
     },
 
+    // ----- speaker names -----
+    /// Who speaks into which microphone, and how their names come on.
+    SetSpeakerNames {
+        speakers: crate::speakers::SpeakerNames,
+    },
+
     // ----- cameras -----
     /// Going through the cameras by itself: which, how long, in order or mixed up.
     UpdateAutoSwitch {

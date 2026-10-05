@@ -25,6 +25,7 @@ import { RemoteDialog } from './views/RemoteDialog';
 import { barActions, defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { CaptionsDialog } from './captions/CaptionsDialog';
+import { SpeakersDialog } from './views/SpeakersDialog';
 import { BroadcastDialog } from './broadcast/BroadcastDialog';
 import { OverlayEditor } from './views/OverlayEditor';
 import { sendCommand } from './views/commands';
@@ -122,6 +123,7 @@ function ControlApp() {
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const openBroadcast = useCallback(() => setBroadcastOpen(true), []);
   const [captionsOpen, setCaptionsOpen] = useState(false);
+  const [speakersOpen, setSpeakersOpen] = useState(false);
   const [overlaysOpen, setOverlaysOpen] = useState(false);
   useEffect(() => client.watchRemote(setRemote), [client]);
   useReportProblem(
@@ -183,6 +185,11 @@ function ControlApp() {
     const phones = remote?.phones ?? 0;
     const settings: MenuItem[] = [
       { label: 'Recording and streaming…', onClick: openBroadcast },
+      {
+        label: `Speaker names…${show?.speakers?.on ? ' (on)' : ''}`,
+        hint: 'Names come on by themselves when people talk',
+        onClick: () => setSpeakersOpen(true),
+      },
       {
         label: `Live captions…${show?.captions?.on ? ' (on)' : ''}`,
         hint: 'Write what is said for the stream’s viewers',
@@ -373,6 +380,7 @@ function ControlApp() {
                   <ShabbosGuard show={show} />
                   <DataWatcher show={show} client={client} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
+                  {speakersOpen && <SpeakersDialog show={show} client={client} onClose={() => setSpeakersOpen(false)} />}
                   {captionsOpen && (
                     <CaptionsDialog
                       show={show}

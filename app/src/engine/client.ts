@@ -392,6 +392,7 @@ export function emptyShow(): Show {
     data: { path: '', everyMs: 1000, headers: [], rows: [], row: 0, error: '', updatedAt: 0 },
     autoSwitch: { on: false, cameras: [], minS: 6, maxS: 10, random: false, mix: false, nextAt: 0, seed: 1 },
     captions: { on: false, listen: null, inPicture: false, place: 'bottom', size: 1, lines: 2, language: 'en', best: false },
+    speakers: { on: false, people: [], channel: 3, titleSource: null, holdS: 6, againMin: 3 },
     qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
     settings: {

@@ -43,6 +43,7 @@ pub mod screen;
 pub mod scripture;
 pub mod seating;
 pub mod slideshow;
+pub mod speakers;
 pub mod split;
 pub mod stage;
 pub mod stream;

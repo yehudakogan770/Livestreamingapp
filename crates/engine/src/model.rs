@@ -623,6 +623,9 @@ pub struct Show {
     /// Live captions: words spoken written on screen.
     #[serde(default)]
     pub captions: crate::captions::Captions,
+    /// Speakers' name titles, coming on by themselves when they talk.
+    #[serde(default)]
+    pub speakers: crate::speakers::SpeakerNames,
     pub settings: Settings,
 }
 
@@ -656,6 +659,7 @@ impl Default for Show {
             data: crate::data::DataFeed::default(),
             auto_switch: crate::cameras::AutoSwitch::default(),
             captions: crate::captions::Captions::default(),
+            speakers: crate::speakers::SpeakerNames::default(),
             settings: Settings::default(),
         }
     }

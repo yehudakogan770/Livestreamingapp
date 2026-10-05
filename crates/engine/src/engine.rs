@@ -1744,6 +1744,11 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::SetOverlayOn { .. }
         | Action::SetOverlayInNext { .. }
         | Action::OverlaysOff) => apply_overlay(s, a, now),
+        Action::SetSpeakerNames { mut speakers } => {
+            speakers.repair(&s.sources);
+            s.speakers = speakers;
+            Ok(())
+        }
         Action::SetCaptions { mut captions } => {
             captions.repair(&s.sources);
             s.captions = captions;

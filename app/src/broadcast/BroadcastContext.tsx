@@ -4,6 +4,7 @@ import type { Show } from '../engine/types/Show';
 import { useSound } from '../audio/SoundContext';
 import { useProblemStore, useReportProblem } from '../problems/problems';
 import { RehearsalLog, type RehearsalReport } from './rehearsal';
+import { useSpeakerNames } from '../engine/speakers';
 import { due, loadSchedule, saveSchedule, timeText, type Schedule } from './schedule';
 import { Broadcaster } from './recorder';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
@@ -380,6 +381,9 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     },
     [broadcaster, client],
   );
+
+  // Speakers' names come on by themselves when they talk.
+  useSpeakerNames(show, client);
 
   // ---- live captions (to the stream only) ----
   const live = useMemo(() => (sound && typeof Worker !== 'undefined' ? new LiveCaptions(client, sound) : null), [client, sound]);

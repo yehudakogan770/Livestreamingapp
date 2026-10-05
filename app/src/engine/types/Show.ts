@@ -14,6 +14,7 @@ import type { RunningSteps } from "./RunningSteps";
 import type { ScreenState } from "./ScreenState";
 import type { Settings } from "./Settings";
 import type { Source } from "./Source";
+import type { SpeakerNames } from "./SpeakerNames";
 import type { Transition } from "./Transition";
 import type { Trigger } from "./Trigger";
 import type { Visuals } from "./Visuals";
@@ -96,4 +97,8 @@ autoSwitch: AutoSwitch,
 /**
  * Live captions: words spoken written on screen.
  */
-captions: Captions, settings: Settings, };
+captions: Captions, 
+/**
+ * Speakers' name titles, coming on by themselves when they talk.
+ */
+speakers: SpeakerNames, settings: Settings, };
