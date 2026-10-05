@@ -30,6 +30,8 @@ import { PopMenu, Scrub, type MenuEntry } from './controls';
 import { drag, usePlayhead, usePlaying, useSize } from './hooks';
 import { usePeaks, useStrip } from './peaks';
 import { useUi, type Tool, type Ui } from './state';
+import { pins, type Pin } from '../collab/comments';
+import { useCollab, type Collab } from '../collab/session';
 
 const RULER = 28;
 const HEAD = 190;
@@ -61,8 +63,9 @@ export function clipColor(p: Project, c: Clip): string {
   return '#3d6fa8';
 }
 
-export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engine; ui: Ui; actions: Actions }) {
+export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc; engine: Engine; ui: Ui; actions: Actions; collab?: Collab | null }) {
   const { project, selection } = useDoc(doc);
+  const cs = useCollab(collab);
   const u = useUi(ui);
   const s = current(project);
   const fps = rate(s);
@@ -596,7 +599,20 @@ export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engin
           onDrop={onDrop}
         >
           <div className="tl__content" style={{ width: contentW, height: rowsH }}>
-            <Ruler s={s} zoom={zoom} fps={fps} from={scroll.x} width={size.w} doc={doc} engine={engine} />
+            <Ruler
+              s={s}
+              zoom={zoom}
+              fps={fps}
+              from={scroll.x}
+              width={size.w}
+              doc={doc}
+              engine={engine}
+              pins={cs ? pins(cs.comments, s.id) : []}
+              onPin={(p) => {
+                engine.seek(p.frame);
+                collab?.focus(p.ids[0] ?? null);
+              }}
+            />
             {rows.map((r) => (
               <div
                 key={r.track.id}
@@ -1106,6 +1122,8 @@ function Ruler({
   width,
   doc,
   engine,
+  pins: commentPins,
+  onPin,
 }: {
   s: ReturnType<typeof current>;
   zoom: number;
@@ -1114,6 +1132,9 @@ function Ruler({
   width: number;
   doc: Doc;
   engine: Engine;
+  /** Review comments (shared projects). */
+  pins: Pin[];
+  onPin: (p: Pin) => void;
 }) {
   // A tick every so many frames, so labels never crowd.
   const steps = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200, 18000, 36000, 108000];
@@ -1152,6 +1173,22 @@ function Ruler({
           }}
         >
           {m.name && zoom * 60 > m.name.length * 6 ? <span>{m.name}</span> : null}
+        </button>
+      ))}
+      {commentPins.map((p) => (
+        <button
+          key={`c${p.frame}`}
+          type="button"
+          className={`ruler__comment${p.resolved ? ' is-done' : ''}`}
+          style={{ left: p.frame * zoom }}
+          title={p.title}
+          aria-label={`${p.ids.length} comment${p.ids.length === 1 ? '' : 's'}`}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            onPin(p);
+          }}
+        >
+          {p.ids.length > 1 ? p.ids.length : ''}
         </button>
       ))}
     </div>

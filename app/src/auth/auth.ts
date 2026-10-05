@@ -10,6 +10,9 @@ function sb(): SupabaseClient {
   return client;
 }
 
+/** The signed-in connection to the Lumora account server (Lumora Edit's team projects use it too). */
+export const supabase = (): SupabaseClient => sb();
+
 /** Plain words for what went wrong. */
 function say(e: unknown): Error {
   const m = e instanceof Error ? e.message : String(e);

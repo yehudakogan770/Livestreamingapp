@@ -33,7 +33,7 @@ export interface UiState {
   targetAudio: string | null;
   scope: 'waveform' | 'parade' | 'vectorscope' | 'histogram';
   safeMargins: boolean;
-  dialog: null | 'export' | 'sequence' | 'newSequence' | 'help' | 'speed' | 'marker' | 'project';
+  dialog: null | 'export' | 'sequence' | 'newSequence' | 'help' | 'speed' | 'marker' | 'project' | 'share' | 'history';
   /** A short message at the bottom (what just happened). */
   note: string;
 }

@@ -1,73 +1,35 @@
--- Lumora sign-in: run this once in your Supabase project
--- (Supabase → SQL Editor → New query → paste all of this → Run).
+-- Lumora update 2: team projects in Lumora Edit.
 --
--- It also sets up Lumora Edit's team projects (at the end; the same as
--- update-2-editor-collab.sql).
+-- WHAT IT DOES
+--   Lets approved Lumora accounts share a Lumora Edit project and work on it
+--   together: the project (its edit, not the video files) is kept online,
+--   with members (editor or viewer), one person editing each sequence at a
+--   time (a lock that runs out after about a minute without a heartbeat),
+--   saves checked by version number, a history of saved versions, and review
+--   comments tied to a frame.
 --
--- Every account gets a profile. New accounts wait for approval. The very first
--- account made is the Lumora team's: approved, and able to approve others.
-
-create table if not exists public.profiles (
-  id uuid primary key references auth.users on delete cascade,
-  email text not null,
-  name text not null default '',
-  approved boolean not null default false,
-  blocked boolean not null default false,
-  is_admin boolean not null default false,
-  created_at timestamptz not null default now()
-);
-
-alter table public.profiles enable row level security;
-
--- Is the person asking on the Lumora team?
-create or replace function public.is_admin() returns boolean
-  language sql security definer stable set search_path = public
-as $$
-  select coalesce((select is_admin and not blocked from public.profiles where id = auth.uid()), false)
-$$;
-
--- People see their own profile; the Lumora team sees everyone.
-drop policy if exists "see own or team sees all" on public.profiles;
-create policy "see own or team sees all" on public.profiles
-  for select using (id = auth.uid() or public.is_admin());
-
--- Only the Lumora team can approve or block (nobody can approve themselves).
-drop policy if exists "team approves" on public.profiles;
-create policy "team approves" on public.profiles
-  for update using (public.is_admin()) with check (public.is_admin());
-
--- A new account gets its profile (the first one ever: the Lumora team).
-create or replace function public.new_profile() returns trigger
-  language plpgsql security definer set search_path = public
-as $$
-declare
-  first boolean := not exists (select 1 from public.profiles);
-begin
-  insert into public.profiles (id, email, name, approved, is_admin)
-  values (new.id, new.email, coalesce(new.raw_user_meta_data ->> 'name', ''), first, first);
-  return new;
-end
-$$;
-
-drop trigger if exists on_new_account on auth.users;
-create trigger on_new_account after insert on auth.users
-  for each row execute function public.new_profile();
-
--- Only the columns the team may change.
-revoke update on public.profiles from authenticated, anon;
-grant update (approved, blocked) on public.profiles to authenticated;
-grant select on public.profiles to authenticated;
-
--- People can change their own name (and nothing else about their account).
-create or replace function public.set_my_name(new_name text) returns void
-  language sql security definer set search_path = public
-as $$
-  update public.profiles set name = left(trim(new_name), 80) where id = auth.uid()
-$$;
-revoke execute on function public.set_my_name(text) from public, anon;
-grant execute on function public.set_my_name(text) to authenticated;
-
--- ---- Lumora Edit team projects (the same as update-2-editor-collab.sql) ----
+-- HOW TO RUN IT
+--   Run once: Supabase → SQL Editor → New query → paste all of this → Run.
+--   It is safe to run again (it only adds what is not there yet).
+--   It needs setup.sql to have been run first (the profiles table).
+--   (Already included in setup.sql for new projects.)
+--
+-- WHAT IT ADDS
+--   Tables:    editor_projects, editor_project_members, editor_versions,
+--              editor_locks, editor_comments
+--   Functions: is_approved, editor_role, share_editor_project,
+--              open_editor_project, save_editor_project, my_editor_projects,
+--              editor_project_people, invite_to_editor_project,
+--              take_editor_lock, release_editor_lock, request_editor_lock,
+--              hand_over_editor_lock
+--   Realtime:  editor_locks and editor_comments are added to the
+--              supabase_realtime publication (live lock and comment updates).
+--
+-- WHO MAY DO WHAT (row level security)
+--   Only the owner and members can see a project, its versions, locks and
+--   comments. The owner and editors can save; viewers can only look (and
+--   leave review comments). Only the owner invites, changes roles, removes
+--   members or deletes the project. Blocked or unapproved accounts get nothing.
 
 -- Is the person asking approved (and not blocked)?
 create or replace function public.is_approved() returns boolean
