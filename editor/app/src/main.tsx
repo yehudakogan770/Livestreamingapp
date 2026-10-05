@@ -18,7 +18,7 @@ import '@fontsource/chakra-petch/700.css';
 lockDown(['s', 'p']);
 
 const root = document.getElementById('root');
-if (!root) throw new Error('Lumora Edit: #root element missing from index.html');
+if (!root) throw new Error('Lumora Studio: #root element missing from index.html');
 
 createRoot(root).render(
   <StrictMode>

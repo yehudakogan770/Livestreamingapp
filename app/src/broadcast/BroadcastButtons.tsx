@@ -122,7 +122,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
             <>
               <span className="bc-saved__path">{saved}</span>
               {b.settings.iso !== false && (
-                <span className="bc-saved__edit"> To edit it with every camera, open the .lumora file next to it in Lumora Edit.</span>
+                <span className="bc-saved__edit"> To edit it with every camera, open the .lumora file next to it in Lumora Studio.</span>
               )}
             </>
           )}

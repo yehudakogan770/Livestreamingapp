@@ -49,10 +49,10 @@ export function ShareDialog({
             sequence at a time; everyone can leave comments on the timeline.
           </p>
           <p className="collab__lead">
-            Only the edit goes online, not your video, sound or picture files. Each person keeps their own copies, and Lumora Edit asks them to find any it
+            Only the edit goes online, not your video, sound or picture files. Each person keeps their own copies, and Lumora Studio asks them to find any it
             can't (by file name). From now on this project saves online; the file on this computer stays as it is now.
           </p>
-          {!authOn() && <p className="form__problem">Team projects need the Lumora sign-in, which is not set up in this copy of Lumora Edit.</p>}
+          {!authOn() && <p className="form__problem">Team projects need the Lumora sign-in, which is not set up in this copy of Lumora Studio.</p>}
           {authOn() && !signedIn && <p className="form__problem">Sign in to share projects.</p>}
           {problem && <p className="form__problem">{problem}</p>}
           <div className="form__foot">

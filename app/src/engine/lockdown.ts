@@ -19,7 +19,7 @@ function typingIn(t: EventTarget | null): boolean {
   return t instanceof HTMLElement && (t.isContentEditable || t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
 }
 
-/** `allow`: Ctrl+ keys the program uses itself (Lumora Edit saves with Ctrl+S). */
+/** `allow`: Ctrl+ keys the program uses itself (Lumora Studio saves with Ctrl+S). */
 export function lockDown(allow: string[] = []): void {
   if (!import.meta.env.PROD || !inApp()) return;
   window.addEventListener('contextmenu', (e) => !typingIn(e.target) && e.preventDefault(), { capture: true });

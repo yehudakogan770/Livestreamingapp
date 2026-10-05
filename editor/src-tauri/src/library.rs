@@ -32,7 +32,7 @@ pub fn add_video(dir: &Path, path: &str, name: &str, seconds: f64) -> Result<(),
     items.push(json!({
         "id": format!("lib-edit-{now:x}"),
         "name": name,
-        "category": "From Lumora Edit",
+        "category": "From Lumora Studio",
         "savedAt": u64::try_from(now).unwrap_or(0),
         "type": "input",
         "source": {

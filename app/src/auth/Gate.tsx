@@ -7,7 +7,7 @@ import '../views/ControlView.css';
 import './Gate.css';
 
 /** Who is signed in (null while the lock is off). */
-/** The loading window gives way (Lumora and Lumora Edit both answer this). */
+/** The loading window gives way (Lumora and Lumora Studio both answer this). */
 function appReady(): void {
   if ('__TAURI_INTERNALS__' in window) void invoke('app_ready').catch(() => {});
 }

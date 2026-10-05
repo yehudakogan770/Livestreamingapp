@@ -40,7 +40,7 @@ export async function saveFlow(api: SaveApi, start: Synced, mine: Project): Prom
     current = m.project;
     synced = latest;
   }
-  throw new Error('Others keep saving this project at the same moment. Lumora Edit will try again shortly.');
+  throw new Error('Others keep saving this project at the same moment. Lumora Studio will try again shortly.');
 }
 
 export type PullResult = { kind: 'same' } | { kind: 'brought'; synced: Synced; changes: Changes } | { kind: 'conflict'; theirs: Synced; conflicts: string[] };

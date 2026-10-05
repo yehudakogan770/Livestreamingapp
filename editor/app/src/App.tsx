@@ -40,7 +40,7 @@ export function App() {
   return (
     <Gate>
       <Main />
-      <UpdateBar product="Lumora Edit" />
+      <UpdateBar product="Lumora Studio" />
     </Gate>
   );
 }
@@ -61,7 +61,7 @@ function Main() {
       const editPath = editPathFor(path);
       if (await native.fileExists(editPath)) {
         const carryOn = await ask(`You already started editing “${event.name}”. Carry on with that edit?`, {
-          title: 'Lumora Edit',
+          title: 'Lumora Studio',
           kind: 'info',
           okLabel: 'Carry on',
           cancelLabel: 'Start again',
@@ -94,7 +94,7 @@ function Main() {
     const picked = await open({
       title: 'Open a project or an event',
       multiple: false,
-      filters: [{ name: 'Lumora Edit projects and Lumora events', extensions: ['lumoraedit', 'lumora'] }],
+      filters: [{ name: 'Lumora Studio projects and Lumora events', extensions: ['lumoraedit', 'lumora'] }],
     });
     if (typeof picked === 'string') void openPath(picked);
   }, [openPath]);
@@ -108,7 +108,7 @@ function Main() {
     const picked = await save({
       title: 'Where to keep the new project',
       defaultPath: 'My video.lumoraedit',
-      filters: [{ name: 'Lumora Edit project', extensions: ['lumoraedit'] }],
+      filters: [{ name: 'Lumora Studio project', extensions: ['lumoraedit'] }],
     });
     if (!picked) return;
     const project = emptyProject(baseName(picked));
@@ -139,7 +139,7 @@ function Main() {
 
   useEffect(() => {
     if (!inApp()) return;
-    const name = screen.s === 'edit' ? `${screen.project.name} — Lumora Edit` : 'Lumora Edit';
+    const name = screen.s === 'edit' ? `${screen.project.name} — Lumora Studio` : 'Lumora Studio';
     void getCurrentWindow()
       .setTitle(name)
       .catch(() => {});

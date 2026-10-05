@@ -56,7 +56,7 @@ export function LockBanner({ collab, doc }: { collab: Collab; doc: Doc }) {
   };
   let body: React.ReactNode = null;
   if (!canEdit(cs.role)) body = <>You are a viewer on this project: you can watch it and leave comments, but not change it.</>;
-  else if (!cs.online) body = <>Lumora Edit cannot reach the internet. Editing this shared project is paused until it is back.</>;
+  else if (!cs.online) body = <>Lumora Studio cannot reach the internet. Editing this shared project is paused until it is back.</>;
   else if (v.kind === 'theirs')
     body = (
       <>

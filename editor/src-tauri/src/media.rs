@@ -22,7 +22,7 @@ pub fn quiet(program: &Path) -> Command {
     cmd
 }
 
-/// FFmpeg next to Lumora Edit, or on the computer.
+/// FFmpeg next to Lumora Studio, or on the computer.
 pub fn find_ffmpeg() -> Option<PathBuf> {
     let exe = if cfg!(windows) {
         "ffmpeg.exe"
@@ -129,7 +129,7 @@ pub fn probe(ffmpeg: &Path, file: &Path) -> Result<Probe, String> {
 #[serde(rename_all = "camelCase")]
 pub struct Prepared {
     pub path: String,
-    /// What plays while editing, when the file itself can't (made by Lumora Edit).
+    /// What plays while editing, when the file itself can't (made by Lumora Studio).
     pub proxy: Option<String>,
     pub fps: f64,
     pub duration_ms: f64,
@@ -488,7 +488,7 @@ pub fn import(
     let info = probe(ffmpeg, file)?;
     if info.video.is_none() && !info.audio {
         return Err(format!(
-            "{} has no picture or sound Lumora Edit can use.",
+            "{} has no picture or sound Lumora Studio can use.",
             file.file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("This file")

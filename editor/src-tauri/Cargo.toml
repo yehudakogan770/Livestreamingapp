@@ -1,6 +1,6 @@
 [package]
 name = "lumora-edit"
-description = "Lumora Edit — edit the whole event, every camera"
+description = "Lumora Studio — edit the whole event, every camera"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

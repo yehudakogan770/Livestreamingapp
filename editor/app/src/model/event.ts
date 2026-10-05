@@ -36,7 +36,7 @@ export function parseEvent(text: string): EventFile {
     throw new Error('This file is not a Lumora event file.');
   }
   const r = raw as Record<string, unknown>;
-  if (num(r.version, 1) > 1) throw new Error('This event file is from a newer Lumora. Update Lumora Edit (Help → Check for updates).');
+  if (num(r.version, 1) > 1) throw new Error('This event file is from a newer Lumora. Update Lumora Studio (Help → Check for updates).');
   const program = (r.program && typeof r.program === 'object' ? r.program : {}) as Record<string, unknown>;
   const files = Array.isArray(r.files) ? r.files : [];
   const cuts = Array.isArray(r.cuts) ? r.cuts : [];

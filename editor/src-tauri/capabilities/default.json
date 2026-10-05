@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "What the Lumora Edit window is allowed to do.",
+  "description": "What the Lumora Studio window is allowed to do.",
   "windows": ["main"],
   "permissions": [
     "core:default",

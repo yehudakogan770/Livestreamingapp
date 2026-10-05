@@ -254,7 +254,7 @@ export function ExportDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
       if (st.stage === 'done' && st.path && toLumora && kind === 'video') {
         void native
           .sendToLumora(st.path, baseName(st.path), seconds)
-          .then(() => setState({ ...st, message: 'The film is ready, and it is in Lumora’s library (From Lumora Edit).' }))
+          .then(() => setState({ ...st, message: 'The film is ready, and it is in Lumora’s library (From Lumora Studio).' }))
           .catch((e: unknown) => setState({ ...st, message: `The film is ready. ${e instanceof Error ? e.message : String(e)}` }));
       }
     });

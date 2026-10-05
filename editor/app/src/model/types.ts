@@ -1,4 +1,4 @@
-// Lumora Edit's project: media in bins, sequences with many video and audio
+// Lumora Studio's project: media in bins, sequences with many video and audio
 // tracks, and clips with keyframed effects. Sequence times are whole frames;
 // times inside a media file are seconds.
 
@@ -19,7 +19,7 @@ export interface MediaItem {
   id: string;
   name: string;
   path: string;
-  /** What plays while editing when the original can't (made by Lumora Edit). */
+  /** What plays while editing when the original can't (made by Lumora Studio). */
   proxy: string | null;
   kind: 'video' | 'audio' | 'image';
   /** Seconds (0 for a picture). */

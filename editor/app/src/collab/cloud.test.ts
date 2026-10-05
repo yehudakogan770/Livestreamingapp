@@ -46,14 +46,14 @@ describe('team projects online', () => {
     expect(args.p_doc.media[0]).not.toHaveProperty('missing');
   });
 
-  it('opens a project and checks it is a Lumora Edit project', async () => {
+  it('opens a project and checks it is a Lumora Studio project', async () => {
     const doc = emptyProject('Film');
     const f = fakeDb({ open_editor_project: { data: { id: 'p1', name: 'Film', version: 3, doc, role: 'viewer', owner: 'o' } } });
     const o = await openShared('p1', f.db);
     expect(o).toMatchObject({ version: 3, role: 'viewer' });
     expect(o.doc.sequences).toHaveLength(1);
     const bad = fakeDb({ open_editor_project: { data: { id: 'p1', name: 'x', version: 1, doc: { kind: 'other' }, role: 'owner', owner: 'o' } } });
-    await expect(openShared('p1', bad.db)).rejects.toThrow(/not a Lumora Edit project/);
+    await expect(openShared('p1', bad.db)).rejects.toThrow(/not a Lumora Studio project/);
   });
 
   it("takes a lock and keeps the server's clock apart", async () => {

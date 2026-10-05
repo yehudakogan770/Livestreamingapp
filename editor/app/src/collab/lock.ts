@@ -66,6 +66,6 @@ export function editGate(before: Project, after: Project, role: Role, blocked: (
 export function lockReason(view: LockView, seqName: string, isOpen: boolean, online: boolean): string | null {
   if (view.kind === 'mine') return null;
   if (view.kind === 'theirs') return `${view.name} is editing “${seqName}”.`;
-  if (!online) return 'Lumora Edit cannot reach the internet, so editing this shared project is paused.';
+  if (!online) return 'Lumora Studio cannot reach the internet, so editing this shared project is paused.';
   return isOpen ? `Getting “${seqName}” ready to edit… try again in a moment.` : `Open “${seqName}” to edit it.`;
 }

@@ -81,7 +81,7 @@ export class Compositor {
       antialias: false,
       preserveDrawingBuffer: true,
     }) as WebGL2RenderingContext | null;
-    if (!gl) throw new Error('This computer could not start the graphics Lumora Edit needs (WebGL 2).');
+    if (!gl) throw new Error('This computer could not start the graphics Lumora Studio needs (WebGL 2).');
     this.gl = gl;
     this.float = !!gl.getExtension('EXT_color_buffer_float');
     gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);

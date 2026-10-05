@@ -10,7 +10,7 @@ function sb(): SupabaseClient {
   return client;
 }
 
-/** The signed-in connection to the Lumora account server (Lumora Edit's team projects use it too). */
+/** The signed-in connection to the Lumora account server (Lumora Studio's team projects use it too). */
 export const supabase = (): SupabaseClient => sb();
 
 /** Plain words for what went wrong. */

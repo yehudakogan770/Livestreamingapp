@@ -144,7 +144,7 @@ export function Editor({
     const picked = await save({
       title: 'Save the project',
       defaultPath: path || `${doc.project.name}.lumoraedit`,
-      filters: [{ name: 'Lumora Edit project', extensions: ['lumoraedit'] }],
+      filters: [{ name: 'Lumora Studio project', extensions: ['lumoraedit'] }],
     });
     if (!picked) return;
     await native.writeText(picked, JSON.stringify(doc.project));
@@ -400,7 +400,7 @@ export function Editor({
       style={{ ['--left' as string]: `${u.left}px`, ['--right' as string]: `${u.right}px`, ['--bottom' as string]: `${u.bottom}px` }}
     >
       <header className="ed__top">
-        <img className="ed__logo" src="./brand/lumora-logo.svg" alt="Lumora Edit" />
+        <img className="ed__logo" src="./brand/lumora-logo.svg" alt="Lumora Studio" />
         <nav className="ed__menus" aria-label="Menus">
           {menus.map(([name, items]) => (
             <button

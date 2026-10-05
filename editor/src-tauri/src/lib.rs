@@ -1,4 +1,4 @@
-//! Lumora Edit: open an event recorded with Lumora and edit the whole event,
+//! Lumora Studio: open an event recorded with Lumora and edit the whole event,
 //! with every camera, then make the finished film.
 
 mod export;
@@ -18,7 +18,7 @@ struct AppState {
 }
 
 const NO_FFMPEG: &str =
-    "FFmpeg was not found. It comes with Lumora Edit: install Lumora Edit again from the website.";
+    "FFmpeg was not found. It comes with Lumora Studio: install Lumora Studio again from the website.";
 
 impl AppState {
     fn ffmpeg(&self) -> Result<PathBuf, String> {
@@ -35,7 +35,7 @@ fn ffmpeg_found(state: State<'_, AppState>) -> bool {
     state.ffmpeg.is_some()
 }
 
-/// The event file Lumora Edit was opened with (double-clicking a `.lumora` file).
+/// The event file Lumora Studio was opened with (double-clicking a `.lumora` file).
 #[tauri::command]
 fn initial_file() -> Option<String> {
     std::env::args().skip(1).find(|a| {
@@ -351,5 +351,5 @@ pub fn run() {
             reveal,
         ])
         .run(tauri::generate_context!())
-        .expect("Lumora Edit could not start");
+        .expect("Lumora Studio could not start");
 }

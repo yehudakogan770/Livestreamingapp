@@ -1,4 +1,4 @@
-// Every command in Lumora Edit, in one place: the menus, the buttons and the
+// Every command in Lumora Studio, in one place: the menus, the buttons and the
 // keyboard all use these.
 import { addGenerated, addGenerator, addMedia, addText, STILL_SECONDS } from '../model/build';
 import {

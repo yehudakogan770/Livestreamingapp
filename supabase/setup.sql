@@ -1,7 +1,7 @@
 -- Lumora sign-in: run this once in your Supabase project
 -- (Supabase → SQL Editor → New query → paste all of this → Run).
 --
--- It also sets up Lumora Edit's team projects (at the end; the same as
+-- It also sets up Lumora Studio's team projects (at the end; the same as
 -- update-2-editor-collab.sql).
 --
 -- Every account gets a profile. New accounts wait for approval. The very first
@@ -67,7 +67,7 @@ $$;
 revoke execute on function public.set_my_name(text) from public, anon;
 grant execute on function public.set_my_name(text) to authenticated;
 
--- ---- Lumora Edit team projects (the same as update-2-editor-collab.sql) ----
+-- ---- Lumora Studio team projects (the same as update-2-editor-collab.sql) ----
 
 -- Is the person asking approved (and not blocked)?
 create or replace function public.is_approved() returns boolean

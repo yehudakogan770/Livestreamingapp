@@ -1,7 +1,7 @@
--- Lumora update 2: team projects in Lumora Edit.
+-- Lumora update 2: team projects in Lumora Studio.
 --
 -- WHAT IT DOES
---   Lets approved Lumora accounts share a Lumora Edit project and work on it
+--   Lets approved Lumora accounts share a Lumora Studio project and work on it
 --   together: the project (its edit, not the video files) is kept online,
 --   with members (editor or viewer), one person editing each sequence at a
 --   time (a lock that runs out after about a minute without a heartbeat),

@@ -1,6 +1,6 @@
 // Copies the engines that run on the computer, offline, next to the app:
 // picture smarts (MediaPipe: background removal, auto-framing) and the
-// speech engine for live captions (ONNX Runtime, which Lumora Edit uses to
+// speech engine for live captions (ONNX Runtime, which Lumora Studio uses to
 // transcribe too). Runs before either UI starts or is built.
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 

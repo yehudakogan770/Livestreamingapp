@@ -80,7 +80,7 @@ jobs:
           if-no-files-found: error
 
   windows-edit:
-    name: Lumora Edit installer
+    name: Lumora Studio installer
     runs-on: windows-latest
     needs: checks
     env:
@@ -108,10 +108,10 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: Lumora-Edit-Setup-windows
+          name: Lumora-Studio-Setup-windows
           path: |
-            target/release/bundle/nsis/Lumora Edit_*.exe
-            target/release/bundle/nsis/Lumora Edit_*.sig
+            target/release/bundle/nsis/Lumora Studio_*.exe
+            target/release/bundle/nsis/Lumora Studio_*.sig
           if-no-files-found: error
 
   release:
@@ -130,7 +130,7 @@ jobs:
           path: lumora
       - uses: actions/download-artifact@v4
         with:
-          name: Lumora-Edit-Setup-windows
+          name: Lumora-Studio-Setup-windows
           path: edit
       # Names that never change, so the website's download links always work.
       - name: Name the installers, and say where the updates are
@@ -149,7 +149,7 @@ jobs:
             fi
           }
           publish lumora Lumora-Setup.exe latest.json "A new version of Lumora."
-          publish edit Lumora-Edit-Setup.exe latest-edit.json "A new version of Lumora Edit."
+          publish edit Lumora-Studio-Setup.exe latest-edit.json "A new version of Lumora Studio."
           ls -la out
       - name: Publish it (anyone can download, no account)
         uses: softprops/action-gh-release@v2
@@ -160,10 +160,10 @@ jobs:
           make_latest: true
           files: |
             out/Lumora-Setup.exe
-            out/Lumora-Edit-Setup.exe
+            out/Lumora-Studio-Setup.exe
             out/latest*.json
           body: |
             Lumora for Windows 10 and 11 (64-bit). Download Lumora-Setup.exe and run it.
-            Lumora Edit (for editing recorded events): download Lumora-Edit-Setup.exe.
+            Lumora Studio (for editing recorded events): download Lumora-Studio-Setup.exe.
             Already have Lumora? Use Help → Check for updates in the app.
             The first time, Windows may say it doesn't recognize the app: click More info, then Run anyway.

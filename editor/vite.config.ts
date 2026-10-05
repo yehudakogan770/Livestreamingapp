@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// Lumora Edit's screens live in ./editor/app; the program serves them from ./dist-edit.
+// Lumora Studio's screens live in ./editor/app; the program serves them from ./dist-edit.
 export default defineConfig({
   root: 'editor/app',
   plugins: [react()],

@@ -115,7 +115,7 @@ pub fn model(
     let m = MODELS
         .iter()
         .find(|m| m.name == name)
-        .ok_or_else(|| format!("Lumora Edit doesn't know the speech model “{name}”."))?;
+        .ok_or_else(|| format!("Lumora Studio doesn't know the speech model “{name}”."))?;
     if let Some(dir) = lumora {
         let theirs = dir.join("models").join(m.name);
         if has_all(&theirs, m) {

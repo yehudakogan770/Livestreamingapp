@@ -1,5 +1,5 @@
 // Making a project: from a recorded event (every camera as one multicam
-// clip, the live switching as the first edit), from older Lumora Edit
+// clip, the live switching as the first edit), from older Lumora Studio
 // projects, and adding media to a sequence.
 import type { EventFile } from './event';
 import { migrateProject } from './grade';
@@ -21,7 +21,7 @@ import {
   type Track,
 } from './types';
 
-/** What Lumora Edit found out about a file when it got it ready. */
+/** What Lumora Studio found out about a file when it got it ready. */
 export interface Prepared {
   path: string;
   /** What to play while editing, when it isn't the file itself. */
@@ -285,7 +285,7 @@ export function updateSequence(
   });
 }
 
-// ---- Older projects (Lumora Edit's first version) ----
+// ---- Older projects (Lumora Studio's first version) ----
 
 interface V1 {
   kind: 'lumora-edit';
@@ -322,13 +322,13 @@ interface V1 {
   titles?: { id: string; at: number; length: number; text: string; sub: string; style: 'lower' | 'center' | 'corner' }[];
 }
 
-/** Open a project from any version of Lumora Edit. */
+/** Open a project from any version of Lumora Studio. */
 export function readProject(text: string): Project {
   const raw = JSON.parse(text) as Project | V1;
-  if (raw?.kind !== 'lumora-edit') throw new Error('This is not a Lumora Edit project.');
+  if (raw?.kind !== 'lumora-edit') throw new Error('This is not a Lumora Studio project.');
   if (raw.version === 2) {
     const p = raw as Project;
-    if (!Array.isArray(p.sequences) || p.sequences.length === 0) throw new Error('This Lumora Edit project is damaged.');
+    if (!Array.isArray(p.sequences) || p.sequences.length === 0) throw new Error('This Lumora Studio project is damaged.');
     // Color effects from before node grading become nodes (they look the same).
     return migrateProject(p);
   }

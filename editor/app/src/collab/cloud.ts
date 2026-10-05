@@ -19,7 +19,7 @@ export function plain(e: unknown): Error {
   const m = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String((e as { message: unknown }).message) : String(e);
   if (/could not find the function|function .* does not exist|relation .* does not exist|schema cache|PGRST20[02]/i.test(m))
     return new Error('Team projects are not switched on yet on the Lumora account server. (Its owner runs supabase/update-2-editor-collab.sql once.)');
-  if (/fetch|network|failed to|load failed/i.test(m)) return new Error('Lumora Edit cannot reach the internet. Check the connection and try again.');
+  if (/fetch|network|failed to|load failed/i.test(m)) return new Error('Lumora Studio cannot reach the internet. Check the connection and try again.');
   if (/jwt|not authenticated|permission denied/i.test(m)) return new Error('Please sign in again to use team projects.');
   return new Error(m);
 }

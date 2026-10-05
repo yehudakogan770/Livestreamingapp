@@ -115,7 +115,7 @@ export function parseCube(text: string): Cube {
     const key = (parts[0] ?? '').toUpperCase();
     if (key === 'TITLE') title = line.slice(5).trim().replace(/^"|"$/g, '');
     else if (key === 'LUT_3D_SIZE') size = Number(parts[1]);
-    else if (key === 'LUT_1D_SIZE') throw new Error('This is a 1D LUT. Lumora Edit uses 3D LUTs (.cube with LUT_3D_SIZE).');
+    else if (key === 'LUT_1D_SIZE') throw new Error('This is a 1D LUT. Lumora Studio uses 3D LUTs (.cube with LUT_3D_SIZE).');
     else if (key === 'DOMAIN_MIN') min = parts.slice(1, 4).map(Number);
     else if (key === 'DOMAIN_MAX') max = parts.slice(1, 4).map(Number);
     else if (/^[-+.\d]/.test(key)) for (const v of parts.slice(0, 3)) values.push(Number(v));
