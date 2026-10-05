@@ -1,6 +1,8 @@
-//! ISO recording: while the Live Screen is recorded, each camera can also be
-//! recorded to its own file (for editing afterwards), next to the recording
-//! in a folder of its own. Also the chapter list: what was on air when.
+//! ISO recording: while the Live Screen is recorded, each camera and each
+//! microphone is also recorded to its own file (for editing afterwards), next
+//! to the recording in a folder of its own. Also the chapter list, and the
+//! event file (`.lumora`) the editing program opens: every file, when it
+//! started, and what was on air when.
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -46,7 +48,8 @@ pub struct Isos {
 }
 
 impl Isos {
-    /// Start a camera's file in `folder/<recording> — cameras/<camera>.<ext>`.
+    /// Start a camera's (or microphone's) file in
+    /// `folder/<recording> — event files/<name>.<ext>`.
     ///
     /// # Errors
     /// The folder or file can't be made.
@@ -57,7 +60,7 @@ impl Isos {
         camera: &str,
         ext: &str,
     ) -> Result<(u64, PathBuf), String> {
-        let dir = folder.join(format!("{} — cameras", safe_name(recording)));
+        let dir = folder.join(format!("{} — event files", safe_name(recording)));
         fs::create_dir_all(&dir).map_err(|e| format!("Could not make the cameras folder: {e}"))?;
         let ext = if ext == "mkv" { "mkv" } else { "webm" };
         let base = safe_name(camera);
@@ -90,6 +93,17 @@ impl Isos {
     }
 }
 
+/// Save the event file (`<recording>.lumora`, JSON) next to the recording.
+///
+/// # Errors
+/// The file can't be written.
+pub fn save_event(folder: &Path, recording: &str, json: &str) -> Result<PathBuf, String> {
+    fs::create_dir_all(folder).map_err(|e| e.to_string())?;
+    let path = folder.join(format!("{}.lumora", safe_name(recording)));
+    fs::write(&path, json).map_err(|e| format!("Could not save the event file: {e}"))?;
+    Ok(path)
+}
+
 /// Save the chapter list next to the recording.
 ///
 /// # Errors
@@ -118,11 +132,13 @@ mod tests {
         isos.stop(a);
         assert!(isos.chunk(a, b"x").is_err());
         assert_eq!(fs::read(&pa).unwrap(), b"abc");
-        assert!(pa.ends_with("Wedding- part 1 — cameras/Cam-1.mkv"));
+        assert!(pa.ends_with("Wedding- part 1 — event files/Cam-1.mkv"));
         assert!(pb.ends_with("Cam-1.webm"));
         isos.stop(b);
         let ch = save_chapters(&dir, "Wedding", "0:00 Opening\n").unwrap();
         assert_eq!(fs::read_to_string(ch).unwrap(), "0:00 Opening\n");
+        let ev = save_event(&dir, "Wedding", "{}").unwrap();
+        assert!(ev.ends_with("Wedding.lumora"));
         let _ = fs::remove_dir_all(dir);
     }
 }

@@ -43,6 +43,8 @@ interface Live {
   isos: Iso[];
   /** What was on air when (recordings). */
   chapters: { at: number; name: string }[] | null;
+  /** Every change of what was on air (recordings, for the editing program). */
+  cuts: { at: number; id: string | null; name: string }[];
   name: string;
   startedAt: number;
   /** It sends the vertical picture (not the wide one). */
@@ -54,6 +56,45 @@ interface Iso {
   recorder: MediaRecorder;
   stream: MediaStream;
   sending: Promise<void>;
+  kind: 'camera' | 'microphone';
+  /** The input it records. */
+  sourceId: string;
+  name: string;
+  path: string;
+  /** When it started, ms after the recording did. */
+  startMs: number;
+  /** Stop listening (microphones). */
+  release?: () => void;
+}
+
+/** The event file: everything the editing program needs to lay out the whole event. */
+export interface EventFile {
+  app: 'Lumora';
+  version: 1;
+  name: string;
+  /** When the recording started (ms since 1970). */
+  startedAt: number;
+  durationMs: number | null;
+  /** The Live Screen recording (it may have become an .mp4 when it finished). */
+  program: { path: string | null; mp4: string | null };
+  files: { kind: 'camera' | 'microphone'; sourceId: string; name: string; path: string; startMs: number }[];
+  /** What was on air when (ms after the start). */
+  cuts: { at: number; id: string | null; name: string }[];
+}
+
+/** The event file for a recording so far (or finished). */
+export function eventFile(live: Pick<Live, 'name' | 'startedAt' | 'running' | 'isos' | 'cuts'>, endedAt: number | null): EventFile {
+  const path = live.running.path ?? null;
+  return {
+    app: 'Lumora',
+    version: 1,
+    name: live.name,
+    startedAt: live.startedAt,
+    durationMs: endedAt === null ? null : endedAt - live.startedAt,
+    program: { path, mp4: path ? path.replace(/\.(mkv|webm)$/i, '.mp4') : null },
+    files: live.isos.map((i) => ({ kind: i.kind, sourceId: i.sourceId, name: i.name, path: i.path, startMs: i.startMs })),
+    cuts: live.cuts,
+  };
 }
 
 /** Some enabled destinations want the vertical version beside the wide stream. */
@@ -103,11 +144,13 @@ export class Broadcaster {
     this.compositor?.setShow(show);
     // A new chapter whenever something else goes on air.
     const rec = this.live.get('record');
-    if (rec?.chapters) {
+    if (rec) {
       const id = show.screens.live.program;
       const name = show.sources.find((x) => x.id === id)?.name ?? 'Black';
-      const last = rec.chapters[rec.chapters.length - 1];
-      if (last?.name !== name) rec.chapters.push({ at: Date.now() - rec.startedAt, name });
+      const at = Date.now() - rec.startedAt;
+      if (rec.cuts[rec.cuts.length - 1]?.id !== id) rec.cuts.push({ at, id, name });
+      const last = rec.chapters?.[rec.chapters.length - 1];
+      if (rec.chapters && last?.name !== name) rec.chapters.push({ at, name });
     }
   }
 
@@ -137,7 +180,7 @@ export class Broadcaster {
     // The picture keeps the size it started with while anything is running.
     if (this.live.size === 0) compositor.resize(wide.width, wide.height);
     const running = await this.open(kind, vertical, q.fps, settings.videoKbps, settings, name, mime, rehearse);
-    if (kind === 'record' && settings.iso) void this.startIsos(this.live.get('record')!, settings.videoKbps);
+    if (kind === 'record') void this.startIsos(this.live.get('record')!, settings.videoKbps, settings.iso);
     return running;
   }
 
@@ -206,6 +249,7 @@ export class Broadcaster {
       sending: Promise.resolve(),
       isos: [],
       chapters: kind === 'record' && settings.chapters ? [] : null,
+      cuts: [],
       name,
       startedAt: Date.now(),
       vertical,
@@ -242,6 +286,10 @@ export class Broadcaster {
     await Promise.all(live.isos.map((i) => this.stopIso(i)));
     await this.client.captureStop(live.running.session).catch(() => {});
     if (live.chapters?.length) await this.client.saveChapters(live.name, chapterText(live.chapters)).catch(() => {});
+    if (live === this.recordLive) {
+      this.recordLive = null;
+      await this.client.saveEventFile(live.name, JSON.stringify(eventFile(live, Date.now()), null, 2)).catch(() => {});
+    }
     this.release(live.video, live.audio);
     if (this.live.size === 0 && !this.replay) this.run(0);
   }
@@ -253,37 +301,82 @@ export class Broadcaster {
 
   // ---- ISO: each camera to its own file ----
 
-  private async startIsos(live: Live, kbps: number) {
-    const cams = (this.show?.sources ?? []).filter((s) => s.kind.type === 'camera');
+  /** The recording whose event file is kept up to date. */
+  private recordLive: Live | null = null;
+
+  private async startIsos(live: Live, kbps: number, ownFiles: boolean) {
+    this.recordLive = live;
+    const save = () => void this.client.saveEventFile(live.name, JSON.stringify(eventFile(live, null), null, 2)).catch(() => {});
+    save();
+    if (!ownFiles) return;
     const mime = recordingType();
-    if (!mime || !navigator.mediaDevices?.getUserMedia) return;
-    for (const cam of cams) {
-      if (cam.kind.type !== 'camera') continue;
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: cam.kind.deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        });
-        const id = await this.client.isoStart(live.name, cam.name, mime.includes('matroska') ? 'mkv' : 'webm');
-        if (id === null || this.live.get('record') !== live) {
-          stream.getTracks().forEach((t) => t.stop());
-          if (id !== null) void this.client.isoStop(id);
-          return;
+    const sources = this.show?.sources ?? [];
+    if (mime && navigator.mediaDevices?.getUserMedia) {
+      for (const cam of sources) {
+        if (cam.kind.type !== 'camera') continue;
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: cam.kind.deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          });
+          const file = await this.client.isoStart(live.name, cam.name, mime.includes('matroska') ? 'mkv' : 'webm');
+          if (file === null || this.live.get('record') !== live) {
+            stream.getTracks().forEach((t) => t.stop());
+            if (file !== null) void this.client.isoStop(file.id);
+            return;
+          }
+          const recorder = new MediaRecorder(stream, { mimeType: mime.replace(/,opus/, ''), videoBitsPerSecond: kbps * 1000 });
+          this.keep(live, { ...file, recorder, stream, sending: Promise.resolve(), kind: 'camera', sourceId: cam.id, name: cam.name, startMs: 0 });
+        } catch {
+          // A camera that can't be opened twice is left out; the main recording carries on.
         }
-        const recorder = new MediaRecorder(stream, { mimeType: mime.replace(/,opus/, ''), videoBitsPerSecond: kbps * 1000 });
-        const iso: Iso = { id, recorder, stream, sending: Promise.resolve() };
-        recorder.ondataavailable = (e) => {
-          if (!e.data.size) return;
-          iso.sending = iso.sending
-            .then(() => e.data.arrayBuffer())
-            .then((b) => this.client.isoChunk(id, b))
-            .catch(() => {});
-        };
-        recorder.start(1000);
-        live.isos.push(iso);
-      } catch {
-        // A camera that can't be opened twice is left out; the main recording carries on.
       }
     }
+    // Each microphone as it hears (before its fader), for the editing program.
+    const sound = this.sound;
+    const audioType = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : null;
+    if (sound && audioType) {
+      for (const mic of sources) {
+        if (mic.kind.type !== 'microphone' || this.live.get('record') !== live) continue;
+        try {
+          const dest = sound.context.createMediaStreamDestination();
+          const release = sound.listen(mic.id, dest, true);
+          const file = await this.client.isoStart(live.name, `${mic.name} (sound)`, 'webm');
+          if (file === null) {
+            release();
+            continue;
+          }
+          const recorder = new MediaRecorder(dest.stream, { mimeType: audioType, audioBitsPerSecond: 192_000 });
+          this.keep(live, {
+            ...file,
+            recorder,
+            stream: dest.stream,
+            sending: Promise.resolve(),
+            kind: 'microphone',
+            sourceId: mic.id,
+            name: mic.name,
+            startMs: 0,
+            release,
+          });
+        } catch {
+          // A microphone that can't be recorded on its own is left out.
+        }
+      }
+    }
+    save();
+  }
+
+  /** Start a camera's or microphone's own recording, noting when it began. */
+  private keep(live: Live, iso: Iso) {
+    iso.recorder.ondataavailable = (e) => {
+      if (!e.data.size) return;
+      iso.sending = iso.sending
+        .then(() => e.data.arrayBuffer())
+        .then((b) => this.client.isoChunk(iso.id, b))
+        .catch(() => {});
+    };
+    iso.recorder.start(1000);
+    iso.startMs = Date.now() - live.startedAt;
+    live.isos.push(iso);
   }
 
   private async stopIso(iso: Iso) {
@@ -294,6 +387,7 @@ export class Broadcaster {
       });
     }
     await iso.sending;
+    iso.release?.();
     iso.stream.getTracks().forEach((t) => t.stop());
     await this.client.isoStop(iso.id).catch(() => {});
   }

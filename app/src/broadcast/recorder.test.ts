@@ -19,3 +19,23 @@ describe('chapters', () => {
     expect(text).toBe('0:00 Opening\n1:10 Camera 1\n3:20 Speaker\n');
   });
 });
+
+describe('event file', () => {
+  it('lists every file with when it started, and what was on air when', async () => {
+    const { eventFile } = await import('./recorder');
+    const f = eventFile(
+      {
+        name: 'Gala',
+        startedAt: 1000,
+        running: { session: 1, startedAt: 1000, path: 'C:\\Videos\\Gala.mkv', destinations: [], bytes: 0, speed: null },
+        isos: [{ kind: 'camera', sourceId: 'cam1', name: 'Stage', path: 'C:\\Videos\\Gala — event files\\Stage.mkv', startMs: 420 }] as never,
+        cuts: [{ at: 0, id: 'cam1', name: 'Stage' }],
+      },
+      61_000,
+    );
+    expect(f.program.mp4).toBe('C:\\Videos\\Gala.mp4');
+    expect(f.durationMs).toBe(60_000);
+    expect(f.files[0]).toMatchObject({ kind: 'camera', name: 'Stage', startMs: 420 });
+    expect(f.cuts).toHaveLength(1);
+  });
+});

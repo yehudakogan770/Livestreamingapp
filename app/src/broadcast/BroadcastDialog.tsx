@@ -162,8 +162,8 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
               </select>
             </label>
             <label className="check">
-              <input type="checkbox" checked={draft.iso ?? false} onChange={(e) => set({ iso: e.target.checked })} /> Also record each camera to its own file
-              (for editing afterwards)
+              <input type="checkbox" checked={draft.iso ?? true} onChange={(e) => set({ iso: e.target.checked })} /> Also record each camera and microphone to
+              its own file (for editing afterwards)
             </label>
             <label className="check">
               <input type="checkbox" checked={draft.chapters ?? true} onChange={(e) => set({ chapters: e.target.checked })} /> Save a chapter list with each

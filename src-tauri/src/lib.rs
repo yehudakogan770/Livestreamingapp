@@ -515,6 +515,17 @@ fn iso_stop(id: u64, state: State<'_, AppState>) {
     state.isos.stop(id);
 }
 
+/// Save the event file the editing program opens, next to the recording.
+#[tauri::command]
+fn save_event_file(
+    recording: String,
+    json: String,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    iso::save_event(&state.capture.folder(), &recording, &json)
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
 /// Read the data file titles take their words from (a CSV or JSON file, up to 4 MB).
 #[tauri::command]
 async fn read_data_file(path: String) -> Result<String, String> {
@@ -949,6 +960,7 @@ pub fn run() {
             iso_start,
             iso_chunk,
             iso_stop,
+            save_event_file,
             save_chapters,
             perf_stats,
             save_snapshot,

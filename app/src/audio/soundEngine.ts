@@ -147,7 +147,7 @@ export class SoundEngine {
   }
 
   /** Who listens to what (live captions): a channel after its fader, or the Stream mix (null). */
-  private readonly listeners = new Map<AudioNode, string | null>();
+  private readonly listeners = new Map<AudioNode, { id: string | null; pre: boolean }>();
 
   /** The sound clock (for things that listen, like live captions). */
   get context(): AudioContext {
@@ -155,18 +155,20 @@ export class SoundEngine {
   }
 
   /**
-   * Feed a channel (after its fader, so a closed microphone is silent) or the
+   * Feed a channel (after its fader, so a closed microphone is silent; or
+   * `pre`: before it, as the microphone hears, for its own recording) or the
    * Stream mix (null) into `into`. Survives the channel being reopened.
    * Returns a function that stops it.
    */
-  listen(sourceId: string | null, into: AudioNode): () => void {
-    this.listeners.set(into, sourceId);
-    const from = sourceId === null ? this.outputs.master.gain : this.channels.get(sourceId)?.fader;
+  listen(sourceId: string | null, into: AudioNode, pre = false): () => void {
+    this.listeners.set(into, { id: sourceId, pre });
+    const tap = (ch: Channel | undefined) => (pre ? ch?.comp : ch?.fader);
+    const from = sourceId === null ? this.outputs.master.gain : tap(this.channels.get(sourceId));
     from?.connect(into);
     void this.ctx.resume().catch(() => {});
     return () => {
       this.listeners.delete(into);
-      const now = sourceId === null ? this.outputs.master.gain : this.channels.get(sourceId)?.fader;
+      const now = sourceId === null ? this.outputs.master.gain : tap(this.channels.get(sourceId));
       try {
         now?.disconnect(into);
       } catch {
@@ -249,7 +251,7 @@ export class SoundEngine {
     comp.connect(solo);
     this.setFilters({ lowCut, bass, mid, treble, comp }, src);
     fader.connect(meter);
-    for (const [into, id] of this.listeners) if (id === src.id) fader.connect(into);
+    for (const [into, l] of this.listeners) if (l.id === src.id) (l.pre ? comp : fader).connect(into);
     solo.connect(this.outputs.phones.input);
     const sends = {} as Record<Mix, GainNode>;
     for (const mix of ['master', 'a', 'b'] as const) {

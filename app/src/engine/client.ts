@@ -168,7 +168,7 @@ export interface CaptureStatus {
 }
 
 export function defaultCaptureSettings(): CaptureSettings {
-  return { folder: null, quality: '1080p', videoKbps: 6000, audioKbps: 160, recordMix: 'stream', iso: false, chapters: true, destinations: [] };
+  return { folder: null, quality: '1080p', videoKbps: 6000, audioKbps: 160, recordMix: 'stream', iso: true, chapters: true, destinations: [] };
 }
 
 export interface EngineClient {
@@ -246,7 +246,10 @@ export interface EngineClient {
   /** Keep a snapshot picture (in the Snapshots folder next to the recordings); resolves where. */
   saveSnapshot(png: Blob, name: string): Promise<string>;
   /** Start a camera's own file next to the recording (null where that isn't possible). */
-  isoStart(recording: string, camera: string, ext: 'mkv' | 'webm'): Promise<number | null>;
+  /** Start a camera's or microphone's own file; resolves its id and where it goes (null: not here). */
+  isoStart(recording: string, camera: string, ext: 'mkv' | 'webm'): Promise<{ id: number; path: string } | null>;
+  /** Save the event file (`<recording>.lumora`) the editing program opens. */
+  saveEventFile(recording: string, json: string): Promise<string | null>;
   isoChunk(id: number, bytes: ArrayBuffer): Promise<void>;
   isoStop(id: number): Promise<void>;
   /** Save the chapter list next to the recording (null where that isn't possible). */
@@ -659,9 +662,13 @@ class TauriClient implements EngineClient {
     }
   }
 
-  async isoStart(recording: string, camera: string, ext: 'mkv' | 'webm'): Promise<number | null> {
-    const [id] = await invoke<[number, string]>('iso_start', { recording, camera, ext });
-    return id;
+  async isoStart(recording: string, camera: string, ext: 'mkv' | 'webm'): Promise<{ id: number; path: string } | null> {
+    const [id, path] = await invoke<[number, string]>('iso_start', { recording, camera, ext });
+    return { id, path };
+  }
+
+  saveEventFile(recording: string, json: string): Promise<string | null> {
+    return invoke<string>('save_event_file', { recording, json });
   }
 
   isoChunk(id: number, bytes: ArrayBuffer): Promise<void> {
@@ -1098,7 +1105,11 @@ export class DemoClient implements EngineClient {
     return Promise.resolve();
   }
 
-  isoStart(): Promise<number | null> {
+  saveEventFile(): Promise<string | null> {
+    return Promise.resolve(null);
+  }
+
+  isoStart(): Promise<{ id: number; path: string } | null> {
     // A browser can only save the one recording.
     return Promise.resolve(null);
   }

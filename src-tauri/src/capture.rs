@@ -146,7 +146,8 @@ impl Default for CaptureSettings {
             video_kbps: 6000,
             audio_kbps: 160,
             record_mix: RecordMix::Stream,
-            iso: false,
+            // Every camera and microphone in its own file, for editing.
+            iso: true,
             chapters: true,
             destinations: Vec::new(),
         }
