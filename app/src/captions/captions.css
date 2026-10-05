@@ -1,0 +1,53 @@
+.cap {
+  width: min(640px, calc(100vw - 48px));
+}
+.cap__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 16px;
+  overflow: auto;
+}
+.cap__main {
+  font-weight: 600;
+}
+.cap__state {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.cap__state.is-listening {
+  color: #8fe0b0;
+}
+.cap__state.is-failed {
+  color: #ffb4ad;
+}
+.cap__preview {
+  min-height: 64px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #000;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.35;
+  text-align: center;
+}
+.cap__preview span {
+  color: #777;
+  font-weight: 400;
+}
+.cap__h {
+  margin: 6px 0 0;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.cap__row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+.cap__grow {
+  flex: 1;
+}

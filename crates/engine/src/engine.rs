@@ -1744,6 +1744,11 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         | Action::SetOverlayOn { .. }
         | Action::SetOverlayInNext { .. }
         | Action::OverlaysOff) => apply_overlay(s, a, now),
+        Action::SetCaptions { mut captions } => {
+            captions.repair(&s.sources);
+            s.captions = captions;
+            Ok(())
+        }
         Action::UpdateAutoSwitch { auto } => {
             let was_on = s.auto_switch.on;
             let seed = s.auto_switch.seed;

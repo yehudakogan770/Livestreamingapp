@@ -24,6 +24,7 @@ import { DataDialog, DataWatcher } from './views/DataDialog';
 import { RemoteDialog } from './views/RemoteDialog';
 import { barActions, defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
+import { CaptionsDialog } from './captions/CaptionsDialog';
 import { BroadcastDialog } from './broadcast/BroadcastDialog';
 import { OverlayEditor } from './views/OverlayEditor';
 import { sendCommand } from './views/commands';
@@ -120,6 +121,7 @@ function ControlApp() {
   const [remoteOpen, setRemoteOpen] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const openBroadcast = useCallback(() => setBroadcastOpen(true), []);
+  const [captionsOpen, setCaptionsOpen] = useState(false);
   const [overlaysOpen, setOverlaysOpen] = useState(false);
   useEffect(() => client.watchRemote(setRemote), [client]);
   useReportProblem(
@@ -181,6 +183,11 @@ function ControlApp() {
     const phones = remote?.phones ?? 0;
     const settings: MenuItem[] = [
       { label: 'Recording and streaming…', onClick: openBroadcast },
+      {
+        label: `Live captions…${show?.captions?.on ? ' (on)' : ''}`,
+        hint: 'Write what is said for the stream’s viewers',
+        onClick: () => setCaptionsOpen(true),
+      },
       {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
@@ -366,6 +373,17 @@ function ControlApp() {
                   <ShabbosGuard show={show} />
                   <DataWatcher show={show} client={client} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
+                  {captionsOpen && (
+                    <CaptionsDialog
+                      show={show}
+                      client={client}
+                      onClose={() => setCaptionsOpen(false)}
+                      onStreamSettings={() => {
+                        setCaptionsOpen(false);
+                        setBroadcastOpen(true);
+                      }}
+                    />
+                  )}
                   {overlaysOpen && (
                     <OverlayEditor
                       show={show}

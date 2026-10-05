@@ -959,6 +959,12 @@ pub enum Action {
         speed: u32,
     },
 
+    // ----- captions -----
+    /// Live captions: on or off, which microphone, where and how big.
+    SetCaptions {
+        captions: crate::captions::Captions,
+    },
+
     // ----- cameras -----
     /// Going through the cameras by itself: which, how long, in order or mixed up.
     UpdateAutoSwitch {

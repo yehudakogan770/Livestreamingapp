@@ -298,6 +298,23 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                       </button>
                     </span>
                     <span className="field__note">Stream key: {service.keyHelp}. It stays on this computer.</span>
+                    {(service.name.startsWith('YouTube') || d.captionsUrl) && (
+                      <label className="field">
+                        <span className="field__label">Captions address (optional)</span>
+                        <input
+                          className="text"
+                          value={d.captionsUrl ?? ''}
+                          placeholder="https://upload.youtube.com/closedcaption?…"
+                          autoComplete="off"
+                          onChange={(e) => setDest(d.id, { captionsUrl: e.target.value })}
+                          aria-label="Captions address"
+                        />
+                        <span className="field__note">
+                          For live captions viewers can turn on and off (CC): YouTube Studio → your stream → Settings → Closed captions → “Post captions to
+                          URL”, then copy the address here.
+                        </span>
+                      </label>
+                    )}
                     {draft.quality !== 'vertical' && (
                       <label className="check">
                         <input type="checkbox" checked={!!d.vertical} onChange={(e) => setDest(d.id, { vertical: e.target.checked })} /> Send the vertical

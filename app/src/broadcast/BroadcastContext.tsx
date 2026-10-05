@@ -4,6 +4,8 @@ import type { Show } from '../engine/types/Show';
 import { useSound } from '../audio/SoundContext';
 import { useReportProblem } from '../problems/problems';
 import { Broadcaster } from './recorder';
+import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
+import { lineWidth } from './captionLayer';
 
 /** The highlights reel's input. */
 export const HIGHLIGHTS = 'highlights-reel';
@@ -30,6 +32,8 @@ interface Broadcast {
   makeReplay(seconds: number, speed: number): Promise<string>;
   /** Keep the last `seconds` in the highlights reel (a video input that plays them all). Resolves how many it holds. */
   saveHighlight(seconds: number): Promise<number>;
+  /** Live captions: whether they're running, and the words right now. */
+  captions: { state: CaptionState; lines(): string[] };
 }
 
 const Ctx = createContext<Broadcast | null>(null);
@@ -361,10 +365,51 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     [broadcaster, client],
   );
 
+  // ---- live captions (to the stream only) ----
+  const live = useMemo(() => (sound && typeof Worker !== 'undefined' ? new LiveCaptions(client, sound) : null), [client, sound]);
+  const [captionState, setCaptionState] = useState<CaptionState>({ state: 'off' });
+  const statusRef = useRef(status);
+  statusRef.current = status;
+  const cc = show.captions;
+  useEffect(() => {
+    if (!live) return;
+    live.onState = setCaptionState;
+    live.sendTo = () => captionTargets(settingsRef.current, statusRef.current);
+    return () => live.stop();
+  }, [live]);
+  useEffect(() => {
+    if (!live) return;
+    if (cc?.on) void live.start(cc.listen ?? null);
+    else live.stop();
+  }, [live, cc?.on, cc?.listen]);
+  const ccRef = useRef(cc);
+  ccRef.current = cc;
+  useEffect(() => {
+    if (!broadcaster) return;
+    broadcaster.captionsInPicture = () => {
+      const c = ccRef.current;
+      if (!live || !c?.on || !c.inPicture) return null;
+      return { lines: live.lines.shown(c.lines, lineWidth(1920, 1080, c.size)), look: c };
+    };
+  }, [broadcaster, live]);
+  useReportProblem(
+    captionState.state === 'failed' && cc?.on
+      ? {
+          key: 'captions',
+          level: 'warning',
+          title: 'Live captions stopped',
+          detail: captionState.message,
+          fix: 'The stream carries on without them. Turn captions off and on again (Settings → Live captions).',
+        }
+      : null,
+  );
+  const captionLines = useCallback(() => (live && cc ? live.lines.shown(cc.lines, lineWidth(1920, 1080, cc.size)) : []), [live, cc]);
+  const captions = useMemo(() => ({ state: captionState, lines: captionLines }), [captionState, captionLines]);
+
   const frameStats = useCallback(() => broadcaster?.frameStats() ?? null, [broadcaster]);
   const value = useMemo<Broadcast>(
-    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats }),
-    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats],
+    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats, captions }),
+    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats, captions],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

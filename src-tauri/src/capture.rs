@@ -52,6 +52,9 @@ pub struct Destination {
     /// Gets the vertical (9:16) version, for TikTok, Reels and Shorts,
     /// streamed at the same time as the wide one.
     pub vertical: bool,
+    /// Where live captions are sent (YouTube: Studio → stream settings →
+    /// closed captions → "Post captions to URL"). Viewers turn them on and off.
+    pub captions_url: String,
 }
 
 impl Default for Destination {
@@ -63,6 +66,7 @@ impl Default for Destination {
             key: String::new(),
             enabled: true,
             vertical: false,
+            captions_url: String::new(),
         }
     }
 }

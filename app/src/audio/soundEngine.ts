@@ -146,6 +146,35 @@ export class SoundEngine {
     return node.stream;
   }
 
+  /** Who listens to what (live captions): a channel after its fader, or the Stream mix (null). */
+  private readonly listeners = new Map<AudioNode, string | null>();
+
+  /** The sound clock (for things that listen, like live captions). */
+  get context(): AudioContext {
+    return this.ctx;
+  }
+
+  /**
+   * Feed a channel (after its fader, so a closed microphone is silent) or the
+   * Stream mix (null) into `into`. Survives the channel being reopened.
+   * Returns a function that stops it.
+   */
+  listen(sourceId: string | null, into: AudioNode): () => void {
+    this.listeners.set(into, sourceId);
+    const from = sourceId === null ? this.outputs.master.gain : this.channels.get(sourceId)?.fader;
+    from?.connect(into);
+    void this.ctx.resume().catch(() => {});
+    return () => {
+      this.listeners.delete(into);
+      const now = sourceId === null ? this.outputs.master.gain : this.channels.get(sourceId)?.fader;
+      try {
+        now?.disconnect(into);
+      } catch {
+        // Already gone.
+      }
+    };
+  }
+
   /** Stop feeding a stream made by {@link mixStream}. */
   endMixStream(stream: MediaStream): void {
     const tap = this.taps.get(stream);
@@ -220,6 +249,7 @@ export class SoundEngine {
     comp.connect(solo);
     this.setFilters({ lowCut, bass, mid, treble, comp }, src);
     fader.connect(meter);
+    for (const [into, id] of this.listeners) if (id === src.id) fader.connect(into);
     solo.connect(this.outputs.phones.input);
     const sends = {} as Record<Mix, GainNode>;
     for (const mix of ['master', 'a', 'b'] as const) {

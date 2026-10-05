@@ -124,6 +124,8 @@ export interface Destination {
   enabled: boolean;
   /** Gets the vertical (9:16) version, streamed at the same time as the wide one. */
   vertical?: boolean;
+  /** Live captions go here (YouTube: Studio → stream settings → closed captions → "Post captions to URL"). */
+  captionsUrl?: string;
 }
 
 export interface CaptureSettings {
@@ -227,6 +229,10 @@ export interface EngineClient {
   /** More encoded picture and sound, in order. */
   captureChunk(session: number, data: ArrayBuffer): Promise<void>;
   captureStop(session: number): Promise<void>;
+  /** A live captions speech model on this computer (downloaded the first time); resolves its folder. */
+  captionsModel(name: string): Promise<string>;
+  /** Send a caption line to a YouTube caption address. */
+  captionsSend(url: string, seq: number, at: number, text: string): Promise<void>;
 
   // ----- files -----
   /** Ask the operator for a video or picture file. Resolves to its path, or null if canceled. */
@@ -385,6 +391,7 @@ export function emptyShow(): Show {
     visuals: defaultVisuals(),
     data: { path: '', everyMs: 1000, headers: [], rows: [], row: 0, error: '', updatedAt: 0 },
     autoSwitch: { on: false, cameras: [], minS: 6, maxS: 10, random: false, mix: false, nextAt: 0, seed: 1 },
+    captions: { on: false, listen: null, inPicture: false, place: 'bottom', size: 1, lines: 2 },
     qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
     settings: {
@@ -579,6 +586,14 @@ class TauriClient implements EngineClient {
       cancelled = true;
       stop?.();
     };
+  }
+
+  captionsModel(name: string): Promise<string> {
+    return invoke<string>('captions_model', { name });
+  }
+
+  captionsSend(url: string, seq: number, at: number, text: string): Promise<void> {
+    return invoke('captions_send', { url, seq, at, text });
   }
 
   captureSettings(): Promise<CaptureSettings> {
@@ -987,6 +1002,14 @@ export class DemoClient implements EngineClient {
 
   captureFolder(): Promise<string> {
     return Promise.resolve('Downloads (browser demo)');
+  }
+
+  captionsModel(): Promise<string> {
+    return Promise.reject(new Error('Live captions need the Lumora app.'));
+  }
+
+  captionsSend(): Promise<void> {
+    return Promise.resolve();
   }
 
   pickFolder(): Promise<string | null> {

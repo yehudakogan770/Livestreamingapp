@@ -620,6 +620,9 @@ pub struct Show {
     /// Going through the cameras by itself.
     #[serde(default)]
     pub auto_switch: crate::cameras::AutoSwitch,
+    /// Live captions: words spoken written on screen.
+    #[serde(default)]
+    pub captions: crate::captions::Captions,
     pub settings: Settings,
 }
 
@@ -652,6 +655,7 @@ impl Default for Show {
             qna: crate::qna::Qna::default(),
             data: crate::data::DataFeed::default(),
             auto_switch: crate::cameras::AutoSwitch::default(),
+            captions: crate::captions::Captions::default(),
             settings: Settings::default(),
         }
     }

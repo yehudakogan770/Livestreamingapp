@@ -9,6 +9,8 @@ import type { SoundEngine } from '../audio/soundEngine';
 import { ProgramCompositor } from './compositor';
 import { ReplayBuffer, type Piece } from './replay';
 import { VerticalFrame } from './vertical';
+import { CaptionLayer } from './captionLayer';
+import type { Captions } from '../engine/types/Captions';
 
 export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number; kbps: number }> = {
   '720p': { name: '720p (1280 × 720), 30 frames a second', width: 1280, height: 720, fps: 30, kbps: 3000 },
@@ -84,6 +86,10 @@ export class Broadcaster {
   private readonly live = new Map<SessionKind, Live>();
   /** The vertical picture, made from the wide one (only while something sends it). */
   private frame: VerticalFrame | null = null;
+  /** The stream's copy of the picture, with captions when asked (the recording stays clean). */
+  private readonly layer = typeof document === 'undefined' ? null : ((l) => (l.works ? l : null))(new CaptionLayer());
+  /** The captions to write in the stream picture now (none: nothing written). */
+  captionsInPicture: () => { lines: string[]; look: Captions } | null = () => null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private fps = 0;
 
@@ -170,8 +176,10 @@ export class Broadcaster {
       throw e instanceof Error ? e : new Error(String(e));
     }
     this.run(Math.max(fps, this.fps));
-    if (vertical) this.verticalFrame().draw(compositor.canvas);
-    const video = (vertical ? this.verticalFrame().canvas : compositor.canvas).captureStream(fps);
+    const streamed = kind !== 'record' && this.layer;
+    if (streamed) this.drawLayer(compositor.canvas);
+    if (vertical) this.verticalFrame().draw(streamed ? this.layer!.canvas : compositor.canvas);
+    const video = (vertical ? this.verticalFrame().canvas : streamed ? this.layer!.canvas : compositor.canvas).captureStream(fps);
     const audio = this.sound ? this.sound.mixStream(kind === 'record' && settings.recordMix === 'recording' ? 'b' : 'master') : null;
     const stream = new MediaStream([...video.getVideoTracks(), ...(audio?.getAudioTracks() ?? [])]);
     let recorder: MediaRecorder;
@@ -344,6 +352,11 @@ export class Broadcaster {
     if (audio) this.sound?.endMixStream(audio);
   }
 
+  private drawLayer(src: HTMLCanvasElement) {
+    const c = this.captionsInPicture();
+    this.layer?.draw(src, c?.lines ?? [], c?.look ?? null);
+  }
+
   /** When each of the last frames was drawn, and how many came late. */
   private drawn: number[] = [];
   private late = 0;
@@ -372,7 +385,9 @@ export class Broadcaster {
         // A frame that comes much later than it should means pictures were missed.
         if (last !== undefined && t - last > frame * 1.8) this.late += Math.round((t - last) / frame) - 1;
         c.draw(Date.now());
-        if (this.frame && [...this.live.values()].some((l) => l.vertical)) this.frame.draw(c.canvas);
+        const streaming = this.live.has('stream') || this.live.has('vertical');
+        if (streaming) this.drawLayer(c.canvas);
+        if (this.frame && [...this.live.values()].some((l) => l.vertical)) this.frame.draw(streaming && this.layer ? this.layer.canvas : c.canvas);
         this.drawn.push(t);
         if (this.drawn.length > fps * 2) this.drawn.splice(0, this.drawn.length - fps * 2);
       };

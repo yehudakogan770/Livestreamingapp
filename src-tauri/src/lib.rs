@@ -1,6 +1,7 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
 mod browser;
+mod captions;
 mod capture;
 mod control;
 mod desktop;
@@ -211,6 +212,24 @@ fn files_changed(app: &tauri::AppHandle, state: &AppState, files: &events::Event
 }
 
 /// The open event's file and the recent list.
+/// The live captions model on this computer (downloaded the first time).
+#[tauri::command]
+async fn captions_model(app: tauri::AppHandle, name: String) -> Result<String, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || captions::model(&dir, &name))
+        .await
+        .map_err(|e| e.to_string())?
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
+/// Send a caption line to `YouTube` (closed captions viewers turn on and off).
+#[tauri::command]
+async fn captions_send(url: String, seq: u64, at: u64, text: String) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || captions::send_youtube(&url, seq, at, &text))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 fn event_files(state: State<'_, AppState>) -> events::EventFiles {
     state
@@ -894,6 +913,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            captions_model,
+            captions_send,
             get_show,
             dispatch,
             list_displays,
