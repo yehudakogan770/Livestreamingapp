@@ -6,6 +6,8 @@ import { effectsAt, isAudioEffect, sourceAt, type EffectNow } from '../render/fr
 
 export interface Heard {
   clip: Clip;
+  /** Unique while playing (a clip inside a nest is keyed by the nest too). */
+  key: string;
   track: Track;
   media: MediaItem;
   /** Seconds into the file. */
@@ -31,13 +33,16 @@ export function fadeCurve(type: string, x: number): number {
   return type === 'crossfadelinear' ? k : Math.sin((k * Math.PI) / 2);
 }
 
-/** Every sound clip playing at a frame, including the overlap of crossfades. */
-export function audioAt(p: Project, s: Sequence, frame: number): Heard[] {
+/** Every sound clip playing at a frame, including the overlap of crossfades (and the sound of nested sequences). */
+export function audioAt(p: Project, s: Sequence, frame: number, prefix = '', depth = 0, inside: string[] = [s.id]): Heard[] {
   const fps = rate(s);
   const out: Heard[] = [];
+  // Inside a nest, only tracks heard in that sequence count.
+  const heardHere = depth > 0 ? heardTracks(s) : null;
   for (const t of s.tracks) {
     if (t.kind !== 'audio') continue;
-    const clips = onTrack(s, t.id).filter((c) => c.enabled && c.source.kind === 'media');
+    if (heardHere && !heardHere.has(t.id)) continue;
+    const clips = onTrack(s, t.id).filter((c) => c.enabled && (c.source.kind === 'media' || c.source.kind === 'sequence'));
     for (const c of clips) {
       const half = c.tIn ? Math.floor(c.tIn.length / 2) : 0;
       const next = clips.find((o) => o.start === end(c) && o.id !== c.id);
@@ -62,6 +67,20 @@ export function audioAt(p: Project, s: Sequence, frame: number): Heard[] {
         if (frame >= w0) fade *= fadeCurve(c.tOut.type, 1 - (frame - w0 + 0.5) / c.tOut.length);
       }
       const src = c.source;
+      if (src.kind === 'sequence') {
+        const inner = p.sequences.find((x) => x.id === src.seq);
+        if (!inner || depth >= 4 || inside.includes(inner.id)) continue;
+        const local = frame - c.start;
+        const lc = Math.max(0, Math.min(c.length - 1, local));
+        const innerFrame = Math.round(sourceAt(c, local, fps) * rate(inner));
+        const outer = dbToGain(valueAt(c.gain, lc)) * fade;
+        const pan = valueAt(c.pan, lc) / 100;
+        for (const h of audioAt(p, inner, innerFrame, `${prefix}${c.id}/`, depth + 1, [...inside, inner.id])) {
+          // The nest plays on this track: its own track's volume goes into the clip's.
+          out.push({ ...h, track: t, gain: h.gain * outer * dbToGain(h.track.volume), pan: Math.max(-1, Math.min(1, h.pan + pan + h.track.pan)) });
+        }
+        continue;
+      }
       if (src.kind !== 'media') continue;
       const m = p.media.find((x) => x.id === src.media);
       if (!m?.hasAudio) continue;
@@ -71,6 +90,7 @@ export function audioAt(p: Project, s: Sequence, frame: number): Heard[] {
       const lc = Math.max(0, Math.min(c.length - 1, local));
       out.push({
         clip: c,
+        key: `${prefix}${c.id}`,
         track: t,
         media: m,
         time,

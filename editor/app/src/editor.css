@@ -1116,6 +1116,10 @@ input[type='range'] {
   content: '♪';
   color: #7fd39a;
 }
+.fxlist__item--gen::before {
+  content: '✦';
+  color: #f2d36b;
+}
 .fxlist__item--tr::before {
   content: '⋈';
   color: #6fc7d1;

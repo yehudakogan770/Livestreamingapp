@@ -3,4 +3,4 @@
 /**
  * How the zmanim input looks.
  */
-export type ZmanimStyle = "card" | "bar" | "countdown";
+export type ZmanimStyle = 'card' | 'bar' | 'countdown';

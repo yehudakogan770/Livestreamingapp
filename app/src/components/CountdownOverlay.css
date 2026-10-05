@@ -78,15 +78,41 @@
   }
 }
 
-.hype__logo { max-width: 60cqw; max-height: 60cqh; object-fit: contain; animation: hype-logo 0.9s ease-out both; }
+.hype__logo {
+  max-width: 60cqw;
+  max-height: 60cqh;
+  object-fit: contain;
+  animation: hype-logo 0.9s ease-out both;
+}
 @keyframes hype-logo {
-  0% { opacity: 0; transform: scale(0.92); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* After zero: the numbers fade out, then the logo or words fade in over them. */
-.hype__stack { display: flex; flex-direction: column; align-items: center; gap: 2cqh; transition: opacity 0.9s ease; }
-.hype__stack.is-gone { opacity: 0; }
-.hype__end, .hype__logo { position: absolute; }
-.hype__end { animation: hype-logo 1s ease-out 0.5s both; }
-.hype__logo { animation-delay: 0.5s; }
+.hype__stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2cqh;
+  transition: opacity 0.9s ease;
+}
+.hype__stack.is-gone {
+  opacity: 0;
+}
+.hype__end,
+.hype__logo {
+  position: absolute;
+}
+.hype__end {
+  animation: hype-logo 1s ease-out 0.5s both;
+}
+.hype__logo {
+  animation-delay: 0.5s;
+}

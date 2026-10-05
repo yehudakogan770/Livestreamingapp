@@ -3,4 +3,4 @@
 /**
  * How the wall looks on screen.
  */
-export type WallStyle = "cards" | "grid" | "ticker";
+export type WallStyle = 'cards' | 'grid' | 'ticker';

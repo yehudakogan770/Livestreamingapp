@@ -3,4 +3,4 @@
 /**
  * A draw in progress (or just finished): the winner is chosen when it starts.
  */
-export type Draw = { startedAt: number, winner: number, durationMs: number, };
+export type Draw = { startedAt: number; winner: number; durationMs: number };

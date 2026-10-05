@@ -12,7 +12,14 @@ export function PresetButtons({ show, act, showAll, onShowAll }: { show: Show; a
         <>
           <span className="pbuttons__label">{p.name}</span>
           {p.buttons.map((b, i) => (
-            <button key={i} type="button" className="btn pbuttons__btn" title={b.steps.map((st) => describeStep(st, show)).join('\n') || 'No steps yet'} disabled={b.steps.length === 0} onClick={() => act({ type: 'runSteps', name: b.name, steps: b.steps })}>
+            <button
+              key={i}
+              type="button"
+              className="btn pbuttons__btn"
+              title={b.steps.map((st) => describeStep(st, show)).join('\n') || 'No steps yet'}
+              disabled={b.steps.length === 0}
+              onClick={() => act({ type: 'runSteps', name: b.name, steps: b.steps })}
+            >
               {b.name}
             </button>
           ))}
@@ -22,7 +29,9 @@ export function PresetButtons({ show, act, showAll, onShowAll }: { show: Show; a
       {show.running.length > 0 && (
         <span className="pbuttons__running" role="status">
           Running: {show.running.map((r) => r.name).join(', ')}
-          <button type="button" className="chip" onClick={() => act({ type: 'stopSteps' })}>Stop</button>
+          <button type="button" className="chip" onClick={() => act({ type: 'stopSteps' })}>
+            Stop
+          </button>
         </span>
       )}
       {p && p.sources.length > 0 && (

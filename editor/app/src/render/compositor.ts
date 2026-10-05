@@ -4,7 +4,7 @@
 import { curvesImage, flatCurve, hexToRgb, wheelColor, type Cube, type CurveSet } from './color';
 import type { EffectNow, Layer, Op } from './frame';
 import { drawText } from './text';
-import { BLEND_MODES, COMPOSITE_FS, COPY_FS, EFFECT_FS, FINAL_FS, FULL_VS, LAYER_FS, LAYER_VS, TRANSITION_FS, TRANSITION_TYPES } from './shaders';
+import { BLEND_MODES, COMPOSITE_FS, COPY_FS, EFFECT_FS, FINAL_FS, FULL_VS, GENERATOR_FS, LAYER_FS, LAYER_VS, TRANSITION_FS, TRANSITION_TYPES } from './shaders';
 
 type Source = TexImageSource;
 
@@ -70,7 +70,7 @@ export class Compositor {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     this.quad = gl.createBuffer() as WebGLBuffer;
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quad);
-    gl.bufferData(gl.ARRAY_BUFFER, 16 * 4, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, 24 * 4, gl.DYNAMIC_DRAW);
     this.vaoFull = gl.createVertexArray() as WebGLVertexArrayObject;
     this.vaoQuad = gl.createVertexArray() as WebGLVertexArrayObject;
     this.empty = this.makeTexture();
@@ -115,7 +115,7 @@ export class Compositor {
       }
       if (loc === null) continue;
       if (typeof v === 'number') {
-        if (k === 'uMode' || k === 'uType') gl.uniform1i(loc, v);
+        if (k === 'uMode' || k === 'uType' || k === 'uGen') gl.uniform1i(loc, v);
         else gl.uniform1f(loc, v);
       } else if (typeof v[0] !== 'number') {
         const [tex, unit, kind] = v as [WebGLTexture, number, '3d'?];
@@ -127,6 +127,7 @@ export class Compositor {
         if (n.length === 2) gl.uniform2f(loc, n[0] as number, n[1] as number);
         else if (n.length === 3) gl.uniform3f(loc, n[0] as number, n[1] as number, n[2] as number);
         else if (n.length === 4) gl.uniform4f(loc, n[0] as number, n[1] as number, n[2] as number, n[3] as number);
+        else if (n.length === 9) gl.uniformMatrix3fv(loc, false, n);
       }
     }
   }
@@ -272,6 +273,7 @@ export class Compositor {
     let tex: WebGLTexture;
     let sw: number;
     let sh: number;
+    let nested: Target | null = null;
     const scale = this.h / this.seqH;
     if (src.kind === 'color') {
       const [r, g, b] = hexToRgb(src.color);
@@ -285,10 +287,24 @@ export class Compositor {
       tex = up.tex;
       sw = this.w;
       sh = this.h;
+    } else if (src.kind === 'nested') {
+      // The sequence inside is drawn first, then placed like a picture.
+      const inner = this.compose(src.ops, pics);
+      nested = inner;
+      tex = inner.tex;
+      sw = this.w;
+      sh = this.h;
+    } else if (src.kind === 'generator') {
+      const made = this.take();
+      this.generate(src, made);
+      nested = made;
+      tex = made.tex;
+      sw = this.w;
+      sh = this.h;
     } else if (src.kind === 'text') {
       const c = this.textSource(layer);
       if (!c) return false;
-      const up = this.upload(`text:${layer.clip.id}`, c, '');
+      const up = this.upload(`text:${layer.key}`, c, '');
       if (!up) return false;
       tex = up.tex;
       sw = this.w;
@@ -297,7 +313,7 @@ export class Compositor {
       const pic = pics.picture(layer);
       if (!pic) return false;
       const stamp = src.kind === 'image' ? src.media.path : '';
-      const up = this.upload(src.kind === 'image' ? `img:${src.media.id}` : `vid:${layer.clip.id}`, pic, stamp);
+      const up = this.upload(src.kind === 'image' ? `img:${src.media.id}` : `vid:${layer.key}`, pic, stamp);
       if (!up) return false;
       tex = up.tex;
       sw = up.w;
@@ -309,25 +325,34 @@ export class Compositor {
     const dh = sh * fit * (m.scale / 100);
     const cx = this.w / 2 + m.x * scale;
     const cy = this.h / 2 + m.y * scale;
-    const a = (m.rotation * Math.PI) / 180;
-    const cos = Math.cos(a);
-    const sin = Math.sin(a);
-    const corner = (u: number, v: number): [number, number] => {
-      const x = (u - 0.5) * dw;
-      const y = (v - 0.5) * dh;
-      const px = cx + x * cos - y * sin;
-      const py = cy + x * sin + y * cos;
-      return [(px / this.w) * 2 - 1, 1 - (py / this.h) * 2];
+    // Turned flat (rotation), then tilted (3D), seen through a lens from in front of the frame.
+    const rz = (m.rotation * Math.PI) / 180;
+    const rx = (m.rotX * Math.PI) / 180;
+    const ry = (m.rotY * Math.PI) / 180;
+    const focal = this.h * 1.25;
+    const depth = m.z * scale;
+    const corner = (u: number, v: number): [number, number, number] => {
+      let x = (u - 0.5) * dw;
+      let y = (v - 0.5) * dh;
+      let z = 0;
+      [x, y] = [x * Math.cos(rz) - y * Math.sin(rz), x * Math.sin(rz) + y * Math.cos(rz)];
+      [y, z] = [y * Math.cos(rx) - z * Math.sin(rx), y * Math.sin(rx) + z * Math.cos(rx)];
+      [x, z] = [x * Math.cos(ry) + z * Math.sin(ry), -x * Math.sin(ry) + z * Math.cos(ry)];
+      const px = cx + x - this.w / 2;
+      const py = cy + y - this.h / 2;
+      const w = Math.max(0.05, (focal + z + depth) / focal);
+      // Divided by w on the GPU, so the picture is drawn in true perspective.
+      return [((this.w / 2 + px / w) / this.w) * 2 - 1, 1 - ((this.h / 2 + py / w) / this.h) * 2, w];
     };
-    const data = new Float32Array(16);
+    const data = new Float32Array(24);
     [
       [0, 0],
       [1, 0],
       [0, 1],
       [1, 1],
     ].forEach(([u, v], i) => {
-      const [x, y] = corner(u as number, v as number);
-      data.set([x, y, u as number, v as number], i * 4);
+      const [x, y, w] = corner(u as number, v as number);
+      data.set([x * w, y * w, 0, w, u as number, v as number], i * 6);
     });
     this.bindTarget(target);
     const p = this.program('layer', LAYER_VS, LAYER_FS);
@@ -336,10 +361,11 @@ export class Compositor {
     gl.bindBuffer(gl.ARRAY_BUFFER, this.quad);
     gl.bufferSubData(gl.ARRAY_BUFFER, 0, data);
     gl.enableVertexAttribArray(0);
-    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 16, 0);
+    gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 24, 0);
     gl.enableVertexAttribArray(1);
-    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 16, 8);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 16);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    this.give(nested);
     return true;
   }
 
@@ -401,7 +427,8 @@ export class Compositor {
   }
 
   /** Apply one effect; gives back the target holding the result (the input is given back if it was replaced). */
-  private effect(e: EffectNow, input: Target, pics: Pictures): Target {
+  private effect(e: EffectNow, input: Target, pics: Pictures, layer: Layer): Target {
+    const time = layer.local / Math.max(1, layer.fps);
     const p = e.p;
     const n = (k: string, d = 0) => (Number.isFinite(p[k]) ? (p[k] as number) : d);
     const run = (name: string, u: Record<string, number | number[] | [WebGLTexture, number, '3d'?]>): Target => {
@@ -510,6 +537,44 @@ export class Compositor {
         this.give(input);
         return out;
       }
+      case 'cornerpin': {
+        const k = this.h / this.seqH;
+        const W = this.w;
+        const H = this.h;
+        // Where each corner of the frame goes (pixels from where it was; down is positive).
+        const quad: [number, number][] = [
+          [n('tlx') * k, n('tly') * k],
+          [W + n('trx') * k, n('try') * k],
+          [W + n('brx') * k, H + n('bry') * k],
+          [n('blx') * k, H + n('bly') * k],
+        ];
+        const m = squareToQuad(quad);
+        if (!m) return input;
+        const inv = invert3(m);
+        if (!inv) return input;
+        return run('cornerpin', { uH: inv });
+      }
+      case 'chromatic':
+        return run('chromatic', { uAmount: n('amount', 30) * (this.h / this.seqH) });
+      case 'glitch':
+        return run('glitch', { uAmount: n('amount', 40) / 100, uTime: time, uSeedRate: n('speed', 50) / 10 });
+      case 'zoomblur':
+        return run('zoomblur', { uAmount: n('amount', 30) / 100, uCenter: [0.5 + n('cx') / 200, 0.5 - n('cy') / 200] });
+      case 'dirblur': {
+        const a = (n('angle') * Math.PI) / 180;
+        const len = n('length', 30) * (this.h / this.seqH);
+        return run('dirblur', { uDir: [Math.cos(a) * len, Math.sin(a) * len] });
+      }
+      case 'displace':
+        return run('displace', { uAmount: n('amount', 30) * (this.h / this.seqH), uFreq: n('size', 50) / 10, uTime: time * (n('speed', 50) / 50) });
+      case 'posterize':
+        return run('posterize', { uLevels: Math.max(2, n('levels', 6)) });
+      case 'edges':
+        return run('edges', { uAmount: n('amount', 100) / 100, uInvert: n('invert') });
+      case 'wave':
+        return run('wave', { uAmount: n('amount', 20) * (this.h / this.seqH), uFreq: n('size', 30) / 10, uTime: time * (n('speed', 50) / 25) });
+      case 'vhs':
+        return run('vhs', { uAmount: n('amount', 50) / 100, uTime: time });
       default:
         return input;
     }
@@ -524,7 +589,7 @@ export class Compositor {
       this.give(t);
       return null;
     }
-    for (const e of layer.effects) t = this.effect(e, t, pics);
+    for (const e of layer.effects) t = this.effect(e, t, pics, layer);
     return t;
   }
 
@@ -534,11 +599,8 @@ export class Compositor {
     return out;
   }
 
-  /** Draw a whole frame. With `flip`, the result is the right way up for reading back pixels. */
-  render(ops: Op[], pics: Pictures, background: string, flip = false): void {
-    const gl = this.gl;
-    for (const t of this.targets) t.busy = false;
-    gl.disable(gl.BLEND);
+  /** Stack layers into a new target (it is the caller's to give back). */
+  private compose(ops: Op[], pics: Pictures): Target {
     let acc = this.take();
     this.clear(acc);
     for (const op of ops) {
@@ -565,17 +627,51 @@ export class Compositor {
       } else {
         // An adjustment layer changes everything under it.
         let t = this.pass('copy', COPY_FS, acc, { uOpacity: 1 });
-        for (const e of op.layer.effects) t = this.effect(e, t, pics);
+        for (const e of op.layer.effects) t = this.effect(e, t, pics, op.layer);
         const mixed = this.composite(acc, t, op.layer.motion.opacity / 100, 'normal');
         this.give(t);
         acc = mixed;
       }
     }
+    return acc;
+  }
+
+  /** Draw a whole frame. With `flip`, the result is the right way up for reading back pixels. */
+  render(ops: Op[], pics: Pictures, background: string, flip = false): void {
+    const gl = this.gl;
+    for (const t of this.targets) t.busy = false;
+    gl.disable(gl.BLEND);
+    const acc = this.compose(ops, pics);
     this.bindTarget(null);
     const p = this.program('final', FULL_VS, FINAL_FS);
     this.use(p, { uTex: [acc.tex, 0], uSize: [this.w, this.h], uBack: hexToRgb(background), uFlip: flip ? 1 : 0 });
     this.drawFull();
     this.give(acc);
+  }
+
+  /** A made picture (gradient, noise, particles, light leak) drawn into a target. */
+  private generate(src: Extract<NonNullable<Layer['source']>, { kind: 'generator' }>, out: Target) {
+    const st = src.settings;
+    const num = (k: string, d: number) => (typeof st[k] === 'number' ? (st[k] as number) : d);
+    const col = (k: string, d: string) => hexToRgb(typeof st[k] === 'string' ? (st[k] as string) : d);
+    const kinds = ['gradient', 'noise', 'particles', 'lightleak', 'bars'];
+    this.pass(
+      'generator',
+      GENERATOR_FS,
+      this.empty,
+      {
+        uGen: Math.max(0, kinds.indexOf(src.gen)),
+        uTime: src.local / Math.max(1, src.fps),
+        uC1: col('color1', '#1e3a5f'),
+        uC2: col('color2', '#d08a48'),
+        uA: num('a', 50) / 100,
+        uB: num('b', 50) / 100,
+        uC: num('c', 50) / 100,
+        uKind: num('kind', 0),
+        uScale: this.h / this.seqH,
+      },
+      out,
+    );
   }
 
   /** The finished frame, small, for the scopes (rows from the top). */
@@ -620,4 +716,37 @@ function colorPixel(color: string): ImageData {
     pixels.set(color, d);
   }
   return d;
+}
+
+/** The 3×3 map from the unit square to four corners (top-left, top-right, bottom-right, bottom-left). */
+export function squareToQuad(q: [number, number][]): number[] | null {
+  const [p0, p1, p2, p3] = q as [[number, number], [number, number], [number, number], [number, number]];
+  const dx1 = p1[0] - p2[0];
+  const dx2 = p3[0] - p2[0];
+  const dy1 = p1[1] - p2[1];
+  const dy2 = p3[1] - p2[1];
+  const sx = p0[0] - p1[0] + p2[0] - p3[0];
+  const sy = p0[1] - p1[1] + p2[1] - p3[1];
+  const den = dx1 * dy2 - dx2 * dy1;
+  if (Math.abs(den) < 1e-9) return null;
+  const g = (sx * dy2 - dx2 * sy) / den;
+  const h = (dx1 * sy - sx * dy1) / den;
+  const a = p1[0] - p0[0] + g * p1[0];
+  const b = p3[0] - p0[0] + h * p3[0];
+  const d = p1[1] - p0[1] + g * p1[1];
+  const e = p3[1] - p0[1] + h * p3[1];
+  // Column-major for the GPU: maps (u, v, 1) to (x·w, y·w, w).
+  return [a, d, g, b, e, h, p0[0], p0[1], 1];
+}
+
+export function invert3(m: number[]): number[] | null {
+  const [a, b, c, d, e, f, g, h, i] = m as [number, number, number, number, number, number, number, number, number];
+  // m is column-major: columns (a,b,c), (d,e,f), (g,h,i).
+  const A = e * i - f * h;
+  const B = -(d * i - f * g);
+  const C = d * h - e * g;
+  const det = a * A + b * B + c * C;
+  if (Math.abs(det) < 1e-12) return null;
+  const inv = [A, -(b * i - c * h), b * f - c * e, B, a * i - c * g, -(a * f - c * d), C, -(a * h - b * g), a * e - b * d];
+  return inv.map((x) => x / det);
 }

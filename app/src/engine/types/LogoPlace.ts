@@ -3,4 +3,4 @@
 /**
  * Where the event logo sits on the visuals.
  */
-export type LogoPlace = "corner" | "centre" | "bottom";
+export type LogoPlace = 'corner' | 'centre' | 'bottom';

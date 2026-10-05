@@ -25,7 +25,10 @@ describe('countdown text', () => {
 });
 
 const withCd = (extra: [Action, number][] = []) =>
-  run(emptyShow(), [[{ type: 'addSource', source: { id: 'cd', name: 'Countdown', kind: { type: 'countdown', background: '#000000', timer: defaultCountdown() } } }, 0], ...extra]);
+  run(emptyShow(), [
+    [{ type: 'addSource', source: { id: 'cd', name: 'Countdown', kind: { type: 'countdown', background: '#000000', timer: defaultCountdown() } } }, 0],
+    ...extra,
+  ]);
 const t = (s: Show, id = 'cd') => timerOf(s, id)!;
 
 describe('countdown rules (same as the engine)', () => {

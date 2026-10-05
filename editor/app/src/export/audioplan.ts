@@ -24,15 +24,21 @@ export interface Part {
 }
 
 /** Every piece of sound in [from, to), joined up where clips simply follow on. */
-export function audioParts(p: Project, s: Sequence, from: number, to: number): Part[] {
+export function audioParts(p: Project, s: Sequence, from: number, to: number, depth = 0, inside: string[] = [s.id]): Part[] {
   const fps = rate(s);
   const heard = heardTracks(s);
   const parts: (Part & { clip: Clip })[] = [];
   for (const t of s.tracks) {
     if (t.kind !== 'audio' || !heard.has(t.id)) continue;
-    const clips = s.clips.filter((c) => c.track === t.id && c.enabled && c.source.kind === 'media').sort((a, b) => a.start - b.start);
+    const clips = s.clips
+      .filter((c) => c.track === t.id && c.enabled && (c.source.kind === 'media' || c.source.kind === 'sequence'))
+      .sort((a, b) => a.start - b.start);
     for (const c of clips) {
       const src = c.source;
+      if (src.kind === 'sequence') {
+        parts.push(...nestParts(p, s, c, t, from, to, depth, inside).map((x) => ({ ...x, clip: c })));
+        continue;
+      }
       if (src.kind !== 'media') continue;
       const m = p.media.find((x) => x.id === src.media);
       if (!m?.hasAudio) continue;
@@ -83,6 +89,69 @@ export function audioParts(p: Project, s: Sequence, from: number, to: number): P
     }
   }
   return join(parts, fps);
+}
+
+/**
+ * The sound of a nested sequence, as pieces of this sequence: placed where
+ * the nest clip is, at its speed, with its volume (and the nest's own track
+ * volumes and pans) folded in.
+ */
+function nestParts(p: Project, s: Sequence, c: Clip, t: Track, from: number, to: number, depth: number, inside: string[]): Part[] {
+  const src = c.source;
+  if (src.kind !== 'sequence') return [];
+  const inner = p.sequences.find((x) => x.id === src.seq);
+  if (!inner || depth >= 4 || inside.includes(inner.id)) return [];
+  const fps = rate(s);
+  const ifps = rate(inner);
+  const w0 = Math.max(from, c.start);
+  const w1 = Math.min(to, end(c));
+  if (w1 <= w0) return [];
+  // Outer frame → inner frame, and back.
+  const toInner = (f: number) => (src.in + ((f - c.start) * c.speed) / fps) * ifps;
+  const toOuter = (g: number) => c.start + ((g / ifps - src.in) * fps) / c.speed;
+  const innerParts = audioParts(p, inner, Math.floor(toInner(w0)), Math.ceil(toInner(w1)), depth + 1, [...inside, inner.id]);
+  const lc = (f: number) => Math.max(0, Math.min(c.length - 1, f - c.start));
+  const panOuter = valueAt(c.pan, lc(w0)) / 100;
+  return innerParts.flatMap((x) => {
+    const of0 = Math.max(w0, Math.round(toOuter(x.from)));
+    const of1 = Math.min(w1, Math.round(toOuter(x.to)));
+    if (of1 <= of0) return [];
+    const skip = (toInner(of0) - x.from) / ifps; // seconds of the inner part skipped at the start
+    const innerAt = (sec: number) => interp(x.envelope, sec);
+    // The volume line: the inner one, times the nest clip's own (sampled where either changes).
+    const marks = new Set<number>([0, (of1 - of0 - 1) / fps]);
+    for (const [ts] of x.envelope) {
+      const o = (ts - skip) / c.speed;
+      if (o > 0 && o < (of1 - of0) / fps) marks.add(o);
+    }
+    for (let f = of0; f < of1; f += Math.max(1, Math.round(fps / 4))) marks.add((f - of0) / fps);
+    const env = [...marks]
+      .sort((a, b) => a - b)
+      .map((o) => [o, innerAt(skip + o * c.speed) * gainOf(p, s, c, of0 + Math.round(o * fps)) * dbToGain(x.track.volume)] as [number, number]);
+    return [
+      {
+        ...x,
+        track: t,
+        from: of0,
+        to: of1,
+        srcFrom: x.reverse ? x.srcFrom : x.srcFrom + skip * x.speed,
+        speed: x.speed * c.speed,
+        envelope: thin(env),
+        pan: Math.max(-1, Math.min(1, x.pan + x.track.pan + panOuter)),
+      },
+    ];
+  });
+}
+
+function interp(e: [number, number][], t: number): number {
+  if (e.length === 0) return 1;
+  if (t <= (e[0] as [number, number])[0]) return (e[0] as [number, number])[1];
+  for (let i = 0; i < e.length - 1; i++) {
+    const [t0, v0] = e[i] as [number, number];
+    const [t1, v1] = e[i + 1] as [number, number];
+    if (t < t1) return v0 + ((v1 - v0) * (t - t0)) / Math.max(1e-6, t1 - t0);
+  }
+  return (e[e.length - 1] as [number, number])[1];
 }
 
 /** How loud a clip is at a frame (its own volume and fades). */

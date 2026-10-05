@@ -222,6 +222,40 @@ export function addGenerated(p: Project, at: number, length: number, kind: 'colo
   return { project: placeClips(p, [clip], 'overwrite'), id: clip.id };
 }
 
+export const GENERATORS: { gen: string; name: string; settings: Record<string, number | string>; options?: string[] }[] = [
+  { gen: 'gradient', name: 'Gradient', settings: { color1: '#1e3a5f', color2: '#d08a48', a: 25, b: 50, c: 50, kind: 0 }, options: ['Straight', 'Round'] },
+  { gen: 'noise', name: 'Clouds (noise)', settings: { color1: '#0e1a2a', color2: '#4fb3bf', a: 30, b: 30, c: 50 } },
+  {
+    gen: 'particles',
+    name: 'Particles',
+    settings: { color1: '#ffffff', color2: '#ffd27a', a: 50, b: 30, c: 30, kind: 0 },
+    options: ['Snow', 'Sparks', 'Bokeh', 'Confetti', 'Dust'],
+  },
+  { gen: 'lightleak', name: 'Light leak', settings: { color1: '#ff8a3d', color2: '#ffd27a', a: 60, b: 50, c: 40 } },
+  { gen: 'bars', name: 'Color bars', settings: {} },
+];
+
+/** A made picture (gradient, noise, particles…) on the first free track above the pictures. */
+export function addGenerator(
+  p: Project,
+  at: number,
+  length: number,
+  gen: string,
+  settings: Record<string, number | string> = {},
+): { project: Project; id: string } {
+  const def = GENERATORS.find((g) => g.gen === gen);
+  const s = current(p);
+  const video = s.tracks.filter((t) => t.kind === 'video');
+  const overlay = gen === 'particles' || gen === 'lightleak';
+  const freeTrack =
+    (overlay ? video.slice(1) : video).find((t) => !t.locked && !s.clips.some((c) => c.track === t.id && c.start < at + length && c.start + c.length > at)) ??
+    video[video.length - 1];
+  if (!freeTrack) return { project: p, id: '' };
+  const clip = newClip(freeTrack.id, at, length, { kind: 'generator', gen, settings: { ...(def?.settings ?? {}), ...settings } }, def?.name ?? 'Generator');
+  if (gen === 'lightleak') clip.motion.blend = 'screen';
+  return { project: placeClips(p, [clip], 'overwrite'), id: clip.id };
+}
+
 export function addSequence(p: Project, name: string, width: number, height: number, fps: number): Project {
   const seq = newSequence(name, width, height, fps);
   return { ...p, sequences: [...p.sequences, seq], open: seq.id };

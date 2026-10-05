@@ -279,7 +279,7 @@ export class Engine {
         return img.complete && img.naturalWidth ? img : null;
       }
       if (src.kind !== 'video') return null;
-      const v = this.videos.get(layer.clip.id);
+      const v = this.videos.get(layer.key);
       return v && v.el.readyState >= 2 ? v.el : null;
     },
     cube: (path: string) => {
@@ -319,8 +319,7 @@ export class Engine {
         slot.el.src = src;
       }
       slot.used = now;
-      const clip = s.clips.find((c) => c.id === n.key);
-      const clipRate = (clip?.speed ?? 1) * (clip?.reverse ? -1 : 1);
+      const clipRate = n.rate;
       this.follow(slot.el, n.time, showing.has(n.key) && this.playing, this.speed * clipRate);
     }
     // Let go of videos no longer needed for a while.
@@ -477,12 +476,12 @@ export class Engine {
     const now = performance.now();
     const heard = this.playing && this.speed > 0 && this.speed <= 2 ? audioAt(this.p, s, frame) : [];
     for (const h of heard) {
-      let slot = this.sounds.get(h.clip.id);
+      let slot = this.sounds.get(h.key);
       const src = fileOf(h.media);
       if (!slot) {
         slot = this.spareSounds.find((x) => x.src === src) ?? this.spareSounds[0] ?? this.newSound();
         this.spareSounds = this.spareSounds.filter((x) => x !== slot);
-        this.sounds.set(h.clip.id, slot);
+        this.sounds.set(h.key, slot);
       }
       if (slot.src !== src) {
         slot.src = src;
@@ -497,7 +496,7 @@ export class Engine {
       this.follow(slot.el, h.time, true, this.speed * h.clip.speed);
     }
     for (const [k, slot] of this.sounds) {
-      if (heard.some((h) => h.clip.id === k)) continue;
+      if (heard.some((h) => h.key === k)) continue;
       if (!slot.el.paused) slot.el.pause();
       if (now - slot.used > 3000) {
         this.sounds.delete(k);

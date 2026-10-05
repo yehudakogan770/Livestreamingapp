@@ -207,6 +207,7 @@ export function Editor({
         { label: 'Speed / duration…', keys: 'Ctrl+R', run: () => ui.set({ dialog: 'speed' }) },
         { label: 'Enable / disable', keys: 'Shift+E', run: actions.toggleEnabled },
         { label: 'Link / unlink', keys: 'Ctrl+L', run: actions.link },
+        { label: 'Nest', run: actions.nest },
         'sep',
         { label: 'Video transition at the playhead', keys: 'Ctrl+D', run: () => actions.transition('video') },
         { label: 'Sound crossfade at the playhead', keys: 'Ctrl+Shift+D', run: () => actions.transition('audio') },

@@ -3,4 +3,4 @@
 /**
  * How an overlay comes in or goes out.
  */
-export type OverlayAnim = "cut" | "fade" | "slideLeft" | "slideRight" | "slideUp" | "zoom" | "wipe";
+export type OverlayAnim = 'cut' | 'fade' | 'slideLeft' | 'slideRight' | 'slideUp' | 'zoom' | 'wipe';

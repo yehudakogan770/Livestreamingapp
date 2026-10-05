@@ -655,6 +655,32 @@
 .tile__more:hover {
   background: rgba(40, 44, 52, 0.95);
 }
+/* Remove: shows when the pointer is over the input (and stays while it asks to be sure). */
+.tile__remove {
+  position: absolute;
+  right: 32px;
+  top: 4px;
+  z-index: 2;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 0;
+  background: rgba(10, 11, 13, 0.85);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  opacity: 0;
+}
+.tile:hover .tile__remove,
+.tile__remove:focus-visible,
+.tile__remove.is-armed {
+  opacity: 1;
+}
+.tile__remove:hover,
+.tile__remove.is-armed {
+  background: var(--program);
+}
 .tile--add {
   display: flex;
   flex-direction: column;

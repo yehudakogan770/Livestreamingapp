@@ -3,4 +3,4 @@
 /**
  * How it moves.
  */
-export type LogoMotion = "spin" | "swing" | "float";
+export type LogoMotion = 'spin' | 'swing' | 'float';

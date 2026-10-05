@@ -4,4 +4,4 @@
  * Play state of a video. The position is stored as "position `pos_s` at time
  * `at`", so every window can work out the current position on its own.
  */
-export type Playback = { playing: boolean, posS: number, at: number, };
+export type Playback = { playing: boolean; posS: number; at: number };

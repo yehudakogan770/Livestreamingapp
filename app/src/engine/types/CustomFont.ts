@@ -3,4 +3,4 @@
 /**
  * A font from a file (TTF, OTF, WOFF), usable by name like an installed one.
  */
-export type CustomFont = { name: string, path: string, };
+export type CustomFont = { name: string; path: string };

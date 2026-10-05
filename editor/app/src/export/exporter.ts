@@ -20,7 +20,7 @@ import type { MediaItem, Project, Sequence } from '../model/types';
 import { inApp, mediaUrl, native, onExportProgress } from '../native';
 import { parseCube, type Cube } from '../render/color';
 import { Compositor, type Pictures } from '../render/compositor';
-import { frameOps, type Layer, type Op } from '../render/frame';
+import { allLayers, frameOps, type Layer, type Op } from '../render/frame';
 import { finishJobs, type SoundFormat } from './audioplan';
 
 export interface ExportSettings {
@@ -137,13 +137,10 @@ class Sources {
   async prepare(ops: Op[], frame: number, readText: (p: string) => Promise<string>) {
     for (const f of this.frames.values()) f.close();
     this.frames.clear();
-    const layers: Layer[] = [];
-    for (const op of ops) {
-      if (op.kind === 'transition') {
-        if (op.from) layers.push(op.from);
-        if (op.to) layers.push(op.to);
-      } else layers.push(op.layer);
-      for (const e of op.kind === 'transition' ? [...(op.from?.effects ?? []), ...(op.to?.effects ?? [])] : op.layer.effects) {
+    // Every layer, including the ones inside nested sequences.
+    const layers: Layer[] = allLayers(ops);
+    for (const l of layers) {
+      for (const e of l.effects) {
         const path = e.type === 'lut' && typeof e.d.path === 'string' ? e.d.path : '';
         if (path && !this.cubes.has(path))
           this.cubes.set(
@@ -163,14 +160,14 @@ class Sources {
       if (src?.kind !== 'video') continue;
       const sink = await this.sink(src.media);
       if (!sink) continue;
-      let r = this.readers.get(l.clip.id);
+      let r = this.readers.get(l.key);
       if (!r) {
         r = new Reader(sink, src.time);
-        this.readers.set(l.clip.id, r);
+        this.readers.set(l.key, r);
       }
       r.used = frame;
       const sample = await r.at(src.time);
-      if (sample) this.frames.set(l.clip.id, sample.toVideoFrame());
+      if (sample) this.frames.set(l.key, sample.toVideoFrame());
     }
     // Clips that are over.
     for (const [k, r] of this.readers) {
@@ -185,7 +182,7 @@ class Sources {
     picture: (layer: Layer) => {
       const src = layer.source;
       if (src?.kind === 'image') return this.images.get(src.media.id) ?? null;
-      return this.frames.get(layer.clip.id) ?? null;
+      return this.frames.get(layer.key) ?? null;
     },
     cube: (path: string) => this.cubes.get(path) ?? null,
   };

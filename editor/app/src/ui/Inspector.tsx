@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { timecode } from '../model/build';
+import { GENERATORS, timecode } from '../model/build';
+import { valueAt } from '../model/anim';
 import { setAngle, setTransition, updateMarker, removeMarker, withLinked } from '../model/edit';
 import { effectDef, TRANSITIONS, type ParamDef } from '../model/effects';
 import { current, end, mediaOf, rate } from '../model/seq';
@@ -216,6 +217,22 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
           }
         />
       )}
+      {main.source.kind === 'sequence' && (
+        <Section title="Nested sequence">
+          <p className="insp__note">This clip shows another sequence. Change what is inside by opening it.</p>
+          <button
+            type="button"
+            className="btn btn--sm"
+            onClick={() => {
+              const src = main.source;
+              if (src.kind === 'sequence') doc.quiet((p) => ({ ...p, open: src.seq }));
+            }}
+          >
+            Open the nested sequence
+          </button>
+        </Section>
+      )}
+      {main.source.kind === 'generator' && <GeneratorEditor clip={main} upd={upd} />}
       {main.source.kind === 'color' && (
         <Section title="Color">
           <ColorField
@@ -453,6 +470,12 @@ function MotionSection({
           label="Size to the frame"
         />
       </div>
+      <Section title="3D" open={valueAt(m.rotX, 0) !== 0 || valueAt(m.rotY, 0) !== 0 || valueAt(m.z, 0) !== 0}>
+        {row('rotX', 'Tilt ↕', 0, -180, 180, 0.5, '°')}
+        {row('rotY', 'Turn ↔', 0, -180, 180, 0.5, '°')}
+        {row('z', 'Depth', 0, -2000, 8000, 1, 'px')}
+        <p className="insp__note">Tilt and turn the picture in space; Depth moves it nearer or farther.</p>
+      </Section>
       <Section title="Crop" open={false}>
         {row('cropL', 'Left', 0, 0, 100, 0.5, '%')}
         {row('cropR', 'Right', 0, 0, 100, 0.5, '%')}
@@ -752,6 +775,55 @@ function TextEditor({ data, onChange }: { data: TextData; onChange: (t: TextData
           </button>
         ))}
       </div>
+    </Section>
+  );
+}
+
+function GeneratorEditor({ clip, upd }: { clip: Clip; upd: (c: Clip, label: string, f: (c: Clip) => Clip, final?: boolean, key?: string) => void }) {
+  const src = clip.source;
+  if (src.kind !== 'generator') return null;
+  const def = GENERATORS.find((g) => g.gen === src.gen);
+  const st = src.settings;
+  const set = (k: string, v: number | string, final = true) =>
+    upd(
+      clip,
+      def?.name ?? 'Generator',
+      (c) => (c.source.kind === 'generator' ? { ...c, source: { ...c.source, settings: { ...c.source.settings, [k]: v } } } : c),
+      final,
+      `gen-${clip.id}`,
+    );
+  const num = (k: string, d = 50) => (typeof st[k] === 'number' ? (st[k] as number) : d);
+  const labels: Record<string, [string, string, string]> = {
+    gradient: ['Direction', 'Middle', 'Softness'],
+    noise: ['Size', 'Speed', 'Contrast'],
+    particles: ['How many', 'Size', 'Speed'],
+    lightleak: ['Strength', 'Size', 'Speed'],
+  };
+  const names = labels[src.gen];
+  return (
+    <Section title={def?.name ?? 'Generator'}>
+      {def?.options && (
+        <div className="insp__row">
+          <Choice value={num('kind', 0)} options={def.options.map((o, i) => [i, o] as [number, string])} onChange={(v) => set('kind', v)} label="Kind" />
+        </div>
+      )}
+      {src.gen !== 'bars' && (
+        <div className="insp__row">
+          <span className="field__label">Colors</span>
+          <ColorField value={typeof st.color1 === 'string' ? st.color1 : '#000000'} label="First color" onChange={(v) => set('color1', v, false)} />
+          <ColorField value={typeof st.color2 === 'string' ? st.color2 : '#ffffff'} label="Second color" onChange={(v) => set('color2', v, false)} />
+        </div>
+      )}
+      {names &&
+        (['a', 'b', 'c'] as const).map((k, i) => (
+          <div key={k} className="insp__row">
+            <span className="field__label" style={{ minWidth: 90 }}>
+              {names[i]}
+            </span>
+            <input type="range" min={0} max={100} value={num(k)} aria-label={names[i]} onChange={(e) => set(k, Number(e.target.value), false)} />
+            <Scrub value={num(k)} min={0} max={100} step={1} label={names[i]} onChange={(v, final) => set(k, v, final)} />
+          </div>
+        ))}
     </Section>
   );
 }

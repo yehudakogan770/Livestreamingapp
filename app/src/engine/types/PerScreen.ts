@@ -3,4 +3,4 @@
 /**
  * Per-screen map with exactly one entry for each screen.
  */
-export type PerScreen<T> = { live: T, back: T, monitor: T, };
+export type PerScreen<T> = { live: T; back: T; monitor: T };

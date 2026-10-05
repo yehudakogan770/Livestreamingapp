@@ -2,6 +2,8 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { valueAt } from '../model/anim';
 import { duration, parseTimecode, timecode } from '../model/build';
 import {
+  addSequenceClip,
+  contains,
   moveClips,
   nearest,
   removeTrack,
@@ -54,6 +56,8 @@ export function clipColor(p: Project, c: Clip): string {
   if (src.kind === 'text') return '#7a5bb0';
   if (src.kind === 'color') return '#5d636e';
   if (src.kind === 'adjustment') return '#8c6d3f';
+  if (src.kind === 'sequence') return '#6b7a3a';
+  if (src.kind === 'generator') return '#3a6b6b';
   return '#3d6fa8';
 }
 
@@ -285,11 +289,16 @@ export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engin
   // ---- dropping media, effects and transitions ----
   const onDragOver = (e: React.DragEvent) => {
     const types = e.dataTransfer.types;
-    if (!types.includes('application/x-lumora-media') && !types.includes('application/x-lumora-effect') && !types.includes('application/x-lumora-transition'))
+    if (
+      !types.includes('application/x-lumora-media') &&
+      !types.includes('application/x-lumora-seq') &&
+      !types.includes('application/x-lumora-effect') &&
+      !types.includes('application/x-lumora-transition')
+    )
       return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
-    if (types.includes('application/x-lumora-media')) {
+    if (types.includes('application/x-lumora-media') || types.includes('application/x-lumora-seq')) {
       const p = contentXY(e);
       let f = toFrame(p.x);
       if (u.snapping) f = nearest(pointsFor(new Set()), f, snapWithin) ?? f;
@@ -302,6 +311,21 @@ export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engin
     const p = contentXY(e);
     const row = rowAt(p.y);
     const mediaId = e.dataTransfer.getData('application/x-lumora-media');
+    const seqId = e.dataTransfer.getData('application/x-lumora-seq');
+    if (seqId) {
+      e.preventDefault();
+      let f = toFrame(p.x);
+      if (u.snapping) f = nearest(pointsFor(new Set()), f, snapWithin) ?? f;
+      const t = row?.track;
+      const vTrack = t?.kind === 'video' ? t : (video.find((x) => !x.locked) ?? video[0]);
+      const aTrack = t?.kind === 'audio' ? t : audio[0];
+      if (seqId === s.id || contains(project, seqId, s.id)) {
+        ui.note('A sequence can’t go inside itself');
+        return;
+      }
+      doc.edit((q) => addSequenceClip(q, seqId, f, e.ctrlKey ? 'insert' : 'overwrite', vTrack?.id, aTrack?.id), 'Add sequence');
+      return;
+    }
     if (mediaId) {
       e.preventDefault();
       let f = toFrame(p.x);
@@ -394,6 +418,9 @@ export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engin
         ],
       },
       { label: 'Remove effects', disabled: c.effects.length === 0, run: () => actions.update([...sel], 'Remove effects', (x) => ({ ...x, effects: [] })) },
+      'sep',
+      { label: 'Nest (put in a sequence of its own)', run: actions.nest },
+      ...(c.source.kind === 'sequence' ? [{ label: 'Open the nested sequence', run: () => openNest(c) }] : []),
       ...(c.source.kind === 'media'
         ? [
             'sep' as const,
@@ -412,6 +439,14 @@ export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engin
         : []),
     ];
     setMenu({ x: e.clientX, y: e.clientY, items });
+  };
+
+  const openNest = (c: Clip) => {
+    if (c.source.kind !== 'sequence') return;
+    const id = c.source.seq;
+    engine.pause();
+    doc.quiet((q) => ({ ...q, open: id }));
+    doc.select(null);
   };
 
   const backMenu = (e: React.MouseEvent) => {
@@ -595,6 +630,7 @@ export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engin
                   peaks={r.track.kind === 'audio' ? peaksOf((mediaOf(project, c)?.proxy ?? mediaOf(project, c)?.path) || '') : null}
                   onDown={onClipDown}
                   onMenu={clipMenu}
+                  onOpen={openNest}
                   onGain={(db, final) => actions.update([c.id], 'Clip volume', (x) => ({ ...x, gain: db }), final ? undefined : `gain-${c.id}`)}
                   onTransition={(side) => doc.select({ kind: 'transition', clip: c.id, side })}
                   transitionSelected={selection?.kind === 'transition' && selection.clip === c.id ? selection.side : null}
@@ -835,6 +871,7 @@ const ClipBox = memo(function ClipBox({
   peaks,
   onDown,
   onMenu,
+  onOpen,
   onGain,
   onTransition,
   transitionSelected,
@@ -853,6 +890,7 @@ const ClipBox = memo(function ClipBox({
   peaks: Uint8Array | null;
   onDown: (e: React.PointerEvent, c: Clip) => void;
   onMenu: (e: React.MouseEvent, c: Clip) => void;
+  onOpen: (c: Clip) => void;
   onGain: (db: number, final: boolean) => void;
   onTransition: (side: 'in' | 'out') => void;
   transitionSelected: 'in' | 'out' | null;
@@ -880,6 +918,7 @@ const ClipBox = memo(function ClipBox({
       style={{ left: x, top: y + 2, width: w, height: h - 4, ['--clip' as string]: color }}
       onPointerDown={(e) => onDown(e, c)}
       onContextMenu={(e) => onMenu(e, c)}
+      onDoubleClick={() => onOpen(c)}
       onPointerMove={(e) => {
         if (tool !== 'select' && tool !== 'ripple' && tool !== 'roll') return;
         const local = e.nativeEvent.offsetX;

@@ -89,6 +89,11 @@ export interface Motion {
   scaleX: Param;
   /** Degrees. */
   rotation: Param;
+  /** Tilt toward or away (degrees, around the across and up-down lines): 3D. */
+  rotX?: Param;
+  rotY?: Param;
+  /** Nearer (negative) or farther (positive), in pixels: 3D. */
+  z?: Param;
   /** Percent of the picture taken off each side. */
   cropL: Param;
   cropR: Param;
@@ -152,7 +157,19 @@ export type ClipSource =
   | { kind: 'multicam'; group: string; angle: string; in: number }
   | { kind: 'text'; text: TextData }
   | { kind: 'color'; color: string }
-  | { kind: 'adjustment' };
+  | { kind: 'adjustment' }
+  /** A whole sequence used as one clip (a nest). `in` is seconds into it. */
+  | { kind: 'sequence'; seq: string; in: number }
+  /** A picture made here: a gradient, noise, particles… */
+  | { kind: 'generator'; gen: string; settings: Record<string, number | string> };
+
+/** A spot followed through a clip: where it is at each frame (pixels from the middle of the frame). */
+export interface TrackPath {
+  id: string;
+  name: string;
+  /** [frame of the clip, x, y] */
+  points: [number, number, number][];
+}
 
 export interface Clip {
   id: string;
@@ -178,6 +195,8 @@ export interface Clip {
   tIn: Transition | null;
   /** Out of this clip when nothing follows it (to black or silence). */
   tOut: Transition | null;
+  /** Spots followed through the clip (motion tracking). */
+  paths?: TrackPath[];
 }
 
 export interface Marker {
@@ -242,6 +261,9 @@ export const NO_MOTION: Motion = {
   scale: 100,
   scaleX: 100,
   rotation: 0,
+  rotX: 0,
+  rotY: 0,
+  z: 0,
   cropL: 0,
   cropR: 0,
   cropT: 0,

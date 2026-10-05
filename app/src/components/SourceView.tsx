@@ -34,7 +34,7 @@ import { Logo3dView } from './Logo3dView';
 import { BrowserView, StreamView } from './BrowserView';
 import type { Logo3d } from '../engine/types/Logo3d';
 import { defaultVisuals } from '../engine/visuals';
-import { acquireCamera, fullResolution, releaseCamera, setCameraValues, type CameraValues } from '../engine/cameras';
+import { acquireCamera, cameraProblem, fullResolution, rememberCameraName, releaseCamera, setCameraValues, type CameraValues } from '../engine/cameras';
 import { FrameDelay } from '../engine/frameDelay';
 
 // ---- views ----
@@ -142,7 +142,9 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
     case 'image':
       return <ImageView url={client.mediaUrl(k.path)} fit={fit} audience={audience} />;
     case 'camera':
-      return <CameraView deviceId={k.deviceId} fit={fit} audience={audience} delayMs={source.videoDelayMs ?? 0} values={source.camera?.values} />;
+      return (
+        <CameraView deviceId={k.deviceId} label={k.label} fit={fit} audience={audience} delayMs={source.videoDelayMs ?? 0} values={source.camera?.values} />
+      );
     case 'text':
       return <DataText t={k} />;
     case 'credits':
@@ -492,24 +494,34 @@ function ImageView({ url, fit, audience }: { url: string; fit: 'cover' | 'contai
 
 function CameraView({
   deviceId,
+  label,
   fit,
   audience,
   delayMs = 0,
   values,
 }: {
   deviceId: string;
+  label?: string;
   fit: 'cover' | 'contain';
   audience: boolean;
   delayMs?: number;
   values?: CameraValues;
 }) {
+  if (label) rememberCameraName(deviceId, label);
   const ref = useRef<HTMLVideoElement>(null);
   // The camera's own settings (zoom, focus…), kept with the event.
   useEffect(() => {
     if (values) setCameraValues(deviceId, values);
   }, [deviceId, values]);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  // A camera that failed is tried again every few seconds (it may be free again, or plugged back in).
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    if (!failed) return;
+    const id = setTimeout(() => setAttempt((n) => n + 1), 3000);
+    return () => clearTimeout(id);
+  }, [failed, attempt]);
   const delayed = delayMs > 0;
   // Held back: the camera plays hidden and its frames from `delayMs` ago are drawn.
   useEffect(() => {
@@ -537,7 +549,7 @@ function CameraView({
   useEffect(() => {
     let alive = true;
     if (!navigator.mediaDevices?.getUserMedia) {
-      setFailed(true);
+      setFailed('Camera not found or unplugged');
       return;
     }
     acquireCamera(deviceId).then(
@@ -545,19 +557,24 @@ function CameraView({
         if (!alive || !ref.current) return;
         // Unplugged during the show: the track ends and the screen goes black.
         const tracks = stream.getVideoTracks();
-        if (tracks.length === 0 || tracks.every((t) => t.readyState === 'ended')) return setFailed(true);
-        tracks.forEach((t) => t.addEventListener('ended', () => alive && setFailed(true)));
+        if (tracks.length === 0 || tracks.every((t) => t.readyState === 'ended')) return setFailed('Camera not found or unplugged');
+        tracks.forEach((t) =>
+          t.addEventListener('ended', () => {
+            if (alive) setFailed('Camera not found or unplugged');
+          }),
+        );
+        setFailed(null);
         ref.current.srcObject = stream;
         void ref.current.play().catch(() => {});
       },
-      () => alive && setFailed(true),
+      () => alive && setFailed(cameraProblem(deviceId) ?? 'Camera not found or unplugged'),
     );
     return () => {
       alive = false;
       releaseCamera(deviceId);
     };
-  }, [deviceId]);
-  if (failed) return <Missing text="Camera not found or unplugged" audience={audience} />;
+  }, [deviceId, attempt]);
+  if (failed) return <Missing text={failed} audience={audience} />;
   // One video element either way, so turning the delay on or off keeps the camera.
   return (
     <>

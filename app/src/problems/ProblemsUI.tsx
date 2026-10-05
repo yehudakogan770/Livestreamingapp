@@ -67,7 +67,10 @@ export function ProblemToasts() {
     <div className="ptoasts" role="alert">
       {shown.map((p) => (
         <div key={p.key + p.since} className={`ptoast ptoast--${p.level}`}>
-          <strong>{p.level === 'error' ? '⚠ ' : ''}{p.title}</strong>
+          <strong>
+            {p.level === 'error' ? '⚠ ' : ''}
+            {p.title}
+          </strong>
           {p.detail && <span>{p.detail}</span>}
         </div>
       ))}

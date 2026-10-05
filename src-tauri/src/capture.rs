@@ -216,6 +216,8 @@ pub struct Failure {
     pub kind: Kind,
     pub session: u64,
     pub message: String,
+    /// It never got going (the server was never reached): not worth retrying by itself.
+    pub never_started: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -276,6 +278,10 @@ impl Shared {
 
     /// A session stopped by itself.
     fn fail(&self, kind: Kind, session: u64, message: String) {
+        self.fail_how(kind, session, message, false);
+    }
+
+    fn fail_how(&self, kind: Kind, session: u64, message: String, never_started: bool) {
         eprintln!("lumora: {kind:?} {session} stopped: {message}");
         self.update(|s| {
             let slot = Shared::slot(s, kind);
@@ -285,6 +291,7 @@ impl Shared {
                     kind,
                     session,
                     message,
+                    never_started,
                 });
             }
         });
@@ -566,6 +573,9 @@ impl Capture {
                     .to_owned(),
             );
         }
+        if !rehearse {
+            preflight(&dests)?;
+        }
         let targets: Vec<String> = if rehearse {
             Vec::new()
         } else {
@@ -606,12 +616,12 @@ impl Capture {
             let errors = Arc::clone(&errors);
             let stopping = Arc::clone(stopping);
             thread::spawn(move || {
-                read_progress(out, &shared, session);
+                let sent = read_progress(out, &shared, session);
                 // FFmpeg has ended. Unless the operator stopped it, say why.
                 thread::sleep(Duration::from_millis(200));
                 if !stopping.load(Ordering::SeqCst) {
                     let said = lock(&errors).clone();
-                    shared.fail(kind, session, explain_stream_error(&said));
+                    shared.fail_how(kind, session, explain_stream_error(&said), !sent);
                 }
             });
         }
@@ -1048,9 +1058,15 @@ fn tee_escape(s: &str) -> String {
     out
 }
 
-/// FFmpeg's progress report: keep the speed up to date.
-fn read_progress(out: impl Read, shared: &Shared, session: u64) {
+/// FFmpeg's progress report: keep the speed up to date. Says whether anything was sent.
+fn read_progress(out: impl Read, shared: &Shared, session: u64) -> bool {
+    let mut sent = false;
     for line in BufReader::new(out).lines().map_while(Result::ok) {
+        if let Some(v) = line.strip_prefix("total_size=") {
+            if v.trim().parse::<u64>().is_ok_and(|n| n > 0) {
+                sent = true;
+            }
+        }
         if let Some(v) = line.strip_prefix("speed=") {
             let speed = v.trim().trim_end_matches('x').parse::<f32>().ok();
             shared.update(|s| {
@@ -1060,6 +1076,85 @@ fn read_progress(out: impl Read, shared: &Shared, session: u64) {
             });
         }
     }
+    sent
+}
+
+/// Where a stream address points: host and port (RTMP 1935, RTMPS 443).
+fn host_port(url: &str) -> Option<(String, u16)> {
+    let (scheme, rest) = url.split_once("://")?;
+    let default = match scheme.to_ascii_lowercase().as_str() {
+        "rtmp" => 1935,
+        "rtmps" | "https" => 443,
+        "http" => 80,
+        "srt" | "udp" | "rtp" => return None,
+        _ => return None,
+    };
+    let authority = rest.split('/').next()?.rsplit('@').next()?;
+    if authority.is_empty() {
+        return None;
+    }
+    match authority.rsplit_once(':') {
+        Some((h, p)) if !h.contains(']') || h.ends_with(']') => {
+            Some((h.trim_matches(['[', ']']).to_owned(), p.parse().ok()?))
+        }
+        _ => Some((authority.trim_matches(['[', ']']).to_owned(), default)),
+    }
+}
+
+/// Before going live: every destination has a key and its server answers,
+/// so a problem is said in seconds, not after a long wait.
+fn preflight(dests: &[&Destination]) -> Result<(), String> {
+    for d in dests {
+        let url = d.url.trim().trim_end_matches('/');
+        // YouTube, Facebook and most services need a stream key after the server address.
+        let path = url
+            .split_once("://")
+            .map_or("", |(_, r)| r)
+            .split_once('/')
+            .map_or("", |(_, p)| p);
+        if d.key.trim().is_empty()
+            && path.matches('/').count() < 1
+            && (url.contains("youtube")
+                || url.contains("facebook")
+                || url.contains("twitch")
+                || url.contains("vimeo"))
+        {
+            return Err(format!(
+                "{} has no stream key. Paste it in Settings → Recording and streaming.",
+                d.name
+            ));
+        }
+    }
+    let checks: Vec<_> = dests
+        .iter()
+        .filter_map(|d| host_port(&d.url).map(|hp| (d.name.clone(), hp)))
+        .map(|(name, (host, port))| {
+            thread::spawn(move || {
+                use std::net::{TcpStream, ToSocketAddrs};
+                let addrs: Vec<_> = match (host.as_str(), port).to_socket_addrs() {
+                    Ok(a) => a.collect(),
+                    Err(_) => return Err(format!("{name}: the server address “{host}” could not be found (is the internet connected?)")),
+                };
+                for a in &addrs {
+                    if TcpStream::connect_timeout(a, Duration::from_secs(4)).is_ok() {
+                        return Ok(());
+                    }
+                }
+                Err(format!("{name}: the server ({host}) did not answer. Check the internet connection, or a firewall that blocks streaming."))
+            })
+        })
+        .collect();
+    let problems: Vec<String> = checks
+        .into_iter()
+        .filter_map(|h| h.join().unwrap_or(Ok(())).err())
+        .collect();
+    // Going live only stops here when no destination can be reached.
+    if !problems.is_empty()
+        && problems.len() == dests.iter().filter(|d| host_port(&d.url).is_some()).count()
+    {
+        return Err(problems.join(" "));
+    }
+    Ok(())
 }
 
 fn explain_stream_error(ffmpeg_said: &str) -> String {
@@ -1490,19 +1585,62 @@ mod tests {
 
     #[test]
     fn a_stream_that_cannot_connect_says_why() {
-        let Some(ffmpeg) = find_ffmpeg() else {
-            eprintln!("FFmpeg not installed: skipped");
-            return;
-        };
+        // Nothing listens there: said straight away, before FFmpeg starts.
         let d = temp_dir("fail");
-        let Some(video) = sample(&ffmpeg, &d) else {
-            return;
-        };
-        let (c, _) = capture(&d, Some(ffmpeg));
+        let (c, _) = capture(&d, Some(PathBuf::from("ffmpeg")));
         c.set_settings(CaptureSettings {
             destinations: vec![Destination {
                 name: "Bad".into(),
                 url: "rtmp://127.0.0.1:9/live".into(),
+                ..Destination::default()
+            }],
+            ..CaptureSettings::default()
+        });
+        let started = Instant::now();
+        let e = c
+            .start(Kind::Stream, "video/x-matroska;codecs=avc1,opus", "")
+            .unwrap_err();
+        assert!(e.contains("did not answer"), "{e}");
+        assert!(started.elapsed() < Duration::from_secs(6));
+        // A known service without a key is caught too.
+        c.set_settings(CaptureSettings {
+            destinations: vec![Destination {
+                name: "YouTube".into(),
+                url: "rtmp://a.rtmp.youtube.com/live2".into(),
+                ..Destination::default()
+            }],
+            ..CaptureSettings::default()
+        });
+        let e = c
+            .start(Kind::Stream, "video/x-matroska;codecs=avc1,opus", "")
+            .unwrap_err();
+        assert!(e.contains("no stream key"), "{e}");
+    }
+
+    #[test]
+    fn a_server_that_answers_but_refuses_the_stream_says_why() {
+        let Some(ffmpeg) = find_ffmpeg() else {
+            eprintln!("FFmpeg not installed: skipped");
+            return;
+        };
+        let d = temp_dir("refuse");
+        let Some(video) = sample(&ffmpeg, &d) else {
+            return;
+        };
+        // Answers, then hangs up (like a server that doesn't take the stream).
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        thread::spawn(move || {
+            for s in listener.incoming().flatten() {
+                drop(s);
+            }
+        });
+        let (c, _) = capture(&d, Some(ffmpeg));
+        c.set_settings(CaptureSettings {
+            destinations: vec![Destination {
+                name: "Hangs up".into(),
+                url: format!("rtmp://127.0.0.1:{port}/live"),
+                key: "k".into(),
                 ..Destination::default()
             }],
             ..CaptureSettings::default()
@@ -1522,7 +1660,26 @@ mod tests {
         );
         let f = c.status().failure.unwrap();
         assert_eq!(f.kind, Kind::Stream);
+        assert!(f.never_started, "nothing was ever sent");
         assert!(c.status().streaming.is_none());
         eprintln!("failure message: {}", f.message);
+    }
+
+    #[test]
+    fn stream_addresses_point_somewhere() {
+        assert_eq!(
+            host_port("rtmp://a.rtmp.youtube.com/live2"),
+            Some(("a.rtmp.youtube.com".into(), 1935))
+        );
+        assert_eq!(
+            host_port("rtmps://live-api-s.facebook.com:443/rtmp/"),
+            Some(("live-api-s.facebook.com".into(), 443))
+        );
+        assert_eq!(
+            host_port("rtmp://user:pw@host:1940/app"),
+            Some(("host".into(), 1940))
+        );
+        assert_eq!(host_port("srt://host:9000"), None);
+        assert_eq!(host_port("C:/videos/a.flv"), None);
     }
 }

@@ -1,6 +1,6 @@
 // Every command in Lumora Edit, in one place: the menus, the buttons and the
 // keyboard all use these.
-import { addGenerated, addMedia, addText, STILL_SECONDS } from '../model/build';
+import { addGenerated, addGenerator, addMedia, addText, STILL_SECONDS } from '../model/build';
 import {
   addMarker,
   addTrack,
@@ -13,6 +13,7 @@ import {
   liftRange,
   link,
   moveClips,
+  nest,
   paste,
   pasteAttributes,
   razor,
@@ -345,6 +346,27 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
       if (id) doc.select({ kind: 'clips', ids: [id] });
     },
     addTrack: (kind: 'video' | 'audio') => edit('Add track', (p) => addTrack(p, kind)),
+    /** Put the selected clips in a sequence of their own. */
+    nest: () => {
+      const ids = selected();
+      if (!ids.length) return ui.note('Select the clips to nest first');
+      let made = '';
+      edit('Nest', (p) => {
+        const r = nest(p, selectWithLinks(ids));
+        made = r.seq;
+        return r.project;
+      });
+      if (made) ui.note('Nested. Double-click the new clip to open what is inside');
+    },
+    addGenerator: (gen: string, settings: Record<string, number | string> = {}) => {
+      let id = '';
+      edit('Add generator', (p) => {
+        const r = addGenerator(p, here(), Math.round(fps() * 5), gen, settings);
+        id = r.id;
+        return r.project;
+      });
+      if (id) doc.select({ kind: 'clips', ids: [id] });
+    },
 
     // ---- tools and view ----
     tool: (t: Tool) => ui.set({ tool: t }),

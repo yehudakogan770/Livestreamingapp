@@ -91,6 +91,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     attempt: number;
     message: string;
   } | null>(null);
+  // The stream has really gone out at least once since GO LIVE was pressed.
+  const everLive = useRef(false);
   const [startError, setStartError] = useState<{
     kind: CaptureKind;
     message: string;
@@ -140,6 +142,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   const start = useCallback(
     async (kind: CaptureKind) => {
       wanted.current[kind] = true;
+      if (kind === 'stream') everLive.current = false;
       setBusy((b) => ({ ...b, [kind]: true }));
       setStartError(null);
       try {
@@ -207,6 +210,13 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     const kind = failure.kind;
     broadcaster.abandon(kind, session);
     if (!wanted.current[kind]) return;
+    // It never got going (first try): say so plainly instead of retrying in the background.
+    if (kind === 'stream' && failure.neverStarted && !everLive.current) {
+      wanted.current.stream = false;
+      void broadcaster.stop('stream');
+      setStartError({ kind, message: failure.message });
+      return;
+    }
     const n = attempts.current[kind]++;
     // A recording is restarted once (into a new file); a stream keeps trying.
     if (kind === 'record' && n >= 1) {
@@ -224,6 +234,9 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     return () => clearTimeout(id);
   }, [failure, broadcaster, launch]);
   // Running again: forget the failed attempts.
+  useEffect(() => {
+    if (status.streaming?.speed != null) everLive.current = true;
+  }, [status.streaming?.speed]);
   useEffect(() => {
     if (status.streaming) {
       attempts.current.stream = 0;

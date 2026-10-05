@@ -5,12 +5,13 @@
  * their camera and microphone through VDO.Ninja (free, in the browser, no
  * account); Lumora shows them like a web page input, sound included.
  */
-export type Guest = { 
-/**
- * The private room name in both links (letters and digits only).
- */
-room: string, 
-/**
- * Bumped to reload the guest's picture now.
- */
-reload: number, };
+export type Guest = {
+  /**
+   * The private room name in both links (letters and digits only).
+   */
+  room: string;
+  /**
+   * Bumped to reload the guest's picture now.
+   */
+  reload: number;
+};

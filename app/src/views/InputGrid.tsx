@@ -89,6 +89,8 @@ export function InputGrid({
   const sc = show.screens[screen];
   const problemIds = new Set(useProblems().flatMap((p) => (p.sourceId ? [p.sourceId] : [])));
   const [menu, setMenu] = useState<string | null>(null);
+  // An input waiting for a second click to be removed.
+  const [removing, setRemoving] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const editingText = show.sources.find((x) => x.id === editing && x.kind.type === 'text');
   const editingSplit = show.sources.find((x) => x.id === editing && x.kind.type === 'split');
@@ -140,6 +142,16 @@ export function InputGrid({
               title={soundOnly ? 'Sound only: use the mixer' : 'Click: line up next · Double-click: straight to air'}
               onClick={() => act({ type: 'setPreview', screen, sourceId: src.id })}
               onDoubleClick={() => act({ type: 'cutTo', screen, sourceId: src.id })}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setMenu(src.id);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Delete') {
+                  e.preventDefault();
+                  setRemoving(src.id);
+                }
+              }}
             >
               <span className="tile__thumb">
                 {soundFile ? (
@@ -176,6 +188,21 @@ export function InputGrid({
                 {playing ? '❚❚' : '▶'}
               </button>
             )}
+            <button
+              type="button"
+              className={`tile__remove${removing === src.id ? ' is-armed' : ''}`}
+              aria-label={removing === src.id ? `Click again to remove ${src.name}` : `Remove ${src.name}`}
+              title={removing === src.id ? 'Click again to remove' : 'Remove this input'}
+              onClick={() => {
+                if (removing === src.id) {
+                  setRemoving(null);
+                  act({ type: 'removeSource', id: src.id });
+                } else setRemoving(src.id);
+              }}
+              onBlur={() => setRemoving((r) => (r === src.id ? null : r))}
+            >
+              {removing === src.id ? 'Remove?' : '✕'}
+            </button>
             <button type="button" className="tile__more" aria-label={`Options for ${src.name}`} onClick={() => setMenu(menu === src.id ? null : src.id)}>
               ⋯
             </button>

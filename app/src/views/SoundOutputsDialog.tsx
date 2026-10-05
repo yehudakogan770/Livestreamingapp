@@ -53,7 +53,9 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
       >
         <option value="">{emptyName}</option>
         {devices.map((d, i) => (
-          <option key={d.deviceId} value={d.deviceId}>{d.label || `Sound device ${i + 1}`}</option>
+          <option key={d.deviceId} value={d.deviceId}>
+            {d.label || `Sound device ${i + 1}`}
+          </option>
         ))}
       </select>
     </div>
@@ -64,7 +66,9 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
       <div className="modal__box outputs">
         <header className="modal__head">
           <h2>Speakers and mixes</h2>
-          <button type="button" className="icon" aria-label="Close without saving" onClick={close}>✕</button>
+          <button type="button" className="icon" aria-label="Close without saving" onClick={close}>
+            ✕
+          </button>
         </header>
         <p className="outputs__intro">
           Each mix can play on its own speakers or sound device. The Stream mix is what the live stream and recording hear by default.
@@ -72,15 +76,27 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
         </p>
         <div className="outputs__rows">
           {row('master', <strong>Stream</strong>, 'The main mix', "Computer's default speakers")}
-          {row('a', <input className="text" value={nameA} maxLength={24} onChange={(e) => setNameA(e.target.value)} aria-label="Name of mix A" />, 'e.g. the hall speakers', 'Not played')}
-          {row('b', <input className="text" value={nameB} maxLength={24} onChange={(e) => setNameB(e.target.value)} aria-label="Name of mix B" />, 'e.g. a separate recording mix', 'Not played')}
+          {row(
+            'a',
+            <input className="text" value={nameA} maxLength={24} onChange={(e) => setNameA(e.target.value)} aria-label="Name of mix A" />,
+            'e.g. the hall speakers',
+            'Not played',
+          )}
+          {row(
+            'b',
+            <input className="text" value={nameB} maxLength={24} onChange={(e) => setNameB(e.target.value)} aria-label="Name of mix B" />,
+            'e.g. a separate recording mix',
+            'Not played',
+          )}
           {row('headphones', <strong>Headphones</strong>, 'Hears the Stream mix, or the input you solo (S)', 'Not played')}
         </div>
         <footer className="modal__foot">
           <button type="button" className="btn" onClick={close}>
             Cancel
           </button>
-          <button type="button" className="btn btn--primary" onClick={done}>Done</button>
+          <button type="button" className="btn btn--primary" onClick={done}>
+            Done
+          </button>
         </footer>
       </div>
     </div>

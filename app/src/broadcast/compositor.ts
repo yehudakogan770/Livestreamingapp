@@ -71,6 +71,8 @@ interface Media {
   key: string;
   el: HTMLVideoElement | HTMLImageElement;
   failed: boolean;
+  /** When a failed camera is tried again. */
+  retryAt?: number;
   release?: () => void;
 }
 
@@ -2933,8 +2935,18 @@ export class ProgramCompositor {
   /** Open what is on air or next, and let go of the rest. */
   private keep(show: Show, ids: (string | null)[]) {
     const wanted = new Set(ids.filter((x): x is string => x !== null));
+    const now = performance.now();
     for (const [id, m] of this.media) {
       const src = show.sources.find((s) => s.id === id);
+      // A camera that failed is opened again every few seconds (it may be free again).
+      if (m.failed && src?.kind.type === 'camera') {
+        m.retryAt ??= now + 3000;
+        if (now >= m.retryAt) {
+          this.drop(m);
+          this.media.delete(id);
+          continue;
+        }
+      }
       if (!wanted.has(id) || !src || mediaKey(src) !== m.key) {
         this.drop(m);
         this.media.delete(id);
@@ -2981,7 +2993,11 @@ export class ProgramCompositor {
       acquireCamera(k.deviceId).then(
         (stream) => {
           const tracks = stream.getVideoTracks();
-          tracks.forEach((t) => t.addEventListener('ended', () => (m.failed = true)));
+          tracks.forEach((t) =>
+            t.addEventListener('ended', () => {
+              m.failed = true;
+            }),
+          );
           el.srcObject = stream;
           void el.play().catch(() => {});
         },

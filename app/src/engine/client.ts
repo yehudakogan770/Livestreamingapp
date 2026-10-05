@@ -170,7 +170,7 @@ export interface CaptureStatus {
   lastRecording: string | null;
   /** Still turning the last recording into an .mp4. */
   finishing: boolean;
-  failure: { kind: SessionKind; session: number; message: string } | null;
+  failure: { kind: SessionKind; session: number; message: string; neverStarted?: boolean } | null;
 }
 
 export function defaultCaptureSettings(): CaptureSettings {

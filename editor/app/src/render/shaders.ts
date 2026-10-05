@@ -10,12 +10,12 @@ void main() {
 }`;
 
 export const LAYER_VS = `#version 300 es
-in vec2 aPos;
+in vec4 aPos;
 in vec2 aUv;
 out vec2 vUv;
 void main() {
   vUv = aUv;
-  gl_Position = vec4(aPos, 0.0, 1.0);
+  gl_Position = aPos;
 }`;
 
 const HEAD = `#version 300 es
@@ -162,6 +162,87 @@ void main() {
   else {
     float r = sin(p * 3.14159) * 6.0 + 0.001;
     outColor = mix(blurred(uv, r, false), blurred(uv, r, true), p);
+  }
+}`;
+
+/** Pictures made here: gradient, noise, particles, light leak, color bars. */
+export const GENERATOR_FS = `${HEAD}
+uniform int uGen;
+uniform float uTime, uA, uB, uC, uKind, uScale;
+uniform vec3 uC1, uC2;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+float fbm(vec2 p) { float v = 0.0; float a = 0.5; for (int i = 0; i < 6; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; } return v; }
+void main() {
+  vec2 uv = vec2(vUv.x, 1.0 - vUv.y);
+  vec2 asp = vec2(uSize.x / uSize.y, 1.0);
+  if (uGen == 0) {
+    // Gradient: A = angle, B = where the middle is; kind 1 = round.
+    float t;
+    if (uKind > 0.5) t = length((uv - 0.5) * asp) / 0.75;
+    else { float an = uA * 6.2832; vec2 d = vec2(cos(an), sin(an)); t = dot(uv - 0.5, d) + 0.5; }
+    t = clamp((t - uB) / max(0.02, uC * 2.0) + 0.5, 0.0, 1.0);
+    outColor = vec4(mix(uC1, uC2, t), 1.0);
+  } else if (uGen == 1) {
+    // Noise / clouds: A = size, B = speed, C = contrast.
+    float n = fbm(uv * asp * (1.0 + uA * 12.0) + vec2(uTime * uB * 0.6, uTime * uB * 0.25));
+    n = clamp((n - 0.5) * (0.5 + uC * 3.0) + 0.5, 0.0, 1.0);
+    outColor = vec4(mix(uC1, uC2, n), 1.0);
+  } else if (uGen == 2) {
+    // Particles: kind 0 snow, 1 sparks, 2 bokeh, 3 confetti, 4 dust. A = how many, B = size, C = speed.
+    vec4 acc = vec4(0.0);
+    float layers = 3.0;
+    for (float L = 0.0; L < 3.0; L++) {
+      float cells = mix(4.0, 26.0, uA) * (1.0 + L * 0.6);
+      float speed = (0.05 + uC * 0.5) * (1.0 + L * 0.3);
+      vec2 p = uv * asp * cells;
+      float dir = uKind > 0.5 && uKind < 1.5 ? -1.0 : 1.0;
+      p.y += uTime * speed * cells * dir;
+      p.x += sin(uTime * 0.7 + L * 2.0 + floor(p.y) * 1.7) * 0.3;
+      vec2 id = floor(p);
+      vec2 f = fract(p) - 0.5;
+      float r = hash(id + L * 13.0);
+      if (r > 0.25 + (1.0 - uA) * 0.6) continue;
+      vec2 off = vec2(hash(id + 1.3), hash(id + 7.1)) - 0.5;
+      float size = (0.06 + uB * 0.3) * (0.5 + r) / (1.0 + L * 0.4);
+      float d = length(f - off * 0.6);
+      float a;
+      vec3 c = uC1;
+      if (uKind > 3.5) { a = smoothstep(size * 0.5, 0.0, d) * 0.5; c = mix(uC1, vec3(1.0), 0.5); }
+      else if (uKind > 2.5) { vec2 q = abs(f - off * 0.6); a = step(q.x, size * 0.6) * step(q.y, size * 1.2); c = mix(uC1, uC2, hash(id + 3.0)); }
+      else if (uKind > 1.5) { a = smoothstep(size * 2.2, size * 1.8, d) * 0.35 + smoothstep(size * 2.2, size * 2.0, d) * 0.1; c = mix(uC1, uC2, hash(id)); }
+      else if (uKind > 0.5) { a = smoothstep(size * 0.5, 0.0, d) * (0.6 + 0.4 * sin(uTime * 20.0 + r * 50.0)); c = mix(uC1, uC2, r); }
+      else { a = smoothstep(size, size * 0.4, d); c = uC1; }
+      acc.rgb += c * a * (1.0 - acc.a);
+      acc.a += a * (1.0 - acc.a);
+    }
+    outColor = acc;
+  } else if (uGen == 3) {
+    // Light leak: soft moving warm light (see-through, for over pictures).
+    vec2 p = uv * asp;
+    float a = 0.0;
+    vec3 c = vec3(0.0);
+    for (float i = 0.0; i < 3.0; i++) {
+      vec2 ctr = vec2(0.2 + 0.6 * noise(vec2(uTime * 0.15 * (0.5 + uC) + i * 3.0, i)), 0.2 + 0.6 * noise(vec2(i * 5.0, uTime * 0.12 * (0.5 + uC) + i)));
+      float d = length(p - ctr * asp);
+      float k = smoothstep(0.35 + uB * 0.6, 0.0, d) * (0.4 + uA * 0.8);
+      c += mix(uC1, uC2, i / 2.0) * k;
+      a += k;
+    }
+    a = clamp(a, 0.0, 1.0);
+    outColor = vec4(clamp(c, 0.0, 1.0), a);
+  } else {
+    // Color bars.
+    float x = uv.x;
+    vec3 bars[7] = vec3[7](vec3(0.75), vec3(0.75, 0.75, 0.0), vec3(0.0, 0.75, 0.75), vec3(0.0, 0.75, 0.0), vec3(0.75, 0.0, 0.75), vec3(0.75, 0.0, 0.0), vec3(0.0, 0.0, 0.75));
+    int i = int(clamp(floor(x * 7.0), 0.0, 6.0));
+    vec3 c = bars[i];
+    if (uv.y > 0.75) c = vec3(uv.x);
+    outColor = vec4(c, 1.0);
   }
 }`;
 
@@ -354,6 +435,107 @@ void main() { outColor = texture(uTex, vec2(uH > 0.5 ? 1.0 - vUv.x : vUv.x, uV >
 uniform vec2 uOffset;
 uniform float uOpacity;
 void main() { float a = texture(uTex, vUv - uOffset / uSize).a * uOpacity; outColor = vec4(0.0, 0.0, 0.0, a); }`,
+  cornerpin: `${HEAD}
+uniform mat3 uH;
+void main() {
+  vec2 px = vec2(vUv.x, 1.0 - vUv.y) * uSize;
+  vec3 q = uH * vec3(px, 1.0);
+  vec2 uv = q.xy / q.z;
+  if (q.z <= 0.0 || uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) { outColor = vec4(0.0); return; }
+  outColor = texture(uTex, vec2(uv.x, 1.0 - uv.y));
+}`,
+  chromatic: `${HEAD}
+uniform float uAmount;
+void main() {
+  vec2 d = (vUv - 0.5) * uAmount / uSize * 2.0;
+  vec4 c = texture(uTex, vUv);
+  float r = texture(uTex, vUv + d).r;
+  float b = texture(uTex, vUv - d).b;
+  outColor = vec4(r, c.g, b, c.a);
+}`,
+  glitch: `${HEAD}
+uniform float uAmount, uTime, uSeedRate;
+float hash(float n) { return fract(sin(n) * 43758.5453); }
+void main() {
+  float t = floor(uTime * (2.0 + uSeedRate * 2.0));
+  float band = floor(vUv.y * 24.0);
+  float on = step(1.0 - uAmount * 0.5, hash(band * 7.13 + t));
+  float shift = (hash(band + t * 3.1) - 0.5) * 0.12 * uAmount * on;
+  vec2 uv = vUv + vec2(shift, 0.0);
+  float split = 0.01 * uAmount * (0.5 + on);
+  vec4 c = texture(uTex, uv);
+  outColor = vec4(texture(uTex, uv + vec2(split, 0.0)).r, c.g, texture(uTex, uv - vec2(split, 0.0)).b, c.a);
+}`,
+  zoomblur: `${HEAD}
+uniform float uAmount;
+uniform vec2 uCenter;
+void main() {
+  vec4 s = vec4(0.0);
+  for (int i = 0; i < 24; i++) {
+    float k = 1.0 - uAmount * 0.3 * float(i) / 23.0;
+    s += texture(uTex, uCenter + (vUv - uCenter) * k);
+  }
+  outColor = s / 24.0;
+}`,
+  dirblur: `${HEAD}
+uniform vec2 uDir;
+void main() {
+  vec4 s = vec4(0.0);
+  for (int i = 0; i < 24; i++) s += texture(uTex, vUv + uDir / uSize * (float(i) / 23.0 - 0.5));
+  outColor = s / 24.0;
+}`,
+  displace: `${HEAD}
+uniform float uAmount, uFreq, uTime;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+  vec2 i = floor(p); vec2 f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+void main() {
+  vec2 p = vUv * uFreq * vec2(uSize.x / uSize.y, 1.0);
+  vec2 off = vec2(noise(p + uTime), noise(p + 17.0 - uTime)) - 0.5;
+  outColor = texture(uTex, vUv + off * uAmount / uSize * 2.0);
+}`,
+  posterize: `${HEAD}
+uniform float uLevels;
+void main() { vec4 s = texture(uTex, vUv); vec3 c = unpre(s); c = floor(c * uLevels) / (uLevels - 1.0); outColor = vec4(clamp(c, 0.0, 1.0) * s.a, s.a); }`,
+  edges: `${HEAD}
+uniform float uAmount, uInvert;
+void main() {
+  vec2 px = 1.0 / uSize;
+  float tl = luma(texture(uTex, vUv + vec2(-px.x, px.y)).rgb), t = luma(texture(uTex, vUv + vec2(0, px.y)).rgb), tr = luma(texture(uTex, vUv + px).rgb);
+  float l = luma(texture(uTex, vUv - vec2(px.x, 0)).rgb), r = luma(texture(uTex, vUv + vec2(px.x, 0)).rgb);
+  float bl = luma(texture(uTex, vUv - px).rgb), b = luma(texture(uTex, vUv - vec2(0, px.y)).rgb), br = luma(texture(uTex, vUv + vec2(px.x, -px.y)).rgb);
+  float gx = -tl - 2.0 * l - bl + tr + 2.0 * r + br;
+  float gy = -tl - 2.0 * t - tr + bl + 2.0 * b + br;
+  float e = clamp(length(vec2(gx, gy)), 0.0, 1.0);
+  if (uInvert > 0.5) e = 1.0 - e;
+  vec4 s = texture(uTex, vUv);
+  outColor = vec4(mix(s.rgb, vec3(e) * s.a, uAmount), s.a);
+}`,
+  wave: `${HEAD}
+uniform float uAmount, uFreq, uTime;
+void main() {
+  vec2 off = vec2(sin(vUv.y * uFreq * 6.2832 + uTime * 6.2832), 0.0) * uAmount / uSize.x;
+  outColor = texture(uTex, vUv + off);
+}`,
+  vhs: `${HEAD}
+uniform float uAmount, uTime;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main() {
+  float line = floor(vUv.y * uSize.y);
+  float jitter = (hash(vec2(line, floor(uTime * 30.0))) - 0.5) * 0.004 * uAmount;
+  vec2 uv = vUv + vec2(jitter, 0.0);
+  vec4 c = texture(uTex, uv);
+  float r = texture(uTex, uv + vec2(0.003 * uAmount, 0.0)).r;
+  float b = texture(uTex, uv - vec2(0.003 * uAmount, 0.0)).b;
+  vec3 col = vec3(r, c.g, b);
+  col *= 1.0 - 0.15 * uAmount * step(0.5, fract(line * 0.5));
+  col += (hash(vUv * uSize + uTime) - 0.5) * 0.12 * uAmount;
+  col = mix(vec3(luma(col)), col, 1.0 - 0.3 * uAmount);
+  outColor = vec4(clamp(col, 0.0, c.a), c.a);
+}`,
   over: `${HEAD}
 uniform sampler2D uOther;
 void main() { vec4 top = texture(uOther, vUv); outColor = top + texture(uTex, vUv) * (1.0 - top.a); }`,

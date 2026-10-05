@@ -3,4 +3,4 @@
 /**
  * One of the extra mixes.
  */
-export type BusId = "a" | "b";
+export type BusId = 'a' | 'b';

@@ -1,6 +1,6 @@
 // The edits: each takes the project and gives back a changed copy (undo keeps the old one).
-import { changeSpeed, current, cutClip, editSeq, end, handles, onTrack, rate, trackOf, trimLeft, trimRight } from './seq';
-import { uid, newTrack, type Clip, type Marker, type Project, type Sequence, type Track, type TrackKind, type Transition } from './types';
+import { changeSpeed, current, cutClip, editSeq, end, handles, onTrack, rate, seqLength, trackOf, trimLeft, trimRight } from './seq';
+import { uid, newClip, newTrack, type Clip, type Marker, type Project, type Sequence, type Track, type TrackKind, type Transition } from './types';
 
 const unlocked = (s: Sequence, track: string): boolean => !trackOf(s, track)?.locked;
 
@@ -584,4 +584,74 @@ export function nearest(points: number[], frame: number, within: number): number
   let best: number | null = null;
   for (const x of points) if (Math.abs(x - frame) <= within && (best === null || Math.abs(x - frame) < Math.abs(best - frame))) best = x;
   return best;
+}
+
+/** A sequence put into the open one as a clip (its picture and its sound, linked). */
+export function addSequenceClip(p: Project, seqId: string, at: number, mode: 'insert' | 'overwrite', video?: string, audio?: string): Project {
+  const s = current(p);
+  const inner = p.sequences.find((x) => x.id === seqId);
+  if (!inner || inner.id === s.id || contains(p, inner.id, s.id)) return p;
+  const fps = rate(s);
+  const length = Math.max(1, Math.round((seqLength(inner) / rate(inner)) * fps));
+  const vTrack = video ?? s.tracks.find((t) => t.kind === 'video' && !t.locked)?.id;
+  const aTrack = audio ?? s.tracks.find((t) => t.kind === 'audio' && !t.locked)?.id;
+  const hasPicture = inner.clips.some((c) => inner.tracks.find((t) => t.id === c.track)?.kind === 'video');
+  const hasSound = inner.clips.some((c) => inner.tracks.find((t) => t.id === c.track)?.kind === 'audio');
+  const link = hasPicture && hasSound ? uid('l') : null;
+  const clips: Clip[] = [];
+  const source = { kind: 'sequence' as const, seq: inner.id, in: 0 };
+  if (hasPicture && vTrack) clips.push({ ...newClip(vTrack, at, length, source, inner.name), link });
+  if (hasSound && aTrack) clips.push({ ...newClip(aTrack, at, length, source, inner.name), link });
+  return placeClips(p, clips, mode);
+}
+
+/** Does sequence `outer` show sequence `inner` anywhere inside it (so nesting would loop)? */
+export function contains(p: Project, outer: string, inner: string, depth = 0): boolean {
+  if (outer === inner) return true;
+  if (depth > 8) return true;
+  const s = p.sequences.find((x) => x.id === outer);
+  return !!s?.clips.some((c) => c.source.kind === 'sequence' && contains(p, c.source.seq, inner, depth + 1));
+}
+
+/** Put clips into a new sequence of their own, and leave one clip (picture and sound) in their place. */
+export function nest(p: Project, ids: string[]): { project: Project; seq: string } {
+  const s = current(p);
+  const chosen = s.clips.filter((c) => ids.includes(c.id));
+  if (chosen.length === 0) return { project: p, seq: '' };
+  const from = Math.min(...chosen.map((c) => c.start));
+  const to = Math.max(...chosen.map(end));
+  const n = p.sequences.length + 1;
+  const tracks = s.tracks.map((t) => ({ ...t, id: uid(t.kind === 'video' ? 'v' : 'a'), locked: false, off: false, solo: false }));
+  const trackFor = (id: string) => tracks[s.tracks.findIndex((t) => t.id === id)]?.id ?? '';
+  const links = new Map<string, string>();
+  const inner: Sequence = {
+    ...s,
+    id: uid('s'),
+    name: `Nested sequence ${n}`,
+    tracks,
+    clips: chosen.map((c) => ({
+      ...structuredClone(c),
+      id: uid(),
+      start: c.start - from,
+      track: trackFor(c.track),
+      link: c.link ? (links.get(c.link) ?? (links.set(c.link, uid('l')), links.get(c.link) ?? null)) : null,
+    })),
+    markers: [],
+    inPoint: null,
+    outPoint: null,
+    playhead: 0,
+  };
+  const kindOf = (c: Clip) => s.tracks.find((t) => t.id === c.track)?.kind;
+  const lowestVideo = s.tracks.find((t) => t.kind === 'video' && chosen.some((c) => c.track === t.id));
+  const firstAudio = s.tracks.find((t) => t.kind === 'audio' && chosen.some((c) => c.track === t.id));
+  const link = lowestVideo && firstAudio ? uid('l') : null;
+  const source = { kind: 'sequence' as const, seq: inner.id, in: 0 };
+  const replacement: Clip[] = [];
+  if (lowestVideo && chosen.some((c) => kindOf(c) === 'video')) replacement.push({ ...newClip(lowestVideo.id, from, to - from, source, inner.name), link });
+  if (firstAudio && chosen.some((c) => kindOf(c) === 'audio')) replacement.push({ ...newClip(firstAudio.id, from, to - from, source, inner.name), link });
+  const without: Project = {
+    ...p,
+    sequences: [...p.sequences.map((x) => (x.id === s.id ? { ...x, clips: x.clips.filter((c) => !ids.includes(c.id)) } : x)), inner],
+  };
+  return { project: placeClips(without, replacement, 'overwrite'), seq: inner.id };
 }

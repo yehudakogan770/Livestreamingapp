@@ -3,4 +3,4 @@
 /**
  * Where the text sits and how it behaves.
  */
-export type TextLayout = "lowerThird" | "title" | "ticker" | "fullScreen";
+export type TextLayout = 'lowerThird' | 'title' | 'ticker' | 'fullScreen';

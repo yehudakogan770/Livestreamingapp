@@ -51,9 +51,12 @@ export function sourceTime(c: Clip, into: number, fps: number): number {
 /** How many frames a clip could grow at each end before its source runs out. */
 export function handles(p: Project, c: Clip, fps: number): { before: number; after: number } {
   const src = c.source;
-  if (src.kind !== 'media' && src.kind !== 'multicam') return { before: Infinity, after: Infinity };
+  if (src.kind !== 'media' && src.kind !== 'multicam' && src.kind !== 'sequence') return { before: Infinity, after: Infinity };
   let duration = 0;
-  if (src.kind === 'media') {
+  if (src.kind === 'sequence') {
+    const inner = p.sequences.find((x) => x.id === src.seq);
+    duration = inner ? seqLength(inner) / rate(inner) : 0;
+  } else if (src.kind === 'media') {
     const m = p.media.find((x) => x.id === src.media);
     if (!m || m.kind === 'image') return { before: Infinity, after: Infinity };
     duration = m.duration;
@@ -72,6 +75,9 @@ function mapMotion(m: Motion, f: (p: Motion['x']) => Motion['x']): Motion {
     scale: f(m.scale),
     scaleX: f(m.scaleX),
     rotation: f(m.rotation),
+    ...(m.rotX !== undefined ? { rotX: f(m.rotX) } : {}),
+    ...(m.rotY !== undefined ? { rotY: f(m.rotY) } : {}),
+    ...(m.z !== undefined ? { z: f(m.z) } : {}),
     cropL: f(m.cropL),
     cropR: f(m.cropR),
     cropT: f(m.cropT),

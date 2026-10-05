@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { duration } from '../model/build';
+import { duration, GENERATORS } from '../model/build';
 import { EFFECTS, TRANSITIONS } from '../model/effects';
 import { newSequence, type Bin, type MediaItem, type Project } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
@@ -166,9 +166,14 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
             key={s.id}
             type="button"
             className={`media__seq${s.id === project.open ? ' is-open' : ''}`}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData('application/x-lumora-seq', s.id);
+              e.dataTransfer.effectAllowed = 'copy';
+            }}
             onClick={() => doc.quiet((p) => ({ ...p, open: s.id }))}
             onDoubleClick={() => ui.set({ dialog: 'sequence' })}
-            title="A sequence: click to open it on the timeline"
+            title="A sequence: click to open it on the timeline, or drag it into another sequence"
           >
             <span className="media__icon">▤</span>
             <span className="media__name">{s.name}</span>
@@ -422,6 +427,14 @@ function TextTab({ actions }: { actions: Actions }) {
             </button>
           ))}
         </div>
+      </div>
+      <div className="fxlist__group">
+        <h3>Generated</h3>
+        {GENERATORS.map((g) => (
+          <button key={g.gen} type="button" className="fxlist__item fxlist__item--gen" onClick={() => actions.addGenerator(g.gen)}>
+            {g.name}
+          </button>
+        ))}
       </div>
       <div className="fxlist__group">
         <h3>Made here</h3>

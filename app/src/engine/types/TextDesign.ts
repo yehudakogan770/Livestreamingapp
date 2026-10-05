@@ -3,4 +3,4 @@
 /**
  * The design of the text's background.
  */
-export type TextDesign = "box" | "bar" | "split" | "underline" | "gradient" | "glass";
+export type TextDesign = 'box' | 'bar' | 'split' | 'underline' | 'gradient' | 'glass';

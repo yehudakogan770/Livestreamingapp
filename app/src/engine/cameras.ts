@@ -31,28 +31,77 @@ export function fullResolution(holder: string, deviceId: string, on: boolean): v
   );
 }
 
+/** Why each camera last failed to open, in plain words. */
+const problems = new Map<string, string>();
+export const cameraProblem = (deviceId: string): string | null => problems.get(deviceId) ?? null;
+
+function explain(e: unknown): string {
+  const name = e instanceof DOMException || e instanceof Error ? e.name : '';
+  if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError')
+    return 'The camera is being used by another program (Zoom, Teams, the Camera app…). Close it; Lumora tries again by itself.';
+  if (name === 'NotAllowedError' || name === 'SecurityError')
+    return 'Lumora is not allowed to use the camera. In Windows: Settings → Privacy & security → Camera, turn on camera access for desktop apps.';
+  return 'Camera not found or unplugged';
+}
+
+/** Open a camera, asking for less each time it is refused (some cameras refuse big sizes or high frame rates). */
+async function open(deviceId: string): Promise<MediaStream> {
+  const id = deviceId ? { deviceId: { exact: deviceId } } : {};
+  const full: MediaTrackConstraints = { ...id, ...size(deviceId), frameRate: { ideal: 60 } };
+  const tries: MediaTrackConstraints[] = [
+    // Pan, tilt and zoom too (cameras that can move); refused on most webcams.
+    { ...full, pan: true, tilt: true, zoom: true } as MediaTrackConstraints,
+    full,
+    { ...id, width: { ideal: 1280 }, height: { ideal: 720 } },
+    id,
+  ];
+  let last: unknown = null;
+  for (const video of tries) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: false, video });
+    } catch (e) {
+      last = e;
+      // Busy or not allowed: asking for less won't help.
+      if (e instanceof DOMException && (e.name === 'NotAllowedError' || e.name === 'NotReadableError')) break;
+    }
+  }
+  // The camera's id can change (another USB port, a Windows update): find it by its name.
+  if (deviceId) {
+    const label = labels.get(deviceId);
+    const devices = await navigator.mediaDevices.enumerateDevices().catch(() => [] as MediaDeviceInfo[]);
+    const same = devices.find((d) => d.kind === 'videoinput' && label && d.label === label && d.deviceId !== deviceId);
+    if (same) return navigator.mediaDevices.getUserMedia({ audio: false, video: { deviceId: { exact: same.deviceId } } });
+  }
+  throw last ?? new Error('Camera not found');
+}
+
+/** A camera's name, so it can be found again if its id changes. */
+const labels = new Map<string, string>();
+export function rememberCameraName(deviceId: string, label: string) {
+  if (label) labels.set(deviceId, label);
+}
+
 /** A camera's stream; call releaseCamera when done with it. */
 export function acquireCamera(deviceId: string): Promise<MediaStream> {
   let entry = cameras.get(deviceId);
   if (!entry) {
-    const video: MediaTrackConstraints = {
-      deviceId: deviceId ? { exact: deviceId } : undefined,
-      ...size(deviceId),
-      frameRate: { ideal: 60 },
-    };
-    // Ask for pan, tilt and zoom too (cameras that can move); if that is
-    // refused, the camera still opens without them.
-    const stream = navigator.mediaDevices
-      .getUserMedia({ audio: false, video: { ...video, pan: true, tilt: true, zoom: true } as MediaTrackConstraints })
-      .catch(() => navigator.mediaDevices.getUserMedia({ audio: false, video }))
-      .then((st) => {
-        const want = wanted.get(deviceId);
-        if (want) void applyValues(st, want);
-        return st;
-      });
+    const stream = open(deviceId).then((st) => {
+      problems.delete(deviceId);
+      // Unplugged: forget it, so the next try opens it afresh.
+      for (const t of st.getVideoTracks())
+        t.addEventListener('ended', () => {
+          if (cameras.get(deviceId)?.stream === stream) cameras.delete(deviceId);
+        });
+      const want = wanted.get(deviceId);
+      if (want) void applyValues(st, want);
+      return st;
+    });
     entry = { stream, users: 0 };
     cameras.set(deviceId, entry);
-    stream.catch(() => cameras.delete(deviceId));
+    stream.catch((e: unknown) => {
+      problems.set(deviceId, explain(e));
+      cameras.delete(deviceId);
+    });
   }
   entry.users++;
   return entry.stream;

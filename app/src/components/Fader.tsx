@@ -97,7 +97,9 @@ export function Fader({ value, label, onChange }: { value: number; label: string
     >
       <div className="fader__marks" aria-hidden>
         {MARKS.map((db) => (
-          <span key={db} style={{ bottom: `${posForDb(db) * 100}%` }}>{db === 0 ? '0' : db}</span>
+          <span key={db} style={{ bottom: `${posForDb(db) * 100}%` }}>
+            {db === 0 ? '0' : db}
+          </span>
         ))}
       </div>
       <div ref={track} className="fader__track">
