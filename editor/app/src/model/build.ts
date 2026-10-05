@@ -149,6 +149,11 @@ export function buildEventProject(event: EventFile, eventPath: string, media: Ma
   }
   // Sound that starts after the event began: the part before it is silence.
   seq.clips = clips.map((c) => (c.source.kind === 'media' && c.source.in < 0 ? fixLead(c, fps) : c)).filter((c) => c.length > 0);
+  // Moments marked live (and replays rolled live) become markers, for finding highlights.
+  const marks = [...(event.markers ?? []), ...cuts.filter((c) => /replay/i.test(c.name)).map((c) => ({ at: c.at, name: 'REPLAY' }))];
+  seq.markers = marks
+    .filter((m) => m.at / 1000 < duration)
+    .map((m) => ({ id: uid('k'), at: Math.round((m.at / 1000) * fps), length: 0, name: m.name, color: '#d9a441' }));
   return { kind: 'lumora-edit', version: 2, name: event.name || 'Event', eventPath, media: items, bins, groups: [group], sequences: [seq], open: seq.id };
 }
 

@@ -1,0 +1,157 @@
+/* The smart tools' dialogs (Smart menu). */
+.smart__top {
+  align-items: start;
+}
+.smart__map {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.smart__maprow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+}
+.smart__maprow > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.smart__slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.smart__slider input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.smart__slider small {
+  min-width: 48px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.smart__words {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  font-size: 12.5px;
+}
+.smart__num {
+  width: 80px;
+}
+.smart__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.smart__strip {
+  position: relative;
+  height: 18px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--well);
+}
+.smart__strip i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px solid rgba(0, 0, 0, 0.35);
+}
+.smart__listhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.smart__listhead > span {
+  margin-right: auto;
+}
+.smart__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.smart__list--short {
+  max-height: 160px;
+}
+.smart__list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+}
+.smart__list li:last-child {
+  border-bottom: 0;
+}
+.smart__list li.is-on {
+  color: var(--text);
+}
+.smart__list li > small {
+  margin-left: auto;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.smart__empty {
+  justify-content: center;
+}
+.smart__time,
+.smart__link {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.smart__link {
+  align-self: flex-start;
+  font-size: 12.5px;
+}
+.smart__tag {
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: var(--button);
+}
+.smart__tag--filler {
+  background: var(--selected);
+}
+.smart__why {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.smart__why b {
+  font-weight: 600;
+  color: var(--text);
+}
+.smart__order {
+  display: flex;
+  gap: 2px;
+}
+.smart__order button {
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--button);
+  color: var(--text);
+  font-size: 11px;
+}
+.smart__order button:disabled {
+  opacity: 0.35;
+}

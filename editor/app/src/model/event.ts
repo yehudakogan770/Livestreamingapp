@@ -11,6 +11,8 @@ export interface EventFile {
   files: EventMedia[];
   /** What was on air when (ms after the start). */
   cuts: { at: number; id: string | null; name: string }[];
+  /** Moments marked live: a REPLAY, a highlight (ms after the start). Older files have none. */
+  markers?: { at: number; name: string }[];
 }
 
 export interface EventMedia {
@@ -40,6 +42,7 @@ export function parseEvent(text: string): EventFile {
   const program = (r.program && typeof r.program === 'object' ? r.program : {}) as Record<string, unknown>;
   const files = Array.isArray(r.files) ? r.files : [];
   const cuts = Array.isArray(r.cuts) ? r.cuts : [];
+  const markers = Array.isArray(r.markers) ? r.markers : [];
   return {
     app: 'Lumora',
     version: 1,
@@ -62,6 +65,10 @@ export function parseEvent(text: string): EventFile {
     cuts: cuts
       .filter((c): c is Record<string, unknown> => !!c && typeof c === 'object')
       .map((c) => ({ at: Math.max(0, num(c.at)), id: typeof c.id === 'string' ? c.id : null, name: str(c.name) }))
+      .sort((a, b) => a.at - b.at),
+    markers: markers
+      .filter((m): m is Record<string, unknown> => !!m && typeof m === 'object')
+      .map((m) => ({ at: Math.max(0, num(m.at)), name: str(m.name, 'Highlight') }))
       .sort((a, b) => a.at - b.at),
   };
 }

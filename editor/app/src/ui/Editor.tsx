@@ -16,6 +16,7 @@ import { typing } from './hooks';
 import { chooseAndImport, importFiles, MEDIA_EXTENSIONS } from './importer';
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
+import { SmartDialogs, smartMenu } from '../smart/SmartTools';
 import { Mixer } from './Mixer';
 import { ProgramMonitor, SourceMonitor } from './Monitors';
 import { ProjectPanel } from './ProjectPanel';
@@ -370,6 +371,7 @@ export function Editor({
         ];
       },
     ],
+    ['Smart', () => smartMenu(state.project)],
     ['Help', () => [{ label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) }]],
   ];
 
@@ -528,6 +530,7 @@ export function Editor({
       {u.dialog === 'history' && collab && <HistoryDialog collab={collab} onClose={() => ui.set({ dialog: null })} />}
       {collab && <ConflictDialog collab={collab} onOpenShared={onOpenShared} />}
       {u.dialog === 'transcribe' && <TranscribeDialog doc={doc} ui={ui} />}
+      <SmartDialogs doc={doc} engine={engine} ui={ui} />
     </div>
   );
 }

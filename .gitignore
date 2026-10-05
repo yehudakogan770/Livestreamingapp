@@ -6,6 +6,8 @@ src-tauri/gen/
 /app/public/mediapipe/
 /app/public/ort/
 editor/app/public/ort/
+editor/app/public/mediapipe/
+editor/app/public/models/efficientdet_lite0.tflite
 editor/app/public/demo/
 ffmpeg-cache/
 src-tauri/binaries/
