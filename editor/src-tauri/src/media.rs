@@ -393,7 +393,7 @@ pub fn needs(file: &Path, p: &Probe) -> Needs {
 }
 
 /// A name for a made copy that changes when the original does.
-fn cache_name(file: &Path, ext: &str) -> String {
+pub fn cache_name(file: &Path, ext: &str) -> String {
     use std::hash::{Hash, Hasher};
     let meta = fs::metadata(file).ok();
     let stamp = meta

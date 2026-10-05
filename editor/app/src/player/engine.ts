@@ -7,6 +7,7 @@ import type { MediaItem, Project, Sequence } from '../model/types';
 import { Compositor, type Pictures } from '../render/compositor';
 import { parseCube, type Cube } from '../render/color';
 import { frameOps, videoNeeds, type Layer, type Op } from '../render/frame';
+import { matteFor, mattes } from '../vision/mattes';
 import { audioAt, dbToGain, heardTracks, type Heard } from './audio';
 import { VoiceChain, type Measure } from './voice';
 
@@ -132,6 +133,8 @@ export class Engine {
     if (this.frame > len) this.frame = len;
     this.dirty = true;
     this.updateBuses();
+    // A new AI mask frame is ready: draw again.
+    mattes.onReady = () => (this.dirty = true);
   }
 
   start() {
@@ -295,6 +298,11 @@ export class Engine {
       const v = this.videos.get(layer.key);
       return v && v.el.readyState >= 2 ? v.el : null;
     },
+    // AI masks: worked out in the background, from the playhead on, the first time they're needed.
+    matte: (layer, effect) =>
+      matteFor(layer, effect, () => {
+        if (this.p) mattes.analyze(this.p, layer.clip, effect.id, layer.fps, layer.local);
+      }),
     cube: (path: string) => {
       const have = this.cubes.get(path);
       if (have && typeof have === 'object') return have;

@@ -21,6 +21,7 @@ import { inApp, mediaUrl, native, onExportProgress } from '../native';
 import { parseCube, type Cube } from '../render/color';
 import { Compositor, type Pictures } from '../render/compositor';
 import { allLayers, frameOps, type Layer, type Op } from '../render/frame';
+import { isAiMask, matteFor, mattes } from '../vision/mattes';
 import { finishJobs, type SoundFormat } from './audioplan';
 
 export interface ExportSettings {
@@ -185,7 +186,14 @@ class Sources {
       return this.frames.get(layer.key) ?? null;
     },
     cube: (path: string) => this.cubes.get(path) ?? null,
+    matte: (layer: Layer, effect) => matteFor(layer, effect),
   };
+
+  /** AI masks: any frame not worked out yet is done now, from the exact frame decoded (the film waits for it). */
+  async mattes(ops: Op[]) {
+    for (const l of allLayers(ops))
+      for (const e of l.effects) if (isAiMask(e.type)) await mattes.ensure(l, e, this.pictures.picture(l) as CanvasImageSource | null);
+  }
 
   async close() {
     for (const f of this.frames.values()) f.close();
@@ -310,6 +318,7 @@ export class Exporter {
         if (failed) throw failed;
         const ops = frameOps(this.p, s, f);
         await sources.prepare(ops, f, readText);
+        await sources.mattes(ops);
         gl.render(ops, sources.pictures, s.background);
         await source.add((f - from) / fps, 1 / fps);
         if ((f - from) % 5 === 0) {

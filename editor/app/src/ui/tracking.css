@@ -1,0 +1,83 @@
+/* Motion tracking and AI masks: points and paths over the viewer, picking, progress. */
+
+.trk {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.trk__path {
+  fill: none;
+  stroke: rgba(240, 200, 80, 0.75);
+  stroke-width: 1.5;
+}
+.trk__box {
+  fill: rgba(240, 200, 80, 0.08);
+  stroke: rgba(240, 200, 80, 0.9);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+}
+.trk__point {
+  pointer-events: auto;
+  cursor: move;
+}
+.trk__point circle {
+  fill: rgba(0, 0, 0, 0.25);
+  stroke: #f0c850;
+  stroke-width: 2;
+}
+.trk__point path {
+  stroke: #f0c850;
+  stroke-width: 1.5;
+}
+.trk__point.is-hand circle {
+  stroke: #fff;
+  fill: rgba(240, 200, 80, 0.45);
+}
+.trk-pick {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  outline: 2px dashed rgba(240, 200, 80, 0.7);
+  outline-offset: -2px;
+}
+.trk-pick__hint {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.trk-pick__box {
+  display: none;
+  position: absolute;
+  border: 1.5px dashed #f0c850;
+  background: rgba(240, 200, 80, 0.1);
+  pointer-events: none;
+}
+.trk-bar {
+  flex: 1;
+  min-width: 60px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.trk-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.trk-row {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.trk-row__name {
+  width: 120px;
+}

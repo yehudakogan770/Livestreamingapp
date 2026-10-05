@@ -455,10 +455,12 @@ void main() {
   outColor = src * a;
 }`,
   mask: `${HEAD}
-uniform float uShape, uCx, uCy, uW, uH, uFeather, uInvert;
+uniform float uShape, uCx, uCy, uW, uH, uAngle, uFeather, uInvert;
 void main() {
   vec4 src = texture(uTex, vUv);
-  vec2 p = vec2(vUv.x, 1.0 - vUv.y) - vec2(0.5 + uCx * 0.5, 0.5 + uCy * 0.5);
+  // Frame heights from the mask's middle, turned with the mask.
+  vec2 p = (vec2(vUv.x, 1.0 - vUv.y) - vec2(0.5 + uCx * 0.5, 0.5 + uCy * 0.5)) * vec2(uSize.x / uSize.y, 1.0);
+  p = vec2(cos(uAngle) * p.x + sin(uAngle) * p.y, -sin(uAngle) * p.x + cos(uAngle) * p.y);
   vec2 half_ = max(vec2(0.001), vec2(uW, uH) * 0.5);
   float d;
   if (uShape < 0.5) d = length(p / half_) - 1.0;
