@@ -560,20 +560,40 @@ function useFitLayout() {
         w.style.removeProperty('--stage-h');
         return;
       }
+      const stage = centre.parentElement!;
       const sw = centre.querySelector<HTMLElement>('.switch');
       // Every card there (the one on air and the one in Next), with the gap between.
       const shown = [...centre.querySelectorAll<HTMLElement>('.centre__more > *')];
       const switchH = sw?.offsetHeight ?? 0;
       const cardH = shown.length ? shown.reduce((n, c, i) => n + c.scrollHeight + (i ? 10 : 0), 0) + 4 : 0;
       const col = sw?.offsetWidth || 262;
-      const monH = (centreW: number) => ((W - centreW - 48) / 2) * (9 / 16) + 86;
+      // The monitors as they really are (not worked out from the window):
+      // their width now, and the head and foot around each picture.
+      const st = getComputedStyle(stage);
+      const padV = parseFloat(st.paddingTop) + parseFloat(st.paddingBottom) || 20;
+      const mons = [...stage.querySelectorAll<HTMLElement>(':scope > .mon')];
+      const monW = mons.length ? Math.min(...mons.map((m) => m.offsetWidth)) : 0;
+      let chrome = 64;
+      if (mons[0]) {
+        const parts = [...mons[0].children].filter((c) => !c.classList.contains('mon__fit') && getComputedStyle(c).position !== 'absolute');
+        const gap = parseFloat(getComputedStyle(mons[0]).rowGap) || 0;
+        chrome = Math.ceil(parts.reduce((n, c) => n + (c as HTMLElement).offsetHeight, 0) + gap * parts.length);
+      }
+      if (`${chrome}px` !== w.style.getPropertyValue('--mon-chrome')) w.style.setProperty('--mon-chrome', `${chrome}px`);
+      // How tall the top must be for the monitors to be as big as their
+      // width allows, with the TAKE column `centreW` wide.
+      const monH = (centreW: number) => padV + chrome + Math.max(0, monW + (centre.offsetWidth - centreW) / 2) * (9 / 16);
       const inputsMin = Math.min(260, Math.max(150, H * 0.26));
       const room = H - inputsMin;
+      // The card (countdown, slides…) never makes the top taller than the
+      // monitors need: it scrolls in the room there is. Only a short top
+      // grows to show its first row.
+      const cardMin = Math.min(cardH, 48);
       // Stacked: the card under the switch buttons (bigger monitors).
-      const stacked = Math.max(monH(col), 20 + switchH + (cardH ? 10 + cardH : 0));
+      const stacked = Math.max(monH(col), padV + switchH + (cardMin ? 10 + cardMin : 0));
       // Side by side: the card beside the switch buttons (shorter).
       // (the card column starts 28px down, level with the switch buttons)
-      const side = Math.max(monH(col * 2 + 10), 20 + Math.max(switchH, cardH + 28));
+      const side = Math.max(monH(col * 2 + 10), padV + Math.max(switchH, cardMin + 28));
       const useSide = cardH > 0 && stacked > room && side < stacked;
       // Chosen by hand (Arrange the screen), or worked out from what is shown.
       const fixed = Number(w.dataset.stage);

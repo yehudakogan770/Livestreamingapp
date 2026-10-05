@@ -2037,8 +2037,8 @@ button.strip__name:hover {
   justify-content: center;
 }
 .mon__fit > .mon__screen {
-  /* Head, gaps and the line under the picture take about 64px. */
-  width: min(100cqw, calc((100cqh - 64px) * 16 / 9));
+  /* Head, gaps and the line under the picture (measured by useFitLayout). */
+  width: min(100cqw, calc((100cqh - var(--mon-chrome, 64px)) * 16 / 9));
   max-height: none;
   flex: 0 0 auto;
 }
@@ -2127,6 +2127,8 @@ button.strip__name:hover {
 .control__work.is-side .stage > .centre > .switch {
   flex: 0 0 262px;
   width: 262px;
+  /* Its own height (not stretched), so it can be measured. */
+  align-self: flex-start;
 }
 .control__work.is-side .centre__more {
   flex: 0 0 262px;
