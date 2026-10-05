@@ -83,7 +83,7 @@ export interface RemoteStatus {
 
 export type CaptureKind = 'record' | 'stream';
 /** A session the app runs: a recording, the stream, or the vertical version beside it. */
-export type SessionKind = CaptureKind | 'vertical';
+export type SessionKind = CaptureKind | 'vertical' | 'ndi';
 
 /** What to make a PTZ camera do (mirrors src-tauri/src/ptz.rs). */
 export type PtzCommand =
@@ -141,6 +141,10 @@ export interface CaptureSettings {
   iso: boolean;
   /** Save a chapter list with each recording. */
   chapters: boolean;
+  /** Offer the Live Screen on the network as an NDI source. */
+  ndi?: boolean;
+  /** The NDI source's name. */
+  ndiName?: string;
   destinations: Destination[];
 }
 
@@ -161,6 +165,8 @@ export interface CaptureStatus {
   streaming: CaptureRunning | null;
   /** The vertical version beside the stream. */
   vertical?: CaptureRunning | null;
+  /** The NDI output, while it runs. */
+  ndi?: CaptureRunning | null;
   lastRecording: string | null;
   /** Still turning the last recording into an .mp4. */
   finishing: boolean;
@@ -231,6 +237,8 @@ export interface EngineClient {
   captureStop(session: number): Promise<void>;
   /** A live captions speech model on this computer (downloaded the first time); resolves its folder. */
   captionsModel(name: string): Promise<string>;
+  /** The NDI sources on the network (also asking `extraIps` directly). */
+  ndiSources(extraIps: string): Promise<string[]>;
   /** Send a caption line to a YouTube caption address. */
   captionsSend(url: string, seq: number, at: number, text: string): Promise<void>;
 
@@ -594,6 +602,10 @@ class TauriClient implements EngineClient {
 
   captionsModel(name: string): Promise<string> {
     return invoke<string>('captions_model', { name });
+  }
+
+  ndiSources(extraIps: string): Promise<string[]> {
+    return invoke<string[]>('ndi_sources', { extraIps });
   }
 
   captionsSend(url: string, seq: number, at: number, text: string): Promise<void> {
@@ -1014,6 +1026,10 @@ export class DemoClient implements EngineClient {
 
   captionsModel(): Promise<string> {
     return Promise.reject(new Error('Live captions need the Lumora app.'));
+  }
+
+  ndiSources(): Promise<string[]> {
+    return Promise.reject(new Error('NDI needs the Lumora app.'));
   }
 
   captionsSend(): Promise<void> {

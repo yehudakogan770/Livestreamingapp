@@ -10,6 +10,7 @@ mod export;
 mod iso;
 mod library;
 mod media;
+mod ndi;
 mod outputs;
 mod perf;
 mod ptz;
@@ -212,6 +213,14 @@ fn files_changed(app: &tauri::AppHandle, state: &AppState, files: &events::Event
 }
 
 /// The open event's file and the recent list.
+/// The NDI sources on the network (asks `extra_ips` directly too).
+#[tauri::command]
+async fn ndi_sources(extra_ips: String) -> Result<Vec<String>, String> {
+    tauri::async_runtime::spawn_blocking(move || ndi::sources(2500, &extra_ips))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 /// The live captions model on this computer (downloaded the first time).
 #[tauri::command]
 async fn captions_model(app: tauri::AppHandle, name: String) -> Result<String, String> {
@@ -928,6 +937,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             app_ready,
             captions_model,
+            ndi_sources,
             captions_send,
             get_show,
             dispatch,

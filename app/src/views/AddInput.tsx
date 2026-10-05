@@ -49,7 +49,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'credits', name: 'Credits / thank-you', hint: 'Rolling names at the end' },
   { kind: 'split', name: 'Split screen', hint: '2 – 4 inputs at once, picture-in-picture' },
   { kind: 'slideshow', name: 'Slideshow', hint: 'Pictures, PDF, videos between slides' },
-  { kind: 'stream', name: 'Stream / IP camera', hint: 'SRT, RTMP, RTSP camera, HLS link…' },
+  { kind: 'stream', name: 'Stream / IP / NDI camera', hint: 'NDI, SRT, RTMP, RTSP camera, HLS link…' },
   { kind: 'raffle', name: 'Raffle', hint: 'People enter from their phones; the draw is on screen' },
   { kind: 'fundraiser', name: 'Fundraiser', hint: 'Goal, total and donors on screen; pledges from phones' },
   { kind: 'graphic', name: 'Designed title', hint: 'Your own title: text, boxes and pictures anywhere (the title designer)' },
@@ -515,6 +515,7 @@ export function AddInput({
                   From another computer, a phone app, an encoder or an IP camera. If it needs a password, put it in the address (rtsp://name:password@…). Its
                   sound comes into the mixer.
                 </span>
+                <NdiPicker client={client} onPick={(name) => setWords(`ndi://${name}`)} />
               </label>
             )}
             {kind === 'browser' && (
@@ -605,6 +606,49 @@ export function AddInput({
           </button>
         </footer>
       </div>
+    </div>
+  );
+}
+
+/** NDI sources on the network: pick one to take it in. */
+function NdiPicker({ client, onPick }: { client: EngineClient; onPick: (name: string) => void }) {
+  const [found, setFound] = useState<string[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [ips, setIps] = useState('');
+  const look = () => {
+    setBusy(true);
+    setProblem(null);
+    client
+      .ndiSources(ips)
+      .then(setFound, (e: unknown) => setProblem(e instanceof Error ? e.message : String(e)))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <div className="ndi-pick">
+      <div className="ndi-pick__row">
+        <button type="button" className="btn" onClick={look} disabled={busy}>
+          {busy ? 'Looking…' : found ? 'Look again' : 'Find NDI sources on the network'}
+        </button>
+        <input
+          className="text"
+          value={ips}
+          onChange={(e) => setIps(e.target.value)}
+          placeholder="Other computers’ addresses (optional)"
+          aria-label="NDI computers to ask"
+        />
+      </div>
+      {problem && <span className="field__note field__note--warn">{problem}</span>}
+      {found && found.length === 0 && <span className="field__note">None found. Check the NDI device is on and on the same network.</span>}
+      {found && found.length > 0 && (
+        <div className="ndi-pick__list">
+          {found.map((n) => (
+            <button key={n} type="button" className="seg" onClick={() => onPick(n)}>
+              {n}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

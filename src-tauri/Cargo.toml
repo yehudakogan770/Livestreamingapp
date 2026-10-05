@@ -25,6 +25,7 @@ if-addrs = "0.15"
 qrcode = { version = "0.14", default-features = false, features = ["svg"] }
 jpeg-encoder = "0.7"
 png = "0.18"
+libloading = "0.8"
 sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 
 # Web page inputs are captured with the Windows Graphics Capture API.
@@ -32,7 +33,8 @@ sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 windows-capture = "2"
 
 [lints.rust]
-unsafe_code = "forbid"
+# Only ndi.rs (the NDI library is C) may use unsafe, with a reason each time.
+unsafe_code = "deny"
 
 [lints.clippy]
 all = { level = "warn", priority = -1 }

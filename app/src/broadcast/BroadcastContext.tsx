@@ -59,6 +59,7 @@ const EMPTY: CaptureStatus = {
   recording: null,
   streaming: null,
   vertical: null,
+  ndi: null,
   lastRecording: null,
   finishing: false,
   failure: null,
@@ -112,7 +113,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   useEffect(() => {
     if (checkedOrphans.current || !broadcaster || status === EMPTY) return;
     checkedOrphans.current = true;
-    for (const r of [status.recording, status.streaming, status.vertical]) if (r) void client.captureStop(r.session);
+    for (const r of [status.recording, status.streaming, status.vertical, status.ndi]) if (r) void client.captureStop(r.session);
   }, [status, broadcaster, client]);
 
   // Rehearsal: chosen before going live, never kept (a real event can't start as a rehearsal by mistake).
@@ -180,6 +181,12 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   useEffect(() => {
     if (!failure || !broadcaster) return;
     const { session, message } = failure;
+    // The NDI output stopped: it is brought back by itself (see below).
+    if (failure.kind === 'ndi') {
+      broadcaster.abandon('ndi', session);
+      setNdiTrouble(message);
+      return;
+    }
     // The vertical version dropped: bring it back while the stream runs.
     if (failure.kind === 'vertical') {
       broadcaster.abandon('vertical', session);
@@ -380,6 +387,44 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       return new Set(all.map((x) => x.name)).size;
     },
     [broadcaster, client],
+  );
+
+  // ---- NDI output: kept running while it is switched on ----
+  const [ndiTrouble, setNdiTrouble] = useState<string | null>(null);
+  const ndiWanted = !!settings.ndi;
+  const ndiRunning = !!status.ndi;
+  useEffect(() => {
+    if (!broadcaster) return;
+    if (!ndiWanted) {
+      setNdiTrouble(null);
+      if (ndiRunning) void broadcaster.stop('ndi');
+      return;
+    }
+    if (ndiRunning) {
+      setNdiTrouble(null);
+      return;
+    }
+    // Start now, or try again a little later after a problem.
+    const id = setTimeout(
+      () =>
+        void broadcaster
+          .stop('ndi')
+          .then(() => broadcaster.startNdi(settingsRef.current))
+          .catch((e: unknown) => setNdiTrouble(e instanceof Error ? e.message : String(e))),
+      ndiTrouble ? 5000 : 0,
+    );
+    return () => clearTimeout(id);
+  }, [broadcaster, ndiWanted, ndiRunning, ndiTrouble]);
+  useReportProblem(
+    ndiWanted && ndiTrouble && !ndiRunning
+      ? {
+          key: 'ndi:out',
+          level: 'warning',
+          title: 'The NDI output isn’t running',
+          detail: ndiTrouble,
+          fix: 'Lumora keeps trying. NDI needs the free NDI Tools on this computer (ndi.video/tools).',
+        }
+      : null,
   );
 
   // Speakers' names come on by themselves when they talk.

@@ -196,6 +196,24 @@ export class Broadcaster {
     return this.open('vertical', true, q.fps, Math.min(settings.videoKbps, q.kbps), settings, name, mime, rehearse);
   }
 
+  /**
+   * Offer the Live Screen on the network as NDI (the clean picture, as recorded).
+   * @throws Error with a message for the operator if it can't start.
+   */
+  async startNdi(settings: CaptureSettings): Promise<CaptureRunning> {
+    if (this.live.has('ndi')) throw new Error('Already sending NDI.');
+    const mime = recordingType();
+    if (!mime) throw new Error('This computer’s web view can’t encode video for NDI.');
+    const q = QUALITIES[settings.quality === 'vertical' ? '1080p' : settings.quality];
+    if (!this.compositor) {
+      this.compositor = new ProgramCompositor(this.client, q.width, q.height);
+      if (this.show) this.compositor.setShow(this.show);
+    }
+    if (this.live.size === 0) this.compositor.resize(q.width, q.height);
+    // Plenty of bitrate: it's only unpacked again on this computer.
+    return this.open('ndi', false, q.fps, Math.max(settings.videoKbps, 12000), settings, 'NDI', mime);
+  }
+
   /** The vertical picture (made when first needed). */
   private verticalFrame(): VerticalFrame {
     this.frame ??= new VerticalFrame(QUALITIES.vertical.width, QUALITIES.vertical.height);
@@ -220,7 +238,7 @@ export class Broadcaster {
       throw e instanceof Error ? e : new Error(String(e));
     }
     this.run(Math.max(fps, this.fps));
-    const streamed = kind !== 'record' && this.layer;
+    const streamed = (kind === 'stream' || kind === 'vertical') && this.layer;
     if (streamed) this.drawLayer(compositor.canvas);
     if (vertical) this.verticalFrame().draw(streamed ? this.layer!.canvas : compositor.canvas);
     const video = (vertical ? this.verticalFrame().canvas : streamed ? this.layer!.canvas : compositor.canvas).captureStream(fps);

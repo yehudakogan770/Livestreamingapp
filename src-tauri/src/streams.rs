@@ -324,6 +324,95 @@ fn run(job: Job) {
     lock(&status).remove(&id);
 }
 
+/// Read an NDI source until told to stop: its pictures as JPEGs (at most
+/// 30 a second), its sound as the stream sound. Reconnects by itself.
+fn run_ndi(
+    id: &str,
+    name: &str,
+    frames: &Frames,
+    sounds: &Sounds,
+    status: &Mutex<HashMap<String, StreamStatus>>,
+    stop: &AtomicBool,
+) {
+    let say = |live: bool, problem: Option<String>| {
+        lock(status).insert(id.to_owned(), StreamStatus { live, problem });
+    };
+    while !stop.load(Ordering::Relaxed) {
+        let mut recv = match crate::ndi::Receiver::new(name) {
+            Ok(r) => r,
+            Err(e) => {
+                say(false, Some(e));
+                // Not installed, or not there yet: look again in a while.
+                for _ in 0..25 {
+                    if stop.load(Ordering::Relaxed) {
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(200));
+                }
+                continue;
+            }
+        };
+        let mut last_picture = std::time::Instant::now();
+        let mut last_jpeg = std::time::Instant::now() - Duration::from_secs(1);
+        let mut live = false;
+        while !stop.load(Ordering::Relaxed) {
+            match recv.capture(200) {
+                crate::ndi::Received::Video {
+                    width,
+                    height,
+                    bgra,
+                } => {
+                    last_picture = std::time::Instant::now();
+                    if !live {
+                        live = true;
+                        say(true, None);
+                    }
+                    if last_jpeg.elapsed() < Duration::from_millis(30) {
+                        continue;
+                    }
+                    last_jpeg = std::time::Instant::now();
+                    let (Ok(w), Ok(h)) = (u16::try_from(width), u16::try_from(height)) else {
+                        continue;
+                    };
+                    let mut jpeg = Vec::with_capacity(bgra.len() / 8);
+                    let enc = jpeg_encoder::Encoder::new(&mut jpeg, 85);
+                    if enc
+                        .encode(&bgra, w, h, jpeg_encoder::ColorType::Bgra)
+                        .is_ok()
+                    {
+                        frames.put(id, jpeg, "image/jpeg");
+                    }
+                }
+                crate::ndi::Received::Audio {
+                    rate,
+                    channels,
+                    samples,
+                    planar,
+                } => sounds.put(
+                    id,
+                    crate::ndi::to_stereo_s16(rate, channels, samples, &planar),
+                ),
+                crate::ndi::Received::Nothing => {
+                    if live && last_picture.elapsed() > Duration::from_secs(3) {
+                        live = false;
+                        say(
+                            false,
+                            Some(format!(
+                                "The NDI source “{name}” stopped sending. Waiting for it…"
+                            )),
+                        );
+                    } else if !live && last_picture.elapsed() > Duration::from_secs(5) {
+                        say(false, Some(format!("Waiting for the NDI source “{name}”…")));
+                    }
+                }
+            }
+        }
+    }
+    frames.remove(id);
+    sounds.remove(id);
+    lock(status).remove(id);
+}
+
 pub struct Streams {
     tx: Mutex<Sender<Show>>,
     pub status: Arc<Mutex<HashMap<String, StreamStatus>>>,
@@ -378,6 +467,29 @@ fn manage(
         });
         for (id, st) in wanted {
             if readers.contains_key(&id) {
+                continue;
+            }
+            // An NDI source: read with the NDI runtime, not FFmpeg.
+            if let Some(name) = st.url.strip_prefix("ndi://").map(str::to_owned) {
+                let stop = Arc::new(AtomicBool::new(false));
+                let (f, snd, s, st2, id2) = (
+                    Arc::clone(frames),
+                    Arc::clone(sounds),
+                    Arc::clone(status),
+                    Arc::clone(&stop),
+                    id.clone(),
+                );
+                thread::spawn(move || run_ndi(&id2, &name, &f, &snd, &s, &st2));
+                readers.insert(
+                    id,
+                    Reader {
+                        url: st.url,
+                        buffer_ms: st.buffer_ms,
+                        stop,
+                        child: Arc::new(Mutex::new(None)),
+                        sound: Arc::new(Mutex::new(None)),
+                    },
+                );
                 continue;
             }
             let Some(ffmpeg) = ffmpeg else {

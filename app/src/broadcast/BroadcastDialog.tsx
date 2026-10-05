@@ -329,6 +329,24 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
               + Add a destination
             </button>
           </section>
+          <section className="bcd__section">
+            <h3>NDI (video over the network)</h3>
+            <label className="check">
+              <input type="checkbox" checked={draft.ndi ?? false} onChange={(e) => set({ ndi: e.target.checked })} /> Offer the Live Screen on the network as an
+              NDI source (for other computers, video mixers and OBS or vMix)
+            </label>
+            {draft.ndi && (
+              <label className="field">
+                <span className="field__label">NDI name</span>
+                <input className="text" value={draft.ndiName ?? 'Lumora'} maxLength={60} onChange={(e) => set({ ndiName: e.target.value })} />
+              </label>
+            )}
+            <p className="field__note">
+              {b.status.ndi
+                ? `Sending now as “${draft.ndiName ?? 'Lumora'}”.`
+                : 'NDI needs the free NDI Tools on this computer (ndi.video/tools). To take NDI cameras in, use Add input → NDI source.'}
+            </p>
+          </section>
           {problem && (
             <p className="field__note field__note--warn" role="alert">
               {problem}

@@ -2379,3 +2379,23 @@ button.strip__name:hover {
   aspect-ratio: 16 / 9;
   overflow: hidden;
 }
+
+/* NDI sources (Add input → Stream / IP / NDI camera) */
+.ndi-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.ndi-pick__row {
+  display: flex;
+  gap: 8px;
+}
+.ndi-pick__row .text {
+  flex: 1;
+}
+.ndi-pick__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

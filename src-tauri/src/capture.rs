@@ -136,6 +136,10 @@ pub struct CaptureSettings {
     /// Save a chapter list (what was on air when) with each recording.
     pub chapters: bool,
     pub destinations: Vec<Destination>,
+    /// Offer the Live Screen on the network as an NDI source.
+    pub ndi: bool,
+    /// The NDI source's name (shown as "COMPUTER (name)").
+    pub ndi_name: String,
 }
 
 impl Default for CaptureSettings {
@@ -150,6 +154,8 @@ impl Default for CaptureSettings {
             iso: true,
             chapters: true,
             destinations: Vec::new(),
+            ndi: false,
+            ndi_name: "Lumora".to_owned(),
         }
     }
 }
@@ -159,6 +165,10 @@ impl CaptureSettings {
         self.video_kbps = self.video_kbps.clamp(500, 80_000);
         self.audio_kbps = self.audio_kbps.clamp(64, 320);
         self.folder = self.folder.filter(|f| !f.trim().is_empty());
+        self.ndi_name = self.ndi_name.trim().chars().take(60).collect();
+        if self.ndi_name.is_empty() {
+            "Lumora".clone_into(&mut self.ndi_name);
+        }
         for (i, d) in self.destinations.iter_mut().enumerate() {
             if d.id.is_empty() {
                 d.id = format!("dest-{}", i + 1);
@@ -179,6 +189,8 @@ pub enum Kind {
     Stream,
     /// The vertical (9:16) version, streamed beside the wide one.
     Vertical,
+    /// The Live Screen offered on the network as an NDI source.
+    Ndi,
 }
 
 /// A recording or stream that is running.
@@ -215,6 +227,8 @@ pub struct CaptureStatus {
     pub streaming: Option<Running>,
     /// The vertical version, when some destinations get it.
     pub vertical: Option<Running>,
+    /// The NDI output, while it runs.
+    pub ndi: Option<Running>,
     /// The last recording that finished, ready to use.
     pub last_recording: Option<String>,
     /// Still turning the last recording into an .mp4.
@@ -256,6 +270,7 @@ impl Shared {
             Kind::Record => &mut s.recording,
             Kind::Stream => &mut s.streaming,
             Kind::Vertical => &mut s.vertical,
+            Kind::Ndi => &mut s.ndi,
         }
     }
 
@@ -380,6 +395,7 @@ impl Capture {
                 Kind::Record => "Already recording.".to_owned(),
                 Kind::Stream => "Already streaming.".to_owned(),
                 Kind::Vertical => "Already streaming the vertical version.".to_owned(),
+                Kind::Ndi => "Already sending NDI.".to_owned(),
             });
         }
         let session = self.next.fetch_add(1, Ordering::SeqCst);
@@ -389,6 +405,7 @@ impl Capture {
             Kind::Stream | Kind::Vertical => {
                 self.open_stream(kind, session, mime, &stopping, rehearse)?
             }
+            Kind::Ndi => self.open_ndi(session, &stopping)?,
         };
         let (tx, rx) = mpsc::channel::<Vec<u8>>();
         let queued = Arc::new(AtomicU64::new(0));
@@ -452,6 +469,7 @@ impl Capture {
                     Kind::Stream | Kind::Vertical => {
                         "The internet connection is too slow for the stream.".to_owned()
                     }
+                    Kind::Ndi => "The computer can't keep up with the NDI output.".to_owned(),
                 },
             );
             return Err("too slow".to_owned());
@@ -613,6 +631,89 @@ impl Capture {
     }
 }
 
+impl Capture {
+    fn open_ndi(
+        &self,
+        session: u64,
+        stopping: &Arc<AtomicBool>,
+    ) -> Result<(Box<dyn Write + Send>, Running, Finish), String> {
+        crate::ndi::available()?;
+        let ffmpeg = self
+            .ffmpeg
+            .as_ref()
+            .ok_or("NDI output needs FFmpeg, which was not found on this computer.")?;
+        let settings = self.settings();
+        let (w, h, fps) = ndi_size(settings.quality);
+        let sender = Arc::new(Mutex::new(crate::ndi::Sender::new(&settings.ndi_name)?));
+        let mut video = Command::new(ffmpeg)
+            .args(ndi_video_args(w, h))
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| format!("FFmpeg could not start: {e}"))?;
+        let video_in = video.stdin.take().ok_or("FFmpeg could not start")?;
+        let mut video_out = video.stdout.take().ok_or("FFmpeg could not start")?;
+        {
+            let sender = Arc::clone(&sender);
+            let shared = Arc::clone(&self.shared);
+            let stopping = Arc::clone(stopping);
+            thread::spawn(move || {
+                let mut frame = vec![0u8; (w * h * 4) as usize];
+                while video_out.read_exact(&mut frame).is_ok() {
+                    lock(&sender).video(w, h, fps, &mut frame);
+                }
+                if !stopping.load(Ordering::SeqCst) {
+                    shared.fail(Kind::Ndi, session, "The NDI output stopped.".to_owned());
+                }
+            });
+        }
+        let mut children = vec![video];
+        // The sound, if there is any (a picture-only NDI source is fine).
+        let mut audio_in = None;
+        if let Ok(mut audio) = Command::new(ffmpeg)
+            .args(ndi_audio_args())
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+        {
+            audio_in = audio.stdin.take();
+            if let Some(mut out) = audio.stdout.take() {
+                let sender = Arc::clone(&sender);
+                thread::spawn(move || {
+                    // 20 ms pieces: 960 samples × 2 channels × 4 bytes.
+                    let mut buf = vec![0u8; 960 * 2 * 4];
+                    while out.read_exact(&mut buf).is_ok() {
+                        let floats: Vec<f32> = buf
+                            .as_chunks::<4>()
+                            .0
+                            .iter()
+                            .map(|b| f32::from_le_bytes(*b))
+                            .collect();
+                        let mut planar = crate::ndi::deinterleave(&floats, 2);
+                        lock(&sender).audio(48_000, 2, 960, &mut planar);
+                    }
+                });
+            }
+            children.push(audio);
+        }
+        let running = Running {
+            session,
+            started_at: now_ms(),
+            path: None,
+            destinations: vec![format!("NDI: {}", settings.ndi_name)],
+            bytes: 0,
+            speed: None,
+        };
+        let out = TeeWriter {
+            video: video_in,
+            audio: audio_in,
+        };
+        Ok((Box::new(out), running, Finish::Ndi(children)))
+    }
+}
+
 impl Drop for Capture {
     fn drop(&mut self) {
         self.stop_all();
@@ -649,6 +750,7 @@ fn write_loop(
                     format!("The recording could not be written ({e}). Is the disk full?")
                 }
                 Kind::Stream | Kind::Vertical => "The stream stopped.".to_owned(),
+                Kind::Ndi => "The NDI output stopped.".to_owned(),
             };
             // For streams the FFmpeg reader explains why; this is the fallback.
             if kind == Kind::Record {
@@ -676,6 +778,8 @@ enum Finish {
     Recording(PathBuf),
     /// FFmpeg (a failure is reported by its progress reader).
     Stream(Child),
+    /// The FFmpegs that unpack the picture and sound for NDI.
+    Ndi(Vec<Child>),
 }
 
 impl Finish {
@@ -697,24 +801,110 @@ impl Finish {
                     }),
                 }
             }
-            Finish::Stream(mut child) => {
-                // Stdin is closed: give FFmpeg a moment to finish, then make sure it's gone.
-                let deadline = Instant::now() + Duration::from_secs(5);
-                loop {
-                    match child.try_wait() {
-                        Ok(Some(_)) => break,
-                        Ok(None) if Instant::now() < deadline => {
-                            thread::sleep(Duration::from_millis(50))
-                        }
-                        _ => {
-                            let _ = child.kill();
-                            let _ = child.wait();
-                            break;
-                        }
-                    }
-                }
+            Finish::Stream(child) => finish_child(child),
+            Finish::Ndi(children) => children.into_iter().for_each(finish_child),
+        }
+    }
+}
+
+/// Stdin is closed: give FFmpeg a moment to finish, then make sure it's gone.
+fn finish_child(mut child: Child) {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(50)),
+            _ => {
+                let _ = child.kill();
+                let _ = child.wait();
+                break;
             }
         }
+    }
+}
+
+/// The NDI picture size and frame rate for a quality (at most 1080p: NDI's usual).
+fn ndi_size(q: Quality) -> (u32, u32, u32) {
+    match q {
+        Quality::P720 => (1280, 720, 30),
+        Quality::P720x60 => (1280, 720, 60),
+        Quality::P1080x60 | Quality::P1440x60 => (1920, 1080, 60),
+        Quality::Vertical => (1080, 1920, 30),
+        Quality::P1080 | Quality::P1440 | Quality::P2160 => (1920, 1080, 30),
+    }
+}
+
+/// FFmpeg's arguments to unpack the encoded picture into raw BGRA frames.
+fn ndi_video_args(w: u32, h: u32) -> Vec<String> {
+    let mut a: Vec<String> = [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-fflags",
+        "+genpts",
+        "-analyzeduration",
+        "1000000",
+        "-i",
+        "pipe:0",
+        "-map",
+        "0:v:0",
+        "-pix_fmt",
+        "bgra",
+        "-f",
+        "rawvideo",
+    ]
+    .iter()
+    .map(|s| (*s).to_owned())
+    .collect();
+    a.splice(11..11, ["-vf".to_owned(), format!("scale={w}:{h}")]);
+    a.push("pipe:1".to_owned());
+    a
+}
+
+/// FFmpeg's arguments to unpack the sound into raw 48 kHz stereo floats.
+fn ndi_audio_args() -> Vec<String> {
+    [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-analyzeduration",
+        "1000000",
+        "-i",
+        "pipe:0",
+        "-map",
+        "0:a:0",
+        "-ac",
+        "2",
+        "-ar",
+        "48000",
+        "-f",
+        "f32le",
+        "pipe:1",
+    ]
+    .iter()
+    .map(|s| (*s).to_owned())
+    .collect()
+}
+
+/// Hands the encoded picture and sound to both unpacking FFmpegs (a sound
+/// problem never stops the picture).
+struct TeeWriter {
+    video: ChildStdin,
+    audio: Option<ChildStdin>,
+}
+
+impl Write for TeeWriter {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.video.write_all(buf)?;
+        if let Some(a) = self.audio.as_mut() {
+            if a.write_all(buf).is_err() {
+                self.audio = None;
+            }
+        }
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.video.flush()
     }
 }
 
@@ -1188,6 +1378,67 @@ mod tests {
         assert!(
             lock(&seen).iter().all(|s| s.failure.is_none()),
             "stopping is not a failure"
+        );
+    }
+
+    /// Needs FFmpeg and the NDI runtime (NDI_LIB_PATH): `cargo test -- --ignored ndi`.
+    #[test]
+    #[ignore = "needs the NDI runtime"]
+    fn the_live_screen_goes_out_over_ndi() {
+        let Some(ffmpeg) = find_ffmpeg() else {
+            return;
+        };
+        let d = temp_dir("ndi-out");
+        let Some(video) = sample(&ffmpeg, &d) else {
+            return;
+        };
+        let (c, _) = capture(&d, Some(ffmpeg));
+        c.set_settings(CaptureSettings {
+            ndi_name: "Lumora Out Test".into(),
+            quality: Quality::P720,
+            ..CaptureSettings::default()
+        });
+        let r = c
+            .start(Kind::Ndi, "video/x-matroska;codecs=avc1,opus", "")
+            .unwrap();
+        assert_eq!(r.destinations, ["NDI: Lumora Out Test"]);
+        let feed = {
+            let video = video.clone();
+            let session = r.session;
+            let c = std::sync::Arc::new(c);
+            let c2 = std::sync::Arc::clone(&c);
+            (
+                thread::spawn(move || {
+                    for part in video.chunks(4096) {
+                        if c2.chunk(session, part.to_vec()).is_err() {
+                            break;
+                        }
+                        thread::sleep(Duration::from_millis(3));
+                    }
+                }),
+                c,
+            )
+        };
+        let names = crate::ndi::sources(3000, "127.0.0.1").unwrap();
+        let name = names
+            .iter()
+            .find(|n| n.contains("Lumora Out Test"))
+            .expect("found on the network")
+            .clone();
+        let mut recv = crate::ndi::Receiver::new(&name).unwrap();
+        let mut size = None;
+        for _ in 0..100 {
+            if let crate::ndi::Received::Video { width, height, .. } = recv.capture(200) {
+                size = Some((width, height));
+                break;
+            }
+        }
+        let _ = feed.0.join();
+        feed.1.stop(r.session);
+        assert_eq!(
+            size,
+            Some((1280, 720)),
+            "the picture arrived at the NDI size"
         );
     }
 
