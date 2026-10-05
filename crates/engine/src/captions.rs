@@ -35,6 +35,11 @@ pub struct Captions {
     pub size: f32,
     /// Lines of text at once, 1 – 3.
     pub lines: u8,
+    /// The language spoken: a code like "en" or "he", or "auto" (worked out).
+    pub language: String,
+    /// The most accurate (bigger, slower) model for languages other than
+    /// English.
+    pub best: bool,
 }
 
 impl Default for Captions {
@@ -46,6 +51,8 @@ impl Default for Captions {
             place: CaptionPlace::Bottom,
             size: 1.0,
             lines: 2,
+            language: "en".to_owned(),
+            best: false,
         }
     }
 }
@@ -58,6 +65,14 @@ impl Captions {
             1.0
         };
         self.lines = self.lines.clamp(1, 3);
+        let code = self.language.trim().to_ascii_lowercase();
+        self.language = if code == "auto"
+            || ((2..=3).contains(&code.len()) && code.chars().all(|c| c.is_ascii_lowercase()))
+        {
+            code
+        } else {
+            "en".to_owned()
+        };
         if let Some(id) = &self.listen {
             if !sources.iter().any(|s| &s.id == id) {
                 self.listen = None;
@@ -76,9 +91,11 @@ mod tests {
             size: 9.0,
             lines: 0,
             listen: Some(SourceId::new("gone")),
+            language: "Hebrew!".into(),
             ..Captions::default()
         };
         c.repair(&[]);
+        assert_eq!(c.language, "en");
         assert!((c.size - 1.6).abs() < f32::EPSILON);
         assert_eq!(c.lines, 1);
         assert!(c.listen.is_none());

@@ -5,6 +5,18 @@ import type { Show } from '../engine/types/Show';
 import { useBroadcast } from '../broadcast/BroadcastContext';
 import '../broadcast/broadcast.css';
 import './captions.css';
+import { LANGUAGES } from './whisper';
+
+/** Languages the operator is most likely to want, first. */
+const FIRST = ['he', 'es', 'yi', 'ru', 'fr', 'ar', 'de', 'pt', 'it', 'zh', 'hi', 'uk', 'pl'];
+
+function languageName(code: string): string {
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
 
 /** Live captions: what's said, written for the stream's viewers (never on the room's screens). */
 export function CaptionsDialog({
@@ -36,7 +48,7 @@ export function CaptionsDialog({
   const st = b?.captions.state ?? { state: 'off' as const };
   const stateText =
     st.state === 'downloading'
-      ? 'Getting the speech model ready (the first time, a one-time download of about 30 MB)…'
+      ? `Getting the speech model ready (the first time, a one-time download of about ${c.language === 'en' ? '30' : c.best ? '250' : '80'} MB)…`
       : st.state === 'starting'
         ? 'Starting…'
         : st.state === 'listening'
@@ -65,8 +77,46 @@ export function CaptionsDialog({
             {stateText}
           </div>
           <div className="cap__preview" aria-label="The words right now">
-            {lines.length ? lines.map((l, i) => <div key={i}>{l}</div>) : <span>{c.on ? 'Words appear here as people speak.' : ' '}</span>}
+            {lines.length ? (
+              lines.map((l, i) => (
+                <div key={i} dir="auto">
+                  {l}
+                </div>
+              ))
+            ) : (
+              <span>{c.on ? 'Words appear here as people speak.' : ' '}</span>
+            )}
           </div>
+          <div className="cap__row">
+            <label className="field cap__grow">
+              <span className="field__label">Language spoken</span>
+              <select value={c.language} onChange={(e) => set({ language: e.target.value })}>
+                <option value="en">English</option>
+                <option value="auto">Work it out by itself (any language)</option>
+                <optgroup label="Other languages">
+                  {[...FIRST, ...LANGUAGES.filter((l) => l !== 'en' && !FIRST.includes(l)).sort((a, b) => languageName(a).localeCompare(languageName(b)))].map(
+                    (l) => (
+                      <option key={l} value={l}>
+                        {languageName(l)}
+                      </option>
+                    ),
+                  )}
+                </optgroup>
+              </select>
+            </label>
+            {c.language !== 'en' && (
+              <label className="field">
+                <span className="field__label">Model</span>
+                <select value={c.best ? 'best' : 'standard'} onChange={(e) => set({ best: e.target.value === 'best' })}>
+                  <option value="standard">Standard (quicker)</option>
+                  <option value="best">Most accurate (needs a fast computer)</option>
+                </select>
+              </label>
+            )}
+          </div>
+          {c.language !== 'en' && (
+            <p className="field__note">Other languages come phrase by phrase, a moment after they are said. Accuracy is best for widely spoken languages.</p>
+          )}
           <label className="field">
             <span className="field__label">Listen to</span>
             <select value={c.listen ?? ''} onChange={(e) => set({ listen: e.target.value || null })}>

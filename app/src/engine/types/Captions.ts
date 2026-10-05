@@ -19,4 +19,13 @@ size: number,
 /**
  * Lines of text at once, 1 – 3.
  */
-lines: number, };
+lines: number, 
+/**
+ * The language spoken: a code like "en" or "he", or "auto" (worked out).
+ */
+language: string, 
+/**
+ * The most accurate (bigger, slower) model for languages other than
+ * English.
+ */
+best: boolean, };

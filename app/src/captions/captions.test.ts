@@ -49,3 +49,23 @@ describe('model helpers', () => {
     expect(Math.max(...evenLevel(Float32Array.from([0.001])))).toBeCloseTo(0.02);
   });
 });
+
+describe('languages', () => {
+  it('uses the quick model for English and Whisper for the rest', async () => {
+    const { modelFor } = await import('./live');
+    expect(modelFor('en', false).name).toBe('moonshine-tiny');
+    expect(modelFor('he', false).name).toBe('whisper-base');
+    expect(modelFor('auto', true).name).toBe('whisper-small');
+  });
+  it('reads Whisper word pieces in any alphabet', async () => {
+    const { ByteWords, LANGUAGES } = await import('./whisper');
+    // "Ġ" is a space; Hebrew comes as bytes.
+    const shalom = [...new TextEncoder().encode('שלום')].map((b) => String.fromCharCode(b < 161 ? b + 256 : b));
+    const vocab: Record<string, number> = { ĠHello: 1 };
+    shalom.forEach((ch, i) => (vocab[ch] = 10 + i));
+    const w = new ByteWords({ model: { vocab } });
+    expect(w.text([1])).toBe('Hello');
+    expect(LANGUAGES[0]).toBe('en');
+    expect(LANGUAGES.indexOf('he')).toBe(20);
+  });
+});

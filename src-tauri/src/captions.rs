@@ -13,23 +13,66 @@ struct Model {
     files: &'static [(&'static str, &'static str, u64)],
 }
 
-const MODELS: &[Model] = &[Model {
-    name: "moonshine-tiny",
-    home: "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/main",
-    files: &[
-        (
-            "encoder_model_quantized.onnx",
-            "onnx/encoder_model_quantized.onnx",
-            7_000_000,
-        ),
-        (
-            "decoder_model_merged_quantized.onnx",
-            "onnx/decoder_model_merged_quantized.onnx",
-            18_000_000,
-        ),
-        ("tokenizer.json", "tokenizer.json", 1_000_000),
-    ],
-}];
+const MODELS: &[Model] = &[
+    Model {
+        name: "moonshine-tiny",
+        home: "https://huggingface.co/onnx-community/moonshine-tiny-ONNX/resolve/main",
+        files: &[
+            (
+                "encoder_model_quantized.onnx",
+                "onnx/encoder_model_quantized.onnx",
+                7_000_000,
+            ),
+            (
+                "decoder_model_merged_quantized.onnx",
+                "onnx/decoder_model_merged_quantized.onnx",
+                18_000_000,
+            ),
+            ("tokenizer.json", "tokenizer.json", 1_000_000),
+        ],
+    },
+    // Every other language (about 100): Whisper, standard and most accurate.
+    Model {
+        name: "whisper-base",
+        home: "https://huggingface.co/onnx-community/whisper-base/resolve/main",
+        files: WHISPER_FILES_BASE,
+    },
+    Model {
+        name: "whisper-small",
+        home: "https://huggingface.co/onnx-community/whisper-small/resolve/main",
+        files: WHISPER_FILES_SMALL,
+    },
+];
+
+const WHISPER_FILES_BASE: &[(&str, &str, u64)] = &[
+    (
+        "encoder_model_quantized.onnx",
+        "onnx/encoder_model_quantized.onnx",
+        20_000_000,
+    ),
+    (
+        "decoder_model_merged_quantized.onnx",
+        "onnx/decoder_model_merged_quantized.onnx",
+        45_000_000,
+    ),
+    ("tokenizer.json", "tokenizer.json", 1_000_000),
+    ("generation_config.json", "generation_config.json", 1_000),
+];
+
+const WHISPER_FILES_SMALL: &[(&str, &str, u64)] = &[
+    (
+        "encoder_model_quantized.onnx",
+        "onnx/encoder_model_quantized.onnx",
+        80_000_000,
+    ),
+    (
+        "decoder_model_merged_quantized.onnx",
+        "onnx/decoder_model_merged_quantized.onnx",
+        140_000_000,
+    ),
+    ("tokenizer.json", "tokenizer.json", 1_000_000),
+    ("generation_config.json", "generation_config.json", 1_000),
+];
 
 /// Lumora's own website keeps a copy of every model (tried first).
 const SITE: &str = "https://yehudakogan770.github.io/Livestreamingapp/models";

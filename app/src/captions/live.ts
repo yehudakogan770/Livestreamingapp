@@ -14,8 +14,13 @@ import { Segmenter } from './segmenter';
 
 export type CaptionState = { state: 'off' } | { state: 'downloading' } | { state: 'starting' } | { state: 'listening' } | { state: 'failed'; message: string };
 
-const MODEL = 'moonshine-tiny';
 const FILES = { encoder: 'encoder_model_quantized.onnx', decoder: 'decoder_model_merged_quantized.onnx', tokenizer: 'tokenizer.json' };
+
+/** The model for a language: Moonshine for English (quick, words as they're said), Whisper for the rest. */
+export function modelFor(language: string, best: boolean): { name: string; kind: 'moonshine' | 'whisper'; files: Record<string, string> } {
+  if (language === 'en') return { name: 'moonshine-tiny', kind: 'moonshine', files: FILES };
+  return { name: best ? 'whisper-small' : 'whisper-base', kind: 'whisper', files: { ...FILES, generation: 'generation_config.json' } };
+}
 
 export class LiveCaptions {
   readonly lines = new CaptionLines();
@@ -25,7 +30,10 @@ export class LiveCaptions {
   private silent: GainNode | null = null;
   private segmenter = new Segmenter();
   private busy = false;
-  private waiting: Float32Array | null = null;
+  /** Finished phrases waiting their turn (a slow model may fall behind: old ones are dropped). */
+  private waiting: Float32Array[] = [];
+  /** Words-so-far are shown (only with the quick English model). */
+  private partials = true;
   private nextId = 1;
   private finals = new Set<number>();
   private seq = 1;
@@ -49,13 +57,15 @@ export class LiveCaptions {
     this.onState(s);
   }
 
-  /** Start listening to `listen` (a microphone input, or null: the Stream mix). */
-  async start(listen: string | null): Promise<void> {
+  /** Start listening to `listen` (a microphone input, or null: the Stream mix) in `language` ("auto": worked out). */
+  async start(listen: string | null, language = 'en', best = false): Promise<void> {
     this.stop();
     const run = ++this.run;
+    const m = modelFor(language, best);
+    this.partials = m.kind === 'moonshine';
     try {
       this.set({ state: 'downloading' });
-      const folder = await this.client.captionsModel(MODEL);
+      const folder = await this.client.captionsModel(m.name);
       if (run !== this.run) return;
       this.set({ state: 'starting' });
       const sep = folder.includes('\\') ? '\\' : '/';
@@ -69,9 +79,9 @@ export class LiveCaptions {
         worker.postMessage({
           type: 'load',
           ortBase: new URL('ort/', document.baseURI).href,
-          encoder: url(FILES.encoder),
-          decoder: url(FILES.decoder),
-          tokenizer: url(FILES.tokenizer),
+          kind: m.kind,
+          language: language === 'auto' ? null : language,
+          files: Object.fromEntries(Object.entries(m.files).map(([k, f]) => [k, url(f)])),
         });
       });
       if (run !== this.run) return;
@@ -106,7 +116,7 @@ export class LiveCaptions {
     this.worker?.terminate();
     this.worker = null;
     this.busy = false;
-    this.waiting = null;
+    this.waiting = [];
     this.segmenter = new Segmenter();
     if (this.state.state !== 'failed') this.set({ state: 'off' });
   }
@@ -120,15 +130,18 @@ export class LiveCaptions {
     for (const p of this.segmenter.push(audio16k)) {
       if (p.kind === 'final') this.ask(p.audio, true);
       // Words so far: only when the model is free (finished phrases come first).
-      else if (!this.busy) this.ask(p.audio, false);
+      else if (this.partials && !this.busy) this.ask(p.audio, false);
     }
   }
 
   private ask(audio: Float32Array, final: boolean) {
     if (!this.worker) return;
     if (this.busy) {
-      // One finished phrase waits its turn; partials are dropped.
-      if (final) this.waiting = audio;
+      // Finished phrases wait their turn (at most 2: captions stay current); partials are dropped.
+      if (final) {
+        this.waiting.push(audio);
+        if (this.waiting.length > 2) this.waiting.shift();
+      }
       return;
     }
     const id = this.nextId++;
@@ -144,8 +157,7 @@ export class LiveCaptions {
       this.lines.addFinal(text);
       if (text.trim()) for (const url of this.sendTo()) void this.client.captionsSend(url, this.seq++, Date.now(), text).catch(() => {});
     } else this.lines.setPartial(text);
-    const next = this.waiting;
-    this.waiting = null;
+    const next = this.waiting.shift();
     if (next) this.ask(next, true);
   }
 }

@@ -379,9 +379,9 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   }, [live]);
   useEffect(() => {
     if (!live) return;
-    if (cc?.on) void live.start(cc.listen ?? null);
+    if (cc?.on) void live.start(cc.listen ?? null, cc.language ?? 'en', cc.best ?? false);
     else live.stop();
-  }, [live, cc?.on, cc?.listen]);
+  }, [live, cc?.on, cc?.listen, cc?.language, cc?.best]);
   const ccRef = useRef(cc);
   ccRef.current = cc;
   useEffect(() => {
