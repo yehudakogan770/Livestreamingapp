@@ -163,7 +163,7 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
             </label>
             <label className="check">
               <input type="checkbox" checked={draft.iso ?? true} onChange={(e) => set({ iso: e.target.checked })} /> Also record each camera and microphone to
-              its own file (for editing afterwards)
+              its own file (to edit the whole event afterwards in Lumora Edit)
             </label>
             <label className="check">
               <input type="checkbox" checked={draft.chapters ?? true} onChange={(e) => set({ chapters: e.target.checked })} /> Save a chapter list with each

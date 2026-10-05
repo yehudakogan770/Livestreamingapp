@@ -119,7 +119,12 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
               download it
             </a>
           ) : (
-            <span className="bc-saved__path">{saved}</span>
+            <>
+              <span className="bc-saved__path">{saved}</span>
+              {b.settings.iso !== false && (
+                <span className="bc-saved__edit"> To edit it with every camera, open the .lumora file next to it in Lumora Edit.</span>
+              )}
+            </>
           )}
           <button type="button" className="icon" aria-label="Close" onClick={() => setSaved(null)}>
             ✕
