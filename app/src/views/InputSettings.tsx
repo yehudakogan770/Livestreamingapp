@@ -7,6 +7,7 @@ import type { Source } from '../engine/types/Source';
 import { SourceView } from '../components/SourceView';
 import { autoBalance, ChromaKeyer, defaultAdjust, defaultAutoFrame, defaultBackground, isAdjusted } from '../engine/chroma';
 import { maxZoom, visionFailed } from '../engine/vision';
+import { currentSet, SETS } from '../visuals/sets';
 import type { AutoFrame } from '../engine/types/AutoFrame';
 import type { Background } from '../engine/types/Background';
 import type { Act } from './act';
@@ -423,6 +424,7 @@ const BG_MODES: [Background['mode'], string][] = [
   ['blur', 'Blur it'],
   ['remove', 'Take it away'],
   ['picture', 'A picture'],
+  ['set', 'A virtual set'],
 ];
 
 /** Background without a green screen, and auto-framing. */
@@ -456,7 +458,7 @@ function SmartTab({ source, act, client, cameraWidth }: { source: Source; act: A
             type="button"
             className="seg"
             aria-pressed={bg.mode === mode}
-            onClick={() => (mode === 'picture' && !bg.picture ? choosePicture() : setBg({ mode }))}
+            onClick={() => (mode === 'picture' && !bg.picture ? choosePicture() : setBg(mode === 'set' ? { mode, set: bg.set ?? SETS[0]!.id } : { mode }))}
           >
             {name}
           </button>
@@ -471,11 +473,23 @@ function SmartTab({ source, act, client, cameraWidth }: { source: Source; act: A
           </button>
         </div>
       )}
+      {bg.mode === 'set' && (
+        <div className="is__sets">
+          {SETS.map((s) => (
+            <button key={s.id} type="button" className="is__set" aria-pressed={bg.set === s.id} onClick={() => setBg({ mode: 'set', set: s.id })}>
+              <SetThumb id={s.id} />
+              <span>{s.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
       {bg.mode !== 'keep' && slider('Edge', bg.edge, (v) => setBg({ edge: v }), 'Crisp', 'Soft')}
       <p className="field__note">
-        {bg.mode === 'remove'
-          ? 'What is behind this input shows through, like a green screen: put it over a picture, video or virtual set.'
-          : 'Lumora finds the people in the picture by itself. Works best with one to three people facing the camera.'}
+        {bg.mode === 'set'
+          ? 'Sets use the event’s accent color (Event → Event look). Move the person in the set with Crop & position. With a green screen on, its edge is used.'
+          : bg.mode === 'remove'
+            ? 'What is behind this input shows through, like a green screen: put it over a picture, video or virtual set.'
+            : 'Lumora finds the people in the picture by itself. Works best with one to three people facing the camera.'}
       </p>
 
       {source.kind.type !== 'image' && (
@@ -523,4 +537,18 @@ function SmartTab({ source, act, client, cameraWidth }: { source: Source; act: A
       )}
     </>
   );
+}
+
+/** A small picture of a virtual set (with what stands in front). */
+function SetThumb({ id }: { id: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current;
+    const p = currentSet(id);
+    const g = c?.getContext('2d');
+    if (!c || !p || !g) return;
+    g.drawImage(p.back, 0, 0, c.width, c.height);
+    if (p.front) g.drawImage(p.front, 0, 0, c.width, c.height);
+  }, [id]);
+  return <canvas ref={ref} width={128} height={72} />;
 }

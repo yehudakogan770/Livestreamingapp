@@ -27,6 +27,8 @@ pub enum BackgroundMode {
     Remove,
     /// Swapped for a picture.
     Picture,
+    /// A virtual set (a designed studio), sometimes with a desk in front.
+    Set,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -41,6 +43,9 @@ pub struct Background {
     pub picture: Option<String>,
     /// How soft the edge around people is, 0 – 1.
     pub edge: f32,
+    /// The virtual set (mode Set), e.g. "news".
+    #[ts(optional = nullable)]
+    pub set: Option<String>,
 }
 
 impl Default for Background {
@@ -50,6 +55,7 @@ impl Default for Background {
             blur: 0.6,
             picture: None,
             edge: 0.4,
+            set: None,
         }
     }
 }
@@ -60,7 +66,14 @@ impl Background {
         self.blur = fit(self.blur, 0.0, 1.0, d.blur);
         self.edge = fit(self.edge, 0.0, 1.0, d.edge);
         self.picture = self.picture.take().filter(|p| !p.trim().is_empty());
-        if self.mode == BackgroundMode::Picture && self.picture.is_none() {
+        self.set = self
+            .set
+            .take()
+            .map(|s| s.trim().chars().take(40).collect::<String>())
+            .filter(|s| !s.is_empty());
+        if (self.mode == BackgroundMode::Picture && self.picture.is_none())
+            || (self.mode == BackgroundMode::Set && self.set.is_none())
+        {
             self.mode = BackgroundMode::Remove;
         }
     }

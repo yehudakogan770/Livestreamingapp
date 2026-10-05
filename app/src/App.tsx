@@ -26,6 +26,7 @@ import { barActions, defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { CaptionsDialog } from './captions/CaptionsDialog';
 import { SpeakersDialog } from './views/SpeakersDialog';
+import { setSetLook } from './visuals/sets';
 import { BroadcastDialog } from './broadcast/BroadcastDialog';
 import { OverlayEditor } from './views/OverlayEditor';
 import { sendCommand } from './views/commands';
@@ -60,6 +61,8 @@ function ControlApp() {
   const client = useMemo(createEngineClient, []);
   const { snapshot, error } = useShow(client);
   useEventFonts(snapshot?.show.event.brand.fonts, client);
+  // Virtual sets follow the event's look.
+  setSetLook(snapshot?.show.event.brand.accent ?? '#2f80ed', snapshot?.show.event.name ?? '');
   const [controlling, setControlling] = useState<ScreenId>('live');
   const select = useCallback((id: ScreenId) => setControlling(id), []);
   const show = snapshot?.show ?? null;

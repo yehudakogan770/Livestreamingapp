@@ -122,6 +122,9 @@ uniform float bgBlur;     // 0 – 1
 uniform float edge;       // 0 – 1
 uniform sampler2D bgPic;
 uniform float bgAspect;   // picture width / height
+uniform float maskOn;     // a person mask came (else: the green screen's edge, or all of it)
+uniform float fgOn;       // something stands in front (a virtual set's desk)
+uniform sampler2D fgPic;
 
 vec2 chroma(vec3 c) {
   return vec2(-0.169 * c.r - 0.331 * c.g + 0.5 * c.b, 0.5 * c.r - 0.419 * c.g - 0.081 * c.b);
@@ -145,7 +148,7 @@ void main() {
   vec4 c = texture2D(tex, s);
   vec3 rgb = c.rgb;
   float person = 1.0;
-  if (bgMode > 0.5) {
+  if (bgMode > 0.5 && maskOn > 0.5) {
     float e = 0.03 + edge * 0.3;
     person = smoothstep(0.5 - e, 0.5 + e, texture2D(mask, s).r);
   }
@@ -209,11 +212,16 @@ void main() {
     rgb += n * grain * 0.2;
   }
   if (bgMode > 2.5) {
-    // A picture behind the people, filling the frame.
+    // A picture (or virtual set) behind the people, filling the frame.
     vec2 b = uv - 0.5;
     float r = aspect / bgAspect;
     if (r > 1.0) b.y /= r; else b.x *= r;
-    rgb = mix(texture2D(bgPic, b + 0.5).rgb, rgb, person);
+    rgb = mix(texture2D(bgPic, b + 0.5).rgb, rgb, person * alpha);
+    alpha = 1.0;
+    if (fgOn > 0.5) {
+      vec4 f = texture2D(fgPic, b + 0.5);
+      rgb = mix(rgb, f.rgb, f.a);
+    }
   }
   rgb = clamp(rgb, 0.0, 1.0);
   gl_FragColor = vec4(rgb * alpha, alpha);
@@ -277,6 +285,9 @@ const UNIFORMS = [
   'edge',
   'bgPic',
   'bgAspect',
+  'maskOn',
+  'fgOn',
+  'fgPic',
 ] as const;
 
 /** Background removal and auto-framing for one frame (see vision.ts). */
@@ -284,13 +295,15 @@ export interface Smarts {
   /** The person mask (null: the background stays). */
   mask: { data: Uint8Array; w: number; h: number } | null;
   bg: Background;
-  /** The picture behind the people (mode picture), loaded. */
-  picture: HTMLImageElement | null;
+  /** The picture behind the people (mode picture, or a virtual set). */
+  picture: HTMLImageElement | HTMLCanvasElement | null;
+  /** What stands in front of them (a virtual set's desk). */
+  front?: HTMLCanvasElement | null;
   /** Auto-framed zoom and pan, used instead of the input's own (null: its own). */
   view: { zoom: number; panX: number; panY: number } | null;
 }
 
-const BG_MODE: Record<Background['mode'], number> = { keep: 0, blur: 1, remove: 2, picture: 3 };
+const BG_MODE: Record<Background['mode'], number> = { keep: 0, blur: 1, remove: 2, picture: 3, set: 3 };
 
 /** One processor: draws a processed copy of a picture onto its own canvas. */
 export class ChromaKeyer {
@@ -299,7 +312,9 @@ export class ChromaKeyer {
   private readonly loc: Partial<Record<(typeof UNIFORMS)[number], WebGLUniformLocation | null>> = {};
   private maskTex: WebGLTexture | null = null;
   private picTex: WebGLTexture | null = null;
-  private picFor: HTMLImageElement | null = null;
+  private picFor: HTMLImageElement | HTMLCanvasElement | null = null;
+  private fgTex: WebGLTexture | null = null;
+  private fgFor: HTMLCanvasElement | null = null;
   private mainTex: WebGLTexture | null = null;
 
   constructor(canvas: HTMLCanvasElement = document.createElement('canvas')) {
@@ -340,12 +355,16 @@ export class ChromaKeyer {
     gl.activeTexture(gl.TEXTURE2);
     this.picTex = texture();
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
+    gl.activeTexture(gl.TEXTURE3);
+    this.fgTex = texture();
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
     gl.activeTexture(gl.TEXTURE0);
     this.mainTex = texture();
     for (const name of UNIFORMS) this.loc[name] = gl.getUniformLocation(prog, name);
     gl.uniform1i(this.loc.tex!, 0);
     gl.uniform1i(this.loc.mask!, 1);
     gl.uniform1i(this.loc.bgPic!, 2);
+    gl.uniform1i(this.loc.fgPic!, 3);
   }
 
   /** This computer can process pictures (it has WebGL). */
@@ -381,30 +400,56 @@ export class ChromaKeyer {
       return false;
     }
     const L = this.loc;
-    // Background without a green screen: only once a mask has come.
-    const bgOn = !!smarts?.mask && smarts.bg.mode !== 'keep' && (smarts.bg.mode !== 'picture' || !!smarts.picture?.complete);
-    gl.uniform1f(L.bgMode!, bgOn ? BG_MODE[smarts!.bg.mode] : 0);
+    // Background without a green screen: once a mask has come (or a green screen gives the edge).
+    const sm = smarts ?? null;
+    const mode = sm?.bg.mode ?? 'keep';
+    const behind = mode === 'picture' || mode === 'set';
+    const pic = sm?.picture ?? null;
+    const picReady = !!pic && (pic instanceof HTMLCanvasElement || pic.complete);
+    const bgOn = !!sm && mode !== 'keep' && (!!sm.mask || (behind && key.enabled)) && (!behind || picReady);
+    gl.uniform1f(L.bgMode!, bgOn ? BG_MODE[mode] : 0);
+    gl.uniform1f(L.maskOn!, bgOn && sm!.mask ? 1 : 0);
+    gl.uniform1f(L.fgOn!, 0);
     if (bgOn) {
-      const m = smarts!.mask!;
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, this.maskTex);
-      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, m.w, m.h, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, m.data);
-      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
-      gl.uniform1f(L.bgBlur!, smarts!.bg.blur);
-      gl.uniform1f(L.edge!, smarts!.bg.edge);
-      const pic = smarts!.picture;
-      if (smarts!.bg.mode === 'picture' && pic && pic !== this.picFor) {
-        gl.activeTexture(gl.TEXTURE2);
-        gl.bindTexture(gl.TEXTURE_2D, this.picTex);
-        try {
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pic);
-          this.picFor = pic;
-        } catch {
-          // A picture that can't be used: the background shows black behind.
+      const m = sm!.mask;
+      if (m) {
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, this.maskTex);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, m.w, m.h, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, m.data);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+      }
+      gl.uniform1f(L.bgBlur!, sm!.bg.blur);
+      gl.uniform1f(L.edge!, sm!.bg.edge);
+      if (behind && pic) {
+        if (pic !== this.picFor) {
+          gl.activeTexture(gl.TEXTURE2);
+          gl.bindTexture(gl.TEXTURE_2D, this.picTex);
+          try {
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pic);
+            this.picFor = pic;
+          } catch {
+            // A picture that can't be used: the background shows black behind.
+          }
+        }
+        const pw = pic instanceof HTMLCanvasElement ? pic.width : pic.naturalWidth;
+        const ph = pic instanceof HTMLCanvasElement ? pic.height : pic.naturalHeight;
+        gl.uniform1f(L.bgAspect!, pw / Math.max(1, ph));
+        const front = mode === 'set' ? (sm!.front ?? null) : null;
+        if (front) {
+          if (front !== this.fgFor) {
+            gl.activeTexture(gl.TEXTURE3);
+            gl.bindTexture(gl.TEXTURE_2D, this.fgTex);
+            try {
+              gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, front);
+              this.fgFor = front;
+            } catch {
+              // Without the desk, the set still shows.
+            }
+          }
+          gl.uniform1f(L.fgOn!, 1);
         }
       }
-      if (pic) gl.uniform1f(L.bgAspect!, pic.naturalWidth / Math.max(1, pic.naturalHeight));
       gl.activeTexture(gl.TEXTURE0);
     }
     const view = smarts?.view;

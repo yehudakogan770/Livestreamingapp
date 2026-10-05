@@ -233,3 +233,29 @@
 .is__group:first-child {
   margin-top: 0;
 }
+.is__sets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.is__set {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.is__set[aria-pressed='true'] {
+  border-color: var(--accent, #4fb3bf);
+  box-shadow: 0 0 0 1px var(--accent, #4fb3bf);
+}
+.is__set canvas {
+  width: 100%;
+  height: auto;
+  border-radius: 3px;
+}

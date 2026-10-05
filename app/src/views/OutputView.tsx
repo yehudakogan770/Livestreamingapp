@@ -1,4 +1,5 @@
 import { useEventFonts } from '../engine/fonts';
+import { setSetLook } from '../visuals/sets';
 import { useEffect, useMemo } from 'react';
 import { dataValues } from '../engine/data';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -19,6 +20,8 @@ export function OutputView({ screen }: { screen: ScreenId }) {
   const client = useMemo(createEngineClient, []);
   const { snapshot } = useShow(client);
   useEventFonts(snapshot?.show.event.brand.fonts, client);
+  // Virtual sets follow the event's look.
+  setSetLook(snapshot?.show.event.brand.accent ?? '#2f80ed', snapshot?.show.event.name ?? '');
 
   useEffect(() => {
     document.title = `Lumora — ${screen} output`;

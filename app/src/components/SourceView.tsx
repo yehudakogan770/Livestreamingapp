@@ -20,6 +20,7 @@ import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
 import { ChromaKeyer, defaultAdjust, defaultAutoFrame, defaultBackground, needsProcessing, type Smarts } from '../engine/chroma';
 import { InputVision, shotToView, usesVision } from '../engine/vision';
+import { currentSet } from '../visuals/sets';
 import type { Adjust } from '../engine/types/Adjust';
 import type { AutoFrame } from '../engine/types/AutoFrame';
 import type { Background } from '../engine/types/Background';
@@ -455,7 +456,14 @@ function Keyed({
             picture.crossOrigin = 'anonymous';
             picture.src = pu;
           }
-          smarts = { mask: vision.mask, bg, picture: pu ? picture : null, view: af.enabled ? shotToView(vision.shot) : null };
+          const set = bg.mode === 'set' ? currentSet(bg.set) : null;
+          smarts = {
+            mask: vision.mask,
+            bg,
+            picture: set ? set.back : pu ? picture : null,
+            front: set?.front ?? null,
+            view: af.enabled ? shotToView(vision.shot) : null,
+          };
         }
         keyer.draw(pic, w, h, kc, ad, 1920, smarts);
       }

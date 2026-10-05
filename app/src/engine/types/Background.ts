@@ -13,4 +13,8 @@ picture?: string | null,
 /**
  * How soft the edge around people is, 0 – 1.
  */
-edge: number, };
+edge: number, 
+/**
+ * The virtual set (mode Set), e.g. "news".
+ */
+set?: string | null, };

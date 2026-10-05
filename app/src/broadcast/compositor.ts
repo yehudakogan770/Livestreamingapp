@@ -19,6 +19,7 @@ import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundA
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
 import { InputVision, shotToView, usesVision } from '../engine/vision';
+import { currentSet, setSetLook } from '../visuals/sets';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
 import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
@@ -142,6 +143,7 @@ export class ProgramCompositor {
 
   setShow(show: Show): void {
     this.show = show;
+    setSetLook(show.event.brand.accent, show.event.name);
   }
 
   resize(width: number, height: number): void {
@@ -1880,10 +1882,12 @@ export class ProgramCompositor {
             // A PTZ camera is steered instead (optical zoom): no digital zoom here.
             const digital = src.ptz ? { ...src.autoFrame, enabled: false } : src.autoFrame;
             v.update(el, iw, ih, src.background, digital, w);
+            const set = src.background.mode === 'set' ? currentSet(src.background.set) : null;
             smarts = {
               mask: v.mask,
               bg: src.background,
-              picture: this.bgPicture(src.background.mode === 'picture' ? src.background.picture : null),
+              picture: set ? set.back : this.bgPicture(src.background.mode === 'picture' ? src.background.picture : null),
+              front: set?.front ?? null,
               view: src.autoFrame.enabled && !src.ptz ? shotToView(v.shot) : null,
             };
           }
