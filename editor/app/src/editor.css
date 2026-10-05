@@ -2235,3 +2235,84 @@ button.tc:hover {
 .help__keys dd {
   margin: 0;
 }
+
+/* ---- transcript and captions ---- */
+.th__role {
+  width: auto;
+  min-width: 20px;
+  padding: 0 4px;
+  font-weight: 600;
+}
+.estrip__role {
+  width: 100%;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--well);
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.tscript {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.tscript__bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px 6px;
+}
+.tscript__words {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 12px 12px;
+  font-size: 14px;
+  line-height: 1.7;
+  user-select: none;
+  outline: none;
+}
+.tscript__words:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.tscript__para {
+  margin: 0 0 10px;
+}
+.tscript__time {
+  margin-right: 8px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--well);
+  color: var(--text-faint);
+  font: inherit;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.tscript__w {
+  border-radius: 3px;
+  cursor: text;
+}
+.tscript__w:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.tscript__w.is-found {
+  background: rgba(214, 167, 58, 0.3);
+}
+.tscript__w.is-now {
+  color: var(--accent);
+}
+.tscript__w.is-sel {
+  background: var(--accent-deep);
+  color: #fff;
+}
+.tscript__foot {
+  margin: 0;
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--border);
+  color: var(--text-faint);
+  font-size: 11.5px;
+}

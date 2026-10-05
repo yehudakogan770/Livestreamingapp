@@ -111,6 +111,7 @@ export function ParamRow({
   onSeek,
   clipStart,
   slider = true,
+  keys: keyable = true,
 }: {
   label: string;
   param: Param | undefined;
@@ -125,6 +126,8 @@ export function ParamRow({
   onSeek: (frame: number) => void;
   clipStart: number;
   slider?: boolean;
+  /** Can change over the clip (keyframes). */
+  keys?: boolean;
 }) {
   const v = valueAt(param, local, def);
   const animated = isAnim(param);
@@ -135,15 +138,19 @@ export function ParamRow({
   const set = (x: number, final: boolean) => onChange(animated ? setValue(param, local, x) : x, final);
   return (
     <div className={`prow${animated ? ' is-anim' : ''}`}>
-      <button
-        type="button"
-        className={`prow__watch${animated ? ' is-on' : ''}`}
-        title={animated ? 'Turn keyframes off (keeps the value here)' : 'Turn keyframes on (the value can change over the clip)'}
-        aria-label={`Keyframes for ${label}`}
-        onClick={() => onChange(toggleAnim(param, local, def), true)}
-      >
-        ◷
-      </button>
+      {keyable || animated ? (
+        <button
+          type="button"
+          className={`prow__watch${animated ? ' is-on' : ''}`}
+          title={animated ? 'Turn keyframes off (keeps the value here)' : 'Turn keyframes on (the value can change over the clip)'}
+          aria-label={`Keyframes for ${label}`}
+          onClick={() => onChange(toggleAnim(param, local, def), true)}
+        >
+          ◷
+        </button>
+      ) : (
+        <span className="prow__watch" aria-hidden="true" />
+      )}
       <span className="prow__label" title={label}>
         {label}
       </span>

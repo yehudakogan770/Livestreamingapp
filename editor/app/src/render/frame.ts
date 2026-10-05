@@ -2,6 +2,8 @@
 // transitions between them, and adjustment layers. The same list is drawn
 // while editing and when the film is made.
 import { valueAt } from '../model/anim';
+import { captionText } from '../model/captions';
+import { effectDef } from '../model/effects';
 import { end, onTrack, rate, seqLength } from '../model/seq';
 import type { BlendMode, Clip, MediaItem, Project, Sequence, TextData } from '../model/types';
 
@@ -93,8 +95,8 @@ export function effectsAt(c: Clip, local: number, kind: 'video' | 'audio', isAud
     .map((e) => ({ id: e.id, type: e.type, p: Object.fromEntries(Object.entries(e.p).map(([k, v]) => [k, valueAt(v, t)])), d: e.d ?? {} }));
 }
 
-const AUDIO_EFFECTS = new Set(['eq', 'compressor', 'denoise', 'deess', 'limiter', 'voice']);
-export const isAudioEffect = (type: string): boolean => AUDIO_EFFECTS.has(type);
+/** A sound effect (the rest change the picture). */
+export const isAudioEffect = (type: string): boolean => effectDef(type)?.kind === 'audio';
 
 /** Nests inside nests stop here (and a sequence never shows itself). */
 const MAX_DEPTH = 4;
@@ -150,6 +152,16 @@ export function frameOps(p: Project, s: Sequence, frame: number, prefix = '', de
   for (const t of s.tracks) {
     if (t.kind !== 'video' || t.off) continue;
     const clips = onTrack(s, t.id).filter((c) => c.enabled);
+    // A captions track: the block showing now, drawn in the track's look (no transitions).
+    if (t.captions) {
+      const c = clips.find((x) => frame >= x.start && frame < end(x));
+      if (c?.source.kind === 'caption' && c.source.text.trim())
+        ops.push({
+          kind: 'layer',
+          layer: { ...lay(c), source: { kind: 'text', text: captionText(c.source.text, t.captions), local: frame - c.start, length: c.length } },
+        });
+      continue;
+    }
     // A transition into a clip (from the one touching it, or from nothing).
     const into = clips.find((c) => {
       const w = transitionWindow(c);

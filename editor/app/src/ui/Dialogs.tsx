@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { addSequence, duration, updateSequence } from '../model/build';
+import { captionCues, captionTracks, toSrt, toVtt, withoutCaptions } from '../model/captions';
 import { current, rate, seqLength } from '../model/seq';
 import { FRAME_RATES } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
@@ -195,6 +196,9 @@ export function ExportDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
   const [quality, setQuality] = useState<'high' | 'good' | 'small'>('high');
   const [loudness, setLoudness] = useState(false);
   const [toLumora, setToLumora] = useState(false);
+  const hasCaptions = captionTracks(s).some((t) => s.clips.some((c) => c.track === t.id));
+  const [burn, setBurn] = useState(true);
+  const [sidecar, setSidecar] = useState(false);
   const folder = project.eventPath ? folderOf(project.eventPath) : '';
   const [out, setOut] = useState(joinPath(folder || (inApp() ? '' : 'C:/Users/You/Videos'), `${project.name || 'Film'} (edited).mp4`));
   const [state, setState] = useState<ExportState | null>(null);
@@ -236,8 +240,17 @@ export function ExportDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
       target = picked;
       setOut(picked);
     }
-    const ex = new Exporter(doc.project, { height, mbps, sound: kind === 'video' ? null : kind, range, loudness, out: target }, (st) => {
+    const film = hasCaptions && !burn ? withoutCaptions(doc.project) : doc.project;
+    // Caption files next to the film, timed from where the export starts.
+    const cues = hasCaptions && sidecar ? captionCues(s, undefined, range) : [];
+    const ex = new Exporter(film, { height, mbps, sound: kind === 'video' ? null : kind, range, loudness, out: target }, (st) => {
       setState(st);
+      if (st.stage === 'done' && st.path && cues.length) {
+        const base = st.path.replace(/\.[^.\\/]+$/, '');
+        void Promise.all([native.writeText(`${base}.srt`, toSrt(cues)), native.writeText(`${base}.vtt`, toVtt(cues))]).catch((e: unknown) =>
+          setState({ ...st, message: `The film is ready, but the caption files weren't saved: ${e instanceof Error ? e.message : String(e)}` }),
+        );
+      }
       if (st.stage === 'done' && st.path && toLumora && kind === 'video') {
         void native
           .sendToLumora(st.path, baseName(st.path), seconds)
@@ -333,6 +346,17 @@ export function ExportDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
           {kind === 'video' && (
             <label className="check form__check">
               <input type="checkbox" checked={toLumora} onChange={(e) => setToLumora(e.target.checked)} /> Put it in Lumora’s library, ready to show live
+            </label>
+          )}
+          {hasCaptions && kind === 'video' && (
+            <label className="check form__check">
+              <input type="checkbox" checked={burn} onChange={(e) => setBurn(e.target.checked)} /> Burn the captions into the picture
+            </label>
+          )}
+          {hasCaptions && (
+            <label className="check form__check">
+              <input type="checkbox" checked={sidecar} onChange={(e) => setSidecar(e.target.checked)} /> Also save the captions as .srt and .vtt files next to
+              it
             </label>
           )}
           <label className="form__row">

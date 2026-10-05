@@ -3,7 +3,8 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useAccess } from '../../../../app/src/auth/Gate';
 import { Doc, useDoc } from '../doc';
-import { current } from '../model/seq';
+import { addCaptionTrack, captionTracks, mergeCaptions, splitCaption } from '../model/captions';
+import { current, end } from '../model/seq';
 import type { Project } from '../model/types';
 import { Engine } from '../player/engine';
 import { fileName, folderOf, inApp, native } from '../native';
@@ -14,6 +15,7 @@ import { ExportDialog, HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs
 import { typing } from './hooks';
 import { chooseAndImport, importFiles, MEDIA_EXTENSIONS } from './importer';
 import { Inspector } from './Inspector';
+import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { Mixer } from './Mixer';
 import { ProgramMonitor, SourceMonitor } from './Monitors';
 import { ProjectPanel } from './ProjectPanel';
@@ -271,6 +273,51 @@ export function Editor({
         { label: 'Reset panel sizes', run: () => ui.set({ left: 330, right: 330, bottom: 330 }) },
       ],
     ],
+    [
+      'Captions',
+      () => {
+        const sel = doc.state.selection?.kind === 'clips' ? doc.state.selection.ids : [];
+        const caps = s.clips.filter((c) => sel.includes(c.id) && c.source.kind === 'caption');
+        const here = Math.floor(engine.time);
+        const atHead = caps.find((c) => here > c.start && here < end(c));
+        const transcribed = state.project.media.some((m) => m.transcript?.words.length);
+        return [
+          { label: 'Transcribe…', run: () => ui.set({ dialog: 'transcribe' }) },
+          { label: 'Make captions from the transcript', disabled: !transcribed, run: () => doc.edit((p) => makeCaptions(p, null), 'Make captions') },
+          { label: 'Add a captions track', run: () => doc.edit((p) => addCaptionTrack(p).project, 'Add captions track') },
+          'sep',
+          {
+            label: 'Split the caption at the playhead',
+            disabled: !atHead,
+            run: () => atHead && doc.edit((p) => splitCaption(p, atHead.id, here), 'Split caption'),
+          },
+          {
+            label: 'Join the selected captions',
+            disabled: caps.length < 2,
+            run: () =>
+              doc.edit(
+                (p) =>
+                  mergeCaptions(
+                    p,
+                    caps.map((c) => c.id),
+                  ),
+                'Join captions',
+              ),
+          },
+          'sep',
+          {
+            label: 'Save captions as .srt…',
+            disabled: !captionTracks(s).length,
+            run: () => void saveCaptionFile(doc, 'srt').then((m) => m && ui.note(m)),
+          },
+          {
+            label: 'Save captions as .vtt…',
+            disabled: !captionTracks(s).length,
+            run: () => void saveCaptionFile(doc, 'vtt').then((m) => m && ui.note(m)),
+          },
+        ];
+      },
+    ],
     ['Help', () => [{ label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) }]],
   ];
 
@@ -386,13 +433,14 @@ export function Editor({
       {u.dialog === 'newSequence' && <SequenceDialog doc={doc} ui={ui} fresh />}
       {u.dialog === 'speed' && <SpeedDialog doc={doc} ui={ui} actions={actions} />}
       {u.dialog === 'help' && <HelpDialog ui={ui} />}
+      {u.dialog === 'transcribe' && <TranscribeDialog doc={doc} ui={ui} />}
     </div>
   );
 }
 
 function EditPage({ doc, engine, ui, actions }: { doc: Doc; engine: Engine; ui: Ui; actions: Actions }) {
   const u = useUi(ui);
-  const [leftTab, setLeftTab] = useState<'controls' | 'source'>('controls');
+  const [leftTab, setLeftTab] = useState<'controls' | 'source' | 'transcript'>('controls');
   // A clip opened from the bin shows in the source monitor.
   const lastSource = useRef(u.source?.media);
   useEffect(() => {
@@ -422,9 +470,20 @@ function EditPage({ doc, engine, ui, actions }: { doc: Doc; engine: Engine; ui: 
             >
               Source
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={leftTab === 'transcript'}
+              className={leftTab === 'transcript' ? 'is-on' : ''}
+              onClick={() => setLeftTab('transcript')}
+            >
+              Transcript
+            </button>
           </div>
           {leftTab === 'controls' ? (
             <Inspector doc={doc} engine={engine} ui={ui} actions={actions} />
+          ) : leftTab === 'transcript' ? (
+            <TranscriptPanel doc={doc} engine={engine} ui={ui} />
           ) : (
             <SourceMonitor doc={doc} ui={ui} actions={actions} engine={engine} />
           )}

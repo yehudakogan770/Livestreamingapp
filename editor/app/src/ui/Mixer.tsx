@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { updateTrack } from '../model/edit';
 import { current } from '../model/seq';
+import type { TrackRole } from '../model/types';
 import { useDoc, type Doc } from '../doc';
 import type { Engine } from '../player/engine';
 import { Scrub } from './controls';
@@ -18,6 +19,17 @@ export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
           <span className="estrip__name" title={t.name}>
             {t.name}
           </span>
+          <select
+            className="estrip__role"
+            value={t.role ?? ''}
+            aria-label={`${t.name}: what it carries`}
+            title="Speech tracks make Music tracks turn down while someone talks"
+            onChange={(e) => doc.edit((p) => updateTrack(p, t.id, { role: (e.target.value || undefined) as TrackRole | undefined }), 'Track role')}
+          >
+            <option value="">—</option>
+            <option value="dialogue">Speech</option>
+            <option value="music">Music</option>
+          </select>
           <div className="estrip__pan">
             <span>Pan</span>
             <Scrub

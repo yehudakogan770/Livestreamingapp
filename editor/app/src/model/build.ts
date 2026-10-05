@@ -189,7 +189,7 @@ export function addMedia(
 /** A new text clip at a frame on the lowest free video track above V1. */
 export function addText(p: Project, at: number, length: number, preset: Partial<typeof DEFAULT_TEXT> = {}): { project: Project; id: string } {
   const s = current(p);
-  const video = s.tracks.filter((t) => t.kind === 'video');
+  const video = s.tracks.filter((t) => t.kind === 'video' && !t.captions);
   const freeTrack =
     video.slice(1).find((t) => !t.locked && !s.clips.some((c) => c.track === t.id && c.start < at + length && c.start + c.length > at)) ??
     video[video.length - 1];
@@ -206,7 +206,7 @@ export function addText(p: Project, at: number, length: number, preset: Partial<
 
 export function addGenerated(p: Project, at: number, length: number, kind: 'color' | 'adjustment', color = '#000000'): { project: Project; id: string } {
   const s = current(p);
-  const video = s.tracks.filter((t) => t.kind === 'video');
+  const video = s.tracks.filter((t) => t.kind === 'video' && !t.captions);
   const freeTrack =
     (kind === 'color' ? video : video.slice(1)).find(
       (t) => !t.locked && !s.clips.some((c) => c.track === t.id && c.start < at + length && c.start + c.length > at),
@@ -245,7 +245,7 @@ export function addGenerator(
 ): { project: Project; id: string } {
   const def = GENERATORS.find((g) => g.gen === gen);
   const s = current(p);
-  const video = s.tracks.filter((t) => t.kind === 'video');
+  const video = s.tracks.filter((t) => t.kind === 'video' && !t.captions);
   const overlay = gen === 'particles' || gen === 'lightleak';
   const freeTrack =
     (overlay ? video.slice(1) : video).find((t) => !t.locked && !s.clips.some((c) => c.track === t.id && c.start < at + length && c.start + c.length > at)) ??

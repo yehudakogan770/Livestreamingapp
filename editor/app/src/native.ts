@@ -30,6 +30,11 @@ export const native = {
   importMedia: (path: string) => invoke<Prepared>('import_media', { path }),
   strip: (path: string, seconds: number) => invoke<Strip>('strip', { path, seconds }),
   peaks: async (path: string): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>('peaks', { path })),
+  /** The folder of a speech model (downloaded the first time). */
+  speechModel: (name: string) => invoke<string>('speech_model', { name }),
+  /** `seconds` of a file's sound from `from`, at 16 kHz, one channel. */
+  speechAudio: async (path: string, from: number, seconds: number): Promise<Float32Array> =>
+    new Float32Array(await invoke<ArrayBuffer>('speech_audio', { path, from, seconds })),
   exportFolder: (out: string) => invoke<string>('export_folder', { out }),
   writeChunk: (path: string, position: number, data: Uint8Array) =>
     invoke<void>('write_chunk', data, { headers: { 'x-path': encodeURIComponent(path), 'x-position': String(position) } }),
@@ -67,6 +72,9 @@ function subscribe<T>(event: string, f: (p: T) => void): () => void {
 export const onExportProgress = (f: (p: ExportProgress) => void): (() => void) => subscribe('export-progress', f);
 /** How far a file's playable copy is along: [path, 0–1]. */
 export const onImportProgress = (f: (p: [string, number]) => void): (() => void) => subscribe('import-progress', f);
+
+/** How far a speech model's download is along: [name, 0–1]. */
+export const onSpeechProgress = (f: (p: [string, number]) => void): (() => void) => subscribe('speech-progress', f);
 
 /** A file's folder, and its name without the extension. */
 export function folderOf(path: string): string {

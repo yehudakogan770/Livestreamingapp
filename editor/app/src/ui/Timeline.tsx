@@ -58,6 +58,7 @@ export function clipColor(p: Project, c: Clip): string {
   if (src.kind === 'adjustment') return '#8c6d3f';
   if (src.kind === 'sequence') return '#6b7a3a';
   if (src.kind === 'generator') return '#3a6b6b';
+  if (src.kind === 'caption') return '#8a7a2e';
   return '#3d6fa8';
 }
 
@@ -774,7 +775,7 @@ function TrackHead({
         aria-pressed={targeted}
         onClick={() => ui.set(t.kind === 'video' ? { targetVideo: targeted ? null : t.id } : { targetAudio: targeted ? null : t.id })}
       >
-        {t.kind === 'video' ? 'V' : 'A'}
+        {t.captions ? 'CC' : t.kind === 'video' ? 'V' : 'A'}
       </button>
       {name !== null ? (
         <input
@@ -837,6 +838,15 @@ function TrackHead({
             >
               S
             </button>
+            <button
+              type="button"
+              className={`th__btn th__role${t.role ? ' is-on' : ''}`}
+              title={ROLE_TITLE[t.role ?? 'none']}
+              aria-label={`Track role: ${ROLE_NAME[t.role ?? 'none']}`}
+              onClick={() => set({ role: nextRole(t.role) }, 'Track role')}
+            >
+              {ROLE_NAME[t.role ?? 'none']}
+            </button>
           </>
         )}
       </span>
@@ -856,6 +866,14 @@ function TrackHead({
     </div>
   );
 }
+
+const ROLE_NAME = { none: '—', dialogue: 'Speech', music: 'Music' } as const;
+const ROLE_TITLE = {
+  none: 'Click: mark as Speech (music ducks under it)',
+  dialogue: 'Speech: Music tracks turn down while it talks. Click: Music',
+  music: 'Music: turns down while a Speech track talks. Click: no role',
+} as const;
+const nextRole = (r: Track['role']): Track['role'] => (r === undefined ? 'dialogue' : r === 'dialogue' ? 'music' : undefined);
 
 const ClipBox = memo(function ClipBox({
   p,
