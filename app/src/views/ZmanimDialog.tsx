@@ -159,9 +159,9 @@ export function ZmanimDialog({ show, act, source, onClose }: { show: Show; act: 
               </p>
               <p>
                 {z.candles !== null
-                  ? `🕯 Candle lighting today at ${clockTime(z.candles)}`
+                  ? `Candle lighting today at ${clockTime(z.candles)}`
                   : next !== null
-                    ? `🕯 Next candle lighting: ${new Date(next).toLocaleDateString('en-US', { weekday: 'long' })} at ${clockTime(next)}`
+                    ? `Next candle lighting: ${new Date(next).toLocaleDateString('en-US', { weekday: 'long' })} at ${clockTime(next)}`
                     : ''}
               </p>
               <p className="field__note">Times are shown in this computer's time zone: set the computer's clock to the event's place.</p>

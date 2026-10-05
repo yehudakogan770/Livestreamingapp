@@ -68,7 +68,7 @@ export function AuctionCard({ source, act, client, onClose }: { source: Source; 
                 </button>
               ) : (
                 <button type="button" className="btn btn--primary btn--big" disabled={!best} onClick={() => act({ type: 'auctionSold', id, value: true })}>
-                  🔨 Sold!
+                  Sold!
                 </button>
               )}
               <button
@@ -232,7 +232,7 @@ export function AuctionCard({ source, act, client, onClose }: { source: Source; 
               </div>
               <div className="lyc__row">
                 <button type="button" className="btn btn--small" onClick={() => void pickPhoto()}>
-                  {form.item.photo ? '✓ Picture — change' : '🖼 Add a picture'}
+                  {form.item.photo ? '✓ Picture — change' : 'Add a picture'}
                 </button>
                 {form.item.photo && (
                   <button type="button" className="btn btn--small" onClick={() => setForm({ ...form, item: { ...form.item, photo: '' } })}>

@@ -313,7 +313,7 @@ export function GraphicCard({ source, act, client, onClose }: { source: Source; 
               {[...g.elements].reverse().map((e) => (
                 <li key={e.id}>
                   <button type="button" className={e.id === sel ? 'is-on' : ''} onClick={() => setSel(e.id)}>
-                    {e.kind === 'text' ? `T  ${e.text.slice(0, 30) || '(no words)'}` : e.kind === 'box' ? '■  Box' : '🖼  Picture'}
+                    {e.kind === 'text' ? `${e.text.slice(0, 30) || '(no words)'}` : e.kind === 'box' ? 'Box' : 'Picture'}
                   </button>
                 </li>
               ))}

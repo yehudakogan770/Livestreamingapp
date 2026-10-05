@@ -209,10 +209,19 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
     case 'microphone':
       return (
         <div
-          style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8e9096', fontSize: 28 }}
+          style={{
+            ...fill,
+            background: '#101216',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#8e9096',
+            fontSize: 16,
+            fontWeight: 600,
+          }}
           data-kind="microphone"
         >
-          🎤
+          Microphone
         </div>
       );
     case 'video':

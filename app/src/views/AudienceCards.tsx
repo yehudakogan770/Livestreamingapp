@@ -54,7 +54,7 @@ export function RaffleCard({ source, act, client, onClose }: { source: Source; a
             </div>
             <div className="lyc__bar">
               <button type="button" className="btn btn--primary btn--big" disabled={!left} onClick={() => act({ type: 'raffleDraw', id })}>
-                🎲 Draw a winner
+                Draw a winner
               </button>
               <button type="button" className={`btn${r.open ? ' is-on' : ''}`} onClick={() => act({ type: 'raffleOpen', id, value: !r.open })}>
                 {r.open ? '■ Stop taking names' : '▶ Take names from phones'}

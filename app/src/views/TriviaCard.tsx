@@ -94,7 +94,7 @@ export function TriviaCard({ source, act, client, onClose }: { source: Source; a
                 disabled={!t.players.length}
                 onClick={() => act({ type: 'triviaBoard', id, value: true })}
               >
-                🏆 Leaderboard
+                Leaderboard
               </button>
               <button type="button" className={`btn${t.phase === 'join' ? ' is-on' : ''}`} onClick={() => act({ type: 'triviaBoard', id, value: false })}>
                 Join screen

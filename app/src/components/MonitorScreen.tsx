@@ -150,7 +150,7 @@ export function MonitorScreen({ show }: { show: Show }) {
   const shabbos =
     toCandles !== null && toCandles > -15 * 60_000 && toCandles <= 3_600_000 ? (
       <div className={`mscreen__shabbos${toCandles <= 10 * 60_000 ? ' is-urgent' : ''}`}>
-        🕯 {toCandles > 0 ? `Candle lighting in ${Math.ceil(toCandles / 60_000)} min · ${clockTime(candles)}` : `Candle lighting was at ${clockTime(candles)}`}
+        {toCandles > 0 ? `Candle lighting in ${Math.ceil(toCandles / 60_000)} min · ${clockTime(candles)}` : `Candle lighting was at ${clockTime(candles)}`}
       </div>
     ) : null;
 

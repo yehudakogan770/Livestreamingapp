@@ -44,7 +44,7 @@ function WifiSetup({ wifi, client, act }: { wifi: GuestWifi; client: EngineClien
   };
   return (
     <details className="join__wifi">
-      <summary>📶 Code to join the Wi-Fi{wifi.show ? ' · on' : ''}</summary>
+      <summary>Code to join the Wi-Fi{wifi.show ? ' · on' : ''}</summary>
       <p className="field__note">
         For halls without internet: guests scan this first to join your Wi-Fi (a travel router or a phone's hotspot), then the page's code. The two codes take
         turns on screen.
@@ -88,8 +88,8 @@ export function JoinSetup({ remote, what, client, act }: { remote: RemoteStatus 
           computer
         </label>
         <label className="check">
-          <input type="checkbox" checked={!!net?.on} onChange={(e) => void client.setAudienceInternet(e.target.checked).catch(() => {})} /> 🌐 Anyone with
-          internet (needs internet on this computer)
+          <input type="checkbox" checked={!!net?.on} onChange={(e) => void client.setAudienceInternet(e.target.checked).catch(() => {})} /> Anyone with internet
+          (needs internet on this computer)
         </label>
         {net?.on && net.phase !== 'on' && <span className="join__phase">{PHASE[net.phase]}</span>}
       </div>

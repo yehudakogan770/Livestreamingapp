@@ -78,7 +78,6 @@ function Strip({ src, show, act, problem }: { src: Source; show: Show; act: Act;
   return (
     <div className={`strip${onAir && a.follow ? ' strip--air' : ''}${problem ? ' strip--problem' : ''}`}>
       <button type="button" className="strip__name" title={`${src.name} · settings`} onClick={() => setMenu(!menu)}>
-        {src.kind.type === 'microphone' ? '🎤 ' : ''}
         {src.name}
       </button>
       <div className="strip__body">

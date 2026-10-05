@@ -351,7 +351,7 @@ export function ControlView({
                     disabled={snapping}
                     title="Snapshot: save a picture of this screen as the audience sees it"
                   >
-                    {snapping ? '…' : '📷'}
+                    {snapping ? '…' : 'Snap'}
                   </button>
                   <span className="mon__tag">{name.toUpperCase()}</span>
                 </div>

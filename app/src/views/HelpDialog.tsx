@@ -55,7 +55,7 @@ export function HelpDialog({ onClose, jewish = false }: { onClose: () => void; j
                     </p>
                   ) : p.startsWith('Tip: ') ? (
                     <p key={i} className="hlp__tip">
-                      💡 {p.slice(5)}
+                      <b>Tip:</b> {p.slice(5)}
                     </p>
                   ) : (
                     <p key={i}>{p}</p>

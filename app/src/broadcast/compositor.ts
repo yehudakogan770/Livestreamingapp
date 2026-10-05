@@ -1024,7 +1024,7 @@ export class ProgramCompositor {
       ctx.fill();
       ctx.stroke();
       const parts: [string, string, number][] = [
-        ['🕯 Candle lighting', '#fff', 400],
+        ['Candle lighting', '#fff', 400],
         [clockTime(z.candles), '#fff', 700],
       ];
       if (now < z.candles) parts.push([`in ${countdownText(z.candles - now)}`, '#f2d27a', 400]);

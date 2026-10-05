@@ -237,7 +237,7 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
                 )}
                 <div className="bcd__row">
                   <button type="button" className={`btn${look.barImage ? ' is-on' : ''}`} onClick={() => void pickBar()} disabled={!client}>
-                    {look.barImage ? '✓ My own picture — change' : '🖼 Use my own design (a picture)'}
+                    {look.barImage ? '✓ My own picture — change' : 'Use my own design (a picture)'}
                   </button>
                   {look.barImage && (
                     <button type="button" className="btn btn--small" onClick={() => set({ barImage: '' })}>

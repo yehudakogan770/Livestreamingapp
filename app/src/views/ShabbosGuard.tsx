@@ -35,7 +35,7 @@ export function ShabbosGuard({ show }: { show: Show }) {
   if (done === candles && now - candles < 30 * 60_000) {
     return (
       <div className="shabbos shabbos--done" role="status">
-        🕯 The stream and recording were ended for candle lighting ({clockTime(candles)}). Good Shabbos!
+        The stream and recording were ended for candle lighting ({clockTime(candles)}). Good Shabbos!
         <button type="button" className="icon" aria-label="Close" onClick={() => setDone(null)}>
           ✕
         </button>
@@ -45,7 +45,7 @@ export function ShabbosGuard({ show }: { show: Show }) {
   if (!live || now < stopAt - WARN_MS || now >= stopAt) return null;
   return (
     <div className="shabbos" role="alert">
-      🕯 Candle lighting {clockTime(candles)} — the stream and recording end by themselves in <b>{countdownText(stopAt - now)}</b>
+      Candle lighting {clockTime(candles)} — the stream and recording end by themselves in <b>{countdownText(stopAt - now)}</b>
     </div>
   );
 }

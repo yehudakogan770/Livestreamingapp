@@ -39,7 +39,6 @@ export function CapturePicker({ client, value, onChange }: { client: EngineClien
               title={c.app}
               onClick={() => onChange(captureOf(c, cursor))}
             >
-              {kind === 'display' ? '🖥 ' : '▭ '}
               {c.name}
               {c.app && kind === 'window' && <small> · {c.app.replace(/\.exe$/i, '')}</small>}
             </button>

@@ -21,7 +21,7 @@ function PrompterPanel({ show, act }: { show: Show; act: Act }) {
     <div className="field prompt">
       <div className="mpanel__row">
         <button type="button" className={`btn${p.on ? ' is-on' : ''}`} aria-expanded={open} onClick={() => setOpen(!open)}>
-          📜 Teleprompter{p.on ? ' · on the monitor' : ''} {open ? '▴' : '▾'}
+          Teleprompter{p.on ? ' · on the monitor' : ''} {open ? '▴' : '▾'}
         </button>
         {p.on && (
           <>

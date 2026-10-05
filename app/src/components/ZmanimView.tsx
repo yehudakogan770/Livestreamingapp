@@ -95,7 +95,7 @@ export function ZmanimView({ z: card, place: given }: { z: ZmanimCard; place?: P
       </div>
       {z.candles !== null && (
         <div className="zm__candles">
-          <span>🕯 Candle lighting</span>
+          <span>Candle lighting</span>
           <b>{clockTime(z.candles)}</b>
           {now < z.candles && <em>in {countdownText(z.candles - now)}</em>}
         </div>

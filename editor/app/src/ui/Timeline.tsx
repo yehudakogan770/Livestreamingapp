@@ -45,7 +45,7 @@ const TOOLS: [Tool, string, string, string][] = [
   ['razor', '✂', 'Razor: cut a clip in two', 'C'],
   ['slip', '⇔', 'Slip: show another part of the clip, in the same place', 'Y'],
   ['slide', '⇆', 'Slide: move a clip between its neighbors', 'U'],
-  ['hand', '✋', 'Hand: drag the timeline along', 'H'],
+  ['hand', '✥', 'Hand: drag the timeline along', 'H'],
   ['text', 'T', 'Type: click on the timeline to add words', 'T'],
 ];
 
@@ -536,7 +536,7 @@ export function Timeline({ doc, engine, ui, actions }: { doc: Doc; engine: Engin
           aria-pressed={u.linked}
           onClick={actions.linkedSelection}
         >
-          ⛓ Linked
+          Linked
         </button>
         <button type="button" className="tl__toggle" title="Add a marker (M)" onClick={actions.marker}>
           ▾ Marker
@@ -805,7 +805,7 @@ function TrackHead({
           aria-pressed={t.locked}
           onClick={() => set({ locked: !t.locked }, 'Lock track')}
         >
-          {t.locked ? '🔒' : '🔓'}
+          {t.locked ? 'Locked' : 'Lock'}
         </button>
         {t.kind === 'video' ? (
           <button

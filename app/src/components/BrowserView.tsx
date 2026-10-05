@@ -49,7 +49,7 @@ export function BrowserView({
         style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a9abb0', fontSize: 11, padding: 6 }}
         data-kind="browser"
       >
-        🌐 {host}
+        {host}
       </div>
     );
   }

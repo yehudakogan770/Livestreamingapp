@@ -208,7 +208,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
                       setOpen(n);
                     }}
                   >
-                    {isOpen ? '▾' : '▸'} <span className="media__icon">🗀</span>
+                    {isOpen ? '▾' : '▸'}
                   </button>
                   {renaming === b.id ? (
                     <input
