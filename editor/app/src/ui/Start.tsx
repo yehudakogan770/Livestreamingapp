@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { forget, recentList } from '../recent';
 import { folderOf } from '../native';
+import { SharedList } from '../collab/SharedList';
 
 /** The first screen: open an event (or carry on with a recent one). */
 export function Start({
@@ -8,11 +9,13 @@ export function Start({
   onChoose,
   onNew,
   onOpen,
+  onOpenShared,
 }: {
   problem?: string | undefined;
   onChoose: () => void;
   onNew: () => void;
   onOpen: (path: string) => void;
+  onOpenShared: (id: string) => void;
 }) {
   const [recent, setRecent] = useState(recentList);
   return (
@@ -62,6 +65,7 @@ export function Start({
               </li>
             ))}
           </ul>
+          <SharedList onOpen={onOpenShared} />
         </div>
       </div>
     </div>

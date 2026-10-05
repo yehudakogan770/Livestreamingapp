@@ -25,6 +25,12 @@ export class Doc {
   private lastAt = 0;
   private listeners = new Set<() => void>();
   state: DocState;
+  /**
+   * For a shared project: may this change be made? Null when it may,
+   * otherwise why not (it is then not made, and `blocked` is told).
+   */
+  gate: ((before: Project, after: Project) => string | null) | null = null;
+  blocked: (why: string) => void = () => {};
 
   constructor(project: Project) {
     this.state = { project, selection: null, canUndo: false, canRedo: false, dirty: false, last: '' };
@@ -46,7 +52,7 @@ export class Doc {
   edit(f: (p: Project) => Project, label = 'Edit', key?: string) {
     const before = this.state.project;
     const after = f(before);
-    if (after === before) return;
+    if (after === before || !this.allowed(before, after)) return;
     const now = Date.now();
     const same = key !== undefined && key === this.lastKey && now - this.lastAt < 1500;
     if (!same) {
@@ -59,17 +65,25 @@ export class Doc {
     this.set({ project: after, dirty: true, last: label, selection: keep(this.state.selection, after) });
   }
 
+  private allowed(before: Project, after: Project): boolean {
+    const why = this.gate?.(before, after) ?? null;
+    if (why) this.blocked(why);
+    return !why;
+  }
+
   undo() {
-    const x = this.past.pop();
-    if (!x) return;
+    const x = this.past[this.past.length - 1];
+    if (!x || !this.allowed(this.state.project, x.p)) return;
+    this.past.pop();
     this.future.push({ p: this.state.project, label: x.label });
     this.lastKey = null;
     this.set({ project: x.p, dirty: true, last: x.label, selection: keep(this.state.selection, x.p) });
   }
 
   redo() {
-    const x = this.future.pop();
-    if (!x) return;
+    const x = this.future[this.future.length - 1];
+    if (!x || !this.allowed(this.state.project, x.p)) return;
+    this.future.pop();
     this.past.push({ p: this.state.project, label: x.label });
     this.lastKey = null;
     this.set({ project: x.p, dirty: true, last: x.label, selection: keep(this.state.selection, x.p) });
@@ -95,6 +109,25 @@ export class Doc {
 
   saved() {
     this.set({ dirty: false });
+  }
+
+  /**
+   * Bring in a change made elsewhere (someone else's save): into what is
+   * shown and into every undo step, so Undo never takes their work back.
+   */
+  rebase(f: (p: Project) => Project) {
+    this.past = this.past.map((x) => ({ ...x, p: f(x.p) }));
+    this.future = this.future.map((x) => ({ ...x, p: f(x.p) }));
+    const after = f(this.state.project);
+    this.set({ project: after, selection: keep(this.state.selection, after) });
+  }
+
+  /** Start over from another project (a reload or a restored version): nothing to undo. */
+  replace(project: Project) {
+    this.past = [];
+    this.future = [];
+    this.lastKey = null;
+    this.set({ project, dirty: false, last: '', selection: keep(this.state.selection, project) });
   }
 }
 

@@ -13,8 +13,23 @@ import { Start } from './ui/Start';
 import { Getting } from './ui/Getting';
 import { Editor } from './ui/Editor';
 import { demoProject } from './demo';
+import { openShared as loadShared } from './collab/cloud';
+import { applyLinks, loadLinks } from './collab/links';
+import type { Role } from './collab/lock';
 
-type Screen = { s: 'start'; problem?: string } | { s: 'getting'; eventPath: string; text: string } | { s: 'edit'; project: Project; savePath: string };
+/** A project opened from online (shared with a team). */
+export interface SharedOpen {
+  id: string;
+  role: Role;
+  version: number;
+  /** The project as it was saved online (before this computer's file places). */
+  base: Project;
+}
+
+type Screen =
+  | { s: 'start'; problem?: string }
+  | { s: 'getting'; eventPath: string; text: string }
+  | { s: 'edit'; project: Project; savePath: string; shared?: SharedOpen };
 
 /** Where the edit of an event is kept: next to its event file. */
 export const editPathFor = (eventPath: string): string => eventPath.replace(/\.lumora$/i, '') + '.lumoraedit';
@@ -59,6 +74,17 @@ function Main() {
         }
       }
       setScreen({ s: 'getting', eventPath: path, text });
+    } catch (e) {
+      setScreen({ s: 'start', problem: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
+  /** A shared project: the newest version online, with this computer's own file places. */
+  const openShared = useCallback(async (id: string) => {
+    try {
+      const o = await loadShared(id);
+      const project = applyLinks(o.doc, loadLinks(id));
+      setScreen({ s: 'edit', project, savePath: '', shared: { id, role: o.role, version: o.version, base: o.doc } });
     } catch (e) {
       setScreen({ s: 'start', problem: e instanceof Error ? e.message : String(e) });
     }
@@ -135,13 +161,23 @@ function Main() {
   if (screen.s === 'edit')
     return (
       <Editor
-        key={screen.savePath || 'unsaved'}
+        key={screen.shared ? `shared:${screen.shared.id}` : screen.savePath || 'unsaved'}
         project={screen.project}
         savePath={screen.savePath}
+        shared={screen.shared ?? null}
+        onOpenShared={(id) => void openShared(id)}
         onClose={() => setScreen({ s: 'start' })}
         onOpen={() => void choose()}
         onNew={() => void create()}
       />
     );
-  return <Start problem={screen.problem} onChoose={() => void choose()} onNew={() => void create()} onOpen={(p) => void openPath(p)} />;
+  return (
+    <Start
+      problem={screen.problem}
+      onChoose={() => void choose()}
+      onNew={() => void create()}
+      onOpen={(p) => void openPath(p)}
+      onOpenShared={(id) => void openShared(id)}
+    />
+  );
 }
