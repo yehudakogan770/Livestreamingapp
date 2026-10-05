@@ -68,6 +68,8 @@ export class Engine {
   readText: ((path: string) => Promise<string>) | null = null;
   /** Called with each drawn frame (for the scopes). */
   onFrame: (() => void) | null = null;
+  /** A grade node's matte shown instead of its clip's picture (Color page). */
+  private matte: { clip: string; node: string } | null = null;
   /** Draw at full size, half or a quarter while playing (a lighter load). */
   quality: 1 | 0.5 | 0.25 = 1;
   /** Where the viewer is: the size the canvas is shown at. */
@@ -205,6 +207,13 @@ export class Engine {
     this.dirty = true;
   }
 
+  /** Show a grade node's matte in the viewer (null: the picture). */
+  setMatte(m: { clip: string; node: string } | null) {
+    if (m?.clip === this.matte?.clip && m?.node === this.matte?.node) return;
+    this.matte = m;
+    this.redraw();
+  }
+
   // ---- each screen refresh ----
 
   private tick = () => {
@@ -254,6 +263,7 @@ export class Engine {
     const h = Math.round(fitH * (this.playing ? this.quality : 1));
     const w = Math.round((h * s.width) / s.height);
     c.resize(w, h, s.height);
+    c.matte = this.matte;
     try {
       c.render(ops, this.pictures, s.background);
     } catch (e) {

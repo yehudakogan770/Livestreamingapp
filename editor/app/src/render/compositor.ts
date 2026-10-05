@@ -1,10 +1,26 @@
 // Draws a frame on the GPU: every layer with its position, crop, effects and
 // blend mode; transitions; adjustment layers. Used for the viewer and for
 // making the film, so what you see is what you get.
-import { curvesImage, flatCurve, hexToRgb, wheelColor, type Cube, type CurveSet } from './color';
+import { curvesImage, flatCurve, hexToRgb, type Cube, type CurveSet } from './color';
 import type { EffectNow, Layer, Op } from './frame';
+import { nodeUniforms, planGrade, wheelVectors } from './grade';
+import type { NodeNow } from '../model/grade';
 import { drawText } from './text';
-import { BLEND_MODES, COMPOSITE_FS, COPY_FS, EFFECT_FS, FINAL_FS, FULL_VS, GENERATOR_FS, LAYER_FS, LAYER_VS, TRANSITION_FS, TRANSITION_TYPES } from './shaders';
+import {
+  BLEND_MODES,
+  COMPOSITE_FS,
+  COPY_FS,
+  EFFECT_FS,
+  FINAL_FS,
+  FULL_VS,
+  GENERATOR_FS,
+  GRADE_ADD_FS,
+  GRADE_FS,
+  LAYER_FS,
+  LAYER_VS,
+  TRANSITION_FS,
+  TRANSITION_TYPES,
+} from './shaders';
 
 type Source = TexImageSource;
 
@@ -53,6 +69,10 @@ export class Compositor {
   private textCanvas: HTMLCanvasElement | OffscreenCanvas | null = null;
   private float: boolean;
   private seed = 0;
+  /** Show one grade node's matte instead of the picture (the Color page's "show matte"). */
+  matte: { clip: string; node: string } | null = null;
+  /** The layer being drawn is showing a matte (its later effects are skipped). */
+  private matteShown = false;
 
   constructor(readonly canvas: HTMLCanvasElement | OffscreenCanvas) {
     const gl = canvas.getContext('webgl2', {
@@ -371,15 +391,14 @@ export class Compositor {
 
   // ---- effects ----
 
-  private curveTexture(e: EffectNow): WebGLTexture | null {
-    const set = e.d as unknown as CurveSet;
+  private curveTexture(key: string, set: CurveSet | null | undefined): WebGLTexture | null {
     if (!set?.master) return null;
     if (flatCurve(set.master) && flatCurve(set.r) && flatCurve(set.g) && flatCurve(set.b)) return null;
     const stamp = JSON.stringify(set);
-    let t = this.curveTex.get(e.id);
+    let t = this.curveTex.get(key);
     if (!t) {
       t = { tex: this.makeTexture(), stamp: '' };
-      this.curveTex.set(e.id, t);
+      this.curveTex.set(key, t);
     }
     if (t.stamp !== stamp) {
       const gl = this.gl;
@@ -451,18 +470,13 @@ export class Compositor {
           uVib: n('vibrance') / 100,
         });
       case 'wheels': {
-        const wheel = (x: string, y: string, level: string, k: number) => {
-          const c = wheelColor(n(x), n(y));
-          const l = n(level) / 100;
-          return c.map((v) => v * k + l) as [number, number, number];
-        };
-        const lift = wheel('liftX', 'liftY', 'lift', 0.15).map((v) => v * 0.5);
-        const gamma = wheel('gammaX', 'gammaY', 'gamma', 0.25).map((v) => 1 + v);
-        const gain = wheel('gainX', 'gainY', 'gain', 0.3).map((v) => 1 + v);
-        return run('wheels', { uLift: lift, uGamma: gamma, uGain: gain });
+        const w = wheelVectors({ id: e.id, p, curves: null, qualifier: null, window: null });
+        return run('wheels', { uLift: w.lift, uGamma: w.gamma, uGain: w.gain });
       }
+      case 'grade':
+        return this.grade(e, input, layer);
       case 'curves': {
-        const tex = this.curveTexture(e);
+        const tex = this.curveTexture(e.id, e.d as unknown as CurveSet);
         if (!tex) return input;
         return run('curves', { uCurve: [tex, 1], uMix: n('mix', 100) / 100 });
       }
@@ -580,6 +594,58 @@ export class Compositor {
     }
   }
 
+  /** One grade node drawn from `input`, mixed over `base`. */
+  private gradeNode(fx: string, node: NodeNow, input: Target, base: Target, matte = false): Target {
+    const curve = this.curveTexture(`${fx}/${node.id}`, node.curves);
+    return this.pass('grade', GRADE_FS, input, {
+      ...nodeUniforms(node),
+      uUseCurves: curve ? 1 : 0,
+      uCurve: [curve ?? this.empty, 2],
+      uBase: [base.tex, 1],
+      uShowMatte: matte ? 1 : 0,
+    });
+  }
+
+  /** A clip's node grade: each step in turn (nodes that change nothing are skipped). */
+  private grade(e: EffectNow, input: Target, layer: Layer): Target {
+    if (!e.grade) return input;
+    const matteNode = this.matte && this.matte.clip === layer.clip.id ? this.matte.node : null;
+    const plan = planGrade(e.grade, matteNode);
+    let cur = input;
+    for (const s of plan.steps) {
+      let out: Target;
+      if (s.kind === 'serial') out = this.gradeNode(e.id, s.node, cur, cur);
+      else if (s.kind === 'parallel') {
+        // Each node's change from the same input, added up.
+        out = cur;
+        for (const node of s.nodes) {
+          const o = this.gradeNode(e.id, node, cur, cur);
+          const sum = this.pass('gradeadd', GRADE_ADD_FS, out, { uOther: [o.tex, 1], uBase: [cur.tex, 2] });
+          this.give(o);
+          if (out !== cur) this.give(out);
+          out = sum;
+        }
+      } else {
+        // Bottom node first; each one above shows through its matte over the ones under it.
+        out = this.gradeNode(e.id, s.nodes[0] as NodeNow, cur, cur);
+        for (const node of s.nodes.slice(1)) {
+          const next = this.gradeNode(e.id, node, cur, out);
+          this.give(out);
+          out = next;
+        }
+      }
+      this.give(cur);
+      cur = out;
+    }
+    if (plan.matte) {
+      const out = this.gradeNode(e.id, plan.matte, cur, cur, true);
+      this.give(cur);
+      this.matteShown = true;
+      return out;
+    }
+    return cur;
+  }
+
   /** A layer drawn and its effects applied, in a target of its own (null: nothing to show). */
   private renderLayer(layer: Layer | null, pics: Pictures): Target | null {
     if (!layer) return null;
@@ -589,7 +655,11 @@ export class Compositor {
       this.give(t);
       return null;
     }
-    for (const e of layer.effects) t = this.effect(e, t, pics, layer);
+    this.matteShown = false;
+    for (const e of layer.effects) {
+      t = this.effect(e, t, pics, layer);
+      if (this.matteShown) break;
+    }
     return t;
   }
 
@@ -627,7 +697,11 @@ export class Compositor {
       } else {
         // An adjustment layer changes everything under it.
         let t = this.pass('copy', COPY_FS, acc, { uOpacity: 1 });
-        for (const e of op.layer.effects) t = this.effect(e, t, pics, op.layer);
+        this.matteShown = false;
+        for (const e of op.layer.effects) {
+          t = this.effect(e, t, pics, op.layer);
+          if (this.matteShown) break;
+        }
         const mixed = this.composite(acc, t, op.layer.motion.opacity / 100, 'normal');
         this.give(t);
         acc = mixed;

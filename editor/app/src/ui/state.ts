@@ -33,6 +33,9 @@ export interface UiState {
   targetAudio: string | null;
   scope: 'waveform' | 'parade' | 'vectorscope' | 'histogram';
   safeMargins: boolean;
+  /** The grade node chosen on the Color page, and whether the viewer shows its matte. */
+  gradeNode: string | null;
+  showMatte: boolean;
   dialog: null | 'export' | 'sequence' | 'newSequence' | 'help' | 'speed' | 'marker' | 'project';
   /** A short message at the bottom (what just happened). */
   note: string;
@@ -72,6 +75,8 @@ export class Ui {
       targetAudio: null,
       scope: s.scope ?? 'waveform',
       safeMargins: false,
+      gradeNode: null,
+      showMatte: false,
       dialog: null,
       note: '',
     };

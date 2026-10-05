@@ -24,6 +24,8 @@ export interface EffectDef {
   data?: Record<string, unknown>;
   /** Shown while editing too (some sound effects are only made on export). */
   previewNote?: string;
+  /** Not in the effects list (made by another part of the program). */
+  hidden?: boolean;
 }
 
 const P = (key: string, label: string, min: number, max: number, def: number, step = 1, unit?: string): ParamDef => ({
@@ -119,6 +121,8 @@ export const EFFECTS: EffectDef[] = [
     group: 'Color',
     params: [P('amount', 'Amount', -100, 100, -40), P('size', 'Size', 0, 100, 60), P('feather', 'Feather', 0, 100, 50)],
   },
+  // The Color page's node grade (its settings are in `d`, see model/grade.ts).
+  { type: 'grade', name: 'Color grade (nodes)', kind: 'video', group: 'Color', params: [], hidden: true },
   { type: 'bw', name: 'Black & white', kind: 'video', group: 'Color', params: [P('mix', 'Amount', 0, 100, 100, 1, '%')] },
   { type: 'invert', name: 'Invert', kind: 'video', group: 'Color', params: [P('mix', 'Amount', 0, 100, 100, 1, '%')] },
   // ---- Blur & sharpen ----
