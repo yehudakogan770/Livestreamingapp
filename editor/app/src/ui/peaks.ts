@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { inApp, native } from '../native';
+import { inApp, native, type Strip } from '../native';
 
 /** Waveforms of the sound files, fetched once each. */
 const store = new Map<string, Uint8Array | 'loading' | 'failed'>();
@@ -40,4 +40,31 @@ export function usePeaks(paths: string[]): (path: string) => Uint8Array | null {
     const v = store.get(path);
     return v instanceof Uint8Array ? v : null;
   };
+}
+
+/** Picture strips of the videos (small frames along the length), fetched once each. */
+const strips = new Map<string, Strip | 'loading' | 'failed'>();
+
+export function useStrip(path: string | null, seconds: number): Strip | null {
+  useSyncExternalStore(
+    (f) => {
+      listeners.add(f);
+      return () => listeners.delete(f);
+    },
+    () => version,
+  );
+  if (!path || !inApp()) return null;
+  if (!strips.has(path)) {
+    strips.set(path, 'loading');
+    void native
+      .strip(path, seconds)
+      .then((s) => strips.set(path, s))
+      .catch(() => strips.set(path, 'failed'))
+      .finally(() => {
+        version += 1;
+        for (const f of listeners) f();
+      });
+  }
+  const v = strips.get(path);
+  return v && typeof v === 'object' ? v : null;
 }

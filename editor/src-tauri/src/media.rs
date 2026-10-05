@@ -50,8 +50,12 @@ pub struct Probe {
     pub duration_ms: Option<f64>,
     pub video: Option<String>,
     pub audio: bool,
+    pub audio_codec: Option<String>,
     pub width: u32,
     pub height: u32,
+    pub fps: f64,
+    /** A still picture (one frame, an image format). */
+    pub still: bool,
 }
 
 /// Read what FFmpeg says about a file (`ffmpeg -i file`).
@@ -83,10 +87,24 @@ pub fn parse_probe(said: &str) -> Probe {
                         p.width = w;
                         p.height = h;
                     }
+                    if let Some(f) = rest.split(',').find_map(|x| {
+                        x.trim()
+                            .strip_suffix(" fps")
+                            .and_then(|n| n.trim().parse::<f64>().ok())
+                    }) {
+                        p.fps = f;
+                    }
+                    p.still = matches!(
+                        codec.as_str(),
+                        "png" | "mjpeg" | "webp" | "bmp" | "tiff" | "gif" | "hevc_image"
+                    ) && p.fps <= 0.0;
                     p.video = Some(codec);
                 }
-            } else if line.contains("Audio: ") {
+            } else if let Some(i) = line.find("Audio: ") {
                 p.audio = true;
+                if p.audio_codec.is_none() {
+                    p.audio_codec = line[i + 7..].split([' ', ',']).next().map(str::to_owned);
+                }
             }
         }
     }
@@ -111,6 +129,9 @@ pub fn probe(ffmpeg: &Path, file: &Path) -> Result<Probe, String> {
 #[serde(rename_all = "camelCase")]
 pub struct Prepared {
     pub path: String,
+    /// What plays while editing, when the file itself can't (made by Lumora Edit).
+    pub proxy: Option<String>,
+    pub fps: f64,
     pub duration_ms: f64,
     pub has_video: bool,
     pub has_audio: bool,
@@ -200,6 +221,8 @@ pub fn prepare(ffmpeg: &Path, file: &Path) -> Result<Prepared, String> {
     };
     Ok(Prepared {
         path: path.to_string_lossy().into_owned(),
+        proxy: None,
+        fps: if info.fps > 0.0 { info.fps } else { 30.0 },
         duration_ms,
         has_video: info.video.is_some(),
         has_audio: info.audio,
@@ -299,6 +322,371 @@ pub fn peaks(ffmpeg: &Path, file: &Path, cache: &Path) -> Result<Vec<u8>, String
     Ok(peaks)
 }
 
+/// What a file needs before it can be edited smoothly.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Needs {
+    /// It plays as it is.
+    Nothing,
+    /// The same pictures in a container the editor reads (a quick copy).
+    Rewrap,
+    /// A new copy the editor can play (takes a while for long files).
+    Optimize,
+    /// A still picture in a format the editor can't show.
+    Picture,
+    /// Sound in a format the editor can't play.
+    Sound,
+}
+
+const PLAYS: [&str; 4] = ["h264", "vp8", "vp9", "av1"];
+const SOUNDS: [&str; 9] = [
+    "aac",
+    "mp3",
+    "opus",
+    "vorbis",
+    "flac",
+    "pcm_s16le",
+    "pcm_s24le",
+    "pcm_f32le",
+    "pcm_s32le",
+];
+
+#[must_use]
+pub fn needs(file: &Path, p: &Probe) -> Needs {
+    let ext = ext_of(file);
+    let picture_ext = matches!(
+        ext.as_str(),
+        "png" | "jpg" | "jpeg" | "webp" | "gif" | "bmp" | "avif"
+    );
+    if picture_ext {
+        return Needs::Nothing;
+    }
+    if matches!(
+        ext.as_str(),
+        "tif" | "tiff" | "heic" | "heif" | "psd" | "tga" | "exr" | "dpx"
+    ) {
+        return Needs::Picture;
+    }
+    match &p.video {
+        Some(v) if !p.still => {
+            let audio_ok = p.audio_codec.as_deref().is_none_or(|a| SOUNDS.contains(&a));
+            if !PLAYS.contains(&v.as_str()) || !audio_ok {
+                Needs::Optimize
+            } else if matches!(ext.as_str(), "mp4" | "webm") {
+                Needs::Nothing
+            } else {
+                Needs::Rewrap
+            }
+        }
+        Some(_) => Needs::Picture,
+        None => {
+            let ok_ext = matches!(
+                ext.as_str(),
+                "mp3" | "wav" | "m4a" | "aac" | "ogg" | "oga" | "opus" | "flac" | "webm"
+            );
+            if ok_ext && p.audio_codec.as_deref().is_none_or(|a| SOUNDS.contains(&a)) {
+                Needs::Nothing
+            } else {
+                Needs::Sound
+            }
+        }
+    }
+}
+
+/// A name for a made copy that changes when the original does.
+fn cache_name(file: &Path, ext: &str) -> String {
+    use std::hash::{Hash, Hasher};
+    let meta = fs::metadata(file).ok();
+    let stamp = meta
+        .as_ref()
+        .and_then(|m| m.modified().ok())
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map_or(0, |d| d.as_secs());
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    (file.to_string_lossy(), meta.map_or(0, |m| m.len()), stamp).hash(&mut h);
+    let stem = file
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("media")
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_')
+        .take(40)
+        .collect::<String>();
+    format!("{stem}-{:012x}.{ext}", h.finish() & 0xffff_ffff_ffff)
+}
+
+/// Run FFmpeg, saying how far along it is (0–1).
+fn run_with_progress(
+    ffmpeg: &Path,
+    args: &[std::ffi::OsString],
+    seconds: f64,
+    progress: &dyn Fn(f64),
+) -> Result<(), String> {
+    use std::io::{BufRead, BufReader};
+    let mut child = quiet(ffmpeg)
+        .args([
+            "-hide_banner",
+            "-nostdin",
+            "-y",
+            "-loglevel",
+            "error",
+            "-progress",
+            "pipe:1",
+        ])
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("FFmpeg could not start: {e}"))?;
+    let stderr = child.stderr.take();
+    let said = std::thread::spawn(move || {
+        let mut s = String::new();
+        if let Some(mut e) = stderr {
+            let _ = e.read_to_string(&mut s);
+        }
+        s
+    });
+    if let Some(out) = child.stdout.take() {
+        for line in BufReader::new(out).lines().map_while(Result::ok) {
+            if let Some(us) = line
+                .strip_prefix("out_time_us=")
+                .and_then(|v| v.trim().parse::<f64>().ok())
+            {
+                if seconds > 0.0 {
+                    progress((us / 1_000_000.0 / seconds).clamp(0.0, 1.0));
+                }
+            }
+        }
+    }
+    let ok = child.wait().map(|s| s.success()).unwrap_or(false);
+    let said = said.join().unwrap_or_default();
+    if ok {
+        Ok(())
+    } else {
+        Err(format!(
+            "This file could not be read: {}",
+            said.lines()
+                .rfind(|l| !l.trim().is_empty())
+                .unwrap_or("unknown problem")
+        ))
+    }
+}
+
+/// Get any file ready to edit. The original is never changed: when it can't
+/// be played as it is, a copy that can is made in `cache` (and used while editing).
+///
+/// # Errors
+/// The file is missing or can't be read.
+pub fn import(
+    ffmpeg: &Path,
+    file: &Path,
+    cache: &Path,
+    progress: &dyn Fn(f64),
+) -> Result<Prepared, String> {
+    if !file.is_file() {
+        return Err(format!("{} was not found.", file.display()));
+    }
+    let info = probe(ffmpeg, file)?;
+    if info.video.is_none() && !info.audio {
+        return Err(format!(
+            "{} has no picture or sound Lumora Edit can use.",
+            file.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("This file")
+        ));
+    }
+    let need = needs(file, &info);
+    let seconds = info.duration_ms.unwrap_or(0.0) / 1000.0;
+    let _ = fs::create_dir_all(cache);
+    let proxy: Option<PathBuf> = match need {
+        Needs::Nothing => None,
+        Needs::Rewrap => {
+            let out = cache.join(cache_name(file, "mp4"));
+            if !out.is_file() {
+                let temp = out.with_extension("making.mp4");
+                let args: Vec<std::ffi::OsString> = vec![
+                    "-i".into(),
+                    file.into(),
+                    "-map".into(),
+                    "0:v:0".into(),
+                    "-map".into(),
+                    "0:a?".into(),
+                    "-c".into(),
+                    "copy".into(),
+                    "-movflags".into(),
+                    "+faststart".into(),
+                    temp.clone().into(),
+                ];
+                if run_with_progress(ffmpeg, &args, seconds, progress).is_err() {
+                    // Some files can't simply be rewrapped: make a new copy.
+                    let _ = fs::remove_file(&temp);
+                    optimize(ffmpeg, file, &temp, seconds, progress)?;
+                }
+                fs::rename(&temp, &out).map_err(|e| e.to_string())?;
+            }
+            Some(out)
+        }
+        Needs::Optimize => {
+            let out = cache.join(cache_name(file, "mp4"));
+            if !out.is_file() {
+                let temp = out.with_extension("making.mp4");
+                optimize(ffmpeg, file, &temp, seconds, progress)?;
+                fs::rename(&temp, &out).map_err(|e| e.to_string())?;
+            }
+            Some(out)
+        }
+        Needs::Picture => {
+            let out = cache.join(cache_name(file, "png"));
+            if !out.is_file() {
+                let args: Vec<std::ffi::OsString> = vec![
+                    "-i".into(),
+                    file.into(),
+                    "-frames:v".into(),
+                    "1".into(),
+                    out.clone().into(),
+                ];
+                run_with_progress(ffmpeg, &args, 0.0, progress)?;
+            }
+            Some(out)
+        }
+        Needs::Sound => {
+            let out = cache.join(cache_name(file, "m4a"));
+            if !out.is_file() {
+                let temp = out.with_extension("making.m4a");
+                let args: Vec<std::ffi::OsString> = vec![
+                    "-i".into(),
+                    file.into(),
+                    "-vn".into(),
+                    "-c:a".into(),
+                    "aac".into(),
+                    "-b:a".into(),
+                    "256k".into(),
+                    temp.clone().into(),
+                ];
+                run_with_progress(ffmpeg, &args, seconds, progress)?;
+                fs::rename(&temp, &out).map_err(|e| e.to_string())?;
+            }
+            Some(out)
+        }
+    };
+    let still = matches!(need, Needs::Picture) || info.still;
+    let duration_ms = if still {
+        0.0
+    } else {
+        match info.duration_ms {
+            Some(d) => d,
+            None => measure(ffmpeg, proxy.as_deref().unwrap_or(file)).unwrap_or(0.0),
+        }
+    };
+    Ok(Prepared {
+        path: file.to_string_lossy().into_owned(),
+        proxy: proxy.map(|p| p.to_string_lossy().into_owned()),
+        fps: if info.fps > 0.0 { info.fps } else { 30.0 },
+        duration_ms,
+        has_video: info.video.is_some(),
+        has_audio: info.audio && !still,
+        width: info.width,
+        height: info.height,
+    })
+}
+
+/// A copy that plays smoothly while editing (H.264, a keyframe every half second for quick jumps).
+fn optimize(
+    ffmpeg: &Path,
+    file: &Path,
+    out: &Path,
+    seconds: f64,
+    progress: &dyn Fn(f64),
+) -> Result<(), String> {
+    let args: Vec<std::ffi::OsString> = vec![
+        "-i".into(),
+        file.into(),
+        "-map".into(),
+        "0:v:0".into(),
+        "-map".into(),
+        "0:a?".into(),
+        "-c:v".into(),
+        "libx264".into(),
+        "-preset".into(),
+        "veryfast".into(),
+        "-crf".into(),
+        "17".into(),
+        "-pix_fmt".into(),
+        "yuv420p".into(),
+        "-g".into(),
+        "15".into(),
+        "-c:a".into(),
+        "aac".into(),
+        "-b:a".into(),
+        "256k".into(),
+        "-ac".into(),
+        "2".into(),
+        "-movflags".into(),
+        "+faststart".into(),
+        out.into(),
+    ];
+    run_with_progress(ffmpeg, &args, seconds, progress)
+}
+
+/// Small pictures of a video along its length, in one image (for the timeline and bins).
+#[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Strip {
+    pub path: String,
+    /// Seconds between pictures.
+    pub every: f64,
+    pub count: u32,
+    pub cols: u32,
+    pub w: u32,
+    pub h: u32,
+}
+
+/// # Errors
+/// FFmpeg can't read the file.
+pub fn strip(ffmpeg: &Path, file: &Path, seconds: f64, cache: &Path) -> Result<Strip, String> {
+    const W: u32 = 160;
+    const H: u32 = 90;
+    const COLS: u32 = 20;
+    let every = (seconds / 600.0).max(1.0).ceil();
+    let count = ((seconds / every).ceil() as u32).max(1);
+    let rows = count.div_ceil(COLS);
+    let out = cache.join(cache_name(file, "strip.jpg"));
+    let _ = fs::create_dir_all(cache);
+    if !out.is_file() {
+        let vf = format!(
+            "fps=1/{every},scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,tile={COLS}x{rows}"
+        );
+        let ok = quiet(ffmpeg)
+            .args([
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-skip_frame",
+                "nokey",
+                "-i",
+            ])
+            .arg(file)
+            .args(["-an", "-vf", &vf, "-frames:v", "1", "-q:v", "5"])
+            .arg(&out)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map_err(|e| format!("FFmpeg could not start: {e}"))?
+            .success();
+        if !ok || !out.is_file() {
+            return Err("No pictures could be made for this file.".into());
+        }
+    }
+    Ok(Strip {
+        path: out.to_string_lossy().into_owned(),
+        every,
+        count,
+        cols: COLS,
+        w: W,
+        h: H,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -345,6 +733,33 @@ mod tests {
         };
         assert_eq!(remux_target(Path::new("a/Mic.webm"), &done), None);
         assert_eq!(remux_target(Path::new("a/Live.mp4"), &p), None);
+    }
+
+    #[test]
+    fn what_files_need() {
+        let mut p = parse_probe(SAID);
+        assert_eq!(needs(Path::new("a.mp4"), &p), Needs::Nothing);
+        p.audio_codec = Some("pcm_s16be".into());
+        assert_eq!(needs(Path::new("a.mp4"), &p), Needs::Optimize);
+        p.audio_codec = Some("aac".into());
+        assert_eq!(needs(Path::new("a.mov"), &p), Needs::Rewrap);
+        p.video = Some("prores".into());
+        assert_eq!(needs(Path::new("a.mov"), &p), Needs::Optimize);
+        assert_eq!(needs(Path::new("a.heic"), &p), Needs::Picture);
+        assert_eq!(needs(Path::new("a.png"), &p), Needs::Nothing);
+        let wma = Probe {
+            audio: true,
+            audio_codec: Some("wmav2".into()),
+            ..Probe::default()
+        };
+        assert_eq!(needs(Path::new("a.wma"), &wma), Needs::Sound);
+        let mp3 = Probe {
+            audio: true,
+            audio_codec: Some("mp3".into()),
+            ..Probe::default()
+        };
+        assert_eq!(needs(Path::new("a.mp3"), &mp3), Needs::Nothing);
+        assert!((parse_probe(SAID).fps - 30.30).abs() < 0.01);
     }
 
     #[test]

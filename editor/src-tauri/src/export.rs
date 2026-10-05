@@ -9,7 +9,6 @@ use std::process::{Child, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use base64::Engine as _;
 use serde::{Deserialize, Serialize};
 
 use crate::media::quiet;
@@ -20,20 +19,13 @@ pub struct Job {
     pub seconds: f64,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct TitleImage {
-    pub id: String,
-    /// PNG, as base64.
-    pub png: String,
-}
-
+/// The FFmpeg runs that finish the film (the picture is already in the work folder).
 #[derive(Deserialize, Debug, Clone)]
 pub struct Plan {
     pub jobs: Vec<Job>,
-    pub list: String,
-    #[serde(rename = "final")]
-    pub last: Job,
-    pub titles: Vec<TitleImage>,
+    /// Text files the runs read (e.g. lists), by name in the work folder.
+    #[serde(default)]
+    pub files: Vec<(String, String)>,
 }
 
 #[derive(Serialize, Debug, Clone, Default)]
@@ -100,6 +92,7 @@ impl Exports {
         ffmpeg: PathBuf,
         plan: Plan,
         out: PathBuf,
+        tmp: PathBuf,
         report: impl Fn(Progress) + Send + 'static,
     ) -> Result<(), String> {
         if self.busy.swap(true, Ordering::SeqCst) {
@@ -110,9 +103,9 @@ impl Exports {
         let stop = Arc::clone(&self.stop);
         let busy = Arc::clone(&self.busy);
         std::thread::spawn(move || {
-            let result = run(&ffmpeg, &plan, &out, &child, &stop, &report);
+            let result = run(&ffmpeg, &plan, &out, &tmp, &child, &stop, &report);
             busy.store(false, Ordering::SeqCst);
-            let parts = plan.jobs.len() + 1;
+            let parts = plan.jobs.len();
             report(match result {
                 Ok(()) => Progress {
                     done: 1.0,
@@ -141,14 +134,11 @@ impl Exports {
     }
 }
 
-fn run(
-    ffmpeg: &Path,
-    plan: &Plan,
-    out: &Path,
-    child: &Mutex<Option<Child>>,
-    stop: &AtomicBool,
-    report: &dyn Fn(Progress),
-) -> Result<(), String> {
+/// A work folder next to the film (big files never fill the system drive).
+///
+/// # Errors
+/// The folder can't be made.
+pub fn work_folder(out: &Path) -> Result<PathBuf, String> {
     let folder = out
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -156,30 +146,57 @@ fn run(
     let tmp = folder.join(format!(".lumora-edit-{}", std::process::id()));
     let _ = fs::remove_dir_all(&tmp);
     fs::create_dir_all(&tmp).map_err(|e| format!("Could not make a work folder: {e}"))?;
-    let result = (|| {
-        for t in &plan.titles {
-            let bytes = base64::engine::general_purpose::STANDARD
-                .decode(&t.png)
-                .map_err(|e| e.to_string())?;
-            let safe: String = t.id.chars().filter(char::is_ascii_alphanumeric).collect();
-            fs::write(tmp.join(format!("title-{safe}.png")), bytes).map_err(|e| e.to_string())?;
+    Ok(tmp)
+}
+
+/// Write bytes into a file at a place (the picture arrives in pieces, not always in order).
+///
+/// # Errors
+/// The file can't be written.
+pub fn write_at(path: &Path, position: u64, bytes: &[u8]) -> Result<(), String> {
+    use std::io::{Seek, SeekFrom, Write};
+    let mut f = fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .write(true)
+        .open(path)
+        .map_err(|e| format!("Could not write the film: {e}"))?;
+    f.seek(SeekFrom::Start(position))
+        .map_err(|e| e.to_string())?;
+    f.write_all(bytes).map_err(|e| {
+        if e.raw_os_error() == Some(112) || e.to_string().contains("space") {
+            "The disk is full. Free some space (or save the film to another drive) and try again."
+                .to_owned()
+        } else {
+            format!("Could not write the film: {e}")
         }
-        fs::write(tmp.join("list.txt"), &plan.list).map_err(|e| e.to_string())?;
-        // The joining at the end is quick: it counts as a small share.
-        let total: f64 =
-            plan.jobs.iter().map(|j| j.seconds).sum::<f64>() + plan.last.seconds * 0.1 + 0.001;
-        let parts = plan.jobs.len() + 1;
+    })
+}
+
+fn run(
+    ffmpeg: &Path,
+    plan: &Plan,
+    out: &Path,
+    tmp: &Path,
+    child: &Mutex<Option<Child>>,
+    stop: &AtomicBool,
+    report: &dyn Fn(Progress),
+) -> Result<(), String> {
+    let result = (|| {
+        for (name, text) in &plan.files {
+            let safe: String = name
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '-')
+                .collect();
+            fs::write(tmp.join(safe), text).map_err(|e| e.to_string())?;
+        }
+        let total: f64 = plan.jobs.iter().map(|j| j.seconds).sum::<f64>() + 0.001;
+        let parts = plan.jobs.len();
         let mut before = 0.0;
-        for (i, job) in plan
-            .jobs
-            .iter()
-            .chain(std::iter::once(&plan.last))
-            .enumerate()
-        {
-            let weight = if i == plan.jobs.len() { 0.1 } else { 1.0 };
-            let args: Vec<String> = job.args.iter().map(|a| fill(a, &tmp, out)).collect();
+        for (i, job) in plan.jobs.iter().enumerate() {
+            let args: Vec<String> = job.args.iter().map(|a| fill(a, tmp, out)).collect();
             one(ffmpeg, &args, child, stop, &|s| {
-                let done = (before + s.min(job.seconds) * weight) / total;
+                let done = (before + s.min(job.seconds)) / total;
                 report(Progress {
                     done: done.min(0.999),
                     part: i + 1,
@@ -187,11 +204,11 @@ fn run(
                     ..Progress::default()
                 });
             })?;
-            before += job.seconds * weight;
+            before += job.seconds;
         }
         Ok(())
     })();
-    let _ = fs::remove_dir_all(&tmp);
+    let _ = fs::remove_dir_all(tmp);
     if result.is_err() {
         let _ = fs::remove_file(out);
     }
@@ -271,10 +288,22 @@ mod tests {
     #[test]
     fn reads_the_plan_the_editor_sends() {
         let plan: Plan = serde_json::from_str(
-            r#"{"jobs":[{"args":["-i","a"],"seconds":2}],"list":"file 'part-0001.mkv'\n","final":{"args":["{out}"],"seconds":2},"titles":[{"id":"t1","png":"iVBORw0KGgo="}],"seconds":2}"#,
+            r#"{"jobs":[{"args":["-i","{tmp}/video.mp4","{out}"],"seconds":2}],"files":[["list.txt","x"]]}"#,
         )
         .unwrap();
         assert_eq!(plan.jobs.len(), 1);
-        assert_eq!(plan.last.args, ["{out}"]);
+        assert_eq!(plan.files[0].0, "list.txt");
+    }
+
+    #[test]
+    fn writes_pieces_in_place() {
+        let dir = std::env::temp_dir().join(format!("lumora-edit-write-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let f = dir.join("v.bin");
+        write_at(&f, 4, b"5678").unwrap();
+        write_at(&f, 0, b"1234").unwrap();
+        assert_eq!(fs::read(&f).unwrap(), b"12345678");
+        let _ = fs::remove_dir_all(dir);
     }
 }

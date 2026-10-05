@@ -1,5 +1,6 @@
 import type { EventFile } from './model/event';
-import { buildProject, type Prepared, type Project } from './model/project';
+import { buildEventProject, mediaFrom, type Prepared } from './model/build';
+import type { Project } from './model/types';
 
 /**
  * A made-up event for trying the screens in a plain browser (`?demo`), with
@@ -43,5 +44,23 @@ export async function demoProject(): Promise<Project> {
     m('/demo/podium.webm', 120_000, false, true),
     m('/demo/hand.webm', 119_000, false, true),
   ]);
-  return buildProject(event, 'C:/Users/You/Videos/Lumora/Spring Gala.lumora', media);
+  const p = buildEventProject(event, 'C:/Users/You/Videos/Lumora/Spring Gala.lumora', media);
+  // Some media of its own, as if imported.
+  const bin = { id: 'b-extra', name: 'Music & pictures', parent: null };
+  return {
+    ...p,
+    bins: [...p.bins, bin],
+    media: [
+      ...p.media,
+      {
+        ...mediaFrom({ path: '/demo/podium.webm', durationMs: 120_000, hasVideo: false, hasAudio: true, width: 0, height: 0 }, 'Music bed', bin.id),
+        id: 'm-music',
+      },
+      {
+        ...mediaFrom({ path: '/brand/lumora-logo.svg', durationMs: 0, hasVideo: true, hasAudio: false, width: 600, height: 160 }, 'Logo', bin.id),
+        kind: 'image' as const,
+        id: 'm-logo',
+      },
+    ],
+  };
 }

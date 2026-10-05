@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ask, open } from '@tauri-apps/plugin-dialog';
+import { ask, open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Gate } from '../../../app/src/auth/Gate';
 import { UpdateBar } from '../../../app/src/components/UpdateBar';
 import { parseEvent } from './model/event';
-import type { Project } from './model/project';
-import { inApp, native } from './native';
+import { readProject } from './model/build';
+import { emptyProject, type Project } from './model/types';
+import { baseName, inApp, native } from './native';
 import { remember } from './recent';
 import { Start } from './ui/Start';
 import { Getting } from './ui/Getting';
@@ -18,15 +19,9 @@ type Screen = { s: 'start'; problem?: string } | { s: 'getting'; eventPath: stri
 /** Where the edit of an event is kept: next to its event file. */
 export const editPathFor = (eventPath: string): string => eventPath.replace(/\.lumora$/i, '') + '.lumoraedit';
 
-export function readProject(text: string): Project {
-  const p = JSON.parse(text) as Project;
-  if (p?.kind !== 'lumora-edit' || !Array.isArray(p.clips) || !Array.isArray(p.angles)) throw new Error('This is not a Lumora Edit project.');
-  return { ...p, titles: p.titles ?? [], tracks: p.tracks ?? [], range: p.range ?? null };
-}
-
 export function App() {
   // Trying the screens in a browser while building them (never in the program).
-  if (import.meta.env.DEV && !inApp() && /[?&](demo|start)/.test(location.search)) return <Main />;
+  if (import.meta.env.DEV && !inApp() && /[?&](demo|start|empty)/.test(location.search)) return <Main />;
   return (
     <Gate>
       <Main />
@@ -71,17 +66,37 @@ function Main() {
 
   const choose = useCallback(async () => {
     const picked = await open({
-      title: 'Open an event',
+      title: 'Open a project or an event',
       multiple: false,
-      filters: [{ name: 'Lumora events and edits', extensions: ['lumora', 'lumoraedit'] }],
+      filters: [{ name: 'Lumora Edit projects and Lumora events', extensions: ['lumoraedit', 'lumora'] }],
     });
     if (typeof picked === 'string') void openPath(picked);
   }, [openPath]);
 
-  // Opened by double-clicking an event file, or a file dropped on the window.
+  /** A new, empty project: where to keep it is asked first (it then saves as you go). */
+  const create = useCallback(async () => {
+    if (!inApp()) {
+      setScreen({ s: 'edit', project: emptyProject('Untitled'), savePath: '' });
+      return;
+    }
+    const picked = await save({
+      title: 'Where to keep the new project',
+      defaultPath: 'My video.lumoraedit',
+      filters: [{ name: 'Lumora Edit project', extensions: ['lumoraedit'] }],
+    });
+    if (!picked) return;
+    const project = emptyProject(baseName(picked));
+    await native.writeText(picked, JSON.stringify(project));
+    remember(picked, project.name);
+    setScreen({ s: 'edit', project, savePath: picked });
+  }, []);
+
+  // Opened by double-clicking a file, or a file dropped on the start screen.
   useEffect(() => {
     if (!inApp()) {
-      if (new URLSearchParams(location.search).has('demo')) void demoProject().then((project) => setScreen({ s: 'edit', project, savePath: '' }));
+      const q = new URLSearchParams(location.search);
+      if (q.has('demo')) void demoProject().then((project) => setScreen({ s: 'edit', project, savePath: '' }));
+      if (q.has('empty')) setScreen({ s: 'edit', project: emptyProject('Untitled'), savePath: '' });
       return;
     }
     void native.initialFile().then((f) => f && void openPath(f));
@@ -118,6 +133,15 @@ function Main() {
       />
     );
   if (screen.s === 'edit')
-    return <Editor key={screen.savePath} project={screen.project} savePath={screen.savePath} onClose={() => setScreen({ s: 'start' })} />;
-  return <Start problem={screen.problem} onChoose={() => void choose()} onOpen={(p) => void openPath(p)} />;
+    return (
+      <Editor
+        key={screen.savePath || 'unsaved'}
+        project={screen.project}
+        savePath={screen.savePath}
+        onClose={() => setScreen({ s: 'start' })}
+        onOpen={() => void choose()}
+        onNew={() => void create()}
+      />
+    );
+  return <Start problem={screen.problem} onChoose={() => void choose()} onNew={() => void create()} onOpen={(p) => void openPath(p)} />;
 }

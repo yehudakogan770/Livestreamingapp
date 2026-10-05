@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseEvent, type EventFile } from '../model/event';
-import { buildProject, timecode, type Prepared, type Project } from '../model/project';
+import { buildEventProject, duration, type Prepared } from '../model/build';
+import type { Project } from '../model/types';
 import { baseName, folderOf, joinPath, native } from '../native';
 
 type Status = 'waiting' | 'working' | 'ready' | 'missing';
@@ -98,7 +99,7 @@ export function Getting({
         await native.writeText(eventPath, JSON.stringify(fixed, null, 2)).catch(() => {});
       }
       try {
-        const project = buildProject(event, eventPath, media);
+        const project = buildEventProject(event, eventPath, media);
         project.name = event.name || baseName(eventPath);
         const missing = list.filter((x) => x.status === 'missing');
         if (missing.length === 0) onDone(project);
@@ -126,7 +127,7 @@ export function Getting({
               <span className="getting__state">
                 {x.status === 'waiting' && 'Waiting'}
                 {x.status === 'working' && 'Getting ready…'}
-                {x.status === 'ready' && `Ready · ${timecode(x.found?.durationMs ?? 0)}`}
+                {x.status === 'ready' && `Ready · ${duration((x.found?.durationMs ?? 0) / 1000)}`}
                 {x.status === 'missing' && (x.problem === 'Not found' ? 'Not found' : 'Could not be read')}
               </span>
             </li>
