@@ -33,7 +33,7 @@ import { Logo3dView } from './Logo3dView';
 import { BrowserView, StreamView } from './BrowserView';
 import type { Logo3d } from '../engine/types/Logo3d';
 import { defaultVisuals } from '../engine/visuals';
-import { acquireCamera, releaseCamera, setCameraValues, type CameraValues } from '../engine/cameras';
+import { acquireCamera, fullResolution, releaseCamera, setCameraValues, type CameraValues } from '../engine/cameras';
 import { FrameDelay } from '../engine/frameDelay';
 
 // ---- views ----
@@ -79,6 +79,14 @@ export function SourceView(props: SourceViewProps) {
 const Who = createContext<{ id: string; name: string; kind: Source['kind']['type'] } | null>(null);
 
 function SourceBody({ source, client, thumb = false, reportDuration = false, audience = false }: SourceViewProps) {
+  // A camera that auto-framing zooms into opens at full resolution (sharp close shots).
+  const sharpCam = source.kind.type === 'camera' && !!source.autoFrame?.enabled && !source.ptz ? source.kind.deviceId : null;
+  useEffect(() => {
+    if (!sharpCam) return;
+    const holder = `view:${source.id}:${Math.random()}`;
+    fullResolution(holder, sharpCam, true);
+    return () => fullResolution(holder, sharpCam, false);
+  }, [sharpCam, source.id]);
   const fit = source.fit === 'cover' ? 'cover' : 'contain';
   const k = source.kind;
   const keyed =
@@ -90,7 +98,7 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
         keyCfg={source.key}
         adjust={source.adjust}
         background={source.background}
-        autoFrame={source.autoFrame}
+        autoFrame={source.ptz && source.autoFrame ? { ...source.autoFrame, enabled: false } : source.autoFrame}
         pictureUrl={source.background?.mode === 'picture' && source.background.picture ? client.mediaUrl(source.background.picture) : null}
         fit={fit}
         audience={audience}

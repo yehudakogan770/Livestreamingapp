@@ -3,14 +3,41 @@
 
 const cameras = new Map<string, { stream: Promise<MediaStream>; users: number }>();
 
+/**
+ * Cameras opened at their full resolution (up to 4K) because something
+ * zooms into them (auto-framing), by who asked: device → holders.
+ */
+const fullRes = new Map<string, Set<string>>();
+const size = (deviceId: string) =>
+  fullRes.get(deviceId)?.size ? { width: { ideal: 3840 }, height: { ideal: 2160 } } : { width: { ideal: 1920 }, height: { ideal: 1080 } };
+
+/**
+ * Ask for a camera at full resolution (so a zoomed-in shot stays sharp), or
+ * stop asking. `holder` says who asks; the camera stays at full resolution
+ * while anyone does. Safe to call every frame.
+ */
+export function fullResolution(holder: string, deviceId: string, on: boolean): void {
+  const set = fullRes.get(deviceId) ?? new Set<string>();
+  const before = set.size > 0;
+  if (on) set.add(holder);
+  else set.delete(holder);
+  if (set.size) fullRes.set(deviceId, set);
+  else fullRes.delete(deviceId);
+  if (before === set.size > 0) return;
+  // Change an open camera without closing it (it keeps showing meanwhile).
+  void cameras.get(deviceId)?.stream.then(
+    (st) => st.getVideoTracks().forEach((t) => void t.applyConstraints({ ...t.getConstraints(), ...size(deviceId) }).catch(() => {})),
+    () => {},
+  );
+}
+
 /** A camera's stream; call releaseCamera when done with it. */
 export function acquireCamera(deviceId: string): Promise<MediaStream> {
   let entry = cameras.get(deviceId);
   if (!entry) {
     const video: MediaTrackConstraints = {
       deviceId: deviceId ? { exact: deviceId } : undefined,
-      width: { ideal: 1920 },
-      height: { ideal: 1080 },
+      ...size(deviceId),
       frameRate: { ideal: 60 },
     };
     // Ask for pan, tilt and zoom too (cameras that can move); if that is

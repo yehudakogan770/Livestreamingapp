@@ -38,9 +38,9 @@ export function maxZoom(cameraWidth: number, outputWidth: number, keepSharp: boo
   return Math.min(3, Math.max(1, (cameraWidth / outputWidth) * 1.15));
 }
 
-/** The shot that frames the people found, as the settings ask. */
-export function frameFor(people: Box[], f: Pick<AutoFrame, 'who' | 'tightness'>, limit: number): Shot {
-  if (people.length === 0) return WIDE;
+/** The part of the picture to frame (everyone, or the main person), tight shots keeping the top (head and shoulders). */
+export function subject(people: Box[], f: Pick<AutoFrame, 'who' | 'tightness'>): (Box & { pad: number }) | null {
+  if (people.length === 0) return null;
   let b: Box;
   if (f.who === 'main') {
     b = people.reduce((a, p) => (p.w * p.h > a.w * a.h ? p : a));
@@ -54,13 +54,21 @@ export function frameFor(people: Box[], f: Pick<AutoFrame, 'who' | 'tightness'>,
   const t = Math.min(1, Math.max(0, f.tightness));
   // Tight shots keep the top of the person (head and shoulders), not the feet.
   const keep = t > 0.5 ? 1 - (t - 0.5) * 1.1 : 1;
-  const h = b.h * keep;
   // Room around them: generous when loose, close when tight.
-  const pad = 1.6 - 0.45 * t;
-  const zoom = Math.min(limit, Math.max(1, Math.min(1 / (b.w * pad), 1 / (h * pad))));
+  return { ...b, h: b.h * keep, pad: 1.6 - 0.45 * t };
+}
+
+/** How many times closer the shot should be to frame the subject well (below 1: wider). */
+export const wantedZoom = (b: Box & { pad: number }) => Math.min(1 / (b.w * b.pad), 1 / (b.h * b.pad));
+
+/** The shot that frames the people found, as the settings ask. */
+export function frameFor(people: Box[], f: Pick<AutoFrame, 'who' | 'tightness'>, limit: number): Shot {
+  const b = subject(people, f);
+  if (!b) return WIDE;
+  const zoom = Math.min(limit, Math.max(1, wantedZoom(b)));
   const half = 0.5 / zoom;
   const clampC = (c: number) => Math.min(1 - half, Math.max(half, c));
-  return { cx: clampC(b.x + b.w / 2), cy: clampC(b.y + h / 2), zoom };
+  return { cx: clampC(b.x + b.w / 2), cy: clampC(b.y + b.h / 2), zoom };
 }
 
 /** Move the shot a step toward where it should be: calm, never jumpy. */
@@ -184,6 +192,10 @@ export interface Mask {
 export class InputVision {
   mask: Mask | null = null;
   shot: Shot = WIDE;
+  /** The people found the last time it looked (auto-framing). */
+  people: Box[] = [];
+  /** When it last looked for people. */
+  lookedAt = 0;
   private target: Shot = WIDE;
   private lastMask = 0;
   private lastLook = 0;
@@ -244,6 +256,8 @@ export class InputVision {
             if (b) people.push({ x: b.originX / w, y: b.originY / h, w: b.width / w, h: b.height / h });
           }
           // Nobody for a moment (someone turned away): hold the shot 3 s, then go wide.
+          this.people = people;
+          this.lookedAt = now;
           if (people.length) this.seenAt = now;
           if (people.length || now - this.seenAt > 3000) {
             const next = frameFor(people, af, maxZoom(w, outW, af.keepSharp));

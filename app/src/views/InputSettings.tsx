@@ -497,11 +497,18 @@ function SmartTab({ source, act, client, cameraWidth }: { source: Source; act: A
               </div>
               {slider('Shot', af.tightness, (v) => setAf({ tightness: v }), 'Wide', 'Close')}
               {slider('Moves', af.speed, (v) => setAf({ speed: v }), 'Calmly', 'Quickly')}
-              <label className="check">
-                <input type="checkbox" checked={af.keepSharp} onChange={(e) => setAf({ keepSharp: e.target.checked })} /> Keep it sharp (never zoom in past what
-                the camera can show sharply)
-              </label>
-              {cameraWidth > 0 && (
+              {source.ptz?.host && (
+                <p className="field__note">
+                  This camera can turn and zoom by itself, so Lumora steers it to follow the people: real optical zoom, always sharp. Try it before the event.
+                </p>
+              )}
+              {!source.ptz?.host && (
+                <label className="check">
+                  <input type="checkbox" checked={af.keepSharp} onChange={(e) => setAf({ keepSharp: e.target.checked })} /> Keep it sharp (never zoom in past
+                  what the camera can show sharply)
+                </label>
+              )}
+              {cameraWidth > 0 && !source.ptz?.host && (
                 <p className="field__note">
                   {af.keepSharp && sharp < 1.3
                     ? `This camera is ${cameraWidth} pixels wide, so it can hardly zoom in and stay sharp. A 4K camera can zoom in 2× sharply; or turn off “Keep it sharp” for closer shots (a little softer).`

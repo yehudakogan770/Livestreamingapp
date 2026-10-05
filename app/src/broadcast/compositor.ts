@@ -10,7 +10,7 @@ import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { programLayers, type StingerPlay } from '../components/ScreenView';
 import { lumaMask } from '../engine/luma';
-import { acquireCamera, releaseCamera } from '../engine/cameras';
+import { acquireCamera, fullResolution, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
 import { loadFontFor } from '../engine/fonts';
 import { eventLogo } from '../engine/brand';
@@ -152,6 +152,7 @@ export class ProgramCompositor {
 
   dispose(): void {
     this.stopSting();
+    for (const s of this.show?.sources ?? []) if (s.kind.type === 'camera') fullResolution(`rec:${s.id}`, s.kind.deviceId, false);
     if (this.visuals) this.visuals.r.dispose();
     for (const l of this.logos.values()) {
       if (l) {
@@ -1857,6 +1858,7 @@ export class ProgramCompositor {
         const m = this.media.get(src.id);
         if (!m || m.failed) return this.safeScreen(event, 'failure', w, h);
         const smart = this.smartsAllowed && usesVision(src.background, src.autoFrame);
+        if (src.kind.type === 'camera') fullResolution(`rec:${src.id}`, src.kind.deviceId, !!src.autoFrame?.enabled && !src.ptz);
         if (needsProcessing(src.key, src.adjust) || smart) {
           // Green screen, light and color, background and framing: on the graphics card, then draw the processed copy.
           const el = m.el;
@@ -1875,12 +1877,14 @@ export class ProgramCompositor {
               v = new InputVision();
               this.visions.set(src.id, v);
             }
-            v.update(el, iw, ih, src.background, src.autoFrame, w);
+            // A PTZ camera is steered instead (optical zoom): no digital zoom here.
+            const digital = src.ptz ? { ...src.autoFrame, enabled: false } : src.autoFrame;
+            v.update(el, iw, ih, src.background, digital, w);
             smarts = {
               mask: v.mask,
               bg: src.background,
               picture: this.bgPicture(src.background.mode === 'picture' ? src.background.picture : null),
-              view: src.autoFrame.enabled ? shotToView(v.shot) : null,
+              view: src.autoFrame.enabled && !src.ptz ? shotToView(v.shot) : null,
             };
           }
           if (keyer.works && ready && keyer.draw(el, iw, ih, src.key, src.adjust, 1920, smarts)) {
