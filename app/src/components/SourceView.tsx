@@ -18,8 +18,11 @@ import { syncMedia } from '../engine/mediaSync';
 import { useStage } from '../engine/CountdownContext';
 import type { Countdown } from '../engine/types/Countdown';
 import { CountdownView } from './CountdownOverlay';
-import { ChromaKeyer, defaultAdjust, needsProcessing } from '../engine/chroma';
+import { ChromaKeyer, defaultAdjust, defaultAutoFrame, defaultBackground, needsProcessing, type Smarts } from '../engine/chroma';
+import { InputVision, shotToView, usesVision } from '../engine/vision';
 import type { Adjust } from '../engine/types/Adjust';
+import type { AutoFrame } from '../engine/types/AutoFrame';
+import type { Background } from '../engine/types/Background';
 import type { ChromaKey } from '../engine/types/ChromaKey';
 import { PesukimView } from './PesukimView';
 import { TextView } from './TextView';
@@ -78,13 +81,28 @@ const Who = createContext<{ id: string; name: string; kind: Source['kind']['type
 function SourceBody({ source, client, thumb = false, reportDuration = false, audience = false }: SourceViewProps) {
   const fit = source.fit === 'cover' ? 'cover' : 'contain';
   const k = source.kind;
-  const keyed = needsProcessing(source.key, source.adjust) && (k.type === 'image' || k.type === 'camera' || k.type === 'video');
+  const keyed =
+    needsProcessing(source.key, source.adjust, source.background, source.autoFrame) && (k.type === 'image' || k.type === 'camera' || k.type === 'video');
   if (keyed) {
     // Green screen and adjustments: the picture is drawn through the processor.
     return (
-      <Keyed keyCfg={source.key} adjust={source.adjust} fit={fit} audience={audience}>
+      <Keyed
+        keyCfg={source.key}
+        adjust={source.adjust}
+        background={source.background}
+        autoFrame={source.autoFrame}
+        pictureUrl={source.background?.mode === 'picture' && source.background.picture ? client.mediaUrl(source.background.picture) : null}
+        fit={fit}
+        audience={audience}
+      >
         <SourceBody
-          source={{ ...source, key: { ...source.key, enabled: false }, adjust: defaultAdjust() }}
+          source={{
+            ...source,
+            key: { ...source.key, enabled: false },
+            adjust: defaultAdjust(),
+            background: defaultBackground(),
+            autoFrame: defaultAutoFrame(),
+          }}
           client={client}
           thumb={thumb}
           reportDuration={reportDuration}
@@ -367,12 +385,18 @@ function Logo3dInput({ logo, thumb, audience }: { logo: Logo3d; thumb: boolean; 
 function Keyed({
   keyCfg,
   adjust,
+  background,
+  autoFrame,
+  pictureUrl,
   fit,
   audience,
   children,
 }: {
   keyCfg: ChromaKey;
   adjust: Adjust;
+  background?: Background;
+  autoFrame?: AutoFrame;
+  pictureUrl: string | null;
   fit: 'cover' | 'contain';
   audience: boolean;
   children: React.ReactNode;
@@ -380,8 +404,8 @@ function Keyed({
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [works, setWorks] = useState(true);
-  const latest = useRef({ keyCfg, adjust });
-  latest.current = { keyCfg, adjust };
+  const latest = useRef({ keyCfg, adjust, background, autoFrame, pictureUrl });
+  latest.current = { keyCfg, adjust, background, autoFrame, pictureUrl };
   const who = useContext(Who);
   useReportProblem(
     !works && !audience && who
@@ -404,11 +428,29 @@ function Keyed({
       return;
     }
     let id = 0;
+    const vision = new InputVision();
+    let picture: HTMLImageElement | null = null;
     const frame = () => {
       const el = box.current?.querySelector('video, img');
-      const { keyCfg: kc, adjust: ad } = latest.current;
-      if (el instanceof HTMLVideoElement && el.readyState >= 2) keyer.draw(el, el.videoWidth, el.videoHeight, kc, ad);
-      else if (el instanceof HTMLImageElement && el.complete) keyer.draw(el, el.naturalWidth, el.naturalHeight, kc, ad);
+      const { keyCfg: kc, adjust: ad, background: bg, autoFrame: af, pictureUrl: pu } = latest.current;
+      const video = el instanceof HTMLVideoElement && el.readyState >= 2 ? el : null;
+      const img = el instanceof HTMLImageElement && el.complete ? el : null;
+      const pic = video ?? img;
+      if (pic) {
+        const w = video ? video.videoWidth : img!.naturalWidth;
+        const h = video ? video.videoHeight : img!.naturalHeight;
+        let smarts: Smarts | null = null;
+        if (bg && af && usesVision(bg, af)) {
+          vision.update(pic, w, h, bg, af, box.current?.clientWidth ? box.current.clientWidth * devicePixelRatio : 1920);
+          if (pu && picture?.src !== pu) {
+            picture = new Image();
+            picture.crossOrigin = 'anonymous';
+            picture.src = pu;
+          }
+          smarts = { mask: vision.mask, bg, picture: pu ? picture : null, view: af.enabled ? shotToView(vision.shot) : null };
+        }
+        keyer.draw(pic, w, h, kc, ad, 1920, smarts);
+      }
       id = requestAnimationFrame(frame);
     };
     id = requestAnimationFrame(frame);

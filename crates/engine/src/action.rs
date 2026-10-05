@@ -98,6 +98,14 @@ pub struct SourcePatch {
     #[serde(default)]
     #[ts(optional)]
     pub video_delay_ms: Option<u32>,
+    /// Background without a green screen (cameras, videos and pictures).
+    #[serde(default)]
+    #[ts(optional)]
+    pub background: Option<crate::vision::Background>,
+    /// Auto-framing (cameras and videos).
+    #[serde(default)]
+    #[ts(optional)]
+    pub auto_frame: Option<crate::vision::AutoFrame>,
 }
 
 /// Changes to the stage monitor. Fields left out stay as they are.

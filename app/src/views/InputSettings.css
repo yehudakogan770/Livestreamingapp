@@ -221,3 +221,15 @@
   background: var(--panel);
   border-color: #2f5a60;
 }
+
+/* Background & framing */
+.is__group {
+  margin: 12px 0 2px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.is__group:first-child {
+  margin-top: 0;
+}

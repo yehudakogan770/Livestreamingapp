@@ -1,5 +1,5 @@
 import { defaultFilters } from '../engine/audio';
-import { defaultAdjust } from '../engine/chroma';
+import { defaultAdjust, defaultAutoFrame, defaultBackground } from '../engine/chroma';
 import { act, fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SourceView } from './SourceView';
@@ -21,6 +21,8 @@ const picture: Source = {
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
   adjust: defaultAdjust(),
+  background: defaultBackground(),
+  autoFrame: defaultAutoFrame(),
 };
 const video: Source = {
   id: 'v',
@@ -33,6 +35,8 @@ const video: Source = {
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
   adjust: defaultAdjust(),
+  background: defaultBackground(),
+  autoFrame: defaultAutoFrame(),
 };
 
 describe('when a source fails', () => {

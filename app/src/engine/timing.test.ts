@@ -1,6 +1,6 @@
 import { defaultFilters } from './audio';
 import type { TransitionKind } from './types/TransitionKind';
-import { defaultAdjust } from './chroma';
+import { defaultAdjust, defaultAutoFrame, defaultBackground } from './chroma';
 import { describe, expect, it } from 'vitest';
 import { clock, fadeAmount, mixAt, sourceEnded, sourcePosition, transitionProgress } from './timing';
 import type { Source } from './types/Source';
@@ -17,6 +17,8 @@ const video = (durationS: number, looping: boolean, playing: boolean, posS: numb
   audio: { follow: true, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
   key: { enabled: false, color: '#00b140', similarity: 0.4, smoothness: 0.08, spill: 0.3 },
   adjust: defaultAdjust(),
+  background: defaultBackground(),
+  autoFrame: defaultAutoFrame(),
 });
 
 const screen = (over: Partial<ScreenState> = {}): ScreenState => ({

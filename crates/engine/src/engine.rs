@@ -2755,6 +2755,8 @@ fn add_source(s: &mut Show, new: NewSource) -> Result<()> {
         speed: None,
         video_delay_ms: None,
         camera: None,
+        background: crate::vision::Background::default(),
+        auto_frame: crate::vision::AutoFrame::default(),
     };
     s.sources.push(src);
     Ok(())
@@ -2845,6 +2847,41 @@ fn update_source(s: &mut Show, id: &SourceId, patch: SourcePatch) -> Result<()> 
             ));
         }
         src.video_delay_ms = Some(ms.min(1000)).filter(|&ms| ms > 0);
+    }
+    update_vision(src, patch.background, patch.auto_frame)
+}
+
+/// Background removal and auto-framing on one input.
+fn update_vision(
+    src: &mut Source,
+    background: Option<crate::vision::Background>,
+    auto_frame: Option<crate::vision::AutoFrame>,
+) -> Result<()> {
+    if let Some(mut b) = background {
+        if !matches!(
+            src.kind,
+            SourceKind::Camera { .. } | SourceKind::Video { .. } | SourceKind::Image { .. }
+        ) {
+            return Err(ActionError::invalid(
+                "background",
+                "the background can be taken away on cameras, videos and pictures",
+            ));
+        }
+        b.repair();
+        src.background = b;
+    }
+    if let Some(mut f) = auto_frame {
+        if !matches!(
+            src.kind,
+            SourceKind::Camera { .. } | SourceKind::Video { .. }
+        ) {
+            return Err(ActionError::invalid(
+                "autoFrame",
+                "auto-framing works on cameras and videos",
+            ));
+        }
+        f.repair();
+        src.auto_frame = f;
     }
     Ok(())
 }

@@ -382,6 +382,12 @@ pub struct Source {
     #[serde(default)]
     #[ts(optional = nullable)]
     pub camera: Option<crate::cameras::CameraControls>,
+    /// The background behind the people, taken away without a green screen.
+    #[serde(default)]
+    pub background: crate::vision::Background,
+    /// A wide camera that zooms in on and follows the people in it.
+    #[serde(default)]
+    pub auto_frame: crate::vision::AutoFrame,
 }
 
 /// Green screen: a color taken out of the picture so what is behind shows.

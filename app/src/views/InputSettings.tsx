@@ -5,11 +5,14 @@ import type { Effect } from '../engine/types/Effect';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { SourceView } from '../components/SourceView';
-import { autoBalance, ChromaKeyer, defaultAdjust, isAdjusted } from '../engine/chroma';
+import { autoBalance, ChromaKeyer, defaultAdjust, defaultAutoFrame, defaultBackground, isAdjusted } from '../engine/chroma';
+import { maxZoom, visionFailed } from '../engine/vision';
+import type { AutoFrame } from '../engine/types/AutoFrame';
+import type { Background } from '../engine/types/Background';
 import type { Act } from './act';
 import './InputSettings.css';
 
-type Tab = 'colour' | 'crop' | 'effects';
+type Tab = 'colour' | 'crop' | 'effects' | 'smart';
 type NumKey = { [K in keyof Adjust]: Adjust[K] extends number ? K : never }[keyof Adjust];
 type FxKey = 'blur' | 'vignette' | 'blackWhite' | 'grain';
 
@@ -92,6 +95,7 @@ export function InputSettings({
   latest.current = a;
   const set = (p: Partial<Adjust>) => act({ type: 'updateSource', id: source.id, patch: { adjust: { ...latest.current, ...p } } });
   const d = defaultAdjust();
+  const [cameraWidth, setCameraWidth] = useState(0);
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -116,6 +120,7 @@ export function InputSettings({
       if (!el || !g || !keyer.works) return;
       const w = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
       const h = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
+      setCameraWidth(w);
       if (!w || !h || !keyer.draw(el, w, h, { ...source.key, enabled: false }, latest.current, 320)) return;
       g.clearRect(0, 0, 64, 36);
       g.drawImage(keyer.canvas, 0, 0, 64, 36);
@@ -276,6 +281,7 @@ export function InputSettings({
                   ['colour', 'Color & light'],
                   ['crop', 'Crop & position'],
                   ['effects', 'Effects'],
+                  ['smart', 'Background & framing'],
                 ] as const
               ).map(([id, name]) => (
                 <button
@@ -367,6 +373,7 @@ export function InputSettings({
                   )}
                 </>
               )}
+              {tab === 'smart' && <SmartTab source={source} act={act} client={client} cameraWidth={cameraWidth} />}
               {tab === 'effects' && (
                 <>
                   {EFFECTS.map(([key, name, amountLabel]) => {
@@ -408,5 +415,105 @@ export function InputSettings({
         </footer>
       </div>
     </div>
+  );
+}
+
+const BG_MODES: [Background['mode'], string][] = [
+  ['keep', 'Keep it'],
+  ['blur', 'Blur it'],
+  ['remove', 'Take it away'],
+  ['picture', 'A picture'],
+];
+
+/** Background without a green screen, and auto-framing. */
+function SmartTab({ source, act, client, cameraWidth }: { source: Source; act: Act; client: EngineClient; cameraWidth: number }) {
+  const bg = source.background ?? defaultBackground();
+  const af = source.autoFrame ?? defaultAutoFrame();
+  const setBg = (p: Partial<Background>) => act({ type: 'updateSource', id: source.id, patch: { background: { ...bg, ...p } } });
+  const setAf = (p: Partial<AutoFrame>) => act({ type: 'updateSource', id: source.id, patch: { autoFrame: { ...af, ...p } } });
+  const choosePicture = () =>
+    void client.pickFile('image').then((f) => {
+      if (f) setBg({ mode: 'picture', picture: f.path });
+    });
+  const sharp = maxZoom(cameraWidth, 1920, true);
+  const slider = (label: string, value: number, on: (v: number) => void, low: string, high: string) => (
+    <div className="is__row">
+      <span>{label}</span>
+      <input type="range" min={0} max={100} value={Math.round(value * 100)} aria-label={label} onChange={(e) => on(Number(e.target.value) / 100)} />
+      <em>{value < 0.34 ? low : value > 0.66 ? high : 'Medium'}</em>
+    </div>
+  );
+  return (
+    <>
+      {visionFailed() && (
+        <p className="field__note field__note--warn">These need the graphics card, which isn’t available on this computer, so the picture shows as it is.</p>
+      )}
+      <h4 className="is__group">Background (no green screen needed)</h4>
+      <div className="segs">
+        {BG_MODES.map(([mode, name]) => (
+          <button
+            key={mode}
+            type="button"
+            className="seg"
+            aria-pressed={bg.mode === mode}
+            onClick={() => (mode === 'picture' && !bg.picture ? choosePicture() : setBg({ mode }))}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+      {bg.mode === 'blur' && slider('Blur', bg.blur, (v) => setBg({ blur: v }), 'Soft', 'Strong')}
+      {bg.mode === 'picture' && (
+        <div className="is__flip">
+          <span>Picture</span>
+          <button type="button" className="btn" onClick={choosePicture}>
+            {bg.picture ? 'Change picture…' : 'Choose a picture…'}
+          </button>
+        </div>
+      )}
+      {bg.mode !== 'keep' && slider('Edge', bg.edge, (v) => setBg({ edge: v }), 'Crisp', 'Soft')}
+      <p className="field__note">
+        {bg.mode === 'remove'
+          ? 'What is behind this input shows through, like a green screen: put it over a picture, video or virtual set.'
+          : 'Lumora finds the people in the picture by itself. Works best with one to three people facing the camera.'}
+      </p>
+
+      {source.kind.type !== 'image' && (
+        <>
+          <h4 className="is__group">Auto-framing</h4>
+          <label className="check">
+            <input type="checkbox" checked={af.enabled} onChange={(e) => setAf({ enabled: e.target.checked })} /> Follow the people (the camera zooms in and
+            moves with them by itself)
+          </label>
+          {af.enabled && (
+            <>
+              <div className="segs">
+                <button type="button" className="seg" aria-pressed={af.who === 'everyone'} onClick={() => setAf({ who: 'everyone' })}>
+                  Everyone
+                </button>
+                <button type="button" className="seg" aria-pressed={af.who === 'main'} onClick={() => setAf({ who: 'main' })}>
+                  The main person
+                </button>
+              </div>
+              {slider('Shot', af.tightness, (v) => setAf({ tightness: v }), 'Wide', 'Close')}
+              {slider('Moves', af.speed, (v) => setAf({ speed: v }), 'Calmly', 'Quickly')}
+              <label className="check">
+                <input type="checkbox" checked={af.keepSharp} onChange={(e) => setAf({ keepSharp: e.target.checked })} /> Keep it sharp (never zoom in past what
+                the camera can show sharply)
+              </label>
+              {cameraWidth > 0 && (
+                <p className="field__note">
+                  {af.keepSharp && sharp < 1.3
+                    ? `This camera is ${cameraWidth} pixels wide, so it can hardly zoom in and stay sharp. A 4K camera can zoom in 2× sharply; or turn off “Keep it sharp” for closer shots (a little softer).`
+                    : af.keepSharp
+                      ? `This camera can zoom in up to ${sharp.toFixed(1)}× and stay sharp.`
+                      : 'Close shots zoom in up to 3×; the closer, the softer the picture.'}
+                </p>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </>
   );
 }

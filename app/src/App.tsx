@@ -29,6 +29,7 @@ import { OverlayEditor } from './views/OverlayEditor';
 import { sendCommand } from './views/commands';
 import { TEXT_TEMPLATES } from './engine/text';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
+import { visionPaused } from './engine/vision';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
 import { StageContext } from './engine/CountdownContext';
@@ -127,6 +128,23 @@ function ControlApp() {
           detail: remote.error,
           fix: 'Turn it off and on again (Settings → Phone remote). If that does not help, restart the computer.',
           action: { label: 'Phone remote…', run: () => setRemoteOpen(true) },
+        }
+      : null,
+  );
+  // The safety net for background removal and auto-framing (see vision.ts).
+  const [smartsPaused, setSmartsPaused] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setSmartsPaused(visionPaused()), 2000);
+    return () => clearInterval(id);
+  }, []);
+  useReportProblem(
+    smartsPaused
+      ? {
+          key: 'vision:busy',
+          level: 'warning',
+          title: 'Background removal and auto-framing are paused: the computer is too busy',
+          detail: 'So the show stays smooth, those pictures show as they are for now. Lumora tries again in 30 seconds.',
+          fix: 'Use them on fewer cameras, close other programs, or use a computer with a stronger graphics card.',
         }
       : null,
   );

@@ -83,6 +83,8 @@ mod tests {
             speed: None,
             video_delay_ms: None,
             camera: None,
+            background: crate::vision::Background::default(),
+            auto_frame: crate::vision::AutoFrame::default(),
         }
     }
 

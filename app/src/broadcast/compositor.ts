@@ -18,6 +18,7 @@ import { effectAt, WORD_OUT_MS, WORD_SPEED, wordEffect, type EffectState } from 
 import { barDesign, barLayout, barRange, glossesOf, pesukimOf, shownText, soundAndMeaning, wholeLayout, wordsOf, type PesukimData } from '../engine/pesukim';
 import { overlayLook, overlaysOn } from '../engine/overlays';
 import { ChromaKeyer, needsProcessing } from '../engine/chroma';
+import { InputVision, shotToView, usesVision } from '../engine/vision';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
 import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
@@ -83,6 +84,12 @@ export class ProgramCompositor {
   private readonly pictures = new Map<string, Media>();
   /** One green-screen keyer per keyed input. */
   private readonly keyers = new Map<string, ChromaKeyer>();
+  /** Background removal and auto-framing, per input. */
+  private readonly visions = new Map<string, InputVision>();
+  /** Pictures put behind people (background removal), by path. */
+  private readonly bgPictures = new Map<string, HTMLImageElement>();
+  /** Off while the computer is overloaded (the show comes first). */
+  smartsAllowed = true;
   private show: Show | null = null;
   private lastSync = 0;
   /** When each source started being drawn (for build-on animations). */
@@ -1849,8 +1856,9 @@ export class ProgramCompositor {
       case 'camera': {
         const m = this.media.get(src.id);
         if (!m || m.failed) return this.safeScreen(event, 'failure', w, h);
-        if (needsProcessing(src.key, src.adjust)) {
-          // Green screen: key the frame on the graphics card, then draw the keyed copy.
+        const smart = this.smartsAllowed && usesVision(src.background, src.autoFrame);
+        if (needsProcessing(src.key, src.adjust) || smart) {
+          // Green screen, light and color, background and framing: on the graphics card, then draw the processed copy.
           const el = m.el;
           const iw = el instanceof HTMLVideoElement ? el.videoWidth : el.naturalWidth;
           const ih = el instanceof HTMLVideoElement ? el.videoHeight : el.naturalHeight;
@@ -1859,7 +1867,23 @@ export class ProgramCompositor {
             keyer = new ChromaKeyer();
             this.keyers.set(src.id, keyer);
           }
-          if (keyer.works && (el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete) && keyer.draw(el, iw, ih, src.key, src.adjust)) {
+          const ready = el instanceof HTMLVideoElement ? el.readyState >= 2 : el.complete;
+          let smarts = null;
+          if (smart && ready) {
+            let v = this.visions.get(src.id);
+            if (!v) {
+              v = new InputVision();
+              this.visions.set(src.id, v);
+            }
+            v.update(el, iw, ih, src.background, src.autoFrame, w);
+            smarts = {
+              mask: v.mask,
+              bg: src.background,
+              picture: this.bgPicture(src.background.mode === 'picture' ? src.background.picture : null),
+              view: src.autoFrame.enabled ? shotToView(v.shot) : null,
+            };
+          }
+          if (keyer.works && ready && keyer.draw(el, iw, ih, src.key, src.adjust, 1920, smarts)) {
             this.fit(keyer.canvas, src.fit, w, h);
             return;
           }
@@ -1869,6 +1893,18 @@ export class ProgramCompositor {
         return;
       }
     }
+  }
+
+  /** A picture to put behind people, loading it the first time. */
+  private bgPicture(path: string | null | undefined): HTMLImageElement | null {
+    if (!path) return null;
+    let img = this.bgPictures.get(path);
+    if (!img) {
+      img = new Image();
+      img.src = this.client.mediaUrl(path);
+      this.bgPictures.set(path, img);
+    }
+    return img;
   }
 
   /** A camera held back (see FrameDelay); null when it isn't. */

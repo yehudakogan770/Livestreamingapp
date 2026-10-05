@@ -17,7 +17,7 @@ import { cleanUrl, defaultBrowser } from '../engine/browser';
 import { sendCommand } from './commands';
 import { useEffect, useState } from 'react';
 import { defaultCountdown, type EngineClient } from '../engine/client';
-import { defaultAdjust, defaultKey } from '../engine/chroma';
+import { defaultAdjust, defaultAutoFrame, defaultBackground, defaultKey } from '../engine/chroma';
 import type { NewSource } from '../engine/types/NewSource';
 import type { SourceKind } from '../engine/types/SourceKind';
 import type { Source } from '../engine/types/Source';
@@ -292,6 +292,8 @@ export function AddInput({
         id: 'draft',
         key: defaultKey(),
         adjust: defaultAdjust(),
+        background: defaultBackground(),
+        autoFrame: defaultAutoFrame(),
         volume: 1,
         muted: true,
         looping: false,

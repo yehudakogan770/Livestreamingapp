@@ -4,7 +4,7 @@ import { defaultFilters } from './audio';
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
-import { defaultAdjust, defaultKey } from './chroma';
+import { defaultAdjust, defaultAutoFrame, defaultBackground, defaultKey } from './chroma';
 import { cueDue, nextCueIndex } from './cues';
 import { nextSlideIndex, slideDue } from './slideshow';
 import type { Slideshow } from './types/Slideshow';
@@ -307,6 +307,8 @@ function apply(s: Show, a: Action, now: number) {
         kind,
         key: { ...defaultKey(), ...a.source.key },
         adjust: defaultAdjust(),
+        background: defaultBackground(),
+        autoFrame: defaultAutoFrame(),
         volume: clamp01(a.source.volume ?? 1),
         muted: a.source.muted ?? false,
         looping: a.source.looping ?? false,
