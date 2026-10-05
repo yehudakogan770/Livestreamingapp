@@ -170,10 +170,8 @@ export class ProgramCompositor {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const show = this.show;
     if (!show) return;
-    // A vertical frame shows the middle of the 16:9 picture.
     const h = canvas.height;
-    const w = canvas.width > h ? canvas.width : Math.round((h * 16) / 9);
-    if (w !== canvas.width) ctx.translate(-(w - canvas.width) / 2, 0);
+    const w = canvas.width;
     this.drawnBefore = this.drawnNow;
     this.drawnNow = new Set();
     for (const id of this.starts.keys()) if (!this.drawnBefore.has(id)) this.starts.delete(id);

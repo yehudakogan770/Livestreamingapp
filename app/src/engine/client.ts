@@ -82,6 +82,8 @@ export interface RemoteStatus {
 // ----- recording and streaming (mirrors src-tauri/src/capture.rs) -----
 
 export type CaptureKind = 'record' | 'stream';
+/** A session the app runs: a recording, the stream, or the vertical version beside it. */
+export type SessionKind = CaptureKind | 'vertical';
 
 /** What to make a PTZ camera do (mirrors src-tauri/src/ptz.rs). */
 export type PtzCommand =
@@ -120,6 +122,8 @@ export interface Destination {
   url: string;
   key: string;
   enabled: boolean;
+  /** Gets the vertical (9:16) version, streamed at the same time as the wide one. */
+  vertical?: boolean;
 }
 
 export interface CaptureSettings {
@@ -153,10 +157,12 @@ export interface CaptureStatus {
   ffmpeg: boolean;
   recording: CaptureRunning | null;
   streaming: CaptureRunning | null;
+  /** The vertical version beside the stream. */
+  vertical?: CaptureRunning | null;
   lastRecording: string | null;
   /** Still turning the last recording into an .mp4. */
   finishing: boolean;
-  failure: { kind: CaptureKind; session: number; message: string } | null;
+  failure: { kind: SessionKind; session: number; message: string } | null;
 }
 
 export function defaultCaptureSettings(): CaptureSettings {
@@ -217,7 +223,7 @@ export interface EngineClient {
   /** Ask the operator for a folder. Resolves null if canceled. */
   pickFolder(): Promise<string | null>;
   /** Start a recording or stream of what the encoder makes (`mime`); `name` names the file. */
-  captureStart(kind: CaptureKind, mime: string, name: string): Promise<CaptureRunning>;
+  captureStart(kind: SessionKind, mime: string, name: string): Promise<CaptureRunning>;
   /** More encoded picture and sound, in order. */
   captureChunk(session: number, data: ArrayBuffer): Promise<void>;
   captureStop(session: number): Promise<void>;
@@ -593,7 +599,7 @@ class TauriClient implements EngineClient {
     return typeof path === 'string' ? path : null;
   }
 
-  async captureStart(kind: CaptureKind, mime: string, name: string): Promise<CaptureRunning> {
+  async captureStart(kind: SessionKind, mime: string, name: string): Promise<CaptureRunning> {
     try {
       return await invoke<CaptureRunning>('capture_start', { kind, mime, name });
     } catch (e) {
@@ -987,8 +993,8 @@ export class DemoClient implements EngineClient {
     return Promise.reject(new EngineError({ code: 'unavailable' }));
   }
 
-  captureStart(kind: CaptureKind, mime: string, name: string): Promise<CaptureRunning> {
-    if (kind === 'stream') return Promise.reject(new Error('Streaming needs the Lumora app; the browser demo can only record.'));
+  captureStart(kind: SessionKind, mime: string, name: string): Promise<CaptureRunning> {
+    if (kind !== 'record') return Promise.reject(new Error('Streaming needs the Lumora app; the browser demo can only record.'));
     if (this.capture.recording) return Promise.reject(new Error('Already recording.'));
     const session = this.nextSession++;
     this.recorded = { session, mime, name, parts: [] };

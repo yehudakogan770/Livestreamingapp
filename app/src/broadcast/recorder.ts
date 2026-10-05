@@ -3,11 +3,12 @@
 // and sent, chunk by chunk and in order, to the app, which writes the file or
 // feeds FFmpeg. See src-tauri/src/capture.rs.
 
-import type { CaptureKind, CaptureRunning, CaptureSettings, EngineClient, Quality } from '../engine/client';
+import type { CaptureKind, CaptureRunning, CaptureSettings, EngineClient, Quality, SessionKind } from '../engine/client';
 import type { Show } from '../engine/types/Show';
 import type { SoundEngine } from '../audio/soundEngine';
 import { ProgramCompositor } from './compositor';
 import { ReplayBuffer, type Piece } from './replay';
+import { VerticalFrame } from './vertical';
 
 export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number; kbps: number }> = {
   '720p': { name: '720p (1280 × 720), 30 frames a second', width: 1280, height: 720, fps: 30, kbps: 3000 },
@@ -17,7 +18,7 @@ export const QUALITIES: Record<Quality, { name: string; width: number; height: n
   '1440p': { name: '1440p (2560 × 1440), 30 frames a second', width: 2560, height: 1440, fps: 30, kbps: 12000 },
   '1440p60': { name: '1440p, 60 frames a second (fast computer)', width: 2560, height: 1440, fps: 60, kbps: 18000 },
   '2160p': { name: '4K (3840 × 2160), 30 frames a second (recording; YouTube 4K)', width: 3840, height: 2160, fps: 30, kbps: 25000 },
-  vertical: { name: 'Vertical 1080 × 1920 — Shorts, Reels, TikTok (middle of the picture)', width: 1080, height: 1920, fps: 30, kbps: 6000 },
+  vertical: { name: 'Vertical 1080 × 1920 — Shorts, Reels, TikTok (the whole picture, fitted)', width: 1080, height: 1920, fps: 30, kbps: 6000 },
 };
 
 /** H.264 first: it goes to YouTube and into .mp4 files without re-encoding. */
@@ -42,6 +43,8 @@ interface Live {
   chapters: { at: number; name: string }[] | null;
   name: string;
   startedAt: number;
+  /** It sends the vertical picture (not the wide one). */
+  vertical: boolean;
 }
 
 interface Iso {
@@ -49,6 +52,11 @@ interface Iso {
   recorder: MediaRecorder;
   stream: MediaStream;
   sending: Promise<void>;
+}
+
+/** Some enabled destinations want the vertical version beside the wide stream. */
+export function wantsVertical(settings: CaptureSettings): boolean {
+  return settings.quality !== 'vertical' && settings.destinations.some((d) => d.enabled && d.vertical && d.url.trim() !== '');
 }
 
 /** "m:ss" or "h:mm:ss" from the start, as YouTube chapters are written. */
@@ -73,7 +81,9 @@ export class Broadcaster {
   /** Made when first needed, so a computer that can't draw never affects the control window. */
   private compositor: ProgramCompositor | null = null;
   private show: Show | null = null;
-  private readonly live = new Map<CaptureKind, Live>();
+  private readonly live = new Map<SessionKind, Live>();
+  /** The vertical picture, made from the wide one (only while something sends it). */
+  private frame: VerticalFrame | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private fps = 0;
 
@@ -95,7 +105,7 @@ export class Broadcaster {
     }
   }
 
-  running(kind: CaptureKind): CaptureRunning | null {
+  running(kind: SessionKind): CaptureRunning | null {
     return this.live.get(kind)?.running ?? null;
   }
 
@@ -109,27 +119,66 @@ export class Broadcaster {
     if (!mime) throw new Error('This computer’s web view can’t record video. Recording and streaming work in the Windows app.');
     const q = QUALITIES[settings.quality];
     if (!this.compositor) {
-      this.compositor = new ProgramCompositor(this.client, q.width, q.height);
+      // Always drawn wide; the vertical version is made from it.
+      const w = settings.quality === 'vertical' ? QUALITIES['1080p'] : q;
+      this.compositor = new ProgramCompositor(this.client, w.width, w.height);
       if (this.show) this.compositor.setShow(this.show);
     }
     const compositor = this.compositor;
+    // A vertical picture is made from the whole wide one (nothing cut off).
+    const vertical = settings.quality === 'vertical';
+    const wide = vertical ? QUALITIES['1080p'] : q;
     // The picture keeps the size it started with while anything is running.
-    if (this.live.size === 0) compositor.resize(q.width, q.height);
+    if (this.live.size === 0) compositor.resize(wide.width, wide.height);
+    const running = await this.open(kind, vertical, q.fps, settings.videoKbps, settings, name, mime);
+    if (kind === 'record' && settings.iso) void this.startIsos(this.live.get('record')!, settings.videoKbps);
+    return running;
+  }
+
+  /**
+   * Start the vertical version beside the stream (for the destinations that want it).
+   * @throws Error with a message for the operator if it can't start.
+   */
+  async startVertical(settings: CaptureSettings, name: string): Promise<CaptureRunning | null> {
+    if (this.live.has('vertical') || !this.live.has('stream') || !wantsVertical(settings)) return null;
+    const mime = recordingType();
+    if (!mime) return null;
+    const q = QUALITIES.vertical;
+    return this.open('vertical', true, q.fps, Math.min(settings.videoKbps, q.kbps), settings, name, mime);
+  }
+
+  /** The vertical picture (made when first needed). */
+  private verticalFrame(): VerticalFrame {
+    this.frame ??= new VerticalFrame(QUALITIES.vertical.width, QUALITIES.vertical.height);
+    return this.frame;
+  }
+
+  private async open(
+    kind: SessionKind,
+    vertical: boolean,
+    fps: number,
+    videoKbps: number,
+    settings: CaptureSettings,
+    name: string,
+    mime: string,
+  ): Promise<CaptureRunning> {
+    const compositor = this.compositor!;
     let running: CaptureRunning;
     try {
       running = await this.client.captureStart(kind, mime, name);
     } catch (e) {
       throw e instanceof Error ? e : new Error(String(e));
     }
-    this.run(Math.max(q.fps, this.fps));
-    const video = compositor.canvas.captureStream(q.fps);
+    this.run(Math.max(fps, this.fps));
+    if (vertical) this.verticalFrame().draw(compositor.canvas);
+    const video = (vertical ? this.verticalFrame().canvas : compositor.canvas).captureStream(fps);
     const audio = this.sound ? this.sound.mixStream(kind === 'record' && settings.recordMix === 'recording' ? 'b' : 'master') : null;
     const stream = new MediaStream([...video.getVideoTracks(), ...(audio?.getAudioTracks() ?? [])]);
     let recorder: MediaRecorder;
     try {
       recorder = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: settings.videoKbps * 1000,
+        videoBitsPerSecond: videoKbps * 1000,
         audioBitsPerSecond: (settings.audioKbps || 160) * 1000,
         // A keyframe every 2 s, as streaming services ask (Chromium option).
         videoKeyFrameIntervalDuration: 2000,
@@ -150,6 +199,7 @@ export class Broadcaster {
       chapters: kind === 'record' && settings.chapters ? [] : null,
       name,
       startedAt: Date.now(),
+      vertical,
     };
     recorder.ondataavailable = (e) => {
       if (e.data.size === 0) return;
@@ -162,12 +212,13 @@ export class Broadcaster {
     this.live.set(kind, live);
     recorder.start(500);
     if (this.show) this.setShow(this.show);
-    if (kind === 'record' && settings.iso) void this.startIsos(live, settings.videoKbps);
     return running;
   }
 
   /** Stop recording or streaming; resolves once everything has been handed over. */
-  async stop(kind: CaptureKind): Promise<void> {
+  async stop(kind: SessionKind): Promise<void> {
+    // The vertical version goes with the stream.
+    if (kind === 'stream') await this.stop('vertical');
     const live = this.live.get(kind);
     if (!live) return;
     this.live.delete(kind);
@@ -187,7 +238,7 @@ export class Broadcaster {
   }
 
   /** The app ended this session by itself (it failed): stop encoding for it. */
-  abandon(kind: CaptureKind, session: number): void {
+  abandon(kind: SessionKind, session: number): void {
     if (this.live.get(kind)?.running.session === session) void this.stop(kind);
   }
 
@@ -321,6 +372,7 @@ export class Broadcaster {
         // A frame that comes much later than it should means pictures were missed.
         if (last !== undefined && t - last > frame * 1.8) this.late += Math.round((t - last) / frame) - 1;
         c.draw(Date.now());
+        if (this.frame && [...this.live.values()].some((l) => l.vertical)) this.frame.draw(c.canvas);
         this.drawn.push(t);
         if (this.drawn.length > fps * 2) this.drawn.splice(0, this.drawn.length - fps * 2);
       };

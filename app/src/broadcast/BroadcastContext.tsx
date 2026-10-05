@@ -42,6 +42,7 @@ const EMPTY: CaptureStatus = {
   ffmpeg: false,
   recording: null,
   streaming: null,
+  vertical: null,
   lastRecording: null,
   finishing: false,
   failure: null,
@@ -95,16 +96,24 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   useEffect(() => {
     if (checkedOrphans.current || !broadcaster || status === EMPTY) return;
     checkedOrphans.current = true;
-    for (const r of [status.recording, status.streaming]) if (r) void client.captureStop(r.session);
+    for (const r of [status.recording, status.streaming, status.vertical]) if (r) void client.captureStop(r.session);
   }, [status, broadcaster, client]);
 
   const launch = useCallback(
     async (kind: CaptureKind) => {
       if (!broadcaster) throw new Error('Recording is not available here.');
-      await broadcaster.start(kind, settingsRef.current, recordingName(showRef.current));
+      const name = recordingName(showRef.current);
+      await broadcaster.start(kind, settingsRef.current, name);
+      // The vertical version starts beside the stream; if it can't, the wide stream carries on.
+      if (kind === 'stream')
+        void broadcaster.startVertical(settingsRef.current, name).then(
+          () => setVerticalTrouble(null),
+          (e: unknown) => setVerticalTrouble(e instanceof Error ? e.message : String(e)),
+        );
     },
     [broadcaster],
   );
+  const [verticalTrouble, setVerticalTrouble] = useState<string | null>(null);
 
   const start = useCallback(
     async (kind: CaptureKind) => {
@@ -149,7 +158,25 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   const failure = status.failure;
   useEffect(() => {
     if (!failure || !broadcaster) return;
-    const { kind, session, message } = failure;
+    const { session, message } = failure;
+    // The vertical version dropped: bring it back while the stream runs.
+    if (failure.kind === 'vertical') {
+      broadcaster.abandon('vertical', session);
+      if (!wanted.current.stream) return;
+      setVerticalTrouble(message);
+      const id = setTimeout(() => {
+        if (!wanted.current.stream) return;
+        void broadcaster
+          .stop('vertical')
+          .then(() => broadcaster.startVertical(settingsRef.current, recordingName(showRef.current)))
+          .then(
+            () => setVerticalTrouble(null),
+            (e: unknown) => setVerticalTrouble(e instanceof Error ? e.message : String(e)),
+          );
+      }, 5000);
+      return () => clearTimeout(id);
+    }
+    const kind = failure.kind;
     broadcaster.abandon(kind, session);
     if (!wanted.current[kind]) return;
     const n = attempts.current[kind]++;
@@ -177,7 +204,22 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     if (status.recording) attempts.current.record = 0;
   }, [status.streaming, status.recording]);
 
+  useEffect(() => {
+    if (status.vertical) setVerticalTrouble(null);
+  }, [status.vertical]);
+
   // ---- tell the operator ----
+  useReportProblem(
+    verticalTrouble && status.streaming
+      ? {
+          key: 'stream:vertical',
+          level: 'warning',
+          title: 'The vertical stream is not running',
+          detail: verticalTrouble,
+          fix: 'The wide stream carries on. Lumora keeps trying; check the vertical destinations in Settings → Recording and streaming.',
+        }
+      : null,
+  );
   useReportProblem(
     reconnecting
       ? {

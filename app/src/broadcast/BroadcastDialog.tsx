@@ -5,7 +5,7 @@ import { QUALITIES, recordingType } from './recorder';
 import './broadcast.css';
 
 /** Streaming services with their server address filled in. */
-export const SERVICES: { name: string; url: string; keyHelp: string }[] = [
+export const SERVICES: { name: string; url: string; keyHelp: string; vertical?: boolean }[] = [
   {
     name: 'YouTube',
     url: 'rtmp://a.rtmp.youtube.com/live2',
@@ -20,6 +20,24 @@ export const SERVICES: { name: string; url: string; keyHelp: string }[] = [
     name: 'Vimeo',
     url: 'rtmps://rtmp-global.cloud.vimeo.com:443/live',
     keyHelp: 'Vimeo → Live event → Connect with RTMP → Stream key',
+  },
+  {
+    name: 'YouTube Shorts',
+    url: 'rtmp://a.rtmp.youtube.com/live2',
+    keyHelp: 'YouTube Studio → Go live → Stream → Stream key (a second stream, for the vertical version)',
+    vertical: true,
+  },
+  {
+    name: 'TikTok',
+    url: '',
+    keyHelp: 'TikTok LIVE Studio or TikTok Live → Streaming software → Server URL and Stream key',
+    vertical: true,
+  },
+  {
+    name: 'Instagram',
+    url: '',
+    keyHelp: 'Instagram → Live → Streaming software → Stream URL and Stream key',
+    vertical: true,
   },
   {
     name: 'Other (RTMP)',
@@ -74,7 +92,7 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
     const used = new Set(draft.destinations.map((d) => d.name));
     const service = SERVICES.find((s) => !used.has(s.name)) ?? SERVICES[SERVICES.length - 1]!;
     set({
-      destinations: [...draft.destinations, { id, name: service.name, url: service.url, key: '', enabled: true }],
+      destinations: [...draft.destinations, { id, name: service.name, url: service.url, key: '', enabled: true, vertical: !!service.vertical }],
     });
   };
   const choose = () =>
@@ -214,7 +232,7 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
               <p className="field__note">Nowhere yet. Add YouTube, Facebook or another service; you can stream to several at once.</p>
             )}
             {draft.destinations.map((d) => {
-              const service = SERVICES.find((s) => s.url && s.url === d.url) ?? SERVICES[SERVICES.length - 1]!;
+              const service = SERVICES.find((s) => s.name === d.name) ?? SERVICES.find((s) => s.url && s.url === d.url) ?? SERVICES[SERVICES.length - 1]!;
               return (
                 <div key={d.id} className={`bcd__dest${d.enabled ? '' : ' is-off'}`}>
                   <label className="check">
@@ -236,6 +254,7 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                           setDest(d.id, {
                             url: s.url,
                             name: SERVICES.some((x) => x.name === d.name) ? s.name : d.name,
+                            vertical: !!s.vertical,
                           });
                         }}
                       >
@@ -279,6 +298,12 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                       </button>
                     </span>
                     <span className="field__note">Stream key: {service.keyHelp}. It stays on this computer.</span>
+                    {draft.quality !== 'vertical' && (
+                      <label className="check">
+                        <input type="checkbox" checked={!!d.vertical} onChange={(e) => setDest(d.id, { vertical: e.target.checked })} /> Send the vertical
+                        version (9:16, for TikTok, Reels and Shorts): the whole picture, nothing cut off, at the same time as the wide stream
+                      </label>
+                    )}
                   </div>
                 </div>
               );

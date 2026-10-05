@@ -49,6 +49,9 @@ pub struct Destination {
     /// The stream key (kept on this computer only).
     pub key: String,
     pub enabled: bool,
+    /// Gets the vertical (9:16) version, for TikTok, Reels and Shorts,
+    /// streamed at the same time as the wide one.
+    pub vertical: bool,
 }
 
 impl Default for Destination {
@@ -59,6 +62,7 @@ impl Default for Destination {
             url: String::new(),
             key: String::new(),
             enabled: true,
+            vertical: false,
         }
     }
 }
@@ -168,6 +172,8 @@ impl CaptureSettings {
 pub enum Kind {
     Record,
     Stream,
+    /// The vertical (9:16) version, streamed beside the wide one.
+    Vertical,
 }
 
 /// A recording or stream that is running.
@@ -202,6 +208,8 @@ pub struct CaptureStatus {
     pub ffmpeg: bool,
     pub recording: Option<Running>,
     pub streaming: Option<Running>,
+    /// The vertical version, when some destinations get it.
+    pub vertical: Option<Running>,
     /// The last recording that finished, ready to use.
     pub last_recording: Option<String>,
     /// Still turning the last recording into an .mp4.
@@ -242,6 +250,7 @@ impl Shared {
         match kind {
             Kind::Record => &mut s.recording,
             Kind::Stream => &mut s.streaming,
+            Kind::Vertical => &mut s.vertical,
         }
     }
 
@@ -349,13 +358,14 @@ impl Capture {
             return Err(match kind {
                 Kind::Record => "Already recording.".to_owned(),
                 Kind::Stream => "Already streaming.".to_owned(),
+                Kind::Vertical => "Already streaming the vertical version.".to_owned(),
             });
         }
         let session = self.next.fetch_add(1, Ordering::SeqCst);
         let stopping = Arc::new(AtomicBool::new(false));
         let (out, running, finish): (Box<dyn Write + Send>, Running, Finish) = match kind {
             Kind::Record => self.open_recording(session, mime, name)?,
-            Kind::Stream => self.open_stream(session, mime, &stopping)?,
+            Kind::Stream | Kind::Vertical => self.open_stream(kind, session, mime, &stopping)?,
         };
         let (tx, rx) = mpsc::channel::<Vec<u8>>();
         let queued = Arc::new(AtomicU64::new(0));
@@ -416,7 +426,7 @@ impl Capture {
                 session,
                 match kind {
                     Kind::Record => "The disk can't keep up with the recording.".to_owned(),
-                    Kind::Stream => {
+                    Kind::Stream | Kind::Vertical => {
                         "The internet connection is too slow for the stream.".to_owned()
                     }
                 },
@@ -485,6 +495,7 @@ impl Capture {
 
     fn open_stream(
         &self,
+        kind: Kind,
         session: u64,
         mime: &str,
         stopping: &Arc<AtomicBool>,
@@ -494,11 +505,18 @@ impl Capture {
              Put ffmpeg.exe next to Lumora (or install FFmpeg) and start Lumora again.",
         )?;
         let settings = self.settings();
-        let dests: Vec<&Destination> = settings
-            .destinations
-            .iter()
-            .filter(|d| d.enabled && !d.url.trim().is_empty())
-            .collect();
+        let dests = destinations_for(&settings, kind);
+        if dests.is_empty() && kind == Kind::Vertical {
+            return Err("No destination gets the vertical version.".to_owned());
+        }
+        if dests.is_empty() && !destinations_for(&settings, Kind::Vertical).is_empty() {
+            return Err(
+                "Every destination gets the vertical version. Add a wide one too, or set \
+                 the picture to Vertical in Settings → Recording and streaming to stream \
+                 only vertical."
+                    .to_owned(),
+            );
+        }
         if dests.is_empty() {
             return Err(
                 "There is nowhere to stream to yet. Add YouTube, Facebook or another \
@@ -547,7 +565,7 @@ impl Capture {
                 thread::sleep(Duration::from_millis(200));
                 if !stopping.load(Ordering::SeqCst) {
                     let said = lock(&errors).clone();
-                    shared.fail(Kind::Stream, session, explain_stream_error(&said));
+                    shared.fail(kind, session, explain_stream_error(&said));
                 }
             });
         }
@@ -598,7 +616,7 @@ fn write_loop(
                 Kind::Record => {
                     format!("The recording could not be written ({e}). Is the disk full?")
                 }
-                Kind::Stream => "The stream stopped.".to_owned(),
+                Kind::Stream | Kind::Vertical => "The stream stopped.".to_owned(),
             };
             // For streams the FFmpeg reader explains why; this is the fallback.
             if kind == Kind::Record {
@@ -696,6 +714,22 @@ fn to_mp4(ffmpeg: &Path, path: &Path) -> Option<PathBuf> {
 }
 
 /// FFmpeg's arguments for streaming what arrives on stdin to every target.
+/// Where a stream session sends to: the wide stream goes to every enabled
+/// destination except the vertical ones (unless the whole picture is
+/// vertical), the vertical stream to the vertical ones.
+fn destinations_for(settings: &CaptureSettings, kind: Kind) -> Vec<&Destination> {
+    let all_vertical = settings.quality == Quality::Vertical;
+    settings
+        .destinations
+        .iter()
+        .filter(|d| d.enabled && !d.url.trim().is_empty())
+        .filter(|d| match kind {
+            Kind::Vertical => d.vertical && !all_vertical,
+            _ => !d.vertical || all_vertical,
+        })
+        .collect()
+}
+
 fn stream_args(mime: &str, video_kbps: u32, audio_kbps: u32, targets: &[String]) -> Vec<String> {
     let h264 = mime.contains("avc1") || mime.contains("h264");
     let mut a: Vec<String> = [
@@ -1119,6 +1153,32 @@ mod tests {
             lock(&seen).iter().all(|s| s.failure.is_none()),
             "stopping is not a failure"
         );
+    }
+
+    #[test]
+    fn the_vertical_version_goes_only_where_it_is_wanted() {
+        let dest = |name: &str, vertical: bool| Destination {
+            name: name.into(),
+            url: format!("rtmp://{name}"),
+            vertical,
+            ..Destination::default()
+        };
+        let mut s = CaptureSettings {
+            destinations: vec![dest("YouTube", false), dest("TikTok", true)],
+            ..CaptureSettings::default()
+        };
+        let names = |s: &CaptureSettings, k| {
+            destinations_for(s, k)
+                .iter()
+                .map(|d| d.name.clone())
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(names(&s, Kind::Stream), ["YouTube"]);
+        assert_eq!(names(&s, Kind::Vertical), ["TikTok"]);
+        // A picture that is all vertical sends everything in the one stream.
+        s.quality = Quality::Vertical;
+        assert_eq!(names(&s, Kind::Stream), ["YouTube", "TikTok"]);
+        assert!(names(&s, Kind::Vertical).is_empty());
     }
 
     #[test]
