@@ -213,3 +213,20 @@
   padding-left: 18px;
   line-height: 1.5;
 }
+.bc-later {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin: 0 16px 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+}
+.bc-later .text {
+  width: auto;
+}
+.bc-later .field__note {
+  flex-basis: 100%;
+}

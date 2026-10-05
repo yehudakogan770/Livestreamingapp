@@ -4,6 +4,7 @@ import type { Show } from '../engine/types/Show';
 import { useSound } from '../audio/SoundContext';
 import { useProblemStore, useReportProblem } from '../problems/problems';
 import { RehearsalLog, type RehearsalReport } from './rehearsal';
+import { due, loadSchedule, saveSchedule, timeText, type Schedule } from './schedule';
 import { Broadcaster } from './recorder';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
@@ -41,6 +42,9 @@ interface Broadcast {
   /** How the last rehearsal went (until closed). */
   rehearsalReport: RehearsalReport | null;
   closeRehearsalReport(): void;
+  /** Going live at a set time (null: not planned). */
+  schedule: Schedule | null;
+  setSchedule(s: Schedule | null): void;
 }
 
 const Ctx = createContext<Broadcast | null>(null);
@@ -446,6 +450,56 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     };
   }, [rehearsing, problems, broadcaster]);
   const closeRehearsalReport = useCallback(() => setRehearsalReport(null), []);
+
+  // ---- go live at a set time ----
+  const [schedule, setScheduleState] = useState<Schedule | null>(() => (typeof localStorage === 'undefined' ? null : loadSchedule()));
+  const setSchedule = useCallback((s: Schedule | null) => {
+    saveSchedule(s);
+    setScheduleState(s);
+  }, []);
+  const begun = useRef(false);
+  useEffect(() => {
+    begun.current = false;
+    if (!schedule) return;
+    const tick = () => {
+      const now = Date.now();
+      const step = due(schedule, now);
+      if (step === 'wait') return;
+      const show = showRef.current;
+      // The countdown input that counts to the start (the first one there is).
+      const countdown = show.sources.find((x) => x.kind.type === 'countdown');
+      if (!begun.current) {
+        begun.current = true;
+        if (countdown && step === 'start') {
+          void client.dispatch({ type: 'countdownTo', id: countdown.id, at: schedule.at });
+          void client.dispatch({ type: 'cutTo', screen: 'live', sourceId: countdown.id });
+        }
+        if (!statusRef.current.streaming) void start('stream').catch(() => {});
+      }
+      if (step === 'time') {
+        // With a countdown on air, it goes to Next by itself at zero; without one, Lumora takes Next.
+        const onAir = show.screens.live.program;
+        if (!countdown || onAir !== countdown.id) {
+          if (show.screens.live.preview) void client.dispatch({ type: 'take', screen: 'live' });
+        }
+        setSchedule(null);
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [schedule, client, start, setSchedule]);
+  useReportProblem(
+    schedule
+      ? {
+          key: 'schedule',
+          level: 'warning',
+          title: `Going live by itself at ${timeText(schedule.at)}`,
+          detail: `The stream starts at ${timeText(schedule.at - schedule.earlyMin * 60_000)} with the countdown on screen; at ${timeText(schedule.at)} what is lined up in Next goes on air. Keep Lumora open.`,
+          action: { label: 'Cancel it', run: () => setSchedule(null) },
+        }
+      : null,
+  );
   const value = useMemo<Broadcast>(
     () => ({
       status,
@@ -465,6 +519,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       setRehearsal,
       rehearsalReport,
       closeRehearsalReport,
+      schedule,
+      setSchedule,
     }),
     [
       status,
@@ -484,6 +540,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       setRehearsal,
       rehearsalReport,
       closeRehearsalReport,
+      schedule,
+      setSchedule,
     ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

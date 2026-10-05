@@ -3,6 +3,7 @@ import type { CaptureKind } from '../engine/client';
 import { clock } from '../engine/timing';
 import { useBroadcast } from './BroadcastContext';
 import { verdict } from './rehearsal';
+import { nextAt, timeText } from './schedule';
 import './broadcast.css';
 
 /** How long something has been running, ticking every second. */
@@ -98,7 +99,15 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         onClick={() => press('stream')}
       >
         <i className="bc-dot" />
-        {live ? `${b.rehearsal ? 'REHEARSING' : 'LIVE'} ${liveTime}` : reconnecting ? 'Reconnecting…' : b.rehearsal ? 'REHEARSE' : 'GO LIVE'}
+        {live
+          ? `${b.rehearsal ? 'REHEARSING' : 'LIVE'} ${liveTime}`
+          : reconnecting
+            ? 'Reconnecting…'
+            : b.schedule
+              ? `LIVE AT ${timeText(b.schedule.at)}`
+              : b.rehearsal
+                ? 'REHEARSE'
+                : 'GO LIVE'}
       </button>
       <ReplayButtons />
 
@@ -145,6 +154,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
                   ? 'Everything runs exactly as if live, but nothing is sent anywhere. Run through the event, then end the rehearsal for a report.'
                   : `The Live Screen goes out to ${destinations.map((d) => d.name).join(', ')}.`}
             </p>
+            {!confirm.stopping && confirm.kind === 'stream' && <Later onDone={() => setConfirm(null)} />}
             {!confirm.stopping && !b.rehearsal && destinations.some((d) => !d.key.trim()) && (
               <p className="confirm__text field__note--warn">
                 No stream key for{' '}
@@ -319,6 +329,59 @@ function RehearsalReportDialog() {
           </button>
         </footer>
       </div>
+    </div>
+  );
+}
+
+/** Go live later, at a set time (the stream starts early with the countdown on screen). */
+function Later({ onDone }: { onDone: () => void }) {
+  const b = useBroadcast();
+  const [time, setTime] = useState(() => {
+    const d = new Date(Date.now() + 60 * 60_000);
+    return `${String(d.getHours()).padStart(2, '0')}:${d.getMinutes() < 30 ? '30' : '00'}`;
+  });
+  const [early, setEarly] = useState(10);
+  if (!b) return null;
+  if (b.schedule)
+    return (
+      <div className="bc-later">
+        Going live by itself at <b>{timeText(b.schedule.at)}</b>.{' '}
+        <button
+          type="button"
+          className="linkish"
+          onClick={() => {
+            b.setSchedule(null);
+            onDone();
+          }}
+        >
+          Cancel that
+        </button>
+      </div>
+    );
+  const at = nextAt(time);
+  return (
+    <div className="bc-later">
+      <span>Or go live later, by itself, at</span>
+      <input type="time" className="text" value={time} onChange={(e) => setTime(e.target.value)} aria-label="Start time" />
+      <select value={early} onChange={(e) => setEarly(Number(e.target.value))} aria-label="Start streaming early">
+        <option value={0}>exactly then</option>
+        <option value={5}>streaming 5 min early</option>
+        <option value={10}>streaming 10 min early</option>
+        <option value={15}>streaming 15 min early</option>
+        <option value={30}>streaming 30 min early</option>
+      </select>
+      <button
+        type="button"
+        className="btn"
+        disabled={!at}
+        onClick={() => {
+          if (at) b.setSchedule({ at, earlyMin: early });
+          onDone();
+        }}
+      >
+        Set
+      </button>
+      <span className="field__note">The countdown shows until then; at the time, what is in Next goes on air.</span>
     </div>
   );
 }
