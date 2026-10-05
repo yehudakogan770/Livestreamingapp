@@ -680,8 +680,9 @@
 }
 /* Remove: shows when the pointer is over the input (and stays while it asks to be sure). */
 .tile__remove {
+  /* Next to the number, clear of the ON AIR / NEXT tags on the right. */
   position: absolute;
-  right: 32px;
+  left: 28px;
   top: 3px;
   z-index: 2;
   min-width: 24px;
