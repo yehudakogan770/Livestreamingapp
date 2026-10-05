@@ -2021,6 +2021,11 @@ button.strip__name:hover {
   height: var(--stage-h, calc(100cqh - var(--inputs-min)));
   grid-template-rows: minmax(0, 1fr);
 }
+/* The Monitor tab has no inputs underneath: it uses the whole height. */
+.control__work > .stage--monitor {
+  flex: 1 1 auto;
+  height: auto;
+}
 .stage > .mon {
   min-height: 0;
   /* The monitor's own size decides how big the picture can be. */
