@@ -32,6 +32,26 @@ export interface MediaItem {
   bin: string | null;
   /** The file was not found where it was. */
   missing?: boolean;
+  /** The words spoken in it (made by Transcribe). */
+  transcript?: Transcript;
+}
+
+/** A word heard in a file: seconds into the file. */
+export interface Word {
+  w: string;
+  s: number;
+  e: number;
+}
+
+/** What was said in a file, word by word. */
+export interface Transcript {
+  /** A language code ("en", "he"…). */
+  language: string;
+  /** The speech model that wrote it down. */
+  model: string;
+  words: Word[];
+  /** The parts of the file that were listened to (seconds). */
+  done: [number, number][];
 }
 
 export interface Bin {
@@ -61,6 +81,8 @@ export interface Angle {
 }
 
 export type TrackKind = 'video' | 'audio';
+/** What a sound track carries: speech ducks music under it. */
+export type TrackRole = 'dialogue' | 'music';
 export interface Track {
   id: string;
   kind: TrackKind;
@@ -75,6 +97,30 @@ export interface Track {
   pan: number;
   /** Pixels on the timeline. */
   height: number;
+  /** Sound: speech or music (music is turned down while someone talks). */
+  role?: TrackRole;
+  /** A captions track (a video track holding caption blocks), and how they look. */
+  captions?: CaptionStyle;
+}
+
+/** How a captions track looks (sizes are for a 1080-high frame). */
+export interface CaptionStyle {
+  font: string;
+  size: number;
+  weight: number;
+  color: string;
+  stroke: number;
+  strokeColor: string;
+  shadow: number;
+  box: boolean;
+  boxColor: string;
+  boxOpacity: number;
+  /** Where the lines sit, and how far from the edge (percent of the height). */
+  position: 'bottom' | 'middle' | 'top';
+  margin: number;
+  /** About this many letters on a line, and at most this many lines. */
+  lineChars: number;
+  lines: number;
 }
 
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'add' | 'darken' | 'lighten' | 'difference' | 'softlight';
@@ -149,6 +195,8 @@ export interface TextData {
   animOut: TextAnim;
   /** Frames. */
   animLength: number;
+  /** Every line the same size (otherwise later lines are a little smaller). */
+  even?: boolean;
 }
 export type TextAnim = 'none' | 'fade' | 'up' | 'down' | 'left' | 'right' | 'pop' | 'type' | 'blur' | 'wipe';
 
@@ -161,7 +209,9 @@ export type ClipSource =
   /** A whole sequence used as one clip (a nest). `in` is seconds into it. */
   | { kind: 'sequence'; seq: string; in: number }
   /** A picture made here: a gradient, noise, particles… */
-  | { kind: 'generator'; gen: string; settings: Record<string, number | string> };
+  | { kind: 'generator'; gen: string; settings: Record<string, number | string> }
+  /** A caption block on a captions track (the track says how it looks). */
+  | { kind: 'caption'; text: string };
 
 /** A spot followed through a clip: where it is at each frame (pixels from the middle of the frame). */
 export interface TrackPath {
@@ -296,6 +346,23 @@ export const DEFAULT_TEXT: TextData = {
   animIn: 'fade',
   animOut: 'fade',
   animLength: 12,
+};
+
+export const DEFAULT_CAPTION_STYLE: CaptionStyle = {
+  font: 'Segoe UI',
+  size: 54,
+  weight: 600,
+  color: '#ffffff',
+  stroke: 0,
+  strokeColor: '#000000',
+  shadow: 0,
+  box: true,
+  boxColor: '#000000',
+  boxOpacity: 65,
+  position: 'bottom',
+  margin: 7,
+  lineChars: 42,
+  lines: 2,
 };
 
 export function newTrack(kind: TrackKind, index: number): Track {

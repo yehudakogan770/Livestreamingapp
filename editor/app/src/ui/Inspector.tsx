@@ -15,6 +15,7 @@ import type { Actions } from './actions';
 import { Choice, ColorField, ParamRow, Scrub, Section } from './controls';
 import { usePlayhead } from './hooks';
 import type { Ui } from './state';
+import { CaptionSection } from './Speech';
 
 export const FONTS = [
   'Segoe UI',
@@ -204,6 +205,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
       </div>
 
       {main.source.kind === 'multicam' && <CameraPick doc={doc} clip={main} />}
+      {main.source.kind === 'caption' && <CaptionSection doc={doc} engine={engine} ui={ui} clip={main} selected={clips} />}
       {main.source.kind === 'text' && (
         <TextEditor
           data={main.source.text}
@@ -246,7 +248,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
         </Section>
       )}
 
-      {isVideoClip(main) && main.source.kind !== 'adjustment' && (
+      {isVideoClip(main) && main.source.kind !== 'adjustment' && main.source.kind !== 'caption' && (
         <MotionSection
           clip={main}
           local={local}
@@ -309,7 +311,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
             onChange={(p, final) => upd(sound, 'Pan', (c) => ({ ...c, pan: p }), final, `pan-${sound.id}`)}
           />
           <div className="insp__row">
-            {['eq', 'voice', 'compressor', 'denoise'].map((type) => (
+            {['eq', 'voice', 'compressor', 'denoise', 'voiceiso', 'dehum', 'loudnorm'].map((type) => (
               <button key={type} type="button" className="btn btn--sm" onClick={() => actions.addEffect([sound.id], type)}>
                 + {effectDef(type)?.name}
               </button>
@@ -547,6 +549,7 @@ function EffectSection({
         unit={pd.unit}
         clipStart={clip.start}
         onSeek={onSeek}
+        keys={!pd.still}
         onChange={(p, final) => set({ p: { ...effect.p, [pd.key]: p } }, final)}
       />
     );

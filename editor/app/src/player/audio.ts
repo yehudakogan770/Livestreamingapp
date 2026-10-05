@@ -1,5 +1,6 @@
 // What is heard at a frame: each sound clip, how loud, where in its file.
 import { valueAt } from '../model/anim';
+import { DUCK_DEFAULTS } from '../model/effects';
 import { end, onTrack, rate } from '../model/seq';
 import type { Clip, MediaItem, Project, Sequence, Track } from '../model/types';
 import { effectsAt, isAudioEffect, sourceAt, type EffectNow } from '../render/frame';
@@ -16,6 +17,26 @@ export interface Heard {
   gain: number;
   pan: number;
   effects: EffectNow[];
+  /** Turned down while speech plays (a Duck effect, or a Music track). */
+  duck: Duck | null;
+}
+
+/** How a clip ducks under speech: the speech level that starts it (dB), how much, and how quickly (ms). */
+export interface Duck {
+  threshold: number;
+  ratio: number;
+  attack: number;
+  release: number;
+}
+
+/** A clip's ducking: its own Duck effect, or the Music track's; speech itself never ducks. */
+export function duckOf(c: Clip, t: Track, local: number): Duck | null {
+  if (t.role === 'dialogue') return null;
+  const e = c.effects.find((x) => x.on && x.type === 'duck');
+  if (!e && t.role !== 'music') return null;
+  const lc = Math.max(0, Math.min(c.length - 1, local));
+  const v = (k: string) => (e && e.p[k] !== undefined ? valueAt(e.p[k], lc) : (DUCK_DEFAULTS[k] as number));
+  return { threshold: v('threshold'), ratio: Math.max(1, v('ratio')), attack: v('attack'), release: v('release') };
 }
 
 export const dbToGain = (db: number): number => (db <= -60 ? 0 : 10 ** (db / 20));
@@ -97,6 +118,7 @@ export function audioAt(p: Project, s: Sequence, frame: number, prefix = '', dep
         gain: dbToGain(valueAt(c.gain, lc)) * fade,
         pan: Math.max(-1, Math.min(1, valueAt(c.pan, lc) / 100)),
         effects: effectsAt(c, local, 'audio', isAudioEffect),
+        duck: duckOf(c, t, local),
       });
     }
   }

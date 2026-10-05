@@ -8,6 +8,7 @@ import { Compositor, type Pictures } from '../render/compositor';
 import { parseCube, type Cube } from '../render/color';
 import { frameOps, videoNeeds, type Layer, type Op } from '../render/frame';
 import { audioAt, dbToGain, heardTracks, type Heard } from './audio';
+import { VoiceChain, type Measure } from './voice';
 
 const fileOf = (m: MediaItem): string => mediaUrl(m.proxy ?? m.path);
 
@@ -28,6 +29,8 @@ interface SoundSlot {
   comp: DynamicsCompressorNode | null;
   makeup: GainNode | null;
   limit: DynamicsCompressorNode | null;
+  /** Voice cleanup, loudness and ducking. */
+  voice: VoiceChain | null;
   pan: StereoPannerNode | null;
   track: string;
 }
@@ -466,11 +469,19 @@ export class Engine {
     slot.limit.ratio.value = 1;
     slot.limit.attack.value = 0.001;
     slot.pan = ctx.createStereoPanner();
+    const v = new VoiceChain(ctx);
+    slot.voice = v;
     let node: AudioNode = slot.input;
-    for (const n of [slot.gain, slot.lowCut, ...slot.eq, slot.comp, slot.makeup, slot.limit, slot.pan]) {
+    for (const n of [slot.gain, slot.lowCut, ...slot.eq, v.input]) {
       node.connect(n);
       node = n;
     }
+    node = v.output;
+    for (const n of [slot.comp, slot.makeup, slot.limit, v.postIn]) {
+      node.connect(n);
+      node = n;
+    }
+    v.postOut.connect(slot.pan);
     this.route(slot);
   }
 
@@ -485,6 +496,9 @@ export class Engine {
     if (!this.p) return;
     const now = performance.now();
     const heard = this.playing && this.speed > 0 && this.speed <= 2 ? audioAt(this.p, s, frame) : [];
+    // How loud the speech tracks are now (what ducked clips listen to).
+    this.speechDb = -120;
+    if (heard.some((h) => h.duck)) for (const t of s.tracks) if (t.role === 'dialogue') this.speechDb = Math.max(this.speechDb, this.busLevel(t.id));
     for (const h of heard) {
       let slot = this.sounds.get(h.key);
       const src = fileOf(h.media);
@@ -523,6 +537,21 @@ export class Engine {
   }
 
   private spareSounds: SoundSlot[] = [];
+  private speechDb = -120;
+  /** Each clip's loudness heard so far (for Loudness normalize while editing). */
+  private loudness = new Map<string, Measure>();
+  private levelBuf = new Float32Array(1024);
+
+  /** A track's level now (RMS, dB). */
+  private busLevel(track: string): number {
+    const bus = this.buses.get(track);
+    if (!bus) return -120;
+    bus.meter.getFloatTimeDomainData(this.levelBuf);
+    let sum = 0;
+    for (const v of this.levelBuf) sum += v * v;
+    const ms = sum / this.levelBuf.length;
+    return ms > 1e-12 ? 10 * Math.log10(ms) : -120;
+  }
 
   private newSound(): SoundSlot {
     const el = new Audio();
@@ -539,6 +568,7 @@ export class Engine {
       comp: null,
       makeup: null,
       limit: null,
+      voice: null,
       pan: null,
       track: '',
     };
@@ -587,6 +617,14 @@ export class Engine {
     if (slot.limit) {
       slot.limit.threshold.value = limit ? (limit.p.ceiling ?? -1) : 0;
       slot.limit.ratio.value = limit ? 20 : 1;
+    }
+    if (slot.voice) {
+      let m = this.loudness.get(h.key);
+      if (!m) {
+        m = { sum: 0, n: 0 };
+        this.loudness.set(h.key, m);
+      }
+      slot.voice.apply(h, this.speechDb, m);
     }
   }
 

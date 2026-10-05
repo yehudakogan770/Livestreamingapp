@@ -158,7 +158,10 @@ export function extractRange(p: Project, from: number, to: number): Project {
 }
 
 /** Put clips into the sequence: over what is there, or pushing everything after along. */
-export function placeClips(p: Project, clips: Clip[], mode: 'insert' | 'overwrite'): Project {
+export function placeClips(p: Project, given: Clip[], mode: 'insert' | 'overwrite'): Project {
+  // Captions go only on captions tracks, and nothing else does.
+  const s0 = current(p);
+  const clips = given.filter((c) => (c.source.kind === 'caption') === !!trackOf(s0, c.track)?.captions);
   if (clips.length === 0) return p;
   return editSeq(p, (s) => {
     const fps = rate(s);
@@ -211,6 +214,8 @@ export function moveClips(p: Project, ids: string[], m: Move, copy = false): Pro
       return { ...c, id: copy ? uid() : c.id, start: c.start + frames, track: t.id };
     });
     if (placed.some((c) => !unlocked(s, c.track))) return s;
+    // Captions stay on captions tracks, and nothing else goes there.
+    if (placed.some((c) => (c.source.kind === 'caption') !== !!trackOf(s, c.track)?.captions)) return s;
     if (copy) {
       // Copies keep their links among themselves.
       const links = new Map<string, string>();
@@ -485,9 +490,11 @@ export function removeMarker(p: Project, id: string): Project {
 
 export function addTrack(p: Project, kind: TrackKind): Project {
   return editSeq(p, (s) => {
-    const list = s.tracks.filter((t) => t.kind === kind);
+    const list = s.tracks.filter((t) => t.kind === kind && !t.captions);
     const t = newTrack(kind, list.length + 1);
-    const tracks = kind === 'video' ? [...list, t, ...s.tracks.filter((x) => x.kind === 'audio')] : [...s.tracks, t];
+    // Captions tracks stay on top of the pictures.
+    const captions = s.tracks.filter((x) => x.captions);
+    const tracks = kind === 'video' ? [...list, t, ...captions, ...s.tracks.filter((x) => x.kind === 'audio')] : [...s.tracks, t];
     return { ...s, tracks };
   });
 }

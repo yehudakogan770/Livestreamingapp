@@ -22,10 +22,10 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
   if ('letterSpacing' in ctx) (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${t.tracking * s}px`;
   const lineH = size * t.lineHeight;
   // Later lines are a little smaller (a name, then what they do).
-  const sizes = lines.map((_, i) => (i === 0 ? 1 : 0.62));
+  const sizes = lines.map((_, i) => (i === 0 || t.even ? 1 : 0.62));
   const heights = sizes.map((x) => lineH * x);
   const widths = lines.map((line, i) => {
-    ctx.font = `${t.italic ? 'italic ' : ''}${i === 0 ? t.weight : Math.min(t.weight, 500)} ${size * (sizes[i] ?? 1)}px "${t.font}", "Segoe UI", system-ui, sans-serif`;
+    ctx.font = `${t.italic ? 'italic ' : ''}${i === 0 || t.even ? t.weight : Math.min(t.weight, 500)} ${size * (sizes[i] ?? 1)}px "${t.font}", "Segoe UI", system-ui, sans-serif`;
     return ctx.measureText(line).width;
   });
   const blockW = Math.max(1, ...widths);
@@ -73,7 +73,7 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
   lines.forEach((line, i) => {
     const lh = heights[i] ?? lineH;
     const fs = size * (sizes[i] ?? 1);
-    ctx.font = `${t.italic ? 'italic ' : ''}${i === 0 ? t.weight : Math.min(t.weight, 500)} ${fs}px "${t.font}", "Segoe UI", system-ui, sans-serif`;
+    ctx.font = `${t.italic ? 'italic ' : ''}${i === 0 || t.even ? t.weight : Math.min(t.weight, 500)} ${fs}px "${t.font}", "Segoe UI", system-ui, sans-serif`;
     const lw = widths[i] ?? 0;
     const x = t.align === 'left' ? left : t.align === 'right' ? left + blockW - lw : left + (blockW - lw) / 2;
     const shown = anim === 'type' ? line.slice(0, Math.round(line.length * reveal)) : line;
@@ -90,7 +90,7 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
       ctx.strokeText(shown, x, cy);
       ctx.shadowColor = 'transparent';
     }
-    ctx.fillStyle = i === 0 ? t.color : mixWhite(t.color);
+    ctx.fillStyle = i === 0 || t.even ? t.color : mixWhite(t.color);
     ctx.fillText(shown, x, cy);
     ctx.shadowColor = 'transparent';
     y += lh;

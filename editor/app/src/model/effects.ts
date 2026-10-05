@@ -12,6 +12,8 @@ export interface ParamDef {
   toggle?: boolean;
   /** Shown as a choice. */
   options?: string[];
+  /** Stays the same over the clip (no keyframes). */
+  still?: boolean;
 }
 
 export interface EffectDef {
@@ -274,25 +276,74 @@ export const EFFECTS: EffectDef[] = [
       P('makeup', 'Make-up gain', 0, 24, 3, 0.5, 'dB'),
     ],
   },
+  { type: 'limiter', name: 'Limiter', kind: 'audio', group: 'Sound', params: [P('ceiling', 'Ceiling', -12, 0, -1, 0.1, 'dB')] },
+  { type: 'voice', name: 'Voice clarity', kind: 'audio', group: 'Sound', params: [P('amount', 'Amount', 0, 100, 50)] },
+  // ---- Voice cleanup ----
   {
     type: 'denoise',
-    name: 'Noise reduction',
+    name: 'Reduce noise',
     kind: 'audio',
-    group: 'Sound',
-    params: [P('amount', 'Amount', 0, 100, 50)],
-    previewNote: 'You hear it in the exported film.',
+    group: 'Voice cleanup',
+    params: [P('amount', 'Amount', 0, 100, 50), P('floor', 'Noise level', -80, -20, -50, 1, 'dB')],
+    previewNote: 'While editing you hear a preview (a noise gate and low cut). The exported film gets the full noise reduction.',
+  },
+  {
+    type: 'voiceiso',
+    name: 'Voice isolation',
+    kind: 'audio',
+    group: 'Voice cleanup',
+    params: [P('amount', 'Amount', 0, 100, 70)],
+    previewNote: 'Keeps the voice and takes away the room and noise. While editing you hear a preview; the exported film gets the full cleanup.',
+  },
+  {
+    type: 'dehum',
+    name: 'Remove hum',
+    kind: 'audio',
+    group: 'Voice cleanup',
+    params: [
+      { ...P('mains', 'Hum', 0, 1, 1), options: ['50 Hz', '60 Hz'], still: true },
+      { ...P('harmonics', 'Harmonics', 1, 8, 4), still: true },
+      P('depth', 'Amount', 0, 40, 24, 0.5, 'dB'),
+      { ...P('q', 'Narrowness', 2, 60, 18), still: true },
+    ],
   },
   {
     type: 'deess',
-    name: 'De-esser',
+    name: 'De-ess',
     kind: 'audio',
-    group: 'Sound',
-    params: [P('amount', 'Amount', 0, 100, 50)],
-    previewNote: 'You hear it in the exported film.',
+    group: 'Voice cleanup',
+    params: [P('amount', 'Amount', 0, 100, 50), { ...P('freq', 'Above', 3000, 10000, 5500, 50, 'Hz'), still: true }],
+    previewNote: 'Softens harsh “s” sounds. While editing you hear a close preview.',
   },
-  { type: 'limiter', name: 'Limiter', kind: 'audio', group: 'Sound', params: [P('ceiling', 'Ceiling', -12, 0, -1, 0.1, 'dB')] },
-  { type: 'voice', name: 'Voice clarity', kind: 'audio', group: 'Sound', params: [P('amount', 'Amount', 0, 100, 50)] },
+  {
+    type: 'loudnorm',
+    name: 'Loudness normalize',
+    kind: 'audio',
+    group: 'Voice cleanup',
+    params: [
+      { ...P('target', 'Loudness', -30, -10, -16, 0.5, 'LUFS'), still: true },
+      { ...P('peak', 'Highest peak', -6, 0, -1.5, 0.1, 'dB'), still: true },
+    ],
+    previewNote: 'Measured on export (EBU R128). While editing, the level is estimated as it plays.',
+  },
+  {
+    type: 'duck',
+    name: 'Duck under speech',
+    kind: 'audio',
+    group: 'Voice cleanup',
+    params: [
+      { ...P('threshold', 'Speech above', -60, 0, -32, 0.5, 'dB'), still: true },
+      { ...P('ratio', 'How much', 1, 20, 8, 0.5), still: true },
+      { ...P('attack', 'Down in', 1, 500, 30, 1, 'ms'), still: true },
+      { ...P('release', 'Back up in', 20, 3000, 500, 10, 'ms'), still: true },
+    ],
+    previewNote:
+      'Turns this clip down while a Speech track talks (mark tracks Speech or Music in the track header or the Mixer). Music tracks duck by themselves.',
+  },
 ];
+
+/** The ducking settings a Music track uses when its clips have no Duck effect of their own. */
+export const DUCK_DEFAULTS: Record<string, number> = { threshold: -32, ratio: 8, attack: 30, release: 500 };
 
 export const effectDef = (type: string): EffectDef | undefined => EFFECTS.find((e) => e.type === type);
 

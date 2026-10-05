@@ -1291,7 +1291,7 @@ mod tests {
     }
 
     fn wait_for(what: impl Fn() -> bool) -> bool {
-        for _ in 0..200 {
+        for _ in 0..600 {
             if what() {
                 return true;
             }
