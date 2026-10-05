@@ -9,7 +9,7 @@ export type Fundraiser = {
   currency: string;
   goal: number;
   /**
-   * Given before Lumora (cash, cheques, online): added to the total.
+   * Given before Lumora (cash, checks, online): added to the total.
    */
   starting: number;
   pledges: Array<Pledge>;

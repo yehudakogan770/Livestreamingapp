@@ -66,7 +66,7 @@ Each milestone is tested on real hardware before the next one starts.
 1. Project foundation: app shell, CI, tests, empty Lumora window with branding. **Done.**
 2. Engine core: show state, the three outputs on chosen displays. **Done** (outputs
    render in their own windows; the wgpu renderer replaces the web renderer later).
-3. Sources: cameras / capture cards, video files, images, colours. **Done** (web
+3. Sources: cameras / capture cards, video files, images, colors. **Done** (web
    renderer; capture-card formats and hardware decode arrive with the native renderer).
 4. Switching: preview / program, TAKE, CUT, T-bar, transitions. **Done.**
 
@@ -103,7 +103,7 @@ they opened.
     `OverlaysView` animates them with the Web Animations API; the recorder draws
     them too; buttons 1 – 4 under the On air picture, Shift+1 – 4, the phone).
     Text and titles: **done** (a `text` input: lower third, title, ticker,
-    full-screen message; font, weight, colour, outline, shadow, box; `TextView`,
+    full-screen message; font, weight, color, outline, shadow, box; `TextView`,
     `TextEditor`, drawn by the recorder too).
     Credits: **done** (a `credits` input: rolling, pages or a wall of names;
     paste from a spreadsheet; play/pause/speed/restart live; rolls from the top
@@ -128,12 +128,12 @@ they opened.
     Green screen: **done** (`Source.key`, a `ChromaKey` on cameras, videos and
     pictures; `app/src/engine/chroma.ts` keys by chroma distance in a WebGL
     shader, with soft edge and green-spill removal, on the screens and in the
-    recorder's compositor; `GreenScreenDialog.tsx`: pick the colour from the
+    recorder's compositor; `GreenScreenDialog.tsx`: pick the color from the
     picture, preview over any input, "make a scene" adds a split with the
     keyed input over a background).
     Stage visuals: **done** (`crates/engine/src/visuals.rs`: one shared state in
     `Show.visuals` — tempo and beat anchor, scene and fade, effects, text,
-    logo, 8 saved looks, favourites, safe mode; autopilot changes scene on
+    logo, 8 saved looks, favorites, safe mode; autopilot changes scene on
     the heartbeat. The 13 music types / 261 scenes live in
     `app/src/visuals/banks.json`, read by the engine, the screens and the
     phone. `app/src/visuals/` holds the original shaders unchanged, a typed
@@ -148,9 +148,9 @@ they opened.
     keeper copies in files older events still use from elsewhere, never
     swapping a file that is on air — `lumora_engine::media`).
     3D logo maker: **done** (`crates/engine/src/logo3d.rs`: a `logo3d` input —
-    depth, bevel, metal / glass / gloss / matte, colour or the logo's own,
+    depth, bevel, metal / glass / gloss / matte, color or the logo's own,
     light, full spin / back and forth (ease, pause, bounce) / float, camera,
-    see-through / colour / stage-visuals loop behind. `app/src/logo3d/`: the
+    see-through / color / stage-visuals loop behind. `app/src/logo3d/`: the
     picture's outline becomes a 16-bit distance field, drawn as slices
     through the thickness with a rounded bevel and lit by the field's edge
     direction. `LogoMaker.tsx` (Inputs → 3D logo maker…) adds or edits the

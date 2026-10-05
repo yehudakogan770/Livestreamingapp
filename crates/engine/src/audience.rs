@@ -172,7 +172,7 @@ pub struct Fundraiser {
     pub currency: String,
     #[ts(type = "number")]
     pub goal: u64,
-    /// Given before Lumora (cash, cheques, online): added to the total.
+    /// Given before Lumora (cash, checks, online): added to the total.
     #[ts(type = "number")]
     pub starting: u64,
     pub pledges: Vec<Pledge>,

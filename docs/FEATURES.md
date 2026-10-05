@@ -49,8 +49,8 @@ A feature only counts as finished when **all** of these are true:
 
 - ★ **Cameras**: USB, HDMI/SDI through capture cards, all modes (resolution, frame rate) selectable
 - ★ **Videos** with play, pause, seek, ±10 s, loop, speed — **usable while live**
-- ★ **Images** and solid colours
-- ★ Add as many inputs as needed; reorder, rename, colour-tag
+- ★ **Images** and solid colors
+- ★ Add as many inputs as needed; reorder, rename, color-tag
 - ★ Real picture thumbnails that update live on every input tile
 - ★ Per-input audio on/off and volume
 - ★ Warning (not black) when a source disconnects; auto-reconnect when it returns
@@ -121,7 +121,7 @@ A feature only counts as finished when **all** of these are true:
 ## 9. Text and titles
 
 - ★ Text on any screen, prepared before or typed on the spot
-- ★ Formatting: font, size, colour, background bar, alignment, **Hebrew + English (right-to-left)**
+- ★ Formatting: font, size, color, background bar, alignment, **Hebrew + English (right-to-left)**
 - ★ Many fonts included, import your own
 - ◆ Animated titles (fade, slide, typewriter)
 - ◆ Scrolling ticker
@@ -147,7 +147,7 @@ A feature only counts as finished when **all** of these are true:
 - ★ Bar designs (gold frame, royal blue, glass, night sky, simple dark), or **your own design** as a picture
 - ★ Display modes: bar / one word / big word + line / whole pasuk
 - ★ The child's name comes up **before** their pasuk (not the whole time); words editable; hyphen joins two words
-- ★ Backgrounds or camera behind; fonts, sizes, colours
+- ★ Backgrounds or camera behind; fonts, sizes, colors
 - ◆ Auto-advance timing; videos between pesukim
 - ◆ Presenter clicker support
 
@@ -183,7 +183,7 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 
 - ★ 13 music types (Slow, Medium, Fast, Bounce, Electric, Acoustic, Worship, Hip hop, Rock, Latin, Retro 80s, Party & kids, Space) with 261 ready-made scenes on 60 animated looks
 - ★ Beat clock: BPM, tap tempo, sync to 1; scenes change on the beat or the bar with automatic fades
-- ★ Effect pads: strobe (hold), flash, blackout, freeze, invert, text, randomize, reset, colours, next scene
+- ★ Effect pads: strobe (hold), flash, blackout, freeze, invert, text, randomize, reset, colors, next scene
 - ★ Quick visuals controls on the Back Screen strip and in the All-three view
 - ★ Show on the Back Screen, the Live Screen, or both
 - ◆ Advanced effects: zoom, spin, pan, zoom kick, mirror, kaleidoscope, hue, saturation, contrast, glow, trails, RGB split, pixelate, posterize, TV lines, vignette
@@ -192,7 +192,7 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 - ◆ **MIDI keyboard control** (Yamaha PSR-SX720 first): learn mode maps keys to scenes, pads, looks, sliders — and to Lumora actions like TAKE and presets; MIDI clock sets the tempo
 - ◆ Follow the music: react to the room's audio as well as the beat
 - ◆ Import your own video loops alongside the generated visuals
-- ○ Add your own scenes and colour sets
+- ○ Add your own scenes and color sets
 
 ## 16. Audio
 
@@ -208,7 +208,7 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 ## 17. Video adjustments and effects
 
 - ★ Per camera: brightness, contrast, saturation, white balance, sharpness
-- ◆ Colour looks (LUTs), skin smoothing, black & white
+- ◆ Color looks (LUTs), skin smoothing, black & white
 - ◆ Crop, rotate, mirror, zoom
 - ◆ Live effects on the stream (blur, vignette, glow)
 
@@ -250,7 +250,7 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 - ★ If a remote disconnects, nothing on the screens changes; it reconnects by itself
 - ◆ Permissions per device (full control, monitor messages only, camera only, view only)
 - ◆ Second PC as an extra control screen or as an output only
-- ◆ Stream Deck, MIDI controllers and keyboard shortcuts (all customisable)
+- ◆ Stream Deck, MIDI controllers and keyboard shortcuts (all customizable)
 - ◆ Tally lights on phone cameras (and hardware tally, see §27)
 
 ## 23. Reliability and monitoring
@@ -261,13 +261,13 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 - ◆ Event log (what happened when) for after-event review
 - ◆ Pre-show check: tests every screen, camera, mic and stream before doors open
 
-## 24. Settings and customisation
+## 24. Settings and customization
 
 - ★ Simple mode and Advanced mode
 - ★ Video quality settings (default highest)
 - ★ Window mode that doesn't cover the taskbar, or full screen
 - ★ Open the controls a second time on another screen
-- ◆ Customisable layout (move, resize, hide panels) with reset to default
+- ◆ Customizable layout (move, resize, hide panels) with reset to default
 - ◆ English and Hebrew interface
 
 ## 25. Updates, manual and website
@@ -305,9 +305,9 @@ Deck, MIDI, shortcuts (§22) · scoreboards (§9).
   screen, with names, red/green tally borders and audio meters; choose the layout.
 - ◆ **Layers inside an input** (up to 10): e.g. camera + logo + lower third
   saved as one input and switched as one.
-- ◆ **Colour correction per input**: brightness, contrast, saturation, white
+- ◆ **Color correction per input**: brightness, contrast, saturation, white
   balance, lift / gamma / gain; plus crop, zoom, position and rotate.
-- ◆ **Four favourite transition buttons**, each with its own effect and length.
+- ◆ **Four favorite transition buttons**, each with its own effect and length.
 - ◆ **Quick play**: send one input to air with its own transition in one click.
 - ◆ **Video and audio delay per input**, to line up cameras and sound.
 - ◆ **Fade to black** with a chosen length (in addition to Blank and PANIC).
@@ -368,10 +368,10 @@ Streamlabs, Ecamm Live, Resolume, Blackmagic ATEM software, Zoom Events.
 
 ### Done
 ✅ Program / preview, TAKE, CUT, T-bar, 22 transitions (wipes and pushes every way, doors, circle, diamond,
-zoom, blur, flash), 2 stingers with cut point, favourite transitions, Play now ·
+zoom, blur, flash), 2 stingers with cut point, favorite transitions, Play now ·
 ✅ Fade to black · ✅ Overlays 1–4 with animations · ✅ Split screen / PiP / custom layers ·
-✅ Titles, lower thirds, tickers in 6 designs with accent colour and animated build-on · ✅ Credits · ✅ Countdown and stage monitor ·
-✅ Slideshow (pictures, PDF) · ✅ Green screen · ✅ Colour correction, crop, rotate, effects ·
+✅ Titles, lower thirds, tickers in 6 designs with accent color and animated build-on · ✅ Credits · ✅ Countdown and stage monitor ·
+✅ Slideshow (pictures, PDF) · ✅ Green screen · ✅ Color correction, crop, rotate, effects ·
 ✅ Web page input · ✅ Stream inputs (SRT / RTMP / RTSP / HLS) · ✅ 3D logo maker ·
 ✅ Beat-synced stage visuals · ✅ Recording and multi-site streaming · ✅ Snapshot ·
 ✅ Audio mixer with buses, follow video, solo, delay · ✅ Presets, run of show, triggers ·
@@ -411,7 +411,7 @@ on screen with the page's code.
 13. ✅ **Animated title designer** with templates (vMix GT, Wirecast) — 6 title designs with build-on, and a free-layout designer: text, boxes and pictures anywhere by dragging, each coming in its own way, with {Column} data.
 14. 🔶 **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames). Stats done (processor, graphics card, memory, frames, dropped, data rates); ⬜ per-output size.
 15. ✅ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).
-16. ✅ **Branding kit** — logo, colours and fonts applied to every title at once (StreamYard, Restream).
+16. ✅ **Branding kit** — logo, colors and fonts applied to every title at once (StreamYard, Restream).
 17. ✅ **Audience polls and Q&A** shown on screen (Zoom Events, Restream).
 18. ✅ **MIDI and keyboard mapping for everything**, not only visuals (vMix, Resolume).
 19. ✅ **Video delay per input** to line up cameras with sound (vMix): each camera's picture can be held back up to 1 second (input settings → Crop & position), on every screen and in the recording.
@@ -426,9 +426,9 @@ on screen with the page's code.
 28. ✅ **Table finder** — the guest list pasted or opened from a spreadsheet (CSV); guests type their name on their phone and see their table (the whole list is never sent to phones); on screen, the code to scan or the list a page at a time.
 29. ✅ **Teleprompter** on the stage monitor — the script scrolls past a reading line; the operator (or Stream Deck, or the phone remote) starts, pauses, speeds up and slows down; size and a mirrored picture for glass prompters.
 30. ✅ **Music ducking** — music and videos get quieter by themselves while someone talks into a microphone, and come back up gently after (per channel, how much quieter is adjustable).
-31. ✅ **Camera control** — a button per camera under Next (one click switches straight to it; red on air, green in Next); **Auto** goes through the chosen cameras by itself (in order or mixed up, a range of seconds, cut or quick mix) and waits while anything else is on air; each camera's zoom, pan, tilt, focus, light and colour from the computer, with saved shots to go back to in one click.
-32. ✅ **12 Pesukim bar over the Live screen** — as an overlay, so the cameras keep switching underneath; one word at a time or the line with the word lit (per event); whole pasuk with how it sounds and its translation; designs, your own picture, or no background with two-colour words.
-33. ✅ **Event look, fully customizable** — ready-made looks in one click; font (any installed font, or your own font files), size, thickness, italic, capitals, colours, outline, shadow, letter and line spacing, the second line's own colour, size and font; box design, colour, see-through, accent, corners, room, border; where name titles go and how they come on (build, fade, slide, rise, pop).
+31. ✅ **Camera control** — a button per camera under Next (one click switches straight to it; red on air, green in Next); **Auto** goes through the chosen cameras by itself (in order or mixed up, a range of seconds, cut or quick mix) and waits while anything else is on air; each camera's zoom, pan, tilt, focus, light and color from the computer, with saved shots to go back to in one click.
+32. ✅ **12 Pesukim bar over the Live screen** — as an overlay, so the cameras keep switching underneath; one word at a time or the line with the word lit (per event); whole pasuk with how it sounds and its translation; designs, your own picture, or no background with two-color words.
+33. ✅ **Event look, fully customizable** — ready-made looks in one click; font (any installed font, or your own font files), size, thickness, italic, capitals, colors, outline, shadow, letter and line spacing, the second line's own color, size and font; box design, color, see-through, accent, corners, room, border; where name titles go and how they come on (build, fade, slide, rise, pop).
 34. ✅ **How to use Lumora** — a plain-language manual inside the app (Help menu), searchable, offline: every part of the app step by step.
 35. ✅ **500 built-in fonts** — all open-source (Google Fonts), 58 with Hebrew, kept inside the app so they work offline; a font picker with search and groups (Hebrew, sans, serif, display, handwriting, mono, on this computer, added), each font shown in itself; used by titles, songs, credits, the title designer and the 12 Pesukim, on screen and in the recording.
 36. ✅ **On-screen effects** — 14 ways for titles to come on (build, fade, slide, rise, drop, pop, zoom, flip, focus, wipe, typewriter, bounce, spin, shine), for every title or the whole event look; the 12 Pesukim bar has its own entrance and an effect for each new word; the same on the screens and in the recording.
