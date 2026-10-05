@@ -1,4 +1,5 @@
 import { scaleKeys, shiftKeys } from './anim';
+import { retimeTracks } from '../track/paths';
 import { exactRate, type Clip, type MediaItem, type Motion, type Project, type Sequence, type Track } from './types';
 
 export const end = (c: Clip): number => c.start + c.length;
@@ -101,7 +102,10 @@ const withIn = (c: Clip, delta: number): Clip => ('in' in c.source ? { ...c, sou
 
 /** Take `d` frames off the start (a negative `d` adds frames back). */
 export function trimLeft(c: Clip, d: number, fps: number): Clip {
-  const moved = mapParams({ ...c, start: c.start + d, length: c.length - d }, (x) => shiftKeys(x, -d));
+  const moved = retimeTracks(
+    mapParams({ ...c, start: c.start + d, length: c.length - d }, (x) => shiftKeys(x, -d)),
+    (t) => t - d,
+  );
   return c.reverse ? moved : withIn(moved, (d * c.speed) / fps);
 }
 
@@ -120,5 +124,8 @@ export function cutClip(c: Clip, at: number, fps: number, id: string): [Clip, Cl
 
 export function changeSpeed(c: Clip, speed: number): Clip {
   const length = Math.max(1, Math.round((c.length * c.speed) / speed));
-  return mapParams({ ...c, speed, length }, (x) => scaleKeys(x, length / c.length));
+  return retimeTracks(
+    mapParams({ ...c, speed, length }, (x) => scaleKeys(x, length / c.length)),
+    (t) => Math.round(t * (length / c.length)),
+  );
 }

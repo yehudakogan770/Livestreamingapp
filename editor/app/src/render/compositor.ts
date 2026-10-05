@@ -2,7 +2,8 @@
 // blend mode; transitions; adjustment layers. Used for the viewer and for
 // making the film, so what you see is what you get.
 import { curvesImage, flatCurve, hexToRgb, wheelColor, type Cube, type CurveSet } from './color';
-import type { EffectNow, Layer, Op } from './frame';
+import type { EffectNow, Layer, MotionNow, Op } from './frame';
+import { CUTOUT_FS, LIMIT_FS } from './maskfx';
 import { drawText } from './text';
 import { BLEND_MODES, COMPOSITE_FS, COPY_FS, EFFECT_FS, FINAL_FS, FULL_VS, GENERATOR_FS, LAYER_FS, LAYER_VS, TRANSITION_FS, TRANSITION_TYPES } from './shaders';
 
@@ -13,6 +14,8 @@ export interface Pictures {
   picture(layer: Layer): Source | null;
   /** A LUT file's contents, once read (null until then). */
   cube?(path: string): Cube | null;
+  /** An AI mask's matte at this frame (the picture's shape, 0–255; `stamp` changes when it does), or null while it isn't ready. */
+  matte?(layer: Layer, effect: EffectNow): { w: number; h: number; data: Uint8Array; stamp: string } | null;
 }
 
 interface Target {
@@ -267,14 +270,12 @@ export class Compositor {
 
   /** Draw a layer's picture into a target with its position, size, turn and crop. */
   private drawLayer(layer: Layer, pics: Pictures, target: Target): boolean {
-    const gl = this.gl;
     const src = layer.source;
     if (!src) return false;
     let tex: WebGLTexture;
     let sw: number;
     let sh: number;
     let nested: Target | null = null;
-    const scale = this.h / this.seqH;
     if (src.kind === 'color') {
       const [r, g, b] = hexToRgb(src.color);
       this.clear(target, [r, g, b, 1]);
@@ -319,31 +320,15 @@ export class Compositor {
       sw = up.w;
       sh = up.h;
     }
-    const m = layer.motion;
-    const fit = m.fill ? Math.max(this.w / sw, this.h / sh) : Math.min(this.w / sw, this.h / sh);
-    const dw = sw * fit * (m.scale / 100) * (m.scaleX / 100);
-    const dh = sh * fit * (m.scale / 100);
-    const cx = this.w / 2 + m.x * scale;
-    const cy = this.h / 2 + m.y * scale;
-    // Turned flat (rotation), then tilted (3D), seen through a lens from in front of the frame.
-    const rz = (m.rotation * Math.PI) / 180;
-    const rx = (m.rotX * Math.PI) / 180;
-    const ry = (m.rotY * Math.PI) / 180;
-    const focal = this.h * 1.25;
-    const depth = m.z * scale;
-    const corner = (u: number, v: number): [number, number, number] => {
-      let x = (u - 0.5) * dw;
-      let y = (v - 0.5) * dh;
-      let z = 0;
-      [x, y] = [x * Math.cos(rz) - y * Math.sin(rz), x * Math.sin(rz) + y * Math.cos(rz)];
-      [y, z] = [y * Math.cos(rx) - z * Math.sin(rx), y * Math.sin(rx) + z * Math.cos(rx)];
-      [x, z] = [x * Math.cos(ry) + z * Math.sin(ry), -x * Math.sin(ry) + z * Math.cos(ry)];
-      const px = cx + x - this.w / 2;
-      const py = cy + y - this.h / 2;
-      const w = Math.max(0.05, (focal + z + depth) / focal);
-      // Divided by w on the GPU, so the picture is drawn in true perspective.
-      return [((this.w / 2 + px / w) / this.w) * 2 - 1, 1 - ((this.h / 2 + py / w) / this.h) * 2, w];
-    };
+    this.place(tex, sw, sh, layer.motion, target);
+    this.give(nested);
+    return true;
+  }
+
+  /** Draw a picture (sw × sh) into a target where Motion puts it: position, size, turn, tilt and crop. */
+  private place(tex: WebGLTexture, sw: number, sh: number, m: MotionNow, target: Target) {
+    const gl = this.gl;
+    const corner = placeCorner(m, sw, sh, this.w, this.h, this.seqH);
     const data = new Float32Array(24);
     [
       [0, 0],
@@ -365,8 +350,6 @@ export class Compositor {
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 24, 16);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    this.give(nested);
-    return true;
   }
 
   // ---- effects ----
@@ -498,15 +481,9 @@ export class Compositor {
       case 'lumakey':
         return run('lumakey', { uThreshold: n('threshold') / 100, uSoftness: n('softness') / 100, uInvert: n('invert') });
       case 'mask':
-        return run('mask', {
-          uShape: n('shape'),
-          uCx: n('cx') / 100,
-          uCy: n('cy') / 100,
-          uW: (n('w', 40) / 100) * (this.h / this.w),
-          uH: n('h', 50) / 100,
-          uFeather: n('feather', 10) / 200,
-          uInvert: n('invert'),
-        });
+        // Only limiting other effects: the clip itself stays whole.
+        if (n('use') >= 0.5) return input;
+        return run('mask', shapeMask(n));
       case 'mosaic':
         return run('mosaic', { uBlock: n('size', 24) * (this.h / this.seqH) });
       case 'grain':
@@ -589,7 +566,7 @@ export class Compositor {
       this.give(t);
       return null;
     }
-    for (const e of layer.effects) t = this.effect(e, t, pics, layer);
+    for (const e of layer.effects) t = this.applyEffect(e, t, pics, layer);
     return t;
   }
 
@@ -627,7 +604,7 @@ export class Compositor {
       } else {
         // An adjustment layer changes everything under it.
         let t = this.pass('copy', COPY_FS, acc, { uOpacity: 1 });
-        for (const e of op.layer.effects) t = this.effect(e, t, pics, op.layer);
+        for (const e of op.layer.effects) t = this.applyEffect(e, t, pics, op.layer);
         const mixed = this.composite(acc, t, op.layer.motion.opacity / 100, 'normal');
         this.give(t);
         acc = mixed;
@@ -697,6 +674,77 @@ export class Compositor {
     return flipped;
   }
 
+  // ---- masks ----
+
+  private white: WebGLTexture | null = null;
+
+  /** A mask as a frame-sized picture (its alpha: how much of each spot is in), or null while an AI matte isn't ready. */
+  private maskTarget(layer: Layer, mask: EffectNow, pics: Pictures): Target | null {
+    if (mask.type === 'mask') {
+      if (!this.white) {
+        this.white = this.makeTexture();
+        this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+      }
+      const p = mask.p;
+      return this.pass(
+        'mask',
+        EFFECT_FS.mask as string,
+        this.white,
+        shapeMask((k, d = 0) => (Number.isFinite(p[k]) ? (p[k] as number) : d)),
+      );
+    }
+    const matte = pics.matte?.(layer, mask);
+    if (!matte || !matte.w || !matte.h) return null;
+    const gl = this.gl;
+    const key = `matte:${layer.key}:${mask.id}`;
+    let t = this.textures.get(key);
+    if (!t) {
+      t = { tex: this.makeTexture(), stamp: '' };
+      this.textures.set(key, t);
+    }
+    gl.bindTexture(gl.TEXTURE_2D, t.tex);
+    if (t.stamp !== matte.stamp) {
+      // White, as see-through as the matte says (premultiplied).
+      const rgba = new Uint8Array(matte.w * matte.h * 4);
+      for (let i = 0; i < matte.w * matte.h; i++) rgba.fill(matte.data[i] as number, i * 4, i * 4 + 4);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, matte.w, matte.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+      gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+      t.stamp = matte.stamp;
+    }
+    // Placed exactly as the clip's picture is.
+    const out = this.take();
+    this.clear(out);
+    this.place(t.tex, matte.w, matte.h, layer.motion, out);
+    return out;
+  }
+
+  /** An effect, kept inside (or outside) a mask when it is limited to one. AI masks cut the layer out. */
+  private applyEffect(e: EffectNow, input: Target, pics: Pictures, layer: Layer): Target {
+    if (e.type === 'personmask' || e.type === 'objectmask') {
+      if ((e.p.use ?? 0) >= 0.5) return input;
+      const m = this.maskTarget(layer, e, pics);
+      if (!m) return input;
+      const out = this.pass('cutout', CUTOUT_FS, input, { uMask: [m.tex, 1] });
+      this.give(m);
+      this.give(input);
+      return out;
+    }
+    const lim = limitOf(e);
+    const mask = lim ? layer.effects.find((x) => x.id === lim.mask) : undefined;
+    if (!lim || !mask) return this.effect(e, input, pics, layer);
+    const m = this.maskTarget(layer, mask, pics);
+    // The mask isn't ready yet: the effect waits for it.
+    if (!m) return input;
+    const orig = this.pass('copy', COPY_FS, input, { uOpacity: 1 });
+    const done = this.effect(e, input, pics, layer);
+    const out = this.pass('limit', LIMIT_FS, done, { uOrig: [orig.tex, 1], uMask: [m.tex, 2], uOutside: lim.outside ? 1 : 0 });
+    this.give(orig);
+    this.give(done);
+    this.give(m);
+    return out;
+  }
+
   /** Forget a clip's picture (it was taken off the timeline). */
   forget(keys: string[]) {
     for (const k of keys) {
@@ -705,6 +753,59 @@ export class Compositor {
       this.textures.delete(k);
     }
   }
+}
+
+/**
+ * Where a spot of a picture (u, v: 0–1 across and down it) lands when Motion
+ * places it in a W × H frame: on the GPU's −1…1 scale, and the perspective
+ * divisor. The tracking code works out the same thing (tests check they agree).
+ */
+export function placeCorner(m: MotionNow, sw: number, sh: number, W: number, H: number, seqH: number): (u: number, v: number) => [number, number, number] {
+  const scale = H / seqH;
+  const fit = m.fill ? Math.max(W / sw, H / sh) : Math.min(W / sw, H / sh);
+  const dw = sw * fit * (m.scale / 100) * (m.scaleX / 100);
+  const dh = sh * fit * (m.scale / 100);
+  const cx = W / 2 + m.x * scale;
+  const cy = H / 2 + m.y * scale;
+  // Turned flat (rotation), then tilted (3D), seen through a lens from in front of the frame.
+  const rz = (m.rotation * Math.PI) / 180;
+  const rx = (m.rotX * Math.PI) / 180;
+  const ry = (m.rotY * Math.PI) / 180;
+  const focal = H * 1.25;
+  const depth = m.z * scale;
+  return (u: number, v: number): [number, number, number] => {
+    let x = (u - 0.5) * dw;
+    let y = (v - 0.5) * dh;
+    let z = 0;
+    [x, y] = [x * Math.cos(rz) - y * Math.sin(rz), x * Math.sin(rz) + y * Math.cos(rz)];
+    [y, z] = [y * Math.cos(rx) - z * Math.sin(rx), y * Math.sin(rx) + z * Math.cos(rx)];
+    [x, z] = [x * Math.cos(ry) + z * Math.sin(ry), -x * Math.sin(ry) + z * Math.cos(ry)];
+    const px = cx + x - W / 2;
+    const py = cy + y - H / 2;
+    const w = Math.max(0.05, (focal + z + depth) / focal);
+    // Divided by w on the GPU, so the picture is drawn in true perspective.
+    return [((W / 2 + px / w) / W) * 2 - 1, 1 - ((H / 2 + py / w) / H) * 2, w];
+  };
+}
+
+/** A shape mask's numbers for the GPU (sizes in frame heights, so it stays round at any shape of frame). */
+function shapeMask(n: (k: string, d?: number) => number): Record<string, number> {
+  return {
+    uShape: n('shape'),
+    uCx: n('cx') / 100,
+    uCy: n('cy') / 100,
+    uW: n('w', 40) / 100,
+    uH: n('h', 50) / 100,
+    uAngle: (n('angle') * Math.PI) / 180,
+    uFeather: n('feather', 10) / 200,
+    uInvert: n('invert'),
+  };
+}
+
+/** The mask an effect is limited to (by the mask effect's id), inside or outside it. */
+export function limitOf(e: { d?: Record<string, unknown> }): { mask: string; outside: boolean } | null {
+  const l = e.d?.limit as { mask?: unknown; outside?: unknown } | undefined;
+  return l && typeof l.mask === 'string' && l.mask ? { mask: l.mask, outside: !!l.outside } : null;
 }
 
 const pixels = new Map<string, ImageData>();

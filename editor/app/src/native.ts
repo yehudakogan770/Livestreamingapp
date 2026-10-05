@@ -33,6 +33,10 @@ export const native = {
   exportFolder: (out: string) => invoke<string>('export_folder', { out }),
   writeChunk: (path: string, position: number, data: Uint8Array) =>
     invoke<void>('write_chunk', data, { headers: { 'x-path': encodeURIComponent(path), 'x-position': String(position) } }),
+  /** AI mask results kept for a media file ("person" or "object"; empty when there are none). */
+  matteRead: async (media: string, kind: string): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>('matte_read', { media, kind })),
+  matteWrite: (media: string, kind: string, data: Uint8Array) =>
+    invoke<void>('matte_write', data, { headers: { 'x-media': encodeURIComponent(media), 'x-kind': encodeURIComponent(kind) } }),
   exportStart: (plan: { jobs: Job[]; files?: [string, string][] }, out: string, tmp: string) => invoke<void>('export_start', { plan, out, tmp }),
   exportCancel: () => invoke<void>('export_cancel'),
   exportAbandon: (tmp: string) => invoke<void>('export_abandon', { tmp }),

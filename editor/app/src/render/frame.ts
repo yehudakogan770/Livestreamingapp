@@ -4,6 +4,7 @@
 import { valueAt } from '../model/anim';
 import { end, onTrack, rate, seqLength } from '../model/seq';
 import type { BlendMode, Clip, MediaItem, Project, Sequence, TextData } from '../model/types';
+import { withTracking } from '../track/paths';
 
 export type LayerSource =
   | { kind: 'video'; media: MediaItem; time: number }
@@ -145,7 +146,8 @@ export function transitionWindow(c: Clip): { from: number; to: number } | null {
 /** Everything to draw at a frame, bottom first. */
 export function frameOps(p: Project, s: Sequence, frame: number, prefix = '', depth = 0, inside: string[] = [s.id]): Op[] {
   const fps = rate(s);
-  const lay = (c: Clip) => layerFor(p, c, frame, fps, prefix, depth, inside);
+  // Tracking (steadying, following, masks on a track) is applied the same way for the viewer and the film.
+  const lay = (c: Clip) => withTracking(p, s, layerFor(p, c, frame, fps, prefix, depth, inside));
   const ops: Op[] = [];
   for (const t of s.tracks) {
     if (t.kind !== 'video' || t.off) continue;

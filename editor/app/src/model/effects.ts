@@ -36,6 +36,12 @@ const P = (key: string, label: string, min: number, max: number, def: number, st
   ...(unit ? { unit } : {}),
 });
 
+/** A mask cuts the clip out, or only says where other effects apply (each effect's "Limit to"). */
+const USE_AS = ['Cut out', 'Only limit effects'];
+
+/** Masks that other effects can be limited to. */
+export const MASK_TYPES = ['mask', 'personmask', 'objectmask'];
+
 export const EFFECTS: EffectDef[] = [
   // ---- Color ----
   {
@@ -151,8 +157,36 @@ export const EFFECTS: EffectDef[] = [
       P('cy', 'Center ↕', -100, 100, 0, 0.5, '%'),
       P('w', 'Width', 1, 200, 40, 0.5, '%'),
       P('h', 'Height', 1, 200, 50, 0.5, '%'),
+      P('angle', 'Rotation', -180, 180, 0, 0.5, '°'),
       P('feather', 'Feather', 0, 100, 10),
       { ...P('invert', 'Invert', 0, 1, 0), toggle: true },
+      { ...P('use', 'Use as', 0, 1, 0), options: USE_AS },
+    ],
+  },
+  // ---- AI masks ----
+  {
+    type: 'personmask',
+    name: 'Select person (AI mask)',
+    kind: 'video',
+    group: 'AI masks',
+    params: [
+      P('feather', 'Feather', 0, 100, 4, 0.5),
+      P('expand', 'Expand / shrink', -50, 50, 0, 0.5),
+      { ...P('invert', 'Invert', 0, 1, 0), toggle: true },
+      { ...P('use', 'Use as', 0, 1, 0), options: USE_AS },
+    ],
+  },
+  {
+    type: 'objectmask',
+    name: 'Select object (click)',
+    kind: 'video',
+    group: 'AI masks',
+    params: [
+      P('feather', 'Feather', 0, 100, 4, 0.5),
+      P('expand', 'Expand / shrink', -50, 50, 0, 0.5),
+      P('tolerance', 'Color tolerance', 1, 100, 25),
+      { ...P('invert', 'Invert', 0, 1, 0), toggle: true },
+      { ...P('use', 'Use as', 0, 1, 0), options: USE_AS },
     ],
   },
   // ---- Stylize ----

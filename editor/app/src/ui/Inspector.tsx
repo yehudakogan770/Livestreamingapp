@@ -14,6 +14,7 @@ import type { Actions } from './actions';
 import { Choice, ColorField, ParamRow, Scrub, Section } from './controls';
 import { usePlayhead } from './hooks';
 import type { Ui } from './state';
+import { EffectExtras, TrackingSection } from './Tracking';
 
 export const FONTS = [
   'Segoe UI',
@@ -253,6 +254,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
           onChange={(motion, final) => upd(main, 'Motion', (c) => ({ ...c, motion }), final, `motion-${main.id}`)}
         />
       )}
+      {isVideoClip(main) && main.source.kind !== 'adjustment' && <TrackingSection doc={doc} engine={engine} clip={main} local={local} t={t} />}
       {isVideoClip(main) && main.source.kind === 'adjustment' && (
         <Section title="Adjustment layer">
           <p className="insp__note">Its effects change every track under it. Add effects from the Effects tab.</p>
@@ -275,7 +277,16 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
       {main.effects
         .filter((e) => effectDef(e.type)?.kind === 'video')
         .map((e) => (
-          <EffectSection key={e.id} clip={main} effect={e} local={local} onSeek={seek} upd={upd} ui={ui} />
+          <EffectSection
+            key={e.id}
+            clip={main}
+            effect={e}
+            local={local}
+            onSeek={seek}
+            upd={upd}
+            ui={ui}
+            extra={<EffectExtras doc={doc} engine={engine} clip={main} effect={e} local={local} />}
+          />
         ))}
 
       {(main.source.kind === 'media' || main.source.kind === 'multicam') && <SpeedSection clip={main} actions={actions} doc={doc} />}
@@ -493,6 +504,7 @@ function EffectSection({
   onSeek,
   upd,
   ui,
+  extra,
 }: {
   clip: Clip;
   effect: Effect;
@@ -500,6 +512,8 @@ function EffectSection({
   onSeek: (f: number) => void;
   upd: (c: Clip, label: string, f: (c: Clip) => Clip, final?: boolean, key?: string) => void;
   ui: Ui;
+  /** More rows (tracking, AI masks, "Limit to"). */
+  extra?: React.ReactNode;
 }) {
   const def = effectDef(effect.type);
   if (!def) return null;
@@ -619,6 +633,7 @@ function EffectSection({
         </button>
       )}
       {def.params.map(paramRow)}
+      {extra}
     </Section>
   );
 }

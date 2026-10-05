@@ -163,12 +163,50 @@ export type ClipSource =
   /** A picture made here: a gradient, noise, particles… */
   | { kind: 'generator'; gen: string; settings: Record<string, number | string> };
 
-/** A spot followed through a clip: where it is at each frame (pixels from the middle of the frame). */
+/**
+ * A spot (or a region) followed through a clip: motion tracking. Places are
+ * 0–1 across and down the clip's own picture, so they stay right whatever the
+ * clip's size, fit or the sequence's shape.
+ */
 export interface TrackPath {
   id: string;
   name: string;
-  /** [frame of the clip, x, y] */
-  points: [number, number, number][];
+  /** [frame of the clip, across, down, size (1: as when tracking started), turn (degrees)], in frame order. */
+  points: TrackPoint[];
+  /** One spot (where it is) or a region (where it is, its size and its turn). */
+  kind?: 'point' | 'region';
+  /** The region's width and height when tracking started (0–1 of the picture's). */
+  box?: [number, number];
+  /** Frames placed by hand: tracking keeps them, and starts again from them. */
+  manual?: number[];
+}
+export type TrackPoint = [number, number, number, number?, number?];
+
+/** A clip that follows a track of another clip (a title on a face, a graphic on a sign). */
+export interface Follow {
+  clip: string;
+  path: string;
+  /** The sequence frame it was attached at: where it was then, relative to the track, is kept. */
+  at: number;
+  /** Grows and turns with the region too. */
+  scale: boolean;
+  rotate: boolean;
+}
+
+/** Steadied with one of its own tracks (the track's movement is taken away). */
+export interface Stabilize {
+  path: string;
+  /** How much of the camera's own movement is smoothed away (0 – 100). */
+  smooth: number;
+  /** No movement at all, as if on a tripod (held where it is at `at`). */
+  lock: boolean;
+  /** The clip frame a locked shot is held at. */
+  at: number;
+  /** Zoom in just enough that no edge shows. */
+  crop: boolean;
+  /** A region track also takes away turning and zooming. */
+  rotate: boolean;
+  scale: boolean;
 }
 
 export interface Clip {
@@ -197,6 +235,10 @@ export interface Clip {
   tOut: Transition | null;
   /** Spots followed through the clip (motion tracking). */
   paths?: TrackPath[];
+  /** Moves with a track of another clip. */
+  follow?: Follow | null;
+  /** Steadied with one of its own tracks. */
+  stabilize?: Stabilize | null;
 }
 
 export interface Marker {

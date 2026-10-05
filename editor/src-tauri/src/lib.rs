@@ -3,6 +3,7 @@
 
 mod export;
 mod library;
+mod mattes;
 mod media;
 
 use std::path::{Path, PathBuf};
@@ -117,6 +118,38 @@ async fn strip(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+/// AI mask results kept for a media file (empty when there are none yet).
+#[tauri::command]
+async fn matte_read(
+    state: State<'_, AppState>,
+    media: String,
+    kind: String,
+) -> Result<tauri::ipc::Response, String> {
+    let cache = state.cache.clone();
+    let bytes = tauri::async_runtime::spawn_blocking(move || mattes::read(&cache, &media, &kind))
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Keep AI mask results (raw bytes; the media file and kind are in the headers).
+#[tauri::command]
+fn matte_write(state: State<'_, AppState>, request: tauri::ipc::Request<'_>) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("Nothing to write.".into());
+    };
+    let header = |k: &str| {
+        request
+            .headers()
+            .get(k)
+            .and_then(|v| v.to_str().ok())
+            .map(decode)
+    };
+    let media = header("x-media").ok_or("No file given.")?;
+    let kind = header("x-kind").ok_or("No kind given.")?;
+    mattes::write(&state.cache, &media, &kind, bytes)
 }
 
 /// A work folder for making a film, next to where it will be saved.
@@ -306,6 +339,8 @@ pub fn run() {
             peaks,
             export_folder,
             write_chunk,
+            matte_read,
+            matte_write,
             export_start,
             export_cancel,
             export_abandon,

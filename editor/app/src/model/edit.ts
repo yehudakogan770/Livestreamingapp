@@ -1,6 +1,6 @@
 // The edits: each takes the project and gives back a changed copy (undo keeps the old one).
 import { changeSpeed, current, cutClip, editSeq, end, handles, onTrack, rate, seqLength, trackOf, trimLeft, trimRight } from './seq';
-import { uid, newClip, newTrack, type Clip, type Marker, type Project, type Sequence, type Track, type TrackKind, type Transition } from './types';
+import { uid, newClip, newTrack, type Clip, type Effect, type Marker, type Project, type Sequence, type Track, type TrackKind, type Transition } from './types';
 
 const unlocked = (s: Sequence, track: string): boolean => !trackOf(s, track)?.locked;
 
@@ -539,12 +539,23 @@ export function paste(p: Project, board: Clipboard, at: number, mode: 'insert' |
   return placeClips(p, clips, mode);
 }
 
+/** Copies of effects with new ids (an effect limited to a mask stays limited to that mask's copy). */
+function withNewIds(effects: Effect[]): Effect[] {
+  const ids = new Map(effects.map((e) => [e.id, uid('e')]));
+  return effects.map((e) => {
+    const copy = { ...structuredClone(e), id: ids.get(e.id) as string };
+    const lim = copy.d?.limit as { mask?: string } | undefined;
+    if (lim?.mask && ids.has(lim.mask)) copy.d = { ...copy.d, limit: { ...lim, mask: ids.get(lim.mask) } };
+    return copy;
+  });
+}
+
 /** Copy one clip's effects, motion and sound settings onto others. */
 export function pasteAttributes(p: Project, from: Clip, ids: string[]): Project {
   return updateClips(p, ids, (c) => ({
     ...c,
     motion: structuredClone(from.motion),
-    effects: from.effects.map((e) => ({ ...structuredClone(e), id: uid('e') })),
+    effects: withNewIds(from.effects),
     gain: structuredClone(from.gain),
     pan: structuredClone(from.pan),
   }));
