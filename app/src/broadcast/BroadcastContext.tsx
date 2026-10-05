@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { defaultCaptureSettings, type CaptureKind, type CaptureSettings, type CaptureStatus, type EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
 import { useSound } from '../audio/SoundContext';
-import { useReportProblem } from '../problems/problems';
+import { useProblemStore, useReportProblem } from '../problems/problems';
+import { RehearsalLog, type RehearsalReport } from './rehearsal';
 import { Broadcaster } from './recorder';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
@@ -34,6 +35,12 @@ interface Broadcast {
   saveHighlight(seconds: number): Promise<number>;
   /** Live captions: whether they're running, and the words right now. */
   captions: { state: CaptionState; lines(): string[] };
+  /** Rehearsal: GO LIVE runs everything as if live, but nothing is sent. */
+  rehearsal: boolean;
+  setRehearsal(on: boolean): void;
+  /** How the last rehearsal went (until closed). */
+  rehearsalReport: RehearsalReport | null;
+  closeRehearsalReport(): void;
 }
 
 const Ctx = createContext<Broadcast | null>(null);
@@ -103,14 +110,19 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     for (const r of [status.recording, status.streaming, status.vertical]) if (r) void client.captureStop(r.session);
   }, [status, broadcaster, client]);
 
+  // Rehearsal: chosen before going live, never kept (a real event can't start as a rehearsal by mistake).
+  const [rehearsal, setRehearsalOn] = useState(false);
+  const rehearsalRef = useRef(rehearsal);
+  rehearsalRef.current = rehearsal;
   const launch = useCallback(
     async (kind: CaptureKind) => {
       if (!broadcaster) throw new Error('Recording is not available here.');
       const name = recordingName(showRef.current);
-      await broadcaster.start(kind, settingsRef.current, name);
+      const rehearse = kind === 'stream' && rehearsalRef.current;
+      await broadcaster.start(kind, settingsRef.current, name, rehearse);
       // The vertical version starts beside the stream; if it can't, the wide stream carries on.
       if (kind === 'stream')
-        void broadcaster.startVertical(settingsRef.current, name).then(
+        void broadcaster.startVertical(settingsRef.current, name, rehearse).then(
           () => setVerticalTrouble(null),
           (e: unknown) => setVerticalTrouble(e instanceof Error ? e.message : String(e)),
         );
@@ -172,7 +184,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         if (!wanted.current.stream) return;
         void broadcaster
           .stop('vertical')
-          .then(() => broadcaster.startVertical(settingsRef.current, recordingName(showRef.current)))
+          .then(() => broadcaster.startVertical(settingsRef.current, recordingName(showRef.current), rehearsalRef.current))
           .then(
             () => setVerticalTrouble(null),
             (e: unknown) => setVerticalTrouble(e instanceof Error ? e.message : String(e)),
@@ -374,7 +386,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   useEffect(() => {
     if (!live) return;
     live.onState = setCaptionState;
-    live.sendTo = () => captionTargets(settingsRef.current, statusRef.current);
+    // A rehearsal sends no captions either.
+    live.sendTo = () => (rehearsalRef.current ? [] : captionTargets(settingsRef.current, statusRef.current));
     return () => live.stop();
   }, [live]);
   useEffect(() => {
@@ -407,9 +420,71 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   const captions = useMemo(() => ({ state: captionState, lines: captionLines }), [captionState, captionLines]);
 
   const frameStats = useCallback(() => broadcaster?.frameStats() ?? null, [broadcaster]);
+
+  // ---- rehearsal ----
+  const setRehearsal = useCallback((on: boolean) => {
+    // Not while the stream runs: stop it first.
+    if (!statusRef.current.streaming) setRehearsalOn(on);
+  }, []);
+  const problems = useProblemStore();
+  const [rehearsalReport, setRehearsalReport] = useState<RehearsalReport | null>(null);
+  const rehearsing = rehearsal && !!status.streaming;
+  useEffect(() => {
+    if (!rehearsing) return;
+    const log = new RehearsalLog();
+    const look = () => {
+      log.problems(problems?.snapshot() ?? []);
+      log.sample(broadcaster?.frameStats()?.dropped ?? null, statusRef.current.streaming?.speed ?? null);
+    };
+    const unsub = problems?.subscribe(look);
+    const id = setInterval(look, 2000);
+    return () => {
+      unsub?.();
+      clearInterval(id);
+      look();
+      setRehearsalReport(log.report());
+    };
+  }, [rehearsing, problems, broadcaster]);
+  const closeRehearsalReport = useCallback(() => setRehearsalReport(null), []);
   const value = useMemo<Broadcast>(
-    () => ({ status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats, captions }),
-    [status, settings, saveSettings, start, stop, reconnecting, busy, replayOn, setReplay, makeReplay, saveHighlight, frameStats, captions],
+    () => ({
+      status,
+      settings,
+      saveSettings,
+      start,
+      stop,
+      reconnecting,
+      busy,
+      replayOn,
+      setReplay,
+      makeReplay,
+      saveHighlight,
+      frameStats,
+      captions,
+      rehearsal,
+      setRehearsal,
+      rehearsalReport,
+      closeRehearsalReport,
+    }),
+    [
+      status,
+      settings,
+      saveSettings,
+      start,
+      stop,
+      reconnecting,
+      busy,
+      replayOn,
+      setReplay,
+      makeReplay,
+      saveHighlight,
+      frameStats,
+      captions,
+      rehearsal,
+      setRehearsal,
+      rehearsalReport,
+      closeRehearsalReport,
+    ],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

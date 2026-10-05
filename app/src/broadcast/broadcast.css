@@ -194,3 +194,22 @@
 .perf__panel td {
   padding: 3px 0;
 }
+
+/* Rehearsal: orange, never mistaken for LIVE */
+.bc-btn--small {
+  font-size: 11px;
+  padding-inline: 8px;
+}
+.bc-btn--rehearse {
+  background: #7a4a00;
+  border-color: #c98a1f;
+  color: #ffe2b0;
+}
+.bc-btn--rehearse .bc-dot {
+  background: #ffb547;
+}
+.bc-report {
+  margin: 8px 0;
+  padding-left: 18px;
+  line-height: 1.5;
+}

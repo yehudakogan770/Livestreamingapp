@@ -450,9 +450,12 @@ fn capture_start(
     kind: capture::Kind,
     mime: String,
     name: String,
+    rehearse: Option<bool>,
     state: State<'_, AppState>,
 ) -> Result<capture::Running, String> {
-    state.capture.start(kind, &mime, &name)
+    state
+        .capture
+        .start_with(kind, &mime, &name, rehearse.unwrap_or(false))
 }
 
 /// More of the encoded Live Screen: the bytes are the body, the session a header.

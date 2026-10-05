@@ -119,7 +119,7 @@ export class Broadcaster {
    * Start recording or streaming.
    * @throws Error with a message for the operator if it can't start.
    */
-  async start(kind: CaptureKind, settings: CaptureSettings, name: string): Promise<CaptureRunning> {
+  async start(kind: CaptureKind, settings: CaptureSettings, name: string, rehearse = false): Promise<CaptureRunning> {
     if (this.live.has(kind)) throw new Error(kind === 'record' ? 'Already recording.' : 'Already streaming.');
     const mime = recordingType();
     if (!mime) throw new Error('This computer’s web view can’t record video. Recording and streaming work in the Windows app.');
@@ -136,7 +136,7 @@ export class Broadcaster {
     const wide = vertical ? QUALITIES['1080p'] : q;
     // The picture keeps the size it started with while anything is running.
     if (this.live.size === 0) compositor.resize(wide.width, wide.height);
-    const running = await this.open(kind, vertical, q.fps, settings.videoKbps, settings, name, mime);
+    const running = await this.open(kind, vertical, q.fps, settings.videoKbps, settings, name, mime, rehearse);
     if (kind === 'record' && settings.iso) void this.startIsos(this.live.get('record')!, settings.videoKbps);
     return running;
   }
@@ -145,12 +145,12 @@ export class Broadcaster {
    * Start the vertical version beside the stream (for the destinations that want it).
    * @throws Error with a message for the operator if it can't start.
    */
-  async startVertical(settings: CaptureSettings, name: string): Promise<CaptureRunning | null> {
+  async startVertical(settings: CaptureSettings, name: string, rehearse = false): Promise<CaptureRunning | null> {
     if (this.live.has('vertical') || !this.live.has('stream') || !wantsVertical(settings)) return null;
     const mime = recordingType();
     if (!mime) return null;
     const q = QUALITIES.vertical;
-    return this.open('vertical', true, q.fps, Math.min(settings.videoKbps, q.kbps), settings, name, mime);
+    return this.open('vertical', true, q.fps, Math.min(settings.videoKbps, q.kbps), settings, name, mime, rehearse);
   }
 
   /** The vertical picture (made when first needed). */
@@ -167,11 +167,12 @@ export class Broadcaster {
     settings: CaptureSettings,
     name: string,
     mime: string,
+    rehearse = false,
   ): Promise<CaptureRunning> {
     const compositor = this.compositor!;
     let running: CaptureRunning;
     try {
-      running = await this.client.captureStart(kind, mime, name);
+      running = await this.client.captureStart(kind, mime, name, rehearse);
     } catch (e) {
       throw e instanceof Error ? e : new Error(String(e));
     }

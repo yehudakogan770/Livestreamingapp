@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CaptureKind } from '../engine/client';
 import { clock } from '../engine/timing';
 import { useBroadcast } from './BroadcastContext';
+import { verdict } from './rehearsal';
 import './broadcast.css';
 
 /** How long something has been running, ticking every second. */
@@ -46,8 +47,8 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
     const running = kind === 'record' ? !!rec : !!live || !!reconnecting;
     if (running) return setConfirm({ kind, stopping: true });
     if (kind === 'record') return void b.start('record').catch(() => {});
-    // Going live: set up first if there is nowhere to go, otherwise confirm.
-    if (destinations.length === 0) return onSettings();
+    // Going live: set up first if there is nowhere to go, otherwise confirm (a rehearsal needs nowhere).
+    if (destinations.length === 0 && !b.rehearsal) return onSettings();
     setConfirm({ kind, stopping: false });
   };
 
@@ -72,14 +73,32 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
       </button>
       <button
         type="button"
-        className={`btn bc-btn${live ? ' bc-btn--live' : ''}${reconnecting ? ' bc-btn--warn' : ''}`}
+        className={`btn bc-btn bc-btn--small${b.rehearsal ? ' bc-btn--rehearse' : ''}`}
+        aria-pressed={b.rehearsal}
+        disabled={!!live}
+        title="Rehearsal: practice the whole event as if live, with nothing sent anywhere. A report comes at the end."
+        onClick={() => b.setRehearsal(!b.rehearsal)}
+      >
+        Rehearsal
+      </button>
+      <button
+        type="button"
+        className={`btn bc-btn${live ? (b.rehearsal ? ' bc-btn--rehearse' : ' bc-btn--live') : ''}${reconnecting ? ' bc-btn--warn' : ''}`}
         aria-pressed={!!live}
         disabled={b.busy.stream}
-        title={live ? `Live on ${live.destinations.join(', ')}` : 'Stream the Live Screen'}
+        title={
+          live
+            ? b.rehearsal
+              ? 'Rehearsing: nothing is being sent'
+              : `Live on ${live.destinations.join(', ')}`
+            : b.rehearsal
+              ? 'Start the rehearsal'
+              : 'Stream the Live Screen'
+        }
         onClick={() => press('stream')}
       >
         <i className="bc-dot" />
-        {live ? `LIVE ${liveTime}` : reconnecting ? 'Reconnecting…' : 'GO LIVE'}
+        {live ? `${b.rehearsal ? 'REHEARSING' : 'LIVE'} ${liveTime}` : reconnecting ? 'Reconnecting…' : b.rehearsal ? 'REHEARSE' : 'GO LIVE'}
       </button>
       <ReplayButtons />
 
@@ -98,20 +117,35 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
           </button>
         </div>
       )}
+      {b.rehearsalReport && <RehearsalReportDialog />}
       {confirm && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="Confirm" onPointerDown={(e) => e.target === e.currentTarget && setConfirm(null)}>
           <div className="modal__box confirm">
             <header className="modal__head">
-              <h2>{confirm.stopping ? (confirm.kind === 'record' ? 'Stop recording?' : 'End the stream?') : 'Go live?'}</h2>
+              <h2>
+                {confirm.stopping
+                  ? confirm.kind === 'record'
+                    ? 'Stop recording?'
+                    : b.rehearsal
+                      ? 'End the rehearsal?'
+                      : 'End the stream?'
+                  : b.rehearsal
+                    ? 'Start the rehearsal?'
+                    : 'Go live?'}
+              </h2>
             </header>
             <p className="confirm__text">
               {confirm.stopping
                 ? confirm.kind === 'record'
                   ? 'The recording is saved and a new one can be started any time.'
-                  : 'Viewers will see the stream end.'
-                : `The Live Screen goes out to ${destinations.map((d) => d.name).join(', ')}.`}
+                  : b.rehearsal
+                    ? 'You’ll get a report of how it went.'
+                    : 'Viewers will see the stream end.'
+                : b.rehearsal
+                  ? 'Everything runs exactly as if live, but nothing is sent anywhere. Run through the event, then end the rehearsal for a report.'
+                  : `The Live Screen goes out to ${destinations.map((d) => d.name).join(', ')}.`}
             </p>
-            {!confirm.stopping && destinations.some((d) => !d.key.trim()) && (
+            {!confirm.stopping && !b.rehearsal && destinations.some((d) => !d.key.trim()) && (
               <p className="confirm__text field__note--warn">
                 No stream key for{' '}
                 {destinations
@@ -126,7 +160,15 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
                 Cancel
               </button>
               <button type="button" className={`btn ${confirm.stopping ? 'btn--danger' : 'btn--primary'}`} onClick={yes} autoFocus>
-                {confirm.stopping ? (confirm.kind === 'record' ? 'Stop recording' : 'End stream') : 'Go live'}
+                {confirm.stopping
+                  ? confirm.kind === 'record'
+                    ? 'Stop recording'
+                    : b.rehearsal
+                      ? 'End rehearsal'
+                      : 'End stream'
+                  : b.rehearsal
+                    ? 'Start rehearsal'
+                    : 'Go live'}
               </button>
             </footer>
           </div>
@@ -226,5 +268,57 @@ function ReplayButtons() {
         </span>
       )}
     </span>
+  );
+}
+
+/** How the rehearsal went. */
+function RehearsalReportDialog() {
+  const b = useBroadcast();
+  if (!b?.rehearsalReport) return null;
+  const r = b.rehearsalReport;
+  const v = verdict(r);
+  return (
+    <div
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Rehearsal report"
+      onPointerDown={(e) => e.target === e.currentTarget && b.closeRehearsalReport()}
+    >
+      <div className="modal__box confirm">
+        <header className="modal__head">
+          <h2>{v.good ? 'The rehearsal went well' : 'How the rehearsal went'}</h2>
+        </header>
+        <div className="confirm__text">
+          <p>
+            {r.minutes} minute{r.minutes === 1 ? '' : 's'}.{' '}
+            {v.good ? 'Nothing went wrong, and the computer kept up the whole time. You’re ready.' : 'Worth fixing before the event:'}
+          </p>
+          {!v.good && (
+            <ul className="bc-report">
+              {v.lines.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          )}
+          <p className="field__note">Turn Rehearsal off before the real event, so GO LIVE goes live.</p>
+        </div>
+        <footer className="modal__foot">
+          <button type="button" className="btn" onClick={() => b.closeRehearsalReport()}>
+            Close
+          </button>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => {
+              b.setRehearsal(false);
+              b.closeRehearsalReport();
+            }}
+          >
+            Turn Rehearsal off
+          </button>
+        </footer>
+      </div>
+    </div>
   );
 }

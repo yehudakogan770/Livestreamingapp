@@ -357,7 +357,23 @@ impl Capture {
     ///
     /// # Errors
     /// Why it could not start, in words for the operator.
+    #[cfg(test)]
     pub fn start(&self, kind: Kind, mime: &str, name: &str) -> Result<Running, String> {
+        self.start_with(kind, mime, name, false)
+    }
+
+    /// Start a recording or stream; a rehearsed stream is made exactly as a
+    /// real one (so the computer is tested) but sent nowhere.
+    ///
+    /// # Errors
+    /// Why it could not start, in words for the operator.
+    pub fn start_with(
+        &self,
+        kind: Kind,
+        mime: &str,
+        name: &str,
+        rehearse: bool,
+    ) -> Result<Running, String> {
         if Shared::slot(&mut lock(&self.shared.status), kind).is_some() {
             return Err(match kind {
                 Kind::Record => "Already recording.".to_owned(),
@@ -369,7 +385,9 @@ impl Capture {
         let stopping = Arc::new(AtomicBool::new(false));
         let (out, running, finish): (Box<dyn Write + Send>, Running, Finish) = match kind {
             Kind::Record => self.open_recording(session, mime, name)?,
-            Kind::Stream | Kind::Vertical => self.open_stream(kind, session, mime, &stopping)?,
+            Kind::Stream | Kind::Vertical => {
+                self.open_stream(kind, session, mime, &stopping, rehearse)?
+            }
         };
         let (tx, rx) = mpsc::channel::<Vec<u8>>();
         let queued = Arc::new(AtomicU64::new(0));
@@ -503,6 +521,7 @@ impl Capture {
         session: u64,
         mime: &str,
         stopping: &Arc<AtomicBool>,
+        rehearse: bool,
     ) -> Result<(Box<dyn Write + Send>, Running, Finish), String> {
         let ffmpeg = self.ffmpeg.as_ref().ok_or(
             "Streaming needs FFmpeg, which was not found on this computer. \
@@ -510,25 +529,29 @@ impl Capture {
         )?;
         let settings = self.settings();
         let dests = destinations_for(&settings, kind);
-        if dests.is_empty() && kind == Kind::Vertical {
+        if rehearse {
+            // Nothing leaves the computer.
+        } else if dests.is_empty() && kind == Kind::Vertical {
             return Err("No destination gets the vertical version.".to_owned());
-        }
-        if dests.is_empty() && !destinations_for(&settings, Kind::Vertical).is_empty() {
+        } else if dests.is_empty() && !destinations_for(&settings, Kind::Vertical).is_empty() {
             return Err(
                 "Every destination gets the vertical version. Add a wide one too, or set \
                  the picture to Vertical in Settings → Recording and streaming to stream \
                  only vertical."
                     .to_owned(),
             );
-        }
-        if dests.is_empty() {
+        } else if dests.is_empty() {
             return Err(
                 "There is nowhere to stream to yet. Add YouTube, Facebook or another \
                         destination in Settings → Recording and streaming."
                     .to_owned(),
             );
         }
-        let targets: Vec<String> = dests.iter().map(|d| d.target()).collect();
+        let targets: Vec<String> = if rehearse {
+            Vec::new()
+        } else {
+            dests.iter().map(|d| d.target()).collect()
+        };
         let mut child = Command::new(ffmpeg)
             .args(stream_args(
                 mime,
@@ -577,7 +600,11 @@ impl Capture {
             session,
             started_at: now_ms(),
             path: None,
-            destinations: dests.iter().map(|d| d.name.clone()).collect(),
+            destinations: if rehearse {
+                vec!["Rehearsal (nothing sent)".to_owned()]
+            } else {
+                dests.iter().map(|d| d.name.clone()).collect()
+            },
             bytes: 0,
             speed: None,
         };
@@ -799,11 +826,15 @@ fn stream_args(mime: &str, video_kbps: u32, audio_kbps: u32, targets: &[String])
             "pipe:1",
             "-stats_period",
             "1",
-            "-f",
-            "tee",
         ]
         .map(str::to_owned),
     );
+    if targets.is_empty() {
+        // A rehearsal: made in full, sent nowhere.
+        a.extend(["-f", "null", "-"].map(str::to_owned));
+        return a;
+    }
+    a.extend(["-f", "tee"].map(str::to_owned));
     // One failing destination never stops the others.
     let tee = targets
         .iter()
@@ -1157,6 +1188,13 @@ mod tests {
             lock(&seen).iter().all(|s| s.failure.is_none()),
             "stopping is not a failure"
         );
+    }
+
+    #[test]
+    fn a_rehearsal_is_made_in_full_but_sent_nowhere() {
+        let a = stream_args("video/x-matroska;codecs=avc1,opus", 6000, 160, &[]);
+        assert!(a.ends_with(&["-f".to_owned(), "null".to_owned(), "-".to_owned()]));
+        assert!(!a.iter().any(|x| x == "tee"));
     }
 
     #[test]

@@ -225,7 +225,7 @@ export interface EngineClient {
   /** Ask the operator for a folder. Resolves null if canceled. */
   pickFolder(): Promise<string | null>;
   /** Start a recording or stream of what the encoder makes (`mime`); `name` names the file. */
-  captureStart(kind: SessionKind, mime: string, name: string): Promise<CaptureRunning>;
+  captureStart(kind: SessionKind, mime: string, name: string, rehearse?: boolean): Promise<CaptureRunning>;
   /** More encoded picture and sound, in order. */
   captureChunk(session: number, data: ArrayBuffer): Promise<void>;
   captureStop(session: number): Promise<void>;
@@ -614,9 +614,9 @@ class TauriClient implements EngineClient {
     return typeof path === 'string' ? path : null;
   }
 
-  async captureStart(kind: SessionKind, mime: string, name: string): Promise<CaptureRunning> {
+  async captureStart(kind: SessionKind, mime: string, name: string, rehearse = false): Promise<CaptureRunning> {
     try {
-      return await invoke<CaptureRunning>('capture_start', { kind, mime, name });
+      return await invoke<CaptureRunning>('capture_start', { kind, mime, name, rehearse });
     } catch (e) {
       throw new Error(String(e));
     }
