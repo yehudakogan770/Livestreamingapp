@@ -65,8 +65,11 @@ export interface RemoteStatus {
   running: boolean;
   pin: string;
   port: number | null;
-  /** Addresses phones can open, each with a QR code (SVG). */
-  addresses: { url: string; qr: string; voteUrl: string; voteQr: string }[];
+  /**
+   * Addresses phones can open, each with a QR code (SVG). `slidesUrl` is the
+   * speaker's slides page; its QR code also carries the speaker PIN.
+   */
+  addresses: { url: string; qr: string; voteUrl: string; voteQr: string; slidesUrl?: string; slidesQr?: string }[];
   /** Phones connected now. */
   phones: number;
   /** Why it could not start. */
@@ -79,6 +82,20 @@ export interface RemoteStatus {
     voteQr: string | null;
     error: string | null;
   };
+  /** The speaker's clicker (slides only, with its own PIN). */
+  speaker?: SpeakerStatus;
+}
+
+/** The speaker's clicker (mirrors SpeakerStatus in src-tauri/src/remote.rs). */
+export interface SpeakerStatus {
+  /** The speaker PIN (6 digits). */
+  pin: string;
+  /** Paused by the operator: the speaker sees the slides but can't change them. */
+  locked: boolean;
+  /** The speaker may black out the slides. */
+  black: boolean;
+  /** Devices on the slides page now. `speaker`: connected with the speaker PIN (not the remote's). */
+  devices: { id: number; device: string; speaker: boolean }[];
 }
 
 // ----- recording and streaming (mirrors src-tauri/src/capture.rs) -----
@@ -225,6 +242,12 @@ export interface EngineClient {
   setRemote(on: boolean): Promise<RemoteStatus>;
   /** A new PIN; connected phones have to type it again. */
   newRemotePin(): Promise<RemoteStatus>;
+  /** The speaker's clicker: pause it (or let it work again), and whether it may black out the slides. */
+  setSpeaker(rules: { locked?: boolean; black?: boolean }): Promise<RemoteStatus>;
+  /** A new speaker PIN: the speaker's devices have to type it again. */
+  newSpeakerPin(): Promise<RemoteStatus>;
+  /** Disconnect a device from the slides page (it can't come back until a new speaker PIN). */
+  disconnectSpeaker(id: number): Promise<RemoteStatus>;
   /** Choose a data file (CSV or JSON) where it is: it is read again as it changes. Null if canceled. */
   pickDataFile(): Promise<string | null>;
   /** Read the data file's text. */
@@ -610,6 +633,18 @@ class TauriClient implements EngineClient {
     return invoke<RemoteStatus>('new_remote_pin');
   }
 
+  setSpeaker(rules: { locked?: boolean; black?: boolean }): Promise<RemoteStatus> {
+    return invoke<RemoteStatus>('set_speaker', { locked: rules.locked ?? null, black: rules.black ?? null });
+  }
+
+  newSpeakerPin(): Promise<RemoteStatus> {
+    return invoke<RemoteStatus>('new_speaker_pin');
+  }
+
+  disconnectSpeaker(id: number): Promise<RemoteStatus> {
+    return invoke<RemoteStatus>('disconnect_speaker', { id });
+  }
+
   setAudienceInternet(on: boolean): Promise<RemoteStatus> {
     return invoke<RemoteStatus>('set_audience_internet', { on });
   }
@@ -987,6 +1022,7 @@ export class DemoClient implements EngineClient {
       phones: 0,
       error: null,
       internet: { on: false, phase: 'off', voteUrl: null, voteQr: null, error: null },
+      speaker: { pin: '', locked: false, black: false, devices: [] },
     });
     return () => {};
   }
@@ -996,6 +1032,18 @@ export class DemoClient implements EngineClient {
   }
 
   newRemotePin(): Promise<RemoteStatus> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  setSpeaker(): Promise<RemoteStatus> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  newSpeakerPin(): Promise<RemoteStatus> {
+    return Promise.reject(new EngineError({ code: 'unavailable' }));
+  }
+
+  disconnectSpeaker(): Promise<RemoteStatus> {
     return Promise.reject(new EngineError({ code: 'unavailable' }));
   }
 

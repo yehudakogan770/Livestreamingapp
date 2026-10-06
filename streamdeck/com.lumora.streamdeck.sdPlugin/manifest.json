@@ -263,6 +263,54 @@
           "ShowTitle": false
         }
       ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.slidenext",
+      "Name": "Next slide",
+      "Tooltip": "The slideshow’s next slide (the key shows the slide number)",
+      "Icon": "imgs/actions/slidenext",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/slidenext",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.slideback",
+      "Name": "Previous slide",
+      "Tooltip": "The slideshow’s slide before (the key shows the slide number)",
+      "Icon": "imgs/actions/slideback",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/slideback",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.slidefirst",
+      "Name": "First slide",
+      "Tooltip": "Back to the slideshow’s first slide",
+      "Icon": "imgs/actions/slidefirst",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/slidefirst",
+          "ShowTitle": false
+        }
+      ]
     }
   ]
 }

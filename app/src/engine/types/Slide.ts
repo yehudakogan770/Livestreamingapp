@@ -4,4 +4,20 @@ import type { SourceId } from './SourceId';
 /**
  * One slide.
  */
-export type Slide = { type: 'image'; path: string } | { type: 'input'; sourceId: SourceId };
+export type Slide =
+  | {
+      type: 'image';
+      path: string;
+      /**
+       * Speaker notes (shown only on the speaker's remote).
+       */
+      notes?: string | null;
+    }
+  | {
+      type: 'input';
+      sourceId: SourceId;
+      /**
+       * Speaker notes (shown only on the speaker's remote).
+       */
+      notes?: string | null;
+    };
