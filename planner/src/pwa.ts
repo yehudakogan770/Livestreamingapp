@@ -1,3 +1,4 @@
+import { detectDevice, readEnv } from './device';
 // The Planner as an app on the phone (or computer): the service worker that
 // keeps it on the device, a new version waiting to be loaded, installing it
 // (Android and desktop Chrome ask through `beforeinstallprompt`; iPhone and
@@ -137,11 +138,10 @@ export function isStandalone(): boolean {
   }
 }
 
-/** A phone or tablet: iPhone/iPad, Android, or a touch-first screen. */
-export function isMobile(ua = navigator.userAgent): boolean {
-  if (isIos() || /Android|Mobi/i.test(ua)) return true;
+/** A phone or tablet (the same device model as the layout). Computers are never asked to install. */
+export function isMobile(): boolean {
   try {
-    return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches;
+    return detectDevice(readEnv()) !== 'computer';
   } catch {
     return false;
   }
