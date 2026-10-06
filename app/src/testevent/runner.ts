@@ -16,6 +16,9 @@ import { defaultScoreboard } from '../engine/score';
 import { defaultSlideshow } from '../engine/slideshow';
 import { defaultSplit } from '../engine/split';
 import { TEXT_TEMPLATES } from '../engine/text';
+import { defaultBackup, MANUAL_GRACE_MS } from '../engine/backup';
+import { backupLog as defaultBackupLog, type BackupLog } from '../engine/backupLog';
+import { inputHealth, type InputHealth } from '../engine/inputHealth';
 import type { Action } from '../engine/types/Action';
 import type { NewSource } from '../engine/types/NewSource';
 import type { Show } from '../engine/types/Show';
@@ -52,6 +55,9 @@ export interface RunnerDeps {
   signal: AbortSignal;
   /** Tauri commands (a test can replace it). */
   call?: <T>(cmd: string, args?: Record<string, unknown>) => Promise<T>;
+  /** What has a picture, and what the backup lineup did (a test can replace them). */
+  health?: InputHealth;
+  backupLog?: BackupLog;
 }
 
 export interface Progress {
@@ -132,6 +138,8 @@ export function neededMBps(s: Pick<CaptureSettings, 'videoKbps' | 'audioKbps' | 
 export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: RunnerDeps): Promise<RunResult> {
   const call = deps.call ?? (<T>(cmd: string, args?: Record<string, unknown>) => invoke<T>(cmd, args));
   const { client, signal } = deps;
+  const health = deps.health ?? inputHealth;
+  const backupLog = deps.backupLog ?? defaultBackupLog;
   const why = cannotStart(deps.broadcast()?.status);
   if (why) throw new Error(why);
   const t0 = Date.now();
@@ -559,6 +567,32 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
               if (show().screens.live.blank) {
                 await act({ type: 'setBlank', screens: ['live'], value: false });
                 throw new Error('Fade to black did not come back');
+              }
+              break;
+            }
+            case 'backup': {
+              // A camera on air loses its picture (pretended): the next one in the lineup must go on air, and say so.
+              const [lost, spare] = pics;
+              if (!lost || !spare) throw new Error('Two inputs with a picture are needed');
+              const before = show().event.backup ?? defaultBackup();
+              await act({ type: 'updateEvent', patch: { backup: { ...defaultBackup(), lineup: [lost.id, spare.id], screens: ['live'] } } });
+              try {
+                await act({ type: 'cutTo', screen: 'live', sourceId: lost.id });
+                // The cut above is a take of the operator's, which the lineup never overrules straight away.
+                await sleep(MANUAL_GRACE_MS + 500);
+                const mark = backupLog.lastId();
+                const t = Date.now();
+                health.simulate(lost.id, 8000);
+                await waitFor(`${spare.name} to go on air in place of ${lost.name}`, () => show().screens.live.program === spare.id, 6000);
+                const took = Date.now() - t;
+                const said = backupLog.since(mark).find((n) => n.kind === 'switched' && n.from === lost.id && n.to === spare.id);
+                if (!said) throw new Error('The switch was made but the operator was not told');
+                await waitFor(`${lost.name} to be marked “No signal”`, () => !!show().noSignal?.includes(lost.id), 3000);
+                note(`${lost.name} lost: switched to ${spare.name} after ${(took / 1000).toFixed(1)} s, told at once, marked “No signal”`);
+              } finally {
+                health.endSimulation(lost.id);
+                backupLog.settle('live', lost.id);
+                await act({ type: 'updateEvent', patch: { backup: before } });
               }
               break;
             }

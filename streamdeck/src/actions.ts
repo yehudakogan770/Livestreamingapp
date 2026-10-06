@@ -20,6 +20,7 @@ export const KINDS = [
   'nextcue',
   'screen',
   'rehearsal',
+  'backup',
 ] as const;
 export type Kind = (typeof KINDS)[number];
 
@@ -187,5 +188,7 @@ export function request(kind: Kind, s: KeySettings, state: DeckState | null, dec
     }
     case 'nextcue':
       return state.run.cues ? { to: 'action', body: { type: 'nextCue' } } : { to: 'none', why: 'no cues' };
+    case 'backup':
+      return { to: 'action', body: { type: 'setBackupOn', value: !state.backup } };
   }
 }

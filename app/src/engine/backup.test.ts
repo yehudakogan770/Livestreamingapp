@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   automaticLineup,
   BACK_STEADY_MS,
@@ -12,7 +12,7 @@ import {
   SWITCH_GAP_MS,
 } from './backup';
 import { emptyShow } from './client';
-import { InputHealth } from './inputHealth';
+import { InputHealth, watchFrames } from './inputHealth';
 import type { Backup } from './types/Backup';
 import type { Show } from './types/Show';
 import type { NewSource } from './types/NewSource';
@@ -104,9 +104,7 @@ describe('failover', () => {
     const s = makeShow({ fadeMs: 300 });
     const f = new Failover();
     run(f, s, [], 0);
-    expect(run(f, s, ['cam1'], 10_000).actions).toEqual([
-      { type: 'playNow', screen: 'live', sourceId: 'cam2', transition: { kind: 'fade', durationMs: 300 } },
-    ]);
+    expect(run(f, s, ['cam1'], 10_000).actions).toEqual([{ type: 'playNow', screen: 'live', sourceId: 'cam2', transition: { kind: 'fade', durationMs: 300 } }]);
   });
 
   it('does nothing when it is off', () => {
@@ -299,5 +297,60 @@ describe('input health', () => {
     expect(h.downAll(['srt', 'cam1'], 1500)).toEqual(new Map([['srt', 'The stream isn’t coming in']]));
     h.setFailed('srt', null);
     expect(h.downAll(['srt'], 1500).size).toBe(0);
+  });
+
+  it('counts the frames a video element shows, and stops counting when told', () => {
+    vi.useFakeTimers();
+    try {
+      let now = 0;
+      const h = new InputHealth(() => now);
+      let cb: (() => void) | null = null;
+      const video = {
+        requestVideoFrameCallback: (f: () => void) => ((cb = f), 1),
+        cancelVideoFrameCallback: () => (cb = null),
+        closest: () => null,
+        style: { opacity: '' },
+        srcObject: null,
+      } as unknown as HTMLVideoElement;
+      const stop = watchFrames('cam1', video, h, 100);
+      cb!();
+      now = 1000;
+      h.beat();
+      cb!();
+      expect(h.down('cam1', 1500)).toBeNull();
+      now = 3000;
+      h.beat();
+      vi.advanceTimersByTime(200);
+      expect(h.down('cam1', 1500)).toBe('No picture coming in');
+      stop();
+      expect(cb).toBeNull();
+      expect(h.down('cam1', 1500)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('never calls a picture drawn some other way (green screen) lost', () => {
+    vi.useFakeTimers();
+    try {
+      let now = 0;
+      const h = new InputHealth(() => now);
+      const video = {
+        requestVideoFrameCallback: () => 1,
+        cancelVideoFrameCallback: () => {},
+        closest: (sel: string) => (sel === '.keyed' ? {} : null),
+        style: { opacity: '0' },
+        srcObject: null,
+      } as unknown as HTMLVideoElement;
+      watchFrames('cam1', video, h, 100);
+      for (let t = 0; t < 20; t++) {
+        now += 500;
+        h.beat();
+        vi.advanceTimersByTime(500);
+        expect(h.down('cam1', 1500)).toBeNull();
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

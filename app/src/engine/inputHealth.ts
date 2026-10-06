@@ -153,25 +153,54 @@ type FrameVideo = HTMLVideoElement & {
   cancelVideoFrameCallback?: (h: number) => void;
 };
 
+/** Frames the camera itself has sent (Chromium's track stats), whether or not they are drawn. */
+function framesSent(video: HTMLVideoElement): number | null {
+  const src = video.srcObject as MediaStream | null;
+  const track = src && typeof src.getVideoTracks === 'function' ? src.getVideoTracks()[0] : undefined;
+  const total = (track as (MediaStreamTrack & { stats?: { totalFrames?: unknown } }) | undefined)?.stats?.totalFrames;
+  return typeof total === 'number' ? total : null;
+}
+
+/** A picture that is drawn some other way (green screen, picture delay): its own frames can't be seen. */
+const drawnElsewhere = (video: HTMLVideoElement) => !!video.closest('.keyed') || video.style.opacity === '0';
+
 /**
- * Count a video element's frames for an input (a camera). Does nothing where
- * the browser can't say when frames arrive. Returns the function that stops.
+ * Count a camera's frames for an input. Uses the frames the camera sends
+ * where the browser can say (so it works however the picture is drawn), else
+ * the frames shown in this video element. Does nothing where neither can be
+ * told. Returns the function that stops.
  */
-export function watchFrames(id: string, video: HTMLVideoElement, health: InputHealth = inputHealth): () => void {
+export function watchFrames(id: string, video: HTMLVideoElement, health: InputHealth = inputHealth, pollMs = 250): () => void {
   const v = video as FrameVideo;
-  if (typeof v.requestVideoFrameCallback !== 'function') return () => {};
+  const canShow = typeof v.requestVideoFrameCallback === 'function';
+  const canCount = typeof MediaStream !== 'undefined' && typeof MediaStreamTrack !== 'undefined' && 'stats' in MediaStreamTrack.prototype;
+  if (!canShow && !canCount) return () => {};
   const stop = health.watch(id);
-  let handle = 0;
   let alive = true;
-  const next = () => {
-    if (!alive) return;
-    health.frame(id);
+  let handle = 0;
+  let last: number | null = null;
+  if (canShow) {
+    const next = () => {
+      if (!alive) return;
+      if (framesSent(v) === null) health.frame(id);
+      handle = v.requestVideoFrameCallback!(next);
+    };
     handle = v.requestVideoFrameCallback!(next);
-  };
-  handle = v.requestVideoFrameCallback(next);
+  }
+  const poll = setInterval(() => {
+    const sent = framesSent(v);
+    if (sent !== null) {
+      if (sent !== last) health.frame(id);
+      last = sent;
+    } else if (!canShow || drawnElsewhere(v)) {
+      // Nothing to judge by: never call it lost for that.
+      health.frame(id);
+    }
+  }, pollMs);
   return () => {
     alive = false;
-    v.cancelVideoFrameCallback?.(handle);
+    clearInterval(poll);
+    if (canShow) v.cancelVideoFrameCallback?.(handle);
     stop();
   };
 }

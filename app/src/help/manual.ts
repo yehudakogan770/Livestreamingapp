@@ -201,7 +201,7 @@ export const MANUAL: Topic[] = [
     keywords: 'remote phone stream deck companion clicker presenter midi controller keyboard',
     body: [
       '• Settings → Phone remote…: control Lumora from a phone (with a PIN).',
-      '• Stream Deck / Companion: buttons for takes, overlays, slides, the teleprompter and more.',
+      '• Stream Deck / Companion: buttons for takes, overlays, slides, the teleprompter, the backup lineup and more.',
       '• Presenter clickers move the slides (and the words of anything shown a part at a time).',
       '• Settings → MIDI controller…: faders and buttons on a MIDI desk.',
       'Help → Keyboard shortcuts lists every key.',
@@ -237,9 +237,28 @@ export const MANUAL: Topic[] = [
     body: [
       '• PANIC (double-click): the audience sees nothing (black). One click brings it back. Your on-air picture shows a small “PANIC on” tag.',
       '• If a camera or video stops working, the screen shows the logo (the event’s, or Lumora’s until you choose one) instead of freezing.',
+      '• If the camera on air goes out, the backup lineup switches to the next camera by itself (see “Backup lineup: if a camera goes out”).',
       '• Blank Live / Back / Monitor: that screen goes black (B for the one you control).',
       '• All good (bottom left) turns yellow or red when something needs attention; click it to see what.',
       '• CPU and graphics use are shown at the bottom; if they are high, close other programs.',
+    ],
+  },
+  {
+    id: 'backup',
+    title: 'Backup lineup: if a camera goes out',
+    keywords: 'backup lineup failover camera lost unplugged no signal frozen dropped stream ndi spare switch automatic',
+    body: [
+      'If the camera on air goes out (it is unplugged, stops sending pictures, or a stream or NDI source drops), Lumora switches to the next camera in your backup lineup by itself, in about a second and a half. It skips any that are out too. If none has a picture, the audience sees your logo.',
+      'It is on from the start. With two or more cameras the lineup is automatic: your cameras in the order of your inputs, then the logo.',
+      '1. Settings → Backup lineup… (also in a camera’s ⋯ menu, and in Adjust picture…).',
+      '2. To choose the order yourself, pick My own order. Move inputs up and down, take them out, or add another one, such as a wide shot or a slide.',
+      '3. Choose the screens it looks after (Live, Back, Monitor), how long without a picture counts as lost, and a cut or a quick fade.',
+      'When it switches, a notice at the top says so, for example “Camera 1 lost: switched to Camera 2”, with the time. The camera’s tile says No signal, and the problem light lists it.',
+      'When the camera comes back, Lumora does not switch back by itself. The notice says “Camera 1 is back”; click Take Camera 1 when you are ready. Turn on Switch back by itself when it returns if you prefer.',
+      '• Your own take always wins: right after you take something, the lineup waits, and it never switches back and forth.',
+      '• If the camera in Next goes out, its tile and the Next monitor say No signal.',
+      '• Try it (in the Backup lineup window) pretends the camera on air lost its picture for 6 seconds. Use it during a rehearsal. The test event checks it too.',
+      '• A Stream Deck key turns the lineup on and off.',
     ],
   },
   {

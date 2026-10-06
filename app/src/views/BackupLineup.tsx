@@ -1,99 +1,21 @@
 // The backup lineup in the control window: the watcher that notices an input
 // on air losing its picture and switches to the next one, the notice that
 // tells the operator, and the settings dialog. The rules are in
-// ../engine/backup.ts; what has a picture in ../engine/inputHealth.ts.
+// ../engine/backup.ts; what has a picture in ../engine/inputHealth.ts; what
+// it did in ../engine/backupLog.ts.
 
 import { ChevronDown, ChevronUp, ListOrdered, Plus, RotateCcw, VideoOff, X } from 'lucide-react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { automaticLineup, backupOf, canStandIn, cleanBackup, Failover, lineupOf, type Notice } from '../engine/backup';
+import { automaticLineup, backupOf, canStandIn, cleanBackup, Failover, lineupOf } from '../engine/backup';
 import type { EngineClient } from '../engine/client';
 import { inputHealth, type InputHealth } from '../engine/inputHealth';
 import type { Action } from '../engine/types/Action';
 import type { Backup } from '../engine/types/Backup';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
+import { backupLog, BackupLog, clockTime, noteText, SCREEN_NAME } from '../engine/backupLog';
 import { useProblemStore } from '../problems/problems';
 import './BackupLineup.css';
-
-const SCREEN_NAME: Record<ScreenId, string> = { live: 'Live Screen', back: 'Back Screen', monitor: 'Monitor' };
-
-/** One notice, with the names as they were when it happened. */
-export interface BackupNote extends Notice {
-  id: number;
-  /** Wall-clock time (for "at 8:42 PM"). */
-  wallAt: number;
-  fromName: string;
-  toName: string | null;
-}
-
-/** What the backup lineup did, newest last: shown as notices, kept for the test event's report. */
-export class BackupLog {
-  private notes: BackupNote[] = [];
-  private open: BackupNote[] = [];
-  private listeners = new Set<() => void>();
-  private nextId = 1;
-
-  push(n: Notice, show: Show, wallAt = Date.now()): BackupNote {
-    const name = (id: string | null) => (id === null ? null : (show.sources.find((s) => s.id === id)?.name ?? 'an input'));
-    const note: BackupNote = { ...n, id: this.nextId++, wallAt, fromName: name(n.from) ?? '', toName: name(n.to) };
-    this.notes = [...this.notes.slice(-199), note];
-    // A newer word about the same input on the same screen replaces the older one.
-    this.open = [...this.open.filter((x) => !(x.screen === n.screen && x.from === n.from)), note].slice(-4);
-    this.changed();
-    return note;
-  }
-
-  dismiss(id: number): void {
-    const before = this.open.length;
-    this.open = this.open.filter((x) => x.id !== id);
-    if (this.open.length !== before) this.changed();
-  }
-
-  /** Forget the notices about an input (it was taken back by hand). */
-  settle(screen: ScreenId, from: string): void {
-    const before = this.open.length;
-    this.open = this.open.filter((x) => !(x.screen === screen && x.from === from));
-    if (this.open.length !== before) this.changed();
-  }
-
-  all = (): BackupNote[] => this.notes;
-  active = (): BackupNote[] => this.open;
-  since(id: number): BackupNote[] {
-    return this.notes.filter((n) => n.id > id);
-  }
-  lastId(): number {
-    return this.nextId - 1;
-  }
-
-  subscribe = (l: () => void): (() => void) => {
-    this.listeners.add(l);
-    return () => this.listeners.delete(l);
-  };
-
-  private changed() {
-    for (const l of this.listeners) l();
-  }
-}
-
-/** This window's backup log. */
-export const backupLog = new BackupLog();
-
-export const clockTime = (at: number) => new Date(at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' });
-
-/** What a notice says, in plain words. */
-export function noteText(n: BackupNote): string {
-  const where = n.screen === 'live' ? '' : ` on the ${SCREEN_NAME[n.screen]}`;
-  switch (n.kind) {
-    case 'switched':
-      return `${n.fromName} lost: switched to ${n.toName ?? 'the next input'}${where}`;
-    case 'allDown':
-      return `${n.fromName} lost, and nothing in the backup lineup has a picture${where}: the audience sees the logo`;
-    case 'back':
-      return `${n.fromName} is back`;
-    case 'switchedBack':
-      return `${n.fromName} is back: switched back to it${where}`;
-  }
-}
 
 /**
  * Watches the inputs and runs the failover. Lives in the control window
@@ -155,6 +77,7 @@ export function BackupWatcher({
   // The failover itself, a few times a second and whenever something changes.
   useEffect(() => {
     let sent = (latest.current.noSignal ?? []).join('\n');
+    let sentAt = 0;
     const tick = () => {
       const s = latest.current;
       const b = backupOf(s);
@@ -164,8 +87,11 @@ export function BackupWatcher({
       );
       const ids = [...down.keys()].sort();
       const key = ids.join('\n');
-      if (key !== sent) {
+      // Told again if the show lost it (another event opened), but not on every tick while it travels.
+      const now = health.now();
+      if (key !== (s.noSignal ?? []).join('\n') && (key !== sent || now - sentAt > 2000)) {
         sent = key;
+        sentAt = now;
         void client.dispatch({ type: 'setNoSignal', ids }).catch(() => {});
       }
       // Problem center: a picture that stopped without any other word about it.
@@ -183,7 +109,7 @@ export function BackupWatcher({
           });
         else store?.clear(me, k);
       }
-      const r = failover.current!.step(s, new Set(down.keys()), health.now());
+      const r = failover.current!.step(s, new Set(down.keys()), now);
       for (const a of r.actions) void client.dispatch(a).catch(() => {});
       for (const n of r.notices) log.push(n, s);
       // An input taken back by hand needs no notice any more.
@@ -334,20 +260,19 @@ export function BackupDialog({
             picture, switch to the next one in the lineup by itself
           </label>
           <p className="field__note">
-            A camera that is unplugged, stops sending pictures, or a stream that drops out counts as lost. Inputs that are also out are skipped. If none
-            has a picture, the audience sees the logo.
+            A camera that is unplugged, stops sending pictures, or a stream that drops out counts as lost. Inputs that are also out are skipped. If none has a
+            picture, the audience sees the logo.
           </p>
 
           <div className="field">
             <span className="field__label">The lineup</span>
             <div className="bkp__modes" role="radiogroup" aria-label="The lineup">
               <label className="check">
-                <input type="radio" name="bkp-mode" checked={!custom} onChange={() => set({ lineup: [] })} /> Automatic: the cameras in input order, then
-                the logo
+                <input type="radio" name="bkp-mode" checked={!custom} onChange={() => set({ lineup: [] })} /> Automatic: the cameras in input order, then the
+                logo
               </label>
               <label className="check">
-                <input type="radio" name="bkp-mode" checked={custom} onChange={() => set({ lineup: automaticLineup(show) })} /> My own
-                order
+                <input type="radio" name="bkp-mode" checked={custom} onChange={() => set({ lineup: automaticLineup(show) })} /> My own order
               </label>
             </div>
             <ol className="bkp__list" aria-label="Lineup order">
@@ -497,9 +422,7 @@ export function BackupDialog({
               {trying ? 'Testing…' : 'Try it'}
             </button>
             <span className="field__note">
-              {onAir
-                ? `Pretends ${name(onAir)} (on air now) loses its picture for 6 seconds. Best during a rehearsal.`
-                : 'Put something on air first.'}
+              {onAir ? `Pretends ${name(onAir)} (on air now) loses its picture for 6 seconds. Best during a rehearsal.` : 'Put something on air first.'}
             </span>
           </div>
         </div>

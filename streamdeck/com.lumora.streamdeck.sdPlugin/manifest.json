@@ -247,6 +247,22 @@
           "ShowTitle": false
         }
       ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.backup",
+      "Name": "Backup lineup",
+      "Tooltip": "Turn the backup lineup on or off (if the camera on air goes out, the next one goes on air)",
+      "Icon": "imgs/actions/backup",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/backup",
+          "ShowTitle": false
+        }
+      ]
     }
   ]
 }

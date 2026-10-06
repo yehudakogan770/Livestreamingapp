@@ -6,7 +6,8 @@ import { demoApply } from '../engine/demo';
 import { InputHealth } from '../engine/inputHealth';
 import type { Action } from '../engine/types/Action';
 import type { Show } from '../engine/types/Show';
-import { BackupDialog, BackupLog, BackupNotices, BackupWatcher } from './BackupLineup';
+import { BackupLog } from '../engine/backupLog';
+import { BackupDialog, BackupNotices, BackupWatcher } from './BackupLineup';
 
 function makeShow(): Show {
   let s = emptyShow();

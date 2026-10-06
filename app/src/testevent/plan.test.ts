@@ -138,12 +138,30 @@ describe('the show the test runs', () => {
       'pesukim',
       'preset',
       'blank',
+      'backup',
       'replay',
       'background',
       'autoframe',
       'captions',
     ])
       expect(steps).toContain(k);
+  });
+
+  test('a camera loss is pretended to check the backup lineup, even without a camera', () => {
+    const e = env({ cameras: [] });
+    const o = opts();
+    const inputs = planInputs(o, e).inputs;
+    expect(pictureInputs(inputs).length).toBeGreaterThanOrEqual(2);
+    expect(planShow(o, e, inputs).map((s) => s.kind)).toContain('backup');
+    expect(
+      planShow(
+        o,
+        e,
+        inputs.filter(
+          (i) => i.kind !== 'pattern' && i.kind !== 'color' && i.kind !== 'title' && i.kind !== 'split' && i.kind !== 'image' && i.kind !== 'video',
+        ),
+      ).map((s) => s.kind),
+    ).not.toContain('backup');
   });
 
   test('no camera: no background removal or auto-framing; no stream when off', () => {

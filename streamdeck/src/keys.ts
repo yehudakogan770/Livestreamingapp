@@ -231,5 +231,9 @@ function baseModel(kind: Kind, s: KeySettings, { state, deck, now }: KeyContext)
       const on = !!state?.app.rehearsal;
       return { icon: 'rehearsal', label: 'REHEARSAL', sub: on ? 'On' : 'Off', tone: on ? 'warn' : 'idle' };
     }
+    case 'backup': {
+      const on = !!state?.backup;
+      return { icon: 'backup', label: 'BACKUP', sub: state ? (on ? 'Lineup on' : 'Lineup off') : null, tone: on ? 'on' : 'idle' };
+    }
   }
 }

@@ -5,7 +5,7 @@ import { defaultCountdown, type EngineClient } from '../engine/client';
 import type { AtZero } from '../engine/types/AtZero';
 import type { SafeScreen } from '../engine/types/SafeScreen';
 import type { Show } from '../engine/types/Show';
-import { backupOf, lineupOf } from '../engine/backup';
+import { backupOf, lineupOf, logoInput } from '../engine/backup';
 import './EventSetup.css';
 
 type Ending = 'takeNext' | 'logo' | 'showText' | 'blank' | 'hold';
@@ -24,7 +24,9 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
   const [panicShows, setPanicShows] = useState<SafeScreen>(ev.panicShows);
   const backup = backupOf(show);
   const [backupOn, setBackupOn] = useState(backup.on);
-  const lineup = lineupOf(show).map((id) => show.sources.find((s) => s.id === id)?.name ?? id);
+  const lineupIds = lineupOf(show);
+  const lineup = lineupIds.map((id) => show.sources.find((s) => s.id === id)?.name ?? id);
+  const endsOnLogo = lineupIds.at(-1) === logoInput(show)?.id;
   // The countdown ending applies to every countdown input (and new ones copy it).
   const cds = show.sources.flatMap((s) => (s.kind.type === 'countdown' ? [{ id: s.id, timer: s.kind.timer }] : []));
   const firstTimer = cds[0]?.timer ?? defaultCountdown();
@@ -118,11 +120,12 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
       <div className="field">
         <span className="field__label">If the camera on air goes out</span>
         <label className="check">
-          <input type="checkbox" checked={backupOn} onChange={(e) => setBackupOn(e.target.checked)} /> Switch to the next one in the backup lineup by
-          itself
+          <input type="checkbox" checked={backupOn} onChange={(e) => setBackupOn(e.target.checked)} /> Switch to the next one in the backup lineup by itself
         </label>
         <span className="field__note">
-          {lineup.length >= 2 ? `The lineup: ${lineup.join(' → ')}, then the logo.` : 'Once the event has two or more cameras, they back each other up.'}{' '}
+          {lineup.length >= 2
+            ? `The lineup: ${lineup.join(' → ')}${endsOnLogo ? '' : ', then the logo'}.`
+            : 'Once the event has two or more cameras, they back each other up.'}{' '}
           Change the order in Settings → Backup lineup….
         </span>
       </div>

@@ -34,6 +34,16 @@ describe('what each key sends', () => {
     expect(body(request('overlay', { channel: '9' }, state(), 'live'))).toEqual({ type: 'setOverlayOn', channel: 0, value: false });
   });
 
+  it('the backup lineup: on and off (on unless the event turned it off)', () => {
+    const on = { ...sampleShow(), event: { backup: { on: true } } };
+    const off = { ...sampleShow(), event: { backup: { on: false } } };
+    expect(state({}, on).backup).toBe(true);
+    expect(state({}, sampleShow()).backup).toBe(false);
+    expect(body(request('backup', {}, state({}, on), 'live'))).toEqual({ type: 'setBackupOn', value: false });
+    expect(body(request('backup', {}, state({}, off), 'live'))).toEqual({ type: 'setBackupOn', value: true });
+    expect(kindOf(uuid('backup'))).toBe('backup');
+  });
+
   it('presets, cues and countdowns', () => {
     expect(body(request('preset', { preset: 'p1' }, state(), 'live'))).toEqual({ type: 'pickPreset', id: 'p1' });
     expect(body(request('preset', { preset: 'gone', presetName: 'Speeches' }, state(), 'live'))).toEqual({ type: 'pickPreset', id: 'p2' });

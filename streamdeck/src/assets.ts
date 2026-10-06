@@ -22,6 +22,7 @@ export const ICON_OF: Record<Kind, IconName> = {
   nextcue: 'cue',
   screen: 'screen',
   rehearsal: 'rehearsal',
+  backup: 'backup',
 };
 
 /** The plugin's icon: Lumora's mark on its dark tile. */
