@@ -2,26 +2,10 @@
 // (mouse, pen or finger alike), and the Back button closing a full-screen sheet.
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useDevice } from './device';
 
-/** Phones: narrow windows, and phones on their side (short and touch). Keep in step with planner.css. */
-export const PHONE_QUERY = '(max-width: 760px), (pointer: coarse) and (max-height: 500px)';
-
-/** Whether a media query matches now (false where there is no matchMedia, as in tests). */
-export function useMedia(query: string): boolean {
-  const get = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
-  const [on, setOn] = useState(get);
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return;
-    const m = window.matchMedia(query);
-    const f = () => setOn(m.matches);
-    f();
-    m.addEventListener('change', f);
-    return () => m.removeEventListener('change', f);
-  }, [query]);
-  return on;
-}
-
-export const usePhone = (): boolean => useMedia(PHONE_QUERY);
+/** The phone layout: a phone (see device.ts), not merely a narrow window. */
+export const usePhone = (): boolean => useDevice() === 'phone';
 
 /** A drag in progress: the row picked up, and the gap it would drop into (0 = before the first row). */
 export interface Drag {

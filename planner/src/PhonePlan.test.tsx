@@ -6,10 +6,11 @@ import type { ChatStore } from './useChat';
 import type { BlockStore } from './useBlocks';
 import { blankBlock } from './blocks';
 
-// A phone-sized window: every media query matches (the phone layout's).
+// A phone: a finger for a pointer and a phone-sized window.
 beforeAll(() => {
+  Object.assign(window, { innerWidth: 390, innerHeight: 844 });
   window.matchMedia = ((query: string) => ({
-    matches: true,
+    matches: !query.includes('pointer: fine'),
     media: query,
     onchange: null,
     addEventListener: () => {},

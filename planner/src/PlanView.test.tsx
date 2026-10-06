@@ -58,6 +58,26 @@ vi.mock('./session', () => ({ db: () => ({}) }));
 const { PlanView } = await import('./PlanView');
 
 describe('plan view', () => {
+  it('works from the keyboard on a computer: arrows select, Enter edits, N adds, Esc deselects', () => {
+    render(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} />);
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+    expect(document.getElementById('cue-a')).toHaveClass('is-sel');
+    fireEvent.keyDown(document.body, { key: 'ArrowDown' });
+    expect(document.getElementById('cue-b')).toHaveClass('is-sel');
+    expect(screen.getByText('Mic check first')).toBeInTheDocument();
+    fireEvent.keyDown(document.body, { key: 'Enter' });
+    expect(screen.getByLabelText('Cue 2')).toHaveFocus();
+    // Typing in a cell: N is a letter, not a new cue.
+    fireEvent.keyDown(screen.getByLabelText('Cue 2'), { key: 'n' });
+    expect(store.addCue).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByLabelText('Cue 2'), { key: 'Escape' });
+    expect(screen.getByLabelText('Cue 2')).not.toHaveFocus();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(document.getElementById('cue-b')).not.toHaveClass('is-sel');
+    fireEvent.keyDown(document.body, { key: 'n' });
+    expect(store.addCue).toHaveBeenCalledWith(null);
+  });
+
   it('shows the cue sheet with times, totals and who is here', () => {
     render(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} />);
     expect(screen.getByDisplayValue('Fall Dinner')).toBeInTheDocument();

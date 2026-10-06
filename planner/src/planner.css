@@ -1762,877 +1762,884 @@ html {
 
 /* Tablets and narrower windows: the details stay on the side, a little narrower;
    the cue sheet drops the columns the details panel shows anyway. */
-@media (min-width: 761px) and (max-width: 1100px) {
-  .plan__body {
+@media (max-width: 1100px) {
+  :where(:root:not([data-device='phone'])) .plan__body {
     grid-template-columns: minmax(0, 1fr) 280px;
   }
-  .cues {
+  :where(:root:not([data-device='phone'])) .cues {
     min-width: 0;
   }
-  .c-notes,
-  .cues td.notes,
-  .cues th.th-notes {
-    display: none;
+  /* The cue's name takes the room the notes leave. */
+  :where(:root:not([data-device='phone'])) .c-title {
+    width: auto;
   }
-  .signin {
+  /* A hidden column keeps its cells (so the columns after it stay in line) at no width. */
+  :where(:root:not([data-device='phone'])) .c-notes {
+    width: 0;
+  }
+  :where(:root:not([data-device='phone'])) .cues td.notes,
+  :where(:root:not([data-device='phone'])) .cues th.th-notes {
+    visibility: hidden;
+    padding: 0 !important;
+    font-size: 0;
+  }
+  :where(:root:not([data-device='phone'])) .signin {
     grid-template-columns: minmax(0, 1fr) minmax(360px, 1fr);
   }
-  .signin__about {
+  :where(:root:not([data-device='phone'])) .signin__about {
     padding: 32px;
   }
 }
-@media (min-width: 761px) and (max-width: 900px) {
-  .c-hint,
-  .cues td.hint,
-  .cues th.th-hint {
-    display: none;
+@media (max-width: 900px) {
+  :where(:root:not([data-device='phone'])) .c-hint {
+    width: 0;
   }
-  .c-seg {
+  :where(:root:not([data-device='phone'])) .cues td.hint,
+  :where(:root:not([data-device='phone'])) .cues th.th-hint {
+    visibility: hidden;
+    padding: 0 !important;
+    font-size: 0;
+  }
+  :where(:root:not([data-device='phone'])) .c-seg {
     width: 100px;
   }
-  .signin {
+  :where(:root:not([data-device='phone'])) .signin {
     grid-template-columns: 1fr;
   }
-  .signin__about {
+  :where(:root:not([data-device='phone'])) .signin__about {
     display: none;
   }
-  .signin__brand {
+  :where(:root:not([data-device='phone'])) .signin__brand {
     display: block;
     margin-bottom: 12px;
   }
 }
 /* Touch screens that keep the table (tablets): bigger rows and buttons. */
-@media (pointer: coarse) and (min-width: 761px) {
-  :root {
-    --h: 40px;
-  }
-  .cues td {
-    height: 46px;
-  }
-  .cell {
-    height: 38px;
-  }
-  .c-handle {
-    width: 30px;
-  }
-  .grip {
-    height: 18px;
-    opacity: 1;
-  }
-  .inspector__in .field > span {
-    font-size: 13px;
-  }
+:root:where([data-device='tablet']) {
+  --h: 40px;
+}
+:where([data-device='tablet']) .cues td {
+  height: 46px;
+}
+:where([data-device='tablet']) .cell {
+  height: 38px;
+}
+:where([data-device='tablet']) .c-handle {
+  width: 30px;
+}
+:where([data-device='tablet']) .grip {
+  height: 18px;
+  opacity: 1;
+}
+:where([data-device='tablet']) .inspector__in .field > span {
+  font-size: 13px;
 }
 
 /* ---- Phones: cards, a full-screen sheet for one cue, actions at the bottom.
-   The query matches PHONE_QUERY in touch.ts. ---- */
-@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
-  :root {
-    --h: 44px;
-  }
-  body {
-    font-size: 15px;
-  }
-  /* 16px or larger, or iOS zooms in on the field being typed in. */
-  input,
-  select,
-  textarea,
-  .input {
-    font-size: 16px;
-  }
-  .btn {
-    padding: 0 16px;
-    font-size: 15px;
-    border-radius: 8px;
-  }
-  .input {
-    border-radius: 8px;
-    padding: 0 12px;
-  }
-  textarea.input {
-    height: auto;
-    padding: 10px 12px;
-  }
-  select.input {
-    padding-right: 34px;
-    background-position: right 12px center;
-  }
-  input[type='date'].input,
-  input[type='time'].input {
-    width: 100%;
-    min-width: 0;
-    -webkit-appearance: none;
-    appearance: none;
-    text-align: left;
-    font-family: var(--mono);
-    font-size: 16px;
-  }
-  input[type='date']::-webkit-date-and-time-value,
-  input[type='time']::-webkit-date-and-time-value {
-    text-align: left;
-  }
-  .grid2,
-  .grid2.insp-group {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  .field {
-    gap: 6px;
-  }
-  .field > span,
-  .field__label {
-    font-size: 13px;
-  }
-  .small,
-  .mono {
-    font-size: 13px;
-  }
+   The phone layout: <html data-device="phone"> (device.ts). ---- */
+:root:where([data-device='phone']) {
+  --h: 44px;
+}
+:where([data-device='phone']) body {
+  font-size: 15px;
+}
+/* 16px or larger, or iOS zooms in on the field being typed in. */
+:where([data-device='phone']) input,
+:where([data-device='phone']) select,
+:where([data-device='phone']) textarea,
+:where([data-device='phone']) .input {
+  font-size: 16px;
+}
+:where([data-device='phone']) .btn {
+  padding: 0 16px;
+  font-size: 15px;
+  border-radius: 8px;
+}
+:where([data-device='phone']) .input {
+  border-radius: 8px;
+  padding: 0 12px;
+}
+:where([data-device='phone']) textarea.input {
+  height: auto;
+  padding: 10px 12px;
+}
+:where([data-device='phone']) select.input {
+  padding-right: 34px;
+  background-position: right 12px center;
+}
+:where([data-device='phone']) input[type='date'].input,
+:where([data-device='phone']) input[type='time'].input {
+  width: 100%;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 16px;
+}
+:where([data-device='phone']) input[type='date']::-webkit-date-and-time-value,
+:where([data-device='phone']) input[type='time']::-webkit-date-and-time-value {
+  text-align: left;
+}
+:where([data-device='phone']) .grid2,
+:where([data-device='phone']) .grid2.insp-group {
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+:where([data-device='phone']) .field {
+  gap: 6px;
+}
+:where([data-device='phone']) .field > span,
+:where([data-device='phone']) .field__label {
+  font-size: 13px;
+}
+:where([data-device='phone']) .small,
+:where([data-device='phone']) .mono {
+  font-size: 13px;
+}
 
-  /* Sign-in: one column, the form only */
-  .signin {
-    display: block;
-  }
-  .signin__about {
-    display: none;
-  }
-  .signin__side {
-    display: block;
-    padding: 20px 16px calc(32px + env(safe-area-inset-bottom));
-  }
-  .signin__theme {
-    top: 22px;
-    right: 8px;
-  }
-  .signin__brand {
-    display: block;
-    height: 40px;
-    margin-bottom: 28px;
-    padding-top: 8px;
-  }
-  .signin__form {
-    width: 100%;
-    gap: 18px;
-  }
-  .signin__form .gate__title {
-    font-size: 24px;
-  }
-  .signin__form .input,
-  .signin__form .btn--block {
-    height: 48px;
-  }
-  .btn--theme {
-    font-size: 14px;
-  }
-  .gate__box {
-    padding: 22px 18px;
-  }
+/* Sign-in: one column, the form only */
+:where([data-device='phone']) .signin {
+  display: block;
+}
+:where([data-device='phone']) .signin__about {
+  display: none;
+}
+:where([data-device='phone']) .signin__side {
+  display: block;
+  padding: 20px 16px calc(32px + env(safe-area-inset-bottom));
+}
+:where([data-device='phone']) .signin__theme {
+  top: 22px;
+  right: 8px;
+}
+:where([data-device='phone']) .signin__brand {
+  display: block;
+  height: 40px;
+  margin-bottom: 28px;
+  padding-top: 8px;
+}
+:where([data-device='phone']) .signin__form {
+  width: 100%;
+  gap: 18px;
+}
+:where([data-device='phone']) .signin__form .gate__title {
+  font-size: 24px;
+}
+:where([data-device='phone']) .signin__form .input,
+:where([data-device='phone']) .signin__form .btn--block {
+  height: 48px;
+}
+:where([data-device='phone']) .btn--theme {
+  font-size: 14px;
+}
+:where([data-device='phone']) .gate__box {
+  padding: 22px 18px;
+}
 
-  /* The app bar on the plan list; a plan has its own compact header. */
-  .bar {
-    height: 56px;
-    gap: 2px;
-    padding: 0 8px 0 16px;
-  }
-  .bar__who,
-  .bar__clock,
-  .bar__div {
-    display: none;
-  }
-  .app--plan > .bar {
-    display: none;
-  }
-  .bar__brand {
-    flex: 0 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    font-size: 16px;
-  }
-  .bar .btn--theme {
-    width: 44px;
-    padding: 0;
-  }
-  .bar .btn--theme .btn__label {
-    display: none;
-  }
-  .bar .btn--theme svg {
-    width: 20px;
-    height: 20px;
-  }
-  .account__btn {
-    height: 44px;
-    padding: 0 6px;
-  }
-  .account__btn .avatar {
-    width: 30px;
-    height: 30px;
-    font-size: 11px;
-  }
-  .popover {
-    right: 0;
-    width: min(300px, calc(100vw - 32px));
-  }
-  .popover__item {
-    height: 48px;
-    font-size: 16px;
-  }
+/* The app bar on the plan list; a plan has its own compact header. */
+:where([data-device='phone']) .bar {
+  height: 56px;
+  gap: 2px;
+  padding: 0 8px 0 16px;
+}
+:where([data-device='phone']) .bar__who,
+:where([data-device='phone']) .bar__clock,
+:where([data-device='phone']) .bar__div {
+  display: none;
+}
+:where([data-device='phone']) .app--plan > .bar {
+  display: none;
+}
+:where([data-device='phone']) .bar__brand {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 16px;
+}
+:where([data-device='phone']) .bar .btn--theme {
+  width: 44px;
+  padding: 0;
+}
+:where([data-device='phone']) .bar .btn--theme .btn__label {
+  display: none;
+}
+:where([data-device='phone']) .bar .btn--theme svg {
+  width: 20px;
+  height: 20px;
+}
+:where([data-device='phone']) .account__btn {
+  height: 44px;
+  padding: 0 6px;
+}
+:where([data-device='phone']) .account__btn .avatar {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+:where([data-device='phone']) .popover {
+  right: 0;
+  width: min(300px, calc(100vw - 32px));
+}
+:where([data-device='phone']) .popover__item {
+  height: 48px;
+  font-size: 16px;
+}
 
-  /* Plans */
-  .page {
-    padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
-  }
-  .page__head {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 14px;
-  }
-  .page__title h1 {
-    font-size: 26px;
-  }
-  .page__new .input {
-    width: auto;
-  }
-  .page__sub {
-    margin: 24px 0 10px;
-    font-size: 14px;
-  }
-  .page__sub--first {
-    margin-top: 6px;
-  }
-  .empty {
-    padding: 20px;
-  }
-  .empty p:first-child {
-    font-size: 16px;
-  }
-  .plancards {
-    display: flex;
-    flex-direction: column;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--surface);
-    overflow: hidden;
-  }
-  .plancards li + li {
-    border-top: 1px solid var(--line);
-  }
-  .plancard {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-height: 72px;
-    padding: 14px 16px;
-    color: var(--text);
-    text-decoration: none;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .plancard:active {
-    background: var(--hover);
-  }
-  .plancard__name {
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    overflow-wrap: anywhere;
-  }
-  .plancard__when {
-    font-size: 15px;
-  }
-  .plancard__meta {
-    font-size: 13px;
-  }
+/* Plans */
+:where([data-device='phone']) .page {
+  padding: 20px 16px calc(24px + env(safe-area-inset-bottom));
+}
+:where([data-device='phone']) .page__head {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+:where([data-device='phone']) .page__title h1 {
+  font-size: 26px;
+}
+:where([data-device='phone']) .page__new .input {
+  width: auto;
+}
+:where([data-device='phone']) .page__sub {
+  margin: 24px 0 10px;
+  font-size: 14px;
+}
+:where([data-device='phone']) .page__sub--first {
+  margin-top: 6px;
+}
+:where([data-device='phone']) .empty {
+  padding: 20px;
+}
+:where([data-device='phone']) .empty p:first-child {
+  font-size: 16px;
+}
+:where([data-device='phone']) .plancards {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+:where([data-device='phone']) .plancards li + li {
+  border-top: 1px solid var(--line);
+}
+:where([data-device='phone']) .plancard {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 72px;
+  padding: 14px 16px;
+  color: var(--text);
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+:where([data-device='phone']) .plancard:active {
+  background: var(--hover);
+}
+:where([data-device='phone']) .plancard__name {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+:where([data-device='phone']) .plancard__when {
+  font-size: 15px;
+}
+:where([data-device='phone']) .plancard__meta {
+  font-size: 13px;
+}
 
-  /* One plan */
-  .phone {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  .phone__head {
-    flex: 0 0 auto;
-    max-height: 70%;
-    overflow-y: auto;
-    padding: 0 16px 8px;
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .phone__top {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 48px;
-  }
-  .phone__back {
-    display: inline-flex;
-    color: var(--text);
-    align-items: center;
-    gap: 2px;
-    min-height: 44px;
-    margin-left: -6px;
-    padding-right: 12px;
-    font-size: 16px;
-    text-decoration: none;
-  }
-  .phone__save {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 13px;
-    color: var(--faint);
-    white-space: nowrap;
-  }
-  .phone__name {
-    display: block;
-    width: 100%;
-    height: 40px;
-    padding: 0;
-    border: 0;
-    border-bottom: 1px solid transparent;
-    background: none;
-    font-size: 24px;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    text-overflow: ellipsis;
-  }
-  .phone__name:focus {
-    outline: none;
-    border-bottom-color: var(--focus);
-  }
-  .phone__when {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    min-height: 40px;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--dim);
-    font-size: 15px;
-    text-align: left;
-    cursor: pointer;
-  }
-  .phone__when-text {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .phone__when-act {
-    display: inline-flex;
-    align-items: center;
-    height: 32px;
-    padding: 0 12px;
-    border: 1px solid var(--line-2);
-    border-radius: 8px;
-    color: var(--text);
-    font-size: 14px;
-    font-weight: 500;
-  }
-  .phone__meta {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 14px 10px;
-    padding: 8px 0 12px;
-  }
-  .phone__wide {
-    grid-column: 1 / -1;
-  }
-  .plan__error {
-    padding: 8px 16px;
-  }
+/* One plan */
+:where([data-device='phone']) .phone {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+:where([data-device='phone']) .phone__head {
+  flex: 0 0 auto;
+  max-height: 70%;
+  overflow-y: auto;
+  padding: 0 16px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+:where([data-device='phone']) .phone__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+}
+:where([data-device='phone']) .phone__back {
+  display: inline-flex;
+  color: var(--text);
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  margin-left: -6px;
+  padding-right: 12px;
+  font-size: 16px;
+  text-decoration: none;
+}
+:where([data-device='phone']) .phone__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+:where([data-device='phone']) .phone__name {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+}
+:where([data-device='phone']) .phone__name:focus {
+  outline: none;
+  border-bottom-color: var(--focus);
+}
+:where([data-device='phone']) .phone__when {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+:where([data-device='phone']) .phone__when-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where([data-device='phone']) .phone__when-act {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+:where([data-device='phone']) .phone__meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px 10px;
+  padding: 8px 0 12px;
+}
+:where([data-device='phone']) .phone__wide {
+  grid-column: 1 / -1;
+}
+:where([data-device='phone']) .plan__error {
+  padding: 8px 16px;
+}
 
-  /* Now and next, pinned under the header on the event day */
-  .nownext {
-    flex: 0 0 auto;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .nownext--over {
-    display: block;
-    padding: 12px 16px;
-    color: var(--dim);
-  }
-  .nownext__now,
-  .nownext__next {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 0;
-    min-height: 64px;
-    padding: 9px 16px;
-    border: 0;
-    background: none;
-    text-align: left;
-    color: var(--text);
-    cursor: pointer;
-  }
-  .nownext__now {
-    background: var(--live-bg);
-    box-shadow: inset 3px 0 0 var(--live);
-  }
-  .nownext__now--idle {
-    background: none;
-    box-shadow: none;
-    cursor: default;
-  }
-  .nownext__next {
-    border-left: 1px solid var(--line);
-  }
-  .nownext__label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--dim);
-  }
-  .nownext__now .nownext__label {
-    color: var(--live);
-  }
-  .nownext__title {
-    font-size: 15px;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .nownext__time {
-    font: 13px var(--mono);
-    color: var(--dim);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+/* Now and next, pinned under the header on the event day */
+:where([data-device='phone']) .nownext {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+:where([data-device='phone']) .nownext--over {
+  display: block;
+  padding: 12px 16px;
+  color: var(--dim);
+}
+:where([data-device='phone']) .nownext__now,
+:where([data-device='phone']) .nownext__next {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  min-height: 64px;
+  padding: 9px 16px;
+  border: 0;
+  background: none;
+  text-align: left;
+  color: var(--text);
+  cursor: pointer;
+}
+:where([data-device='phone']) .nownext__now {
+  background: var(--live-bg);
+  box-shadow: inset 3px 0 0 var(--live);
+}
+:where([data-device='phone']) .nownext__now--idle {
+  background: none;
+  box-shadow: none;
+  cursor: default;
+}
+:where([data-device='phone']) .nownext__next {
+  border-left: 1px solid var(--line);
+}
+:where([data-device='phone']) .nownext__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+}
+:where([data-device='phone']) .nownext__now .nownext__label {
+  color: var(--live);
+}
+:where([data-device='phone']) .nownext__title {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where([data-device='phone']) .nownext__time {
+  font: 13px var(--mono);
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-  /* The cues, one card each */
-  .phone__list {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    padding: 12px 16px 20px;
-  }
-  .cards {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-  .cards__section {
-    padding: 14px 2px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .cards__section:first-child {
-    padding-top: 0;
-  }
-  .card {
-    display: flex;
-    min-width: 0;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: var(--surface);
-    box-shadow: var(--shadow-sm);
-  }
-  .card.is-sel {
-    border-color: var(--line-3);
-  }
-  .card.is-now {
-    border-color: color-mix(in srgb, var(--live) 45%, transparent);
-    background: var(--live-bg);
-    box-shadow: inset 3px 0 0 var(--live);
-  }
-  .card.is-dragging {
-    opacity: 0.45;
-  }
-  .card.drop-before {
-    box-shadow: 0 -5px 0 -2px var(--text);
-  }
-  .card.drop-after {
-    box-shadow: 0 5px 0 -2px var(--text);
-  }
-  .card__open {
-    flex: 1;
-    min-width: 0;
-    display: grid;
-    grid-template-columns: 92px minmax(0, 1fr);
-    gap: 10px;
-    min-height: 68px;
-    padding: 12px 6px 12px 14px;
-    border: 0;
-    border-radius: 10px 0 0 10px;
-    background: none;
-    color: var(--text);
-    text-align: left;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .card__open:active {
-    background: var(--hover);
-  }
-  .card__when {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    font: 13px var(--mono);
-    padding-top: 1px;
-  }
-  .card__time {
-    font-weight: 500;
-    white-space: nowrap;
-  }
-  .card__time.is-fixed {
-    font-weight: 600;
-    text-decoration: underline;
-    text-decoration-color: var(--line-3);
-    text-underline-offset: 3px;
-  }
-  .card__len {
-    color: var(--dim);
-    white-space: nowrap;
-  }
-  .card__main {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 0;
-  }
-  .card__line {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-width: 0;
-  }
-  .card__type {
-    flex: 0 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 13px;
-    line-height: 18px;
-    color: var(--dim);
-  }
-  .drift--inline {
-    display: inline;
-    margin: 0;
-    font-size: 12px;
-    white-space: nowrap;
-  }
-  .card__line .com__n {
-    margin-left: auto;
-  }
-  .card__title {
-    font-size: 16px;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .card__title.is-empty {
-    color: var(--dim);
-  }
-  .card__sub {
-    font-size: 13px;
-    color: var(--dim);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .card__grip {
-    flex: 0 0 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: grab;
-    touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-  }
-  .card__grip .grip {
-    height: 18px;
-    opacity: 1;
-  }
-  .phone__totals {
-    margin: 16px 2px 0;
-    font-size: 14px;
-    color: var(--dim);
-  }
-  .phone__totals b {
-    color: var(--text);
-    font-family: var(--mono);
-    font-weight: 500;
-  }
-  .phone__role {
-    margin: 4px 2px 0;
-  }
-  .phone__empty {
-    margin-top: 4px;
-  }
+/* The cues, one card each */
+:where([data-device='phone']) .phone__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 12px 16px 20px;
+}
+:where([data-device='phone']) .cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:where([data-device='phone']) .cards__section {
+  padding: 14px 2px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+:where([data-device='phone']) .cards__section:first-child {
+  padding-top: 0;
+}
+:where([data-device='phone']) .card {
+  display: flex;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+:where([data-device='phone']) .card.is-sel {
+  border-color: var(--line-3);
+}
+:where([data-device='phone']) .card.is-now {
+  border-color: color-mix(in srgb, var(--live) 45%, transparent);
+  background: var(--live-bg);
+  box-shadow: inset 3px 0 0 var(--live);
+}
+:where([data-device='phone']) .card.is-dragging {
+  opacity: 0.45;
+}
+:where([data-device='phone']) .card.drop-before {
+  box-shadow: 0 -5px 0 -2px var(--text);
+}
+:where([data-device='phone']) .card.drop-after {
+  box-shadow: 0 5px 0 -2px var(--text);
+}
+:where([data-device='phone']) .card__open {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 10px;
+  min-height: 68px;
+  padding: 12px 6px 12px 14px;
+  border: 0;
+  border-radius: 10px 0 0 10px;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:where([data-device='phone']) .card__open:active {
+  background: var(--hover);
+}
+:where([data-device='phone']) .card__when {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font: 13px var(--mono);
+  padding-top: 1px;
+}
+:where([data-device='phone']) .card__time {
+  font-weight: 500;
+  white-space: nowrap;
+}
+:where([data-device='phone']) .card__time.is-fixed {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--line-3);
+  text-underline-offset: 3px;
+}
+:where([data-device='phone']) .card__len {
+  color: var(--dim);
+  white-space: nowrap;
+}
+:where([data-device='phone']) .card__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+:where([data-device='phone']) .card__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+:where([data-device='phone']) .card__type {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--dim);
+}
+:where([data-device='phone']) .drift--inline {
+  display: inline;
+  margin: 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+:where([data-device='phone']) .card__line .com__n {
+  margin-left: auto;
+}
+:where([data-device='phone']) .card__title {
+  font-size: 16px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where([data-device='phone']) .card__title.is-empty {
+  color: var(--dim);
+}
+:where([data-device='phone']) .card__sub {
+  font-size: 13px;
+  color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where([data-device='phone']) .card__grip {
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+:where([data-device='phone']) .card__grip .grip {
+  height: 18px;
+  opacity: 1;
+}
+:where([data-device='phone']) .phone__totals {
+  margin: 16px 2px 0;
+  font-size: 14px;
+  color: var(--dim);
+}
+:where([data-device='phone']) .phone__totals b {
+  color: var(--text);
+  font-family: var(--mono);
+  font-weight: 500;
+}
+:where([data-device='phone']) .phone__role {
+  margin: 4px 2px 0;
+}
+:where([data-device='phone']) .phone__empty {
+  margin-top: 4px;
+}
 
-  /* Actions, at the bottom where a thumb reaches */
-  .phone__bar {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) 16px;
-    border-top: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .phone__bar .phone__add {
-    flex: 1 1 auto;
-    height: 48px;
-    margin-right: 6px;
-  }
-  .phone__bar .phone__act {
-    flex: 0 0 auto;
-    flex-direction: column;
-    gap: 2px;
-    width: 64px;
-    height: 52px;
-    padding: 0;
-    border-color: transparent;
-    background: none;
-    box-shadow: none;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--dim);
-  }
-  .phone__bar .phone__act svg {
-    color: var(--text);
-  }
-  .phone__bar .phone__act:active {
-    background: var(--hover);
-  }
-  .menu-back {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    display: flex;
-    align-items: flex-end;
-    background: var(--scrim);
-  }
-  .menu {
-    width: 100%;
-    padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line-2);
-    border-radius: 14px 14px 0 0;
-    background: var(--surface);
-  }
-  .menu button {
-    display: block;
-    width: 100%;
-    min-height: 54px;
-    padding: 0 20px;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    background: none;
-    color: var(--text);
-    font-size: 16px;
-    text-align: left;
-    cursor: pointer;
-  }
-  .menu button:last-child {
-    border-bottom: 0;
-    color: var(--dim);
-  }
-  .menu .menu__danger {
-    color: var(--live);
-  }
+/* Actions, at the bottom where a thumb reaches */
+:where([data-device='phone']) .phone__bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+:where([data-device='phone']) .phone__bar .phone__add {
+  flex: 1 1 auto;
+  height: 48px;
+  margin-right: 6px;
+}
+:where([data-device='phone']) .phone__bar .phone__act {
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 2px;
+  width: 64px;
+  height: 52px;
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+}
+:where([data-device='phone']) .phone__bar .phone__act svg {
+  color: var(--text);
+}
+:where([data-device='phone']) .phone__bar .phone__act:active {
+  background: var(--hover);
+}
+:where([data-device='phone']) .menu-back {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  background: var(--scrim);
+}
+:where([data-device='phone']) .menu {
+  width: 100%;
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line-2);
+  border-radius: 14px 14px 0 0;
+  background: var(--surface);
+}
+:where([data-device='phone']) .menu button {
+  display: block;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 20px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  color: var(--text);
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+:where([data-device='phone']) .menu button:last-child {
+  border-bottom: 0;
+  color: var(--dim);
+}
+:where([data-device='phone']) .menu .menu__danger {
+  color: var(--live);
+}
 
-  /* One cue, full screen */
-  .cuesheet {
-    position: fixed;
-    inset: 0;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
-    background: var(--surface);
-    animation: sheet-up 0.2s ease-out;
-  }
-  .cuesheet__head {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 56px;
-    padding: 4px 12px 4px 6px;
-    border-bottom: 1px solid var(--line);
-  }
-  .cuesheet__back.btn {
-    gap: 2px;
-    padding: 0 10px 0 4px;
-    color: var(--text);
-    font-size: 16px;
-  }
-  .cuesheet__back.btn svg {
-    color: var(--text);
-  }
-  .cuesheet__title {
-    flex: 1;
-    min-width: 0;
-    font-size: 16px;
-    white-space: nowrap;
-    text-align: center;
-  }
-  .cuesheet__title .muted {
-    font-weight: 400;
-  }
-  .cuesheet__move {
-    display: flex;
-    gap: 6px;
-  }
-  .cuesheet__move .btn {
-    width: 44px;
-    padding: 0;
-  }
-  .cuesheet__move .btn svg {
-    color: var(--text);
-  }
-  .cuesheet__body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-  }
-  .cuesheet__body p {
-    margin: 0;
-  }
-  .cuesheet__body .inspector__in {
-    gap: 16px;
-    padding: 16px 16px 28px;
-  }
-  .cuesheet__body .insp-group,
-  .cuesheet__body .hints,
-  .cuesheet__body .comments,
-  .cuesheet__body .insp-actions {
-    padding-top: 16px;
-  }
-  .cuesheet__body .hints {
-    gap: 16px;
-  }
-  .cuesheet__body .insp-group__title,
-  .cuesheet__body .hints legend,
-  .cuesheet__body .comments h3 {
-    font-size: 15px;
-  }
-  .cuesheet__body .insp-actions .btn {
-    height: 44px;
-  }
-  .cuesheet__body .link {
-    min-height: 32px;
-  }
-  .cuesheet__foot {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .cuesheet__foot .phone__save {
-    flex: 1;
-  }
-  .cuesheet__foot .btn--primary {
-    height: 48px;
-    min-width: 128px;
-    font-size: 16px;
-  }
-  .minsec {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .minsec .input {
-    width: 76px;
-    text-align: right;
-    font-family: var(--mono);
-  }
-  .minsec__unit {
-    color: var(--dim);
-  }
+/* One cue, full screen */
+:where([data-device='phone']) .cuesheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  background: var(--surface);
+  animation: sheet-up 0.2s ease-out;
+}
+:where([data-device='phone']) .cuesheet__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 56px;
+  padding: 4px 12px 4px 6px;
+  border-bottom: 1px solid var(--line);
+}
+:where([data-device='phone']) .cuesheet__back.btn {
+  gap: 2px;
+  padding: 0 10px 0 4px;
+  color: var(--text);
+  font-size: 16px;
+}
+:where([data-device='phone']) .cuesheet__back.btn svg {
+  color: var(--text);
+}
+:where([data-device='phone']) .cuesheet__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  white-space: nowrap;
+  text-align: center;
+}
+:where([data-device='phone']) .cuesheet__title .muted {
+  font-weight: 400;
+}
+:where([data-device='phone']) .cuesheet__move {
+  display: flex;
+  gap: 6px;
+}
+:where([data-device='phone']) .cuesheet__move .btn {
+  width: 44px;
+  padding: 0;
+}
+:where([data-device='phone']) .cuesheet__move .btn svg {
+  color: var(--text);
+}
+:where([data-device='phone']) .cuesheet__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+:where([data-device='phone']) .cuesheet__body p {
+  margin: 0;
+}
+:where([data-device='phone']) .cuesheet__body .inspector__in {
+  gap: 16px;
+  padding: 16px 16px 28px;
+}
+:where([data-device='phone']) .cuesheet__body .insp-group,
+:where([data-device='phone']) .cuesheet__body .hints,
+:where([data-device='phone']) .cuesheet__body .comments,
+:where([data-device='phone']) .cuesheet__body .insp-actions {
+  padding-top: 16px;
+}
+:where([data-device='phone']) .cuesheet__body .hints {
+  gap: 16px;
+}
+:where([data-device='phone']) .cuesheet__body .insp-group__title,
+:where([data-device='phone']) .cuesheet__body .hints legend,
+:where([data-device='phone']) .cuesheet__body .comments h3 {
+  font-size: 15px;
+}
+:where([data-device='phone']) .cuesheet__body .insp-actions .btn {
+  height: 44px;
+}
+:where([data-device='phone']) .cuesheet__body .link {
+  min-height: 32px;
+}
+:where([data-device='phone']) .cuesheet__foot {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+:where([data-device='phone']) .cuesheet__foot .phone__save {
+  flex: 1;
+}
+:where([data-device='phone']) .cuesheet__foot .btn--primary {
+  height: 48px;
+  min-width: 128px;
+  font-size: 16px;
+}
+:where([data-device='phone']) .minsec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:where([data-device='phone']) .minsec .input {
+  width: 76px;
+  text-align: right;
+  font-family: var(--mono);
+}
+:where([data-device='phone']) .minsec__unit {
+  color: var(--dim);
+}
 
-  /* Share, as a sheet from the bottom */
-  .dialog {
-    align-items: flex-end;
-    padding: 0;
-  }
-  .dialog__box {
-    max-height: 92%;
-    border-radius: 14px 14px 0 0;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  .dialog__head {
-    padding: 8px 8px 8px 16px;
-  }
-  .dialog__head h2 {
-    font-size: 17px;
-  }
-  .dialog__body {
-    padding: 16px;
-  }
-  .dialog__body form.row {
-    flex-wrap: wrap;
-  }
-  .dialog__body form.row .input.grow {
-    flex: 1 1 100%;
-  }
-  .dialog__body form.row .btn--primary {
-    flex: 1;
-  }
-  .people td {
-    padding: 10px 0 10px 8px;
-  }
+/* Share, as a sheet from the bottom */
+:where([data-device='phone']) .dialog {
+  align-items: flex-end;
+  padding: 0;
+}
+:where([data-device='phone']) .dialog__box {
+  max-height: 92%;
+  border-radius: 14px 14px 0 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+:where([data-device='phone']) .dialog__head {
+  padding: 8px 8px 8px 16px;
+}
+:where([data-device='phone']) .dialog__head h2 {
+  font-size: 17px;
+}
+:where([data-device='phone']) .dialog__body {
+  padding: 16px;
+}
+:where([data-device='phone']) .dialog__body form.row {
+  flex-wrap: wrap;
+}
+:where([data-device='phone']) .dialog__body form.row .input.grow {
+  flex: 1 1 100%;
+}
+:where([data-device='phone']) .dialog__body form.row .btn--primary {
+  flex: 1;
+}
+:where([data-device='phone']) .people td {
+  padding: 10px 0 10px 8px;
 }
 /* Phones on their side: little height, so the header and now/next take less of it. */
-@media (pointer: coarse) and (max-height: 500px) {
-  .phone__top {
-    min-height: 36px;
-  }
-  .phone__back {
-    min-height: 36px;
-  }
-  .phone__name {
-    height: 32px;
-    font-size: 18px;
-  }
-  .phone__when {
-    min-height: 32px;
-  }
-  .nownext__now,
-  .nownext__next {
-    flex-direction: row;
-    align-items: baseline;
-    gap: 8px;
-    min-height: 44px;
-    padding: 4px 16px;
-  }
-  .nownext__title {
-    flex: 1;
-    min-width: 0;
-  }
-  .phone__bar,
-  .cuesheet__foot {
-    padding-top: 4px;
-    padding-bottom: calc(4px + env(safe-area-inset-bottom));
-  }
+:where([data-device='phone'][data-orient='landscape']) .phone__top {
+  min-height: 36px;
+}
+:where([data-device='phone'][data-orient='landscape']) .phone__back {
+  min-height: 36px;
+}
+:where([data-device='phone'][data-orient='landscape']) .phone__name {
+  height: 32px;
+  font-size: 18px;
+}
+:where([data-device='phone'][data-orient='landscape']) .phone__when {
+  min-height: 32px;
+}
+:where([data-device='phone'][data-orient='landscape']) .nownext__now,
+:where([data-device='phone'][data-orient='landscape']) .nownext__next {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 16px;
+}
+:where([data-device='phone'][data-orient='landscape']) .nownext__title {
+  flex: 1;
+  min-width: 0;
+}
+:where([data-device='phone'][data-orient='landscape']) .phone__bar,
+:where([data-device='phone'][data-orient='landscape']) .cuesheet__foot {
+  padding-top: 4px;
+  padding-bottom: calc(4px + env(safe-area-inset-bottom));
 }
 @keyframes sheet-up {
   from {
@@ -3602,212 +3609,676 @@ textarea.chat__input {
   display: none;
 }
 
-@media (min-width: 761px) and (max-width: 1100px) {
-  .shell {
+@media (max-width: 1100px) {
+  :where(:root:not([data-device='phone'])) .shell {
     grid-template-columns: 208px minmax(0, 1fr);
   }
-  .plan__bar .tools__here .muted,
-  .plan__bar .tools__save {
+  :where(:root:not([data-device='phone'])) .plan__bar .tools__here .muted,
+  :where(:root:not([data-device='phone'])) .plan__bar .tools__save {
     display: none;
   }
 }
 
-@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
-  .shell {
-    display: flex;
-    flex-direction: column;
-  }
-  .shell__main {
-    flex: 1;
-  }
-  .page__head {
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-  .page__title h1 {
-    font-size: 24px;
-  }
-  .page__new {
-    margin: 0 0 18px;
-  }
-  .page__mark {
-    width: 26px;
-    height: 26px;
-  }
-  .tabbar {
-    flex: 0 0 auto;
-    display: flex;
-    padding: 4px 4px env(safe-area-inset-bottom);
-    border-top: 1px solid var(--line);
-    background: var(--surface);
-  }
-  .tabbar__btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    min-height: 52px;
-    padding: 4px 0 2px;
-    border: 0;
-    background: none;
-    color: var(--faint);
-    font-size: 11px;
-    font-weight: 500;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .tabbar__btn.is-on {
-    color: var(--text);
-  }
-  .tabbar__icon {
-    position: relative;
-    display: flex;
-  }
-  .tabbar__badge {
-    position: absolute;
-    top: -4px;
-    left: calc(100% - 2px);
-    padding: 0 3px;
-    background: var(--surface);
-    color: var(--text);
-    font: 600 12px/16px var(--font);
-  }
-  .phone {
-    position: relative;
-  }
-  .phone__acts {
-    display: flex;
-    gap: 0;
-    margin-right: -8px;
-  }
-  .phone__acts .btn svg {
-    color: var(--text);
-  }
-  .phone__tabs {
-    margin: 6px 0 2px;
-  }
-  .phone__tabs .seg__btn {
-    height: 36px;
-    font-size: 14px;
-  }
-  .phone__chat {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-  .phone__chat .chat__compose {
-    padding: 8px 12px;
-  }
-  .phone__chat .chat__tip {
-    display: none;
-  }
-  .chat__input {
-    min-height: 44px;
-  }
-  .chat__send {
-    width: 44px;
-    height: 44px;
-  }
-  .msg__del {
-    opacity: 0.4;
-    width: 36px;
-    height: 36px;
-  }
-  .phone__mine {
-    margin-bottom: 14px;
-  }
-  .phone__roles {
-    margin-bottom: 16px;
-  }
-  .phone--run .phone__list,
-  .phone--schedule .phone__list {
-    padding-bottom: 88px;
-  }
-  .fab {
-    position: absolute;
-    right: 16px;
-    bottom: 16px;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border: 0;
-    border-radius: 28px;
-    background: var(--accent);
-    color: var(--accent-ink);
-    box-shadow: var(--shadow);
-    cursor: pointer;
-  }
-  .fab:active {
-    background: var(--accent-hover);
-  }
-  .plancard {
-    flex-direction: row;
-    align-items: center;
-    gap: 14px;
-  }
-  .plancard__date {
-    flex: 0 0 44px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 4px 0;
-    border: 1px solid var(--line-2);
-    border-radius: 8px;
-    font-size: 11px;
-    color: var(--dim);
-    line-height: 1.2;
-  }
-  .plancard__date b {
-    font-size: 18px;
-    color: var(--text);
-  }
-  .plancard__main {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .plancard__go {
-    color: var(--faint);
-  }
-  .cal__title {
-    min-width: 0;
-    font-size: 20px;
-  }
-  .cal__bar .btn--primary {
-    margin-left: auto;
-  }
-  .agenda__item {
-    grid-template-columns: 84px minmax(0, 1fr);
-    min-height: 60px;
-    padding: 12px 14px;
-  }
-  .agenda__name {
-    font-size: 16px;
-  }
-  .agenda__sub {
-    font-size: 13px;
-  }
-  .grid3 {
-    grid-template-columns: 1fr 1fr;
-  }
-  .grid3 > :first-child {
-    grid-column: 1 / -1;
-  }
-  .block-ed {
-    gap: 16px;
-    padding: 16px 16px 28px;
-  }
-  .dialog__box--small {
-    width: 100%;
-  }
+:where([data-device='phone']) .shell {
+  display: flex;
+  flex-direction: column;
+}
+:where([data-device='phone']) .shell__main {
+  flex: 1;
+}
+:where([data-device='phone']) .page__head {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+}
+:where([data-device='phone']) .page__title h1 {
+  font-size: 24px;
+}
+:where([data-device='phone']) .page__new {
+  margin: 0 0 18px;
+}
+:where([data-device='phone']) .page__mark {
+  width: 26px;
+  height: 26px;
+}
+:where([data-device='phone']) .tabbar {
+  flex: 0 0 auto;
+  display: flex;
+  padding: 4px 4px env(safe-area-inset-bottom);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+:where([data-device='phone']) .tabbar__btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 52px;
+  padding: 4px 0 2px;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+:where([data-device='phone']) .tabbar__btn.is-on {
+  color: var(--text);
+}
+:where([data-device='phone']) .tabbar__icon {
+  position: relative;
+  display: flex;
+}
+:where([data-device='phone']) .tabbar__badge {
+  position: absolute;
+  top: -4px;
+  left: calc(100% - 2px);
+  padding: 0 3px;
+  background: var(--surface);
+  color: var(--text);
+  font: 600 12px/16px var(--font);
+}
+:where([data-device='phone']) .phone {
+  position: relative;
+}
+:where([data-device='phone']) .phone__acts {
+  display: flex;
+  gap: 0;
+  margin-right: -8px;
+}
+:where([data-device='phone']) .phone__acts .btn svg {
+  color: var(--text);
+}
+:where([data-device='phone']) .phone__tabs {
+  margin: 6px 0 2px;
+}
+:where([data-device='phone']) .phone__tabs .seg__btn {
+  height: 36px;
+  font-size: 14px;
+}
+:where([data-device='phone']) .phone__chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+:where([data-device='phone']) .phone__chat .chat__compose {
+  padding: 8px 12px;
+}
+:where([data-device='phone']) .phone__chat .chat__tip {
+  display: none;
+}
+:where([data-device='phone']) .chat__input {
+  min-height: 44px;
+}
+:where([data-device='phone']) .chat__send {
+  width: 44px;
+  height: 44px;
+}
+:where([data-device='phone']) .msg__del {
+  opacity: 0.4;
+  width: 36px;
+  height: 36px;
+}
+:where([data-device='phone']) .phone__mine {
+  margin-bottom: 14px;
+}
+:where([data-device='phone']) .phone__roles {
+  margin-bottom: 16px;
+}
+:where([data-device='phone']) .phone--run .phone__list,
+:where([data-device='phone']) .phone--schedule .phone__list {
+  padding-bottom: 88px;
+}
+:where([data-device='phone']) .fab {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 28px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+:where([data-device='phone']) .fab:active {
+  background: var(--accent-hover);
+}
+:where([data-device='phone']) .plancard {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+}
+:where([data-device='phone']) .plancard__date {
+  flex: 0 0 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px 0;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.2;
+}
+:where([data-device='phone']) .plancard__date b {
+  font-size: 18px;
+  color: var(--text);
+}
+:where([data-device='phone']) .plancard__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:where([data-device='phone']) .plancard__go {
+  color: var(--faint);
+}
+:where([data-device='phone']) .cal__title {
+  min-width: 0;
+  font-size: 20px;
+}
+:where([data-device='phone']) .cal__bar .btn--primary {
+  margin-left: auto;
+}
+:where([data-device='phone']) .agenda__item {
+  grid-template-columns: 84px minmax(0, 1fr);
+  min-height: 60px;
+  padding: 12px 14px;
+}
+:where([data-device='phone']) .agenda__name {
+  font-size: 16px;
+}
+:where([data-device='phone']) .agenda__sub {
+  font-size: 13px;
+}
+:where([data-device='phone']) .grid3 {
+  grid-template-columns: 1fr 1fr;
+}
+:where([data-device='phone']) .grid3 > :first-child {
+  grid-column: 1 / -1;
+}
+:where([data-device='phone']) .block-ed {
+  gap: 16px;
+  padding: 16px 16px 28px;
+}
+:where([data-device='phone']) .dialog__box--small {
+  width: 100%;
+}
+
+/* ==== Devices: <html data-device="phone | tablet | computer"> (device.ts) ====
+   Computers keep the desktop app at any width: a narrow window (data-compact)
+   gets a sidebar of icons and the details panel over the sheet, still with
+   hover, menus and keys. Tablets get the same frame sized for fingers. */
+
+/* Over the page: the opened sidebar, the details panel (both with a scrim) */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: var(--scrim);
+}
+.side__top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.side__top .side__brand {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.side__toggle {
+  flex: 0 0 auto;
+  color: var(--dim);
+}
+
+/* The rail: icons only, the whole sidebar opens over the page */
+.side__slot {
+  position: relative;
+  width: 56px;
+  min-height: 0;
+  display: flex;
+}
+.side__slot > .side {
+  flex: 1;
+}
+.side--rail {
+  align-items: center;
+  width: 56px;
+  padding: 10px 6px 8px;
+}
+.side--rail .side__top {
+  flex-direction: column;
+  gap: 6px;
+}
+.side--rail .side__brand {
+  justify-content: center;
+  width: 36px;
+  padding: 0;
+}
+.side--rail .side__text,
+.side--rail .side__count,
+.side--rail .side__group,
+.side--rail .side__clock,
+.side--rail .account__who,
+.side--rail .account__btn > svg {
+  display: none;
+}
+.side--rail .side__item {
+  justify-content: center;
+  width: 40px;
+  min-height: 36px;
+  padding: 0;
+}
+.side--rail .side__nav {
+  gap: 4px;
+}
+.side--rail .side__foot {
+  margin-top: auto;
+  align-items: center;
+  border-top: 0;
+}
+.side--rail .side__row {
+  flex-direction: column;
+  gap: 4px;
+}
+.side--rail .side__row .account__btn {
+  width: auto;
+  padding: 0 4px;
+}
+.side--over {
+  position: absolute;
+  z-index: 31;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 272px;
+  box-shadow: var(--shadow);
+}
+.side__scrim {
+  z-index: 30;
+}
+
+/* The details panel over the sheet, from the right */
+.plan__body {
+  position: relative;
+}
+.panel--over {
+  position: absolute;
+  z-index: 31;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(380px, calc(100% - 48px));
+  border-left: 1px solid var(--line-2);
+  box-shadow: var(--shadow);
+  transform: translateX(calc(100% + 24px));
+  visibility: hidden;
+  transition:
+    transform 0.18s ease-out,
+    visibility 0s 0.18s;
+}
+.panel--over.is-open {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.18s ease-out;
+}
+.panel__scrim {
+  position: absolute;
+  background: transparent;
+}
+/* Over the sheet, the panel's own close is the only one. */
+.panel--over .inspector__head > .btn--icon {
+  display: none;
+}
+.panel__close {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+}
+:where([data-compact]) .plan__body,
+:where([data-device='tablet'][data-orient='portrait']) .plan__body {
+  grid-template-columns: minmax(0, 1fr);
+}
+:where([data-compact]) .sheet,
+:where([data-device='tablet'][data-orient='portrait']) .sheet {
+  border-right: 0;
+}
+
+/* The row's button to its details (tablets, narrow windows) */
+.com__open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 100%;
+  height: 100%;
+  min-height: 30px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--dim);
+  cursor: pointer;
+}
+.com__open:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+.cues td.com:has(.com__open) {
+  padding: 0 4px;
+}
+
+/* Keyboard shortcuts, in the account menu (computers) */
+.keys {
+  margin: 4px 0;
+  padding: 8px 10px 6px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.keys__head {
+  margin-bottom: 6px;
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
+}
+.keys__list {
+  margin: 0;
+}
+.keys__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+}
+.keys__row dt {
+  color: var(--text);
+}
+.keys__row dd {
+  margin: 0;
+}
+kbd {
+  display: inline-block;
+  min-width: 22px;
+  padding: 1px 6px;
+  border: 1px solid var(--line-2);
+  border-bottom-width: 2px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--dim);
+  font: 500 11px var(--mono);
+  text-align: center;
+}
+
+/* ---- A computer with a narrow window: the compact desktop ---- */
+:where([data-compact]) .shell {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+/* The sheet keeps all its columns and scrolls sideways. */
+:where([data-compact]) .cues {
+  min-width: 940px;
+}
+:where([data-compact]) .c-notes {
+  width: 14%;
+}
+:where([data-compact]) .c-hint {
+  width: 14%;
+}
+:where([data-compact]) .c-who {
+  width: 12%;
+}
+:where([data-compact]) .plan__meta .tools__note {
+  display: none;
+}
+:where([data-compact]) .cues td.notes,
+:where([data-compact]) .cues th.th-notes,
+:where([data-compact]) .cues td.hint,
+:where([data-compact]) .cues th.th-hint {
+  visibility: visible;
+  padding: 0 9px !important;
+  font-size: 12px;
+}
+:where([data-compact]) .cues td.notes {
+  font-size: inherit;
+}
+:where([data-compact]) .c-com {
+  width: 52px;
+}
+:where([data-compact]) .plan__bar .tools__here,
+:where([data-compact]) .status__div,
+:where([data-compact]) .status > .status__segs {
+  display: none;
+}
+:where([data-compact]) .status > .bar__spacer {
+  display: block;
+  flex: 1;
+}
+:where([data-compact]) .page {
+  padding: 24px 20px 40px;
+}
+:where([data-compact]) .plans {
+  min-width: 640px;
+}
+:where([data-compact]) .page:has(.plans) {
+  overflow-x: auto;
+}
+
+/* ---- Tablets: the desktop's frame, for fingers ---- */
+:root:where([data-device='tablet']) {
+  --h: 44px;
+}
+:where([data-device='tablet']) body {
+  font-size: 14px;
+}
+:where([data-device='tablet']) input,
+:where([data-device='tablet']) select,
+:where([data-device='tablet']) textarea {
+  font-size: 16px;
+}
+:where([data-device='tablet']) .cell {
+  height: 40px;
+  font-size: 15px;
+}
+:where([data-device='tablet']) .cues td {
+  height: 52px;
+}
+:where([data-device='tablet']) .cues th {
+  height: 40px;
+  font-size: 13px;
+}
+:where([data-device='tablet']) .cues td.num {
+  font-size: 13px;
+}
+:where([data-device='tablet']) .c-handle {
+  width: 36px;
+}
+:where([data-device='tablet']) .c-time {
+  width: 116px;
+}
+:where([data-device='tablet']) .c-len {
+  width: 84px;
+}
+:where([data-device='tablet']) .c-com {
+  width: 52px;
+}
+:where([data-device='tablet']) .grip {
+  width: 10px;
+  height: 22px;
+  opacity: 1;
+}
+:where([data-device='tablet']) .com__open {
+  min-height: 44px;
+}
+/* Nothing only on hover: a message's time and delete button show all the time. */
+:where([data-device='tablet']) .msg__gutter,
+:where([data-device='tablet']) .msg__del {
+  opacity: 1;
+}
+:where([data-device='tablet']) .msg__del {
+  width: 40px;
+  height: 40px;
+}
+:where([data-device='tablet']) .side__item,
+:where([data-device='tablet']) .side__plan {
+  min-height: 44px;
+}
+:where([data-device='tablet']) .side__plan {
+  min-height: 52px;
+}
+:where([data-device='tablet']) .side--rail .side__item {
+  width: 44px;
+  min-height: 44px;
+}
+:where([data-device='tablet']) .side--rail,
+:where([data-device='tablet']) .side__slot {
+  width: 64px;
+}
+:where([data-device='tablet']) .account__btn {
+  height: 44px;
+}
+:where([data-device='tablet']) .popover__item {
+  height: 44px;
+  font-size: 15px;
+}
+:where([data-device='tablet']) .plan__bar {
+  height: 60px;
+}
+:where([data-device='tablet']) .plan__bar .plan__name {
+  height: 44px;
+  font-size: 19px;
+}
+:where([data-device='tablet']) .plan__meta .input {
+  height: 40px;
+}
+:where([data-device='tablet']) .plan__meta .mini > span:first-child {
+  font-size: 13px;
+}
+:where([data-device='tablet']) .plan__tabs {
+  height: 56px;
+}
+:where([data-device='tablet']) .plan__tabs .btn {
+  height: 44px;
+}
+:where([data-device='tablet']) .tabs__tab {
+  min-height: 44px;
+  font-size: 15px;
+}
+:where([data-device='tablet']) .panel__tabs {
+  padding: 8px;
+}
+:where([data-device='tablet']) .panel__tab {
+  height: 40px;
+  font-size: 15px;
+}
+:where([data-device='tablet']) .panel__close {
+  width: 40px;
+  height: 40px;
+}
+:where([data-device='tablet']) .seg__btn {
+  min-height: 40px;
+  padding: 0 16px;
+}
+:where([data-device='tablet']) .plans td {
+  height: 52px;
+  font-size: 15px;
+}
+:where([data-device='tablet']) .status {
+  min-height: 48px;
+  font-size: 13px;
+}
+:where([data-device='tablet']) .status__div,
+:where([data-device='tablet']) .status > .status__segs {
+  display: none;
+}
+:where([data-device='tablet']) .status > .bar__spacer {
+  display: block;
+  flex: 1;
+}
+:where([data-device='tablet']) .status__link {
+  min-height: 44px;
+}
+:where([data-device='tablet']) .panel--over {
+  width: min(420px, calc(100% - 64px));
+}
+/* Fewer columns than on a computer; the rest is in the details. */
+:where([data-device='tablet']) .c-hint,
+:where([data-device='tablet']) .c-notes {
+  width: 0;
+}
+:where([data-device='tablet']) .cues td.hint,
+:where([data-device='tablet']) .cues th.th-hint,
+:where([data-device='tablet']) .cues td.notes,
+:where([data-device='tablet']) .cues th.th-notes {
+  visibility: hidden;
+  padding: 0 !important;
+  font-size: 0;
+}
+:where([data-device='tablet']) .c-title {
+  width: auto;
+}
+:where([data-device='tablet']) .c-who {
+  width: 20%;
+}
+:where([data-device='tablet']) .c-seg {
+  width: 116px;
+}
+/* Upright: the sheet gets the whole width, the sidebar is a rail. */
+:where([data-device='tablet'][data-orient='portrait']) .shell {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+:where([data-device='tablet'][data-orient='portrait']) .cues {
+  min-width: 0;
+}
+:where([data-device='tablet'][data-orient='landscape']) .shell {
+  grid-template-columns: 200px minmax(0, 1fr);
+}
+/* Beside the details, the sheet leaves the type to them too. */
+:where([data-device='tablet'][data-orient='landscape']) .c-seg {
+  width: 0;
+}
+:where([data-device='tablet'][data-orient='landscape']) .cues td.type,
+:where([data-device='tablet'][data-orient='landscape']) .cues th.th-type {
+  visibility: hidden;
+  padding: 0 !important;
+  font-size: 0;
+}
+:where([data-device='tablet'][data-orient='landscape']) .plan__body {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+:where([data-device='tablet'][data-orient='landscape']) .cues {
+  min-width: 0;
+}
+/* The calendar: bigger days to tap */
+:where([data-device='tablet']) .month__day {
+  min-height: 132px;
+  padding: 8px;
+}
+:where([data-device='tablet']) .month__n {
+  min-width: 30px;
+  height: 30px;
+  font-size: 14px;
+}
+:where([data-device='tablet']) .calchip {
+  min-height: 44px;
+  padding: 5px 8px;
+  font-size: 13px;
+}
+/* Narrow days: the time above the name, not beside it. */
+:where([data-device='tablet']) .calchip,
+:where([data-compact]) .calchip {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 /* Paper: only the print sheet, black on white. */
@@ -4110,21 +4581,19 @@ label {
   transition: height 0.15s ease-out;
 }
 
-@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
-  /* Above the tab bar */
-  .appbar {
-    bottom: calc(72px + env(safe-area-inset-bottom));
-  }
-  .offbar {
-    font-size: 14px;
-  }
-  .install__steps {
-    padding-left: 20px;
-  }
-  .install__acts {
-    margin-left: 0;
-  }
-  .install__acts .btn {
-    flex: 1;
-  }
+/* Above the tab bar */
+:where([data-device='phone']) .appbar {
+  bottom: calc(72px + env(safe-area-inset-bottom));
+}
+:where([data-device='phone']) .offbar {
+  font-size: 14px;
+}
+:where([data-device='phone']) .install__steps {
+  padding-left: 20px;
+}
+:where([data-device='phone']) .install__acts {
+  margin-left: 0;
+}
+:where([data-device='phone']) .install__acts .btn {
+  flex: 1;
 }
