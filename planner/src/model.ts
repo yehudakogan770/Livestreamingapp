@@ -314,6 +314,8 @@ export function showClock(stored: string): string {
 export function parseDuration(text: string): number | null {
   const t = text.trim().toLowerCase();
   if (!t) return null;
+  // A bare number is minutes ("20" is 20 minutes, "1.5" is a minute and a half).
+  if (/^\d+(\.\d+)?$/.test(t)) return Math.round(Number(t) * 60);
   if (/^\d+(:\d{1,2}){0,2}$/.test(t)) {
     const parts = t.split(':').map(Number);
     if (parts.slice(1).some((n) => n > 59)) return null;
