@@ -41,6 +41,7 @@ import { SoundProvider } from './audio/SoundContext';
 import { StageContext } from './engine/CountdownContext';
 import { openProblemReport, ReportingHost, useErrorReports } from './reports/ReportUI';
 import { openSystemCheck, SystemCheckHost } from './syscheck/SystemCheck';
+import { openTestEvent, TestEventHost } from './testevent/TestEvent';
 import './App.css';
 
 export function App() {
@@ -227,6 +228,11 @@ function ControlApp() {
         : []),
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
+      {
+        label: 'Run a test event…',
+        hint: 'Lumora runs a whole event by itself and tells you if this computer is ready (your event is kept safe)',
+        onClick: openTestEvent,
+      },
       ...(access
         ? [
             null,
@@ -442,6 +448,7 @@ function ControlApp() {
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
                   <ShabbosGuard show={show} />
                   <DataWatcher show={show} client={client} />
+                  <TestEventHost show={show} client={client} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
                   {speakersOpen && <SpeakersDialog show={show} client={client} onClose={() => setSpeakersOpen(false)} />}
                   {captionsOpen && (

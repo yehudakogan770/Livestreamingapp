@@ -13,6 +13,7 @@ import { PreviewView, ProgramView } from '../components/ScreenView';
 import { SourceView } from '../components/SourceView';
 import { SafeBoundary } from '../components/SafeBoundary';
 import { StageContext } from '../engine/CountdownContext';
+import { useTestProbe } from '../testevent/outputProbe';
 import './MultiviewView.css';
 
 /**
@@ -22,6 +23,7 @@ import './MultiviewView.css';
 export function MultiviewView() {
   const client = useMemo(createEngineClient, []);
   const { snapshot } = useShow(client);
+  useTestProbe('multiview', snapshot?.show);
   useEventFonts(snapshot?.show.event.brand.fonts, client);
   useEffect(() => {
     document.title = 'Lumora — Multiview';

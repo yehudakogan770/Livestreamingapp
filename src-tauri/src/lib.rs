@@ -20,6 +20,7 @@ mod store;
 mod streamdeck;
 mod streams;
 mod syscheck;
+mod testevent;
 mod tunnel;
 
 /// The same browser settings for every Lumora window (Windows needs them to
@@ -1026,6 +1027,12 @@ pub fn run() {
                 capture::Capture::new(Some(&dir), videos, ffmpeg.clone(), move |status| {
                     let _ = handle.emit("capture-changed", status);
                 });
+            // A test event that was cut short: the person's own show comes back first.
+            let mut show = show;
+            if lumora_testevent::read_marker(&dir).is_some() {
+                testevent::restore_at_start(&dir, &mut show, &capture);
+                store.save(show.clone(), 0);
+            }
             let library = library::Library::new(&dir);
             let media = media::Media::new(&dir);
             let browsers = browser::Browsers::new(app.handle().clone());
@@ -1079,6 +1086,23 @@ pub fn run() {
             selftest::selftest_temp_folder,
             selftest::selftest_videos,
             selftest::selftest_decode,
+            testevent::test_event_begin,
+            testevent::test_event_end,
+            testevent::test_event_restored_at_start,
+            testevent::test_event_media,
+            testevent::test_event_disk_speed,
+            testevent::test_event_videos,
+            testevent::test_event_probe,
+            testevent::test_event_cleanup,
+            testevent::test_event_receivers,
+            testevent::test_event_stop_receivers,
+            testevent::test_event_preflight,
+            testevent::test_event_real_destination,
+            testevent::test_event_arrange_outputs,
+            testevent::test_event_fullscreen,
+            testevent::test_event_system,
+            testevent::test_event_save_report,
+            testevent::test_event_open_report,
             take_crash_reports,
             close_seen,
             close_app,
