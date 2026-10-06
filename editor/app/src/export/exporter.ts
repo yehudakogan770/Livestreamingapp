@@ -19,6 +19,7 @@ import { current, rate } from '../model/seq';
 import type { Clip, MediaItem, Project, Sequence } from '../model/types';
 import { inApp, mediaUrl, native, onExportProgress } from '../native';
 import { parseCube, type Cube } from '../render/color';
+import { builtinCube } from '../render/luts';
 import { Compositor, type Pictures } from '../render/compositor';
 import { allLayers, frameOps, type Layer, type Op } from '../render/frame';
 import { rateAt } from '../model/remap';
@@ -285,9 +286,10 @@ export class Sources {
         if (path && !this.cubes.has(path))
           this.cubes.set(
             path,
-            await readText(path)
-              .then(parseCube)
-              .catch(() => null),
+            builtinCube(path) ??
+              (await readText(path)
+                .then(parseCube)
+                .catch(() => null)),
           );
       }
     }

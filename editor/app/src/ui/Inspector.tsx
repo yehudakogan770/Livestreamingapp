@@ -12,6 +12,7 @@ import { selectedIds, useDoc, type Doc } from '../doc';
 import type { Engine } from '../player/engine';
 import { fileName, inApp } from '../native';
 import { TEXT_PRESETS } from '../render/text';
+import { BUILTIN_LUTS } from '../render/luts';
 import { TitleExtras } from './Templates';
 import { BLEND_LIST } from '../model/blend';
 import { ProMotionSections } from './ProMotion';
@@ -640,6 +641,27 @@ function EffectSection({
           </button>
           <span className="insp__note">{typeof effect.d?.name === 'string' && effect.d.name ? effect.d.name : 'None yet'}</span>
         </div>
+      )}
+      {effect.type === 'lut' && (
+        <label className="insp__row">
+          <span className="insp__note">Camera log</span>
+          <select
+            className="text"
+            aria-label="Built-in camera LUT"
+            value={typeof effect.d?.path === 'string' && effect.d.path.startsWith('builtin:') ? effect.d.path : ''}
+            onChange={(e) => {
+              const lut = BUILTIN_LUTS.find((x) => x.path === e.target.value);
+              if (lut) set({ d: { ...effect.d, path: lut.path, name: lut.name } });
+            }}
+          >
+            <option value="">Built-in: choose a camera…</option>
+            {BUILTIN_LUTS.map((x) => (
+              <option key={x.id} value={x.path}>
+                {x.name}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
       {effect.type === 'grade' && (
         <div className="insp__row">
