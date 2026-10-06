@@ -23,6 +23,7 @@ import { ZmanimDialog } from './views/ZmanimDialog';
 import { ShabbosGuard } from './views/ShabbosGuard';
 import { DataDialog, DataWatcher } from './views/DataDialog';
 import { RemoteDialog } from './views/RemoteDialog';
+import { StreamDeckDialog, StreamDeckOffer, useDeck } from './streamdeck/StreamDeck';
 import { barActions, defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { CaptionsDialog } from './captions/CaptionsDialog';
@@ -39,6 +40,8 @@ import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
 import { StageContext } from './engine/CountdownContext';
 import { openProblemReport, ReportingHost, useErrorReports } from './reports/ReportUI';
+import { openSystemCheck, SystemCheckHost } from './syscheck/SystemCheck';
+import { openTestEvent, TestEventHost } from './testevent/TestEvent';
 import './App.css';
 
 export function App() {
@@ -56,6 +59,7 @@ function Control() {
         <ControlApp />
       </ProblemsProvider>
       <ReportingHost product="Lumora" />
+      <SystemCheckHost app="lumora" />
     </Gate>
   );
 }
@@ -134,6 +138,9 @@ function ControlApp() {
   useEffect(() => client.watchEventFiles(setFiles), [client]);
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
   const [remoteOpen, setRemoteOpen] = useState(false);
+  // Lumora's Stream Deck buttons (offered once when a Stream Deck is found).
+  const [deck, refreshDeck, setDeck] = useDeck();
+  const [deckOpen, setDeckOpen] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const openBroadcast = useCallback(() => setBroadcastOpen(true), []);
   const [captionsOpen, setCaptionsOpen] = useState(false);
@@ -213,8 +220,26 @@ function ControlApp() {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
       },
+      // Only on computers with the Stream Deck app.
+      ...(deck.found
+        ? [
+            {
+              label: 'Stream Deck…',
+              hint: 'Lumora’s buttons for the Elgato Stream Deck',
+              onClick: () => {
+                refreshDeck();
+                setDeckOpen(true);
+              },
+            },
+          ]
+        : []),
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
+      {
+        label: 'Run a test event…',
+        hint: 'Lumora runs a whole event by itself and tells you if this computer is ready (your event is kept safe)',
+        onClick: openTestEvent,
+      },
       ...(access
         ? [
             null,
@@ -343,6 +368,7 @@ function ControlApp() {
       { label: 'How to use Lumora', onClick: () => sendCommand({ type: 'help' }) },
       { label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) },
       { label: 'Check for updates…', onClick: checkForUpdates },
+      { label: 'Check this computer…', hint: 'Can this computer handle a live event?', onClick: openSystemCheck },
       null,
       { label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport },
     ];
@@ -372,6 +398,8 @@ function ControlApp() {
     access,
     signOut,
     remote,
+    refreshDeck,
+    deck.found,
     openBroadcast,
     show?.sources,
     show?.overlays,
@@ -427,6 +455,7 @@ function ControlApp() {
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
                   <ShabbosGuard show={show} />
                   <DataWatcher show={show} client={client} />
+                  <TestEventHost show={show} client={client} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
                   {speakersOpen && <SpeakersDialog show={show} client={client} onClose={() => setSpeakersOpen(false)} />}
                   {captionsOpen && (
@@ -478,6 +507,19 @@ function ControlApp() {
       {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
+      <StreamDeckOffer status={deck} onChange={setDeck} />
+      {deckOpen && (
+        <StreamDeckDialog
+          status={deck}
+          remote={remote}
+          onChange={setDeck}
+          onRemote={() => {
+            setDeckOpen(false);
+            setRemoteOpen(true);
+          }}
+          onClose={() => setDeckOpen(false)}
+        />
+      )}
       {confirmNew && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="New event">
           <div className="modal__box confirm">

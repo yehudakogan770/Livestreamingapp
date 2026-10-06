@@ -165,6 +165,37 @@ pub fn premultiply(px: &mut [u8]) {
     }
 }
 
+/// A graphics card the engine could use, for the system check.
+#[derive(Debug, Clone)]
+pub struct AdapterSummary {
+    pub name: String,
+    /// "discrete", "integrated", "software", "virtual" or "other".
+    pub kind: &'static str,
+    pub backend: String,
+}
+
+/// Every graphics card the engine's graphics APIs offer (Direct3D 12 on Windows). Nothing is started.
+pub fn adapters() -> Vec<AdapterSummary> {
+    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    pollster::block_on(instance.enumerate_adapters(wgpu::Backends::all()))
+        .iter()
+        .map(|a| {
+            let i = a.get_info();
+            AdapterSummary {
+                kind: match i.device_type {
+                    wgpu::DeviceType::DiscreteGpu => "discrete",
+                    wgpu::DeviceType::IntegratedGpu => "integrated",
+                    wgpu::DeviceType::Cpu => "software",
+                    wgpu::DeviceType::VirtualGpu => "virtual",
+                    wgpu::DeviceType::Other => "other",
+                },
+                backend: format!("{:?}", i.backend),
+                name: i.name,
+            }
+        })
+        .collect()
+}
+
 impl Gpu {
     /// Find a graphics card (one that can show in `surface`, when given) and start it.
     ///

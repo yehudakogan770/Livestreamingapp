@@ -17,6 +17,7 @@ import { due, loadSchedule, saveSchedule, timeText, type Schedule } from './sche
 import { Broadcaster } from './recorder';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
+import { useRemoteControl } from './remoteControl';
 
 /** The highlights reel's input. */
 export const HIGHLIGHTS = 'highlights-reel';
@@ -666,5 +667,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       setSchedule,
     ],
   );
+  // The Stream Deck (through the phone remote's server) records, goes live and replays too.
+  useRemoteControl(value);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

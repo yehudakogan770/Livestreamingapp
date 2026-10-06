@@ -80,3 +80,60 @@ export function DurationInput({
     />
   );
 }
+
+/** A time of day with the phone's own time picker; stored as "19:30" ('' when empty). */
+export function TimeInput({ value, onChange, className, readOnly, label }: Omit<FieldProps, 'placeholder'> & { value: string; onChange: (v: string) => void }) {
+  const secs = parseClock(value);
+  return (
+    <input
+      type="time"
+      className={className ?? 'input'}
+      value={secs === null ? '' : clock24(secs)}
+      step={secs !== null && secs % 60 ? 1 : 60}
+      readOnly={readOnly}
+      aria-label={label}
+      onChange={(e) => onChange(e.target.value)}
+    />
+  );
+}
+
+const digits = (s: string) => s.replace(/\D/g, '').slice(0, 4);
+
+/** A length as minutes and seconds, each on the number keypad; stored in seconds (null when both are empty). */
+export function MinSecInput({
+  value,
+  onChange,
+  readOnly,
+  label,
+}: Omit<FieldProps, 'placeholder' | 'className'> & { value: number | null; onChange: (v: number | null) => void }) {
+  const [min, setMin] = useState<string | null>(null);
+  const [sec, setSec] = useState<string | null>(null);
+  const m = min ?? (value === null ? '' : String(Math.floor(value / 60)));
+  const s = sec ?? (value === null ? '' : String(value % 60).padStart(2, '0'));
+  const commit = () => {
+    if (min === null && sec === null) return;
+    if (!m && !s) onChange(null);
+    else onChange(Math.min(Number(m || 0) * 60 + Number(s || 0), 86_400));
+    setMin(null);
+    setSec(null);
+  };
+  const common = {
+    className: 'input',
+    inputMode: 'numeric' as const,
+    pattern: '[0-9]*',
+    enterKeyHint: 'done' as const,
+    readOnly,
+    onBlur: commit,
+    onKeyDown: (e: { key: string; target: EventTarget }) => {
+      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+    },
+  };
+  return (
+    <span className="minsec" role="group" aria-label={label}>
+      <input {...common} value={m} placeholder="0" aria-label={`${label}, minutes`} onChange={(e) => setMin(digits(e.target.value))} />
+      <span className="minsec__unit">min</span>
+      <input {...common} value={s} placeholder="00" aria-label={`${label}, seconds`} onChange={(e) => setSec(digits(e.target.value).slice(0, 2))} />
+      <span className="minsec__unit">sec</span>
+    </span>
+  );
+}

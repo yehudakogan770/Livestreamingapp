@@ -1,0 +1,324 @@
+/* The test event window (Settings → Run a test event…). */
+
+.te {
+  width: min(760px, calc(100vw - 48px));
+}
+.te__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 14px 0;
+}
+.te__body > .modal__foot {
+  position: sticky;
+  bottom: 0;
+  margin: 4px -14px 0;
+}
+.te__lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.te__dim {
+  color: var(--text-faint);
+}
+.te__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.te__group legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+.te__lengths {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.te__length {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--button);
+  box-shadow: inset 0 1px 0 var(--hi);
+  text-align: left;
+}
+.te__length:hover {
+  background: var(--button-hover);
+}
+.te__length.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.te__length span {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.te__length small {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.te__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.te__check input {
+  margin-top: 2px;
+}
+.te__check.is-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.te__real {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.te__realbox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 0 22px;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--warning);
+  background: var(--warning-bg);
+}
+.te__plan summary,
+.te__section summary {
+  cursor: pointer;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+.te__plan ul {
+  columns: 2;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+
+/* Running */
+.te__now {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.te__now strong {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+}
+.te__live {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--on-air);
+}
+.te__bar {
+  width: 100%;
+  height: 6px;
+}
+.te__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid #000;
+  border-radius: var(--radius);
+  background: #000;
+  overflow: hidden;
+}
+.te__stats div {
+  padding: 8px 10px;
+  background: var(--well);
+}
+.te__stats dt {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.te__stats dd {
+  margin: 2px 0 0;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.te__timeline {
+  max-height: 220px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--well);
+  font-size: 12px;
+}
+.te__timeline--report {
+  max-height: 320px;
+}
+.te__timeline li {
+  display: grid;
+  grid-template-columns: 44px minmax(140px, auto) 1fr;
+  gap: 8px;
+  padding: 4px 8px;
+  border-left: 2px solid transparent;
+}
+.te__timeline li + li {
+  border-top: 1px solid var(--border);
+}
+.te__timeline li.is-ok {
+  border-left-color: var(--preview);
+}
+.te__timeline li.is-bad {
+  border-left-color: var(--program);
+}
+.te__timeline li.is-skip {
+  opacity: 0.6;
+}
+.te__time {
+  font-family: var(--mono);
+  color: var(--text-faint);
+}
+
+/* Report */
+.te__verdict {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--raised);
+}
+.te__verdict p {
+  margin: 0;
+  line-height: 1.45;
+}
+.te__verdict-word {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.te__verdict--yes .te__verdict-word {
+  color: var(--preview-bright);
+}
+.te__verdict--risky .te__verdict-word {
+  color: var(--warning);
+}
+.te__verdict--no .te__verdict-word {
+  color: var(--program-bright);
+}
+.te__verdict--yes {
+  border-color: var(--preview);
+}
+.te__verdict--risky {
+  border-color: var(--warning);
+}
+.te__verdict--no {
+  border-color: var(--program);
+}
+.te__body h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+}
+.te__findings {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.te__finding {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.te__finding p {
+  margin: 3px 0 0;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+.te__finding details {
+  margin-top: 4px;
+  font-size: 12px;
+}
+.te__finding summary {
+  cursor: pointer;
+  color: var(--text-faint);
+}
+.te__advice {
+  color: var(--text) !important;
+}
+.te__sev {
+  align-self: start;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+}
+.te__finding--critical .te__sev {
+  border-color: var(--program);
+  color: var(--program-bright);
+}
+.te__finding--problem .te__sev {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+.te__list {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  line-height: 1.5;
+}
+.te__md {
+  max-height: 320px;
+  margin: 8px 0 0;
+  padding: 10px;
+  overflow: auto;
+  border-radius: var(--radius);
+  background: var(--well);
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: pre-wrap;
+  user-select: text;
+}
+.te__foot {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.te__foot .btn svg.lucide {
+  width: 14px;
+  height: 14px;
+}
+.te__spacer {
+  flex: 1;
+}

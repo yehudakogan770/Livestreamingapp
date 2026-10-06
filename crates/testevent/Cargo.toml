@@ -1,0 +1,18 @@
+[package]
+name = "lumora-testevent"
+description = "Lumora's test event (Settings → Run a test event…): the restore marker that keeps the person's own show safe, the test media made with FFmpeg, the disk speed check, the recording check and the saved report."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+must_use_candidate = "allow"

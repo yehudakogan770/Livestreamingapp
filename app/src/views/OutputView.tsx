@@ -10,6 +10,7 @@ import { MonitorScreen } from '../components/MonitorScreen';
 import { ProgramView } from '../components/ScreenView';
 import { SafeBoundary } from '../components/SafeBoundary';
 import { StageContext } from '../engine/CountdownContext';
+import { useTestProbe } from '../testevent/outputProbe';
 import './OutputView.css';
 
 /**
@@ -19,6 +20,8 @@ import './OutputView.css';
 export function OutputView({ screen }: { screen: ScreenId }) {
   const client = useMemo(createEngineClient, []);
   const { snapshot } = useShow(client);
+  // Answers the test event (Settings → Run a test event…) when it checks this output.
+  useTestProbe(screen, snapshot?.show);
   useEventFonts(snapshot?.show.event.brand.fonts, client);
   // Virtual sets follow the event's look.
   setSetLook(snapshot?.show.event.brand.accent ?? '#2f80ed', snapshot?.show.event.name ?? '');

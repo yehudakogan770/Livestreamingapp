@@ -17,7 +17,10 @@ mod ptz;
 mod remote;
 mod selftest;
 mod store;
+mod streamdeck;
 mod streams;
+mod syscheck;
+mod testevent;
 mod tunnel;
 
 /// The same browser settings for every Lumora window (Windows needs them to
@@ -906,6 +909,45 @@ impl remote::Backend for RemoteBackend {
             let _ = self.0.emit("remote-changed", state.remote.status());
         }
     }
+
+    fn app_command(&self, command: remote::AppCommand) -> Result<(), String> {
+        // Recording, streaming and replay run in the control window.
+        self.0
+            .emit_to("control", "remote-command", command)
+            .map_err(|e| e.to_string())
+    }
+}
+
+/// The control window says what is running (recording, stream, rehearsal,
+/// replay), for control surfaces such as the Stream Deck.
+#[tauri::command]
+fn remote_app_state(app_state: serde_json::Value, state: State<'_, AppState>) {
+    state.remote.set_app_state(&app_state);
+}
+
+fn deck_places(app: &tauri::AppHandle) -> streamdeck::Places {
+    streamdeck::Places::here(
+        app.path().resource_dir().ok(),
+        app.path().app_data_dir().ok(),
+    )
+}
+
+/// Is the Stream Deck app here, and is Lumora's plugin in it?
+#[tauri::command]
+fn streamdeck_status(app: tauri::AppHandle) -> streamdeck::DeckStatus {
+    streamdeck::status(&deck_places(&app))
+}
+
+/// Add (or update) Lumora's buttons in the Stream Deck app.
+#[tauri::command]
+fn streamdeck_install(app: tauri::AppHandle) -> Result<streamdeck::DeckStatus, String> {
+    streamdeck::install(&deck_places(&app))
+}
+
+/// "Not now": don't offer this version of the plugin again.
+#[tauri::command]
+fn streamdeck_dismiss(app: tauri::AppHandle) -> streamdeck::DeckStatus {
+    streamdeck::answer(&deck_places(&app))
 }
 
 /// Crashes since last time (see crates/crash); the screens send them only if
@@ -985,6 +1027,12 @@ pub fn run() {
                 capture::Capture::new(Some(&dir), videos, ffmpeg.clone(), move |status| {
                     let _ = handle.emit("capture-changed", status);
                 });
+            // A test event that was cut short: the person's own show comes back first.
+            let mut show = show;
+            if lumora_testevent::read_marker(&dir).is_some() {
+                testevent::restore_at_start(&dir, &mut show, &capture);
+                store.save(show.clone(), 0);
+            }
             let library = library::Library::new(&dir);
             let media = media::Media::new(&dir);
             let browsers = browser::Browsers::new(app.handle().clone());
@@ -1032,11 +1080,29 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,
             selftest::selftest_temp_folder,
             selftest::selftest_videos,
             selftest::selftest_decode,
+            testevent::test_event_begin,
+            testevent::test_event_end,
+            testevent::test_event_restored_at_start,
+            testevent::test_event_media,
+            testevent::test_event_disk_speed,
+            testevent::test_event_videos,
+            testevent::test_event_probe,
+            testevent::test_event_cleanup,
+            testevent::test_event_receivers,
+            testevent::test_event_stop_receivers,
+            testevent::test_event_preflight,
+            testevent::test_event_real_destination,
+            testevent::test_event_arrange_outputs,
+            testevent::test_event_fullscreen,
+            testevent::test_event_system,
+            testevent::test_event_save_report,
+            testevent::test_event_open_report,
             take_crash_reports,
             close_seen,
             close_app,
@@ -1093,7 +1159,11 @@ pub fn run() {
             library_items,
             save_library,
             export_library,
-            import_library
+            import_library,
+            remote_app_state,
+            streamdeck_status,
+            streamdeck_install,
+            streamdeck_dismiss
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

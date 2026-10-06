@@ -13,3 +13,5 @@ ffmpeg-cache/
 src-tauri/binaries/
 editor/src-tauri/binaries/
 editor/src-tauri/gen/
+/streamdeck/com.lumora.streamdeck.sdPlugin/bin/
+/streamdeck/com.lumora.streamdeck.sdPlugin/logs/
