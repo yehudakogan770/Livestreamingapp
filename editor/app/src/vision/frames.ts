@@ -1,6 +1,6 @@
 // Reading a clip's frames exactly (the same decoder the export uses), small,
 // for tracking and AI masks.
-import { ALL_FORMATS, Input, UrlSource, VideoSampleSink } from 'mediabunny';
+import type { VideoSampleSink } from 'mediabunny';
 import type { MediaItem } from '../model/types';
 import { mediaUrl } from '../native';
 
@@ -23,6 +23,8 @@ export class FrameReader {
   private open(): Promise<VideoSampleSink | null> {
     if (!this.sink)
       this.sink = (async () => {
+        // Loaded when first needed (the library is big, and not needed to start).
+        const { ALL_FORMATS, Input, UrlSource, VideoSampleSink } = await import('mediabunny');
         const input = new Input({ source: new UrlSource(mediaUrl(decodedFile(this.media))), formats: ALL_FORMATS });
         const track = await input.getPrimaryVideoTrack();
         if (!track || !(await track.canDecode())) return null;

@@ -17,7 +17,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useAccess } from '../../../../app/src/auth/Gate';
@@ -29,7 +29,6 @@ import type { Project } from '../model/types';
 import { Engine } from '../player/engine';
 import { fileName, folderOf, inApp, native } from '../native';
 import { makeActions, type Actions } from './actions';
-import { ColorPanel, Scopes } from './ColorPage';
 import { PopMenu, type MenuEntry } from './controls';
 import { HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
 import { DeliverDialog, QueueChip } from './Deliver';
@@ -46,7 +45,6 @@ import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { SmartDialogs, smartMenu } from '../smart/SmartTools';
 import { ExtrasDialogs, extrasMenu } from '../extras/ExtrasTools';
-import { Mixer } from './Mixer';
 import { ProgramMonitor, SourceMonitor } from './Monitors';
 import { ProjectPanel } from './ProjectPanel';
 import { Ui, useUi } from './state';
@@ -61,6 +59,15 @@ import { nativePlayback } from '../render/native/client';
 import { openProblemReport, useErrorReports } from '../../../../app/src/reports/ReportUI';
 import { openSystemCheck } from '../../../../app/src/syscheck/SystemCheck';
 import { openAbout } from '../../../../app/src/components/About';
+import { BENCH } from '../benchflag';
+import { NativeOffer } from './NativeOffer';
+
+// The Color and Audio pages load when first opened (fetched in the background soon after the editor opens).
+const colorPage = () => import('./ColorPage');
+const mixerPage = () => import('./Mixer');
+const ColorPanel = lazy(() => colorPage().then((m) => ({ default: m.ColorPanel })));
+const Scopes = lazy(() => colorPage().then((m) => ({ default: m.Scopes })));
+const Mixer = lazy(() => mixerPage().then((m) => ({ default: m.Mixer })));
 
 /** The project file's text: without this computer's missing marks, with the playhead where it is. */
 function projectText(p: Project, playhead: number): string {
@@ -99,6 +106,8 @@ export function Editor({
     return e;
   }, [project]);
   const actions = useMemo(() => makeActions(doc, engine, ui), [doc, engine, ui]);
+  // Measuring speed in a browser (docs/PERFORMANCE.md): the editor's parts, for the scripts.
+  if (BENCH && !inApp()) (window as unknown as { __studio?: unknown }).__studio = { doc, engine, ui, actions };
   const state = useDoc(doc);
   const u = useUi(ui);
   const [path, setPath] = useState(savePath);
@@ -125,6 +134,12 @@ export function Editor({
   }, [collab, doc, ui]);
   // Edit the sequence on the timeline (if nobody else is).
   useEffect(() => collab?.watch(state.project.open), [collab, state.project.open]);
+
+  // The other pages, fetched once the editor is up (so switching to them is instant).
+  useEffect(() => {
+    const t = window.setTimeout(() => void Promise.all([colorPage(), mixerPage()]).catch(() => undefined), 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     engine.start();
@@ -590,17 +605,22 @@ export function Editor({
       )}
 
       {collab && <LockBanner collab={collab} doc={doc} />}
+      <NativeOffer />
 
       {u.page === 'edit' && <EditPage doc={doc} engine={engine} ui={ui} actions={actions} collab={collab} />}
       {u.page === 'color' && (
         <div className="page page--color">
           <div className="page__top">
             <ProgramMonitor doc={doc} engine={engine} ui={ui} actions={actions} />
-            <Scopes engine={engine} ui={ui} />
+            <Suspense fallback={null}>
+              <Scopes engine={engine} ui={ui} />
+            </Suspense>
           </div>
           <Splitter ui={ui} which="bottom" />
           <div className="page__bottom">
-            <ColorPanel doc={doc} engine={engine} actions={actions} ui={ui} />
+            <Suspense fallback={null}>
+              <ColorPanel doc={doc} engine={engine} actions={actions} ui={ui} />
+            </Suspense>
           </div>
         </div>
       )}
@@ -608,7 +628,9 @@ export function Editor({
         <div className="page page--audio">
           <div className="page__top">
             <ProgramMonitor doc={doc} engine={engine} ui={ui} actions={actions} />
-            <Mixer doc={doc} engine={engine} />
+            <Suspense fallback={null}>
+              <Mixer doc={doc} engine={engine} />
+            </Suspense>
           </div>
           <Splitter ui={ui} which="bottom" />
           <div className="page__bottom">
