@@ -131,6 +131,8 @@ export class Broadcaster {
   private readonly layer = typeof document === 'undefined' ? null : ((l) => (l.works ? l : null))(new CaptionLayer());
   /** The captions to write in the stream picture now (none: nothing written). */
   captionsInPicture: () => { lines: string[]; look: Captions } | null = () => null;
+  /** A session's encoder stopped by itself (the app does not know yet). */
+  onLost: ((kind: SessionKind, session: number, message: string) => void) | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private fps = 0;
 
@@ -280,6 +282,13 @@ export class Broadcaster {
         // A refused chunk means the session ended; the status says why.
         .catch(() => {});
     };
+    // The encoder stopping by itself (a graphics driver reset, the picture
+    // ending) sends nothing more: say so, so it is started again.
+    const lost = (why: string) => {
+      if (this.live.get(kind) === live) this.onLost?.(kind, running.session, why);
+    };
+    recorder.onerror = (e) => lost(`The video encoder stopped (${(e as Event & { error?: DOMException }).error?.message ?? 'error'}).`);
+    recorder.onstop = () => lost('The video encoder stopped.');
     this.live.set(kind, live);
     recorder.start(500);
     if (this.show) this.setShow(this.show);

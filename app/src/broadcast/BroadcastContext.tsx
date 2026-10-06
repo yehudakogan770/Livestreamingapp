@@ -1,5 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { defaultCaptureSettings, type CaptureKind, type CaptureSettings, type CaptureStatus, type EngineClient } from '../engine/client';
+import {
+  defaultCaptureSettings,
+  type CaptureFailure,
+  type CaptureKind,
+  type CaptureSettings,
+  type CaptureStatus,
+  type EngineClient,
+  type SessionKind,
+} from '../engine/client';
 import type { Show } from '../engine/types/Show';
 import { useSound } from '../audio/SoundContext';
 import { useProblemStore, useReportProblem } from '../problems/problems';
@@ -102,6 +110,16 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     record: false,
     stream: false,
   });
+  // One retry waiting per kind. Retries are not tied to the status: it changes
+  // every second while anything runs, and that must never put a retry off.
+  const retries = useRef(new Map<SessionKind, ReturnType<typeof setTimeout>>());
+  // The operator starting or stopping by hand replaces any retry still waiting.
+  const forget = (kind: CaptureKind) => {
+    for (const k of kind === 'stream' ? (['stream', 'vertical'] as const) : [kind]) {
+      clearTimeout(retries.current.get(k));
+      retries.current.delete(k);
+    }
+  };
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
 
@@ -142,6 +160,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   const start = useCallback(
     async (kind: CaptureKind) => {
       wanted.current[kind] = true;
+      forget(kind);
       if (kind === 'stream') everLive.current = false;
       setBusy((b) => ({ ...b, [kind]: true }));
       setStartError(null);
@@ -164,6 +183,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   const stop = useCallback(
     async (kind: CaptureKind) => {
       wanted.current[kind] = false;
+      forget(kind);
       if (kind === 'stream') setReconnecting(null);
       setBusy((b) => ({ ...b, [kind]: true }));
       try {
@@ -180,59 +200,99 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     record: 0,
     stream: 0,
   });
-  const failure = status.failure;
+  const later = useCallback((kind: SessionKind, ms: number, run: () => void) => {
+    clearTimeout(retries.current.get(kind));
+    retries.current.set(
+      kind,
+      setTimeout(() => {
+        retries.current.delete(kind);
+        run();
+      }, ms),
+    );
+  }, []);
   useEffect(() => {
-    if (!failure || !broadcaster) return;
-    const { session, message } = failure;
-    // The NDI output stopped: it is brought back by itself (see below).
-    if (failure.kind === 'ndi') {
-      broadcaster.abandon('ndi', session);
-      setNdiTrouble(message);
-      return;
-    }
-    // The vertical version dropped: bring it back while the stream runs.
-    if (failure.kind === 'vertical') {
-      broadcaster.abandon('vertical', session);
-      if (!wanted.current.stream) return;
-      setVerticalTrouble(message);
-      const id = setTimeout(() => {
+    const pending = retries.current;
+    return () => {
+      for (const id of pending.values()) clearTimeout(id);
+      pending.clear();
+    };
+  }, []);
+  const onFailure = useCallback(
+    (failure: CaptureFailure) => {
+      if (!broadcaster) return;
+      const { session, message } = failure;
+      // The NDI output stopped: it is brought back by itself (see below).
+      if (failure.kind === 'ndi') {
+        broadcaster.abandon('ndi', session);
+        setNdiTrouble(message);
+        return;
+      }
+      // The vertical version dropped: bring it back while the stream runs.
+      if (failure.kind === 'vertical') {
+        broadcaster.abandon('vertical', session);
         if (!wanted.current.stream) return;
-        void broadcaster
-          .stop('vertical')
-          .then(() => broadcaster.startVertical(settingsRef.current, recordingName(showRef.current), rehearsalRef.current))
-          .then(
-            () => setVerticalTrouble(null),
-            (e: unknown) => setVerticalTrouble(e instanceof Error ? e.message : String(e)),
-          );
-      }, 5000);
-      return () => clearTimeout(id);
-    }
-    const kind = failure.kind;
-    broadcaster.abandon(kind, session);
-    if (!wanted.current[kind]) return;
-    // It never got going (first try): say so plainly instead of retrying in the background.
-    if (kind === 'stream' && failure.neverStarted && !everLive.current) {
-      wanted.current.stream = false;
-      void broadcaster.stop('stream');
-      setStartError({ kind, message: failure.message });
-      return;
-    }
-    const n = attempts.current[kind]++;
-    // A recording is restarted once (into a new file); a stream keeps trying.
-    if (kind === 'record' && n >= 1) {
-      wanted.current.record = false;
-      return;
-    }
-    if (kind === 'stream') setReconnecting({ attempt: n + 1, message });
-    const id = setTimeout(
-      () => {
+        setVerticalTrouble(message);
+        later('vertical', 5000, () => {
+          if (!wanted.current.stream) return;
+          void broadcaster
+            .stop('vertical')
+            .then(() => broadcaster.startVertical(settingsRef.current, recordingName(showRef.current), rehearsalRef.current))
+            .then(
+              () => setVerticalTrouble(null),
+              (e: unknown) => setVerticalTrouble(e instanceof Error ? e.message : String(e)),
+            );
+        });
+        return;
+      }
+      const kind = failure.kind;
+      broadcaster.abandon(kind, session);
+      if (!wanted.current[kind]) return;
+      // It never got going (first try): say so plainly instead of retrying in the background.
+      if (kind === 'stream' && failure.neverStarted && !everLive.current) {
+        wanted.current.stream = false;
+        void broadcaster.stop('stream');
+        setStartError({ kind, message: failure.message });
+        return;
+      }
+      const n = attempts.current[kind]++;
+      // A recording is restarted once (into a new file); a stream keeps trying.
+      if (kind === 'record' && n >= 1) {
+        wanted.current.record = false;
+        return;
+      }
+      if (kind === 'stream') setReconnecting({ attempt: n + 1, message });
+      later(kind, RETRY_MS[Math.min(n, RETRY_MS.length - 1)]!, () => {
         if (!wanted.current[kind]) return;
         void broadcaster.stop(kind).then(() => launch(kind).catch(() => {}));
-      },
-      RETRY_MS[Math.min(n, RETRY_MS.length - 1)],
-    );
-    return () => clearTimeout(id);
-  }, [failure, broadcaster, launch]);
+      });
+    },
+    [broadcaster, launch, later],
+  );
+  // Each failure is handled once, however often the status repeats it.
+  const handled = useRef(new Set<string>());
+  const failure = status.failure;
+  const failures = status.failures;
+  useEffect(() => {
+    for (const f of failures ?? (failure ? [failure] : [])) {
+      const key = `${f.kind}:${f.session}`;
+      if (handled.current.has(key)) continue;
+      handled.current.add(key);
+      onFailure(f);
+    }
+  }, [failure, failures, onFailure]);
+  // The encoder itself stopped (the app still waits for it): handled the same way.
+  useEffect(() => {
+    if (!broadcaster) return;
+    broadcaster.onLost = (kind, session, message) => {
+      const key = `${kind}:${session}`;
+      if (handled.current.has(key)) return;
+      handled.current.add(key);
+      onFailure({ kind, session, message });
+    };
+    return () => {
+      broadcaster.onLost = null;
+    };
+  }, [broadcaster, onFailure]);
   // Running again: forget the failed attempts.
   useEffect(() => {
     if (status.streaming?.speed != null) everLive.current = true;

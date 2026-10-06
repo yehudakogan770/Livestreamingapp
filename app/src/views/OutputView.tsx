@@ -31,7 +31,7 @@ export function OutputView({ screen }: { screen: ScreenId }) {
     const w = getCurrentWindow();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') void w.setFullscreen(false);
-      if (e.key === 'F11') {
+      if (e.key === 'F11' && !e.repeat) {
         e.preventDefault();
         void w.isFullscreen().then((f) => w.setFullscreen(!f));
       }

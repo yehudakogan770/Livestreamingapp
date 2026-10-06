@@ -18,7 +18,7 @@ use std::hash::{BuildHasher, Hasher};
 use std::io::{Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
-use std::sync::mpsc::{self, Sender};
+use std::sync::mpsc::{self, SyncSender};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
@@ -36,6 +36,9 @@ const PORTS_TO_TRY: u16 = 10;
 const MAX_BODY: u64 = 256 * 1024;
 /// How often phones are told the time (and dead connections noticed).
 const PING: Duration = Duration::from_secs(10);
+/// Updates waiting for one phone; a phone this far behind has stopped
+/// reading (asleep, out of range) and is let go, so memory never piles up.
+const PHONE_QUEUE: usize = 32;
 
 const PAGE: &str = include_str!("../remote/index.html");
 const SCRIPT: &str = include_str!("../remote/remote.js");
@@ -215,7 +218,7 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 
 struct Phone {
     id: u64,
-    tx: Sender<String>,
+    tx: SyncSender<String>,
 }
 
 struct Shared {
@@ -243,7 +246,7 @@ impl Shared {
         {
             let mut phones = lock(&self.phones);
             before = phones.len();
-            phones.retain(|p| p.tx.send(message.to_owned()).is_ok());
+            phones.retain(|p| p.tx.try_send(message.to_owned()).is_ok());
             after = phones.len();
         }
         if before != after {
@@ -1265,7 +1268,7 @@ fn stream(shared: &Shared, request: Request) {
     let Some(snapshot) = shared.backend.snapshot() else {
         return json(request, 503, r#"{"code":"starting"}"#);
     };
-    let (tx, rx) = mpsc::channel::<String>();
+    let (tx, rx) = mpsc::sync_channel::<String>(PHONE_QUEUE);
     let mut out = request.into_writer();
     let head = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: keep-alive\r\n\r\n";
     if out
@@ -1357,6 +1360,19 @@ mod tests {
             .map(|(_, b)| b.to_owned())
             .unwrap_or_default();
         (status, body)
+    }
+
+    #[test]
+    fn a_phone_that_stopped_reading_is_let_go() {
+        let (r, _) = remote();
+        let (tx, rx) = mpsc::sync_channel(PHONE_QUEUE);
+        lock(&r.shared.phones).push(Phone { id: 1, tx });
+        // Hours of changes to a phone whose connection went quiet.
+        for _ in 0..PHONE_QUEUE * 10 {
+            r.shared.send_all("update");
+        }
+        assert_eq!(r.shared.phone_count(), 0, "let go, not queued forever");
+        assert_eq!(rx.try_iter().count(), PHONE_QUEUE);
     }
 
     #[test]

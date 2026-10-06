@@ -200,6 +200,9 @@ export function ControlView({
   // Keyboard: Enter TAKE · Shift+Enter CUT · 1–9, 0 line up an input · Shift+1–4 overlays · B blank this screen.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // A key held down repeats: act on the first press only, so a long press
+      // never takes twice (back to the old picture) or flashes blank on and off.
+      if (e.repeat) return;
       // Ctrl + 1 – 4: TAKE with a favorite transition.
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && /^Digit[1-4]$/.test(e.code) && !typing(e.target)) {
         const t = show.settings.favouriteTransitions[Number(e.code.slice(5)) - 1];

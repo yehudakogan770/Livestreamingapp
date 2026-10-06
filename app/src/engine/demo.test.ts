@@ -24,6 +24,14 @@ describe('demo engine (same rules as the Rust engine)', () => {
     expect(s.screens.live.transition?.kind).toBe('fade');
   });
 
+  it('cutting to what is in Next leaves the old picture in Next, so TAKE still switches', () => {
+    let s = run([...two, { type: 'cutTo', screen: 'live', sourceId: 'a' }, { type: 'setPreview', screen: 'live', sourceId: 'b' }]);
+    s = run([{ type: 'cutTo', screen: 'live', sourceId: 'b' }], s, 5000);
+    expect(s.screens.live).toMatchObject({ program: 'b', preview: 'a' });
+    s = run([{ type: 'playNow', screen: 'live', sourceId: 'a', transition: { kind: 'fade', durationMs: 500 } }], s, 6000);
+    expect(s.screens.live).toMatchObject({ program: 'a', preview: 'b' });
+  });
+
   it('the T-bar mixes, and reaching the end finishes the take once', () => {
     let s = run([
       ...two,

@@ -2,9 +2,20 @@ import { useCallback, useEffect, useState } from 'react';
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
+import { invoke } from '@tauri-apps/api/core';
 import './UpdateBar.css';
 
 const isInsideLumora = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
+
+/** Streaming or recording right now (false where that can't be asked, like Lumora Studio). */
+async function sendingNow(): Promise<boolean> {
+  try {
+    const s = await invoke<{ recording: unknown; streaming: unknown; vertical?: unknown }>('capture_status');
+    return !!(s.recording || s.streaming || s.vertical);
+  } catch {
+    return false;
+  }
+}
 
 /** Ask for a check now (Help → Check for updates). */
 export function checkForUpdates(): void {
@@ -49,7 +60,12 @@ export function UpdateBar({ product = 'Lumora' }: { product?: string }) {
     if (isInsideLumora()) void getVersion().then(setCurrent);
   }, []);
 
-  const install = (update: Update) => {
+  const install = async (update: Update) => {
+    // Updating closes Lumora: never while the stream or a recording runs.
+    if (await sendingNow()) {
+      setSt({ s: 'error', message: 'Stop the stream and the recording first (updating closes Lumora).' });
+      return;
+    }
     let done = 0;
     let total: number | null = null;
     setSt({ s: 'getting', update, done, total });
@@ -84,7 +100,7 @@ export function UpdateBar({ product = 'Lumora' }: { product?: string }) {
             <b>A new {product} is ready</b> ({st.update.version}). It takes a minute and {product} opens again by itself.
             {product === 'Lumora' ? ' Not during an event.' : ''}
           </span>
-          <button type="button" className="btn btn--primary" onClick={() => install(st.update)}>
+          <button type="button" className="btn btn--primary" onClick={() => void install(st.update)}>
             Update now
           </button>
           <button type="button" className="btn" onClick={() => setHidden(true)}>

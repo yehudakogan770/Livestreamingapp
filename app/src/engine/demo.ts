@@ -444,7 +444,8 @@ function apply(s: Show, a: Action, now: number) {
       notMonitor(a.screen);
       picture(s, a.sourceId);
       if (isPesukim(s, a.sourceId)) return pesukimBarIn(s, a.screen, a.sourceId, true, now);
-      const keep = s.screens[a.screen].preview;
+      // Next stays, unless it is what goes on air now (then the old picture drops into Next).
+      const keep = s.screens[a.screen].preview === a.sourceId ? null : s.screens[a.screen].preview;
       s.screens[a.screen].preview = a.sourceId;
       take(s, a.screen, 'cut', MIN_TRANSITION_MS, now);
       if (keep !== null) s.screens[a.screen].preview = keep;
@@ -943,7 +944,8 @@ function apply(s: Show, a: Action, now: number) {
       notMonitor(a.screen);
       picture(s, a.sourceId);
       if (isPesukim(s, a.sourceId)) return pesukimBarIn(s, a.screen, a.sourceId, true, now);
-      const keep = s.screens[a.screen].preview;
+      // Next stays, unless it is what goes on air now (then the old picture drops into Next).
+      const keep = s.screens[a.screen].preview === a.sourceId ? null : s.screens[a.screen].preview;
       s.screens[a.screen].preview = a.sourceId;
       take(s, a.screen, a.transition.kind, Math.min(MAX_TRANSITION_MS, Math.max(MIN_TRANSITION_MS, a.transition.durationMs)), now);
       if (keep !== null) s.screens[a.screen].preview = keep;

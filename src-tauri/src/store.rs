@@ -32,7 +32,8 @@ pub enum LoadedFrom {
 }
 
 enum Msg {
-    Save(Box<Show>),
+    /// A version of the show and its revision (a higher one is newer).
+    Save(Box<Show>, u64),
     /// Also keep this event file up to date (or stop).
     Target(Option<PathBuf>),
 }
@@ -54,9 +55,11 @@ impl Store {
         (Store { tx }, show, from)
     }
 
-    /// Ask for the show to be saved. Returns immediately.
-    pub fn save(&self, show: Show) {
-        let _ = self.tx.send(Msg::Save(Box::new(show)));
+    /// Ask for the show at `revision` to be saved. Returns immediately.
+    /// Versions can arrive out of order (two changes at once); an older one
+    /// never replaces a newer one on disk.
+    pub fn save(&self, show: Show, revision: u64) {
+        let _ = self.tx.send(Msg::Save(Box::new(show), revision));
     }
 
     /// Keep an event file up to date from now on (`None`: only the app's copy).
@@ -79,10 +82,15 @@ fn load(dir: &Path) -> (Show, LoadedFrom) {
 
 fn writer(dir: &Path, rx: &Receiver<Msg>) {
     let mut target: Option<PathBuf> = None;
+    let mut newest = 0;
     while let Ok(msg) = rx.recv() {
         let mut latest = None;
         let mut apply = |m: Msg, latest: &mut Option<Show>| match m {
-            Msg::Save(show) => *latest = Some(*show),
+            Msg::Save(show, revision) if revision >= newest => {
+                newest = revision;
+                *latest = Some(*show);
+            }
+            Msg::Save(..) => {}
             Msg::Target(t) => target = t,
         };
         apply(msg, &mut latest);
@@ -179,7 +187,7 @@ mod tests {
         assert_eq!(from, LoadedFrom::Fresh);
         assert_eq!(show.sources.len(), 0);
 
-        store.save(show_with("Camera 1"));
+        store.save(show_with("Camera 1"), 1);
         wait_for(&dir.join(FILE), "Camera 1");
         drop(store);
 
@@ -190,12 +198,29 @@ mod tests {
     }
 
     #[test]
+    fn an_older_version_arriving_late_never_overwrites_a_newer_one() {
+        let dir = temp_dir("order");
+        let (store, _, _) = Store::open(dir.clone());
+        store.save(show_with("Newer"), 8);
+        store.save(show_with("Older"), 7);
+        store.save(show_with("Marker"), 9);
+        wait_for(&dir.join(FILE), "Marker");
+        store.save(show_with("Stale"), 3);
+        store.save(show_with("Last"), 10);
+        wait_for(&dir.join(FILE), "Last");
+        drop(store);
+        let text = fs::read_to_string(dir.join(FILE)).unwrap();
+        assert!(!text.contains("Stale"));
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn a_corrupt_save_falls_back_to_the_backup() {
         let dir = temp_dir("backup");
         let (store, _, _) = Store::open(dir.clone());
-        store.save(show_with("First"));
+        store.save(show_with("First"), 1);
         wait_for(&dir.join(FILE), "First");
-        store.save(show_with("Second"));
+        store.save(show_with("Second"), 2);
         wait_for(&dir.join(BACKUP), "First");
         drop(store);
 

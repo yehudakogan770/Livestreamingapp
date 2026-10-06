@@ -107,9 +107,14 @@ export function acquireCamera(deviceId: string): Promise<MediaStream> {
   return entry.stream;
 }
 
-export function releaseCamera(deviceId: string) {
+/**
+ * Done with a camera. Pass the promise acquireCamera gave: after an unplug the
+ * camera may have been opened afresh, and letting go of the old one must never
+ * close the new one (that would black out the camera on air).
+ */
+export function releaseCamera(deviceId: string, acquired?: Promise<MediaStream>) {
   const entry = cameras.get(deviceId);
-  if (!entry) return;
+  if (!entry || (acquired && entry.stream !== acquired)) return;
   entry.users--;
   if (entry.users <= 0) {
     cameras.delete(deviceId);
@@ -194,7 +199,8 @@ export interface CameraSetting {
 
 /** The settings this camera offers, with what they are now (none if it can't say). */
 export async function cameraSettings(deviceId: string): Promise<CameraSetting[]> {
-  const st = await acquireCamera(deviceId).catch(() => null);
+  const opening = acquireCamera(deviceId);
+  const st = await opening.catch(() => null);
   if (!st) return [];
   try {
     const track = st.getVideoTracks()[0];
@@ -215,6 +221,6 @@ export async function cameraSettings(deviceId: string): Promise<CameraSetting[]>
     }
     return out;
   } finally {
-    releaseCamera(deviceId);
+    releaseCamera(deviceId, opening);
   }
 }

@@ -574,7 +574,8 @@ function CameraView({
       setFailed('Camera not found or unplugged');
       return;
     }
-    acquireCamera(deviceId).then(
+    const opening = acquireCamera(deviceId);
+    opening.then(
       (stream) => {
         if (!alive || !ref.current) return;
         // Unplugged during the show: the track ends and the screen goes black.
@@ -593,7 +594,7 @@ function CameraView({
     );
     return () => {
       alive = false;
-      releaseCamera(deviceId);
+      releaseCamera(deviceId, opening);
     };
   }, [deviceId, attempt]);
   if (failed) return <Missing text={failed} audience={audience} />;

@@ -181,6 +181,11 @@ export class ProgramCompositor {
     this.visuals = null;
     for (const d of this.delays.values()) d.dispose();
     this.delays.clear();
+    for (const k of this.keyers.values()) k.dispose();
+    this.keyers.clear();
+    this.visions.clear();
+    for (const p of this.pages.values()) p.frame?.close();
+    this.pages.clear();
     for (const m of [...this.media.values(), ...this.pictures.values()]) this.drop(m);
     this.media.clear();
     this.pictures.clear();
@@ -189,6 +194,11 @@ export class ProgramCompositor {
   /** Draw the Live Screen as it is at `now`. */
   draw(now: number): void {
     const { ctx, canvas } = this;
+    if (this.dirty) {
+      this.dirty = false;
+      // Drops any clip, fade or move a failed part left behind.
+      (ctx as CanvasRenderingContext2D & { reset?: () => void }).reset?.();
+    }
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#000';
@@ -216,57 +226,31 @@ export class ProgramCompositor {
       }
     }
     const overlays = overlaysOn(show.overlays, this.screen, now);
-    this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
-    if (now - this.lastSync > 150) {
-      this.lastSync = now;
-      for (const [id, m] of this.media) {
-        const src = show.sources.find((s) => s.id === id);
-        if (src && m.el instanceof HTMLVideoElement && src.kind.type === 'video') syncMedia(m.el, src, now);
+    this.safely('media', () => {
+      this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
+      if (now - this.lastSync > 150) {
+        this.lastSync = now;
+        for (const [id, m] of this.media) {
+          const src = show.sources.find((s) => s.id === id);
+          if (src && m.el instanceof HTMLVideoElement && src.kind.type === 'video') syncMedia(m.el, src, now);
+        }
       }
-    }
+    });
 
     for (const l of [...layers].sort((a, b) => Number(!!a.top) - Number(!!b.top))) {
       const src = show.sources.find((s) => s.id === l.id);
       if (!src || l.opacity <= 0) continue;
-      ctx.save();
-      ctx.globalAlpha = clamp01(l.opacity);
-      if (l.shape) {
-        ctx.beginPath();
-        shapePath(ctx, l.shape, w, h);
-        ctx.clip();
-      }
-      if (l.shift || l.shiftY) ctx.translate(((l.shift ?? 0) / 100) * w, ((l.shiftY ?? 0) / 100) * h);
-      if (l.scale !== undefined && l.scale !== 1) {
-        ctx.translate(w / 2, h / 2);
-        ctx.scale(l.scale, l.scale);
-        ctx.translate(-w / 2, -h / 2);
-      }
-      if (l.blur) ctx.filter = `blur(${(l.blur * h).toFixed(2)}px)`;
-      const mask = l.luma && lumaMask(l.luma.pattern, l.luma.p);
-      if (mask) {
-        // Draw the new source apart, keep it only where the mask shows, then put it on.
-        const off = this.offscreen(w, h);
-        const main = this.ctx;
-        const o = off.getContext('2d')!;
-        o.globalCompositeOperation = 'source-over';
-        o.clearRect(0, 0, w, h);
-        this.ctx = o;
-        try {
-          this.drawSource(src, show.event, now, w, h);
-        } finally {
-          this.ctx = main;
-        }
-        o.globalCompositeOperation = 'destination-in';
-        o.drawImage(mask.canvas, 0, 0, w, h);
-        o.globalCompositeOperation = 'source-over';
-        main.drawImage(off, 0, 0);
-      } else this.drawSource(src, show.event, now, w, h);
-      ctx.restore();
+      this.safely(src.id, () => this.drawLayer(l, src, show, now, w, h));
     }
     this.overlay('#000', black, w, h);
     this.overlay('#fff', white, w, h);
-    for (const { o } of overlays) this.drawOverlay(o, show, now, w, h);
-    this.drawSting(stinger, now, w, h);
+    for (const { o } of overlays) this.safely(`overlay:${o.sourceId}`, () => this.drawOverlay(o, show, now, w, h));
+    this.safely('stinger', () => this.drawSting(stinger, now, w, h));
+    // Blank and PANIC always end up on top, whatever happened above.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
+    ctx.globalAlpha = 1;
     this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), w, h);
     const panic = fadeAmount(show.panic, show.panicChangedAt, now);
     if (panic > 0) {
@@ -276,6 +260,71 @@ export class ProgramCompositor {
       ctx.restore();
     }
     ctx.globalAlpha = 1;
+  }
+
+  /** Inputs that failed to draw (each is said once). */
+  private readonly broken = new Set<string>();
+
+  /**
+   * Draw one part of the picture. If it fails, it is left out and the rest
+   * (overlays, blank, PANIC) is still drawn: the output never freezes or
+   * keeps a half-applied clip or fade from it.
+   */
+  private safely(what: string, draw: () => void) {
+    const ctx = this.ctx;
+    ctx.save();
+    try {
+      draw();
+    } catch (e) {
+      // Something it saved may not have been restored: start the next frame clean.
+      this.dirty = true;
+      if (!this.broken.has(what) && this.broken.size < 100) {
+        this.broken.add(what);
+        console.error(`Lumora: could not draw ${what}`, e);
+      }
+    } finally {
+      ctx.restore();
+    }
+  }
+
+  /** A part failed mid-frame: its drawing state is cleared before the next frame. */
+  private dirty = false;
+
+  /** One layer of the picture (a source with its transition's fade, shape, move and blur). */
+  private drawLayer(l: ReturnType<typeof programLayers>['layers'][number], src: Source, show: Show, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    ctx.globalAlpha = clamp01(l.opacity);
+    if (l.shape) {
+      ctx.beginPath();
+      shapePath(ctx, l.shape, w, h);
+      ctx.clip();
+    }
+    if (l.shift || l.shiftY) ctx.translate(((l.shift ?? 0) / 100) * w, ((l.shiftY ?? 0) / 100) * h);
+    if (l.scale !== undefined && l.scale !== 1) {
+      ctx.translate(w / 2, h / 2);
+      ctx.scale(l.scale, l.scale);
+      ctx.translate(-w / 2, -h / 2);
+    }
+    if (l.blur) ctx.filter = `blur(${(l.blur * h).toFixed(2)}px)`;
+    const mask = l.luma && lumaMask(l.luma.pattern, l.luma.p);
+    if (mask) {
+      // Draw the new source apart, keep it only where the mask shows, then put it on.
+      const off = this.offscreen(w, h);
+      const main = this.ctx;
+      const o = off.getContext('2d')!;
+      o.globalCompositeOperation = 'source-over';
+      o.clearRect(0, 0, w, h);
+      this.ctx = o;
+      try {
+        this.drawSource(src, show.event, now, w, h);
+      } finally {
+        this.ctx = main;
+      }
+      o.globalCompositeOperation = 'destination-in';
+      o.drawImage(mask.canvas, 0, 0, w, h);
+      o.globalCompositeOperation = 'source-over';
+      main.drawImage(off, 0, 0);
+    } else this.drawSource(src, show.event, now, w, h);
   }
 
   private drawSting(play: StingerPlay | undefined, now: number, w: number, h: number) {
@@ -2971,6 +3020,14 @@ export class ProgramCompositor {
         this.media.delete(id);
       }
     }
+    // Processing for inputs that were removed (each holds a graphics context).
+    for (const [id, k] of this.keyers) {
+      if (show.sources.some((s) => s.id === id)) continue;
+      k.dispose();
+      this.keyers.delete(id);
+      this.visions.delete(id);
+    }
+    for (const id of this.visions.keys()) if (!show.sources.some((s) => s.id === id)) this.visions.delete(id);
     for (const id of wanted) {
       if (this.media.has(id)) continue;
       const src = show.sources.find((s) => s.id === id);
@@ -2999,18 +3056,21 @@ export class ProgramCompositor {
       const el = document.createElement('video');
       el.muted = true;
       el.playsInline = true;
-      const m: Media = {
-        key,
-        el,
-        failed: false,
-        release: () => releaseCamera(k.deviceId),
-      };
+      const m: Media = { key, el, failed: false };
       if (!navigator.mediaDevices?.getUserMedia) {
         m.failed = true;
         return m;
       }
-      acquireCamera(k.deviceId).then(
+      const opening = acquireCamera(k.deviceId);
+      let released = false;
+      m.release = () => {
+        released = true;
+        releaseCamera(k.deviceId, opening);
+      };
+      opening.then(
         (stream) => {
+          // Let go of already (no longer on air): don't hold on to the picture.
+          if (released) return;
           const tracks = stream.getVideoTracks();
           tracks.forEach((t) =>
             t.addEventListener('ended', () => {

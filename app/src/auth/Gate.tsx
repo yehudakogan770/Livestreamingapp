@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { authOn } from './config';
 import { TEST_BUILD } from '../e2e';
@@ -26,10 +26,19 @@ type Gate = { s: 'checking' } | { s: 'out' } | { s: 'in'; access: Access } | { s
  */
 export function Gate({ children }: { children: ReactNode }) {
   const [gate, setGate] = useState<Gate>({ s: 'checking' });
+  // Once let in, Lumora stays open until the person signs out or closes it:
+  // a sign-in that lapses mid-event (no internet when the session renews, a
+  // server hiccup) must never close the control window and end the stream.
+  const letIn = useRef(false);
   const check = useCallback(() => {
+    const keep = (next: Gate) =>
+      setGate((prev) => {
+        if (next.s === 'in' && next.access.state === 'approved') letIn.current = true;
+        return letIn.current && !(next.s === 'in' && next.access.state === 'approved') ? prev : next;
+      });
     checkAccess()
-      .then((access) => setGate(access ? { s: 'in', access } : { s: 'out' }))
-      .catch((e: unknown) => setGate({ s: 'error', message: e instanceof Error ? e.message : String(e) }));
+      .then((access) => keep(access ? { s: 'in', access } : { s: 'out' }))
+      .catch((e: unknown) => keep({ s: 'error', message: e instanceof Error ? e.message : String(e) }));
   }, []);
   // The end-to-end test build (CI only, never an installer) has no sign-in: see e2e.ts.
   const locked = authOn() && !TEST_BUILD;
@@ -45,7 +54,14 @@ export function Gate({ children }: { children: ReactNode }) {
     const t = setInterval(check, 20_000);
     return () => clearInterval(t);
   }, [waiting, check]);
-  const leave = useCallback(() => void signOut().then(() => setGate({ s: 'out' })), []);
+  const leave = useCallback(
+    () =>
+      void signOut().then(() => {
+        letIn.current = false;
+        setGate({ s: 'out' });
+      }),
+    [],
+  );
 
   if (!locked) return <>{children}</>;
   if (gate.s === 'in' && gate.access.state === 'approved') {

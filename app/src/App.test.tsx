@@ -112,6 +112,28 @@ describe('Main screen', () => {
     expect(screen.queryByText(/^Blanked$/)).toBeNull();
   });
 
+  it('holding a key down does it once, never flicking the picture back and forth', async () => {
+    await start();
+    await addColour('One');
+    await addColour('Two');
+    await act(async () => {
+      fireEvent.keyDown(window, { key: '1' });
+      fireEvent.keyDown(window, { key: 'Enter', shiftKey: true });
+      fireEvent.keyDown(window, { key: '2' });
+    });
+    // Enter held: the key repeats, but only the first press takes.
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'Enter' });
+      for (let i = 0; i < 3; i++) fireEvent.keyDown(window, { key: 'Enter', repeat: true });
+    });
+    expect(onAir()).toBe('Two');
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'b' });
+      fireEvent.keyDown(window, { key: 'b', repeat: true });
+    });
+    expect(screen.getByText(/^Blanked$/)).toBeInTheDocument();
+  });
+
   it('PANIC needs a double-click, and one click brings the screens back', async () => {
     await start();
     const panic = screen.getByRole('button', { name: 'PANIC' });

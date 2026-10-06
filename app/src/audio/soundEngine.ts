@@ -56,6 +56,9 @@ export function canChooseSpeakers(): boolean {
   return typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
 }
 
+/** How often a microphone that dropped out is tried again. */
+const MIC_RETRY_MS = 3000;
+
 const channelKey = (s: Source) =>
   s.kind.type === 'stream'
     ? `stream:${s.kind.url}`
@@ -318,6 +321,7 @@ export class SoundEngine {
         })
         .then((stream) => {
           if (this.channels.get(src.id) !== ch) return stream.getTracks().forEach((t) => t.stop());
+          this.problems.delete(src.id);
           ch.stream = stream;
           ch.input = ctx.createMediaStreamSource(stream);
           ch.input.connect(delay);
@@ -439,6 +443,26 @@ export class SoundEngine {
     this.ducked = duckStep(this.ducked, now - this.talkedAt < DUCK_HOLD_MS);
   }
 
+  /** When dropped-out microphones were last tried again. */
+  private micsTriedAt = 0;
+
+  /**
+   * A microphone that dropped out (unplugged, a wireless receiver's USB
+   * hiccup, Windows resetting the sound device) is opened again every few
+   * seconds, so it comes back by itself instead of staying silent.
+   */
+  private reopenMicrophones(show: Show, now: number) {
+    if (now - this.micsTriedAt < MIC_RETRY_MS) return;
+    this.micsTriedAt = now;
+    for (const src of soundSources(show)) {
+      if (src.kind.type !== 'microphone' || !this.channels.get(src.id)?.failed) continue;
+      this.drop(src.id);
+      this.add(src);
+      // Still a problem until it really opens.
+      this.problems.add(src.id);
+    }
+  }
+
   private tick() {
     const show = this.show;
     if (!show) return;
@@ -448,6 +472,7 @@ export class SoundEngine {
     const smooth = 0.012;
     const solo = show.audio.solo;
     this.phonesFromStream.gain.setTargetAtTime(solo === null ? 1 : 0, t, smooth);
+    this.reopenMicrophones(show, now);
     for (const src of soundSources(show)) {
       const ch = this.channels.get(src.id);
       if (!ch) continue;

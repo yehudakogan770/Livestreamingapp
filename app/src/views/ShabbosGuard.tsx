@@ -25,13 +25,15 @@ export function ShabbosGuard({ show }: { show: Show }) {
   const candles = on ? zmanimOn(now, place).candles : null;
   const stopAt = candles === null ? null : candles - place.stopMinutes * 60_000;
   const live = !!b && (!!b.status.streaming || !!b.status.recording);
+  // A stream that dropped a moment ago is still wanted: Lumora would bring it back.
+  const wanted = live || !!b?.reconnecting;
   useEffect(() => {
     if (!b || stopAt === null || candles === null || now < stopAt || now > candles + 6 * 3_600_000) return;
     if (stopped.current === candles) return;
     stopped.current = candles;
-    if (!live) return;
-    void Promise.allSettled([b.status.streaming && b.stop('stream'), b.status.recording && b.stop('record')]).then(() => setDone(candles));
-  }, [b, now, stopAt, candles, live]);
+    // Both are stopped (not only what runs this second), so nothing starts again by itself.
+    void Promise.allSettled([b.stop('stream'), b.stop('record')]).then(() => wanted && setDone(candles));
+  }, [b, now, stopAt, candles, wanted]);
   if (stopAt === null || candles === null) return null;
   if (done === candles && now - candles < 30 * 60_000) {
     return (

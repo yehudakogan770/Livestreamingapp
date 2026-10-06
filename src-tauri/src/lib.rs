@@ -230,7 +230,7 @@ fn apply(app: &tauri::AppHandle, state: &AppState, action: Action) -> Result<(),
 
 /// Save a new version of the show and send it to every window and phone.
 fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
-    state.store.save(snapshot.show.clone());
+    state.store.save(snapshot.show.clone(), snapshot.revision);
     state.browsers.sync(&snapshot.show);
     state.streams.sync(&snapshot.show);
     state.desktop.sync(&snapshot.show);
@@ -1063,7 +1063,11 @@ fn heartbeat(app: tauri::AppHandle) {
         let state = app.state::<AppState>();
         let snapshot = {
             let mut engine = lock(&state);
-            match engine.tick(now_ms()) {
+            // A bug in one tick must never stop time for the rest of the event
+            // (a tick works on a copy, so the show is unharmed).
+            let ticked =
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| engine.tick(now_ms())));
+            match ticked.unwrap_or(Outcome::Unchanged) {
                 Outcome::Unchanged => continue,
                 Outcome::Changed => Snapshot {
                     revision: engine.revision(),

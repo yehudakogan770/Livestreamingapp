@@ -170,7 +170,18 @@ export interface CaptureStatus {
   lastRecording: string | null;
   /** Still turning the last recording into an .mp4. */
   finishing: boolean;
-  failure: { kind: SessionKind; session: number; message: string; neverStarted?: boolean } | null;
+  failure: CaptureFailure | null;
+  /** The last few failures, oldest first (several can happen at once; `failure` is the newest). */
+  failures?: CaptureFailure[];
+}
+
+/** Why a recording or stream stopped by itself. */
+export interface CaptureFailure {
+  kind: SessionKind;
+  session: number;
+  message: string;
+  /** It never got going (the server was never reached). */
+  neverStarted?: boolean;
 }
 
 export function defaultCaptureSettings(): CaptureSettings {

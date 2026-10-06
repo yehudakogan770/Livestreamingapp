@@ -74,11 +74,15 @@ export function usePtzFollow(show: Show | null, client: EngineClient): void {
       let plan = STILL;
       let alive = true;
       const send = (c: PtzCommand) => void client.ptz(ptz, c).catch(() => {});
-      void acquireCamera(deviceId).then((st) => {
-        if (!alive) return;
-        video.srcObject = st;
-        void video.play().catch(() => {});
-      });
+      const opening = acquireCamera(deviceId);
+      opening.then(
+        (st) => {
+          if (!alive) return;
+          video.srcObject = st;
+          void video.play().catch(() => {});
+        },
+        () => {}, // A camera that can't open just isn't followed.
+      );
       const latest = () => showRef.current?.sources.find((s) => s.id === id)?.autoFrame ?? src.autoFrame;
       const timer = setInterval(() => {
         if (video.readyState < 2) return;
@@ -96,7 +100,7 @@ export function usePtzFollow(show: Show | null, client: EngineClient): void {
         // Never leave a camera moving.
         for (const c of commandsFor(plan, STILL)) send(c);
         video.srcObject = null;
-        releaseCamera(deviceId);
+        releaseCamera(deviceId, opening);
       });
     }
     return () => stops.forEach((s) => s());

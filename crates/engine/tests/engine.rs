@@ -365,6 +365,49 @@ fn cut_to_goes_straight_to_air_and_keeps_the_preview() {
 }
 
 #[test]
+fn cutting_to_what_is_in_next_leaves_the_old_picture_in_next() {
+    // Otherwise Next and On Air show the same input and TAKE does nothing.
+    let mut e = on_air();
+    assert_eq!(e.show().screens.live.preview, Some(id("src-2")));
+    e.apply(
+        Action::CutTo {
+            screen: ScreenId::Live,
+            source_id: id("src-2"),
+        },
+        100,
+    )
+    .unwrap();
+    let live = &e.show().screens.live;
+    assert_eq!(live.program, Some(id("src-2")));
+    assert_eq!(live.preview, Some(id("src-1")));
+    e.apply(
+        Action::PlayNow {
+            screen: ScreenId::Live,
+            source_id: id("src-1"),
+            transition: Transition {
+                kind: TransitionKind::Fade,
+                duration_ms: 500,
+            },
+        },
+        200,
+    )
+    .unwrap();
+    let live = &e.show().screens.live;
+    assert_eq!(live.program, Some(id("src-1")));
+    assert_eq!(live.preview, Some(id("src-2")));
+    e.apply(
+        Action::Take {
+            screen: ScreenId::Live,
+            transition: None,
+            duration_ms: None,
+        },
+        300,
+    )
+    .unwrap();
+    assert_eq!(e.show().screens.live.program, Some(id("src-2")));
+}
+
+#[test]
 fn tbar_moves_and_completes_the_take_at_the_end() {
     let mut e = on_air();
     e.apply(

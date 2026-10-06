@@ -845,7 +845,14 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 pesukim_bar(s, screen, &source_id, true, now);
                 return Ok(());
             }
-            let keep = s.screens.get(screen).preview.clone();
+            // What was in Next stays there, unless it is what goes on air now
+            // (then the old picture drops into Next, as with TAKE).
+            let keep = s
+                .screens
+                .get(screen)
+                .preview
+                .clone()
+                .filter(|p| p != &source_id);
             s.screens.get_mut(screen).preview = Some(source_id);
             take(
                 s,
@@ -1311,7 +1318,14 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 pesukim_bar(s, screen, &source_id, true, now);
                 return Ok(());
             }
-            let keep = s.screens.get(screen).preview.clone();
+            // What was in Next stays there, unless it is what goes on air now
+            // (then the old picture drops into Next, as with TAKE).
+            let keep = s
+                .screens
+                .get(screen)
+                .preview
+                .clone()
+                .filter(|p| p != &source_id);
             s.screens.get_mut(screen).preview = Some(source_id);
             take(s, screen, transition.clamped(), now)?;
             if keep.is_some() {

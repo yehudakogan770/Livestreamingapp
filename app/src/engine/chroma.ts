@@ -372,6 +372,11 @@ export class ChromaKeyer {
     return this.gl !== null;
   }
 
+  /** Free its graphics memory now (a window only gets a few drawing contexts). */
+  dispose(): void {
+    this.gl?.getExtension('WEBGL_lose_context')?.loseContext();
+  }
+
   /**
    * Process one frame of `src` (sized w × h). The canvas takes the cropped
    * size (at most `maxW` wide). Returns false if it could not.

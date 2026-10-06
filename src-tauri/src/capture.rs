@@ -33,6 +33,13 @@ use crate::store::write_file_atomic;
 const FILE: &str = "capture.json";
 /// More than this waiting to be written means the disk or network can't keep up.
 const MAX_QUEUED: u64 = 64 * 1024 * 1024;
+/// FFmpeg reports its progress every second; this long without a report means
+/// it is stuck (the network went silent): it is ended so the stream can reconnect.
+const STALL: Duration = Duration::from_secs(20);
+/// After stop, how long FFmpeg gets to take the last chunks before it is ended.
+const STOP_GRACE: Duration = Duration::from_secs(10);
+/// How many recent failures the status keeps (several can happen at once).
+const FAILURES_KEPT: usize = 8;
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -236,6 +243,8 @@ pub struct CaptureStatus {
     /// Still turning the last recording into an .mp4.
     pub finishing: bool,
     pub failure: Option<Failure>,
+    /// The last few failures, oldest first (`failure` is the newest).
+    pub failures: Vec<Failure>,
 }
 
 // ---------------------------------------------------------------------------
@@ -287,12 +296,18 @@ impl Shared {
             let slot = Shared::slot(s, kind);
             if slot.as_ref().is_some_and(|r| r.session == session) {
                 *slot = None;
-                s.failure = Some(Failure {
+                let f = Failure {
                     kind,
                     session,
                     message,
                     never_started,
-                });
+                };
+                // Kept in a list too: the stream and its vertical version often
+                // fail together, and each must be seen to be retried.
+                s.failures.push(f.clone());
+                let extra = s.failures.len().saturating_sub(FAILURES_KEPT);
+                s.failures.drain(..extra);
+                s.failure = Some(f);
             }
         });
     }
@@ -304,6 +319,10 @@ struct Session {
     queued: Arc<AtomicU64>,
     /// Set when the operator stops it (so the end is not a failure).
     stopping: Arc<AtomicBool>,
+    /// The FFmpegs it feeds (ended if they are stuck after stop).
+    pids: Vec<u32>,
+    /// Set once everything has finished.
+    done: Arc<AtomicBool>,
 }
 
 /// Recordings and streams.
@@ -315,6 +334,8 @@ pub struct Capture {
     shared: Arc<Shared>,
     next: AtomicU64,
     ffmpeg: Option<PathBuf>,
+    max_queued: u64,
+    stall: Duration,
 }
 
 impl Capture {
@@ -345,6 +366,8 @@ impl Capture {
             }),
             next: AtomicU64::new(1),
             ffmpeg,
+            max_queued: MAX_QUEUED,
+            stall: STALL,
         }
     }
 
@@ -416,16 +439,20 @@ impl Capture {
         };
         let (tx, rx) = mpsc::channel::<Vec<u8>>();
         let queued = Arc::new(AtomicU64::new(0));
+        let pids = finish.pids();
+        let done = Arc::new(AtomicBool::new(false));
         {
             let shared = Arc::clone(&self.shared);
             let queued = Arc::clone(&queued);
             let ffmpeg = self.ffmpeg.clone();
             let mime = mime.to_owned();
+            let done = Arc::clone(&done);
             thread::Builder::new()
                 .name(format!("lumora-{kind:?}-{session}").to_lowercase())
                 .spawn(move || {
                     write_loop(&shared, kind, session, out, &rx, &queued);
                     finish.run(&shared, ffmpeg.as_deref(), &mime);
+                    done.store(true, Ordering::SeqCst);
                 })
                 .map_err(|e| e.to_string())?;
         }
@@ -436,6 +463,8 @@ impl Capture {
                 tx,
                 queued,
                 stopping,
+                pids,
+                done,
             },
         );
         self.shared.update(|s| {
@@ -464,10 +493,10 @@ impl Capture {
             return Err("not running".to_owned());
         }
         let len = bytes.len() as u64;
-        if s.queued.fetch_add(len, Ordering::SeqCst) + len > MAX_QUEUED {
+        if s.queued.fetch_add(len, Ordering::SeqCst) + len > self.max_queued {
             let kind = s.kind;
             drop(sessions);
-            self.stop(session);
+            // Say why first: once stopped, the session is no longer there to fail.
             self.shared.fail(
                 kind,
                 session,
@@ -479,6 +508,7 @@ impl Capture {
                     Kind::Ndi => "The computer can't keep up with the NDI output.".to_owned(),
                 },
             );
+            self.stop(session);
             return Err("too slow".to_owned());
         }
         s.tx.send(bytes).map_err(|_| "not running".to_owned())
@@ -493,6 +523,20 @@ impl Capture {
         // Dropping the sender ends the write loop; the file is closed or
         // FFmpeg finishes sending.
         drop(s.tx);
+        // An FFmpeg stuck on a dead connection never takes the last chunks:
+        // end it, so neither it nor the write loop is left behind.
+        if !s.pids.is_empty() {
+            let (pids, done) = (s.pids, s.done);
+            thread::spawn(move || {
+                let deadline = Instant::now() + STOP_GRACE;
+                while Instant::now() < deadline && !done.load(Ordering::SeqCst) {
+                    thread::sleep(Duration::from_millis(100));
+                }
+                if !done.load(Ordering::SeqCst) {
+                    pids.into_iter().for_each(kill_pid);
+                }
+            });
+        }
         self.shared.update(|st| {
             let slot = Shared::slot(st, s.kind);
             if slot.as_ref().is_some_and(|r| r.session == session) {
@@ -624,8 +668,12 @@ impl Capture {
             let shared = Arc::clone(&self.shared);
             let errors = Arc::clone(&errors);
             let stopping = Arc::clone(stopping);
+            let heard = Arc::new(AtomicU64::new(now_ms()));
+            let ended = Arc::new(AtomicBool::new(false));
+            watch_for_stall(pid, self.stall, &heard, &ended, &stopping);
             thread::spawn(move || {
-                let sent = read_progress(out, &shared, session);
+                let sent = read_progress(out, &shared, kind, session, &heard);
+                ended.store(true, Ordering::SeqCst);
                 // FFmpeg has ended. Unless the operator stopped it, say why.
                 thread::sleep(Duration::from_millis(200));
                 if !stopping.load(Ordering::SeqCst) {
@@ -802,6 +850,15 @@ enum Finish {
 }
 
 impl Finish {
+    /// The FFmpegs being fed.
+    fn pids(&self) -> Vec<u32> {
+        match self {
+            Finish::Recording(_) => Vec::new(),
+            Finish::Stream(child) => vec![child.id()],
+            Finish::Ndi(children) => children.iter().map(Child::id).collect(),
+        }
+    }
+
     fn run(self, shared: &Shared, ffmpeg: Option<&Path>, mime: &str) {
         match self {
             Finish::Recording(path) => {
@@ -1067,10 +1124,41 @@ fn tee_escape(s: &str) -> String {
     out
 }
 
+/// End FFmpeg when it stops reporting progress (stuck on a connection that
+/// went silent), so the failure is reported and the stream can reconnect.
+fn watch_for_stall(
+    pid: u32,
+    stall: Duration,
+    heard: &Arc<AtomicU64>,
+    ended: &Arc<AtomicBool>,
+    stopping: &Arc<AtomicBool>,
+) {
+    let (heard, ended, stopping) = (Arc::clone(heard), Arc::clone(ended), Arc::clone(stopping));
+    let limit = u64::try_from(stall.as_millis()).unwrap_or(u64::MAX);
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_millis(250).min(stall));
+        if ended.load(Ordering::SeqCst) || stopping.load(Ordering::SeqCst) {
+            return;
+        }
+        if now_ms().saturating_sub(heard.load(Ordering::SeqCst)) > limit {
+            eprintln!("lumora: FFmpeg {pid} stopped reporting progress: ending it");
+            kill_pid(pid);
+            return;
+        }
+    });
+}
+
 /// FFmpeg's progress report: keep the speed up to date. Says whether anything was sent.
-fn read_progress(out: impl Read, shared: &Shared, session: u64) -> bool {
+fn read_progress(
+    out: impl Read,
+    shared: &Shared,
+    kind: Kind,
+    session: u64,
+    heard: &AtomicU64,
+) -> bool {
     let mut sent = false;
     for line in BufReader::new(out).lines().map_while(Result::ok) {
+        heard.store(now_ms(), Ordering::SeqCst);
         if let Some(v) = line.strip_prefix("total_size=") {
             if v.trim().parse::<u64>().is_ok_and(|n| n > 0) {
                 sent = true;
@@ -1079,7 +1167,10 @@ fn read_progress(out: impl Read, shared: &Shared, session: u64) -> bool {
         if let Some(v) = line.strip_prefix("speed=") {
             let speed = v.trim().trim_end_matches('x').parse::<f32>().ok();
             shared.update(|s| {
-                if let Some(r) = s.streaming.as_mut().filter(|r| r.session == session) {
+                if let Some(r) = Shared::slot(s, kind)
+                    .as_mut()
+                    .filter(|r| r.session == session)
+                {
                     r.speed = speed;
                 }
             });
@@ -1702,6 +1793,91 @@ mod tests {
         assert!(f.never_started, "nothing was ever sent");
         assert!(c.status().streaming.is_none());
         eprintln!("failure message: {}", f.message);
+    }
+
+    #[test]
+    fn a_session_that_cannot_keep_up_says_why() {
+        let d = temp_dir("slow");
+        let (mut c, _) = capture(&d, None);
+        c.max_queued = 4;
+        let r = c.start(Kind::Record, "video/webm", "Slow").unwrap();
+        assert!(c.chunk(r.session, b"too much at once".to_vec()).is_err());
+        let st = c.status();
+        assert!(st.recording.is_none());
+        let f = st.failure.expect("the reason is kept, so it is retried");
+        assert_eq!((f.kind, f.session), (Kind::Record, r.session));
+        assert!(f.message.contains("can't keep up"), "{}", f.message);
+        assert_eq!(st.failures.len(), 1);
+    }
+
+    #[test]
+    fn failures_at_the_same_time_are_all_kept() {
+        let d = temp_dir("both");
+        let (mut c, _) = capture(&d, None);
+        c.max_queued = 4;
+        let a = c.start(Kind::Record, "video/webm", "A").unwrap();
+        // Pretend a stream is running beside it, then both fail.
+        c.shared.update(|s| s.streaming = Some(a.clone()));
+        c.shared.fail(Kind::Stream, a.session, "dropped".into());
+        let _ = c.chunk(a.session, b"too much at once".to_vec());
+        let kinds: Vec<Kind> = c.status().failures.iter().map(|f| f.kind).collect();
+        assert_eq!(kinds, [Kind::Stream, Kind::Record]);
+        for i in 0..20 {
+            c.shared.update(|s| {
+                s.streaming = Some(Running {
+                    session: 100 + i,
+                    ..a.clone()
+                })
+            });
+            c.shared.fail(Kind::Stream, 100 + i, "again".into());
+        }
+        assert_eq!(c.status().failures.len(), FAILURES_KEPT);
+    }
+
+    #[test]
+    fn a_stream_stuck_on_a_silent_server_is_ended() {
+        let Some(ffmpeg) = find_ffmpeg() else {
+            eprintln!("FFmpeg not installed: skipped");
+            return;
+        };
+        let d = temp_dir("silent");
+        let Some(video) = sample(&ffmpeg, &d) else {
+            return;
+        };
+        // Takes the connection, then never answers (a network that went quiet).
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        thread::spawn(move || {
+            let mut held = Vec::new();
+            for s in listener.incoming().flatten() {
+                held.push(s);
+            }
+        });
+        let (mut c, _) = capture(&d, Some(ffmpeg));
+        c.stall = Duration::from_secs(2);
+        c.set_settings(CaptureSettings {
+            destinations: vec![Destination {
+                name: "Silent".into(),
+                url: format!("rtmp://127.0.0.1:{port}/live"),
+                key: "k".into(),
+                ..Destination::default()
+            }],
+            ..CaptureSettings::default()
+        });
+        let r = c
+            .start(Kind::Stream, "video/x-matroska;codecs=avc1,opus", "")
+            .unwrap();
+        for part in video.chunks(4096) {
+            if c.chunk(r.session, part.to_vec()).is_err() {
+                break;
+            }
+        }
+        assert!(
+            wait_for(|| c.status().failure.is_some()),
+            "a stuck FFmpeg is ended and reported: {:?}",
+            c.status()
+        );
+        assert!(c.status().streaming.is_none());
     }
 
     #[test]
