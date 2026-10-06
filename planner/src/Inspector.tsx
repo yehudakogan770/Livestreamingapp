@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ArrowDown, ArrowUp, Copy, Trash2, X } from 'lucide-react';
 import { ClockInput, DurationInput, MinSecInput, TimeInput } from './fields';
 import { SEGMENTS, TRANSITION_NAMES, clock12, formatDuration, type PlanComment, type PlanCue, type Schedule, type Segment } from './model';
 import type { PlanStore } from './usePlan';
@@ -69,15 +70,18 @@ export function Inspector({
     <div className="inspector__in">
       {!phone && (
         <div className="inspector__head">
-          <b>Cue {index + 1}</b>
-          <span className="muted small">
-            {timed?.start != null && clock12(timed.start)}
-            {timed?.end != null && `–${clock12(timed.end)}`}
-            {timed && ` · ${formatDuration(timed.elapsed)} in`}
-          </span>
-          <span className="bar__spacer" />
-          <button type="button" className="btn btn--quiet" onClick={() => onSel(null)} aria-label="Close cue details">
-            Close
+          <div className="inspector__id">
+            <b>
+              Cue {index + 1} <span className="muted">of {count}</span>
+            </b>
+            <span className="muted small mono">
+              {timed?.start != null && clock12(timed.start)}
+              {timed?.end != null && `–${clock12(timed.end)}`}
+              {timed && ` · ${formatDuration(timed.elapsed)} in`}
+            </span>
+          </div>
+          <button type="button" className="btn btn--quiet btn--icon" onClick={() => onSel(null)} aria-label="Close cue details" title="Close">
+            <X size={16} strokeWidth={1.75} aria-hidden="true" />
           </button>
         </div>
       )}
@@ -114,6 +118,9 @@ export function Inspector({
             ))}
           </select>
         </label>
+      </div>
+      <div className="grid2 insp-group">
+        <h4 className="insp-group__title">Timing</h4>
         <label className="field">
           <span>Fixed start (optional)</span>
           {phone ? (
@@ -204,18 +211,20 @@ export function Inspector({
         </label>
         <p className="muted small">Names are matched to the inputs, overlays and presets in the Lumora event when the plan is loaded.</p>
       </fieldset>
-      <label className="field">
+      <label className="field insp-group">
         <span>Notes</span>
         <textarea className="input" rows={4} maxLength={4000} value={cue.notes} readOnly={!canEdit} onChange={(e) => set({ notes: e.target.value })} />
       </label>
       {canEdit && (
-        <div className="row row--wrap">
+        <div className="row row--wrap insp-actions">
           {!phone && (
             <>
               <button type="button" className="btn" disabled={index === 0} onClick={() => store.move(index, index - 1)}>
+                <ArrowUp size={14} strokeWidth={1.75} aria-hidden="true" />
                 Move up
               </button>
               <button type="button" className="btn" disabled={index === count - 1} onClick={() => store.move(index, index + 1)}>
+                <ArrowDown size={14} strokeWidth={1.75} aria-hidden="true" />
                 Move down
               </button>
             </>
@@ -228,6 +237,7 @@ export function Inspector({
               if (id) onSel(id);
             }}
           >
+            <Copy size={14} strokeWidth={1.75} aria-hidden="true" />
             Duplicate
           </button>
           <span className="bar__spacer" />
@@ -239,6 +249,7 @@ export function Inspector({
               store.deleteCue(cue.id);
             }}
           >
+            <Trash2 size={14} strokeWidth={1.75} aria-hidden="true" />
             Delete cue
           </button>
         </div>

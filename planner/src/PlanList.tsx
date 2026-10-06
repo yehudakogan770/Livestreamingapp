@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Plus } from 'lucide-react';
 import { createPlan, listPlans } from './api';
 import { isoDate, shortDate, showClock, type PlanSummary } from './model';
 import { db } from './session';
@@ -71,7 +72,7 @@ export function PlanList({ userId, email, canPlan, onOpen }: { userId: string; e
       <table className="plans">
         <thead>
           <tr>
-            <th>Event</th>
+            <th className="plans__event">Event</th>
             <th>Date</th>
             <th>Starts</th>
             <th>Venue</th>
@@ -83,7 +84,7 @@ export function PlanList({ userId, email, canPlan, onOpen }: { userId: string; e
         <tbody>
           {list.map((p) => (
             <tr key={p.id} onClick={() => onOpen(p.id)}>
-              <td>
+              <td className="plans__event">
                 <a
                   href={`#/plan/${p.id}`}
                   onClick={(e) => {
@@ -95,9 +96,9 @@ export function PlanList({ userId, email, canPlan, onOpen }: { userId: string; e
               </td>
               <td className="nowrap">{shortDate(p.eventDate) || '—'}</td>
               <td className="nowrap">{showClock(p.startTime) || '—'}</td>
-              <td>{p.venue || '—'}</td>
+              <td className="muted">{p.venue || '—'}</td>
               <td className="num">{p.cueCount}</td>
-              <td className="nowrap">{access(p)}</td>
+              <td className="nowrap muted">{access(p)}</td>
               <td className="nowrap muted">
                 {ago(p.updatedAt)}
                 {p.updatedBy && ` · ${p.updatedBy}`}
@@ -111,7 +112,14 @@ export function PlanList({ userId, email, canPlan, onOpen }: { userId: string; e
   return (
     <main className="page">
       <div className="page__head">
-        <h1>Plans</h1>
+        <div className="page__title">
+          <h1>Plans</h1>
+          {plans && plans.length > 0 && (
+            <p className="muted">
+              {plans.length} plan{plans.length === 1 ? '' : 's'} · {upcoming.length} upcoming
+            </p>
+          )}
+        </div>
         {canPlan && (
           <form className="row page__new" onSubmit={make}>
             <input
@@ -123,6 +131,7 @@ export function PlanList({ userId, email, canPlan, onOpen }: { userId: string; e
               aria-label="New event name"
             />
             <button type="submit" className="btn btn--primary" disabled={busy}>
+              <Plus size={15} strokeWidth={2} aria-hidden="true" />
               New plan
             </button>
           </form>
@@ -154,7 +163,7 @@ export function PlanList({ userId, email, canPlan, onOpen }: { userId: string; e
       )}
       {upcoming.length > 0 && (
         <>
-          {phone && <h2 className="page__sub page__sub--first">Upcoming</h2>}
+          {(phone || past.length > 0) && <h2 className="page__sub page__sub--first">Upcoming</h2>}
           {table(upcoming)}
         </>
       )}
