@@ -3113,3 +3113,10 @@ button.strip__name:hover {
   flex-wrap: wrap;
   gap: 6px;
 }
+.pbuttons__macro svg {
+  width: 13px;
+  height: 13px;
+  vertical-align: -2px;
+  margin-right: 4px;
+  color: var(--text-dim);
+}

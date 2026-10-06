@@ -1,3 +1,4 @@
+import { Workflow } from 'lucide-react';
 import type { Show } from '../engine/types/Show';
 import { describeStep } from './PresetEditor';
 import type { Act } from './act';
@@ -5,7 +6,8 @@ import type { Act } from './act';
 /** The picked preset's buttons, above the inputs, and what is running now. */
 export function PresetButtons({ show, act, showAll, onShowAll }: { show: Show; act: Act; showAll: boolean; onShowAll: (v: boolean) => void }) {
   const p = show.presets.find((x) => x.id === show.activePreset);
-  if (!p && show.running.length === 0) return null;
+  const macros = show.macros.filter((m) => m.steps.length > 0);
+  if (!p && show.running.length === 0 && macros.length === 0) return null;
   return (
     <div className="pbuttons">
       {p && (
@@ -25,6 +27,18 @@ export function PresetButtons({ show, act, showAll, onShowAll }: { show: Show; a
           ))}
         </>
       )}
+      {macros.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          className="btn pbuttons__btn pbuttons__macro"
+          title={`Macro${m.hotkey ? ` (${m.hotkey})` : ''}:\n${m.steps.map((st) => describeStep(st, show)).join('\n')}`}
+          onClick={() => act({ type: 'runMacro', id: m.id })}
+        >
+          <Workflow aria-hidden="true" />
+          {m.name}
+        </button>
+      ))}
       <span className="grow" />
       {show.running.length > 0 && (
         <span className="pbuttons__running" role="status">

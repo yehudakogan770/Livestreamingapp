@@ -27,6 +27,7 @@ pub fn to_saved(show: &Show) -> Show {
     s.panic_changed_at = 0;
     s.audio.solo = None;
     s.running.clear();
+    s.app_requests.clear();
     s.no_signal.clear();
     for id in ScreenId::ALL {
         let sc = s.screens.get_mut(id);
@@ -121,6 +122,12 @@ fn repair_cameras(s: &mut Show) {
 }
 
 pub fn repair(mut s: Show) -> Show {
+    s.app_requests.clear();
+    s.macros.truncate(crate::macros::MAX_MACROS);
+    s.macros.retain(|m| !m.id.trim().is_empty());
+    for m in &mut s.macros {
+        m.repair();
+    }
     // Drop sources with duplicate or empty ids (keep the first).
     let mut seen = HashSet::new();
     s.sources

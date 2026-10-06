@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { CaptureKind, CaptureSettings, CaptureStatus } from '../engine/client';
+import type { AppRequest } from '../engine/types/AppRequest';
 
 /** What the server passes on (see `AppCommand` in src-tauri/src/remote.rs). */
 export type RemoteCommand =
@@ -104,4 +105,38 @@ export function useRemoteControl(ops: RemoteOps): void {
   useEffect(() => {
     if (inApp()) void invoke('remote_app_state', { appState: JSON.parse(text) as RemoteAppState }).catch(() => {});
   }, [text]);
+}
+
+/**
+ * Requests left in the show by macros, triggers, cues and buttons (recording,
+ * streaming, replay) that are newer than `seen`. Each runs once: requests there
+ * when the window opened are never run again.
+ */
+export function newRequests(list: readonly AppRequest[], seen: number): { todo: AppRequest[]; seen: number } {
+  const todo = list.filter((r) => r.seq > seen).sort((a, b) => a.seq - b.seq);
+  return { todo, seen: Math.max(seen, ...list.map((r) => r.seq)) };
+}
+
+/** Carry out the show's requests for the control window, one after another. */
+export function useAppRequests(list: readonly AppRequest[], ops: RemoteOps, onError: (message: string, request: AppRequest) => void): void {
+  const ref = useRef(ops);
+  ref.current = ops;
+  const errRef = useRef(onError);
+  errRef.current = onError;
+  // Those already there when the window opened (a reload) are not run again.
+  const seen = useRef<number | null>(null);
+  const queue = useRef(Promise.resolve());
+  useEffect(() => {
+    if (seen.current === null) {
+      seen.current = newRequests(list, 0).seen;
+      return;
+    }
+    const { todo, seen: next } = newRequests(list, seen.current);
+    seen.current = next;
+    for (const r of todo) {
+      queue.current = queue.current
+        .then(() => runRemoteCommand(r.step, ref.current))
+        .catch((e: unknown) => errRef.current(e instanceof Error ? e.message : String(e), r));
+    }
+  }, [list]);
 }

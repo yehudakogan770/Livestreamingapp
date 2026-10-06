@@ -345,6 +345,7 @@ function ControlApp() {
     const cues: MenuItem[] = [
       { label: 'Run of show…', onClick: () => sendCommand({ type: 'runOfShow' }) },
       { label: 'Triggers (when this happens, do that)…', onClick: () => sendCommand({ type: 'triggers' }) },
+      { label: 'Macros (several steps with one button)…', onClick: () => sendCommand({ type: 'macros' }) },
       { label: 'Next cue (N)', onClick: () => void client.dispatch({ type: 'nextCue' }).catch(fail), disabled: !run?.cues.length },
       run?.running
         ? { label: run.paused ? 'Carry on' : 'Hold the show', onClick: () => void client.dispatch({ type: 'pauseShow', value: !run.paused }).catch(fail) }

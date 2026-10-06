@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { defaultCaptureSettings, type CaptureStatus } from '../engine/client';
-import { remoteAppState, runRemoteCommand, type RemoteOps } from './remoteControl';
+import { newRequests, remoteAppState, runRemoteCommand, type RemoteOps } from './remoteControl';
 
 function ops(over: Partial<RemoteOps> = {}, status: Partial<CaptureStatus> = {}): RemoteOps {
   return {
@@ -74,5 +74,18 @@ describe('what control surfaces are told', () => {
   it('says what is running', () => {
     const o = ops({ rehearsal: true, replayOn: true, busy: { record: false, stream: true } }, { recording: running });
     expect(remoteAppState(o, null)).toEqual({ recording: true, streaming: false, rehearsal: true, replay: true, busy: true, error: null });
+  });
+});
+
+describe('requests left in the show by macros', () => {
+  const req = (seq: number) => ({ seq, step: { command: 'record' as const, on: true } });
+  it('runs only the new ones, in order', () => {
+    const { todo, seen } = newRequests([req(3), req(5), req(4)], 3);
+    expect(todo.map((r) => r.seq)).toEqual([4, 5]);
+    expect(seen).toBe(5);
+  });
+  it('never goes back, even when old ones drop off the list', () => {
+    expect(newRequests([], 7)).toEqual({ todo: [], seen: 7 });
+    expect(newRequests([req(2)], 7).todo).toEqual([]);
   });
 });

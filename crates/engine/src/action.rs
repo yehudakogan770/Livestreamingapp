@@ -910,6 +910,20 @@ pub enum Action {
         id: String,
     },
 
+    // ----- macros -----
+    /// Replace the macros.
+    SetMacros {
+        macros: Vec<crate::macros::Macro>,
+    },
+    /// Run a macro now (by its id).
+    RunMacro {
+        id: String,
+    },
+    /// Leave a request for the control window (recording, streaming, replay).
+    RequestApp {
+        step: crate::macros::AppStep,
+    },
+
     // ----- stream input -----
     /// Change a stream input's address or buffer.
     UpdateStream {

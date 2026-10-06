@@ -615,6 +615,13 @@ pub struct Show {
     /// "When this happens, do that."
     #[serde(default)]
     pub triggers: Vec<crate::triggers::Trigger>,
+    /// Named step lists run by a button, key, Stream Deck or the control API.
+    #[serde(default)]
+    pub macros: Vec<crate::macros::Macro>,
+    /// Recording / streaming / replay asked for by steps, for the control
+    /// window to carry out (each once). Not saved.
+    #[serde(default)]
+    pub app_requests: Vec<crate::macros::AppRequest>,
     /// Audience questions.
     #[serde(default)]
     pub qna: crate::qna::Qna,
@@ -662,6 +669,8 @@ impl Default for Show {
             overlays: crate::overlays::channels(),
             visuals: crate::visuals::Visuals::default(),
             triggers: Vec::new(),
+            macros: Vec::new(),
+            app_requests: Vec::new(),
             qna: crate::qna::Qna::default(),
             data: crate::data::DataFeed::default(),
             auto_switch: crate::cameras::AutoSwitch::default(),

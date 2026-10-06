@@ -28,6 +28,9 @@ import { MidiDialog, useMidiControl } from './MidiDialog';
 import { ChatPanel } from './ChatPanel';
 import { PerfChip } from '../broadcast/PerfChip';
 import { TriggersDialog } from './TriggersDialog';
+import { MacrosDialog } from './MacrosDialog';
+import { macroRecorder } from '../macros/macros';
+import { useMacroKeys } from '../macros/useMacroKeys';
 import { useCopying } from '../engine/copying';
 import { snapshot, snapshotName } from '../broadcast/snapshot';
 import { CreditsCard } from './CreditsCard';
@@ -82,6 +85,7 @@ export function ControlView({
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [visualsOpen, setVisualsOpen] = useState(false);
   const [triggersOpen, setTriggersOpen] = useState(false);
+  const [macrosOpen, setMacrosOpen] = useState(false);
   /** The 3D logo maker: the input being changed (null: a new one). */
   const [logoMaker, setLogoMaker] = useState<{ id: string | null } | null>(null);
   const [stingers, setStingers] = useState(false);
@@ -104,6 +108,7 @@ export function ControlView({
       else if (c.type === 'library') setLibraryOpen(true);
       else if (c.type === 'visuals') setVisualsOpen(true);
       else if (c.type === 'triggers') setTriggersOpen(true);
+      else if (c.type === 'macros') setMacrosOpen(true);
       else if (c.type === 'midi') setMidiOpen(true);
       else if (c.type === 'chat') setChatOpen((o) => !o);
       else if (c.type === 'arrange') setArranging(true);
@@ -141,7 +146,15 @@ export function ControlView({
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4500);
   }, []);
 
-  const act: Act = useCallback((a: Action) => void client.dispatch(a).catch(fail), [client, fail]);
+  const act: Act = useCallback(
+    (a: Action) => {
+      // While a macro is being recorded, what the operator does becomes its steps.
+      macroRecorder.capture(a, Date.now());
+      void client.dispatch(a).catch(fail);
+    },
+    [client, fail],
+  );
+  useMacroKeys(show, act);
   useMidiControl(show, screen, act);
 
   useEffect(() => client.watchOutputs(setOpen), [client]);
@@ -565,6 +578,7 @@ export function ControlView({
       )}
       {backupOpen && <BackupDialog show={show} act={act} focus={backupOpen.input} onClose={() => setBackupOpen(null)} />}
       {triggersOpen && <TriggersDialog show={show} act={act} onClose={() => setTriggersOpen(false)} />}
+      {macrosOpen && <MacrosDialog show={show} act={act} onClose={() => setMacrosOpen(false)} />}
       {visualsOpen && <VisualsPage show={show} act={act} client={client} onClose={() => setVisualsOpen(false)} />}
       {libraryOpen && <LibraryDialog show={show} client={client} act={act} onClose={() => setLibraryOpen(false)} />}
       {outputsOpen && <OutputsDialog show={show} client={client} open={open} act={act} onClose={() => setOutputsOpen(false)} onError={fail} />}

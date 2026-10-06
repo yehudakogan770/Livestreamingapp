@@ -13,6 +13,8 @@ export type Command =
   | { type: 'visuals' }
   | { type: 'logoMaker'; id?: string }
   | { type: 'triggers' }
+  | { type: 'macros' }
+  | { type: 'controlApi' }
   | { type: 'midi' }
   | { type: 'chat' }
   | { type: 'arrange' }

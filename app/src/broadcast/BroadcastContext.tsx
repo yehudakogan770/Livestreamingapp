@@ -18,7 +18,7 @@ import { Broadcaster } from './recorder';
 import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
-import { useRemoteControl } from './remoteControl';
+import { useAppRequests, useRemoteControl } from './remoteControl';
 
 /** The highlights reel's input. */
 export const HIGHLIGHTS = 'highlights-reel';
@@ -706,5 +706,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   );
   // The Stream Deck (through the phone remote's server) records, goes live and replays too.
   useRemoteControl(value);
+  // Macros, triggers and cues record, go live and replay through the same requests.
+  useAppRequests(show.appRequests ?? [], value, (message, r) => setStartError({ kind: r.step.command === 'record' ? 'record' : 'stream', message }));
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

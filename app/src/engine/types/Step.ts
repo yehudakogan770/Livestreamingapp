@@ -22,4 +22,9 @@ export type Step =
   | { type: 'backFollowsLive'; value: boolean }
   | { type: 'preset'; presetId: string }
   | { type: 'overlay'; channel: number; value: boolean }
-  | { type: 'wait'; ms: number };
+  | { type: 'wait'; ms: number }
+  | { type: 'record'; on: boolean }
+  | { type: 'stream'; on: boolean }
+  | { type: 'replay'; seconds: number; slow: boolean }
+  | { type: 'macro'; macroId: string }
+  | { type: 'dataStep'; delta: number };

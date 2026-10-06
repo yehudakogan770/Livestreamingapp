@@ -193,6 +193,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::PreviousPreset
             | Action::RunSteps { .. }
             | Action::StopSteps
+            | Action::RunMacro { .. }
             | Action::UpdateMonitor { .. }
             | Action::SetCountdownLength { .. }
             | Action::StartCountdown { .. }

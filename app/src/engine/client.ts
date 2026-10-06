@@ -457,6 +457,8 @@ export function emptyShow(): Show {
     noSignal: [],
     qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
+    macros: [],
+    appRequests: [],
     settings: {
       displays: { live: null, back: null, monitor: null },
       autoPlayOnTake: true,
