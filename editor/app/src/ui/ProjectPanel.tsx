@@ -9,7 +9,7 @@ import { TEXT_PRESETS } from '../render/text';
 import { TemplatesSection } from './Templates';
 import type { Actions } from './actions';
 import { ColorField, PopMenu, type MenuEntry } from './controls';
-import { chooseAndImport, dismissProblem, newBinId, useImporting } from './importer';
+import { chooseAndImport, dismissProblem, makeProxies, newBinId, useImporting } from './importer';
 import { useStrip } from './peaks';
 import { searchMatches } from '../manage/smartbins';
 import { mediaManageMenu, SmartBinsSection } from './SmartBins';
@@ -94,6 +94,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
           ],
         },
         ...(inApp() ? [{ label: 'Show in folder', run: () => void native.reveal(m.path) }] : []),
+        ...(inApp() && m.kind === 'video' && !m.playbackProxy ? [{ label: 'Generate proxy', run: () => makeProxies(doc, [m], true) }] : []),
         ...mediaManageMenu(doc, ui, m),
         'sep',
         {

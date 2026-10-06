@@ -1,5 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { valueAt } from '../model/anim';
+import { CacheBar } from '../cache/CacheBar';
 import { duration, parseTimecode, timecode } from '../model/build';
 import {
   addSequenceClip,
@@ -1218,6 +1219,7 @@ function Ruler({
           {m.name && zoom * 60 > m.name.length * 6 ? <span>{m.name}</span> : null}
         </button>
       ))}
+      <CacheBar p={doc.project} s={s} zoom={zoom} from={from} width={width} />
       {commentPins.map((p) => (
         <button
           key={`c${p.frame}`}

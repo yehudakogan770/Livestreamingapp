@@ -19,7 +19,9 @@ import { shortcutFor } from './shortcuts';
 import { applyWorkspace, BUILT_IN_WORKSPACES, savedWorkspaces } from './workspaces';
 import { Autosaver } from '../manage/recovery';
 import { typing } from './hooks';
-import { chooseAndImport, importFiles, makeProxies, MEDIA_EXTENSIONS } from './importer';
+import { chooseAndImport, importFiles, makeProxies, MEDIA_EXTENSIONS, proxyOptions, setProxyFocus } from './importer';
+import { renderCache } from '../cache/manager';
+import { CacheDialog, cacheMenu } from '../cache/CacheDialog';
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { SmartDialogs, smartMenu } from '../smart/SmartTools';
@@ -100,6 +102,21 @@ export function Editor({
   useEffect(() => {
     engine.useProxies = u.proxies;
   }, [engine, u.proxies]);
+  // The render cache plays heavy stretches from cached files and makes them while playback is stopped;
+  // proxies are made nearest the playhead first.
+  useEffect(() => {
+    engine.cached = renderCache.opsAt;
+    proxyOptions.hardware = renderCache.settings.hwEncode;
+    const focus = () => ({ project: engine.project, playing: engine.isPlaying, playhead: Math.floor(engine.time), proxies: engine.useProxies });
+    void renderCache.start(focus);
+    setProxyFocus(() => ({ p: engine.project, playhead: Math.floor(engine.time) }));
+    const redraw = renderCache.subscribe(() => engine.redraw());
+    return () => {
+      redraw();
+      renderCache.stop();
+      engine.cached = null;
+    };
+  }, [engine]);
 
   // Look for files that have moved since the project was saved (or, in a
   // shared project, that someone else added and this computer doesn't have).
@@ -359,6 +376,7 @@ export function Editor({
         { label: 'Playback: half', checked: u.quality === 0.5, run: () => ui.set({ quality: 0.5 }) },
         { label: 'Playback: quarter', checked: u.quality === 0.25, run: () => ui.set({ quality: 0.25 }) },
         { label: 'Use proxies for playback', checked: u.proxies, run: () => ui.set({ proxies: !u.proxies }) },
+        ...cacheMenu(doc, doc.state.selection?.kind === 'clips' ? doc.state.selection.ids : []),
         { label: 'Safe margins', checked: u.safeMargins, run: () => ui.set({ safeMargins: !u.safeMargins }) },
         'sep',
         { label: 'Zoom in', keys: '=', run: () => actions.zoom(1.5) },
@@ -584,6 +602,7 @@ export function Editor({
       <SmartDialogs doc={doc} engine={engine} ui={ui} />
       <ManagePanels doc={doc} ui={ui} engine={engine} autosaver={autosaver} />
       <ExtrasDialogs doc={doc} engine={engine} ui={ui} />
+      <CacheDialog />
     </div>
   );
 }
