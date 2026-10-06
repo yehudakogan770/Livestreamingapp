@@ -35,6 +35,7 @@ import { Collab, useCollab } from '../collab/session';
 import { canEdit } from '../collab/lock';
 import { CommentsPanel, ConflictDialog, HereChips, LockBanner } from '../collab/CollabUi';
 import { HistoryDialog, ShareDialog } from '../collab/CollabDialogs';
+import { openProblemReport, useErrorReports } from '../../../../app/src/reports/ReportUI';
 
 export function Editor({
   project,
@@ -69,6 +70,7 @@ export function Editor({
   const [saveProblem, setSaveProblem] = useState('');
   const [missing, setMissing] = useState<string[]>([]);
   const { access, signOut } = useAccess();
+  const [reportsOn, toggleReports] = useErrorReports();
   const userId = access?.userId ?? '';
   const userName = access ? access.name || access.email : '';
 
@@ -422,7 +424,15 @@ export function Editor({
     ],
     ['Smart', () => smartMenu(state.project)],
     ['AI', () => extrasMenu(state.project, doc, ui)],
-    ['Help', () => [{ label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) }]],
+    [
+      'Help',
+      () => [
+        { label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) },
+        'sep',
+        { label: 'Report a problem…', run: openProblemReport },
+        { label: 'Send anonymous error reports', checked: reportsOn, run: toggleReports },
+      ],
+    ],
   ];
 
   const savedText = cs

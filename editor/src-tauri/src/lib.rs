@@ -405,6 +405,16 @@ fn reveal(path: String) {
     }
 }
 
+/// Crashes since last time (see crates/crash); the screens send them only if
+/// the person agreed to error reports.
+#[tauri::command]
+fn take_crash_reports(app: tauri::AppHandle) -> Vec<lumora_crash::CrashReport> {
+    app.path()
+        .app_data_dir()
+        .map(|dir| lumora_crash::take(&dir))
+        .unwrap_or_default()
+}
+
 /// # Panics
 /// The window can't be made.
 pub fn run() {
@@ -413,6 +423,10 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
+            // A crash leaves a note for an (opt-in) error report next time.
+            if let Ok(dir) = app.path().app_data_dir() {
+                lumora_crash::install(dir, app.package_info().version.to_string());
+            }
             let cache = app
                 .path()
                 .app_cache_dir()
@@ -430,6 +444,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            take_crash_reports,
             ffmpeg_found,
             initial_file,
             read_text,

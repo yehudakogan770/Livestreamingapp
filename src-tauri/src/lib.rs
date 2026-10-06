@@ -873,6 +873,16 @@ impl remote::Backend for RemoteBackend {
     }
 }
 
+/// Crashes since last time (see crates/crash); the screens send them only if
+/// the person agreed to error reports.
+#[tauri::command]
+fn take_crash_reports(app: tauri::AppHandle) -> Vec<lumora_crash::CrashReport> {
+    app.path()
+        .app_data_dir()
+        .map(|dir| lumora_crash::take(&dir))
+        .unwrap_or_default()
+}
+
 /// Start Lumora.
 ///
 /// # Panics
@@ -913,6 +923,8 @@ pub fn run() {
             STARTED.get_or_init(std::time::Instant::now);
             place_splash(app.handle());
             let dir = app.path().app_data_dir()?;
+            // A crash leaves a note for an (opt-in) error report next time.
+            lumora_crash::install(dir.clone(), app.package_info().version.to_string());
             let (store, show, from) = Store::open(dir.clone());
             eprintln!("lumora: show loaded ({from:?})");
             // Carry on with the event that was open (its file keeps being updated).
@@ -982,6 +994,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            take_crash_reports,
             close_seen,
             close_app,
             captions_model,

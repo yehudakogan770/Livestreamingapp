@@ -1928,6 +1928,7 @@ dependencies = [
  "if-addrs",
  "jpeg-encoder",
  "libloading 0.8.9",
+ "lumora-crash",
  "lumora-engine",
  "png 0.18.1",
  "qrcode",
@@ -1944,9 +1945,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "lumora-crash"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "lumora-edit"
 version = "0.1.0"
 dependencies = [
+ "lumora-crash",
  "serde",
  "serde_json",
  "tauri",
