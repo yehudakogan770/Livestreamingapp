@@ -18,6 +18,7 @@ import { openShared as loadShared } from './collab/cloud';
 import { applyLinks, loadLinks } from './collab/links';
 import type { Role } from './collab/lock';
 import { ReportingHost } from '../../../app/src/reports/ReportUI';
+import { SystemCheckHost } from '../../../app/src/syscheck/SystemCheck';
 import { e2e } from '../../../app/src/e2e';
 
 /** A project opened from online (shared with a team). */
@@ -45,6 +46,7 @@ export function App() {
       <Main />
       <UpdateBar product="Lumora Studio" />
       <ReportingHost product="Lumora Studio" />
+      <SystemCheckHost app="studio" />
     </Gate>
   );
 }

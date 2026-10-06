@@ -15,6 +15,7 @@ mod native_view;
 mod rendercache;
 mod selftest;
 mod speech;
+mod syscheck;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -473,6 +474,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,
             selftest::selftest_temp_folder,

@@ -21,6 +21,7 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 lumora-crash = { path = "../../crates/crash" }
 lumora-selftest = { path = "../../crates/selftest" }
+lumora-syscheck = { path = "../../crates/syscheck" }
 studio-engine = { package = "lumora-studio-engine", path = "../../crates/studio-engine" }
 
 [target.'cfg(windows)'.dependencies]
