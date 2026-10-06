@@ -81,6 +81,8 @@ interface Note {
 
 export class NativePlayback {
   enabled = false;
+  /** Turned on or off by the person on this computer (never: it may be offered, see ./suggest.ts). */
+  chosen = false;
   status: NativeStatus = 'off';
   /** Why it isn't on (shown in the viewer's light), or which graphics card it runs on. */
   message = '';
@@ -109,7 +111,9 @@ export class NativePlayback {
 
   constructor() {
     try {
-      this.enabled = typeof localStorage !== 'undefined' && localStorage.getItem(KEY) === '1';
+      const v = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
+      this.enabled = v === '1';
+      this.chosen = v !== null;
     } catch {
       this.enabled = false;
     }
@@ -126,6 +130,7 @@ export class NativePlayback {
 
   setEnabled(on: boolean) {
     this.enabled = on;
+    this.chosen = true;
     try {
       localStorage.setItem(KEY, on ? '1' : '0');
     } catch {
