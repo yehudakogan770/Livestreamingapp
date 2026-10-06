@@ -3,7 +3,19 @@ import { setKey, valueAt } from './anim';
 import { composite, blendColor, BLEND_NAMES, type RGB } from './blend';
 import { bezierAt, segmentValue, smooth } from './interp';
 import { copyKeys, moveKeys, pasteKeys, scaleKeyTimes, setEases, setHandle, speedAt } from './keyops';
-import { addFreeze, addReverse, clipFrameOf, enableRemap, rateAt, remapPosition, remapSourceAt, sampleFrames, soundPieces } from './remap';
+import {
+  addFreeze,
+  addRamp,
+  addReverse,
+  clipFrameFinder,
+  clipFrameOf,
+  enableRemap,
+  rateAt,
+  remapPosition,
+  remapSourceAt,
+  sampleFrames,
+  soundPieces,
+} from './remap';
 import { shapeOutline, trimOutline, outlineLength, DEFAULT_SHAPE, type Pt } from './shapes';
 import { charLooks, rangeAmount, textAnimatorPreset, textUnits } from './textanim';
 import { BLEND_MODES } from '../render/shaders';
@@ -123,6 +135,20 @@ describe('time remapping', () => {
     expect(b(31)).toBeCloseTo(11, 9);
     // Going from file position back to the clip frame.
     expect(clipFrameOf(back, 60, 15, 21)).toBe(25);
+  });
+
+  it('finds clip frames quickly, as the frame by frame search does', () => {
+    const ramp = addFreeze(addRamp(remap(100), 10, 20, 250, 90), 50, 6);
+    const back = addReverse(remap(80), 20, 10, 60);
+    for (const [r, n] of [
+      [ramp, 90],
+      [back, 60],
+      [remap(37), 120],
+    ] as [TimeRemap, number][]) {
+      const find = clipFrameFinder(r, n);
+      for (let x = -3; x < 200; x += 0.37) expect(find(x)).toBe(clipFrameOf(r, n, x));
+      for (let f = 0; f <= n; f++) expect(find(remapPosition(r, n, f))).toBe(clipFrameOf(r, n, remapPosition(r, n, f)));
+    }
   });
 
   it('turns a clip into a remapped one without changing what it shows', () => {

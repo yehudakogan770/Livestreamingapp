@@ -4,6 +4,7 @@
 // pause, and each stretch written down by the model in a worker.
 import { evenLevel } from '../../../../app/src/captions/moonshine';
 import { withLinked } from '../model/edit';
+import { remapSpan } from '../model/remap';
 import { end, rate } from '../model/seq';
 import type { MediaItem, Project, Sequence, Transcript, Word } from '../model/types';
 import { mediaUrl, native, onSpeechProgress } from '../native';
@@ -23,9 +24,11 @@ export function spansToTranscribe(p: Project, s: Sequence, ids: string[] | null)
     const src = c.source;
     const m = p.media.find((x) => x.id === src.media);
     if (!m?.hasAudio) continue;
+    // The part of the file it plays (time remapping can reach further, or back before `in`).
+    const span = c.remap ? remapSpan(c.remap, c.length) : { min: 0, max: c.length };
     // A second either side, so words at the cut are heard whole.
-    const from = Math.max(0, src.in - 1);
-    const to = Math.min(m.duration || Infinity, src.in + (c.length * c.speed) / fps + 1);
+    const from = Math.max(0, src.in + (span.min * c.speed) / fps - 1);
+    const to = Math.min(m.duration || Infinity, src.in + (span.max * c.speed) / fps + 1);
     out.set(m.id, [...(out.get(m.id) ?? []), [from, to]]);
   }
   for (const [k, v] of out) out.set(k, unite(v));

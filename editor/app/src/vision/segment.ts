@@ -73,10 +73,18 @@ function toMatte(mask: MPMask): Matte {
 }
 
 /** The picture to look at: a canvas the size asked, drawn from any picture. */
-export function canvasOf(src: CanvasImageSource, w: number, h: number): OffscreenCanvas {
+export function canvasOf(src: CanvasImageSource | ImageData, w: number, h: number): OffscreenCanvas {
   const c = new OffscreenCanvas(w, h);
   const ctx = c.getContext('2d', { willReadFrequently: true }) as OffscreenCanvasRenderingContext2D;
-  ctx.drawImage(src, 0, 0, w, h);
+  ctx.drawImage(drawable(src), 0, 0, w, h);
+  return c;
+}
+
+/** Raw pixels (a frame FFmpeg read from the original) can't be drawn scaled: they go on a canvas of their own first. */
+function drawable(src: CanvasImageSource | ImageData): CanvasImageSource {
+  if (typeof ImageData === 'undefined' || !(src instanceof ImageData)) return src as CanvasImageSource;
+  const c = new OffscreenCanvas(src.width, src.height);
+  (c.getContext('2d') as OffscreenCanvasRenderingContext2D).putImageData(src, 0, 0);
   return c;
 }
 

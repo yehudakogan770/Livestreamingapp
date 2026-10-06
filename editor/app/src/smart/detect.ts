@@ -15,7 +15,7 @@ export class FaceFinder {
     if (this.worker) return;
     const worker = new Worker(new URL('./detect.worker.ts', import.meta.url), { type: 'module' });
     this.worker = worker;
-    await new Promise<void>((resolve, reject) => {
+    const ready = new Promise<void>((resolve, reject) => {
       worker.onmessage = (e: MessageEvent<{ type: string; message?: string }>) =>
         e.data.type === 'ready' ? resolve() : reject(new Error(e.data.message ?? 'The face finder could not start.'));
       worker.onerror = (e) => reject(new Error(e.message || 'The face finder could not start.'));
@@ -27,6 +27,15 @@ export class FaceFinder {
         person: at('models/efficientdet_lite0.tflite'),
       });
     });
+    try {
+      await ready;
+    } catch (e) {
+      // It couldn't start: let it go, so the next start makes a new one (rather than asking one that never answers).
+      this.stop();
+      throw e;
+    }
+    // It stopped working: whatever was asked is given back empty (nothing waits forever).
+    worker.onerror = () => this.stop();
     worker.onmessage = (e: MessageEvent<{ type: string; id: number; done?: number; found?: Found[][] }>) => {
       const w = this.waiting.get(e.data.id);
       if (!w) return;

@@ -164,5 +164,11 @@ describe('a reframed sequence', () => {
     // Picture and sound stay linked to each other (a new link).
     expect(out.clips[0]?.link).toBe(out.clips[1]?.link);
     expect(out.clips[0]?.link).not.toBe(s.clips[0]?.link);
+    // A title following the clip's track follows the copy in the new sequence.
+    const title = { ...clip, id: 'title', follow: { clip: clip.id, path: 'P', at: 12, scale: false, rotate: false } };
+    const withTitle = reframedSequence({ ...s, clips: [...s.clips, title] }, '9:16', new Map());
+    const copy = withTitle.clips[withTitle.clips.length - 1];
+    expect(copy?.follow?.clip).toBe(withTitle.clips[0]?.id);
+    expect(copy?.follow?.at).toBe(12);
   });
 });

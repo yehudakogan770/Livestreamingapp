@@ -6,6 +6,7 @@ import {
   extractRange,
   liftRange,
   moveClips,
+  nest,
   paste,
   copyClips,
   razor,
@@ -15,11 +16,12 @@ import {
   slip,
   switchAngle,
   trim,
+  updateClips,
   withLinked,
 } from './edit';
 import type { EventFile } from './event';
 import { current, end, handles, onTrack, sourceTime } from './seq';
-import { emptyProject, type MediaItem, type Project } from './types';
+import { emptyProject, newClip, type Clip, type MediaItem, type Project, type TrackPoint } from './types';
 
 function project(): Project {
   const p = emptyProject('Test');
@@ -125,6 +127,16 @@ describe('editing', () => {
     expect(onTrack(seq(q), v1(q))[0]?.length).toBe(600);
   });
 
+  it('a remapped clip has the handles its speed leaves it', () => {
+    const p = project();
+    // 10 seconds in at 200%: the 300 frames use 20 seconds of the 100-second file (10–30 s).
+    const first = { ...(onTrack(seq(p), v1(p))[0] as Clip), remap: { speed: 200, sampling: 'nearest' as const, pitch: true } };
+    expect(handles(p, first, 30)).toEqual({ before: 150, after: 1050 });
+    // Played backwards, the end runs toward the file's start.
+    const back = { ...first, remap: { speed: -100, sampling: 'nearest' as const, pitch: true }, source: { kind: 'media' as const, media: 'm1', in: 20 } };
+    expect(handles(p, back, 30)).toEqual({ before: 2400, after: 300 });
+  });
+
   it('slip and slide', () => {
     const p = project();
     const [a, b] = onTrack(seq(p), v1(p)) as unknown as [{ id: string }, { id: string }];
@@ -136,6 +148,54 @@ describe('editing', () => {
       [270, 300],
     ]);
     expect(a.id).toBeTruthy();
+  });
+
+  it('slip keeps tracks on the picture they were tracked on', () => {
+    const p = project();
+    const b = onTrack(seq(p), v1(p))[1] as Clip;
+    const tracked = updateClips(p, [b.id], (c) => ({
+      ...c,
+      paths: [{ id: 'P', name: 'Track', points: [[40, 0.2, 0.3] as TrackPoint, [100, 0.4, 0.5] as TrackPoint], manual: [40] }],
+      stabilize: { path: 'P', smooth: 0, lock: true, at: 60, crop: false, rotate: false, scale: false },
+    }));
+    // Slipped 30 frames later into the file: what was at frame 40 of the clip is now at frame 10.
+    const c = onTrack(seq(slip(tracked, b.id, 30)), v1(p))[1] as Clip;
+    expect(c.paths?.[0]?.points.map((x) => x[0])).toEqual([10, 70]);
+    expect(c.paths?.[0]?.manual).toEqual([10]);
+    expect(c.stabilize?.at).toBe(30);
+  });
+
+  it('a clip following a track keeps its place when the tracked clip is moved', () => {
+    const p = project();
+    const [a, b] = onTrack(seq(p), v1(p)) as [Clip, Clip];
+    const v2 = seq(p).tracks[1]?.id as string;
+    const title = {
+      ...newClip(v2, 320, 60, { kind: 'color', color: '#fff' }, 'Title'),
+      follow: { clip: b.id, path: 'P', at: 330, scale: false, rotate: false },
+    };
+    const q = { ...p, sequences: p.sequences.map((s) => ({ ...s, clips: [...s.clips, title] })) };
+    // Taking out the first clip pulls everything 300 frames earlier: the frame of the tracked clip it was attached at moves too.
+    const r = rippleDelete(q, [a.id]);
+    const moved = seq(r).clips.find((c) => c.id === title.id);
+    expect(moved?.start).toBe(20);
+    expect(moved?.follow?.at).toBe(30);
+    // Trimming the tracked clip's start keeps the same picture at that frame: nothing to change.
+    const t = trim(q, b.id, 'start', 15, 'normal');
+    expect(seq(t).clips.find((c) => c.id === title.id)?.follow?.at).toBe(330);
+    // Copied and pasted together, the title's copy follows the tracked clip's copy, at the same place on it.
+    const board = copyClips(seq(q), [b.id, title.id]);
+    const pasted = paste(q, board, 900, 'overwrite');
+    const copyOfB = seq(pasted).clips.find((c) => c.start === 900 && c.track === v1(p));
+    const copyOfTitle = seq(pasted).clips.find((c) => c.start === 920);
+    expect(copyOfTitle?.follow?.clip).toBe(copyOfB?.id);
+    expect(copyOfTitle?.follow?.at).toBe(930);
+    // Nested together, it follows the tracked clip inside the nest, at the same place on it.
+    const n = nest(q, [b.id, title.id]);
+    const inner = n.project.sequences.find((x) => x.id === n.seq);
+    const innerB = inner?.clips.find((c) => c.name === b.name && c.track === inner.tracks[0]?.id);
+    const innerTitle = inner?.clips.find((c) => c.name === 'Title');
+    expect(innerTitle?.follow?.clip).toBe(innerB?.id);
+    expect(innerTitle?.follow?.at).toBe(30);
   });
 
   it('moves clips and covers what they land on', () => {

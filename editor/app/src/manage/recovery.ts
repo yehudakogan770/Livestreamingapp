@@ -137,6 +137,8 @@ export class Autosaver {
   private lastProject: Project | null = null;
   private key = '';
   private writing = false;
+  /** Closed cleanly: an autosave still being written must not put the marker back. */
+  private stopped = false;
 
   constructor(
     private doc: Doc,
@@ -147,6 +149,7 @@ export class Autosaver {
 
   start() {
     if (!inApp()) return;
+    this.stopped = false;
     this.key = projectKey(this.path(), SESSION);
     this.lastProject = this.doc.project;
     this.lastAt = Date.now();
@@ -172,6 +175,7 @@ export class Autosaver {
   }
 
   private async mark() {
+    if (this.stopped) return;
     // Nothing unsaved: the project file is as new as this autosave.
     if (this.path() && !this.doc.state.dirty) this.savedAt = Date.now();
     const m: Marker = { key: this.key, name: this.doc.project.name, path: this.path(), session: SESSION, backupAt: this.lastAt, savedAt: this.savedAt };
@@ -202,6 +206,7 @@ export class Autosaver {
 
   /** A clean close: the marker goes (the backups stay, for Restore backup). */
   async stop() {
+    this.stopped = true;
     clearInterval(this.timer);
     this.stopDoc();
     if (!inApp() || !this.key) return;

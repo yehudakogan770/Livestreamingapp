@@ -36,7 +36,7 @@ const dims = (src: unknown): [number, number] => {
 function countingGl(): WebGL2RenderingContext {
   let id = 0;
   const special: Record<string, unknown> = {
-    getExtension: () => ({}),
+    getExtension: () => ({ loseContext: () => undefined }),
     getShaderParameter: () => true,
     getProgramParameter: () => true,
     getUniformLocation: () => ({ id: ++id }),
@@ -197,5 +197,26 @@ describe('playback compose benchmark', () => {
     if (big) process.stdout.write(`compose bench ${JSON.stringify(r)}\n`);
     expect(r.frames).toBeGreaterThan(0);
     expect(r.msPerFrame).toBeGreaterThan(0);
+  });
+});
+
+describe('graphics memory', () => {
+  it('lets go of pictures of clips that are over, and of everything when disposed', () => {
+    const p = benchProject(4);
+    const s = p.sequences[0];
+    if (!s) throw new Error('no sequence');
+    const c = new Compositor(new FakeCanvas() as unknown as OffscreenCanvas);
+    c.resize(1920, 1080, s.height);
+    const pics: Pictures = { picture: (l) => (l.source?.kind === 'video' ? ({ width: UHD.w, height: UHD.h } as unknown as TexImageSource) : null) };
+    let most = 0;
+    // Every second frame through four minutes: 24 shots and 8 titles go by.
+    for (let f = 0; f < 4 * 60 * 30; f += 2) {
+      c.render(frameOps(p, s, f), pics, s.background);
+      most = Math.max(most, c.held);
+    }
+    // Only what is showing (and what showed in the last few seconds) is held, not every clip played through.
+    expect(most).toBeLessThan(14);
+    c.dispose();
+    expect(c.held).toBe(0);
   });
 });

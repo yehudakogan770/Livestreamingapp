@@ -196,7 +196,7 @@ export class MatteStore {
   }
 
   /** Work out one frame's matte from its picture (null when the models can't run here). */
-  private async make(media: MediaItem, spec: MatteSpec, pic: CanvasImageSource): Promise<{ m: Matte; how: ObjectMethod | 'ai' } | null> {
+  private async make(media: MediaItem, spec: MatteSpec, pic: CanvasImageSource | ImageData): Promise<{ m: Matte; how: ObjectMethod | 'ai' } | null> {
     const [w, h] = lookSize(media.width, media.height, LONG[spec.kind]);
     const c = canvasOf(pic, w, h);
     if (spec.kind === 'person') {
@@ -207,8 +207,8 @@ export class MatteStore {
     return { m: r.matte, how: r.how };
   }
 
-  /** The export: make sure a frame's matte is done, from the exact frame it decoded. */
-  async ensure(layer: Layer, e: EffectNow, pic: CanvasImageSource | null): Promise<void> {
+  /** The export: make sure a frame's matte is done, from the exact frame it decoded (raw pixels when FFmpeg read the original). */
+  async ensure(layer: Layer, e: EffectNow, pic: CanvasImageSource | ImageData | null): Promise<void> {
     const src = layer.source;
     if (!pic || (src?.kind !== 'video' && src?.kind !== 'image')) return;
     const spec = specFor(layer.clip, e, layer.local);

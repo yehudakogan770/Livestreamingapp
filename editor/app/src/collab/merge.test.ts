@@ -87,6 +87,41 @@ describe('merging two saves', () => {
   });
 });
 
+describe('what stays on one computer', () => {
+  it('never shares, compares or brings in playback proxies', () => {
+    const b = base();
+    const mine = { ...b, media: [{ ...media('m1', 'C:/mine/a.mp4'), playbackProxy: 'C:/cache/a-proxy.mp4' }] };
+    // Making a proxy here is not a change to put online, nor a conflict with someone renaming the file.
+    expect(realChange(b, mine)).toBe(false);
+    const theirs = {
+      ...b,
+      media: [
+        { ...media('m1', 'C:/mine/a.mp4'), name: 'Renamed', playbackProxy: 'E:/their-cache/a.mp4' },
+        { ...media('m2', 'E:/b.mp4'), playbackProxy: 'E:/their-cache/b.mp4' },
+      ],
+    };
+    expect(conflicts(b, mine, theirs)).toEqual([]);
+    const out = bringIn(mine, diff(b, theirs));
+    expect(out.media.map((m) => [m.name, m.playbackProxy ?? null])).toEqual([
+      ['Renamed', 'C:/cache/a-proxy.mp4'],
+      ['m2', null],
+    ]);
+    expect(forUpload(mine, b).media[0]).not.toHaveProperty('playbackProxy');
+  });
+});
+
+describe('smart bins', () => {
+  const bin = { id: 'sb1', name: 'Five stars', match: 'all' as const, rules: [{ field: 'rating' as const, atLeast: 5 }] };
+  it('are shared like bins', () => {
+    const b = base();
+    const theirs = { ...b, smartBins: [bin] };
+    expect(realChange(b, theirs)).toBe(true);
+    expect(bringIn(b, diff(b, theirs)).smartBins).toEqual([bin]);
+    const mine = { ...b, smartBins: [{ ...bin, name: 'Best' }] };
+    expect(conflicts(b, mine, theirs)).toEqual(['Smart bin “Best”']);
+  });
+});
+
 describe('file places', () => {
   it('uploads the shared place for media that was shared already', () => {
     const b = base();

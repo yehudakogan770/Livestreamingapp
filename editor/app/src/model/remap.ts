@@ -70,6 +70,33 @@ export function clipFrameOf(r: TimeRemap, length: number, position: number, from
   return -1;
 }
 
+/** `clipFrameOf` for many positions (a word list): a binary search when the clip never runs backwards. */
+export function clipFrameFinder(r: TimeRemap, length: number): (position: number) => number {
+  const n = Math.max(1, length);
+  const pos = sums(r, n);
+  for (let f = 0; f < n; f++) if ((pos[f + 1] as number) < (pos[f] as number)) return (x) => clipFrameOf(r, n, x);
+  // The first index (0 … n) whose position passes the test (positions only grow).
+  const first = (past: (v: number) => boolean): number => {
+    let lo = 0;
+    let hi = n + 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (past(pos[mid] as number)) hi = mid;
+      else lo = mid + 1;
+    }
+    return lo;
+  };
+  return (x) => {
+    // The frame that runs over it, and the first frame starting right on it: whichever comes first.
+    const over = first((v) => v > x) - 1;
+    const a = over >= 0 && over < n && (pos[over] as number) <= x ? over : Infinity;
+    const on = first((v) => v > x - 1e-9);
+    const b = on < n && Math.abs((pos[on] as number) - x) < 1e-9 ? on : Infinity;
+    const f = Math.min(a, b);
+    return Number.isFinite(f) ? f : -1;
+  };
+}
+
 /** The range of the file a remapped clip uses (frames of normal speed from `in`). */
 export function remapSpan(r: TimeRemap, length: number): { min: number; max: number } {
   const n = Math.max(1, length);

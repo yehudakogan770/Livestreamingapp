@@ -1,5 +1,6 @@
 // The edits: each takes the project and gives back a changed copy (undo keeps the old one).
 import { changeSpeed, current, cutClip, editSeq, end, handles, onTrack, rate, seqLength, trackOf, trimLeft, trimRight } from './seq';
+import { carryFollows, retimeTracks } from '../track/paths';
 import { uid, newClip, newTrack, type Clip, type Effect, type Marker, type Project, type Sequence, type Track, type TrackKind, type Transition } from './types';
 
 const unlocked = (s: Sequence, track: string): boolean => !trackOf(s, track)?.locked;
@@ -321,12 +322,13 @@ export function slip(p: Project, id: string, frames: number): Project {
     }
     if (d === 0) return s;
     const ids = new Set(group.map((c) => c.id));
-    return {
-      ...s,
-      clips: s.clips.map((c) =>
-        ids.has(c.id) && 'in' in c.source ? { ...c, source: { ...c.source, in: Math.max(0, c.source.in + (d * c.speed) / fps) } } : c,
-      ),
+    const slipped = (c: Clip): Clip => {
+      if (!('in' in c.source)) return c;
+      const out = { ...c, source: { ...c.source, in: Math.max(0, c.source.in + (d * c.speed) / fps) } };
+      // Tracks follow the picture, not the clip: what was at frame f of the clip is now d frames earlier (later when reversed).
+      return c.remap ? out : retimeTracks(out, (t) => t + (c.reverse ? d : -d));
     };
+    return { ...s, clips: s.clips.map((c) => (ids.has(c.id) ? slipped(c) : c)) };
   });
 }
 
@@ -525,13 +527,23 @@ export function copyClips(s: Sequence, ids: string[]): Clipboard {
     const t = trackOf(s, c.track);
     if (t) places[c.id] = { kind: t.kind, index: s.tracks.filter((x) => x.kind === t.kind).indexOf(t) };
   }
-  return { clips: list.map((c) => ({ ...structuredClone(c), start: c.start - first })), places };
+  const copied = new Set(list.map((c) => c.id));
+  return {
+    clips: list.map((c) => {
+      const out = { ...structuredClone(c), start: c.start - first };
+      // Following a clip copied with it: the frame it was attached at goes along (relative, like the start).
+      if (out.follow && copied.has(out.follow.clip)) out.follow = { ...out.follow, at: out.follow.at - first };
+      return out;
+    }),
+    places,
+  };
 }
 
 /** Paste at a frame, on the same tracks (or the matching tracks of a sequence that has fewer). */
 export function paste(p: Project, board: Clipboard, at: number, mode: 'insert' | 'overwrite'): Project {
   const s = current(p);
   const links = new Map<string, string>();
+  const ids = new Map(board.clips.map((c) => [c.id, uid()]));
   const clips = board.clips.flatMap((c) => {
     let track = trackOf(s, c.track);
     const place = board.places[c.id];
@@ -541,9 +553,10 @@ export function paste(p: Project, board: Clipboard, at: number, mode: 'insert' |
     }
     if (!track) return [];
     const link = c.link ? (links.get(c.link) ?? (links.set(c.link, uid('l')), links.get(c.link) ?? null)) : null;
-    return [{ ...c, id: uid(), start: c.start + at, track: track.id, link }];
+    return [{ ...c, id: ids.get(c.id) as string, start: c.start + at, track: track.id, link }];
   });
-  return placeClips(p, clips, mode);
+  // A copy that follows a clip copied with it follows that clip's copy (its frame was kept relative, like the start).
+  return placeClips(p, carryFollows(clips, ids, at), mode);
 }
 
 /** Copies of effects with new ids (an effect limited to a mask stays limited to that mask's copy). */
@@ -642,18 +655,21 @@ export function nest(p: Project, ids: string[]): { project: Project; seq: string
   const tracks = s.tracks.map((t) => ({ ...t, id: uid(t.kind === 'video' ? 'v' : 'a'), locked: false, off: false, solo: false }));
   const trackFor = (id: string) => tracks[s.tracks.findIndex((t) => t.id === id)]?.id ?? '';
   const links = new Map<string, string>();
+  const newIds = new Map(chosen.map((c) => [c.id, uid()]));
+  const moved = chosen.map((c) => ({
+    ...structuredClone(c),
+    id: newIds.get(c.id) as string,
+    start: c.start - from,
+    track: trackFor(c.track),
+    link: c.link ? (links.get(c.link) ?? (links.set(c.link, uid('l')), links.get(c.link) ?? null)) : null,
+  }));
   const inner: Sequence = {
     ...s,
     id: uid('s'),
     name: `Nested sequence ${n}`,
     tracks,
-    clips: chosen.map((c) => ({
-      ...structuredClone(c),
-      id: uid(),
-      start: c.start - from,
-      track: trackFor(c.track),
-      link: c.link ? (links.get(c.link) ?? (links.set(c.link, uid('l')), links.get(c.link) ?? null)) : null,
-    })),
+    // A clip following one nested with it keeps following it inside.
+    clips: carryFollows(moved, newIds, -from),
     markers: [],
     inPoint: null,
     outPoint: null,

@@ -73,6 +73,10 @@ export class Compositor {
   private targets: Target[] = [];
   /** Each picture's texture, reused frame after frame (its storage is made again only when the size changes). */
   private textures = new Map<string, { tex: WebGLTexture; stamp: string; w: number; h: number }>();
+  /** The frame each picture (or optical flow) was last drawn in: ones not drawn for a while are let go. */
+  private lastUsed = new Map<string, number>();
+  /** Frames drawn so far. */
+  private drawn = 0;
   /** The four corners of the layer being drawn (made once, not every frame). */
   private quadData = new Float32Array(24);
   private curveTex = new Map<string, { tex: WebGLTexture; stamp: string }>();
@@ -274,6 +278,7 @@ export class Compositor {
       t = { tex: this.makeTexture(), stamp: '', w: 0, h: 0 };
       this.textures.set(key, t);
     }
+    this.lastUsed.set(key, this.drawn);
     gl.bindTexture(gl.TEXTURE_2D, t.tex);
     if (t.stamp !== stamp || stamp === '') {
       try {
@@ -348,8 +353,10 @@ export class Compositor {
       const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : textStamp(src.text, src.local, src.length, layer.fps);
       const stamp = `${this.w}x${this.h}|${look}`;
       const have = this.textures.get(key);
-      if (have && have.stamp === stamp) tex = have.tex;
-      else {
+      if (have && have.stamp === stamp) {
+        tex = have.tex;
+        this.lastUsed.set(key, this.drawn);
+      } else {
         const c = this.textSource(layer);
         if (!c) return false;
         const up = this.upload(key, c, stamp);
@@ -446,6 +453,7 @@ export class Compositor {
     sh: number,
   ): { tex: WebGLTexture; w: number; h: number } | null {
     const have = this.flows.get(key);
+    this.lastUsed.set(`flow:${key}`, this.drawn);
     if (have && have.stamp === stamp) return have;
     const gl = this.gl;
     const [w, h] = flowSize(sw, sh);
@@ -826,6 +834,7 @@ export class Compositor {
     for (const t of this.targets) t.busy = false;
     gl.disable(gl.BLEND);
     const acc = this.compose(ops, pics);
+    this.sweep();
     this.bindTarget(null);
     const p = this.program('final', FULL_VS, FINAL_FS);
     this.use(p, { uTex: [acc.tex, 0], uSize: [this.w, this.h], uBack: hexToRgb(background), uFlip: flip ? 1 : 0 });
@@ -844,6 +853,7 @@ export class Compositor {
     for (const t of this.targets) t.busy = false;
     gl.disable(gl.BLEND);
     const acc = this.compose(ops, pics);
+    this.sweep();
     let o = this.outTarget;
     if (!o || o.w !== this.w || o.h !== this.h) {
       if (o) {
@@ -945,6 +955,7 @@ export class Compositor {
       t = { tex: this.makeTexture(), stamp: '', w: 0, h: 0 };
       this.textures.set(key, t);
     }
+    this.lastUsed.set(key, this.drawn);
     gl.bindTexture(gl.TEXTURE_2D, t.tex);
     if (t.stamp !== matte.stamp) {
       // White, as see-through as the matte says (premultiplied).
@@ -994,9 +1005,75 @@ export class Compositor {
       const t = this.textures.get(k);
       if (t) this.gl.deleteTexture(t.tex);
       this.textures.delete(k);
+      this.lastUsed.delete(k);
     }
   }
+
+  /**
+   * After each frame: pictures and optical flows not drawn in the last few
+   * seconds are let go, so the graphics memory doesn't grow with every clip
+   * played through (a long timeline would otherwise run the GPU out of memory).
+   */
+  private sweep(keepFrames = KEEP_UNUSED_FRAMES) {
+    this.drawn += 1;
+    if (this.drawn % 30 !== 0) return;
+    const gl = this.gl;
+    for (const [k, at] of this.lastUsed) {
+      if (this.drawn - at <= keepFrames) continue;
+      this.lastUsed.delete(k);
+      const flow = k.startsWith('flow:') ? k.slice(5) : null;
+      const t = flow !== null ? this.flows.get(flow) : this.textures.get(k);
+      if (t) gl.deleteTexture(t.tex);
+      if (flow !== null) this.flows.delete(flow);
+      else this.textures.delete(k);
+    }
+  }
+
+  /** How many pictures are held on the graphics card (for tests). */
+  get held(): number {
+    return this.textures.size + this.flows.size;
+  }
+
+  /** Let go of everything on the graphics card, and the context itself (a compositor made for one job, done). */
+  dispose() {
+    const gl = this.gl;
+    for (const t of this.textures.values()) gl.deleteTexture(t.tex);
+    for (const t of this.flows.values()) gl.deleteTexture(t.tex);
+    for (const t of this.curveTex.values()) gl.deleteTexture(t.tex);
+    for (const t of this.lutTex.values()) gl.deleteTexture(t.tex);
+    for (const t of this.targets) {
+      gl.deleteFramebuffer(t.fb);
+      gl.deleteTexture(t.tex);
+    }
+    for (const o of [this.small, this.outTarget]) {
+      if (!o) continue;
+      gl.deleteFramebuffer(o.fb);
+      gl.deleteTexture(o.tex);
+    }
+    for (const p of this.programs.values()) gl.deleteProgram(p.prog);
+    if (this.white) gl.deleteTexture(this.white);
+    gl.deleteTexture(this.empty);
+    gl.deleteBuffer(this.full);
+    gl.deleteBuffer(this.quad);
+    gl.deleteVertexArray(this.vaoFull);
+    gl.deleteVertexArray(this.vaoQuad);
+    this.textures.clear();
+    this.flows.clear();
+    this.curveTex.clear();
+    this.lutTex.clear();
+    this.targets = [];
+    this.programs.clear();
+    this.lastUsed.clear();
+    this.small = null;
+    this.outTarget = null;
+    this.white = null;
+    // Browsers allow only a few live contexts: this one's place is given back now, not when it is garbage collected.
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+  }
 }
+
+/** Pictures not drawn for this many frames are let go (they are uploaded again if they come back). */
+export const KEEP_UNUSED_FRAMES = 90;
 
 /**
  * Where a spot of a picture (u, v: 0–1 across and down it) lands when Motion

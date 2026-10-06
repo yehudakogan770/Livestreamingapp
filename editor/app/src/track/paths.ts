@@ -77,6 +77,19 @@ export function retimeTracks(c: Clip, f: (t: number) => number): Clip {
   };
 }
 
+/**
+ * Clips copied with new ids (into a nest, a reframed copy, a paste): one that
+ * follows a clip copied with it follows that clip's copy, at the same place
+ * on it (`shift`: how far the copies moved along the timeline).
+ */
+export function carryFollows(clips: Clip[], ids: ReadonlyMap<string, string>, shift: number): Clip[] {
+  return clips.map((c) => {
+    const fl = c.follow;
+    const to = fl ? ids.get(fl.clip) : undefined;
+    return fl && to ? { ...c, follow: { ...fl, clip: to, at: fl.at + shift } } : c;
+  });
+}
+
 /** How big the picture is in the frame before Motion (fit inside, or fill), in sequence pixels. */
 export function placedSize(srcW: number, srcH: number, fill: boolean, W: number, H: number): [number, number] {
   if (!srcW || !srcH) return [W, H];

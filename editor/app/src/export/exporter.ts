@@ -16,7 +16,7 @@ import {
 } from 'mediabunny';
 import type { VideoSample } from 'mediabunny';
 import { current, rate } from '../model/seq';
-import type { MediaItem, Project, Sequence } from '../model/types';
+import type { Clip, MediaItem, Project, Sequence } from '../model/types';
 import { inApp, mediaUrl, native, onExportProgress } from '../native';
 import { parseCube, type Cube } from '../render/color';
 import { Compositor, type Pictures } from '../render/compositor';
@@ -160,15 +160,39 @@ export class FfmpegReader {
     return Math.abs(t - expect) <= Math.abs(step) * 0.5 + 1e-6;
   }
 
+  /** How many frames to pass over to reach `t` reading on (a remapped clip running faster), or -1 to start again. */
+  static skip(expect: number, t: number, step: number): number {
+    if (step <= 0) return -1;
+    const n = Math.round((t - expect) / step);
+    return n >= 1 && n <= MAX_SKIP && FfmpegReader.continues(expect + n * step, t, step) ? n : -1;
+  }
+
   async at(t: number): Promise<ImageData | null> {
     if (this.cur && Math.abs(t - (this.expect - this.step)) < 1e-6) return this.cur;
-    if (this.id === null || this.step <= 0 || !FfmpegReader.continues(this.expect, t, this.step)) {
+    let id = this.id;
+    const skip = id === null ? -1 : FfmpegReader.skip(this.expect, t, this.step);
+    if (id !== null && skip > 0) {
+      // A little further on: the frames between are read and passed over (cheaper than starting FFmpeg again).
+      for (let i = 0; i < skip; i++) {
+        if ((await native.framesNext(id)).length > 0) continue;
+        // The end of the file: FFmpeg has closed this reader.
+        this.id = null;
+        return this.cur;
+      }
+      this.expect += skip * this.step;
+    } else if (id === null || this.step <= 0 || !FfmpegReader.continues(this.expect, t, this.step)) {
       await this.close();
-      this.id = await native.framesOpen(this.path, Math.max(0, t), 1 / Math.abs(this.step || 1 / 30), this.width, this.height);
+      id = await native.framesOpen(this.path, Math.max(0, t), 1 / Math.abs(this.step || 1 / 30), this.width, this.height);
+      this.id = id;
     }
-    const bytes = await native.framesNext(this.id);
+    const bytes = await native.framesNext(id);
     this.expect = t + this.step;
-    if (bytes.length !== this.width * this.height * 4) return this.cur;
+    if (bytes.length !== this.width * this.height * 4) {
+      // The end of the file (often sooner than its stated length): FFmpeg has closed this reader, so the next
+      // frame starts it again rather than asking a closed one; the last picture is held.
+      this.id = null;
+      return this.cur;
+    }
     this.cur = new ImageData(new Uint8ClampedArray(bytes.buffer as ArrayBuffer, bytes.byteOffset, bytes.length), this.width, this.height);
     return this.cur;
   }
@@ -177,6 +201,19 @@ export class FfmpegReader {
     if (this.id !== null) await native.framesClose(this.id).catch(() => undefined);
     this.id = null;
   }
+}
+
+/** Frames a reader passes over rather than starting FFmpeg again. */
+const MAX_SKIP = 8;
+
+/**
+ * File seconds between the frames an FFmpeg reader hands over for a clip. A
+ * remapped clip's times are on the file's own frame grid (and its speed
+ * changes), so it reads every frame of the file; otherwise one frame of the
+ * film at the clip's speed.
+ */
+export function readerStep(clip: Clip, local: number, media: MediaItem, fps: number): number {
+  return clip.remap ? 1 / (media.fps || 30) : rateAt(clip, local) / fps;
 }
 
 type Route = { via: 'decoder'; sink: VideoSampleSink; rotation: number } | { via: 'ffmpeg'; path: string } | null;
@@ -291,9 +328,7 @@ export class Sources {
         const m = l.source.media;
         const h = Math.max(2, Math.round(Math.min(m.height || this.size.height, this.size.height) / 2) * 2);
         const w = Math.max(2, Math.round((h * (m.width || 16)) / (m.height || 9) / 2) * 2);
-        // A remapped clip changes speed: FFmpeg reads at normal speed and starts again where it jumps.
-        const r = l.clip.remap ? 1 : rateAt(l.clip, l.local);
-        f = new FfmpegReader(route.path, w, h, r / this.fps);
+        f = new FfmpegReader(route.path, w, h, readerStep(l.clip, l.local, m, this.fps));
         this.ffReaders.set(key, f);
       }
       f.used = frame;
@@ -325,7 +360,7 @@ export class Sources {
   /** AI masks: any frame not worked out yet is done now, from the exact frame decoded (the film waits for it). */
   async mattes(ops: Op[]) {
     for (const l of allLayers(ops))
-      for (const e of l.effects) if (isAiMask(e.type)) await mattes.ensure(l, e, this.pictures.picture(l) as CanvasImageSource | null);
+      for (const e of l.effects) if (isAiMask(e.type)) await mattes.ensure(l, e, this.pictures.picture(l) as CanvasImageSource | ImageData | null);
   }
 
   async close() {
@@ -479,6 +514,7 @@ export class Exporter {
     await output.start();
     const sources = new Sources({ width, height }, fps);
     const readText = (p: string) => native.readText(p);
+    let ended = false;
     try {
       for (let f = from; f < to; f++) {
         await this.gate();
@@ -502,6 +538,7 @@ export class Exporter {
           });
         }
       }
+      ended = true;
       if (this.stopped) {
         await output.cancel();
         return null;
@@ -511,7 +548,10 @@ export class Exporter {
       if (failed) throw failed;
       if (!inApp() && target instanceof BufferTarget && target.buffer) this.lastBuffer = target.buffer;
     } finally {
+      // A frame that failed: the encoder is let go too.
+      if (!ended) await output.cancel().catch(() => undefined);
       await sources.close();
+      gl.dispose();
     }
     return { file: `{tmp}/${file}`, copy: codec === 'avc', crf: this.o.mbps >= 30 ? 14 : this.o.mbps >= 15 ? 17 : 21 };
   }
@@ -562,10 +602,15 @@ export class Exporter {
         await sources.close();
       }
     };
-    let r = await encode(pipe.args);
-    if (r.error && pipe.fallback && r.sent < 12 && !this.stopped) {
-      this.note = 'The graphics card’s encoder could not start: made with the software encoder.';
-      r = await encode(pipe.fallback);
+    let r: { sent: number; error: Error | null };
+    try {
+      r = await encode(pipe.args);
+      if (r.error && pipe.fallback && r.sent < 12 && !this.stopped) {
+        this.note = 'The graphics card’s encoder could not start: made with the software encoder.';
+        r = await encode(pipe.fallback);
+      }
+    } finally {
+      gl.dispose();
     }
     if (r.error) throw r.error;
     if (this.stopped) return null;
