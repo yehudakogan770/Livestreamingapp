@@ -516,7 +516,7 @@ export function Editor({
       style={{ ['--left' as string]: `${u.left}px`, ['--right' as string]: `${u.right}px`, ['--bottom' as string]: `${u.bottom}px` }}
     >
       <header className="ed__top">
-        <img className="ed__logo" src="./brand/lumora-logo.svg" alt="Lumora Studio" />
+        <img className="ed__logo" src="./brand/studio-logo.svg" alt="Lumora Studio" />
         <nav className="ed__menus" aria-label="Menus">
           {menus.map(([name, items]) => (
             <button

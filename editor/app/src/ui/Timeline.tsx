@@ -88,7 +88,7 @@ export function clipColor(p: Project, c: Clip): string {
   const src = c.source;
   if (src.kind === 'multicam') return p.groups.find((g) => g.id === src.group)?.angles.find((a) => a.id === src.angle)?.color ?? '#3d6fa8';
   if (src.kind === 'text') return '#7a5bb0';
-  if (src.kind === 'color') return '#5d636e';
+  if (src.kind === 'color') return '#636363';
   if (src.kind === 'adjustment') return '#8c6d3f';
   if (src.kind === 'sequence') return '#6b7a3a';
   if (src.kind === 'generator') return '#3a6b6b';
@@ -1335,7 +1335,7 @@ function Meters({ engine }: { engine: Engine }) {
         holds[i] = Math.max(db, (holds[i] ?? -90) - 0.25);
         const y = (d: number) => h - (Math.max(0, d + 60) / 66) * h;
         const x = 3 + i * 9;
-        ctx.fillStyle = '#121417';
+        ctx.fillStyle = '#141414';
         ctx.fillRect(x, 0, 7, h);
         const top = y(peaks[i] ?? -90);
         // Solid zones, as on a desk: green to -18 dB, amber to -6, red above.

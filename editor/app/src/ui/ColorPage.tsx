@@ -712,7 +712,7 @@ function CurvesEditor({ set, onChange }: { set: CurveSet; onChange: (s: CurveSet
     const ctx = cv?.getContext('2d');
     if (!cv || !ctx) return;
     ctx.clearRect(0, 0, W, H);
-    ctx.strokeStyle = '#262628';
+    ctx.strokeStyle = '#262626';
     for (let i = 1; i < 4; i++) {
       ctx.beginPath();
       ctx.moveTo((W * i) / 4, 0);
@@ -721,7 +721,7 @@ function CurvesEditor({ set, onChange }: { set: CurveSet; onChange: (s: CurveSet
       ctx.lineTo(W, (H * i) / 4);
       ctx.stroke();
     }
-    ctx.strokeStyle = '#3a3a3d';
+    ctx.strokeStyle = '#3a3a3a';
     ctx.beginPath();
     ctx.moveTo(0, H);
     ctx.lineTo(W, 0);

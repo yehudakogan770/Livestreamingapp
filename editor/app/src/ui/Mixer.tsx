@@ -133,7 +133,7 @@ function Meter({ engine, id, stereo }: { engine: Engine; id: string; stereo?: bo
         shown[i] = Math.max(lv[i] ?? -90, (shown[i] ?? -90) - 1.2);
         const top = h - (Math.max(0, (shown[i] ?? -90) + 60) / 66) * h;
         const x = i * 8;
-        ctx.fillStyle = '#121417';
+        ctx.fillStyle = '#141414';
         ctx.fillRect(x, 0, 6, h);
         const y = (d: number) => h - (Math.max(0, d + 60) / 66) * h;
         for (const [lo, hi, col] of METER_ZONES) {

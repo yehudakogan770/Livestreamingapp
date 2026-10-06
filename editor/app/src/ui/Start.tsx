@@ -23,7 +23,7 @@ export function Start({
     <div className="start">
       <div className="start__card">
         <div className="start__main">
-          <img className="start__logo" src="./brand/lumora-logo.svg" alt="Lumora Studio" />
+          <img className="start__logo" src="./brand/studio-logo.svg" alt="Lumora Studio" />
           <h1>Make any video</h1>
           <p className="start__lead">
             Start a new project and bring in your videos, music and pictures. Or open an event Lumora recorded (a <b>.lumora</b> file, in Videos → Lumora):

@@ -9,7 +9,7 @@ import { startSelfTest } from '../../../app/src/selftest/start';
 import { studioScenario } from './selftest';
 import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
-import '../../../app/src/styles.css';
+import './theme.css';
 import './editor.css';
 // Fonts for words on the picture (the Windows fonts are there already).
 import '@fontsource/bebas-neue/400.css';

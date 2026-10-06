@@ -14,17 +14,17 @@
   bottom: 0;
 }
 .rcache__run--uncached {
-  background: #d2453a;
+  background: var(--cache-uncached);
 }
 .rcache__run--cached {
-  background: #3d7fd6;
+  background: var(--cache-cached);
 }
 .rcache__run--making {
-  background: repeating-linear-gradient(90deg, #3d7fd6 0 4px, transparent 4px 8px);
-  opacity: 0.9;
+  background: var(--cache-cached);
+  opacity: 0.45;
 }
 .rcache__stat {
   font-family: var(--mono, monospace);
   font-size: 11px;
-  color: var(--text-dim, #9aa0a6);
+  color: var(--text-dim, #9f9f9f);
 }
