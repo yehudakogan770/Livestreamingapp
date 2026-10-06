@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#15171b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>Lumora Slides</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M25.65 3.06A21 21 0 0 1 42.95 33.04L29.01 33.23A10.5 10.5 0 0 0 30.82 16.02Z' fill='%234fb3bf'/%3E%3Cpath d='M41.31 35.89A21 21 0 0 1 6.69 35.89L13.5 23.73A10.5 10.5 0 0 0 27.5 33.9Z' fill='%23d6d8dc'/%3E%3Cpath d='M5.05 33.04A21 21 0 0 1 22.35 3.06L29.49 15.05A10.5 10.5 0 0 0 13.68 22.09Z' fill='%238f949c'/%3E%3Ccircle cx='24' cy='24' r='5.6' fill='%23e0473b'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/slides.css" />
+  </head>
+  <body>
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="lumora-mark" viewBox="0 0 48 48">
+        <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+        <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+        <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />
+        <circle cx="24" cy="24" r="5.6" fill="#e0473b" />
+      </symbol>
+    </svg>
+
+    <!-- Typing the PIN -->
+    <section id="login" class="login" hidden>
+      <div class="login__box">
+        <div class="brand">
+          <svg class="brand__mark" aria-hidden="true"><use href="#lumora-mark" /></svg>Lumora <span>Slides</span>
+        </div>
+        <p>Type the speaker PIN shown on the computer<br />(Slideshow → Let the speaker change slides).</p>
+        <form id="login-form" autocomplete="off">
+          <input id="pin" class="pin" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="PIN" aria-label="PIN" />
+          <button class="btn btn--primary btn--big" type="submit">Connect</button>
+        </form>
+        <p id="login-error" class="login__error" role="alert"></p>
+      </div>
+    </section>
+
+    <!-- The clicker -->
+    <div id="app" class="sl" hidden>
+      <header class="sl__top">
+        <svg class="sl__mark" aria-hidden="true"><use href="#lumora-mark" /></svg>
+        <span id="conn" class="conn" title="Connection"></span>
+        <span id="event" class="sl__event">Lumora</span>
+        <select id="pick" class="sl__pick" aria-label="Slideshow" hidden></select>
+        <span class="sl__times">
+          <button id="elapsed" class="chip" type="button" title="Time since you started. Tap to start again from 0:00.">
+            <small>Elapsed</small> <b id="elapsed-time">0:00</b>
+          </button>
+          <span id="cd" class="chip chip--cd" hidden><small id="cd-name">Countdown</small> <b id="cd-time">0:00</b></span>
+          <span class="chip"><small>Time</small> <b id="clock">–</b></span>
+        </span>
+      </header>
+
+      <div id="offline" class="banner" role="status" hidden>Lost the connection to the computer. Trying again…</div>
+      <div id="locked" class="banner banner--warn" role="status" hidden>The operator has paused slide control. You can still see the slides.</div>
+
+      <main class="sl__main">
+        <section class="sl__now" aria-label="Current slide">
+          <div id="now" class="frame frame--now" role="button" tabindex="0" aria-label="Current slide: tap for the next slide"></div>
+          <div class="sl__where">
+            <span id="tag" class="tag"></span>
+            <b id="where" class="sl__count">No slides yet</b>
+            <span id="black-tag" class="tag tag--black" hidden>Blacked out</span>
+          </div>
+        </section>
+
+        <section class="sl__side">
+          <div class="sl__next">
+            <span class="sl__label">Next</span>
+            <div id="next" class="frame frame--next" aria-label="Next slide"></div>
+          </div>
+          <div id="notes-box" class="sl__notes">
+            <span class="sl__label">Notes</span>
+            <div id="notes" class="notes" dir="auto"></div>
+          </div>
+        </section>
+
+        <nav class="sl__buttons" aria-label="Slide controls">
+          <button id="prev" class="btn btn--huge" type="button" aria-label="Previous slide">‹ Back</button>
+          <button id="go" class="btn btn--huge btn--primary" type="button" aria-label="Next slide">Next ›</button>
+          <div class="sl__more">
+            <button id="all" class="btn" type="button">All slides</button>
+            <button id="black" class="btn" type="button" hidden>Black screen</button>
+          </div>
+        </nav>
+      </main>
+
+      <!-- Every slide, to jump to one -->
+      <div id="grid-sheet" class="sheet" role="dialog" aria-modal="true" aria-label="All slides" hidden>
+        <div class="sheet__head">
+          <b>All slides</b>
+          <button id="grid-close" class="btn" type="button">Close</button>
+        </div>
+        <div id="grid" class="grid"></div>
+      </div>
+
+      <div id="toast" class="toast" role="status" hidden></div>
+    </div>
+
+    <script type="module" src="/slides.js"></script>
+  </body>
+</html>

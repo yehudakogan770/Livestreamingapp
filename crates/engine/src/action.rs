@@ -933,9 +933,11 @@ pub enum Action {
     },
 
     // ----- slideshow -----
+    /// The next slide (while blacked out: just bring the slides back, like a clicker).
     SlideNext {
         id: SourceId,
     },
+    /// The slide before (while blacked out: just bring the slides back).
     SlidePrevious {
         id: SourceId,
     },
@@ -943,6 +945,11 @@ pub enum Action {
     SlideGo {
         id: SourceId,
         index: usize,
+    },
+    /// Black out the slides (or bring them back). What is behind them stays.
+    SlideBlack {
+        id: SourceId,
+        value: bool,
     },
     /// Replace the slides and settings (the slide showing is kept if it can be).
     UpdateSlideshow {

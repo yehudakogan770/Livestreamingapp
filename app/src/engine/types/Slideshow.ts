@@ -39,4 +39,9 @@ export type Slideshow = {
    * Fade between slides.
    */
   fade: boolean;
+  /**
+   * Blacked out: the slides' area shows black (what is behind stays).
+   * Going to a slide brings the slides back.
+   */
+  black: boolean;
 };

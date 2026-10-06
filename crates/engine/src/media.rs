@@ -28,7 +28,7 @@ pub fn for_each_path(show: &mut Show, mut f: impl FnMut(&mut String)) {
             } => f(logo),
             SourceKind::Slideshow(sh) => {
                 for slide in &mut sh.slides {
-                    if let Slide::Image { path } = slide {
+                    if let Slide::Image { path, .. } = slide {
                         f(path);
                     }
                 }
@@ -75,7 +75,7 @@ fn inner_ids(kind: &SourceKind) -> Vec<SourceId> {
             .slides
             .iter()
             .filter_map(|sl| match sl {
-                Slide::Input { source_id } => Some(source_id.clone()),
+                Slide::Input { source_id, .. } => Some(source_id.clone()),
                 Slide::Image { .. } => None,
             })
             .chain(sh.behind.clone())

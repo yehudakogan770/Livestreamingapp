@@ -37,6 +37,12 @@ export const ICONS = {
   // A camera with a second one behind it: a backup lineup.
   backup:
     '<rect x="2.5" y="9" width="11" height="9" rx="1.5"/><path d="m13.5 12 4-2.5v8l-4-2.5"/><path d="M6 6h9.5A1.5 1.5 0 0 1 17 7.5"/><path d="M19.5 7.5 21.5 6v6"/>',
+  // A slide with an arrow onward.
+  slideNext: '<rect x="2.5" y="5" width="13" height="10" rx="1"/><path d="M18 10h4"/><path d="m20 8 2 2-2 2"/><path d="M6 19h6"/>',
+  // A slide with an arrow back.
+  slideBack: '<rect x="8.5" y="5" width="13" height="10" rx="1"/><path d="M6 10H2"/><path d="m4 8-2 2 2 2"/><path d="M12 19h6"/>',
+  // Back to the first slide: an arrow to a bar.
+  slideFirst: '<rect x="8.5" y="5" width="13" height="10" rx="1"/><path d="M2.5 6v8"/><path d="M7 10H4"/><path d="m5.5 8-2 2 2 2"/><path d="M12 19h6"/>',
   // A warning triangle (Lumora can't be reached).
   warning: '<path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.3v.1"/>',
   // Lumora's mark (docs/img/lumora-mark.svg) solid in one color: three blades and the on-air light.
