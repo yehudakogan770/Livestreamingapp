@@ -4,7 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#0f1114" />
-    <link rel="icon" href="data:," />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M25.65 3.06A21 21 0 0 1 42.95 33.04L29.01 33.23A10.5 10.5 0 0 0 30.82 16.02Z' fill='%234fb3bf'/%3E%3Cpath d='M41.31 35.89A21 21 0 0 1 6.69 35.89L13.5 23.73A10.5 10.5 0 0 0 27.5 33.9Z' fill='%23d6d8dc'/%3E%3Cpath d='M5.05 33.04A21 21 0 0 1 22.35 3.06L29.49 15.05A10.5 10.5 0 0 0 13.68 22.09Z' fill='%238f949c'/%3E%3Ccircle cx='24' cy='24' r='5.6' fill='%23e0473b'/%3E%3C/svg%3E"
+    />
     <title>Join in</title>
     <style>
       :root {
@@ -24,7 +28,11 @@
         min-height: 100vh;
         background: var(--bg);
         color: var(--text);
-        font: 17px/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
+        font:
+          17px/1.4 system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
       }
       main {
         max-width: 560px;
@@ -165,9 +173,34 @@
         text-align: center;
         color: var(--dim);
       }
+      .brandbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        max-width: 560px;
+        margin: 0 auto;
+        padding: 14px 16px 0;
+        color: var(--dim);
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .brandbar svg {
+        width: 20px;
+        height: 20px;
+        flex: none;
+      }
     </style>
   </head>
   <body>
+    <header class="brandbar">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+        <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+        <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />
+        <circle cx="24" cy="24" r="5.6" fill="#e0473b" />
+      </svg>
+      Lumora
+    </header>
     <main id="app"><p class="empty">Waiting for a question…</p></main>
     <script>
       // Each phone is one voter (a random name kept on the phone).
@@ -211,7 +244,17 @@
       }
 
       function draw(a) {
-        const key = JSON.stringify({ ...a, now: 0 }) + JSON.stringify(myBids) + bidNote + JSON.stringify(mine) + sentNote + pledgeNote + JSON.stringify(joined) + wallNote + (photo ? photo.size : '') + sending;
+        const key =
+          JSON.stringify({ ...a, now: 0 }) +
+          JSON.stringify(myBids) +
+          bidNote +
+          JSON.stringify(mine) +
+          sentNote +
+          pledgeNote +
+          JSON.stringify(joined) +
+          wallNote +
+          (photo ? photo.size : '') +
+          sending;
         if (key === last) return;
         // Never redraw under someone typing.
         if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
@@ -239,7 +282,12 @@
             b.onclick = () => vote(poll, i);
             box.append(b);
           });
-          box.append(el('p', { className: 'note', textContent: chosen === undefined ? 'Tap your answer.' : 'Thank you! You can change your answer while voting is open.' }));
+          box.append(
+            el('p', {
+              className: 'note',
+              textContent: chosen === undefined ? 'Tap your answer.' : 'Thank you! You can change your answer while voting is open.',
+            }),
+          );
           app.append(box);
         }
         for (const r of raffles) {
@@ -262,8 +310,16 @@
           const go = el('button', { className: 'send', textContent: 'Pledge' });
           go.onclick = () => pledgeIt(f);
           app.append(
-            el('section', { className: 'poll' }, el('h1', { textContent: f.title || 'Fundraiser' }), nameBox(), amount, msg, go,
-              el('p', { className: 'note', textContent: pledgeNote || 'A pledge is a promise: the hosts will tell you how to give.' })),
+            el(
+              'section',
+              { className: 'poll' },
+              el('h1', { textContent: f.title || 'Fundraiser' }),
+              nameBox(),
+              amount,
+              msg,
+              go,
+              el('p', { className: 'note', textContent: pledgeNote || 'A pledge is a promise: the hosts will tell you how to give.' }),
+            ),
           );
         }
         for (const st of seating) {
@@ -278,17 +334,29 @@
           app.append(box);
           if (typed.seat.trim().length >= 2) findSeat(st, box);
         }
-        const LOOK = [['#e0473b', '▲'], ['#2f80ed', '◆'], ['#d9a21b', '●'], ['#27ae60', '■']];
+        const LOOK = [
+          ['#e0473b', '▲'],
+          ['#2f80ed', '◆'],
+          ['#d9a21b', '●'],
+          ['#27ae60', '■'],
+        ];
         for (const g of games) {
           const box = el('section', { className: 'poll' }, el('p', { className: 'event', textContent: g.title || 'Trivia' }));
           const mark = (i) => LOOK[i][1] + ' ' + (g.options ? g.options[i] : '');
           const standing = g.place ? 'You are #' + g.place + ' with ' + Number(g.score).toLocaleString() + ' points.' : '';
           if (g.phase === 'join' || !g.options) {
-            box.append(el('h1', { textContent: 'Get ready to play!' }), el('p', { className: 'note', textContent: 'Type your name — the first question is coming.' }), nameBox());
+            box.append(
+              el('h1', { textContent: 'Get ready to play!' }),
+              el('p', { className: 'note', textContent: 'Type your name — the first question is coming.' }),
+              nameBox(),
+            );
           } else if (g.phase === 'asking') {
             box.append(el('h1', { textContent: g.text, dir: 'auto' }));
             if (g.answered !== null && g.answered !== undefined) {
-              box.append(el('p', { className: 'big-note', textContent: 'Answer in: ' + mark(g.answered) }), el('p', { className: 'note', textContent: 'Wait for the answer on the screen…' }));
+              box.append(
+                el('p', { className: 'big-note', textContent: 'Answer in: ' + mark(g.answered) }),
+                el('p', { className: 'note', textContent: 'Wait for the answer on the screen…' }),
+              );
             } else if (!g.taking) {
               box.append(el('p', { className: 'big-note', textContent: "Time's up!" }));
             } else {
@@ -303,25 +371,49 @@
           } else if (g.phase === 'reveal') {
             const right = g.answered === g.correct;
             box.append(
-              el('h1', { textContent: g.answered === null || g.answered === undefined ? 'The answer: ' + mark(g.correct) : right ? '✓ Right! +' + g.points : '✗ Not this time', dir: 'auto' }),
-              el('p', { className: 'note', textContent: (right || g.answered === null || g.answered === undefined ? '' : 'The answer was ' + mark(g.correct) + '. ') + standing }),
+              el('h1', {
+                textContent:
+                  g.answered === null || g.answered === undefined ? 'The answer: ' + mark(g.correct) : right ? '✓ Right! +' + g.points : '✗ Not this time',
+                dir: 'auto',
+              }),
+              el('p', {
+                className: 'note',
+                textContent: (right || g.answered === null || g.answered === undefined ? '' : 'The answer was ' + mark(g.correct) + '. ') + standing,
+              }),
             );
           } else {
-            box.append(el('h1', { textContent: g.place ? '🏆 You are #' + g.place : '🏆 Leaderboard on the screen' }), el('p', { className: 'note', textContent: standing }));
+            box.append(
+              el('h1', { textContent: g.place ? '🏆 You are #' + g.place : '🏆 Leaderboard on the screen' }),
+              el('p', { className: 'note', textContent: standing }),
+            );
           }
           app.append(box);
         }
         for (const au of auctions) {
           const it = au.item;
           const money = (n) => (au.currency || '') + Number(n).toLocaleString();
-          const box = el('section', { className: 'poll' }, el('p', { className: 'event', textContent: au.title || 'Auction' }), el('h1', { textContent: it.name, dir: 'auto' }));
+          const box = el(
+            'section',
+            { className: 'poll' },
+            el('p', { className: 'event', textContent: au.title || 'Auction' }),
+            el('h1', { textContent: it.name, dir: 'auto' }),
+          );
           if (it.detail) box.append(el('p', { className: 'note', textContent: it.detail, dir: 'auto' }));
           const mineTop = it.top !== null && myBids[it.id] === it.top && it.topName === typed.name.trim();
           if (it.sold) {
-            box.append(el('p', { className: 'big', textContent: 'Sold for ' + money(it.top) }), el('p', { textContent: (mineTop ? 'You won! Mazel tov! 🎉' : 'to ' + (it.topName || 'Anonymous')) + ' — the next item is coming.' }));
+            box.append(
+              el('p', { className: 'big', textContent: 'Sold for ' + money(it.top) }),
+              el('p', { textContent: (mineTop ? 'You won! Mazel tov! 🎉' : 'to ' + (it.topName || 'Anonymous')) + ' — the next item is coming.' }),
+            );
           } else {
-            box.append(el('p', { className: 'note', textContent: it.top === null ? 'Starting bid' : 'Current bid' }), el('p', { className: 'big', textContent: money(it.top === null ? it.min : it.top) }));
-            if (it.top !== null) box.append(el('p', { className: mineTop ? 'winning' : '', textContent: mineTop ? "You're the highest bidder! 🎉" : 'by ' + (it.topName || 'Anonymous') }));
+            box.append(
+              el('p', { className: 'note', textContent: it.top === null ? 'Starting bid' : 'Current bid' }),
+              el('p', { className: 'big', textContent: money(it.top === null ? it.min : it.top) }),
+            );
+            if (it.top !== null)
+              box.append(
+                el('p', { className: mineTop ? 'winning' : '', textContent: mineTop ? "You're the highest bidder! 🎉" : 'by ' + (it.topName || 'Anonymous') }),
+              );
             if (it.endsAt) {
               const t = el('p', { className: 'timer' });
               timers.push([t, it.endsAt]);
@@ -330,7 +422,13 @@
             box.append(nameBox());
             const quick = el('button', { className: 'send', textContent: 'Bid ' + money(it.min) });
             quick.onclick = () => placeBid(au, it.min);
-            const more = el('input', { type: 'number', inputMode: 'numeric', min: it.min, placeholder: 'Or type more (' + money(it.min) + ' or more)', value: typed.bid });
+            const more = el('input', {
+              type: 'number',
+              inputMode: 'numeric',
+              min: it.min,
+              placeholder: 'Or type more (' + money(it.min) + ' or more)',
+              value: typed.bid,
+            });
             more.oninput = () => (typed.bid = more.value);
             const go = el('button', { textContent: 'Bid this amount' });
             go.onclick = () => placeBid(au, Math.floor(Number(typed.bid)));
@@ -375,7 +473,17 @@
           q.oninput = () => (typed.question = q.value);
           const send = el('button', { className: 'send', textContent: 'Send the question' });
           send.onclick = () => askIt();
-          app.append(el('section', { className: 'poll' }, el('h1', { textContent: 'Ask a question' }), nameBox(), q, send, el('p', { className: 'note', textContent: sentNote || 'The hosts choose which questions go on screen.' })));
+          app.append(
+            el(
+              'section',
+              { className: 'poll' },
+              el('h1', { textContent: 'Ask a question' }),
+              nameBox(),
+              q,
+              send,
+              el('p', { className: 'note', textContent: sentNote || 'The hosts choose which questions go on screen.' }),
+            ),
+          );
         }
       }
 
@@ -457,7 +565,8 @@
           const list = r.ok ? await r.json() : [];
           out.textContent = '';
           if (!list.length) out.append(el('p', { className: 'note', textContent: 'No one by that name yet — try your family name.' }));
-          for (const g of list) out.append(el('p', { className: 'seat', dir: 'auto' }, el('span', { textContent: g.name }), el('b', { textContent: 'Table ' + g.table })));
+          for (const g of list)
+            out.append(el('p', { className: 'seat', dir: 'auto' }, el('span', { textContent: g.name }), el('b', { textContent: 'Table ' + g.table })));
         } catch {
           out.textContent = 'It did not load — try again.';
         }

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>You are invited to Lumora</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f4f5f7">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f4f5f7">
+      <tr>
+        <td align="center" style="padding: 32px 16px">
+          <table
+            role="presentation"
+            width="100%"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            style="max-width: 520px; background-color: #ffffff; border: 1px solid #e3e5e8; border-radius: 8px"
+          >
+            <tr>
+              <td style="padding: 20px 32px; background-color: #15171b; border-radius: 8px 8px 0 0">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td style="vertical-align: middle">
+                      <img
+                        src="https://yehudakogan770.github.io/Livestreamingapp/img/lumora-mark-96.png"
+                        width="32"
+                        height="32"
+                        alt=""
+                        style="display: block; border: 0"
+                      />
+                    </td>
+                    <td
+                      style="
+                        vertical-align: middle;
+                        padding-left: 10px;
+                        font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+                        font-size: 20px;
+                        font-weight: 600;
+                        color: #ffffff;
+                      "
+                    >
+                      Lumora
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 32px; font-family: 'Segoe UI', Helvetica, Arial, sans-serif; font-size: 16px; line-height: 1.5; color: #1d2025">
+                <h1 style="margin: 0 0 16px; font-size: 22px; font-weight: 600; color: #15171b">You are invited to Lumora</h1>
+                <p style="margin: 0 0 16px">The Lumora team has invited you to use Lumora. Accept the invitation to set up your account.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 8px 0 24px">
+                  <tr>
+                    <td style="border-radius: 6px; background-color: #15171b">
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        style="
+                          display: inline-block;
+                          padding: 12px 22px;
+                          font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+                          font-size: 16px;
+                          font-weight: 600;
+                          color: #ffffff;
+                          text-decoration: none;
+                          border-radius: 6px;
+                        "
+                        >Accept the invitation</a
+                      >
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin: 0 0 16px">
+                  If the button does not work, copy this link into your browser:<br /><a
+                    href="{{ .ConfirmationURL }}"
+                    style="color: #1f6fb2; word-break: break-all"
+                    >{{ .ConfirmationURL }}</a
+                  >
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td
+                style="
+                  padding: 20px 32px;
+                  border-top: 1px solid #e3e5e8;
+                  font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+                  font-size: 13px;
+                  line-height: 1.5;
+                  color: #6b7079;
+                "
+              >
+                This invitation was sent to {{ .Email }}. If you were not expecting it, you can ignore this email.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

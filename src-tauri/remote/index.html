@@ -7,14 +7,29 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <title>Lumora Remote</title>
-    <link rel="icon" href="data:," />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath d='M25.65 3.06A21 21 0 0 1 42.95 33.04L29.01 33.23A10.5 10.5 0 0 0 30.82 16.02Z' fill='%234fb3bf'/%3E%3Cpath d='M41.31 35.89A21 21 0 0 1 6.69 35.89L13.5 23.73A10.5 10.5 0 0 0 27.5 33.9Z' fill='%23d6d8dc'/%3E%3Cpath d='M5.05 33.04A21 21 0 0 1 22.35 3.06L29.49 15.05A10.5 10.5 0 0 0 13.68 22.09Z' fill='%238f949c'/%3E%3Ccircle cx='24' cy='24' r='5.6' fill='%23e0473b'/%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="/remote.css" />
   </head>
   <body>
+    <!-- Lumora's mark, drawn once (docs/img/lumora-mark.svg) -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="lumora-mark" viewBox="0 0 48 48">
+        <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+        <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+        <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />
+        <circle cx="24" cy="24" r="5.6" fill="#e0473b" />
+      </symbol>
+    </svg>
     <!-- Typing the PIN -->
     <section id="login" class="login" hidden>
       <div class="login__box">
-        <div class="brand">Lumora <span>Remote</span></div>
+        <div class="brand">
+          <svg class="brand__mark" aria-hidden="true"><use href="#lumora-mark" /></svg>Lumora <span>Remote</span>
+        </div>
         <p>Type the PIN shown on the computer<br />(Settings → Phone remote).</p>
         <form id="login-form" autocomplete="off">
           <input id="pin" class="pin" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="• • • •" aria-label="PIN" />
@@ -27,6 +42,7 @@
     <!-- The remote -->
     <div id="app" class="app" hidden>
       <header class="top">
+        <svg class="top__mark" aria-hidden="true"><use href="#lumora-mark" /></svg>
         <span id="conn" class="conn" title="Connection"></span>
         <span id="event" class="top__event">Lumora</span>
         <span id="clock" class="top__clock"></span>

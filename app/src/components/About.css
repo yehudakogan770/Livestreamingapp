@@ -1,0 +1,30 @@
+.about {
+  width: min(400px, calc(100vw - 48px));
+}
+.about__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 28px 24px 22px;
+  text-align: center;
+}
+.about__body svg {
+  margin-bottom: 12px;
+}
+.about__body p {
+  margin: 0;
+}
+.about__name {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+}
+.about__line,
+.about__version,
+.about__site {
+  color: var(--text-dim);
+}
+.about__version {
+  margin-top: 10px !important;
+}

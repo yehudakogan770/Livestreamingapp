@@ -10,6 +10,30 @@ const BLADES = [
 
 const BLADE_FOR: Record<ScreenId, number> = { live: 0, back: 1, monitor: 2 };
 
+// The mark in its own colors (docs/img/lumora-mark.svg). Lumora Studio's has
+// an amber blade and a gray light (editor/app/public/brand/studio-logo.svg).
+const COLORS = {
+  lumora: { blades: ['#4fb3bf', '#d6d8dc', '#8f949c'], light: '#e0473b' },
+  studio: { blades: ['#e0973f', '#d9d9d9', '#8c8c8c'], light: '#d9d9d9' },
+} as const;
+
+/** Which app's mark: Lumora's, or Lumora Studio's. */
+export type MarkOf = keyof typeof COLORS;
+
+/** The app's mark as it is everywhere else (icons, website): for headers of the app's own windows. */
+export function BrandMark({ size = 16, of = 'lumora', className }: { size?: number; of?: MarkOf; className?: string }) {
+  const c = COLORS[of];
+  return (
+    <svg className={className} width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" data-mark={of}>
+      {BLADES.map((d, i) => (
+        <path key={d} d={d} fill={c.blades[i]} />
+      ))}
+      {of === 'studio' && <circle cx="24" cy="24" r="5.6" fill="#1c1c1c" />}
+      <circle cx="24" cy="24" r={of === 'studio' ? 3.2 : 5.6} fill={c.light} />
+    </svg>
+  );
+}
+
 export function LogoMark({ size = 18, lit = 'live' }: { size?: number; lit?: ScreenId }) {
   const active = BLADE_FOR[lit];
   return (

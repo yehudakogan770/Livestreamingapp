@@ -4,7 +4,7 @@
 // into com.lumora.streamdeck.sdPlugin/imgs by scripts/pack.mjs.
 
 import { KINDS, type Kind } from './actions';
-import { ICONS, iconSvg, type IconName } from './icons';
+import { iconSvg, type IconName } from './icons';
 import { COLORS, keyModel, renderSvg } from './keys';
 
 export const ICON_OF: Record<Kind, IconName> = {
@@ -24,14 +24,20 @@ export const ICON_OF: Record<Kind, IconName> = {
   rehearsal: 'rehearsal',
 };
 
-/** The plugin's icon: Lumora's mark on its dark tile. */
+/** Lumora's mark in its own colors (docs/img/lumora-mark.svg), on a 48 × 48 grid. */
+const MARK =
+  '<path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf"/>' +
+  '<path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc"/>' +
+  '<path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c"/>' +
+  '<circle cx="24" cy="24" r="5.6" fill="#e0473b"/>';
+
+/** The plugin's icon: Lumora's mark on its dark tile, like the app's own icon. */
 function pluginIcon(size: number): string {
-  const s = size / 24;
+  const inset = size * 0.16;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
     `<rect width="${size}" height="${size}" rx="${size * 0.18}" fill="${COLORS.background}"/>` +
-    `<g transform="translate(${size * 0.18} ${size * 0.18}) scale(${s * 0.64})" fill="none" stroke="${COLORS.text}" color="${COLORS.text}" ` +
-    `stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${ICONS.lumora}</g></svg>\n`
+    `<g transform="translate(${inset} ${inset}) scale(${(size - 2 * inset) / 48})">${MARK}</g></svg>\n`
   );
 }
 

@@ -3,6 +3,7 @@ import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
+import { BrandMark } from './Logo';
 import './UpdateBar.css';
 
 const isInsideLumora = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -82,6 +83,7 @@ export function UpdateBar({ product = 'Lumora' }: { product?: string }) {
   if (hidden || st.s === 'idle' || (st.s === 'checking' && !st.asked)) return null;
   return (
     <div className="upd" role="status">
+      <BrandMark size={18} of={product === 'Lumora Studio' ? 'studio' : 'lumora'} className="upd__mark" />
       {st.s === 'checking' && <span>Looking for a newer {product}…</span>}
       {st.s === 'none' && (
         <>

@@ -113,7 +113,7 @@ function GateScreen({ gate, product, onCheck, onSignOut }: { gate: Gate; product
     <div className="gate">
       <div className="gate__card">
         <div className="gate__brand">
-          <img src="./brand/lumora-logo.svg" alt="Lumora" />
+          <img src={product === 'studio' ? './brand/studio-logo.svg' : './brand/lumora-logo.svg'} alt={PRODUCT_NAME[product]} />
         </div>
         {gate.s === 'checking' && <p className="gate__note">Checking your account…</p>}
         {gate.s === 'out' && <SignIn />}

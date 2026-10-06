@@ -36,8 +36,13 @@ export const ICONS = {
   rehearsal: '<rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 4V2.8h6V4"/><path d="m8.5 13 2.5 2.5 4.5-5"/>',
   // A warning triangle (Lumora can't be reached).
   warning: '<path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.3v.1"/>',
-  // Lumora's mark: a lens ring with a light in it.
-  lumora: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/>',
+  // Lumora's mark (docs/img/lumora-mark.svg) solid in one color: three blades and the on-air light.
+  lumora:
+    '<g transform="scale(0.5)" fill="currentColor" stroke="none">' +
+    '<path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z"/>' +
+    '<path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z"/>' +
+    '<path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z"/>' +
+    '<circle cx="24" cy="24" r="5.6"/></g>',
 } as const;
 
 export type IconName = keyof typeof ICONS;

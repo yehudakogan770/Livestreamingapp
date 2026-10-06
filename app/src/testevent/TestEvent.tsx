@@ -3,7 +3,8 @@
 
 import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
-import { ClipboardCheck, Copy, FileText, FolderOpen, Gauge, Send, Square, X } from 'lucide-react';
+import { ClipboardCheck, Copy, FileText, FolderOpen, Send, Square, X } from 'lucide-react';
+import { BrandMark } from '../components/Logo';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { useSound } from '../audio/SoundContext';
 import { useBroadcast } from '../broadcast/BroadcastContext';
@@ -173,7 +174,7 @@ function TestEventDialog({ show, client, onClose }: { show: Show; client: Engine
       <div className="modal__box te">
         <header className="modal__head">
           <h2>
-            <Gauge className="modal__icon" aria-hidden="true" />
+            <BrandMark className="modal__icon" />
             Test event
           </h2>
           {!running && (
