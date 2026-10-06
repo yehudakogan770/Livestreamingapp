@@ -35,6 +35,7 @@ import { Collab, useCollab } from '../collab/session';
 import { canEdit } from '../collab/lock';
 import { CommentsPanel, ConflictDialog, HereChips, LockBanner } from '../collab/CollabUi';
 import { HistoryDialog, ShareDialog } from '../collab/CollabDialogs';
+import { nativePlayback } from '../render/native/client';
 
 export function Editor({
   project,
@@ -60,6 +61,7 @@ export function Editor({
     const e = new Engine();
     e.setProject(project);
     if (inApp()) e.readText = native.readText;
+    e.native = nativePlayback;
     return e;
   }, [project]);
   const actions = useMemo(() => makeActions(doc, engine, ui), [doc, engine, ui]);
@@ -90,8 +92,12 @@ export function Editor({
 
   useEffect(() => {
     engine.start();
-    return () => engine.release();
-  }, [engine]);
+    nativePlayback.onNote = (t) => ui.note(t);
+    return () => {
+      engine.release();
+      void nativePlayback.stop();
+    };
+  }, [engine, ui]);
   useEffect(() => engine.setProject(state.project), [engine, state.project]);
   useEffect(() => {
     engine.quality = u.quality;
@@ -359,6 +365,7 @@ export function Editor({
         { label: 'Playback: half', checked: u.quality === 0.5, run: () => ui.set({ quality: 0.5 }) },
         { label: 'Playback: quarter', checked: u.quality === 0.25, run: () => ui.set({ quality: 0.25 }) },
         { label: 'Use proxies for playback', checked: u.proxies, run: () => ui.set({ proxies: !u.proxies }) },
+        { label: 'Native playback (beta)', checked: nativePlayback.enabled, run: () => nativePlayback.setEnabled(!nativePlayback.enabled) },
         { label: 'Safe margins', checked: u.safeMargins, run: () => ui.set({ safeMargins: !u.safeMargins }) },
         'sep',
         { label: 'Zoom in', keys: '=', run: () => actions.zoom(1.5) },

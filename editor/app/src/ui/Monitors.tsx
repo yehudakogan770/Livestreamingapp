@@ -13,6 +13,8 @@ import { Choice } from './controls';
 import { drag, usePlayhead, usePlaying, useSize } from './hooks';
 import { PlayheadTime } from './Timeline';
 import { DroppedFrames, ProxyToggle } from './Playback';
+import { NativeBadge } from './NativeBadge';
+import { nativePlayback } from '../render/native/client';
 import { useUi, type Ui } from './state';
 import { TrackOverlay } from './Tracking';
 
@@ -52,6 +54,8 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
   const clock = clockAt(project, onTop, t, fps);
   const sel = selectedIds(selection);
   const moving = s.clips.find((c) => sel.includes(c.id) && s.tracks.find((tr) => tr.id === c.track)?.kind === 'video' && t >= c.start && t < end(c));
+  // Guides and handles over the picture show only over WebGL's (the native window would cover them).
+  nativePlayback.blocked = u.safeMargins || (!playing && !!moving) || !!problem;
 
   return (
     <div className="vmon vmon--program">
@@ -72,6 +76,7 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
         </select>
         <ProxyToggle ui={ui} on={u.proxies} />
         <DroppedFrames engine={engine} />
+        <NativeBadge />
         <button
           type="button"
           className={`tbtn${u.safeMargins ? ' is-on' : ''}`}

@@ -10,6 +10,7 @@ mod library;
 mod manage;
 mod mattes;
 mod media;
+mod native_view;
 mod speech;
 
 use std::path::{Path, PathBuf};
@@ -426,6 +427,7 @@ pub fn run() {
                 frames: frames::Readers::default(),
                 encoders: Arc::default(),
             });
+            app.manage(native_view::NativeView::default());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -467,6 +469,14 @@ pub fn run() {
             delivery::recovery_read,
             delivery::recovery_list,
             delivery::recovery_remove,
+            native_view::native_view_start,
+            native_view::native_view_stop,
+            native_view::native_view_frame,
+            native_view::native_view_play,
+            native_view::native_view_sync,
+            native_view::native_view_place,
+            native_view::native_view_reset,
+            native_view::native_view_pixels,
         ])
         .run(tauri::generate_context!())
         .expect("Lumora Studio could not start");

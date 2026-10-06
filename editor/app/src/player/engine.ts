@@ -9,6 +9,7 @@ import { parseCube, type Cube } from '../render/color';
 import { allLayers, frameOps, sourceAt, videoNeeds, type Layer, type Op } from '../render/frame';
 import { rateAt } from '../model/remap';
 import { matteFor, mattes } from '../vision/mattes';
+import type { NativeTick } from '../render/native/client';
 import { audioAt, dbToGain, heardTracks, type Heard } from './audio';
 import { playbackFile } from './files';
 import { FrameCache, aheadCount, framesAhead } from './framecache';
@@ -110,6 +111,8 @@ export class Engine {
   private opsAt: { p: Project | null; frame: number } = { p: null, frame: -1 };
   private ahead: { p: Project | null; frame: number; ops: Op[] } = { p: null, frame: -1e9, ops: [] };
   readonly stats: PlaybackStats = { drawn: 0, dropped: 0, late: 0, composeMs: 0 };
+  /** Native playback (beta): draws the program monitor instead of WebGL when it can (render/native/client.ts). */
+  native: { drive(t: NativeTick): boolean } | null = null;
 
   constructor() {
     this.cache.onReady = () => (this.dirty = true);
@@ -329,6 +332,7 @@ export class Engine {
       this.lastOps = ops;
       this.opsAt = { p: this.p, frame };
     }
+    if (this.driveNative(ops, s, frame)) return;
     this.syncVideo(ops, s, frame, fps);
     this.syncSound(s, frame);
     this.prefetch(ops, s, frame, fps);
@@ -349,6 +353,23 @@ export class Engine {
       this.stats.composeMs = this.stats.composeMs * 0.9 + (performance.now() - t0) * 0.1;
     }
   };
+
+  /** The native engine draws the frame (true), or the WebGL path below does. */
+  private driveNative(ops: Op[], s: Sequence, frame: number): boolean {
+    const n = this.native;
+    if (!n || !this.p) return false;
+    const c = this.compositor;
+    const t = { p: this.p, s, at: this.frame, ops, playing: this.playing, speed: this.speed, dirty: this.dirty, matte: this.matte };
+    const extra = { pictures: this.pictures, proxies: this.proxies, quality: this.quality, shown: this.shown, stats: this.stats };
+    if (!n.drive({ ...t, ...extra, canvas: c ? (c.canvas as HTMLCanvasElement) : null })) return false;
+    // It decodes its own video: the page's players rest. The sound carries on here.
+    for (const v of this.videos.values()) if (!v.el.paused) v.el.pause();
+    this.syncSound(s, frame);
+    // Stopped with the scopes open: they read the WebGL picture, so it is drawn too (one frame).
+    if (this.dirty && !this.playing && this.onFrame) this.draw(ops, s);
+    this.dirty = false;
+    return true;
+  }
 
   /** Get frames decoded before they are needed. */
   private prefetch(ops: Op[], s: Sequence, frame: number, fps: number) {
