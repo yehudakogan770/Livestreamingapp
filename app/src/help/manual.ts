@@ -170,6 +170,28 @@ export const MANUAL: Topic[] = [
       '1. Settings → Recording and streaming…: where to stream (YouTube, Facebook, or any RTMP address) and where recordings go.',
       '2. GO LIVE starts the stream; REC starts recording. Both show red while running.',
       '• REPLAY: play back the last seconds, in slow motion if you like; “★ Keep as a highlight” saves it for the highlights reel.',
+      '• You can stream to several places at once. If one of them drops out, the others keep going, and Lumora tells you which one stopped.',
+    ],
+  },
+  {
+    id: 'encoders',
+    title: 'Encoders and quality',
+    keywords:
+      'encoder nvenc nvidia quick sync intel amd amf x264 software hardware gpu graphics card 4k 2160p 1080p60 60fps bitrate cbr keyframe hevc h.265 quality iso camera files fallback',
+    body: [
+      'An encoder squeezes the picture small enough to stream or save. Lumora can use the encoder built into your graphics card (NVIDIA, Intel or AMD), which takes the work off the processor, or the processor itself (“Software”).',
+      '1. Open Settings → Recording and streaming… and find Encoder.',
+      '2. Leave it on Automatic. Lumora checks your graphics card each time it starts and uses its encoder if it works; the note under the setting says what it found.',
+      '3. Speed or quality: Balanced suits almost everyone. Choose Speed if the computer struggles, Quality if it has plenty to spare.',
+      '• Streams always go out at a steady bitrate with a keyframe every 2 seconds, which is what YouTube, Facebook and Vimeo ask for.',
+      '• 4K: set Picture to 4K and Stream picture to 1080p. Lumora draws the show once in 4K for the recording, and the graphics card makes the 1080p stream from it. 4K needs a strong computer with a graphics card; run Help → Check this computer first, and always try it in a Rehearsal.',
+      '• 60 frames a second (1080p60, 4K60) looks smoother but is twice the work. If the frame rate in the bottom bar drops below its target, go back to 30.',
+      '• Each destination can have its own bitrate (under its stream key). Destinations with the same bitrate share one encode, so keep them the same unless one really needs less.',
+      '• “Encode recordings with this encoder” saves recordings at a constant quality instead of a fixed bitrate. HEVC (H.265) makes smaller files but needs a graphics card that can make it. Leave this off if you are not sure: the recording is then saved exactly as Lumora makes it, which is the safest.',
+      '• Camera files (each camera recorded on its own) can be turned on or off for each input, with their own bitrate. They all start on the same clock as the main recording, so Lumora Studio lines them up by itself.',
+      'If the graphics card’s encoder stops in the middle of an event, Lumora switches to the processor by itself and carries on. The stream comes back within a few seconds; a recording carries on in a new file next to the first one, and nothing already recorded is lost. A message in the bottom bar says so. Restart Lumora (and update the graphics driver) to use the graphics card again.',
+      'You can see which encoder is working in the bottom bar: click the CPU button. The test event report lists it too.',
+      'Tip: The processor’s encoder is fine for one 1080p30 stream on a good computer. For 1080p60, 4K, or several destinations at different bitrates, use a graphics card.',
     ],
   },
   {

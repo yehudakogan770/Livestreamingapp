@@ -623,6 +623,8 @@ impl Capture {
         // Writing into a file: a failure is the disk's. Into FFmpeg: FFmpeg's
         // own reader says why it stopped.
         let report_write = matches!(finish, Finish::Recording(_));
+        // Where FFmpeg encodes again, its progress reports say how much went out.
+        let count = !matches!(finish, Finish::Encoded { .. } | Finish::Stream(_, false));
         let done = Arc::new(AtomicBool::new(false));
         {
             let shared = Arc::clone(&self.shared);
@@ -633,7 +635,16 @@ impl Capture {
             thread::Builder::new()
                 .name(format!("lumora-{kind:?}-{session}").to_lowercase())
                 .spawn(move || {
-                    write_loop(&shared, kind, session, out, &rx, &queued, report_write);
+                    write_loop(
+                        &shared,
+                        kind,
+                        session,
+                        out,
+                        &rx,
+                        &queued,
+                        report_write,
+                        count,
+                    );
                     finish.run(&shared, ffmpeg.as_deref(), &mime, &done);
                     done.store(true, Ordering::SeqCst);
                 })
@@ -796,7 +807,13 @@ impl Capture {
             &record_args(&e, &path),
             self.stall,
             stopping,
-            move |speed| speed_to.running(Kind::Record, session, |r| r.speed = speed),
+            move |p: Progress| {
+                speed_to.running(Kind::Record, session, |r| {
+                    r.speed = p.speed;
+                    // The file's own size (not what the WebView hands over).
+                    r.bytes = p.bytes.unwrap_or(r.bytes);
+                });
+            },
             |_| {},
             move |_sent, said| {
                 let detail = ffmpeg_detail(&said);
@@ -892,21 +909,43 @@ impl Capture {
         let n = plan.groups.len();
         let remaining = Arc::new(AtomicUsize::new(n));
         let any_sent = Arc::new(AtomicBool::new(false));
-        let speeds = Arc::new(Mutex::new(vec![None::<f32>; n]));
+        let reports = Arc::new(Mutex::new(vec![Progress::default(); n]));
+        // What goes out, kbit/s per FFmpeg (constant when encoded; the stream's own when sent as it is).
+        let rates: Arc<Vec<u32>> = Arc::new(plan.groups.iter().map(|(g, _)| g.kbps).collect());
+        // Bytes out are counted from the time sent at that bitrate when FFmpeg encodes
+        // (what the WebView hands over is more than goes out then).
+        let estimate = plan.groups.iter().any(|(_, e)| e.is_some());
         let pids = Arc::new(Mutex::new(Vec::<u32>::new()));
         let mut children = Vec::new();
         let mut inputs = Vec::new();
         for (i, (group, enc)) in plan.groups.iter().enumerate() {
             let args = stream_args(group, enc.as_ref(), settings.audio_kbps);
-            let on_speed = {
-                let (shared, speeds) = (Arc::clone(&self.shared), Arc::clone(&speeds));
-                move |speed: Option<f32>| {
-                    let slowest = {
-                        let mut s = lock(&speeds);
-                        s[i] = speed;
-                        s.iter().flatten().copied().reduce(f32::min)
+            let on_progress = {
+                let (shared, reports, rates) = (
+                    Arc::clone(&self.shared),
+                    Arc::clone(&reports),
+                    Arc::clone(&rates),
+                );
+                move |p: Progress| {
+                    let (slowest, out) = {
+                        let mut all = lock(&reports);
+                        all[i] = p;
+                        let slowest = all.iter().filter_map(|x| x.speed).reduce(f32::min);
+                        let out: f64 = all
+                            .iter()
+                            .zip(rates.iter())
+                            .map(|(x, k)| x.secs * f64::from(*k) * 125.0)
+                            .sum();
+                        (slowest, out)
                     };
-                    shared.running(kind, session, |r| r.speed = slowest);
+                    shared.running(kind, session, |r| {
+                        r.speed = slowest;
+                        if estimate {
+                            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                            let bytes = out as u64;
+                            r.bytes = bytes;
+                        }
+                    });
                 }
             };
             let on_line = {
@@ -973,7 +1012,13 @@ impl Capture {
                 }
             };
             match spawn_watched(
-                ffmpeg, &args, self.stall, stopping, on_speed, on_line, on_end,
+                ffmpeg,
+                &args,
+                self.stall,
+                stopping,
+                on_progress,
+                on_line,
+                on_end,
             ) {
                 Ok((child, stdin)) => {
                     lock(&pids).push(child.id());
@@ -1001,7 +1046,11 @@ impl Capture {
             plan.label(),
         );
         running.source_kbps = Some(plan.source_kbps);
-        Ok((Box::new(FanOut(inputs)), running, Finish::Stream(children)))
+        Ok((
+            Box::new(FanOut(inputs)),
+            running,
+            Finish::Stream(children, !estimate),
+        ))
     }
 }
 
@@ -1104,6 +1153,7 @@ impl Write for StdinWriter {
 }
 
 /// Write chunks until the session is stopped (or writing fails).
+#[allow(clippy::too_many_arguments)]
 fn write_loop(
     shared: &Shared,
     kind: Kind,
@@ -1112,6 +1162,7 @@ fn write_loop(
     rx: &mpsc::Receiver<Vec<u8>>,
     queued: &AtomicU64,
     report_write: bool,
+    count: bool,
 ) {
     let mut last_report = Instant::now();
     let mut written = 0u64;
@@ -1129,7 +1180,7 @@ fn write_loop(
             return;
         }
         written += chunk.len() as u64;
-        if last_report.elapsed() > Duration::from_secs(1) {
+        if count && last_report.elapsed() > Duration::from_secs(1) {
             last_report = Instant::now();
             shared.running(kind, session, |r| r.bytes = written);
         }
@@ -1146,8 +1197,9 @@ enum Finish {
         hevc: bool,
     },
     /// The FFmpegs of a stream, one per bitrate (a failure is reported by
-    /// their progress readers).
-    Stream(Vec<Child>),
+    /// their progress readers). `true`: what is handed over is what goes out
+    /// (nothing encoded again), so the writer counts the bytes.
+    Stream(Vec<Child>, bool),
     /// The FFmpegs that unpack the picture and sound for NDI.
     Ndi(Vec<Child>),
 }
@@ -1158,7 +1210,7 @@ impl Finish {
         match self {
             Finish::Recording(_) => Vec::new(),
             Finish::Encoded { child, .. } => vec![child.id()],
-            Finish::Stream(children) | Finish::Ndi(children) => {
+            Finish::Stream(children, _) | Finish::Ndi(children) => {
                 children.iter().map(Child::id).collect()
             }
         }
@@ -1181,7 +1233,7 @@ impl Finish {
                 }
                 finish_recording(shared, ffmpeg, path, hevc);
             }
-            Finish::Stream(children) | Finish::Ndi(children) => {
+            Finish::Stream(children, _) | Finish::Ndi(children) => {
                 for c in children {
                     finish_child(c, Duration::from_secs(5));
                 }
@@ -1249,7 +1301,7 @@ impl Write for FanOut {
     }
 }
 
-/// Start an FFmpeg that is fed on stdin and watched: its progress (`on_speed`),
+/// Start an FFmpeg that is fed on stdin and watched: its progress (`on_progress`),
 /// each line it says (`on_line`), and, if it ends without being stopped,
 /// whether it sent anything and its last words (`on_end`). An FFmpeg that
 /// stops reporting progress (stuck on a dead connection) is ended.
@@ -1258,7 +1310,7 @@ fn spawn_watched(
     args: &[String],
     stall: Duration,
     stopping: &Arc<AtomicBool>,
-    on_speed: impl Fn(Option<f32>) + Send + 'static,
+    on_progress: impl Fn(Progress) + Send + 'static,
     on_line: impl Fn(&str) + Send + 'static,
     on_end: impl FnOnce(bool, String) + Send + 'static,
 ) -> Result<(Child, ChildStdin), String> {
@@ -1303,7 +1355,7 @@ fn spawn_watched(
         let ended = Arc::new(AtomicBool::new(false));
         watch_for_stall(pid, stall, &heard, &ended, &stopping);
         thread::spawn(move || {
-            let sent = read_progress(out, &heard, on_speed);
+            let sent = read_progress(out, &heard, on_progress);
             ended.store(true, Ordering::SeqCst);
             // FFmpeg has ended. Unless the operator stopped it, say why.
             thread::sleep(Duration::from_millis(200));
@@ -1682,18 +1734,42 @@ fn watch_for_stall(
     });
 }
 
-/// FFmpeg's progress report: keep the speed up to date. Says whether anything was sent.
-fn read_progress(out: impl Read, heard: &AtomicU64, on_speed: impl Fn(Option<f32>)) -> bool {
+/// One of FFmpeg's progress reports (every second).
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+struct Progress {
+    /// How fast it keeps up (1.0 = real time).
+    speed: Option<f32>,
+    /// Seconds of picture and sound out so far.
+    secs: f64,
+    /// Bytes in the output file (not known for a stream: the tee muxer has no file).
+    bytes: Option<u64>,
+}
+
+/// FFmpeg's progress reports, handed on as each one ends. Says whether
+/// anything went out (a stream's tee muxer reports no size, so the time out counts).
+fn read_progress(out: impl Read, heard: &AtomicU64, on_progress: impl Fn(Progress)) -> bool {
     let mut sent = false;
+    let mut p = Progress::default();
     for line in BufReader::new(out).lines().map_while(Result::ok) {
         heard.store(now_ms(), Ordering::SeqCst);
-        if let Some(v) = line.strip_prefix("total_size=") {
-            if v.trim().parse::<u64>().is_ok_and(|n| n > 0) {
-                sent = true;
+        let (key, value) = line.split_once('=').unwrap_or((&line, ""));
+        let value = value.trim();
+        match key {
+            "total_size" => {
+                p.bytes = value.parse::<u64>().ok().filter(|n| *n > 0);
+                sent |= p.bytes.is_some();
             }
-        }
-        if let Some(v) = line.strip_prefix("speed=") {
-            on_speed(v.trim().trim_end_matches('x').parse::<f32>().ok());
+            "out_time_us" => {
+                if let Some(us) = value.parse::<i64>().ok().filter(|us| *us > 0) {
+                    #[allow(clippy::cast_precision_loss)]
+                    let secs = us as f64 / 1e6;
+                    p.secs = secs;
+                    sent = true;
+                }
+            }
+            "speed" => p.speed = value.trim_end_matches('x').parse::<f32>().ok(),
+            "progress" => on_progress(p),
+            _ => {}
         }
     }
     sent
@@ -2866,6 +2942,31 @@ mod tests {
             c.status()
         );
         assert!(c.status().streaming.is_none());
+    }
+
+    #[test]
+    fn progress_counts_a_stream_as_sent_by_its_time_out() {
+        let heard = AtomicU64::new(0);
+        let seen = Mutex::new(Vec::new());
+        // A stream through the tee muxer: no size, but time out.
+        let tee = "frame=30\ntotal_size=0\nout_time_us=1000000\nspeed=1.01x\nprogress=continue\n\
+                   total_size=N/A\nout_time_us=2000000\nspeed=0.98x\nprogress=end\n";
+        assert!(read_progress(tee.as_bytes(), &heard, |p| lock(&seen).push(p)));
+        let seen = lock(&seen).clone();
+        assert_eq!(seen.len(), 2);
+        assert_eq!(
+            (seen[1].secs, seen[1].speed, seen[1].bytes),
+            (2.0, Some(0.98), None)
+        );
+        // Nothing ever went out.
+        let none = "total_size=0\nout_time_us=0\nspeed=N/A\nprogress=end\n";
+        assert!(!read_progress(none.as_bytes(), &heard, |_| {}));
+        // A file: its size.
+        let file = "total_size=4096\nout_time_us=N/A\nprogress=end\n";
+        assert!(read_progress(file.as_bytes(), &heard, |p| assert_eq!(
+            p.bytes,
+            Some(4096)
+        )));
     }
 
     #[test]

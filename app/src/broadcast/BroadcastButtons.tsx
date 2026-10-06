@@ -67,7 +67,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         className={`btn bc-btn${rec ? ' bc-btn--rec' : ''}`}
         aria-pressed={!!rec}
         disabled={b.busy.record}
-        title={rec?.path ? `Recording to ${rec.path}` : 'Record the Live Screen to a file'}
+        title={rec?.path ? `Recording to ${rec.path}${rec.encoder ? ` · ${rec.encoder}` : ''}` : 'Record the Live Screen to a file'}
         onClick={() => press('record')}
       >
         <i className="bc-dot" />
@@ -92,7 +92,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
           live
             ? b.rehearsal
               ? 'Rehearsing: nothing is being sent'
-              : `Live on ${live.destinations.join(', ')}`
+              : `Live on ${live.destinations.join(', ')}${live.encoder ? ` · ${live.encoder}` : ''}`
             : b.rehearsal
               ? 'Start the rehearsal'
               : 'Stream the Live Screen'

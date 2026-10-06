@@ -130,9 +130,10 @@ export function cannotStart(status: CaptureStatus | null | undefined): string | 
 }
 
 /** MB/s a recording with these settings writes (the main file, plus a file per camera). */
-export function neededMBps(s: Pick<CaptureSettings, 'videoKbps' | 'audioKbps' | 'iso'>, cameras: number): number {
+export function neededMBps(s: Pick<CaptureSettings, 'videoKbps' | 'audioKbps' | 'iso' | 'isoKbps'>, cameras: number): number {
   const main = (s.videoKbps + s.audioKbps) / 8 / 1000;
-  return main * (1 + (s.iso ? cameras * 0.8 : 0));
+  const camera = s.isoKbps ? s.isoKbps / 8 / 1000 : main * 0.8;
+  return main + (s.iso ? cameras * camera : 0);
 }
 
 export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: RunnerDeps): Promise<RunResult> {
@@ -164,6 +165,17 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
   let ownSettings: CaptureSettings | null = null;
   const recording: Measured['recording'] = { file: null, probe: null, seconds: 0 };
   let recStartedAt = 0;
+  // Which encoders did the work (the report says, since a graphics card can't be checked from here).
+  const encoders: NonNullable<Measured['encoders']> = { recording: null, stream: null, vertical: null, hardware: [], failed: [] };
+  const noteEncoders = () => {
+    const st = deps.broadcast()?.status;
+    if (!st) return;
+    encoders.recording = st.recording?.encoder ?? encoders.recording;
+    encoders.stream = st.streaming?.encoder ?? encoders.stream;
+    encoders.vertical = st.vertical?.encoder ?? encoders.vertical;
+    encoders.hardware = st.hwEncoders ?? encoders.hardware;
+    encoders.failed = st.hwFailed ?? encoders.failed;
+  };
   const problemsBefore = new Set(deps.problems().map((p) => p.key));
 
   const progress = () =>
@@ -387,6 +399,7 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
         await waitFor('the recording to start', () => !!deps.broadcast()?.status.recording, 20_000);
         firstSession = Math.min(firstSession, bc().status.recording!.session);
         recStartedAt = Date.now();
+        noteEncoders();
         note(`session ${bc().status.recording!.session} (was ${before})`);
       });
 
@@ -797,6 +810,7 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
         }
         const st = bc().status.streaming!;
         firstSession = Math.min(firstSession, st.session);
+        noteEncoders();
         streamRun.check.started = true;
         streamRun.startedAt = Date.now();
         streamRun.startBytes = st.bytes;
@@ -963,6 +977,7 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
     problems: [...seenProblems.values()],
     console: consoleLines,
     captureFailures,
+    encoders: (noteEncoders(), encoders),
     restored: session.restored,
     stopped,
   };

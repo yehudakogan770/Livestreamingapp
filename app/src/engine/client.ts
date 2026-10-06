@@ -114,7 +114,11 @@ export interface CaptureChoice {
   name: string;
   app: string;
 }
-export type Quality = '720p' | '720p60' | '1080p' | '1080p60' | '1440p' | '1440p60' | '2160p' | 'vertical';
+export type Quality = '720p' | '720p60' | '1080p' | '1080p60' | '1440p' | '1440p60' | '2160p' | '2160p60' | 'vertical';
+/** Which encoder FFmpeg uses when it encodes (src-tauri/src/encode.rs). */
+export type EncoderChoice = 'auto' | 'nvidia' | 'intel' | 'amd' | 'software';
+/** An encoder family. */
+export type EncoderFamily = 'nvenc' | 'qsv' | 'amf' | 'software';
 
 /** Where the stream goes. */
 export interface Destination {
@@ -128,6 +132,8 @@ export interface Destination {
   vertical?: boolean;
   /** Live captions go here (YouTube: Studio → stream settings → closed captions → "Post captions to URL"). */
   captionsUrl?: string;
+  /** Its own video bitrate, kbit/s (null or missing: the stream's). */
+  videoKbps?: number | null;
 }
 
 export interface CaptureSettings {
@@ -141,6 +147,10 @@ export interface CaptureSettings {
   recordMix: 'stream' | 'recording';
   /** Also record each camera to its own file. */
   iso: boolean;
+  /** Inputs (source ids) left out of the own-file recording. */
+  isoSkip?: string[];
+  /** Bitrate of each camera's own file, kbit/s. */
+  isoKbps?: number;
   /** Save a chapter list with each recording. */
   chapters: boolean;
   /** Offer the Live Screen on the network as an NDI source. */
@@ -148,6 +158,18 @@ export interface CaptureSettings {
   /** The NDI source's name. */
   ndiName?: string;
   destinations: Destination[];
+  /** Which encoder FFmpeg uses when it encodes (default: automatic). */
+  encoder?: EncoderChoice;
+  /** Speed against quality. */
+  preset?: 'speed' | 'balanced' | 'quality';
+  /** The stream's picture when it differs from the recording's (null: the same). */
+  streamQuality?: Quality | null;
+  /** The stream's bitrate when it differs from the recording's (null: the same). */
+  streamKbps?: number | null;
+  /** FFmpeg encodes recordings again with the encoder, at constant quality. */
+  recordEncode?: boolean;
+  /** The format of recordings FFmpeg encodes. */
+  recordCodec?: 'h264' | 'hevc';
 }
 
 export interface CaptureRunning {
@@ -158,6 +180,12 @@ export interface CaptureRunning {
   bytes: number;
   /** How fast FFmpeg keeps up (1 = real time). */
   speed: number | null;
+  /** The video encoder doing the work ("NVIDIA NVENC (h264_nvenc)"). */
+  encoder?: string;
+  /** The bitrate the WebView should encode at, kbit/s (null: the settings'). */
+  sourceKbps?: number | null;
+  /** Destinations that dropped out while the rest carry on. */
+  dropped?: string[];
 }
 
 export interface CaptureStatus {
@@ -175,6 +203,12 @@ export interface CaptureStatus {
   failure: CaptureFailure | null;
   /** The last few failures, oldest first (several can happen at once; `failure` is the newest). */
   failures?: CaptureFailure[];
+  /** Hardware encoders that worked in the start-up check (h264_nvenc, …). */
+  hwEncoders?: string[];
+  /** The start-up check of the hardware encoders has finished. */
+  hwChecked?: boolean;
+  /** Hardware encoders that failed since Lumora started (not used again). */
+  hwFailed?: EncoderFamily[];
 }
 
 /** Why a recording or stream stopped by itself. */
@@ -184,6 +218,8 @@ export interface CaptureFailure {
   message: string;
   /** It never got going (the server was never reached). */
   neverStarted?: boolean;
+  /** The graphics card's encoder failed; the next start uses the processor. */
+  fallback?: boolean;
 }
 
 export function defaultCaptureSettings(): CaptureSettings {

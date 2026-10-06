@@ -26,6 +26,11 @@ export interface SettingsShown {
   iso: boolean;
   chapters: boolean;
   destinations: string[];
+  /** Encoder choice, speed/quality, stream picture, recordings encoded again. */
+  encoder?: string;
+  preset?: string;
+  streamQuality?: string | null;
+  recordEncode?: boolean;
 }
 
 export interface ReportMeta {
@@ -139,6 +144,19 @@ function code(text: string): string {
 }
 
 /** The report as Markdown: the summary first, then the developer's details. */
+/** The encoders in use, for the at-a-glance table. */
+export function encoderRows(e: Measured['encoders']): string[][] {
+  if (!e) return [];
+  const rows = [
+    ['Graphics-card encoders found', e.hardware.length ? e.hardware.join(', ') : 'none (the processor encodes)'],
+    ['Recording encoder', e.recording ?? '–'],
+    ['Stream encoder', e.stream ?? '–'],
+  ];
+  if (e.vertical) rows.push(['Vertical stream encoder', e.vertical]);
+  if (e.failed.length) rows.push(['Graphics-card encoder failed (fell back to the processor)', e.failed.join(', ')]);
+  return rows;
+}
+
 export function buildMarkdown(d: ReportData): string {
   const { meta, measured: m, judged: j } = d;
   const st = j.stats;
@@ -179,6 +197,7 @@ export function buildMarkdown(d: ReportData): string {
         ['Recording encoder speed (min / avg)', `${n(st.recSpeedMin, '×')} / ${n(st.recSpeedAvg, '×')}`],
         ['Stream encoder speed (min)', n(st.streamSpeedMin, '×')],
         ['Recording drive', `${n(st.diskMBps, ' MB/s')} (needs ${n(Math.round(m.neededMBps * 10) / 10, ' MB/s')})`],
+        ...encoderRows(m.encoders),
       ],
     ),
   );
@@ -297,6 +316,13 @@ export function buildMarkdown(d: ReportData): string {
           ['Recording mix', s.recordMix],
           ['Camera files (ISO)', s.iso ? 'on' : 'off'],
           ['Chapters', s.chapters ? 'on' : 'off'],
+          ...(s.encoder
+            ? [
+                ['Encoder', `${s.encoder}${s.preset ? `, ${s.preset}` : ''}`],
+                ['Stream picture', s.streamQuality ?? 'same as the recording'],
+                ['Recordings encoded again', s.recordEncode ? 'yes' : 'no (saved as the app encodes them)'],
+              ]
+            : []),
           ['Destinations', s.destinations.length ? s.destinations.map((x) => clean(x)).join(', ') : 'none'],
         ],
       ),

@@ -125,6 +125,8 @@ export interface Measured {
   problems: SeenProblem[];
   console: string[];
   captureFailures: string[];
+  /** The video encoders that did the work, and the graphics-card encoders found (and failed). */
+  encoders?: { recording: string | null; stream: string | null; vertical: string | null; hardware: string[]; failed: string[] };
   /** The person's show came back exactly. */
   restored: boolean | null;
   stopped: boolean;
@@ -249,6 +251,7 @@ export const WHERE = {
   encoder: 'FFmpeg cannot keep up: src-tauri/src/capture.rs (encoder settings, stream_args) and app/src/broadcast/recorder.ts (chunks sent).',
   recording: 'The recording file: src-tauri/src/capture.rs (writing and finishing the file) and app/src/broadcast/recorder.ts (MediaRecorder chunks).',
   disk: 'Disk writes: src-tauri/src/capture.rs (the writer thread and its queue, MAX_QUEUED).',
+  hwEncoder: 'Encoders: src-tauri/src/encode.rs (choice, arguments, failure words) and capture.rs (the fallback).',
   memory:
     'Memory that keeps growing: app/src/broadcast/compositor.ts and app/src/broadcast/replay.ts (frames and blobs kept), src-tauri/src/perf.rs (measurement).',
   cpu: 'Processor load: app/src/broadcast/compositor.ts, app/src/engine/vision.ts, src-tauri/src/capture.rs (encoder preset).',
@@ -517,6 +520,19 @@ export function judge(m: Measured, st: Stats = analyze(m)): { verdict: Verdict; 
         WHERE.memory,
       );
   }
+
+  // ----- the encoders -----
+  if (m.encoders?.failed.length)
+    add(
+      'problem',
+      'Encoder',
+      'The graphics card’s encoder stopped during the test',
+      `${m.encoders.failed.join(', ')} failed; the processor took over.`,
+      'Update the graphics driver, then run the test again. Until then, choose Software in Settings → Recording and streaming → Encoder.',
+      WHERE.hwEncoder,
+    );
+  else if (m.encoders?.stream || m.encoders?.recording)
+    advice.push(`Encoders used: recording — ${m.encoders.recording ?? 'not tested'}; stream — ${m.encoders.stream ?? 'not tested'}.`);
 
   // ----- the disk -----
   if (m.diskMBps !== null) {

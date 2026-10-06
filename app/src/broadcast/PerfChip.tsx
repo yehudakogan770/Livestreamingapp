@@ -126,6 +126,18 @@ export function PerfChip({ client }: { client: EngineClient }) {
                   </td>
                 </tr>
               )}
+              {b?.status.recording?.encoder && (
+                <tr>
+                  <th>Recording encoder</th>
+                  <td>{b.status.recording.encoder}</td>
+                </tr>
+              )}
+              {b?.status.streaming?.encoder && (
+                <tr>
+                  <th>Stream encoder</th>
+                  <td>{b.status.streaming.encoder}</td>
+                </tr>
+              )}
             </tbody>
           </table>
           {busy && (

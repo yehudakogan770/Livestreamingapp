@@ -145,6 +145,10 @@ function TestEventDialog({ show, client, onClose }: { show: Show; client: Engine
                 iso: s.iso,
                 chapters: s.chapters,
                 destinations: s.destinations.filter((d) => d.enabled).map((d) => d.name),
+                encoder: s.encoder ?? 'auto',
+                preset: s.preset ?? 'balanced',
+                streamQuality: s.streamQuality ?? null,
+                recordEncode: s.recordEncode ?? false,
               }
             : null,
           inputs: r.inputs,

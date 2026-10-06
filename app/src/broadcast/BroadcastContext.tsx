@@ -15,6 +15,7 @@ import { RehearsalLog, type RehearsalReport } from './rehearsal';
 import { useSpeakerNames } from '../engine/speakers';
 import { due, loadSchedule, saveSchedule, timeText, type Schedule } from './schedule';
 import { Broadcaster } from './recorder';
+import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
 import { useRemoteControl } from './remoteControl';
@@ -157,6 +158,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     [broadcaster],
   );
   const [verticalTrouble, setVerticalTrouble] = useState<string | null>(null);
+  // A graphics-card encoder failed and the processor took over (until Lumora restarts).
+  const [encoderFallback, setEncoderFallback] = useState<string | null>(null);
 
   const start = useCallback(
     async (kind: CaptureKind) => {
@@ -186,6 +189,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       wanted.current[kind] = false;
       forget(kind);
       if (kind === 'stream') setReconnecting(null);
+      setEncoderFallback(null);
       setBusy((b) => ({ ...b, [kind]: true }));
       try {
         await broadcaster?.stop(kind);
@@ -248,6 +252,16 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       const kind = failure.kind;
       broadcaster.abandon(kind, session);
       if (!wanted.current[kind]) return;
+      // The graphics card's encoder failed: started again at once with the processor's
+      // (a recording goes on in a new file). Not counted as a retry.
+      if (failure.fallback) {
+        setEncoderFallback(message);
+        later(kind, 500, () => {
+          if (!wanted.current[kind]) return;
+          void broadcaster.stop(kind).then(() => launch(kind).catch(() => {}));
+        });
+        return;
+      }
       // It never got going (first try): say so plainly instead of retrying in the background.
       if (kind === 'stream' && failure.neverStarted && !everLive.current) {
         wanted.current.stream = false;
@@ -333,6 +347,29 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         }
       : null,
   );
+  useReportProblem(
+    encoderFallback
+      ? {
+          key: 'encoder:fallback',
+          level: 'warning',
+          title: 'The graphics card’s encoder stopped — the processor took over',
+          detail: encoderFallback,
+          fix: 'Recording and streaming carry on with the processor’s encoder (a recording goes on in a new file). Update the graphics driver, or choose Software in Settings → Recording and streaming → Encoder; restart Lumora to try the graphics card again.',
+        }
+      : null,
+  );
+  const dropped = [...(status.streaming?.dropped ?? []), ...(status.vertical?.dropped ?? [])];
+  useReportProblem(
+    dropped.length
+      ? {
+          key: 'stream:dropped',
+          level: 'warning',
+          title: `${dropped.join(', ')} dropped out of the stream`,
+          detail: 'The other destinations carry on.',
+          fix: 'Check that destination’s stream key and that its live event is still open. Stop and start the stream to try it again.',
+        }
+      : null,
+  );
   const recordFailed = failure?.kind === 'record' && !status.recording && !wanted.current.record ? failure : null;
   useReportProblem(
     recordFailed
@@ -404,7 +441,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       const tag = Date.now().toString(36);
       const items = await Promise.all(
         pieces.map(async (p, i) => ({
-          path: await client.saveReplay(p.blob, `replay-${tag}-${i + 1}.webm`),
+          path: await client.saveReplay(p.blob, `replay-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
           name: `Replay ${stamp} (${i + 1})`,
           durationS: (p.end - p.start) / 1000,
         })),
@@ -438,7 +475,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       const tag = Date.now().toString(36);
       const items = await Promise.all(
         pieces.map(async (p, i) => ({
-          path: await client.saveReplay(p.blob, `highlight-${tag}-${i + 1}.webm`),
+          path: await client.saveReplay(p.blob, `highlight-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
           name: `Highlight ${stamp}`,
           durationS: (p.end - p.start) / 1000,
         })),

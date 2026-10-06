@@ -66,6 +66,8 @@ export interface RecordingPlan {
   iso: boolean;
   /** Cameras recorded on their own (when iso). */
   cameras: number;
+  /** Bitrate of each camera's own file (missing: the same as the recording). */
+  isoKbps?: number;
 }
 
 // ---- The result ----
@@ -133,8 +135,8 @@ interface Profile {
   screens: number;
   /** Graphics drivers older than this many months get an "update" line. */
   driverMonths: number;
-  /** The best settings this computer can run, first match wins. */
-  settings: { need: Need; text: string }[];
+  /** The best settings this computer can run, first match wins (`hw`: only with a graphics-card encoder that works). */
+  settings: { need: Need; text: string; hw?: boolean }[];
 }
 type GradeOrCritical = Grade | 'critical';
 
@@ -159,6 +161,7 @@ export const PROFILES: Record<AppId, Profile> = {
     screens: 2,
     driverMonths: 24,
     settings: [
+      { need: [3, 3, 16], hw: true, text: 'Record in 4K and stream at 1080p60 at the same time (the graphics card does the encoding)' },
       { need: [3, 2, 16], text: 'Stream and record at 1080p30 (1080p60 is fine too)' },
       { need: [2, 2, 8], text: 'Stream and record at 1080p30' },
       { need: [1, 1, 8], text: 'Keep to 720p30 for streaming and recording' },
@@ -193,9 +196,45 @@ export const PROFILES: Record<AppId, Profile> = {
   },
 };
 
-/** What can be used at an event (or an edit) on this computer: [safe from, risky from]. */
-export const FEATURES: Record<AppId, { name: string; safe: Need; risky: Need; notes: Record<Safety, string> }[]> = {
+/**
+ * What can be used at an event (or an edit) on this computer: [safe from, risky from].
+ * `hw`: a graphics-card encoder is needed (none: avoid) or helps (none: risky at best).
+ */
+export const FEATURES: Record<AppId, { name: string; safe: Need; risky: Need; hw?: 'needed' | 'helps'; notes: Record<Safety, string> }[]> = {
   lumora: [
+    {
+      name: '1080p60 streaming',
+      safe: [3, 2, 16],
+      risky: [2, 2, 8],
+      hw: 'helps',
+      notes: {
+        safe: 'Fine.',
+        risky: 'Try it in a Rehearsal and watch the frame rate; drop to 1080p30 if frames are missed.',
+        avoid: 'Stay at 1080p30 or 720p.',
+      },
+    },
+    {
+      name: '4K recording with a 1080p stream',
+      safe: [3, 3, 16],
+      risky: [3, 2, 16],
+      hw: 'needed',
+      notes: {
+        safe: 'Fine: the picture is drawn once in 4K and the graphics card makes the 1080p stream.',
+        risky: 'Try it in a Rehearsal first; keep effects and web page inputs few.',
+        avoid: 'Record at 1080p (4K needs a strong graphics card with a working encoder).',
+      },
+    },
+    {
+      name: '4K60 recording',
+      safe: [3, 3, 32],
+      risky: [3, 3, 16],
+      hw: 'needed',
+      notes: {
+        safe: 'Fine on this computer; run a Rehearsal with the full show first.',
+        risky: 'Only with a simple show; 4K30 is safer.',
+        avoid: 'Use 4K30 or 1080p60.',
+      },
+    },
     {
       name: 'Vertical 9:16 stream',
       safe: [3, 2, 16],
@@ -349,8 +388,10 @@ export const majorOf = (v: string | null | undefined): number | null => {
 
 /** Hours of recording that fit in `freeMb` (main recording plus each camera on its own). */
 export function recordingHours(freeMb: number, plan: RecordingPlan): number {
-  const files = 1 + (plan.iso ? Math.max(0, plan.cameras) : 0);
-  const mbPerHour = ((plan.videoKbps + plan.audioKbps) * 3600 * files) / 8 / 1000;
+  const main = plan.videoKbps + plan.audioKbps;
+  const camera = plan.isoKbps ?? main;
+  const kbps = main + (plan.iso ? Math.max(0, plan.cameras) * camera : 0);
+  const mbPerHour = (kbps * 3600) / 8 / 1000;
   // Keep 5 GB spare: Windows needs room too.
   return Math.max(0, (freeMb - 5 * 1024) / Math.max(1, mbPerHour));
 }
@@ -511,7 +552,15 @@ export function judge(app: AppId, f: Facts, b: BrowserFacts, plan: RecordingPlan
       .join(' · ');
     if (app === 'lumora') {
       checks.push(
-        check('video', 'Hardware video', value, 'info', enc.length ? '' : 'Lumora compresses video on the processor, so the processor matters most.'),
+        check(
+          'video',
+          'Hardware video',
+          value,
+          'info',
+          enc.length
+            ? `Streams and re-encoded recordings use ${encoderFamily(enc).split(', ')[0]} (Settings → Recording and streaming → Encoder: Automatic).`
+            : 'No graphics-card encoder works here: the processor does the encoding, so keep to 1080p and avoid 4K.',
+        ),
       );
     } else {
       const g: GradeOrCritical = enc.length && f.hwDecode ? 'good' : 'ok';
@@ -693,8 +742,11 @@ export function judge(app: AppId, f: Facts, b: BrowserFacts, plan: RecordingPlan
   }
 
   // What is safe to use here.
+  const hw = f.hwEncoders.length > 0;
   const features: Feature[] = FEATURES[app].map((x) => {
-    const safety: Safety = meets(x.safe, cpu, gpu, ram) ? 'safe' : meets(x.risky, cpu, gpu, ram) ? 'risky' : 'avoid';
+    let safety: Safety = meets(x.safe, cpu, gpu, ram) ? 'safe' : meets(x.risky, cpu, gpu, ram) ? 'risky' : 'avoid';
+    if (!hw && x.hw === 'needed') safety = 'avoid';
+    if (!hw && x.hw === 'helps' && safety === 'safe') safety = 'risky';
     return { name: x.name, safety, note: x.notes[safety] };
   });
   for (const x of features) {
@@ -702,7 +754,7 @@ export function judge(app: AppId, f: Facts, b: BrowserFacts, plan: RecordingPlan
   }
 
   // The best settings, first.
-  const best = p.settings.find((s) => meets(s.need, cpu, gpu, ram)) ?? p.settings[p.settings.length - 1]!;
+  const best = p.settings.find((s) => (!s.hw || hw) && meets(s.need, cpu, gpu, ram)) ?? p.settings[p.settings.length - 1]!;
   tip('do', `${best.text}.`, 100);
 
   const verdict = verdictOf(checks);
