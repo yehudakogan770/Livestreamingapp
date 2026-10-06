@@ -26,6 +26,7 @@ import { isAiMask, matteFor, mattes } from '../vision/mattes';
 import { exportSources } from '../player/files';
 import { finishJobs, type FinishOptions, type SoundFormat } from './audioplan';
 import { manageNative } from '../manage/native';
+import { renderCache } from '../cache/manager';
 
 export interface ExportSettings {
   /** Output height (the width follows the sequence's shape). */
@@ -180,7 +181,8 @@ export class FfmpegReader {
 
 type Route = { via: 'decoder'; sink: VideoSampleSink; rotation: number } | { via: 'ffmpeg'; path: string } | null;
 
-class Sources {
+/** Every picture a frame needs, decoded exactly (also used by the render cache). */
+export class Sources {
   private routes = new Map<string, Promise<Route>>();
   private readers = new Map<string, Reader>();
   private ffReaders = new Map<string, FfmpegReader>();
@@ -482,7 +484,8 @@ export class Exporter {
         await this.gate();
         if (this.stopped) break;
         if (failed) throw failed;
-        const ops = frameOps(this.p, s, f);
+        // Cached pictures only when they match the film (full size, high quality) and the setting allows it.
+        const ops = renderCache.exportOps(this.p, s, f, height) ?? frameOps(this.p, s, f);
         await sources.prepare(ops, f, readText);
         await sources.mattes(ops);
         gl.render(ops, sources.pictures, s.background);
@@ -529,7 +532,7 @@ export class Exporter {
         for (let f = from; f < to; f++) {
           await this.gate();
           if (this.stopped) break;
-          const ops = frameOps(this.p, s, f);
+          const ops = renderCache.exportOps(this.p, s, f, height) ?? frameOps(this.p, s, f);
           await sources.prepare(ops, f, readText);
           await sources.mattes(ops);
           await manageNative.encodeFrame(id, gl.readFrame(ops, sources.pictures, s.background, pipe.alpha));

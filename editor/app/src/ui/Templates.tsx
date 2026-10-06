@@ -1,6 +1,7 @@
 // The Templates section: motion title templates to click (added at the
 // playhead) or drag onto the timeline, your own saved titles, and the extra
 // title settings in the Inspector (bar, rounded box, second-line color…).
+import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DEFAULT_TEXT, type Clip, type TextData } from '../model/types';
 import { onSavedTemplates, saveTemplates, savedTemplates, templateFromClip, TITLE_TEMPLATES, type TitleTemplate } from '../model/templates';
@@ -86,7 +87,7 @@ export function TemplatesSection({ actions }: { actions: Actions }) {
                       aria-label={`Delete ${t.name}`}
                       onClick={() => saveTemplates(savedTemplates().filter((x) => x.id !== t.id))}
                     >
-                      ✕
+                      <X />
                     </button>
                   )}
                 </div>

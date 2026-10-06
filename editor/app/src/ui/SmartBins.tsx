@@ -1,5 +1,6 @@
 // Smart bins in the project panel (they fill themselves by rules), and the
 // media management commands for a clip's right-click menu.
+import { ChevronDown, ChevronRight, FolderCog, FolderSearch, ListX, Plus } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import type { MediaItem, Project } from '../model/types';
 import { useDoc, type Doc } from '../doc';
@@ -18,15 +19,23 @@ export function SmartBinsSection({ doc, ui, row, search }: { doc: Doc; ui: Ui; r
   return (
     <div className="sbins">
       <div className="sbins__head">
+        <FolderSearch />
         <span>Smart bins</span>
         <span className="ed__fill" />
-        <button type="button" className="tbtn" title="New smart bin" aria-label="New smart bin" onClick={() => panels.show({ kind: 'smartBin', id: null })}>
-          +
+        <button
+          type="button"
+          className="sect__btn"
+          title="New smart bin"
+          aria-label="New smart bin"
+          onClick={() => panels.show({ kind: 'smartBin', id: null })}
+        >
+          <Plus />
         </button>
         <button
           type="button"
-          className="linkbtn"
-          title="Remove the media no sequence uses"
+          className="sect__btn"
+          title="Remove unused: take out the media no sequence uses (Undo brings it back)"
+          aria-label="Remove unused"
           onClick={() => {
             const { removed } = removeUnused(doc.project);
             if (!removed) return ui.note('Everything in the project is used');
@@ -34,7 +43,7 @@ export function SmartBinsSection({ doc, ui, row, search }: { doc: Doc; ui: Ui; r
             ui.note(`Removed ${removed} unused item${removed === 1 ? '' : 's'} (Undo brings them back)`);
           }}
         >
-          Remove unused
+          <ListX />
         </button>
       </div>
       {bins.map((b) => {
@@ -53,8 +62,9 @@ export function SmartBinsSection({ doc, ui, row, search }: { doc: Doc; ui: Ui; r
               }}
               title="A smart bin (double-click to change its rules)"
             >
-              <span>{open === b.id ? '▾' : '▸'}</span>
-              <span className="media__name">⚙ {b.name}</span>
+              {open === b.id ? <ChevronDown /> : <ChevronRight />}
+              <FolderCog className="media__folder" />
+              <span className="media__name">{b.name}</span>
               <span className="media__meta">{items.length}</span>
             </button>
             {open === b.id && <div className="media__items">{items.map(row)}</div>}

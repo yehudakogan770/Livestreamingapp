@@ -4,6 +4,8 @@ import { App } from './App';
 import { lockDown } from '../../../app/src/engine/lockdown';
 import { installRangeFill } from '../../../app/src/rangeFill';
 import { installErrorReporting, reactError } from '../../../app/src/reports/reporter';
+import '@fontsource-variable/inter/wght.css';
+import '@fontsource-variable/jetbrains-mono/wght.css';
 import '../../../app/src/styles.css';
 import './editor.css';
 // Fonts for words on the picture (the Windows fonts are there already).

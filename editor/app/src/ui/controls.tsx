@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { isAnim, keyTimes, removeKey, setKey, setValue, toggleAnim, valueAt } from '../model/anim';
 import type { Param } from '../model/types';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Diamond, RotateCcw, Timer, X } from 'lucide-react';
+import { dialogIcon, sectionIcon } from './icons';
 
 const fmt = (v: number, decimals: number) =>
   Number.isFinite(v)
@@ -146,7 +148,7 @@ export function ParamRow({
           aria-label={`Keyframes for ${label}`}
           onClick={() => onChange(toggleAnim(param, local, def), true)}
         >
-          ◷
+          <Timer />
         </button>
       ) : (
         <span className="prow__watch" aria-hidden="true" />
@@ -171,7 +173,7 @@ export function ParamRow({
         {animated && (
           <>
             <button type="button" disabled={prev === undefined} aria-label="Previous keyframe" onClick={() => prev !== undefined && onSeek(clipStart + prev)}>
-              ◂
+              <ChevronLeft />
             </button>
             <button
               type="button"
@@ -180,15 +182,15 @@ export function ParamRow({
               title={onKey ? 'Remove this keyframe' : 'Add a keyframe here'}
               onClick={() => onChange(onKey ? removeKey(param as Param, local) : setKey(param, local, v), true)}
             >
-              ◆
+              <Diamond />
             </button>
             <button type="button" disabled={next === undefined} aria-label="Next keyframe" onClick={() => next !== undefined && onSeek(clipStart + next)}>
-              ▸
+              <ChevronRight />
             </button>
           </>
         )}
         <button type="button" className="prow__reset" aria-label={`Reset ${label}`} title="Back to the start value" onClick={() => onChange(def, true)}>
-          ↺
+          <RotateCcw />
         </button>
       </span>
     </div>
@@ -202,14 +204,23 @@ export function Choice<T extends string | number>({
   label,
 }: {
   value: T;
-  options: [T, string][];
+  options: [T, ReactNode, string?][];
   onChange: (v: T) => void;
   label?: string;
 }) {
   return (
     <div className="choice" role="radiogroup" aria-label={label}>
-      {options.map(([v, name]) => (
-        <button key={String(v)} type="button" role="radio" aria-checked={v === value} className={v === value ? 'is-on' : ''} onClick={() => onChange(v)}>
+      {options.map(([v, name, tip]) => (
+        <button
+          key={String(v)}
+          type="button"
+          role="radio"
+          aria-checked={v === value}
+          aria-label={tip}
+          title={tip}
+          className={v === value ? 'is-on' : ''}
+          onClick={() => onChange(v)}
+        >
           {name}
         </button>
       ))}
@@ -218,6 +229,7 @@ export function Choice<T extends string | number>({
 }
 
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+  const Icon = dialogIcon(title);
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -229,9 +241,12 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
     <div className="modal" role="dialog" aria-modal="true" aria-label={title} onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className={`modal__card${wide ? ' modal__card--wide' : ''}`}>
         <div className="modal__head">
-          <h2>{title}</h2>
-          <button type="button" className="modal__x" aria-label="Close" onClick={onClose}>
-            ✕
+          <h2>
+            {Icon && <Icon />}
+            {title}
+          </h2>
+          <button type="button" className="modal__x" aria-label="Close" title="Close (Esc)" onClick={onClose}>
+            <X />
           </button>
         </div>
         <div className="modal__body">{children}</div>
@@ -303,9 +318,9 @@ export function PopMenu({ x, y, items, onClose }: { x: number; y: number; items:
                 it.run?.();
               }}
             >
-              <span className="pop__check">{it.checked ? '✓' : ''}</span>
+              <span className="pop__check">{it.checked ? <Check /> : null}</span>
               <span className="pop__label">{it.label}</span>
-              <span className="pop__keys">{it.items ? '▸' : (it.keys ?? '')}</span>
+              <span className="pop__keys">{it.items ? <ChevronRight /> : (it.keys ?? '')}</span>
             </button>
           ),
         )}
@@ -345,7 +360,7 @@ function SubMenu({ x, y, items, onClose }: { x: number; y: number; items: MenuEn
               it.run?.();
             }}
           >
-            <span className="pop__check">{it.checked ? '✓' : ''}</span>
+            <span className="pop__check">{it.checked ? <Check /> : null}</span>
             <span className="pop__label">{it.label}</span>
             <span className="pop__keys">{it.keys ?? ''}</span>
           </button>
@@ -368,11 +383,13 @@ export function ColorField({ value, onChange, label }: { value: string; onChange
 /** A panel section that folds away. */
 export function Section({ title, children, actions, open: startOpen = true }: { title: ReactNode; children: ReactNode; actions?: ReactNode; open?: boolean }) {
   const [open, setOpen] = useState(startOpen);
+  const Icon = sectionIcon(title);
   return (
     <section className={`sect${open ? '' : ' is-shut'}`}>
       <header className="sect__head">
         <button type="button" className="sect__fold" aria-expanded={open} onClick={() => setOpen(!open)}>
-          <span className="sect__arrow">{open ? '▾' : '▸'}</span>
+          <span className="sect__arrow">{open ? <ChevronDown /> : <ChevronRight />}</span>
+          {Icon && <Icon className="sect__icon" />}
           {title}
         </button>
         {actions && <span className="sect__actions">{actions}</span>}
