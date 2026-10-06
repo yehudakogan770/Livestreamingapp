@@ -1,5 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { CalendarDays, ChevronsUpDown, CircleUserRound, Download, LayoutList, LogOut, MessageSquare, Monitor, Moon, Sun } from 'lucide-react';
+import {
+  CalendarDays,
+  ChevronsUpDown,
+  CircleUserRound,
+  Download,
+  LayoutList,
+  LogOut,
+  MessageSquare,
+  Monitor,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Sun,
+} from 'lucide-react';
 import { authOn } from '../../app/src/auth/config';
 import { createPlan, listPlans } from './api';
 import { Calendar } from './Calendar';
@@ -15,7 +28,7 @@ import { isoDate, shortDate, showClock, type PlanSummary } from './model';
 import { offlineWho, rememberPlans, rememberWho, savedPlans } from './offlineCache';
 import { install, useInstall, useOnline } from './pwa';
 import { InstallCard, IosSteps, OfflineBar } from './PwaBars';
-import { usePhone } from './touch';
+import { useLayout, type Device } from './device';
 import { unreachable } from './usePlan';
 
 type Theme = 'auto' | 'light' | 'dark';
@@ -144,7 +157,10 @@ export function App() {
   const [gate, setGate] = useState<Gate>({ s: 'checking' });
   const [theme, nextTheme, setTheme] = useTheme();
   const [route, go, back] = useRoute();
-  const phone = usePhone();
+  const layout = useLayout();
+  const phone = layout.device === 'phone';
+  // A narrow computer window, or a tablet held upright: the sidebar is a row of icons that opens over the page.
+  const rail = layout.compact || (layout.device === 'tablet' && layout.orientation === 'portrait');
   const online = useOnline();
   const installing = useInstall();
   const [unread, setUnread] = useState(0);
@@ -267,7 +283,9 @@ export function App() {
       />
     );
   else if (route.page === 'account')
-    content = <AccountPage name={gate.access.name} email={gate.access.email} theme={theme} setTheme={setTheme} offer={installing.offer} />;
+    content = (
+      <AccountPage name={gate.access.name} email={gate.access.email} theme={theme} setTheme={setTheme} offer={installing.offer} device={layout.device} />
+    );
   else if (route.page === 'calendar')
     content = (
       <main className="page page--wide">
@@ -304,6 +322,8 @@ export function App() {
           name={gate.access.name}
           email={gate.access.email}
           canInstall={installing.offer === 'prompt'}
+          rail={rail}
+          shortcuts={layout.device === 'computer'}
         />
       )}
       <div className="shell__main">
@@ -315,7 +335,11 @@ export function App() {
   );
 }
 
-/** Desktop: the app's sidebar — the mark, where to go, what is coming up, and the account. */
+/**
+ * Computers and tablets: the app's sidebar — the mark, where to go, what is
+ * coming up, and the account. `rail`: a column of icons (a narrow computer
+ * window, a tablet held upright) that opens the whole sidebar over the page.
+ */
 function Sidebar({
   route,
   plans,
@@ -325,6 +349,8 @@ function Sidebar({
   name,
   email,
   canInstall,
+  rail,
+  shortcuts,
 }: {
   route: Route;
   plans: PlanSummary[] | null;
@@ -334,26 +360,58 @@ function Sidebar({
   name: string;
   email: string;
   canInstall: boolean;
+  rail: boolean;
+  shortcuts: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  // Going somewhere closes it; so does Esc.
+  const where = routeHash(route);
+  useEffect(() => setOpen(false), [where, rail]);
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [open]);
   const today = isoDate(new Date());
   const soon = upcoming(plans ?? [], today, 8);
   // The open plan stays in the list even when it is past or has no date.
   const current = planId && !soon.some((p) => p.id === planId) ? (plans ?? []).find((p) => p.id === planId) : undefined;
-  return (
-    <nav className="side no-print" aria-label="Planner">
-      <a className="side__brand" href="#/">
-        <Mark size={22} />
-        <span>Lumora Planner</span>
-      </a>
+  const Toggle = open ? PanelLeftClose : PanelLeftOpen;
+  const side = (
+    <nav className={`side no-print${rail ? (open ? ' side--over' : ' side--rail') : ''}`} aria-label="Planner">
+      <div className="side__top">
+        <a className="side__brand" href="#/" title="Lumora Planner">
+          <Mark size={22} />
+          <span className="side__text">Lumora Planner</span>
+        </a>
+        {rail && (
+          <button
+            type="button"
+            className="btn btn--quiet btn--icon side__toggle"
+            aria-expanded={open}
+            aria-label={open ? 'Close the sidebar' : 'Open the sidebar'}
+            title={open ? 'Close the sidebar' : 'Open the sidebar'}
+            onClick={() => setOpen(!open)}
+          >
+            <Toggle size={16} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        )}
+      </div>
       <div className="side__nav">
-        <a className={`side__item${route.page === 'plans' ? ' is-on' : ''}`} href="#/" aria-current={route.page === 'plans' ? 'page' : undefined}>
+        <a className={`side__item${route.page === 'plans' ? ' is-on' : ''}`} href="#/" aria-current={route.page === 'plans' ? 'page' : undefined} title="Plans">
           <LayoutList size={16} strokeWidth={1.75} aria-hidden="true" />
-          Plans
+          <span className="side__text">Plans</span>
           {plans && <span className="side__count">{plans.length}</span>}
         </a>
-        <a className={`side__item${route.page === 'calendar' ? ' is-on' : ''}`} href="#/calendar" aria-current={route.page === 'calendar' ? 'page' : undefined}>
+        <a
+          className={`side__item${route.page === 'calendar' ? ' is-on' : ''}`}
+          href="#/calendar"
+          aria-current={route.page === 'calendar' ? 'page' : undefined}
+          title="Calendar"
+        >
           <CalendarDays size={16} strokeWidth={1.75} aria-hidden="true" />
-          Calendar
+          <span className="side__text">Calendar</span>
         </a>
       </div>
       <div className="side__group">
@@ -384,13 +442,30 @@ function Sidebar({
       <div className="side__foot">
         <Clock />
         <div className="side__row">
-          <Account name={name} email={email} canInstall={canInstall} />
+          <Account name={name} email={email} canInstall={canInstall} shortcuts={shortcuts} />
           {themeButton}
         </div>
       </div>
     </nav>
   );
+  if (!rail) return side;
+  // The rail keeps its place in the layout; the opened sidebar lies over the page.
+  return (
+    <div className="side__slot">
+      {side}
+      {open && <div className="scrim side__scrim no-print" onClick={() => setOpen(false)} aria-hidden="true" />}
+    </div>
+  );
 }
+
+/** What the keys do on a computer (the account menu lists them). */
+export const SHORTCUTS: [string, string][] = [
+  ['N', 'New cue'],
+  ['↑ ↓', 'Move the selection'],
+  ['Enter', 'Edit the selected cue'],
+  ['Esc', 'Close the panel'],
+  [/Mac|iPhone|iPad/.test(typeof navigator === 'undefined' ? '' : navigator.platform) ? '⌘P' : 'Ctrl+P', 'Print or save as PDF'],
+];
 
 /** Phones: the tab bar at the bottom. Chat shows while a plan is open. */
 function TabBar({ route, go, back, unread }: { route: Route; go: (r: Route) => void; back: () => void; unread: number }) {
@@ -428,12 +503,14 @@ function AccountPage({
   theme,
   setTheme,
   offer,
+  device = 'phone',
 }: {
   name: string;
   email: string;
   theme: Theme;
   setTheme: (t: Theme) => void;
   offer: 'ios' | 'prompt' | null;
+  device?: Device;
 }) {
   return (
     <main className="page">
@@ -453,7 +530,7 @@ function AccountPage({
       <div className="seg seg--block" role="group" aria-label="Theme">
         {(['auto', 'light', 'dark'] as const).map((t) => (
           <button key={t} type="button" className={`seg__btn${theme === t ? ' is-on' : ''}`} aria-pressed={theme === t} onClick={() => setTheme(t)}>
-            {t === 'auto' ? 'As the phone' : t === 'light' ? 'Light' : 'Dark'}
+            {t === 'auto' ? `As the ${device}` : t === 'light' ? 'Light' : 'Dark'}
           </button>
         ))}
       </div>
@@ -503,7 +580,7 @@ export function Clock() {
 }
 
 /** Who is signed in, and Sign out, behind their initials. */
-function Account({ name, email, canInstall }: { name: string; email: string; canInstall: boolean }) {
+function Account({ name, email, canInstall, shortcuts }: { name: string; email: string; canInstall: boolean; shortcuts: boolean }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -519,7 +596,15 @@ function Account({ name, email, canInstall }: { name: string; email: string; can
   }, [open]);
   return (
     <div className="account" ref={box}>
-      <button type="button" className="account__btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)} title={email}>
+      <button
+        type="button"
+        className="account__btn"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Account: ${name || email}`}
+        onClick={() => setOpen(!open)}
+        title={email}
+      >
         <span className="avatar" aria-hidden="true">
           {initials(name || email)}
         </span>
@@ -545,6 +630,21 @@ function Account({ name, email, canInstall }: { name: string; email: string; can
               <Download size={15} strokeWidth={1.75} aria-hidden="true" />
               Install app
             </button>
+          )}
+          {shortcuts && (
+            <div className="keys" role="group" aria-label="Keyboard shortcuts">
+              <div className="keys__head">Keyboard shortcuts</div>
+              <dl className="keys__list">
+                {SHORTCUTS.map(([k, what]) => (
+                  <div key={what} className="keys__row">
+                    <dt>{what}</dt>
+                    <dd>
+                      <kbd>{k}</kbd>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
           )}
           <button type="button" role="menuitem" className="popover__item" onClick={() => void signOut()}>
             <LogOut size={15} strokeWidth={1.75} aria-hidden="true" />

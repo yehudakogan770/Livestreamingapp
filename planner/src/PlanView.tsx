@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Check, CircleAlert, Ellipsis, LoaderCircle, Plus, Printer, StickyNote, UserPlus } from 'lucide-react';
+import { Check, ChevronRight, CircleAlert, Ellipsis, LoaderCircle, MessageSquare, PanelRight, Plus, Printer, StickyNote, UserPlus, X } from 'lucide-react';
 import { deletePlan, removePerson } from './api';
 import { Chat } from './Chat';
 import { ClockInput, DurationInput } from './fields';
@@ -11,7 +11,8 @@ import { PrintSheet } from './PrintSheet';
 import { BlockEditor, ScheduleView } from './Schedule';
 import { db } from './session';
 import { ShareDialog } from './ShareDialog';
-import { useBackToClose, usePhone, useReorder } from './touch';
+import { useLayout } from './device';
+import { useBackToClose, useReorder } from './touch';
 import { useBlocks } from './useBlocks';
 import { useChat } from './useChat';
 import { usePlan, type PlanStore } from './usePlan';
@@ -56,7 +57,11 @@ export function PlanView({
 }) {
   const store = usePlan(planId, me);
   const { plan, cues, comments, role, here, error, gone, saving } = store;
-  const phone = usePhone();
+  const layout = useLayout();
+  const phone = layout.device === 'phone';
+  /** The side panel lies over the sheet and opens when asked: a narrow computer window, or a tablet held upright. */
+  const overlay = layout.compact || (layout.device === 'tablet' && layout.orientation === 'portrait');
+  const [panelOpen, setPanelOpen] = useState(false);
   const [sel, setSel] = useState<string | null>(null);
   const [blockSel, setBlockSel] = useState<string | null>(null);
   const [panel, setPanel] = useState<'detail' | 'chat'>('detail');
@@ -65,16 +70,80 @@ export function PlanView({
   const [more, setMore] = useState(false);
   const now = useNow();
   const canEdit = role === 'owner' || role === 'editor';
-  const chatOpen = phone ? tab === 'chat' : panel === 'chat';
+  const chatOpen = phone ? tab === 'chat' : panel === 'chat' && (!overlay || panelOpen);
   const chat = useChat(planId, me, chatOpen);
   const blocks = useBlocks(planId);
   useBackToClose(sharing, () => setSharing(false));
+  useEffect(() => {
+    if (!overlay) setPanelOpen(false);
+  }, [overlay]);
+  /** Show the cue (or block) details, or the chat, in the side panel. */
+  const showPanel = (p: 'detail' | 'chat') => {
+    setPanel(p);
+    if (overlay) setPanelOpen(true);
+  };
+
+  // Computers: the keyboard. N adds a cue, ↑/↓ move the selection, Enter edits it, Esc closes the panel.
+  const keyState = useRef({ sel, cues: store.cues, panel, panelOpen, overlay, canEdit: false, on: false });
+  keyState.current = {
+    sel,
+    cues: store.cues,
+    panel,
+    panelOpen,
+    overlay,
+    canEdit: store.role === 'owner' || store.role === 'editor',
+    on: layout.device === 'computer' && tab === 'run' && !sharing && !!store.plan,
+  };
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      const k = keyState.current;
+      if (!k.on || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      const typing = !!t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+      if (document.querySelector('[role="dialog"], [role="menu"]')) return;
+      const i = k.cues.findIndex((c) => c.id === k.sel);
+      if (e.key === 'Escape') {
+        if (typing && t!.closest('.cues')) t!.blur();
+        else if (typing) return;
+        else if (k.overlay && k.panelOpen) setPanelOpen(false);
+        else if (k.panel === 'chat') setPanel('detail');
+        else if (k.sel) setSel(null);
+        else return;
+        e.preventDefault();
+        return;
+      }
+      if (typing) return;
+      if ((e.key === 'n' || e.key === 'N') && k.canEdit) {
+        e.preventDefault();
+        const id = store.addCue(k.sel);
+        if (id) {
+          setSel(id);
+          setPanel('detail');
+          setTimeout(() => focusField(`#cue-${id} .cell--title`), 0);
+        }
+      } else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && k.cues.length > 0) {
+        e.preventDefault();
+        const next = i < 0 ? (e.key === 'ArrowDown' ? 0 : k.cues.length - 1) : Math.max(0, Math.min(k.cues.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)));
+        const id = k.cues[next]!.id;
+        setSel(id);
+        document.getElementById(`cue-${id}`)?.scrollIntoView?.({ block: 'nearest' });
+      } else if (e.key === 'Enter' && i >= 0) {
+        e.preventDefault();
+        if (k.overlay) {
+          setPanel('detail');
+          setPanelOpen(true);
+        } else focusField(`#cue-${k.cues[i]!.id} .cell--title`);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [store]);
 
   useEffect(() => onUnread(chat.unread), [chat.unread, onUnread]);
   // Larger screens show the chat beside the plan, not as a page of its own.
   useEffect(() => {
     if (!phone && tab === 'chat') {
-      setPanel('chat');
+      showPanel('chat');
       onTab('run');
     }
   }, [phone, tab]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -146,7 +215,7 @@ export function PlanView({
     if (i < 0) return;
     setSel(cues[i]!.id);
     if (phone) return;
-    setPanel('detail');
+    showPanel('detail');
     setTimeout(() => focusField(`[aria-label="Length of cue ${i + 1}"]`), 0);
   };
 
@@ -206,7 +275,7 @@ export function PlanView({
           A block is a stretch of the day for the people: crew call, load-in, sound check, doors, strike. Give it a time, a place and who it is for; “My
           schedule” shows yours.
         </p>
-        {canEdit && <p className="muted small">Double-click an empty time on the timeline to add a block there.</p>}
+        {canEdit && layout.device === 'computer' && <p className="muted small">Double-click an empty time on the timeline to add a block there.</p>}
       </div>
     );
   else
@@ -389,6 +458,33 @@ export function PlanView({
             </button>
           </div>
           <span className="bar__spacer" />
+          {overlay && (
+            <>
+              <button
+                type="button"
+                className={`btn btn--quiet${panelOpen && panel === 'detail' ? ' is-on' : ''}`}
+                aria-pressed={panelOpen && panel === 'detail'}
+                onClick={() => (panelOpen && panel === 'detail' ? setPanelOpen(false) : showPanel('detail'))}
+              >
+                <PanelRight size={15} strokeWidth={1.75} aria-hidden="true" />
+                {detailName}
+              </button>
+              <button
+                type="button"
+                className={`btn btn--quiet${panelOpen && panel === 'chat' ? ' is-on' : ''}`}
+                aria-pressed={panelOpen && panel === 'chat'}
+                onClick={() => (panelOpen && panel === 'chat' ? setPanelOpen(false) : showPanel('chat'))}
+              >
+                <MessageSquare size={15} strokeWidth={1.75} aria-hidden="true" />
+                Chat
+                {chat.unread > 0 && (
+                  <span className="panel__n" aria-label={`${chat.unread} unread`}>
+                    {chat.unread}
+                  </span>
+                )}
+              </button>
+            </>
+          )}
           {tab !== 'schedule' && canEdit && (
             <button
               type="button"
@@ -398,6 +494,7 @@ export function PlanView({
                 if (id) {
                   setSel(id);
                   setPanel('detail');
+                  if (overlay) setTimeout(() => focusField(`#cue-${id} .cell--title`), 0);
                 }
               }}
             >
@@ -410,7 +507,14 @@ export function PlanView({
 
         <div className="plan__body">
           {tab === 'schedule' ? (
-            <ScheduleView store={blocks} plan={plan} canEdit={canEdit} me={me} sel={blockSel} onSel={(id) => (setBlockSel(id), setPanel('detail'))} />
+            <ScheduleView
+              store={blocks}
+              plan={plan}
+              canEdit={canEdit}
+              me={me}
+              sel={blockSel}
+              onSel={(id) => (setBlockSel(id), id ? showPanel('detail') : setPanel('detail'))}
+            />
           ) : (
             <CueSheet
               store={store}
@@ -424,9 +528,23 @@ export function PlanView({
               onNow={onNow}
               commentCount={commentCount}
               hasStart={!!plan.startTime}
+              onOpen={
+                overlay || layout.device === 'tablet'
+                  ? (id) => {
+                      setSel(id);
+                      showPanel('detail');
+                    }
+                  : undefined
+              }
             />
           )}
-          <aside className="panel" aria-label="Details and chat">
+          {overlay && panelOpen && <div className="scrim panel__scrim" onClick={() => setPanelOpen(false)} aria-hidden="true" />}
+          <aside
+            className={`panel${overlay ? ' panel--over' : ''}${overlay && panelOpen ? ' is-open' : ''}`}
+            aria-label="Details and chat"
+            aria-hidden={overlay && !panelOpen ? true : undefined}
+            inert={overlay && !panelOpen ? true : undefined}
+          >
             <div className="panel__tabs" role="tablist" aria-label="Side panel">
               <button type="button" role="tab" className="panel__tab" aria-selected={panel === 'detail'} onClick={() => setPanel('detail')}>
                 {detailName}
@@ -439,6 +557,17 @@ export function PlanView({
                   </span>
                 )}
               </button>
+              {overlay && (
+                <button
+                  type="button"
+                  className="btn btn--quiet btn--icon panel__close"
+                  onClick={() => setPanelOpen(false)}
+                  aria-label="Close the panel"
+                  title="Close (Esc)"
+                >
+                  <X size={16} strokeWidth={1.75} aria-hidden="true" />
+                </button>
+              )}
             </div>
             <div className={`panel__body${panel === 'chat' ? ' panel__body--chat' : ''}`}>
               {panel === 'chat' ? (
@@ -547,6 +676,7 @@ function CueSheet({
   onNow,
   commentCount,
   hasStart,
+  onOpen,
 }: {
   store: PlanStore;
   sched: Schedule;
@@ -556,6 +686,8 @@ function CueSheet({
   onNow: number | null;
   commentCount: Map<string, number>;
   hasStart: boolean;
+  /** Tablets and narrow windows: each row has a button that opens its details. */
+  onOpen?: (id: string) => void;
 }) {
   const { cues } = store;
   // Rows drag only by their handle (so text in the cells can still be selected), by mouse, pen or touch.
@@ -605,7 +737,7 @@ function CueSheet({
               )}
             </th>
             <th>Length</th>
-            <th>Type</th>
+            <th className="th-type">Type</th>
             <th>Cue</th>
             <th>Who</th>
             <th className="th-hint">Lumora</th>
@@ -675,7 +807,7 @@ function CueSheet({
                     onChange={(v) => store.editCue(c.id, { durationSec: v })}
                   />
                 </td>
-                <td>
+                <td className="type">
                   <select
                     className="cell cell--seg"
                     value={c.segment}
@@ -713,7 +845,24 @@ function CueSheet({
                 </td>
                 <td className="cell-text hint">{hintText(c)}</td>
                 <td className="cell-text notes">{c.notes.split('\n')[0]}</td>
-                <td className="num com">{commentCount.get(c.id) ? <span className="com__n">{commentCount.get(c.id)}</span> : null}</td>
+                <td className="num com">
+                  {onOpen ? (
+                    <button
+                      type="button"
+                      className="com__open"
+                      aria-label={`Details of cue ${i + 1}${commentCount.get(c.id) ? `, ${commentCount.get(c.id)} comments` : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpen(c.id);
+                      }}
+                    >
+                      {commentCount.get(c.id) ? <span className="com__n">{commentCount.get(c.id)}</span> : null}
+                      <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
+                    </button>
+                  ) : commentCount.get(c.id) ? (
+                    <span className="com__n">{commentCount.get(c.id)}</span>
+                  ) : null}
+                </td>
               </tr>,
             ];
           })}
