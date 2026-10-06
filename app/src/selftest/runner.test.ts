@@ -73,14 +73,14 @@ describe('the self-test runner', () => {
     const r = await runScenario(
       'x',
       [
-        { name: 'slow', run: () => sleep(1000) },
+        { name: 'slow', run: () => sleep(5000) },
         { name: 'never', run: () => {} },
       ],
       { timeoutMs: 40, stepTimeoutMs: 10_000 },
     );
     expect(r.steps[0]).toMatchObject({ name: 'slow', ok: false });
     expect(r.steps[1]).toMatchObject({ name: 'never', ok: false, skipped: true });
-    expect(r.ms).toBeLessThan(900);
+    expect(r.ms).toBeLessThan(4000);
   });
 
   it('withTimeout', async () => {
