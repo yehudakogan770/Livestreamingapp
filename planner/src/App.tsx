@@ -6,6 +6,7 @@ import { onSignInChange, signIn, signOut, whoAmI, type Who } from './session';
 
 type Theme = 'auto' | 'light' | 'dark';
 const THEME_KEY = 'lumora.planner.theme';
+const THEME_COLOR = { light: '#ffffff', dark: '#1c1d1f' } as const;
 
 function loadTheme(): Theme {
   try {
@@ -21,6 +22,10 @@ function useTheme(): [Theme, () => void] {
   useEffect(() => {
     if (theme === 'auto') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = theme;
+    // The phone's status bar (and the installed app's title bar) follows the chosen theme.
+    for (const m of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+      m.content = theme === 'auto' ? (m.dataset.auto ?? m.content) : THEME_COLOR[theme];
+    }
     try {
       localStorage.setItem(THEME_KEY, theme);
     } catch {
@@ -94,7 +99,7 @@ export function App() {
     );
 
   return (
-    <div className="app">
+    <div className={planId ? 'app app--plan' : 'app'}>
       <header className="bar no-print">
         <a className="bar__brand" href="#/" onClick={() => go(null)}>
           <img src="./mark.svg" alt="" width="18" height="18" />

@@ -767,6 +767,9 @@ select.input {
   align-items: center;
   gap: 8px;
 }
+.inspector__head b {
+  white-space: nowrap;
+}
 .inspector p {
   margin: 0;
 }
@@ -892,21 +895,6 @@ select.input {
   margin: 0;
 }
 
-/* Phones and very narrow windows only: the cue details go under the sheet. */
-@media (max-width: 760px) {
-  .plan__body {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(260px, 1fr) auto;
-    overflow: auto;
-  }
-  .sheet {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .inspector {
-    overflow: visible;
-  }
-}
 @media (max-width: 900px) {
   .bar__who,
   .bar__clock {
@@ -914,6 +902,754 @@ select.input {
   }
   .mini--wide .input {
     width: 160px;
+  }
+}
+
+/* The notch and rounded corners (viewport-fit=cover), and the browser's own bars. */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+#root {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+@supports (height: 100dvh) {
+  #root {
+    height: 100dvh;
+  }
+}
+.handle {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Tablets and narrower windows: the details stay on the side, a little narrower;
+   the cue sheet drops the columns the details panel shows anyway. */
+@media (min-width: 761px) and (max-width: 1100px) {
+  .plan__body {
+    grid-template-columns: minmax(0, 1fr) 270px;
+  }
+  .inspector__head {
+    flex-wrap: wrap;
+  }
+  .cues {
+    min-width: 0;
+  }
+  .c-notes,
+  .cues td.notes,
+  .cues th.th-notes {
+    display: none;
+  }
+}
+@media (min-width: 761px) and (max-width: 900px) {
+  .c-hint,
+  .cues td.hint,
+  .cues th.th-hint {
+    display: none;
+  }
+  .c-seg {
+    width: 92px;
+  }
+}
+/* Touch screens that keep the table (tablets): bigger rows and buttons. */
+@media (pointer: coarse) and (min-width: 761px) {
+  .cues td {
+    height: 42px;
+  }
+  .cell {
+    height: 36px;
+  }
+  .btn,
+  .input {
+    height: 38px;
+  }
+  .c-handle {
+    width: 30px;
+  }
+  .grip {
+    height: 18px;
+  }
+  .inspector__in .field > span {
+    font-size: 13px;
+  }
+}
+
+/* ---- Phones: cards, a full-screen sheet for one cue, actions at the bottom.
+   The query matches PHONE_QUERY in touch.ts. ---- */
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  body {
+    font-size: 15px;
+  }
+  /* 16px or larger, or iOS zooms in on the field being typed in. */
+  input,
+  select,
+  textarea,
+  .input {
+    font-size: 16px;
+  }
+  .input,
+  .btn,
+  .gate .field input {
+    height: 44px;
+  }
+  .btn {
+    padding: 0 14px;
+    font-size: 15px;
+  }
+  textarea.input {
+    height: auto;
+    padding: 10px;
+  }
+  input[type='date'].input,
+  input[type='time'].input {
+    width: 100%;
+    min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    text-align: left;
+  }
+  input[type='date']::-webkit-date-and-time-value,
+  input[type='time']::-webkit-date-and-time-value {
+    text-align: left;
+  }
+  .grid2 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .field {
+    gap: 5px;
+  }
+  .field > span {
+    font-size: 13px;
+  }
+  .small,
+  .mono {
+    font-size: 13px;
+  }
+
+  /* The app bar on the plan list; a plan has its own compact header. */
+  .bar {
+    height: 52px;
+    gap: 4px;
+    padding: 0 6px 0 12px;
+  }
+  .bar__who,
+  .bar__clock {
+    display: none;
+  }
+  .app--plan > .bar {
+    display: none;
+  }
+  .bar__brand {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 15px;
+  }
+  .bar .btn--quiet {
+    padding: 0 8px;
+    font-size: 14px;
+  }
+
+  /* Plans */
+  .page {
+    padding: 12px 12px calc(20px + env(safe-area-inset-bottom));
+  }
+  .page__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .page__head h1 {
+    font-size: 22px;
+  }
+  .page__new {
+    gap: 8px;
+  }
+  .page__sub {
+    margin: 20px 0 8px;
+    font-size: 15px;
+  }
+  .page__sub--first {
+    margin-top: 4px;
+  }
+  .empty {
+    padding: 16px;
+  }
+  .plancards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .plancard {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-height: 64px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+  }
+  .plancard:active {
+    background: var(--surface-2);
+  }
+  .plancard__name {
+    font-size: 17px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .plancard__when {
+    font-size: 15px;
+  }
+  .plancard__meta {
+    font-size: 13px;
+  }
+
+  /* One plan */
+  .phone {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone__head {
+    flex: 0 0 auto;
+    max-height: 70%;
+    overflow-y: auto;
+    padding: 0 12px 6px;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .phone__top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+  }
+  .phone__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding-right: 12px;
+    font-size: 16px;
+    text-decoration: none;
+  }
+  .phone__back span {
+    font-size: 24px;
+    line-height: 1;
+  }
+  .phone__save {
+    font-size: 13px;
+    color: var(--faint);
+    white-space: nowrap;
+  }
+  .phone__name {
+    display: block;
+    width: 100%;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    background: none;
+    font-size: 21px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+  }
+  .phone__name:focus {
+    outline: none;
+    border-bottom-color: var(--focus);
+  }
+  .phone__when {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 40px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--dim);
+    font-size: 15px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .phone__when-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .phone__when-act {
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .phone__meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 10px;
+    padding: 6px 0 10px;
+  }
+  .phone__wide {
+    grid-column: 1 / -1;
+  }
+  .plan__error {
+    padding: 8px 12px;
+  }
+
+  /* Now and next, pinned under the header on the event day */
+  .nownext {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .nownext--over {
+    display: block;
+    padding: 10px 12px;
+    color: var(--dim);
+  }
+  .nownext__now,
+  .nownext__next {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    min-height: 60px;
+    padding: 8px 12px;
+    border: 0;
+    background: none;
+    text-align: left;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .nownext__now {
+    background: var(--live-bg);
+    box-shadow: inset 3px 0 0 var(--live);
+  }
+  .nownext__now--idle {
+    background: none;
+    box-shadow: none;
+    cursor: default;
+  }
+  .nownext__next {
+    border-left: 1px solid var(--line);
+  }
+  .nownext__label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dim);
+  }
+  .nownext__now .nownext__label {
+    color: var(--live);
+  }
+  .nownext__title {
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .nownext__time {
+    font: 13px var(--mono);
+    color: var(--dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* The cues, one card each */
+  .phone__list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    padding: 10px 12px 16px;
+  }
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cards__section {
+    padding: 12px 2px 2px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--dim);
+  }
+  .cards__section:first-child {
+    padding-top: 0;
+  }
+  .card {
+    display: flex;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+  }
+  .card.is-sel {
+    border-color: var(--line-2);
+  }
+  .card.is-now {
+    border-color: var(--live);
+    background: var(--live-bg);
+    box-shadow: inset 3px 0 0 var(--live);
+  }
+  .card.is-dragging {
+    opacity: 0.45;
+  }
+  .card.drop-before {
+    box-shadow: 0 -4px 0 -1px var(--accent);
+  }
+  .card.drop-after {
+    box-shadow: 0 4px 0 -1px var(--accent);
+  }
+  .card__open {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr);
+    gap: 10px;
+    min-height: 64px;
+    padding: 10px 6px 10px 12px;
+    border: 0;
+    border-radius: 6px 0 0 6px;
+    background: none;
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .card__open:active {
+    background: var(--surface-2);
+  }
+  .card__when {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font: 13px var(--mono);
+  }
+  .card__time {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .card__time.is-fixed {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .card__len {
+    color: var(--dim);
+    white-space: nowrap;
+  }
+  .card__main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+  .card__line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .card__type {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--seg);
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--dim);
+  }
+  .drift--inline {
+    display: inline;
+    margin: 0;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .card__line .com__n {
+    margin-left: auto;
+  }
+  .card__title {
+    font-size: 16px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card__title.is-empty {
+    color: var(--dim);
+  }
+  .card__sub {
+    font-size: 13px;
+    color: var(--dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .card__grip {
+    flex: 0 0 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--line);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .card__grip .grip {
+    height: 20px;
+  }
+  .phone__totals {
+    margin: 14px 2px 0;
+    font-size: 14px;
+    color: var(--dim);
+  }
+  .phone__totals b {
+    color: var(--text);
+  }
+  .phone__role {
+    margin: 4px 2px 0;
+  }
+  .phone__empty {
+    margin-top: 4px;
+  }
+
+  /* Actions, at the bottom where a thumb reaches */
+  .phone__bar {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .phone__bar .btn {
+    flex: 0 0 auto;
+    padding: 0 12px;
+  }
+  .phone__bar .phone__add {
+    flex: 1 1 auto;
+  }
+  .menu-back {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.4);
+  }
+  .menu {
+    width: 100%;
+    padding: 4px 0 calc(4px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line-2);
+    border-radius: 10px 10px 0 0;
+    background: var(--surface);
+  }
+  .menu button {
+    display: block;
+    width: 100%;
+    min-height: 52px;
+    padding: 0 20px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: none;
+    color: var(--text);
+    font-size: 16px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .menu button:last-child {
+    border-bottom: 0;
+    color: var(--dim);
+  }
+  .menu .menu__danger {
+    color: var(--live);
+  }
+
+  /* One cue, full screen */
+  .cuesheet {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    background: var(--surface);
+    animation: sheet-up 0.2s ease-out;
+  }
+  .cuesheet__head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 52px;
+    padding: 4px 8px 4px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  .cuesheet__back.btn {
+    padding: 0 8px;
+    color: var(--accent);
+    font-size: 16px;
+  }
+  .cuesheet__back span {
+    font-size: 24px;
+    line-height: 1;
+  }
+  .cuesheet__title {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .cuesheet__title .muted {
+    font-weight: 400;
+  }
+  .cuesheet__move {
+    display: flex;
+    gap: 6px;
+  }
+  .cuesheet__move .btn {
+    width: 44px;
+    padding: 0;
+    font-size: 18px;
+  }
+  .cuesheet__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+  }
+  .cuesheet__body p {
+    margin: 0;
+  }
+  .cuesheet__body .inspector__in {
+    gap: 14px;
+    padding: 14px 16px 24px;
+  }
+  .cuesheet__body .hints {
+    gap: 12px;
+    padding: 10px 12px 12px;
+  }
+  .cuesheet__body .comments h3 {
+    font-size: 15px;
+  }
+  .cuesheet__body .link {
+    min-height: 32px;
+  }
+  .cuesheet__foot {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .cuesheet__foot .phone__save {
+    flex: 1;
+  }
+  .cuesheet__foot .btn--primary {
+    height: 48px;
+    min-width: 128px;
+    font-size: 16px;
+  }
+  .minsec {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .minsec .input {
+    width: 72px;
+    text-align: right;
+  }
+  .minsec__unit {
+    color: var(--dim);
+  }
+
+  /* Share, as a sheet from the bottom */
+  .dialog {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .dialog__box {
+    max-height: 92%;
+    border-radius: 10px 10px 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .dialog__body form.row {
+    flex-wrap: wrap;
+  }
+  .dialog__body form.row .input.grow {
+    flex: 1 1 100%;
+  }
+  .people td {
+    padding: 8px 6px;
+  }
+}
+/* Phones on their side: little height, so the header and now/next take less of it. */
+@media (pointer: coarse) and (max-height: 500px) {
+  .phone__top {
+    min-height: 36px;
+  }
+  .phone__back {
+    min-height: 36px;
+  }
+  .phone__name {
+    height: 32px;
+    font-size: 18px;
+  }
+  .phone__when {
+    min-height: 32px;
+  }
+  .nownext__now,
+  .nownext__next {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 8px;
+    min-height: 44px;
+    padding: 4px 12px;
+  }
+  .nownext__title {
+    flex: 1;
+    min-width: 0;
+  }
+  .phone__bar,
+  .cuesheet__foot {
+    padding-top: 4px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cuesheet {
+    animation: none;
   }
 }
 

@@ -1,35 +1,18 @@
-import { useEffect, useMemo, useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import { deletePlan, removePerson } from './api';
 import { ClockInput, DurationInput } from './fields';
-import {
-  SEGMENTS,
-  TRANSITION_NAMES,
-  cueAt,
-  eventSeconds,
-  formatDuration,
-  clock12,
-  longDate,
-  schedule,
-  segmentName,
-  type PlanComment,
-  type PlanCue,
-  type Schedule,
-  type Segment,
-} from './model';
+import { Inspector, hintText, initials } from './Inspector';
+import { SEGMENTS, cueAt, eventSeconds, formatDuration, clock12, longDate, schedule, segmentName, type PlanCue, type Schedule, type Segment } from './model';
+import { PhonePlan } from './PhonePlan';
 import { PrintSheet } from './PrintSheet';
 import { db } from './session';
 import { ShareDialog } from './ShareDialog';
+import { usePhone, useReorder } from './touch';
 import { usePlan, type PlanStore } from './usePlan';
 
-const ROLE_WORDS = { owner: 'You own this plan', editor: 'You can edit', viewer: 'View only' } as const;
+export { hintText };
 
-/** "Camera 1 · Fade · Lower third: Rabbi" — the Lumora hints in short. */
-export function hintText(c: PlanCue): string {
-  return [c.input, c.transition, c.overlay]
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .join(' · ');
-}
+const ROLE_WORDS = { owner: 'You own this plan', editor: 'You can edit', viewer: 'View only' } as const;
 
 function useNow(ms = 1000): Date {
   const [now, setNow] = useState(() => new Date());
@@ -48,6 +31,7 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
   const [sharing, setSharing] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const now = useNow();
+  const phone = usePhone();
   const canEdit = role === 'owner' || role === 'editor';
 
   const sched = useMemo(() => schedule(cues, plan?.startTime ?? ''), [cues, plan?.startTime]);
@@ -96,6 +80,34 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
         .catch((e: unknown) => alert(e instanceof Error ? e.message : String(e)));
     }
   };
+
+  const shared = (
+    <>
+      <PrintSheet plan={plan} cues={cues} sched={sched} />
+      {sharing && <ShareDialog plan={plan} role={role} me={me.id} onClose={() => setSharing(false)} onChanged={store.reloadRole} />}
+    </>
+  );
+
+  if (phone)
+    return (
+      <>
+        <PhonePlan
+          store={store}
+          sched={sched}
+          sel={sel}
+          onSel={setSel}
+          canEdit={canEdit}
+          onNow={onNow}
+          nowSec={nowSec}
+          commentCount={commentCount}
+          me={me}
+          onBack={onBack}
+          onShare={() => setSharing(true)}
+          onLeaveOrDelete={leaveOrDelete}
+        />
+        {shared}
+      </>
+    );
 
   return (
     <>
@@ -262,19 +274,10 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
           <RunningClock sched={sched} cues={cues} nowSec={nowSec} onNow={onNow} eventDate={plan.eventDate} now={now} />
         </footer>
       </main>
-      <PrintSheet plan={plan} cues={cues} sched={sched} />
-      {sharing && <ShareDialog plan={plan} role={role} me={me.id} onClose={() => setSharing(false)} onChanged={store.reloadRole} />}
+      {shared}
     </>
   );
 }
-
-const initials = (n: string): string =>
-  n
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('');
 
 /** On the event day: what is on now and how long it has left; otherwise how far away the event is. */
 function RunningClock({
@@ -341,35 +344,8 @@ function CueSheet({
   commentCount: Map<string, number>;
 }) {
   const { cues } = store;
-  // Rows drag only by their handle (so text in the cells can still be selected).
-  const [armed, setArmed] = useState<string | null>(null);
-  const [drag, setDrag] = useState<{ from: number; over: number; after: boolean } | null>(null);
-
-  const onDragStart = (e: DragEvent, i: number) => {
-    if (!canEdit || armed !== cues[i]!.id) {
-      e.preventDefault();
-      return;
-    }
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', cues[i]!.id);
-    setDrag({ from: i, over: i, after: false });
-  };
-  const onDragOver = (e: DragEvent, i: number) => {
-    if (!drag) return;
-    e.preventDefault();
-    const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const after = e.clientY > box.top + box.height / 2;
-    if (drag.over !== i || drag.after !== after) setDrag({ ...drag, over: i, after });
-  };
-  const onDrop = (e: DragEvent) => {
-    e.preventDefault();
-    if (!drag) return;
-    const slot = drag.over + (drag.after ? 1 : 0);
-    const to = slot > drag.from ? slot - 1 : slot;
-    store.move(drag.from, to);
-    setDrag(null);
-    setArmed(null);
-  };
+  // Rows drag only by their handle (so text in the cells can still be selected), by mouse, pen or touch.
+  const { listRef, handle, rowClass } = useReorder<HTMLTableSectionElement>(cues.length, store.move, canEdit);
   const keys = (e: KeyboardEvent, i: number) => {
     if (!canEdit || !e.altKey) return;
     if (e.key === 'ArrowUp' && i > 0) {
@@ -382,13 +358,7 @@ function CueSheet({
   };
 
   return (
-    <div
-      className="sheet"
-      onDragEnd={() => {
-        setDrag(null);
-        setArmed(null);
-      }}
-    >
+    <div className="sheet">
       <table className="cues">
         <colgroup>
           <col className="c-handle" />
@@ -411,16 +381,15 @@ function CueSheet({
             <th>Type</th>
             <th>Cue</th>
             <th>Who</th>
-            <th>Lumora</th>
-            <th>Notes</th>
+            <th className="th-hint">Lumora</th>
+            <th className="th-notes">Notes</th>
             <th aria-label="Comments" />
           </tr>
         </thead>
-        <tbody>
+        <tbody ref={listRef}>
           {cues.map((c, i) => {
             const t = sched.rows[i]!;
             const section = c.section && c.section !== cues[i - 1]?.section ? c.section : null;
-            const dropCls = drag && drag.over === i && drag.from !== i ? (drag.after ? ' drop-after' : ' drop-before') : '';
             return [
               section ? (
                 <tr key={`s-${c.id}`} className="cues__section">
@@ -429,19 +398,15 @@ function CueSheet({
               ) : null,
               <tr
                 key={c.id}
-                className={`cues__row${sel === c.id ? ' is-sel' : ''}${onNow === i ? ' is-now' : ''}${drag?.from === i ? ' is-dragging' : ''}${dropCls}`}
-                draggable={canEdit && armed === c.id}
-                onDragStart={(e) => onDragStart(e, i)}
-                onDragOver={(e) => onDragOver(e, i)}
-                onDrop={onDrop}
+                data-reorder
+                className={`cues__row${sel === c.id ? ' is-sel' : ''}${onNow === i ? ' is-now' : ''}${rowClass(i)}`}
                 onClick={() => onSel(c.id)}
                 onFocus={() => sel !== c.id && onSel(c.id)}
                 onKeyDown={(e) => keys(e, i)}
               >
                 <td
                   className={`handle${canEdit ? '' : ' handle--off'}`}
-                  onPointerDown={() => canEdit && setArmed(c.id)}
-                  onPointerUp={() => setArmed(null)}
+                  {...handle(i)}
                   title={canEdit ? 'Drag to reorder (or Alt+↑/↓)' : undefined}
                   aria-hidden="true"
                 >
@@ -534,237 +499,6 @@ function CueSheet({
           </tr>
         </tfoot>
       </table>
-    </div>
-  );
-}
-
-/** Everything about one cue, and its comments. */
-function Inspector({
-  cue,
-  index,
-  count,
-  store,
-  canEdit,
-  comments,
-  me,
-  isOwner,
-  timed,
-  onSel,
-}: {
-  cue: PlanCue;
-  index: number;
-  count: number;
-  store: PlanStore;
-  canEdit: boolean;
-  comments: PlanComment[];
-  me: string;
-  isOwner: boolean;
-  timed: Schedule['rows'][number] | undefined;
-  onSel: (id: string | null) => void;
-}) {
-  const set = (change: Partial<PlanCue>) => store.editCue(cue.id, change);
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
-  const send = () => {
-    if (!text.trim()) return;
-    setBusy(true);
-    setErr('');
-    store
-      .comment(cue.id, text)
-      .then(() => setText(''))
-      .catch((e: unknown) => setErr(e instanceof Error ? e.message : String(e)))
-      .finally(() => setBusy(false));
-  };
-  return (
-    <div className="inspector__in">
-      <div className="inspector__head">
-        <b>Cue {index + 1}</b>
-        <span className="muted small">
-          {timed?.start != null && clock12(timed.start)}
-          {timed?.end != null && `–${clock12(timed.end)}`}
-          {timed && ` · ${formatDuration(timed.elapsed)} in`}
-        </span>
-        <span className="bar__spacer" />
-        <button type="button" className="btn btn--quiet" onClick={() => onSel(null)} aria-label="Close cue details">
-          Close
-        </button>
-      </div>
-      <label className="field">
-        <span>Cue</span>
-        <input className="input" value={cue.title} maxLength={120} readOnly={!canEdit} onChange={(e) => set({ title: e.target.value })} />
-      </label>
-      <div className="grid2">
-        <label className="field">
-          <span>Section</span>
-          <input
-            className="input"
-            value={cue.section}
-            maxLength={60}
-            readOnly={!canEdit}
-            placeholder="e.g. Opening"
-            onChange={(e) => set({ section: e.target.value })}
-          />
-        </label>
-        <label className="field">
-          <span>Type</span>
-          <select className="input" value={cue.segment} disabled={!canEdit} onChange={(e) => set({ segment: e.target.value as Segment })}>
-            {SEGMENTS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Fixed start (optional)</span>
-          <ClockInput
-            value={cue.startTime}
-            readOnly={!canEdit}
-            placeholder="after the cue before"
-            label="Fixed start"
-            onChange={(v) => set({ startTime: v })}
-          />
-        </label>
-        <label className="field">
-          <span>Length</span>
-          <DurationInput value={cue.durationSec} readOnly={!canEdit} placeholder="e.g. 5:00" label="Length" onChange={(v) => set({ durationSec: v })} />
-        </label>
-      </div>
-      <label className="field">
-        <span>Who</span>
-        <input
-          className="input"
-          value={cue.who}
-          maxLength={80}
-          readOnly={!canEdit}
-          placeholder="Person or role responsible"
-          onChange={(e) => set({ who: e.target.value })}
-        />
-      </label>
-      <fieldset className="hints">
-        <legend>In Lumora</legend>
-        <label className="field">
-          <span>Input on Live</span>
-          <input
-            className="input"
-            value={cue.input}
-            maxLength={80}
-            readOnly={!canEdit}
-            placeholder="Input name, e.g. Camera 1"
-            onChange={(e) => set({ input: e.target.value })}
-          />
-        </label>
-        <label className="field">
-          <span>Title or overlay</span>
-          <input
-            className="input"
-            value={cue.overlay}
-            maxLength={80}
-            readOnly={!canEdit}
-            placeholder="Overlay input or preset name, or “Overlay 2”"
-            onChange={(e) => set({ overlay: e.target.value })}
-          />
-        </label>
-        <label className="field">
-          <span>Transition</span>
-          <input
-            className="input"
-            list="planner-transitions"
-            value={cue.transition}
-            maxLength={40}
-            readOnly={!canEdit}
-            placeholder="Cut"
-            onChange={(e) => set({ transition: e.target.value })}
-          />
-          <datalist id="planner-transitions">
-            {TRANSITION_NAMES.map((t) => (
-              <option key={t} value={t} />
-            ))}
-          </datalist>
-        </label>
-        <p className="muted small">Names are matched to the inputs, overlays and presets in the Lumora event when the plan is loaded.</p>
-      </fieldset>
-      <label className="field">
-        <span>Notes</span>
-        <textarea className="input" rows={4} maxLength={4000} value={cue.notes} readOnly={!canEdit} onChange={(e) => set({ notes: e.target.value })} />
-      </label>
-      {canEdit && (
-        <div className="row row--wrap">
-          <button type="button" className="btn" disabled={index === 0} onClick={() => store.move(index, index - 1)}>
-            Move up
-          </button>
-          <button type="button" className="btn" disabled={index === count - 1} onClick={() => store.move(index, index + 1)}>
-            Move down
-          </button>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              const id = store.duplicateCue(cue.id);
-              if (id) onSel(id);
-            }}
-          >
-            Duplicate
-          </button>
-          <span className="bar__spacer" />
-          <button
-            type="button"
-            className="btn btn--danger"
-            onClick={() => {
-              if (comments.length && !confirm('Delete this cue and its comments?')) return;
-              store.deleteCue(cue.id);
-            }}
-          >
-            Delete cue
-          </button>
-        </div>
-      )}
-      {cue.updatedBy && (
-        <p className="muted small">
-          Last changed by {cue.updatedBy}
-          {cue.updatedAt ? `, ${new Date(cue.updatedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}
-        </p>
-      )}
-
-      <section className="comments" aria-label="Comments">
-        <h3>Comments{comments.length ? ` (${comments.length})` : ''}</h3>
-        {comments.map((c) => (
-          <div key={c.id} className="comment">
-            <div className="comment__head">
-              <b>{c.authorName || 'Someone'}</b>
-              <span className="muted small">
-                {new Date(c.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-              </span>
-              <span className="bar__spacer" />
-              {(c.author === me || isOwner) && (
-                <button type="button" className="link" onClick={() => store.uncomment(c.id)}>
-                  Delete
-                </button>
-              )}
-            </div>
-            <p>{c.text}</p>
-          </div>
-        ))}
-        <textarea
-          className="input"
-          rows={2}
-          maxLength={2000}
-          value={text}
-          placeholder="Write a comment (Ctrl+Enter sends)"
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send();
-          }}
-          aria-label="New comment"
-        />
-        {err && <p className="warn small">{err}</p>}
-        <div className="row">
-          <button type="button" className="btn" disabled={busy || !text.trim()} onClick={send}>
-            Comment
-          </button>
-        </div>
-      </section>
     </div>
   );
 }

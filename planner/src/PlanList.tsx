@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { createPlan, listPlans } from './api';
 import { isoDate, shortDate, showClock, type PlanSummary } from './model';
 import { db } from './session';
+import { usePhone } from './touch';
 
 const ROLE_NAME = { owner: 'Owner', editor: 'Editor', viewer: 'Viewer' } as const;
 
@@ -20,6 +21,7 @@ export function PlanList({ userId, onOpen }: { userId: string; onOpen: (id: stri
   const [error, setError] = useState('');
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
+  const phone = usePhone();
 
   const refresh = () => {
     setError('');
@@ -42,54 +44,77 @@ export function PlanList({ userId, onOpen }: { userId: string; onOpen: (id: stri
   const upcoming = (plans ?? []).filter((p) => !p.eventDate || p.eventDate >= today);
   const past = (plans ?? []).filter((p) => p.eventDate && p.eventDate < today);
 
-  const table = (list: PlanSummary[]) => (
-    <table className="plans">
-      <thead>
-        <tr>
-          <th>Event</th>
-          <th>Date</th>
-          <th>Starts</th>
-          <th>Venue</th>
-          <th className="num">Cues</th>
-          <th>Access</th>
-          <th>Last change</th>
-        </tr>
-      </thead>
-      <tbody>
-        {list.map((p) => (
-          <tr key={p.id} onClick={() => onOpen(p.id)}>
-            <td>
-              <a
-                href={`#/plan/${p.id}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-              >
-                {p.name}
-              </a>
-            </td>
-            <td className="nowrap">{shortDate(p.eventDate) || '—'}</td>
-            <td className="nowrap">{showClock(p.startTime) || '—'}</td>
-            <td>{p.venue || '—'}</td>
-            <td className="num">{p.cueCount}</td>
-            <td className="nowrap">{p.role === 'owner' ? 'Owner' : `${ROLE_NAME[p.role]} · ${p.ownerName}’s`}</td>
-            <td className="nowrap muted">
-              {ago(p.updatedAt)}
-              {p.updatedBy && ` · ${p.updatedBy}`}
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+  const access = (p: PlanSummary) => (p.role === 'owner' ? 'Owner' : `${ROLE_NAME[p.role]} · ${p.ownerName}’s`);
+
+  // Phones: one card per plan, the whole card a link.
+  const cards = (list: PlanSummary[]) => (
+    <ul className="plancards">
+      {list.map((p) => (
+        <li key={p.id}>
+          <a className="plancard" href={`#/plan/${p.id}`}>
+            <span className="plancard__name">{p.name}</span>
+            <span className="plancard__when">{[shortDate(p.eventDate) || 'No date yet', showClock(p.startTime), p.venue].filter(Boolean).join(' · ')}</span>
+            <span className="plancard__meta muted">
+              {p.cueCount} cue{p.cueCount === 1 ? '' : 's'} · {access(p)}
+              {p.updatedAt ? ` · ${ago(p.updatedAt)}` : ''}
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
   );
+
+  const table = (list: PlanSummary[]) =>
+    phone ? (
+      cards(list)
+    ) : (
+      <table className="plans">
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Date</th>
+            <th>Starts</th>
+            <th>Venue</th>
+            <th className="num">Cues</th>
+            <th>Access</th>
+            <th>Last change</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((p) => (
+            <tr key={p.id} onClick={() => onOpen(p.id)}>
+              <td>
+                <a
+                  href={`#/plan/${p.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                >
+                  {p.name}
+                </a>
+              </td>
+              <td className="nowrap">{shortDate(p.eventDate) || '—'}</td>
+              <td className="nowrap">{showClock(p.startTime) || '—'}</td>
+              <td>{p.venue || '—'}</td>
+              <td className="num">{p.cueCount}</td>
+              <td className="nowrap">{access(p)}</td>
+              <td className="nowrap muted">
+                {ago(p.updatedAt)}
+                {p.updatedBy && ` · ${p.updatedBy}`}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
 
   return (
     <main className="page">
       <div className="page__head">
         <h1>Plans</h1>
-        <form className="row" onSubmit={make}>
+        <form className="row page__new" onSubmit={make}>
           <input
-            className="input"
+            className="input grow"
             placeholder="New event name"
             value={name}
             maxLength={120}
@@ -119,7 +144,12 @@ export function PlanList({ userId, onOpen }: { userId: string; onOpen: (id: stri
           </p>
         </div>
       )}
-      {upcoming.length > 0 && table(upcoming)}
+      {upcoming.length > 0 && (
+        <>
+          {phone && <h2 className="page__sub page__sub--first">Upcoming</h2>}
+          {table(upcoming)}
+        </>
+      )}
       {past.length > 0 && (
         <>
           <h2 className="page__sub">Past events</h2>
