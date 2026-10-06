@@ -1,0 +1,60 @@
+/* The AI menu's dialogs (they build on the Smart tools' styles). */
+.extras__h {
+  margin: 6px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.extras__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  font-size: 12.5px;
+}
+.extras__inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.extras__search {
+  width: 100%;
+  font-size: 14px;
+  padding: 8px 10px;
+}
+.extras__hits {
+  max-height: 320px;
+}
+.extras__title {
+  flex: 1;
+  min-width: 0;
+}
+.extras__presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.extras__preset {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--button);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.extras__preset small {
+  color: var(--text-dim);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+.extras__preset.is-on {
+  border-color: var(--accent);
+  background: var(--selected);
+}

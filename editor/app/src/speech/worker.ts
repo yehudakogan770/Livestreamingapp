@@ -5,7 +5,9 @@ import { Whisper } from '../../../../app/src/captions/whisper';
 
 let model: Whisper | null = null;
 
-type In = { type: 'load'; ortBase: string; files: Record<string, string> } | { type: 'transcribe'; id: number; audio: Float32Array; language: string | null };
+type In =
+  | { type: 'load'; ortBase: string; files: Record<string, string> }
+  | { type: 'transcribe'; id: number; audio: Float32Array; language: string | null; task?: 'transcribe' | 'translate' };
 
 self.onmessage = async (e: MessageEvent<In>) => {
   const m = e.data;
@@ -33,7 +35,7 @@ self.onmessage = async (e: MessageEvent<In>) => {
     let text = '';
     let language = m.language ?? '';
     try {
-      if (model) ({ text, language } = await model.transcribe(m.audio, m.language));
+      if (model) ({ text, language } = await model.transcribe(m.audio, m.language, m.task));
     } catch {
       // A stretch that fails is skipped; the next one carries on.
     }

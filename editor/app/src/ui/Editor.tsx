@@ -17,6 +17,7 @@ import { chooseAndImport, importFiles, makeProxies, MEDIA_EXTENSIONS } from './i
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { SmartDialogs, smartMenu } from '../smart/SmartTools';
+import { ExtrasDialogs, extrasMenu } from '../extras/ExtrasTools';
 import { Mixer } from './Mixer';
 import { ProgramMonitor, SourceMonitor } from './Monitors';
 import { ProjectPanel } from './ProjectPanel';
@@ -382,6 +383,7 @@ export function Editor({
       },
     ],
     ['Smart', () => smartMenu(state.project)],
+    ['AI', () => extrasMenu(state.project, doc, ui)],
     ['Help', () => [{ label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) }]],
   ];
 
@@ -541,6 +543,7 @@ export function Editor({
       {collab && <ConflictDialog collab={collab} onOpenShared={onOpenShared} />}
       {u.dialog === 'transcribe' && <TranscribeDialog doc={doc} ui={ui} />}
       <SmartDialogs doc={doc} engine={engine} ui={ui} />
+      <ExtrasDialogs doc={doc} engine={engine} ui={ui} />
     </div>
   );
 }

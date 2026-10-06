@@ -67,6 +67,8 @@ export class Transcriber {
     /** A language code, or null: worked out from what is heard first. */
     private language: string | null,
     private report: (p: SpeechProgress) => void,
+    /** "translate": what is said is written down in English (Whisper's own translation). */
+    private task: 'transcribe' | 'translate' = 'transcribe',
   ) {}
 
   stop() {
@@ -114,7 +116,7 @@ export class Transcriber {
     const id = this.next++;
     return new Promise((resolve) => {
       this.waiting.set(id, resolve);
-      this.worker?.postMessage({ type: 'transcribe', id, audio, language: this.language }, [audio.buffer]);
+      this.worker?.postMessage({ type: 'transcribe', id, audio, language: this.language, task: this.task }, [audio.buffer]);
     });
   }
 
