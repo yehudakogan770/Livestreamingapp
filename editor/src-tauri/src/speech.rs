@@ -111,7 +111,6 @@ const MT_FILES: &[(&str, &str, u64)] = &[
 ];
 
 /// Lumora's website keeps a copy of every model (tried first).
-const SITE: &str = "https://yehudakogan770.github.io/Livestreamingapp/models";
 
 fn complete(p: &Path, min: u64) -> bool {
     std::fs::metadata(p).is_ok_and(|m| m.len() >= min)
@@ -188,7 +187,7 @@ pub fn model(
         }
         let part = folder.join(format!("{file}.part"));
         let urls = [
-            format!("{SITE}/{}/{file}", m.name),
+            format!("{}models/{}/{file}", crate::SITE_URL, m.name),
             format!("{}/{path}", m.home),
         ];
         let report = |n: u64| progress(fraction(before + n.min(min), total));

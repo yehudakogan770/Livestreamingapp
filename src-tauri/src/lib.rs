@@ -379,28 +379,31 @@ fn open_multiview(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(
     outputs::open_multiview(&app, &show).map_err(|e| e.to_string())
 }
 
-/// The web Lumora Planner (the team's shared run of show).
-const PLANNER_URL: &str = "https://yehudakogan770.github.io/Livestreamingapp/planner/";
+/// The Lumora website. When it moves to its own domain, change this one line
+/// (and `SITE_URL` in app/src/site.ts and the other app's lib.rs).
+pub(crate) const SITE_URL: &str = "https://yehudakogan770.github.io/Livestreamingapp/";
 
-/// Opens the Planner in the computer's web browser (only that address).
-#[tauri::command]
-fn open_planner() -> Result<(), String> {
+/// The pages of the website the app may open in the browser (only these).
+const SITE_PAGES: [&str; 3] = ["planner/", "terms.html", "privacy.html"];
+
+/// Opens a web address in the computer's browser.
+fn open_in_browser(url: &str) -> Result<(), String> {
     #[cfg(windows)]
     let mut cmd = {
         let mut c = std::process::Command::new("rundll32");
-        c.args(["url.dll,FileProtocolHandler", PLANNER_URL]);
+        c.args(["url.dll,FileProtocolHandler", url]);
         c
     };
     #[cfg(target_os = "macos")]
     let mut cmd = {
         let mut c = std::process::Command::new("open");
-        c.arg(PLANNER_URL);
+        c.arg(url);
         c
     };
     #[cfg(all(unix, not(target_os = "macos")))]
     let mut cmd = {
         let mut c = std::process::Command::new("xdg-open");
-        c.arg(PLANNER_URL);
+        c.arg(url);
         c
     };
     let mut child = cmd
@@ -411,6 +414,22 @@ fn open_planner() -> Result<(), String> {
         let _ = child.wait();
     });
     Ok(())
+}
+
+/// Opens a page of the Lumora website (the Planner, Terms of Use or Privacy
+/// Policy) in the browser.
+#[tauri::command]
+fn open_site_page(page: String) -> Result<(), String> {
+    if !SITE_PAGES.contains(&page.as_str()) {
+        return Err("That page is not part of the Lumora website.".to_owned());
+    }
+    open_in_browser(&format!("{SITE_URL}{page}"))
+}
+
+/// Opens the web Lumora Planner (the team's shared run of show) in the browser.
+#[tauri::command]
+fn open_planner() -> Result<(), String> {
+    open_in_browser(&format!("{SITE_URL}planner/"))
 }
 
 #[tauri::command]
@@ -1117,6 +1136,7 @@ pub fn run() {
             close_output,
             open_multiview,
             open_planner,
+            open_site_page,
             close_multiview,
             multiview_open,
             event_files,

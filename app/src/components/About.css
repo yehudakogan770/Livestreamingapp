@@ -25,6 +25,10 @@
 .about__site {
   color: var(--text-dim);
 }
+.about__legal {
+  font-size: 13px;
+  color: var(--text-dim);
+}
 .about__version {
   margin-top: 10px !important;
 }

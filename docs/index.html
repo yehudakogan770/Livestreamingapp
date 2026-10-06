@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lumora · Live production and streaming software for Windows</title>
+    <title>Lumora · Live production and video editing for Windows</title>
     <meta
       name="description"
-      content="Meet Lumora: the free live production studio for every event. Switch cameras, add titles and slides, stream to YouTube and Facebook, and run every screen in the room from one Windows computer."
+      content="Meet Lumora and Lumora Studio: free live production and video editing for Windows. Run the event live with Lumora, then edit every camera you recorded in Lumora Studio."
     />
     <meta property="og:title" content="Meet Lumora" />
     <meta property="og:description" content="The live production studio for every event. Switch. Stream. Record." />
@@ -25,11 +25,10 @@
       <div class="wrap top__in">
         <a class="brand" href="./" aria-label="Lumora home"><img src="img/lumora-mark.svg" alt="" width="28" height="28" />Lumora</a>
         <nav class="nav" aria-label="Sections">
-          <a href="#features">Features</a>
+          <a href="#features">Lumora</a>
+          <a href="#studio">Studio</a>
           <a href="#demo">Live demo</a>
-          <a href="#screens">Three screens</a>
-          <a href="#more">All features</a>
-          <a href="#edit">Editing</a>
+          <a href="#together">Workflow</a>
           <a href="#feedback">Feedback</a>
           <a href="planner/" title="Lumora Planner: plan the run of show with your team (sign in)">Planner</a>
         </nav>
@@ -42,15 +41,39 @@
       <section class="hero">
         <div class="hero__bg" aria-hidden="true"></div>
         <div class="wrap hero__text">
-          <p class="hero__kicker">Live production software for Windows</p>
+          <p class="hero__kicker">Live production and video editing for Windows</p>
           <h1>Meet Lumora.</h1>
           <p class="hero__sub">The live production studio for every event.</p>
           <p class="hero__verbs"><span>Switch.</span><span>Stream.</span><span>Record.</span></p>
+          <p class="hero__pair">Lumora runs the event live. Lumora Studio edits it after.</p>
+          <div class="fam">
+            <article class="fam__card">
+              <header>
+                <img src="img/lumora-mark.svg" alt="" width="40" height="40" />
+                <div><h2 class="fam__name">Lumora</h2><p class="fam__role">Live production</p></div>
+              </header>
+              <p>Cameras, titles, streaming and every screen in the room, from one Windows computer.</p>
+              <div class="fam__go">
+                <a class="btn btn--red" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">Download Lumora</a>
+                <a class="fam__more" href="#features">Explore Lumora</a>
+              </div>
+            </article>
+            <article class="fam__card fam__card--studio">
+              <header>
+                <img src="img/studio-mark.svg" alt="" width="40" height="40" />
+                <div><h2 class="fam__name">Lumora Studio</h2><p class="fam__role">Video editing</p></div>
+              </header>
+              <p>Every camera from the event, already synced. Edit, grade, mix, caption and export.</p>
+              <div class="fam__go">
+                <a class="btn btn--amber" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">Download Lumora Studio</a>
+                <a class="fam__more" href="#studio">Explore Studio</a>
+              </div>
+            </article>
+          </div>
           <div class="hero__cta">
-            <a class="btn btn--red btn--big" href="#download">Download free for Windows</a>
             <a class="btn btn--glass btn--big" href="#demo">Try the live demo</a>
           </div>
-          <p class="hero__fine">Free · Windows 10 and 11</p>
+          <p class="hero__fine">Both free · Windows 10 and 11</p>
         </div>
         <div class="wrap hero__shot">
           <div class="win win--hero">
@@ -114,6 +137,7 @@
       <section id="features" class="light cards-sec">
         <div class="wrap">
           <div class="head">
+            <p class="prod"><img src="img/lumora-mark.svg" alt="" width="22" height="22" />Lumora <span>Live production</span></p>
             <h2>Everything your event needs, in one app.</h2>
             <p>No extra programs, no plugins, no subscription. Plug in your cameras and put on a show people remember.</p>
           </div>
@@ -747,40 +771,239 @@
         </div>
       </section>
 
-      <!-- Light: Lumora Studio. -->
-      <section id="edit" class="light split">
-        <div class="wrap split__in">
-          <div class="win split__win">
+      <!-- Light: how the two apps work together. -->
+      <section id="together" class="light together">
+        <div class="wrap">
+          <div class="head">
+            <p class="eyebrow">Lumora and Lumora Studio</p>
+            <h2>Record live. Finish in Studio.</h2>
+            <p>The two apps are made for each other. Nothing to export, nothing to line up by hand.</p>
+          </div>
+          <ol class="steps">
+            <li class="step">
+              <span class="step__n"><img src="img/lumora-mark.svg" alt="" width="28" height="28" /></span>
+              <small>Step 1</small>
+              <h3>Record in Lumora</h3>
+              <p>Every camera and microphone is saved on its own, next to the program you streamed.</p>
+            </li>
+            <li class="step">
+              <span class="step__n"><img src="img/studio-mark.svg" alt="" width="28" height="28" /></span>
+              <small>Step 2</small>
+              <h3>Open the event in Studio</h3>
+              <p>One file brings in the whole event: every camera, every microphone and every cut you made live.</p>
+            </li>
+            <li class="step">
+              <span class="step__n step__n--done"
+                ><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg
+              ></span>
+              <small>Step 3</small>
+              <h3>Every camera, already synced</h3>
+              <p>Your live edit is the starting point. Change any shot, clean up the sound and export the finished video.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- Dark: Lumora Studio. -->
+      <section id="studio" class="dark studio">
+        <div class="wrap">
+          <div class="head studio__head">
+            <p class="prod prod--studio"><img src="img/studio-mark.svg" alt="" width="22" height="22" />Lumora Studio <span>Video editing</span></p>
+            <h2 class="studio__title">Meet Lumora Studio.</h2>
+            <p class="studio__sub">The video editor for everything you record.</p>
+            <p class="studio__verbs"><span>Cut.</span><span>Grade.</span><span>Deliver.</span></p>
+          </div>
+          <div class="win studio__win">
             <div class="win__bar">
-              <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora Studio</span><i></i><i></i><i></i>
+              <span><img src="img/studio-mark.svg" alt="" width="14" height="14" />Lumora Studio</span><i></i><i></i><i></i>
             </div>
             <img
               src="img/edit.jpg"
               width="1600"
               height="900"
               loading="lazy"
-              alt="Lumora Studio: effect controls, the program monitor and a multi-track timeline."
+              alt="Lumora Studio editing a recorded event: the program monitor, the media panel with four cameras, and a timeline of camera cuts over three sound tracks."
             />
           </div>
+          <ul class="pages">
+            <li><b>Edit</b><span>A multi-track timeline with the tools editors expect.</span></li>
+            <li><b>Color</b><span>Node grading, wheels, curves and scopes.</span></li>
+            <li><b>Audio</b><span>A mixer with faders, meters and voice cleanup.</span></li>
+            <li><b>Deliver</b><span>Presets for every platform, and a render queue.</span></li>
+          </ul>
+          <div class="studio__cta">
+            <a class="btn btn--amber btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe"
+              >Download Lumora Studio</a
+            >
+            <p class="fine">Free · Windows 10 and 11</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Light: what Studio does. -->
+      <section id="studio-features" class="light more">
+        <div class="wrap">
+          <div class="head">
+            <h2>A complete editor, made for events.</h2>
+            <p>From the first cut to the finished file, without leaving the app.</p>
+          </div>
+          <div class="sfeats">
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
+                <rect x="2" y="6" width="14" height="12" rx="2" />
+              </svg>
+              <h3>Multicam from the event</h3>
+              <p>Lumora's recordings open with every angle synced. Switch cameras as it plays, or nudge a camera a frame at a time.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="6" cy="6" r="3" />
+                <path d="M8.12 8.12 12 12" />
+                <path d="M20 4 8.12 15.88" />
+                <circle cx="6" cy="18" r="3" />
+                <path d="M14.8 14.8 20 20" />
+              </svg>
+              <h3>Timeline editing</h3>
+              <p>Ripple, roll, slip, slide, razor, insert and overwrite. As many tracks as you need, with keyframes and a graph editor.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+                <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+              </svg>
+              <h3>Node color grading</h3>
+              <p>Serial, parallel and layer nodes. Color wheels, primaries, curves and LUTs. Copy a grade to every clip from the same camera.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+                <path d="M7 16v-3" />
+                <path d="M11 16V9" />
+                <path d="M15 16v-5" />
+                <path d="M19 16V6" />
+              </svg>
+              <h3>Scopes</h3>
+              <p>Waveform, RGB parade, vectorscope and histogram, live beside the picture while you grade.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 5H3" />
+                <path d="M12 19H3" />
+                <path d="M14 3v4" />
+                <path d="M16 17v4" />
+                <path d="M21 12h-9" />
+                <path d="M21 19h-5" />
+                <path d="M21 5h-7" />
+                <path d="M8 10v4" />
+                <path d="M8 12H3" />
+              </svg>
+              <h3>Audio mixer and voice cleanup</h3>
+              <p>Faders, pan and meters for every track. EQ, compressor and noise reduction make a speech in a loud hall clear.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <rect width="18" height="14" x="3" y="5" rx="2" ry="2" />
+                <path d="M7 15h4M15 15h2M7 11h2M13 11h4" />
+              </svg>
+              <h3>Captions and transcript</h3>
+              <p>Transcribe on your own computer, then edit the video by editing the text. Translate captions and export SRT or VTT.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
+                />
+                <path d="M20 2v4" />
+                <path d="M22 4h-4" />
+                <circle cx="4" cy="20" r="2" />
+              </svg>
+              <h3>Smart tools</h3>
+              <p>Remove silences and filler words, build a multicam edit automatically, reframe for vertical and square, and cut a highlight reel.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="22" x2="18" y1="12" y2="12" />
+                <line x1="6" x2="2" y1="12" y2="12" />
+                <line x1="12" x2="12" y1="6" y2="2" />
+                <line x1="12" x2="12" y1="22" y2="18" />
+              </svg>
+              <h3>AI masks and tracking</h3>
+              <p>Select a person or an object with one click. Track a point or a region so a title, blur or mask follows it.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4v16" />
+                <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" />
+                <path d="M9 20h6" />
+              </svg>
+              <h3>Speed, titles and templates</h3>
+              <p>Speed changes and ramps, animated titles, transitions, green screen and ready-made templates in your event's look.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <path d="M16 3.128a4 4 0 0 1 0 7.744" />
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                <circle cx="9" cy="7" r="4" />
+              </svg>
+              <h3>Team review</h3>
+              <p>Share a project with your team. Leave comments on an exact frame and mark them done as the edit comes together.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"
+                />
+              </svg>
+              <h3>Fast playback</h3>
+              <p>Hardware decoding, native GPU playback, proxies and a render cache keep long multicam events smooth.</p>
+            </article>
+            <article class="sfeat">
+              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 3v12" />
+                <path d="m17 8-5-5-5 5" />
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              </svg>
+              <h3>Export presets</h3>
+              <p>YouTube up to 4K, Shorts, Reels, TikTok, ProRes, DNxHR, WAV and MP3, or a file ready to play back in Lumora.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dark: the Color page. -->
+      <section class="dark split studio-color">
+        <div class="wrap split__in">
           <div class="split__text">
-            <p class="eyebrow">Lumora Studio</p>
-            <h2>A full video editor, built in.</h2>
+            <p class="eyebrow eyebrow--studio">Lumora Studio · Color</p>
+            <h2>Every camera, one look.</h2>
             <p>
-              Make the videos you show live, and edit the events you record. Import any video, music and pictures, cut on a timeline with as many tracks as you
-              need, and send the finished video straight into Lumora, ready to play.
+              Event cameras rarely match. Grade one shot with nodes, wheels and curves, check it on the scopes, and copy the grade to every clip from that
+              camera.
             </p>
-            <ul class="checks">
-              <li>Professional tools: ripple, roll, slip, slide, razor, insert and overwrite</li>
-              <li>Keyframes, transitions, titles, green screen and masks</li>
-              <li>Color wheels, curves and LUTs, with scopes</li>
-              <li>Sound mixer with EQ, compressor and noise reduction</li>
-              <li>Recorded events open with every camera, ready to switch</li>
+            <ul class="checks checks--dark">
+              <li>Serial, parallel and layer nodes</li>
+              <li>Shadows, midtones, highlights and offset wheels</li>
+              <li>Curves, LUTs and color matching between cameras</li>
+              <li>Waveform, RGB parade, vectorscope and histogram</li>
             </ul>
-            <p>
-              <a class="btn btn--red" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe"
-                >Download Lumora Studio</a
-              >
-            </p>
+          </div>
+          <div class="win split__win">
+            <div class="win__bar">
+              <span><img src="img/studio-mark.svg" alt="" width="14" height="14" />Lumora Studio</span><i></i><i></i><i></i>
+            </div>
+            <img
+              src="img/studio-color.jpg"
+              width="1600"
+              height="900"
+              loading="lazy"
+              alt="The Lumora Studio Color page: the picture beside a waveform scope, a node graph, color wheels, primaries and curves."
+            />
           </div>
         </div>
       </section>
@@ -791,7 +1014,7 @@
           <div class="fb__text">
             <p class="eyebrow">Feedback</p>
             <h2>Tell us what you think.</h2>
-            <p>Found a problem, or have an idea for Lumora? Tell us here.</p>
+            <p>Found a problem, or have an idea for Lumora or Lumora Studio? Tell us here.</p>
           </div>
           <form class="fb__form" data-feedback>
             <div class="fb__row">
@@ -821,23 +1044,35 @@
       <section id="download" class="dark dl">
         <div class="dl__bg" aria-hidden="true"></div>
         <div class="wrap dl__in">
-          <img src="img/lumora-mark.svg" alt="" width="64" height="64" class="dl__mark" />
           <h2>Ready for your best event yet?</h2>
-          <p>Lumora is free. No subscription, no watermark.</p>
-          <a class="btn btn--red btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe"
-            >Download for Windows</a
-          >
-          <p class="dl__also">
-            <a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">Also get Lumora Studio</a>, the video
-            editor for your events and the videos you show.
-          </p>
-          <p class="dl__also">
-            <a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora.streamDeckPlugin">Stream Deck plugin</a>: TAKE, CUT,
-            inputs with tally, overlays, replay, recording and going live from an Elgato Stream Deck. Lumora also offers it when it finds one.
-          </p>
+          <p>Both apps are free. No subscription, no watermark.</p>
+          <div class="dlcards">
+            <article class="dlcard">
+              <img src="img/lumora-mark.svg" alt="" width="56" height="56" />
+              <h3>Lumora</h3>
+              <p>Live production, streaming and recording.</p>
+              <a class="btn btn--red btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">Download Lumora</a>
+            </article>
+            <article class="dlcard dlcard--studio">
+              <img src="img/studio-mark.svg" alt="" width="56" height="56" />
+              <h3>Lumora Studio</h3>
+              <p>Video editing, color, sound and captions.</p>
+              <a class="btn btn--amber btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">Download Lumora Studio</a>
+            </article>
+          </div>
+          <ul class="dl__more">
+            <li>
+              <a href="planner/">Lumora Planner</a>
+              <span>Plan the run of show with your team, in the browser.</span>
+            </li>
+            <li>
+              <a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora.streamDeckPlugin">Stream Deck plugin</a>
+              <span>TAKE, CUT, inputs with tally, overlays, replay, recording and going live from an Elgato Stream Deck.</span>
+            </li>
+          </ul>
           <p class="fine">
-            For Windows 10 and 11. The first time, Windows may say it doesn't recognize the app: click <b>More info</b>, then <b>Run anyway</b>. Then make your
-            account in Lumora: each new account is approved by the Lumora team.
+            For Windows 10 and 11, 64-bit. The first time, Windows may say it doesn't recognize the app: click <b>More info</b>, then <b>Run anyway</b>. Then
+            make your account: each new account is approved by the Lumora team, and the same account works in both apps.
           </p>
         </div>
       </section>
@@ -851,6 +1086,8 @@
           <a href="#feedback">Feedback</a>
           <a href="planner/">Planner</a>
           <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">All versions</a>
+          <a href="terms.html">Terms of Use</a>
+          <a href="privacy.html">Privacy Policy</a>
         </nav>
         <span>© <span id="year">2026</span> Lumora</span>
       </div>
