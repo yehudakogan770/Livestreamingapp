@@ -25,8 +25,10 @@ import { StreamDeckDialog, StreamDeckOffer, useDeck } from './streamdeck/StreamD
 import { barActions, defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { setSetLook } from './visuals/sets';
+import { useClicker } from './views/useClicker';
+import { loadClicker, saveClicker } from './engine/clicker';
 import { OverlayEditor } from './views/OverlayEditor';
-import { sendCommand } from './views/commands';
+import { sendCommand, useCommands, type Command } from './views/commands';
 import { TEXT_TEMPLATES } from './engine/text';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
 import { visionPaused } from './engine/vision';
@@ -49,6 +51,7 @@ const CaptionsDialog = lazyPart(() => import('./captions/CaptionsDialog').then((
 const SpeakersDialog = lazyPart(() => import('./views/SpeakersDialog').then((m) => m.SpeakersDialog));
 const BroadcastDialog = lazyPart(() => import('./broadcast/BroadcastDialog').then((m) => m.BroadcastDialog));
 const PeopleDialog = lazyPart(() => import('./auth/PeopleDialog').then((m) => m.PeopleDialog));
+const SpeakerDialog = lazyPart(() => import('./views/SpeakerDialog').then((m) => m.SpeakerDialog));
 const AccountDialog = lazyPart(() => import('./auth/AccountDialog').then((m) => m.AccountDialog));
 
 export function Control() {
@@ -132,6 +135,14 @@ function ControlApp() {
   useEffect(() => client.watchEventFiles(setFiles), [client]);
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
   const [remoteOpen, setRemoteOpen] = useState(false);
+  // The speaker's clicker (slides from another device), and a presentation clicker on this computer.
+  const [speakerOpen, setSpeakerOpen] = useState(false);
+  const [clicker, setClicker] = useState(loadClicker);
+  const changeClicker = useCallback((on: boolean) => {
+    saveClicker(on);
+    setClicker(on);
+  }, []);
+  useCommands(useCallback((c: Command) => c.type === 'speakerRemote' && setSpeakerOpen(true), []));
   // Lumora's Stream Deck buttons (offered once when a Stream Deck is found).
   const [deck, refreshDeck, setDeck] = useDeck();
   const [deckOpen, setDeckOpen] = useState(false);
@@ -176,6 +187,12 @@ function ControlApp() {
     return () => clearTimeout(t);
   }, [notice]);
   const fail = useCallback((e: unknown) => setNotice(e instanceof Error ? e.message : String(e)), []);
+  useClicker(
+    clicker,
+    show,
+    controlling,
+    useCallback((a: Action) => void client.dispatch(a).catch(fail), [client, fail]),
+  );
   const open = useCallback((path?: string) => void client.openEvent(path).then((ok) => ok && setSetupDismissed(true), fail), [client, fail]);
   const saveAs = useCallback(
     () => void client.saveEventAs().then((p) => p && setNotice(`Saved. Lumora keeps “${baseName(p)}” up to date from now on.`), fail),
@@ -218,6 +235,11 @@ function ControlApp() {
       {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
+      },
+      {
+        label: `${clicker ? '● ' : '    '}Presentation clicker controls the slideshow`,
+        hint: 'A clicker plugged into this computer: Page Down next, Page Up back, B black',
+        onClick: () => changeClicker(!clicker),
       },
       // Only on computers with the Stream Deck app.
       ...(deck.found
@@ -327,6 +349,16 @@ function ControlApp() {
     const slides = show?.sources.filter((x) => x.kind.type === 'slideshow') ?? [];
     const slideshow: MenuItem[] = [
       { label: 'Add a slideshow…', onClick: () => sendCommand({ type: 'addInput', kind: 'slideshow' }) },
+      {
+        label: `Let the speaker change slides…${remote?.speaker?.devices.some((d) => d.speaker) ? ' (connected)' : ''}`,
+        hint: 'A phone, tablet or laptop changes the slides, and nothing else',
+        onClick: () => setSpeakerOpen(true),
+      },
+      {
+        label: `${clicker ? '● ' : '    '}Presentation clicker controls the slideshow`,
+        hint: 'A clicker plugged into this computer: Page Down next, Page Up back, B black',
+        onClick: () => changeClicker(!clicker),
+      },
       ...(slides.length ? [null, ...slides.map((x) => ({ label: `Put “${x.name}” in Next`, onClick: () => putInNext(x.id) }))] : []),
     ];
     const timers = show?.sources.filter((x) => x.kind.type === 'countdown') ?? [];
@@ -411,6 +443,8 @@ function ControlApp() {
     controlling,
     client,
     fail,
+    clicker,
+    changeClicker,
   ]);
 
   // Quick actions on the right of the title bar (the same as their menu items).
@@ -512,6 +546,9 @@ function ControlApp() {
       {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
+      {speakerOpen && remote && (
+        <SpeakerDialog client={client} status={remote} clicker={clicker} onClicker={changeClicker} onClose={() => setSpeakerOpen(false)} />
+      )}
       <StreamDeckOffer status={deck} onChange={setDeck} />
       {deckOpen && (
         <StreamDeckDialog

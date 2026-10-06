@@ -258,7 +258,8 @@ function SlideshowInput({ source, client, thumb, audience }: { source: Source; c
     <div style={{ ...fill, background: sh.background, overflow: 'hidden' }} data-kind="slideshow">
       {behind && <SourceBody source={behind} client={client} thumb={thumb} audience={audience} />}
       <div style={{ position: 'absolute', left: `${sh.area.x}%`, top: `${sh.area.y}%`, width: `${sh.area.w}%`, height: `${sh.area.h}%`, overflow: 'hidden' }}>
-        {slide && (
+        {sh.black && <div style={{ ...fill, background: '#000' }} data-black="true" />}
+        {slide && !sh.black && (
           <div key={`${sh.current}:${sh.changedAt}`} style={{ ...fill, animation: sh.fade && !thumb ? 'slide-in 0.4s ease-out both' : undefined }}>
             {slide.type === 'image' ? (
               <ImageView url={client.mediaUrl(slide.path)} fit={fit} audience={audience} />

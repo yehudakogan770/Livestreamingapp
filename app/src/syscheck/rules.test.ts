@@ -111,6 +111,8 @@ describe('the classes', () => {
     // 6160 kbps × 3 files ≈ 8.3 GB an hour; 5 GB is kept spare.
     expect(recordingHours(100 * 1024, plan)).toBeCloseTo(11.7, 1);
     expect(recordingHours(4 * 1024, plan)).toBe(0);
+    // Camera files at their own bitrate: 6160 + 2 × 8000 kbps ≈ 10 GB an hour.
+    expect(recordingHours(100 * 1024, { ...plan, isoKbps: 8000 })).toBeCloseTo(9.76, 1);
     expect(hoursText(0.7)).toBe('≈ 40 min');
     expect(hoursText(2.6)).toBe('≈ 2½ hours');
     expect(hoursText(38.2)).toBe('≈ 38 hours');
@@ -131,8 +133,13 @@ describe('Lumora on typical computers', () => {
     const r = judge('lumora', desktop(), browser(), plan);
     expect(r.verdict).toBe('yes');
     expect(r.headline).toBe('Yes — ready for live events');
-    expect(r.tips[0]).toEqual({ kind: 'do', text: 'Stream and record at 1080p30 (1080p60 is fine too).', weight: 100 });
+    expect(r.tips[0]).toEqual({
+      kind: 'do',
+      text: 'Record in 4K and stream at 1080p60 at the same time (the graphics card does the encoding).',
+      weight: 100,
+    });
     expect(r.features.every((f) => f.safety === 'safe')).toBe(true);
+    expect(byId(r.checks, 'video').advice).toMatch(/^Streams and re-encoded recordings use NVENC/);
     expect(r.tips.some((t) => t.text.startsWith('Record to D: (SSD, 420 GB free) ≈'))).toBe(true);
     expect(r.tips.some((t) => t.kind === 'dont' && t.text.includes('Windows Update'))).toBe(true);
     expect(r.tips.some((t) => t.text.includes('Rehearsal'))).toBe(true);
@@ -274,6 +281,33 @@ describe('Lumora Studio on typical computers', () => {
     expect(r.tips.some((t) => t.text === 'Use proxies for 4K footage (made when you import).')).toBe(true);
     expect(r.tips.some((t) => t.text.startsWith('Turn on Native playback'))).toBe(false);
     expect(r.features.find((f) => f.name === 'Optical-flow slow motion')!.note).toBe('Avoid it on long clips; use plain slow motion.');
+  });
+});
+
+describe('4K and 60 frames a second', () => {
+  const safety = (r: ReturnType<typeof judge>, name: string) => r.features.find((f) => f.name === name)!.safety;
+  it('the same strong desktop without a working graphics-card encoder: no 4K, and 1080p60 only risky', () => {
+    const r = judge('lumora', desktop({ hwEncoders: [] }), browser(), plan);
+    expect(r.tips[0]!.text).toBe('Stream and record at 1080p30 (1080p60 is fine too).');
+    expect(safety(r, '4K recording with a 1080p stream')).toBe('avoid');
+    expect(safety(r, '4K60 recording')).toBe('avoid');
+    expect(safety(r, '1080p60 streaming')).toBe('risky');
+    expect(byId(r.checks, 'video').advice).toMatch(/keep to 1080p and avoid 4K/);
+  });
+  it('a mid laptop: 1080p60 risky, 4K not advised', () => {
+    const r = judge(
+      'lumora',
+      desktop({ cpu: { name: 'Intel(R) Core(TM) i5-1135G7', cores: 4, threads: 8 }, memory: { totalMb: 16077, availableMb: 8000 }, gpus: [IRIS] }),
+      browser({ renderer: 'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics)' }),
+      plan,
+    );
+    expect(safety(r, '1080p60 streaming')).toBe('risky');
+    expect(safety(r, '4K recording with a 1080p stream')).toBe('avoid');
+  });
+  it('16 GB: 4K60 is risky, 4K30 with a 1080p stream is safe', () => {
+    const r = judge('lumora', desktop({ memory: { totalMb: 16077, availableMb: 9000 } }), browser(), plan);
+    expect(safety(r, '4K60 recording')).toBe('risky');
+    expect(safety(r, '4K recording with a 1080p stream')).toBe('safe');
   });
 });
 

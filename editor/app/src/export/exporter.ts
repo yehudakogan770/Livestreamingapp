@@ -1,20 +1,7 @@
 // Making the film: each frame is drawn by the same compositor as the viewer
 // (every frame decoded exactly), encoded by the computer's video encoder, and
 // written next to the film; then FFmpeg adds the sound.
-import {
-  ALL_FORMATS,
-  BufferTarget,
-  CanvasSource,
-  Input,
-  Mp4OutputFormat,
-  Output,
-  StreamTarget,
-  UrlSource,
-  VideoSampleSink,
-  WebMOutputFormat,
-  canEncodeVideo,
-} from 'mediabunny';
-import type { VideoSample } from 'mediabunny';
+import type { VideoSample, VideoSampleSink } from 'mediabunny';
 import { current, rate } from '../model/seq';
 import type { Clip, MediaItem, Project, Sequence } from '../model/types';
 import { inApp, mediaUrl, native, onExportProgress } from '../native';
@@ -27,6 +14,9 @@ import { exportSources } from '../player/files';
 import { finishJobs, type FinishOptions, type SoundFormat } from './audioplan';
 import { manageNative } from '../manage/native';
 import { renderCache } from '../cache/manager';
+
+/** The decoder and encoder library: big, so loaded the first time a film is made (not when the app starts). */
+const mediabunny = () => import('mediabunny');
 
 export interface ExportSettings {
   /** Output height (the width follows the sequence's shape). */
@@ -243,6 +233,7 @@ export class Sources {
         for (const s of exportSources(m, inApp())) {
           if (s.via === 'ffmpeg') return { via: 'ffmpeg', path: s.path };
           const ok = await (async () => {
+            const { ALL_FORMATS, Input, UrlSource, VideoSampleSink } = await mediabunny();
             const input = new Input({ source: new UrlSource(mediaUrl(s.path)), formats: ALL_FORMATS });
             const track = await input.getPrimaryVideoTrack();
             if (!track || !(await track.canDecode())) return null;
@@ -373,6 +364,7 @@ export class Sources {
 
 /** What the computer can encode: H.264 (best) or VP9. */
 export async function pictureCodec(width: number, height: number, mbps: number): Promise<'avc' | 'vp9'> {
+  const { canEncodeVideo } = await mediabunny();
   return (await canEncodeVideo('avc', { width, height, bitrate: mbps * 1e6 }).catch(() => false)) ? 'avc' : 'vp9';
 }
 
@@ -480,6 +472,7 @@ export class Exporter {
     const height = even(Math.min(this.o.height, 4320));
     const width = even((height * s.width) / s.height);
     const codec = await pictureCodec(width, height, this.o.mbps);
+    const { BufferTarget, CanvasSource, Mp4OutputFormat, Output, StreamTarget, WebMOutputFormat } = await mediabunny();
     const canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : document.createElement('canvas');
     const gl = new Compositor(canvas);
     gl.resize(width, height, s.height);

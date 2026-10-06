@@ -17,6 +17,7 @@ export function defaultSlideshow(): Slideshow {
     background: '#000000',
     behind: null,
     fade: true,
+    black: false,
   };
 }
 
@@ -34,7 +35,7 @@ export function nextSlideIndex(sh: Slideshow): number | null {
 }
 
 export function slideDue(sh: Slideshow, now: number): boolean {
-  return sh.autoMs !== null && now >= sh.changedAt + sh.autoMs && nextSlideIndex(sh) !== null;
+  return !sh.black && sh.autoMs !== null && now >= sh.changedAt + sh.autoMs && nextSlideIndex(sh) !== null;
 }
 
 /** The slideshow on air (or in Next) on this screen. */

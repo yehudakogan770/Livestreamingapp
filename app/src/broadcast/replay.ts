@@ -14,10 +14,27 @@ export interface Piece {
   end: number;
 }
 
+/** H.264 for replays when this WebView can also play it back: it is encoded on the graphics card where there is one (VP9 and VP8 mostly on the processor). */
+const H264_REPLAY: [record: string, play: string][] = [
+  ['video/x-matroska;codecs=avc1,opus', 'video/x-matroska; codecs="avc1.640028, opus"'],
+  ['video/webm;codecs=h264,opus', 'video/webm; codecs="avc1.640028, opus"'],
+];
+
 /** The best format for replays (VP9/VP8 WebM play back everywhere Lumora runs). */
-function replayType(): string | null {
+export function replayType(canPlay: (type: string) => boolean = defaultCanPlay): string | null {
   if (typeof MediaRecorder === 'undefined') return null;
+  const h264 = H264_REPLAY.find(([rec, play]) => MediaRecorder.isTypeSupported(rec) && canPlay(play));
+  if (h264) return h264[0];
   return ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find((t) => MediaRecorder.isTypeSupported(t)) ?? null;
+}
+
+function defaultCanPlay(type: string): boolean {
+  return typeof document !== 'undefined' && document.createElement('video').canPlayType(type) === 'probably';
+}
+
+/** The file ending for a replay piece. */
+export function replayExt(type: string): 'mkv' | 'webm' {
+  return type.includes('matroska') ? 'mkv' : 'webm';
 }
 
 /** The pieces covering the last `ms` before `now`, oldest first. */

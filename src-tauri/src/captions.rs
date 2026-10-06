@@ -74,8 +74,6 @@ const WHISPER_FILES_SMALL: &[(&str, &str, u64)] = &[
     ("generation_config.json", "generation_config.json", 1_000),
 ];
 
-/// Lumora's own website keeps a copy of every model (tried first).
-
 fn hidden(cmd: &mut Command) -> &mut Command {
     #[cfg(windows)]
     {

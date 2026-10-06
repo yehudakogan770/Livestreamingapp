@@ -1883,6 +1883,13 @@ export class ProgramCompositor {
         ctx.beginPath();
         ctx.rect(0, 0, aw, ah);
         ctx.clip();
+        // Blacked out (the speaker's B key): the slides' area is black, what is behind stays.
+        if (k.black) {
+          ctx.fillStyle = '#000';
+          ctx.fillRect(0, 0, aw, ah);
+          ctx.restore();
+          return;
+        }
         // Each new slide fades in over 0.4 s, like the screens.
         ctx.globalAlpha *= k.fade ? ease((now - k.changedAt) / 400) : 1;
         if (slide.type === 'image') {

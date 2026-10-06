@@ -253,3 +253,11 @@
 .bc-later .field__note {
   flex-basis: 100%;
 }
+
+/* Which inputs get their own file. */
+.bcd__isos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 26px;
+}
