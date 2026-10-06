@@ -1,0 +1,70 @@
+.sd-offer {
+  position: fixed;
+  right: 16px;
+  bottom: 64px;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 8px 8px 8px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  background: var(--raised);
+  box-shadow: var(--shadow-pop);
+  font-size: 13px;
+}
+.sd-offer .btn {
+  height: 30px;
+  flex-shrink: 0;
+}
+.sd-offer__icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--text-dim);
+}
+.sd {
+  width: min(560px, calc(100vw - 48px));
+}
+.sd__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow: auto;
+}
+.sd__intro {
+  margin: 0;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.sd__status {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--well);
+}
+.sd__steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  line-height: 1.45;
+}
+.sd__pin {
+  padding: 1px 8px;
+  border-radius: var(--radius);
+  background: var(--well);
+  font-family: var(--mono);
+  user-select: text;
+}
+.sd__inline {
+  height: 26px;
+  margin-left: 4px;
+}
+.sd__spacer {
+  flex: 1;
+}

@@ -1,21 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": false,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-    "allowJs": true,
-    "types": ["vite/client"]
+    "noEmit": true,
+    "types": []
   },
-  "include": ["app/src", "vite.config.ts", "src-tauri/remote", "editor/app/src", "editor/vite.config.ts", "streamdeck/src"],
-  "exclude": ["streamdeck/src/plugin.ts"]
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
 }

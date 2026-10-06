@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Lumora</title>
+    <link rel="stylesheet" href="inspector.css" />
+  </head>
+  <body>
+    <section class="group" aria-labelledby="conn-title">
+      <h2 id="conn-title">Lumora</h2>
+      <label class="row">
+        <span class="name">Address</span>
+        <input id="address" type="text" spellcheck="false" placeholder="This computer" autocomplete="off" />
+      </label>
+      <label class="row">
+        <span class="name">PIN</span>
+        <input id="pin" type="text" inputmode="numeric" maxlength="4" spellcheck="false" placeholder="4 digits" autocomplete="off" />
+      </label>
+      <div class="row">
+        <span class="name"></span>
+        <div class="status">
+          <span id="status" class="badge" data-state="off">Not set up</span>
+          <button id="connect" type="button">Connect</button>
+        </div>
+      </div>
+      <p class="note" id="conn-help">
+        In Lumora, open Settings → Phone remote, switch it on and type its PIN here. Lumora on another computer: type that computer’s address (for example
+        192.168.1.20).
+      </p>
+    </section>
+
+    <section class="group" id="options" aria-labelledby="opt-title">
+      <h2 id="opt-title">Key</h2>
+      <div id="fields"></div>
+      <label class="row">
+        <span class="name">Label</span>
+        <input id="label" type="text" placeholder="Automatic" autocomplete="off" data-setting="label" />
+      </label>
+      <p class="note" id="hint"></p>
+    </section>
+
+    <script src="inspector.js"></script>
+  </body>
+</html>

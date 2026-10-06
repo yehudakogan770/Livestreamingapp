@@ -17,6 +17,7 @@ mod ptz;
 mod remote;
 mod selftest;
 mod store;
+mod streamdeck;
 mod streams;
 mod tunnel;
 
@@ -872,6 +873,45 @@ impl remote::Backend for RemoteBackend {
             let _ = self.0.emit("remote-changed", state.remote.status());
         }
     }
+
+    fn app_command(&self, command: remote::AppCommand) -> Result<(), String> {
+        // Recording, streaming and replay run in the control window.
+        self.0
+            .emit_to("control", "remote-command", command)
+            .map_err(|e| e.to_string())
+    }
+}
+
+/// The control window says what is running (recording, stream, rehearsal,
+/// replay), for control surfaces such as the Stream Deck.
+#[tauri::command]
+fn remote_app_state(app_state: serde_json::Value, state: State<'_, AppState>) {
+    state.remote.set_app_state(&app_state);
+}
+
+fn deck_places(app: &tauri::AppHandle) -> streamdeck::Places {
+    streamdeck::Places::here(
+        app.path().resource_dir().ok(),
+        app.path().app_data_dir().ok(),
+    )
+}
+
+/// Is the Stream Deck app here, and is Lumora's plugin in it?
+#[tauri::command]
+fn streamdeck_status(app: tauri::AppHandle) -> streamdeck::DeckStatus {
+    streamdeck::status(&deck_places(&app))
+}
+
+/// Add (or update) Lumora's buttons in the Stream Deck app.
+#[tauri::command]
+fn streamdeck_install(app: tauri::AppHandle) -> Result<streamdeck::DeckStatus, String> {
+    streamdeck::install(&deck_places(&app))
+}
+
+/// "Not now": don't offer this version of the plugin again.
+#[tauri::command]
+fn streamdeck_dismiss(app: tauri::AppHandle) -> streamdeck::DeckStatus {
+    streamdeck::answer(&deck_places(&app))
 }
 
 /// Crashes since last time (see crates/crash); the screens send them only if
@@ -1058,7 +1098,11 @@ pub fn run() {
             library_items,
             save_library,
             export_library,
-            import_library
+            import_library,
+            remote_app_state,
+            streamdeck_status,
+            streamdeck_install,
+            streamdeck_dismiss
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

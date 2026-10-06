@@ -1,0 +1,18 @@
+{
+  "name": "lumora-streamdeck",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lumora's Stream Deck plugin: TAKE, CUT, inputs with tally, overlays, presets, replay, recording and going live.",
+  "type": "module",
+  "scripts": {
+    "pack": "node scripts/pack.mjs"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "2.1.2",
+    "@elgato/utils": "0.6.0"
+  },
+  "devDependencies": {
+    "rolldown": "1.2.11",
+    "typescript": "5.9.3"
+  }
+}
