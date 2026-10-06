@@ -330,6 +330,44 @@ describe('input health', () => {
     }
   });
 
+  it('stops counting shown frames once the camera’s own count can be read', () => {
+    vi.useFakeTimers();
+    try {
+      let now = 0;
+      const h = new InputHealth(() => now);
+      let asked = 0;
+      let cb: (() => void) | null = null;
+      const track = { stats: { totalFrames: 0 } };
+      const video = {
+        requestVideoFrameCallback: (f: () => void) => (asked++, (cb = f), asked),
+        cancelVideoFrameCallback: () => (cb = null),
+        closest: () => null,
+        style: { opacity: '' },
+        srcObject: { getVideoTracks: () => [track] },
+      } as unknown as HTMLVideoElement;
+      const stop = watchFrames('cam1', video, h, 100);
+      expect(asked).toBe(1);
+      cb!();
+      // Not asked again: the poll counts the camera's frames from now on.
+      expect(asked).toBe(1);
+      for (let t = 0; t < 10; t++) {
+        now += 500;
+        h.beat();
+        track.stats.totalFrames += 15;
+        vi.advanceTimersByTime(500);
+        expect(h.down('cam1', 1500)).toBeNull();
+      }
+      // The camera stops sending: noticed.
+      now += 3000;
+      h.beat();
+      vi.advanceTimersByTime(200);
+      expect(h.down('cam1', 1500)).toBe('No picture coming in');
+      stop();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('never calls a picture drawn some other way (green screen) lost', () => {
     vi.useFakeTimers();
     try {

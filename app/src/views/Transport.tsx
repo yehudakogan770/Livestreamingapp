@@ -6,7 +6,6 @@ import type { Act } from './act';
 
 /** Play / pause / skip and time for the video under a monitor. Empty for other sources. */
 export function Transport({ source, act }: { source: Source | undefined; act: Act; label?: string }) {
-  const now = useNow(false, 250);
   if (!source || source.kind.type !== 'video') {
     return (
       <div className="transport transport--empty">
@@ -15,7 +14,13 @@ export function Transport({ source, act }: { source: Source | undefined; act: Ac
       </div>
     );
   }
-  const { durationS, playback } = source.kind;
+  return <VideoTransport source={source} kind={source.kind} act={act} />;
+}
+
+/** The clock ticks only while a video is there (a camera's empty strip never re-renders). */
+function VideoTransport({ source, kind, act }: { source: Source; kind: Extract<Source['kind'], { type: 'video' }>; act: Act }) {
+  const now = useNow(false, 250);
+  const { durationS, playback } = kind;
   const pos = sourcePosition(source, now);
   const seek = (s: number) => act({ type: 'seek', id: source.id, posS: Math.max(0, durationS > 0 ? Math.min(durationS, s) : s) });
   return (

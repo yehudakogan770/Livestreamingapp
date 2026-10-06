@@ -13,6 +13,10 @@ export default defineConfig({
     target: 'es2022',
     // The shipped app carries no readable source: minified, with no source maps.
     sourcemap: false,
+    // One stylesheet for every window, loaded at the start, as before the
+    // windows were split into parts loaded when needed: every style is there
+    // from the first frame, in the same order.
+    cssCodeSplit: false,
   },
   test: {
     root: '.',
