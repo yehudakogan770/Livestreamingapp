@@ -6,11 +6,14 @@ import { captionText } from '../model/captions';
 import { effectDef } from '../model/effects';
 import { end, onTrack, rate, seqLength } from '../model/seq';
 import { gradeAt, gradeOf, type GradeNow } from '../model/grade';
-import type { BlendMode, Clip, MediaItem, Project, Sequence, TextData } from '../model/types';
+import { rateAt, remapSourceAt, sampleFrames } from '../model/remap';
+import type { BlendMode, Clip, MediaItem, Project, Sequence, ShapeData, TextData } from '../model/types';
 import { withTracking } from '../track/paths';
 
 export type LayerSource =
-  | { kind: 'video'; media: MediaItem; time: number }
+  /** `next`: a second frame mixed in (time remapping between the file's frames: blended or by optical flow). */
+  | { kind: 'video'; media: MediaItem; time: number; next?: { time: number; mix: number; mode: 'blend' | 'flow' } }
+  | { kind: 'shape'; shape: ShapeData; local: number; length: number }
   | { kind: 'image'; media: MediaItem }
   | { kind: 'text'; text: TextData; local: number; length: number }
   | { kind: 'color'; color: string }
@@ -57,6 +60,8 @@ export interface Layer {
   local: number;
   motion: MotionNow;
   effects: EffectNow[];
+  /** Motion blur: the movement across the shutter (each look drawn and averaged), relative to `base`. */
+  motionBlur?: { base: MotionNow; samples: MotionNow[] };
 }
 
 export type Op =
@@ -66,13 +71,39 @@ export type Op =
 
 /** Seconds into the clip's source at a frame of the clip (frames past either end reach into the source's spare footage). */
 export function sourceAt(c: Clip, into: number, fps: number): number {
+  if (c.remap) return remapSourceAt(c, c.remap, into, fps);
   const f = c.reverse ? c.length - 1 - into : into;
   return ('in' in c.source ? c.source.in : 0) + (f * c.speed) / fps;
 }
 
-export function motionAt(c: Clip, local: number): MotionNow {
+/** The looks across the shutter for motion blur (none when the clip doesn't move then). */
+export function blurSamples(c: Clip, local: number, base: MotionNow): MotionNow[] | undefined {
+  const mb = c.motionBlur;
+  if (!mb?.on || mb.shutter <= 0) return undefined;
+  const n = Math.max(2, Math.min(32, Math.round(mb.samples)));
+  const open = Math.min(720, mb.shutter) / 360;
+  const out: MotionNow[] = [];
+  let moves = false;
+  for (let i = 0; i < n; i++) {
+    const m = motionAt(c, local + open * (i / (n - 1) - 0.5), true);
+    if (!moves && NUMERIC.some((k) => Math.abs((m[k] as number) - (base[k] as number)) > 1e-3)) moves = true;
+    out.push(m);
+  }
+  return moves ? out : undefined;
+}
+
+const NUMERIC = ['x', 'y', 'scale', 'scaleX', 'rotation', 'rotX', 'rotY', 'z', 'cropL', 'cropR', 'cropT', 'cropB', 'opacity'] as const;
+
+/** A look across the shutter moved by what tracking (or anything after) changed in the frame's motion. */
+export function shifted(m: MotionNow, base: MotionNow, now: MotionNow): MotionNow {
+  const out = { ...now };
+  for (const k of NUMERIC) out[k] = now[k] + (m[k] - base[k]);
+  return out;
+}
+
+export function motionAt(c: Clip, local: number, between = false): MotionNow {
   const m = c.motion;
-  const t = Math.max(0, Math.min(c.length - 1, local));
+  const t = Math.max(0, Math.min(c.length - 1, between ? local : Math.round(local)));
   return {
     x: valueAt(m.x, t),
     y: valueAt(m.y, t),
@@ -121,7 +152,7 @@ export function layerFor(p: Project, c: Clip, frame: number, fps: number, prefix
   if (src.kind === 'media') {
     const m = p.media.find((x) => x.id === src.media);
     if (m && m.kind === 'image') source = { kind: 'image', media: m };
-    else if (m && m.hasVideo) source = { kind: 'video', media: m, time: clampTime(sourceAt(c, local, fps), m) };
+    else if (m && m.hasVideo) source = remapped(c, m, clampTime(sourceAt(c, local, fps), m));
   } else if (src.kind === 'multicam') {
     const g = p.groups.find((x) => x.id === src.group);
     const a = g?.angles.find((x) => x.id === src.angle);
@@ -129,9 +160,10 @@ export function layerFor(p: Project, c: Clip, frame: number, fps: number, prefix
     if (a && m) {
       const t = sourceAt(c, local, fps) - a.offset;
       // A camera that wasn't recording then shows nothing.
-      if (t >= -0.5 / fps && t < m.duration) source = { kind: 'video', media: m, time: clampTime(t, m) };
+      if (t >= -0.5 / fps && t < m.duration) source = remapped(c, m, clampTime(t, m));
     }
   } else if (src.kind === 'text') source = { kind: 'text', text: src.text, local, length: c.length };
+  else if (src.kind === 'shape') source = { kind: 'shape', shape: src.shape, local, length: c.length };
   else if (src.kind === 'color') source = { kind: 'color', color: src.color };
   else if (src.kind === 'generator') source = { kind: 'generator', gen: src.gen, settings: src.settings, local, length: c.length, fps };
   else if (src.kind === 'sequence') {
@@ -142,7 +174,17 @@ export function layerFor(p: Project, c: Clip, frame: number, fps: number, prefix
         source = { kind: 'nested', ops: frameOps(p, inner, innerFrame, `${prefix}${c.id}/`, depth + 1, [...inside, inner.id]), background: inner.background };
     }
   }
-  return { clip: c, key: `${prefix}${c.id}`, fps, source, local, motion, effects };
+  const samples = blurSamples(c, local, motion);
+  return { clip: c, key: `${prefix}${c.id}`, fps, source, local, motion, effects, ...(samples ? { motionBlur: { base: motion, samples } } : {}) };
+}
+
+/** A remapped clip's picture on the file's frame grid: the nearest frame, or the two either side to blend or interpolate. */
+function remapped(c: Clip, m: MediaItem, time: number): LayerSource {
+  if (!c.remap) return { kind: 'video', media: m, time };
+  const s = sampleFrames(time, m.fps || 30, c.remap.sampling);
+  const last = Math.max(0, m.duration - 0.001);
+  if (s.next === null || s.next > last) return { kind: 'video', media: m, time: Math.min(last, s.time) };
+  return { kind: 'video', media: m, time: s.time, next: { time: s.next, mix: s.mix, mode: c.remap.sampling === 'flow' ? 'flow' : 'blend' } };
 }
 
 const clampTime = (t: number, m: MediaItem): number => Math.max(0, Math.min(Math.max(0, m.duration - 0.001), t));
@@ -209,7 +251,7 @@ export function videoNeeds(ops: Op[]): { media: MediaItem; time: number; key: st
   const out: { media: MediaItem; time: number; key: string; rate: number }[] = [];
   // One video per clip, so a clip keeps the same one through its transitions.
   const add = (l: Layer | null) => {
-    if (l?.source?.kind === 'video') out.push({ media: l.source.media, time: l.source.time, key: l.key, rate: l.clip.speed * (l.clip.reverse ? -1 : 1) });
+    if (l?.source?.kind === 'video') out.push({ media: l.source.media, time: l.source.time, key: l.key, rate: rateAt(l.clip, l.local) });
     if (l?.source?.kind === 'nested') out.push(...videoNeeds(l.source.ops));
   };
   for (const op of ops) {
