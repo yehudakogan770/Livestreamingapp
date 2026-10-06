@@ -46,7 +46,8 @@
   border-radius: 1.5cqh;
   background: #fff;
 }
-.aud__qr svg {
+.aud__qr svg,
+.aud__qr img {
   display: block;
   width: 100%;
   height: 100%;

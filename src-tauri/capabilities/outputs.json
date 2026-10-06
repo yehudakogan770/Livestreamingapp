@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "outputs",
+  "description": "What the output windows (the screens and the multiview) are allowed to do: only their own window. No file dialogs, updates or restarts.",
+  "windows": ["output-*"],
+  "permissions": [
+    "core:default",
+    "core:window:allow-set-fullscreen",
+    "core:window:allow-is-fullscreen",
+    "core:window:allow-close",
+    "core:webview:allow-set-webview-zoom"
+  ]
+}

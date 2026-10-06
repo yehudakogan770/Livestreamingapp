@@ -20,6 +20,7 @@ import { demoApply, demoTick } from './demo';
 import { channels } from './overlays';
 import { emptyRun } from './cues';
 import type { LibraryItem } from './library';
+import type { BrowserInfo } from './browser';
 
 /**
  * Lumora keeps its own copy of every imported file, so the event still works
@@ -298,7 +299,7 @@ export interface EngineClient {
 
   // ----- web pages -----
   /** Where web page frames are served; `captured` false: show pages directly. */
-  browserInfo(): Promise<{ port: number | null; captured: boolean }>;
+  browserInfo(): Promise<BrowserInfo>;
   /** Bring a web page's window to the front to click on it (or send it back). */
   browserPage(id: string, front: boolean): Promise<void>;
   browserNav(id: string, how: 'back' | 'forward' | 'reload'): Promise<void>;
@@ -806,7 +807,7 @@ class TauriClient implements EngineClient {
     await invoke('export_cancel', { session });
   }
 
-  browserInfo(): Promise<{ port: number | null; captured: boolean }> {
+  browserInfo(): Promise<BrowserInfo> {
     return invoke('browser_info');
   }
 
@@ -1226,7 +1227,7 @@ export class DemoClient implements EngineClient {
     return Promise.resolve();
   }
 
-  browserInfo(): Promise<{ port: number | null; captured: boolean }> {
+  browserInfo(): Promise<BrowserInfo> {
     return Promise.resolve({ port: null, captured: false });
   }
 

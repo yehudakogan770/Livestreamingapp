@@ -42,6 +42,9 @@ describe('cleaning error reports', () => {
     expect(scrub('token eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0In0.c2lnbmF0dXJlMTIz here')).toBe('token <token> here');
     expect(scrub('using sb_publishable_SW15wnTjCrTapvBZxXA5qg_E94To1FF')).toBe('using <key>');
     expect(scrub('id 9f8e7d6c5b4a39281706f5e4d3c2b1a0aabbccdd')).toBe('id <secret>');
+    // Twitch chat signs in with 'PASS oauth:…' (30 letters: too short for the catch-all).
+    expect(scrub('PASS oauth:abcdefghij0123456789klmnopqrst')).toBe('PASS oauth:<hidden>');
+    expect(scrub('client_secret=abc123def')).toBe('client_secret=<hidden>');
   });
 
   it('takes out network addresses', () => {

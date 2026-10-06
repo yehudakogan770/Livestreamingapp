@@ -15,6 +15,12 @@ export interface Access {
   studio: boolean;
   /** Checked a while ago (no internet now). */
   offline?: boolean;
+  /** Two-step sign-in (an authenticator app's code) is on for this account. */
+  twoStep?: boolean;
+  /** Two-step sign-in is on, but this session has not given the code yet. */
+  codeNeeded?: boolean;
+  /** This session gave the code (needed for the Lumora team's actions). */
+  aal2?: boolean;
 }
 
 export interface Profile {
@@ -27,6 +33,8 @@ export interface Profile {
   /** Missing before update-4-app-access.sql: then both apps. */
   lumora?: boolean;
   studio?: boolean;
+  /** Made in the Planner (a teammate), not asking for Lumora or Studio. Missing before update-6-security.sql. */
+  planner_only?: boolean;
   created_at?: string;
 }
 
@@ -47,31 +55,50 @@ export function accessFrom(p: Profile): Access {
   };
 }
 
-/** May this person open this app now? (Approved, and set up for it.) */
+/** May this person open this app now? (Approved, set up for it, and the code given if they use two-step sign-in.) */
 export function mayUse(a: Access, product: Product): boolean {
-  return a.state === 'approved' && (a.admin || a[product] !== false);
+  return a.state === 'approved' && (a.admin || a[product] !== false) && !a.codeNeeded;
 }
 
-/** How long Lumora keeps working without checking in (offline events). */
-export const OFFLINE_DAYS = 30;
+/**
+ * How long Lumora keeps working without checking in (offline events). With
+ * internet it always checks the account again when it starts.
+ */
+export const OFFLINE_DAYS = 7;
 const KEY = 'lumora.access';
 
 interface Saved extends Access {
   at: number;
 }
 
-/** The last answer for this person, if it is recent enough to use offline. */
-export function cachedAccess(saved: Saved | null, userId: string, now: number): Access | null {
+/**
+ * The last answer for this person, if it is recent enough to use offline (and,
+ * for an account with two-step sign-in, only if this session gave the code:
+ * `aal` is the session's level, 'aal1' or 'aal2').
+ */
+export function cachedAccess(saved: Saved | null, userId: string, now: number, aal: string | null = null): Access | null {
   if (!saved || saved.userId !== userId) return null;
-  if (now - saved.at > OFFLINE_DAYS * 86_400_000) return null;
+  if (!(now >= saved.at) || now - saved.at > OFFLINE_DAYS * 86_400_000) return null;
+  if (saved.twoStep && aal !== 'aal2') return null;
   const { at: _at, ...a } = saved;
   // Remembered before accounts had apps: both, as on the server.
-  return { ...a, lumora: a.lumora !== false, studio: a.studio !== false, offline: true };
+  return { ...a, lumora: a.lumora !== false, studio: a.studio !== false, offline: true, codeNeeded: false };
+}
+
+/** Is this "no internet" (so the remembered answer may be used), not a real answer from the server? */
+export function isOffline(e: unknown): boolean {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return true;
+  const name = e && typeof e === 'object' && 'name' in e ? String((e as { name: unknown }).name) : '';
+  if (/AuthRetryableFetchError|TypeError|AbortError/.test(name)) return true;
+  const m = e instanceof Error ? e.message : e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : String(e);
+  return /failed to fetch|fetch failed|networkerror|network error|load failed|network request failed|timed? ?out|ECONN|ENOTFOUND|EAI_AGAIN/i.test(m);
 }
 
 export function saveAccess(a: Access): void {
+  // An account with two-step sign-in is remembered only once the code was given.
+  if (a.codeNeeded) return;
   try {
-    localStorage.setItem(KEY, JSON.stringify({ ...a, offline: undefined, at: Date.now() }));
+    localStorage.setItem(KEY, JSON.stringify({ ...a, offline: undefined, codeNeeded: undefined, at: Date.now() }));
   } catch {
     // Not remembered: it is checked again next time.
   }

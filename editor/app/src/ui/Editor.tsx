@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
 import { useAccess } from '../../../../app/src/auth/Gate';
+import { AccountDialog } from '../../../../app/src/auth/AccountDialog';
 import { Doc, useDoc } from '../doc';
 import { addCaptionTrack, captionTracks, mergeCaptions, splitCaption } from '../model/captions';
 import { current, end } from '../model/seq';
@@ -102,6 +103,7 @@ export function Editor({
   const [saveProblem, setSaveProblem] = useState('');
   const [missing, setMissing] = useState<string[]>([]);
   const { access, signOut } = useAccess();
+  const [accountOpen, setAccountOpen] = useState(false);
   const [reportsOn, toggleReports] = useErrorReports();
   const userId = access?.userId ?? '';
   const userName = access ? access.name || access.email : '';
@@ -323,7 +325,7 @@ export function Editor({
             ]
           : []),
         { label: 'Close project', run: onClose },
-        ...(access ? ['sep' as const, { label: `Sign out (${access.email})`, run: signOut }] : []),
+        ...(access ? ['sep' as const, { label: 'My account…', run: () => setAccountOpen(true) }, { label: `Sign out (${access.email})`, run: signOut }] : []),
       ],
     ],
     [
@@ -662,6 +664,7 @@ export function Editor({
         />
       )}
       {u.dialog === 'history' && collab && <HistoryDialog collab={collab} onClose={() => ui.set({ dialog: null })} />}
+      {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {collab && <ConflictDialog collab={collab} onOpenShared={onOpenShared} />}
       {u.dialog === 'transcribe' && <TranscribeDialog doc={doc} ui={ui} />}
       <SmartDialogs doc={doc} engine={engine} ui={ui} />

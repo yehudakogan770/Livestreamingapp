@@ -4,6 +4,7 @@ import { useNow } from '../engine/useNow';
 import { useStage } from '../engine/CountdownContext';
 import { joinShown, takesTurns } from '../engine/join';
 import './SeatingView.css';
+import { QrImage } from './QrImage';
 
 /** The table finder on screen: the code to scan, or the list a page at a time. Mirrored in compositor.ts seating(). */
 export function SeatingView({ s, thumb = false }: { s: Seating; thumb?: boolean }) {
@@ -46,7 +47,7 @@ export function SeatingView({ s, thumb = false }: { s: Seating; thumb?: boolean 
       </h2>
       {s.showJoin && s.open && s.joinQr && !thumb ? (
         <div className="seat__join">
-          <div className="seat__qr" dangerouslySetInnerHTML={{ __html: j.qr }} />
+          <QrImage className="seat__qr" svg={j.qr} />
           <b>{j.label}</b>
           <small>{j.sub}</small>
         </div>

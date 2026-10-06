@@ -1013,3 +1013,21 @@ select.input {
     color: #555;
   }
 }
+
+/* Two-step sign-in (the code from an authenticator app) */
+.twostep {
+  display: grid;
+  gap: 10px;
+}
+.twostep h1 {
+  margin: 0;
+  font-size: 18px;
+}
+.twostep p.is-bad {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.twostep__code {
+  font-size: 18px;
+  letter-spacing: 0.15em;
+}

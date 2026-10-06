@@ -3,7 +3,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { authOn } from './config';
 import { TEST_BUILD } from '../e2e';
 import { mayUse, PRODUCT_NAME, type Access, type Product } from './access';
-import { checkAccess, onSignInChange, signIn, signOut, signUp } from './auth';
+import { checkAccess, MIN_PASSWORD, onSignInChange, signIn, signOut, signUp, supabase } from './auth';
+import { CodeForm } from './TwoStep';
 import '../views/ControlView.css';
 import './Gate.css';
 
@@ -30,14 +31,20 @@ export function Gate({ product, children }: { product: Product; children: ReactN
   // Once let in, Lumora stays open until the person signs out or closes it:
   // a sign-in that lapses mid-event (no internet when the session renews, a
   // server hiccup) must never close the control window and end the stream.
+  // If the server says the account changed (blocked, not approved, the app
+  // turned off), a note says so; the next start is checked again.
   const letIn = useRef(false);
+  const [changed, setChanged] = useState(false);
   const check = useCallback(() => {
-    const keep = (next: Gate) =>
-      setGate((prev) => {
-        const ok = next.s === 'in' && mayUse(next.access, product);
-        if (ok) letIn.current = true;
-        return letIn.current && !ok ? prev : next;
-      });
+    const keep = (next: Gate) => {
+      const ok = next.s === 'in' && mayUse(next.access, product);
+      if (ok) {
+        letIn.current = true;
+        setChanged(false);
+        setGate(next);
+      } else if (!letIn.current) setGate(next);
+      else if (next.s === 'in' && !next.access.offline && !next.access.codeNeeded) setChanged(true);
+    };
     checkAccess()
       .then((access) => keep(access ? { s: 'in', access } : { s: 'out' }))
       .catch((e: unknown) => keep({ s: 'error', message: e instanceof Error ? e.message : String(e) }));
@@ -51,15 +58,23 @@ export function Gate({ product, children }: { product: Product; children: ReactN
   }, [check, locked]);
   // Waiting for approval (or for this app to be turned on): look again every 20 seconds.
   const waiting = gate.s === 'in' && (gate.access.state === 'pending' || (gate.access.state === 'approved' && !mayUse(gate.access, product)));
+  const open = gate.s === 'in' && mayUse(gate.access, product);
   useEffect(() => {
-    if (!waiting) return;
+    if (!waiting || (gate.s === 'in' && gate.access.codeNeeded)) return;
     const t = setInterval(check, 20_000);
     return () => clearInterval(t);
-  }, [waiting, check]);
+  }, [waiting, gate, check]);
+  // While open: look again every 15 minutes (only ever to show the note).
+  useEffect(() => {
+    if (!open || !locked) return;
+    const t = setInterval(check, 15 * 60_000);
+    return () => clearInterval(t);
+  }, [open, locked, check]);
   const leave = useCallback(
     () =>
       void signOut().then(() => {
         letIn.current = false;
+        setChanged(false);
         setGate({ s: 'out' });
       }),
     [],
@@ -67,9 +82,26 @@ export function Gate({ product, children }: { product: Product; children: ReactN
 
   if (!locked) return <>{children}</>;
   if (gate.s === 'in' && mayUse(gate.access, product)) {
-    return <AccessCtx.Provider value={{ access: gate.access, signOut: leave }}>{children}</AccessCtx.Provider>;
+    return (
+      <AccessCtx.Provider value={{ access: gate.access, signOut: leave }}>
+        {changed && <AccessChanged product={product} onClose={() => setChanged(false)} />}
+        {children}
+      </AccessCtx.Provider>
+    );
   }
   return <GateScreen gate={gate} product={product} onCheck={check} onSignOut={leave} />;
+}
+
+/** The account changed while the app is open: it stays open (an event may be live), and says so. */
+function AccessChanged({ product, onClose }: { product: Product; onClose: () => void }) {
+  return (
+    <div className="gate__banner" role="status">
+      <span>Your access has changed; {PRODUCT_NAME[product]} will close the next time it starts. Contact the Lumora team if you think this is a mistake.</span>
+      <button type="button" className="icon" aria-label="Hide this note" onClick={onClose}>
+        ×
+      </button>
+    </div>
+  );
 }
 
 function GateScreen({ gate, product, onCheck, onSignOut }: { gate: Gate; product: Product; onCheck: () => void; onSignOut: () => void }) {
@@ -85,6 +117,15 @@ function GateScreen({ gate, product, onCheck, onSignOut }: { gate: Gate; product
         </div>
         {gate.s === 'checking' && <p className="gate__note">Checking your account…</p>}
         {gate.s === 'out' && <SignIn />}
+        {gate.s === 'in' && gate.access.codeNeeded && (
+          <CodeForm db={supabase()} onDone={onCheck}>
+            <div className="gate__row">
+              <button type="button" className="btn" onClick={onSignOut}>
+                Sign out
+              </button>
+            </div>
+          </CodeForm>
+        )}
         {gate.s === 'error' && (
           <>
             <h1>Can't check your account</h1>
@@ -99,7 +140,7 @@ function GateScreen({ gate, product, onCheck, onSignOut }: { gate: Gate; product
             </div>
           </>
         )}
-        {gate.s === 'in' && gate.access.state === 'pending' && (
+        {gate.s === 'in' && !gate.access.codeNeeded && gate.access.state === 'pending' && (
           <>
             <h1>Waiting for approval</h1>
             <p className="gate__note">
@@ -116,7 +157,7 @@ function GateScreen({ gate, product, onCheck, onSignOut }: { gate: Gate; product
             </div>
           </>
         )}
-        {gate.s === 'in' && gate.access.state === 'approved' && !mayUse(gate.access, product) && (
+        {gate.s === 'in' && !gate.access.codeNeeded && gate.access.state === 'approved' && !mayUse(gate.access, product) && (
           <>
             <h1>Your account isn't set up for {PRODUCT_NAME[product]}.</h1>
             <p className="gate__note">Contact the Lumora team for help.</p>
@@ -130,7 +171,7 @@ function GateScreen({ gate, product, onCheck, onSignOut }: { gate: Gate; product
             </div>
           </>
         )}
-        {gate.s === 'in' && gate.access.state === 'blocked' && (
+        {gate.s === 'in' && !gate.access.codeNeeded && gate.access.state === 'blocked' && (
           <>
             <h1>This account can't use Lumora</h1>
             <p className="gate__note">The Lumora team has turned off access for {gate.access.email}. If you think this is a mistake, contact them.</p>
@@ -196,10 +237,11 @@ function SignIn() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
-          minLength={6}
+          minLength={mode === 'in' ? undefined : MIN_PASSWORD}
           required
         />
       </label>
+      {mode === 'new' && <p className="gate__note small">At least {MIN_PASSWORD} characters, with letters and numbers.</p>}
       {message && <p className={`gate__msg${message.bad ? ' is-bad' : ''}`}>{message.text}</p>}
       <button type="submit" className="btn btn--primary gate__go" disabled={busy}>
         {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Make my account'}

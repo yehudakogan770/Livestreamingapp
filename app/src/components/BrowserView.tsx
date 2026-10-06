@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { BrowserInput } from '../engine/types/BrowserInput';
-import { browserInfo } from '../engine/browser';
+import { browserInfo, servedUrl, type BrowserInfo } from '../engine/browser';
 
 const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%' };
 
@@ -41,7 +41,7 @@ export function BrowserView({
   const info = useBrowserInfo(client);
   const blank = page.url === 'https://';
   if (!info || blank) return <div style={{ ...fill, background: audience ? 'transparent' : '#101216' }} data-kind="browser" />;
-  if (info.captured && info.port) return <FramePicture port={info.port} id={id} fit={fit} kind="browser" />;
+  if (info.captured && info.port) return <FramePicture info={info} id={id} fit={fit} kind="browser" />;
   if (thumb) {
     const host = page.url.replace(/^[a-z]+:\/\//i, '').split('/')[0];
     return (
@@ -57,10 +57,8 @@ export function BrowserView({
 }
 
 /** Live pictures served by the app (web pages, stream inputs). */
-export function FramePicture({ port, id, fit, kind }: { port: number; id: string; fit: 'cover' | 'contain'; kind: string }) {
-  return (
-    <img src={`http://127.0.0.1:${port}/stream/${encodeURIComponent(id)}`} alt="" draggable={false} style={{ ...fill, objectFit: fit }} data-kind={kind} />
-  );
+export function FramePicture({ info, id, fit, kind }: { info: BrowserInfo; id: string; fit: 'cover' | 'contain'; kind: string }) {
+  return <img src={servedUrl(info, `stream/${encodeURIComponent(id)}`) ?? ''} alt="" draggable={false} style={{ ...fill, objectFit: fit }} data-kind={kind} />;
 }
 
 /** A stream input (SRT, RTMP, RTSP, HLS…): black until its pictures arrive. */
@@ -81,7 +79,7 @@ export function StreamView({
   return (
     <div style={{ ...fill, background: audience ? 'transparent' : '#000' }} data-kind="stream">
       {info?.port ? (
-        <FramePicture port={info.port} id={id} fit={fit} kind="stream" />
+        <FramePicture info={info} id={id} fit={fit} kind="stream" />
       ) : (
         !audience &&
         info && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#8e9096', fontSize: 12 }}>{note}</span>

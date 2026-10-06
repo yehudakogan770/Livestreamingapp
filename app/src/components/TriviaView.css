@@ -41,7 +41,8 @@
   border-radius: 2cqh;
   background: #fff;
 }
-.trv__qr svg {
+.trv__qr svg,
+.trv__qr img {
   display: block;
   width: 100%;
   height: 100%;

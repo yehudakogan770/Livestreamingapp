@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accessFrom, cachedAccess, mayUse, OFFLINE_DAYS } from './access';
+import { accessFrom, cachedAccess, isOffline, mayUse, OFFLINE_DAYS } from './access';
 
 const p = { id: 'u1', email: 'a@b.c', name: 'Ann', approved: false, blocked: false, is_admin: false };
 
@@ -52,5 +52,36 @@ describe('who may use Lumora', () => {
     expect(cachedAccess(old as typeof saved, 'u1', 2_000)).toMatchObject({ lumora: true, studio: true });
     const waiting = { ...accessFrom({ ...p, lumora: true, studio: true }), at: 1_000 };
     expect(mayUse(cachedAccess(waiting, 'u1', 2_000)!, 'lumora')).toBe(false);
+  });
+
+  it('offline sign-in is remembered for 7 days, no more', () => {
+    expect(OFFLINE_DAYS).toBe(7);
+    const saved = { ...accessFrom({ ...p, approved: true }), at: 1_000 };
+    expect(cachedAccess(saved, 'u1', 1_000 + 7 * 86_400_000)).not.toBeNull();
+    expect(cachedAccess(saved, 'u1', 1_000 + 7 * 86_400_000 + 1)).toBeNull();
+    // A clock turned back does not stretch it.
+    expect(cachedAccess(saved, 'u1', 500)).toBeNull();
+  });
+
+  it('offline, an account with two-step sign-in needs a session that gave the code', () => {
+    const saved = { ...accessFrom({ ...p, approved: true }), twoStep: true, at: 1_000 };
+    expect(cachedAccess(saved, 'u1', 2_000, 'aal1')).toBeNull();
+    expect(cachedAccess(saved, 'u1', 2_000, null)).toBeNull();
+    expect(cachedAccess(saved, 'u1', 2_000, 'aal2')).toMatchObject({ state: 'approved', offline: true, codeNeeded: false });
+  });
+
+  it('a code still to give keeps the app closed', () => {
+    const a = { ...accessFrom({ ...p, approved: true }), twoStep: true, codeNeeded: true };
+    expect(mayUse(a, 'lumora')).toBe(false);
+    expect(mayUse({ ...a, codeNeeded: false }, 'lumora')).toBe(true);
+  });
+
+  it('only "no internet" falls back to the remembered answer; a real answer from the server does not', () => {
+    expect(isOffline(new TypeError('Failed to fetch'))).toBe(true);
+    expect(isOffline({ name: 'AuthRetryableFetchError', message: 'Failed to fetch' })).toBe(true);
+    expect(isOffline({ message: 'TypeError: NetworkError when attempting to fetch resource.' })).toBe(true);
+    expect(isOffline({ code: 'PGRST116', message: 'JSON object requested, multiple (or no) rows returned' })).toBe(false);
+    expect(isOffline({ name: 'AuthApiError', message: 'User from sub claim in JWT does not exist' })).toBe(false);
+    expect(isOffline(new Error('permission denied for table profiles'))).toBe(false);
   });
 });

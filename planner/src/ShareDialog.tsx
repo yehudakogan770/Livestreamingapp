@@ -1,11 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { invite, people, removePerson, setRole, type Person } from './api';
+import { cancelInvitation, invitations, invite, people, removePerson, setRole, type Invitation, type Person } from './api';
 import type { Plan, Role } from './model';
 import { db } from './session';
 
 /** Who is on the plan; the owner adds people by email as editors or viewers. */
 export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan; role: Role | null; me: string; onClose: () => void; onChanged: () => void }) {
   const [list, setList] = useState<Person[] | null>(null);
+  const [waiting, setWaiting] = useState<Invitation[]>([]);
+  const [note, setNote] = useState('');
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState<'editor' | 'viewer'>('editor');
   const [error, setError] = useState('');
@@ -13,8 +15,11 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
   const owner = role === 'owner';
 
   const refresh = () =>
-    people(db(), plan.id)
-      .then(setList)
+    Promise.all([people(db(), plan.id), owner ? invitations(db(), plan.id) : Promise.resolve([])])
+      .then(([p, w]) => {
+        setList(p);
+        setWaiting(w);
+      })
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   useEffect(() => {
     void refresh();
@@ -26,6 +31,7 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
   const run = (p: Promise<void>) => {
     setBusy(true);
     setError('');
+    setNote('');
     p.then(() => refresh())
       .then(onChanged)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
@@ -34,7 +40,14 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
   const add = (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
-    run(invite(db(), plan.id, email, newRole).then(() => setEmail('')));
+    const to = email.trim();
+    run(
+      invite(db(), plan.id, to, newRole).then((r) => {
+        setEmail('');
+        if (r.pending)
+          setNote(`${to} has no account yet. Ask them to open the Planner and choose “Create an account” with this email; the plan is theirs to see then.`);
+      }),
+    );
   };
 
   return (
@@ -52,7 +65,7 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
               <input
                 className="input grow"
                 type="email"
-                placeholder="Teammate’s email (their Lumora account)"
+                placeholder="Teammate’s email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-label="Email"
@@ -69,6 +82,7 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
             <p className="muted small">Only the owner of the plan can share it with more people.</p>
           )}
           {error && <p className="warn">{error}</p>}
+          {note && <p className="small">{note}</p>}
           <table className="people">
             <tbody>
               {list === null && (
@@ -112,11 +126,25 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
                   </td>
                 </tr>
               ))}
+              {waiting.map((w) => (
+                <tr key={w.email}>
+                  <td>
+                    <b>{w.email}</b>
+                    <div className="muted small">Invited · no account yet</div>
+                  </td>
+                  <td className="nowrap">{w.role === 'editor' ? 'Can edit' : 'Can view'}</td>
+                  <td className="nowrap">
+                    <button type="button" className="link" disabled={busy} onClick={() => run(cancelInvitation(db(), plan.id, w.email))}>
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
           <p className="muted small">
-            Editors change the plan and its cues; viewers read, print and comment. Everyone on the plan can load it into Lumora. Teammates need an approved
-            Lumora account.
+            Editors change the plan and its cues; viewers read, print and comment. Everyone with Lumora can load it into Lumora. Teammates need only an account
+            (they can make one in the Planner); they see just the plans shared with them.
           </p>
         </div>
       </div>

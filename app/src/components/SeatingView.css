@@ -41,7 +41,8 @@
   border-radius: 2cqh;
   background: #fff;
 }
-.seat__qr svg {
+.seat__qr svg,
+.seat__qr img {
   display: block;
   width: 100%;
   height: 100%;

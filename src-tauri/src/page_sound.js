@@ -4,7 +4,7 @@
 (() => {
   if (window.top !== window || window.__lumoraSound) return;
   window.__lumoraSound = true;
-  const url = 'http://127.0.0.1:__PORT__/audio-in/' + encodeURIComponent(__ID__);
+  const url = 'http://127.0.0.1:__PORT__/audio-in/' + encodeURIComponent(__ID__) + '?t=' + encodeURIComponent(__KEY__);
   let ctx = null;
   let mix = null;
   const hooked = new WeakMap();

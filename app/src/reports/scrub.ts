@@ -7,7 +7,7 @@
 export const LIMITS = { message: 1000, stack: 8000, line: 400, description: 4000 } as const;
 
 const NAME_KEYS =
-  'password|passwd|pwd|pass|passphrase|secret|token|access_token|refresh_token|id_token|api[_-]?key|apikey|auth|authorization|stream[_-]?key|streamkey|key|pin|streamid|session|cookie|signature|sig';
+  'password|passwd|pwd|pass|passphrase|secret|token|oauth|client[_-]?secret|access_token|refresh_token|id_token|api[_-]?key|apikey|auth|authorization|stream[_-]?key|streamkey|key|pin|streamid|session|cookie|signature|sig';
 
 const RULES: [RegExp, string | ((...m: string[]) => string)][] = [
   // Addresses that carry a file's path inside them (asset protocol, file://).

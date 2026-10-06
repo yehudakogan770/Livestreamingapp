@@ -4,6 +4,7 @@ import { useNow } from '../engine/useNow';
 import { useStage } from '../engine/CountdownContext';
 import { joinShown, takesTurns } from '../engine/join';
 import './TriviaView.css';
+import { QrImage } from './QrImage';
 
 /** A trivia game on screen: join, the question, the answer, the leaderboard. Mirrored in compositor.ts trivia(). */
 export function TriviaView({ t, thumb = false }: { t: Trivia; thumb?: boolean }) {
@@ -17,7 +18,7 @@ export function TriviaView({ t, thumb = false }: { t: Trivia; thumb?: boolean })
         <h2 className="trv__title">{t.title}</h2>
         {t.showJoin && t.joinQr && !thumb ? (
           <div className="trv__join">
-            <div className="trv__qr" dangerouslySetInnerHTML={{ __html: j.qr }} />
+            <QrImage className="trv__qr" svg={j.qr} />
             <b>{j.label}</b>
             <small>{j.sub}</small>
           </div>

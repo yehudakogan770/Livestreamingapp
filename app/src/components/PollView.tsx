@@ -4,6 +4,7 @@ import { useStage } from '../engine/CountdownContext';
 import { joinShown, takesTurns } from '../engine/join';
 import { useNow } from '../engine/useNow';
 import './PollView.css';
+import { QrImage } from './QrImage';
 
 function PollJoin({ url, qr }: { url: string; qr: string }) {
   const wifi = useStage()?.event.wifi;
@@ -11,7 +12,7 @@ function PollJoin({ url, qr }: { url: string; qr: string }) {
   const j = joinShown(url, qr, 'Scan to vote', wifi, now);
   return (
     <div className="poll__join">
-      <div className="poll__qr" dangerouslySetInnerHTML={{ __html: j.qr }} />
+      <QrImage className="poll__qr" svg={j.qr} />
       <span>{j.label}</span>
       <small>{j.sub}</small>
     </div>

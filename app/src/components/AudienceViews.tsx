@@ -11,6 +11,7 @@ import { useNow } from '../engine/useNow';
 import { useStage } from '../engine/CountdownContext';
 import { joinShown, takesTurns } from '../engine/join';
 import './AudienceViews.css';
+import { QrImage } from './QrImage';
 
 /** Confetti over the whole frame (the recorder draws the same pieces). */
 function Confetti({ t }: { t: number }) {
@@ -40,7 +41,7 @@ function Join({ url, qr, label }: { url: string; qr: string; label: string }) {
   const j = joinShown(url, qr, label, wifi, now);
   return (
     <div className="aud__join">
-      <div className="aud__qr" dangerouslySetInnerHTML={{ __html: j.qr }} />
+      <QrImage className="aud__qr" svg={j.qr} />
       <span>{j.label}</span>
       <small>{j.sub}</small>
     </div>
