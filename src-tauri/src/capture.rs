@@ -1,26 +1,36 @@
 //! Recording and streaming.
 //!
 //! The control window draws the Live Screen (with its sound) and encodes it
-//! with the WebView's own video encoder (hardware where the computer has
-//! one). The encoded stream arrives here in chunks, one session per
-//! recording or stream:
+//! with the WebView's own video encoder (MediaRecorder: the graphics card
+//! through Windows Media Foundation where it can, else the processor). Only
+//! compressed video crosses from the WebView to here: a 4K picture at 40
+//! Mbit/s is 5 MB a second, while raw 4K60 pictures would be 2 GB a second,
+//! far more than a WebView can hand over. The encoded stream arrives in
+//! chunks, one session per recording or stream:
 //!
 //! - **Recording**: chunks go straight into a file as they arrive, so a crash
 //!   or power cut loses at most a second. When the recording stops, it is
-//!   turned into an `.mp4` if FFmpeg is available (no re-encoding).
+//!   turned into an `.mp4` if FFmpeg is available (no re-encoding). With
+//!   "Encode recordings" on, FFmpeg encodes it again at constant quality with
+//!   the chosen encoder (see `encode.rs`) into an `.mkv` instead.
 //! - **Streaming**: chunks are piped into FFmpeg, which sends them to every
 //!   chosen destination (YouTube, Facebook, any RTMP server) at once. One
-//!   destination failing never stops the others.
+//!   destination failing never stops the others. Destinations with their own
+//!   bitrate get their own FFmpeg (fed the same chunks), so one of those
+//!   failing never stops the rest either. FFmpeg encodes again (NVENC, Quick
+//!   Sync, AMF or x264) when the stream is smaller than the picture, has its
+//!   own bitrate, or a hardware encoder is there for a steady bitrate.
 //!
-//! If a session fails (the network drops, the disk fills up), the status
-//! says so and the control window starts a new one.
+//! If a session fails (the network drops, the disk fills up, the graphics
+//! card's encoder stops), the status says so and the control window starts a
+//! new one; a hardware encoder that failed is replaced by the processor's.
 
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, Command, Stdio};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::thread;
@@ -28,6 +38,7 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
+use crate::encode::{self, Codec, EncoderChoice, Family, Preset, Rate, StreamNeed, VideoEncode};
 use crate::store::write_file_atomic;
 
 const FILE: &str = "capture.json";
@@ -38,6 +49,8 @@ const MAX_QUEUED: u64 = 64 * 1024 * 1024;
 const STALL: Duration = Duration::from_secs(20);
 /// After stop, how long FFmpeg gets to take the last chunks before it is ended.
 const STOP_GRACE: Duration = Duration::from_secs(10);
+/// The same for a recording FFmpeg encodes (it may be a few seconds behind).
+const ENCODE_GRACE: Duration = Duration::from_secs(30);
 /// How many recent failures the status keeps (several can happen at once).
 const FAILURES_KEPT: usize = 8;
 
@@ -62,6 +75,8 @@ pub struct Destination {
     /// Where live captions are sent (YouTube: Studio → stream settings →
     /// closed captions → "Post captions to URL"). Viewers turn them on and off.
     pub captions_url: String,
+    /// Its own video bitrate in kbit/s (`None`: the stream's).
+    pub video_kbps: Option<u32>,
 }
 
 impl Default for Destination {
@@ -74,6 +89,7 @@ impl Default for Destination {
             enabled: true,
             vertical: false,
             captions_url: String::new(),
+            video_kbps: None,
         }
     }
 }
@@ -110,9 +126,44 @@ pub enum Quality {
     P1440x60,
     #[serde(rename = "2160p")]
     P2160,
+    #[serde(rename = "2160p60")]
+    P2160x60,
     /// 1080 × 1920, for Shorts, Reels and TikTok.
     #[serde(rename = "vertical")]
     Vertical,
+}
+
+impl Quality {
+    /// Width, height and frames a second (mirrors QUALITIES in app/src/broadcast/recorder.ts).
+    #[must_use]
+    pub fn size(self) -> (u32, u32, u32) {
+        match self {
+            Quality::P720 => (1280, 720, 30),
+            Quality::P720x60 => (1280, 720, 60),
+            Quality::P1080 => (1920, 1080, 30),
+            Quality::P1080x60 => (1920, 1080, 60),
+            Quality::P1440 => (2560, 1440, 30),
+            Quality::P1440x60 => (2560, 1440, 60),
+            Quality::P2160 => (3840, 2160, 30),
+            Quality::P2160x60 => (3840, 2160, 60),
+            Quality::Vertical => (1080, 1920, 30),
+        }
+    }
+
+    /// The bitrate that suits it, kbit/s.
+    #[must_use]
+    pub fn kbps(self) -> u32 {
+        match self {
+            Quality::P720 => 3000,
+            Quality::P720x60 => 4500,
+            Quality::P1080 | Quality::Vertical => 6000,
+            Quality::P1080x60 => 9000,
+            Quality::P1440 => 12000,
+            Quality::P1440x60 => 18000,
+            Quality::P2160 => 25000,
+            Quality::P2160x60 => 40000,
+        }
+    }
 }
 
 /// Which mix a recording hears.
@@ -140,6 +191,10 @@ pub struct CaptureSettings {
     pub record_mix: RecordMix,
     /// Also record each camera to its own file.
     pub iso: bool,
+    /// Inputs (source ids) left out of the own-file recording.
+    pub iso_skip: Vec<String>,
+    /// Bitrate of each camera's own file, kbit/s.
+    pub iso_kbps: u32,
     /// Save a chapter list (what was on air when) with each recording.
     pub chapters: bool,
     pub destinations: Vec<Destination>,
@@ -147,6 +202,20 @@ pub struct CaptureSettings {
     pub ndi: bool,
     /// The NDI source's name (shown as "COMPUTER (name)").
     pub ndi_name: String,
+    /// Which encoder FFmpeg uses when it encodes.
+    pub encoder: EncoderChoice,
+    /// Speed against quality.
+    pub preset: Preset,
+    /// The stream's picture when it differs from the recording's (e.g. a 4K
+    /// recording streamed at 1080p). `None`: the same.
+    pub stream_quality: Option<Quality>,
+    /// The stream's bitrate when it differs from the recording's, kbit/s.
+    pub stream_kbps: Option<u32>,
+    /// FFmpeg encodes recordings again with the encoder above, at constant
+    /// quality (off: the WebView's encode is saved as it is, which is safest).
+    pub record_encode: bool,
+    /// The format of recordings FFmpeg encodes.
+    pub record_codec: Codec,
 }
 
 impl Default for CaptureSettings {
@@ -159,10 +228,18 @@ impl Default for CaptureSettings {
             record_mix: RecordMix::Stream,
             // Every camera and microphone in its own file, for editing.
             iso: true,
+            iso_skip: Vec::new(),
+            iso_kbps: 8000,
             chapters: true,
             destinations: Vec::new(),
             ndi: false,
             ndi_name: "Lumora".to_owned(),
+            encoder: EncoderChoice::Auto,
+            preset: Preset::Balanced,
+            stream_quality: None,
+            stream_kbps: None,
+            record_encode: false,
+            record_codec: Codec::H264,
         }
     }
 }
@@ -171,6 +248,16 @@ impl CaptureSettings {
     fn cleaned(mut self) -> Self {
         self.video_kbps = self.video_kbps.clamp(500, 80_000);
         self.audio_kbps = self.audio_kbps.clamp(64, 320);
+        self.iso_kbps = self.iso_kbps.clamp(1000, 50_000);
+        self.stream_kbps = self.stream_kbps.map(|k| k.clamp(500, 80_000));
+        // Only ever smaller than the picture (scaling up adds nothing), never vertical.
+        let picture = self.quality;
+        self.stream_quality = self.stream_quality.filter(|q| {
+            *q != Quality::Vertical
+                && picture != Quality::Vertical
+                && *q != picture
+                && q.size().1 <= picture.size().1
+        });
         self.folder = self.folder.filter(|f| !f.trim().is_empty());
         self.ndi_name = self.ndi_name.trim().chars().take(60).collect();
         if self.ndi_name.is_empty() {
@@ -181,6 +268,10 @@ impl CaptureSettings {
                 d.id = format!("dest-{}", i + 1);
             }
             d.name = d.name.trim().chars().take(40).collect();
+            d.video_kbps = d
+                .video_kbps
+                .filter(|k| *k > 0)
+                .map(|k| k.clamp(500, 80_000));
         }
         self
     }
@@ -214,7 +305,32 @@ pub struct Running {
     pub bytes: u64,
     /// How fast FFmpeg keeps up (1.0 = real time; below 0.95 the network is too slow).
     pub speed: Option<f32>,
+    /// The video encoder doing the work, for the operator ("NVIDIA NVENC (h264_nvenc)").
+    pub encoder: String,
+    /// The bitrate the WebView should encode at, kbit/s (`None`: the settings').
+    pub source_kbps: Option<u32>,
+    /// Destinations that dropped out while the rest carry on.
+    pub dropped: Vec<String>,
 }
+
+impl Running {
+    fn new(session: u64, path: Option<String>, destinations: Vec<String>, encoder: String) -> Self {
+        Running {
+            session,
+            started_at: now_ms(),
+            path,
+            destinations,
+            bytes: 0,
+            speed: None,
+            encoder,
+            source_kbps: None,
+            dropped: Vec::new(),
+        }
+    }
+}
+
+/// What the WebView's own encoder is called (it is used as it is).
+const WEBVIEW_ENCODER: &str = "The app’s own encoder (WebView2), saved as it is";
 
 /// Why a recording or stream stopped by itself.
 #[derive(Debug, Clone, Serialize)]
@@ -225,6 +341,9 @@ pub struct Failure {
     pub message: String,
     /// It never got going (the server was never reached): not worth retrying by itself.
     pub never_started: bool,
+    /// The graphics card's encoder failed; the next start uses the processor
+    /// (worth starting again straight away, even for a recording).
+    pub fallback: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -245,6 +364,12 @@ pub struct CaptureStatus {
     pub failure: Option<Failure>,
     /// The last few failures, oldest first (`failure` is the newest).
     pub failures: Vec<Failure>,
+    /// Hardware encoders that worked in the start-up check (h264_nvenc, …).
+    pub hw_encoders: Vec<String>,
+    /// The start-up check of the hardware encoders has finished.
+    pub hw_checked: bool,
+    /// Hardware encoders that failed since Lumora started (not used again).
+    pub hw_failed: Vec<Family>,
 }
 
 // ---------------------------------------------------------------------------
@@ -291,6 +416,17 @@ impl Shared {
     }
 
     fn fail_how(&self, kind: Kind, session: u64, message: String, never_started: bool) {
+        self.fail_with(kind, session, message, never_started, false);
+    }
+
+    fn fail_with(
+        &self,
+        kind: Kind,
+        session: u64,
+        message: String,
+        never_started: bool,
+        fallback: bool,
+    ) {
         eprintln!("lumora: {kind:?} {session} stopped: {message}");
         self.update(|s| {
             let slot = Shared::slot(s, kind);
@@ -301,6 +437,7 @@ impl Shared {
                     session,
                     message,
                     never_started,
+                    fallback,
                 };
                 // Kept in a list too: the stream and its vertical version often
                 // fail together, and each must be seen to be retried.
@@ -308,6 +445,27 @@ impl Shared {
                 let extra = s.failures.len().saturating_sub(FAILURES_KEPT);
                 s.failures.drain(..extra);
                 s.failure = Some(f);
+            }
+        });
+    }
+
+    /// A graphics card's encoder failed: say so, and never use it again this time.
+    fn hw_failed(&self, family: Family) {
+        self.update(|s| {
+            if !s.hw_failed.contains(&family) {
+                s.hw_failed.push(family);
+            }
+        });
+    }
+
+    /// Change the running session (if it is still this one).
+    fn running(&self, kind: Kind, session: u64, f: impl FnOnce(&mut Running)) {
+        self.update(|s| {
+            if let Some(r) = Shared::slot(s, kind)
+                .as_mut()
+                .filter(|r| r.session == session)
+            {
+                f(r);
             }
         });
     }
@@ -321,6 +479,8 @@ struct Session {
     stopping: Arc<AtomicBool>,
     /// The FFmpegs it feeds (ended if they are stuck after stop).
     pids: Vec<u32>,
+    /// How long they get after stop.
+    grace: Duration,
     /// Set once everything has finished.
     done: Arc<AtomicBool>,
 }
@@ -373,6 +533,21 @@ impl Capture {
 
     pub fn status(&self) -> CaptureStatus {
         lock(&self.shared.status).clone()
+    }
+
+    /// The hardware encoders that work here (from the start-up check).
+    pub fn set_hw_encoders(&self, working: Vec<String>) {
+        eprintln!("lumora: hardware encoders {working:?}");
+        self.shared.update(|s| {
+            s.hw_encoders = working;
+            s.hw_checked = true;
+        });
+    }
+
+    /// The encoder FFmpeg would use now for this codec.
+    fn family(&self, settings: &CaptureSettings, codec: Codec) -> Family {
+        let s = lock(&self.shared.status);
+        encode::pick(settings.encoder, codec, &s.hw_encoders, &s.hw_failed)
     }
 
     pub fn settings(&self) -> CaptureSettings {
@@ -431,7 +606,7 @@ impl Capture {
         let session = self.next.fetch_add(1, Ordering::SeqCst);
         let stopping = Arc::new(AtomicBool::new(false));
         let (out, running, finish): (Box<dyn Write + Send>, Running, Finish) = match kind {
-            Kind::Record => self.open_recording(session, mime, name)?,
+            Kind::Record => self.open_recording(session, mime, name, &stopping)?,
             Kind::Stream | Kind::Vertical => {
                 self.open_stream(kind, session, mime, &stopping, rehearse)?
             }
@@ -440,6 +615,14 @@ impl Capture {
         let (tx, rx) = mpsc::channel::<Vec<u8>>();
         let queued = Arc::new(AtomicU64::new(0));
         let pids = finish.pids();
+        let grace = if matches!(finish, Finish::Encoded { .. }) {
+            ENCODE_GRACE
+        } else {
+            STOP_GRACE
+        };
+        // Writing into a file: a failure is the disk's. Into FFmpeg: FFmpeg's
+        // own reader says why it stopped.
+        let report_write = matches!(finish, Finish::Recording(_));
         let done = Arc::new(AtomicBool::new(false));
         {
             let shared = Arc::clone(&self.shared);
@@ -450,8 +633,8 @@ impl Capture {
             thread::Builder::new()
                 .name(format!("lumora-{kind:?}-{session}").to_lowercase())
                 .spawn(move || {
-                    write_loop(&shared, kind, session, out, &rx, &queued);
-                    finish.run(&shared, ffmpeg.as_deref(), &mime);
+                    write_loop(&shared, kind, session, out, &rx, &queued, report_write);
+                    finish.run(&shared, ffmpeg.as_deref(), &mime, &done);
                     done.store(true, Ordering::SeqCst);
                 })
                 .map_err(|e| e.to_string())?;
@@ -464,6 +647,7 @@ impl Capture {
                 queued,
                 stopping,
                 pids,
+                grace,
                 done,
             },
         );
@@ -526,9 +710,9 @@ impl Capture {
         // An FFmpeg stuck on a dead connection never takes the last chunks:
         // end it, so neither it nor the write loop is left behind.
         if !s.pids.is_empty() {
-            let (pids, done) = (s.pids, s.done);
+            let (pids, done, grace) = (s.pids, s.done, s.grace);
             thread::spawn(move || {
-                let deadline = Instant::now() + STOP_GRACE;
+                let deadline = Instant::now() + grace;
                 while Instant::now() < deadline && !done.load(Ordering::SeqCst) {
                     thread::sleep(Duration::from_millis(100));
                 }
@@ -558,6 +742,7 @@ impl Capture {
         session: u64,
         mime: &str,
         name: &str,
+        stopping: &Arc<AtomicBool>,
     ) -> Result<(Box<dyn Write + Send>, Running, Finish), String> {
         let folder = self.folder();
         fs::create_dir_all(&folder).map_err(|e| {
@@ -566,6 +751,12 @@ impl Capture {
                 folder.display()
             )
         })?;
+        let settings = self.settings();
+        if let (Some(ffmpeg), true) = (self.ffmpeg.as_ref(), settings.record_encode) {
+            let e = plan_record(&settings, self.family(&settings, settings.record_codec));
+            return self
+                .open_encoded_recording(ffmpeg, session, name, &folder, &settings, e, stopping);
+        }
         let ext = if mime.contains("matroska") {
             "mkv"
         } else {
@@ -574,15 +765,83 @@ impl Capture {
         let path = unique_path(&folder, &file_name(name), ext);
         let file = File::create(&path)
             .map_err(|e| format!("Can't create the recording file {}: {e}", path.display()))?;
-        let running = Running {
+        let running = Running::new(
             session,
-            started_at: now_ms(),
-            path: Some(path.to_string_lossy().into_owned()),
-            destinations: Vec::new(),
-            bytes: 0,
-            speed: None,
-        };
+            Some(path.to_string_lossy().into_owned()),
+            Vec::new(),
+            WEBVIEW_ENCODER.to_owned(),
+        );
         Ok((Box::new(file), running, Finish::Recording(path)))
+    }
+
+    /// A recording FFmpeg encodes again at constant quality (into an .mkv,
+    /// which stays playable whatever happens).
+    #[allow(clippy::too_many_arguments)]
+    fn open_encoded_recording(
+        &self,
+        ffmpeg: &Path,
+        session: u64,
+        name: &str,
+        folder: &Path,
+        settings: &CaptureSettings,
+        e: VideoEncode,
+        stopping: &Arc<AtomicBool>,
+    ) -> Result<(Box<dyn Write + Send>, Running, Finish), String> {
+        let path = unique_path(folder, &file_name(name), "mkv");
+        let speed_to = Arc::clone(&self.shared);
+        let end_to = Arc::clone(&self.shared);
+        let family = e.family;
+        let (child, stdin) = spawn_watched(
+            ffmpeg,
+            &record_args(&e, &path),
+            self.stall,
+            stopping,
+            move |speed| speed_to.running(Kind::Record, session, |r| r.speed = speed),
+            |_| {},
+            move |_sent, said| {
+                let detail = ffmpeg_detail(&said);
+                if family.hardware() && encode::encoder_failed(&said) {
+                    end_to.hw_failed(family);
+                    end_to.fail_with(
+                        Kind::Record,
+                        session,
+                        format!(
+                            "The {} encoder stopped ({detail}). The recording so far is kept; \
+                             Lumora goes on recording with the processor (x264) in a new file.",
+                            family.label()
+                        ),
+                        false,
+                        true,
+                    );
+                } else {
+                    end_to.fail(
+                        Kind::Record,
+                        session,
+                        format!("The recording encoder stopped ({detail}). The recording so far is kept."),
+                    );
+                }
+            },
+        )?;
+        let mut running = Running::new(
+            session,
+            Some(path.to_string_lossy().into_owned()),
+            Vec::new(),
+            format!(
+                "{} ({}), constant quality",
+                family.label(),
+                family.encoder(e.codec)
+            ),
+        );
+        running.source_kbps = Some(encode::source_kbps(
+            settings.video_kbps,
+            settings.quality.kbps(),
+        ));
+        let hevc = family.encoder(e.codec).starts_with("hevc");
+        Ok((
+            Box::new(StdinWriter(stdin)),
+            running,
+            Finish::Encoded { child, path, hevc },
+        ))
     }
 
     fn open_stream(
@@ -620,81 +879,129 @@ impl Capture {
         if !rehearse {
             preflight(&dests)?;
         }
-        let targets: Vec<String> = if rehearse {
+        let targets: Vec<(String, String, Option<u32>)> = if rehearse {
             Vec::new()
         } else {
-            dests.iter().map(|d| d.target()).collect()
+            dests
+                .iter()
+                .map(|d| (d.name.clone(), d.target(), d.video_kbps))
+                .collect()
         };
-        let mut child = quiet(ffmpeg)
-            .args(stream_args(
-                mime,
-                settings.video_kbps,
-                settings.audio_kbps,
-                &targets,
-            ))
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| format!("FFmpeg could not start: {e}"))?;
-        let stdin = child.stdin.take().ok_or("FFmpeg could not start")?;
-        let errors = Arc::new(Mutex::new(String::new()));
-        let pid = child.id();
-        if let Some(err) = child.stderr.take() {
-            let errors = Arc::clone(&errors);
-            thread::spawn(move || {
-                for line in BufReader::new(err).lines().map_while(Result::ok) {
-                    // After a failed start FFmpeg can hang (busy, never exiting):
-                    // end it, so the failure is reported and nothing is left running.
-                    if gave_up(&line) {
-                        thread::spawn(move || {
-                            thread::sleep(Duration::from_secs(2));
-                            kill_pid(pid);
+        let family = self.family(&settings, Codec::H264);
+        let plan = plan_stream(&settings, kind, mime, family, &targets);
+        let n = plan.groups.len();
+        let remaining = Arc::new(AtomicUsize::new(n));
+        let any_sent = Arc::new(AtomicBool::new(false));
+        let speeds = Arc::new(Mutex::new(vec![None::<f32>; n]));
+        let pids = Arc::new(Mutex::new(Vec::<u32>::new()));
+        let mut children = Vec::new();
+        let mut inputs = Vec::new();
+        for (i, (group, enc)) in plan.groups.iter().enumerate() {
+            let args = stream_args(group, enc.as_ref(), settings.audio_kbps);
+            let on_speed = {
+                let (shared, speeds) = (Arc::clone(&self.shared), Arc::clone(&speeds));
+                move |speed: Option<f32>| {
+                    let slowest = {
+                        let mut s = lock(&speeds);
+                        s[i] = speed;
+                        s.iter().flatten().copied().reduce(f32::min)
+                    };
+                    shared.running(kind, session, |r| r.speed = slowest);
+                }
+            };
+            let on_line = {
+                let (shared, names) = (Arc::clone(&self.shared), group.names.clone());
+                move |line: &str| {
+                    if let Some(name) = encode::dropped_output(line).and_then(|k| names.get(k)) {
+                        eprintln!("lumora: {kind:?} {session}: {name} dropped out");
+                        let name = name.clone();
+                        shared.running(kind, session, |r| {
+                            if !r.dropped.contains(&name) {
+                                r.dropped.push(name);
+                            }
                         });
                     }
-                    let mut e = lock(&errors);
-                    // Keep the last few lines, to explain a failure.
-                    e.push_str(&line);
-                    e.push('\n');
-                    if e.len() > 4000 {
-                        let cut = e.len() - 2000;
-                        let cut = (cut..e.len()).find(|&i| e.is_char_boundary(i)).unwrap_or(0);
-                        e.drain(..cut);
+                }
+            };
+            let on_end = {
+                let shared = Arc::clone(&self.shared);
+                let (remaining, any_sent, pids) = (
+                    Arc::clone(&remaining),
+                    Arc::clone(&any_sent),
+                    Arc::clone(&pids),
+                );
+                let names = group.names.clone();
+                let hw = enc.is_some_and(|e| e.family.hardware());
+                move |sent: bool, said: String| {
+                    if sent {
+                        any_sent.store(true, Ordering::SeqCst);
+                    }
+                    if hw && encode::encoder_failed(&said) {
+                        // Everything starts again with the processor's encoder.
+                        shared.hw_failed(family);
+                        shared.fail_with(
+                            kind,
+                            session,
+                            format!(
+                                "The {} encoder stopped ({}). Lumora switched to the processor \
+                                 (x264) and is starting the stream again.",
+                                family.label(),
+                                ffmpeg_detail(&said)
+                            ),
+                            false,
+                            true,
+                        );
+                        lock(&pids).iter().copied().for_each(kill_pid);
+                    } else if remaining.fetch_sub(1, Ordering::SeqCst) == 1 {
+                        shared.fail_how(
+                            kind,
+                            session,
+                            explain_stream_error(&said),
+                            !any_sent.load(Ordering::SeqCst),
+                        );
+                    } else {
+                        // The other destinations carry on.
+                        eprintln!("lumora: {kind:?} {session}: {names:?} stopped: {said}");
+                        shared.running(kind, session, |r| {
+                            for name in &names {
+                                if !r.dropped.contains(name) {
+                                    r.dropped.push(name.clone());
+                                }
+                            }
+                        });
                     }
                 }
-            });
-        }
-        if let Some(out) = child.stdout.take() {
-            let shared = Arc::clone(&self.shared);
-            let errors = Arc::clone(&errors);
-            let stopping = Arc::clone(stopping);
-            let heard = Arc::new(AtomicU64::new(now_ms()));
-            let ended = Arc::new(AtomicBool::new(false));
-            watch_for_stall(pid, self.stall, &heard, &ended, &stopping);
-            thread::spawn(move || {
-                let sent = read_progress(out, &shared, kind, session, &heard);
-                ended.store(true, Ordering::SeqCst);
-                // FFmpeg has ended. Unless the operator stopped it, say why.
-                thread::sleep(Duration::from_millis(200));
-                if !stopping.load(Ordering::SeqCst) {
-                    let said = lock(&errors).clone();
-                    shared.fail_how(kind, session, explain_stream_error(&said), !sent);
+            };
+            match spawn_watched(
+                ffmpeg, &args, self.stall, stopping, on_speed, on_line, on_end,
+            ) {
+                Ok((child, stdin)) => {
+                    lock(&pids).push(child.id());
+                    children.push(child);
+                    inputs.push(Some(stdin));
                 }
-            });
+                Err(e) => {
+                    stopping.store(true, Ordering::SeqCst);
+                    for mut c in children {
+                        let _ = c.kill();
+                        let _ = c.wait();
+                    }
+                    return Err(e);
+                }
+            }
         }
-        let running = Running {
+        let mut running = Running::new(
             session,
-            started_at: now_ms(),
-            path: None,
-            destinations: if rehearse {
+            None,
+            if rehearse {
                 vec!["Rehearsal (nothing sent)".to_owned()]
             } else {
                 dests.iter().map(|d| d.name.clone()).collect()
             },
-            bytes: 0,
-            speed: None,
-        };
-        Ok((Box::new(StdinWriter(stdin)), running, Finish::Stream(child)))
+            plan.label(),
+        );
+        running.source_kbps = Some(plan.source_kbps);
+        Ok((Box::new(FanOut(inputs)), running, Finish::Stream(children)))
     }
 }
 
@@ -765,14 +1072,12 @@ impl Capture {
             }
             children.push(audio);
         }
-        let running = Running {
+        let running = Running::new(
             session,
-            started_at: now_ms(),
-            path: None,
-            destinations: vec![format!("NDI: {}", settings.ndi_name)],
-            bytes: 0,
-            speed: None,
-        };
+            None,
+            vec![format!("NDI: {}", settings.ndi_name)],
+            "Unpacked by FFmpeg (no encoding)".to_owned(),
+        );
         let out = TeeWriter {
             video: video_in,
             audio: audio_in,
@@ -806,36 +1111,27 @@ fn write_loop(
     mut out: Box<dyn Write + Send>,
     rx: &mpsc::Receiver<Vec<u8>>,
     queued: &AtomicU64,
+    report_write: bool,
 ) {
     let mut last_report = Instant::now();
     let mut written = 0u64;
     while let Ok(chunk) = rx.recv() {
         queued.fetch_sub(chunk.len() as u64, Ordering::SeqCst);
         if let Err(e) = out.write_all(&chunk).and_then(|()| out.flush()) {
-            let message = match kind {
-                Kind::Record => {
-                    format!("The recording could not be written ({e}). Is the disk full?")
-                }
-                Kind::Stream | Kind::Vertical => "The stream stopped.".to_owned(),
-                Kind::Ndi => "The NDI output stopped.".to_owned(),
-            };
-            // For streams the FFmpeg reader explains why; this is the fallback.
-            if kind == Kind::Record {
-                shared.fail(kind, session, message);
+            // Into FFmpeg, its reader explains why; into a file, it's the disk.
+            if report_write {
+                shared.fail(
+                    kind,
+                    session,
+                    format!("The recording could not be written ({e}). Is the disk full?"),
+                );
             }
             return;
         }
         written += chunk.len() as u64;
         if last_report.elapsed() > Duration::from_secs(1) {
             last_report = Instant::now();
-            shared.update(|s| {
-                if let Some(r) = Shared::slot(s, kind)
-                    .as_mut()
-                    .filter(|r| r.session == session)
-                {
-                    r.bytes = written;
-                }
-            });
+            shared.running(kind, session, |r| r.bytes = written);
         }
     }
 }
@@ -843,8 +1139,15 @@ fn write_loop(
 /// What happens after the last chunk.
 enum Finish {
     Recording(PathBuf),
-    /// FFmpeg (a failure is reported by its progress reader).
-    Stream(Child),
+    /// A recording FFmpeg encodes (it gets time to write the end of the file).
+    Encoded {
+        child: Child,
+        path: PathBuf,
+        hevc: bool,
+    },
+    /// The FFmpegs of a stream, one per bitrate (a failure is reported by
+    /// their progress readers).
+    Stream(Vec<Child>),
     /// The FFmpegs that unpack the picture and sound for NDI.
     Ndi(Vec<Child>),
 }
@@ -854,38 +1157,59 @@ impl Finish {
     fn pids(&self) -> Vec<u32> {
         match self {
             Finish::Recording(_) => Vec::new(),
-            Finish::Stream(child) => vec![child.id()],
-            Finish::Ndi(children) => children.iter().map(Child::id).collect(),
+            Finish::Encoded { child, .. } => vec![child.id()],
+            Finish::Stream(children) | Finish::Ndi(children) => {
+                children.iter().map(Child::id).collect()
+            }
         }
     }
 
-    fn run(self, shared: &Shared, ffmpeg: Option<&Path>, mime: &str) {
+    /// `ended` is set once no FFmpeg is being fed any more (the .mp4 may still be made).
+    fn run(self, shared: &Shared, ffmpeg: Option<&Path>, mime: &str, ended: &AtomicBool) {
         match self {
             Finish::Recording(path) => {
                 let can_mp4 = mime.contains("avc1") || mime.contains("h264");
-                match ffmpeg.filter(|_| can_mp4) {
-                    Some(ffmpeg) => {
-                        shared.update(|s| s.finishing = true);
-                        let done = to_mp4(ffmpeg, &path).unwrap_or(path);
-                        shared.update(|s| {
-                            s.finishing = false;
-                            s.last_recording = Some(done.to_string_lossy().into_owned());
-                        });
-                    }
-                    None => shared.update(|s| {
-                        s.last_recording = Some(path.to_string_lossy().into_owned());
-                    }),
+                finish_recording(shared, ffmpeg.filter(|_| can_mp4), path, false);
+            }
+            Finish::Encoded { child, path, hevc } => {
+                finish_child(child, ENCODE_GRACE);
+                ended.store(true, Ordering::SeqCst);
+                // A hardware encoder that never started leaves nothing worth keeping.
+                if fs::metadata(&path).map_or(0, |m| m.len()) < 1024 {
+                    let _ = fs::remove_file(&path);
+                    return;
+                }
+                finish_recording(shared, ffmpeg, path, hevc);
+            }
+            Finish::Stream(children) | Finish::Ndi(children) => {
+                for c in children {
+                    finish_child(c, Duration::from_secs(5));
                 }
             }
-            Finish::Stream(child) => finish_child(child),
-            Finish::Ndi(children) => children.into_iter().for_each(finish_child),
         }
     }
 }
 
+/// Turn a finished recording into an .mp4 (when it can be) and say it is ready.
+fn finish_recording(shared: &Shared, ffmpeg: Option<&Path>, path: PathBuf, hevc: bool) {
+    match ffmpeg {
+        Some(ffmpeg) => {
+            shared.update(|s| s.finishing = true);
+            let done = to_mp4(ffmpeg, &path, hevc).unwrap_or(path);
+            shared.update(|s| {
+                s.finishing = false;
+                s.last_recording = Some(done.to_string_lossy().into_owned());
+            });
+        }
+        None => shared.update(|s| {
+            s.last_recording = Some(path.to_string_lossy().into_owned());
+        }),
+    }
+}
+
 /// Stdin is closed: give FFmpeg a moment to finish, then make sure it's gone.
-fn finish_child(mut child: Child) {
-    let deadline = Instant::now() + Duration::from_secs(5);
+fn finish_child(mut child: Child, within: Duration) {
+    let deadline = Instant::now() + within;
     loop {
         match child.try_wait() {
             Ok(Some(_)) => break,
@@ -899,12 +1223,105 @@ fn finish_child(mut child: Child) {
     }
 }
 
+/// Feeds every FFmpeg of a stream the same chunks; one that has stopped is
+/// left out, and only when all have stopped does writing fail.
+struct FanOut(Vec<Option<ChildStdin>>);
+
+impl Write for FanOut {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        for slot in &mut self.0 {
+            if slot.as_mut().is_some_and(|w| w.write_all(buf).is_err()) {
+                *slot = None;
+            }
+        }
+        if self.0.iter().all(Option::is_none) {
+            return Err(std::io::ErrorKind::BrokenPipe.into());
+        }
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        for slot in &mut self.0 {
+            if slot.as_mut().is_some_and(|w| w.flush().is_err()) {
+                *slot = None;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Start an FFmpeg that is fed on stdin and watched: its progress (`on_speed`),
+/// each line it says (`on_line`), and, if it ends without being stopped,
+/// whether it sent anything and its last words (`on_end`). An FFmpeg that
+/// stops reporting progress (stuck on a dead connection) is ended.
+fn spawn_watched(
+    ffmpeg: &Path,
+    args: &[String],
+    stall: Duration,
+    stopping: &Arc<AtomicBool>,
+    on_speed: impl Fn(Option<f32>) + Send + 'static,
+    on_line: impl Fn(&str) + Send + 'static,
+    on_end: impl FnOnce(bool, String) + Send + 'static,
+) -> Result<(Child, ChildStdin), String> {
+    let mut child = quiet(ffmpeg)
+        .args(args)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("FFmpeg could not start: {e}"))?;
+    let stdin = child.stdin.take().ok_or("FFmpeg could not start")?;
+    let errors = Arc::new(Mutex::new(String::new()));
+    let pid = child.id();
+    if let Some(err) = child.stderr.take() {
+        let errors = Arc::clone(&errors);
+        thread::spawn(move || {
+            for line in BufReader::new(err).lines().map_while(Result::ok) {
+                // After a failed start FFmpeg can hang (busy, never exiting):
+                // end it, so the failure is reported and nothing is left running.
+                if gave_up(&line) {
+                    thread::spawn(move || {
+                        thread::sleep(Duration::from_secs(2));
+                        kill_pid(pid);
+                    });
+                }
+                on_line(&line);
+                let mut e = lock(&errors);
+                // Keep the last few lines, to explain a failure.
+                e.push_str(&line);
+                e.push('\n');
+                if e.len() > 4000 {
+                    let cut = e.len() - 2000;
+                    let cut = (cut..e.len()).find(|&i| e.is_char_boundary(i)).unwrap_or(0);
+                    e.drain(..cut);
+                }
+            }
+        });
+    }
+    if let Some(out) = child.stdout.take() {
+        let stopping = Arc::clone(stopping);
+        let heard = Arc::new(AtomicU64::new(now_ms()));
+        let ended = Arc::new(AtomicBool::new(false));
+        watch_for_stall(pid, stall, &heard, &ended, &stopping);
+        thread::spawn(move || {
+            let sent = read_progress(out, &heard, on_speed);
+            ended.store(true, Ordering::SeqCst);
+            // FFmpeg has ended. Unless the operator stopped it, say why.
+            thread::sleep(Duration::from_millis(200));
+            if !stopping.load(Ordering::SeqCst) {
+                let said = lock(&errors).clone();
+                on_end(sent, said);
+            }
+        });
+    }
+    Ok((child, stdin))
+}
+
 /// The NDI picture size and frame rate for a quality (at most 1080p: NDI's usual).
 fn ndi_size(q: Quality) -> (u32, u32, u32) {
     match q {
         Quality::P720 => (1280, 720, 30),
         Quality::P720x60 => (1280, 720, 60),
-        Quality::P1080x60 | Quality::P1440x60 => (1920, 1080, 60),
+        Quality::P1080x60 | Quality::P1440x60 | Quality::P2160x60 => (1920, 1080, 60),
         Quality::Vertical => (1080, 1920, 30),
         Quality::P1080 | Quality::P1440 | Quality::P2160 => (1920, 1080, 30),
     }
@@ -985,7 +1402,7 @@ impl Write for TeeWriter {
 }
 
 /// Turn a finished recording into an .mp4 without re-encoding. Returns the new file.
-fn to_mp4(ffmpeg: &Path, path: &Path) -> Option<PathBuf> {
+fn to_mp4(ffmpeg: &Path, path: &Path, hevc: bool) -> Option<PathBuf> {
     let out = path.with_extension("mp4");
     let out = if out.exists() {
         unique_path(path.parent()?, &path.file_stem()?.to_string_lossy(), "mp4")
@@ -996,6 +1413,8 @@ fn to_mp4(ffmpeg: &Path, path: &Path) -> Option<PathBuf> {
         .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
         .arg(path)
         .args(["-map", "0", "-c", "copy", "-movflags", "+faststart"])
+        // HEVC tagged so Windows and Apple players open it too.
+        .args(if hevc { &["-tag:v", "hvc1"][..] } else { &[] })
         .arg(&out)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
@@ -1028,52 +1447,179 @@ fn destinations_for(settings: &CaptureSettings, kind: Kind) -> Vec<&Destination>
         .collect()
 }
 
-fn stream_args(mime: &str, video_kbps: u32, audio_kbps: u32, targets: &[String]) -> Vec<String> {
-    let h264 = mime.contains("avc1") || mime.contains("h264");
-    let mut a: Vec<String> = [
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-fflags",
-        "+genpts",
-        // The encoder says what the stream holds, so start sending after a second.
-        "-analyzeduration",
-        "1000000",
-        "-i",
-        "pipe:0",
-        "-map",
-        "0:v:0",
-        "-map",
-        "0:a:0?",
-    ]
-    .iter()
-    .map(|s| (*s).to_owned())
-    .collect();
-    if h264 {
-        // Already H.264 from the WebView's encoder: sent as it is.
-        a.extend(["-c:v", "copy"].map(str::to_owned));
+fn is_h264(mime: &str) -> bool {
+    mime.contains("avc1") || mime.contains("h264")
+}
+
+/// How a stream session is made: one FFmpeg per bitrate.
+#[derive(Debug, Clone, PartialEq)]
+struct StreamPlan {
+    family: Family,
+    /// Each FFmpeg's destinations and its encode (`None`: sent as the WebView encoded it).
+    groups: Vec<(encode::Group, Option<VideoEncode>)>,
+    /// What the WebView encodes at, kbit/s.
+    source_kbps: u32,
+}
+
+impl StreamPlan {
+    /// The encoder in use, for the operator.
+    fn label(&self) -> String {
+        let encodes = self.groups.iter().filter(|(_, e)| e.is_some()).count();
+        let mut parts = Vec::new();
+        if encodes > 0 {
+            let more = if encodes > 1 {
+                format!(", {encodes} bitrates")
+            } else {
+                String::new()
+            };
+            parts.push(format!(
+                "{} ({}){more}",
+                self.family.label(),
+                self.family.encoder(Codec::H264)
+            ));
+        }
+        if encodes < self.groups.len() {
+            parts.push("the app’s own encoder (WebView2), sent as it is".to_owned());
+        }
+        let text = parts.join(" + ");
+        let mut chars = text.chars();
+        chars
+            .next()
+            .map(|c| c.to_uppercase().chain(chars).collect())
+            .unwrap_or_default()
+    }
+}
+
+/// Plan a stream (`Kind::Stream` or `Kind::Vertical`) to these destinations
+/// (name, address, own bitrate); none: a rehearsal.
+fn plan_stream(
+    settings: &CaptureSettings,
+    kind: Kind,
+    mime: &str,
+    family: Family,
+    targets: &[(String, String, Option<u32>)],
+) -> StreamPlan {
+    let picture = if kind == Kind::Vertical {
+        Quality::Vertical
     } else {
-        let k = video_kbps;
-        a.extend([
-            "-c:v".to_owned(),
-            "libx264".to_owned(),
-            "-preset".to_owned(),
-            "veryfast".to_owned(),
-            "-tune".to_owned(),
-            "zerolatency".to_owned(),
-            "-pix_fmt".to_owned(),
-            "yuv420p".to_owned(),
-            "-b:v".to_owned(),
-            format!("{k}k"),
-            "-maxrate".to_owned(),
-            format!("{k}k"),
-            "-bufsize".to_owned(),
-            format!("{}k", k * 2),
-            "-g".to_owned(),
-            "60".to_owned(),
-            "-flags:v".to_owned(),
-            "+global_header".to_owned(),
-        ]);
+        settings.quality
+    };
+    let (pw, ph, pfps) = picture.size();
+    let out = match kind {
+        Kind::Stream => settings.stream_quality.unwrap_or(picture),
+        _ => picture,
+    };
+    let (ow, oh, ofps) = out.size();
+    let fps = ofps.min(pfps);
+    let smaller = (ow, oh) != (pw, ph);
+    let mut base = settings.stream_kbps.unwrap_or(settings.video_kbps);
+    if kind == Kind::Vertical {
+        base = base.min(Quality::Vertical.kbps());
+    }
+    let groups = if targets.is_empty() {
+        vec![encode::Group {
+            kbps: base,
+            names: Vec::new(),
+            targets: Vec::new(),
+        }]
+    } else {
+        encode::group_by_bitrate(targets, base)
+    };
+    let need = StreamNeed {
+        input_h264: is_h264(mime),
+        resized: smaller || fps != pfps,
+        own_bitrate: false,
+    };
+    let groups: Vec<_> = groups
+        .into_iter()
+        .map(|g| {
+            let need = StreamNeed {
+                own_bitrate: g.kbps != base,
+                ..need
+            };
+            let enc = encode::must_encode(need, family, settings.encoder).then_some(VideoEncode {
+                family,
+                codec: Codec::H264,
+                rate: Rate::Cbr { kbps: g.kbps },
+                preset: settings.preset,
+                fps,
+                size: smaller.then_some((ow, oh)),
+            });
+            (g, enc)
+        })
+        .collect();
+    // Sent as it is somewhere: the WebView encodes at the stream's bitrate.
+    // Otherwise well above it, so the second encode loses next to nothing.
+    let source_kbps = if groups.iter().any(|(_, e)| e.is_none()) {
+        base
+    } else {
+        let top = groups.iter().map(|(g, _)| g.kbps).max().unwrap_or(base);
+        encode::source_kbps(top, picture.kbps())
+    };
+    StreamPlan {
+        family,
+        groups,
+        source_kbps,
+    }
+}
+
+/// The encode of a recording FFmpeg encodes again: constant quality, at
+/// most the recording bitrate.
+fn plan_record(settings: &CaptureSettings, family: Family) -> VideoEncode {
+    VideoEncode {
+        family,
+        codec: settings.record_codec,
+        rate: Rate::Quality {
+            level: encode::quality_level(settings.preset),
+            max_kbps: settings.video_kbps,
+        },
+        preset: settings.preset,
+        fps: settings.quality.size().2,
+        size: None,
+    }
+}
+
+/// The start of every FFmpeg fed the WebView's encode on stdin.
+fn input_args(decode: Vec<String>) -> Vec<String> {
+    let mut a: Vec<String> = ["-hide_banner", "-loglevel", "error", "-fflags", "+genpts"]
+        .map(str::to_owned)
+        .to_vec();
+    // The encoder says what the stream holds, so start after a second.
+    a.extend(["-analyzeduration", "1000000"].map(str::to_owned));
+    a.extend(decode);
+    a.extend(["-i", "pipe:0", "-map", "0:v:0", "-map", "0:a:0?"].map(str::to_owned));
+    a
+}
+
+/// FFmpeg's progress report, every second, on stdout.
+fn progress_args() -> [String; 4] {
+    ["-progress", "pipe:1", "-stats_period", "1"].map(str::to_owned)
+}
+
+/// FFmpeg's arguments for a recording it encodes again (into Matroska, which
+/// stays playable if anything stops; it becomes an .mp4 at the end).
+fn record_args(e: &VideoEncode, path: &Path) -> Vec<String> {
+    let mut a = input_args(encode::decode_args(e.family));
+    a.extend(encode::video_args(e));
+    a.extend(["-c:a", "copy"].map(str::to_owned));
+    a.extend(progress_args());
+    a.extend(["-f", "matroska", "-y"].map(str::to_owned));
+    a.push(path.to_string_lossy().into_owned());
+    a
+}
+
+/// FFmpeg's arguments for streaming what arrives on stdin to one bitrate
+/// group of destinations (`video`: its encode; `None`: sent as it is).
+fn stream_args(group: &encode::Group, video: Option<&VideoEncode>, audio_kbps: u32) -> Vec<String> {
+    let mut a = input_args(
+        video
+            .map(|e| encode::decode_args(e.family))
+            .unwrap_or_default(),
+    );
+    match video {
+        Some(e) => a.extend(encode::video_args(e)),
+        // Already H.264 from the WebView's encoder: sent as it is.
+        None => a.extend(["-c:v", "copy"].map(str::to_owned)),
     }
     a.extend([
         "-c:a".to_owned(),
@@ -1081,29 +1627,17 @@ fn stream_args(mime: &str, video_kbps: u32, audio_kbps: u32, targets: &[String])
         "-b:a".to_owned(),
         format!("{audio_kbps}k"),
     ]);
-    a.extend(
-        [
-            "-ar",
-            "48000",
-            "-ac",
-            "2",
-            "-flags:a",
-            "+global_header",
-            "-progress",
-            "pipe:1",
-            "-stats_period",
-            "1",
-        ]
-        .map(str::to_owned),
-    );
-    if targets.is_empty() {
+    a.extend(["-ar", "48000", "-ac", "2", "-flags:a", "+global_header"].map(str::to_owned));
+    a.extend(progress_args());
+    if group.targets.is_empty() {
         // A rehearsal: made in full, sent nowhere.
         a.extend(["-f", "null", "-"].map(str::to_owned));
         return a;
     }
     a.extend(["-f", "tee"].map(str::to_owned));
     // One failing destination never stops the others.
-    let tee = targets
+    let tee = group
+        .targets
         .iter()
         .map(|t| format!("[f=flv:onfail=ignore]{}", tee_escape(t)))
         .collect::<Vec<_>>()
@@ -1149,13 +1683,7 @@ fn watch_for_stall(
 }
 
 /// FFmpeg's progress report: keep the speed up to date. Says whether anything was sent.
-fn read_progress(
-    out: impl Read,
-    shared: &Shared,
-    kind: Kind,
-    session: u64,
-    heard: &AtomicU64,
-) -> bool {
+fn read_progress(out: impl Read, heard: &AtomicU64, on_speed: impl Fn(Option<f32>)) -> bool {
     let mut sent = false;
     for line in BufReader::new(out).lines().map_while(Result::ok) {
         heard.store(now_ms(), Ordering::SeqCst);
@@ -1165,15 +1693,7 @@ fn read_progress(
             }
         }
         if let Some(v) = line.strip_prefix("speed=") {
-            let speed = v.trim().trim_end_matches('x').parse::<f32>().ok();
-            shared.update(|s| {
-                if let Some(r) = Shared::slot(s, kind)
-                    .as_mut()
-                    .filter(|r| r.session == session)
-                {
-                    r.speed = speed;
-                }
-            });
+            on_speed(v.trim().trim_end_matches('x').parse::<f32>().ok());
         }
     }
     sent
@@ -1279,8 +1799,17 @@ fn explain_stream_error(ffmpeg_said: &str) -> String {
     } else {
         "The stream stopped."
     };
-    // The line that says what went wrong, without FFmpeg's "[tcp @ 0x…]" prefix.
-    let detail = ffmpeg_said
+    let detail = ffmpeg_detail(ffmpeg_said);
+    if detail.is_empty() {
+        what.to_owned()
+    } else {
+        format!("{what} ({detail})")
+    }
+}
+
+/// The line that says what went wrong, without FFmpeg's "[tcp @ 0x…]" prefix.
+fn ffmpeg_detail(ffmpeg_said: &str) -> &str {
+    ffmpeg_said
         .lines()
         .map(|l| l.split_once("] ").map_or(l, |(_, rest)| rest).trim())
         .find(|l| {
@@ -1289,12 +1818,7 @@ fn explain_stream_error(ffmpeg_said: &str) -> String {
         })
         .or_else(|| ffmpeg_said.lines().last())
         .unwrap_or("")
-        .trim();
-    if detail.is_empty() {
-        what.to_owned()
-    } else {
-        format!("{what} ({detail})")
-    }
+        .trim()
 }
 
 /// A file name without characters Windows refuses.
@@ -1477,22 +2001,271 @@ mod tests {
             ..Destination::default()
         };
         assert_eq!(d.target(), "rtmp://a.rtmp.youtube.com/live2/abcd-1234");
-        let args = stream_args(
-            "video/x-matroska;codecs=avc1,opus",
-            6000,
-            160,
-            &["rtmp://x/a|b".into()],
-        );
-        assert!(args.windows(2).any(|w| w == ["-c:v", "copy"]));
+        let s = CaptureSettings::default();
+        let args = &plan_args(&s, H264, Family::Software, &[t("A", "rtmp://x/a|b", None)])[0];
+        assert!(has(args, ["-c:v", "copy"]));
         assert_eq!(args.last().unwrap(), "[f=flv:onfail=ignore]rtmp://x/a\\|b");
-        let vp8 = stream_args(
+        let s = CaptureSettings {
+            video_kbps: 4000,
+            audio_kbps: 128,
+            ..CaptureSettings::default()
+        };
+        let vp8 = &plan_args(
+            &s,
             "video/webm;codecs=vp8,opus",
-            4000,
-            128,
-            &["rtmp://x/y".into()],
+            Family::Software,
+            &[t("A", "rtmp://x/y", None)],
+        )[0];
+        assert!(has(vp8, ["-c:v", "libx264"]) && has(vp8, ["-b:v", "4000k"]));
+        assert!(has(vp8, ["-b:a", "128k"]));
+    }
+
+    const H264: &str = "video/x-matroska;codecs=avc1,opus";
+
+    fn has(a: &[String], pair: [&str; 2]) -> bool {
+        a.windows(2).any(|w| w[0] == pair[0] && w[1] == pair[1])
+    }
+
+    fn t(name: &str, url: &str, kbps: Option<u32>) -> (String, String, Option<u32>) {
+        (name.to_owned(), url.to_owned(), kbps)
+    }
+
+    /// Each FFmpeg's arguments for a wide stream.
+    fn plan_args(
+        s: &CaptureSettings,
+        mime: &str,
+        family: Family,
+        targets: &[(String, String, Option<u32>)],
+    ) -> Vec<Vec<String>> {
+        let s = s.clone().cleaned();
+        plan_stream(&s, Kind::Stream, mime, family, targets)
+            .groups
+            .iter()
+            .map(|(g, e)| stream_args(g, e.as_ref(), s.audio_kbps))
+            .collect()
+    }
+
+    #[test]
+    fn a_4k_recording_streams_at_1080p_from_the_same_picture() {
+        let s = CaptureSettings {
+            quality: Quality::P2160x60,
+            video_kbps: 40_000,
+            stream_quality: Some(Quality::P1080),
+            stream_kbps: Some(6000),
+            ..CaptureSettings::default()
+        }
+        .cleaned();
+        let plan = plan_stream(
+            &s,
+            Kind::Stream,
+            H264,
+            Family::Nvenc,
+            &[t("YouTube", "rtmp://y", None)],
         );
-        assert!(vp8.contains(&"libx264".to_owned()) && vp8.contains(&"4000k".to_owned()));
-        assert!(vp8.contains(&"128k".to_owned()));
+        let (g, e) = &plan.groups[0];
+        let e = e.expect("scaled, so encoded");
+        assert_eq!((g.kbps, e.size, e.fps), (6000, Some((1920, 1080)), 30));
+        assert_eq!(e.rate, Rate::Cbr { kbps: 6000 });
+        // The WebView sends well above the stream, so the second encode loses nothing.
+        assert_eq!(plan.source_kbps, 60_000);
+        let a = stream_args(g, Some(&e), 160);
+        assert!(has(&a, ["-hwaccel", "auto"]), "decoded on the card: {a:?}");
+        assert!(has(
+            &a,
+            ["-vf", "scale=1920:1080:flags=bicubic,format=nv12"]
+        ));
+        assert!(has(&a, ["-c:v", "h264_nvenc"]) && has(&a, ["-g", "60"]) && has(&a, ["-r", "30"]));
+        assert!(
+            plan.label().starts_with("NVIDIA NVENC (h264_nvenc)"),
+            "{}",
+            plan.label()
+        );
+        // A stream never bigger than the picture, nor vertical.
+        let odd = CaptureSettings {
+            quality: Quality::P1080,
+            stream_quality: Some(Quality::P2160),
+            ..CaptureSettings::default()
+        }
+        .cleaned();
+        assert_eq!(odd.stream_quality, None);
+    }
+
+    #[test]
+    fn the_webview_encode_goes_out_as_it_is_unless_ffmpeg_is_needed() {
+        let s = CaptureSettings::default();
+        let plan = plan_stream(
+            &s,
+            Kind::Stream,
+            H264,
+            Family::Software,
+            &[t("A", "rtmp://a", None)],
+        );
+        assert!(
+            plan.groups[0].1.is_none(),
+            "no card, nothing to change: no encode"
+        );
+        assert_eq!(plan.source_kbps, 6000);
+        assert!(
+            plan.label().starts_with("The app’s own encoder"),
+            "{}",
+            plan.label()
+        );
+        // A graphics card: a steady bitrate and keyframes, from a richer source.
+        let plan = plan_stream(
+            &s,
+            Kind::Stream,
+            H264,
+            Family::Qsv,
+            &[t("A", "rtmp://a", None)],
+        );
+        assert_eq!(plan.groups[0].1.map(|e| e.family), Some(Family::Qsv));
+        assert_eq!(plan.source_kbps, 12_000);
+        // Software chosen on purpose: x264 does it.
+        let sw = CaptureSettings {
+            encoder: EncoderChoice::Software,
+            ..CaptureSettings::default()
+        };
+        let plan = plan_stream(
+            &sw,
+            Kind::Stream,
+            H264,
+            Family::Software,
+            &[t("A", "rtmp://a", None)],
+        );
+        assert_eq!(plan.groups[0].1.map(|e| e.family), Some(Family::Software));
+    }
+
+    #[test]
+    fn each_bitrate_gets_its_own_ffmpeg() {
+        let s = CaptureSettings {
+            video_kbps: 6000,
+            ..CaptureSettings::default()
+        };
+        let targets = [
+            t("YouTube", "rtmp://y", None),
+            t("Facebook", "rtmps://f", Some(4000)),
+            t("Vimeo", "rtmps://v", None),
+        ];
+        let plan = plan_stream(&s, Kind::Stream, H264, Family::Software, &targets);
+        assert_eq!(plan.groups.len(), 2);
+        let (wide, own) = (&plan.groups[0], &plan.groups[1]);
+        assert_eq!(wide.0.names, ["YouTube", "Vimeo"]);
+        assert!(
+            wide.1.is_none(),
+            "the stream's own bitrate goes out as it is"
+        );
+        assert_eq!(own.0.names, ["Facebook"]);
+        assert_eq!(own.1.map(|e| e.rate), Some(Rate::Cbr { kbps: 4000 }));
+        // Something goes out as it is, so the WebView encodes at the stream's bitrate.
+        assert_eq!(plan.source_kbps, 6000);
+        let a = stream_args(&wide.0, None, 160);
+        assert_eq!(
+            a.last().unwrap(),
+            "[f=flv:onfail=ignore]rtmp://y|[f=flv:onfail=ignore]rtmps://v"
+        );
+        assert!(
+            plan.label().contains("+ the app’s own encoder"),
+            "{}",
+            plan.label()
+        );
+    }
+
+    #[test]
+    fn a_recording_encoded_again_is_constant_quality() {
+        let s = CaptureSettings {
+            record_encode: true,
+            record_codec: Codec::Hevc,
+            preset: Preset::Quality,
+            quality: Quality::P2160,
+            video_kbps: 40_000,
+            ..CaptureSettings::default()
+        };
+        let e = plan_record(&s, Family::Nvenc);
+        let a = record_args(&e, Path::new("show.mkv"));
+        assert!(has(&a, ["-c:v", "hevc_nvenc"]) && has(&a, ["-cq", "20"]));
+        assert!(has(&a, ["-maxrate", "40000k"]) && has(&a, ["-g", "60"]));
+        assert!(has(&a, ["-c:a", "copy"]) && has(&a, ["-f", "matroska"]));
+        assert_eq!(a.last().unwrap(), "show.mkv");
+        let x = record_args(&plan_record(&s, Family::Software), Path::new("x.mkv"));
+        assert!(has(&x, ["-c:v", "libx264"]) && has(&x, ["-crf", "20"]));
+        assert!(!x.contains(&"-hwaccel".to_owned()));
+    }
+
+    /// Every option given to an encoder is one this FFmpeg knows (for the
+    /// encoders this FFmpeg has; the bundled Windows FFmpeg has them all).
+    #[test]
+    fn every_encoder_option_is_known_to_ffmpeg() {
+        let Some(ffmpeg) = find_ffmpeg() else {
+            eprintln!("FFmpeg not installed: skipped");
+            return;
+        };
+        let generic = [
+            "-vf",
+            "-r",
+            "-c:v",
+            "-b:v",
+            "-maxrate",
+            "-bufsize",
+            "-g",
+            "-keyint_min",
+            "-flags:v",
+            "-profile:v",
+            "-sc_threshold",
+            "-global_quality",
+            "-x264-params",
+            "-crf",
+            "-preset",
+        ];
+        let mut checked = 0;
+        for family in [Family::Nvenc, Family::Qsv, Family::Amf, Family::Software] {
+            let name = family.encoder(Codec::H264);
+            let out = quiet(&ffmpeg)
+                .args(["-hide_banner", "-h", &format!("encoder={name}")])
+                .output()
+                .unwrap();
+            let help = String::from_utf8_lossy(&out.stdout).into_owned();
+            if !help.contains("AVOptions") {
+                eprintln!("{name}: not in this FFmpeg, skipped");
+                continue;
+            }
+            for rate in [
+                Rate::Cbr { kbps: 6000 },
+                Rate::Quality {
+                    level: 23,
+                    max_kbps: 20_000,
+                },
+            ] {
+                for preset in [Preset::Speed, Preset::Balanced, Preset::Quality] {
+                    let a = encode::video_args(&VideoEncode {
+                        family,
+                        codec: Codec::H264,
+                        rate,
+                        preset,
+                        fps: 30,
+                        size: Some((1280, 720)),
+                    });
+                    for (i, opt) in a.iter().enumerate().filter(|(_, o)| o.starts_with('-')) {
+                        if generic.contains(&opt.as_str()) && opt != "-preset" {
+                            continue;
+                        }
+                        let line = help
+                            .lines()
+                            .find(|l| l.starts_with(&format!("  {opt} ")))
+                            .unwrap_or_else(|| panic!("{name} has no option {opt}"));
+                        // A named value must be one of its choices.
+                        let v = &a[i + 1];
+                        if v.chars().all(|c| c.is_ascii_lowercase()) && !line.contains("<string>") {
+                            assert!(
+                                help.contains(&format!("\n     {v} ")),
+                                "{name} {opt} has no value {v}"
+                            );
+                        }
+                    }
+                    checked += 1;
+                }
+            }
+        }
+        assert!(checked > 0);
     }
 
     #[test]
@@ -1681,9 +2454,224 @@ mod tests {
 
     #[test]
     fn a_rehearsal_is_made_in_full_but_sent_nowhere() {
-        let a = stream_args("video/x-matroska;codecs=avc1,opus", 6000, 160, &[]);
+        let a = &plan_args(&CaptureSettings::default(), H264, Family::Software, &[])[0];
         assert!(a.ends_with(&["-f".to_owned(), "null".to_owned(), "-".to_owned()]));
         assert!(!a.iter().any(|x| x == "tee"));
+        // Rehearsed with the real encoder, so the computer is tested.
+        let a = &plan_args(&CaptureSettings::default(), H264, Family::Amf, &[])[0];
+        assert!(has(a, ["-c:v", "h264_amf"]));
+    }
+
+    /// The bytes a file holds once it stops growing.
+    fn settled(path: &Path) -> bool {
+        fs::metadata(path).is_ok_and(|m| m.len() > 1000)
+    }
+
+    /// The picture size FFmpeg finds in a file.
+    fn size_of(ffmpeg: &Path, path: &Path) -> String {
+        let out = quiet(ffmpeg)
+            .args(["-hide_banner", "-i"])
+            .arg(path)
+            .output()
+            .unwrap();
+        String::from_utf8_lossy(&out.stderr).into_owned()
+    }
+
+    #[test]
+    fn each_bitrate_and_size_goes_out_through_its_own_ffmpeg() {
+        let Some(ffmpeg) = find_ffmpeg() else {
+            eprintln!("FFmpeg not installed: skipped");
+            return;
+        };
+        let d = temp_dir("groups");
+        let Some(video) = sample(&ffmpeg, &d) else {
+            return;
+        };
+        let (c, _) = capture(&d, Some(ffmpeg.clone()));
+        let (a, b) = (d.join("a.flv"), d.join("b.flv"));
+        c.set_settings(CaptureSettings {
+            quality: Quality::P1080,
+            stream_quality: Some(Quality::P720),
+            encoder: EncoderChoice::Software,
+            destinations: vec![
+                Destination {
+                    name: "A".into(),
+                    url: a.to_string_lossy().into(),
+                    ..Destination::default()
+                },
+                Destination {
+                    name: "B".into(),
+                    url: b.to_string_lossy().into(),
+                    video_kbps: Some(1500),
+                    ..Destination::default()
+                },
+            ],
+            ..CaptureSettings::default()
+        });
+        let r = c.start(Kind::Stream, H264, "").unwrap();
+        assert!(
+            r.encoder.contains("x264") && r.encoder.contains("2 bitrates"),
+            "{}",
+            r.encoder
+        );
+        for part in video.chunks(4096) {
+            c.chunk(r.session, part.to_vec()).unwrap();
+        }
+        c.stop(r.session);
+        assert!(wait_for(|| settled(&a) && settled(&b)));
+        thread::sleep(Duration::from_millis(500));
+        for f in [&a, &b] {
+            assert!(
+                size_of(&ffmpeg, f).contains("1280x720"),
+                "scaled to the stream's size"
+            );
+        }
+        assert!(c.status().failure.is_none());
+    }
+
+    #[test]
+    fn one_destination_failing_never_stops_the_others() {
+        let Some(ffmpeg) = find_ffmpeg() else {
+            eprintln!("FFmpeg not installed: skipped");
+            return;
+        };
+        let d = temp_dir("onfail");
+        let Some(video) = sample(&ffmpeg, &d) else {
+            return;
+        };
+        // Answers, then hangs up.
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        thread::spawn(move || {
+            for s in listener.incoming().flatten() {
+                drop(s);
+            }
+        });
+        let good = d.join("good.flv");
+        let (c, _) = capture(&d, Some(ffmpeg));
+        let dest = |name: &str, url: String, kbps| Destination {
+            name: name.into(),
+            url,
+            key: "k".into(),
+            video_kbps: kbps,
+            ..Destination::default()
+        };
+        // A bad destination beside a good one (same FFmpeg), and one with its own (failing) FFmpeg.
+        c.set_settings(CaptureSettings {
+            destinations: vec![
+                Destination {
+                    name: "Good".into(),
+                    url: good.to_string_lossy().into(),
+                    ..Destination::default()
+                },
+                dest("Bad", format!("rtmp://127.0.0.1:{port}/live"), None),
+                dest("Own", format!("rtmp://127.0.0.1:{port}/own"), Some(2000)),
+            ],
+            ..CaptureSettings::default()
+        });
+        let r = c.start(Kind::Stream, H264, "").unwrap();
+        for part in video.chunks(4096) {
+            if c.chunk(r.session, part.to_vec()).is_err() {
+                break;
+            }
+            thread::sleep(Duration::from_millis(5));
+        }
+        assert!(
+            wait_for(|| c.status().streaming.is_some_and(|s| s.dropped.len() == 2)),
+            "both bad ones are reported: {:?}",
+            c.status().streaming
+        );
+        let st = c.status();
+        assert!(
+            st.failure.is_none(),
+            "the stream carries on: {:?}",
+            st.failure
+        );
+        let mut dropped = st.streaming.unwrap().dropped;
+        dropped.sort();
+        assert_eq!(dropped, ["Bad", "Own"]);
+        c.stop(r.session);
+        assert!(wait_for(|| settled(&good)));
+    }
+
+    /// A graphics-card encoder that can't start (this test computer has no
+    /// NVIDIA card) is replaced by the processor's on the next start.
+    #[test]
+    fn a_failed_hardware_encoder_falls_back_to_the_processor() {
+        let Some(ffmpeg) = find_ffmpeg() else {
+            eprintln!("FFmpeg not installed: skipped");
+            return;
+        };
+        let works = lumora_syscheck::working_hw_encoders(&ffmpeg);
+        if works.iter().any(|e| e == "h264_nvenc") {
+            eprintln!("NVENC works here: skipped");
+            return;
+        }
+        let d = temp_dir("fallback");
+        let Some(video) = sample(&ffmpeg, &d) else {
+            return;
+        };
+        let (c, _) = capture(&d, Some(ffmpeg.clone()));
+        // Pretend the start-up check found NVENC working.
+        c.set_hw_encoders(vec!["h264_nvenc".into()]);
+        let out = d.join("out.flv");
+        c.set_settings(CaptureSettings {
+            destinations: vec![Destination {
+                name: "File".into(),
+                url: out.to_string_lossy().into(),
+                ..Destination::default()
+            }],
+            ..CaptureSettings::default()
+        });
+        let feed = |c: &Capture, session| {
+            for part in video.chunks(4096) {
+                if c.chunk(session, part.to_vec()).is_err() {
+                    break;
+                }
+                thread::sleep(Duration::from_millis(2));
+            }
+        };
+        let r = c.start(Kind::Stream, H264, "").unwrap();
+        assert!(r.encoder.contains("NVENC"), "{}", r.encoder);
+        feed(&c, r.session);
+        assert!(wait_for(|| c.status().failure.is_some()));
+        let st = c.status();
+        let f = st.failure.unwrap();
+        assert!(f.fallback && !f.never_started, "{f:?}");
+        assert!(f.message.contains("NVIDIA NVENC"), "{}", f.message);
+        assert_eq!(st.hw_failed, [Family::Nvenc]);
+        // Started again: the processor, and it works.
+        c.stop(r.session);
+        let r = c.start(Kind::Stream, H264, "").unwrap();
+        assert!(!r.encoder.contains("NVENC"), "{}", r.encoder);
+        feed(&c, r.session);
+        c.stop(r.session);
+        assert!(wait_for(|| settled(&out)));
+
+        // A recording the same way: the new file is made with the processor.
+        let (c, _) = capture(&d, Some(ffmpeg.clone()));
+        c.set_hw_encoders(vec!["h264_nvenc".into()]);
+        c.set_settings(CaptureSettings {
+            record_encode: true,
+            ..CaptureSettings::default()
+        });
+        let r = c.start(Kind::Record, H264, "Encoded").unwrap();
+        assert!(r.encoder.contains("NVENC"), "{}", r.encoder);
+        feed(&c, r.session);
+        assert!(wait_for(|| c.status().failure.is_some()));
+        assert!(c.status().failure.unwrap().fallback);
+        c.stop(r.session);
+        let r = c.start(Kind::Record, H264, "Encoded").unwrap();
+        assert!(r.encoder.contains("x264"), "{}", r.encoder);
+        assert_eq!(r.source_kbps, Some(12_000));
+        feed(&c, r.session);
+        c.stop(r.session);
+        assert!(wait_for(|| c
+            .status()
+            .last_recording
+            .is_some_and(|p| p.ends_with(".mp4"))));
+        let done = PathBuf::from(c.status().last_recording.unwrap());
+        assert!(size_of(&ffmpeg, &done).contains("h264"));
     }
 
     #[test]

@@ -5,6 +5,7 @@ mod captions;
 mod capture;
 mod control;
 mod desktop;
+mod encode;
 mod events;
 mod export;
 mod iso;
@@ -1086,6 +1087,18 @@ pub fn run() {
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_secs(20));
                 reveal(&late);
+            });
+            // Which graphics-card encoders really work here (a tiny encode
+            // each, a few seconds, off the main thread).
+            let probe = app.handle().clone();
+            std::thread::spawn(move || {
+                let state = probe.state::<AppState>();
+                let working = state
+                    .ffmpeg
+                    .as_deref()
+                    .map(lumora_syscheck::working_hw_encoders)
+                    .unwrap_or_default();
+                state.capture.set_hw_encoders(working);
             });
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
