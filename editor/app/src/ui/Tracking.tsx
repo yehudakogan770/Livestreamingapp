@@ -1,6 +1,7 @@
 // Motion tracking and AI masks on the screen: the Tracking section of the
 // effect controls, the extra rows of mask effects ("follow a track", "limit
 // to"), and the tracker points and paths drawn over the program monitor.
+import { Crosshair, Scan, X } from 'lucide-react';
 import { useSyncExternalStore, type ReactNode } from 'react';
 import { useDoc, type Doc } from '../doc';
 import { updateClips } from '../model/edit';
@@ -356,7 +357,8 @@ export function TrackingSection({ doc, engine, clip, local, t }: { doc: Doc; eng
         <>
           <div className="insp__row">
             <button type="button" className="btn btn--sm" title="Follow one spot (its position)" onClick={() => startPick(engine, clip, 'point')}>
-              + Track a point
+              <Crosshair />
+              Track a point
             </button>
             <button
               type="button"
@@ -364,7 +366,8 @@ export function TrackingSection({ doc, engine, clip, local, t }: { doc: Doc; eng
               title="Follow a region (its position, size and turn)"
               onClick={() => startPick(engine, clip, 'region')}
             >
-              + Track a region
+              <Scan />
+              Track a region
             </button>
           </div>
           {paths.length === 0 && (
@@ -450,7 +453,7 @@ export function TrackingSection({ doc, engine, clip, local, t }: { doc: Doc; eng
                   }))
                 }
               >
-                ✕
+                <X />
               </button>
             </div>
             {ended?.message && <p className="insp__note">{ended.message}</p>}
@@ -493,7 +496,7 @@ export function TrackingSection({ doc, engine, clip, local, t }: { doc: Doc; eng
               ))}
             </select>
             <button type="button" className="sect__btn" title="Stop stabilizing" onClick={() => set('Stabilize off', (c) => ({ ...c, stabilize: null }))}>
-              ✕
+              <X />
             </button>
           </div>
           <label className="check">

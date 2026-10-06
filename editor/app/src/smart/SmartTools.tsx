@@ -2,6 +2,7 @@
 // filler words, auto reframe to vertical or square, and highlight reel. Each
 // one analyzes first (with progress, and a Stop button), shows what it would
 // do, and only then changes the project, as one step that Undo takes back.
+import { ArrowDown } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { timecode } from '../model/build';
 import { current, rate } from '../model/seq';
@@ -826,7 +827,7 @@ function HighlightDialog({ doc, engine, ui, onClose }: { doc: Doc; engine: Engin
                         ↑
                       </button>
                       <button type="button" aria-label="Later" disabled={i === moments.length - 1} onClick={() => move(i, 1)}>
-                        ↓
+                        <ArrowDown />
                       </button>
                     </span>
                   </li>

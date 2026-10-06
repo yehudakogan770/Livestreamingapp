@@ -1,3 +1,4 @@
+import { AudioLines, Headphones, Sigma, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { updateTrack } from '../model/edit';
 import { current } from '../model/seq';
@@ -5,6 +6,7 @@ import type { TrackRole } from '../model/types';
 import { useDoc, type Doc } from '../doc';
 import type { Engine } from '../player/engine';
 import { Scrub } from './controls';
+import { METER_ZONES } from './Timeline';
 
 /** One fader and meter for each sound track, and one for everything. */
 export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
@@ -17,6 +19,7 @@ export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
       {tracks.map((t) => (
         <div key={t.id} className={`estrip${t.off ? ' is-muted' : ''}${t.solo ? ' is-solo' : ''}`}>
           <span className="estrip__name" title={t.name}>
+            <AudioLines />
             {t.name}
           </span>
           <select
@@ -62,24 +65,29 @@ export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
               className={`th__btn th__btn--m${t.off ? ' is-on' : ''}`}
               aria-pressed={t.off}
               title="Mute"
+              aria-label="Mute"
               onClick={() => doc.edit((p) => updateTrack(p, t.id, { off: !t.off }), 'Mute')}
             >
-              M
+              {t.off ? <VolumeX /> : <Volume2 />}
             </button>
             <button
               type="button"
               className={`th__btn th__btn--s${t.solo ? ' is-on' : ''}`}
               aria-pressed={t.solo}
               title="Solo"
+              aria-label="Solo"
               onClick={() => doc.edit((p) => updateTrack(p, t.id, { solo: !t.solo }), 'Solo')}
             >
-              S
+              <Headphones />
             </button>
           </div>
         </div>
       ))}
       <div className="estrip estrip--master">
-        <span className="estrip__name">Everything</span>
+        <span className="estrip__name">
+          <Sigma />
+          Everything
+        </span>
         <div className="estrip__pan" />
         <div className="estrip__body">
           <Meter engine={engine} id="master" stereo />
@@ -125,14 +133,17 @@ function Meter({ engine, id, stereo }: { engine: Engine; id: string; stereo?: bo
         shown[i] = Math.max(lv[i] ?? -90, (shown[i] ?? -90) - 1.2);
         const top = h - (Math.max(0, (shown[i] ?? -90) + 60) / 66) * h;
         const x = i * 8;
-        ctx.fillStyle = '#1c1c1e';
+        ctx.fillStyle = '#121417';
         ctx.fillRect(x, 0, 6, h);
-        const grad = ctx.createLinearGradient(0, h, 0, 0);
-        grad.addColorStop(0, '#2f8f4e');
-        grad.addColorStop(0.75, '#c9b23a');
-        grad.addColorStop(0.92, '#d2453a');
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, top, 6, h - top);
+        const y = (d: number) => h - (Math.max(0, d + 60) / 66) * h;
+        for (const [lo, hi, col] of METER_ZONES) {
+          const a = Math.max(top, y(hi));
+          const b = y(lo);
+          if (b > a) {
+            ctx.fillStyle = col;
+            ctx.fillRect(x, a, 6, b - a);
+          }
+        }
       }
     };
     draw();

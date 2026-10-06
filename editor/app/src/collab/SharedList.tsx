@@ -1,3 +1,4 @@
+import { Cloud, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { authOn } from '../../../../app/src/auth/config';
 import { useAccess } from '../../../../app/src/auth/Gate';
@@ -23,7 +24,10 @@ export function SharedList({ onOpen }: { onOpen: (id: string) => void }) {
   if (!signedIn) return null;
   return (
     <>
-      <h2 className="start__h2">Shared with me</h2>
+      <h2 className="start__h2">
+        <Users />
+        Shared with me
+      </h2>
       {problem && <p className="start__empty">{problem}</p>}
       {!problem && list === null && <p className="start__empty">Looking…</p>}
       {list?.length === 0 && <p className="start__empty">Projects shared with you (and ones you share) show up here.</p>}
@@ -31,6 +35,7 @@ export function SharedList({ onOpen }: { onOpen: (id: string) => void }) {
         {list?.map((p) => (
           <li key={p.id}>
             <button type="button" className="start__item" onClick={() => onOpen(p.id)} title={`Version ${p.version}`}>
+              <Cloud className="start__kind" aria-label="A shared project" />
               <span className="start__name">{p.name}</span>
               <span className="start__when">{new Date(p.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               <span className="start__where">

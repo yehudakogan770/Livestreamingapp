@@ -1,3 +1,4 @@
+import { AlignCenter, AlignLeft, AlignRight, ChevronDown, ChevronUp, Minus, Plus, RotateCcw, X } from 'lucide-react';
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { GENERATORS, timecode } from '../model/build';
@@ -361,7 +362,8 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
             )
           }
         >
-          + Color correction
+          <Plus />
+          Color correction
         </button>
         <button type="button" className="btn btn--sm" onClick={() => ui.set({ page: 'color' })}>
           Open the Color page
@@ -399,10 +401,12 @@ function CameraPick({ doc, clip }: { doc: Doc; clip: Clip }) {
             .map((a) => (
               <span key={a.id} className="insp__sync">
                 <button type="button" className="btn btn--sm" title="This camera is a frame early" onClick={() => nudgeAngle(doc, g.id, a.id, -1 / 30)}>
-                  − frame
+                  <Minus />
+                  Frame
                 </button>
                 <button type="button" className="btn btn--sm" title="This camera is a frame late" onClick={() => nudgeAngle(doc, g.id, a.id, 1 / 30)}>
-                  + frame
+                  <Plus />
+                  Frame
                 </button>
               </span>
             ))}
@@ -456,7 +460,7 @@ function MotionSection({
       title="Motion"
       actions={
         <button type="button" className="sect__btn" title="Back to how it was" onClick={() => onChange({ ...NO_MOTION }, true)}>
-          ↺
+          <RotateCcw />
         </button>
       }
     >
@@ -592,10 +596,10 @@ function EffectSection({
       actions={
         <>
           <button type="button" className="sect__btn" title="Earlier" aria-label="Move up" onClick={() => move(-1)}>
-            ▴
+            <ChevronUp />
           </button>
           <button type="button" className="sect__btn" title="Later" aria-label="Move down" onClick={() => move(1)}>
-            ▾
+            <ChevronDown />
           </button>
           <button
             type="button"
@@ -604,7 +608,7 @@ function EffectSection({
             aria-label={`Remove ${def.name}`}
             onClick={() => upd(clip, 'Remove effect', (c) => ({ ...c, effects: c.effects.filter((e) => e.id !== effect.id) }))}
           >
-            ✕
+            <X />
           </button>
         </>
       }
@@ -737,9 +741,9 @@ function TextEditor({ data, onChange }: { data: TextData; onChange: (t: TextData
         <Choice
           value={data.align}
           options={[
-            ['left', '⇤'],
-            ['center', '↔'],
-            ['right', '⇥'],
+            ['left', <AlignLeft key="l" />, 'Left'],
+            ['center', <AlignCenter key="c" />, 'Center'],
+            ['right', <AlignRight key="r" />, 'Right'],
           ]}
           onChange={(v) => set({ align: v })}
           label="Line up"

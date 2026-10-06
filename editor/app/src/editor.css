@@ -1,10 +1,15 @@
-/* Lumora Studio — the same look as Lumora (tokens in app/src/styles.css), laid out
-   like a finishing suite (Resolve / Premiere / Avid): dense panels split by 1px
-   dividers, 24-28px controls, 3px corners, no gradients or glows, pictures and
-   scopes on black. Red is the playhead and nothing else on the Edit page; the
-   accent marks selection and focus. Fits 1280×760. */
+/* Lumora Studio — Lumora's broadcast-console look (tokens in app/src/styles.css)
+   laid out like a finishing suite (Resolve / Media Composer / Premiere): a dark
+   app bar with menus, panels with an icon + title header, 1px dividers, dense
+   24-28px controls, line icons with tooltips, Inter for words and JetBrains Mono
+   for every timecode. No gradients, glows, grids or decorative stripes; pictures
+   and scopes sit on black. Colors mean one thing each: red is the playhead (and
+   clipping), the accent teal is selection and focus, amber is a warning or a
+   mute, the light-gray key is the one primary action. Fits 1280×760. */
 
-/* ---- start ---- */
+/* ---- start ----
+   Like a project manager: the brand and the two actions on the left, the
+   recent projects as a plain list on the right. No picture behind it. */
 .start {
   position: fixed;
   inset: 0;
@@ -14,40 +19,54 @@
   background: var(--bg);
 }
 .start__card {
-  width: min(980px, 100%);
+  width: min(1040px, 100%);
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
   background: var(--panel);
-  box-shadow: var(--shadow-pop);
+  box-shadow:
+    inset 0 1px 0 var(--hi),
+    var(--shadow-pop);
   overflow: hidden;
 }
 .start__main {
-  padding: 32px 32px 28px;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 36px 28px;
 }
 .start__logo {
-  height: 34px;
-  margin: 0 0 24px -4px;
+  align-self: flex-start;
+  height: 30px;
+  margin: 0 0 40px -2px;
 }
 .start h1 {
-  margin: 0 0 8px;
-  font-size: 20px;
-  font-weight: 600;
+  margin: 0 0 10px;
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 .start__lead {
-  margin: 0 0 20px;
+  margin: 0 0 28px;
   color: var(--text-dim);
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
 }
 .start__open {
   width: 100%;
-  height: 32px;
+  height: 38px;
+  justify-content: center;
   font-size: 13px;
 }
+.start__open svg.lucide {
+  width: 15px;
+  height: 15px;
+}
 .start__hint {
-  margin: 12px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 14px 0 0;
   color: var(--text-faint);
   font-size: 12px;
   line-height: 1.5;
@@ -68,8 +87,8 @@
   padding: 0;
   border-left: 1px solid var(--border);
   background: var(--bar);
-  min-height: 400px;
-  max-height: 560px;
+  min-height: 460px;
+  max-height: 600px;
   overflow: auto;
 }
 .start__recent h2 {
@@ -77,19 +96,23 @@
   top: 0;
   z-index: 1;
   margin: 0;
-  height: 32px;
+  height: 34px;
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  gap: 7px;
+  padding: 0 14px;
   background: var(--raised);
   border-bottom: 1px solid var(--border);
   font-size: 12px;
   font-weight: 600;
+  color: var(--text);
+}
+.start__recent h2 svg.lucide {
   color: var(--text-dim);
 }
 .start__empty {
   margin: 0;
-  padding: 10px 12px;
+  padding: 12px 14px;
   color: var(--text-faint);
   font-size: 12.5px;
 }
@@ -108,10 +131,11 @@
   flex: 1;
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 1px 10px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 8px;
   text-align: left;
-  padding: 7px 12px;
+  padding: 9px 14px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -122,18 +146,37 @@
 .start__item:active {
   background: var(--button-active);
 }
+.start__kind {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--well);
+  color: var(--text-dim);
+  stroke-width: 1.75 !important;
+}
 .start__name {
+  grid-column: 2;
+  grid-row: 1;
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .start__when {
+  grid-column: 3;
+  grid-row: 1;
   color: var(--text-faint);
-  font-size: 11.5px;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 11px;
 }
 .start__where {
-  grid-column: 1 / -1;
+  grid-column: 2 / -1;
+  grid-row: 2;
   color: var(--text-faint);
   font-size: 11.5px;
   overflow: hidden;
@@ -141,7 +184,9 @@
   white-space: nowrap;
 }
 .start__forget {
-  width: 30px;
+  width: 34px;
+  display: grid;
+  place-items: center;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -179,7 +224,7 @@
 .getting__bar i {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: #c4c8ce;
   transition: width 0.3s;
 }
 .getting__list {
@@ -258,104 +303,115 @@
 }
 .ed__top {
   flex: none;
-  height: 36px;
+  height: 40px;
 }
 .ed__status {
   flex: none;
-  height: 22px;
+  height: 38px;
 }
+/* The app bar: the darkest strip, like Lumora's title bar. */
 .ed__top {
+  position: relative;
+  z-index: 20;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 8px;
-  background: var(--bar);
-  border-bottom: 1px solid var(--border);
+  gap: 2px;
+  padding: 0 8px 0 12px;
+  background: #0f1114;
+  border-bottom: 1px solid #000;
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
   min-width: 0;
 }
 .ed__logo {
   height: 18px;
-  margin-right: 6px;
+  padding-right: 12px;
+  margin-right: 4px;
+  border-right: 1px solid var(--border);
+  box-sizing: content-box;
 }
 .ed__menus {
   display: flex;
-  gap: 1px;
+  gap: 0;
+  min-width: 0;
 }
 .ed__menu {
-  height: 24px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: var(--radius-sm);
+  height: 28px;
+  padding: 0 7px 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--text);
-  font-size: 13px;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ed__menu .ed__caret {
+  width: 11px;
+  height: 11px;
+  color: var(--text-faint);
+  margin-right: -2px;
 }
 .ed__menu:hover {
   background: var(--button);
-  color: #fff;
+  color: var(--text);
 }
 .ed__menu:active {
   background: var(--button-hover);
+  border-color: var(--border-strong);
 }
 .ed__name {
-  max-width: 220px;
-  margin-left: 6px;
-  padding-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  height: 24px;
+  margin-left: 8px;
+  padding-left: 12px;
   border-left: 1px solid var(--border);
-  color: var(--text-dim);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 0;
+}
+.ed__name > span {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
-/* The pages: one segmented control, like Resolve's page buttons. */
-.ed__pages {
-  display: flex;
-  margin-left: 14px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-strong);
-  overflow: hidden;
-}
-.ed__pages button {
-  height: 24px;
-  min-width: 64px;
-  padding: 0 14px;
-  border: 0;
-  border-right: 1px solid var(--border-strong);
-  border-radius: 0;
-  background: var(--button-active);
-  color: var(--text-dim);
-  font-size: 12.5px;
-}
-.ed__pages button:last-child {
-  border-right: 0;
-}
-.ed__pages button:hover:not(.is-on) {
-  background: var(--button);
-  color: var(--text);
-}
-.ed__pages button.is-on {
-  background: var(--selected);
-  color: #fff;
-  box-shadow: inset 0 -2px 0 var(--accent);
+.ed__name svg.lucide {
+  color: var(--text-faint);
 }
 .ed__fill {
   flex: 1;
 }
 .ed__saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  margin: 0 8px 0 6px;
+  padding: 0 10px 0 12px;
+  border-left: 1px solid var(--border);
   color: var(--text-faint);
   font-size: 12px;
-  margin: 0 6px;
   white-space: nowrap;
-  max-width: 260px;
+  max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.ed__saved svg.lucide {
+  width: 13px;
+  height: 13px;
 }
 .ed__saved.is-problem {
   color: var(--danger);
 }
 .ed__export {
-  height: 26px;
-  padding: 0 14px;
+  height: 28px;
+  padding: 0 14px 0 11px;
   font-size: 12.5px;
 }
 .ed__warn {
@@ -371,21 +427,80 @@
 }
 .ed__warnx {
   margin-left: auto;
+  display: inline-flex;
   border: 0;
   background: none;
   color: inherit;
 }
+/* The bottom bar: what just happened on the left, the pages in the middle (as
+   in Resolve's page bar), the sequence format on the right. */
 .ed__status {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
-  padding: 0 10px;
-  background: var(--bar);
-  border-top: 1px solid var(--border);
+  gap: 12px;
+  padding: 0 12px;
+  background: #0f1114;
+  border-top: 1px solid #000;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
   color: var(--text-dim);
-  font-size: 11.5px;
+  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
+}
+.ed__note {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ed__seqinfo {
+  justify-self: end;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.ed__pages {
+  display: flex;
+  gap: 2px;
+}
+.ed__pages button {
+  height: 30px;
+  min-width: 92px;
+  padding: 0 14px 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.ed__pages button svg.lucide {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+  color: var(--text-faint);
+}
+.ed__pages button:hover:not(.is-on) {
+  background: var(--button);
+  color: var(--text);
+}
+.ed__pages button:hover:not(.is-on) svg.lucide {
+  color: var(--text-dim);
+}
+.ed__pages button.is-on {
+  border-color: var(--border-strong);
+  border-top-color: #424852;
+  background: #22262c;
+  color: #fff;
+  font-weight: 600;
+}
+.ed__pages button.is-on svg.lucide {
+  color: var(--accent);
 }
 
 /* pages */
@@ -450,36 +565,49 @@
 .split--right {
   cursor: col-resize;
 }
-/* Panel tabs: flat, the open one lifted to the panel color with an accent edge. */
+/* Panel headers: tabs with an icon and a title. The open one is lifted to the
+   panel color, with the accent along its top edge. */
 .tabs {
   flex: none;
   display: flex;
-  height: 28px;
+  height: 30px;
   padding: 0;
   background: var(--bar);
   border-bottom: 1px solid var(--border);
 }
 .tabs button {
-  height: 28px;
-  padding: 0 12px;
+  height: 30px;
+  padding: 0 12px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border: 0;
   border-right: 1px solid var(--border);
   border-radius: 0;
   background: transparent;
   color: var(--text-dim);
-  font-weight: 400;
-  font-size: 12.5px;
+  font-weight: 500;
+  font-size: 12px;
   white-space: nowrap;
+}
+.tabs button svg.lucide {
+  width: 13px;
+  height: 13px;
+  color: var(--text-faint);
 }
 .tabs button:hover:not(.is-on) {
   color: var(--text);
   background: var(--raised);
 }
 .tabs button.is-on {
-  height: 29px;
+  height: 31px;
   background: var(--panel);
   color: #fff;
+  font-weight: 600;
   box-shadow: inset 0 2px 0 var(--accent);
+}
+.tabs button.is-on svg.lucide {
+  color: var(--text);
 }
 
 /* small controls */
@@ -493,13 +621,41 @@
 .tbtn {
   min-width: 26px;
   height: 24px;
-  padding: 0 5px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
+  border-top-color: #424852;
   background: var(--button);
   color: var(--text);
   font-size: 12px;
   line-height: 1;
+  white-space: nowrap;
+}
+.tbtn svg.lucide {
+  color: var(--text-dim);
+}
+.tbtn:hover:not(:disabled) svg.lucide {
+  color: var(--text);
+}
+/* Icon-only buttons: no key cap until the pointer is on them (transport, bars). */
+.tbtn--icon {
+  width: 28px;
+  min-width: 28px;
+  height: 26px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+}
+.tbtn--icon svg.lucide {
+  width: 15px;
+  height: 15px;
+}
+.tbtn--icon:hover:not(:disabled) {
+  border-color: var(--border-strong);
 }
 .tbtn:hover:not(:disabled) {
   background: var(--button-hover);
@@ -516,13 +672,35 @@
   background: var(--selected);
   color: #fff;
 }
-.tbtn--play {
-  min-width: 38px;
-  height: 26px;
-  font-size: 12px;
+.tbtn.is-on svg.lucide {
+  color: var(--accent);
 }
-input[type='range'] {
-  accent-color: var(--accent);
+/* Play: the one lit key in the transport. */
+.tbtn--play {
+  min-width: 40px;
+  height: 28px;
+  margin: 0 2px;
+  background: #dde0e4;
+  border-color: #dde0e4;
+  border-top-color: #f2f3f5;
+  color: #0c0e11;
+}
+.tbtn--play svg.lucide,
+.tbtn--play:hover:not(:disabled) svg.lucide {
+  width: 15px;
+  height: 15px;
+  color: #0c0e11;
+  fill: #0c0e11;
+}
+.tbtn--play:hover:not(:disabled) {
+  background: #eceef1;
+}
+.tbtn--play:active:not(:disabled) {
+  background: #c4c8ce;
+}
+.tbtn--play.is-on {
+  border-color: #dde0e4;
+  background: #dde0e4;
 }
 .text--sm,
 select.text--sm {
@@ -545,6 +723,10 @@ select.text--sm {
 .choice button {
   height: 24px;
   padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border: 0;
   border-right: 1px solid var(--border-strong);
   background: var(--button-active);
@@ -633,8 +815,8 @@ select.text--sm {
 .pop {
   position: fixed;
   z-index: 100;
-  min-width: 220px;
-  padding: 3px;
+  min-width: 240px;
+  padding: 4px;
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
   background: var(--raised);
@@ -642,7 +824,7 @@ select.text--sm {
 }
 .pop button {
   width: 100%;
-  height: 26px;
+  height: 28px;
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
@@ -652,13 +834,14 @@ select.text--sm {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text);
-  font-size: 13px;
+  font-size: 12.5px;
   text-align: left;
 }
 .pop button:hover:not(:disabled),
 .pop button.is-open {
-  background: var(--accent-deep);
+  background: var(--selected);
   color: #fff;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 .pop button:disabled {
   color: var(--text-faint);
@@ -670,19 +853,28 @@ select.text--sm {
   margin: 3px 0;
 }
 .pop__check {
+  display: inline-flex;
+  justify-content: center;
   color: var(--accent);
-  text-align: center;
+}
+.pop__check svg.lucide {
+  width: 13px;
+  height: 13px;
 }
 .pop__keys {
+  display: inline-flex;
+  align-items: center;
   color: var(--text-faint);
-  font-size: 11.5px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+.pop__keys svg.lucide {
+  width: 12px;
+  height: 12px;
 }
 .pop button:hover .pop__keys,
 .pop button.is-open .pop__keys {
-  color: rgba(255, 255, 255, 0.75);
-}
-.pop button:hover .pop__check {
-  color: #fff;
+  color: var(--text-dim);
 }
 
 /* panel sections */
@@ -692,7 +884,11 @@ select.text--sm {
 .sect__head {
   display: flex;
   align-items: center;
-  min-height: 26px;
+  min-height: 28px;
+}
+.sect__btn svg.lucide {
+  width: 13px;
+  height: 13px;
 }
 .sect__fold {
   flex: 1;
@@ -716,17 +912,30 @@ select.text--sm {
   color: var(--text-faint);
 }
 .sect__arrow {
+  display: inline-flex;
   width: 12px;
   color: var(--text-faint);
-  font-size: 10px;
+}
+.sect__arrow svg.lucide {
+  width: 12px;
+  height: 12px;
+}
+.sect__fold > svg.sect__icon {
+  width: 13px;
+  height: 13px;
+  color: var(--text-dim);
 }
 .sect__actions {
   display: flex;
   gap: 2px;
 }
 .sect__btn {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -776,6 +985,9 @@ select.text--sm {
 .prow__watch {
   width: 18px;
   height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
   background: none;
@@ -790,9 +1002,17 @@ select.text--sm {
   display: flex;
   gap: 1px;
 }
+.prow__watch svg.lucide,
+.prow__keys svg.lucide {
+  width: 12px;
+  height: 12px;
+}
 .prow__keys button {
   width: 18px;
   height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
@@ -806,6 +1026,9 @@ select.text--sm {
 }
 .prow__keys button.is-on {
   color: var(--accent);
+}
+.prow__keys button.is-on svg.lucide {
+  fill: var(--accent);
 }
 .prow__keys button:disabled {
   opacity: 0.3;
@@ -986,8 +1209,8 @@ select.text--sm {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 26px;
+  gap: 7px;
+  min-height: 28px;
   padding: 1px 8px;
   border: 0;
   background: transparent;
@@ -1030,6 +1253,8 @@ select.text--sm {
   font-family: var(--mono);
 }
 .media__icon {
+  width: 15px;
+  height: 15px;
   color: var(--text-dim);
 }
 .media__fold {
@@ -1039,7 +1264,21 @@ select.text--sm {
   border: 0;
   padding: 0;
   background: none;
+  color: var(--text-faint);
+}
+.media__fold svg.lucide {
+  width: 12px;
+  height: 12px;
+}
+.media__fold svg.media__folder,
+svg.media__folder {
+  width: 15px;
+  height: 15px;
   color: var(--text-dim);
+}
+.media__bar .btn svg.lucide {
+  width: 13px;
+  height: 13px;
 }
 .media__bin.is-target > .media__binhead {
   box-shadow: inset 2px 0 0 var(--accent);
@@ -1047,6 +1286,10 @@ select.text--sm {
 .media__x {
   width: 20px;
   height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: none;
@@ -1062,7 +1305,7 @@ select.text--sm {
   display: grid;
   place-items: center;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   background: #000;
   font-size: 10px;
   color: var(--text-faint);
@@ -1080,8 +1323,12 @@ select.text--sm {
   background-repeat: no-repeat;
 }
 .media__thumb--audio {
-  background: var(--well);
-  color: var(--text-dim);
+  background: #18221c;
+  color: #8fc2a0;
+}
+.media__thumb svg.lucide {
+  width: 14px;
+  height: 14px;
 }
 .media__rename {
   flex: 1;
@@ -1159,8 +1406,11 @@ select.text--sm {
   margin: 2px 8px;
 }
 .fxlist__item {
-  height: 24px;
+  height: 26px;
   padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1172,22 +1422,13 @@ select.text--sm {
 .fxlist__item:hover {
   background: var(--raised);
 }
-.fxlist__item::before {
-  content: 'fx';
-  display: inline-block;
-  width: 22px;
+.fxlist__item svg.lucide {
+  width: 13px;
+  height: 13px;
   color: var(--text-faint);
-  font-size: 10px;
-  font-weight: 600;
 }
-.fxlist__item--audio::before {
-  content: '♪';
-}
-.fxlist__item--gen::before {
-  content: '✦';
-}
-.fxlist__item--tr::before {
-  content: '⋈';
+.fxlist__item:hover svg.lucide {
+  color: var(--text-dim);
 }
 .fxlist__row {
   display: flex;
@@ -1221,11 +1462,9 @@ select.text--sm {
 }
 .ttpl h4 {
   margin: 8px 0 4px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-dim);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 .ttpl__grid {
   display: grid;
@@ -1240,23 +1479,24 @@ select.text--sm {
   flex-direction: column;
   gap: 4px;
   width: 100%;
-  padding: 5px;
+  padding: 4px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: var(--radius);
   background: var(--well);
   color: var(--text);
   cursor: grab;
 }
 .ttpl__btn:hover {
-  border-color: var(--accent);
+  border-color: var(--border-strong);
+  background: var(--bar);
 }
 .ttpl__look {
   display: flex;
   height: 54px;
   padding: 5px;
   overflow: hidden;
-  border-radius: 4px;
-  background: linear-gradient(135deg, #2a3442, #4a3a32);
+  border-radius: var(--radius-sm);
+  background: #2b2f35;
 }
 .ttpl__look b {
   max-width: 100%;
@@ -1277,9 +1517,12 @@ select.text--sm {
   right: 2px;
   width: 18px;
   height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   font-size: 10px;
@@ -1323,21 +1566,33 @@ select.text--sm {
 }
 .vmon__head {
   flex: none;
-  height: 28px;
+  height: 30px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 0 6px 0 10px;
   background: var(--bar);
   border-bottom: 1px solid var(--border);
   font-size: 12px;
 }
 .vmon__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   font-weight: 600;
   color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.vmon__title svg.lucide {
+  color: var(--text-dim);
+}
+.vmon__title small {
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 400;
 }
 .vmon__clock {
   padding: 0 5px;
@@ -1448,7 +1703,15 @@ select.text--sm {
   height: 0;
 }
 .vmon__audioonly {
-  font-size: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  color: var(--text-dim);
+}
+.vmon__audioonly svg.lucide {
+  width: 28px;
+  height: 28px;
   color: var(--text-faint);
 }
 .vmon__empty {
@@ -1495,37 +1758,59 @@ select.text--sm {
 }
 .vtransport {
   flex: none;
-  height: 34px;
+  height: 38px;
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 0 6px;
+  padding: 0 8px;
   background: var(--bar);
   border-top: 1px solid var(--border);
+}
+/* Transport keys in groups (marks, motion, edits), split by a 1px rule. */
+.vtransport__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 0 6px;
+  border-left: 1px solid var(--border);
+}
+.vtransport__group:first-of-type {
+  border-left: 0;
+}
+.vtransport .btn--sm svg.lucide {
+  width: 13px;
+  height: 13px;
 }
 .vtransport__fill {
   flex: 1;
 }
 .vtransport__len {
   color: var(--text-faint);
-  font-size: 11.5px;
+  font-family: var(--mono);
+  font-size: 11px;
   white-space: nowrap;
 }
 /* Timecode: plain light figures in the mono face, as on a deck. */
 .tc {
   height: 24px;
-  padding: 0 6px;
-  border: 1px solid transparent;
+  padding: 0 7px;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: transparent;
+  background: var(--well);
+  box-shadow: inset 0 1px 0 var(--lo);
   color: var(--text);
   font-family: var(--mono);
   font-size: 12.5px;
+  font-weight: 500;
   letter-spacing: 0.02em;
 }
 .tc--big {
-  font-size: 15px;
+  height: 28px;
+  padding: 0 9px;
+  font-size: 16px;
   color: #fff;
+  display: inline-flex;
+  align-items: center;
 }
 button.tc:hover {
   border-color: var(--border-strong);
@@ -1555,7 +1840,7 @@ button.tc:hover {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: rgba(90, 143, 208, 0.3);
+  background: rgba(255, 255, 255, 0.12);
   border-left: 1px solid var(--accent);
   border-right: 1px solid var(--accent);
 }
@@ -1633,9 +1918,9 @@ button.tc:hover {
   border-radius: var(--radius-sm);
   background: var(--program);
   color: #fff;
+  font-family: var(--mono);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.04em;
 }
 
 /* timeline */
@@ -1648,29 +1933,43 @@ button.tc:hover {
 }
 .tl__tools {
   flex: none;
-  height: 32px;
+  height: 36px;
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 0 6px;
+  padding: 0 8px 0 6px;
   background: var(--bar);
   border-bottom: 1px solid var(--border);
   overflow: hidden;
 }
 .tl__seq,
 .tl__seqs {
-  max-width: 160px;
-  height: 24px;
-  padding: 0 8px;
-  border: 1px solid var(--border-strong);
+  max-width: 180px;
+  height: 26px;
+  padding: 0 9px 0 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: var(--well);
+  background: transparent;
   color: #fff;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 12.5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.tl__seq:hover {
+  background: var(--button);
+  border-color: var(--border-strong);
+}
+.tl__seq svg.lucide {
+  color: var(--text-dim);
+}
+.tl__seq span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* The edit tools: one segmented strip (Resolve's toolbar). */
 .tl__toolset {
@@ -1681,14 +1980,23 @@ button.tc:hover {
   overflow: hidden;
 }
 .tl__tool {
-  width: 28px;
-  height: 22px;
+  width: 30px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   border-right: 1px solid var(--border);
   border-radius: 0;
   background: var(--button-active);
   color: var(--text-dim);
   font-size: 12px;
+}
+.tl__tool svg.lucide {
+  width: 15px;
+  height: 15px;
+  stroke-width: 1.75;
 }
 .tl__tool:last-child {
   border-right: 0;
@@ -1699,12 +2007,15 @@ button.tc:hover {
 }
 .tl__tool.is-on {
   background: var(--selected);
-  color: #fff;
-  box-shadow: inset 0 -2px 0 var(--accent);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
 }
 .tl__toggle {
-  height: 24px;
-  padding: 0 8px;
+  height: 26px;
+  padding: 0 9px 0 7px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--button-active);
@@ -1719,10 +2030,24 @@ button.tc:hover {
 .tl__toggle:active {
   background: var(--button-active);
 }
+.tl__toggle svg.lucide {
+  width: 13px;
+  height: 13px;
+}
 .tl__toggle.is-on {
   border-color: var(--accent);
   color: #fff;
   background: var(--selected);
+}
+.tl__toggle.is-on svg.lucide {
+  color: var(--accent);
+}
+.tl__tools .btn--sm {
+  height: 26px;
+}
+.tl__tools .btn--sm svg.lucide {
+  width: 13px;
+  height: 13px;
 }
 .tl__fill {
   flex: 1;
@@ -1756,7 +2081,7 @@ button.tc:hover {
 /* Track headers: the patch (V1 / A1), the name, then lock / mute / solo. */
 .th {
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   grid-template-rows: auto auto;
   align-content: center;
   align-items: center;
@@ -1772,13 +2097,14 @@ button.tc:hover {
   background-image: repeating-linear-gradient(-45deg, transparent 0 6px, rgba(255, 255, 255, 0.03) 6px 12px);
 }
 .th__target {
-  width: 24px;
-  height: 18px;
+  width: 26px;
+  height: 20px;
   padding: 0;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--button-active);
   color: var(--text-dim);
+  font-family: var(--mono);
   font-size: 10.5px;
   font-weight: 600;
 }
@@ -1787,7 +2113,7 @@ button.tc:hover {
   color: var(--text);
 }
 .th__target.is-on {
-  background: var(--accent-deep);
+  background: var(--selected);
   border-color: var(--accent);
   color: #fff;
 }
@@ -1795,7 +2121,7 @@ button.tc:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 400;
+  font-weight: 500;
   color: var(--text);
 }
 .th__name--edit {
@@ -1812,25 +2138,35 @@ button.tc:hover {
   display: flex;
   gap: 2px;
 }
+/* Lock / hide / mute / solo: small square keys with line icons. A pressed key
+   lights: lock and hide in white, mute in amber, solo as a lit (light) key. */
 .th__btn {
-  min-width: 18px;
-  height: 18px;
+  min-width: 22px;
+  height: 20px;
   padding: 0 3px;
-  border: 1px solid var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--button-active);
-  color: var(--text-dim);
+  background: transparent;
+  color: var(--text-faint);
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
 }
+.th__btn svg.lucide {
+  width: 12px;
+  height: 12px;
+}
 .th__btn:hover {
   background: var(--button);
+  border-color: var(--border-strong);
   color: var(--text);
 }
 .th__btn.is-on {
   color: #fff;
-  border-color: var(--text-faint);
+  border-color: var(--border-strong);
   background: var(--button-hover);
 }
 .th__btn--m.is-on {
@@ -1839,9 +2175,9 @@ button.tc:hover {
   background: var(--warning-bg);
 }
 .th__btn--s.is-on {
-  color: #fff;
-  border-color: var(--accent);
-  background: var(--selected);
+  color: #0c0e11;
+  border-color: #dde0e4;
+  background: #dde0e4;
 }
 .th__vol {
   grid-column: 2 / 4;
@@ -1883,10 +2219,11 @@ button.tc:hover {
   position: absolute;
   top: 0;
   bottom: 0;
-  padding: 2px 0 0 4px;
+  padding: 3px 0 0 5px;
   border-left: 1px solid var(--border-strong);
   font-family: var(--mono);
   font-size: 10px;
+  font-weight: 500;
   color: var(--text-dim);
   white-space: nowrap;
   pointer-events: none;
@@ -1959,25 +2296,34 @@ button.tc:hover {
   pointer-events: none;
   z-index: 4;
 }
-/* Clips: the label color, muted toward graphite so a full timeline stays calm;
-   a thin darker edge, and a white outline when selected. */
+/* Clips: a muted graphite body per kind (picture slate-gray, sound green-gray),
+   the label or camera color only in the name band along the top, a thin
+   darker edge, and the accent outline when selected. */
 .clip {
+  --band: color-mix(in srgb, var(--clip) 52%, #24282e);
   position: absolute;
   z-index: 2;
   border-radius: var(--radius-sm);
   overflow: visible;
-  background: color-mix(in srgb, var(--clip) 46%, #2a2a2c);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--clip) 40%, #000);
+  background: color-mix(in srgb, var(--clip) 14%, #2c3138);
+  box-shadow:
+    inset 0 15px 0 var(--band),
+    inset 0 0 0 1px color-mix(in srgb, var(--clip) 30%, #08090b);
 }
 .clip--audio {
-  background: color-mix(in srgb, var(--clip) 36%, #222224);
+  --band: color-mix(in srgb, var(--clip) 40%, #222824);
+  background: color-mix(in srgb, var(--clip) 16%, #20262a);
 }
 .clip.is-sel {
-  background: color-mix(in srgb, var(--clip) 60%, #3a3a3d);
+  background: color-mix(in srgb, var(--clip) 20%, #353b43);
   box-shadow:
-    inset 0 0 0 1px #fff,
-    0 0 0 1px #fff;
+    inset 0 15px 0 var(--band),
+    inset 0 0 0 1px var(--accent),
+    0 0 0 1px var(--accent);
   z-index: 3;
+}
+.clip--audio.is-sel {
+  background: color-mix(in srgb, var(--clip) 22%, #283030);
 }
 .clip.is-off {
   opacity: 0.45;
@@ -1985,11 +2331,11 @@ button.tc:hover {
 }
 .clip__thumbs {
   position: absolute;
-  inset: 0;
+  inset: 16px 1px 1px;
   overflow: hidden;
-  border-radius: var(--radius-sm);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.85;
 }
 .clip__thumbs i {
   position: absolute;
@@ -2005,20 +2351,20 @@ button.tc:hover {
 }
 .clip__wave {
   position: absolute;
-  top: 0;
+  top: 15px;
   pointer-events: none;
 }
 .clip__name {
   position: absolute;
-  top: 2px;
+  top: 1px;
   right: 6px;
+  height: 14px;
   display: flex;
   gap: 4px;
   align-items: center;
   font-size: 11px;
-  font-weight: 400;
-  color: #fff;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.9);
+  font-weight: 500;
+  color: #eef0f2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2091,7 +2437,7 @@ button.tc:hover {
   position: absolute;
   z-index: 7;
   border: 1px solid var(--accent);
-  background: rgba(90, 143, 208, 0.12);
+  background: rgba(79, 179, 191, 0.08);
   pointer-events: none;
 }
 .tl__playhead {
@@ -2181,6 +2527,11 @@ button.tc:hover {
   border-bottom: 1px solid var(--border);
   font-size: 12px;
 }
+.colorp__col h3 > svg.lucide {
+  width: 13px;
+  height: 13px;
+  color: var(--text-dim);
+}
 .colorp__col h3 .sect__btn {
   margin-left: auto;
 }
@@ -2225,7 +2576,7 @@ button.tc:hover {
   background:
     linear-gradient(rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.09)) center / 1px 100% no-repeat,
     linear-gradient(rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.09)) center / 100% 1px no-repeat,
-    radial-gradient(circle closest-side, #1c1c1e 0, #1c1c1e calc(100% - 7px), transparent calc(100% - 6px)),
+    radial-gradient(circle closest-side, #16181c 0, #16181c calc(100% - 7px), transparent calc(100% - 6px)),
     conic-gradient(from 90deg, #c84a44, #b84a8c, #6a5bc0, #4a78c8, #4aa6a6, #4ea860, #b8b444, #c8843c, #c84a44);
   box-shadow:
     inset 0 0 0 1px #000,
@@ -2264,6 +2615,21 @@ button.tc:hover {
   background: var(--bar);
   border-bottom: 1px solid var(--border);
 }
+.ngraph__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ngraph__title svg.lucide {
+  color: var(--text-dim);
+}
+.ngraph__bar .btn--sm svg.lucide {
+  width: 13px;
+  height: 13px;
+}
 .ngraph__gap {
   width: 1px;
   height: 18px;
@@ -2278,9 +2644,7 @@ button.tc:hover {
   overflow-x: auto;
   border: 0;
   border-radius: 0;
-  background-color: #161617;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 12px 12px;
+  background: #111316;
 }
 .colorp__nodes > .insp__note {
   padding: 4px 10px;
@@ -2345,22 +2709,22 @@ button.tc:hover {
   align-items: center;
   gap: 6px;
   min-width: 112px;
-  height: 28px;
+  height: 30px;
   padding: 0 6px 0 0;
   border: 1px solid #000;
   border-radius: var(--radius-sm);
-  background: #3a3a3d;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: #2b2f35;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   font-size: 12px;
   cursor: pointer;
   user-select: none;
 }
 .gnode:hover {
-  background: #424246;
+  background: #333840;
 }
 .gnode.is-on {
   border-color: var(--accent);
-  background: #3a3a3d;
+  background: #2b2f35;
   box-shadow: 0 0 0 1px var(--accent);
 }
 .gnode.is-off {
@@ -2376,15 +2740,15 @@ button.tc:hover {
   padding: 0 5px;
   border-right: 1px solid #000;
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
-  background: #2a2a2c;
+  background: #1d2025;
   color: var(--text-dim);
   font-family: var(--mono);
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
 }
 .gnode.is-on .gnode__num {
-  background: var(--accent-deep);
-  color: #fff;
+  background: var(--selected);
+  color: var(--accent);
 }
 .gnode__label {
   flex: 1;
@@ -2432,10 +2796,19 @@ button.tc:hover {
   flex: none;
   display: flex;
   align-items: center;
-  height: 28px;
-  padding: 0 6px;
+  gap: 6px;
+  height: 30px;
+  padding: 0 6px 0 10px;
   background: var(--bar);
   border-bottom: 1px solid var(--border);
+}
+.scopes__head > svg.lucide {
+  color: var(--text-dim);
+}
+.scopes__title {
+  margin-right: auto;
+  font-size: 12px;
+  font-weight: 600;
 }
 .scopes__canvas {
   flex: 1;
@@ -2473,15 +2846,22 @@ button.tc:hover {
 .estrip__name {
   width: calc(100% + 12px);
   margin: -6px -6px 0;
-  height: 24px;
-  line-height: 24px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 6px;
   background: var(--bar);
   border-bottom: 1px solid var(--border);
-  text-align: center;
   font-weight: 600;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+.estrip__name svg.lucide {
+  width: 13px;
+  height: 13px;
+  color: var(--text-faint);
 }
 .estrip__pan {
   height: 24px;
@@ -2546,7 +2926,7 @@ button.tc:hover {
   width: min(760px, 100%);
 }
 .modal__head {
-  height: 36px;
+  height: 38px;
   flex: none;
   display: flex;
   align-items: center;
@@ -2554,15 +2934,28 @@ button.tc:hover {
   padding: 0 6px 0 14px;
   background: var(--raised);
   border-bottom: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 var(--hi);
 }
 .modal__head h2 {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   font-weight: 600;
+}
+.modal__head h2 svg.lucide {
+  width: 15px;
+  height: 15px;
+  color: var(--text-dim);
 }
 .modal__x {
   width: 26px;
   height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -2602,8 +2995,11 @@ button.tc:hover {
   gap: 4px;
 }
 .fchip {
-  height: 24px;
+  height: 26px;
   padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
   background: var(--button-active);
@@ -2676,7 +3072,7 @@ button.tc:hover {
 .expo__bar i {
   display: block;
   height: 100%;
-  background: var(--accent);
+  background: #c4c8ce;
   transition: width 0.3s;
 }
 .expo__left {
@@ -2699,7 +3095,7 @@ button.tc:hover {
 }
 .help__keys dt {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text);
 }
 .help__keys dd {
@@ -2711,7 +3107,8 @@ button.tc:hover {
 
 /* ---- team projects ---- */
 .start__h2 {
-  margin-top: 22px !important;
+  margin-top: 0 !important;
+  border-top: 1px solid var(--border);
 }
 .here {
   display: flex;
@@ -2761,6 +3158,9 @@ button.tc:hover {
 }
 .lockbar.is-mine {
   border-left-color: var(--accent);
+}
+.lockbar > svg.lucide {
+  color: var(--text-dim);
 }
 .lockbar__wait {
   color: var(--text-faint);
@@ -2865,6 +3265,26 @@ button.tc:hover {
   background: none;
   color: inherit;
   text-align: left;
+}
+.comment__go svg.comment__icon {
+  align-self: center;
+  width: 12px;
+  height: 12px;
+  color: var(--text-faint);
+}
+.comment__del {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-dim);
+}
+.comment__del:hover {
+  color: var(--danger);
+  text-decoration: none;
+}
+.comment__del svg.lucide {
+  width: 12px;
+  height: 12px;
 }
 .comment__time {
   font-family: var(--mono);
@@ -3007,6 +3427,7 @@ button.tc:hover {
   flex-wrap: wrap;
   gap: 4px;
   padding: 6px;
+  background: var(--bar);
   border-bottom: 1px solid var(--border);
 }
 .tscript__words {
@@ -3054,8 +3475,9 @@ button.tc:hover {
   box-shadow: inset 0 -2px 0 var(--program-bright);
 }
 .tscript__w.is-sel {
-  background: var(--accent-deep);
+  background: var(--selected);
   color: #fff;
+  box-shadow: inset 0 -1px 0 var(--accent);
 }
 .tscript__foot {
   margin: 0;

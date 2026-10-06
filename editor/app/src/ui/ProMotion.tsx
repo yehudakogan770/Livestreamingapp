@@ -1,6 +1,7 @@
 // Pro motion and timing in the Inspector: the keyframe graph editor, time
 // remapping (speed ramps, freezes, backwards parts, frame blending and
 // optical flow), motion blur, text animators and shape layers.
+import { Plus, X } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { isAnim } from '../model/anim';
 import { withLinked } from '../model/edit';
@@ -398,7 +399,8 @@ function TextAnimatorsSection({ clip, local, fps, onSeek, upd }: { clip: Clip; l
           ))}
         </select>
         <button type="button" className="btn btn--sm" onClick={add}>
-          + Add animator
+          <Plus />
+          Add animator
         </button>
       </div>
       {list.map((a) => (
@@ -452,7 +454,7 @@ function AnimatorEditor({ clip, a, local, onSeek, upd }: { clip: Clip; a: TextAn
               upd(clip, 'Remove text animator', (c) => withText(c, (t) => ({ ...t, animators: (t.animators ?? []).filter((x) => x.id !== a.id) })))
             }
           >
-            ✕
+            <X />
           </button>
         </>
       }

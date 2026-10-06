@@ -110,8 +110,8 @@
   flex-wrap: wrap;
 }
 .promo__box {
-  border: 1px solid #2c3036;
-  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 6px 8px;
   margin: 6px 0;
 }
