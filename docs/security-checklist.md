@@ -57,7 +57,7 @@ passwords; this makes the server insist too.
   - **Save**.
 
 People turn it on themselves in Lumora or Lumora Studio: **My account →
-Two-step sign-in**. The Lumora team's accounts must have it.
+Two-step sign-in**. It is optional for everyone, the Lumora team included (update 7). Recommended for the team.
 
 **Someone lost their phone:** Lumora → Settings → People and approvals →
 their row → **Reset two-step** (click twice). They then sign in with their
