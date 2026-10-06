@@ -1,15 +1,19 @@
 //! Lumora Studio: open an event recorded with Lumora and edit the whole event,
 //! with every camera, then make the finished film.
 
+mod delivery;
+mod encode;
 mod export;
 mod formats;
 mod frames;
 mod library;
+mod manage;
 mod mattes;
 mod media;
 mod speech;
 
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use tauri::{Emitter, Manager, State};
 
@@ -20,6 +24,8 @@ struct AppState {
     exports: export::Exports,
     /// Originals read by FFmpeg for making the film.
     frames: frames::Readers,
+    /// Delivery encoders fed with the editor's frames.
+    encoders: Arc<encode::Encoders>,
 }
 
 const NO_FFMPEG: &str =
@@ -418,6 +424,7 @@ pub fn run() {
                 cache,
                 exports: export::Exports::default(),
                 frames: frames::Readers::default(),
+                encoders: Arc::default(),
             });
             Ok(())
         })
@@ -449,6 +456,17 @@ pub fn run() {
             find_by_name,
             send_to_lumora,
             reveal,
+            delivery::encoders_available,
+            delivery::encode_open,
+            delivery::encode_frame,
+            delivery::encode_close,
+            delivery::encode_abort,
+            delivery::scene_cuts,
+            delivery::collect_files,
+            delivery::recovery_write,
+            delivery::recovery_read,
+            delivery::recovery_list,
+            delivery::recovery_remove,
         ])
         .run(tauri::generate_context!())
         .expect("Lumora Studio could not start");

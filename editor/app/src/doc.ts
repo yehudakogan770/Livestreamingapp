@@ -97,6 +97,26 @@ export class Doc {
     return this.future[this.future.length - 1]?.label ?? '';
   }
 
+  /** Every step: those done (oldest first), then those undone that can be redone (next first). */
+  get steps(): { done: string[]; undone: string[] } {
+    return { done: this.past.map((x) => x.label), undone: [...this.future].reverse().map((x) => x.label) };
+  }
+
+  /** Undo or redo until `n` steps are done (the undo history: click a step to go back to it). */
+  goTo(n: number) {
+    const target = Math.max(0, Math.min(this.past.length + this.future.length, n));
+    while (this.past.length > target) {
+      const before = this.past.length;
+      this.undo();
+      if (this.past.length === before) return;
+    }
+    while (this.past.length < target) {
+      const before = this.past.length;
+      this.redo();
+      if (this.past.length === before) return;
+    }
+  }
+
   select(selection: Selection) {
     this.set({ selection });
   }

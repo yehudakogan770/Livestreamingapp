@@ -421,7 +421,7 @@ export function soundGraph(
   fps: number,
   from: number,
   firstInput: number,
-  loudness: boolean,
+  loudness: boolean | string,
   speech: string | null = null,
 ): SoundGraph {
   const inputs: string[] = [];
@@ -467,7 +467,7 @@ export function soundGraph(
     'aformat=sample_fmts=fltp:channel_layouts=stereo',
     `apad=whole_dur=${total}`,
     `atrim=duration=${total}`,
-    ...(loudness ? ['loudnorm=I=-16:TP=-1.5:LRA=11'] : []),
+    ...(loudness === true ? ['loudnorm=I=-16:TP=-1.5:LRA=11'] : loudness ? [loudness] : []),
   ];
   if (labels.length === 0) filters.push(`anullsrc=r=48000:cl=stereo,${tail.join(',')}[aout]`);
   else if (labels.length === 1) filters.push(`[${labels[0]}]${tail.join(',')}[aout]`);
@@ -486,6 +486,14 @@ export interface Job {
 
 export type SoundFormat = 'aac' | 'mp3' | 'wav';
 
+/** Delivery's own choices for the last run (a preset's sound codec, chapters, embedded captions). */
+export interface FinishOptions {
+  /** The sound encoder's arguments (otherwise those of `sound`). */
+  audio?: string[];
+  /** More inputs and what to do with them; `first` is the number the first of them gets. */
+  extra?: (first: number) => { inputs: string[]; args: string[] };
+}
+
 /**
  * The runs that make the sound and join it to the picture. When something
  * ducks under speech, the speech tracks are mixed first (the key the
@@ -498,7 +506,8 @@ export function finishJobs(
   range: { from: number; to: number },
   video: { file: string; copy: boolean; crf: number } | null,
   sound: SoundFormat,
-  loudness: boolean,
+  loudness: boolean | string,
+  opts: FinishOptions = {},
 ): Job[] {
   const fps = rate(s);
   const seconds = (range.to - range.from) / fps;
@@ -531,7 +540,14 @@ export function finishJobs(
     });
   }
   const graph = soundGraph(parts, seconds, fps, range.from, video ? 1 : 0, loudness, speech);
-  const audioCodec = sound === 'mp3' ? ['-c:a', 'libmp3lame', '-q:a', '2'] : sound === 'wav' ? ['-c:a', 'pcm_s16le'] : ['-c:a', 'aac', '-b:a', '256k'];
+  const extra = opts.extra?.((video ? 1 : 0) + graph.inputs.filter((x) => x === '-i').length) ?? { inputs: [], args: [] };
+  const audioCodec = opts.audio
+    ? opts.audio
+    : sound === 'mp3'
+      ? ['-c:a', 'libmp3lame', '-q:a', '2']
+      : sound === 'wav'
+        ? ['-c:a', 'pcm_s16le']
+        : ['-c:a', 'aac', '-b:a', '256k'];
   const videoArgs = video
     ? [
         '-map',
@@ -543,12 +559,14 @@ export function finishJobs(
     args: [
       ...(video ? ['-i', video.file] : []),
       ...graph.inputs,
+      ...extra.inputs,
       '-filter_complex',
       graph.graph,
       ...videoArgs,
       '-map',
       '[aout]',
       ...audioCodec,
+      ...extra.args,
       '-ar',
       '48000',
       ...(video ? ['-movflags', '+faststart', '-t', num(seconds)] : []),

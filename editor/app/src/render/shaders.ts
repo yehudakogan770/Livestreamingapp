@@ -62,6 +62,15 @@ void main() {
   outColor = vec4(c.rgb + uBack * (1.0 - c.a), 1.0);
 }`;
 
+/** A frame for reading back (flipped): over the background, or with \`uAlpha\` see-through with straight (not premultiplied) color. */
+export const OUT_FS = `${HEAD}
+uniform vec3 uBack;
+uniform float uAlpha;
+void main() {
+  vec4 c = texture(uTex, vec2(vUv.x, 1.0 - vUv.y));
+  outColor = uAlpha > 0.5 ? vec4(unpre(c), c.a) : vec4(c.rgb + uBack * (1.0 - c.a), 1.0);
+}`;
+
 export const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'add', 'darken', 'lighten', 'difference', 'softlight'];
 
 export const COMPOSITE_FS = `${HEAD}

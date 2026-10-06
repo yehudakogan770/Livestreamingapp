@@ -12,6 +12,7 @@ import { remember } from './recent';
 import { Start } from './ui/Start';
 import { Getting } from './ui/Getting';
 import { Editor } from './ui/Editor';
+import { RecoveryOffer } from './ui/Manage';
 import { demoProject } from './demo';
 import { openShared as loadShared } from './collab/cloud';
 import { applyLinks, loadLinks } from './collab/links';
@@ -172,12 +173,22 @@ function Main() {
       />
     );
   return (
-    <Start
-      problem={screen.problem}
-      onChoose={() => void choose()}
-      onNew={() => void create()}
-      onOpen={(p) => void openPath(p)}
-      onOpenShared={(id) => void openShared(id)}
-    />
+    <>
+      <Start
+        problem={screen.problem}
+        onChoose={() => void choose()}
+        onNew={() => void create()}
+        onOpen={(p) => void openPath(p)}
+        onOpenShared={(id) => void openShared(id)}
+      />
+      <RecoveryOffer
+        onRestore={(project, path) => {
+          // The autosave holds newer work than the project file: it becomes the file again.
+          if (path) void native.writeText(path, JSON.stringify(project)).catch(() => undefined);
+          if (path) remember(path, project.name);
+          setScreen({ s: 'edit', project, savePath: path });
+        }}
+      />
+    </>
   );
 }

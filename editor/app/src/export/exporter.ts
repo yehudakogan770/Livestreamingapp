@@ -23,7 +23,8 @@ import { Compositor, type Pictures } from '../render/compositor';
 import { allLayers, frameOps, type Layer, type Op } from '../render/frame';
 import { isAiMask, matteFor, mattes } from '../vision/mattes';
 import { exportSources } from '../player/files';
-import { finishJobs, type SoundFormat } from './audioplan';
+import { finishJobs, type FinishOptions, type SoundFormat } from './audioplan';
+import { manageNative } from '../manage/native';
 
 export interface ExportSettings {
   /** Output height (the width follows the sequence's shape). */
@@ -33,8 +34,30 @@ export interface ExportSettings {
   /** Just the sound. */
   sound: SoundFormat | null;
   range: { from: number; to: number };
-  loudness: boolean;
+  /** Even out the loudness (true: −16 LUFS), or FFmpeg's loudness filter for a target. */
+  loudness: boolean | string;
   out: string;
+  /** The picture is encoded by FFmpeg from the frames drawn (delivery presets: H.265, ProRes, hardware encoders…). */
+  pipe?: PipePlan;
+  /** The sound codec, chapters and captions of a delivery preset. */
+  finish?: FinishOptions;
+  /** Text files the last run reads (chapters, captions), by name in the work folder. */
+  files?: [string, string][];
+  /** Just the picture (image sequences, GIF): no sound is made. */
+  pictureOnly?: boolean;
+}
+
+/** How FFmpeg encodes the frames. */
+export interface PipePlan {
+  args: string[];
+  /** The size frames are drawn at. */
+  render: { width: number; height: number };
+  /** Keep transparency. */
+  alpha: boolean;
+  /** The software encoder's arguments, used when the hardware encoder fails at the start. */
+  fallback?: string[];
+  /** Where the picture is (for joining with the sound). */
+  file: string;
 }
 
 export interface ExportState {
@@ -306,6 +329,9 @@ export async function pictureCodec(width: number, height: number, mbps: number):
 
 export class Exporter {
   private stopped = false;
+  private paused: { resume: () => void; wait: Promise<void> } | null = null;
+  /** Something worth telling about how it was made (e.g. the software encoder took over). */
+  note = '';
   constructor(
     private p: Project,
     private o: ExportSettings,
@@ -314,6 +340,29 @@ export class Exporter {
 
   stop() {
     this.stopped = true;
+    this.resume();
+  }
+
+  /** Hold between frames until resumed. */
+  pause() {
+    if (this.paused) return;
+    let resume = () => {};
+    const wait = new Promise<void>((r) => (resume = r));
+    this.paused = { resume, wait };
+  }
+
+  resume() {
+    const p = this.paused;
+    this.paused = null;
+    p?.resume();
+  }
+
+  get isPaused(): boolean {
+    return this.paused !== null;
+  }
+
+  private async gate() {
+    while (this.paused) await this.paused.wait;
   }
 
   async run(): Promise<void> {
@@ -329,15 +378,22 @@ export class Exporter {
       if (inApp()) tmp = await native.exportFolder(this.o.out);
       let video: { file: string; copy: boolean; crf: number } | null = null;
       if (!this.o.sound) {
-        video = await this.picture(s, fps, from, to, tmp, t0);
+        video = this.o.pipe && inApp() ? await this.pipePicture(this.o.pipe, s, fps, from, to, tmp, t0) : await this.picture(s, fps, from, to, tmp, t0);
         if (this.stopped) throw new Error('Stopped.');
       }
+      if (this.o.pictureOnly && inApp()) {
+        void native.exportAbandon(tmp);
+        tmp = '';
+        this.report({ stage: 'done', done: 1, message: this.note || 'Ready.', left: 0, path: this.o.out });
+        return;
+      }
+      await this.gate();
       if (!inApp()) {
         this.report({ stage: 'done', done: 1, message: 'Done (the sound is added in the app).', left: 0, path: null });
         return;
       }
       this.report({ stage: 'sound', done: video ? 0.86 : 0, message: video ? 'Adding the sound…' : 'Making the sound…', left: null, path: null });
-      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness);
+      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, this.o.finish);
       const base = video ? 0.86 : 0;
       await new Promise<void>((resolve, reject) => {
         const stop = onExportProgress((pr) => {
@@ -355,13 +411,13 @@ export class Exporter {
             path: null,
           });
         });
-        native.exportStart({ jobs }, this.o.out, tmp).catch((e: unknown) => {
+        native.exportStart({ jobs, files: this.o.files ?? [] }, this.o.out, tmp).catch((e: unknown) => {
           stop();
           reject(e instanceof Error ? e : new Error(String(e)));
         });
       });
       tmp = '';
-      this.report({ stage: 'done', done: 1, message: 'The film is ready.', left: 0, path: this.o.out });
+      this.report({ stage: 'done', done: 1, message: this.note || 'The film is ready.', left: 0, path: this.o.out });
       void seconds;
     } catch (e) {
       if (tmp) void native.exportAbandon(tmp);
@@ -411,6 +467,7 @@ export class Exporter {
     const readText = (p: string) => native.readText(p);
     try {
       for (let f = from; f < to; f++) {
+        await this.gate();
         if (this.stopped) break;
         if (failed) throw failed;
         const ops = frameOps(this.p, s, f);
@@ -442,6 +499,62 @@ export class Exporter {
       await sources.close();
     }
     return { file: `{tmp}/${file}`, copy: codec === 'avc', crf: this.o.mbps >= 30 ? 14 : this.o.mbps >= 15 ? 17 : 21 };
+  }
+
+  /** Draw every frame and hand it to FFmpeg (a hardware encoder that fails at the start is swapped for the software one). */
+  private async pipePicture(pipe: PipePlan, s: Sequence, fps: number, from: number, to: number, tmp: string, t0: number) {
+    const { width, height } = pipe.render;
+    const canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : document.createElement('canvas');
+    const gl = new Compositor(canvas);
+    gl.resize(width, height, s.height);
+    const readText = (p: string) => native.readText(p);
+    const share = this.o.pictureOnly ? 1 : 0.86;
+    const encode = async (args: string[]): Promise<{ sent: number; error: Error | null }> => {
+      const id = await manageNative.encodeOpen(args, tmp, this.o.out, width * height * 4);
+      const sources = new Sources({ width, height }, fps);
+      let sent = 0;
+      try {
+        for (let f = from; f < to; f++) {
+          await this.gate();
+          if (this.stopped) break;
+          const ops = frameOps(this.p, s, f);
+          await sources.prepare(ops, f, readText);
+          await sources.mattes(ops);
+          await manageNative.encodeFrame(id, gl.readFrame(ops, sources.pictures, s.background, pipe.alpha));
+          sent += 1;
+          if ((f - from) % 5 === 0) {
+            const done = (f - from + 1) / (to - from);
+            const spent = (performance.now() - t0) / 1000;
+            this.report({
+              stage: 'picture',
+              done: done * share,
+              message: `Frame ${f - from + 1} of ${to - from}`,
+              left: done > 0.02 ? (spent / done) * (1 - done) * 1.1 : null,
+              path: null,
+            });
+          }
+        }
+        if (this.stopped) {
+          await manageNative.encodeAbort(id);
+          return { sent, error: null };
+        }
+        await manageNative.encodeClose(id);
+        return { sent, error: null };
+      } catch (e) {
+        await manageNative.encodeAbort(id).catch(() => undefined);
+        return { sent, error: e instanceof Error ? e : new Error(String(e)) };
+      } finally {
+        await sources.close();
+      }
+    };
+    let r = await encode(pipe.args);
+    if (r.error && pipe.fallback && r.sent < 12 && !this.stopped) {
+      this.note = 'The graphics card’s encoder could not start: made with the software encoder.';
+      r = await encode(pipe.fallback);
+    }
+    if (r.error) throw r.error;
+    if (this.stopped) return null;
+    return { file: pipe.file, copy: true, crf: 0 };
   }
 
   /** In the browser (trying screens out): the picture file made. */

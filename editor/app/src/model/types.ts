@@ -40,6 +40,13 @@ export interface MediaItem {
   preparing?: boolean;
   /** The words spoken in it (made by Transcribe). */
   transcript?: Transcript;
+  /** Media management: stars (0–5), tags, notes, and when it was added (ms since 1970). */
+  rating?: number;
+  tags?: string[];
+  notes?: string;
+  addedAt?: number;
+  /** A subclip: only this part of the file (seconds), e.g. one shot found by scene detection. */
+  range?: [number, number];
 }
 
 /** What a file is (FFmpeg looked when it was imported) and how Lumora Studio handles it. */
@@ -371,7 +378,26 @@ export interface Project {
   sequences: Sequence[];
   /** The sequence on the timeline. */
   open: string;
+  /** Bins that fill themselves by rules (type, rating, tag…). */
+  smartBins?: SmartBin[];
 }
+
+/** A bin that shows the media matching its rules (all of them, or any). */
+export interface SmartBin {
+  id: string;
+  name: string;
+  match: 'all' | 'any';
+  rules: SmartRule[];
+}
+export type SmartRule =
+  | { field: 'kind'; is: 'video' | 'audio' | 'image' }
+  | { field: 'rating'; atLeast: number }
+  | { field: 'tag'; has: string }
+  | { field: 'resolution'; atLeast: number }
+  | { field: 'added'; withinDays: number }
+  | { field: 'transcript'; has: boolean }
+  | { field: 'used'; is: boolean }
+  | { field: 'text'; has: string };
 
 export const FRAME_RATES = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60] as const;
 export const exactRate = (fps: number): number =>

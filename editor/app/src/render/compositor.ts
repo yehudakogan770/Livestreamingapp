@@ -22,6 +22,7 @@ import {
   TRANSITION_FS,
   TRANSITION_TYPES,
 } from './shaders';
+import { OUT_FS } from './shaders';
 
 type Source = TexImageSource;
 
@@ -729,6 +730,42 @@ export class Compositor {
     this.use(p, { uTex: [acc.tex, 0], uSize: [this.w, this.h], uBack: hexToRgb(background), uFlip: flip ? 1 : 0 });
     this.drawFull();
     this.give(acc);
+  }
+
+  private outTarget: { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number } | null = null;
+
+  /**
+   * A whole frame as RGBA bytes, top row first, for exports FFmpeg encodes:
+   * over the background, or (with \`alpha\`) see-through where nothing covers it.
+   */
+  readFrame(ops: Op[], pics: Pictures, background: string, alpha: boolean): Uint8Array {
+    const gl = this.gl;
+    for (const t of this.targets) t.busy = false;
+    gl.disable(gl.BLEND);
+    const acc = this.compose(ops, pics);
+    let o = this.outTarget;
+    if (!o || o.w !== this.w || o.h !== this.h) {
+      if (o) {
+        gl.deleteFramebuffer(o.fb);
+        gl.deleteTexture(o.tex);
+      }
+      const tex = this.makeTexture();
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.w, this.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      const fb = gl.createFramebuffer() as WebGLFramebuffer;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      o = { fb, tex, w: this.w, h: this.h };
+      this.outTarget = o;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, o.fb);
+    gl.viewport(0, 0, this.w, this.h);
+    this.use(this.program('out', FULL_VS, OUT_FS), { uTex: [acc.tex, 0], uBack: hexToRgb(background), uAlpha: alpha ? 1 : 0 });
+    this.drawFull();
+    this.give(acc);
+    const px = new Uint8Array(this.w * this.h * 4);
+    gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return px;
   }
 
   /** A made picture (gradient, noise, particles, light leak) drawn into a target. */

@@ -5,6 +5,7 @@ import { uid, type MediaItem, type Project } from '../model/types';
 import type { Doc } from '../doc';
 import { fileName, inApp, native, onImportProgress, onProxyProgress } from '../native';
 import { wantsProxy } from '../player/files';
+import { shotsAfterImport } from '../manage/shots';
 
 export const MEDIA_EXTENSIONS = [
   'mp4',
@@ -121,6 +122,7 @@ export async function importFiles(doc: Doc, paths: string[], bin: string | null)
     }
   };
   await Promise.all([run(), run()]);
+  void shotsAfterImport(doc, added);
   return added;
 }
 
