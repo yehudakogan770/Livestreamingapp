@@ -1,5 +1,6 @@
-/* Lumora Planner: a plain, dense production tool. Neutral greys, one accent,
-   red for what is on now. Light or dark, as the computer is set (or chosen). */
+/* Lumora Planner: a plain, dense production tool, like a printed run of show.
+   Ink on neutral grays; the only color is red for what is on now (and amber
+   for a warning). Light or dark, as the computer is set (or chosen). */
 
 :root {
   --bg: #f2f2f1;
@@ -7,83 +8,60 @@
   --surface-2: #f7f7f6;
   --line: #dddddb;
   --line-2: #c4c4c1;
-  --text: #1b1b1a;
+  --text: #1a1a1a;
   --dim: #5d5d5a;
   --faint: #8b8b87;
-  --accent: #1d6f79;
+  /* "Accent" is ink: primary buttons are black on paper, white on the dark theme. */
+  --accent: #1a1a1a;
+  --accent-hover: #3a3a39;
   --accent-ink: #ffffff;
-  --sel: #e6eff0;
+  --sel: #e9e9e7;
   --live: #c4271f;
   --live-bg: #fbeceb;
   --warn: #9a5800;
-  --focus: #1d6f79;
+  --focus: #1a1a1a;
   --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --mono: ui-monospace, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
-  --s-camera: #5b6f8c;
-  --s-video: #7a5b8c;
-  --s-slide: #6b7d3c;
-  --s-title: #2f7f86;
-  --s-lyrics: #a3546d;
-  --s-countdown: #b07514;
-  --s-speaker: #3f7d4f;
-  --s-break: #8a8a86;
-  --s-custom: #5d5d5a;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #151617;
-    --surface: #1c1d1f;
-    --surface-2: #222326;
-    --line: #313236;
-    --line-2: #45474c;
-    --text: #e6e6e3;
-    --dim: #a4a4a0;
-    --faint: #76767a;
-    --accent: #5fb4bd;
-    --accent-ink: #0d1415;
-    --sel: #213034;
+    --bg: #161615;
+    --surface: #1d1d1c;
+    --surface-2: #242423;
+    --line: #333331;
+    --line-2: #484845;
+    --text: #e8e8e5;
+    --dim: #a6a6a1;
+    --faint: #7c7c77;
+    --accent: #e8e8e5;
+    --accent-hover: #ffffff;
+    --accent-ink: #161615;
+    --sel: #2f2f2d;
     --live: #f0574e;
     --live-bg: #3a1d1b;
     --warn: #e2a640;
-    --focus: #5fb4bd;
-    --s-camera: #8299bb;
-    --s-video: #a688b8;
-    --s-slide: #9cb062;
-    --s-title: #5fb4bd;
-    --s-lyrics: #d47f99;
-    --s-countdown: #dba04a;
-    --s-speaker: #6fb07f;
-    --s-break: #9a9a96;
-    --s-custom: #a4a4a0;
+    --focus: #e8e8e5;
     color-scheme: dark;
   }
 }
 :root[data-theme='dark'] {
-  --bg: #151617;
-  --surface: #1c1d1f;
-  --surface-2: #222326;
-  --line: #313236;
-  --line-2: #45474c;
-  --text: #e6e6e3;
-  --dim: #a4a4a0;
-  --faint: #76767a;
-  --accent: #5fb4bd;
-  --accent-ink: #0d1415;
-  --sel: #213034;
+  --bg: #161615;
+  --surface: #1d1d1c;
+  --surface-2: #242423;
+  --line: #333331;
+  --line-2: #484845;
+  --text: #e8e8e5;
+  --dim: #a6a6a1;
+  --faint: #7c7c77;
+  --accent: #e8e8e5;
+  --accent-hover: #ffffff;
+  --accent-ink: #161615;
+  --sel: #2f2f2d;
   --live: #f0574e;
   --live-bg: #3a1d1b;
   --warn: #e2a640;
-  --focus: #5fb4bd;
-  --s-camera: #8299bb;
-  --s-video: #a688b8;
-  --s-slide: #9cb062;
-  --s-title: #5fb4bd;
-  --s-lyrics: #d47f99;
-  --s-countdown: #dba04a;
-  --s-speaker: #6fb07f;
-  --s-break: #9a9a96;
-  --s-custom: #a4a4a0;
+  --focus: #e8e8e5;
   color-scheme: dark;
 }
 
@@ -104,7 +82,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 a {
-  color: var(--accent);
+  color: var(--text);
+  text-underline-offset: 2px;
 }
 button,
 input,
@@ -187,7 +166,8 @@ h3 {
   font-weight: 600;
 }
 .btn--primary:hover:not(:disabled) {
-  border-color: var(--text);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 .btn--quiet {
   border-color: transparent;
@@ -205,9 +185,10 @@ h3 {
   border: 0;
   padding: 0;
   background: none;
-  color: var(--accent);
+  color: var(--text);
   cursor: pointer;
   text-decoration: underline;
+  text-underline-offset: 2px;
 }
 .input {
   height: 28px;
@@ -611,10 +592,10 @@ select.input {
   opacity: 0.4;
 }
 .cues__row.drop-before td {
-  box-shadow: inset 0 2px 0 var(--accent);
+  box-shadow: inset 0 2px 0 var(--text);
 }
 .cues__row.drop-after td {
-  box-shadow: inset 0 -2px 0 var(--accent);
+  box-shadow: inset 0 -2px 0 var(--text);
 }
 .cues__section td {
   height: 26px;
@@ -663,8 +644,9 @@ select.input {
   font-weight: 600;
 }
 .cell--seg {
-  padding-left: 10px;
   appearance: none;
+  color: var(--dim);
+  font-size: 12px;
   cursor: pointer;
 }
 .cell--seg:disabled {
@@ -696,51 +678,20 @@ select.input {
   display: inline-block;
   min-width: 18px;
   padding: 0 4px;
-  border-radius: 9px;
-  background: var(--line);
-  color: var(--text);
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  color: var(--dim);
   font-size: 11px;
+  line-height: 16px;
   text-align: center;
 }
 
-/* Segment colors: a bar on the type cell, a dot in the totals. */
-.seg-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-right: 4px;
-  border-radius: 1px;
-  background: var(--seg);
-}
-.seg--camera {
-  --seg: var(--s-camera);
-}
-.seg--video {
-  --seg: var(--s-video);
-}
-.seg--slide {
-  --seg: var(--s-slide);
-}
-.seg--title {
-  --seg: var(--s-title);
-}
-.seg--lyrics {
-  --seg: var(--s-lyrics);
-}
-.seg--countdown {
-  --seg: var(--s-countdown);
-}
-.seg--speaker {
-  --seg: var(--s-speaker);
-}
-.seg--break {
-  --seg: var(--s-break);
-}
-.seg--custom {
-  --seg: var(--s-custom);
-}
-.cell--seg {
-  box-shadow: inset 4px 0 0 var(--seg);
+/* A break: the row steps back, set lighter and in italics. */
+.cues__row.is-break .cell--title,
+.card.is-break .card__title {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--dim);
 }
 
 /* The cue being edited */
@@ -1135,6 +1086,7 @@ html {
   }
   .phone__back {
     display: inline-flex;
+    color: var(--text);
     align-items: center;
     gap: 4px;
     min-height: 44px;
@@ -1189,8 +1141,9 @@ html {
     white-space: nowrap;
   }
   .phone__when-act {
-    color: var(--accent);
-    font-weight: 600;
+    color: var(--text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
   .phone__meta {
     display: grid;
@@ -1312,16 +1265,16 @@ html {
     opacity: 0.45;
   }
   .card.drop-before {
-    box-shadow: 0 -4px 0 -1px var(--accent);
+    box-shadow: 0 -4px 0 -1px var(--text);
   }
   .card.drop-after {
-    box-shadow: 0 4px 0 -1px var(--accent);
+    box-shadow: 0 4px 0 -1px var(--text);
   }
   .card__open {
     flex: 1;
     min-width: 0;
     display: grid;
-    grid-template-columns: 74px minmax(0, 1fr);
+    grid-template-columns: 88px minmax(0, 1fr);
     gap: 10px;
     min-height: 64px;
     padding: 10px 6px 10px 12px;
@@ -1372,11 +1325,7 @@ html {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding: 0 6px;
-    border: 1px solid var(--line);
-    border-left: 3px solid var(--seg);
-    border-radius: 3px;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 18px;
     color: var(--dim);
   }
@@ -1510,7 +1459,7 @@ html {
   }
   .cuesheet__back.btn {
     padding: 0 8px;
-    color: var(--accent);
+    color: var(--text);
     font-size: 16px;
   }
   .cuesheet__back span {

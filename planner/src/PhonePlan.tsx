@@ -157,7 +157,7 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
                   {section}
                 </li>
               ) : null,
-              <li key={c.id} id={`cue-${c.id}`} data-reorder className={`card${onNow === i ? ' is-now' : ''}${sel === c.id ? ' is-sel' : ''}${rowClass(i)}`}>
+              <li key={c.id} id={`cue-${c.id}`} data-reorder className={`card${onNow === i ? ' is-now' : ''}${sel === c.id ? ' is-sel' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}>
                 <button type="button" className="card__open" onClick={() => onSel(c.id)} aria-label={`Cue ${i + 1}: ${cueName(c)}`}>
                   <span className="card__when">
                     <span className={`card__time${t.fixed ? ' is-fixed' : ''}`}>{t.start !== null ? clock12(t.start) : '—'}</span>
@@ -165,7 +165,7 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
                   </span>
                   <span className="card__main">
                     <span className="card__line">
-                      <span className={`card__type seg--${c.segment}`}>{segmentName(c.segment)}</span>
+                      <span className="card__type">{segmentName(c.segment)}</span>
                       {t.drift !== null && t.drift !== 0 && (
                         <span className={`drift drift--inline${t.drift < 0 ? ' drift--over' : ''}`}>
                           {t.drift < 0 ? `runs over ${formatDuration(-t.drift)}` : `gap ${formatDuration(t.drift)}`}

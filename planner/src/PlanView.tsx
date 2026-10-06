@@ -265,7 +265,6 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
           <span className="status__segs">
             {SEGMENTS.filter((s) => sched.bySegment[s.id]).map((s) => (
               <span key={s.id} className="status__seg">
-                <i className={`seg-dot seg--${s.id}`} />
                 {s.name} {formatDuration(sched.bySegment[s.id]!)}
               </span>
             ))}
@@ -399,7 +398,7 @@ function CueSheet({
               <tr
                 key={c.id}
                 data-reorder
-                className={`cues__row${sel === c.id ? ' is-sel' : ''}${onNow === i ? ' is-now' : ''}${rowClass(i)}`}
+                className={`cues__row${sel === c.id ? ' is-sel' : ''}${onNow === i ? ' is-now' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}
                 onClick={() => onSel(c.id)}
                 onFocus={() => sel !== c.id && onSel(c.id)}
                 onKeyDown={(e) => keys(e, i)}
@@ -446,7 +445,7 @@ function CueSheet({
                 </td>
                 <td>
                   <select
-                    className={`cell cell--seg seg--${c.segment}`}
+                    className="cell cell--seg"
                     value={c.segment}
                     disabled={!canEdit}
                     aria-label={`Type of cue ${i + 1}`}

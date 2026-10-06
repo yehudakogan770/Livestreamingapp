@@ -6,7 +6,7 @@ import { onSignInChange, signIn, signOut, whoAmI, type Who } from './session';
 
 type Theme = 'auto' | 'light' | 'dark';
 const THEME_KEY = 'lumora.planner.theme';
-const THEME_COLOR = { light: '#ffffff', dark: '#1c1d1f' } as const;
+const THEME_COLOR = { light: '#ffffff', dark: '#1d1d1c' } as const;
 
 function loadTheme(): Theme {
   try {
