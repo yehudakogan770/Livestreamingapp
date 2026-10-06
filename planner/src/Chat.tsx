@@ -1,11 +1,12 @@
 // The plan's chat: everyone on the plan, live. Enter sends (Shift+Enter is a
 // new line); "#4" in a message links to cue 4.
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUp, Trash2 } from 'lucide-react';
 import { MAX_MESSAGE, dayLabel, mayDelete, parseMentions, startsDay, startsGroup, timeLabel } from './chatModel';
 import { initials } from './Inspector';
 import type { ChatStore } from './useChat';
+import type { Message } from './chatModel';
 import { Mark } from './Mark';
 
 export function Chat({
@@ -29,6 +30,10 @@ export function Chat({
   const [err, setErr] = useState('');
   const list = useRef<HTMLDivElement>(null);
   const stick = useRef(true);
+  // The same functions every time, so typing a message does not redraw every message above it.
+  const live = useRef({ onCue, remove: chat.remove });
+  live.current = { onCue, remove: chat.remove };
+  const act = useMemo<MessageActions>(() => ({ cue: (n) => live.current.onCue(n), remove: (id) => live.current.remove(id) }), []);
 
   // Stay at the newest message unless scrolled up to read older ones.
   useLayoutEffect(() => {
@@ -73,61 +78,18 @@ export function Chat({
             <p className="muted small">A chat for everyone on “{planName || 'this plan'}”. Write #4 to point at cue 4.</p>
           </div>
         )}
-        {messages.map((m, i) => {
-          const head = startsGroup(messages, i);
-          const mine = m.author === me;
-          return (
-            <div key={m.id} className="chat__item">
-              {startsDay(messages, i) && <div className="chat__day">{dayLabel(m.createdAt)}</div>}
-              <article
-                className={`msg${head ? ' msg--head' : ''}${mine ? ' msg--mine' : ''}`}
-                aria-label={`${m.authorName || 'Someone'}, ${timeLabel(m.createdAt)}`}
-              >
-                {head ? (
-                  <span className="avatar msg__avatar" aria-hidden="true">
-                    {initials(m.authorName || '?')}
-                  </span>
-                ) : (
-                  <span className="msg__gutter mono" aria-hidden="true">
-                    {timeLabel(m.createdAt).replace(/ [AP]M$/, '')}
-                  </span>
-                )}
-                <div className="msg__main">
-                  {head && (
-                    <div className="msg__head">
-                      <b>{m.authorName || 'Someone'}</b>
-                      <time className="muted small" dateTime={new Date(m.createdAt).toISOString()}>
-                        {timeLabel(m.createdAt)}
-                      </time>
-                    </div>
-                  )}
-                  <p className="msg__body">
-                    {parseMentions(m.body, cueCount).map((p, k) =>
-                      'cue' in p ? (
-                        <button key={k} type="button" className="msg__cue" onClick={() => onCue(p.cue)} title={`Show cue ${p.cue}`}>
-                          {p.text}
-                        </button>
-                      ) : (
-                        <span key={k}>{p.text}</span>
-                      ),
-                    )}
-                  </p>
-                </div>
-                {mayDelete(m, me, isOwner) && (
-                  <button
-                    type="button"
-                    className="btn btn--quiet btn--icon msg__del"
-                    aria-label="Delete message"
-                    title="Delete message"
-                    onClick={() => confirm('Delete this message for everyone?') && chat.remove(m.id)}
-                  >
-                    <Trash2 size={14} strokeWidth={1.75} aria-hidden="true" />
-                  </button>
-                )}
-              </article>
-            </div>
-          );
-        })}
+        {messages.map((m, i) => (
+          <MessageItem
+            key={m.id}
+            m={m}
+            day={startsDay(messages, i)}
+            head={startsGroup(messages, i)}
+            mine={m.author === me}
+            canDelete={mayDelete(m, me, isOwner)}
+            cueCount={cueCount}
+            act={act}
+          />
+        ))}
       </div>
       <form
         className="chat__compose"
@@ -163,3 +125,76 @@ export function Chat({
     </section>
   );
 }
+
+interface MessageActions {
+  cue: (n: number) => void;
+  remove: (id: string) => void;
+}
+
+/** One message (and the day above it, if it starts one). */
+const MessageItem = memo(function MessageItem({
+  m,
+  day,
+  head,
+  mine,
+  canDelete,
+  cueCount,
+  act,
+}: {
+  m: Message;
+  day: boolean;
+  head: boolean;
+  mine: boolean;
+  canDelete: boolean;
+  cueCount: number;
+  act: MessageActions;
+}) {
+  return (
+    <div className="chat__item">
+      {day && <div className="chat__day">{dayLabel(m.createdAt)}</div>}
+      <article className={`msg${head ? ' msg--head' : ''}${mine ? ' msg--mine' : ''}`} aria-label={`${m.authorName || 'Someone'}, ${timeLabel(m.createdAt)}`}>
+        {head ? (
+          <span className="avatar msg__avatar" aria-hidden="true">
+            {initials(m.authorName || '?')}
+          </span>
+        ) : (
+          <span className="msg__gutter mono" aria-hidden="true">
+            {timeLabel(m.createdAt).replace(/ [AP]M$/, '')}
+          </span>
+        )}
+        <div className="msg__main">
+          {head && (
+            <div className="msg__head">
+              <b>{m.authorName || 'Someone'}</b>
+              <time className="muted small" dateTime={new Date(m.createdAt).toISOString()}>
+                {timeLabel(m.createdAt)}
+              </time>
+            </div>
+          )}
+          <p className="msg__body">
+            {parseMentions(m.body, cueCount).map((p, k) =>
+              'cue' in p ? (
+                <button key={k} type="button" className="msg__cue" onClick={() => act.cue(p.cue)} title={`Show cue ${p.cue}`}>
+                  {p.text}
+                </button>
+              ) : (
+                <span key={k}>{p.text}</span>
+              ),
+            )}
+          </p>
+        </div>
+        {canDelete && (
+          <button
+            type="button"
+            className="btn btn--quiet btn--icon msg__del"
+            aria-label="Delete message"
+            title="Delete message"
+            onClick={() => confirm('Delete this message for everyone?') && act.remove(m.id)}
+          >
+            <Trash2 size={14} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        )}
+      </article>
+    </div>
+  );
+});
