@@ -3,6 +3,7 @@
 // Tapping a cue opens everything about it in a full-screen sheet.
 
 import { useEffect, useRef, useState } from 'react';
+import { ArrowDown, ArrowUp, ChevronLeft, Ellipsis, Plus, Printer, UserPlus } from 'lucide-react';
 import { TimeInput } from './fields';
 import { Inspector, hintText, initials } from './Inspector';
 import { clock12, formatDuration, segmentName, shortDate, showClock, type PlanCue, type Schedule } from './model';
@@ -68,7 +69,8 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
       <header className="phone__head">
         <div className="phone__top">
           <a className="phone__back" href="#/" onClick={onBack}>
-            <span aria-hidden="true">‹</span> Plans
+            <ChevronLeft size={22} strokeWidth={1.75} aria-hidden="true" />
+            Plans
           </a>
           <span className="bar__spacer" />
           {here.length > 0 && (
@@ -157,7 +159,12 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
                   {section}
                 </li>
               ) : null,
-              <li key={c.id} id={`cue-${c.id}`} data-reorder className={`card${onNow === i ? ' is-now' : ''}${sel === c.id ? ' is-sel' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}>
+              <li
+                key={c.id}
+                id={`cue-${c.id}`}
+                data-reorder
+                className={`card${onNow === i ? ' is-now' : ''}${sel === c.id ? ' is-sel' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}
+              >
                 <button type="button" className="card__open" onClick={() => onSel(c.id)} aria-label={`Cue ${i + 1}: ${cueName(c)}`}>
                   <span className="card__when">
                     <span className={`card__time${t.fixed ? ' is-fixed' : ''}`}>{t.start !== null ? clock12(t.start) : '—'}</span>
@@ -213,16 +220,20 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
       <nav className="phone__bar" aria-label="Plan actions">
         {canEdit && (
           <button type="button" className="btn btn--primary phone__add" onClick={add}>
+            <Plus size={18} strokeWidth={2} aria-hidden="true" />
             Add cue
           </button>
         )}
-        <button type="button" className="btn" onClick={onShare}>
+        <button type="button" className="btn phone__act" onClick={onShare}>
+          <UserPlus size={18} strokeWidth={1.75} aria-hidden="true" />
           Share
         </button>
-        <button type="button" className="btn" onClick={() => window.print()}>
+        <button type="button" className="btn phone__act" onClick={() => window.print()}>
+          <Printer size={18} strokeWidth={1.75} aria-hidden="true" />
           Print
         </button>
-        <button type="button" className="btn" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+        <button type="button" className="btn phone__act" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
+          <Ellipsis size={18} strokeWidth={1.75} aria-hidden="true" />
           More
         </button>
       </nav>
@@ -261,7 +272,8 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
         <div className="cuesheet" role="dialog" aria-modal="true" aria-label={`Cue ${selIndex + 1}`}>
           <header className="cuesheet__head">
             <button type="button" className="btn btn--quiet cuesheet__back" onClick={() => onSel(null)}>
-              <span aria-hidden="true">‹</span> Cues
+              <ChevronLeft size={22} strokeWidth={1.75} aria-hidden="true" />
+              Cues
             </button>
             <b className="cuesheet__title">
               Cue {selIndex + 1} <span className="muted">of {cues.length}</span>
@@ -269,7 +281,7 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
             {canEdit && (
               <span className="cuesheet__move">
                 <button type="button" className="btn" disabled={selIndex === 0} aria-label="Move cue up" onClick={() => store.move(selIndex, selIndex - 1)}>
-                  ↑
+                  <ArrowUp size={18} strokeWidth={1.75} aria-hidden="true" />
                 </button>
                 <button
                   type="button"
@@ -278,7 +290,7 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
                   aria-label="Move cue down"
                   onClick={() => store.move(selIndex, selIndex + 1)}
                 >
-                  ↓
+                  <ArrowDown size={18} strokeWidth={1.75} aria-hidden="true" />
                 </button>
               </span>
             )}
