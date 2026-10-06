@@ -1,3 +1,4 @@
+import { CircleHelp, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -66,9 +67,12 @@ export function TriviaCard({ source, act, client, onClose }: { source: Source; a
     <div className="modal" role="dialog" aria-modal="true" aria-label="Trivia" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Trivia · {source.name}</h2>
+          <h2>
+            <CircleHelp className="modal__icon" aria-hidden="true" />
+            Trivia · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">
@@ -165,7 +169,7 @@ export function TriviaCard({ source, act, client, onClose }: { source: Source; a
                     aria-label={`Remove question ${i + 1}`}
                     onClick={() => save(t.questions.filter((_, j) => j !== i))}
                   >
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </li>
               ))}

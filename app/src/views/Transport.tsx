@@ -1,3 +1,4 @@
+import { Pause, Play, Repeat, RotateCcw, RotateCw, SkipBack } from 'lucide-react';
 import type { Source } from '../engine/types/Source';
 import { clock, sourcePosition } from '../engine/timing';
 import { useNow } from '../engine/useNow';
@@ -19,22 +20,25 @@ export function Transport({ source, act }: { source: Source | undefined; act: Ac
   const seek = (s: number) => act({ type: 'seek', id: source.id, posS: Math.max(0, durationS > 0 ? Math.min(durationS, s) : s) });
   return (
     <div className="transport">
-      <button type="button" className="icon" aria-label="Back to start" onClick={() => seek(0)}>
-        ⏮
+      <button type="button" className="icon" aria-label="Back to start" title="Back to start" onClick={() => seek(0)}>
+        <SkipBack aria-hidden="true" />
       </button>
-      <button type="button" className="icon" aria-label="Back 10 seconds" onClick={() => seek(pos - 10)}>
-        −10
+      <button type="button" className="icon" aria-label="Back 10 seconds" title="Back 10 seconds" onClick={() => seek(pos - 10)}>
+        <RotateCcw aria-hidden="true" />
+        <small>10</small>
       </button>
       <button
         type="button"
         className={`icon icon--play${playback.playing ? ' is-on' : ''}`}
         aria-label={playback.playing ? 'Pause' : 'Play'}
+        title={playback.playing ? 'Pause' : 'Play'}
         onClick={() => act({ type: playback.playing ? 'pause' : 'play', id: source.id })}
       >
-        {playback.playing ? '❚❚' : '▶'}
+        {playback.playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
       </button>
-      <button type="button" className="icon" aria-label="Forward 10 seconds" onClick={() => seek(pos + 10)}>
-        +10
+      <button type="button" className="icon" aria-label="Forward 10 seconds" title="Forward 10 seconds" onClick={() => seek(pos + 10)}>
+        <RotateCw aria-hidden="true" />
+        <small>10</small>
       </button>
       <input
         className="transport__scrub"
@@ -54,8 +58,10 @@ export function Transport({ source, act }: { source: Source | undefined; act: Ac
         type="button"
         className={`chip${source.looping ? ' is-on' : ''}`}
         aria-pressed={source.looping}
+        title="Play it again and again"
         onClick={() => act({ type: 'updateSource', id: source.id, patch: { looping: !source.looping } })}
       >
+        <Repeat aria-hidden="true" />
         Loop
       </button>
     </div>

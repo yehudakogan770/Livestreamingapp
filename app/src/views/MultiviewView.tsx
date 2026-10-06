@@ -1,3 +1,5 @@
+import { Timecode } from './Timecode';
+import { LogoMark } from '../components/Logo';
 import { useEventFonts } from '../engine/fonts';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { dataValues } from '../engine/data';
@@ -113,7 +115,9 @@ export function Multiview({ show, client }: { show: Show; client: EngineClient }
   return (
     <div className={`mv__grid mv__grid--${layout}`}>
       <header className="mv__head">
+        <LogoMark size={18} />
         <span>{show.event.name || 'Lumora'}</span>
+        <span className="mv__sub">Multiview</span>
         {show.panic && <em className="mv__tag mv__tag--pgm">PANIC</em>}
         {live.blank && <em className="mv__tag mv__tag--pgm">LIVE BLANK</em>}
         {back.blank && <em className="mv__tag mv__tag--pgm">BACK BLANK</em>}
@@ -128,7 +132,10 @@ export function Multiview({ show, client }: { show: Show; client: EngineClient }
                 tally="pvw"
                 label={
                   <>
-                    {sc === 'live' ? 'LIVE' : 'BACK'} · Next · {nameOf(show.screens[sc].preview)}
+                    <em className="mv__tally">NEXT</em>
+                    <b>{sc === 'live' ? 'LIVE' : 'BACK'}</b>
+                    <span className="mv__name">{nameOf(show.screens[sc].preview)}</span>
+                    <Timecode />
                   </>
                 }
               >
@@ -139,7 +146,10 @@ export function Multiview({ show, client }: { show: Show; client: EngineClient }
                 tally="pgm"
                 label={
                   <>
-                    {sc === 'live' ? 'LIVE' : 'BACK'} · On air · {nameOf(show.screens[sc].program)}
+                    <em className="mv__tally">ON AIR</em>
+                    <b>{sc === 'live' ? 'LIVE' : 'BACK'}</b>
+                    <span className="mv__name">{nameOf(show.screens[sc].program)}</span>
+                    <Timecode />
                   </>
                 }
               >

@@ -1,3 +1,4 @@
+import { Hand, Metronome, Minus, Plus, Spotlight, Star, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
@@ -38,8 +39,9 @@ const pick = <T,>(a: readonly T[]): T => a[Math.floor(Math.random() * a.length)]
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA');
 
 /** Radial gradient of a color set, for the scene pads. */
+/** The scene's three colors as flat bands (shown until its still is made). */
 function swatch(c: [string, string, string]) {
-  return `radial-gradient(circle at 50% 45%, ${c[1]} 0%, ${c[0]} 32%, ${c[2]} 68%, #05050a 100%)`;
+  return `linear-gradient(90deg, ${c[0]} 0 33.34%, ${c[1]} 0 66.67%, ${c[2]} 0)`;
 }
 
 /**
@@ -198,6 +200,7 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
     <div className="modal vis-modal" role="dialog" aria-modal="true" aria-label="Stage visuals">
       <div className="modal__box vis">
         <header className="vis__head">
+          <Spotlight className="vis__icon" aria-hidden="true" />
           <h2>Stage visuals</h2>
           <div className="segs" role="group" aria-label="Show on">
             {(
@@ -225,24 +228,26 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
           <span className="vis__spacer" />
           <div className="vis__tempo">
             <button type="button" className="btn" aria-label="Slower" onClick={() => act({ type: 'visualsTempo', bpm: v.bpm - 1 })}>
-              −
+              <Minus aria-hidden="true" />
             </button>
             <span className="vis__bpm">
               <b aria-label="Tempo">{Number(v.bpm.toFixed(1))}</b> BPM
             </span>
             <button type="button" className="btn" aria-label="Faster" onClick={() => act({ type: 'visualsTempo', bpm: v.bpm + 1 })}>
-              +
+              <Plus aria-hidden="true" />
             </button>
             <button type="button" className="btn" onClick={tap} title="Tap along with the music (T)">
+              <Hand aria-hidden="true" />
               Tap
             </button>
             <button type="button" className="btn" onClick={() => act({ type: 'visualsSync' })} title="Press on beat 1 of a bar (S)">
+              <Metronome aria-hidden="true" />
               Sync to 1
             </button>
             <BeatDots v={v} />
           </div>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
 
@@ -357,7 +362,8 @@ export function VisualsPage({ show, act, client, onClose }: { show: Show; act: A
               <span className="vis__desc">{BANKS[bank]?.desc}</span>
               <span className="vis__spacer" />
               <button type="button" className={`btn vis__favbtn${favOnly ? ' is-on' : ''}`} onClick={() => setFavOnly(!favOnly)}>
-                ★ Favorites
+                <Star aria-hidden="true" />
+                Favorites
               </button>
             </div>
             <div className="vis__scenes">

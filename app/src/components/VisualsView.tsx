@@ -2,14 +2,15 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { Visuals } from '../engine/types/Visuals';
 import { makeRenderer } from '../visuals/renderer';
 import { logoRect, VisualsPlayer } from '../visuals/player';
-import { BANKS, sceneColours, sceneRow } from '../visuals/data';
+import { BANKS, sceneRow } from '../visuals/data';
+import { useSceneStill } from '../visuals/stills';
 
 const fill: CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%' };
 
 /**
  * The stage visuals, drawn live with WebGL on their own beat clock. Thumbnails
- * are a still card (the scene's colors and name) so the input grid never
- * uses up the graphics card's drawing contexts.
+ * are a still of the scene (drawn once with the real shaders) and its name, so
+ * the input grid never uses up the graphics card's drawing contexts.
  */
 export function VisualsView({
   v,
@@ -29,28 +30,31 @@ export function VisualsView({
   return <VisualsCanvas v={v} logoUrl={logoUrl} audience={audience} onFail={onFail} />;
 }
 
-/** A still card for the scene on now. */
+/** A still of the scene on now, with its name in a plain caption strip. */
 export function VisualsCard({ v }: { v: Visuals }) {
   const row = sceneRow(v.scene.bank, v.scene.scene);
-  const [a, b, c] = sceneColours(row, v.settings.palette);
+  const still = useSceneStill(v.scene.bank, v.scene.scene, v.settings.palette);
   return (
-    <div
-      style={{
-        ...fill,
-        background: `radial-gradient(circle at 30% 35%, ${a}cc, transparent 55%), radial-gradient(circle at 70% 65%, ${b}bb, transparent 60%), ${c}55`,
-        backgroundColor: '#05060a',
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        color: '#fff',
-        fontSize: 11,
-        fontWeight: 600,
-        textShadow: '0 1px 3px #000',
-        paddingBottom: '6%',
-      }}
-      data-kind="visuals"
-    >
-      {BANKS[v.scene.bank]?.name} · {row[0]}
+    <div style={{ ...fill, background: still ? `center / cover no-repeat url(${still}), #000` : '#000' }} data-kind="visuals">
+      <span
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          padding: '3px 6px',
+          background: 'rgba(0, 0, 0, 0.72)',
+          color: '#e9ebee',
+          fontSize: 11,
+          fontWeight: 600,
+          textAlign: 'center',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {BANKS[v.scene.bank]?.name} · {row[0]}
+      </span>
     </div>
   );
 }

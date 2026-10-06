@@ -1,3 +1,4 @@
+import { Box, X } from 'lucide-react';
 import { defaultFilters } from '../engine/audio';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient, VideoFormat } from '../engine/client';
@@ -170,10 +171,13 @@ export function LogoMaker({ show, client, act, source, onClose }: { show: Show; 
     <div className="modal" role="dialog" aria-modal="true" aria-label="3D logo maker">
       <div className="modal__box lm">
         <header className="modal__head">
-          <h2>3D logo maker</h2>
+          <h2>
+            <Box className="modal__icon" aria-hidden="true" />
+            3D logo maker
+          </h2>
           <input className="text lm__name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} aria-label="Name" />
           <button type="button" className="icon" aria-label="Close" onClick={onClose} disabled={progress !== null}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lm__body">

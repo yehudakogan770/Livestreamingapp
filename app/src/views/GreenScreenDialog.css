@@ -50,9 +50,6 @@
   padding: 14px;
   border-left: 1px solid var(--border);
 }
-.gs__props input[type='range'] {
-  accent-color: var(--accent);
-}
 .gs__colours {
   display: flex;
   gap: 6px;

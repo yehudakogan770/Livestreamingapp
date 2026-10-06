@@ -1,3 +1,4 @@
+import { SlidersHorizontal, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Adjust } from '../engine/types/Adjust';
@@ -206,7 +207,10 @@ export function InputSettings({
     <div className="modal" role="dialog" aria-modal="true" aria-label="Input settings" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box is">
         <header className="modal__head">
-          <h2>Input settings — {source.name}</h2>
+          <h2>
+            <SlidersHorizontal className="modal__icon" aria-hidden="true" />
+            Input settings — {source.name}
+          </h2>
           <span className="remote__spacer" />
           <select value={source.id} onChange={(e) => onSwitch(e.target.value)} aria-label="Switch input">
             {choices.map((s) => (
@@ -216,7 +220,7 @@ export function InputSettings({
             ))}
           </select>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="is__body">

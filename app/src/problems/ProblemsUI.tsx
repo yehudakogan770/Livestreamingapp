@@ -1,3 +1,4 @@
+import { CircleCheck, OctagonAlert, ShieldCheck, TriangleAlert, Wrench, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useProblemStore, useProblems, type Problem } from './problems';
 import './problems.css';
@@ -18,11 +19,27 @@ export function ProblemLight() {
   return (
     <div ref={ref} className="plight">
       <button type="button" className={`btn plight__btn plight__btn--${state}`} aria-expanded={open} onClick={() => setOpen(!open)}>
-        {state === 'ok' ? '✓ All good' : `⚠ ${problems.length} problem${problems.length === 1 ? '' : 's'}`}
+        {state === 'ok' ? <CircleCheck aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}
+        {state === 'ok' ? 'All good' : `${problems.length} problem${problems.length === 1 ? '' : 's'}`}
       </button>
       {open && (
         <div className="plist" role="dialog" aria-label="Problems">
-          {problems.length === 0 ? <p className="plist__none">Everything is working.</p> : problems.map((p) => <ProblemItem key={p.key} p={p} />)}
+          <div className="plist__head">
+            <ShieldCheck aria-hidden="true" />
+            <span>Problem center</span>
+            <span className="plist__count">{problems.length}</span>
+            <button type="button" className="icon" aria-label="Close" onClick={() => setOpen(false)}>
+              <X aria-hidden="true" />
+            </button>
+          </div>
+          {problems.length === 0 ? (
+            <p className="plist__none">
+              <CircleCheck aria-hidden="true" />
+              Everything is working.
+            </p>
+          ) : (
+            problems.map((p) => <ProblemItem key={p.key} p={p} />)
+          )}
         </div>
       )}
     </div>
@@ -34,11 +51,17 @@ function ProblemItem({ p }: { p: Problem }) {
   return (
     <div className={`pitem pitem--${p.level}`}>
       <div className="pitem__title">
-        {p.title}
+        {p.level === 'error' ? <OctagonAlert aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}
+        <span className="pitem__text">{p.title}</span>
         <small>{mins < 1 ? 'just now' : `${mins} min ago`}</small>
       </div>
       {p.detail && <div className="pitem__detail">{p.detail}</div>}
-      {p.fix && <div className="pitem__fix">What to do: {p.fix}</div>}
+      {p.fix && (
+        <div className="pitem__fix">
+          <Wrench aria-hidden="true" />
+          <span>What to do: {p.fix}</span>
+        </div>
+      )}
       {p.action && (
         <button type="button" className="btn btn--primary pitem__act" onClick={p.action.run}>
           {p.action.label}
@@ -68,7 +91,7 @@ export function ProblemToasts() {
       {shown.map((p) => (
         <div key={p.key + p.since} className={`ptoast ptoast--${p.level}`}>
           <strong>
-            {p.level === 'error' ? '⚠ ' : ''}
+            {p.level === 'error' ? <OctagonAlert aria-hidden="true" /> : <TriangleAlert aria-hidden="true" />}
             {p.title}
           </strong>
           {p.detail && <span>{p.detail}</span>}

@@ -1,3 +1,4 @@
+import { Cpu } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient, PerfStats } from '../engine/client';
 import { useBroadcast } from './BroadcastContext';
@@ -75,6 +76,7 @@ export function PerfChip({ client }: { client: EngineClient }) {
         title="How hard the computer is working — click for more"
         onClick={() => setOpen(!open)}
       >
+        <Cpu aria-hidden="true" />
         {label}
       </button>
       {open && (

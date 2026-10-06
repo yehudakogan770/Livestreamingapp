@@ -1,3 +1,4 @@
+import { X, Zap } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { Trigger } from '../engine/types/Trigger';
@@ -95,10 +96,13 @@ export function TriggersDialog({ show, act, onClose }: { show: Show; act: Act; o
     <div className="modal" role="dialog" aria-modal="true" aria-label="Triggers" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box trg">
         <header className="modal__head">
-          <h2>Triggers</h2>
+          <h2>
+            <Zap className="modal__icon" aria-hidden="true" />
+            Triggers
+          </h2>
           <span className="field__note trg__why">When this happens, do that — by itself, while you run the show.</span>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="trg__body">

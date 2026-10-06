@@ -1,3 +1,4 @@
+import { Table2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -46,9 +47,12 @@ export function SeatingCard({ source, act, client, onClose }: { source: Source; 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Table finder" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Table finder · {source.name}</h2>
+          <h2>
+            <Table2 className="modal__icon" aria-hidden="true" />
+            Table finder · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">
@@ -119,7 +123,7 @@ export function SeatingCard({ source, act, client, onClose }: { source: Source; 
                     {g.name} · <b>table {g.table}</b>
                   </span>
                   <button type="button" className="icon" aria-label={`Remove ${g.name}`} onClick={() => update({ guests: s.guests.filter((x) => x !== g) })}>
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </li>
               ))}

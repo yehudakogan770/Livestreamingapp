@@ -1,3 +1,4 @@
+import { Grid2x2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -59,7 +60,7 @@ export function SplitPicker({ split, sources, onChange }: { split: Split; source
               aria-label={`Remove box ${i + 1}`}
               onClick={() => onChange({ ...split, boxes: split.boxes.filter((_, j) => j !== i) })}
             >
-              ✕
+              <X aria-hidden="true" />
             </button>
           )}
         </div>
@@ -116,9 +117,12 @@ export function SplitEditor({
     <div className="modal" role="dialog" aria-modal="true" aria-label="Split screen" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box spled">
         <header className="modal__head">
-          <h2>Split screen · {source.name}</h2>
+          <h2>
+            <Grid2x2 className="modal__icon" aria-hidden="true" />
+            Split screen · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="spled__body">

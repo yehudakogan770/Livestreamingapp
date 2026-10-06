@@ -1,3 +1,4 @@
+import { Mic, X } from 'lucide-react';
 import { useEffect } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
@@ -22,9 +23,12 @@ export function SpeakersDialog({ show, client, onClose }: { show: Show; client: 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Speaker names" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box cap">
         <header className="modal__head">
-          <h2>Speaker names</h2>
+          <h2>
+            <Mic className="modal__icon" aria-hidden="true" />
+            Speaker names
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="cap__body">

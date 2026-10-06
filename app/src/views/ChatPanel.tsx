@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { audienceAddress } from './JoinSetup';
 import type { Show } from '../engine/types/Show';
@@ -81,7 +82,7 @@ export function ChatPanel({
           </button>
         </div>
         <button type="button" className="icon" aria-label="Close the chat (it stays connected)" onClick={onClose}>
-          ✕
+          <X aria-hidden="true" />
         </button>
       </header>
       {tab === 'questions' ? (
@@ -232,7 +233,7 @@ function Questions({ show, act, card, remote, onRemote }: { show: Show; act: Act
                 {q.shown ? 'Again' : 'Show'}
               </button>
               <button type="button" className="icon" aria-label="Let it go" onClick={() => act({ type: 'qnaRemove', question: q.id })}>
-                ✕
+                <X aria-hidden="true" />
               </button>
             </span>
           </li>

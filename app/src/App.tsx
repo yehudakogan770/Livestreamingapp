@@ -6,7 +6,8 @@ import { useShow } from './engine/useShow';
 import { isMultiview, outputScreen } from './engine/role';
 import { MultiviewView } from './views/MultiviewView';
 import type { ScreenId } from './engine/types/ScreenId';
-import { TitleBar, type MenuItem } from './components/TitleBar';
+import { TitleBar, type MenuItem, type Tool } from './components/TitleBar';
+import { CircleHelp, Layers, LibraryBig, ListChecks, Radio, SquarePlus, Spotlight, Type } from 'lucide-react';
 import { Gate, useAccess } from './auth/Gate';
 import { PeopleDialog } from './auth/PeopleDialog';
 import { AccountDialog } from './auth/AccountDialog';
@@ -363,10 +364,28 @@ function ControlApp() {
     fail,
   ]);
 
+  // Quick actions on the right of the title bar (the same as their menu items).
+  const tools = useMemo<Tool[]>(
+    () => [
+      { icon: SquarePlus, label: 'Add input', onClick: () => sendCommand({ type: 'addInput' }) },
+      { icon: Type, label: 'Add a lower third', onClick: () => sendCommand({ type: 'addInput', kind: 'text', template: 0 }) },
+      { icon: Layers, label: 'Set up overlays', onClick: () => setOverlaysOpen(true) },
+      null,
+      { icon: ListChecks, label: 'Run of show', onClick: () => sendCommand({ type: 'runOfShow' }) },
+      { icon: LibraryBig, label: 'Library', onClick: () => sendCommand({ type: 'library' }) },
+      { icon: Spotlight, label: 'Stage visuals', onClick: () => sendCommand({ type: 'visuals' }) },
+      null,
+      { icon: Radio, label: 'Recording and streaming settings', onClick: openBroadcast },
+      { icon: CircleHelp, label: 'How to use Lumora', onClick: () => sendCommand({ type: 'help' }) },
+    ],
+    [openBroadcast],
+  );
+
   return (
     <div className="app">
       <TitleBar
         controlling={controlling}
+        tools={show ? tools : []}
         eventName={[show?.event.name, files.current ? baseName(files.current) : show ? 'not saved to a file' : ''].filter(Boolean).join(' · ')}
         menus={menus}
       />

@@ -4,7 +4,7 @@
   inset: 0;
   overflow: hidden;
   container-type: size;
-  background: radial-gradient(ellipse at 50% 20%, #2b2233, #0c0a10);
+  background: #2b2233;
   color: #fff;
   font-family: 'Segoe UI', system-ui, sans-serif;
   text-align: center;

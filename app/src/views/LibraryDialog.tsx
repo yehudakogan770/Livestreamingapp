@@ -1,3 +1,4 @@
+import { LibraryBig, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
@@ -36,7 +37,10 @@ export function SaveToLibrary({ client, item, onClose }: { client: EngineClient;
     <div className="modal" role="dialog" aria-modal="true" aria-label="Save to library" onPointerDown={(e) => e.target === e.currentTarget && onClose(false)}>
       <div className="modal__box confirm">
         <header className="modal__head">
-          <h2>Save to library</h2>
+          <h2>
+            <LibraryBig className="modal__icon" aria-hidden="true" />
+            Save to library
+          </h2>
         </header>
         <div className="lib__save">
           <p className="confirm__text lib__why">Kept on this computer, ready for any later event. ({describeItem(item)})</p>
@@ -128,9 +132,12 @@ export function LibraryDialog({ show, client, act, onClose }: { show: Show; clie
     <div className="modal" role="dialog" aria-modal="true" aria-label="Library" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lib">
         <header className="modal__head">
-          <h2>Library</h2>
+          <h2>
+            <LibraryBig className="modal__icon" aria-hidden="true" />
+            Library
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lib__body">
@@ -195,7 +202,7 @@ export function LibraryDialog({ show, client, act, onClose }: { show: Show; clie
                       aria-label={`Delete ${it.name} from the library`}
                       onClick={() => void store((items ?? []).filter((x) => x.id !== it.id))}
                     >
-                      ✕
+                      <X aria-hidden="true" />
                     </button>
                   </li>
                 ))}

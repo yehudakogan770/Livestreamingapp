@@ -1,3 +1,4 @@
+import { BookOpen, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { MANUAL, searchManual } from '../help/manual';
 import './HelpDialog.css';
@@ -17,9 +18,12 @@ export function HelpDialog({ onClose, jewish = false }: { onClose: () => void; j
     <div className="modal" role="dialog" aria-modal="true" aria-label="How to use Lumora" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box hlp">
         <header className="modal__head">
-          <h2>How to use Lumora</h2>
+          <h2>
+            <BookOpen className="modal__icon" aria-hidden="true" />
+            How to use Lumora
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="hlp__body">

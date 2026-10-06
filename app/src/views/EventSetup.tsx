@@ -1,3 +1,4 @@
+import { CalendarCog } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appLogo } from '../engine/brand';
 import { defaultCountdown, type EngineClient } from '../engine/client';
@@ -148,7 +149,10 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
     <div className="modal" role="dialog" aria-modal="true" aria-label="Event setup">
       <div className="modal__box evs">
         <header className="modal__head">
-          <h2>Set up the event</h2>
+          <h2>
+            <CalendarCog className="modal__icon" aria-hidden="true" />
+            Set up the event
+          </h2>
           <span className="evs__dots" aria-label={`Step ${step + 1} of 3`}>
             {steps.map((_, i) => (
               <i key={i} className={i === step ? 'is-on' : i < step ? 'is-done' : ''} />

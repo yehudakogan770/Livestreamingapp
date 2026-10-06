@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight, ListOrdered, Pencil, Plus } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useCommands, type Command } from './commands';
 import type { EngineClient } from '../engine/client';
@@ -15,11 +16,15 @@ export function PresetsPanel({ show, client, act }: { show: Show; client: Engine
   const list = show.presets.map((p, i) => ({ p, n: i + 1 })).filter(({ p }) => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
   return (
     <aside className="presets" aria-label="Presets">
-      <div className="presets__head">
+      <div className="phead presets__head">
+        <ListOrdered aria-hidden="true" />
         <span className="presets__title">Presets</span>
-        <button type="button" className="chip" onClick={() => setEditing('new')}>
-          + Add
-        </button>
+        <span className="phead__actions">
+          <button type="button" className="btn" title="Add a preset" onClick={() => setEditing('new')}>
+            <Plus aria-hidden="true" />
+            Add
+          </button>
+        </span>
       </div>
       {show.presets.length > 4 && (
         <input className="text presets__search" value={search} placeholder="Search…" aria-label="Search presets" onChange={(e) => setSearch(e.target.value)} />
@@ -30,7 +35,9 @@ export function PresetsPanel({ show, client, act }: { show: Show; client: Engine
             className="presets__empty"
             title="A preset is a part of the event (Opening, Speaker, Video…): its inputs, transition and buttons. Add one to run the show in order."
           >
-            No presets yet.
+            <ListOrdered aria-hidden="true" />
+            <span>No presets yet.</span>
+            <small>A preset is a part of the event: its inputs, transition and buttons.</small>
           </li>
         )}
         {list.map(({ p, n }) => {
@@ -47,8 +54,8 @@ export function PresetsPanel({ show, client, act }: { show: Show; client: Engine
                   {p.sources.length || ''}
                 </span>
               </button>
-              <button type="button" className="presets__edit" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}>
-                ✎
+              <button type="button" className="presets__edit" aria-label={`Edit ${p.name}`} title="Edit" onClick={() => setEditing(p)}>
+                <Pencil aria-hidden="true" />
               </button>
             </li>
           );
@@ -57,10 +64,12 @@ export function PresetsPanel({ show, client, act }: { show: Show; client: Engine
       {show.presets.length > 0 && (
         <div className="presets__nav">
           <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'previousPreset' })}>
-            ◀ Prev
+            <ChevronLeft aria-hidden="true" />
+            Prev
           </button>
           <button type="button" className="btn" disabled={!show.presets.length} onClick={() => act({ type: 'nextPreset' })}>
-            Next ▶
+            Next
+            <ChevronRight aria-hidden="true" />
           </button>
         </div>
       )}

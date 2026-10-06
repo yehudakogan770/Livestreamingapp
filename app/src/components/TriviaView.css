@@ -4,7 +4,7 @@
   inset: 0;
   overflow: hidden;
   container-type: size;
-  background: radial-gradient(ellipse at 30% 20%, #2a1f4d, #0b0818);
+  background: #2a1f4d;
   color: #fff;
   font-family: 'Segoe UI', system-ui, sans-serif;
   text-align: center;
@@ -196,7 +196,7 @@
 .trv__barwrap i {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #7b5cff, #f2b233);
+  background: #7b5cff;
 }
 .trv__board b {
   width: 14cqh;

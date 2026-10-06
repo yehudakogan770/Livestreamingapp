@@ -2,16 +2,18 @@
 .bc-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+  gap: 7px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   font-variant-numeric: tabular-nums;
 }
+/* The record lamp: a red dot that lights up while recording. */
 .bc-dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: var(--text-faint);
+  background: #6b2420;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 .bc-btn--rec,
 .bc-btn--live {
@@ -20,9 +22,18 @@
   color: #fff;
 }
 .bc-btn--rec .bc-dot,
-.bc-btn--live .bc-dot {
+.bc-btn--live .bc-dot,
+.bc-btn--live .bc-live {
   background: #fff;
   animation: bc-blink 1.2s steps(1) infinite;
+}
+.bc-btn--live .bc-live {
+  background: none;
+  color: #fff;
+}
+.bc-btn--rec,
+.bc-btn--live {
+  border-top-color: #ff8a80;
 }
 .bc-btn--warn {
   background: var(--warning-bg);

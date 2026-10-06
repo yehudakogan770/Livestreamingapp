@@ -1,3 +1,4 @@
+import { Gavel, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -48,9 +49,12 @@ export function AuctionCard({ source, act, client, onClose }: { source: Source; 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Auction" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Auction · {source.name}</h2>
+          <h2>
+            <Gavel className="modal__icon" aria-hidden="true" />
+            Auction · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">
@@ -148,7 +152,7 @@ export function AuctionCard({ source, act, client, onClose }: { source: Source; 
                           aria-label={`Take out the bid of ${amount(a, b.amount)}`}
                           onClick={() => act({ type: 'auctionRemoveBid', id, item: it.id, bid: b.id })}
                         >
-                          ✕
+                          <X aria-hidden="true" />
                         </button>
                       </li>
                     ))}
@@ -184,7 +188,7 @@ export function AuctionCard({ source, act, client, onClose }: { source: Source; 
                       aria-label={`Remove ${x.name}`}
                       onClick={() => (!x.bids.length || confirm(`Remove ${x.name} and its bids?`)) && act({ type: 'auctionRemoveItem', id, item: x.id })}
                     >
-                      ✕
+                      <X aria-hidden="true" />
                     </button>
                   </li>
                 );

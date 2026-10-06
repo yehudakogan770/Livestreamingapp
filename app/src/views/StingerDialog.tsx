@@ -1,3 +1,4 @@
+import { Film, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
@@ -62,9 +63,12 @@ export function StingerDialog({ show, act, client, onClose }: { show: Show; act:
     <div className="modal" role="dialog" aria-modal="true" aria-label="Stingers" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box stg">
         <header className="modal__head">
-          <h2>Stinger transitions</h2>
+          <h2>
+            <Film className="modal__icon" aria-hidden="true" />
+            Stinger transitions
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="stg__body">

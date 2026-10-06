@@ -1,3 +1,4 @@
+import { Clapperboard, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FontPicker } from '../components/FontPicker';
 import type { Credits } from '../engine/types/Credits';
@@ -98,9 +99,12 @@ function CreditsEditor({ c, name, onSave, onClose }: { c: Credits; name: string;
     <div className="modal" role="dialog" aria-modal="true" aria-label="Credits" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box crd">
         <header className="modal__head">
-          <h2>Credits · {name}</h2>
+          <h2>
+            <Clapperboard className="modal__icon" aria-hidden="true" />
+            Credits · {name}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="crd__body">

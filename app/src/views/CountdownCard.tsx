@@ -1,3 +1,4 @@
+import { ChevronDown, ChevronUp, Pause, Play, RotateCcw, Timer } from 'lucide-react';
 import { useState } from 'react';
 import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
@@ -193,7 +194,8 @@ export function CountdownMini({ show, act, screen, onPutInNext }: { show: Show; 
         title="Make a countdown and put it in Next"
         onClick={onPutInNext}
       >
-        ⏱ Countdown
+        <Timer aria-hidden="true" />
+        Countdown
       </button>
     ) : null;
   const id = target.id;
@@ -206,7 +208,10 @@ export function CountdownMini({ show, act, screen, onPutInNext }: { show: Show; 
     <div className="cdm" aria-label="Countdown">
       <div className="cdm__row">
         {tag && !open && <b className={`cd__tag cd__tag--${target.where}`}>{tag}</b>}
-        <span className="cdm__name">{c.label || name}</span>
+        <Timer className="cdm__icon" aria-hidden="true" />
+        <span className="cdm__name" title={c.label || name}>
+          {c.label || name}
+        </span>
         {typing === null ? (
           <button type="button" className={`cdm__time${running ? ' is-running' : ''}`} title="Click to type a time to go to" onClick={() => setTyping(shown)}>
             {shown}
@@ -237,10 +242,11 @@ export function CountdownMini({ show, act, screen, onPutInNext }: { show: Show; 
           className="btn btn--small"
           onClick={() => act(running && !done ? { type: 'pauseCountdown', id } : done ? { type: 'resetCountdown', id } : { type: 'startCountdown', id })}
         >
+          {running && !done ? <Pause aria-hidden="true" /> : done ? <RotateCcw aria-hidden="true" /> : <Play aria-hidden="true" />}
           {running && !done ? 'Pause' : done ? 'Reset' : 'Start'}
         </button>
         <button type="button" className="btn btn--small" aria-expanded={open} aria-label="All countdown controls" onClick={() => setOpen(!open)}>
-          {open ? '▴' : '▾'}
+          {open ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
         </button>
       </div>
       {open && <CountdownCard show={show} act={act} screen={screen} onPutInNext={onPutInNext} />}

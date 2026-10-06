@@ -1,3 +1,4 @@
+import { Radio, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CaptureSettings, Destination, EngineClient, Quality } from '../engine/client';
 import { useBroadcast } from './BroadcastContext';
@@ -118,9 +119,12 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
     >
       <div className="modal__box bcd">
         <header className="modal__head">
-          <h2>Recording and streaming</h2>
+          <h2>
+            <Radio className="modal__icon" aria-hidden="true" />
+            Recording and streaming
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="bcd__body">

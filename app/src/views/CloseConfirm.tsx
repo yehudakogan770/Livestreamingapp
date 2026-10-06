@@ -1,3 +1,4 @@
+import { Power } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useBroadcast } from '../broadcast/BroadcastContext';
 import { closeApp, watchCloseRequests } from '../engine/client';
@@ -36,7 +37,10 @@ export function CloseConfirm() {
     >
       <div className="modal__box">
         <header className="modal__head">
-          <h2>Close Lumora?</h2>
+          <h2>
+            <Power className="modal__icon" aria-hidden="true" />
+            Close Lumora?
+          </h2>
         </header>
         <p style={{ padding: '0 20px' }}>
           {ends && <strong>{ends} </strong>}

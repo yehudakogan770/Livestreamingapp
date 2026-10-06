@@ -1,3 +1,4 @@
+import { ChevronDown, History, Radio, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CaptureKind } from '../engine/client';
 import { clock } from '../engine/timing';
@@ -98,7 +99,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         }
         onClick={() => press('stream')}
       >
-        <i className="bc-dot" />
+        <Radio className="bc-live" aria-hidden="true" />
         {live
           ? `${b.rehearsal ? 'REHEARSING' : 'LIVE'} ${liveTime}`
           : reconnecting
@@ -127,7 +128,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
             </>
           )}
           <button type="button" className="icon" aria-label="Close" onClick={() => setSaved(null)}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </div>
       )}
@@ -205,7 +206,8 @@ function ReplayButtons() {
   if (!b.replayOn)
     return (
       <button type="button" className="btn bc-btn" title="Keep the last minute of the Live Screen, ready to replay" onClick={() => b.setReplay(true)}>
-        ⟲ REPLAY
+        <History aria-hidden="true" />
+        REPLAY
       </button>
     );
   const make = () => {
@@ -228,10 +230,11 @@ function ReplayButtons() {
         title={`Replay the last ${secs} seconds${slow ? ' in slow motion' : ''} (to Next)`}
         onClick={make}
       >
-        ⟲ {secs}s{slow ? ' ½×' : ''}
+        <History aria-hidden="true" />
+        {secs}s{slow ? ' ½×' : ''}
       </button>
       <button type="button" className="btn bc-btn bc-replay__more" aria-label="Replay options" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-        ▾
+        <ChevronDown aria-hidden="true" />
       </button>
       {menu && (
         <div className="bc-replay__menu" role="dialog" aria-label="Replay options">

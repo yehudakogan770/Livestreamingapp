@@ -1,3 +1,4 @@
+import { CalendarClock, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Place } from '../engine/types/Place';
 import type { Show } from '../engine/types/Show';
@@ -54,9 +55,12 @@ export function ZmanimDialog({ show, act, source, onClose }: { show: Show; act: 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Zmanim and Shabbos" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box stg">
         <header className="modal__head">
-          <h2>Zmanim and Shabbos</h2>
+          <h2>
+            <CalendarClock className="modal__icon" aria-hidden="true" />
+            Zmanim and Shabbos
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="stg__body">

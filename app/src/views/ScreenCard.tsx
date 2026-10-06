@@ -1,3 +1,4 @@
+import { ScreenShare, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -21,9 +22,12 @@ export function ScreenCard({ source, act, client, onClose }: { source: Source; a
     <div className="modal" role="dialog" aria-modal="true" aria-label="Screen capture" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box stg">
         <header className="modal__head">
-          <h2>Screen capture · {source.name}</h2>
+          <h2>
+            <ScreenShare className="modal__icon" aria-hidden="true" />
+            Screen capture · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="stg__body">

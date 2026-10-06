@@ -1,3 +1,4 @@
+import { Keyboard, X } from 'lucide-react';
 import { useEffect } from 'react';
 
 /** With the Jewish event tools on (Settings). */
@@ -71,9 +72,12 @@ export function ShortcutsDialog({ onClose, jewish = false }: { onClose: () => vo
     <div className="modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box keys">
         <header className="modal__head">
-          <h2>Keyboard shortcuts</h2>
+          <h2>
+            <Keyboard className="modal__icon" aria-hidden="true" />
+            Keyboard shortcuts
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="keys__body">

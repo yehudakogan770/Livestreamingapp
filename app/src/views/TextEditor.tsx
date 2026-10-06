@@ -1,3 +1,4 @@
+import { Type, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { EFFECTS } from '../engine/effects';
 import type { TextEntrance } from '../engine/types/TextEntrance';
@@ -55,9 +56,12 @@ export function TextEditor({ source, act, onClose }: { source: Source; act: Act;
     <div className="modal" role="dialog" aria-modal="true" aria-label="Text" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box txed">
         <header className="modal__head">
-          <h2>Text · {source.name}</h2>
+          <h2>
+            <Type className="modal__icon" aria-hidden="true" />
+            Text · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="txed__body">

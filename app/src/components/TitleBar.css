@@ -1,22 +1,30 @@
+/* The app bar: the darkest strip at the top, with the mark, the menus,
+   quick actions as line icons, the event and a timecode-style clock. */
 .titlebar {
   /* Always above the rest of the window, so its menus are never hidden
      behind the monitors or tiles (whatever the browser engine). */
   position: relative;
   z-index: 100;
-  height: 32px;
+  height: 40px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 0 10px;
-  background: var(--bar);
-  border-bottom: 1px solid var(--border);
+  padding: 0 8px 0 12px;
+  background: #0f1114;
+  border-bottom: 1px solid #000;
+  box-shadow:
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
+    0 1px 0 rgba(255, 255, 255, 0.025);
 }
 .titlebar__brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   padding-right: 14px;
+  margin-right: 6px;
+  height: 24px;
+  border-right: 1px solid var(--border);
 }
 .titlebar__name {
   font-size: 13px;
@@ -25,49 +33,123 @@
 }
 .titlebar__menu {
   display: flex;
-  gap: 2px;
+  gap: 0;
   flex: 0 1 auto;
   min-width: 0;
   /* Visible: the menus hang below the bar. */
   overflow: visible;
 }
 .titlebar__item {
-  height: 24px;
+  height: 28px;
   padding: 0 8px;
-  border: 0;
-  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
   background: transparent;
-  color: var(--text);
-  font-size: 13px;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-weight: 500;
   white-space: nowrap;
+}
+.titlebar__caret {
+  width: 11px !important;
+  height: 11px !important;
+  color: var(--text-faint);
+  margin-right: -2px;
 }
 .titlebar__item:disabled {
   cursor: default;
   color: var(--text-faint);
 }
-.titlebar__clock {
-  font-family: var(--mono);
-  font-size: 12px;
+.titlebar__item:not(:disabled):hover {
+  color: var(--text);
+  background: var(--button);
+}
+.titlebar__spacer {
+  flex: 1 1 auto;
+}
+.titlebar__tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+  margin-right: 8px;
+  height: 28px;
+  border-right: 1px solid var(--border);
+}
+.titlebar__sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--border-strong);
+}
+.titlebar__tool {
+  width: 30px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
   color: var(--text-dim);
-  padding-left: 12px;
+}
+.titlebar__tool svg.lucide {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+.titlebar__tool:hover {
+  color: var(--text);
+  background: var(--button);
+  border-color: var(--border-strong);
+}
+.titlebar__tool:active {
+  background: var(--button-active);
 }
 .titlebar__event {
   flex: 0 1 auto;
   min-width: 0;
-  margin-left: auto;
-  padding-left: 12px;
-  margin-right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
   font-size: 12px;
-  font-weight: 400;
   color: var(--text-dim);
   white-space: nowrap;
+  max-width: 28vw;
+}
+.titlebar__event > span {
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 30vw;
 }
-.titlebar__item:not(:disabled):hover {
-  color: #fff;
-  background: var(--button);
+.titlebar__event svg.lucide {
+  color: var(--text-faint);
+}
+/* The clock reads like a timecode display: an inset well with mono digits. */
+.titlebar__clock {
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--well);
+  box-shadow: inset 0 1px 0 var(--lo);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  white-space: nowrap;
+}
+.titlebar__clock svg.lucide {
+  width: 12px;
+  height: 12px;
+  color: var(--accent);
 }
 
 .titlebar__slot {
@@ -76,21 +158,23 @@
 .titlebar__item.is-open {
   color: #fff;
   background: var(--button-hover);
-  border-radius: var(--radius-sm);
+  border-color: var(--border-strong);
 }
 .titlebar__drop {
   position: absolute;
-  top: calc(100% + 3px);
+  top: calc(100% + 5px);
   left: 0;
   z-index: 1000;
-  min-width: 240px;
-  padding: 3px;
+  min-width: 248px;
+  padding: 4px;
   display: flex;
   flex-direction: column;
   border-radius: var(--radius);
   background: var(--raised);
   border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-pop);
+  box-shadow:
+    inset 0 1px 0 var(--hi),
+    var(--shadow-pop);
 }
 .titlebar__drop button {
   height: 28px;
@@ -103,11 +187,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 .titlebar__drop button:hover:not(:disabled) {
-  background: var(--accent-deep);
+  background: var(--selected);
   color: #fff;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 .titlebar__drop button:disabled {
   color: var(--text-faint);
@@ -115,18 +200,36 @@
 }
 .titlebar__drop hr {
   width: 100%;
-  margin: 3px 0;
+  margin: 4px 0;
   border: 0;
   border-top: 1px solid var(--border);
 }
 
-/* Narrow windows: the menu names close up so they all fit. */
-@media (max-width: 1200px) {
+/* Narrow windows: the menu names close up and the quick actions thin out. */
+@media (max-width: 1500px) {
+  .titlebar__event {
+    display: none;
+  }
+}
+@media (max-width: 1280px) {
   .titlebar__brand {
-    padding-right: 6px;
+    padding-right: 8px;
+  }
+  .titlebar__name {
+    display: none;
   }
   .titlebar__item {
     padding: 0 5px;
-    font-size: 11.5px;
+    font-size: 12px;
+  }
+  .titlebar__caret {
+    display: none;
+  }
+  .titlebar__tools {
+    padding: 0 4px;
+    margin-right: 4px;
+  }
+  .titlebar__tool {
+    width: 26px;
   }
 }

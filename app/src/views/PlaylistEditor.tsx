@@ -1,3 +1,4 @@
+import { ListVideo, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Playlist } from '../engine/types/Playlist';
@@ -61,9 +62,12 @@ export function PlaylistEditor({ source, act, client, onClose }: { source: Sourc
     <div className="modal" role="dialog" aria-modal="true" aria-label="Playlist" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box pl">
         <header className="modal__head">
-          <h2>Playlist · {source.name}</h2>
+          <h2>
+            <ListVideo className="modal__icon" aria-hidden="true" />
+            Playlist · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="pl__body">
@@ -125,7 +129,7 @@ export function PlaylistEditor({ source, act, client, onClose }: { source: Sourc
                     ↓
                   </button>
                   <button type="button" className="icon" aria-label={`Remove ${it.name}`} onClick={() => remove(i)}>
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </li>
               );

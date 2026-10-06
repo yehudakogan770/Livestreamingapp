@@ -1,3 +1,4 @@
+import { Users, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { Profile } from './access';
 import { listPeople, setPerson } from './auth';
@@ -38,9 +39,12 @@ export function PeopleDialog({ onClose }: { onClose: () => void }) {
     <div className="modal" role="dialog" aria-modal="true" aria-label="People and approvals" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box people">
         <header className="modal__head">
-          <h2>People and approvals</h2>
+          <h2>
+            <Users className="modal__icon" aria-hidden="true" />
+            People and approvals
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="people__tabs" role="tablist">

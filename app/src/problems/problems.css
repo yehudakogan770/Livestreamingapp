@@ -2,8 +2,14 @@
   position: relative;
 }
 .plight__btn--ok {
-  border-color: var(--border-strong);
   color: var(--text);
+}
+.plight__btn--ok svg.lucide {
+  color: var(--preview-bright) !important;
+}
+.plight__btn--warning svg.lucide,
+.plight__btn--error svg.lucide {
+  color: currentColor !important;
 }
 .plight__btn--warning {
   border-color: var(--warning);
@@ -26,27 +32,69 @@
   bottom: calc(100% + 8px);
   left: 0;
   z-index: 70;
-  width: 420px;
+  width: 440px;
   max-height: 60vh;
   overflow-y: auto;
-  padding: 4px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
   border-radius: var(--radius);
-  background: var(--raised);
+  background: var(--panel);
   border: 1px solid var(--border-strong);
-  box-shadow: var(--shadow-pop);
+  box-shadow:
+    inset 0 1px 0 var(--hi),
+    var(--shadow-pop);
+}
+.plist__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 36px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: #202328;
+  font-size: 13px;
+  font-weight: 600;
+}
+.plist__head > svg.lucide {
+  color: var(--accent);
+}
+.plist__count {
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--button);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  color: var(--text-dim);
+}
+.plist__head .icon {
+  margin-left: auto;
 }
 .plist__none {
-  margin: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 16px 12px;
   color: var(--text-dim);
+}
+.plist__none svg.lucide {
+  color: var(--preview-bright);
 }
 .pitem {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 8px 10px;
+  gap: 4px;
+  padding: 10px 12px;
   border-radius: 0;
   border-left: 3px solid;
   border-bottom: 1px solid var(--border);
@@ -60,9 +108,21 @@
 }
 .pitem__title {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  align-items: flex-start;
+  gap: 8px;
   font-weight: 600;
+}
+.pitem__title > svg.lucide {
+  margin-top: 1px;
+}
+.pitem--error .pitem__title > svg.lucide {
+  color: var(--danger);
+}
+.pitem--warning .pitem__title > svg.lucide {
+  color: var(--warning);
+}
+.pitem__text {
+  flex: 1 1 auto;
 }
 .pitem__title small {
   font-weight: 400;
@@ -70,16 +130,41 @@
   white-space: nowrap;
 }
 .pitem__detail {
+  padding-left: 22px;
   color: var(--text-dim);
   font-size: 12px;
 }
 .pitem__fix {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--well);
+  border: 1px solid var(--border);
   font-size: 12px;
+}
+.pitem__fix svg.lucide {
+  width: 12px;
+  height: 12px;
+  margin-top: 2px;
+  color: var(--accent);
 }
 .pitem__act {
   align-self: flex-start;
-  margin-top: 4px;
+  margin: 2px 0 0 22px;
   height: 28px;
+}
+.ptoast strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ptoast--error strong svg.lucide {
+  color: var(--danger);
+}
+.ptoast--warning strong svg.lucide {
+  color: var(--warning);
 }
 .ptoasts {
   position: fixed;
@@ -127,10 +212,12 @@
 }
 .tile__warn {
   position: absolute;
-  left: 30px;
-  top: 4px;
-  height: 16px;
-  padding: 0 6px;
+  left: 34px;
+  top: 5px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
   border-radius: var(--radius-sm);
   background: var(--warning);
   color: #1a1305;

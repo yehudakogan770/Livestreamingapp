@@ -1,4 +1,5 @@
-/* Signing in, before Lumora opens. */
+/* Signing in, before Lumora opens: a flat two-part card on the plain
+   workspace color. The left part carries the mark; the right part the form. */
 .gate {
   position: fixed;
   inset: 0;
@@ -9,33 +10,69 @@
   background: var(--bg);
 }
 .gate__card {
-  width: min(400px, 100%);
-  padding: 0 28px 24px;
+  width: min(760px, 100%);
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
   border-radius: var(--radius);
-  border: 1px solid var(--border-strong);
-  border-top: 0;
+  border: 1px solid #000;
   background: var(--panel);
-  box-shadow: var(--shadow-pop);
+  box-shadow:
+    0 0 0 1px var(--border-strong),
+    inset 0 1px 0 var(--hi);
+  overflow: hidden;
 }
-.gate__brand {
+.gate__side {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px 28px;
+  background: var(--bar);
+  border-right: 1px solid var(--border);
+}
+.gate__side img {
+  display: block;
+  width: 200px;
+  height: auto;
+}
+.gate__tag {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  padding-left: 4px;
+}
+.gate__main {
+  min-width: 0;
+  padding: 28px 32px 28px;
+}
+/* The small mark above the form only shows when the card is one column. */
+.gate__brand {
+  display: none;
   align-items: center;
-  height: 44px;
-  margin: 0 -28px 20px;
-  padding: 0 16px;
-  background: var(--raised);
-  border-top: 1px solid var(--border-strong);
-  border-bottom: 1px solid var(--border);
-  border-radius: var(--radius) var(--radius) 0 0;
+  margin: 0 0 18px;
 }
 .gate__brand img {
   display: block;
   height: 26px;
 }
+@media (max-width: 720px) {
+  .gate__card {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(420px, 100%);
+  }
+  .gate__side {
+    display: none;
+  }
+  .gate__brand {
+    display: flex;
+  }
+}
 .gate h1 {
   margin: 0 0 6px;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 .gate__note {
   margin: 0 0 16px;
@@ -51,7 +88,7 @@
   margin-bottom: 4px;
 }
 .gate__go {
-  height: 34px;
+  height: 36px;
   margin-top: 4px;
   font-size: 13px;
   justify-content: center;

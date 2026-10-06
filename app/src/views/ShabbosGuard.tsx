@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import { useBroadcast } from '../broadcast/BroadcastContext';
@@ -37,7 +38,7 @@ export function ShabbosGuard({ show }: { show: Show }) {
       <div className="shabbos shabbos--done" role="status">
         The stream and recording were ended for candle lighting ({clockTime(candles)}). Good Shabbos!
         <button type="button" className="icon" aria-label="Close" onClick={() => setDone(null)}>
-          ✕
+          <X aria-hidden="true" />
         </button>
       </div>
     );

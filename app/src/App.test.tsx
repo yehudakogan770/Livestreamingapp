@@ -30,8 +30,8 @@ async function addColour(name: string) {
   });
 }
 
-const onAir = () => document.querySelector('.mon--pgm .mon__head em')?.textContent;
-const next = () => document.querySelector('.mon--pvw .mon__head em')?.textContent;
+const onAir = () => document.querySelector('.mon--pgm .mon__src')?.textContent;
+const next = () => document.querySelector('.mon--pvw .mon__src')?.textContent;
 
 describe('App shell', () => {
   it('starts on the Live Screen with the Live blade lit', async () => {
@@ -226,13 +226,13 @@ describe('Audio mixer', () => {
   it('muting the Stream mix is one click', async () => {
     await start();
     const mixer = screen.getByLabelText('Audio mixer');
-    const mute = within(mixer).getAllByRole('button', { name: 'M' })[0]!;
+    const mute = within(mixer).getAllByRole('button', { name: 'Mute' })[0]!;
     await act(async () => {
       fireEvent.click(mute);
     });
     expect(
       within(screen.getByLabelText('Audio mixer')).getAllByRole('button', {
-        name: 'M',
+        name: 'Mute',
       })[0],
     ).toHaveAttribute('aria-pressed', 'true');
   });
@@ -285,7 +285,7 @@ describe('Presets', () => {
     await addColour('Cam A');
     await addColour('Cam B');
     await addColour('Logo');
-    fireEvent.click(screen.getByRole('button', { name: '+ Add' }));
+    fireEvent.click(within(screen.getByLabelText('Presets')).getByRole('button', { name: 'Add' }));
     const dlg = screen.getByRole('dialog', { name: 'New preset' });
     fireEvent.change(within(dlg).getByPlaceholderText('e.g. Speaker'), {
       target: { value: 'Speaker' },
@@ -312,7 +312,7 @@ describe('Presets', () => {
   it('a preset button runs its steps', async () => {
     await start();
     await addColour('Cam A');
-    fireEvent.click(screen.getByRole('button', { name: '+ Add' }));
+    fireEvent.click(within(screen.getByLabelText('Presets')).getByRole('button', { name: 'Add' }));
     const dlg = screen.getByRole('dialog', { name: 'New preset' });
     fireEvent.change(within(dlg).getByPlaceholderText('e.g. Speaker'), {
       target: { value: 'Open' },
@@ -344,7 +344,7 @@ describe('Presets', () => {
 describe('Problems', () => {
   it('the bottom bar says all is good when nothing is wrong', async () => {
     await start();
-    expect(screen.getByRole('button', { name: '✓ All good' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'All good' })).toBeInTheDocument();
   });
 });
 

@@ -1,3 +1,4 @@
+import { UserRound, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -29,9 +30,12 @@ export function GuestCard({ source, act, client, onClose }: { source: Source; ac
     <div className="modal" role="dialog" aria-modal="true" aria-label="Guest" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box stg">
         <header className="modal__head">
-          <h2>Guest · {source.name}</h2>
+          <h2>
+            <UserRound className="modal__icon" aria-hidden="true" />
+            Guest · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="stg__body">

@@ -1,3 +1,4 @@
+import { Palette, X } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Brand } from '../engine/types/Brand';
@@ -277,7 +278,7 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
                   {f.name}
                 </button>
                 <button type="button" className="btn" aria-label={`Remove ${f.name}`} onClick={() => set({ fonts: b.fonts.filter((x) => x.name !== f.name) })}>
-                  ✕
+                  <X aria-hidden="true" />
                 </button>
               </span>
             ))}
@@ -300,9 +301,12 @@ export function BrandDialog({ show, client, onClose }: { show: Show; client: Eng
     <div className="modal" role="dialog" aria-modal="true" aria-label="Event look" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box brd">
         <header className="modal__head">
-          <h2>Event look</h2>
+          <h2>
+            <Palette className="modal__icon" aria-hidden="true" />
+            Event look
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="brd__body">

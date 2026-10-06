@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { MonitorSpeaker, Projector, RadioTower, type LucideIcon } from 'lucide-react';
 import type { Show } from '../engine/types/Show';
 import type { ScreenId } from '../engine/types/ScreenId';
 import './ScreenSelector.css';
@@ -21,6 +22,8 @@ export function screenStatus(show: Show | null, id: ScreenId): Status {
   return sc.program ? 'on-air' : 'idle';
 }
 
+const ICON: Record<ScreenId, LucideIcon> = { live: RadioTower, back: Projector, monitor: MonitorSpeaker };
+
 const LABEL: Record<Status, string> = { 'on-air': 'ON AIR', following: 'FOLLOWS LIVE', blank: 'BLANK', dimmed: 'DIMMED', idle: 'EMPTY' };
 
 /** Choose which screen you are controlling. The center of the design; F1–F3 work anywhere. */
@@ -42,14 +45,24 @@ export function ScreenSelector({ show, selected, onSelect }: { show: Show | null
       <span className="selector__label">Controlling</span>
       {SCREENS.map((s) => {
         const status = screenStatus(show, s.id);
+        const Icon = ICON[s.id];
         return (
-          <button key={s.id} type="button" role="tab" aria-selected={selected === s.id} className="selector__tab" onClick={() => onSelect(s.id)}>
-            <span className="selector__name">{s.name}</span>
-            <span className="selector__meta">
-              <span className={`selector__badge selector__badge--${status}`}>{LABEL[status]}</span>
-              {s.where}
-              <kbd>{s.key}</kbd>
+          <button
+            key={s.id}
+            type="button"
+            role="tab"
+            aria-selected={selected === s.id}
+            className={`selector__tab selector__tab--${status}`}
+            title={`Control the ${s.name} (${s.key})`}
+            onClick={() => onSelect(s.id)}
+          >
+            <Icon className="selector__icon" aria-hidden="true" />
+            <span className="selector__text">
+              <span className="selector__name">{s.name}</span>
+              <span className="selector__meta">{s.where}</span>
             </span>
+            <span className={`selector__badge selector__badge--${status}`}>{LABEL[status]}</span>
+            <kbd>{s.key}</kbd>
           </button>
         );
       })}

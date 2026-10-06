@@ -1,3 +1,4 @@
+import { HandCoins, MessagesSquare, Ticket, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import { JoinSetup, useAudienceLink } from './JoinSetup';
@@ -42,9 +43,12 @@ export function RaffleCard({ source, act, client, onClose }: { source: Source; a
     <div className="modal" role="dialog" aria-modal="true" aria-label="Raffle" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Raffle · {source.name}</h2>
+          <h2>
+            <Ticket className="modal__icon" aria-hidden="true" />
+            Raffle · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">
@@ -102,7 +106,7 @@ export function RaffleCard({ source, act, client, onClose }: { source: Source; a
                 <li key={e.id} className={r.winners.includes(e.id) ? 'is-winner' : ''}>
                   <span dir="auto">{e.name}</span>
                   <button type="button" className="icon" aria-label={`Take out ${e.name}`} onClick={() => act({ type: 'raffleRemove', id, entry: e.id })}>
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </li>
               ))}
@@ -151,9 +155,12 @@ export function FundraiserCard({ source, act, client, onClose }: { source: Sourc
     <div className="modal" role="dialog" aria-modal="true" aria-label="Fundraiser" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Fundraiser · {source.name}</h2>
+          <h2>
+            <HandCoins className="modal__icon" aria-hidden="true" />
+            Fundraiser · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">
@@ -264,7 +271,7 @@ export function FundraiserCard({ source, act, client, onClose }: { source: Sourc
                     </button>
                   )}
                   <button type="button" className="icon" aria-label="Remove" onClick={() => act({ type: 'pledgeRemove', id, pledge: p.id })}>
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </li>
               ))}
@@ -304,9 +311,12 @@ export function WallCard({ source, act, client, onClose }: { source: Source; act
     <div className="modal" role="dialog" aria-modal="true" aria-label="Messages wall" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Messages wall · {source.name}</h2>
+          <h2>
+            <MessagesSquare className="modal__icon" aria-hidden="true" />
+            Messages wall · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">
@@ -441,7 +451,7 @@ export function WallCard({ source, act, client, onClose }: { source: Source; act
                     {w.pinned === m.id ? 'Showing' : 'Show now'}
                   </button>
                   <button type="button" className="icon" aria-label="Remove" onClick={() => act({ type: 'wallRemove', id, message: m.id })}>
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </li>
               ))}

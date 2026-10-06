@@ -16,9 +16,6 @@
   width: 56px;
   height: 30px;
 }
-.spl input[type='range'] {
-  accent-color: var(--accent);
-}
 .spl input[type='color'] {
   width: 40px;
   height: 28px;

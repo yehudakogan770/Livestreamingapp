@@ -62,7 +62,7 @@ export const MANUAL: Topic[] = [
       '2. Press TAKE (or Enter) to send it on air with the chosen transition (Fade, Dip, Wipe, Slide… and how long).',
       '3. CUT (Shift + Enter) switches straight away, with no transition.',
       '4. The fader: drag it from the left to mix by hand. Once the mix is complete it springs back to the left, ready for the next one.',
-      '• Fade to black fades the screen out (and back).',
+      '• FTB (fade to black) fades the screen slowly out (and back up).',
       '• Back = Live makes the Back Screen follow the Live Screen.',
       'Tip: Ctrl + 1 – 4 takes with your favorite transitions.',
     ],

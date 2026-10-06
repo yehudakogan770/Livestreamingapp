@@ -1,3 +1,4 @@
+import { Images, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Slide } from '../engine/types/Slide';
@@ -86,7 +87,7 @@ export function SlideshowSetup({
                 ▼
               </button>
               <button type="button" className="icon" aria-label={`Remove slide ${i + 1}`} onClick={() => setSlides(sh.slides.filter((_, j) => j !== i))}>
-                ✕
+                <X aria-hidden="true" />
               </button>
             </span>
           </div>
@@ -207,9 +208,12 @@ export function SlideshowEditor({
     <div className="modal" role="dialog" aria-modal="true" aria-label="Slideshow" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box sled">
         <header className="modal__head">
-          <h2>Slideshow · {source.name}</h2>
+          <h2>
+            <Images className="modal__icon" aria-hidden="true" />
+            Slideshow · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="sled__body">

@@ -1,3 +1,4 @@
+import { Globe, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { BrowserInput } from '../engine/types/BrowserInput';
@@ -59,7 +60,10 @@ export function BrowserCard({ show, source, act, client, onClose }: { show: Show
     <div className="modal" role="dialog" aria-modal="true" aria-label="Web page" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box brc">
         <header className="modal__head">
-          <h2>Web page — {source.name}</h2>
+          <h2>
+            <Globe className="modal__icon" aria-hidden="true" />
+            Web page — {source.name}
+          </h2>
           <span className="remote__spacer" />
           {onAir.map((sc) => (
             <span key={sc} className="brc__air">
@@ -67,7 +71,7 @@ export function BrowserCard({ show, source, act, client, onClose }: { show: Show
             </span>
           ))}
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="brc__body">

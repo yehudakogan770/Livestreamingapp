@@ -1,3 +1,4 @@
+import { Move, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient, PtzCommand } from '../engine/client';
 import type { Ptz } from '../engine/types/Ptz';
@@ -82,9 +83,12 @@ export function PtzCard({ source, act, client, onClose }: { source: Source; act:
     <div className="modal" role="dialog" aria-modal="true" aria-label="PTZ camera" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box ptz">
         <header className="modal__head">
-          <h2>PTZ camera · {source.name}</h2>
+          <h2>
+            <Move className="modal__icon" aria-hidden="true" />
+            PTZ camera · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="ptz__body">

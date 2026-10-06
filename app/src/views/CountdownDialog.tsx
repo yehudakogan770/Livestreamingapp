@@ -1,3 +1,4 @@
+import { Timer, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { AtZero } from '../engine/types/AtZero';
 import type { Countdown } from '../engine/types/Countdown';
@@ -9,7 +10,7 @@ import { defaultCountdown } from '../engine/client';
 
 const MIN = 60_000;
 const LENGTHS = [1, 2, 3, 5, 10, 15, 20, 30, 45, 60];
-const BACKGROUNDS = ['#0b2545', '#1f6f79', '#3b1c32', '#1a1d22', '#000000', '#5a1f1a'];
+const BACKGROUNDS = ['#0b2545', '#2b2f36', '#3b1c32', '#1a1d22', '#000000', '#5a1f1a'];
 
 /** Parse "5", "5:30", "1:05:00" into ms. */
 export function parseLength(text: string): number | null {
@@ -111,9 +112,12 @@ export function CountdownDialog({ show, id, act, onClose }: { show: Show; id: st
     <div className="modal" role="dialog" aria-modal="true" aria-label="Countdown" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box cdset">
         <header className="modal__head">
-          <h2>Countdown · {src?.name ?? 'Countdown'}</h2>
+          <h2>
+            <Timer className="modal__icon" aria-hidden="true" />
+            Countdown · {src?.name ?? 'Countdown'}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="cdset__body">

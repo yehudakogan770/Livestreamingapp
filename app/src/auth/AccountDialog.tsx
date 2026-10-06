@@ -1,3 +1,4 @@
+import { CircleUserRound, X } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Access } from './access';
 import { changeName, changePassword } from './auth';
@@ -51,9 +52,12 @@ export function AccountDialog({ access, onClose }: { access: Access; onClose: ()
     <div className="modal" role="dialog" aria-modal="true" aria-label="My account" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box account">
         <header className="modal__head">
-          <h2>My account</h2>
+          <h2>
+            <CircleUserRound className="modal__icon" aria-hidden="true" />
+            My account
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="account__body">

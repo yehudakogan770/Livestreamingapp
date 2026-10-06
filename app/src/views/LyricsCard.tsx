@@ -1,3 +1,4 @@
+import { ListMusic, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FontPicker } from '../components/FontPicker';
 import type { Source } from '../engine/types/Source';
@@ -47,9 +48,12 @@ export function LyricsCard({ source, act, onClose }: { source: Source; act: Act;
     <div className="modal" role="dialog" aria-modal="true" aria-label="Song" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Song · {source.name}</h2>
+          <h2>
+            <ListMusic className="modal__icon" aria-hidden="true" />
+            Song · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">

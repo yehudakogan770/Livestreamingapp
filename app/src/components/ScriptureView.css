@@ -7,7 +7,7 @@
   color: #fff;
 }
 .scr--full {
-  background: radial-gradient(ellipse at 50% 30%, #13233a, #04060b);
+  background: #13233a;
 }
 .scr__bar {
   position: absolute;

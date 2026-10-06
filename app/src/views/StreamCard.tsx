@@ -1,3 +1,4 @@
+import { Video, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
@@ -26,11 +27,14 @@ export function StreamCard({ source, act, client, onClose }: { show: Show; sourc
     <div className="modal" role="dialog" aria-modal="true" aria-label="Stream" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box brc">
         <header className="modal__head">
-          <h2>Stream — {source.name}</h2>
+          <h2>
+            <Video className="modal__icon" aria-hidden="true" />
+            Stream — {source.name}
+          </h2>
           <span className="remote__spacer" />
           <span className={`brc__air${status?.live ? '' : ' brc__air--off'}`}>{status?.live ? 'CONNECTED' : 'NOT CONNECTED'}</span>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="brc__body">

@@ -1,3 +1,4 @@
+import { Camera, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
@@ -27,9 +28,12 @@ export function CameraDialog({ show, act, client, onClose }: { show: Show; act: 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Camera control" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box camd">
         <header className="modal__head">
-          <h2>Camera control</h2>
+          <h2>
+            <Camera className="modal__icon" aria-hidden="true" />
+            Camera control
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="camd__tabs" role="tablist">
@@ -202,7 +206,7 @@ function CameraTab({ cam, act, client }: { cam: Source; act: Act; client: Engine
                 aria-label={`Forget ${sh.name || `shot ${i + 1}`}`}
                 onClick={() => save({ ...controls, shots: controls.shots.filter((_, j) => j !== i) })}
               >
-                ✕
+                <X aria-hidden="true" />
               </button>
             </span>
           ))}

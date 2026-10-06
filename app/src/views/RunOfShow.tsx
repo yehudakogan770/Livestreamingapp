@@ -1,3 +1,4 @@
+import { ListChecks, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Cue } from '../engine/types/Cue';
 import type { CueTrigger } from '../engine/types/CueTrigger';
@@ -109,9 +110,12 @@ export function RunOfShowDialog({ show, act, client, onClose }: { show: Show; ac
     <div className="modal" role="dialog" aria-modal="true" aria-label="Run of show" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box ros">
         <header className="modal__head">
-          <h2>Run of show</h2>
+          <h2>
+            <ListChecks className="modal__icon" aria-hidden="true" />
+            Run of show
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="ros__run">

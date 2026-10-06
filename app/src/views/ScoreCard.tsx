@@ -1,3 +1,4 @@
+import { Trophy, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Source } from '../engine/types/Source';
 import type { Scoreboard } from '../engine/types/Scoreboard';
@@ -73,9 +74,12 @@ export function ScoreCard({ source, act, onClose }: { source: Source; act: Act; 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Scoreboard" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box scc">
         <header className="modal__head">
-          <h2>Scoreboard · {source.name}</h2>
+          <h2>
+            <Trophy className="modal__icon" aria-hidden="true" />
+            Scoreboard · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="scc__body">

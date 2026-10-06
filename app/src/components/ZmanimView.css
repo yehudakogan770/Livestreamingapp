@@ -13,7 +13,7 @@
 }
 .zm--card,
 .zm--countdown {
-  background: radial-gradient(ellipse at 30% 20%, #26203a, #09080d);
+  background: #26203a;
 }
 .zm__none {
   position: absolute;

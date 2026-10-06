@@ -1,7 +1,7 @@
 /* Stage visuals: a full-window page over the control screen. */
 .vis-modal {
-  /* Below the title bar (34px, as every page), then a small margin. */
-  padding: 46px 12px 12px;
+  /* Below the title bar (40px, as every page), then a small margin. */
+  padding: 48px 8px 8px;
 }
 .modal__box.vis {
   width: 100%;
@@ -16,13 +16,20 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 8px 8px 8px 14px;
+  border-bottom: 1px solid #000;
+  background: #21252a;
+  box-shadow: inset 0 1px 0 var(--hi);
   flex-wrap: wrap;
+}
+.vis__icon {
+  width: 18px !important;
+  height: 18px !important;
+  color: var(--accent);
 }
 .vis__head h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -35,15 +42,27 @@
   gap: 6px;
 }
 .vis__bpm {
-  min-width: 84px;
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-dim);
+  min-width: 96px;
+  height: 32px;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 10px 0;
+  border: 1px solid #000;
+  border-radius: var(--radius);
+  background: var(--well);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
 }
 .vis__bpm b {
-  font-size: 22px;
-  color: var(--text);
-  margin-right: 3px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
 }
 .vis__dots {
   display: inline-flex;
@@ -79,12 +98,18 @@
 }
 .vis__mid,
 .vis__right {
-  border-left: 1px solid var(--border);
+  border-left: 1px solid #000;
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.035);
+}
+.vis__left,
+.vis__right {
+  background: var(--bar);
 }
 .vis__live {
   position: relative;
   aspect-ratio: 16 / 9;
-  border-radius: var(--radius);
+  border-radius: 0;
+  border: 1px solid #23272d;
   overflow: hidden;
   background: #000;
   flex: 0 0 auto;
@@ -132,9 +157,11 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--button);
+  border-radius: var(--radius-sm);
+  border: 1px solid #0b0c0e;
+  border-top-color: #3a3f47;
+  background: #282c32;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
   color: #fff;
   font-size: 12px;
   font-weight: 600;
@@ -142,14 +169,23 @@
   user-select: none;
   touch-action: none;
 }
+.vis__pad:hover:not(:disabled) {
+  background: #30343c;
+}
 .vis__pad small {
-  font-size: 10px;
-  font-weight: 400;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 500;
   color: var(--text-faint);
 }
 .vis__pad.is-on {
-  border-color: var(--accent);
-  background: var(--selected);
+  border-color: #0f4a52;
+  border-top-color: #9be0e8;
+  background: #3ea1ad;
+  color: #04181b;
+}
+.vis__pad.is-on small {
+  color: #0d3a40;
 }
 .vis__pad:active {
   background: var(--text);
@@ -176,7 +212,6 @@
 .vis__energy input {
   flex: 1 1 auto;
   min-width: 0;
-  accent-color: var(--accent);
 }
 .vis__energy em {
   font-style: normal;
@@ -416,7 +451,6 @@
   flex: 0 0 auto;
 }
 .vis__slider input {
-  accent-color: var(--accent);
   width: 100%;
 }
 .vis__group .segs {

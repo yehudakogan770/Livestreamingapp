@@ -1,3 +1,4 @@
+import { Piano, X } from 'lucide-react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { ScreenId } from '../engine/types/ScreenId';
@@ -102,9 +103,12 @@ export function MidiDialog({ onClose }: { onClose: () => void }) {
     <div className="modal" role="dialog" aria-modal="true" aria-label="MIDI controller" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box midi">
         <header className="modal__head">
-          <h2>MIDI controller</h2>
+          <h2>
+            <Piano className="modal__icon" aria-hidden="true" />
+            MIDI controller
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="midi__body">
@@ -130,7 +134,7 @@ export function MidiDialog({ onClose }: { onClose: () => void }) {
                     {learning === f.id ? 'Cancel' : 'Learn'}
                   </button>
                   <button type="button" className="icon" aria-label={`Forget ${f.name}`} disabled={!map[f.id]} onClick={() => clear(f.id)}>
-                    ✕
+                    <X aria-hidden="true" />
                   </button>
                 </div>
               ))}

@@ -47,6 +47,8 @@ import type { Act } from './act';
 import { screenInputs } from '../engine/screenInputs';
 import { CloseConfirm } from './CloseConfirm';
 import { VisualsCard } from './VisualsCard';
+import { Timecode } from './Timecode';
+import { Camera, LayoutGrid, OctagonAlert, Monitor, Projector, RadioTower, Link2, MonitorUp } from 'lucide-react';
 import './ControlView.css';
 
 interface Toast {
@@ -164,7 +166,7 @@ export function ControlView({
     };
     add({
       name: cds.length ? `Countdown ${cds.length + 1}` : 'Countdown',
-      kind: { type: 'countdown', background: like?.background ?? '#0b2545', logo: like?.logo, timer },
+      kind: { type: 'countdown', background: like?.background ?? '#2b2f36', logo: like?.logo, timer },
     });
   };
 
@@ -271,6 +273,11 @@ export function ControlView({
   const sc = show.screens[screen];
   const find = (id: string | null) => (id === null ? undefined : show.sources.find((s) => s.id === id));
   const name = SCREENS.find((s) => s.id === screen)?.name ?? '';
+  /** An input's number in this screen's list (as on its tile), or a dash. */
+  const inputNumber = (id: string | null) => {
+    const i = id === null ? -1 : screenInputs(show, screen).findIndex((x) => x.id === id);
+    return i < 0 ? '–' : String(i + 1);
+  };
 
   // The controls for what is on air (they stay while it runs), and for what is
   // lined up in Next (as soon as it is there).
@@ -321,13 +328,18 @@ export function ControlView({
             >
               <div className="mon mon--pvw" style={topOrder('next')}>
                 {arr('top', 'next', 'Next')}
-                <div className="mon__head">
-                  <span className="dot dot--pvw" /> Next <em>{find(sc.preview)?.name ?? 'nothing lined up'}</em>
-                </div>
                 <div className="mon__fit">
-                  <div className="mon__screen">
-                    <PreviewView show={show} screen={screen} client={client} />
-                    {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+                  <div className="mon__win">
+                    <div className="mon__screen">
+                      <PreviewView show={show} screen={screen} client={client} />
+                      {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+                    </div>
+                    <div className="mon__label">
+                      <span className="mon__tally">NEXT</span>
+                      <span className="mon__num">{inputNumber(sc.preview)}</span>
+                      <span className="mon__src">{find(sc.preview)?.name ?? 'nothing lined up'}</span>
+                      <Timecode />
+                    </div>
                   </div>
                 </div>
                 <div className="mon__foot">
@@ -342,36 +354,42 @@ export function ControlView({
               </div>
               <div className="mon mon--pgm" style={topOrder('program')}>
                 {arr('top', 'program', 'On air')}
-                <div className="mon__head">
-                  <span className="dot dot--pgm" /> On air <em>{find(sc.program)?.name ?? 'nothing'}</em>
-                  <button
-                    type="button"
-                    className="mon__snap"
-                    onClick={snap}
-                    disabled={snapping}
-                    title="Snapshot: save a picture of this screen as the audience sees it"
-                  >
-                    {snapping ? '…' : 'Snap'}
-                  </button>
-                  <span className="mon__tag">{name.toUpperCase()}</span>
-                </div>
                 <div className="mon__fit">
-                  <div className="mon__screen">
-                    <ProgramView show={show} screen={screen} client={client} reportDuration />
-                    {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
-                    {/* A small tag, not words over the picture: the monitor shows just what the audience sees. */}
-                    {(sc.blank || show.panic) && (
-                      <span
-                        className="mon__state"
-                        title={
-                          show.panic
-                            ? 'Click PANIC (bottom right) to bring the screens back'
-                            : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`
-                        }
+                  <div className="mon__win">
+                    <div className="mon__screen">
+                      <ProgramView show={show} screen={screen} client={client} reportDuration />
+                      {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
+                      {/* A small tag, not words over the picture: the monitor shows just what the audience sees. */}
+                      {(sc.blank || show.panic) && (
+                        <span
+                          className="mon__state"
+                          title={
+                            show.panic
+                              ? 'Click PANIC (bottom right) to bring the screens back'
+                              : `Click “${screen === 'live' ? 'Live' : 'Back'}” next to Blank, or press B, to show it again`
+                          }
+                        >
+                          {show.panic ? 'PANIC on' : 'Blanked'}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mon__label">
+                      <span className="mon__tally">ON AIR</span>
+                      <span className="mon__num">{inputNumber(sc.program)}</span>
+                      <span className="mon__src">{find(sc.program)?.name ?? 'nothing'}</span>
+                      <span className="mon__tag">{name.toUpperCase()}</span>
+                      <button
+                        type="button"
+                        className="mon__snap"
+                        onClick={snap}
+                        disabled={snapping}
+                        aria-label="Snap"
+                        title="Snapshot: save a picture of this screen as the audience sees it"
                       >
-                        {show.panic ? 'PANIC on' : 'Blanked'}
-                      </span>
-                    )}
+                        <Camera aria-hidden="true" />
+                      </button>
+                      <Timecode />
+                    </div>
                   </div>
                 </div>
                 <div className="mon__foot">
@@ -395,6 +413,12 @@ export function ControlView({
             <section className="inputs-area" ref={bottomRef}>
               <div className="inputs-area__grid" style={{ order: bottomOrder('inputs') }}>
                 {arr('bottom', 'inputs', 'Inputs')}
+                <div className="phead">
+                  <LayoutGrid aria-hidden="true" />
+                  <span className="phead__title">Inputs</span>
+                  <span className="phead__meta">{screenInputs(show, screen).length}</span>
+                  <span className="phead__hint">Click: line up in Next · Double-click: straight to air</span>
+                </div>
                 <PresetButtons show={show} act={act} showAll={showAll} onShowAll={setShowAll} />
                 <InputGrid
                   show={show}
@@ -430,7 +454,8 @@ export function ControlView({
 
       <footer className="bar">
         <ProblemLight />
-        <button type="button" className="btn" onClick={() => setOutputsOpen(true)}>
+        <button type="button" className="btn" onClick={() => setOutputsOpen(true)} title="Open, close and place the output windows">
+          <MonitorUp aria-hidden="true" />
           Outputs
           <span className="bar__lamps" aria-label={`${open.length} of 3 open`}>
             {SCREENS.map((s) => (
@@ -445,24 +470,32 @@ export function ControlView({
           title="The Back Screen shows whatever is on the Live Screen"
           onClick={() => act({ type: 'setBackFollowsLive', value: !show.backFollowsLive })}
         >
+          <Link2 aria-hidden="true" />
           Back = Live
         </button>
         <BroadcastButtons onSettings={onBroadcastSettings ?? (() => {})} />
         <PerfChip client={client} />
         <CueBar show={show} act={act} onOpen={() => setRunOpen(true)} />
         <span className="grow" />
-        <span className="bar__label">Blank</span>
-        {SCREENS.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            className={`btn btn--blank${show.screens[s.id].blank ? ' is-on' : ''}`}
-            aria-pressed={show.screens[s.id].blank}
-            onClick={() => act({ type: 'setBlank', screens: [s.id], value: !show.screens[s.id].blank })}
-          >
-            {s.id === 'live' ? 'Live' : s.id === 'back' ? 'Back' : 'Monitor'}
-          </button>
-        ))}
+        <span className="bar__group" role="group" aria-label="Blank a screen">
+          <span className="bar__label">Blank</span>
+          {SCREENS.map((s) => {
+            const Icon = s.id === 'live' ? RadioTower : s.id === 'back' ? Projector : Monitor;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                className={`btn btn--blank${show.screens[s.id].blank ? ' is-on' : ''}`}
+                aria-pressed={show.screens[s.id].blank}
+                title={`Blank the ${s.name} (show black)`}
+                onClick={() => act({ type: 'setBlank', screens: [s.id], value: !show.screens[s.id].blank })}
+              >
+                <Icon aria-hidden="true" />
+                {s.id === 'live' ? 'Live' : s.id === 'back' ? 'Back' : 'Monitor'}
+              </button>
+            );
+          })}
+        </span>
         <PanicButton on={show.panic} act={act} />
       </footer>
 
@@ -534,6 +567,7 @@ function PanicButton({ on, act }: { on: boolean; act: Act }) {
       onClick={() => (on ? act({ type: 'panic', value: false }) : setHint(true))}
       onDoubleClick={() => !on && act({ type: 'panic', value: true })}
     >
+      <OctagonAlert aria-hidden="true" />
       {on ? 'PANIC ON · click to undo' : hint ? 'Double-click to confirm' : 'PANIC'}
     </button>
   );
@@ -577,7 +611,9 @@ function useFitLayout() {
       if (mons[0]) {
         const parts = [...mons[0].children].filter((c) => !c.classList.contains('mon__fit') && getComputedStyle(c).position !== 'absolute');
         const gap = parseFloat(getComputedStyle(mons[0]).rowGap) || 0;
-        chrome = Math.ceil(parts.reduce((n, c) => n + (c as HTMLElement).offsetHeight, 0) + gap * parts.length);
+        // (and the label strip under the picture)
+        const label = mons[0].querySelector<HTMLElement>('.mon__label')?.offsetHeight ?? 0;
+        chrome = Math.ceil(parts.reduce((n, c) => n + (c as HTMLElement).offsetHeight, 0) + gap * parts.length + label);
       }
       if (`${chrome}px` !== w.style.getPropertyValue('--mon-chrome')) w.style.setProperty('--mon-chrome', `${chrome}px`);
       // How tall the top must be for the monitors to be as big as their

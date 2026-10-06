@@ -163,7 +163,6 @@
   color: var(--text-dim);
 }
 .is__row input {
-  accent-color: var(--accent);
   width: 100%;
 }
 .is__row em {

@@ -1,3 +1,6 @@
+import { SquarePlus, Star } from 'lucide-react';
+import { GROUP_ICON, kindIcon } from './kindIcons';
+import { X } from 'lucide-react';
 import { defaultFundraiser, defaultRaffle } from '../engine/audience';
 import { defaultWall } from '../engine/wall';
 import { defaultAuction } from '../engine/auction';
@@ -94,7 +97,12 @@ const FOR_SCREEN: Record<ScreenId, { title: string; best: Kind[]; order: number[
   },
 };
 
-const SWATCHES = ['#000000', '#ffffff', '#1f6f79', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
+const SWATCHES = ['#000000', '#ffffff', '#2b2f36', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
+
+function KindIcon({ kind }: { kind: string }) {
+  const I = kindIcon(kind);
+  return <I className="addinput__icon" aria-hidden="true" />;
+}
 
 /** Choose what kind of input to add, set it up, and add it. */
 export function AddInput({
@@ -124,12 +132,17 @@ export function AddInput({
   // The best for this screen first, then each group (without repeating those).
   const pick = (list: Kind[]) => list.map((id) => kinds.find((k) => k.kind === id)).filter((k) => k !== undefined);
   const kindGroups = [
-    { name: forScreen.title, best: true, items: pick(forScreen.best) },
-    ...forScreen.order.map((g) => ({ name: GROUPS[g]!.name, best: false, items: pick(GROUPS[g]!.kinds.filter((x) => !forScreen.best.includes(x))) })),
+    { name: forScreen.title, best: true, icon: Star, items: pick(forScreen.best) },
+    ...forScreen.order.map((g) => ({
+      name: GROUPS[g]!.name,
+      best: false,
+      icon: GROUP_ICON[g]!,
+      items: pick(GROUPS[g]!.kinds.filter((x) => !forScreen.best.includes(x))),
+    })),
   ].filter((sec) => sec.items.length);
   const [name, setName] = useState('');
   const [path, setPath] = useState<string | null>(null);
-  const [color, setColor] = useState('#1f6f79');
+  const [color, setColor] = useState('#2b2f36');
   const [template, setTemplate] = useState(initialTemplate ?? 0);
   const [split, setSplit] = useState<Split>(defaultSplit);
   const [slideshow, setSlideshow] = useState<Slideshow>(defaultSlideshow);
@@ -307,9 +320,12 @@ export function AddInput({
     <div className="modal" role="dialog" aria-modal="true" aria-label="Add input" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box addinput">
         <header className="modal__head">
-          <h2>Add input</h2>
+          <h2>
+            <SquarePlus className="modal__icon" aria-hidden="true" />
+            Add input
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="addinput__body">
@@ -317,6 +333,7 @@ export function AddInput({
             {forScreen.note && <p className="addinput__note">{forScreen.note}</p>}
             {kindGroups.map((sec) => [
               <h3 key={sec.name} className={`addinput__group${sec.best ? ' addinput__group--best' : ''}`}>
+                <sec.icon aria-hidden="true" />
                 {sec.name}
               </h3>,
               ...sec.items.map((k) => (
@@ -341,6 +358,7 @@ export function AddInput({
                     setCamErr(null);
                   }}
                 >
+                  <KindIcon kind={k.kind} />
                   <strong>{k.name}</strong>
                 </button>
               )),

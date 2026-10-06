@@ -1,3 +1,4 @@
+import { AudioLines, Headphones, Settings2, Speaker, VolumeX } from 'lucide-react';
 import { useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
@@ -23,11 +24,13 @@ export function Mixer({ show, act }: { show: Show; act: Act }) {
   const sources = soundSources(show);
   return (
     <div className="mixer" aria-label="Audio mixer">
-      <div className="mixer__head">
+      <div className="phead mixer__head">
+        <AudioLines aria-hidden="true" />
         <span className="mixer__title">Audio mixer</span>
         {!sound && <span className="mixer__note">sound starts inside Lumora</span>}
         <span className="grow" />
-        <button type="button" className="chip" onClick={() => setOutputs(true)}>
+        <button type="button" className="btn" onClick={() => setOutputs(true)} title="Choose the speakers each mix plays on">
+          <Speaker aria-hidden="true" />
           Speakers…
         </button>
       </div>
@@ -78,7 +81,8 @@ function Strip({ src, show, act, problem }: { src: Source; show: Show; act: Act;
   return (
     <div className={`strip${onAir && a.follow ? ' strip--air' : ''}${problem ? ' strip--problem' : ''}`}>
       <button type="button" className="strip__name" title={`${src.name} · settings`} onClick={() => setMenu(!menu)}>
-        {src.name}
+        <span>{src.name}</span>
+        <Settings2 aria-hidden="true" />
       </button>
       <div className="strip__body">
         <Meter id={src.id} />
@@ -90,19 +94,21 @@ function Strip({ src, show, act, problem }: { src: Source; show: Show; act: Act;
           type="button"
           className={`sbtn sbtn--mute${src.muted ? ' is-on' : ''}`}
           aria-pressed={src.muted}
+          aria-label="Mute"
           title="Mute"
           onClick={() => act({ type: 'updateSource', id: src.id, patch: { muted: !src.muted } })}
         >
-          M
+          <VolumeX aria-hidden="true" />
         </button>
         <button
           type="button"
           className={`sbtn sbtn--solo${soloed ? ' is-on' : ''}`}
           aria-pressed={soloed}
+          aria-label="Solo"
           title="Solo: hear it alone in the headphones"
           onClick={() => act({ type: 'setSolo', sourceId: soloed ? null : src.id })}
         >
-          S
+          <Headphones aria-hidden="true" />
         </button>
         <button
           type="button"
@@ -261,8 +267,15 @@ function MixStrip({
       </div>
       <span className="strip__db">{off ? 'off' : faderDb(volume)}</span>
       <div className="strip__btns">
-        <button type="button" className={`sbtn sbtn--mute${muted ? ' is-on' : ''}`} aria-pressed={muted} title="Mute this mix" onClick={onMute}>
-          M
+        <button
+          type="button"
+          className={`sbtn sbtn--mute${muted ? ' is-on' : ''}`}
+          aria-pressed={muted}
+          aria-label="Mute"
+          title="Mute this mix"
+          onClick={onMute}
+        >
+          <VolumeX aria-hidden="true" />
         </button>
       </div>
     </div>

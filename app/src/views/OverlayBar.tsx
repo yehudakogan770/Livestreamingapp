@@ -1,3 +1,4 @@
+import { Layers, Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
@@ -15,7 +16,10 @@ export function OverlayBar({ show, screen, act, client }: { show: Show; screen: 
   const [editing, setEditing] = useState<number | null>(null);
   return (
     <div className="ovbar" aria-label="Overlays">
-      <span className="ovbar__label">Overlays</span>
+      <span className="ovbar__label">
+        <Layers aria-hidden="true" />
+        Overlays
+      </span>
       {show.overlays.map((o, ch) => {
         const src = show.sources.find((s) => s.id === o.sourceId);
         const here = o.screens.includes(screen);
@@ -34,11 +38,11 @@ export function OverlayBar({ show, screen, act, client }: { show: Show; screen: 
               onClick={() => (src ? act({ type: 'setOverlayOn', channel: ch, value: !o.on }) : setEditing(ch))}
             >
               <b>{ch + 1}</b>
-              {src && <span>{src.name}</span>}
+              {src ? <span>{src.name}</span> : <Plus className="ovbar__plus" aria-hidden="true" />}
             </button>
             {src && (
-              <button type="button" className="icon ovbar__edit" aria-label={`Edit overlay ${ch + 1}`} onClick={() => setEditing(ch)}>
-                ✎
+              <button type="button" className="icon ovbar__edit" aria-label={`Edit overlay ${ch + 1}`} title="Edit" onClick={() => setEditing(ch)}>
+                <Pencil aria-hidden="true" />
               </button>
             )}
           </span>

@@ -246,9 +246,6 @@
   width: 64px;
   height: 26px;
 }
-.pked__look input[type='range'] {
-  accent-color: var(--accent);
-}
 .pked__texts {
   display: flex;
   flex-direction: column;

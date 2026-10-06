@@ -1,3 +1,4 @@
+import { Scroll, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { EFFECTS } from '../engine/effects';
 
@@ -74,9 +75,12 @@ export function PesukimEditor({ show, id, act, onClose, client }: { show: Show; 
     <div className="modal" role="dialog" aria-modal="true" aria-label="12 Pesukim" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box pked">
         <header className="modal__head">
-          <h2>12 Pesukim</h2>
+          <h2>
+            <Scroll className="modal__icon" aria-hidden="true" />
+            12 Pesukim
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="pked__body">

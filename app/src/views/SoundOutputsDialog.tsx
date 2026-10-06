@@ -1,3 +1,4 @@
+import { Speaker, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { AudioOutputId } from '../engine/types/AudioOutputId';
 import type { Show } from '../engine/types/Show';
@@ -65,9 +66,12 @@ export function SoundOutputsDialog({ show, act, onClose }: { show: Show; act: Ac
     <div className="modal" role="dialog" aria-modal="true" aria-label="Speakers" onPointerDown={(e) => e.target === e.currentTarget && close()}>
       <div className="modal__box outputs">
         <header className="modal__head">
-          <h2>Speakers and mixes</h2>
+          <h2>
+            <Speaker className="modal__icon" aria-hidden="true" />
+            Speakers and mixes
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={close}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <p className="outputs__intro">

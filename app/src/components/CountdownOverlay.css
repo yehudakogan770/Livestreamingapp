@@ -9,27 +9,21 @@
   justify-content: center;
   gap: 2cqh;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0) 80%);
   color: #fff;
   font-family: var(--font);
 }
 .hype__label {
   font-size: 6cqh;
   font-weight: 700;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  text-indent: 0.35em;
-  opacity: 0.9;
-  text-shadow: 0 0.5cqh 3cqh rgba(0, 0, 0, 0.7);
+  letter-spacing: 0.02em;
+  opacity: 0.85;
 }
 .hype__time {
   font-size: min(34cqh, 22cqw);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.01em;
-  text-shadow:
-    0 0 4cqh rgba(79, 179, 191, 0.55),
-    0 1cqh 5cqh rgba(0, 0, 0, 0.8);
+  text-shadow: 0 0.4cqh 1.2cqh rgba(0, 0, 0, 0.35);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -40,9 +34,6 @@
 .hype--final .hype__time {
   font-size: min(50cqh, 32cqw);
   animation: hype-beat 1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
-  text-shadow:
-    0 0 6cqh rgba(255, 196, 120, 0.8),
-    0 1cqh 5cqh rgba(0, 0, 0, 0.8);
 }
 .hype--done .hype__time {
   animation: hype-land 0.6s ease-out both;

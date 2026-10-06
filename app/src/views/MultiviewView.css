@@ -1,7 +1,7 @@
 .mv {
   position: fixed;
   inset: 0;
-  background: #000;
+  background: var(--chrome);
   color: #fff;
   font-family: var(--font);
   overflow: hidden;
@@ -17,18 +17,28 @@
 }
 .mv__head {
   flex: 0 0 auto;
-  height: 28px;
+  height: 32px;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 6px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 }
 .mv__clock {
   margin-left: auto;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #000;
   font-family: var(--mono);
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
 }
 .mv__screens {
   flex: 0 1 auto;
@@ -67,16 +77,18 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border: 2px solid #2a2a2c;
+  border: 1px solid #23272d;
   border-radius: 0;
   background: #000;
   overflow: hidden;
 }
 .mv__box--pgm {
   border-color: var(--program-bright);
+  box-shadow: inset 0 0 0 1px var(--program-bright);
 }
 .mv__box--pvw {
   border-color: var(--preview-bright);
+  box-shadow: inset 0 0 0 1px var(--preview-bright);
 }
 .mv__pic {
   position: relative;
@@ -84,18 +96,33 @@
   min-height: 0;
 }
 .mv__label {
+  position: relative;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 2px 8px;
-  background: #111;
+  padding: 5px 8px 3px;
+  background: #101215;
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-top: 1px solid #2a2a2c;
+  border-top: 1px solid #000;
+}
+/* The tally bar across the top of the label strip. */
+.mv__box--pgm .mv__label::before,
+.mv__box--pvw .mv__label::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--program-bright);
+}
+.mv__box--pvw .mv__label::before {
+  background: var(--preview-bright);
 }
 .mv__box--big .mv__label {
   font-size: 16px;
@@ -120,21 +147,36 @@
   background: var(--preview-bright);
   color: #04120a;
 }
-/* Tally: the name strip under a picture takes the tally color, like a hardware multiviewer. */
-.mv__box--pgm .mv__label {
-  background: var(--program);
-  border-top-color: var(--program);
-}
-.mv__box--pvw .mv__label {
-  background: var(--preview);
-  border-top-color: var(--preview);
-}
-.mv__box--pgm .mv__label b,
-.mv__box--pvw .mv__label b {
-  color: rgba(255, 255, 255, 0.8);
-}
-.mv__box--pgm .mv__tag,
-.mv__box--pvw .mv__tag {
-  background: rgba(0, 0, 0, 0.35);
+/* Tally: a colored block at the start of the label strip, like a hardware multiviewer. */
+.mv__tally {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  margin: -5px 0 -3px -8px;
+  padding: 3px 10px 0;
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
   color: #fff;
+  background: var(--program);
+}
+.mv__box--pvw .mv__tally {
+  background: var(--preview);
+}
+.mv__name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mv__label .tc {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.mv__sub {
+  font-weight: 500;
+  color: var(--text-faint);
 }

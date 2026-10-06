@@ -1,3 +1,4 @@
+import { PenTool, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { FontPicker } from '../components/FontPicker';
 import type { EngineClient } from '../engine/client';
@@ -123,9 +124,12 @@ export function GraphicCard({ source, act, client, onClose }: { source: Source; 
     <div className="modal" role="dialog" aria-modal="true" aria-label="Title designer" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box grc">
         <header className="modal__head">
-          <h2>Title designer · {source.name}</h2>
+          <h2>
+            <PenTool className="modal__icon" aria-hidden="true" />
+            Title designer · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="grc__body">

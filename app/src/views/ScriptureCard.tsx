@@ -1,3 +1,4 @@
+import { BookOpen, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Source } from '../engine/types/Source';
 import type { Scripture } from '../engine/types/Scripture';
@@ -76,9 +77,12 @@ export function ScriptureCard({ source, act, onClose }: { source: Source; act: A
     <div className="modal" role="dialog" aria-modal="true" aria-label="Tanach" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box lyc">
         <header className="modal__head">
-          <h2>Tanach · {source.name}</h2>
+          <h2>
+            <BookOpen className="modal__icon" aria-hidden="true" />
+            Tanach · {source.name}
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="lyc__body">

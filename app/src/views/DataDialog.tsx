@@ -1,3 +1,4 @@
+import { Sheet, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
@@ -73,9 +74,12 @@ export function DataDialog({ show, client, onClose }: { show: Show; client: Engi
     <div className="modal" role="dialog" aria-modal="true" aria-label="Data file" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box stg dat">
         <header className="modal__head">
-          <h2>Data file</h2>
+          <h2>
+            <Sheet className="modal__icon" aria-hidden="true" />
+            Data file
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="stg__body">

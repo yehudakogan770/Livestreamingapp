@@ -1,3 +1,4 @@
+import { Ellipsis, Music, Pause, Play, Plus, TriangleAlert, X } from 'lucide-react';
 import { FundraiserCard, RaffleCard, WallCard } from './AudienceCards';
 import { AuctionCard } from './AuctionCard';
 import { ZmanimDialog } from './ZmanimDialog';
@@ -176,7 +177,9 @@ export function InputGrid({
             >
               <span className="tile__thumb">
                 {soundFile ? (
-                  <span className="tile__sound">♪</span>
+                  <span className="tile__sound">
+                    <Music aria-hidden="true" />
+                  </span>
                 ) : (
                   // The picture keeps the screen's shape (16:9), so nothing in it is cut off.
                   <span className="tile__frame">
@@ -184,17 +187,19 @@ export function InputGrid({
                   </span>
                 )}
               </span>
-              <span className="tile__num">{i + 1}</span>
               {problemIds.has(src.id) && (
                 <span className="tile__warn" title="Something is wrong with this input: see the problem light">
-                  ⚠
+                  <TriangleAlert aria-label="Problem" />
                 </span>
               )}
               {onAir && <span className="tile__badge tile__badge--pgm">ON AIR</span>}
               {asOverlay && overlayOn && !onAir && <span className="tile__badge tile__badge--pgm">ON AIR · OVER</span>}
               {asOverlay && !overlayOn && ch >= 0 && show.overlays[ch]?.inNext && <span className="tile__badge tile__badge--pvw">NEXT · OVER</span>}
               {next && <span className="tile__badge tile__badge--pvw">NEXT</span>}
-              <span className="tile__name">{src.name}</span>
+              <span className="tile__foot">
+                <span className="tile__num">{i + 1}</span>
+                <span className="tile__name">{src.name}</span>
+              </span>
               <span className="tile__kind">
                 {soundFile ? 'Sound' : KIND_NAME[src.kind.type]}
                 {src.kind.type === 'video' && src.playlist ? ` · ${src.playlist.current + 1}/${src.playlist.items.length}` : ''}
@@ -208,7 +213,7 @@ export function InputGrid({
                 aria-label={playing ? `Pause ${src.name}` : `Play ${src.name}`}
                 onClick={() => act({ type: playing ? 'pause' : 'play', id: src.id })}
               >
-                {playing ? '❚❚' : '▶'}
+                {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
               </button>
             )}
             <button
@@ -224,10 +229,16 @@ export function InputGrid({
               }}
               onBlur={() => setRemoving((r) => (r === src.id ? null : r))}
             >
-              {removing === src.id ? 'Remove?' : '✕'}
+              {removing === src.id ? 'Remove?' : <X aria-hidden="true" />}
             </button>
-            <button type="button" className="tile__more" aria-label={`Options for ${src.name}`} onClick={() => setMenu(menu === src.id ? null : src.id)}>
-              ⋯
+            <button
+              type="button"
+              className="tile__more"
+              aria-label={`Options for ${src.name}`}
+              title="Options"
+              onClick={() => setMenu(menu === src.id ? null : src.id)}
+            >
+              <Ellipsis aria-hidden="true" />
             </button>
             {menu === src.id && (
               <TileMenu
@@ -254,7 +265,9 @@ export function InputGrid({
         );
       })}
       <button type="button" className="tile tile--add" onClick={onAdd}>
-        <span className="tile--add__plus">+</span>
+        <span className="tile--add__plus">
+          <Plus aria-hidden="true" />
+        </span>
         Add input
       </button>
       {editingRaffle && <RaffleCard source={editingRaffle} act={act} client={client} onClose={() => setEditing(null)} />}
@@ -678,9 +691,11 @@ function useFillTiles() {
     let last = '';
     const fit = () => {
       const n = el.querySelectorAll(':scope > .tile').length;
-      const W = el.clientWidth;
-      const H = el.clientHeight;
-      if (!n || !W || !H) return;
+      // (inside the padding around the tiles)
+      const cs = getComputedStyle(el);
+      const W = el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+      const H = el.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
+      if (!n || W <= 0 || H <= 0) return;
       const gap = 8;
       const shape = 1.45; // width / height of a tile
       // As many rows as gives the biggest tiles of about that shape…

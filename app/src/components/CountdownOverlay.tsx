@@ -31,11 +31,7 @@ export function CountdownView({
   const numbersGone = !countdownVisible(countdown, now) || words;
   const time = formatCountdown(left, countdown.format);
   return (
-    <div
-      className={`hype${final ? ' hype--final' : ''}${done ? ' hype--done' : ''}`}
-      style={{ background: `radial-gradient(ellipse at center, ${background} 0%, #000 140%)` }}
-      data-countdown
-    >
+    <div className={`hype${final ? ' hype--final' : ''}${done ? ' hype--done' : ''}`} style={{ background }} data-countdown>
       <div className={`hype__stack${numbersGone ? ' is-gone' : ''}`} aria-hidden={numbersGone}>
         {countdown.label && !done && <div className="hype__label">{countdown.label}</div>}
         {/* Keyed by the second so the pulse restarts on each one. */}

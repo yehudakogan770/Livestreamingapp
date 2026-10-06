@@ -1,3 +1,4 @@
+import { Captions as CaptionsIcon, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Captions } from '../engine/types/Captions';
@@ -60,9 +61,12 @@ export function CaptionsDialog({
     <div className="modal" role="dialog" aria-modal="true" aria-label="Live captions" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box cap">
         <header className="modal__head">
-          <h2>Live captions</h2>
+          <h2>
+            <CaptionsIcon className="modal__icon" aria-hidden="true" />
+            Live captions
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="cap__body">

@@ -1,3 +1,4 @@
+import { ListOrdered, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { isSoundFile, type EngineClient } from '../engine/client';
 import type { Preset } from '../engine/types/Preset';
@@ -159,9 +160,12 @@ export function PresetEditor({
     >
       <div className="modal__box pe">
         <header className="modal__head">
-          <h2>{preset ? `Edit “${preset.name}”` : 'New preset'}</h2>
+          <h2>
+            <ListOrdered className="modal__icon" aria-hidden="true" />
+            {preset ? `Edit “${preset.name}”` : 'New preset'}
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="pe__body">
@@ -340,7 +344,7 @@ export function StepsEditor({ show, screen, steps, onChange }: { show: Show; scr
                 ↓
               </button>
               <button type="button" className="icon" aria-label="Remove step" onClick={() => onChange(steps.filter((_, j) => j !== i))}>
-                ✕
+                <X aria-hidden="true" />
               </button>
             </span>
           </li>

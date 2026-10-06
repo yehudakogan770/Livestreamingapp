@@ -1,38 +1,80 @@
+/* Which screen you are controlling: a row of routing keys. Each carries a
+   tally lamp (red when its screen is on air) and lights teal when chosen. */
 .selector {
-  height: 48px;
+  height: 44px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 10px;
+  gap: 6px;
+  padding: 0 12px;
   background: var(--bar);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #000;
+  box-shadow: inset 0 1px 0 var(--hi);
 }
 .selector__label {
   font-size: 12px;
-  color: var(--text-dim);
-  padding-right: 4px;
+  font-weight: 600;
+  color: var(--text-faint);
+  padding-right: 6px;
 }
 .selector__tab {
-  height: 38px;
-  min-width: 210px;
-  padding: 0 12px;
+  position: relative;
+  height: 34px;
+  min-width: 232px;
+  padding: 0 8px 0 14px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 1px;
+  align-items: center;
+  gap: 10px;
   border-radius: var(--radius);
   border: 1px solid var(--border-strong);
-  background: var(--button-active);
+  border-top-color: #3f454e;
+  background: #1d2026;
   text-align: left;
+  overflow: hidden;
+}
+/* The tally lamp along the left edge. */
+.selector__tab::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #2b3038;
+}
+.selector__tab--on-air::before {
+  background: var(--program-bright);
+}
+.selector__tab--following::before {
+  background: #9b3a34;
+}
+.selector__tab--blank::before,
+.selector__tab--dimmed::before {
+  background: #4a4f57;
 }
 .selector__tab:hover {
-  background: var(--button);
+  background: #22262c;
 }
 .selector__tab[aria-selected='true'] {
   border-color: var(--accent);
-  background: var(--selected);
+  background: #14363c;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.selector__icon {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 1.6 !important;
+  color: var(--text-dim);
+}
+.selector__tab[aria-selected='true'] .selector__icon {
+  color: var(--accent);
+}
+.selector__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  line-height: 1.15;
 }
 .selector__name {
   font-size: 13px;
@@ -40,36 +82,47 @@
   color: var(--text);
 }
 .selector__meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   font-size: 11px;
-  color: var(--text-dim);
-}
-.selector__meta kbd {
-  font-family: var(--mono);
-  font-size: 10px;
-  padding: 0 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
   color: var(--text-faint);
 }
-.selector__badge {
-  height: 15px;
-  padding: 0 5px;
-  border-radius: var(--radius-sm);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+.selector__tab[aria-selected='true'] .selector__meta {
+  color: #8fc6cd;
+}
+.selector__tab kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  height: 18px;
   line-height: 15px;
-  color: var(--text-dim);
-  background: var(--button-hover);
+  padding: 0 4px;
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  background: var(--well);
+}
+.selector__badge {
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 18px;
+  color: var(--text-faint);
+  background: #2a2f36;
+  white-space: nowrap;
 }
 .selector__badge--on-air {
   background: var(--program);
   color: #fff;
 }
 .selector__badge--following {
-  background: var(--selected);
-  color: var(--text);
+  background: #3a1d1b;
+  color: #ff9c94;
+}
+@media (max-width: 1440px) {
+  .selector__tab {
+    min-width: 200px;
+  }
 }

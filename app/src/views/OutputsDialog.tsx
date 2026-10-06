@@ -1,3 +1,4 @@
+import { MonitorUp, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Display, EngineClient } from '../engine/client';
 import type { ScreenId } from '../engine/types/ScreenId';
@@ -45,9 +46,12 @@ export function OutputsDialog({
     <div className="modal" role="dialog" aria-modal="true" aria-label="Outputs" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box outputs">
         <header className="modal__head">
-          <h2>Outputs</h2>
+          <h2>
+            <MonitorUp className="modal__icon" aria-hidden="true" />
+            Outputs
+          </h2>
           <button type="button" className="icon" aria-label="Close without saving" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <p className="outputs__intro">

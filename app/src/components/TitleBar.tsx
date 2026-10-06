@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ChevronDown, Clock, FileText, type LucideIcon } from 'lucide-react';
 import type { ScreenId } from '../engine/types/ScreenId';
 import { LogoMark } from './Logo';
 import './TitleBar.css';
@@ -17,6 +18,9 @@ function useClock(): string {
 /** One entry of a drop-down menu (null draws a divider). */
 export type MenuItem = { label: string; onClick: () => void; disabled?: boolean; hint?: string } | null;
 
+/** A quick-action button on the right of the bar: an icon, with its name as the tooltip. */
+export type Tool = { icon: LucideIcon; label: string; onClick: () => void; key?: string } | null;
+
 /**
  * The top bar. Menus with items or an action are live; the rest arrive in
  * later milestones. The event's name shows beside the clock.
@@ -26,11 +30,13 @@ export function TitleBar({
   eventName,
   actions = {},
   menus = {},
+  tools = [],
 }: {
   controlling: ScreenId;
   eventName?: string;
   actions?: Partial<Record<string, () => void>>;
   menus?: Partial<Record<string, MenuItem[]>>;
+  tools?: Tool[];
 }) {
   const clock = useClock();
   const [open, setOpen] = useState<string | null>(null);
@@ -48,7 +54,7 @@ export function TitleBar({
   return (
     <header className="titlebar">
       <div className="titlebar__brand">
-        <LogoMark size={18} lit={controlling} />
+        <LogoMark size={20} lit={controlling} />
         <span className="titlebar__name">Lumora</span>
       </div>
       <nav className="titlebar__menu" aria-label="Main menu">
@@ -67,6 +73,7 @@ export function TitleBar({
                 onClick={() => (items ? setOpen(open === m ? null : m) : action?.())}
               >
                 {m}
+                {items && <ChevronDown className="titlebar__caret" aria-hidden="true" />}
               </button>
               {items && open === m && (
                 <div className="titlebar__drop" role="menu" aria-label={m}>
@@ -95,8 +102,35 @@ export function TitleBar({
           );
         })}
       </nav>
-      {eventName && <span className="titlebar__event">{eventName}</span>}
+      <span className="titlebar__spacer" />
+      {tools.length > 0 && (
+        <div className="titlebar__tools" role="toolbar" aria-label="Quick actions">
+          {tools.map((t, i) =>
+            t === null ? (
+              <i key={i} className="titlebar__sep" aria-hidden="true" />
+            ) : (
+              <button
+                key={t.label}
+                type="button"
+                className="titlebar__tool"
+                aria-label={t.label}
+                title={t.key ? `${t.label} (${t.key})` : t.label}
+                onClick={t.onClick}
+              >
+                <t.icon aria-hidden="true" />
+              </button>
+            ),
+          )}
+        </div>
+      )}
+      {eventName && (
+        <span className="titlebar__event" title={eventName}>
+          <FileText aria-hidden="true" />
+          <span>{eventName}</span>
+        </span>
+      )}
       <span className="titlebar__clock" aria-label="Current time">
+        <Clock aria-hidden="true" />
         {clock}
       </span>
     </header>

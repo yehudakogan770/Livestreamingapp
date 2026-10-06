@@ -1,3 +1,4 @@
+import { Smartphone, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient, RemoteStatus } from '../engine/client';
 import './RemoteDialog.css';
@@ -24,9 +25,12 @@ export function RemoteDialog({ client, status, onClose }: { client: EngineClient
     <div className="modal" role="dialog" aria-modal="true" aria-label="Phone remote" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal__box remote">
         <header className="modal__head">
-          <h2>Phone remote</h2>
+          <h2>
+            <Smartphone className="modal__icon" aria-hidden="true" />
+            Phone remote
+          </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
-            ✕
+            <X aria-hidden="true" />
           </button>
         </header>
         <div className="remote__body">

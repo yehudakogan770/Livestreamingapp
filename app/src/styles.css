@@ -1,38 +1,44 @@
 /* Lumora design tokens — taken from the approved designs in /design. */
 :root {
-  /* Lumora's look: neutral graphite surfaces, one restrained accent for selection
-     and focus, and broadcast colors that mean only one thing each:
+  /* Lumora's look: a cool, near-black console. Surfaces step up in small,
+     even increments; 1px hairlines and a 1px top highlight give panels their
+     edge (no glows). The accent is the logo's teal (selection, focus, the
+     primary button); broadcast colors mean one thing each:
      red = on air / recording, green = next (preview), amber = warning. */
-  --bg: #19191a; /* the workspace */
-  --bar: #202021; /* title bar, tabs strip, bottom bar, side columns */
-  --panel: #242426; /* panels and dialog bodies */
-  --raised: #2b2b2e; /* menus, dialog headers, popovers */
-  --button: #323235;
-  --button-hover: #3b3b3f;
-  --button-active: #2a2a2c;
-  --border: #333336; /* 1px dividers */
-  --border-strong: #454549; /* control outlines */
-  --well: #111112; /* fields, meters, picture surrounds */
-  --text: #e6e6e6;
-  --text-dim: #a8a8ac;
-  --text-faint: #7c7c81;
-  --accent: #5a8fd0; /* selection and focus only */
-  --accent-deep: #2f62a6; /* the primary button */
-  --accent-hover: #386fb6;
-  --selected: #2a3646;
-  --program: #c4302b;
-  --program-bright: #e23c35;
-  --preview: #23843e;
-  --preview-bright: #34b153;
-  --on-air: #e23c35;
-  --warning: #e3a33a;
-  --warning-bg: #3a2d14;
-  --danger: #e2615a; /* destructive text and outlines (never a fill) */
+  --bg: #0e1013; /* the workspace */
+  --bar: #14171b; /* title bar, tabs strip, bottom bar, side columns */
+  --panel: #181b20; /* panels and dialog bodies */
+  --raised: #1f2329; /* menus, dialog headers, popovers */
+  --button: #262a31;
+  --button-hover: #2f343c;
+  --button-active: #1c1f24;
+  --border: #252930; /* 1px hairlines */
+  --border-strong: #353a43; /* control outlines */
+  --well: #08090b; /* fields, meters, picture surrounds */
+  --text: #e9ebee;
+  --text-dim: #a0a7b1;
+  --text-faint: #6c737e;
+  --accent: #4fb3bf; /* the logo's teal: selection and focus */
+  --accent-deep: #1d7783; /* the primary button */
+  --accent-hover: #238896;
+  --selected: #14363b;
+  --program: #d42f27;
+  --program-bright: #ff4b3e;
+  --preview: #18994a;
+  --preview-bright: #34d26b;
+  --on-air: #ff4b3e;
+  --warning: #f2b33d;
+  --warning-bg: #3a2c10;
+  --danger: #ff6b61; /* destructive text and outlines (never a fill) */
+  --hi: rgba(255, 255, 255, 0.055); /* the 1px top highlight on raised surfaces */
+  --lo: rgba(0, 0, 0, 0.35); /* the 1px inner shadow of inset fields */
+  --chrome: #0a0b0d; /* the multiviewer frame and title strip */
+  --brand-steel: #8f949c; /* the logo's grey blades */
   --radius: 3px;
   --radius-sm: 2px;
-  --shadow-pop: 0 6px 18px rgba(0, 0, 0, 0.45); /* menus and dialogs only */
-  --font: 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, system-ui, sans-serif;
-  --mono: 'Cascadia Mono', Consolas, 'SF Mono', 'Liberation Mono', monospace;
+  --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.6); /* menus and dialogs only */
+  --font: 'Inter Variable', 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', 'Cascadia Mono', Consolas, 'SF Mono', 'Liberation Mono', monospace;
   color-scheme: dark;
 }
 
@@ -52,6 +58,8 @@ body {
   color: var(--text);
   font-family: var(--font);
   font-size: 13px;
+  font-feature-settings: 'cv11', 'ss01', 'tnum';
+  letter-spacing: -0.003em;
   user-select: none;
   overflow: hidden;
 }
@@ -69,19 +77,104 @@ input:focus-visible {
 /* Native controls follow the accent; thin, quiet scrollbars. */
 input[type='checkbox'],
 input[type='radio'],
-input[type='range'],
 progress {
   accent-color: var(--accent);
 }
+/* Sliders, drawn like a console's: a thin recessed slot, a neutral fill
+   from the start to the value (--val, kept up to date by rangeFill.ts) and a
+   small flat cap with a dark outline. No accent color, no glow. */
+:where(input[type='range']) {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  accent-color: auto;
+  --range-fill: #aeb3ba;
+  --range-slot: #07080a;
+}
+:where(input[type='range'])::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 1px;
+  border: 1px solid #000;
+  border-bottom-color: #2c3138;
+  background: linear-gradient(to right, var(--range-fill) var(--val, 0%), var(--range-slot) var(--val, 0%));
+}
+:where(input[type='range'])::-moz-range-track {
+  height: 2px;
+  border: 1px solid #000;
+  border-bottom-color: #2c3138;
+  background: var(--range-slot);
+}
+:where(input[type='range'])::-moz-range-progress {
+  height: 2px;
+  background: var(--range-fill);
+}
+:where(input[type='range'])::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 16px;
+  margin-top: -7px;
+  border-radius: 2px;
+  border: 1px solid #000;
+  background: linear-gradient(90deg, transparent 4px, #4a4f57 4px 5px, transparent 5px), #d4d7dc;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+:where(input[type='range'])::-moz-range-thumb {
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid #000;
+  background: #d4d7dc;
+}
+:where(input[type='range']):hover::-webkit-slider-thumb {
+  background: linear-gradient(90deg, transparent 4px, #4a4f57 4px 5px, transparent 5px), #eceef1;
+}
+:where(input[type='range']):hover {
+  --range-fill: #c4c8ce;
+}
+:where(input[type='range']):disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+:where(input[type='range']):focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+/* Upright faders (Lumora Studio's mixer): the same slot and cap, turned. */
+.estrip__fader::-webkit-slider-runnable-track {
+  width: 4px;
+  height: auto;
+  margin: 0 auto;
+  background: linear-gradient(to top, var(--range-fill) var(--val, 0%), var(--range-slot) var(--val, 0%));
+}
+.estrip__fader::-webkit-slider-thumb {
+  width: 16px;
+  height: 10px;
+  margin-top: 0;
+  margin-left: -7px;
+  background: linear-gradient(transparent 4px, #4a4f57 4px 5px, transparent 5px), #d4d7dc;
+}
 * {
   scrollbar-width: thin;
-  scrollbar-color: #48484c transparent;
+  scrollbar-color: #3a3f48 transparent;
 }
 h1,
 h2,
 h3,
 h4 {
   font-weight: 600;
+}
+/* Line icons (lucide): 14px by default, the text color, a 2-unit stroke
+   (about 1.2px at this size). Containers size them where they need to. */
+svg.lucide {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke-width: 2;
+  vertical-align: -2px;
 }
 ::selection {
   background: var(--selected);
