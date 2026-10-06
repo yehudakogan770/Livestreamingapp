@@ -523,7 +523,7 @@ select.input {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 280px;
 }
 
 /* The cue sheet */
@@ -534,7 +534,7 @@ select.input {
 }
 .cues {
   width: 100%;
-  min-width: 700px;
+  min-width: 640px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -892,8 +892,8 @@ select.input {
   margin: 0;
 }
 
-/* Narrower windows: the cue details go under the sheet, so the whole sheet fits. */
-@media (max-width: 1280px) {
+/* Phones and very narrow windows only: the cue details go under the sheet. */
+@media (max-width: 760px) {
   .plan__body {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(260px, 1fr) auto;
