@@ -1,16 +1,22 @@
-// Lumora website: the "on air" light on the entry being read, the feedback form and the year.
+// Lumora website: the phone menu, the feedback form and the year. Nothing else.
 (() => {
-  // The time of the entry in the middle of the screen turns red, like a tally light.
-  const entries = [...document.querySelectorAll('.entry')];
-  if ('IntersectionObserver' in window && entries.length) {
-    const io = new IntersectionObserver(
-      (seen) => {
-        for (const e of seen) e.target.classList.toggle('is-on', e.isIntersecting);
-      },
-      { rootMargin: '-45% 0px -50% 0px' },
-    );
-    entries.forEach((e) => io.observe(e));
-  }
+  // Menu on narrow screens.
+  const menu = document.querySelector('[data-menu]');
+  const nav = document.getElementById('nav');
+  const setOpen = (open) => {
+    nav?.classList.toggle('is-open', open);
+    menu?.setAttribute('aria-expanded', String(open));
+  };
+  menu?.addEventListener('click', () => setOpen(menu.getAttribute('aria-expanded') !== 'true'));
+  nav?.addEventListener('click', (e) => {
+    if (e.target.closest('a')) setOpen(false);
+  });
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu?.getAttribute('aria-expanded') === 'true') {
+      setOpen(false);
+      menu.focus();
+    }
+  });
 
   // Feedback: sent through Web3Forms, so nobody has to sign in to anything.
   // Put the access key from web3forms.com here (it only lets people send to you).
