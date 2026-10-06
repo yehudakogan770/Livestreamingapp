@@ -81,7 +81,8 @@ export function press(key: string, init: KeyboardEventInit = {}) {
   }
 }
 
-const DIALOGS = '[role="dialog"], .modal';
+// Dialogs, plus side panels that open from the menus (the live chat).
+const DIALOGS = '[role="dialog"], .modal, aside.chat';
 
 export const openDialogs = () => [...document.querySelectorAll<HTMLElement>(DIALOGS)].filter(visible);
 
@@ -102,7 +103,7 @@ export async function closeDialogs() {
     if (openDialogs().length < open.length) continue;
     const top = open[open.length - 1]!;
     const buttons = [...top.querySelectorAll<HTMLButtonElement>('button')].filter((b) => visible(b) && !b.disabled);
-    const closer = buttons.find((b) => b.getAttribute('aria-label') === 'Close') ?? buttons.find((b) => CLOSERS.includes(words(b))) ?? null;
+    const closer = buttons.find((b) => b.getAttribute('aria-label')?.startsWith('Close')) ?? buttons.find((b) => CLOSERS.includes(words(b))) ?? null;
     closer?.click();
     await sleep(300);
   }
