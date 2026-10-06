@@ -11,6 +11,7 @@ import type { Act } from './act';
 import type { EngineClient } from '../engine/client';
 import { SaveToLibrary } from './LibraryDialog';
 import { cuesItem } from '../engine/library';
+import { PlannerDialog, openPlanner } from '../planner/PlannerDialog';
 import './RunOfShow.css';
 import './TextEditor.css';
 import './PesukimCard.css';
@@ -75,6 +76,7 @@ export function CueBar({ show, act, onOpen }: { show: Show; act: Act; onOpen: ()
 /** The run of show: start it, hold it, run cues, and set them up. */
 export function RunOfShowDialog({ show, act, client, onClose }: { show: Show; act: Act; client: EngineClient; onClose: () => void }) {
   const [keeping, setKeeping] = useState(false);
+  const [planning, setPlanning] = useState(false);
   const now = useNow(false, 250);
   const r = show.run;
   const [cues, setCues] = useState<Cue[]>(() => structuredClone(r.cues));
@@ -322,6 +324,12 @@ export function RunOfShowDialog({ show, act, client, onClose }: { show: Show; ac
           >
             Save to library…
           </button>
+          <button type="button" className="btn" onClick={() => setPlanning(true)} title="Load the cues the team planned in Lumora Planner">
+            Load from Planner…
+          </button>
+          <button type="button" className="btn" onClick={openPlanner} title="Open Lumora Planner in the browser">
+            Open Planner
+          </button>
           <span className="remote__spacer" />
           <button type="button" className="btn" disabled={!dirty} onClick={() => setCues(structuredClone(r.cues))}>
             Undo changes
@@ -331,6 +339,17 @@ export function RunOfShowDialog({ show, act, client, onClose }: { show: Show; ac
           </button>
         </footer>
       </div>
+      {planning && (
+        <PlannerDialog
+          show={show}
+          current={cues}
+          onLoad={(next) => {
+            setSel(next.length > cues.length && next.slice(0, cues.length).every((c, i) => c.id === cues[i]?.id) ? cues.length : 0);
+            setCues(next);
+          }}
+          onClose={() => setPlanning(false)}
+        />
+      )}
       {keeping && (
         <SaveToLibrary
           client={client}
