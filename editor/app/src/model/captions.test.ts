@@ -69,6 +69,19 @@ describe('the transcript on the sequence', () => {
     expect(w[6]?.to).toBe(186);
   });
 
+  it('places words where a remapped clip plays them', () => {
+    const p = talk();
+    // Half speed: the 10-second clip now plays seconds 2–7 of the talk, each word twice as long.
+    const slow = {
+      ...p,
+      sequences: p.sequences.map((s) => ({ ...s, clips: s.clips.map((c) => ({ ...c, remap: { speed: 50, sampling: 'blend' as const, pitch: true } })) })),
+    };
+    const w = sequenceWords(slow, current(slow));
+    expect(w.map((x) => x.w)).toEqual(['Hello', 'everyone,', 'um', 'welcome.']);
+    expect([w[0]?.from, w[0]?.to]).toEqual([30, 60]);
+    expect([w[3]?.from, w[3]?.to]).toEqual([150, 192]);
+  });
+
   it('a word heard on two microphones at once is kept once', () => {
     let p = talk();
     const a2 = current(p).tracks.filter((t) => t.kind === 'audio')[1]?.id ?? '';
@@ -254,6 +267,12 @@ describe('what to transcribe', () => {
     // A picture clip chosen: its sound is what is heard.
     expect([...spansToTranscribe(p, current(p), [a?.id ?? ''])]).toEqual([['m', [[1, 13]]]]);
     expect(spansToTranscribe(p, current(p), ['nothing']).size).toBe(0);
+    // Remapped to 150%: it plays seconds 2–17.
+    const fast = {
+      ...p,
+      sequences: p.sequences.map((s) => ({ ...s, clips: s.clips.map((c) => ({ ...c, remap: { speed: 150, sampling: 'blend' as const, pitch: true } })) })),
+    };
+    expect([...spansToTranscribe(fast, current(fast), null)]).toEqual([['m', [[1, 18]]]]);
   });
 
   it('new transcripts go on their files', () => {

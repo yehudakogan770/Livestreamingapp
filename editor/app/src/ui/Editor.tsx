@@ -59,6 +59,15 @@ import { HistoryDialog, ShareDialog } from '../collab/CollabDialogs';
 import { nativePlayback } from '../render/native/client';
 import { openProblemReport, useErrorReports } from '../../../../app/src/reports/ReportUI';
 
+/** The project file's text: without this computer's missing marks, with the playhead where it is. */
+function projectText(p: Project, playhead: number): string {
+  return JSON.stringify({
+    ...p,
+    media: p.media.map(({ missing: _m, ...m }) => m),
+    sequences: p.sequences.map((s) => (s.id === p.open ? { ...s, playhead } : s)),
+  });
+}
+
 export function Editor({
   project,
   savePath,
@@ -171,6 +180,8 @@ export function Editor({
 
   // Saved as you go (online for a shared project, a little less often).
   const saving = useRef(0);
+  // Writes to the project file go one after another (an older one never lands after a newer one).
+  const writes = useRef<Promise<void>>(Promise.resolve());
   const tick = cs?.tick ?? 0;
   const mayEdit = !cs || canEdit(cs.role);
   const conflict = !!cs?.conflict;
@@ -184,15 +195,13 @@ export function Editor({
     if (collab || !state.dirty || !path || !inApp()) return;
     clearTimeout(saving.current);
     saving.current = window.setTimeout(() => {
-      const text = JSON.stringify({
-        ...doc.project,
-        media: doc.project.media.map(({ missing: _m, ...m }) => m),
-        sequences: doc.project.sequences.map((s) => (s.id === doc.project.open ? { ...s, playhead: Math.floor(engine.time) } : s)),
-      });
-      native
-        .writeText(path, text)
+      const sent = doc.project;
+      const text = projectText(sent, Math.floor(engine.time));
+      writes.current = writes.current
+        .then(() => native.writeText(path, text))
         .then(() => {
-          doc.saved();
+          // Changes made while it was being written stay unsaved (and are saved next).
+          doc.saved(sent);
           setSaveProblem('');
         })
         .catch((e: unknown) => setSaveProblem(e instanceof Error ? e.message : String(e)));
@@ -224,9 +233,10 @@ export function Editor({
       filters: [{ name: 'Lumora Studio project', extensions: ['lumoraedit'] }],
     });
     if (!picked) return;
-    await native.writeText(picked, JSON.stringify(doc.project));
+    const sent = doc.project;
+    await native.writeText(picked, projectText(sent, Math.floor(engine.time)));
     setPath(picked);
-    doc.saved();
+    doc.saved(sent);
     ui.note(`Saved as ${fileName(picked)}`);
   };
 

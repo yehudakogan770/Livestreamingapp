@@ -190,7 +190,6 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
       return;
     }
     if (!already) doc.select({ kind: 'clips', ids: linkedOn ? withLinked(s, [c.id]) : [c.id] });
-    const base = doc.project;
     const key = `drag-${Date.now()}`;
     if (edge && (tool === 'select' || tool === 'ripple' || tool === 'roll')) {
       const mode: TrimMode = tool === 'ripple' ? 'ripple' : tool === 'roll' || (e.ctrlKey && tool === 'select') ? 'roll' : 'normal';
@@ -202,17 +201,17 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
           const snapped = nearest(pointsFor(skip), at + d, snapWithin);
           if (snapped !== null) d = snapped - at;
         }
-        doc.edit(() => trim(base, c.id, edge, d, mode, linkedOn), mode === 'ripple' ? 'Ripple trim' : mode === 'roll' ? 'Roll edit' : 'Trim', key);
+        doc.drag((from) => trim(from, c.id, edge, d, mode, linkedOn), mode === 'ripple' ? 'Ripple trim' : mode === 'roll' ? 'Roll edit' : 'Trim', key);
         engine.seek(at + d);
       });
       return;
     }
     if (tool === 'slip') {
-      drag(e, (dx) => doc.edit(() => slip(base, c.id, -Math.round(dx / zoom)), 'Slip', key));
+      drag(e, (dx) => doc.drag((from) => slip(from, c.id, -Math.round(dx / zoom)), 'Slip', key));
       return;
     }
     if (tool === 'slide') {
-      drag(e, (dx) => doc.edit(() => slide(base, c.id, Math.round(dx / zoom)), 'Slide', key));
+      drag(e, (dx) => doc.drag((from) => slide(from, c.id, Math.round(dx / zoom)), 'Slide', key));
       return;
     }
     // Move (Alt: a copy).

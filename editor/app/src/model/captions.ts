@@ -3,6 +3,7 @@
 // joining blocks; and .srt / .vtt files for players and websites.
 import { wrap } from '../../../../app/src/captions/lines';
 import { extractRange } from './edit';
+import { clipFrameFinder } from './remap';
 import { current, editSeq, end, rate, trackOf } from './seq';
 import {
   DEFAULT_CAPTION_STYLE,
@@ -57,7 +58,21 @@ export function sequenceWords(p: Project, s: Sequence): SeqWord[] {
       const words = m?.transcript?.words;
       if (!m || !words) continue;
       const outSec = src.in + (c.length * c.speed) / fps;
+      const r = c.remap;
+      const findFrame = r ? clipFrameFinder(r, c.length) : () => -1;
       words.forEach((w, index) => {
+        if (r) {
+          // Time remapping: where the clip's speed carries it to the word (the first time it is heard).
+          const at = (sec: number) => findFrame(((sec - src.in) * fps) / c.speed);
+          const a = at(w.s);
+          const b = at(w.e);
+          const mid = at((w.s + w.e) / 2);
+          if (mid < 0) return;
+          const from = c.start + (a < 0 || a > mid ? mid : a);
+          const to = Math.min(end(c), Math.max(from + 1, c.start + (b < mid ? c.length : b)));
+          all.push({ w: w.w, from, to, clip: c.id, media: m.id, index });
+          return;
+        }
         const mid = (w.s + w.e) / 2;
         if (mid < src.in || mid >= outSec) return;
         const from = Math.max(c.start, c.start + Math.round(((w.s - src.in) * fps) / c.speed));

@@ -1,7 +1,7 @@
 import { scaleKeys, shiftKeys } from './anim';
 import { gradeOf, mapGradeParams } from './grade';
 import { retimeTracks } from '../track/paths';
-import { remapPosition, remapSourceAt } from './remap';
+import { remapPosition, remapSourceAt, remapSpeed } from './remap';
 import { exactRate, type Clip, type MediaItem, type Motion, type Param, type Project, type Sequence, type ShapeData, type TextData, type Track } from './types';
 
 export const end = (c: Clip): number => c.start + c.length;
@@ -18,8 +18,37 @@ export function withSeq(p: Project, s: Sequence): Project {
 export function editSeq(p: Project, f: (s: Sequence) => Sequence): Project {
   const s = current(p);
   const after = f(s);
-  return after === s ? p : withSeq(p, after);
+  return after === s ? p : withSeq(p, keepFollows(s, after));
 }
+
+/**
+ * Clips attached to another clip's track keep their place on it when that
+ * clip is moved along the timeline (its frame they were attached at moves
+ * with it). Trimming the start keeps the same picture at that frame, so it
+ * needs nothing.
+ */
+export function keepFollows(before: Sequence, after: Sequence): Sequence {
+  if (!after.clips.some((c) => c.follow)) return after;
+  const was = new Map(before.clips.map((c) => [c.id, c]));
+  const now = new Map(after.clips.map((c) => [c.id, c]));
+  let changed = false;
+  const clips = after.clips.map((c) => {
+    const fl = c.follow;
+    if (!fl) return c;
+    const a = was.get(fl.clip);
+    const b = now.get(fl.clip);
+    // Attached in this very edit (or moved by hand), or the clip isn't there.
+    if (!a || !b || was.get(c.id)?.follow?.at !== fl.at) return c;
+    const shift = b.start - a.start;
+    const moved = shift !== 0 && b.length === a.length && sourceIn(a) === sourceIn(b);
+    if (!moved) return c;
+    changed = true;
+    return { ...c, follow: { ...fl, at: fl.at + shift } };
+  });
+  return changed ? { ...after, clips } : after;
+}
+
+const sourceIn = (c: Clip): number => ('in' in c.source ? c.source.in : 0);
 
 export const videoTracks = (s: Sequence): Track[] => s.tracks.filter((t) => t.kind === 'video');
 export const audioTracks = (s: Sequence): Track[] => s.tracks.filter((t) => t.kind === 'audio');
@@ -65,10 +94,30 @@ export function handles(p: Project, c: Clip, fps: number): { before: number; aft
     if (!m || m.kind === 'image') return { before: Infinity, after: Infinity };
     duration = m.duration;
   } else duration = p.groups.find((g) => g.id === src.group)?.duration ?? 0;
+  if (c.remap) return remapHandles(c, src.in, duration, fps);
   const span = (c.length * c.speed) / fps;
   const head = Math.floor((src.in * fps) / c.speed + 1e-6);
   const tail = Math.floor(((duration - src.in - span) * fps) / c.speed + 1e-6);
   return c.reverse ? { before: Math.max(0, tail), after: Math.max(0, head) } : { before: Math.max(0, head), after: Math.max(0, tail) };
+}
+
+/**
+ * A remapped clip's handles: past each end it carries on at that end's speed
+ * (backwards toward the file's start when that speed is below 0; a freeze can
+ * be stretched as far as wanted).
+ */
+function remapHandles(c: Clip, from: number, duration: number, fps: number): { before: number; after: number } {
+  const r = c.remap as NonNullable<Clip['remap']>;
+  const room = (at: number, rate: number, outward: 1 | -1): number => {
+    const v = rate * outward;
+    if (Math.abs(v) < 1e-9) return Infinity;
+    const left = v > 0 ? duration - at : at;
+    return Math.max(0, Math.floor((left * fps) / Math.abs(v) + 1e-6));
+  };
+  const s0 = remapSpeed(r, 0, c.length) * c.speed;
+  const s1 = remapSpeed(r, c.length - 1, c.length) * c.speed;
+  const last = from + (remapPosition(r, c.length, c.length) * c.speed) / fps;
+  return { before: room(from, s0, -1), after: room(last, s1, 1) };
 }
 
 function mapMotion(m: Motion, f: (p: Motion['x']) => Motion['x']): Motion {

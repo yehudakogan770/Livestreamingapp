@@ -57,7 +57,7 @@ class LookFinder {
     }
     const worker = new Worker(new URL('./look.worker.ts', import.meta.url), { type: 'module' });
     this.worker = worker;
-    await new Promise<void>((resolve, reject) => {
+    const ready = new Promise<void>((resolve, reject) => {
       worker.onmessage = (e: MessageEvent<{ type: string; message?: string; classifier?: boolean }>) => {
         if (e.data.type === 'ready') {
           this.scenes = !!e.data.classifier;
@@ -74,6 +74,15 @@ class LookFinder {
         classifier,
       });
     });
+    try {
+      await ready;
+    } catch (e) {
+      // It couldn't start: let it go, so the next start makes a new one (rather than asking one that never answers).
+      this.stop();
+      throw e;
+    }
+    // It stopped working: whatever was asked is given back empty (nothing waits forever).
+    worker.onerror = () => this.stop();
     worker.onmessage = (e: MessageEvent<{ type: string; id: number; done?: number; looks?: Look[] }>) => {
       const w = this.waiting.get(e.data.id);
       if (!w) return;
@@ -107,10 +116,20 @@ export async function indexPictures(media: MediaItem[], job: Job, again = false)
   const todo = media.filter((m) => m.hasVideo && !m.missing && !have.has(m.id));
   const finder = new LookFinder();
   job.signal.addEventListener('abort', () => finder.stop());
-  if (todo.length) {
-    job.progress(0, 'Starting the picture models…');
-    await finder.start((msg) => job.progress(0, msg));
+  try {
+    if (todo.length) {
+      job.progress(0, 'Starting the picture models…');
+      await finder.start((msg) => job.progress(0, msg));
+    }
+    await lookAtAll(todo, have, finder, job);
+  } finally {
+    // Done, stopped or failed: the worker goes.
+    finder.stop();
   }
+  return { looks: have, scenes: finder.scenes };
+}
+
+async function lookAtAll(todo: MediaItem[], have: Map<string, LookIndex>, finder: LookFinder, job: Job) {
   for (const [i, m] of todo.entries()) {
     check(job);
     const every = Math.max(2, (m.duration || 0) / MOST);
@@ -122,6 +141,4 @@ export async function indexPictures(media: MediaItem[], job: Job, again = false)
     have.set(m.id, index);
     if (inApp()) void native.matteWrite(keyOf(m), KIND, encodeLooks(index)).catch(() => undefined);
   }
-  finder.stop();
-  return { looks: have, scenes: finder.scenes };
 }

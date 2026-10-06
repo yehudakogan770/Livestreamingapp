@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { newEffect } from '../model/effects';
 import { addSerial, newGrade, newGradeEffect } from '../model/grade';
-import { DEFAULT_TEXT, emptyProject, newClip, newSequence, newTrack, type Clip, type MediaItem, type Project, type Sequence } from '../model/types';
+import {
+  DEFAULT_CAPTION_STYLE,
+  DEFAULT_TEXT,
+  emptyProject,
+  newClip,
+  newSequence,
+  newTrack,
+  type Clip,
+  type MediaItem,
+  type Project,
+  type Sequence,
+} from '../model/types';
 import { hash64, hashOf, stable } from './hash';
 import { reach, segmentKeys, type CacheFormat } from './key';
 import { cachedOps } from './ops';
@@ -178,6 +189,50 @@ describe('render cache keys', () => {
     const after = segmentKeys(red, outer, FMT, SEG).map((k) => k.key);
     expect(after.filter((k, i) => k !== base[i]).length).toBe(1);
     expect(after[0]).not.toBe(base[0]);
+  });
+
+  it('change with the look of a captions track inside a nested sequence', () => {
+    const p = project();
+    const inner = newSequence('inner');
+    const capTrack = { ...inner.tracks[0]!, captions: { ...DEFAULT_CAPTION_STYLE } };
+    const cap = newClip(capTrack.id, 0, 60, { kind: 'caption', text: 'Hello' }, 'cap');
+    const nest = { ...inner, tracks: [capTrack, ...inner.tracks.slice(1)], clips: [cap] };
+    const s = seqOf(p);
+    const outer = { ...s, clips: [...s.clips, { ...newClip(s.tracks[2]!.id, 0, 60, { kind: 'sequence', seq: nest.id, in: 0 }, 'nest'), id: 'N' }] };
+    const q: Project = { ...p, sequences: [outer, nest] };
+    const yellow = {
+      ...nest,
+      tracks: nest.tracks.map((t) => (t.id === capTrack.id ? { ...capTrack, captions: { ...DEFAULT_CAPTION_STYLE, color: '#ffff00' } } : t)),
+    };
+    const base = segmentKeys(q, outer, FMT, SEG).map((k) => k.key);
+    const after = segmentKeys({ ...q, sequences: [outer, yellow] }, outer, FMT, SEG).map((k) => k.key);
+    expect(after[0]).not.toBe(base[0]);
+  });
+
+  it('change when the clip a title follows is steadied', () => {
+    const p = project();
+    const path = {
+      id: 'P',
+      name: 'Track 1',
+      points: [
+        [0, 0.5, 0.5],
+        [299, 0.6, 0.4],
+      ] as [number, number, number][],
+    };
+    const tracked = editClip(p, 'A', (c) => ({ ...c, paths: [path] }));
+    // The title sits after the tracked clip (it holds the track's last place), so its segments (300–420) don't hold A itself.
+    const following = editClip(tracked, 'T', (c) => ({ ...c, start: 320, follow: { clip: 'A', path: 'P', at: 320, scale: false, rotate: false } }));
+    const before = keysOf(following);
+    const steadied = editClip(following, 'A', (c) => ({
+      ...c,
+      stabilize: { path: 'P', smooth: 50, lock: false, at: 0, crop: false, rotate: false, scale: false },
+    }));
+    const after = keysOf(steadied);
+    expect(after[5]?.key).not.toBe(before[5]?.key);
+    expect(after[6]?.key).not.toBe(before[6]?.key);
+    // A different size of picture moves where the track is in the frame too.
+    const bigger = { ...following, media: following.media.map((m) => (m.id === 'a' ? { ...m, width: 3840, height: 1600 } : m)) };
+    expect(keysOf(bigger)[6]?.key).not.toBe(before[6]?.key);
   });
 });
 

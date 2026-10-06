@@ -139,6 +139,31 @@ export function effectsAt(c: Clip, local: number, kind: 'video' | 'audio', isAud
 /** A sound effect (the rest change the picture). */
 export const isAudioEffect = (type: string): boolean => effectDef(type)?.kind === 'audio';
 
+// Worked out once per sequence and media list (edits replace them, so these stay right): every frame
+// otherwise filtered and sorted all of a sequence's clips for each track, and searched the media list for each layer.
+const trackLists = new WeakMap<Sequence, Map<string, Clip[]>>();
+const mediaLists = new WeakMap<MediaItem[], Map<string, MediaItem>>();
+
+/** A track's enabled clips, in time order. */
+function enabledOn(s: Sequence, track: string): Clip[] {
+  let by = trackLists.get(s);
+  if (!by) {
+    by = new Map(s.tracks.map((t) => [t.id, onTrack(s, t.id).filter((c) => c.enabled)]));
+    trackLists.set(s, by);
+  }
+  return by.get(track) ?? [];
+}
+
+/** A media item by its id. */
+function mediaOf(p: Project, id: string): MediaItem | undefined {
+  let by = mediaLists.get(p.media);
+  if (!by) {
+    by = new Map(p.media.map((m) => [m.id, m]));
+    mediaLists.set(p.media, by);
+  }
+  return by.get(id);
+}
+
 /** Nests inside nests stop here (and a sequence never shows itself). */
 const MAX_DEPTH = 4;
 
@@ -150,13 +175,13 @@ export function layerFor(p: Project, c: Clip, frame: number, fps: number, prefix
   const src = c.source;
   let source: LayerSource | null = null;
   if (src.kind === 'media') {
-    const m = p.media.find((x) => x.id === src.media);
+    const m = mediaOf(p, src.media);
     if (m && m.kind === 'image') source = { kind: 'image', media: m };
     else if (m && m.hasVideo) source = remapped(c, m, clampTime(sourceAt(c, local, fps), m));
   } else if (src.kind === 'multicam') {
     const g = p.groups.find((x) => x.id === src.group);
     const a = g?.angles.find((x) => x.id === src.angle);
-    const m = a ? p.media.find((x) => x.id === a.media) : undefined;
+    const m = a ? mediaOf(p, a.media) : undefined;
     if (a && m) {
       const t = sourceAt(c, local, fps) - a.offset;
       // A camera that wasn't recording then shows nothing.
@@ -204,7 +229,7 @@ export function frameOps(p: Project, s: Sequence, frame: number, prefix = '', de
   const ops: Op[] = [];
   for (const t of s.tracks) {
     if (t.kind !== 'video' || t.off) continue;
-    const clips = onTrack(s, t.id).filter((c) => c.enabled);
+    const clips = enabledOn(s, t.id);
     // A captions track: the block showing now, drawn in the track's look (no transitions).
     if (t.captions) {
       const c = clips.find((x) => frame >= x.start && frame < end(x));

@@ -97,7 +97,11 @@ function depsHash(p: Project, s: Sequence, c: Clip, depth: number): string {
   const fl = c.follow;
   if (fl) {
     const t = s.clips.find((x) => x.id === fl.clip);
-    parts.push(t ? hashOf({ start: t.start, length: t.length, paths: t.paths ?? null, motion: t.motion }) : 'none');
+    // Where the track is in the frame: the clip's timing, tracks, motion, steadying and picture size.
+    const tm = t?.source.kind === 'media' ? mediaById(p).get(t.source.media) : undefined;
+    parts.push(
+      t ? hashOf({ start: t.start, length: t.length, paths: t.paths ?? null, motion: t.motion, stabilize: t.stabilize ?? null, media: mediaHash(tm) }) : 'none',
+    );
   }
   return parts.join('/');
 }
@@ -112,9 +116,12 @@ export function clipHash(p: Project, s: Sequence, c: Clip, depth = 0): string {
 function sequenceHash(p: Project, s: Sequence, depth: number): string {
   const had = seqHashes.get(s);
   if (had && had.p === p) return had.h;
-  const vt = s.tracks.filter((t) => t.kind === 'video' && !t.off).map((t) => t.id);
+  const shown = s.tracks.filter((t) => t.kind === 'video' && !t.off);
+  const vt = shown.map((t) => t.id);
   const clips = s.clips.filter((c) => vt.includes(c.track)).map((c) => clipHash(p, s, c, depth));
-  const h = hash64(stable({ w: s.width, h: s.height, fps: s.fps, bg: s.background, tracks: vt }) + clips.join(','));
+  // A captions track's look draws its captions (as for the sequence itself).
+  const tracks = shown.map((t) => [t.id, t.captions ?? null]);
+  const h = hash64(stable({ w: s.width, h: s.height, fps: s.fps, bg: s.background, tracks }) + clips.join(','));
   seqHashes.set(s, { p, h });
   return h;
 }

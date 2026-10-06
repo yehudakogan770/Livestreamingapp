@@ -6,6 +6,7 @@
 // point the editor can tweak by hand.
 import { rate, sourceTime } from '../model/seq';
 import { uid, type Clip, type Key, type MediaItem, type Param, type Project, type Sequence } from '../model/types';
+import { carryFollows } from '../track/paths';
 
 export type Aspect = '9:16' | '1:1' | '4:5';
 export const ASPECTS: [Aspect, string][] = [
@@ -262,19 +263,22 @@ export function reframedSequence(s: Sequence, aspect: Aspect, motions: Map<strin
   const size = aspectSize(s, aspect);
   const trackIds = new Map(s.tracks.map((t) => [t.id, uid(t.kind === 'video' ? 'v' : 'a')]));
   const linkIds = new Map<string, string>();
-  const clips = s.clips.map((c) => {
+  const ids = new Map(s.clips.map((c) => [c.id, uid()]));
+  const copies = s.clips.map((c) => {
     const link = c.link ? (linkIds.get(c.link) ?? linkIds.set(c.link, uid('l')).get(c.link) ?? null) : null;
     const motion = motions.get(c.id);
     const track = s.tracks.find((t) => t.id === c.track);
     const picture = track?.kind === 'video' && (c.source.kind === 'media' || c.source.kind === 'multicam' || c.source.kind === 'sequence');
     return {
       ...c,
-      id: uid(),
+      id: ids.get(c.id) as string,
       track: trackIds.get(c.track) ?? c.track,
       link,
       motion: motion ?? (picture ? { ...c.motion, fill: true } : c.motion),
     };
   });
+  // Titles that follow a tracked clip follow its copy.
+  const clips = carryFollows(copies, ids, 0);
   return {
     ...s,
     id: uid('s'),

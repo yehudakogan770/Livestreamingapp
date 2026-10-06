@@ -241,8 +241,9 @@ export class RenderCache {
     const readText = (path: string) => native.readText(path);
     const t0 = performance.now();
     let sent = 0;
+    let gl: Compositor | null = null;
     try {
-      const gl = new Compositor(canvas);
+      gl = new Compositor(canvas);
       gl.resize(width, height, s.height);
       for (let f = seg.from; f < seg.to; f++) {
         // Playback started, or an edit changed this segment: stop (it is made again later if still wanted).
@@ -282,6 +283,8 @@ export class RenderCache {
       this.emit();
     } finally {
       await sources.close();
+      // Each segment's graphics context is let go at once (browsers keep only a few, and the viewer's would be lost).
+      gl?.dispose();
     }
   }
 

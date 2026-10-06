@@ -23,6 +23,8 @@ export class Doc {
   private future: { p: Project; label: string }[] = [];
   private lastKey: string | null = null;
   private lastAt = 0;
+  /** Where the drag being made started (kept up to date with changes brought in meanwhile). */
+  private dragFrom: { key: string; p: Project } | null = null;
   private listeners = new Set<() => void>();
   state: DocState;
   /**
@@ -65,6 +67,17 @@ export class Doc {
     this.set({ project: after, dirty: true, last: label, selection: keep(this.state.selection, after) });
   }
 
+  /**
+   * One step of a drag (a trim, slip or slide): worked out again each time
+   * from where the drag started. Changes brought in while dragging (someone
+   * else's save, an import finishing) are part of that start, so they are kept.
+   */
+  drag(f: (start: Project) => Project, label: string, key: string) {
+    if (this.dragFrom?.key !== key) this.dragFrom = { key, p: this.state.project };
+    const start = this.dragFrom.p;
+    this.edit(() => f(start), label, key);
+  }
+
   private allowed(before: Project, after: Project): boolean {
     const why = this.gate?.(before, after) ?? null;
     if (why) this.blocked(why);
@@ -77,6 +90,7 @@ export class Doc {
     this.past.pop();
     this.future.push({ p: this.state.project, label: x.label });
     this.lastKey = null;
+    this.dragFrom = null;
     this.set({ project: x.p, dirty: true, last: x.label, selection: keep(this.state.selection, x.p) });
   }
 
@@ -86,6 +100,7 @@ export class Doc {
     this.future.pop();
     this.past.push({ p: this.state.project, label: x.label });
     this.lastKey = null;
+    this.dragFrom = null;
     this.set({ project: x.p, dirty: true, last: x.label, selection: keep(this.state.selection, x.p) });
   }
 
@@ -127,7 +142,12 @@ export class Doc {
     if (after !== this.state.project) this.set({ project: after });
   }
 
-  saved() {
+  /**
+   * The project was saved. With the project that was written: only if nothing
+   * changed while it was being written (a change made meanwhile is still unsaved).
+   */
+  saved(written?: Project) {
+    if (written && written !== this.state.project) return;
     this.set({ dirty: false });
   }
 
@@ -138,6 +158,7 @@ export class Doc {
   rebase(f: (p: Project) => Project, dirty = false) {
     this.past = this.past.map((x) => ({ ...x, p: f(x.p) }));
     this.future = this.future.map((x) => ({ ...x, p: f(x.p) }));
+    if (this.dragFrom) this.dragFrom = { ...this.dragFrom, p: f(this.dragFrom.p) };
     const after = f(this.state.project);
     this.set({ project: after, selection: keep(this.state.selection, after), ...(dirty ? { dirty: true } : {}) });
   }
@@ -147,6 +168,7 @@ export class Doc {
     this.past = [];
     this.future = [];
     this.lastKey = null;
+    this.dragFrom = null;
     this.set({ project, dirty: false, last: '', selection: keep(this.state.selection, project) });
   }
 }
