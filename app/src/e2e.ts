@@ -4,8 +4,9 @@
 // is no setting, file or environment variable that turns it on afterwards.
 //
 // In a test build the sign-in is skipped, nothing is sent to the error server,
-// and the robot gets a few hooks (window.__lumoraE2E): the errors seen so far,
-// and (Lumora Studio) opening the demo project with media the test made.
+// and the self-test (./selftest/, run when the program is started with
+// LUMORA_SELFTEST) gets a few hooks (window.__lumoraE2E): the errors seen so
+// far, and (Lumora Studio) opening the demo project with media the test made.
 
 export const TEST_BUILD: boolean = import.meta.env.VITE_LUMORA_E2E === '1';
 

@@ -114,14 +114,18 @@ jobs:
             target/release/bundle/nsis/Lumora Studio_*.sig
           if-no-files-found: error
 
-  # The real programs, started and clicked through on Windows (tauri-driver +
-  # WebdriverIO, see e2e/). It runs after the installers are made and reports
-  # (job summary, screenshots in the e2e-results artifact), but never blocks a
-  # release: nothing needs it, and it may fail without failing the run.
-  #   1. The installers from the jobs above: installed, they start and ask to sign in.
+  # The real programs, started and run through on Windows (e2e/run.mjs). It
+  # runs after the installers are made and reports (job summary, results in
+  # the e2e-results artifact), but never blocks a release: nothing needs it,
+  # and it may fail without failing the run.
+  #   1. The installers from the jobs above: installed, they start and keep
+  #      running (and ignore LUMORA_SELFTEST: they have no self-test).
   #   2. Test builds made here with VITE_LUMORA_E2E=1, which skips the sign-in
-  #      (app/src/e2e.ts). They are never uploaded or shipped; the installers
-  #      are built without it, so people can't skip the sign-in.
+  #      and carries an in-app self-test (app/src/e2e.ts, app/src/selftest/):
+  #      started with LUMORA_SELFTEST=<file>, each runs its steps in the page,
+  #      writes the results to that file and closes. No WebDriver is needed.
+  #      They are never uploaded or shipped; the installers are built without
+  #      it, so people can't skip the sign-in or run the self-test.
   e2e:
     name: End-to-end smoke tests (Windows)
     runs-on: windows-latest
@@ -177,14 +181,11 @@ jobs:
         run: |
           scripts/ci-windows.sh src-tauri/tauri.conf.json src-tauri
           scripts/ci-windows.sh editor/src-tauri/tauri.conf.json editor/src-tauri
-      - name: Make the test builds (no sign-in; never shipped)
+      - name: Make the test builds (no sign-in, with the self-test; never shipped)
         shell: bash
         env:
           VITE_LUMORA_E2E: '1'
         run: |
-          # The shipped WebView settings shut out the test driver: leave them out
-          # of these test builds only.
-          node -e "for (const f of ['src-tauri/tauri.conf.json','editor/src-tauri/tauri.conf.json']) { const fs=require('fs'); const c=JSON.parse(fs.readFileSync(f,'utf8')); for (const w of c.app.windows ?? []) delete w.additionalBrowserArgs; fs.writeFileSync(f, JSON.stringify(c, null, 2)); }"
           npx tauri build --no-bundle
           (cd editor && npx tauri build --no-bundle)
           ls -la target/release/*.exe
@@ -192,11 +193,6 @@ jobs:
           echo "LUMORA_TEST=$(cygpath -w "$PWD/target/release/lumora.exe")" >> "$GITHUB_ENV"
           echo "STUDIO_TEST=$(cygpath -w "$PWD/$studio")" >> "$GITHUB_ENV"
 
-      - name: tauri-driver, and msedgedriver to match WebView2
-        shell: pwsh
-        run: |
-          cargo install tauri-driver --locked
-          ./e2e/setup-msedgedriver.ps1
       - name: Demo media for Lumora Studio
         shell: bash
         run: |
@@ -206,13 +202,10 @@ jobs:
           echo "FFMPEG=$ffmpeg" >> "$GITHUB_ENV"
           echo "E2E_MEDIA=$media" >> "$GITHUB_ENV"
 
-      - name: Run the smoke tests
+      - name: Run the smoke tests (installed start-up, then the test builds' self-tests)
         shell: bash
-        working-directory: e2e
-        run: |
-          npm ci --no-audit --no-fund
-          node run.mjs
-      - name: Keep the screenshots and results
+        run: node e2e/run.mjs
+      - name: Keep the results
         if: always()
         uses: actions/upload-artifact@v4
         with:

@@ -4,6 +4,9 @@ import { App } from './App';
 import { lockDown } from './engine/lockdown';
 import { installRangeFill } from './rangeFill';
 import { installErrorReporting, reactError } from './reports/reporter';
+import { TEST_BUILD } from './e2e';
+import { startSelfTest } from './selftest/start';
+import { lumoraScenario } from './selftest/lumora';
 import './styles.css';
 // Lumora's own type: Inter for the controls, JetBrains Mono for times and numbers.
 import '@fontsource-variable/inter/wght.css';
@@ -34,3 +37,8 @@ createRoot(root, { onCaughtError: reactError, onUncaughtError: reactError }).ren
     <App />
   </StrictMode>,
 );
+
+// The CI test build's self-test (LUMORA_SELFTEST). Never in the installers
+// people download: the bundler drops it when TEST_BUILD is false (checked by
+// selftest/shipped.test.ts).
+if (TEST_BUILD) void startSelfTest(lumoraScenario);

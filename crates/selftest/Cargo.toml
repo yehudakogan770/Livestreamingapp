@@ -1,0 +1,18 @@
+[package]
+name = "lumora-selftest"
+description = "The end-to-end self-test's Rust side for Lumora and Lumora Studio: where the results go, and FFmpeg checks of the files a run made."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+must_use_candidate = "allow"

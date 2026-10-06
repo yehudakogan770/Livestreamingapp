@@ -4,6 +4,9 @@ import { App } from './App';
 import { lockDown } from '../../../app/src/engine/lockdown';
 import { installRangeFill } from '../../../app/src/rangeFill';
 import { installErrorReporting, reactError } from '../../../app/src/reports/reporter';
+import { TEST_BUILD } from '../../../app/src/e2e';
+import { startSelfTest } from '../../../app/src/selftest/start';
+import { studioScenario } from './selftest';
 import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
 import '../../../app/src/styles.css';
@@ -32,3 +35,8 @@ createRoot(root, { onCaughtError: reactError, onUncaughtError: reactError }).ren
     <App />
   </StrictMode>,
 );
+
+// The CI test build's self-test (LUMORA_SELFTEST). Never in the installers
+// people download: the bundler drops it when TEST_BUILD is false (checked by
+// app/src/selftest/shipped.test.ts).
+if (TEST_BUILD) void startSelfTest(studioScenario);

@@ -2122,6 +2122,7 @@ dependencies = [
  "libloading 0.8.9",
  "lumora-crash",
  "lumora-engine",
+ "lumora-selftest",
  "png 0.18.1",
  "qrcode",
  "serde",
@@ -2149,6 +2150,7 @@ name = "lumora-edit"
 version = "0.1.0"
 dependencies = [
  "lumora-crash",
+ "lumora-selftest",
  "lumora-studio-engine",
  "raw-window-handle",
  "serde",
@@ -2168,6 +2170,14 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.21",
  "ts-rs",
+]
+
+[[package]]
+name = "lumora-selftest"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

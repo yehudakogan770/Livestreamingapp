@@ -13,6 +13,7 @@ mod mattes;
 mod media;
 mod native_view;
 mod rendercache;
+mod selftest;
 mod speech;
 
 use std::path::{Path, PathBuf};
@@ -465,10 +466,18 @@ pub fn run() {
                 encoders: Arc::default(),
             });
             app.manage(native_view::NativeView::default());
+            // The CI self-test: close (with a failed result) if it never finishes.
+            let quit = app.handle().clone();
+            lumora_selftest::watchdog(move || quit.exit(1));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            selftest::selftest_config,
+            selftest::selftest_finish,
+            selftest::selftest_temp_folder,
+            selftest::selftest_videos,
+            selftest::selftest_decode,
             take_crash_reports,
             ffmpeg_found,
             initial_file,
