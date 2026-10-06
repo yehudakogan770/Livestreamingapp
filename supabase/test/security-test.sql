@@ -28,13 +28,11 @@ select pg_temp.check((select planner_only from profiles where email = 't@x.org')
 select pg_temp.check(not (select planner_only from profiles where email = 'x@x.org'), 'app sign-up is not');
 select pg_temp.check((select is_admin from profiles where email = 'a@x.org'), 'first account is the team');
 
--- The team at aal1: own profile only, can't approve.
+-- The team without two-step sign-in (optional since update 7): works at aal1.
 select pg_temp.as_user('a', 'aal1');
 set role authenticated;
-select pg_temp.check((select count(*) from profiles) = 1, 'team at aal1 sees only its own profile');
-update profiles set approved = true where email = 'x@x.org';
+select pg_temp.check((select count(*) from profiles) = 5, 'team without two-step sees everyone at aal1');
 reset role;
-select pg_temp.check(not (select approved from profiles where email = 'x@x.org'), 'team at aal1 cannot approve');
 select pg_temp.as_user('a', 'aal2');
 set role authenticated;
 select pg_temp.check((select count(*) from profiles) = 5, 'team at aal2 sees everyone');
