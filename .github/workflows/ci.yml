@@ -32,6 +32,18 @@ jobs:
         run: npm run typecheck
       - name: UI tests
         run: npm test
+      # The website serves the Planner from docs/planner (GitHub Pages, from
+      # the repository): it is built here and must match what is committed.
+      - name: Lumora Planner build (docs/planner is up to date)
+        run: |
+          npm run planner:build
+          if [ -n "$(git status --porcelain -- docs/planner)" ]; then
+            git status --short -- docs/planner
+            echo "::error::docs/planner is out of date: run npm run planner:build and commit docs/planner"
+            exit 1
+          fi
+      - name: Stream Deck plugin builds
+        run: npm run streamdeck:pack
       - name: Rust formatting
         run: cargo fmt --all --check
       - name: Rust lints
@@ -68,6 +80,11 @@ jobs:
       - name: Version, signing and FFmpeg
         shell: bash
         run: scripts/ci-windows.sh src-tauri/tauri.conf.json src-tauri
+      # Lumora carries its Stream Deck buttons and offers them when it finds a Stream Deck:
+      # packed before the installer is built, so it can go inside.
+      - name: Stream Deck plugin (inside the installer)
+        shell: bash
+        run: npm run streamdeck:pack -- --app src-tauri/tauri.conf.json
       - name: Build the installer
         run: npm run build
       - name: Upload installer
@@ -77,6 +94,12 @@ jobs:
           path: |
             target/release/bundle/nsis/Lumora_*.exe
             target/release/bundle/nsis/Lumora_*.sig
+          if-no-files-found: error
+      - name: Upload the Stream Deck plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lumora-StreamDeck-plugin
+          path: streamdeck/dist/com.lumora.streamdeck.streamDeckPlugin
           if-no-files-found: error
 
   windows-edit:
@@ -232,6 +255,11 @@ jobs:
         with:
           name: Lumora-Studio-Setup-windows
           path: edit
+      # The Stream Deck plugin, built by the Lumora installer job (the same one the installer carries).
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lumora-StreamDeck-plugin
+          path: streamdeck
       # Names that never change, so the website's download links always work.
       - name: Name the installers, and say where the updates are
         run: |
@@ -250,6 +278,7 @@ jobs:
           }
           publish lumora Lumora-Setup.exe latest.json "A new version of Lumora."
           publish edit Lumora-Studio-Setup.exe latest-edit.json "A new version of Lumora Studio."
+          cp streamdeck/com.lumora.streamdeck.streamDeckPlugin out/Lumora.streamDeckPlugin
           ls -la out
       - name: Publish it (anyone can download, no account)
         uses: softprops/action-gh-release@v2
@@ -261,9 +290,11 @@ jobs:
           files: |
             out/Lumora-Setup.exe
             out/Lumora-Studio-Setup.exe
+            out/Lumora.streamDeckPlugin
             out/latest*.json
           body: |
             Lumora for Windows 10 and 11 (64-bit). Download Lumora-Setup.exe and run it.
             Lumora Studio (for editing recorded events): download Lumora-Studio-Setup.exe.
+            Stream Deck plugin: download Lumora.streamDeckPlugin and double-click it (Lumora also offers it when it finds a Stream Deck).
             Already have Lumora? Use Help → Check for updates in the app.
             The first time, Windows may say it doesn't recognize the app: click More info, then Run anyway.

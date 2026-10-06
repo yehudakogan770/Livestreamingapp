@@ -16,5 +16,15 @@
     "allowJs": true,
     "types": ["vite/client"]
   },
-  "include": ["app/src", "vite.config.ts", "src-tauri/remote", "editor/app/src", "editor/vite.config.ts"]
+  "include": [
+    "app/src",
+    "vite.config.ts",
+    "src-tauri/remote",
+    "editor/app/src",
+    "editor/vite.config.ts",
+    "planner/src",
+    "planner/vite.config.ts",
+    "streamdeck/src"
+  ],
+  "exclude": ["streamdeck/src/plugin.ts"]
 }
