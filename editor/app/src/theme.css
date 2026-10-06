@@ -1,0 +1,290 @@
+/* Lumora Studio's own look: a finishing and color suite.
+   Studio does not share Lumora's tokens. Lumora (the live app) is a cool,
+   near-black broadcast console with a teal accent. Studio is a calm, neutral
+   gray grading room like Resolve or Baselight. Every gray here is a true gray
+   (R = G = B), so the room never tints your judgment of the picture.
+
+   One accent, used sparingly: Studio amber (#e0973f). It marks selection,
+   focus and the active tool, and only ever as a thin line or a small glyph,
+   never as a large fill. A warm amber sits opposite Lumora's teal, so the two
+   apps never look alike. It stands out on neutral gray without being a
+   picture color you are judging, and it follows the finishing-suite habit of
+   warm selection. Red means the playhead and recording only. Yellow means a
+   warning or a mute. The one primary action is a light-gray key. */
+:root {
+  /* Surfaces: neutral mid-dark grays in even steps. */
+  --bg: #1c1c1c; /* the workspace between panels */
+  --bar: #212121; /* app bar, tab strips, status bar, side columns */
+  --panel: #262626; /* panels and dialog bodies */
+  --raised: #2e2e2e; /* menus, dialog heads, popovers */
+  --button: #333333;
+  --button-hover: #3c3c3c;
+  --button-active: #2a2a2a;
+  --button-edge: #474747; /* the lighter top edge of a key */
+  --border: #343434; /* 1px hairlines */
+  --border-strong: #454545; /* control outlines */
+  --well: #161616; /* fields, meters, scopes, the graph */
+  --chrome: #111111; /* around the picture */
+  --hi: rgba(255, 255, 255, 0.04); /* 1px top highlight on raised surfaces */
+  --lo: rgba(0, 0, 0, 0.35); /* 1px inner shadow of inset fields */
+
+  /* Text. */
+  --text: #e4e4e4;
+  --text-dim: #a6a6a6;
+  --text-faint: #767676;
+
+  /* The Studio accent and selection. */
+  --accent: #e0973f; /* Studio amber: selection, focus, the active tool */
+  --accent-wash: rgba(224, 151, 63, 0.1); /* marquee and drop areas */
+  --selected: #3b3530; /* a selected row or key: neutral, faintly warm */
+  --focus: #e0973f;
+  --check: #c4c4c4; /* native checkboxes, radios, progress */
+
+  /* The one primary action: a light-gray key with dark text. */
+  --primary: #e2e2e2;
+  --primary-edge: #f4f4f4;
+  --primary-hover: #f0f0f0;
+  --primary-active: #c9c9c9;
+  --primary-text: #111111;
+  --progress: #cfcfcf; /* progress bars fill in light gray */
+
+  /* Meaning. */
+  --program: #d23a31; /* recording */
+  --program-bright: #ff5348; /* the playhead, clipping */
+  --on-air: #ff5348;
+  --preview: #2f9a55;
+  --preview-bright: #4cc979;
+  --warning: #e3c04c; /* yellow: warnings and mutes */
+  --warning-bg: #36301a;
+  --danger: #ff6f64; /* destructive text and outlines (never a fill) */
+
+  /* Sliders and meters. */
+  --range-fill-color: #b4b4b4;
+  --range-fill-hover: #cacaca;
+  --range-slot-color: #0e0e0e;
+  --range-cap: #d8d8d8;
+  --range-cap-hover: #efefef;
+  --range-cap-line: #4c4c4c;
+  --meter-slot: #141414; /* the canvas meters (Timeline, Mixer) use these values */
+  --meter-low: #2f9a55;
+  --meter-mid: #d6a93a;
+  --meter-high: #e0453a;
+
+  /* The render cache line: red still to render, blue rendered. */
+  --cache-uncached: #c9473d;
+  --cache-cached: #4a82cf;
+
+  --brand-steel: #8f8f8f;
+  --radius: 3px;
+  --radius-sm: 2px;
+  --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.55); /* menus and dialogs only */
+  --font: 'Inter Variable', 'Segoe UI Variable Text', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --mono: 'JetBrains Mono Variable', 'Cascadia Mono', Consolas, 'SF Mono', 'Liberation Mono', monospace;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  font-feature-settings: 'cv11', 'ss01', 'tnum';
+  letter-spacing: -0.003em;
+  user-select: none;
+  overflow: hidden;
+}
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+/* Native checks and progress stay neutral: the amber is for thin lines only. */
+input[type='checkbox'],
+input[type='radio'],
+progress {
+  accent-color: var(--check);
+}
+
+/* Sliders: a thin recessed slot, a neutral fill from the start to the value
+   (--val, kept up to date by rangeFill.ts) and a small flat gray cap. */
+:where(input[type='range']) {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  accent-color: auto;
+  --range-fill: var(--range-fill-color);
+  --range-slot: var(--range-slot-color);
+}
+:where(input[type='range'])::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 1px;
+  border: 1px solid #000;
+  border-bottom-color: #333333;
+  background: linear-gradient(to right, var(--range-fill) var(--val, 0%), var(--range-slot) var(--val, 0%));
+}
+:where(input[type='range'])::-moz-range-track {
+  height: 2px;
+  border: 1px solid #000;
+  border-bottom-color: #333333;
+  background: var(--range-slot);
+}
+:where(input[type='range'])::-moz-range-progress {
+  height: 2px;
+  background: var(--range-fill);
+}
+:where(input[type='range'])::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 16px;
+  margin-top: -7px;
+  border-radius: 2px;
+  border: 1px solid #000;
+  background: linear-gradient(90deg, transparent 4px, var(--range-cap-line) 4px 5px, transparent 5px), var(--range-cap);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+:where(input[type='range'])::-moz-range-thumb {
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1px solid #000;
+  background: var(--range-cap);
+}
+:where(input[type='range']):hover::-webkit-slider-thumb {
+  background: linear-gradient(90deg, transparent 4px, var(--range-cap-line) 4px 5px, transparent 5px), var(--range-cap-hover);
+}
+:where(input[type='range']):hover {
+  --range-fill: var(--range-fill-hover);
+}
+:where(input[type='range']):disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+:where(input[type='range']):focus-visible {
+  outline: 1px solid var(--focus);
+  outline-offset: 2px;
+}
+/* Upright faders (the mixer): the same slot and cap, turned. */
+.estrip__fader::-webkit-slider-runnable-track {
+  width: 4px;
+  height: auto;
+  margin: 0 auto;
+  background: linear-gradient(to top, var(--range-fill) var(--val, 0%), var(--range-slot) var(--val, 0%));
+}
+.estrip__fader::-webkit-slider-thumb {
+  width: 16px;
+  height: 10px;
+  margin-top: 0;
+  margin-left: -7px;
+  background: linear-gradient(transparent 4px, var(--range-cap-line) 4px 5px, transparent 5px), var(--range-cap);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a transparent;
+}
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+}
+/* Line icons (lucide): 14px, the text color, a 2-unit stroke. */
+svg.lucide {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke-width: 2;
+  vertical-align: -2px;
+}
+::selection {
+  background: #5a4a36;
+}
+
+/* A new slide in a slideshow fades in. */
+@keyframes slide-in {
+  from {
+    opacity: 0;
+  }
+}
+/* Green screen: the original picture is hidden; the keyed copy shows. */
+.keyed > video,
+.keyed > img {
+  opacity: 0;
+}
+
+/* ---- shared controls, recut for Studio ----
+   Studio borrows a few control classes from Lumora (buttons, fields, menus,
+   the sign-in). Lumora draws them with cool, blue-gray values; these rules
+   come later and give them Studio's neutral grays and light-gray primary. */
+.btn {
+  border-color: var(--border-strong);
+  border-top-color: var(--button-edge);
+  background: var(--button);
+}
+.btn:hover:not(:disabled) {
+  background: var(--button-hover);
+}
+.btn.is-on,
+.btn[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.btn--primary,
+.gate .btn--primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  border-top-color: var(--primary-edge);
+  color: var(--primary-text);
+}
+.btn--primary svg.lucide {
+  color: var(--primary-text);
+}
+.btn--primary:hover:not(:disabled),
+.gate .btn--primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+.btn--primary:active:not(:disabled) {
+  background: var(--primary-active);
+}
+.seg {
+  border-top-color: var(--button-edge);
+  background: var(--button-active);
+}
+.seg[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.text {
+  border-bottom-color: #333333;
+}
+select {
+  border-top-color: var(--button-edge);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23a6a6a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+      no-repeat right 8px center,
+    var(--button);
+}
+.modal__foot {
+  background: var(--bar);
+}

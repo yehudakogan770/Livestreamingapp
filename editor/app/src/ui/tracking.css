@@ -8,12 +8,12 @@
 }
 .trk__path {
   fill: none;
-  stroke: rgba(227, 163, 58, 0.75);
+  stroke: rgba(224, 151, 63, 0.75);
   stroke-width: 1.5;
 }
 .trk__box {
-  fill: rgba(227, 163, 58, 0.08);
-  stroke: rgba(227, 163, 58, 0.9);
+  fill: rgba(224, 151, 63, 0.08);
+  stroke: rgba(224, 151, 63, 0.9);
   stroke-width: 1.5;
   stroke-dasharray: 5 3;
 }
@@ -32,13 +32,13 @@
 }
 .trk__point.is-hand circle {
   stroke: #fff;
-  fill: rgba(227, 163, 58, 0.45);
+  fill: rgba(224, 151, 63, 0.45);
 }
 .trk-pick {
   position: absolute;
   inset: 0;
   cursor: crosshair;
-  outline: 2px dashed rgba(227, 163, 58, 0.7);
+  outline: 2px dashed rgba(224, 151, 63, 0.7);
   outline-offset: -2px;
 }
 .trk-pick__hint {
@@ -59,7 +59,7 @@
   display: none;
   position: absolute;
   border: 1.5px dashed var(--warning);
-  background: rgba(227, 163, 58, 0.1);
+  background: rgba(224, 151, 63, 0.1);
   pointer-events: none;
 }
 .trk-bar {

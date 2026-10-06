@@ -7,7 +7,7 @@
   outline: none;
 }
 .graph:focus-visible {
-  box-shadow: 0 0 0 1px #4fb3bf;
+  box-shadow: 0 0 0 1px var(--focus);
   border-radius: 4px;
 }
 .graph__bar {
@@ -18,20 +18,20 @@
 }
 .graph__modes {
   display: inline-flex;
-  border: 1px solid #3a3f47;
+  border: 1px solid #3f3f3f;
   border-radius: 4px;
   overflow: hidden;
 }
 .graph__modes button {
   background: transparent;
   border: 0;
-  color: #c9ccd1;
+  color: #cccccc;
   font-size: 11px;
   padding: 3px 9px;
   cursor: pointer;
 }
 .graph__modes button.is-on {
-  background: #3a3f47;
+  background: #3f3f3f;
   color: #fff;
 }
 .graph__plot {
@@ -43,66 +43,66 @@
   cursor: crosshair;
 }
 .graph__bg {
-  fill: #15171b;
+  fill: #171717;
 }
 .graph__grid {
-  stroke: #262a30;
+  stroke: #2a2a2a;
   stroke-width: 1;
 }
 .graph__zero {
-  stroke: #4a505a;
+  stroke: #4f4f4f;
   stroke-dasharray: 4 3;
 }
 .graph__head {
-  stroke: #e0473b;
+  stroke: var(--program-bright);
   stroke-width: 1;
 }
 .graph__curve {
   fill: none;
-  stroke: #4fb3bf;
+  stroke: var(--text);
   stroke-width: 2;
 }
 .graph__key {
-  fill: #c9ccd1;
-  stroke: #15171b;
+  fill: #cccccc;
+  stroke: #171717;
   stroke-width: 1.5;
   cursor: move;
 }
 .graph__key.is-hold {
-  fill: #8a8f98;
+  fill: #8f8f8f;
 }
 .graph__key.is-on {
-  fill: #f0c850;
+  fill: var(--accent);
 }
 .graph__mark {
-  stroke: #5a606a;
+  stroke: #5f5f5f;
   stroke-width: 1;
 }
 .graph__mark.is-on {
-  stroke: #f0c850;
+  stroke: var(--accent);
 }
 .graph__arm {
-  stroke: #f0c850;
+  stroke: var(--accent);
   stroke-width: 1;
   opacity: 0.8;
 }
 .graph__handle {
-  fill: #15171b;
-  stroke: #f0c850;
+  fill: #171717;
+  stroke: var(--accent);
   stroke-width: 1.5;
   cursor: grab;
 }
 .graph__box {
-  fill: rgba(79, 179, 191, 0.12);
-  stroke: #4fb3bf;
+  fill: var(--accent-wash);
+  stroke: var(--accent);
   stroke-dasharray: 4 3;
 }
 .graph__label {
-  fill: #7d838d;
+  fill: #828282;
   font-size: 10px;
 }
 .graph__note {
-  color: #8a8f98;
+  color: #8f8f8f;
   font-size: 11px;
 }
 
