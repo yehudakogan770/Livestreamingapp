@@ -59,59 +59,53 @@ function GateScreen({ gate, onCheck, onSignOut }: { gate: Gate; onCheck: () => v
   return (
     <div className="gate">
       <div className="gate__card">
-        <aside className="gate__side" aria-hidden="true">
-          <img src="./brand/lumora-logo.svg" alt="" />
-          <span className="gate__tag">Live production</span>
-        </aside>
-        <div className="gate__main">
-          <div className="gate__brand">
-            <img src="./brand/lumora-logo.svg" alt="Lumora" />
-          </div>
-          {gate.s === 'checking' && <p className="gate__note">Checking your account…</p>}
-          {gate.s === 'out' && <SignIn />}
-          {gate.s === 'error' && (
-            <>
-              <h1>Can't check your account</h1>
-              <p className="gate__note">{gate.message}</p>
-              <div className="gate__row">
-                <button type="button" className="btn btn--primary" onClick={onCheck}>
-                  Try again
-                </button>
-                <button type="button" className="btn" onClick={onSignOut}>
-                  Sign out
-                </button>
-              </div>
-            </>
-          )}
-          {gate.s === 'in' && gate.access.state === 'pending' && (
-            <>
-              <h1>Waiting for approval</h1>
-              <p className="gate__note">
-                Thanks{gate.access.name ? `, ${gate.access.name}` : ''}! Your account ({gate.access.email}) has been sent to the Lumora team. Lumora opens as
-                soon as they approve it; you can leave this window open.
-              </p>
-              <div className="gate__row">
-                <button type="button" className="btn btn--primary" onClick={onCheck}>
-                  Check again
-                </button>
-                <button type="button" className="btn" onClick={onSignOut}>
-                  Sign out
-                </button>
-              </div>
-            </>
-          )}
-          {gate.s === 'in' && gate.access.state === 'blocked' && (
-            <>
-              <h1>This account can't use Lumora</h1>
-              <p className="gate__note">The Lumora team has turned off access for {gate.access.email}. If you think this is a mistake, contact them.</p>
-              <div className="gate__row">
-                <button type="button" className="btn" onClick={onSignOut}>
-                  Sign out
-                </button>
-              </div>
-            </>
-          )}
+        <div className="gate__brand">
+          <img src="./brand/lumora-logo.svg" alt="Lumora" />
         </div>
+        {gate.s === 'checking' && <p className="gate__note">Checking your account…</p>}
+        {gate.s === 'out' && <SignIn />}
+        {gate.s === 'error' && (
+          <>
+            <h1>Can't check your account</h1>
+            <p className="gate__note">{gate.message}</p>
+            <div className="gate__row">
+              <button type="button" className="btn btn--primary" onClick={onCheck}>
+                Try again
+              </button>
+              <button type="button" className="btn" onClick={onSignOut}>
+                Sign out
+              </button>
+            </div>
+          </>
+        )}
+        {gate.s === 'in' && gate.access.state === 'pending' && (
+          <>
+            <h1>Waiting for approval</h1>
+            <p className="gate__note">
+              Thanks{gate.access.name ? `, ${gate.access.name}` : ''}! Your account ({gate.access.email}) has been sent to the Lumora team. Lumora opens as soon
+              as they approve it; you can leave this window open.
+            </p>
+            <div className="gate__row">
+              <button type="button" className="btn btn--primary" onClick={onCheck}>
+                Check again
+              </button>
+              <button type="button" className="btn" onClick={onSignOut}>
+                Sign out
+              </button>
+            </div>
+          </>
+        )}
+        {gate.s === 'in' && gate.access.state === 'blocked' && (
+          <>
+            <h1>This account can't use Lumora</h1>
+            <p className="gate__note">The Lumora team has turned off access for {gate.access.email}. If you think this is a mistake, contact them.</p>
+            <div className="gate__row">
+              <button type="button" className="btn" onClick={onSignOut}>
+                Sign out
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
