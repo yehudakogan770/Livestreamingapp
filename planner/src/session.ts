@@ -7,6 +7,7 @@ import { accessFrom, mayUse, type Access, type Profile } from '../../app/src/aut
 import { AUTH_KEY, AUTH_URL } from '../../app/src/auth/config';
 import { aalOf } from '../../app/src/auth/mfa';
 import { MIN_PASSWORD, weakPassword } from '../../app/src/auth/password';
+import { clearCache } from './offlineCache';
 
 let client: SupabaseClient | null = null;
 export function db(): SupabaseClient {
@@ -42,6 +43,7 @@ export async function whoAmI(): Promise<Who> {
     await db()
       .auth.signOut({ scope: 'local' })
       .catch(() => {});
+    clearCache();
     return { s: 'out' };
   }
   const { data: p, error } = await db().from('profiles').select('*').eq('id', session.user.id).single<Profile>();
@@ -84,11 +86,14 @@ export async function signUp(name: string, email: string, password: string): Pro
 }
 
 export async function signOut(): Promise<void> {
+  // The copy of the plans kept on this device goes with the sign-in.
+  clearCache();
   await db().auth.signOut({ scope: 'local' });
 }
 
 export function onSignInChange(f: () => void): () => void {
   const { data } = db().auth.onAuthStateChange((event) => {
+    if (event === 'SIGNED_OUT') clearCache();
     // Outside the callback: Supabase calls made inside it wait on each other.
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED' || event === 'MFA_CHALLENGE_VERIFIED') setTimeout(f, 0);
   });

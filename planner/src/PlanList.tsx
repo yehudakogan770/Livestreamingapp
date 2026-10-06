@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react';
-import { ChevronRight, Plus } from 'lucide-react';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { ChevronRight, LoaderCircle, Plus } from 'lucide-react';
 import { Mark } from './Mark';
 import { isoDate, shortDate, showClock, type PlanSummary } from './model';
+import { PULL_AT, usePullToRefresh } from './touch';
 
 const ROLE_NAME = { owner: 'Owner', editor: 'Editor', viewer: 'Viewer' } as const;
 
@@ -64,17 +65,21 @@ export function PlanList({
   onOpen,
   onCreate,
   phone = false,
+  top,
 }: {
   plans: PlanSummary[] | null;
   error: string;
-  onRefresh: () => void;
+  onRefresh: () => unknown;
   email: string;
   canPlan: boolean;
   onOpen: (id: string) => void;
   onCreate: (name: string, date: string) => Promise<void>;
   phone?: boolean;
+  /** Above the list: the card about installing the app. */
+  top?: ReactNode;
 }) {
   const [name, setName] = useState('');
+  const pull = usePullToRefresh<HTMLElement>(onRefresh, phone);
   const [busy, setBusy] = useState(false);
   const [makeError, setMakeError] = useState('');
 
@@ -163,13 +168,25 @@ export function PlanList({
     );
 
   return (
-    <main className="page">
+    <main className="page page--pull" ref={pull.ref}>
+      {phone && (
+        <div className={`pull${pull.busy ? ' is-busy' : ''}`} style={{ height: pull.dist }} aria-hidden={!pull.busy} role="status">
+          <LoaderCircle
+            size={20}
+            strokeWidth={1.75}
+            className={pull.busy ? 'spin' : undefined}
+            style={pull.busy ? undefined : { transform: `rotate(${(pull.dist / PULL_AT) * 270}deg)`, opacity: Math.min(1, pull.dist / PULL_AT) }}
+            aria-label={pull.busy ? 'Refreshing' : undefined}
+          />
+        </div>
+      )}
       <PageHead
         title="Plans"
         sub={plans && plans.length > 0 ? `${plans.length} plan${plans.length === 1 ? '' : 's'} · ${upcoming.length} upcoming` : undefined}
         mode="list"
         phone={phone}
       />
+      {top}
       {canPlan && (
         <form className="row page__new" onSubmit={make}>
           <input

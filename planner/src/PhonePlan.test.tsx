@@ -48,6 +48,7 @@ const store: PlanStore = {
   error: '',
   gone: false,
   saving: 'saved',
+  fromCopy: false,
   editPlan: vi.fn(),
   editCue: vi.fn(),
   addCue: vi.fn(() => 'c'),

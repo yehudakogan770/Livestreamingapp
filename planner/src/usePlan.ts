@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as api from './api';
 import { blankCue, mergeCue, moveCue, positionAfter, removeCue, sortCues, type Plan, type PlanComment, type PlanCue, type Role } from './model';
+import { savedPlan, rememberPlan } from './offlineCache';
 import { db } from './session';
 
 const SAVE_AFTER_MS = 600;
@@ -22,6 +23,8 @@ export interface PlanStore {
   error: string;
   gone: boolean;
   saving: SaveState;
+  /** Shown from the copy kept on this device (no internet): read-only. */
+  fromCopy: boolean;
   editPlan: (change: api.PlanChange) => void;
   editCue: (id: string, change: Partial<PlanCue>) => void;
   addCue: (afterId: string | null) => string | null;
@@ -32,6 +35,11 @@ export interface PlanStore {
   uncomment: (id: string) => void;
   reloadRole: () => void;
 }
+
+/** A failure to reach the server at all (not a refusal). */
+export const unreachable = (e: unknown): boolean =>
+  (typeof navigator !== 'undefined' && navigator.onLine === false) ||
+  /cannot reach|fetch|network|load failed/i.test(e instanceof Error ? e.message : String(e));
 
 const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -47,6 +55,7 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
   const [error, setError] = useState('');
   const [gone, setGone] = useState(false);
   const [saving, setSaving] = useState<SaveState>('saved');
+  const [fromCopy, setFromCopy] = useState(false);
 
   const cuesRef = useRef<PlanCue[]>([]);
   cuesRef.current = cues;
@@ -73,6 +82,7 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
     setComments([]);
     setError('');
     setGone(false);
+    setFromCopy(false);
     Promise.all([api.loadPlan(db(), planId), api.loadComments(db(), planId), api.myRole(db(), planId)])
       .then(([loaded, cs, r]) => {
         if (!live) return;
@@ -81,7 +91,20 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
         setComments(cs);
         setRole(r);
       })
-      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        if (!live) return;
+        // No internet: the copy kept on this device, to read only.
+        const copy = unreachable(e) ? savedPlan(planId) : null;
+        if (copy?.plan) {
+          setPlan(copy.plan);
+          setCues(sortCues(copy.cues ?? []));
+          setComments(copy.comments ?? []);
+          setRole('viewer');
+          setFromCopy(true);
+          return;
+        }
+        setError(e instanceof Error ? e.message : String(e));
+      });
     const stop = api.watchPlan(db(), planId, me, {
       cue: (c) => setCues((list) => sortCues(mergeCue(list, c, new Set(dirty.current.keys())))),
       cueGone: (id) => {
@@ -106,6 +129,13 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
       stop();
     };
   }, [planId, me, reloadRole]);
+
+  // Keep a copy on this device of what is on screen, for when there is no internet.
+  useEffect(() => {
+    if (!plan || fromCopy || role === null) return;
+    const t = setTimeout(() => rememberPlan(planId, { plan, cues, comments, role }), 800);
+    return () => clearTimeout(t);
+  }, [planId, plan, cues, comments, role, fromCopy]);
 
   const flush = useCallback(async () => {
     timer.current = null;
@@ -265,5 +295,24 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
     api.deleteComment(db(), id).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  return { plan, cues, comments, role, here, error, gone, saving, editPlan, editCue, addCue, duplicateCue, deleteCue, move, comment, uncomment, reloadRole };
+  return {
+    plan,
+    cues,
+    comments,
+    role,
+    here,
+    error,
+    gone,
+    saving,
+    fromCopy,
+    editPlan,
+    editCue,
+    addCue,
+    duplicateCue,
+    deleteCue,
+    move,
+    comment,
+    uncomment,
+    reloadRole,
+  };
 }

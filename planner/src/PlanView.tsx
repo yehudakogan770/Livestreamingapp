@@ -11,7 +11,7 @@ import { PrintSheet } from './PrintSheet';
 import { BlockEditor, ScheduleView } from './Schedule';
 import { db } from './session';
 import { ShareDialog } from './ShareDialog';
-import { usePhone, useReorder } from './touch';
+import { useBackToClose, usePhone, useReorder } from './touch';
 import { useBlocks } from './useBlocks';
 import { useChat } from './useChat';
 import { usePlan, type PlanStore } from './usePlan';
@@ -68,6 +68,7 @@ export function PlanView({
   const chatOpen = phone ? tab === 'chat' : panel === 'chat';
   const chat = useChat(planId, me, chatOpen);
   const blocks = useBlocks(planId);
+  useBackToClose(sharing, () => setSharing(false));
 
   useEffect(() => onUnread(chat.unread), [chat.unread, onUnread]);
   // Larger screens show the chat beside the plan, not as a page of its own.

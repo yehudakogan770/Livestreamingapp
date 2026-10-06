@@ -76,6 +76,7 @@ export function PhonePlan({
   const block = blocks.blocks.find((b) => b.id === blockSel) ?? null;
   useBackToClose(selected !== null, () => onSel(null));
   useBackToClose(block !== null, () => onBlockSel(null));
+  useBackToClose(menu, () => setMenu(false));
 
   // A cue just added or moved is scrolled into view when the sheet closes.
   const lastSel = useRef<string | null>(null);

@@ -4,7 +4,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import * as api from './api';
 import { addMessage, loadSeen, saveSeen, unreadCount, type Message } from './chatModel';
+import { rememberPlan, savedPlan } from './offlineCache';
 import { db } from './session';
+import { unreachable } from './usePlan';
 
 export interface ChatStore {
   messages: Message[];
@@ -35,8 +37,16 @@ export function useChat(planId: string, me: { id: string }, open: boolean): Chat
         if (!live) return;
         setMessages(list);
         setLoaded(true);
+        rememberPlan(planId, { messages: list.slice(-200) });
       })
-      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        if (!live) return;
+        const copy = unreachable(e) ? savedPlan(planId)?.messages : undefined;
+        if (copy) {
+          setMessages(copy);
+          setLoaded(true);
+        } else setError(e instanceof Error ? e.message : String(e));
+      });
     const stop = api.watchChat(db(), planId, {
       message: (m) => setMessages((list) => addMessage(list, m)),
       gone: (id) => setMessages((list) => list.filter((m) => m.id !== id)),

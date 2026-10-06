@@ -139,3 +139,76 @@ export function useBackToClose(open: boolean, close: () => void): void {
     };
   }, [open]);
 }
+
+/** How far the list follows the finger, and how far it must be pulled to refresh. */
+export const PULL_MAX = 88;
+export const PULL_AT = 64;
+
+/** Pulled `dy` pixels down from the top: how far the list moves (it resists, then stops). */
+export function pullDistance(dy: number): number {
+  return dy <= 0 ? 0 : Math.min(PULL_MAX, Math.round(dy * 0.5));
+}
+
+/**
+ * Pull down from the top of a scrolling page to refresh it (touch only). The
+ * page's element gets `ref`; `dist` is how far it is pulled now, and
+ * `busy` is true while refreshing.
+ */
+export function usePullToRefresh<T extends HTMLElement>(refresh: () => unknown, enabled: boolean) {
+  const ref = useRef<T | null>(null);
+  const [dist, setDist] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !enabled) return;
+    let start: number | null = null;
+    let now = 0;
+    let running = false;
+    const down = (e: TouchEvent) => {
+      start = !running && el.scrollTop <= 0 && e.touches.length === 1 ? e.touches[0]!.clientY : null;
+    };
+    const move = (e: TouchEvent) => {
+      if (start === null) return;
+      now = pullDistance(e.touches[0]!.clientY - start);
+      if (now > 0 && el.scrollTop <= 0) {
+        // The page itself does not move or bounce while pulled.
+        if (e.cancelable) e.preventDefault();
+        setDist(now);
+      } else if (now <= 0) setDist(0);
+    };
+    const up = () => {
+      if (start === null) return;
+      start = null;
+      if (now < PULL_AT) {
+        now = 0;
+        setDist(0);
+        return;
+      }
+      now = 0;
+      running = true;
+      setBusy(true);
+      setDist(PULL_AT * 0.75);
+      Promise.resolve()
+        .then(() => refreshRef.current())
+        .catch(() => {})
+        .finally(() => {
+          running = false;
+          setBusy(false);
+          setDist(0);
+        });
+    };
+    el.addEventListener('touchstart', down, { passive: true });
+    el.addEventListener('touchmove', move, { passive: false });
+    el.addEventListener('touchend', up);
+    el.addEventListener('touchcancel', up);
+    return () => {
+      el.removeEventListener('touchstart', down);
+      el.removeEventListener('touchmove', move);
+      el.removeEventListener('touchend', up);
+      el.removeEventListener('touchcancel', up);
+    };
+  }, [enabled]);
+  return { ref, dist, busy };
+}

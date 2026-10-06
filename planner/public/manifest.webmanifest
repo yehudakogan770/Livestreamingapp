@@ -20,6 +20,29 @@
     { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
+  "screenshots": [
+    {
+      "src": "screenshots/phone-plans.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your plans, with the date, start time and venue of each event"
+    },
+    {
+      "src": "screenshots/phone-plan.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "A run of show on the phone, with what is on now"
+    },
+    {
+      "src": "screenshots/desktop-plan.png",
+      "sizes": "1440x900",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "The cue sheet, the cue being edited and the team chat"
+    }
+  ],
   "shortcuts": [
     { "name": "Plans", "url": "./#/", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
     { "name": "Calendar", "url": "./#/calendar", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }

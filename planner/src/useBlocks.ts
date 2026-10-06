@@ -4,7 +4,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as api from './api';
 import { blankBlock, mergeBlock, sortBlocks, type Block } from './blocks';
+import { rememberPlan, savedPlan } from './offlineCache';
 import { db } from './session';
+import { unreachable } from './usePlan';
 
 const SAVE_AFTER_MS = 600;
 const RETRY_MS = 5000;
@@ -35,8 +37,10 @@ export function useBlocks(planId: string): BlockStore {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busy = useRef(false);
 
+  const fromCopy = useRef(false);
   useEffect(() => {
     let live = true;
+    fromCopy.current = false;
     setBlocks([]);
     setLoaded(false);
     setError('');
@@ -47,7 +51,15 @@ export function useBlocks(planId: string): BlockStore {
         setBlocks(sortBlocks(list));
         setLoaded(true);
       })
-      .catch((e: unknown) => live && setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        if (!live) return;
+        const copy = unreachable(e) ? savedPlan(planId)?.blocks : undefined;
+        if (copy) {
+          setBlocks(sortBlocks(copy));
+          setLoaded(true);
+          fromCopy.current = true;
+        } else setError(e instanceof Error ? e.message : String(e));
+      });
     const stop = api.watchBlocks(db(), planId, {
       block: (b) => setBlocks((list) => sortBlocks(mergeBlock(list, b, new Set(dirty.current.keys())))),
       gone: (id) => {
@@ -60,6 +72,13 @@ export function useBlocks(planId: string): BlockStore {
       stop();
     };
   }, [planId]);
+
+  // A copy on this device, for when there is no internet.
+  useEffect(() => {
+    if (!loaded || fromCopy.current) return;
+    const t = setTimeout(() => rememberPlan(planId, { blocks }), 800);
+    return () => clearTimeout(t);
+  }, [planId, blocks, loaded]);
 
   const flush = useCallback(async () => {
     timer.current = null;
