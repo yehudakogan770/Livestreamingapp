@@ -13,13 +13,18 @@ import './reports.css';
 
 // ---- "Report a problem" opens from any menu ----
 let dialogOpen = false;
+/** Words to start the report with (the system check's details), used once. */
+let prefill = '';
 const openListeners = new Set<() => void>();
 function setDialog(v: boolean) {
   dialogOpen = v;
   for (const l of openListeners) l();
 }
-/** Open the "Report a problem" window. */
-export const openProblemReport = (): void => setDialog(true);
+/** Open the "Report a problem" window (optionally with words already in it; menus pass a click, which is ignored). */
+export const openProblemReport = (text?: unknown): void => {
+  prefill = typeof text === 'string' ? text : '';
+  setDialog(true);
+};
 const subscribeOpen = (l: () => void) => {
   openListeners.add(l);
   return () => openListeners.delete(l);
@@ -135,7 +140,11 @@ async function grabWindow(): Promise<string> {
 }
 
 export function ReportDialog({ product, onClose }: { product: string; onClose: () => void }) {
-  const [text, setText] = useState('');
+  const [text, setText] = useState(() => {
+    const t = prefill;
+    prefill = '';
+    return t;
+  });
   const [shot, setShot] = useState<string | null>(null);
   const [logs, setLogs] = useState(true);
   const [busy, setBusy] = useState(false);

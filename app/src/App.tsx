@@ -39,6 +39,7 @@ import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
 import { StageContext } from './engine/CountdownContext';
 import { openProblemReport, ReportingHost, useErrorReports } from './reports/ReportUI';
+import { openSystemCheck, SystemCheckHost } from './syscheck/SystemCheck';
 import './App.css';
 
 export function App() {
@@ -56,6 +57,7 @@ function Control() {
         <ControlApp />
       </ProblemsProvider>
       <ReportingHost product="Lumora" />
+      <SystemCheckHost app="lumora" />
     </Gate>
   );
 }
@@ -336,6 +338,7 @@ function ControlApp() {
       { label: 'How to use Lumora', onClick: () => sendCommand({ type: 'help' }) },
       { label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) },
       { label: 'Check for updates…', onClick: checkForUpdates },
+      { label: 'Check this computer…', hint: 'Can this computer handle a live event?', onClick: openSystemCheck },
       null,
       { label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport },
     ];

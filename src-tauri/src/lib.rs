@@ -18,6 +18,7 @@ mod remote;
 mod selftest;
 mod store;
 mod streams;
+mod syscheck;
 mod tunnel;
 
 /// The same browser settings for every Lumora window (Windows needs them to
@@ -998,6 +999,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,
             selftest::selftest_temp_folder,

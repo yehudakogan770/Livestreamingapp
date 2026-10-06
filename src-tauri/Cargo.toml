@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 lumora-engine = { path = "../crates/engine" }
 lumora-crash = { path = "../crates/crash" }
 lumora-selftest = { path = "../crates/selftest" }
+lumora-syscheck = { path = "../crates/syscheck" }
 tauri = { version = "2", features = ["protocol-asset"] }
 serde.workspace = true
 serde_json.workspace = true

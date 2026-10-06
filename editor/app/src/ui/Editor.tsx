@@ -58,6 +58,7 @@ import { CommentsPanel, ConflictDialog, HereChips, LockBanner } from '../collab/
 import { HistoryDialog, ShareDialog } from '../collab/CollabDialogs';
 import { nativePlayback } from '../render/native/client';
 import { openProblemReport, useErrorReports } from '../../../../app/src/reports/ReportUI';
+import { openSystemCheck } from '../../../../app/src/syscheck/SystemCheck';
 
 /** The project file's text: without this computer's missing marks, with the playhead where it is. */
 function projectText(p: Project, playhead: number): string {
@@ -482,6 +483,7 @@ export function Editor({
       'Help',
       () => [
         { label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) },
+        { label: 'Check this computer…', run: openSystemCheck },
         'sep',
         { label: 'Report a problem…', run: openProblemReport },
         { label: 'Send anonymous error reports', checked: reportsOn, run: toggleReports },
