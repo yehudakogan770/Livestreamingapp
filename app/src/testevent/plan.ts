@@ -191,6 +191,7 @@ export type StepKind =
   | 'pesukim'
   | 'preset'
   | 'blank'
+  | 'backup'
   | 'replay'
   | 'background'
   | 'autoframe'
@@ -225,6 +226,7 @@ const LABELS: Record<StepKind, string> = {
   pesukim: '12 Pesukim',
   preset: 'Presets',
   blank: 'Blank and fade to black',
+  backup: 'Backup lineup (a camera lost)',
   replay: 'Instant replay',
   background: 'Background removal',
   autoframe: 'Auto-framing',
@@ -255,6 +257,7 @@ export function showRound(opts: TestOptions, env: TestEnv, inputs: PlannedInput[
     ['pesukim', 4, has('pesukim')],
     ['preset', 4, true],
     ['blank', 6, true],
+    ['backup', 12, pictureInputs(inputs).length >= 2],
     ['replay', 8, true],
     ['background', 12, camera],
     ['autoframe', 10, camera],

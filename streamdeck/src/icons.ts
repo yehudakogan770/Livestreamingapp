@@ -34,6 +34,9 @@ export const ICONS = {
     '<rect x="2.5" y="4" width="8.5" height="7" rx="1"/><rect x="13" y="13" width="8.5" height="7" rx="1"/><path d="M15 5h3.5a1.5 1.5 0 0 1 1.5 1.5V10"/><path d="m18 8 2 2 2-2"/><path d="M9 19H5.5A1.5 1.5 0 0 1 4 17.5V14"/><path d="m2 16 2-2 2 2"/>',
   // A clipboard with a tick: a practice run.
   rehearsal: '<rect x="5" y="4" width="14" height="17" rx="1.5"/><path d="M9 4V2.8h6V4"/><path d="m8.5 13 2.5 2.5 4.5-5"/>',
+  // A camera with a second one behind it: a backup lineup.
+  backup:
+    '<rect x="2.5" y="9" width="11" height="9" rx="1.5"/><path d="m13.5 12 4-2.5v8l-4-2.5"/><path d="M6 6h9.5A1.5 1.5 0 0 1 17 7.5"/><path d="M19.5 7.5 21.5 6v6"/>',
   // A warning triangle (Lumora can't be reached).
   warning: '<path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.3v.1"/>',
   // Lumora's mark (docs/img/lumora-mark.svg) solid in one color: three blades and the on-air light.

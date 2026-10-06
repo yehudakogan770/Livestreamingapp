@@ -1,6 +1,7 @@
 import type { Ptz } from './types/Ptz';
 import { defaultPlace } from './zmanim';
 import { defaultBrand } from './brand';
+import { defaultBackup } from './backup';
 // Talks to the Lumora engine.
 //
 // Inside the Lumora app this goes through Tauri to the Rust engine. When the
@@ -387,6 +388,7 @@ export function emptyShow(): Show {
       brand: defaultBrand(),
       wifi: { name: '', password: '', qr: '', show: false },
       place: defaultPlace(),
+      backup: defaultBackup(),
     },
     presets: [],
     activePreset: null,
@@ -416,6 +418,7 @@ export function emptyShow(): Show {
     autoSwitch: { on: false, cameras: [], minS: 6, maxS: 10, random: false, mix: false, nextAt: 0, seed: 1 },
     captions: { on: false, listen: null, inPicture: false, place: 'bottom', size: 1, lines: 2, language: 'en', best: false },
     speakers: { on: false, people: [], channel: 3, titleSource: null, holdS: 6, againMin: 3 },
+    noSignal: [],
     qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
     settings: {

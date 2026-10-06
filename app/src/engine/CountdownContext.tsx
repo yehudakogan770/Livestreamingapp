@@ -17,6 +17,8 @@ export interface Stage {
   data?: Record<string, string>;
   /** What each screen shows (a countdown fading off air hides its logo). */
   screens?: Show['screens'];
+  /** Inputs whose picture has stopped (shown as the safe screen to the audience). */
+  noSignal?: string[];
 }
 
 export const StageContext = createContext<Stage | null>(null);

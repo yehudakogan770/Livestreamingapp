@@ -1,4 +1,5 @@
-import { SlidersHorizontal, X } from 'lucide-react';
+import { ListOrdered, SlidersHorizontal, X } from 'lucide-react';
+import { sendCommand } from './commands';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Adjust } from '../engine/types/Adjust';
@@ -373,6 +374,22 @@ export function InputSettings({
                         onClick={() => act({ type: 'updateSource', id: source.id, patch: { videoDelayMs: 0 } })}
                       >
                         ↺
+                      </button>
+                    </div>
+                  )}
+                  {source.kind.type === 'camera' && (
+                    <div className="is__row" title="What goes on air by itself if this camera loses its picture">
+                      <span>If it goes out</span>
+                      <button
+                        type="button"
+                        className="btn is__wide"
+                        onClick={() => {
+                          onClose();
+                          sendCommand({ type: 'backup', input: source.id });
+                        }}
+                      >
+                        <ListOrdered aria-hidden="true" />
+                        Backup lineup…
                       </button>
                     </div>
                   )}

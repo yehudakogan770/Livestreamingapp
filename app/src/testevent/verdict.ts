@@ -282,6 +282,8 @@ const STEP_WHERE: Partial<Record<Phase, string>> = {
   pesukim: '12 Pesukim: crates/engine/src/pesukim.rs and app/src/components/PesukimView.tsx.',
   preset: 'Presets: crates/engine/src/presets.rs.',
   blank: 'Blank and fade to black: crates/engine/src/screen.rs (set_blank, fade_to_black).',
+  backup:
+    'The backup lineup: app/src/engine/backup.ts (Failover), app/src/engine/inputHealth.ts (what has a picture) and app/src/views/BackupLineup.tsx (BackupWatcher).',
   replay: WHERE.replay,
   background: WHERE.vision,
   autoframe: WHERE.vision,
@@ -301,6 +303,7 @@ const FEATURE_NAMES: Partial<Record<Phase, string>> = {
   captions: 'Live captions',
   replay: 'Instant replay',
   outputs: 'The output screens',
+  backup: 'The backup lineup',
 };
 
 /** Steps the show can't do without: if one fails, a real event would go wrong. */

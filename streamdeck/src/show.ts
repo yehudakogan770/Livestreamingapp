@@ -73,6 +73,8 @@ export interface DeckState {
   presets: DeckPreset[];
   activePreset: string | null;
   panic: boolean;
+  /** The backup lineup (automatic failover) is on. */
+  backup: boolean;
   countdowns: DeckCountdown[];
   run: DeckRun;
   app: AppState;
@@ -132,6 +134,8 @@ export function deckState(show: unknown, app: AppState = NO_APP): DeckState {
     presets,
     activePreset: str(s.activePreset),
     panic: s.panic === true,
+    // On unless the event turned it off (older Lumora: no lineup at all).
+    backup: obj(s.event).backup !== undefined && obj(obj(s.event).backup).on !== false,
     countdowns,
     run: { cues: cues.length, current, running: run.running === true, next: nextCue ? (str(nextCue.name) ?? null) : null },
     app,

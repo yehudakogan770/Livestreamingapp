@@ -27,6 +27,7 @@ pub fn to_saved(show: &Show) -> Show {
     s.panic_changed_at = 0;
     s.audio.solo = None;
     s.running.clear();
+    s.no_signal.clear();
     for id in ScreenId::ALL {
         let sc = s.screens.get_mut(id);
         sc.previous = None;
@@ -106,6 +107,12 @@ fn repair_audience(kind: &mut SourceKind) {
 fn repair_cameras(s: &mut Show) {
     let sources = s.sources.clone();
     s.auto_switch.repair(&sources);
+    s.event.backup = std::mem::take(&mut s.event.backup).cleaned();
+    s.event
+        .backup
+        .lineup
+        .retain(|id| sources.iter().any(|x| &x.id == id));
+    s.no_signal.clear();
     for src in &mut s.sources {
         if let Some(c) = &mut src.camera {
             c.repair();

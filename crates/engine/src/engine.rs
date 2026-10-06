@@ -748,6 +748,8 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             let index = index_of(s, &id)?;
             s.sources.remove(index);
             s.auto_switch.cameras.retain(|x| x != &id);
+            s.event.backup.lineup.retain(|x| x != &id);
+            s.no_signal.retain(|x| x != &id);
             if s.auto_switch.cameras.len() < 2 {
                 s.auto_switch.on = false;
             }
@@ -1557,6 +1559,20 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             if let Some(p) = patch.place {
                 ev.place = p.cleaned();
             }
+            if let Some(b) = patch.backup {
+                ev.backup = b.cleaned();
+            }
+            Ok(())
+        }
+        Action::SetBackupOn { value } => {
+            s.event.backup.on = value;
+            Ok(())
+        }
+        Action::SetNoSignal { ids } => {
+            let mut ids: Vec<SourceId> = ids.into_iter().filter(|id| s.has_source(id)).collect();
+            ids.sort();
+            ids.dedup();
+            s.no_signal = ids;
             Ok(())
         }
         Action::UpdateMonitor { patch } => {

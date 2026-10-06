@@ -12,6 +12,7 @@ describe('the manual', () => {
     expect(searchManual('pesukim')[0]!.id).toBe('pesukim');
     expect(searchManual('zoom focus').map((t) => t.id)).toContain('cameras');
     expect(searchManual('nothing-like-this')).toHaveLength(0);
+    expect(searchManual('failover')[0]!.id).toBe('backup');
   });
 
   it('leaves out the Jewish event tools unless they are on', () => {

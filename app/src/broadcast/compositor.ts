@@ -1721,6 +1721,8 @@ export class ProgramCompositor {
   private drawSource(src: Source, event: EventInfo, now: number, w: number, h: number) {
     const ctx = this.ctx;
     const k = src.kind;
+    // The control window sees no picture from it (the backup lineup): the safe screen, never a frozen picture.
+    if (this.show?.noSignal?.includes(src.id)) return this.safeScreen(event, 'failure', w, h);
     switch (k.type) {
       case 'color':
         ctx.fillStyle = k.color;

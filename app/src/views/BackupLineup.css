@@ -1,0 +1,213 @@
+/* The backup lineup: its notices at the top of the control window and its settings. */
+
+.bnotes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px 0;
+}
+.bnote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 4px 6px 4px 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--warning);
+  background: var(--raised);
+  color: var(--text);
+  font-size: 13px;
+}
+.bnote > svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--warning);
+}
+.bnote--allDown {
+  border-left-color: var(--danger);
+}
+.bnote--allDown > svg {
+  color: var(--danger);
+}
+.bnote--back,
+.bnote--switchedBack {
+  border-left-color: var(--preview-bright);
+}
+.bnote--back > svg,
+.bnote--switchedBack > svg {
+  color: var(--preview-bright);
+}
+.bnote__text {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+.bnote__time {
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+/* "No signal" on an input's tile and on the monitors. */
+.tile__nosignal {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--warning);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+.tile__nosignal svg {
+  width: 12px;
+  height: 12px;
+}
+.mon__nosignal {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--warning);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+}
+.mon__nosignal svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* The dialog. */
+.bkp {
+  width: min(600px, calc(100vw - 48px));
+}
+.bkp__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px 16px;
+  overflow: auto;
+}
+.bkp__main {
+  font-weight: 600;
+}
+.bkp__modes,
+.bkp__screens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.bkp__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.bkp__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 4px 0 8px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--well);
+  font-size: 13px;
+}
+.bkp__item.is-focus {
+  border-color: var(--accent);
+}
+.bkp__item--last {
+  color: var(--text-dim);
+  background: transparent;
+  border-style: dashed;
+}
+.bkp__num {
+  width: 18px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 12px;
+  text-align: right;
+}
+.bkp__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bkp__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+}
+.bkp__tag svg {
+  width: 12px;
+  height: 12px;
+}
+.bkp__tag--air {
+  background: var(--program);
+  color: #fff;
+}
+.bkp__tag--down {
+  border: 1px solid var(--warning);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+.bkp__btns {
+  display: inline-flex;
+}
+.bkp__add {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.bkp__add select {
+  flex: 1;
+}
+.bkp__focus {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+.bkp__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.bkp__row .field {
+  flex: 1;
+  min-width: 200px;
+}
+.bkp__try {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}

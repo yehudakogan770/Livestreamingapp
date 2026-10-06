@@ -134,6 +134,7 @@ const HINTS = {
   nextcue: 'Runs the next cue of the run of show; the key shows its name.',
   screen: 'Switches which screen the other keys work on: Live or Back.',
   rehearsal: 'Choose rehearsal before going live: everything runs as if live, with nothing sent anywhere.',
+  backup: 'Turns the backup lineup on or off: if the camera on air goes out, the next one goes on air by itself. Lit while it is on.',
 };
 
 const STATUS = {

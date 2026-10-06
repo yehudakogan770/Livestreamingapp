@@ -187,6 +187,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::Seek { .. }
             | Action::SetMasterMuted { .. }
             | Action::SetBackFollowsLive { .. }
+            | Action::SetBackupOn { .. }
             | Action::PickPreset { .. }
             | Action::NextPreset
             | Action::PreviousPreset

@@ -256,3 +256,7 @@
   height: auto;
   border-radius: var(--radius);
 }
+.is__row .is__wide {
+  grid-column: 2 / -1;
+  justify-self: start;
+}

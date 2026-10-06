@@ -37,6 +37,7 @@ import type { Logo3d } from '../engine/types/Logo3d';
 import { defaultVisuals } from '../engine/visuals';
 import { acquireCamera, cameraProblem, fullResolution, rememberCameraName, releaseCamera, setCameraValues, type CameraValues } from '../engine/cameras';
 import { FrameDelay } from '../engine/frameDelay';
+import { inputHealth, watchFrames } from '../engine/inputHealth';
 
 // ---- views ----
 
@@ -74,8 +75,19 @@ export function SourceView(props: SourceViewProps) {
   return (
     <Who.Provider value={report ? { id: source.id, name: source.name, kind: source.kind.type } : null}>
       <SourceBody {...props} />
+      {props.audience && <NoSignalCover id={source.id} />}
     </Who.Provider>
   );
+}
+
+/**
+ * An input the control window sees has lost its picture: the audience sees the
+ * safe screen (the logo) instead of a frozen picture. The input stays open
+ * underneath, so it shows again the moment its picture returns.
+ */
+function NoSignalCover({ id }: { id: string }) {
+  const stage = useStage();
+  return stage?.noSignal?.includes(id) ? <SafeScreenView /> : null;
 }
 
 const Who = createContext<{ id: string; name: string; kind: Source['kind']['type'] } | null>(null);
@@ -597,6 +609,14 @@ function CameraView({
       releaseCamera(deviceId, opening);
     };
   }, [deviceId, attempt]);
+  // The control window counts the camera's frames, so a picture that stops is noticed (the backup lineup).
+  const who = useContext(Who);
+  const counting = !audience && who ? who.id : null;
+  useEffect(() => {
+    const v = ref.current;
+    if (!counting || failed || !v) return;
+    return watchFrames(counting, v);
+  }, [counting, failed]);
   if (failed) return <Missing text={failed} audience={audience} />;
   // One video element either way, so turning the delay on or off keeps the camera.
   return (
@@ -672,6 +692,14 @@ const FIX: Partial<Record<Source['kind']['type'], string>> = {
 function Missing({ text, audience }: { text: string; audience: boolean }) {
   const who = useContext(Who);
   const stage = useStage();
+  // The backup lineup hears of it too (control window only).
+  const reporter = useRef(Symbol('view')).current;
+  const failedId = who && !audience ? who.id : null;
+  useEffect(() => {
+    if (!failedId) return;
+    inputHealth.report(failedId, reporter, text);
+    return () => inputHealth.report(failedId, reporter, null);
+  }, [failedId, reporter, text]);
   // Tell the operator straight away (control window only; outputs stay quiet).
   useReportProblem(
     who && !audience

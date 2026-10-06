@@ -190,6 +190,8 @@ export type Action =
   | { type: 'runSteps'; name: string; steps: Array<Step> }
   | { type: 'stopSteps' }
   | { type: 'updateEvent'; patch: EventPatch }
+  | { type: 'setBackupOn'; value: boolean }
+  | { type: 'setNoSignal'; ids: Array<SourceId> }
   | { type: 'updatePrompter'; on: boolean; script: string; size: number; mirror: boolean }
   | { type: 'prompterRun'; run: boolean }
   | { type: 'prompterJump'; pos: number }

@@ -38,6 +38,9 @@ pub struct EventInfo {
     pub wifi: GuestWifi,
     /// Where the event is (Hebrew date, zmanim, candle lighting).
     pub place: crate::zmanim::Place,
+    /// The backup lineup: what goes on air by itself when the input on air
+    /// loses its picture.
+    pub backup: Backup,
 }
 
 impl Default for EventInfo {
@@ -53,7 +56,69 @@ impl Default for EventInfo {
             brand: Brand::default(),
             wifi: GuestWifi::default(),
             place: crate::zmanim::Place::default(),
+            backup: Backup::default(),
         }
+    }
+}
+
+/// Most inputs a backup lineup holds.
+pub const MAX_BACKUP_LINEUP: usize = 32;
+
+/// The backup lineup (automatic failover): when the input on air loses its
+/// picture (a camera unplugged, a stream lost), the next input in the lineup
+/// that still has a picture goes on air by itself. The control window sees
+/// the picture stop and makes the switch; the engine only keeps the plan.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct Backup {
+    /// On (the default).
+    pub on: bool,
+    /// The inputs in order. Empty: automatic (the cameras in input order,
+    /// then the logo).
+    pub lineup: Vec<crate::model::SourceId>,
+    /// How long without a new picture before an input counts as lost, ms.
+    pub lost_after_ms: u32,
+    /// A quick mix instead of a cut, ms (0: a cut).
+    pub fade_ms: u32,
+    /// Go back to the input by itself when its picture returns (off: the
+    /// operator is asked).
+    pub switch_back: bool,
+    /// The screens it looks after.
+    pub screens: Vec<crate::model::ScreenId>,
+}
+
+impl Default for Backup {
+    fn default() -> Self {
+        Backup {
+            on: true,
+            lineup: Vec::new(),
+            lost_after_ms: 1500,
+            fade_ms: 0,
+            switch_back: false,
+            screens: vec![crate::model::ScreenId::Live, crate::model::ScreenId::Back],
+        }
+    }
+}
+
+impl Backup {
+    /// Within limits: no repeats, no empty ids, sensible times.
+    #[must_use]
+    pub fn cleaned(mut self) -> Self {
+        let mut seen = std::collections::HashSet::new();
+        self.lineup
+            .retain(|id| !id.as_str().trim().is_empty() && seen.insert(id.clone()));
+        self.lineup.truncate(MAX_BACKUP_LINEUP);
+        self.lost_after_ms = self.lost_after_ms.clamp(500, 10_000);
+        self.fade_ms = self.fade_ms.min(2000);
+        let mut screens = Vec::new();
+        for sc in self.screens {
+            if !screens.contains(&sc) {
+                screens.push(sc);
+            }
+        }
+        self.screens = screens;
+        self
     }
 }
 
@@ -307,4 +372,8 @@ pub struct EventPatch {
     #[serde(default)]
     #[ts(optional)]
     pub place: Option<crate::zmanim::Place>,
+    /// The whole backup lineup.
+    #[serde(default)]
+    #[ts(optional)]
+    pub backup: Option<Backup>,
 }

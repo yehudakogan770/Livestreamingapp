@@ -22,6 +22,7 @@ export const ICON_OF: Record<Kind, IconName> = {
   nextcue: 'cue',
   screen: 'screen',
   rehearsal: 'rehearsal',
+  backup: 'backup',
 };
 
 /** Lumora's mark in its own colors (docs/img/lumora-mark.svg), on a 48 × 48 grid. */

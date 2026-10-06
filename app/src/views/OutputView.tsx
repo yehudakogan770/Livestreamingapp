@@ -63,6 +63,7 @@ export function OutputView({ screen }: { screen: ScreenId }) {
                   visuals: show.visuals,
                   data: dataValues(show.data),
                   screens: show.screens,
+                  noSignal: show.noSignal,
                 }
               : null
           }

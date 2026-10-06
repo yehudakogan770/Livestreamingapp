@@ -1,4 +1,5 @@
-import { Ellipsis, Music, Pause, Play, Plus, TriangleAlert, X } from 'lucide-react';
+import { Ellipsis, Music, Pause, Play, Plus, TriangleAlert, VideoOff, X } from 'lucide-react';
+import { LIVE_KINDS } from '../engine/backup';
 import { FundraiserCard, RaffleCard, WallCard } from './AudienceCards';
 import { AuctionCard } from './AuctionCard';
 import { ZmanimDialog } from './ZmanimDialog';
@@ -92,6 +93,7 @@ export function InputGrid({
 }) {
   const sc = show.screens[screen];
   const problemIds = new Set(useProblems().flatMap((p) => (p.sourceId ? [p.sourceId] : [])));
+  const noSignal = new Set(show.noSignal ?? []);
   const [menu, setMenu] = useState<string | null>(null);
   // An input waiting for a second click to be removed.
   const [removing, setRemoving] = useState<string | null>(null);
@@ -187,6 +189,12 @@ export function InputGrid({
                   </span>
                 )}
               </span>
+              {noSignal.has(src.id) && (
+                <span className="tile__nosignal" title="No picture is coming from this input">
+                  <VideoOff aria-hidden="true" />
+                  No signal
+                </span>
+              )}
               {problemIds.has(src.id) && (
                 <span className="tile__warn" title="Something is wrong with this input: see the problem light">
                   <TriangleAlert aria-label="Problem" />
@@ -583,6 +591,19 @@ function TileMenu({
               }}
             >
               {source.ptz ? 'Move the camera (PTZ)…' : 'PTZ camera control…'}
+            </button>
+          )}
+          {LIVE_KINDS.has(k) && (
+            <button
+              type="button"
+              className="btn menu__wide"
+              title="What goes on air by itself if this input loses its picture"
+              onClick={() => {
+                onClose();
+                sendCommand({ type: 'backup', input: source.id });
+              }}
+            >
+              Backup lineup…
             </button>
           )}
           {k === 'video' && (
