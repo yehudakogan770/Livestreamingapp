@@ -109,13 +109,15 @@ export interface InstallEnv {
   ios: boolean;
   /** Chrome offered to install it. */
   canPrompt: boolean;
+  /** A phone or tablet. Computers are never asked to install it. */
+  mobile: boolean;
   /** The card was closed before. */
   dismissed: boolean;
 }
 
 /** Which install card the plans page shows, if any. */
 export function installCard(env: InstallEnv): 'ios' | 'prompt' | null {
-  if (env.standalone || env.dismissed) return null;
+  if (env.standalone || env.dismissed || !env.mobile) return null;
   if (env.canPrompt) return 'prompt';
   if (env.ios) return 'ios';
   return null;
@@ -130,6 +132,16 @@ export function isStandalone(): boolean {
   try {
     if ((navigator as Navigator & { standalone?: boolean }).standalone === true) return true;
     return typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches;
+  } catch {
+    return false;
+  }
+}
+
+/** A phone or tablet: iPhone/iPad, Android, or a touch-first screen. */
+export function isMobile(ua = navigator.userAgent): boolean {
+  if (isIos() || /Android|Mobi/i.test(ua)) return true;
+  try {
+    return typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches && !matchMedia('(pointer: fine)').matches;
   } catch {
     return false;
   }
@@ -170,7 +182,7 @@ export function useInstall(): { card: 'ios' | 'prompt' | null; offer: 'ios' | 'p
     m.addEventListener?.('change', f);
     return () => m.removeEventListener?.('change', f);
   }, []);
-  const env = { standalone: standalone || installed, ios: isIos(), canPrompt: prompt !== null };
+  const env = { standalone: standalone || installed, ios: isIos(), canPrompt: prompt !== null, mobile: isMobile() };
   return {
     card: installCard({ ...env, dismissed }),
     offer: installOffer(env),

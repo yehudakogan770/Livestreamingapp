@@ -5,15 +5,20 @@ import { cardDismissed, dismissCard, installCard, installOffer, isIos } from './
 import { InstallCard } from './PwaBars';
 import { PULL_MAX, pullDistance } from './touch';
 
-const env = { standalone: false, ios: false, canPrompt: false, dismissed: false };
+const env = { standalone: false, ios: false, canPrompt: false, dismissed: false, mobile: true };
 
 describe('the install card', () => {
   it('offers Chrome’s install prompt when there is one', () => {
-    expect(installCard({ ...env, canPrompt: true })).toBe('prompt');
+    expect(installCard({ ...env, canPrompt: true, mobile: true })).toBe('prompt');
   });
 
   it('shows the Share steps on iPhone and iPad (Safari has no prompt)', () => {
     expect(installCard({ ...env, ios: true })).toBe('ios');
+  });
+
+  it('never asks on a computer', () => {
+    expect(installCard({ ...env, canPrompt: true, mobile: false })).toBeNull();
+    expect(installOffer({ standalone: false, ios: false, canPrompt: true, mobile: false })).toBeNull();
   });
 
   it('shows nothing where neither is possible', () => {
@@ -27,8 +32,8 @@ describe('the install card', () => {
   });
 
   it('the account menu still offers to install after the card was closed, but not in the installed app', () => {
-    expect(installOffer({ standalone: false, ios: false, canPrompt: true })).toBe('prompt');
-    expect(installOffer({ standalone: true, ios: false, canPrompt: true })).toBeNull();
+    expect(installOffer({ standalone: false, ios: false, canPrompt: true, mobile: true })).toBe('prompt');
+    expect(installOffer({ standalone: true, ios: false, canPrompt: true, mobile: true })).toBeNull();
   });
 
   it('is closed for good on this device', () => {
