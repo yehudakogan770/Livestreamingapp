@@ -74,7 +74,10 @@ export async function listPeople(): Promise<Profile[]> {
   return data as Profile[];
 }
 
-export async function setPerson(id: string, change: Partial<Pick<Profile, 'approved' | 'blocked'>>): Promise<void> {
+/** What the Lumora team may change about an account: approval, and which apps it may use. */
+export type PersonChange = Partial<Pick<Profile, 'approved' | 'blocked' | 'lumora' | 'studio'>>;
+
+export async function setPerson(id: string, change: PersonChange): Promise<void> {
   const { error } = await sb().from('profiles').update(change).eq('id', id);
   if (error) throw say(error);
 }

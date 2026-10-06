@@ -51,7 +51,7 @@ export function App() {
 function Control() {
   const [problems] = useState(() => new ProblemStore());
   return (
-    <Gate>
+    <Gate product="lumora">
       <ProblemsProvider store={problems}>
         <ControlApp />
       </ProblemsProvider>

@@ -9,6 +9,10 @@ export interface Access {
   email: string;
   name: string;
   admin: boolean;
+  /** May use Lumora (the Lumora team always may). */
+  lumora: boolean;
+  /** May use Lumora Studio (the Lumora team always may). */
+  studio: boolean;
   /** Checked a while ago (no internet now). */
   offline?: boolean;
 }
@@ -20,17 +24,32 @@ export interface Profile {
   approved: boolean;
   blocked: boolean;
   is_admin: boolean;
+  /** Missing before update-4-app-access.sql: then both apps. */
+  lumora?: boolean;
+  studio?: boolean;
   created_at?: string;
 }
 
+/** The two apps one account can be set up for. */
+export type Product = 'lumora' | 'studio';
+export const PRODUCT_NAME: Record<Product, string> = { lumora: 'Lumora', studio: 'Lumora Studio' };
+
 export function accessFrom(p: Profile): Access {
+  const admin = p.is_admin && !p.blocked;
   return {
     state: p.blocked ? 'blocked' : p.approved ? 'approved' : 'pending',
     userId: p.id,
     email: p.email,
     name: p.name,
-    admin: p.is_admin && !p.blocked,
+    admin,
+    lumora: admin || p.lumora !== false,
+    studio: admin || p.studio !== false,
   };
+}
+
+/** May this person open this app now? (Approved, and set up for it.) */
+export function mayUse(a: Access, product: Product): boolean {
+  return a.state === 'approved' && (a.admin || a[product] !== false);
 }
 
 /** How long Lumora keeps working without checking in (offline events). */
@@ -46,7 +65,8 @@ export function cachedAccess(saved: Saved | null, userId: string, now: number): 
   if (!saved || saved.userId !== userId) return null;
   if (now - saved.at > OFFLINE_DAYS * 86_400_000) return null;
   const { at: _at, ...a } = saved;
-  return { ...a, offline: true };
+  // Remembered before accounts had apps: both, as on the server.
+  return { ...a, lumora: a.lumora !== false, studio: a.studio !== false, offline: true };
 }
 
 export function saveAccess(a: Access): void {

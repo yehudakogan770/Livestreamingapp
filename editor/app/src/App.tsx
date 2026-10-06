@@ -41,7 +41,7 @@ export function App() {
   // Trying the screens in a browser while building them (never in the program).
   if (import.meta.env.DEV && !inApp() && /[?&](demo|start|empty)/.test(location.search)) return <Main />;
   return (
-    <Gate>
+    <Gate product="studio">
       <Main />
       <UpdateBar product="Lumora Studio" />
       <ReportingHost product="Lumora Studio" />

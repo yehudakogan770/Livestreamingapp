@@ -45,8 +45,8 @@ export function ShareDialog({
       <Modal title="Share project" onClose={onClose}>
         <div className="form">
           <p className="collab__lead">
-            Put this project online so others with approved Lumora accounts can open it from their Start screen, as editors or viewers. One person edits each
-            sequence at a time; everyone can leave comments on the timeline.
+            Put this project online so others whose accounts are set up for Lumora Studio can open it from their Start screen, as editors or viewers. One person
+            edits each sequence at a time; everyone can leave comments on the timeline.
           </p>
           <p className="collab__lead">
             Only the edit goes online, not your video, sound or picture files. Each person keeps their own copies, and Lumora Studio asks them to find any it

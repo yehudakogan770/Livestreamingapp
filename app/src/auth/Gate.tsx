@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { invoke } from '@tauri-apps/api/core';
 import { authOn } from './config';
 import { TEST_BUILD } from '../e2e';
-import type { Access } from './access';
+import { mayUse, PRODUCT_NAME, type Access, type Product } from './access';
 import { checkAccess, onSignInChange, signIn, signOut, signUp } from './auth';
 import '../views/ControlView.css';
 import './Gate.css';
@@ -19,12 +19,13 @@ export const useAccess = () => useContext(AccessCtx);
 type Gate = { s: 'checking' } | { s: 'out' } | { s: 'in'; access: Access } | { s: 'error'; message: string };
 
 /**
- * Lumora opens only for people the Lumora team has approved: sign in (or make
- * an account), then wait for approval. Once approved it keeps working offline
+ * Lumora (and Lumora Studio) opens only for people the Lumora team has
+ * approved and set up for that app: sign in (or make an account), then wait
+ * for approval. Once approved it keeps working offline
  * for a while, so events without internet are fine. Off while there is no
  * sign-in set up (auth/config.ts).
  */
-export function Gate({ children }: { children: ReactNode }) {
+export function Gate({ product, children }: { product: Product; children: ReactNode }) {
   const [gate, setGate] = useState<Gate>({ s: 'checking' });
   // Once let in, Lumora stays open until the person signs out or closes it:
   // a sign-in that lapses mid-event (no internet when the session renews, a
@@ -33,13 +34,14 @@ export function Gate({ children }: { children: ReactNode }) {
   const check = useCallback(() => {
     const keep = (next: Gate) =>
       setGate((prev) => {
-        if (next.s === 'in' && next.access.state === 'approved') letIn.current = true;
-        return letIn.current && !(next.s === 'in' && next.access.state === 'approved') ? prev : next;
+        const ok = next.s === 'in' && mayUse(next.access, product);
+        if (ok) letIn.current = true;
+        return letIn.current && !ok ? prev : next;
       });
     checkAccess()
       .then((access) => keep(access ? { s: 'in', access } : { s: 'out' }))
       .catch((e: unknown) => keep({ s: 'error', message: e instanceof Error ? e.message : String(e) }));
-  }, []);
+  }, [product]);
   // The end-to-end test build (CI only, never an installer) has no sign-in: see e2e.ts.
   const locked = authOn() && !TEST_BUILD;
   useEffect(() => {
@@ -47,8 +49,8 @@ export function Gate({ children }: { children: ReactNode }) {
     check();
     return onSignInChange(check);
   }, [check, locked]);
-  // Waiting for approval: look again every 20 seconds.
-  const waiting = gate.s === 'in' && gate.access.state === 'pending';
+  // Waiting for approval (or for this app to be turned on): look again every 20 seconds.
+  const waiting = gate.s === 'in' && (gate.access.state === 'pending' || (gate.access.state === 'approved' && !mayUse(gate.access, product)));
   useEffect(() => {
     if (!waiting) return;
     const t = setInterval(check, 20_000);
@@ -64,13 +66,13 @@ export function Gate({ children }: { children: ReactNode }) {
   );
 
   if (!locked) return <>{children}</>;
-  if (gate.s === 'in' && gate.access.state === 'approved') {
+  if (gate.s === 'in' && mayUse(gate.access, product)) {
     return <AccessCtx.Provider value={{ access: gate.access, signOut: leave }}>{children}</AccessCtx.Provider>;
   }
-  return <GateScreen gate={gate} onCheck={check} onSignOut={leave} />;
+  return <GateScreen gate={gate} product={product} onCheck={check} onSignOut={leave} />;
 }
 
-function GateScreen({ gate, onCheck, onSignOut }: { gate: Gate; onCheck: () => void; onSignOut: () => void }) {
+function GateScreen({ gate, product, onCheck, onSignOut }: { gate: Gate; product: Product; onCheck: () => void; onSignOut: () => void }) {
   // The loading window gives way to this one.
   useEffect(() => {
     if (gate.s !== 'checking') appReady();
@@ -104,6 +106,20 @@ function GateScreen({ gate, onCheck, onSignOut }: { gate: Gate; onCheck: () => v
               Thanks{gate.access.name ? `, ${gate.access.name}` : ''}! Your account ({gate.access.email}) has been sent to the Lumora team. Lumora opens as soon
               as they approve it; you can leave this window open.
             </p>
+            <div className="gate__row">
+              <button type="button" className="btn btn--primary" onClick={onCheck}>
+                Check again
+              </button>
+              <button type="button" className="btn" onClick={onSignOut}>
+                Sign out
+              </button>
+            </div>
+          </>
+        )}
+        {gate.s === 'in' && gate.access.state === 'approved' && !mayUse(gate.access, product) && (
+          <>
+            <h1>Your account isn't set up for {PRODUCT_NAME[product]}.</h1>
+            <p className="gate__note">Contact the Lumora team for help.</p>
             <div className="gate__row">
               <button type="button" className="btn btn--primary" onClick={onCheck}>
                 Check again

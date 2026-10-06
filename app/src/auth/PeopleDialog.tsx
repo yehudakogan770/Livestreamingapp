@@ -1,13 +1,19 @@
 import { Users, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { Profile } from './access';
-import { listPeople, setPerson } from './auth';
+import { listPeople, setPerson, type PersonChange } from './auth';
 import { ReportsAdmin } from '../reports/ReportsAdmin';
 
 type Filter = 'waiting' | 'approved' | 'blocked' | 'all' | 'problems';
 const stateOf = (p: Profile) => (p.blocked ? 'blocked' : p.approved ? 'approved' : 'pending');
+type App = 'lumora' | 'studio';
+// Accounts from before apps could be chosen have both.
+const has = (p: Profile, app: App) => p.is_admin || p[app] !== false;
+const noApps = (p: Profile) => !has(p, 'lumora') && !has(p, 'studio');
+const appsOf = (p: Profile) =>
+  has(p, 'lumora') && has(p, 'studio') ? 'Lumora and Studio' : has(p, 'lumora') ? 'Lumora only' : has(p, 'studio') ? 'Studio only' : 'No apps';
 
-/** For the Lumora team: approve new accounts, or turn access off. */
+/** For the Lumora team: approve new accounts, choose which apps each one may use, or turn access off. */
 export function PeopleDialog({ onClose }: { onClose: () => void }) {
   const [people, setPeople] = useState<Profile[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -30,10 +36,28 @@ export function PeopleDialog({ onClose }: { onClose: () => void }) {
       window.removeEventListener('keydown', esc);
     };
   }, [load, onClose]);
-  const change = (p: Profile, c: Partial<Pick<Profile, 'approved' | 'blocked'>>) =>
+  const change = (p: Profile, c: PersonChange) => {
+    // Shown at once; put back (with the reason) if it could not be saved.
+    setPeople((list) => list?.map((x) => (x.id === p.id ? { ...x, ...c } : x)) ?? list);
+    setError(null);
     void setPerson(p.id, c)
       .then(load)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : String(e));
+        // Back to what is really saved (keeping the reason on screen).
+        listPeople()
+          .then(setPeople)
+          .catch(() => {});
+      });
+  };
+  const toggle = (p: Profile, app: App, on: boolean) => {
+    const other: App = app === 'lumora' ? 'studio' : 'lumora';
+    if (!on && stateOf(p) === 'approved' && !has(p, other)) {
+      setError(`${p.name || p.email} needs at least one app. To stop them using both, block the account instead.`);
+      return;
+    }
+    change(p, { [app]: on });
+  };
   const waiting = people?.filter((p) => stateOf(p) === 'pending').length ?? 0;
   const shown = (people ?? []).filter((p) => filter === 'all' || (filter === 'waiting' ? stateOf(p) === 'pending' : stateOf(p) === filter));
   return (
@@ -83,10 +107,28 @@ export function PeopleDialog({ onClose }: { onClose: () => void }) {
                     {p.created_at ? ` · joined ${new Date(p.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ''}
                   </span>
                 </div>
+                {p.is_admin || st === 'blocked' ? (
+                  <span className="people__apps people__apps--text">{p.is_admin ? 'Lumora and Studio' : appsOf(p)}</span>
+                ) : (
+                  <div className="people__apps" role="group" aria-label={`Apps for ${p.name || p.email}`}>
+                    {(['lumora', 'studio'] as const).map((app) => (
+                      <label key={app} className="check">
+                        <input type="checkbox" checked={has(p, app)} onChange={(e) => toggle(p, app, e.target.checked)} />
+                        {app === 'lumora' ? 'Lumora' : 'Studio'}
+                      </label>
+                    ))}
+                  </div>
+                )}
                 <span className={`people__tag people__tag--${st}`}>{st === 'pending' ? 'Waiting' : st === 'approved' ? 'Approved' : 'Blocked'}</span>
                 <div className="people__acts">
                   {st === 'pending' && (
-                    <button type="button" className="btn btn--primary" onClick={() => change(p, { approved: true })}>
+                    <button
+                      type="button"
+                      className="btn btn--primary"
+                      disabled={noApps(p)}
+                      title={noApps(p) ? 'Tick Lumora and/or Studio first' : undefined}
+                      onClick={() => change(p, { approved: true })}
+                    >
                       Approve
                     </button>
                   )}
@@ -101,6 +143,8 @@ export function PeopleDialog({ onClose }: { onClose: () => void }) {
                     </button>
                   )}
                 </div>
+                {st === 'pending' && noApps(p) && <p className="people__hint">Tick Lumora and/or Studio, then approve.</p>}
+                {st === 'approved' && noApps(p) && <p className="people__hint">No apps are on, so this account can't open Lumora or Studio.</p>}
               </div>
             );
           })}

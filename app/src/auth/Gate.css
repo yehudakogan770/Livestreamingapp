@@ -97,7 +97,7 @@
 }
 .people__row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 12px;
   padding: 10px 0;
@@ -130,6 +130,20 @@
 .people__tag--blocked {
   background: #4a1714;
   color: #ffb4ad;
+}
+.people__apps {
+  display: flex;
+  gap: 12px;
+}
+.people__apps--text {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.people__hint {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
 }
 .people__acts {
   display: flex;
