@@ -24,6 +24,8 @@ export interface UiState {
   /** Source monitor or the camera wall. */
   sourceTab: 'source' | 'cameras';
   quality: 1 | 0.5 | 0.25;
+  /** Play heavy files from their lighter proxies (the film is always made from the originals). */
+  proxies: boolean;
   /** Panel sizes (pixels). */
   left: number;
   right: number;
@@ -68,6 +70,7 @@ export class Ui {
       source: null,
       sourceTab: 'source',
       quality: s.quality ?? 1,
+      proxies: s.proxies ?? true,
       left: s.left ?? 330,
       right: s.right ?? 330,
       bottom: s.bottom ?? 330,
@@ -91,8 +94,8 @@ export class Ui {
     this.state = { ...this.state, ...change };
     for (const f of this.listeners) f();
     try {
-      const { snapping, linked, quality, left, right, bottom, scope } = this.state;
-      localStorage.setItem(KEY, JSON.stringify({ snapping, linked, quality, left, right, bottom, scope }));
+      const { snapping, linked, quality, proxies, left, right, bottom, scope } = this.state;
+      localStorage.setItem(KEY, JSON.stringify({ snapping, linked, quality, proxies, left, right, bottom, scope }));
     } catch {
       // Not kept: fine.
     }

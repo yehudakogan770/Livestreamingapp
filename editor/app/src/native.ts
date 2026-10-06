@@ -28,6 +28,14 @@ export const native = {
   prepare: (path: string) => invoke<Prepared>('prepare_media', { path }),
   /** Any file (the original is never changed). */
   importMedia: (path: string) => invoke<Prepared>('import_media', { path }),
+  /** What a file is and whether a copy will be made (quick: nothing is made yet). */
+  probeMedia: (path: string) => invoke<Prepared>('probe_media', { path }),
+  /** A lighter copy of a heavy file for smooth playback (made once, kept). */
+  makeProxy: (path: string) => invoke<string>('make_proxy', { path }),
+  /** Read an original's frames through FFmpeg (RGBA), for making the film from files the app can't decode. */
+  framesOpen: (path: string, from: number, rate: number, width: number, height: number) => invoke<number>('frames_open', { path, from, rate, width, height }),
+  framesNext: async (id: number): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>('frames_next', { id })),
+  framesClose: (id: number) => invoke<void>('frames_close', { id }),
   strip: (path: string, seconds: number) => invoke<Strip>('strip', { path, seconds }),
   peaks: async (path: string): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>('peaks', { path })),
   /** The folder of a speech model (downloaded the first time). */
@@ -76,6 +84,9 @@ function subscribe<T>(event: string, f: (p: T) => void): () => void {
 export const onExportProgress = (f: (p: ExportProgress) => void): (() => void) => subscribe('export-progress', f);
 /** How far a file's playable copy is along: [path, 0–1]. */
 export const onImportProgress = (f: (p: [string, number]) => void): (() => void) => subscribe('import-progress', f);
+
+/** How far a playback proxy is along: [path, 0–1]. */
+export const onProxyProgress = (f: (p: [string, number]) => void): (() => void) => subscribe('proxy-progress', f);
 
 /** How far a speech model's download is along: [name, 0–1]. */
 export const onSpeechProgress = (f: (p: [string, number]) => void): (() => void) => subscribe('speech-progress', f);

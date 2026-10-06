@@ -32,8 +32,35 @@ export interface MediaItem {
   bin: string | null;
   /** The file was not found where it was. */
   missing?: boolean;
+  /** A lighter copy for smooth playback of heavy files (4K, high bit rates, HEVC). Never used to make the film. */
+  playbackProxy?: string | null;
+  /** What FFmpeg found in the file when it was imported. */
+  source?: SourceInfo;
+  /** The edit-friendly copy is still being made. */
+  preparing?: boolean;
   /** The words spoken in it (made by Transcribe). */
   transcript?: Transcript;
+}
+
+/** What a file is (FFmpeg looked when it was imported) and how Lumora Studio handles it. */
+export interface SourceInfo {
+  /** The picture's codec (FFmpeg's name: h264, hevc, prores…), or the sound's for a sound file. */
+  codec: string;
+  /** Bits per color (8, 10, 12). */
+  bitDepth: number;
+  /** HDR (PQ or HLG), or Dolby Vision. */
+  hdr: boolean;
+  /** Turned in the file (degrees, clockwise). */
+  rotation: number;
+  /** The frame rate changes through the file (phones). */
+  vfr: boolean;
+  bitrateKbps: number;
+  /** Heavy to play (4K and up, high bit rates, HEVC, 10-bit): a lighter playback proxy is made. */
+  heavy: boolean;
+  /** How the film is made from it: the original decoded in the app, or the original read through FFmpeg. */
+  exportVia: 'original' | 'ffmpeg';
+  /** What was done to it, for the person editing (e.g. HDR shown as SDR). */
+  note?: string;
 }
 
 /** A word heard in a file: seconds into the file. */
@@ -197,6 +224,19 @@ export interface TextData {
   animLength: number;
   /** Every line the same size (otherwise later lines are a little smaller). */
   even?: boolean;
+  /** Rounded box corners (pixels, for a 1080-high frame). */
+  boxRadius?: number;
+  /** A bar of color beside the words (lower thirds, quotes). */
+  accent?: string;
+  accentSide?: 'left' | 'right' | 'top' | 'bottom';
+  /** The bar's thickness (pixels, for a 1080-high frame). */
+  accentSize?: number;
+  /** The color of the second and later lines (otherwise the first line's, a little softer). */
+  color2?: string;
+  /** All capitals. */
+  caps?: boolean;
+  /** The box and bar grow in with the words (and shrink away with them). */
+  boxGrow?: boolean;
 }
 export type TextAnim = 'none' | 'fade' | 'up' | 'down' | 'left' | 'right' | 'pop' | 'type' | 'blur' | 'wipe';
 

@@ -12,6 +12,7 @@ import type { Actions } from './actions';
 import { Choice } from './controls';
 import { drag, usePlayhead, usePlaying, useSize } from './hooks';
 import { PlayheadTime } from './Timeline';
+import { DroppedFrames, ProxyToggle } from './Playback';
 import { useUi, type Ui } from './state';
 import { TrackOverlay } from './Tracking';
 
@@ -69,6 +70,8 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
           <option value={0.5}>1/2</option>
           <option value={0.25}>1/4</option>
         </select>
+        <ProxyToggle ui={ui} on={u.proxies} />
+        <DroppedFrames engine={engine} />
         <button
           type="button"
           className={`tbtn${u.safeMargins ? ' is-on' : ''}`}

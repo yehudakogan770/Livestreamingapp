@@ -82,7 +82,8 @@ export function audioParts(p: Project, s: Sequence, from: number, to: number, de
       const endSrc = sourceAt(c, w1 - 1 - c.start, fps) + c.speed / fps;
       parts.push({
         clip: c,
-        path: m.proxy ?? m.path,
+        // FFmpeg reads the original sound (the edit-friendly copy only when the original is gone).
+        path: m.missing && m.proxy ? m.proxy : m.path,
         track: t,
         from: w0,
         to: w1,

@@ -297,12 +297,13 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
       !types.includes('application/x-lumora-media') &&
       !types.includes('application/x-lumora-seq') &&
       !types.includes('application/x-lumora-effect') &&
-      !types.includes('application/x-lumora-transition')
+      !types.includes('application/x-lumora-transition') &&
+      !types.includes('application/x-lumora-template')
     )
       return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
-    if (types.includes('application/x-lumora-media') || types.includes('application/x-lumora-seq')) {
+    if (types.includes('application/x-lumora-media') || types.includes('application/x-lumora-seq') || types.includes('application/x-lumora-template')) {
       const p = contentXY(e);
       let f = toFrame(p.x);
       if (u.snapping) f = nearest(pointsFor(new Set()), f, snapWithin) ?? f;
@@ -316,6 +317,15 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
     const row = rowAt(p.y);
     const mediaId = e.dataTransfer.getData('application/x-lumora-media');
     const seqId = e.dataTransfer.getData('application/x-lumora-seq');
+    const template = e.dataTransfer.getData('application/x-lumora-template');
+    if (template) {
+      e.preventDefault();
+      let f = toFrame(p.x);
+      if (u.snapping) f = nearest(pointsFor(new Set()), f, snapWithin) ?? f;
+      const t = row?.track;
+      actions.addTemplate(template, f, t?.kind === 'video' && !t.captions ? t.id : undefined);
+      return;
+    }
     if (seqId) {
       e.preventDefault();
       let f = toFrame(p.x);
@@ -726,8 +736,22 @@ function SequenceTabs({ doc, ui }: { doc: Doc; ui: Ui }) {
 }
 
 export function PlayheadTime({ engine, fps, big }: { engine: Engine; fps: number; big?: boolean }) {
-  const t = usePlayhead(engine);
   const [text, setText] = useState<string | null>(null);
+  // The clock is written straight to the page every frame (the panel isn't drawn again for it).
+  const shown = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (text !== null) return;
+    let last = '';
+    const show = (frame: number) => {
+      const s = timecode(Math.floor(frame), fps);
+      if (s !== last && shown.current) {
+        last = s;
+        shown.current.textContent = s;
+      }
+    };
+    show(engine.time);
+    return engine.subscribeFrame(show);
+  }, [engine, fps, text]);
   if (text !== null)
     return (
       <input
@@ -741,7 +765,7 @@ export function PlayheadTime({ engine, fps, big }: { engine: Engine; fps: number
           e.stopPropagation();
           if (e.key === 'Escape') setText(null);
           if (e.key === 'Enter') {
-            const f = parseTimecode(text, fps, t);
+            const f = parseTimecode(text, fps, Math.floor(engine.time));
             if (f !== null) {
               engine.pause();
               engine.seek(f);
@@ -756,9 +780,9 @@ export function PlayheadTime({ engine, fps, big }: { engine: Engine; fps: number
       type="button"
       className={`tc${big ? ' tc--big' : ''}`}
       title="Click to type a time (e.g. 1:30, or +10 for ten frames on)"
-      onClick={() => setText(timecode(t, fps))}
+      onClick={() => setText(timecode(Math.floor(engine.time), fps))}
     >
-      {timecode(t, fps)}
+      <span ref={shown} />
     </button>
   );
 }
@@ -1225,17 +1249,25 @@ function rulerLabel(f: number, fps: number, step: number): string {
 }
 
 function Playhead({ engine, zoom, height, scrollRef }: { engine: Engine; zoom: number; height: number; scrollRef: React.RefObject<HTMLDivElement | null> }) {
-  const t = usePlayhead(engine);
-  const playing = usePlaying(engine);
-  const x = t * zoom;
+  const ref = useRef<HTMLDivElement>(null);
+  // Moved straight on the page every frame (a CSS transform), not by drawing the timeline again.
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || !playing) return;
-    // Page along with the playhead while playing.
-    if (x > el.scrollLeft + el.clientWidth - 40) el.scrollLeft = x - 60;
-    else if (x < el.scrollLeft) el.scrollLeft = Math.max(0, x - 60);
-  }, [x, playing, scrollRef]);
-  return <div className="tl__playhead" style={{ transform: `translateX(${x}px)`, height }} />;
+    let last = -1;
+    const place = (frame: number) => {
+      const x = Math.floor(frame) * zoom;
+      if (x === last) return;
+      last = x;
+      if (ref.current) ref.current.style.transform = `translateX(${x}px)`;
+      const el = scrollRef.current;
+      if (!el || !engine.isPlaying) return;
+      // Page along with the playhead while playing.
+      if (x > el.scrollLeft + el.clientWidth - 40) el.scrollLeft = x - 60;
+      else if (x < el.scrollLeft) el.scrollLeft = Math.max(0, x - 60);
+    };
+    place(engine.time);
+    return engine.subscribeFrame(place);
+  }, [engine, zoom, scrollRef]);
+  return <div ref={ref} className="tl__playhead" style={{ height }} />;
 }
 
 /** The overall sound level, left and right. */

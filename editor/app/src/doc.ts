@@ -115,11 +115,11 @@ export class Doc {
    * Bring in a change made elsewhere (someone else's save): into what is
    * shown and into every undo step, so Undo never takes their work back.
    */
-  rebase(f: (p: Project) => Project) {
+  rebase(f: (p: Project) => Project, dirty = false) {
     this.past = this.past.map((x) => ({ ...x, p: f(x.p) }));
     this.future = this.future.map((x) => ({ ...x, p: f(x.p) }));
     const after = f(this.state.project);
-    this.set({ project: after, selection: keep(this.state.selection, after) });
+    this.set({ project: after, selection: keep(this.state.selection, after), ...(dirty ? { dirty: true } : {}) });
   }
 
   /** Start over from another project (a reload or a restored version): nothing to undo. */

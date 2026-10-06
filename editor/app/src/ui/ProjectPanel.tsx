@@ -5,6 +5,7 @@ import { newSequence, type Bin, type MediaItem, type Project } from '../model/ty
 import { selectedIds, useDoc, type Doc } from '../doc';
 import { inApp, mediaUrl, native } from '../native';
 import { TEXT_PRESETS } from '../render/text';
+import { TemplatesSection } from './Templates';
 import type { Actions } from './actions';
 import { ColorField, PopMenu, type MenuEntry } from './controls';
 import { chooseAndImport, dismissProblem, newBinId, useImporting } from './importer';
@@ -287,7 +288,14 @@ function MediaRow({
       className={`media__item${selected ? ' is-sel' : ''}${m.missing ? ' is-missing' : ''}`}
       draggable
       tabIndex={0}
-      title={`${m.path}${m.proxy ? '\n(plays from a ready-made copy while editing)' : ''}`}
+      title={[
+        m.path,
+        m.preparing ? 'Getting an edit-friendly copy ready…' : m.proxy ? '(plays from an edit-friendly copy while editing)' : '',
+        m.playbackProxy ? 'Has a playback proxy (the film is made from the original)' : '',
+        m.source?.note ?? '',
+      ]
+        .filter(Boolean)
+        .join('\n')}
       onDragStart={(e) => {
         e.dataTransfer.setData('application/x-lumora-media', m.id);
         e.dataTransfer.effectAllowed = 'copy';
@@ -329,7 +337,12 @@ function MediaRow({
           }}
         />
       ) : (
-        <span className="media__name">{m.name}</span>
+        <span className="media__name">
+          {m.name}
+          {m.preparing && <span className="media__badge">Preparing…</span>}
+          {m.playbackProxy && <span className="media__badge">Proxy</span>}
+          {m.source?.hdr && <span className="media__badge">HDR</span>}
+        </span>
       )}
       <span className="media__meta">{m.missing ? 'Missing' : m.kind === 'image' ? `${m.width}×${m.height}` : duration(m.duration)}</span>
     </div>
@@ -412,6 +425,7 @@ function TextTab({ actions }: { actions: Actions }) {
   return (
     <div className="fxlist">
       <p className="fxlist__hint">Added at the playhead, on the first free track above the pictures.</p>
+      <TemplatesSection actions={actions} />
       <div className="fxlist__group">
         <h3>Text</h3>
         <div className="tpresets">

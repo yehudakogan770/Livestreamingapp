@@ -10,12 +10,51 @@ function phase(t: TextData, local: number, length: number): { anim: TextAnim; k:
   return { anim: 'none', k: 1 };
 }
 
+/** The words with any live parts filled in: {count} (seconds left in the clip) and {clock} (m:ss left). */
+export function wordsAt(t: TextData, local: number, length: number, fps = 30): string {
+  let words = t.text;
+  if (words.includes('{')) {
+    const left = Math.max(0, Math.ceil((length - local) / Math.max(1, fps) - 1e-9));
+    words = words.replace(/\{count\}/g, String(left)).replace(/\{clock\}/g, `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`);
+  }
+  return t.caps ? words.toUpperCase() : words;
+}
+
+const looks = new WeakMap<TextData, string>();
+
+/**
+ * What the words look like at a frame, as a key: the same key means the same
+ * picture, so it need not be drawn again. It changes only while the words come
+ * on or go off, when they are changed, or when a {count} ticks.
+ */
+export function textStamp(t: TextData, local: number, length: number, fps = 30): string {
+  let base = looks.get(t);
+  if (base === undefined) {
+    base = JSON.stringify(t);
+    looks.set(t, base);
+  }
+  const { anim } = phase(t, local, length);
+  if (anim !== 'none') return `${base}|${local}`;
+  return t.text.includes('{') ? `${base}|${wordsAt(t, local, length, fps)}` : base;
+}
+
+/** A filled box, with rounded corners when asked. */
+function fillBox(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  if (w <= 0 || h <= 0) return;
+  const rr = Math.max(0, Math.min(r, w / 2, h / 2));
+  if (rr > 0 && typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, rr);
+    ctx.fill();
+  } else ctx.fillRect(x, y, w, h);
+}
+
 /** Draw words onto a frame-sized canvas (sizes are for a 1080-high frame). */
-export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, h: number, local: number, length: number): void {
+export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, h: number, local: number, length: number, fps = 30): void {
   const s = h / 1080;
   const size = t.size * s;
   const { anim, k } = phase(t, local, length);
-  const lines = t.text.split('\n');
+  const lines = wordsAt(t, local, length, fps).split('\n');
   ctx.save();
   ctx.font = `${t.italic ? 'italic ' : ''}${t.weight} ${size}px "${t.font}", "Segoe UI", system-ui, sans-serif`;
   ctx.textBaseline = 'middle';
@@ -55,18 +94,35 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
   ctx.scale(scale, scale);
   ctx.translate(-(left + blockW / 2), -(top + blockH / 2));
   if (blur > 0) ctx.filter = `blur(${blur}px)`;
+  const pad = t.box ? t.boxPad * s : 0;
   if (anim === 'wipe') {
     ctx.beginPath();
-    const pad = t.box ? t.boxPad * s : 0;
     ctx.rect(left - pad, top - pad, (blockW + pad * 2) * reveal, blockH + pad * 2);
     ctx.clip();
   }
+  // The box (and bar) can grow out from where the words line up.
+  const grow = t.boxGrow && anim !== 'none' ? k : 1;
+  const bw = (blockW + pad * 2) * grow;
+  const bx = t.align === 'left' ? left - pad : t.align === 'right' ? left + blockW + pad - bw : left + blockW / 2 - bw / 2;
+  const by = top - pad * 0.7;
+  const bh = blockH + pad * 1.4;
   if (t.box) {
-    const pad = t.boxPad * s;
     ctx.save();
     ctx.globalAlpha = alpha * (t.boxOpacity / 100);
     ctx.fillStyle = t.boxColor;
-    ctx.fillRect(left - pad, top - pad * 0.7, blockW + pad * 2, blockH + pad * 1.4);
+    fillBox(ctx, bx, by, bw, bh, (t.boxRadius ?? 0) * s);
+    ctx.restore();
+  }
+  if (t.accent) {
+    const a = (t.accentSize ?? 8) * s;
+    const gap = t.box ? 0 : 14 * s;
+    const side = t.accentSide ?? 'left';
+    ctx.save();
+    ctx.fillStyle = t.accent;
+    if (side === 'left') ctx.fillRect(bx - a - gap, by + (bh * (1 - grow)) / 2, a, bh * grow);
+    else if (side === 'right') ctx.fillRect(bx + bw + gap, by + (bh * (1 - grow)) / 2, a, bh * grow);
+    else if (side === 'top') ctx.fillRect(bx, by - a - gap, bw, a);
+    else ctx.fillRect(bx, by + bh + gap, bw, a);
     ctx.restore();
   }
   let y = top;
@@ -90,7 +146,7 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
       ctx.strokeText(shown, x, cy);
       ctx.shadowColor = 'transparent';
     }
-    ctx.fillStyle = i === 0 || t.even ? t.color : mixWhite(t.color);
+    ctx.fillStyle = i === 0 ? t.color : (t.color2 ?? (t.even ? t.color : mixWhite(t.color)));
     ctx.fillText(shown, x, cy);
     ctx.shadowColor = 'transparent';
     y += lh;

@@ -11,6 +11,7 @@ import { selectedIds, useDoc, type Doc } from '../doc';
 import type { Engine } from '../player/engine';
 import { fileName, inApp } from '../native';
 import { TEXT_PRESETS } from '../render/text';
+import { TitleExtras } from './Templates';
 import type { Actions } from './actions';
 import { Choice, ColorField, ParamRow, Scrub, Section } from './controls';
 import { usePlayhead } from './hooks';
@@ -220,6 +221,17 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
             )
           }
         />
+      )}
+      {main.source.kind === 'text' && (
+        <Section title="Title design">
+          <TitleExtras
+            clip={main}
+            fps={fps}
+            onChange={(text, final) =>
+              upd(main, 'Text', (c) => (c.source.kind === 'text' ? { ...c, source: { ...c.source, text } } : c), final, `text-${main.id}`)
+            }
+          />
+        </Section>
       )}
       {main.source.kind === 'sequence' && (
         <Section title="Nested sequence">

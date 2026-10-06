@@ -13,7 +13,7 @@ import { ColorPanel, Scopes } from './ColorPage';
 import { PopMenu, type MenuEntry } from './controls';
 import { ExportDialog, HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
 import { typing } from './hooks';
-import { chooseAndImport, importFiles, MEDIA_EXTENSIONS } from './importer';
+import { chooseAndImport, importFiles, makeProxies, MEDIA_EXTENSIONS } from './importer';
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { SmartDialogs, smartMenu } from '../smart/SmartTools';
@@ -90,6 +90,9 @@ export function Editor({
     engine.quality = u.quality;
     engine.redraw();
   }, [engine, u.quality]);
+  useEffect(() => {
+    engine.useProxies = u.proxies;
+  }, [engine, u.proxies]);
 
   // Look for files that have moved since the project was saved (or, in a
   // shared project, that someone else added and this computer doesn't have).
@@ -103,6 +106,12 @@ export function Editor({
       if (stale) return;
       if (gone.length) doc.quiet((p) => ({ ...p, media: p.media.map((m) => (gone.includes(m.id) ? { ...m, missing: true } : m)) }));
       setMissing(gone);
+      // Playback proxies that are gone (a cleared cache) are made again, and heavy files without one get one.
+      const lost: string[] = [];
+      for (const m of doc.project.media) if (m.playbackProxy && !(await native.fileExists(m.playbackProxy))) lost.push(m.id);
+      if (stale) return;
+      if (lost.length) doc.quiet((p) => ({ ...p, media: p.media.map((m) => (lost.includes(m.id) ? { ...m, playbackProxy: null } : m)) }));
+      makeProxies(doc, doc.project.media);
     })();
     return () => {
       stale = true;
@@ -319,6 +328,7 @@ export function Editor({
         { label: 'Playback: full', checked: u.quality === 1, run: () => ui.set({ quality: 1 }) },
         { label: 'Playback: half', checked: u.quality === 0.5, run: () => ui.set({ quality: 0.5 }) },
         { label: 'Playback: quarter', checked: u.quality === 0.25, run: () => ui.set({ quality: 0.25 }) },
+        { label: 'Use proxies for playback', checked: u.proxies, run: () => ui.set({ proxies: !u.proxies }) },
         { label: 'Safe margins', checked: u.safeMargins, run: () => ui.set({ safeMargins: !u.safeMargins }) },
         'sep',
         { label: 'Zoom in', keys: '=', run: () => actions.zoom(1.5) },

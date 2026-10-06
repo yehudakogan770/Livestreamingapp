@@ -1150,6 +1150,75 @@ input[type='range'] {
 .tpreset:hover {
   border-color: var(--accent);
 }
+.ttpl h4 {
+  margin: 8px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ttpl__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 6px;
+}
+.ttpl__item {
+  position: relative;
+}
+.ttpl__btn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--well);
+  color: var(--text);
+  cursor: grab;
+}
+.ttpl__btn:hover {
+  border-color: var(--accent);
+}
+.ttpl__look {
+  display: flex;
+  height: 54px;
+  padding: 5px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #2a3442, #4a3a32);
+}
+.ttpl__look b {
+  max-width: 100%;
+  padding: 1px 4px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ttpl__name {
+  font-size: 11px;
+  text-align: left;
+}
+.ttpl__del {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+}
+.insp__num {
+  width: 56px;
+}
 .tpreset__look {
   height: 40px;
   display: flex;
@@ -1210,6 +1279,46 @@ input[type='range'] {
 .vmon__q {
   height: 24px;
   font-size: 12px;
+}
+.vmon__drops {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--well);
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+}
+.vmon__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #5a6068;
+}
+.vmon__drops--ok .vmon__dot {
+  background: #3f9f5e;
+}
+.vmon__drops--warn .vmon__dot {
+  background: #d0a73a;
+}
+.vmon__drops--bad .vmon__dot {
+  background: #d2453a;
+}
+.vmon__drops--bad {
+  color: #ff8a80;
+}
+.media__badge {
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--well);
+  color: var(--text-dim);
+  font-size: 10px;
 }
 .vmon__screen {
   flex: 1;

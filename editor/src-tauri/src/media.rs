@@ -9,6 +9,8 @@ use std::process::{Command, Stdio};
 
 use serde::Serialize;
 
+use crate::formats::{copy_args, CopyKind};
+
 /// A command that never opens a console window on Windows.
 pub fn quiet(program: &Path) -> Command {
     #[allow(unused_mut)]
@@ -56,6 +58,59 @@ pub struct Probe {
     pub fps: f64,
     /** A still picture (one frame, an image format). */
     pub still: bool,
+    /// The whole file's bit rate (kb/s), when FFmpeg says.
+    pub bitrate_kbps: u32,
+    /// The picture's pixel format (yuv420p, yuv422p10le…).
+    pub pix_fmt: String,
+    /// The frame rate FFmpeg guesses from the timestamps ("tbr").
+    pub tbr: f64,
+    /// HDR: PQ (smpte2084) or HLG (arib-std-b67) transfer.
+    pub hdr: bool,
+    /// Dolby Vision (iPhone HDR).
+    pub dolby_vision: bool,
+    /// Turned in the file (degrees clockwise: 0, 90, 180, 270).
+    pub rotation: i32,
+    /// Interlaced fields (camcorders, AVCHD, broadcast).
+    pub interlaced: bool,
+}
+
+/// Bits per color of a pixel format (8 unless it says otherwise).
+#[must_use]
+pub fn bit_depth(pix_fmt: &str) -> u32 {
+    let f = pix_fmt.to_ascii_lowercase();
+    if f.contains("p16") || f.contains("48le") || f.contains("64le") {
+        16
+    } else if f.contains("12le") || f.contains("12be") || f.contains("p012") {
+        12
+    } else if f.contains("10le") || f.contains("10be") || f.contains("p010") || f == "v210" {
+        10
+    } else {
+        8
+    }
+}
+
+/// The pixel format's first word in a stream line (after the codec), if any.
+fn pixel_format(rest: &str) -> Option<String> {
+    const STARTS: [&str; 10] = [
+        "yuv", "yuvj", "nv12", "nv16", "p010", "p210", "gbr", "rgb", "bgr", "gray",
+    ];
+    rest.split([' ', ',', '('])
+        .map(str::trim)
+        .find(|w| STARTS.iter().any(|s| w.starts_with(s)) && !w.contains('/'))
+        .map(str::to_owned)
+}
+
+/// A number before a word in a stream line ("30 tbr", "29.97 fps").
+fn number_before(rest: &str, unit: &str) -> Option<f64> {
+    rest.split(',').find_map(|x| {
+        let x = x.trim();
+        let n = x.strip_suffix(unit)?.trim();
+        let n = n.strip_suffix('k').map_or_else(
+            || n.parse::<f64>().ok(),
+            |k| k.parse::<f64>().ok().map(|v| v * 1000.0),
+        );
+        n
+    })
 }
 
 /// Read what FFmpeg says about a file (`ffmpeg -i file`).
@@ -69,6 +124,33 @@ pub fn parse_probe(said: &str) -> Probe {
             let parts: Vec<f64> = t.split(':').filter_map(|x| x.parse().ok()).collect();
             if let [h, m, s] = parts[..] {
                 p.duration_ms = Some(((h * 60.0 + m) * 60.0 + s) * 1000.0);
+            }
+            if let Some(b) = rest
+                .split(',')
+                .find_map(|x| x.trim().strip_prefix("bitrate:"))
+                .and_then(|b| b.trim().strip_suffix("kb/s"))
+                .and_then(|b| b.trim().parse::<u32>().ok())
+            {
+                p.bitrate_kbps = b;
+            }
+        } else if line.starts_with("DOVI configuration record") {
+            p.dolby_vision = true;
+        } else if let Some(r) = line
+            .strip_prefix("displaymatrix: rotation of")
+            .and_then(|r| r.trim().strip_suffix("degrees"))
+            .and_then(|r| r.trim().parse::<f64>().ok())
+        {
+            // FFmpeg says it counterclockwise: -90 means the picture is shown turned 90° clockwise.
+            if p.rotation == 0 {
+                p.rotation = (-r.round() as i32).rem_euclid(360);
+            }
+        } else if let Some(r) = line
+            .strip_prefix("rotate")
+            .and_then(|r| r.trim().strip_prefix(':'))
+            .and_then(|r| r.trim().parse::<i32>().ok())
+        {
+            if p.rotation == 0 {
+                p.rotation = r.rem_euclid(360);
             }
         } else if line.starts_with("Stream #") {
             if let Some(i) = line.find("Video: ") {
@@ -87,12 +169,20 @@ pub fn parse_probe(said: &str) -> Probe {
                         p.width = w;
                         p.height = h;
                     }
-                    if let Some(f) = rest.split(',').find_map(|x| {
-                        x.trim()
-                            .strip_suffix(" fps")
-                            .and_then(|n| n.trim().parse::<f64>().ok())
-                    }) {
+                    if let Some(f) = number_before(rest, " fps") {
                         p.fps = f;
+                    }
+                    p.tbr = number_before(rest, " tbr").unwrap_or(0.0);
+                    p.pix_fmt = pixel_format(rest).unwrap_or_default();
+                    p.hdr = rest.contains("smpte2084") || rest.contains("arib-std-b67");
+                    p.interlaced = rest.contains("top first")
+                        || rest.contains("bottom first")
+                        || rest.contains("top coded first")
+                        || rest.contains("bottom coded first");
+                    if p.bitrate_kbps == 0 {
+                        if let Some(b) = number_before(rest, " kb/s") {
+                            p.bitrate_kbps = b as u32;
+                        }
                     }
                     p.still = matches!(
                         codec.as_str(),
@@ -137,6 +227,12 @@ pub struct Prepared {
     pub has_audio: bool,
     pub width: u32,
     pub height: u32,
+    /// What the file is and how it is handled (files imported by hand).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source: Option<crate::formats::Plan>,
+    /// An edit-friendly copy is still to be made (only from `look`).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub pending: bool,
 }
 
 fn ext_of(p: &Path) -> String {
@@ -228,6 +324,8 @@ pub fn prepare(ffmpeg: &Path, file: &Path) -> Result<Prepared, String> {
         has_audio: info.audio,
         width: info.width,
         height: info.height,
+        source: None,
+        pending: false,
     })
 }
 
@@ -323,7 +421,7 @@ pub fn peaks(ffmpeg: &Path, file: &Path, cache: &Path) -> Result<Vec<u8>, String
 }
 
 /// What a file needs before it can be edited smoothly.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Needs {
     /// It plays as it is.
     Nothing,
@@ -494,7 +592,8 @@ pub fn import(
                 .unwrap_or("This file")
         ));
     }
-    let need = needs(file, &info);
+    let mut plan = crate::formats::plan(file, &info);
+    let need = plan.need;
     let seconds = info.duration_ms.unwrap_or(0.0) / 1000.0;
     let _ = fs::create_dir_all(cache);
     let proxy: Option<PathBuf> = match need {
@@ -519,17 +618,33 @@ pub fn import(
                 if run_with_progress(ffmpeg, &args, seconds, progress).is_err() {
                     // Some files can't simply be rewrapped: make a new copy.
                     let _ = fs::remove_file(&temp);
-                    optimize(ffmpeg, file, &temp, seconds, progress)?;
+                    optimize(
+                        ffmpeg,
+                        file,
+                        &temp,
+                        seconds,
+                        progress,
+                        &mut plan,
+                        CopyKind::Intermediate,
+                    )?;
                 }
                 fs::rename(&temp, &out).map_err(|e| e.to_string())?;
             }
             Some(out)
         }
         Needs::Optimize => {
-            let out = cache.join(cache_name(file, "mp4"));
+            let out = cache.join(cache_name(file, "edit.mp4"));
             if !out.is_file() {
                 let temp = out.with_extension("making.mp4");
-                optimize(ffmpeg, file, &temp, seconds, progress)?;
+                optimize(
+                    ffmpeg,
+                    file,
+                    &temp,
+                    seconds,
+                    progress,
+                    &mut plan,
+                    CopyKind::Intermediate,
+                )?;
                 fs::rename(&temp, &out).map_err(|e| e.to_string())?;
             }
             Some(out)
@@ -577,54 +692,127 @@ pub fn import(
             None => measure(ffmpeg, proxy.as_deref().unwrap_or(file)).unwrap_or(0.0),
         }
     };
-    Ok(Prepared {
+    Ok(prepared(file, &info, proxy, duration_ms, still, plan))
+}
+
+/// What the editor is told about a file.
+fn prepared(
+    file: &Path,
+    info: &Probe,
+    proxy: Option<PathBuf>,
+    duration_ms: f64,
+    still: bool,
+    plan: crate::formats::Plan,
+) -> Prepared {
+    // A turned picture is shown upright: its size is the other way round.
+    let turned = matches!(info.rotation, 90 | 270);
+    let fps = match plan.cfr {
+        Some(r) if proxy.is_some() => r,
+        _ if info.fps > 0.0 => info.fps,
+        _ => 30.0,
+    };
+    Prepared {
         path: file.to_string_lossy().into_owned(),
         proxy: proxy.map(|p| p.to_string_lossy().into_owned()),
-        fps: if info.fps > 0.0 { info.fps } else { 30.0 },
+        fps,
         duration_ms,
         has_video: info.video.is_some(),
         has_audio: info.audio && !still,
-        width: info.width,
-        height: info.height,
-    })
+        width: if turned { info.height } else { info.width },
+        height: if turned { info.width } else { info.height },
+        source: Some(plan),
+        pending: false,
+    }
 }
 
-/// A copy that plays smoothly while editing (H.264, a keyframe every half second for quick jumps).
+/// Look at a file without making anything (quick): what it is, and whether a copy will be made.
+///
+/// # Errors
+/// The file is missing or FFmpeg can't run.
+pub fn look(ffmpeg: &Path, file: &Path) -> Result<Prepared, String> {
+    if !file.is_file() {
+        return Err(format!("{} was not found.", file.display()));
+    }
+    let info = probe(ffmpeg, file)?;
+    if info.video.is_none() && !info.audio {
+        return Err(format!(
+            "{} has no picture or sound Lumora Studio can use.",
+            file.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("This file")
+        ));
+    }
+    let plan = crate::formats::plan(file, &info);
+    let still = matches!(plan.need, Needs::Picture) || info.still;
+    // Files that don't say how long they are are measured while the copy is made.
+    let pending = plan.need != Needs::Nothing || (info.duration_ms.is_none() && !still);
+    let duration_ms = if still {
+        0.0
+    } else {
+        info.duration_ms.unwrap_or(0.0)
+    };
+    let mut p = prepared(file, &info, None, duration_ms, still, plan);
+    p.pending = pending;
+    Ok(p)
+}
+
+/// A copy made with FFmpeg: an edit-friendly intermediate, or a lighter playback proxy.
+/// HDR that can't be tone-mapped on this computer is copied as it is (and the note says so).
 fn optimize(
     ffmpeg: &Path,
     file: &Path,
     out: &Path,
     seconds: f64,
     progress: &dyn Fn(f64),
+    plan: &mut crate::formats::Plan,
+    kind: CopyKind,
 ) -> Result<(), String> {
-    let args: Vec<std::ffi::OsString> = vec![
-        "-i".into(),
-        file.into(),
-        "-map".into(),
-        "0:v:0".into(),
-        "-map".into(),
-        "0:a?".into(),
-        "-c:v".into(),
-        "libx264".into(),
-        "-preset".into(),
-        "veryfast".into(),
-        "-crf".into(),
-        "17".into(),
-        "-pix_fmt".into(),
-        "yuv420p".into(),
-        "-g".into(),
-        "15".into(),
-        "-c:a".into(),
-        "aac".into(),
-        "-b:a".into(),
-        "256k".into(),
-        "-ac".into(),
-        "2".into(),
-        "-movflags".into(),
-        "+faststart".into(),
-        out.into(),
-    ];
-    run_with_progress(ffmpeg, &args, seconds, progress)
+    let args = copy_args(file, out, plan, kind, true);
+    match run_with_progress(ffmpeg, &args, seconds, progress) {
+        Err(_) if plan.tone_map => {
+            let _ = fs::remove_file(out);
+            run_with_progress(
+                ffmpeg,
+                &copy_args(file, out, plan, kind, false),
+                seconds,
+                progress,
+            )?;
+            plan.note = Some("HDR: its colors could not be converted to SDR on this computer, so they may look flat.".into());
+            Ok(())
+        }
+        r => r,
+    }
+}
+
+/// A lighter copy of a heavy file for smooth playback (kept in `cache`, made once).
+///
+/// # Errors
+/// FFmpeg can't read the file.
+pub fn playback_proxy(
+    ffmpeg: &Path,
+    file: &Path,
+    cache: &Path,
+    progress: &dyn Fn(f64),
+) -> Result<String, String> {
+    let info = probe(ffmpeg, file)?;
+    let mut plan = crate::formats::plan(file, &info);
+    let out = cache.join(cache_name(file, "proxy.mp4"));
+    if !out.is_file() {
+        let _ = fs::create_dir_all(cache);
+        let temp = out.with_extension("making.mp4");
+        let seconds = info.duration_ms.unwrap_or(0.0) / 1000.0;
+        optimize(
+            ffmpeg,
+            file,
+            &temp,
+            seconds,
+            progress,
+            &mut plan,
+            CopyKind::Proxy,
+        )?;
+        fs::rename(&temp, &out).map_err(|e| e.to_string())?;
+    }
+    Ok(out.to_string_lossy().into_owned())
 }
 
 /// Small pictures of a video along its length, in one image (for the timeline and bins).
@@ -803,6 +991,97 @@ mod tests {
         assert_eq!((p.width, p.height), (320, 240));
         let w = peaks(&ffmpeg, Path::new(&p.path), &dir.join("cache")).unwrap();
         assert!((295..=305).contains(&w.len()), "{}", w.len());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    /// Needs FFmpeg: `cargo test -p lumora-edit -- --ignored`.
+    #[test]
+    #[ignore = "needs FFmpeg"]
+    fn camera_files_get_edit_friendly_copies() {
+        let Some(ffmpeg) = find_ffmpeg() else { return };
+        let dir = std::env::temp_dir().join(format!("lumora-edit-formats-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let make = |name: &str, args: &[&str]| {
+            let out = dir.join(name);
+            let ok = quiet(&ffmpeg)
+                .args([
+                    "-loglevel",
+                    "error",
+                    "-f",
+                    "lavfi",
+                    "-i",
+                    "testsrc=s=320x240:r=25:d=2",
+                ])
+                .args(args)
+                .arg(&out)
+                .status()
+                .unwrap();
+            assert!(ok.success(), "{name}");
+            out
+        };
+        // 10-bit ProRes: a copy the editor plays; the film reads the original through FFmpeg.
+        let prores = make(
+            "cam.mov",
+            &[
+                "-c:v",
+                "prores_ks",
+                "-profile:v",
+                "3",
+                "-pix_fmt",
+                "yuv422p10le",
+            ],
+        );
+        let cache = dir.join("cache");
+        let p = import(&ffmpeg, &prores, &cache, &|_| {}).unwrap();
+        let copy = p.proxy.clone().expect("a copy");
+        assert!(Path::new(&copy).is_file());
+        let made = probe(&ffmpeg, Path::new(&copy)).unwrap();
+        assert_eq!(made.video.as_deref(), Some("h264"));
+        assert_eq!(made.pix_fmt, "yuv420p");
+        let plan = p.source.clone().unwrap();
+        assert_eq!(plan.export_via, "ffmpeg");
+        // HLG HDR: tone-mapped, with a note.
+        let hlg = make(
+            "hlg.mp4",
+            &[
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p10le",
+                "-color_primaries",
+                "bt2020",
+                "-color_trc",
+                "arib-std-b67",
+                "-colorspace",
+                "bt2020nc",
+            ],
+        );
+        let h = import(&ffmpeg, &hlg, &cache, &|_| {}).unwrap();
+        let plan = h.source.clone().unwrap();
+        assert!(plan.hdr, "{plan:?}");
+        assert!(plan.note.unwrap_or_default().contains("SDR"));
+        assert!(h.proxy.is_some());
+        // A turned phone video is shown upright.
+        let flat = make("flat.mp4", &["-c:v", "libx264", "-pix_fmt", "yuv420p"]);
+        let turned = dir.join("phone.mp4");
+        let ok = quiet(&ffmpeg)
+            .args(["-loglevel", "error", "-display_rotation", "90", "-i"])
+            .arg(&flat)
+            .args(["-c", "copy"])
+            .arg(&turned)
+            .status()
+            .unwrap();
+        assert!(ok.success());
+        let t = look(&ffmpeg, &turned).unwrap();
+        assert_eq!((t.width, t.height), (240, 320), "{:?}", t.source);
+        // A playback proxy is made once and kept.
+        let px = playback_proxy(&ffmpeg, &prores, &cache, &|_| {}).unwrap();
+        assert!(Path::new(&px).is_file());
+        assert_eq!(
+            playback_proxy(&ffmpeg, &prores, &cache, &|_| {}).unwrap(),
+            px
+        );
         let _ = fs::remove_dir_all(dir);
     }
 }

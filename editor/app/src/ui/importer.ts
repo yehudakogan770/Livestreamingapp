@@ -1,9 +1,10 @@
 import { useSyncExternalStore } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { mediaFrom } from '../model/build';
-import { uid, type Project } from '../model/types';
+import { linkPrepared, mediaFrom, setPlaybackProxy } from '../model/build';
+import { uid, type MediaItem, type Project } from '../model/types';
 import type { Doc } from '../doc';
-import { fileName, inApp, native, onImportProgress } from '../native';
+import { fileName, inApp, native, onImportProgress, onProxyProgress } from '../native';
+import { wantsProxy } from '../player/files';
 
 export const MEDIA_EXTENSIONS = [
   'mp4',
@@ -67,6 +68,7 @@ class Queue {
 }
 export const importing = new Queue();
 onImportProgress(([path, done]) => importing.set(importing.list.map((x) => (x.path === path ? { ...x, done } : x))));
+onProxyProgress(([path, done]) => importing.set(importing.list.map((x) => (x.path === `proxy:${path}` ? { ...x, done } : x))));
 
 export function useImporting(): Importing[] {
   return useSyncExternalStore(importing.subscribe, () => importing.list);
@@ -82,15 +84,39 @@ export async function importFiles(doc: Doc, paths: string[], bin: string | null)
   const work = [...fresh];
   const run = async () => {
     for (let path = work.shift(); path; path = work.shift()) {
+      const name = fileName(path).replace(/\.[^.]+$/, '');
+      let item: MediaItem | null = null;
       try {
-        const prepared = await native.importMedia(path);
-        const item = mediaFrom(prepared, fileName(path).replace(/\.[^.]+$/, ''), bin);
-        added.push(item.id);
-        doc.edit((p: Project) => ({ ...p, media: [...p.media, item] }), 'Import');
+        // A quick look first: the file is in the bin straight away, and any copy it needs is made in the background.
+        const look = await native.probeMedia(path).catch(() => null);
+        if (look) {
+          const it = mediaFrom(look, name, bin);
+          item = it;
+          added.push(it.id);
+          doc.edit((p: Project) => ({ ...p, media: [...p.media, it] }), 'Import');
+        }
+        if (!look?.pending) {
+          if (!item) {
+            const prepared = await native.importMedia(path);
+            const it = mediaFrom(prepared, name, bin);
+            item = it;
+            added.push(it.id);
+            doc.edit((p: Project) => ({ ...p, media: [...p.media, it] }), 'Import');
+          }
+        } else if (item) {
+          const prepared = await native.importMedia(path);
+          const id = item.id;
+          // Linked without a step to undo (the copy simply takes over playback).
+          doc.rebase((p) => linkPrepared(p, id, prepared), true);
+          item = doc.project.media.find((m) => m.id === id) ?? item;
+        }
         importing.set(importing.list.filter((x) => x.path !== path));
+        if (item) makeProxies(doc, [item]);
       } catch (e) {
         const problem = e instanceof Error ? e.message : String(e);
         importing.set(importing.list.map((x) => (x.path === path ? { ...x, problem } : x)));
+        const id = item?.id;
+        if (id) doc.rebase((p) => ({ ...p, media: p.media.map((m) => (m.id === id ? { ...m, preparing: false } : m)) }), true);
       }
     }
   };
@@ -110,6 +136,43 @@ export async function chooseAndImport(doc: Doc, bin: string | null): Promise<voi
   });
   const paths = Array.isArray(picked) ? picked : typeof picked === 'string' ? [picked] : [];
   if (paths.length) await importFiles(doc, paths, bin);
+}
+
+/** Playback proxies being made, one at a time (heavy work, in the background). */
+const proxyJobs: { id: string; path: string }[] = [];
+let proxyBusy = false;
+
+/** Make playback proxies for heavy files that don't have one yet (4K and up, high bit rates, HEVC). */
+export function makeProxies(doc: Doc, media: MediaItem[]) {
+  if (!inApp()) return;
+  for (const m of media) {
+    if (!wantsProxy(m) || proxyJobs.some((j) => j.id === m.id)) continue;
+    proxyJobs.push({ id: m.id, path: m.path });
+    importing.set([...importing.list, { path: `proxy:${m.path}`, name: `${m.name} (proxy)`, done: 0 }]);
+  }
+  void pumpProxies(doc);
+}
+
+async function pumpProxies(doc: Doc) {
+  if (proxyBusy) return;
+  proxyBusy = true;
+  try {
+    for (let job = proxyJobs[0]; job; job = proxyJobs[0]) {
+      const key = `proxy:${job.path}`;
+      try {
+        const out = await native.makeProxy(job.path);
+        const id = job.id;
+        doc.rebase((p) => setPlaybackProxy(p, id, out), true);
+        importing.set(importing.list.filter((x) => x.path !== key));
+      } catch (e) {
+        const problem = `No proxy: ${e instanceof Error ? e.message : String(e)}`;
+        importing.set(importing.list.map((x) => (x.path === key ? { ...x, problem } : x)));
+      }
+      proxyJobs.shift();
+    }
+  } finally {
+    proxyBusy = false;
+  }
 }
 
 export const dismissProblem = (path: string) => importing.set(importing.list.filter((x) => x.path !== path));

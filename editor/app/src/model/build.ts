@@ -18,6 +18,7 @@ import {
   type MulticamGroup,
   type Project,
   type Sequence,
+  type SourceInfo,
   type Track,
 } from './types';
 
@@ -32,6 +33,17 @@ export interface Prepared {
   width: number;
   height: number;
   fps?: number;
+  /** What FFmpeg found and how the file is handled (files imported by hand). */
+  source?: (Omit<SourceInfo, 'note'> & { note?: string | null }) | null;
+  /** An edit-friendly copy is still to be made. */
+  pending?: boolean;
+}
+
+/** What is kept about a file's kind from what the app found. */
+export function sourceInfo(s: Prepared['source']): SourceInfo | undefined {
+  if (!s) return undefined;
+  const { note, ...rest } = s;
+  return note ? { ...rest, note } : rest;
 }
 
 const IMAGE = /\.(png|jpe?g|webp|gif|bmp|tiff?|heic|avif)$/i;
@@ -51,7 +63,35 @@ export function mediaFrom(prepared: Prepared, name: string, bin: string | null =
     hasVideo: image || prepared.hasVideo,
     hasAudio: !image && prepared.hasAudio,
     bin,
+    ...(prepared.source ? { source: sourceInfo(prepared.source) } : {}),
+    ...(prepared.pending ? { preparing: true } : {}),
   };
+}
+
+/** A file's edit-friendly copy is made: it is linked to the media (and plays from now on). */
+export function linkPrepared(p: Project, id: string, prepared: Prepared): Project {
+  return {
+    ...p,
+    media: p.media.map((m) => {
+      if (m.id !== id) return m;
+      const { preparing: _was, ...rest } = m;
+      const source = sourceInfo(prepared.source);
+      return {
+        ...rest,
+        proxy: prepared.proxy ?? null,
+        duration: m.kind === 'image' ? 0 : prepared.durationMs / 1000 || m.duration,
+        fps: prepared.fps ?? m.fps,
+        width: prepared.width || m.width,
+        height: prepared.height || m.height,
+        ...(source ? { source } : {}),
+      };
+    }),
+  };
+}
+
+/** A heavy file's playback proxy is made. */
+export function setPlaybackProxy(p: Project, id: string, path: string): Project {
+  return { ...p, media: p.media.map((m) => (m.id === id ? { ...m, playbackProxy: path } : m)) };
 }
 
 /** How long a still picture is when it goes on the timeline. */

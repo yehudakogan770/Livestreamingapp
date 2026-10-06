@@ -32,6 +32,7 @@ import { current, editSeq, end, rate, seqLength } from '../model/seq';
 import type { Clip, Project } from '../model/types';
 import type { Engine } from '../player/engine';
 import { TEXT_PRESETS } from '../render/text';
+import { addTemplate, templateById } from '../model/templates';
 import { selectedIds, type Doc } from '../doc';
 import type { Tool, Ui } from './state';
 import { chooseAndImport } from './importer';
@@ -335,6 +336,18 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
         return r.project;
       });
       if (id) doc.select({ kind: 'clips', ids: [id] });
+    },
+    /** A title template at a frame (the playhead), on a track (or the first free one above the pictures). */
+    addTemplate: (id: string, at?: number, track?: string) => {
+      const t = templateById(id);
+      if (!t) return;
+      let made = '';
+      edit(`Add ${t.name}`, (p) => {
+        const r = addTemplate(p, t, at ?? here(), fps(), track);
+        made = r.id;
+        return r.project;
+      });
+      if (made) doc.select({ kind: 'clips', ids: [made] });
     },
     addGenerated: (kind: 'color' | 'adjustment', color?: string) => {
       let id = '';

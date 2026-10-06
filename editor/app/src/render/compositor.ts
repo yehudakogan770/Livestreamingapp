@@ -6,7 +6,7 @@ import type { EffectNow, Layer, MotionNow, Op } from './frame';
 import { nodeUniforms, planGrade, wheelVectors } from './grade';
 import type { NodeNow } from '../model/grade';
 import { CUTOUT_FS, LIMIT_FS } from './maskfx';
-import { drawText } from './text';
+import { drawText, textStamp } from './text';
 import {
   BLEND_MODES,
   COMPOSITE_FS,
@@ -65,7 +65,10 @@ export class Compositor {
   private vaoQuad: WebGLVertexArrayObject;
   private programs = new Map<string, Program>();
   private targets: Target[] = [];
-  private textures = new Map<string, { tex: WebGLTexture; stamp: string }>();
+  /** Each picture's texture, reused frame after frame (its storage is made again only when the size changes). */
+  private textures = new Map<string, { tex: WebGLTexture; stamp: string; w: number; h: number }>();
+  /** The four corners of the layer being drawn (made once, not every frame). */
+  private quadData = new Float32Array(24);
   private curveTex = new Map<string, { tex: WebGLTexture; stamp: string }>();
   private lutTex = new Map<string, { tex: WebGLTexture; size: number }>();
   private empty: WebGLTexture;
@@ -258,16 +261,21 @@ export class Compositor {
     const gl = this.gl;
     let t = this.textures.get(key);
     if (!t) {
-      t = { tex: this.makeTexture(), stamp: '' };
+      t = { tex: this.makeTexture(), stamp: '', w: 0, h: 0 };
       this.textures.set(key, t);
     }
     gl.bindTexture(gl.TEXTURE_2D, t.tex);
     if (t.stamp !== stamp || stamp === '') {
       try {
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+        // The same size as last time: new pixels into the storage already there (no new GPU memory each frame).
+        if (t.w === w && t.h === h) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
+        else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
       } catch {
+        t.w = 0;
         return null;
       }
+      t.w = w;
+      t.h = h;
       t.stamp = stamp;
     }
     return { tex: t.tex, w, h };
@@ -284,7 +292,7 @@ export class Compositor {
     const ctx = c.getContext('2d') as CanvasRenderingContext2D | null;
     if (!ctx) return null;
     ctx.clearRect(0, 0, this.w, this.h);
-    drawText(ctx, layer.source.text, this.w, this.h, layer.source.local, layer.source.length);
+    drawText(ctx, layer.source.text, this.w, this.h, layer.source.local, layer.source.length, layer.fps);
     return c;
   }
 
@@ -323,11 +331,18 @@ export class Compositor {
       sw = this.w;
       sh = this.h;
     } else if (src.kind === 'text') {
-      const c = this.textSource(layer);
-      if (!c) return false;
-      const up = this.upload(`text:${layer.key}`, c, '');
-      if (!up) return false;
-      tex = up.tex;
+      // Words are drawn again only when they look different (while they come on or go off, or are changed).
+      const key = `text:${layer.key}`;
+      const stamp = `${this.w}x${this.h}|${textStamp(src.text, src.local, src.length, layer.fps)}`;
+      const have = this.textures.get(key);
+      if (have && have.stamp === stamp) tex = have.tex;
+      else {
+        const c = this.textSource(layer);
+        if (!c) return false;
+        const up = this.upload(key, c, stamp);
+        if (!up) return false;
+        tex = up.tex;
+      }
       sw = this.w;
       sh = this.h;
     } else {
@@ -349,7 +364,7 @@ export class Compositor {
   private place(tex: WebGLTexture, sw: number, sh: number, m: MotionNow, target: Target) {
     const gl = this.gl;
     const corner = placeCorner(m, sw, sh, this.w, this.h, this.seqH);
-    const data = new Float32Array(24);
+    const data = this.quadData;
     [
       [0, 0],
       [1, 0],
@@ -650,12 +665,21 @@ export class Compositor {
   private compose(ops: Op[], pics: Pictures): Target {
     let acc = this.take();
     this.clear(acc);
+    // Nothing drawn yet: the first fully opaque layer is the frame so far (no pass to put it over nothing).
+    let empty = true;
     for (const op of ops) {
       if (op.kind === 'layer') {
         const t = this.renderLayer(op.layer, pics);
         if (!t) continue;
+        if (empty && op.layer.motion.opacity >= 100) {
+          this.give(acc);
+          acc = t;
+          empty = false;
+          continue;
+        }
         acc = this.composite(acc, t, op.layer.motion.opacity / 100, op.layer.motion.blend);
         this.give(t);
+        empty = false;
       } else if (op.kind === 'transition') {
         const a = this.renderLayer(op.from, pics);
         const b = this.renderLayer(op.to, pics);
@@ -669,6 +693,12 @@ export class Compositor {
         });
         this.give(a);
         this.give(b);
+        if (empty) {
+          this.give(acc);
+          acc = out;
+          empty = false;
+          continue;
+        }
         acc = this.composite(acc, out, 1, op.to?.motion.blend ?? op.from?.motion.blend ?? 'normal');
         this.give(out);
       } else {
@@ -682,6 +712,7 @@ export class Compositor {
         const mixed = this.composite(acc, t, op.layer.motion.opacity / 100, 'normal');
         this.give(t);
         acc = mixed;
+        empty = false;
       }
     }
     return acc;
@@ -773,7 +804,7 @@ export class Compositor {
     const key = `matte:${layer.key}:${mask.id}`;
     let t = this.textures.get(key);
     if (!t) {
-      t = { tex: this.makeTexture(), stamp: '' };
+      t = { tex: this.makeTexture(), stamp: '', w: 0, h: 0 };
       this.textures.set(key, t);
     }
     gl.bindTexture(gl.TEXTURE_2D, t.tex);
