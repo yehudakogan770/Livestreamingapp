@@ -210,14 +210,19 @@ function ControlApp() {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
       },
-      {
-        label: 'Stream Deck…',
-        hint: 'Lumora’s buttons for the Elgato Stream Deck',
-        onClick: () => {
-          refreshDeck();
-          setDeckOpen(true);
-        },
-      },
+      // Only on computers with the Stream Deck app.
+      ...(deck.found
+        ? [
+            {
+              label: 'Stream Deck…',
+              hint: 'Lumora’s buttons for the Elgato Stream Deck',
+              onClick: () => {
+                refreshDeck();
+                setDeckOpen(true);
+              },
+            },
+          ]
+        : []),
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
       ...(access
@@ -378,6 +383,7 @@ function ControlApp() {
     signOut,
     remote,
     refreshDeck,
+    deck.found,
     openBroadcast,
     show?.sources,
     show?.overlays,
