@@ -3,7 +3,15 @@ import { Doc } from '../doc';
 import { emptyProject } from '../model/types';
 import { assign, COMMANDS, comboOf, conflicts, diff, effective, holderOf, keyName, lookup, normalize, PRESETS, unassign, type KeyLike } from './shortcuts';
 
-const press = (code: string, key: string, mods: Partial<KeyLike> = {}): KeyLike => ({ key, code, ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...mods });
+const press = (code: string, key: string, mods: Partial<KeyLike> = {}): KeyLike => ({
+  key,
+  code,
+  ctrlKey: false,
+  metaKey: false,
+  shiftKey: false,
+  altKey: false,
+  ...mods,
+});
 
 describe('keyboard shortcuts', () => {
   it('reads keys by their place, in any layout', () => {

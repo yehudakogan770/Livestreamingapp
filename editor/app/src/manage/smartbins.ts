@@ -21,10 +21,12 @@ export function usedMedia(p: Project): Set<string> {
 export function searchMatches(m: MediaItem, query: string): boolean {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (!words.length) return true;
-  const hay = [m.name, m.path.split(/[\\/]/).pop() ?? '', ...(m.tags ?? []).map((t) => `#${t}`), m.notes ?? '', m.source?.codec ?? '']
-    .join(' ')
-    .toLowerCase();
-  const said = () => (m.transcript?.words ?? []).map((w) => w.w).join(' ').toLowerCase();
+  const hay = [m.name, m.path.split(/[\\/]/).pop() ?? '', ...(m.tags ?? []).map((t) => `#${t}`), m.notes ?? '', m.source?.codec ?? ''].join(' ').toLowerCase();
+  const said = () =>
+    (m.transcript?.words ?? [])
+      .map((w) => w.w)
+      .join(' ')
+      .toLowerCase();
   let spoken: string | null = null;
   return words.every((w) => {
     if (hay.includes(w)) return true;
@@ -58,7 +60,9 @@ export function ruleMatches(m: MediaItem, r: SmartRule, used: Set<string>, now: 
 export function smartBinItems(p: Project, bin: SmartBin, now = Date.now()): MediaItem[] {
   const used = usedMedia(p);
   if (!bin.rules.length) return [...p.media];
-  return p.media.filter((m) => (bin.match === 'all' ? bin.rules.every((r) => ruleMatches(m, r, used, now)) : bin.rules.some((r) => ruleMatches(m, r, used, now))));
+  return p.media.filter((m) =>
+    bin.match === 'all' ? bin.rules.every((r) => ruleMatches(m, r, used, now)) : bin.rules.some((r) => ruleMatches(m, r, used, now)),
+  );
 }
 
 /** A rule in words. */

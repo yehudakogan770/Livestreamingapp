@@ -68,7 +68,10 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
       x: e.clientX,
       y: e.clientY,
       items: [
-        { label: 'Open in source monitor', run: () => ui.set({ source: { media: m.id, time: m.range?.[0] ?? 0, in: m.range?.[0] ?? null, out: m.range?.[1] ?? null }, sourceTab: 'source' }) },
+        {
+          label: 'Open in source monitor',
+          run: () => ui.set({ source: { media: m.id, time: m.range?.[0] ?? 0, in: m.range?.[0] ?? null, out: m.range?.[1] ?? null }, sourceTab: 'source' }),
+        },
         { label: 'Rename', run: () => setRenaming(m.id) },
         {
           label: 'New sequence from this clip',

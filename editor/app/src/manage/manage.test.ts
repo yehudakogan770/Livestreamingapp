@@ -93,7 +93,9 @@ describe('collect files / archive', () => {
     expect(trimmed.items.find((x) => x.path === '/shoot/c.wav')?.trim).toBeNull();
     // Clips now point 8 seconds earlier into the shorter file.
     const s = current(trimmed.project);
-    const ins = s.clips.filter((c) => c.source.kind === 'media' && c.source.media === 'a').map((c) => (c.source.kind === 'media' ? Math.round(c.source.in) : -1));
+    const ins = s.clips
+      .filter((c) => c.source.kind === 'media' && c.source.media === 'a')
+      .map((c) => (c.source.kind === 'media' ? Math.round(c.source.in) : -1));
     expect([...new Set(ins)].sort((x, y) => x - y)).toEqual([2, 42]);
     expect(trimmed.project.media.find((m) => m.id === 'a')?.duration).toBeCloseTo(49);
   });
@@ -155,7 +157,11 @@ describe('scene detection', () => {
 
 describe('finding media', () => {
   it('searches names, tags, notes and what is said', () => {
-    const m = media('a', { tags: ['interview'], notes: 'Great light', transcript: { language: 'en', model: 'x', words: [{ w: 'Welcome', s: 0, e: 1 }], done: [] } });
+    const m = media('a', {
+      tags: ['interview'],
+      notes: 'Great light',
+      transcript: { language: 'en', model: 'x', words: [{ w: 'Welcome', s: 0, e: 1 }], done: [] },
+    });
     expect(searchMatches(m, '')).toBe(true);
     expect(searchMatches(m, '#interview')).toBe(true);
     expect(searchMatches(m, 'great LIGHT')).toBe(true);
@@ -168,7 +174,8 @@ describe('finding media', () => {
     let p = project();
     p = setMediaInfo(p, 'a', { rating: 4, tags: ['Interview'] });
     p = { ...p, media: p.media.map((m) => (m.id === 'b' ? { ...m, width: 3840, height: 2160, addedAt: now - 3600_000 } : m)) };
-    const names = (rules: Parameters<typeof newSmartBin>[1], match: 'all' | 'any' = 'all') => smartBinItems(p, newSmartBin('x', rules, match), now).map((m) => m.id);
+    const names = (rules: Parameters<typeof newSmartBin>[1], match: 'all' | 'any' = 'all') =>
+      smartBinItems(p, newSmartBin('x', rules, match), now).map((m) => m.id);
     expect(names([{ field: 'kind', is: 'audio' }])).toEqual(['c']);
     expect(names([{ field: 'rating', atLeast: 3 }])).toEqual(['a']);
     expect(names([{ field: 'tag', has: 'interview' }])).toEqual(['a']);

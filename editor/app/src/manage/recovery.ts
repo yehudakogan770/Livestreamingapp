@@ -66,7 +66,12 @@ export function toPrune(entries: readonly { name: string }[], key: string, keep:
     .map((e) => parseBackup(e.name))
     .filter((b): b is Backup => !!b && b.key !== key && now - b.at > maxAge)
     .map((b) => b.name);
-  return [...backupsOf(entries, key).slice(Math.max(0, keep)).map((b) => b.name), ...old];
+  return [
+    ...backupsOf(entries, key)
+      .slice(Math.max(0, keep))
+      .map((b) => b.name),
+    ...old,
+  ];
 }
 
 /** Is an autosave due? (Changed since the last one, and the time has come.) */
@@ -78,7 +83,14 @@ export function parseMarker(text: string): Marker | null {
   try {
     const m = JSON.parse(text) as Partial<Marker>;
     if (typeof m.key !== 'string' || typeof m.session !== 'string') return null;
-    return { key: m.key, name: String(m.name ?? 'Untitled'), path: String(m.path ?? ''), session: m.session, backupAt: Number(m.backupAt) || 0, savedAt: Number(m.savedAt) || 0 };
+    return {
+      key: m.key,
+      name: String(m.name ?? 'Untitled'),
+      path: String(m.path ?? ''),
+      session: m.session,
+      backupAt: Number(m.backupAt) || 0,
+      savedAt: Number(m.savedAt) || 0,
+    };
   } catch {
     return null;
   }

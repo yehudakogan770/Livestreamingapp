@@ -112,7 +112,8 @@ fn recovery_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         .app_data_dir()
         .map_err(|e| e.to_string())?
         .join("recovery");
-    std::fs::create_dir_all(&dir).map_err(|e| format!("Could not make the recovery folder: {e}"))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Could not make the recovery folder: {e}"))?;
     Ok(dir)
 }
 

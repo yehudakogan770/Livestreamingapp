@@ -30,7 +30,8 @@ const escape = (s: string): string => s.replace(/[=;#\\\n]/g, (c) => (c === '\n'
 export function ffmetadata(chapters: Chapter[], title?: string): string {
   const lines = [';FFMETADATA1'];
   if (title) lines.push(`title=${escape(title)}`);
-  for (const c of chapters) lines.push('[CHAPTER]', 'TIMEBASE=1/1000', `START=${Math.round(c.start * 1000)}`, `END=${Math.round(c.end * 1000)}`, `title=${escape(c.title)}`);
+  for (const c of chapters)
+    lines.push('[CHAPTER]', 'TIMEBASE=1/1000', `START=${Math.round(c.start * 1000)}`, `END=${Math.round(c.end * 1000)}`, `title=${escape(c.title)}`);
   return `${lines.join('\n')}\n`;
 }
 

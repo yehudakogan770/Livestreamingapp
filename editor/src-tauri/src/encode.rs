@@ -78,7 +78,8 @@ pub fn parse_encoders(said: &str) -> Vec<String> {
 
 /// Encode a few frames with an encoder: does it really work here?
 fn works(ffmpeg: &Path, name: &str) -> bool {
-    let pix = if name.ends_with("_qsv") || name.ends_with("_amf") || name.ends_with("_videotoolbox") {
+    let pix = if name.ends_with("_qsv") || name.ends_with("_amf") || name.ends_with("_videotoolbox")
+    {
         "nv12"
     } else {
         "yuv420p"
@@ -166,7 +167,11 @@ impl Enc {
     fn finish(&mut self) -> Result<(), String> {
         drop(self.stdin.take());
         let status = self.child.wait();
-        let said = self.said.take().and_then(|h| h.join().ok()).unwrap_or_default();
+        let said = self
+            .said
+            .take()
+            .and_then(|h| h.join().ok())
+            .unwrap_or_default();
         match status {
             Ok(s) if s.success() => Ok(()),
             _ => Err(explain(&said)),
@@ -294,7 +299,9 @@ impl Encoders {
     /// # Errors
     /// FFmpeg could not finish the file.
     pub fn close(&self, id: u32) -> Result<(), String> {
-        let enc = lock(&self.open).remove(&id).ok_or("That encoder is closed.")?;
+        let enc = lock(&self.open)
+            .remove(&id)
+            .ok_or("That encoder is closed.")?;
         let mut e = lock(&enc);
         e.finish()
     }
@@ -336,7 +343,15 @@ mod tests {
         let found = parse_encoders(LIST);
         assert_eq!(
             found,
-            vec!["libx264", "h264_nvenc", "h264_qsv", "hevc_amf", "prores_ks", "aac", "mov_text"]
+            vec![
+                "libx264",
+                "h264_nvenc",
+                "h264_qsv",
+                "hevc_amf",
+                "prores_ks",
+                "aac",
+                "mov_text"
+            ]
         );
         // The legend above the line is not an encoder list.
         assert!(!found.iter().any(|n| n == "="));
@@ -356,7 +371,13 @@ mod tests {
     #[test]
     fn refuses_unreasonable_frames() {
         let e = Encoders::default();
-        let r = e.open(Path::new("ffmpeg"), &[], Path::new("/w"), Path::new("/o"), 0);
+        let r = e.open(
+            Path::new("ffmpeg"),
+            &[],
+            Path::new("/w"),
+            Path::new("/o"),
+            0,
+        );
         assert!(r.is_err());
         assert!(e.frame(7, &[0; 4]).is_err());
         assert!(e.close(7).is_err());

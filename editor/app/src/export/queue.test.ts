@@ -27,7 +27,13 @@ describe('the render queue', () => {
     // Paused still counts as being made: nothing else starts.
     s = reduce(s, add('b'));
     expect(nextToRun(s)).toBeNull();
-    s = run([{ type: 'resume', id: 'a' }, { type: 'cancel', id: 'a' }], s);
+    s = run(
+      [
+        { type: 'resume', id: 'a' },
+        { type: 'cancel', id: 'a' },
+      ],
+      s,
+    );
     expect(status(s)).toBe('a:canceled b:queued');
     expect(nextToRun(s)?.id).toBe('b');
     // A waiting one can be canceled too.

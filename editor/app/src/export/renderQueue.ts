@@ -91,7 +91,8 @@ export class RenderQueue {
 
   private async run(id: string, w: Work) {
     const { plan } = w;
-    const seconds = (plan.settings.range.to - plan.settings.range.from) / Math.max(1, plan.project.sequences.find((s) => s.id === plan.project.open)?.fps ?? 30);
+    const seconds =
+      (plan.settings.range.to - plan.settings.range.from) / Math.max(1, plan.project.sequences.find((s) => s.id === plan.project.open)?.fps ?? 30);
     let finished = false;
     const ex = new Exporter(plan.project, plan.settings, (st) => {
       if (st.stage === 'picture' || st.stage === 'sound') {
@@ -102,7 +103,9 @@ export class RenderQueue {
       finished = true;
       if (st.stage === 'done') {
         const notes = [...plan.notes, st.message];
-        void this.after(w, st.path, seconds).then((more) => this.send({ type: 'finish', id, path: st.path, message: [...notes, ...more].join(' '), at: Date.now() }));
+        void this.after(w, st.path, seconds).then((more) =>
+          this.send({ type: 'finish', id, path: st.path, message: [...notes, ...more].join(' '), at: Date.now() }),
+        );
       } else if (st.stage === 'stopped') this.send({ type: 'cancel', id });
       else this.send({ type: 'fail', id, message: st.message, at: Date.now() });
     });

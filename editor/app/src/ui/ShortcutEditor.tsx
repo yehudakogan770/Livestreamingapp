@@ -47,7 +47,13 @@ export function ShortcutEditor({ onClose }: { onClose: () => void }) {
             </button>
           )}
           <span className="ed__fill" />
-          <input className="text" placeholder="Find a command or key" value={filter} onChange={(e) => setFilter(e.target.value)} onKeyDown={(e) => e.stopPropagation()} />
+          <input
+            className="text"
+            placeholder="Find a command or key"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
         </div>
         {clashes.size > 0 && (
           <p className="form__problem">
@@ -84,7 +90,11 @@ export function ShortcutEditor({ onClose }: { onClose: () => void }) {
                     {(k.bindings[c.id] ?? []).map((combo) => (
                       <span key={combo} className="kbd">
                         {combo}
-                        <button type="button" aria-label={`Remove ${combo} from ${c.label}`} onClick={() => keys.setBindings(unassign(k.bindings, c.id, combo))}>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${combo} from ${c.label}`}
+                          onClick={() => keys.setBindings(unassign(k.bindings, c.id, combo))}
+                        >
                           ✕
                         </button>
                       </span>

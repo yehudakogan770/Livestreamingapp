@@ -92,7 +92,18 @@ export function encodeArgs(enc: string, v: VideoSpec, fps: number): string[] {
   const bt709 = ['-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv'];
   switch (v.codec) {
     case 'prores':
-      return ['-c:v', 'prores_ks', '-profile:v', String(PRORES[v.prores ?? 'hq'] ?? 3), '-vendor', 'apl0', ...(v.alpha ? ['-alpha_bits', '16'] : []), '-pix_fmt', pix, ...bt709];
+      return [
+        '-c:v',
+        'prores_ks',
+        '-profile:v',
+        String(PRORES[v.prores ?? 'hq'] ?? 3),
+        '-vendor',
+        'apl0',
+        ...(v.alpha ? ['-alpha_bits', '16'] : []),
+        '-pix_fmt',
+        pix,
+        ...bt709,
+      ];
     case 'dnxhr':
       return ['-c:v', 'dnxhd', '-profile:v', `dnxhr_${v.dnxhr ?? 'hq'}`, '-pix_fmt', pix, ...bt709];
     case 'png':

@@ -154,7 +154,16 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
       setOut(picked);
     }
     try {
-      const made = planDelivery(doc.project, { preset: p, seq: s.id, range, out: target, chapters, captions: { burn, embed, sidecar }, encoders: encoders ?? [], app: inApp() });
+      const made = planDelivery(doc.project, {
+        preset: p,
+        seq: s.id,
+        range,
+        out: target,
+        chapters,
+        captions: { burn, embed, sidecar },
+        encoders: encoders ?? [],
+        app: inApp(),
+      });
       renderQueue.add(made, s.name, p.name, toLumora && !!v);
       ui.note(`${s.name} · ${p.name} is in the render queue`);
       close();
@@ -251,7 +260,8 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
         )}
         {hasCaptions && v && (p.container === 'mp4' || p.container === 'mov') && (
           <label className="check form__check">
-            <input type="checkbox" checked={embed} onChange={(e) => setEmbed(e.target.checked)} /> Put the captions in the file (a subtitle track viewers can turn on)
+            <input type="checkbox" checked={embed} onChange={(e) => setEmbed(e.target.checked)} /> Put the captions in the file (a subtitle track viewers can
+            turn on)
           </label>
         )}
         {hasCaptions && (
@@ -327,7 +337,12 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
           <button type="button" className="btn" disabled={seconds <= 0 || problems.length > 0 || typeof plan === 'string'} onClick={() => void queue(false)}>
             Add to queue
           </button>
-          <button type="button" className="btn btn--primary" disabled={seconds <= 0 || problems.length > 0 || typeof plan === 'string'} onClick={() => void queue(true)}>
+          <button
+            type="button"
+            className="btn btn--primary"
+            disabled={seconds <= 0 || problems.length > 0 || typeof plan === 'string'}
+            onClick={() => void queue(true)}
+          >
             Export
           </button>
         </div>
@@ -339,7 +354,13 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
 /** A preset in a few words. */
 function describe(p: DeliveryPreset, s: { width: number; height: number }): string {
   const v = p.video;
-  const sound = p.audio ? (p.audio.codec === 'pcm24' ? '24-bit PCM' : p.audio.codec === 'pcm16' ? '16-bit PCM' : `${p.audio.codec.toUpperCase()} ${p.audio.kbps} kb/s`) : '';
+  const sound = p.audio
+    ? p.audio.codec === 'pcm24'
+      ? '24-bit PCM'
+      : p.audio.codec === 'pcm16'
+        ? '16-bit PCM'
+        : `${p.audio.codec.toUpperCase()} ${p.audio.kbps} kb/s`
+    : '';
   const loud = p.loudness !== null ? `${p.loudness} LUFS` : '';
   if (!v) return [sound, loud, `.${p.container}`].filter(Boolean).join(' · ');
   const w = v.width ?? (v.height ? Math.round((v.height * s.width) / s.height) : s.width);
@@ -350,7 +371,8 @@ function describe(p: DeliveryPreset, s: { width: number; height: number }): stri
       : v.codec === 'dnxhr'
         ? `DNxHR ${(v.dnxhr ?? '').toUpperCase()}`
         : (CODECS.find((c) => c[0] === v.codec)?.[1] ?? v.codec);
-  const r = v.codec === 'h264' || v.codec === 'hevc' ? (v.rate.mode === 'quality' ? `quality ${v.rate.q}` : `${v.rate.mode.toUpperCase()} ${v.rate.mbps} Mb/s`) : '';
+  const r =
+    v.codec === 'h264' || v.codec === 'hevc' ? (v.rate.mode === 'quality' ? `quality ${v.rate.q}` : `${v.rate.mode.toUpperCase()} ${v.rate.mbps} Mb/s`) : '';
   return [codec, `${w}×${h}`, v.bitDepth === 10 ? '10-bit' : '', v.alpha ? 'alpha' : '', r, sound, loud, `.${p.container}`].filter(Boolean).join(' · ');
 }
 
@@ -401,7 +423,17 @@ function PresetSettings({
                   ...p,
                   container: 'mp4',
                   audio: { codec: 'aac', kbps: 256 },
-                  video: { codec: 'h264', width: null, height: null, fit: 'fit', fps: null, rate: { mode: 'quality', q: 80 }, bitDepth: 8, alpha: false, hardware: 'auto' },
+                  video: {
+                    codec: 'h264',
+                    width: null,
+                    height: null,
+                    fit: 'fit',
+                    fps: null,
+                    rate: { mode: 'quality', q: 80 },
+                    bitDepth: 8,
+                    alpha: false,
+                    hardware: 'auto',
+                  },
                 })
           }
           label="Make"
@@ -722,7 +754,11 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
                   </button>
                 )}
                 {j.status === 'done' && j.path && inApp() && (
-                  <button type="button" className="btn btn--sm" onClick={() => j.path && void native.reveal(j.path.replace(/_%0\dd(\.[a-z0-9]+)$/i, '_00000$1'))}>
+                  <button
+                    type="button"
+                    className="btn btn--sm"
+                    onClick={() => j.path && void native.reveal(j.path.replace(/_%0\dd(\.[a-z0-9]+)$/i, '_00000$1'))}
+                  >
                     Open folder
                   </button>
                 )}
@@ -753,10 +789,19 @@ export function QueueChip({ ui }: { ui: Ui }) {
   if (!all.left && !q.jobs.some((j) => j.status === 'failed')) return null;
   const active = all.active;
   return (
-    <button type="button" className={`rq-chip${q.jobs.some((j) => j.status === 'failed') ? ' is-bad' : ''}`} onClick={() => panels.show({ kind: 'queue' })} title="Render queue">
+    <button
+      type="button"
+      className={`rq-chip${q.jobs.some((j) => j.status === 'failed') ? ' is-bad' : ''}`}
+      onClick={() => panels.show({ kind: 'queue' })}
+      title="Render queue"
+    >
       <i style={{ width: `${Math.round(all.done * 100)}%` }} />
       <span>
-        {active ? `${active.status === 'paused' ? 'Paused' : 'Exporting'} ${Math.round(active.done * 100)}%` : all.left ? `${all.left} waiting` : 'Export failed'}
+        {active
+          ? `${active.status === 'paused' ? 'Paused' : 'Exporting'} ${Math.round(active.done * 100)}%`
+          : all.left
+            ? `${all.left} waiting`
+            : 'Export failed'}
         {all.left > 1 ? ` · ${all.left - (active ? 1 : 0)} more` : ''}
       </span>
     </button>

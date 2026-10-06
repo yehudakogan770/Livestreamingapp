@@ -72,7 +72,12 @@ export function UndoHistory({ doc, onClose }: { doc: Doc; onClose: () => void })
         </li>
         {[...done, ...undone].map((label, i) => (
           <li key={i}>
-            <button type="button" className={i + 1 === at ? 'is-now' : i + 1 > at ? 'is-undone' : ''} onClick={() => doc.goTo(i + 1)} aria-current={i + 1 === at}>
+            <button
+              type="button"
+              className={i + 1 === at ? 'is-now' : i + 1 > at ? 'is-undone' : ''}
+              onClick={() => doc.goTo(i + 1)}
+              aria-current={i + 1 === at}
+            >
               {i + 1}. {label}
             </button>
           </li>
@@ -116,8 +121,8 @@ export function ArchiveDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onClose:
     <Modal title="Collect files / archive" onClose={() => !busy && onClose()} wide>
       <div className="form">
         <p className="dlv__note">
-          The project and every file it uses are copied into one folder, with a project file there that uses the copies. Good for moving to another
-          computer, handing over, or archiving.
+          The project and every file it uses are copied into one folder, with a project file there that uses the copies. Good for moving to another computer,
+          handing over, or archiving.
         </p>
         <div className="form__row">
           <span>Into</span>
@@ -234,7 +239,8 @@ export function BackupsDialog({ doc, ui, autosaver, onClose }: { doc: Doc; ui: U
           {list?.map((b) => (
             <li key={b.name}>
               <button type="button" onClick={() => void restore(b)} title="Restore this version">
-                {new Date(b.at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })} · {ago(b.at)}
+                {new Date(b.at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit' })} ·{' '}
+                {ago(b.at)}
               </button>
             </li>
           ))}
@@ -327,7 +333,19 @@ function Stars({ value, onChange }: { value: number; onChange: (n: number) => vo
 }
 
 /** A clip's stars, tags and notes, what it is, and where it is used. */
-export function MediaInfoDialog({ doc, media, engine, onClose, usesOnly }: { doc: Doc; media: string; engine: Engine; onClose: () => void; usesOnly?: boolean }) {
+export function MediaInfoDialog({
+  doc,
+  media,
+  engine,
+  onClose,
+  usesOnly,
+}: {
+  doc: Doc;
+  media: string;
+  engine: Engine;
+  onClose: () => void;
+  usesOnly?: boolean;
+}) {
   const { project } = useDoc(doc);
   const m = project.media.find((x) => x.id === media);
   const [tags, setTags] = useState((m?.tags ?? []).join(', '));
@@ -373,7 +391,14 @@ export function MediaInfoDialog({ doc, media, engine, onClose, usesOnly }: { doc
             )}
             <label className="form__row">
               <span>Notes</span>
-              <textarea className="text" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} onBlur={saveText} onKeyDown={(e) => e.stopPropagation()} />
+              <textarea
+                className="text"
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                onBlur={saveText}
+                onKeyDown={(e) => e.stopPropagation()}
+              />
             </label>
             <p className="dlv__note">
               {m.kind} · {m.kind !== 'audio' ? `${m.width}×${m.height} · ` : ''}

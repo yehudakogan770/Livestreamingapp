@@ -111,7 +111,11 @@ pub fn fill_files(args: &[String], from: &str, to: &str) -> Vec<String> {
 }
 
 /// Collect every file; a file that fails is reported and the rest carry on.
-pub fn collect(ffmpeg: Option<&Path>, jobs: &[CollectJob], report: &dyn Fn(CollectProgress)) -> Vec<String> {
+pub fn collect(
+    ffmpeg: Option<&Path>,
+    jobs: &[CollectJob],
+    report: &dyn Fn(CollectProgress),
+) -> Vec<String> {
     let mut problems = Vec::new();
     let of = jobs.len();
     for (i, job) in jobs.iter().enumerate() {
@@ -134,7 +138,9 @@ pub fn collect(ffmpeg: Option<&Path>, jobs: &[CollectJob], report: &dyn Fn(Colle
                 fs::create_dir_all(dir).map_err(|e| e.to_string())?;
             }
             match &job.args {
-                None => fs::copy(&job.from, &to).map(|_| ()).map_err(|e| e.to_string()),
+                None => fs::copy(&job.from, &to)
+                    .map(|_| ())
+                    .map_err(|e| e.to_string()),
                 Some(args) => {
                     let ff = ffmpeg.ok_or("FFmpeg was not found.")?;
                     let out = quiet(ff)
@@ -147,7 +153,11 @@ pub fn collect(ffmpeg: Option<&Path>, jobs: &[CollectJob], report: &dyn Fn(Colle
                         Ok(())
                     } else {
                         let said = String::from_utf8_lossy(&out.stderr);
-                        Err(said.lines().rfind(|l| !l.trim().is_empty()).unwrap_or("FFmpeg stopped.").to_owned())
+                        Err(said
+                            .lines()
+                            .rfind(|l| !l.trim().is_empty())
+                            .unwrap_or("FFmpeg stopped.")
+                            .to_owned())
                     }
                 }
             }
@@ -249,7 +259,9 @@ frame=  200 fps=0.0 q=-0.0 Lsize=N/A time=00:00:20.00
         assert!(a.contains(&"/m/a.mp4".to_owned()));
         assert!(a.iter().any(|x| x.contains("gt(scene,0.950)")));
         let b = scene_args(Path::new("x"), 0.4);
-        assert!(b.iter().any(|x| x == "scale=320:-2,select='gt(scene,0.400)',showinfo"));
+        assert!(b
+            .iter()
+            .any(|x| x == "scale=320:-2,select='gt(scene,0.400)',showinfo"));
     }
 
     #[test]
@@ -262,7 +274,10 @@ frame=  200 fps=0.0 q=-0.0 Lsize=N/A time=00:00:20.00
         assert!(!safe_name(".hidden"));
         assert!(!safe_name(""));
         assert!(place(Path::new("/r"), "C:\\x").is_err());
-        assert_eq!(place(Path::new("/r"), "a.json").unwrap(), Path::new("/r/a.json"));
+        assert_eq!(
+            place(Path::new("/r"), "a.json").unwrap(),
+            Path::new("/r/a.json")
+        );
     }
 
     #[test]
@@ -280,7 +295,10 @@ frame=  200 fps=0.0 q=-0.0 Lsize=N/A time=00:00:20.00
             },
             CollectJob {
                 from: dir.join("gone.bin").to_string_lossy().into_owned(),
-                to: dir.join("out/Media/gone.bin").to_string_lossy().into_owned(),
+                to: dir
+                    .join("out/Media/gone.bin")
+                    .to_string_lossy()
+                    .into_owned(),
                 args: None,
             },
         ];

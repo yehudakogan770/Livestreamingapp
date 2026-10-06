@@ -86,7 +86,10 @@ export const COMMANDS: Command[] = [
     run: (a) => a.zoomToFit((document.querySelector('.tl__scroll') as HTMLElement | null)?.clientWidth ?? 1000),
   },
   ...tools.map(([id, label, t]): Command => ({ id, label, group: 'Tools', run: (a) => a.tool(t) })),
-  ...Array.from({ length: 9 }, (_, i): Command => ({ id: `angle${i + 1}`, label: `Cut to camera ${i + 1}`, group: 'Multicam', run: (a) => a.switchAngleNumber(i + 1) })),
+  ...Array.from(
+    { length: 9 },
+    (_, i): Command => ({ id: `angle${i + 1}`, label: `Cut to camera ${i + 1}`, group: 'Multicam', run: (a) => a.switchAngleNumber(i + 1) }),
+  ),
   { id: 'addText', label: 'Add text', group: 'Project', run: (a) => a.addText(0) },
   { id: 'import', label: 'Import…', group: 'Project', run: (a) => a.importMedia() },
   { id: 'export', label: 'Export…', group: 'Project', run: (_a, ui) => ui.set({ dialog: 'export' }) },
@@ -320,7 +323,12 @@ export function normalize(combo: string): string {
   const parts = combo.split('+');
   const key = parts.pop() ?? '';
   const mods = new Set(parts.map((x) => x.toLowerCase()));
-  return [mods.has('ctrl') || mods.has('cmd') ? 'Ctrl' : '', mods.has('alt') || mods.has('option') ? 'Alt' : '', mods.has('shift') ? 'Shift' : '', key.length === 1 ? key.toUpperCase() : key]
+  return [
+    mods.has('ctrl') || mods.has('cmd') ? 'Ctrl' : '',
+    mods.has('alt') || mods.has('option') ? 'Alt' : '',
+    mods.has('shift') ? 'Shift' : '',
+    key.length === 1 ? key.toUpperCase() : key,
+  ]
     .filter(Boolean)
     .join('+');
 }

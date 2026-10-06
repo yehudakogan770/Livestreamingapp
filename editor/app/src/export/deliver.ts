@@ -59,7 +59,19 @@ export interface DeliveryPlan {
   notes: string[];
 }
 
-const LANG: Record<string, string> = { en: 'eng', he: 'heb', es: 'spa', fr: 'fra', de: 'deu', it: 'ita', pt: 'por', ru: 'rus', ar: 'ara', ja: 'jpn', zh: 'zho' };
+const LANG: Record<string, string> = {
+  en: 'eng',
+  he: 'heb',
+  es: 'spa',
+  fr: 'fra',
+  de: 'deu',
+  it: 'ita',
+  pt: 'por',
+  ru: 'rus',
+  ar: 'ara',
+  ja: 'jpn',
+  zh: 'zho',
+};
 
 function soundFormatOf(p: DeliveryPreset): SoundFormat | null {
   if (p.video) return null;
@@ -126,7 +138,8 @@ export function planDelivery(p: Project, req: DeliveryRequest): DeliveryPlan {
 
   const out = outputSize(s, v);
   const render = renderSize(s, out, v.fit);
-  const hw = v.hardware !== 'software' && (v.codec === 'h264' || v.codec === 'hevc') && pickVideoEncoder(v.codec, v.bitDepth, v.hardware, req.encoders)?.hardware;
+  const hw =
+    v.hardware !== 'software' && (v.codec === 'h264' || v.codec === 'hevc') && pickVideoEncoder(v.codec, v.bitDepth, v.hardware, req.encoders)?.hardware;
   const ffmpeg = req.app && (needsFfmpegPicture(preset, s) || !!hw);
   const image = preset.container === 'png' || preset.container === 'gif';
   const target = preset.container === 'png' ? numbered(req.out) : req.out;

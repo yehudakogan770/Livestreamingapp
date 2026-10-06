@@ -100,7 +100,15 @@ describe('planning a delivery', () => {
     expect(plan.settings.loudness).toBe('loudnorm=I=-14:TP=-1:LRA=11');
     expect(plan.settings.files?.map((f) => f[0])).toEqual(['chapters.txt']);
     // The last run: the picture copied in, chapters mapped from the input after the sound.
-    const jobs = finishJobs(plan.project, current(plan.project), plan.settings.range, { file: '{tmp}/video.mov', copy: true, crf: 0 }, 'aac', plan.settings.loudness, plan.settings.finish);
+    const jobs = finishJobs(
+      plan.project,
+      current(plan.project),
+      plan.settings.range,
+      { file: '{tmp}/video.mov', copy: true, crf: 0 },
+      'aac',
+      plan.settings.loudness,
+      plan.settings.finish,
+    );
     const last = jobs[jobs.length - 1]!.args;
     const inputs = last.filter((x) => x === '-i').length;
     expect(last[last.indexOf('-map_chapters') + 1]).toBe(String(inputs - 1));
