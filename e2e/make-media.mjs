@@ -19,10 +19,13 @@ const opus = ['-c:a', 'libopus', '-b:a', '48k'];
 const files = [
   ['live.webm', 120, [...video('testsrc2'), ...tone(440)], [...vp8, ...opus]],
   ['wide.webm', 120, video('smptebars'), vp8],
-  ['close.webm', 110, video('testsrc'), vp8],
-  ['side.webm', 120, video('rgbtestsrc'), vp8],
+  ['stage.webm', 120, video('rgbtestsrc'), vp8],
+  ['closeup.webm', 120, video('testsrc'), vp8],
+  ['audience.webm', 120, video('pal75bars'), vp8],
   ['podium.webm', 120, tone(330), opus],
-  ['hand.webm', 119, tone(550), opus],
+  ['hand.webm', 120, tone(550), opus],
+  ['room.webm', 120, tone(220), opus],
+  ['music.webm', 120, tone(660), opus],
 ];
 
 for (const [name, seconds, inputs, codecs] of files) {
