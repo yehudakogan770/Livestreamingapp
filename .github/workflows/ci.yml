@@ -32,6 +32,16 @@ jobs:
         run: npm run typecheck
       - name: UI tests
         run: npm test
+      # The website serves the Planner from docs/planner (GitHub Pages, from
+      # the repository): it is built here and must match what is committed.
+      - name: Lumora Planner build (docs/planner is up to date)
+        run: |
+          npm run planner:build
+          if [ -n "$(git status --porcelain -- docs/planner)" ]; then
+            git status --short -- docs/planner
+            echo "::error::docs/planner is out of date: run npm run planner:build and commit docs/planner"
+            exit 1
+          fi
       - name: Rust formatting
         run: cargo fmt --all --check
       - name: Rust lints

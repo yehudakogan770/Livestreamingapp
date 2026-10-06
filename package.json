@@ -13,6 +13,8 @@
     "edit:build": "cd editor && tauri build",
     "edit:ui:dev": "node scripts/vision-files.mjs && vite --config editor/vite.config.ts",
     "edit:ui:build": "node scripts/vision-files.mjs && vite build --config editor/vite.config.ts",
+    "planner:dev": "vite --config planner/vite.config.ts",
+    "planner:build": "vite build --config planner/vite.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run typecheck && npm run test && cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace"

@@ -1,0 +1,97 @@
+/* Run of show → Load from Planner… */
+.pld {
+  width: min(1080px, calc(100vw - 48px));
+  height: min(760px, calc(100vh - 64px));
+}
+.pld__body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+.pld__plans {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+}
+.pld__plan {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  color: var(--text);
+  text-align: left;
+  font-size: 13px;
+}
+.pld__plan:hover {
+  background: var(--panel-2, rgba(255, 255, 255, 0.04));
+}
+.pld__plan.is-sel {
+  background: var(--selected);
+  border-color: var(--accent);
+}
+.pld__plan em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.pld__open {
+  margin-top: auto;
+}
+.pld__preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px 14px;
+  overflow: auto;
+}
+.pld__opts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pld__sum {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.pld__cues {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+.pld__cues li {
+  display: grid;
+  grid-template-columns: 26px 92px 56px minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 4px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.pld__n,
+.pld__when,
+.pld__len {
+  font-family: var(--mono);
+  color: var(--text-dim);
+}
+.pld__what {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pld__what em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.pld__what em.field__note--warn {
+  color: var(--warning);
+}

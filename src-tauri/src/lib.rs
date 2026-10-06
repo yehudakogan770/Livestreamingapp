@@ -376,6 +376,40 @@ fn open_multiview(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(
     outputs::open_multiview(&app, &show).map_err(|e| e.to_string())
 }
 
+/// The web Lumora Planner (the team's shared run of show).
+const PLANNER_URL: &str = "https://yehudakogan770.github.io/Livestreamingapp/planner/";
+
+/// Opens the Planner in the computer's web browser (only that address).
+#[tauri::command]
+fn open_planner() -> Result<(), String> {
+    #[cfg(windows)]
+    let mut cmd = {
+        let mut c = std::process::Command::new("rundll32");
+        c.args(["url.dll,FileProtocolHandler", PLANNER_URL]);
+        c
+    };
+    #[cfg(target_os = "macos")]
+    let mut cmd = {
+        let mut c = std::process::Command::new("open");
+        c.arg(PLANNER_URL);
+        c
+    };
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let mut cmd = {
+        let mut c = std::process::Command::new("xdg-open");
+        c.arg(PLANNER_URL);
+        c
+    };
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| format!("The browser could not be opened: {e}"))?;
+    // Reaped once the opener hands the address to the browser.
+    std::thread::spawn(move || {
+        let _ = child.wait();
+    });
+    Ok(())
+}
+
 #[tauri::command]
 fn close_multiview(app: tauri::AppHandle) -> Result<(), String> {
     outputs::close_multiview(&app).map_err(|e| e.to_string())
@@ -1016,6 +1050,7 @@ pub fn run() {
             open_output,
             close_output,
             open_multiview,
+            open_planner,
             close_multiview,
             multiview_open,
             event_files,
