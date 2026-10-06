@@ -3,801 +3,624 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lumora · Live production and streaming software for Windows</title>
+    <title>Lumora: live production, editing and planning software for Windows</title>
     <meta
       name="description"
-      content="Meet Lumora: the free live production studio for every event. Switch cameras, add titles and slides, stream to YouTube and Facebook, and run every screen in the room from one Windows computer."
+      content="Lumora is live production software for Windows: switch cameras, stream and record, run titles, scoreboards and every screen in the room. Lumora Studio edits what you recorded. Lumora Planner keeps the team on one run of show."
     />
-    <meta property="og:title" content="Meet Lumora" />
-    <meta property="og:description" content="The live production studio for every event. Switch. Stream. Record." />
-    <meta property="og:image" content="img/main.jpg" />
-    <meta name="theme-color" content="#0b0c0f" />
+    <link rel="canonical" href="https://yehudakogan770.github.io/Livestreamingapp/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Lumora" />
+    <meta property="og:title" content="Lumora: live production software for Windows" />
+    <meta property="og:description" content="Switch, stream, record and run every screen in the room. Then edit it in Lumora Studio." />
+    <meta property="og:url" content="https://yehudakogan770.github.io/Livestreamingapp/" />
+    <meta property="og:image" content="https://yehudakogan770.github.io/Livestreamingapp/img/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The Lumora main screen with Next and On air monitors, the switcher and the inputs." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0c0d0f" />
+    <meta name="color-scheme" content="dark" />
     <link rel="icon" href="img/lumora-mark.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="site.css" />
   </head>
   <body>
-    <header class="top" data-top>
+    <a class="skip" href="#main">Skip to content</a>
+
+    <header class="top">
       <div class="wrap top__in">
-        <a class="brand" href="./" aria-label="Lumora home"><img src="img/lumora-mark.svg" alt="" width="28" height="28" />Lumora</a>
-        <nav class="nav" aria-label="Sections">
-          <a href="#features">Features</a>
-          <a href="#demo">Live demo</a>
-          <a href="#screens">Three screens</a>
-          <a href="#more">All features</a>
-          <a href="#edit">Editing</a>
-          <a href="#feedback">Feedback</a>
-          <a href="planner/" title="Lumora Planner: plan the run of show with your team (sign in)">Planner</a>
+        <a class="brand" href="./" aria-label="Lumora home"><img src="img/lumora-mark.svg" alt="" width="24" height="24" />Lumora</a>
+        <button type="button" class="menu" aria-expanded="false" aria-controls="nav" data-menu>
+          <span class="sr">Menu</span><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+        <nav id="nav" class="nav" aria-label="Main">
+          <a href="#lumora">Lumora</a>
+          <a href="#studio">Studio</a>
+          <a href="#planner">Planner</a>
+          <a href="#requirements">Requirements</a>
+          <a href="#faq">FAQ</a>
+          <a href="#contact">Contact</a>
+          <a class="btn btn--primary btn--sm nav__cta" href="#download">Download</a>
         </nav>
-        <a class="btn btn--red" href="#download">Download free</a>
       </div>
     </header>
 
-    <main>
-      <!-- Top: a big picture of an event hall behind the title, the app below it. -->
+    <main id="main">
       <section class="hero">
-        <div class="hero__bg" aria-hidden="true"></div>
-        <div class="wrap hero__text">
-          <p class="hero__kicker">Live production software for Windows</p>
-          <h1>Meet Lumora.</h1>
-          <p class="hero__sub">The live production studio for every event.</p>
-          <p class="hero__verbs"><span>Switch.</span><span>Stream.</span><span>Record.</span></p>
+        <div class="wrap">
+          <p class="hero__label">Live production software for Windows</p>
+          <h1>Run the whole event from one computer.</h1>
+          <p class="hero__sub">
+            Lumora switches your cameras, streams and records, and drives every screen in the room. Lumora Studio edits what you recorded. Lumora Planner keeps
+            the team on one run of show.
+          </p>
           <div class="hero__cta">
-            <a class="btn btn--red btn--big" href="#download">Download free for Windows</a>
-            <a class="btn btn--glass btn--big" href="#demo">Try the live demo</a>
+            <a class="btn btn--primary" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" /></svg>
+              Download for Windows
+            </a>
+            <a class="btn btn--ghost" href="#lumora">See features</a>
           </div>
-          <p class="hero__fine">Free · Windows 10 and 11</p>
+          <p class="hero__fine">Free · Windows 10 and 11, 64-bit · <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">Release notes</a></p>
         </div>
-        <div class="wrap hero__shot">
-          <div class="win win--hero">
-            <div class="win__bar">
-              <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora</span><i></i><i></i><i></i>
-            </div>
-            <div class="win__stage">
-              <img
-                src="img/main.jpg"
-                width="1600"
-                height="900"
-                alt="The Lumora main screen: Next on the left, On air on the right, TAKE and CUT in the middle, inputs and the sound mixer below."
-              />
-              <canvas class="hero__mon hero__mon--next" data-hero="next" width="640" height="360" aria-hidden="true"></canvas>
-              <canvas class="hero__mon hero__mon--pgm" data-hero="pgm" width="640" height="360" aria-hidden="true"></canvas>
-              <span class="hero__take" data-hero-take aria-hidden="true"></span>
-            </div>
-          </div>
+        <div class="wrap wrap--wide">
+          <figure class="shot shot--hero">
+            <div class="shot__bar" aria-hidden="true"><span>Lumora</span><i></i><i></i><i></i></div>
+            <img
+              src="img/lumora-main.webp"
+              width="1600"
+              height="867"
+              alt="The Lumora main screen: the Next and On air monitors with the switcher between them, the inputs below, and the audio mixer on the right."
+              fetchpriority="high"
+            />
+          </figure>
         </div>
       </section>
 
-      <!-- Light: where you can go live. -->
-      <section class="light logos">
-        <div class="wrap">
-          <p class="logos__title">Go live on all your favorite platforms, at the same time</p>
-          <ul class="logos__row">
-            <li>
-              <svg class="logo" viewBox="0 0 24 24" aria-hidden="true" style="color: #ff0000">
-                <path
-                  d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"
-                /></svg
-              ><span>YouTube</span>
-            </li>
-            <li>
-              <svg class="logo" viewBox="0 0 24 24" aria-hidden="true" style="color: #0866ff">
-                <path
-                  d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"
-                /></svg
-              ><span>Facebook</span>
-            </li>
-            <li>
-              <svg class="logo" viewBox="0 0 24 24" aria-hidden="true" style="color: #1ab7ea">
-                <path
-                  d="M23.9765 6.4168c-.105 2.338-1.739 5.5429-4.894 9.6088-3.2679 4.247-6.0258 6.3699-8.2898 6.3699-1.409 0-2.578-1.294-3.553-3.881l-1.9179-7.1138c-.719-2.584-1.488-3.878-2.312-3.878-.179 0-.806.378-1.8809 1.132l-1.129-1.457a315.06 315.06 0 003.501-3.1279c1.579-1.368 2.765-2.085 3.5539-2.159 1.867-.18 3.016 1.1 3.447 3.838.465 2.953.789 4.789.971 5.5069.5389 2.45 1.1309 3.674 1.7759 3.674.502 0 1.256-.796 2.265-2.385 1.004-1.589 1.54-2.797 1.612-3.628.144-1.371-.395-2.061-1.614-2.061-.574 0-1.167.121-1.777.391 1.186-3.8679 3.434-5.7568 6.7619-5.6368 2.4729.06 3.6279 1.664 3.4929 4.7969z"
-                /></svg
-              ><span>Vimeo</span>
-            </li>
-            <li>
-              <svg class="logo" viewBox="0 0 24 24" aria-hidden="true" style="color: #9146ff">
-                <path
-                  d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"
-                /></svg
-              ><span>Twitch</span>
-            </li>
-            <li><b class="logos__rtmp">RTMP</b><span>Any other site</span></li>
+      <section class="platforms" aria-label="Streaming platforms">
+        <div class="wrap platforms__in">
+          <p>Stream to several platforms at once</p>
+          <ul>
+            <li>YouTube</li>
+            <li>Facebook</li>
+            <li>Vimeo</li>
+            <li>Twitch</li>
+            <li>Any RTMP server</li>
+            <li>NDI on your network</li>
           </ul>
         </div>
       </section>
 
-      <!-- Light: the big six. -->
-      <section id="features" class="light cards-sec">
+      <!-- Lumora -->
+      <section id="lumora" class="product product--live">
         <div class="wrap">
-          <div class="head">
-            <h2>Everything your event needs, in one app.</h2>
-            <p>No extra programs, no plugins, no subscription. Plug in your cameras and put on a show people remember.</p>
-          </div>
-          <div class="cards">
-            <article class="card">
-              <span class="card__icon" style="--c1: #4fb3bf; --c2: #2a7f89"
-                ><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
-                  <rect x="2" y="6" width="14" height="12" rx="2" /></svg
-              ></span>
-              <h3>Every camera you own</h3>
-              <p>USB webcams, capture cards, PTZ and IP cameras, or a phone as a wireless camera. Lumora can even switch between them by itself.</p>
-            </article>
-            <article class="card">
-              <span class="card__icon" style="--c1: #ff7a59; --c2: #e5463b"
-                ><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
-                  <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
-                  <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
-                  <path d="M7.753 16.239a6 6 0 0 1 0-8.478" />
-                  <circle cx="12" cy="12" r="2" /></svg
-              ></span>
-              <h3>Stream everywhere at once</h3>
-              <p>YouTube, Facebook, Vimeo, Twitch and any RTMP site, all at the same time, in stunning quality.</p>
-            </article>
-            <article class="card">
-              <span class="card__icon" style="--c1: #b388ff; --c2: #7c4dff"
-                ><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 4v16" />
-                  <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" />
-                  <path d="M9 20h6" /></svg
-              ></span>
-              <h3>Titles that look the part</h3>
-              <p>Name titles, lower thirds, tickers and credits in your event's colors, with 500 fonts and 14 ways to bring them on screen.</p>
-            </article>
-            <article class="card">
-              <span class="card__icon" style="--c1: #ffca63; --c2: #f59e0b"
-                ><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect width="20" height="14" x="2" y="3" rx="2" />
-                  <line x1="8" x2="16" y1="21" y2="21" />
-                  <line x1="12" x2="12" y1="17" y2="21" /></svg
-              ></span>
+          <header class="product__head">
+            <p class="product__name"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora</p>
+            <h2>A complete live production studio.</h2>
+            <p>
+              Line up the next shot out of sight, then take it live with a clean transition. Lumora runs the stream, the recording, the projector behind the
+              stage and the monitor facing your speakers, all from one operator position.
+            </p>
+          </header>
+
+          <div class="features">
+            <div class="feature">
+              <h3>Switching</h3>
+              <ul>
+                <li>Next and On air monitors, TAKE, CUT and a T&#8209;bar</li>
+                <li>22 transitions and video stingers</li>
+                <li>Picture in picture, split screen and green screen</li>
+                <li>Automatic camera switching</li>
+              </ul>
+            </div>
+            <div class="feature">
+              <h3>Streaming and recording</h3>
+              <ul>
+                <li>Several platforms at once, 720p to 4K</li>
+                <li>A separate vertical 9:16 stream</li>
+                <li>Every camera recorded to its own file</li>
+                <li>NDI output and instant replay with slow motion</li>
+              </ul>
+            </div>
+            <div class="feature">
+              <h3>Graphics</h3>
+              <ul>
+                <li>Lower thirds, titles, tickers and credits</li>
+                <li>Scoreboards with a game clock</li>
+                <li>Countdowns that act when they reach zero</li>
+                <li>Your colors, fonts and logo on everything</li>
+              </ul>
+            </div>
+            <div class="feature">
+              <h3>Camera intelligence</h3>
+              <ul>
+                <li>Background removal without a green screen</li>
+                <li>Auto-framing that follows the speaker</li>
+                <li>Live captions, transcribed on the computer</li>
+                <li>PTZ control with saved shots</li>
+              </ul>
+            </div>
+            <div class="feature">
               <h3>Every screen in the room</h3>
-              <p>Run the stream, the projector behind the stage and the speakers' monitor, all from one place.</p>
-            </article>
-            <article class="card">
-              <span class="card__icon" style="--c1: #5ad08b; --c2: #22a35a"
-                ><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                  <path d="M12 18h.01" /></svg
-              ></span>
-              <h3>Get the room involved</h3>
-              <p>Polls, raffles and trivia on people's own phones, with the results live on the big screen.</p>
-            </article>
-            <article class="card">
-              <span class="card__icon" style="--c1: #6aa8ff; --c2: #2f6fe4"
-                ><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="12" r="2" /></svg
-              ></span>
-              <h3>Record and replay</h3>
-              <p>Every event is recorded to your computer as it happens. Replay the best moments in slow motion.</p>
-            </article>
+              <ul>
+                <li>Live Screen for the stream and recording</li>
+                <li>Back Screen for the projector, with stage visuals</li>
+                <li>Stage Monitor with messages, clock and teleprompter</li>
+                <li>Polls, raffles and trivia on the audience's phones</li>
+              </ul>
+            </div>
+            <div class="feature">
+              <h3>Control</h3>
+              <ul>
+                <li>Presets, cues and a timed run of show</li>
+                <li>Phone and tablet remote</li>
+                <li>Stream Deck plugin, MIDI and keyboard shortcuts</li>
+                <li>A panic button that blanks every screen</li>
+              </ul>
+            </div>
           </div>
-        </div>
-      </section>
 
-      <!-- Dark: try it. -->
-      <section id="demo" class="dark demo">
-        <div class="wrap">
-          <div class="head">
-            <p class="eyebrow">Live demo</p>
-            <h2>Switch like a broadcast pro.</h2>
-            <p>
-              Line up your next shot out of sight, then send it live with a smooth transition. This is Lumora's switcher, running right in your browser. Give it
-              a try.
-            </p>
-          </div>
-          <div class="sw" data-switcher>
-            <div class="sw__bar">
-              <span class="sw__brand"><img src="img/lumora-mark.svg" alt="" width="16" height="16" />Lumora</span>
-              <span class="sw__hint">Pick a shot, then press <b>TAKE</b>. Keys work too: <kbd>1</kbd>–<kbd>4</kbd>, <kbd>Enter</kbd>, <kbd>T</kbd></span>
-              <span class="sw__tc" data-tc>00:00:00:00</span>
-            </div>
-            <div class="sw__mons">
-              <figure class="mon mon--next">
-                <figcaption><i></i>Next <span data-next-name>Wide</span></figcaption>
-                <canvas data-view="next" width="640" height="360" aria-label="The picture lined up in Next"></canvas>
-              </figure>
-              <div class="sw__mid">
-                <button type="button" class="take" data-take>TAKE <small>Fade</small></button>
-                <button type="button" class="cut" data-cut>CUT</button>
-                <button type="button" class="ovl" data-title aria-pressed="false">Name title <kbd>T</kbd></button>
-                <button type="button" class="panic" data-panic aria-pressed="false" title="Double-click, like in the app">
-                  PANIC <small>double-click</small>
-                </button>
-              </div>
-              <figure class="mon mon--pgm">
-                <figcaption><i></i>On air <span data-pgm-name>Stage</span></figcaption>
-                <canvas data-view="program" width="640" height="360" aria-label="The picture on air"></canvas>
-              </figure>
-            </div>
-            <div class="sw__srcs" role="group" aria-label="Inputs">
-              <button type="button" class="src" data-src="0">
-                <canvas data-view="src0" width="320" height="180"></canvas><span><b>1</b> Stage</span>
-              </button>
-              <button type="button" class="src" data-src="1">
-                <canvas data-view="src1" width="320" height="180"></canvas><span><b>2</b> Wide</span>
-              </button>
-              <button type="button" class="src" data-src="2">
-                <canvas data-view="src2" width="320" height="180"></canvas><span><b>3</b> Countdown</span>
-              </button>
-              <button type="button" class="src" data-src="3">
-                <canvas data-view="src3" width="320" height="180"></canvas><span><b>4</b> Visuals</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Light: brand. -->
-      <section class="light split">
-        <div class="wrap split__in">
-          <div class="win split__win">
-            <div class="win__bar">
-              <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora</span><i></i><i></i><i></i>
-            </div>
-            <img src="img/look.jpg" width="1600" height="900" loading="lazy" alt="Lumora's Event look window with eight ready-made title designs." />
-          </div>
-          <div class="split__text">
-            <p class="eyebrow">Event look</p>
-            <h2>Bring your brand.</h2>
-            <p>
-              Set your colors, fonts and logo once. Every name, lower third, ticker, song and scoreboard follows it, so your whole event looks like it was made
-              by a design team.
-            </p>
-            <ul class="checks">
-              <li>Eight ready-made designs, or change every detail</li>
-              <li>500 fonts built in, and your own</li>
-              <li>14 ways for text to come on screen</li>
-              <li>Lower thirds, tickers, credits and a title designer</li>
+          <div class="gallery gallery--live">
+            <figure class="shot gallery__tall">
+              <img
+                src="img/lumora-inputs.webp"
+                width="880"
+                height="760"
+                loading="lazy"
+                alt="The Add input window: cameras, NDI and stream inputs, titles, scoreboards, slides, web pages, stage visuals and audience tools."
+              />
+              <figcaption>Cameras, NDI, screen capture, titles, scoreboards, slides and audience tools, all as inputs.</figcaption>
+            </figure>
+            <figure class="shot">
+              <img
+                src="img/lumora-visuals.webp"
+                width="1400"
+                height="403"
+                loading="lazy"
+                alt="Stage visuals: twenty beat-synced scenes grouped by tempo, with live effects and look controls."
+              />
+              <figcaption>Stage visuals for the Back Screen, synced to the beat of the music.</figcaption>
+            </figure>
+            <ul class="assurances">
+              <li><b>No error screens.</b> If a camera drops out, the audience sees your logo, never a message.</li>
+              <li><b>Saves as you go.</b> If the computer restarts, the event comes back as it was.</li>
+              <li><b>Works offline.</b> Only streaming and online inputs need the internet.</li>
             </ul>
           </div>
         </div>
       </section>
 
-      <!-- Dark: three screens. -->
-      <section id="screens" class="dark screens">
+      <!-- Lumora Studio -->
+      <section id="studio" class="product product--studio">
         <div class="wrap">
-          <div class="head">
-            <p class="eyebrow">Only in Lumora</p>
-            <h2>One operator. Three screens.</h2>
+          <header class="product__head">
+            <p class="product__name"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora Studio</p>
+            <h2>Edit the event you just recorded.</h2>
             <p>
-              Most apps stop at the stream. Lumora runs the whole room: the stream, the projector behind the stage and the monitor your speakers look at.
-              Whatever you put on air in the demo above appears here too.
+              Open a recording with every camera already in sync and cut it like a multicam edit. Lumora Studio is a full video editor with color, audio,
+              captions and smart tools that take care of the slow parts.
             </p>
-          </div>
-          <div class="venue">
-            <article class="dev dev--back">
-              <header>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 7 3 5" />
-                  <path d="M9 6V3" />
-                  <path d="m13 7 2-2" />
-                  <circle cx="9" cy="13" r="3" />
-                  <path d="M11.83 12H20a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2.17" />
-                  <path d="M16 16h2" />
-                </svg>
-                Back Screen <small>The projector behind the stage</small>
-              </header>
-              <div class="dev__screen dev__screen--wide"><canvas data-view="back" width="640" height="270"></canvas></div>
-              <div class="dev__ctl">
-                <button type="button" class="chip" data-backlive aria-pressed="false">Back = Live</button>
-                <span>Its own slides, loops or music visuals, or a mirror of the stream with one click.</span>
-              </div>
-            </article>
-            <article class="dev dev--live">
-              <header>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
-                  <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
-                  <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
-                  <path d="M7.753 16.239a6 6 0 0 1 0-8.478" />
-                  <circle cx="12" cy="12" r="2" />
-                </svg>
-                Live Screen <small>The stream and the recording</small>
-              </header>
-              <div class="dev__phone">
-                <div class="dev__screen"><canvas data-view="live" width="640" height="360"></canvas><span class="dev__live">LIVE</span></div>
-              </div>
-              <p class="dev__note">What viewers at home see, recorded at the same time.</p>
-            </article>
-            <article class="dev dev--mon">
-              <header>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect width="20" height="14" x="2" y="3" rx="2" />
-                  <line x1="8" x2="16" y1="21" y2="21" />
-                  <line x1="12" x2="12" y1="17" y2="21" />
-                </svg>
-                Monitor <small>Facing the people on stage</small>
-              </header>
-              <div class="dev__wedge">
-                <div class="dev__screen dev__screen--mon" data-monitor>
-                  <span class="mclock" data-clock>7:04 PM</span>
-                  <span class="mmsg" data-msg>Welcome, you're on</span>
-                  <span class="mleft" data-left>4:59 left</span>
-                </div>
-              </div>
-              <div class="dev__ctl dev__ctl--msgs">
-                <button type="button" class="chip" data-say="5 minutes left">5 minutes left</button>
-                <button type="button" class="chip" data-say="Please wrap up">Wrap up</button>
-                <button type="button" class="chip" data-say="Speak up a little">Speak up</button>
-                <button type="button" class="chip" data-flash>Flash</button>
-              </div>
-            </article>
-          </div>
-        </div>
-      </section>
+          </header>
 
-      <!-- Light: everything, in tabs. -->
-      <section id="more" class="light more">
-        <div class="wrap">
-          <div class="head">
-            <h2>Packed with features.</h2>
-            <p>Everything the big studios have, simple enough for one person to run.</p>
-          </div>
-          <div class="ftabs" role="tablist" aria-label="Features">
-            <button type="button" role="tab" aria-selected="true" data-ftab="0">Inputs</button>
-            <button type="button" role="tab" aria-selected="false" data-ftab="1">Production</button>
-            <button type="button" role="tab" aria-selected="false" data-ftab="2">Audience</button>
-            <button type="button" role="tab" aria-selected="false" data-ftab="3">Output and control</button>
-          </div>
-          <div class="fpanes">
-            <div class="fpane is-on">
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" />
-                  <rect x="2" y="6" width="14" height="12" rx="2" />
-                </svg>
-                <h3>Cameras</h3>
-                <p>USB, capture cards, IP and PTZ cameras with zoom and focus.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                  <path d="M12 18h.01" />
-                </svg>
-                <h3>Phone cameras</h3>
-                <p>Any phone becomes a wireless camera over Wi-Fi.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <path d="M16 3.128a4 4 0 0 1 0 7.744" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <circle cx="9" cy="7" r="4" />
-                </svg>
-                <h3>Guests by link</h3>
-                <p>Remote guests join from any browser, anywhere.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M2 3h20" />
-                  <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3" />
-                  <path d="m7 21 5-5 5 5" />
-                </svg>
-                <h3>Slides and PDFs</h3>
-                <p>Photo slideshows and PDFs you move through with a clicker.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m12.296 3.464 3.02 3.956" />
-                  <path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3z" />
-                  <path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                  <path d="m6.18 5.276 3.1 3.899" />
-                </svg>
-                <h3>Video playlists</h3>
-                <p>Videos and loops that play one after another.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                  <path d="M2 12h20" />
-                </svg>
-                <h3>Web pages</h3>
-                <p>Any web page, or any window from your computer.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 19v3" />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                  <rect x="9" y="2" width="6" height="13" rx="3" />
-                </svg>
-                <h3>Microphones</h3>
-                <p>Mics, a mixing desk or line-in, straight into the sound mixer.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M9 18V5l12-2v13" />
-                  <circle cx="6" cy="18" r="3" />
-                  <circle cx="18" cy="16" r="3" />
-                </svg>
-                <h3>Music</h3>
-                <p>Music and sound effects, with their own faders.</p>
-              </div>
-            </div>
-            <div class="fpane">
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m18 14 4 4-4 4" />
-                  <path d="m18 2 4 4-4 4" />
-                  <path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22" />
-                  <path d="M2 6h1.972a4 4 0 0 1 3.6 2.2" />
-                  <path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45" />
-                </svg>
-                <h3>22 transitions</h3>
-                <p>Fades, wipes, stingers and a T-bar fader.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
-                  />
-                  <path d="M20 2v4" />
-                  <path d="M22 4h-4" />
-                  <circle cx="4" cy="20" r="2" />
-                </svg>
-                <h3>Auto camera switching</h3>
-                <p>Lumora cuts between your cameras by itself.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect width="18" height="7" x="3" y="3" rx="1" />
-                  <rect width="9" height="7" x="3" y="14" rx="1" />
-                  <rect width="5" height="7" x="16" y="14" rx="1" />
-                </svg>
-                <h3>Layouts</h3>
-                <p>Picture in picture, split screen and green screen.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 4v16" />
-                  <path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" />
-                  <path d="M9 20h6" />
-                </svg>
-                <h3>Titles</h3>
-                <p>Lower thirds, tickers, credits and a title designer.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" />
-                  <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
-                  <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
-                  <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
-                  <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
-                </svg>
-                <h3>Event look</h3>
-                <p>Your colors, fonts and logo on everything.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <line x1="10" x2="14" y1="2" y2="2" />
-                  <line x1="12" x2="15" y1="14" y2="11" />
-                  <circle cx="12" cy="14" r="8" />
-                </svg>
-                <h3>Countdowns</h3>
-                <p>Timers that cut to your next shot when they reach zero.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M10 5H3" />
-                  <path d="M12 19H3" />
-                  <path d="M14 3v4" />
-                  <path d="M16 17v4" />
-                  <path d="M21 12h-9" />
-                  <path d="M21 19h-5" />
-                  <path d="M21 5h-7" />
-                  <path d="M8 10v4" />
-                  <path d="M8 12H3" />
-                </svg>
-                <h3>Sound mixer</h3>
-                <p>Noise removal, gate, compressor and limiter.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M13 5h8" />
-                  <path d="M13 12h8" />
-                  <path d="M13 19h8" />
-                  <path d="m3 17 2 2 4-4" />
-                  <path d="m3 7 2 2 4-4" />
-                </svg>
-                <h3>Run of show</h3>
-                <p>Presets, cues and triggers that run the night.</p>
-              </div>
-            </div>
-            <div class="fpane">
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m9 12 2 2 4-4" />
-                  <path d="M5 7c0-1.1.9-2 2-2h10a2 2 0 0 1 2 2v12H5V7Z" />
-                  <path d="M22 19H2" />
-                </svg>
-                <h3>Polls</h3>
-                <p>Everyone votes from their phone and the results build live.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <line x1="6" x2="10" y1="11" y2="11" />
-                  <line x1="8" x2="8" y1="9" y2="13" />
-                  <line x1="15" x2="15.01" y1="12" y2="12" />
-                  <line x1="18" x2="18.01" y1="10" y2="10" />
-                  <path
-                    d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"
-                  />
-                </svg>
-                <h3>Trivia</h3>
-                <p>Questions on screen, answers from phones, a leaderboard.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"
-                  />
-                  <path d="M20 2v4" />
-                  <path d="M22 4h-4" />
-                  <circle cx="4" cy="20" r="2" />
-                </svg>
-                <h3>Raffles</h3>
-                <p>People enter from their phones; the draw is on screen.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <path d="M16 3.128a4 4 0 0 1 0 7.744" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <circle cx="9" cy="7" r="4" />
-                </svg>
-                <h3>Messages wall</h3>
-                <p>Messages and photos from the audience, on screen.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
-                  <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
-                  <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
-                  <path d="M7.753 16.239a6 6 0 0 1 0-8.478" />
-                  <circle cx="12" cy="12" r="2" />
-                </svg>
-                <h3>Live chat on screen</h3>
-                <p>Comments from YouTube and Twitch, shown on screen.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M13 5h8" />
-                  <path d="M13 12h8" />
-                  <path d="M13 19h8" />
-                  <path d="m3 17 2 2 4-4" />
-                  <path d="m3 7 2 2 4-4" />
-                </svg>
-                <h3>Auctions and fundraisers</h3>
-                <p>Bids and pledges from phones, with live totals on screen.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect width="20" height="14" x="2" y="3" rx="2" />
-                  <line x1="8" x2="16" y1="21" y2="21" />
-                  <line x1="12" x2="12" y1="17" y2="21" />
-                </svg>
-                <h3>Table finder</h3>
-                <p>Guests type their name and see their table.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
-                  <path d="M2 12h20" />
-                </svg>
-                <h3>Works over Wi-Fi</h3>
-                <p>Nothing to install. People just scan a code.</p>
-              </div>
-            </div>
-            <div class="fpane">
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M16.247 7.761a6 6 0 0 1 0 8.478" />
-                  <path d="M19.075 4.933a10 10 0 0 1 0 14.134" />
-                  <path d="M4.925 19.067a10 10 0 0 1 0-14.134" />
-                  <path d="M7.753 16.239a6 6 0 0 1 0-8.478" />
-                  <circle cx="12" cy="12" r="2" />
-                </svg>
-                <h3>Multistreaming</h3>
-                <p>Every platform at once, in crisp, smooth quality.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="10" />
-                  <circle cx="12" cy="12" r="2" />
-                </svg>
-                <h3>Recording</h3>
-                <p>Every event is saved to your computer as it happens.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                  <path d="M3 3v5h5" />
-                </svg>
-                <h3>Instant replay</h3>
-                <p>Slow motion and a highlights reel.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M5 7 3 5" />
-                  <path d="M9 6V3" />
-                  <path d="m13 7 2-2" />
-                  <circle cx="9" cy="13" r="3" />
-                  <path d="M11.83 12H20a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h2.17" />
-                  <path d="M16 16h2" />
-                </svg>
-                <h3>Projector and monitor</h3>
-                <p>The Back Screen and the stage Monitor, built in.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M10 8h.01" />
-                  <path d="M12 12h.01" />
-                  <path d="M14 8h.01" />
-                  <path d="M16 12h.01" />
-                  <path d="M18 8h.01" />
-                  <path d="M6 8h.01" />
-                  <path d="M7 16h10" />
-                  <path d="M8 12h.01" />
-                  <rect width="20" height="16" x="2" y="4" rx="2" />
-                </svg>
-                <h3>Keyboard shortcuts</h3>
-                <p>Every important action has a key.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M10 5H3" />
-                  <path d="M12 19H3" />
-                  <path d="M14 3v4" />
-                  <path d="M16 17v4" />
-                  <path d="M21 12h-9" />
-                  <path d="M21 19h-5" />
-                  <path d="M21 5h-7" />
-                  <path d="M8 10v4" />
-                  <path d="M8 12H3" />
-                </svg>
-                <h3>Stream Deck and MIDI</h3>
-                <p>Run Lumora from hardware buttons and faders.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
-                  <path d="M12 18h.01" />
-                </svg>
-                <h3>Phone remote</h3>
-                <p>Run the show from a phone or tablet.</p>
-              </div>
-              <div>
-                <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M2 3h20" />
-                  <path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3" />
-                  <path d="m7 21 5-5 5 5" />
-                </svg>
-                <h3>Clickers</h3>
-                <p>Presentation clickers move slides and titles.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Dark: built for live. -->
-      <section class="dark calm">
-        <div class="wrap">
-          <div class="head">
-            <p class="eyebrow">Reliable</p>
-            <h2>Built for the moments that count.</h2>
-            <p>Live events don't get a second take. Lumora is built so your audience never sees a problem.</p>
-          </div>
-          <div class="calm__grid">
-            <div>
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M7 18v-6a5 5 0 1 1 10 0v6" />
-                <path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z" />
-                <path d="M21 12h1" />
-                <path d="M18.5 4.5 18 5" />
-                <path d="M2 12h1" />
-                <path d="M12 2v1" />
-                <path d="m4.929 4.929.707.707" />
-                <path d="M12 12v6" />
-              </svg>
-              <h3>Panic button</h3>
-              <p>One double-click and every screen goes black. One click brings it back.</p>
-            </div>
-            <div>
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"
-                />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-              <h3>No error screens</h3>
-              <p>If a camera drops out or a video fails, the audience sees your logo, never an error.</p>
-            </div>
-            <div>
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
-                <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7" />
-                <path d="M7 3v4a1 1 0 0 0 1 1h7" />
-              </svg>
-              <h3>Saves as you go</h3>
-              <p>If your computer restarts, your event comes back exactly as it was.</p>
-            </div>
-            <div>
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 20h.01" />
-                <path d="M8.5 16.429a5 5 0 0 1 7 0" />
-                <path d="M5 12.859a10 10 0 0 1 5.17-2.69" />
-                <path d="M19 12.859a10 10 0 0 0-2.007-1.523" />
-                <path d="M2 8.82a15 15 0 0 1 4.177-2.643" />
-                <path d="M22 8.82a15 15 0 0 0-11.288-3.764" />
-                <path d="m2 2 20 20" />
-              </svg>
-              <h3>Works offline</h3>
-              <p>Your event runs without internet.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Light: Lumora Studio. -->
-      <section id="edit" class="light split">
-        <div class="wrap split__in">
-          <div class="win split__win">
-            <div class="win__bar">
-              <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora Studio</span><i></i><i></i><i></i>
-            </div>
+          <figure class="shot shot--strip">
             <img
-              src="img/edit.jpg"
-              width="1600"
-              height="900"
+              src="img/studio-timeline.webp"
+              width="1590"
+              height="330"
               loading="lazy"
-              alt="Lumora Studio: effect controls, the program monitor and a multi-track timeline."
+              alt="The Lumora Studio timeline: video tracks with Wide, Close-up and Live Screen camera angles, and audio tracks with waveforms."
             />
+            <figcaption>The multi-track timeline, with each camera angle on its own color.</figcaption>
+          </figure>
+
+          <div class="features">
+            <div class="feature">
+              <h3>Editing</h3>
+              <ul>
+                <li>Multi-track timeline with ripple, roll, slip and slide</li>
+                <li>Speed ramps, keyframes and templates</li>
+                <li>Titles, transitions and effects</li>
+                <li>Team editing with shared projects and comments</li>
+              </ul>
+            </div>
+            <div class="feature">
+              <h3>Color and masks</h3>
+              <ul>
+                <li>Node-based color with wheels, curves and LUTs</li>
+                <li>Waveform, parade, vectorscope and histogram</li>
+                <li>AI masks that find people and objects</li>
+                <li>Tracking that keeps a mask on its subject</li>
+              </ul>
+            </div>
+            <div class="feature">
+              <h3>Smart tools</h3>
+              <ul>
+                <li>Automatic multicam cutting</li>
+                <li>Silence and filler word removal</li>
+                <li>Auto reframe for vertical and square</li>
+                <li>Highlight reels from long recordings</li>
+              </ul>
+            </div>
+            <div class="feature">
+              <h3>Captions and performance</h3>
+              <ul>
+                <li>Transcripts you edit like text</li>
+                <li>Captions burned in, embedded or as an SRT file</li>
+                <li>Render cache and proxies for smooth playback</li>
+                <li>Native GPU playback (beta)</li>
+              </ul>
+            </div>
           </div>
-          <div class="split__text">
-            <p class="eyebrow">Lumora Studio</p>
-            <h2>A full video editor, built in.</h2>
-            <p>
-              Make the videos you show live, and edit the events you record. Import any video, music and pictures, cut on a timeline with as many tracks as you
-              need, and send the finished video straight into Lumora, ready to play.
-            </p>
-            <ul class="checks">
-              <li>Professional tools: ripple, roll, slip, slide, razor, insert and overwrite</li>
-              <li>Keyframes, transitions, titles, green screen and masks</li>
-              <li>Color wheels, curves and LUTs, with scopes</li>
-              <li>Sound mixer with EQ, compressor and noise reduction</li>
-              <li>Recorded events open with every camera, ready to switch</li>
-            </ul>
-            <p>
-              <a class="btn btn--red" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe"
-                >Download Lumora Studio</a
-              >
-            </p>
+
+          <div class="gallery gallery--studio">
+            <figure class="shot">
+              <img
+                src="img/studio-color.webp"
+                width="1600"
+                height="277"
+                loading="lazy"
+                alt="The Color page: a node graph with serial and parallel nodes, four color wheels, primary controls and curves."
+              />
+              <figcaption>Node-based grading: serial and parallel nodes, wheels, primaries and curves.</figcaption>
+            </figure>
+            <figure class="shot">
+              <img
+                src="img/studio-silence.webp"
+                width="760"
+                height="291"
+                loading="lazy"
+                alt="The Remove silences and filler words window with a loudness threshold, minimum length and a list of filler words."
+              />
+              <figcaption>Silence and filler word removal, with every threshold in view.</figcaption>
+            </figure>
           </div>
         </div>
       </section>
 
-      <!-- Light: comments. -->
-      <section id="feedback" class="light fb">
-        <div class="wrap fb__in">
-          <div class="fb__text">
-            <p class="eyebrow">Feedback</p>
-            <h2>Tell us what you think.</h2>
-            <p>Found a problem, or have an idea for Lumora? Tell us here.</p>
+      <!-- Lumora Planner -->
+      <section id="planner" class="product product--planner">
+        <div class="wrap planner">
+          <header class="product__head">
+            <p class="product__name"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora Planner</p>
+            <h2>Plan the run of show together.</h2>
+            <p>
+              The team builds the run of show in the browser: sections, cues, times, who is responsible and notes, with comments on each cue. On the day, Lumora
+              loads it straight into its cues.
+            </p>
+            <ul class="ticks">
+              <li>Shared with editors and viewers</li>
+              <li>Start times and running totals worked out for you</li>
+              <li>A printable cue sheet</li>
+              <li>Loads into Lumora: Run of show, then Load from Planner</li>
+            </ul>
+            <p><a class="btn btn--ghost" href="planner/">Open Lumora Planner</a></p>
+          </header>
+
+          <div class="sheet" role="table" aria-label="Example run of show">
+            <div class="sheet__head" role="row">
+              <span role="columnheader">Starts</span><span role="columnheader">Cue</span><span role="columnheader">Type</span
+              ><span role="columnheader">Who</span>
+            </div>
+            <p class="sheet__section">Doors</p>
+            <div class="sheet__row" role="row">
+              <span role="cell">7:00</span><span role="cell">Walk-in loop and countdown</span><span role="cell"><i>CDN</i></span
+              ><span role="cell">Operator</span>
+            </div>
+            <p class="sheet__section">Program</p>
+            <div class="sheet__row" role="row">
+              <span role="cell">7:30</span><span role="cell">Welcome</span><span role="cell"><i>SPK</i></span
+              ><span role="cell">Host</span>
+            </div>
+            <div class="sheet__row" role="row">
+              <span role="cell">7:35</span><span role="cell">Opening video</span><span role="cell"><i>VID</i></span
+              ><span role="cell">Operator</span>
+            </div>
+            <div class="sheet__row" role="row">
+              <span role="cell">7:40</span><span role="cell">Keynote, name title</span><span role="cell"><i>TTL</i></span
+              ><span role="cell">Camera 2</span>
+            </div>
+            <div class="sheet__row" role="row">
+              <span role="cell">8:10</span><span role="cell">Break</span><span role="cell"><i>BRK</i></span
+              ><span role="cell">Everyone</span>
+            </div>
+            <p class="sheet__foot">Example plan · 5 cues · 1 h 10 min</p>
           </div>
-          <form class="fb__form" data-feedback>
-            <div class="fb__row">
-              <label>Your name <small>(optional)</small><input name="name" autocomplete="name" /></label>
-              <label>Email <small>(optional, if you'd like a reply)</small><input name="email" type="email" autocomplete="email" /></label>
+        </div>
+      </section>
+
+      <!-- Workflow -->
+      <section id="workflow" class="workflow">
+        <div class="wrap">
+          <header class="section__head">
+            <h2>How it fits together</h2>
+            <p>Three apps, one event: plan it, run it live, then edit and publish it.</p>
+          </header>
+          <figure class="flow">
+            <svg class="flow__h" viewBox="0 0 960 220" role="img" aria-labelledby="flow-t flow-d">
+              <title id="flow-t">How Planner, Lumora and Studio work together</title>
+              <desc id="flow-d">
+                The run of show from Lumora Planner loads into Lumora as cues. Lumora records every camera to its own file, which Lumora Studio opens as a
+                multicam edit. Finished videos from Studio go back into Lumora for the next show.
+              </desc>
+              <defs>
+                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                  <path d="M0 0 10 5 0 10z" class="flow__tip" />
+                </marker>
+              </defs>
+              <g class="flow__node">
+                <rect x="1" y="50" width="250" height="96" rx="10" />
+                <text x="24" y="88" class="flow__name">Lumora Planner</text>
+                <text x="24" y="114" class="flow__what">Run of show, in the browser</text>
+              </g>
+              <g class="flow__node flow__node--live">
+                <rect x="355" y="50" width="250" height="96" rx="10" />
+                <text x="378" y="88" class="flow__name">Lumora</text>
+                <text x="378" y="114" class="flow__what">Live switching and streaming</text>
+              </g>
+              <g class="flow__node flow__node--studio">
+                <rect x="709" y="50" width="250" height="96" rx="10" />
+                <text x="732" y="88" class="flow__name">Lumora Studio</text>
+                <text x="732" y="114" class="flow__what">Editing and delivery</text>
+              </g>
+              <path d="M256 98H349" class="flow__line" marker-end="url(#ah)" />
+              <text x="302" y="86" text-anchor="middle" class="flow__lbl">cues</text>
+              <path d="M610 98H703" class="flow__line" marker-end="url(#ah)" />
+              <text x="656" y="86" text-anchor="middle" class="flow__lbl">recordings</text>
+              <path d="M834 151V190H480V151" class="flow__line flow__line--back" marker-end="url(#ah)" />
+              <text x="657" y="210" text-anchor="middle" class="flow__lbl">finished videos for the next show</text>
+            </svg>
+            <svg
+              class="flow__v"
+              viewBox="0 0 320 470"
+              role="img"
+              aria-label="Planner sends cues to Lumora; Lumora sends recordings to Studio; Studio sends finished videos back to Lumora."
+            >
+              <defs>
+                <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+                  <path d="M0 0 10 5 0 10z" class="flow__tip" />
+                </marker>
+              </defs>
+              <g class="flow__node">
+                <rect x="1" y="1" width="250" height="84" rx="10" />
+                <text x="20" y="36" class="flow__name">Lumora Planner</text>
+                <text x="20" y="62" class="flow__what">Run of show, in the browser</text>
+              </g>
+              <g class="flow__node flow__node--live">
+                <rect x="1" y="190" width="250" height="84" rx="10" />
+                <text x="20" y="225" class="flow__name">Lumora</text>
+                <text x="20" y="251" class="flow__what">Live switching and streaming</text>
+              </g>
+              <g class="flow__node flow__node--studio">
+                <rect x="1" y="379" width="250" height="84" rx="10" />
+                <text x="20" y="414" class="flow__name">Lumora Studio</text>
+                <text x="20" y="440" class="flow__what">Editing and delivery</text>
+              </g>
+              <path d="M90 90V184" class="flow__line" marker-end="url(#ahv)" />
+              <text x="102" y="142" class="flow__lbl">cues</text>
+              <path d="M90 279V373" class="flow__line" marker-end="url(#ahv)" />
+              <text x="102" y="331" class="flow__lbl">recordings</text>
+              <path d="M256 421H282V232H257" class="flow__line flow__line--back" marker-end="url(#ahv)" />
+              <text x="304" y="327" text-anchor="middle" class="flow__lbl" transform="rotate(-90 304 327)">finished videos</text>
+            </svg>
+          </figure>
+          <ol class="steps">
+            <li><b>Plan.</b> The team writes the run of show in Lumora Planner, with times, people and notes for each cue.</li>
+            <li><b>Run.</b> Lumora loads the plan as cues, switches the show and records every camera to its own file.</li>
+            <li><b>Edit.</b> Lumora Studio opens the recordings in sync, ready to cut, grade, caption and export.</li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- System requirements -->
+      <section id="requirements" class="reqs">
+        <div class="wrap">
+          <header class="section__head">
+            <h2>System requirements</h2>
+            <p>Guidelines for a typical 1080p event. More cameras, 4K, background removal and auto-framing need the recommended hardware.</p>
+          </header>
+          <div class="reqs__grid">
+            <div class="req">
+              <h3>Lumora</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="sr">Part</span></th>
+                    <th scope="col">Minimum</th>
+                    <th scope="col">Recommended</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">System</th>
+                    <td>Windows 10, 64-bit</td>
+                    <td>Windows 11, 64-bit</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Processor</th>
+                    <td>4 cores, e.g. Intel Core i5 8th gen or AMD Ryzen 5 2600</td>
+                    <td>8 cores, e.g. Intel Core i7 12th gen or AMD Ryzen 7 5700X</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Memory</th>
+                    <td>8 GB</td>
+                    <td>16 GB</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Graphics</th>
+                    <td>DirectX 12 graphics with hardware video encoding (Intel Quick Sync, NVIDIA NVENC or AMD AMF)</td>
+                    <td>NVIDIA GeForce RTX 3060 or AMD Radeon RX 6600 or better</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Displays</th>
+                    <td>One 1920 × 1080 display</td>
+                    <td>Two or more, for the Back Screen and Monitor</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Network</th>
+                    <td>Upload of about twice the stream bit rate (10 Mbps for 1080p at 6 Mbps)</td>
+                    <td>Wired Ethernet</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="req req--studio">
+              <h3>Lumora Studio</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="sr">Part</span></th>
+                    <th scope="col">Minimum</th>
+                    <th scope="col">Recommended</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">System</th>
+                    <td>Windows 10, 64-bit</td>
+                    <td>Windows 11, 64-bit</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Processor</th>
+                    <td>4 cores</td>
+                    <td>8 cores or more</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Memory</th>
+                    <td>8 GB</td>
+                    <td>32 GB for 4K and multicam</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Graphics</th>
+                    <td>DirectX 12 graphics with 2 GB of video memory</td>
+                    <td>NVIDIA GeForce RTX 3060 (8 GB) or better</td>
+                  </tr>
+                  <tr>
+                    <th scope="row">Storage</th>
+                    <td>SSD with room for proxies and the render cache</td>
+                    <td>A separate NVMe SSD for media</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p class="reqs__note">Lumora Planner runs in any current browser: Chrome, Edge, Firefox or Safari, on a computer, tablet or phone.</p>
+        </div>
+      </section>
+
+      <!-- Download -->
+      <section id="download" class="download">
+        <div class="wrap">
+          <header class="section__head">
+            <h2>Download</h2>
+            <p>Free for Windows 10 and 11. Each download is the latest release; the apps update themselves after that.</p>
+          </header>
+          <div class="dl">
+            <div class="dl__item dl__item--live">
+              <h3>Lumora</h3>
+              <p>Live production, streaming and recording.</p>
+              <a class="btn btn--primary" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" /></svg>
+                Lumora-Setup.exe
+              </a>
+            </div>
+            <div class="dl__item dl__item--studio">
+              <h3>Lumora Studio</h3>
+              <p>Editing, color, captions and delivery.</p>
+              <a class="btn btn--ghost" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" /></svg>
+                Lumora-Studio-Setup.exe
+              </a>
+            </div>
+            <div class="dl__item">
+              <h3>Lumora Planner</h3>
+              <p>Runs in the browser. Nothing to install.</p>
+              <a class="btn btn--ghost" href="planner/">Open Planner</a>
+            </div>
+          </div>
+          <p class="dl__more">
+            Using an Elgato Stream Deck? Get the
+            <a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora.streamDeckPlugin">Lumora Stream Deck plugin</a> for
+            TAKE, CUT, inputs with tally, overlays, replay, recording and going live. Lumora also offers it when it finds a Stream Deck.
+          </p>
+          <p class="dl__more">Looking for an earlier version? See <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">all releases</a>.</p>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="faq">
+        <div class="wrap faq__in">
+          <header class="section__head">
+            <h2>Questions</h2>
+          </header>
+          <div class="faq__list">
+            <details>
+              <summary>Windows says it protected my PC. Is Lumora safe to run?</summary>
+              <p>
+                Windows SmartScreen warns about new apps it has not seen often. Click <b>More info</b>, then <b>Run anyway</b>. On Windows 11 computers with
+                Smart App Control turned on, the installer may be blocked with no option to run it; Smart App Control can only be switched off as a whole, in
+                Windows Security under App &amp; browser control, so decide with whoever manages the computer. Only download Lumora from this page or the
+                project's GitHub releases.
+              </p>
+            </details>
+            <details>
+              <summary>Why does my account need approval?</summary>
+              <p>
+                You create your account inside Lumora or Lumora Studio the first time you open it. Each new account is approved by the Lumora team for the apps
+                it will use. Until then the app waits at the sign-in screen, and it opens once you are approved.
+              </p>
+            </details>
+            <details>
+              <summary>Does Lumora work without the internet?</summary>
+              <p>
+                Yes. Once your account is approved, Lumora keeps working offline for 30 days at a time, so a venue without internet is not a problem. Switching,
+                recording, titles and every screen in the room run on the computer. Only streaming out, live chat, guests by link and inputs from internet
+                addresses need a connection. Phones for polls and the remote can join a local Wi-Fi network instead.
+              </p>
+            </details>
+            <details>
+              <summary>What is in an error report, and who sees it?</summary>
+              <p>
+                Nothing is sent unless you agree. If you say yes, reports of unexpected errors are cleaned of personal details before they are sent, and only
+                the Lumora team can read them. Your event, project and media files are never included. Report a problem is always your choice, and you can
+                change your answer at any time in Settings in Lumora, or the Help menu in Lumora Studio.
+              </p>
+            </details>
+            <details>
+              <summary>Does it work with Stream Deck and other controllers?</summary>
+              <p>
+                Yes. The Lumora Stream Deck plugin (see Download) puts TAKE, CUT, inputs with tally, overlays, replay, recording and going live on an Elgato
+                Stream Deck. X-keys and other panels work through Bitfocus Companion, and Lumora also takes MIDI controllers, presentation clickers, and a phone
+                or tablet on the same network.
+              </p>
+            </details>
+            <details>
+              <summary>Can I use my own fonts and branding?</summary>
+              <p>
+                Yes. Set your colors, fonts and logo once and every title, lower third, ticker and scoreboard follows it. Lumora includes 500 open-source fonts
+                that work offline, and you can add your own.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section id="contact" class="contact">
+        <div class="wrap contact__in">
+          <header class="section__head">
+            <h2>Contact and feedback</h2>
+            <p>Found a problem, have an idea, or have a question? Send it here. Add your email if you would like a reply.</p>
+          </header>
+          <form class="form" data-feedback>
+            <div class="form__row">
+              <label>Name <span class="opt">optional</span><input name="name" autocomplete="name" /></label>
+              <label>Email <span class="opt">optional</span><input name="email" type="email" autocomplete="email" /></label>
             </div>
             <label
-              >What is it about?
+              >Topic
               <select name="topic">
                 <option>An idea</option>
                 <option>Something isn't working</option>
@@ -805,52 +628,45 @@
                 <option>Something else</option>
               </select>
             </label>
-            <label>Your message<textarea name="message" rows="5" required></textarea></label>
-            <input type="checkbox" name="botcheck" class="fb__trap" tabindex="-1" autocomplete="off" aria-hidden="true" />
-            <div class="fb__send">
-              <button type="submit" class="btn btn--red">Send</button>
-              <span class="fb__status" data-status role="status"></span>
+            <label>Message<textarea name="message" rows="5" required></textarea></label>
+            <input type="checkbox" name="botcheck" class="form__trap" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="form__send">
+              <button type="submit" class="btn btn--primary">Send message</button>
+              <span class="form__status" data-status role="status"></span>
             </div>
           </form>
-        </div>
-      </section>
-
-      <!-- Dark: download. -->
-      <section id="download" class="dark dl">
-        <div class="dl__bg" aria-hidden="true"></div>
-        <div class="wrap dl__in">
-          <img src="img/lumora-mark.svg" alt="" width="64" height="64" class="dl__mark" />
-          <h2>Ready for your best event yet?</h2>
-          <p>Lumora is free. No subscription, no watermark.</p>
-          <a class="btn btn--red btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe"
-            >Download for Windows</a
-          >
-          <p class="dl__also">
-            <a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">Also get Lumora Studio</a>, the video
-            editor for your events and the videos you show.
-          </p>
-          <p class="dl__also">
-            <a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora.streamDeckPlugin">Stream Deck plugin</a>: TAKE, CUT,
-            inputs with tally, overlays, replay, recording and going live from an Elgato Stream Deck. Lumora also offers it when it finds one.
-          </p>
-          <p class="fine">
-            For Windows 10 and 11. The first time, Windows may say it doesn't recognize the app: click <b>More info</b>, then <b>Run anyway</b>. Then make your
-            account in Lumora: each new account is approved by the Lumora team.
-          </p>
         </div>
       </section>
     </main>
 
     <footer class="foot">
       <div class="wrap foot__in">
-        <span class="brand"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora</span>
-        <nav aria-label="Footer">
-          <a href="#features">Features</a>
-          <a href="#feedback">Feedback</a>
-          <a href="planner/">Planner</a>
-          <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">All versions</a>
+        <div class="foot__brand">
+          <span class="brand"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora</span>
+          <p>Live production, editing and planning software for Windows.</p>
+        </div>
+        <nav aria-label="Products">
+          <h2>Products</h2>
+          <a href="#lumora">Lumora</a>
+          <a href="#studio">Lumora Studio</a>
+          <a href="planner/">Lumora Planner</a>
         </nav>
-        <span>© <span id="year">2026</span> Lumora</span>
+        <nav aria-label="Resources">
+          <h2>Resources</h2>
+          <a href="#download">Download</a>
+          <a href="#requirements">System requirements</a>
+          <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">Release notes</a>
+          <a href="#contact">Contact</a>
+        </nav>
+        <div class="foot__privacy">
+          <h2>Privacy</h2>
+          <p>
+            This site has no tracking or cookies. Messages you send are delivered by Web3Forms. The apps send error reports only if you agree, never your files.
+          </p>
+        </div>
+      </div>
+      <div class="wrap foot__base">
+        <p class="foot__copy">© <span data-year>2026</span> Lumora</p>
       </div>
     </footer>
 
