@@ -15,9 +15,23 @@ export function cleanUrl(url: string): string | null {
   return `https://${t}`;
 }
 
-let info: Promise<{ port: number | null; captured: boolean }> | null = null;
+/** Where the app serves web pages' and stream inputs' pictures and sound (on this computer only), and the key it asks for. */
+export interface BrowserInfo {
+  port: number | null;
+  captured: boolean;
+  /** Only Lumora's own windows know it, so other programs and web pages can't watch or listen. */
+  key?: string;
+}
+
+/** A picture or sound the app serves: `path` like `stream/<id>`. */
+export function servedUrl(info: BrowserInfo, path: string, query = ''): string | null {
+  if (!info.port) return null;
+  return `http://127.0.0.1:${info.port}/${path}?k=${encodeURIComponent(info.key ?? '')}${query ? `&${query}` : ''}`;
+}
+
+let info: Promise<BrowserInfo> | null = null;
 /** Where frames come from (asked once per window). */
-export function browserInfo(get: () => Promise<{ port: number | null; captured: boolean }>) {
+export function browserInfo(get: () => Promise<BrowserInfo>) {
   info ??= get().catch(() => ({ port: null, captured: false }));
   return info;
 }

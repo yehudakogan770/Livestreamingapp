@@ -26,11 +26,12 @@
 --
 -- WHAT IT ADDS
 --   Table:     problem_reports
---   Function:  problem_report_limit (a trigger: at most 60 reports an hour
---              from one account, so a broken computer can't flood the table)
+--   Function:  problem_report_limit (a trigger: at most 30 reports an hour,
+--              and 10 with a picture a day, from one account, so a broken
+--              computer can't flood the table)
 --
 -- WHO MAY DO WHAT (row level security)
---   - Any signed-in account may ADD reports, as itself only (user_id is
+--   - Any approved account may ADD reports, as itself only (user_id is
 --     always the person sending), never already "resolved".
 --   - Only the Lumora team (profiles.is_admin, the same people who approve
 --     accounts) may READ reports, and mark them resolved or open again.
@@ -70,11 +71,11 @@ create index if not exists problem_reports_user_time on public.problem_reports (
 
 alter table public.problem_reports enable row level security;
 
--- Signed-in people add reports, as themselves, never already resolved.
+-- Approved accounts add reports, as themselves, never already resolved.
 drop policy if exists "signed in people send reports" on public.problem_reports;
 create policy "signed in people send reports" on public.problem_reports
   for insert to authenticated
-  with check (user_id = auth.uid() and resolved = false and resolved_at is null and resolved_by is null);
+  with check (user_id = auth.uid() and public.is_approved() and resolved = false and resolved_at is null and resolved_by is null);
 
 -- Only the Lumora team reads them.
 drop policy if exists "team reads reports" on public.problem_reports;
@@ -102,8 +103,8 @@ grant select, delete on public.problem_reports to authenticated;
 grant update (resolved) on public.problem_reports to authenticated;
 
 -- Fills in who sent it, and when and by whom it was resolved; and keeps any
--- one account to 60 reports an hour (the app sends far fewer: it waits,
--- batches, and sends the same problem once an hour).
+-- one account to 30 reports an hour and 10 pictures a day (the app sends far
+-- fewer: it waits, batches, and sends the same problem once an hour).
 create or replace function public.problem_report_limit() returns trigger
   language plpgsql security definer set search_path = public
 as $$
@@ -111,8 +112,12 @@ begin
   if tg_op = 'INSERT' then
     new.user_id := auth.uid();
     if (select count(*) from public.problem_reports
-        where user_id = auth.uid() and created_at > now() - interval '1 hour') >= 60 then
+        where user_id = auth.uid() and created_at > now() - interval '1 hour') >= 30 then
       raise exception 'Too many problem reports from this account in the last hour.';
+    end if;
+    if new.screenshot is not null and (select count(*) from public.problem_reports
+        where user_id = auth.uid() and has_screenshot and created_at > now() - interval '1 day') >= 10 then
+      raise exception 'Too many pictures in problem reports from this account today.';
     end if;
   elsif tg_op = 'UPDATE' then
     if new.resolved and not old.resolved then

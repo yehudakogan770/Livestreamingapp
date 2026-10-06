@@ -16,6 +16,7 @@ import type { Source } from '../engine/types/Source';
 import { channelLevel, defaultFilters, DUCK_HOLD_MS, duckGain, duckStep, mixSend, soundSources, type Mix } from '../engine/audio';
 import { syncMedia } from '../engine/mediaSync';
 import { PcmStream } from './pcmStream';
+import { servedUrl } from '../engine/browser';
 
 type OutputName = Mix | 'phones';
 
@@ -306,7 +307,7 @@ export class SoundEngine {
     } else if (src.kind.type === 'stream' || src.kind.type === 'browser' || src.kind.type === 'guest') {
       // The app serves the sound of streams, web pages and guests next to their pictures.
       const id = src.id;
-      const url = () => this.client.browserInfo().then((i) => (i.port ? `http://127.0.0.1:${i.port}/audio/${encodeURIComponent(id)}` : null));
+      const url = () => this.client.browserInfo().then((i) => servedUrl(i, `audio/${encodeURIComponent(id)}`));
       ch.pcm = new PcmStream(ctx, url, delay);
     } else if (src.kind.type === 'microphone') {
       const deviceId = src.kind.deviceId;

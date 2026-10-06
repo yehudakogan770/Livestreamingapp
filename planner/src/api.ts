@@ -138,8 +138,32 @@ export async function people(db: Db, planId: string): Promise<Person[]> {
   return (rows ?? []).map((r) => ({ userId: r.user_id, email: r.email, name: r.name, role: r.role }));
 }
 
-export async function invite(db: Db, planId: string, email: string, role: 'editor' | 'viewer'): Promise<void> {
-  await data(db.rpc('invite_to_planner', { p_id: planId, p_email: email, p_role: role }));
+/** Share by email. `pending`: there is no account with that email yet; it is added when they make one. */
+export async function invite(db: Db, planId: string, email: string, role: 'editor' | 'viewer'): Promise<{ pending: boolean }> {
+  const r = await data<{ pending?: boolean } | null>(db.rpc('invite_to_planner', { p_id: planId, p_email: email, p_role: role }));
+  return { pending: r?.pending === true };
+}
+
+export interface Invitation {
+  email: string;
+  role: 'editor' | 'viewer';
+}
+
+/** Invitations waiting for an account (the owner sees them). */
+export async function invitations(db: Db, planId: string): Promise<Invitation[]> {
+  try {
+    const rows = await data<{ email: string; role: 'editor' | 'viewer' }[] | null>(
+      db.from('planner_invites').select('email, role').eq('plan_id', planId).order('created_at', { ascending: true }),
+    );
+    return (rows ?? []).map((r) => ({ email: r.email, role: r.role }));
+  } catch {
+    // Before update-6-security.sql there are none.
+    return [];
+  }
+}
+
+export async function cancelInvitation(db: Db, planId: string, email: string): Promise<void> {
+  await data(db.from('planner_invites').delete().eq('plan_id', planId).eq('email', email));
 }
 
 export async function setRole(db: Db, planId: string, userId: string, role: 'editor' | 'viewer'): Promise<void> {

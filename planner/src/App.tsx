@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent, type ReactNo
 import { authOn } from '../../app/src/auth/config';
 import { PlanList } from './PlanList';
 import { PlanView } from './PlanView';
-import { onSignInChange, signIn, signOut, whoAmI, type Who } from './session';
+import { db, onSignInChange, signIn, signOut, signUp, whoAmI, type Who } from './session';
+import { CodeForm } from '../../app/src/auth/TwoStep';
+import { MIN_PASSWORD } from '../../app/src/auth/password';
 
 type Theme = 'auto' | 'light' | 'dark';
 const THEME_KEY = 'lumora.planner.theme';
@@ -88,6 +90,20 @@ export function App() {
       </Notice>
     );
   if (gate.s === 'out') return <SignIn onDone={check} themeButton={themeButton} />;
+  if (gate.s === 'code')
+    return (
+      <main className="gate">
+        <div className="gate__box">
+          <CodeForm db={db()} onDone={check}>
+            <div className="row">
+              <button type="button" className="btn" onClick={() => void signOut()}>
+                Sign out
+              </button>
+            </div>
+          </CodeForm>
+        </div>
+      </main>
+    );
   if (gate.s === 'denied')
     return (
       <Notice title="You can’t use the Planner yet" text={gate.why}>
@@ -115,7 +131,11 @@ export function App() {
           Sign out
         </button>
       </header>
-      {planId && me ? <PlanView key={planId} planId={planId} me={me} onBack={() => go(null)} /> : <PlanList userId={gate.access.userId} onOpen={go} />}
+      {planId && me ? (
+        <PlanView key={planId} planId={planId} me={me} onBack={() => go(null)} />
+      ) : (
+        <PlanList userId={gate.access.userId} email={gate.access.email} canPlan={gate.canPlan} onOpen={go} />
+      )}
     </div>
   );
 }
@@ -150,48 +170,86 @@ function Notice({ title, text, children }: { title: string; text: string; childr
 }
 
 function SignIn({ onDone, themeButton }: { onDone: () => void; themeButton: ReactNode }) {
+  const [mode, setMode] = useState<'in' | 'new'>('in');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [note, setNote] = useState('');
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError('');
-    signIn(email, password)
-      .then(onDone)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : String(err)))
-      .finally(() => setBusy(false));
+    setNote('');
+    const go =
+      mode === 'in'
+        ? signIn(email, password).then(onDone)
+        : signUp(name, email, password).then((inNow) => {
+            if (inNow) onDone();
+            else setNote('Account made. Check your email and click the link to confirm it, then sign in here.');
+          });
+    go.catch((err: unknown) => setError(err instanceof Error ? err.message : String(err))).finally(() => setBusy(false));
   };
   return (
     <main className="gate">
       <form className="gate__box" onSubmit={submit}>
         <h1 className="gate__title">
           <img src="./mark.svg" alt="" width="20" height="20" />
-          Lumora Planner
+          {mode === 'in' ? 'Lumora Planner' : 'Make a Planner account'}
         </h1>
-        <p className="muted">Plan the run of show with your team, then load it into Lumora’s cues. Sign in with your Lumora account.</p>
+        <p className="muted">
+          {mode === 'in'
+            ? 'Plan the run of show with your team, then load it into Lumora’s cues. Sign in with your Lumora account.'
+            : 'For teammates: with an account, you see and work on the plans someone invites you to (by this email).'}
+        </p>
+        {mode === 'new' && (
+          <label className="field">
+            <span>Your name</span>
+            <input autoComplete="name" required maxLength={80} value={name} onChange={(e) => setName(e.target.value)} />
+          </label>
+        )}
         <label className="field">
           <span>Email</span>
           <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
         <label className="field">
           <span>Password</span>
-          <input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <input
+            type="password"
+            autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
+            minLength={mode === 'in' ? undefined : MIN_PASSWORD}
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
         </label>
+        {mode === 'new' && <p className="muted small">At least {MIN_PASSWORD} characters, with letters and numbers.</p>}
         {error && <p className="warn">{error}</p>}
+        {note && <p>{note}</p>}
         <div className="row">
           <button type="submit" className="btn btn--primary" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
+            {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Create my account'}
           </button>
           <span className="bar__spacer" />
           {themeButton}
         </div>
         <p className="muted small">
-          No account yet? Make one in the Lumora app (it opens with a sign-in), and the Lumora team approves it. The Planner is for accounts set up for Lumora.
+          {mode === 'in' ? 'Invited to a plan and no account yet? ' : 'Already have an account? '}
+          <button
+            type="button"
+            className="link"
+            onClick={() => {
+              setMode(mode === 'in' ? 'new' : 'in');
+              setError('');
+              setNote('');
+            }}
+          >
+            {mode === 'in' ? 'Create an account' : 'Sign in'}
+          </button>
         </p>
         <p className="muted small">
-          <a href="../">Back to the Lumora website</a>
+          To make plans of your own, use an account the Lumora team has set up for Lumora. <a href="../">Back to the Lumora website</a>
         </p>
       </form>
     </main>

@@ -15,8 +15,8 @@ function ago(ms: number): string {
   return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-/** The plans you own or that were shared with you. */
-export function PlanList({ userId, onOpen }: { userId: string; onOpen: (id: string) => void }) {
+/** The plans you own or that were shared with you (making new ones needs Lumora access: `canPlan`). */
+export function PlanList({ userId, email, canPlan, onOpen }: { userId: string; email: string; canPlan: boolean; onOpen: (id: string) => void }) {
   const [plans, setPlans] = useState<PlanSummary[] | null>(null);
   const [error, setError] = useState('');
   const [name, setName] = useState('');
@@ -112,19 +112,21 @@ export function PlanList({ userId, onOpen }: { userId: string; onOpen: (id: stri
     <main className="page">
       <div className="page__head">
         <h1>Plans</h1>
-        <form className="row page__new" onSubmit={make}>
-          <input
-            className="input grow"
-            placeholder="New event name"
-            value={name}
-            maxLength={120}
-            onChange={(e) => setName(e.target.value)}
-            aria-label="New event name"
-          />
-          <button type="submit" className="btn btn--primary" disabled={busy}>
-            New plan
-          </button>
-        </form>
+        {canPlan && (
+          <form className="row page__new" onSubmit={make}>
+            <input
+              className="input grow"
+              placeholder="New event name"
+              value={name}
+              maxLength={120}
+              onChange={(e) => setName(e.target.value)}
+              aria-label="New event name"
+            />
+            <button type="submit" className="btn btn--primary" disabled={busy}>
+              New plan
+            </button>
+          </form>
+        )}
       </div>
       {error && (
         <p className="warn">
@@ -135,7 +137,13 @@ export function PlanList({ userId, onOpen }: { userId: string; onOpen: (id: stri
         </p>
       )}
       {plans === null && !error && <p className="muted">Loading plans…</p>}
-      {plans?.length === 0 && (
+      {plans?.length === 0 && !canPlan && (
+        <div className="empty">
+          <p>No plans shared with you yet.</p>
+          <p className="muted">Ask the person planning the event to invite {email}.</p>
+        </div>
+      )}
+      {plans?.length === 0 && canPlan && (
         <div className="empty">
           <p>No plans yet.</p>
           <p className="muted">

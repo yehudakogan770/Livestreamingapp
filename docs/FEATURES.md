@@ -392,6 +392,11 @@ that page, never the operator's controls. Without internet, phones join the same
 (a travel router or a phone's hotspot works), and a "join the Wi-Fi" code can take turns
 on screen with the page's code.
 
+Signing in: each time Lumora or Lumora Studio starts with internet, the account is checked
+again; without internet they open for up to 7 days after the last check. Two-step sign-in
+(an authenticator app's code) is in My account, and the Lumora team's accounts must use it
+(see docs/security-checklist.md).
+
 ### To build (most important first)
 1. ✅ **Sound from stream and web page inputs** into the mixer.
 2. ✅ **Screen capture** — this computer's screens or one window (OBS, vMix).

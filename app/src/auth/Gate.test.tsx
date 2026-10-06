@@ -16,7 +16,10 @@ vi.mock('./auth', () => ({
   signIn: vi.fn(),
   signOut: () => Promise.resolve(),
   signUp: vi.fn(),
+  supabase: () => ({}),
+  MIN_PASSWORD: 10,
 }));
+vi.mock('./TwoStep', () => ({ CodeForm: () => <p>Type your code</p> }));
 
 const { Gate } = await import('./Gate');
 
@@ -102,4 +105,47 @@ test('the Lumora team always gets in', async () => {
   );
   await act(async () => {});
   expect(screen.getByText('The editor')).toBeInTheDocument();
+});
+
+test('if the account is blocked during the event, Lumora stays open and says so', async () => {
+  answer = () => Promise.resolve(approved);
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.queryByRole('status')).toBeNull();
+  answer = () => Promise.resolve({ ...approved, state: 'blocked' });
+  await act(async () => changed());
+  expect(screen.getByText('The show')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Your access has changed; Lumora will close the next time it starts.');
+  // Or the app turned off for this account: the same.
+  cleanup();
+  answer = () => Promise.resolve(approved);
+  render(
+    <Gate product="studio">
+      <p>The editor</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  answer = () => Promise.resolve({ ...approved, studio: false });
+  await act(async () => changed());
+  expect(screen.getByText('The editor')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('Lumora Studio will close the next time it starts');
+});
+
+test('with two-step sign-in on, the app opens only after the code', async () => {
+  answer = () => Promise.resolve({ ...approved, twoStep: true, codeNeeded: true });
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.queryByText('The show')).toBeNull();
+  expect(screen.getByText('Type your code')).toBeInTheDocument();
+  answer = () => Promise.resolve({ ...approved, twoStep: true, aal2: true });
+  await act(async () => changed());
+  expect(screen.getByText('The show')).toBeInTheDocument();
 });

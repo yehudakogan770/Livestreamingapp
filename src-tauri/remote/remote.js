@@ -87,6 +87,8 @@
         return 'That can only be done on the computer.';
       case 'wrongPin':
         return 'The PIN was changed on the computer.';
+      case 'tooManyTries':
+        return 'Too many wrong PINs from this phone. Wait a few minutes, then try again.';
       case 'invalidValue':
         return `${err.field}: ${err.reason}`;
       default:
@@ -103,7 +105,7 @@
       });
       if (res.ok) return;
       const err = await res.json().catch(() => ({}));
-      if (res.status === 401) return needPin(describe(err));
+      if (res.status === 401 || res.status === 429) return needPin(describe(err));
       toast(describe(err));
     } catch {
       toast('Could not reach the computer. Check the Wi-Fi.');
@@ -124,6 +126,7 @@
     try {
       const res = await call('/api/check', { method: 'POST' });
       if (res.status === 401) return needPin(pin ? 'That PIN is not right. Look at the computer: Settings → Phone remote.' : '');
+      if (res.status === 429) return needPin('Too many wrong PINs from this phone. Wait a few minutes, then try again.');
       if (!res.ok) return needPin('The computer did not answer. Try again.');
     } catch {
       return needPin('Could not reach the computer. Is the phone on the same Wi-Fi?');

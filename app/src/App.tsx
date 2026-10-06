@@ -1,5 +1,5 @@
 import { useEventFonts } from './engine/fonts';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { dataValues } from './engine/data';
 import { appReady, baseName, createEngineClient, type EventFiles, type RemoteStatus } from './engine/client';
 import { useShow } from './engine/useShow';
@@ -99,6 +99,13 @@ function ControlApp() {
   const { access, signOut } = useAccess();
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  // The Lumora team's accounts need two-step sign-in: until it is on, ask once each start.
+  const askedTwoStep = useRef(false);
+  useEffect(() => {
+    if (!access?.admin || access.twoStep || access.offline || askedTwoStep.current) return;
+    askedTwoStep.current = true;
+    setPeopleOpen(true);
+  }, [access]);
   const [zmanimOpen, setZmanimOpen] = useState(false);
   const [dataOpen, setDataOpen] = useState(false);
   const [setupDismissed, setSetupDismissed] = useState(false);
@@ -237,7 +244,7 @@ function ControlApp() {
         ? [
             null,
             ...(access.admin ? [{ label: 'People and approvals…', hint: 'Approve new accounts, or turn access off', onClick: () => setPeopleOpen(true) }] : []),
-            { label: 'My account…', hint: 'Your name and password', onClick: () => setAccountOpen(true) },
+            { label: 'My account…', hint: 'Your name, password and two-step sign-in', onClick: () => setAccountOpen(true) },
             { label: `Sign out (${access.email})`, onClick: signOut },
           ]
         : []),

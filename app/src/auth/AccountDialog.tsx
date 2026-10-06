@@ -1,11 +1,13 @@
 import { CircleUserRound, X } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { Access } from './access';
-import { changeName, changePassword } from './auth';
+import { changeName, changePassword, MIN_PASSWORD, supabase, twoStepStatus } from './auth';
+import { turnOffTwoStep, type TwoStepState } from './mfa';
+import { TwoStepSetup as TwoStepSetupForm } from './TwoStep';
 
 type Note = { text: string; bad: boolean } | null;
 
-/** Your own account: your name, and your password. */
+/** Your own account: your name, your password, and two-step sign-in. */
 export function AccountDialog({ access, onClose }: { access: Access; onClose: () => void }) {
   const [name, setName] = useState(access.name);
   const [nameNote, setNameNote] = useState<Note>(null);
@@ -90,7 +92,7 @@ export function AccountDialog({ access, onClose }: { access: Access; onClose: ()
                 value={next}
                 onChange={(e) => setNext(e.target.value)}
                 autoComplete="new-password"
-                minLength={6}
+                minLength={MIN_PASSWORD}
                 required
               />
             </label>
@@ -102,7 +104,7 @@ export function AccountDialog({ access, onClose }: { access: Access; onClose: ()
                 value={again}
                 onChange={(e) => setAgain(e.target.value)}
                 autoComplete="new-password"
-                minLength={6}
+                minLength={MIN_PASSWORD}
                 required
               />
             </label>
@@ -111,8 +113,103 @@ export function AccountDialog({ access, onClose }: { access: Access; onClose: ()
               {busy === 'pw' ? 'Changing…' : 'Change password'}
             </button>
           </form>
+          <TwoStepPart admin={access.admin} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Two-step sign-in: on or off, and turning it on (scan a code) or off (with the current code). */
+export function TwoStepPart({ admin }: { admin: boolean }) {
+  const [st, setSt] = useState<TwoStepState | null>(null);
+  const [mode, setMode] = useState<'view' | 'on' | 'off'>('view');
+  const [code, setCode] = useState('');
+  const [note, setNote] = useState<Note>(null);
+  const [busy, setBusy] = useState(false);
+  const load = () =>
+    twoStepStatus()
+      .then(setSt)
+      .catch((e: unknown) => setNote({ text: e instanceof Error ? e.message : String(e), bad: true }));
+  useEffect(() => {
+    void load();
+  }, []);
+  const off = (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setNote(null);
+    turnOffTwoStep(supabase(), code)
+      .then(() => {
+        setMode('view');
+        setCode('');
+        setNote({ text: 'Two-step sign-in is off.', bad: false });
+        return load();
+      })
+      .catch((err: unknown) => setNote({ text: err instanceof Error ? err.message : String(err), bad: true }))
+      .finally(() => setBusy(false));
+  };
+  return (
+    <div className="account__part">
+      <h3>Two-step sign-in</h3>
+      {st === null && !note && <p className="field__note">Checking…</p>}
+      {st && !st.on && mode === 'view' && (
+        <>
+          <p className="field__note">
+            Off. With it on, signing in also needs a 6-digit code from an app on your phone, so a stolen password alone can’t open your account.
+            {admin ? ' The Lumora team needs it to approve people and see problem reports.' : ''}
+          </p>
+          <button type="button" className="btn btn--primary" onClick={() => setMode('on')}>
+            Turn on two-step sign-in
+          </button>
+        </>
+      )}
+      {mode === 'on' && (
+        <TwoStepSetupForm
+          db={supabase()}
+          onDone={() => {
+            setMode('view');
+            setNote({ text: 'Two-step sign-in is on. Lumora will ask for a code each time you sign in.', bad: false });
+            void load();
+          }}
+          onCancel={() => setMode('view')}
+        />
+      )}
+      {st?.on && mode === 'view' && (
+        <>
+          <p className="field__note">On: signing in asks for the code from your authenticator app.</p>
+          <button type="button" className="btn" onClick={() => setMode('off')}>
+            Turn off…
+          </button>
+        </>
+      )}
+      {mode === 'off' && (
+        <form className="twostep" onSubmit={off}>
+          <p className="field__note">
+            Type the current code from your authenticator app to turn two-step sign-in off.
+            {admin ? ' Without it, People and approvals stops working for you.' : ''}
+          </p>
+          <label className="field">
+            <span className="field__label">6-digit code</span>
+            <input
+              className="text twostep__code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              required
+            />
+          </label>
+          <div className="gate__row">
+            <button type="submit" className="btn btn--primary" disabled={busy}>
+              {busy ? 'Turning off…' : 'Turn off'}
+            </button>
+            <button type="button" className="btn" onClick={() => setMode('view')}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+      {note && <p className={`gate__msg${note.bad ? ' is-bad' : ''}`}>{note.text}</p>}
     </div>
   );
 }

@@ -23,7 +23,7 @@ import { currentSet, setSetLook } from '../visuals/sets';
 import { makeRenderer, type Renderer } from '../visuals/renderer';
 import { Logo3dRenderer, loadLogo, placeholderLogo } from '../logo3d/renderer';
 import { loopVisuals } from '../logo3d/background';
-import { browserInfo } from '../engine/browser';
+import { browserInfo, servedUrl, type BrowserInfo } from '../engine/browser';
 import { logoRect, VisualsPlayer } from '../visuals/player';
 import { buildAt, isRtl, textShown, withAlpha } from '../engine/text';
 import { clockShown, formatGameClock } from '../engine/score';
@@ -114,7 +114,7 @@ export class ProgramCompositor {
   private sting: { path: string; el: HTMLVideoElement; startedAt: number } | null = null;
   /** Web pages: the newest captured frame of each, fetched as they come. */
   private readonly pages = new Map<string, { n: number; frame: ImageBitmap | null; busy: boolean; seen: number }>();
-  private pageInfo: { port: number | null; captured: boolean } | null = null;
+  private pageInfo: BrowserInfo | null = null;
   /** One 3D logo renderer per 3D logo input (false: no WebGL here). */
   private readonly logos = new Map<
     string,
@@ -2016,7 +2016,7 @@ export class ProgramCompositor {
     if (!p.busy) {
       const page = p;
       page.busy = true;
-      void fetch(`http://127.0.0.1:${port}/frame/${encodeURIComponent(id)}?after=${page.n}`)
+      void fetch(servedUrl(this.pageInfo, `frame/${encodeURIComponent(id)}`, `after=${page.n}`) ?? '')
         .then(async (r) => {
           if (r.status !== 200) return;
           page.n = Number(r.headers.get('X-Frame') ?? page.n);
