@@ -1339,6 +1339,7 @@ section {
 .hero__kicker,
 .hero__sub,
 .hero__verbs span,
+.hero__pair,
 .hero__cta,
 .hero__fine {
   animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
@@ -1355,11 +1356,14 @@ section {
 .hero__verbs span:nth-child(3) {
   animation-delay: 0.85s;
 }
-.hero__cta {
+.hero__pair {
   animation-delay: 1s;
 }
+.hero__cta {
+  animation-delay: 1.3s;
+}
 .hero__fine {
-  animation-delay: 1.1s;
+  animation-delay: 1.4s;
 }
 .reveal {
   opacity: 0;
@@ -1462,6 +1466,8 @@ section {
   .hero__kicker,
   .hero__sub,
   .hero__verbs span,
+  .hero__pair,
+  .fam,
   .hero__cta,
   .hero__fine,
   .fpane.is-on {
@@ -1507,7 +1513,7 @@ section {
   max-width: 900px;
   margin: 26px auto 0;
   text-align: left;
-  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.95s both;
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 1.15s both;
 }
 .fam__card {
   display: flex;
