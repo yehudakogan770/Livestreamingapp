@@ -182,6 +182,9 @@ jobs:
         env:
           VITE_LUMORA_E2E: '1'
         run: |
+          # The shipped WebView settings shut out the test driver: leave them out
+          # of these test builds only.
+          node -e "for (const f of ['src-tauri/tauri.conf.json','editor/src-tauri/tauri.conf.json']) { const fs=require('fs'); const c=JSON.parse(fs.readFileSync(f,'utf8')); for (const w of c.app.windows ?? []) delete w.additionalBrowserArgs; fs.writeFileSync(f, JSON.stringify(c, null, 2)); }"
           npx tauri build --no-bundle
           (cd editor && npx tauri build --no-bundle)
           ls -la target/release/*.exe

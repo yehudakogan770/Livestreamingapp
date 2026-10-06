@@ -5,7 +5,7 @@
 //   LUMORA_INSTALLED, STUDIO_INSTALLED   installed from the CI installers
 //   LUMORA_TEST, STUDIO_TEST             the test builds (VITE_LUMORA_E2E=1)
 
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,15 +16,15 @@ const out = resolve(process.env.E2E_OUT ?? join(here, 'results'));
 const runs = [
   {
     name: 'lumora-installed',
-    title: 'Lumora (installer): starts, asks to sign in',
-    spec: 'specs/signin.e2e.mjs',
+    title: 'Lumora (installer): starts and keeps running',
+    smoke: true,
     app: process.env.LUMORA_INSTALLED,
     product: 'Lumora',
   },
   {
     name: 'studio-installed',
-    title: 'Lumora Studio (installer): starts, asks to sign in',
-    spec: 'specs/signin.e2e.mjs',
+    title: 'Lumora Studio (installer): starts and keeps running',
+    smoke: true,
     app: process.env.STUDIO_INSTALLED,
     product: 'Lumora Studio',
   },
@@ -63,6 +63,21 @@ function junitCounts(name) {
   }
 }
 
+/**
+ * The installed programs can't be driven (their WebView settings shut out the
+ * test driver, as they should): they must start and still be running after 20 s.
+ */
+function startsAndRuns(app) {
+  if (process.platform !== 'win32') return { ok: false, detail: 'Windows only' };
+  const child = spawn(app, [], { detached: true, stdio: 'ignore' });
+  child.unref();
+  const wait = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  wait(20_000);
+  const list = spawnSync('tasklist', ['/FI', `IMAGENAME eq ${basename(app)}`, '/NH'], { encoding: 'utf8' });
+  const running = (list.stdout ?? '').toLowerCase().includes(basename(app).toLowerCase());
+  return { ok: running, detail: running ? 'running after 20 s' : 'not running after 20 s (closed or crashed)' };
+}
+
 const rows = [];
 let failed = false;
 for (const r of runs) {
@@ -73,6 +88,13 @@ for (const r of runs) {
   }
   console.log(`\n=== ${r.title} (${r.app}) ===`);
   tidy(r.app);
+  if (r.smoke) {
+    const res = startsAndRuns(r.app);
+    tidy(r.app);
+    failed ||= !res.ok;
+    rows.push(`| ${r.title} | ${res.ok ? '✅ passed' : '❌ failed'} | ${res.detail} |`);
+    continue;
+  }
   const res = spawnSync('npx', ['wdio', 'run', 'wdio.conf.mjs'], {
     cwd: here,
     stdio: 'inherit',
