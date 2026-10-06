@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NO_DECK, deckOffer, deckSummary, versionText, type DeckStatus } from './streamDeck';
+import { NO_DECK, deckOffer, deckSummary, versionText, type DeckStatus } from './deckApi';
 
 const deck = (s: Partial<DeckStatus>): DeckStatus => ({ ...NO_DECK, bundled: '1.0.0.0', ...s });
 

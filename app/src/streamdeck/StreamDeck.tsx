@@ -1,7 +1,7 @@
 import { LayoutGrid, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { RemoteStatus } from '../engine/client';
-import { NO_DECK, deckOffer, deckStatus, deckSummary, dismissDeck, installDeck, type DeckStatus } from './streamDeck';
+import { NO_DECK, deckOffer, deckStatus, deckSummary, dismissDeck, installDeck, type DeckStatus } from './deckApi';
 import './StreamDeck.css';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
