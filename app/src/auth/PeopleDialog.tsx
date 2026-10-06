@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Profile } from './access';
 import { listPeople, resetTwoStep, setPerson, supabase, twoStepPeople, twoStepStatus, type PersonChange } from './auth';
 import type { TwoStepState } from './mfa';
-import { CodeForm, TwoStepSetup } from './TwoStep';
+import { CodeForm } from './TwoStep';
 import { ReportsAdmin } from '../reports/ReportsAdmin';
 
 type Filter = 'waiting' | 'approved' | 'blocked' | 'all' | 'problems';
@@ -51,21 +51,12 @@ export function PeopleDialog({ onClose }: { onClose: () => void }) {
             <X aria-hidden="true" />
           </button>
         </header>
-        {step?.aal2 ? (
+        {step && (step.aal2 || !step.on) ? (
           <People />
         ) : (
           <div className="people__body people__twostep">
             {stepError && <p className="field__note">{stepError}</p>}
             {step === null && !stepError && <p className="people__empty">Checking your sign-in…</p>}
-            {step && !step.on && (
-              <>
-                <p>
-                  <b>First, turn on two-step sign-in.</b> Approving people and reading problem reports needs it: then a stolen password alone can’t change who
-                  uses Lumora.
-                </p>
-                <TwoStepSetup db={supabase()} onDone={checkStep} />
-              </>
-            )}
             {step?.on && !step.aal2 && <CodeForm db={supabase()} onDone={checkStep} />}
           </div>
         )}

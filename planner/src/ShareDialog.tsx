@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { X } from 'lucide-react';
 import { cancelInvitation, invitations, invite, people, removePerson, setRole, type Invitation, type Person } from './api';
 import type { Plan, Role } from './model';
 import { db } from './session';
+import { initials } from './Inspector';
 
 /** Who is on the plan; the owner adds people by email as editors or viewers. */
 export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan; role: Role | null; me: string; onClose: () => void; onChanged: () => void }) {
@@ -55,8 +57,8 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
       <div className="dialog__box">
         <header className="dialog__head">
           <h2>Share “{plan.name}”</h2>
-          <button type="button" className="btn btn--quiet" onClick={onClose}>
-            Close
+          <button type="button" className="btn btn--quiet btn--icon" onClick={onClose} aria-label="Close" title="Close">
+            <X size={16} strokeWidth={1.75} aria-hidden="true" />
           </button>
         </header>
         <div className="dialog__body">
@@ -93,9 +95,16 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
               {list?.map((p) => (
                 <tr key={p.userId}>
                   <td>
-                    <b>{p.name || p.email}</b>
-                    {p.userId === me && <span className="muted"> (you)</span>}
-                    <div className="muted small">{p.email}</div>
+                    <span className="person">
+                      <span className="avatar" aria-hidden="true">
+                        {initials(p.name || p.email)}
+                      </span>
+                      <span className="person__id">
+                        <b>{p.name || p.email}</b>
+                        {p.userId === me && <span className="muted"> (you)</span>}
+                        <div className="muted small">{p.email}</div>
+                      </span>
+                    </span>
                   </td>
                   <td className="nowrap">
                     {p.role === 'owner' ? (
@@ -129,8 +138,15 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
               {waiting.map((w) => (
                 <tr key={w.email}>
                   <td>
-                    <b>{w.email}</b>
-                    <div className="muted small">Invited · no account yet</div>
+                    <span className="person">
+                      <span className="avatar avatar--empty" aria-hidden="true">
+                        {initials(w.email)}
+                      </span>
+                      <span className="person__id">
+                        <b>{w.email}</b>
+                        <div className="muted small">Invited · no account yet</div>
+                      </span>
+                    </span>
                   </td>
                   <td className="nowrap">{w.role === 'editor' ? 'Can edit' : 'Can view'}</td>
                   <td className="nowrap">

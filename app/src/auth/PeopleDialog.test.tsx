@@ -79,11 +79,11 @@ test('a change that cannot be saved says why', async () => {
   expect(screen.getByText('Lumora cannot reach the internet.')).toBeInTheDocument();
 });
 
-test('the Lumora team sets up two-step sign-in before anyone is listed', async () => {
+test('two-step sign-in is optional for the Lumora team, but asks for the code when it is on', async () => {
   step = { on: false, aal2: false, factorId: null as unknown as string };
   await open();
-  expect(screen.getByText('Scan this code')).toBeInTheDocument();
-  expect(screen.queryByText('Nina')).toBeNull();
+  expect(screen.queryByText('Scan this code')).toBeNull();
+  expect(screen.getByText('Nina')).toBeInTheDocument();
   cleanup();
   step = { on: true, aal2: false, factorId: 'f' };
   await open();

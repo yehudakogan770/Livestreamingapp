@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
+import { Check, CircleAlert, LoaderCircle, Plus, Printer, StickyNote, UserPlus } from 'lucide-react';
 import { deletePlan, removePerson } from './api';
 import { ClockInput, DurationInput } from './fields';
 import { Inspector, hintText, initials } from './Inspector';
@@ -161,7 +162,8 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
                 onChange={(e) => store.editPlan({ venue: e.target.value })}
               />
             </label>
-            <button type="button" className="btn btn--quiet" aria-expanded={showNotes} onClick={() => setShowNotes(!showNotes)}>
+            <button type="button" className={`btn${showNotes ? ' is-on' : ''}`} aria-expanded={showNotes} onClick={() => setShowNotes(!showNotes)}>
+              <StickyNote size={15} strokeWidth={1.75} aria-hidden="true" />
               {showNotes ? 'Hide event notes' : plan.notes ? 'Event notes (1)' : 'Event notes'}
             </button>
           </div>
@@ -189,13 +191,17 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
                 if (id) setSel(id);
               }}
             >
+              <Plus size={15} strokeWidth={2} aria-hidden="true" />
               Add cue{sel ? ' below' : ''}
             </button>
           )}
+          {canEdit && <span className="tools__div" aria-hidden="true" />}
           <button type="button" className="btn" onClick={() => setSharing(true)}>
+            <UserPlus size={15} strokeWidth={1.75} aria-hidden="true" />
             Share…
           </button>
           <button type="button" className="btn" onClick={() => window.print()} title="Print, or save as PDF from the print window">
+            <Printer size={15} strokeWidth={1.75} aria-hidden="true" />
             Print / PDF
           </button>
           <span className="tools__note">{ROLE_WORDS[role ?? 'viewer']}</span>
@@ -211,6 +217,13 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
             </span>
           )}
           <span className={`tools__save tools__save--${saving}`} role="status">
+            {saving === 'saved' ? (
+              <Check size={14} strokeWidth={2} aria-hidden="true" />
+            ) : saving === 'saving' ? (
+              <LoaderCircle size={14} strokeWidth={2} aria-hidden="true" className="spin" />
+            ) : (
+              <CircleAlert size={14} strokeWidth={2} aria-hidden="true" />
+            )}
             {saving === 'saved' ? 'All changes saved' : saving === 'saving' ? 'Saving…' : 'Not saved — retrying'}
           </span>
         </div>
@@ -262,6 +275,7 @@ export function PlanView({ planId, me, onBack }: { planId: string; me: { id: str
             </span>
           )}
           {sched.untimed > 0 && <span className="warn-text">{sched.untimed} without a length</span>}
+          <span className="status__div" aria-hidden="true" />
           <span className="status__segs">
             {SEGMENTS.filter((s) => sched.bySegment[s.id]).map((s) => (
               <span key={s.id} className="status__seg">
@@ -411,7 +425,10 @@ function CueSheet({
                 >
                   {canEdit && <span className="grip" />}
                 </td>
-                <td className="num mono">{i + 1}</td>
+                <td className="num mono">
+                  {onNow === i && <i className="tally" aria-hidden="true" />}
+                  {i + 1}
+                </td>
                 <td className={`mono${t.fixed ? ' is-fixed' : ''}`}>
                   {canEdit ? (
                     <ClockInput

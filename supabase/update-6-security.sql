@@ -93,11 +93,11 @@ as $$
     or not exists (select 1 from auth.mfa_factors f where f.user_id = auth.uid() and f.status = 'verified')
 $$;
 
--- Is the person asking on the Lumora team? Only when signed in with the code.
+-- Is the person asking on the Lumora team? With the code if two-step is on.
 create or replace function public.is_admin() returns boolean
   language sql security definer stable set search_path = public
 as $$
-  select public.session_aal2()
+  select public.mfa_ok()
     and coalesce((select is_admin and not blocked from public.profiles where id = auth.uid()), false)
 $$;
 
