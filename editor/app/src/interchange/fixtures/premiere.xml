@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xmeml>
+<xmeml version="4">
+	<sequence id="sequence-1" TL.SQAudioVisibleBase="0" MZ.Sequence.PreviewFrameSizeHeight="2160">
+		<uuid>8a7c1d2e-1111-2222-3333-444455556666</uuid>
+		<duration>900</duration>
+		<rate>
+			<timebase>30</timebase>
+			<ntsc>TRUE</ntsc>
+		</rate>
+		<name>Wedding Highlights</name>
+		<media>
+			<video>
+				<format>
+					<samplecharacteristics>
+						<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+						<width>3840</width>
+						<height>2160</height>
+						<anamorphic>FALSE</anamorphic>
+						<pixelaspectratio>square</pixelaspectratio>
+						<fielddominance>none</fielddominance>
+					</samplecharacteristics>
+				</format>
+				<track>
+					<clipitem id="clipitem-1">
+						<masterclipid>masterclip-1</masterclipid>
+						<name>C0012.MP4</name>
+						<enabled>TRUE</enabled>
+						<duration>1800</duration>
+						<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+						<start>0</start>
+						<end>-1</end>
+						<in>150</in>
+						<out>450</out>
+						<file id="file-1">
+							<name>C0012.MP4</name>
+							<pathurl>file://localhost/D:/Weddings/Cohen/C0012.MP4</pathurl>
+							<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+							<duration>1800</duration>
+							<media>
+								<video><samplecharacteristics><width>3840</width><height>2160</height></samplecharacteristics></video>
+								<audio><samplecharacteristics><depth>16</depth><samplerate>48000</samplerate></samplecharacteristics><channelcount>2</channelcount></audio>
+							</media>
+						</file>
+					</clipitem>
+					<transitionitem>
+						<start>285</start>
+						<end>315</end>
+						<alignment>center</alignment>
+						<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+						<effect><name>Cross Dissolve</name><effectid>Cross Dissolve</effectid><effectcategory>Dissolve</effectcategory><effecttype>transition</effecttype><mediatype>video</mediatype></effect>
+					</transitionitem>
+					<clipitem id="clipitem-2">
+						<masterclipid>masterclip-2</masterclipid>
+						<name>C0019.MP4</name>
+						<enabled>TRUE</enabled>
+						<duration>2400</duration>
+						<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+						<start>-1</start>
+						<end>600</end>
+						<in>600</in>
+						<out>1200</out>
+						<file id="file-2">
+							<name>C0019.MP4</name>
+							<pathurl>file://localhost/D:/Weddings/Cohen/C0019.MP4</pathurl>
+							<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+							<duration>2400</duration>
+							<media>
+								<video><samplecharacteristics><width>3840</width><height>2160</height></samplecharacteristics></video>
+								<audio><channelcount>2</channelcount></audio>
+							</media>
+						</file>
+						<filter>
+							<effect>
+								<name>Time Remap</name>
+								<effectid>timeremap</effectid>
+								<effectcategory>motion</effectcategory>
+								<effecttype>motion</effecttype>
+								<mediatype>video</mediatype>
+								<parameter authoringApp="PremierePro"><parameterid>variablespeed</parameterid><name>variablespeed</name><value>0</value></parameter>
+								<parameter authoringApp="PremierePro"><parameterid>speed</parameterid><name>speed</name><value>200</value></parameter>
+								<parameter authoringApp="PremierePro"><parameterid>reverse</parameterid><name>reverse</name><value>FALSE</value></parameter>
+							</effect>
+						</filter>
+					</clipitem>
+					<enabled>TRUE</enabled>
+					<locked>FALSE</locked>
+				</track>
+				<track>
+					<clipitem id="clipitem-3">
+						<name>Logo.png</name>
+						<enabled>FALSE</enabled>
+						<duration>18000</duration>
+						<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+						<start>60</start>
+						<end>210</end>
+						<in>0</in>
+						<out>150</out>
+						<file id="file-3">
+							<name>Logo (white).png</name>
+							<pathurl>file://localhost/D:/Brand/Logo%20(white).png</pathurl>
+							<media><video><samplecharacteristics><width>1200</width><height>400</height></samplecharacteristics></video></media>
+						</file>
+					</clipitem>
+					<generatoritem id="generatoritem-1">
+						<name>Color Matte</name>
+						<start>300</start>
+						<end>330</end>
+					</generatoritem>
+				</track>
+			</video>
+			<audio>
+				<numOutputChannels>2</numOutputChannels>
+				<track>
+					<clipitem id="clipitem-4">
+						<name>C0012.MP4</name>
+						<enabled>TRUE</enabled>
+						<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+						<start>0</start>
+						<end>300</end>
+						<in>150</in>
+						<out>450</out>
+						<file id="file-1"/>
+						<sourcetrack><mediatype>audio</mediatype><trackindex>1</trackindex></sourcetrack>
+						<filter>
+							<effect>
+								<name>Audio Levels</name>
+								<effectid>audiolevels</effectid>
+								<effectcategory>audiolevels</effectcategory>
+								<effecttype>audiolevels</effecttype>
+								<mediatype>audio</mediatype>
+								<parameter authoringApp="PremierePro"><parameterid>level</parameterid><name>Level</name><valuemin>0</valuemin><valuemax>3.98109</valuemax><value>0.501187</value></parameter>
+							</effect>
+						</filter>
+					</clipitem>
+				</track>
+				<track>
+					<clipitem id="clipitem-5">
+						<name>First Dance.mp3</name>
+						<enabled>TRUE</enabled>
+						<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+						<start>0</start>
+						<end>900</end>
+						<in>0</in>
+						<out>900</out>
+						<file id="file-4">
+							<name>First Dance.mp3</name>
+							<pathurl>file://localhost/D:/Music/First%20Dance.mp3</pathurl>
+							<rate><timebase>30</timebase><ntsc>TRUE</ntsc></rate>
+							<duration>6300</duration>
+							<media><audio><channelcount>2</channelcount></audio></media>
+						</file>
+					</clipitem>
+				</track>
+			</audio>
+		</media>
+		<marker>
+			<comment></comment>
+			<name>Ceremony</name>
+			<in>120</in>
+			<out>-1</out>
+		</marker>
+	</sequence>
+</xmeml>
