@@ -19,605 +19,584 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="The Lumora main screen with Next and On air monitors, the switcher and the inputs." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#0c0d0f" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#f6f4ef" />
+    <meta name="color-scheme" content="light" />
     <link rel="icon" href="img/lumora-mark.svg" type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="site.css" />
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
 
-    <header class="top">
-      <div class="wrap top__in">
-        <a class="brand" href="./" aria-label="Lumora home"><img src="img/lumora-mark.svg" alt="" width="24" height="24" />Lumora</a>
-        <button type="button" class="menu" aria-expanded="false" aria-controls="nav" data-menu>
-          <span class="sr">Menu</span><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-        </button>
-        <nav id="nav" class="nav" aria-label="Main">
-          <a href="#lumora">Lumora</a>
+    <header class="mast">
+      <div class="mast__in">
+        <a class="word" href="./" aria-label="Lumora home"><img src="img/lumora-mark.svg" alt="" width="22" height="22" />Lumora</a>
+        <nav class="mast__nav" aria-label="Main">
+          <a href="#evening">The evening</a>
           <a href="#studio">Studio</a>
           <a href="#planner">Planner</a>
           <a href="#requirements">Requirements</a>
-          <a href="#faq">FAQ</a>
-          <a href="#contact">Contact</a>
-          <a class="btn btn--primary btn--sm nav__cta" href="#download">Download</a>
+          <a href="#questions">Questions</a>
         </nav>
+        <a class="mast__dl" href="#download">Download</a>
       </div>
     </header>
 
     <main id="main">
-      <section class="hero">
-        <div class="wrap">
-          <p class="hero__label">Live production software for Windows</p>
-          <h1>Run the whole event from one computer.</h1>
-          <p class="hero__sub">
-            Lumora switches your cameras, streams and records, and drives every screen in the room. Lumora Studio edits what you recorded. Lumora Planner keeps
-            the team on one run of show.
+      <!-- Title page of the rundown -->
+      <section class="slate" aria-labelledby="title">
+        <p class="slate__slug"><span>Run of show</span><span>Spring Gala</span><span>Saturday</span></p>
+        <h1 id="title">One evening,<br /> run from one computer.</h1>
+        <div class="slate__cols">
+          <p class="slate__lede">
+            Lumora is live production software for Windows. It switches your cameras, streams and records, and drives every screen in the room: the stream, the
+            projector behind the stage and the monitor facing your speakers. Lumora Studio edits what you recorded. Lumora Planner keeps the team on one run of
+            show.
           </p>
-          <div class="hero__cta">
-            <a class="btn btn--primary" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" /></svg>
-              Download for Windows
-            </a>
-            <a class="btn btn--ghost" href="#lumora">See features</a>
+          <div class="slate__get">
+            <a class="button" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">Download Lumora for Windows</a>
+            <p>Free. Windows 10 and 11, 64-bit. <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">Release notes</a></p>
           </div>
-          <p class="hero__fine">Free · Windows 10 and 11, 64-bit · <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">Release notes</a></p>
         </div>
-        <div class="wrap wrap--wide">
-          <figure class="shot shot--hero">
-            <div class="shot__bar" aria-hidden="true"><span>Lumora</span><i></i><i></i><i></i></div>
+        <p class="slate__how">
+          This page follows one event, a school's spring gala, from the planning meeting to the edit the morning after. Each entry is a moment of the night and
+          what Lumora does then.
+        </p>
+      </section>
+
+      <!-- The rundown itself, which doubles as the contents -->
+      <section class="rundown" aria-labelledby="rundown-h">
+        <h2 id="rundown-h" class="sr">The evening at a glance</h2>
+        <table class="rundown__table">
+          <thead>
+            <tr>
+              <th scope="col">Time</th>
+              <th scope="col">Segment</th>
+              <th scope="col">What Lumora does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Tue 4:00 PM</td>
+              <td><a href="#planner">Planning meeting</a></td>
+              <td>The team writes the run of show together in Lumora Planner.</td>
+            </tr>
+            <tr>
+              <td>Sat 5:30 PM</td>
+              <td><a href="#load-in">Load-in</a></td>
+              <td>Cameras, microphones, slides and titles go in as inputs.</td>
+            </tr>
+            <tr>
+              <td>7:00 PM</td>
+              <td><a href="#doors">Doors</a></td>
+              <td>Countdown on the projector, visuals in time with the music.</td>
+            </tr>
+            <tr class="is-live">
+              <td>7:30 PM</td>
+              <td><a href="#live">On air</a></td>
+              <td>Switching, streaming to several platforms, recording every camera.</td>
+            </tr>
+            <tr>
+              <td>7:34 PM</td>
+              <td><a href="#welcome">Welcome</a></td>
+              <td>Name titles, captions, and the speaker's own monitor.</td>
+            </tr>
+            <tr>
+              <td>8:15 PM</td>
+              <td><a href="#room">The room joins in</a></td>
+              <td>Polls, a raffle and the fundraiser, on the audience's phones.</td>
+            </tr>
+            <tr>
+              <td>8:52 PM</td>
+              <td><a href="#trouble">A camera drops out</a></td>
+              <td>Nobody in the audience notices.</td>
+            </tr>
+            <tr>
+              <td>Sun 10:00 AM</td>
+              <td><a href="#studio">The edit</a></td>
+              <td>Lumora Studio opens every camera in sync, ready to cut.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <div id="evening" class="entries">
+        <!-- Planner -->
+        <section id="planner" class="entry" aria-labelledby="planner-h">
+          <p class="entry__time" aria-hidden="true">Tue 4:00 PM</p>
+          <div class="entry__body">
+            <h2 id="planner-h"><span class="sr">Tuesday, 4:00 PM. </span>Plan with your team.</h2>
+            <p>
+              Lumora Planner runs in the browser, so the whole team works on the same run of show: sections, cues, start times, who is responsible, and notes,
+              with comments on each cue. Start times and running totals are worked out for you, and you can print a cue sheet for the stage manager.
+            </p>
+            <p>
+              Invite a teammate by email. They make an account in the Planner and can start right away; teammates don't need approval and see only the plans
+              shared with them. On the day, Lumora loads the plan as cues: <i>Run of show</i>, then <i>Load from Planner</i>.
+            </p>
+            <p><a class="more" href="planner/">Open Lumora Planner</a></p>
+          </div>
+          <figure class="entry__wide plan" aria-labelledby="plan-cap">
+            <table class="plan__table">
+              <thead>
+                <tr>
+                  <th scope="col">Starts</th>
+                  <th scope="col">Cue</th>
+                  <th scope="col">Length</th>
+                  <th scope="col">Who</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="plan__section">
+                  <th colspan="4" scope="rowgroup">Doors</th>
+                </tr>
+                <tr>
+                  <td>7:00</td>
+                  <td>Walk-in music and countdown</td>
+                  <td>30 min</td>
+                  <td>Operator</td>
+                </tr>
+                <tr class="plan__section">
+                  <th colspan="4" scope="rowgroup">Program</th>
+                </tr>
+                <tr>
+                  <td>7:30</td>
+                  <td>Opening video</td>
+                  <td>4 min</td>
+                  <td>Operator</td>
+                </tr>
+                <tr>
+                  <td>7:34</td>
+                  <td>Welcome, Dana Levine, with name title</td>
+                  <td>10 min</td>
+                  <td>Camera 2</td>
+                </tr>
+                <tr>
+                  <td>7:44</td>
+                  <td>Choir, with song lyrics on the back screen</td>
+                  <td>15 min</td>
+                  <td>Music director</td>
+                </tr>
+                <tr>
+                  <td>8:15</td>
+                  <td>Audience poll and raffle</td>
+                  <td>20 min</td>
+                  <td>Host</td>
+                </tr>
+              </tbody>
+            </table>
+            <figcaption id="plan-cap">An example plan, five cues long. The page you are reading is laid out the same way.</figcaption>
+          </figure>
+        </section>
+
+        <!-- Load-in -->
+        <section id="load-in" class="entry" aria-labelledby="load-h">
+          <p class="entry__time" aria-hidden="true">Sat 5:30 PM</p>
+          <div class="entry__body">
+            <h2 id="load-h"><span class="sr">Saturday, 5:30 PM. </span>Load-in.</h2>
+            <p>
+              Everything that can appear on a screen is an input: USB and capture-card cameras, NDI and stream sources, guests joining by link, screen capture,
+              video files, slides, web pages, titles, scoreboards and countdowns. Microphones and the sound desk come in the same way and show up on the mixer.
+            </p>
+            <p>
+              The venue has no internet? That's fine. Switching, recording, titles and every screen in the room run on the computer; only streaming out and
+              online inputs need a connection.
+            </p>
+          </div>
+          <figure class="entry__side">
+            <img
+              src="img/lumora-inputs.webp"
+              width="880"
+              height="760"
+              loading="lazy"
+              decoding="async"
+              alt="The Add input window: cameras, NDI and stream inputs, titles, scoreboards, slides, web pages, stage visuals and audience tools, with a preview of a lower third."
+            />
+            <figcaption>The Add input window, grouped by what each input is for.</figcaption>
+          </figure>
+        </section>
+
+        <!-- Doors -->
+        <section id="doors" class="entry" aria-labelledby="doors-h">
+          <p class="entry__time" aria-hidden="true">7:00 PM</p>
+          <div class="entry__body">
+            <h2 id="doors-h"><span class="sr">7:00 PM. </span>Doors.</h2>
+            <p>
+              Guests find their seats. The projector behind the stage, which Lumora calls the Back Screen, shows a countdown to the start while the stream shows
+              the same clock. When it reaches zero, the countdown can take the first cue by itself.
+            </p>
+            <p>
+              Between segments, the Back Screen plays stage visuals: twenty scenes grouped by tempo that move with the beat of the music, with an energy control
+              and an autopilot that changes scene every few bars.
+            </p>
+          </div>
+          <figure class="entry__wide">
+            <img
+              src="img/lumora-visuals.webp"
+              width="1400"
+              height="403"
+              loading="lazy"
+              decoding="async"
+              alt="The Stage visuals window: a live preview of the Spiral scene, twenty scenes grouped by tempo, and controls for colors, zoom and spin."
+            />
+            <figcaption>Stage visuals, set to Medium at 100 beats a minute.</figcaption>
+          </figure>
+        </section>
+
+        <!-- Live -->
+        <section id="live" class="entry entry--live" aria-labelledby="live-h">
+          <p class="entry__time" aria-hidden="true">7:30 PM</p>
+          <div class="entry__body">
+            <h2 id="live-h"><span class="sr">7:30 PM. </span>On air.</h2>
+            <p>
+              You line up the next shot on the left, out of sight, and take it live on the right. One operator runs the stream, the recording, the Back Screen
+              and the Stage Monitor from the same window.
+            </p>
+          </div>
+          <figure class="entry__bleed">
             <img
               src="img/lumora-main.webp"
-              width="1600"
-              height="867"
-              alt="The Lumora main screen: the Next and On air monitors with the switcher between them, the inputs below, and the audio mixer on the right."
-              fetchpriority="high"
-            />
-          </figure>
-        </div>
-      </section>
-
-      <section class="platforms" aria-label="Streaming platforms">
-        <div class="wrap platforms__in">
-          <p>Stream to several platforms at once</p>
-          <ul>
-            <li>YouTube</li>
-            <li>Facebook</li>
-            <li>Vimeo</li>
-            <li>Twitch</li>
-            <li>Any RTMP server</li>
-            <li>NDI on your network</li>
-          </ul>
-        </div>
-      </section>
-
-      <!-- Lumora -->
-      <section id="lumora" class="product product--live">
-        <div class="wrap">
-          <header class="product__head">
-            <p class="product__name"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora</p>
-            <h2>A complete live production studio.</h2>
-            <p>
-              Line up the next shot out of sight, then take it live with a clean transition. Lumora runs the stream, the recording, the projector behind the
-              stage and the monitor facing your speakers, all from one operator position.
-            </p>
-          </header>
-
-          <div class="features">
-            <div class="feature">
-              <h3>Switching</h3>
-              <ul>
-                <li>Next and On air monitors, TAKE, CUT and a T&#8209;bar</li>
-                <li>22 transitions and video stingers</li>
-                <li>Picture in picture, split screen and green screen</li>
-                <li>Automatic camera switching</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Streaming and recording</h3>
-              <ul>
-                <li>Several platforms at once, 720p to 4K</li>
-                <li>A separate vertical 9:16 stream</li>
-                <li>Every camera recorded to its own file</li>
-                <li>NDI output and instant replay with slow motion</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Graphics</h3>
-              <ul>
-                <li>Lower thirds, titles, tickers and credits</li>
-                <li>Scoreboards with a game clock</li>
-                <li>Countdowns that act when they reach zero</li>
-                <li>Your colors, fonts and logo on everything</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Camera intelligence</h3>
-              <ul>
-                <li>Background removal without a green screen</li>
-                <li>Auto-framing that follows the speaker</li>
-                <li>Live captions, transcribed on the computer</li>
-                <li>PTZ control with saved shots</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Every screen in the room</h3>
-              <ul>
-                <li>Live Screen for the stream and recording</li>
-                <li>Back Screen for the projector, with stage visuals</li>
-                <li>Stage Monitor with messages, clock and teleprompter</li>
-                <li>Polls, raffles and trivia on the audience's phones</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Control</h3>
-              <ul>
-                <li>Presets, cues and a timed run of show</li>
-                <li>Phone and tablet remote</li>
-                <li>Stream Deck plugin, MIDI and keyboard shortcuts</li>
-                <li>A panic button that blanks every screen</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="gallery gallery--live">
-            <figure class="shot gallery__tall">
-              <img
-                src="img/lumora-inputs.webp"
-                width="880"
-                height="760"
-                loading="lazy"
-                alt="The Add input window: cameras, NDI and stream inputs, titles, scoreboards, slides, web pages, stage visuals and audience tools."
-              />
-              <figcaption>Cameras, NDI, screen capture, titles, scoreboards, slides and audience tools, all as inputs.</figcaption>
-            </figure>
-            <figure class="shot">
-              <img
-                src="img/lumora-visuals.webp"
-                width="1400"
-                height="403"
-                loading="lazy"
-                alt="Stage visuals: twenty beat-synced scenes grouped by tempo, with live effects and look controls."
-              />
-              <figcaption>Stage visuals for the Back Screen, synced to the beat of the music.</figcaption>
-            </figure>
-            <ul class="assurances">
-              <li><b>No error screens.</b> If a camera drops out, the audience sees your logo, never a message.</li>
-              <li><b>Saves as you go.</b> If the computer restarts, the event comes back as it was.</li>
-              <li><b>Works offline.</b> Only streaming and online inputs need the internet.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <!-- Lumora Studio -->
-      <section id="studio" class="product product--studio">
-        <div class="wrap">
-          <header class="product__head">
-            <p class="product__name"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora Studio</p>
-            <h2>Edit the event you just recorded.</h2>
-            <p>
-              Open a recording with every camera already in sync and cut it like a multicam edit. Lumora Studio is a full video editor with color, audio,
-              captions and smart tools that take care of the slow parts.
-            </p>
-          </header>
-
-          <figure class="shot shot--strip">
-            <img
-              src="img/studio-timeline.webp"
-              width="1590"
-              height="330"
+              width="2000"
+              height="1125"
               loading="lazy"
-              alt="The Lumora Studio timeline: video tracks with Wide, Close-up and Live Screen camera angles, and audio tracks with waveforms."
+              decoding="async"
+              alt="The Lumora main screen during the gala: a poll lined up in Next on the left, stage visuals with a lower third for Dana Levine on air on the right, the switcher between them, eight inputs below and the audio mixer with two microphones."
             />
-            <figcaption>The multi-track timeline, with each camera angle on its own color.</figcaption>
+            <figcaption>The main window. Next on the left, On air on the right, the inputs and the mixer below.</figcaption>
           </figure>
+          <dl class="facts">
+            <div>
+              <dt>Switching</dt>
+              <dd>Next and On air monitors, TAKE, CUT and a T-bar. 22 transitions and video stingers. Picture in picture, split screen, green screen.</dd>
+            </div>
+            <div>
+              <dt>Streaming</dt>
+              <dd>
+                YouTube, Facebook, Vimeo, Twitch or any RTMP server, several at once, from 720p to 4K. A separate vertical 9:16 stream for phones. NDI out to the
+                network.
+              </dd>
+            </div>
+            <div>
+              <dt>Recording</dt>
+              <dd>The program and every camera to its own file, so the edit has all the angles. Instant replay with slow motion.</dd>
+            </div>
+            <div>
+              <dt>Control</dt>
+              <dd>
+                Presets, cues and a timed run of show. A phone or tablet as a remote. Stream Deck plugin, MIDI controllers, presentation clickers and keyboard
+                shortcuts.
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-          <div class="features">
-            <div class="feature">
-              <h3>Editing</h3>
-              <ul>
-                <li>Multi-track timeline with ripple, roll, slip and slide</li>
-                <li>Speed ramps, keyframes and templates</li>
-                <li>Titles, transitions and effects</li>
-                <li>Team editing with shared projects and comments</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Color and masks</h3>
-              <ul>
-                <li>Node-based color with wheels, curves and LUTs</li>
-                <li>Waveform, parade, vectorscope and histogram</li>
-                <li>AI masks that find people and objects</li>
-                <li>Tracking that keeps a mask on its subject</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Smart tools</h3>
-              <ul>
-                <li>Automatic multicam cutting</li>
-                <li>Silence and filler word removal</li>
-                <li>Auto reframe for vertical and square</li>
-                <li>Highlight reels from long recordings</li>
-              </ul>
-            </div>
-            <div class="feature">
-              <h3>Captions and performance</h3>
-              <ul>
-                <li>Transcripts you edit like text</li>
-                <li>Captions burned in, embedded or as an SRT file</li>
-                <li>Render cache and proxies for smooth playback</li>
-                <li>Native GPU playback (beta)</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="gallery gallery--studio">
-            <figure class="shot">
-              <img
-                src="img/studio-color.webp"
-                width="1600"
-                height="277"
-                loading="lazy"
-                alt="The Color page: a node graph with serial and parallel nodes, four color wheels, primary controls and curves."
-              />
-              <figcaption>Node-based grading: serial and parallel nodes, wheels, primaries and curves.</figcaption>
-            </figure>
-            <figure class="shot">
-              <img
-                src="img/studio-silence.webp"
-                width="760"
-                height="291"
-                loading="lazy"
-                alt="The Remove silences and filler words window with a loudness threshold, minimum length and a list of filler words."
-              />
-              <figcaption>Silence and filler word removal, with every threshold in view.</figcaption>
-            </figure>
-          </div>
-        </div>
-      </section>
-
-      <!-- Lumora Planner -->
-      <section id="planner" class="product product--planner">
-        <div class="wrap planner">
-          <header class="product__head">
-            <p class="product__name"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora Planner</p>
-            <h2>Plan the run of show together.</h2>
+        <!-- Welcome -->
+        <section id="welcome" class="entry" aria-labelledby="welcome-h">
+          <p class="entry__time" aria-hidden="true">7:34 PM</p>
+          <div class="entry__body">
+            <h2 id="welcome-h"><span class="sr">7:34 PM. </span>Welcome.</h2>
             <p>
-              The team builds the run of show in the browser: sections, cues, times, who is responsible and notes, with comments on each cue. On the day, Lumora
-              loads it straight into its cues.
+              The head of school walks to the podium. Her name and title come up on the stream as a lower third in your colors, fonts and logo, set once for
+              every title, ticker and scoreboard. Lumora includes 500 open-source fonts that work offline, and you can add your own.
             </p>
-            <ul class="ticks">
-              <li>Shared with editors and viewers</li>
-              <li>Start times and running totals worked out for you</li>
-              <li>A printable cue sheet</li>
-              <li>Loads into Lumora: Run of show, then Load from Planner</li>
-            </ul>
-            <p><a class="btn btn--ghost" href="planner/">Open Lumora Planner</a></p>
-          </header>
-
-          <div class="sheet" role="table" aria-label="Example run of show">
-            <div class="sheet__head" role="row">
-              <span role="columnheader">Starts</span><span role="columnheader">Cue</span><span role="columnheader">Type</span
-              ><span role="columnheader">Who</span>
-            </div>
-            <p class="sheet__section">Doors</p>
-            <div class="sheet__row" role="row">
-              <span role="cell">7:00</span><span role="cell">Walk-in loop and countdown</span><span role="cell"><i>CDN</i></span
-              ><span role="cell">Operator</span>
-            </div>
-            <p class="sheet__section">Program</p>
-            <div class="sheet__row" role="row">
-              <span role="cell">7:30</span><span role="cell">Welcome</span><span role="cell"><i>SPK</i></span
-              ><span role="cell">Host</span>
-            </div>
-            <div class="sheet__row" role="row">
-              <span role="cell">7:35</span><span role="cell">Opening video</span><span role="cell"><i>VID</i></span
-              ><span role="cell">Operator</span>
-            </div>
-            <div class="sheet__row" role="row">
-              <span role="cell">7:40</span><span role="cell">Keynote, name title</span><span role="cell"><i>TTL</i></span
-              ><span role="cell">Camera 2</span>
-            </div>
-            <div class="sheet__row" role="row">
-              <span role="cell">8:10</span><span role="cell">Break</span><span role="cell"><i>BRK</i></span
-              ><span role="cell">Everyone</span>
-            </div>
-            <p class="sheet__foot">Example plan · 5 cues · 1 h 10 min</p>
+            <p>
+              Captions are transcribed live, on the computer. The camera follows her as she moves with auto-framing, and background removal works without a
+              green screen. The Stage Monitor in front of her shows the clock, the time left, messages from the booth, and a teleprompter.
+            </p>
           </div>
-        </div>
-      </section>
-
-      <!-- Workflow -->
-      <section id="workflow" class="workflow">
-        <div class="wrap">
-          <header class="section__head">
-            <h2>How it fits together</h2>
-            <p>Three apps, one event: plan it, run it live, then edit and publish it.</p>
-          </header>
-          <figure class="flow">
-            <svg class="flow__h" viewBox="0 0 960 220" role="img" aria-labelledby="flow-t flow-d">
-              <title id="flow-t">How Planner, Lumora and Studio work together</title>
-              <desc id="flow-d">
-                The run of show from Lumora Planner loads into Lumora as cues. Lumora records every camera to its own file, which Lumora Studio opens as a
-                multicam edit. Finished videos from Studio go back into Lumora for the next show.
-              </desc>
-              <defs>
-                <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                  <path d="M0 0 10 5 0 10z" class="flow__tip" />
-                </marker>
-              </defs>
-              <g class="flow__node">
-                <rect x="1" y="50" width="250" height="96" rx="10" />
-                <text x="24" y="88" class="flow__name">Lumora Planner</text>
-                <text x="24" y="114" class="flow__what">Run of show, in the browser</text>
-              </g>
-              <g class="flow__node flow__node--live">
-                <rect x="355" y="50" width="250" height="96" rx="10" />
-                <text x="378" y="88" class="flow__name">Lumora</text>
-                <text x="378" y="114" class="flow__what">Live switching and streaming</text>
-              </g>
-              <g class="flow__node flow__node--studio">
-                <rect x="709" y="50" width="250" height="96" rx="10" />
-                <text x="732" y="88" class="flow__name">Lumora Studio</text>
-                <text x="732" y="114" class="flow__what">Editing and delivery</text>
-              </g>
-              <path d="M256 98H349" class="flow__line" marker-end="url(#ah)" />
-              <text x="302" y="86" text-anchor="middle" class="flow__lbl">cues</text>
-              <path d="M610 98H703" class="flow__line" marker-end="url(#ah)" />
-              <text x="656" y="86" text-anchor="middle" class="flow__lbl">recordings</text>
-              <path d="M834 151V190H480V151" class="flow__line flow__line--back" marker-end="url(#ah)" />
-              <text x="657" y="210" text-anchor="middle" class="flow__lbl">finished videos for the next show</text>
-            </svg>
-            <svg
-              class="flow__v"
-              viewBox="0 0 320 470"
-              role="img"
-              aria-label="Planner sends cues to Lumora; Lumora sends recordings to Studio; Studio sends finished videos back to Lumora."
-            >
-              <defs>
-                <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-                  <path d="M0 0 10 5 0 10z" class="flow__tip" />
-                </marker>
-              </defs>
-              <g class="flow__node">
-                <rect x="1" y="1" width="250" height="84" rx="10" />
-                <text x="20" y="36" class="flow__name">Lumora Planner</text>
-                <text x="20" y="62" class="flow__what">Run of show, in the browser</text>
-              </g>
-              <g class="flow__node flow__node--live">
-                <rect x="1" y="190" width="250" height="84" rx="10" />
-                <text x="20" y="225" class="flow__name">Lumora</text>
-                <text x="20" y="251" class="flow__what">Live switching and streaming</text>
-              </g>
-              <g class="flow__node flow__node--studio">
-                <rect x="1" y="379" width="250" height="84" rx="10" />
-                <text x="20" y="414" class="flow__name">Lumora Studio</text>
-                <text x="20" y="440" class="flow__what">Editing and delivery</text>
-              </g>
-              <path d="M90 90V184" class="flow__line" marker-end="url(#ahv)" />
-              <text x="102" y="142" class="flow__lbl">cues</text>
-              <path d="M90 279V373" class="flow__line" marker-end="url(#ahv)" />
-              <text x="102" y="331" class="flow__lbl">recordings</text>
-              <path d="M256 421H282V232H257" class="flow__line flow__line--back" marker-end="url(#ahv)" />
-              <text x="304" y="327" text-anchor="middle" class="flow__lbl" transform="rotate(-90 304 327)">finished videos</text>
-            </svg>
+          <figure class="entry__side">
+            <img
+              src="img/lumora-onair.webp"
+              width="822"
+              height="520"
+              loading="lazy"
+              decoding="async"
+              alt="The On air monitor: stage visuals with a lower third that reads Dana Levine, Head of School."
+            />
+            <figcaption>On air: a lower third over the stage visuals.</figcaption>
           </figure>
-          <ol class="steps">
-            <li><b>Plan.</b> The team writes the run of show in Lumora Planner, with times, people and notes for each cue.</li>
-            <li><b>Run.</b> Lumora loads the plan as cues, switches the show and records every camera to its own file.</li>
-            <li><b>Edit.</b> Lumora Studio opens the recordings in sync, ready to cut, grade, caption and export.</li>
-          </ol>
-        </div>
-      </section>
+        </section>
 
-      <!-- System requirements -->
-      <section id="requirements" class="reqs">
-        <div class="wrap">
-          <header class="section__head">
-            <h2>System requirements</h2>
-            <p>Guidelines for a typical 1080p event. More cameras, 4K, background removal and auto-framing need the recommended hardware.</p>
-          </header>
-          <div class="reqs__grid">
-            <div class="req">
-              <h3>Lumora</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col"><span class="sr">Part</span></th>
-                    <th scope="col">Minimum</th>
-                    <th scope="col">Recommended</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">System</th>
-                    <td>Windows 10, 64-bit</td>
-                    <td>Windows 11, 64-bit</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Processor</th>
-                    <td>4 cores, e.g. Intel Core i5 8th gen or AMD Ryzen 5 2600</td>
-                    <td>8 cores, e.g. Intel Core i7 12th gen or AMD Ryzen 7 5700X</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Memory</th>
-                    <td>8 GB</td>
-                    <td>16 GB</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Graphics</th>
-                    <td>DirectX 12 graphics with hardware video encoding (Intel Quick Sync, NVIDIA NVENC or AMD AMF)</td>
-                    <td>NVIDIA GeForce RTX 3060 or AMD Radeon RX 6600 or better</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Displays</th>
-                    <td>One 1920 × 1080 display</td>
-                    <td>Two or more, for the Back Screen and Monitor</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Network</th>
-                    <td>Upload of about twice the stream bit rate (10 Mbps for 1080p at 6 Mbps)</td>
-                    <td>Wired Ethernet</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="req req--studio">
-              <h3>Lumora Studio</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col"><span class="sr">Part</span></th>
-                    <th scope="col">Minimum</th>
-                    <th scope="col">Recommended</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">System</th>
-                    <td>Windows 10, 64-bit</td>
-                    <td>Windows 11, 64-bit</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Processor</th>
-                    <td>4 cores</td>
-                    <td>8 cores or more</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Memory</th>
-                    <td>8 GB</td>
-                    <td>32 GB for 4K and multicam</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Graphics</th>
-                    <td>DirectX 12 graphics with 2 GB of video memory</td>
-                    <td>NVIDIA GeForce RTX 3060 (8 GB) or better</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Storage</th>
-                    <td>SSD with room for proxies and the render cache</td>
-                    <td>A separate NVMe SSD for media</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <!-- The room -->
+        <section id="room" class="entry" aria-labelledby="room-h">
+          <p class="entry__time" aria-hidden="true">8:15 PM</p>
+          <div class="entry__body">
+            <h2 id="room-h"><span class="sr">8:15 PM. </span>The room joins in.</h2>
+            <p>
+              A code on the screen takes guests to a page on their phones. They vote in a poll, enter the raffle, play trivia, post to the messages wall, or
+              pledge to the fundraiser, and the results appear on screen as they come in.
+            </p>
+            <p>Phones can join the venue's own Wi-Fi, so this works even where there is no internet.</p>
           </div>
-          <p class="reqs__note">Lumora Planner runs in any current browser: Chrome, Edge, Firefox or Safari, on a computer, tablet or phone.</p>
-        </div>
-      </section>
+        </section>
 
-      <!-- Download -->
-      <section id="download" class="download">
-        <div class="wrap">
-          <header class="section__head">
-            <h2>Download</h2>
-            <p>Free for Windows 10 and 11. Each download is the latest release; the apps update themselves after that.</p>
-          </header>
-          <div class="dl">
-            <div class="dl__item dl__item--live">
-              <h3>Lumora</h3>
-              <p>Live production, streaming and recording.</p>
-              <a class="btn btn--primary" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" /></svg>
-                Lumora-Setup.exe
-              </a>
-            </div>
-            <div class="dl__item dl__item--studio">
-              <h3>Lumora Studio</h3>
-              <p>Editing, color, captions and delivery.</p>
-              <a class="btn btn--ghost" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" /></svg>
-                Lumora-Studio-Setup.exe
-              </a>
-            </div>
-            <div class="dl__item">
-              <h3>Lumora Planner</h3>
-              <p>Runs in the browser. Nothing to install.</p>
-              <a class="btn btn--ghost" href="planner/">Open Planner</a>
-            </div>
+        <!-- Trouble -->
+        <section id="trouble" class="entry" aria-labelledby="trouble-h">
+          <p class="entry__time" aria-hidden="true">8:52 PM</p>
+          <div class="entry__body">
+            <h2 id="trouble-h"><span class="sr">8:52 PM. </span>A camera cable gets kicked out.</h2>
+            <p>
+              The audience sees your logo, never an error message, and you switch to another camera. Lumora saves as you go: if the computer restarts, the event
+              comes back as it was. And if something is really wrong, one button blanks every screen at once.
+            </p>
           </div>
-          <p class="dl__more">
-            Using an Elgato Stream Deck? Get the
-            <a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora.streamDeckPlugin">Lumora Stream Deck plugin</a> for
-            TAKE, CUT, inputs with tally, overlays, replay, recording and going live. Lumora also offers it when it finds a Stream Deck.
+        </section>
+      </div>
+
+      <!-- Studio -->
+      <section id="studio" class="entry entry--studio" aria-labelledby="studio-h">
+        <p class="entry__time" aria-hidden="true">Sun 10:00 AM</p>
+        <div class="entry__body">
+          <h2 id="studio-h"><span class="sr">Sunday, 10:00 AM. </span>The edit, in Lumora Studio.</h2>
+          <p>
+            Open the gala's recording and every camera is already in sync, ready to cut like a multicam edit. Change any shot by picking another angle,
+            tighten the speeches, fix the color and the sound, add captions, and export the full evening or a short vertical clip of the best moments.
           </p>
-          <p class="dl__more">Looking for an earlier version? See <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">all releases</a>.</p>
         </div>
-      </section>
-
-      <!-- FAQ -->
-      <section id="faq" class="faq">
-        <div class="wrap faq__in">
-          <header class="section__head">
-            <h2>Questions</h2>
-          </header>
-          <div class="faq__list">
-            <details>
-              <summary>Windows says it protected my PC. Is Lumora safe to run?</summary>
-              <p>
-                Windows SmartScreen warns about new apps it has not seen often. Click <b>More info</b>, then <b>Run anyway</b>. On Windows 11 computers with
-                Smart App Control turned on, the installer may be blocked with no option to run it; Smart App Control can only be switched off as a whole, in
-                Windows Security under App &amp; browser control, so decide with whoever manages the computer. Only download Lumora from this page or the
-                project's GitHub releases.
-              </p>
-            </details>
-            <details>
-              <summary>Why does my account need approval?</summary>
-              <p>
-                You create your account inside Lumora or Lumora Studio the first time you open it. Each new account is approved by the Lumora team for the apps
-                it will use. Until then the app waits at the sign-in screen, and it opens once you are approved.
-              </p>
-            </details>
-            <details>
-              <summary>Does Lumora work without the internet?</summary>
-              <p>
-                Yes. Once your account is approved, Lumora keeps working offline for 30 days at a time, so a venue without internet is not a problem. Switching,
-                recording, titles and every screen in the room run on the computer. Only streaming out, live chat, guests by link and inputs from internet
-                addresses need a connection. Phones for polls and the remote can join a local Wi-Fi network instead.
-              </p>
-            </details>
-            <details>
-              <summary>What is in an error report, and who sees it?</summary>
-              <p>
-                Nothing is sent unless you agree. If you say yes, reports of unexpected errors are cleaned of personal details before they are sent, and only
-                the Lumora team can read them. Your event, project and media files are never included. Report a problem is always your choice, and you can
-                change your answer at any time in Settings in Lumora, or the Help menu in Lumora Studio.
-              </p>
-            </details>
-            <details>
-              <summary>Does it work with Stream Deck and other controllers?</summary>
-              <p>
-                Yes. The Lumora Stream Deck plugin (see Download) puts TAKE, CUT, inputs with tally, overlays, replay, recording and going live on an Elgato
-                Stream Deck. X-keys and other panels work through Bitfocus Companion, and Lumora also takes MIDI controllers, presentation clickers, and a phone
-                or tablet on the same network.
-              </p>
-            </details>
-            <details>
-              <summary>Can I use my own fonts and branding?</summary>
-              <p>
-                Yes. Set your colors, fonts and logo once and every title, lower third, ticker and scoreboard follows it. Lumora includes 500 open-source fonts
-                that work offline, and you can add your own.
-              </p>
-            </details>
+        <figure class="entry__bleed">
+          <img
+            src="img/studio-main.webp"
+            width="2000"
+            height="1125"
+            loading="lazy"
+            decoding="async"
+            alt="Lumora Studio with the Spring Gala project open: the program viewer, the media bin with four cameras and two microphones, and a timeline cut between Wide, Close-up, Live Screen and Side."
+          />
+          <figcaption>The Edit page. Each camera angle has its own color on the timeline.</figcaption>
+        </figure>
+        <div class="pair">
+          <figure>
+            <img
+              src="img/studio-color.webp"
+              width="2000"
+              height="1125"
+              loading="lazy"
+              decoding="async"
+              alt="The Color page: the viewer, a waveform scope, a node, four color wheels, primary controls and curves."
+            />
+            <figcaption>The Color page, with nodes, wheels, curves and scopes.</figcaption>
+          </figure>
+          <figure>
+            <img
+              src="img/studio-silence.webp"
+              width="760"
+              height="291"
+              loading="lazy"
+              decoding="async"
+              alt="The Remove silences and filler words window with a loudness threshold, minimum length and a list of filler words."
+            />
+            <figcaption>Removing silences and filler words, with every threshold in view.</figcaption>
+          </figure>
+        </div>
+        <dl class="facts">
+          <div>
+            <dt>Editing</dt>
+            <dd>Multi-track timeline with ripple, roll, slip and slide. Speed ramps, keyframes, titles, transitions and effects. Shared projects with comments.</dd>
           </div>
-        </div>
+          <div>
+            <dt>Color</dt>
+            <dd>Node-based grading with wheels, curves and LUTs. Waveform, parade, vectorscope and histogram. Masks that find and follow people and objects.</dd>
+          </div>
+          <div>
+            <dt>Smart tools</dt>
+            <dd>Automatic multicam cutting, silence and filler word removal, reframing for vertical and square, and highlight reels from long recordings.</dd>
+          </div>
+          <div>
+            <dt>Captions</dt>
+            <dd>Transcripts you edit like text. Captions burned in, embedded, or as an SRT file. Proxies and a render cache for smooth playback.</dd>
+          </div>
+        </dl>
       </section>
 
-      <!-- Contact -->
-      <section id="contact" class="contact">
-        <div class="wrap contact__in">
-          <header class="section__head">
-            <h2>Contact and feedback</h2>
-            <p>Found a problem, have an idea, or have a question? Send it here. Add your email if you would like a reply.</p>
-          </header>
+      <!-- Back matter -->
+      <div class="back">
+        <section id="download" class="back__part" aria-labelledby="download-h">
+          <h2 id="download-h">Download</h2>
+          <p class="back__intro">Free for Windows 10 and 11. Each link is the latest release; the apps update themselves after that.</p>
+          <table class="files">
+            <thead>
+              <tr>
+                <th scope="col">Program</th>
+                <th scope="col">File</th>
+                <th scope="col" class="num">Size</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Lumora<span>Live production, streaming and recording</span></th>
+                <td><a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">Lumora-Setup.exe</a></td>
+                <td class="num">about 76 MB</td>
+              </tr>
+              <tr>
+                <th scope="row">Lumora Studio<span>Editing, color, captions and export</span></th>
+                <td><a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">Lumora-Studio-Setup.exe</a></td>
+                <td class="num">about 48 MB</td>
+              </tr>
+              <tr>
+                <th scope="row">Stream Deck plugin<span>TAKE, CUT, inputs with tally, overlays, replay, recording, going live</span></th>
+                <td><a href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora.streamDeckPlugin">Lumora.streamDeckPlugin</a></td>
+                <td class="num">&mdash;</td>
+              </tr>
+              <tr>
+                <th scope="row">Lumora Planner<span>Runs in the browser; nothing to install</span></th>
+                <td><a href="planner/">Open the Planner</a></td>
+                <td class="num">&mdash;</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="back__note">
+            Lumora also offers the Stream Deck plugin when it finds a Stream Deck. Looking for an earlier version? See
+            <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">all releases</a>.
+          </p>
+        </section>
+
+        <section id="requirements" class="back__part" aria-labelledby="req-h">
+          <h2 id="req-h">What you need</h2>
+          <p class="back__intro">For a typical 1080p event. More cameras, 4K, background removal and auto-framing need the recommended hardware.</p>
+          <div class="specs">
+            <table>
+              <caption>Lumora</caption>
+              <thead>
+                <tr>
+                  <th scope="col"><span class="sr">Part</span></th>
+                  <th scope="col">Minimum</th>
+                  <th scope="col">Recommended</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">System</th>
+                  <td data-label="Minimum">Windows 10, 64-bit</td>
+                  <td data-label="Recommended">Windows 11, 64-bit</td>
+                </tr>
+                <tr>
+                  <th scope="row">Processor</th>
+                  <td data-label="Minimum">4 cores, e.g. Intel Core i5 8th gen or AMD Ryzen 5 2600</td>
+                  <td data-label="Recommended">8 cores, e.g. Intel Core i7 12th gen or AMD Ryzen 7 5700X</td>
+                </tr>
+                <tr>
+                  <th scope="row">Memory</th>
+                  <td data-label="Minimum">8 GB</td>
+                  <td data-label="Recommended">16 GB</td>
+                </tr>
+                <tr>
+                  <th scope="row">Graphics</th>
+                  <td data-label="Minimum">DirectX 12 with hardware video encoding (Intel Quick Sync, NVIDIA NVENC or AMD AMF)</td>
+                  <td data-label="Recommended">NVIDIA GeForce RTX 3060 or AMD Radeon RX 6600 or better</td>
+                </tr>
+                <tr>
+                  <th scope="row">Displays</th>
+                  <td data-label="Minimum">One 1920 × 1080 display</td>
+                  <td data-label="Recommended">Two or more, for the Back Screen and Monitor</td>
+                </tr>
+                <tr>
+                  <th scope="row">Network</th>
+                  <td data-label="Minimum">Upload of about twice the stream bit rate (10 Mbps for 1080p at 6 Mbps)</td>
+                  <td data-label="Recommended">Wired Ethernet</td>
+                </tr>
+              </tbody>
+            </table>
+            <table>
+              <caption>Lumora Studio</caption>
+              <thead>
+                <tr>
+                  <th scope="col"><span class="sr">Part</span></th>
+                  <th scope="col">Minimum</th>
+                  <th scope="col">Recommended</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">System</th>
+                  <td data-label="Minimum">Windows 10, 64-bit</td>
+                  <td data-label="Recommended">Windows 11, 64-bit</td>
+                </tr>
+                <tr>
+                  <th scope="row">Processor</th>
+                  <td data-label="Minimum">4 cores</td>
+                  <td data-label="Recommended">8 cores or more</td>
+                </tr>
+                <tr>
+                  <th scope="row">Memory</th>
+                  <td data-label="Minimum">8 GB</td>
+                  <td data-label="Recommended">32 GB for 4K and multicam</td>
+                </tr>
+                <tr>
+                  <th scope="row">Graphics</th>
+                  <td data-label="Minimum">DirectX 12 with 2 GB of video memory</td>
+                  <td data-label="Recommended">NVIDIA GeForce RTX 3060 (8 GB) or better</td>
+                </tr>
+                <tr>
+                  <th scope="row">Storage</th>
+                  <td data-label="Minimum">SSD with room for proxies and the render cache</td>
+                  <td data-label="Recommended">A separate NVMe SSD for media</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="back__note">Lumora Planner runs in any current browser (Chrome, Edge, Firefox or Safari) on a computer, tablet or phone.</p>
+        </section>
+
+        <section id="questions" class="back__part" aria-labelledby="q-h">
+          <h2 id="q-h">Questions</h2>
+          <div class="qa">
+            <h3>Windows says it protected my PC. Is Lumora safe to run?</h3>
+            <p>
+              Windows SmartScreen warns about new apps it has not seen often. Click <b>More info</b>, then <b>Run anyway</b>. On Windows 11 computers with Smart
+              App Control turned on, the installer may be blocked with no option to run it; Smart App Control can only be switched off as a whole, in Windows
+              Security under App &amp; browser control, so decide with whoever manages the computer. Only download Lumora from this page or the project's GitHub
+              releases.
+            </p>
+
+            <h3>Why does my account need approval?</h3>
+            <p>
+              You create your account inside Lumora or Lumora Studio the first time you open it. Each new account is approved by the Lumora team for the apps it
+              will use. Until then the app waits at the sign-in screen, and it opens once you are approved. Making plans in Lumora Planner also takes an approved
+              account, but the teammates you share a plan with don't need approval: they make an account in the Planner and see only the plans shared with them.
+            </p>
+
+            <h3>Does Lumora work without the internet?</h3>
+            <p>
+              Yes. Once your account is approved, Lumora checks it whenever it starts with an internet connection, and without one it keeps opening for up to 7
+              days after the last check. Connect before the event and a venue without internet is not a problem. Switching, recording, titles and every screen in
+              the room run on the computer. Only streaming out, live chat, guests by link and inputs from internet addresses need a connection. Phones for polls
+              and the remote can join a local Wi-Fi network instead.
+            </p>
+
+            <h3>What is in an error report, and who sees it?</h3>
+            <p>
+              Nothing is sent unless you agree. If you say yes, reports of unexpected errors are cleaned of personal details before they are sent, and only the
+              Lumora team can read them. Your event, project and media files are never included. You can change your answer at any time in Settings in Lumora,
+              or the Help menu in Lumora Studio.
+            </p>
+
+            <h3>Does it work with Stream Deck and other controllers?</h3>
+            <p>
+              Yes. The Lumora Stream Deck plugin (see <a href="#download">Download</a>) puts TAKE, CUT, inputs with tally, overlays, replay, recording and going
+              live on an Elgato Stream Deck. X-keys and other panels work through Bitfocus Companion, and Lumora also takes MIDI controllers, presentation
+              clickers, and a phone or tablet on the same network.
+            </p>
+
+            <h3>Can I use my own fonts and branding?</h3>
+            <p>
+              Yes. Set your colors, fonts and logo once and every title, lower third, ticker and scoreboard follows it. Lumora includes 500 open-source fonts that
+              work offline, and you can add your own.
+            </p>
+          </div>
+        </section>
+
+        <section id="contact" class="back__part" aria-labelledby="contact-h">
+          <h2 id="contact-h">Write to us</h2>
+          <p class="back__intro">Found a problem, have an idea, or have a question? Send it here. Add your email if you would like a reply.</p>
           <form class="form" data-feedback>
-            <div class="form__row">
-              <label>Name <span class="opt">optional</span><input name="name" autocomplete="name" /></label>
-              <label>Email <span class="opt">optional</span><input name="email" type="email" autocomplete="email" /></label>
+            <div class="form__pair">
+              <label><span>Name <span class="opt">(optional)</span></span><input name="name" autocomplete="name" /></label>
+              <label><span>Email <span class="opt">(optional)</span></span><input name="email" type="email" autocomplete="email" /></label>
             </div>
             <label
               >Topic
@@ -628,45 +607,30 @@
                 <option>Something else</option>
               </select>
             </label>
-            <label>Message<textarea name="message" rows="5" required></textarea></label>
+            <label>Message<textarea name="message" rows="6" required></textarea></label>
             <input type="checkbox" name="botcheck" class="form__trap" tabindex="-1" autocomplete="off" aria-hidden="true" />
             <div class="form__send">
-              <button type="submit" class="btn btn--primary">Send message</button>
+              <button type="submit" class="button">Send message</button>
               <span class="form__status" data-status role="status"></span>
             </div>
           </form>
-        </div>
-      </section>
+        </section>
+      </div>
     </main>
 
     <footer class="foot">
-      <div class="wrap foot__in">
-        <div class="foot__brand">
-          <span class="brand"><img src="img/lumora-mark.svg" alt="" width="20" height="20" />Lumora</span>
-          <p>Live production, editing and planning software for Windows.</p>
-        </div>
-        <nav aria-label="Products">
-          <h2>Products</h2>
-          <a href="#lumora">Lumora</a>
-          <a href="#studio">Lumora Studio</a>
-          <a href="planner/">Lumora Planner</a>
-        </nav>
-        <nav aria-label="Resources">
-          <h2>Resources</h2>
+      <div class="foot__in">
+        <p class="foot__end">End of show.</p>
+        <nav class="foot__nav" aria-label="Footer">
           <a href="#download">Download</a>
-          <a href="#requirements">System requirements</a>
+          <a href="planner/">Lumora Planner</a>
           <a href="https://github.com/yehudakogan770/Livestreamingapp/releases">Release notes</a>
           <a href="#contact">Contact</a>
         </nav>
-        <div class="foot__privacy">
-          <h2>Privacy</h2>
-          <p>
-            This site has no tracking or cookies. Messages you send are delivered by Web3Forms. The apps send error reports only if you agree, never your files.
-          </p>
-        </div>
-      </div>
-      <div class="wrap foot__base">
-        <p class="foot__copy">© <span data-year>2026</span> Lumora</p>
+        <p class="foot__small">
+          This site has no tracking or cookies. Messages you send are delivered by Web3Forms. The apps send error reports only if you agree, never your files.
+        </p>
+        <p class="foot__small">© <span data-year>2026</span> Lumora</p>
       </div>
     </footer>
 
