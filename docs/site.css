@@ -1413,12 +1413,401 @@ section {
   }
 }
 
-.dl__also {
+/* Lumora Studio: its own amber, used sparingly. */
+:root {
+  --amber: #e0973f;
+  --amber-2: #f0b267;
+  --amber-ink: #a8651c;
+}
+.btn--amber {
+  background: var(--amber);
+  color: #1b1207;
+  box-shadow: 0 8px 24px -8px rgba(224, 151, 63, 0.7);
+}
+.btn--amber:hover {
+  background: var(--amber-2);
+  box-shadow: 0 10px 30px -8px rgba(224, 151, 63, 0.9);
+}
+
+/* The family, at the top */
+.hero__pair {
+  margin: 34px auto 0;
+  font-size: clamp(18px, 1.8vw, 22px);
+  font-weight: 600;
+  color: #fff;
+}
+.fam {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  max-width: 900px;
+  margin: 26px auto 0;
+  text-align: left;
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.95s both;
+}
+.fam__card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 26px;
+  border-radius: 20px;
+  background: rgba(17, 19, 24, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 2px solid var(--red);
+  backdrop-filter: blur(12px);
+}
+.fam__card--studio {
+  border-top-color: var(--amber);
+}
+.fam__card header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.fam__name {
+  font-size: 24px;
+  line-height: 1.1;
+  font-stretch: 106%;
+  color: #fff;
+}
+.fam__role {
+  margin: 2px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--red-2);
+}
+.fam__card--studio .fam__role {
+  color: var(--amber-2);
+}
+.fam__card > p {
+  flex: 1;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.fam__go {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 4px;
+}
+.fam__more {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+}
+.fam__more::after {
+  content: ' \2192';
+}
+.fam__more:hover {
+  color: #fff;
+}
+.hero .hero__cta {
+  margin-top: 26px;
+}
+
+/* A product label above each product's sections */
+.prod {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 16px;
+  padding: 6px 14px 6px 8px;
+  border-radius: 999px;
+  font-size: 15px !important;
+  font-weight: 700;
+  color: var(--paper-text) !important;
+  background: var(--paper-2);
+  border: 1px solid var(--paper-line);
+}
+.prod span {
+  font-weight: 500;
+  color: var(--paper-muted);
+}
+.dark .prod {
+  color: #fff !important;
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.dark .prod span {
+  color: var(--muted);
+}
+
+/* How they work together */
+.together {
+  padding: 100px 0;
+  border-top: 1px solid var(--paper-line);
+}
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  position: relative;
+  padding: 28px;
+  border-radius: 22px;
+  background: var(--paper-2);
+  border: 1px solid var(--paper-line);
+}
+.step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 50px;
+  right: -17px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid #c3c7cf;
+  border-right: 2px solid #c3c7cf;
+  transform: rotate(45deg);
+}
+.step__n {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+  background: #15171c;
+}
+.step__n--done {
+  background: var(--green);
+  color: #fff;
+}
+.step small {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-muted);
+}
+.step h3 {
+  margin-bottom: 8px;
+  font-size: 21px;
+}
+.step p {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* Lumora Studio */
+.studio {
+  background: radial-gradient(1000px 520px at 50% 0%, rgba(224, 151, 63, 0.1), transparent 70%), var(--ink);
+}
+.studio__head {
+  max-width: 1040px;
+}
+.studio__title {
+  font-size: clamp(44px, 6.4vw, 88px);
+  line-height: 0.98;
+  font-stretch: 110%;
+  letter-spacing: -0.04em;
+  color: #fff;
+}
+.head .studio__sub {
+  margin: 20px 0 0;
+  font-size: clamp(20px, 2.2vw, 28px);
+  color: rgba(255, 255, 255, 0.86);
+}
+.head .studio__verbs {
+  display: flex;
+  justify-content: center;
+  gap: 0.6em;
+  margin: 22px 0 0;
+  font-size: clamp(24px, 3vw, 38px);
+  font-weight: 700;
+  font-style: italic;
+  font-stretch: 112%;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+.studio__verbs span:nth-child(3) {
+  color: var(--amber-2);
+}
+.pages {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin: 34px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.pages li {
+  padding: 18px 0 0;
+  border-top: 2px solid var(--line-2);
+}
+.pages li:first-child {
+  border-top-color: var(--amber);
+}
+.pages b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 18px;
+  color: #fff;
+}
+.pages span {
+  font-size: 15px;
+  color: var(--text-2);
+}
+.studio__cta {
+  margin-top: 54px;
+  text-align: center;
+}
+.studio__cta .fine {
   margin: 14px 0 0;
-  color: rgba(255, 255, 255, 0.75);
+}
+
+/* What Studio does */
+.sfeats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.sfeat {
+  padding: 26px;
+  border-radius: 18px;
+  background: #fff;
+  border: 1px solid var(--paper-line);
+}
+.sfeat .ic {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 14px;
+  color: var(--amber-ink);
+}
+.sfeat h3 {
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+.sfeat p {
+  margin: 0;
   font-size: 15px;
 }
-.dl__also a {
+
+/* Studio's Color page */
+.studio-color .split__in {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+}
+.studio-color h2 {
   color: #fff;
-  font-weight: 600;
+}
+.dark .eyebrow--studio {
+  color: var(--amber-2);
+}
+.checks--dark li {
+  color: var(--text);
+  border-top-color: var(--line);
+}
+.checks--dark li::before {
+  background-color: var(--amber-ink);
+}
+
+/* Download: two equal products */
+.dlcards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.dlcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 34px 28px;
+  border-radius: 22px;
+  background: rgba(17, 19, 24, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-top: 2px solid var(--red);
+  backdrop-filter: blur(10px);
+}
+.dlcard--studio {
+  border-top-color: var(--amber);
+}
+.dlcard img {
+  margin: 0 0 16px;
+}
+.dlcard h3 {
+  font-size: 26px;
+  color: #fff;
+}
+.dl .dlcard p {
+  margin: 6px 0 22px;
+  font-size: 16px;
+}
+.dlcard .btn--big {
+  width: 100%;
+  max-width: 300px;
+}
+.dl__more {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.dl__more li {
+  padding: 16px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 19, 24, 0.5);
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.72);
+}
+.dl__more a {
+  display: block;
+  text-decoration: none;
+  margin-bottom: 2px;
+  font-weight: 650;
+  color: #fff;
+}
+
+@media (max-width: 1020px) {
+  .sfeats,
+  .pages {
+    grid-template-columns: 1fr 1fr;
+  }
+  .studio-color .split__in {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .studio-color .split__win {
+    order: -1;
+  }
+}
+@media (max-width: 720px) {
+  .fam,
+  .steps,
+  .sfeats,
+  .dlcards,
+  .dl__more {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fam__card .btn {
+    flex: 1;
+  }
+  .step:not(:last-child)::after {
+    top: auto;
+    right: calc(50% - 6px);
+    bottom: -18px;
+    transform: rotate(135deg);
+  }
+  .together {
+    padding: 84px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fam {
+    animation: none;
+  }
 }

@@ -623,7 +623,7 @@
   };
   if (!still && 'IntersectionObserver' in window) {
     const items = document.querySelectorAll(
-      '.head, .logos__row li, .card, .dev, .calm__grid > div, .split__win, .split__text, .sw, .ftabs, .fb__text, .fb__form, .dl__in',
+      '.head, .logos__row li, .card, .dev, .calm__grid > div, .split__win, .split__text, .sw, .ftabs, .fb__text, .fb__form, .dl__in, .step, .studio__win, .pages li, .sfeat',
     );
     items.forEach((el) => {
       const sibs = [...el.parentElement.children].filter((x) => x.classList.contains(el.classList[0]));
