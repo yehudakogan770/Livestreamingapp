@@ -120,7 +120,9 @@ describe('lengths', () => {
   it('reads the ways people write them', () => {
     expect(parseDuration('5:00')).toBe(300);
     expect(parseDuration('1:02:30')).toBe(3750);
-    expect(parseDuration('90')).toBe(90);
+    expect(parseDuration('90')).toBe(5400);
+    expect(parseDuration('20')).toBe(1200);
+    expect(parseDuration('1.5')).toBe(90);
     expect(parseDuration('5m')).toBe(300);
     expect(parseDuration('5 min')).toBe(300);
     expect(parseDuration('1h 30m')).toBe(5400);

@@ -153,7 +153,7 @@ export function Inspector({
         ) : (
           <label className="field">
             <span>Length</span>
-            <DurationInput value={cue.durationSec} readOnly={!canEdit} placeholder="e.g. 5:00" label="Length" onChange={(v) => set({ durationSec: v })} />
+            <DurationInput value={cue.durationSec} readOnly={!canEdit} placeholder="Minutes, e.g. 5 or 4:30" label="Length" onChange={(v) => set({ durationSec: v })} />
           </label>
         )}
       </div>
