@@ -210,6 +210,11 @@ function ControlApp() {
         onClick: () => setCaptionsOpen(true),
       },
       {
+        label: `Backup lineup…${show?.event.backup?.on === false ? ' (off)' : ''}`,
+        hint: 'If the camera on air goes out, the next one in the lineup goes on air by itself',
+        onClick: () => sendCommand({ type: 'backup' }),
+      },
+      {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
       },
@@ -399,6 +404,7 @@ function ControlApp() {
     show?.presets.length,
     show?.run,
     show?.visuals,
+    show?.event.backup?.on,
     controlling,
     client,
     fail,

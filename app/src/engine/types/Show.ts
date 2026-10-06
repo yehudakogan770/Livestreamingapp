@@ -14,6 +14,7 @@ import type { RunningSteps } from './RunningSteps';
 import type { ScreenState } from './ScreenState';
 import type { Settings } from './Settings';
 import type { Source } from './Source';
+import type { SourceId } from './SourceId';
 import type { SpeakerNames } from './SpeakerNames';
 import type { Transition } from './Transition';
 import type { Trigger } from './Trigger';
@@ -106,5 +107,9 @@ export type Show = {
    * Speakers' name titles, coming on by themselves when they talk.
    */
   speakers: SpeakerNames;
+  /**
+   * Inputs whose picture has stopped (the backup lineup's watch). Not saved.
+   */
+  noSignal: Array<SourceId>;
   settings: Settings;
 };

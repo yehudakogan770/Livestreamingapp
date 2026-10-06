@@ -24,6 +24,7 @@ import { placeBid, removeItem, setItem } from './auction';
 import { answerIn as triviaAnswer, reveal as triviaReveal } from './trivia';
 import { nextIndex, playlistDue, playlistGo, repairPlaylist } from './playlist';
 import type { Overlay } from './types/Overlay';
+import { cleanBackup, defaultBackup } from './backup';
 import { repairAutoSwitch, repairControls, schedule, switchAction, switchDue } from './autoswitch';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
 import type { Action } from './types/Action';
@@ -394,6 +395,8 @@ function apply(s: Show, a: Action, now: number) {
       s.sources = s.sources.filter((x) => x.id !== a.id);
       s.autoSwitch.cameras = s.autoSwitch.cameras.filter((x) => x !== a.id);
       if (s.autoSwitch.cameras.length < 2) s.autoSwitch.on = false;
+      if (s.event.backup) s.event.backup.lineup = s.event.backup.lineup.filter((x) => x !== a.id);
+      s.noSignal = (s.noSignal ?? []).filter((x) => x !== a.id);
       if (s.audio.solo === a.id) s.audio.solo = null;
       for (const p of s.presets) p.sources = p.sources.filter((x) => x !== a.id);
       for (const src of s.sources) {
@@ -1035,6 +1038,12 @@ function apply(s: Show, a: Action, now: number) {
     case 'setBackFollowsLive':
       s.backFollowsLive = a.value;
       return;
+    case 'setBackupOn':
+      s.event.backup = { ...(s.event.backup ?? defaultBackup()), on: a.value };
+      return;
+    case 'setNoSignal':
+      s.noSignal = [...new Set(a.ids.filter((id) => s.sources.some((x) => x.id === id)))].sort();
+      return;
     case 'setAutoPlayOnTake':
       s.settings.autoPlayOnTake = a.value;
       return;
@@ -1123,6 +1132,7 @@ function apply(s: Show, a: Action, now: number) {
       if (p.onFailure !== undefined) ev.onFailure = p.onFailure;
       if (p.panicShows !== undefined) ev.panicShows = p.panicShows;
       if (p.setUp !== undefined) ev.setUp = p.setUp;
+      if (p.backup !== undefined) ev.backup = cleanBackup(p.backup);
       if (p.place !== undefined) {
         const q = p.place;
         ev.place = {

@@ -15,7 +15,9 @@ export type Command =
   | { type: 'triggers' }
   | { type: 'midi' }
   | { type: 'chat' }
-  | { type: 'arrange' };
+  | { type: 'arrange' }
+  /** The backup lineup settings (opened from an input: offered to add it). */
+  | { type: 'backup'; input?: string };
 
 const bus = new EventTarget();
 

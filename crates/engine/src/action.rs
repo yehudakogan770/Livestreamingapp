@@ -759,6 +759,15 @@ pub enum Action {
     UpdateEvent {
         patch: EventPatch,
     },
+    /// Turn the backup lineup (automatic failover) on or off.
+    SetBackupOn {
+        value: bool,
+    },
+    /// The inputs whose picture has stopped, as the control window sees them
+    /// (screens show the logo instead of a frozen picture). Not saved.
+    SetNoSignal {
+        ids: Vec<SourceId>,
+    },
 
     // ----- stage monitor -----
     /// Change the teleprompter's script and look (where it is stays).

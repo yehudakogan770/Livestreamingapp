@@ -630,6 +630,9 @@ pub struct Show {
     /// Speakers' name titles, coming on by themselves when they talk.
     #[serde(default)]
     pub speakers: crate::speakers::SpeakerNames,
+    /// Inputs whose picture has stopped (the backup lineup's watch). Not saved.
+    #[serde(default)]
+    pub no_signal: Vec<SourceId>,
     pub settings: Settings,
 }
 
@@ -664,6 +667,7 @@ impl Default for Show {
             auto_switch: crate::cameras::AutoSwitch::default(),
             captions: crate::captions::Captions::default(),
             speakers: crate::speakers::SpeakerNames::default(),
+            no_signal: Vec::new(),
             settings: Settings::default(),
         }
     }

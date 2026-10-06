@@ -48,7 +48,8 @@ import { screenInputs } from '../engine/screenInputs';
 import { CloseConfirm } from './CloseConfirm';
 import { VisualsCard } from './VisualsCard';
 import { Timecode } from './Timecode';
-import { Camera, LayoutGrid, OctagonAlert, Monitor, Projector, RadioTower, Link2, MonitorUp } from 'lucide-react';
+import { Camera, LayoutGrid, OctagonAlert, Monitor, Projector, RadioTower, Link2, MonitorUp, VideoOff } from 'lucide-react';
+import { BackupDialog, BackupNotices, BackupWatcher } from './BackupLineup';
 import './ControlView.css';
 
 interface Toast {
@@ -86,6 +87,8 @@ export function ControlView({
   const [stingers, setStingers] = useState(false);
   const [midiOpen, setMidiOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  /** The backup lineup settings, and the input they were opened from. */
+  const [backupOpen, setBackupOpen] = useState<{ input: string | null } | null>(null);
   // Arranging the screen: parts can be swapped and resized (nothing else moves them).
   const layout = useLayout();
   const [arranging, setArranging] = useState(false);
@@ -105,6 +108,7 @@ export function ControlView({
       else if (c.type === 'chat') setChatOpen((o) => !o);
       else if (c.type === 'arrange') setArranging(true);
       else if (c.type === 'logoMaker') setLogoMaker({ id: c.id ?? null });
+      else if (c.type === 'backup') setBackupOpen({ input: c.input ?? null });
     }, []),
   );
   const [outputsOpen, setOutputsOpen] = useState(false);
@@ -315,6 +319,7 @@ export function ControlView({
           }}
         />
       )}
+      <BackupNotices act={act} />
       <div className={`control__main${arranging ? ' is-arranging' : ''}`}>
         {layout.presets !== 'hidden' && (
           <div className={`part part--presets${layout.presets === 'right' ? ' is-right' : ''}`} style={{ order: layout.presets === 'right' ? 2 : 0 }}>
@@ -336,6 +341,12 @@ export function ControlView({
                     <div className="mon__screen">
                       <PreviewView show={show} screen={screen} client={client} />
                       {sc.preview === null && <span className="mon__empty">Click an input below to line it up here</span>}
+                      {sc.preview !== null && show.noSignal?.includes(sc.preview) && (
+                        <span className="mon__nosignal" title="No picture is coming from this input">
+                          <VideoOff aria-hidden="true" />
+                          No signal
+                        </span>
+                      )}
                     </div>
                     <div className="mon__label">
                       <span className="mon__tally">NEXT</span>
@@ -362,6 +373,12 @@ export function ControlView({
                     <div className="mon__screen">
                       <ProgramView show={show} screen={screen} client={client} reportDuration />
                       {screen === 'back' && show.backFollowsLive && <span className="mon__follow">Following the Live Screen</span>}
+                      {sc.program !== null && show.noSignal?.includes(sc.program) && (
+                        <span className="mon__nosignal" title="No picture is coming from this input: the audience sees the logo">
+                          <VideoOff aria-hidden="true" />
+                          No signal
+                        </span>
+                      )}
                       {/* A small tag, not words over the picture: the monitor shows just what the audience sees. */}
                       {(sc.blank || show.panic) && (
                         <span
@@ -503,6 +520,7 @@ export function ControlView({
       </footer>
 
       <SoundWatcher show={show} />
+      <BackupWatcher show={show} client={client} />
       <OutputWatcher show={show} client={client} open={open} onOpenOutputs={openOutputs} />
       <ProblemToasts />
       <div className="toasts" role="status" aria-live="polite">
@@ -545,6 +563,7 @@ export function ControlView({
           onClose={() => setLogoMaker(null)}
         />
       )}
+      {backupOpen && <BackupDialog show={show} act={act} focus={backupOpen.input} onClose={() => setBackupOpen(null)} />}
       {triggersOpen && <TriggersDialog show={show} act={act} onClose={() => setTriggersOpen(false)} />}
       {visualsOpen && <VisualsPage show={show} act={act} client={client} onClose={() => setVisualsOpen(false)} />}
       {libraryOpen && <LibraryDialog show={show} client={client} act={act} onClose={() => setLibraryOpen(false)} />}

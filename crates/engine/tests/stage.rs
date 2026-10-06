@@ -661,6 +661,7 @@ fn the_event_remembers_its_name_logo_and_emergency_plan() {
                 set_up: Some(true),
                 wifi: None,
                 place: None,
+                backup: None,
             },
         },
         0,
