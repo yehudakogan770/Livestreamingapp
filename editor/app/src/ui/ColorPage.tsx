@@ -698,7 +698,7 @@ function CurvesEditor({ set, onChange }: { set: CurveSet; onChange: (s: CurveSet
     const ctx = cv?.getContext('2d');
     if (!cv || !ctx) return;
     ctx.clearRect(0, 0, W, H);
-    ctx.strokeStyle = '#2a2f37';
+    ctx.strokeStyle = '#262628';
     for (let i = 1; i < 4; i++) {
       ctx.beginPath();
       ctx.moveTo((W * i) / 4, 0);
@@ -707,7 +707,7 @@ function CurvesEditor({ set, onChange }: { set: CurveSet; onChange: (s: CurveSet
       ctx.lineTo(W, (H * i) / 4);
       ctx.stroke();
     }
-    ctx.strokeStyle = '#3a404a';
+    ctx.strokeStyle = '#3a3a3d';
     ctx.beginPath();
     ctx.moveTo(0, H);
     ctx.lineTo(W, 0);
@@ -868,7 +868,7 @@ function drawScope(cv: HTMLCanvasElement, px: Uint8Array, w: number, h: number, 
   if (!ctx) return;
   const W = cv.width;
   const H = cv.height;
-  ctx.fillStyle = '#0b0c0e';
+  ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, W, H);
   const img = ctx.getImageData(0, 0, W, H);
   const d = img.data;
