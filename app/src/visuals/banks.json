@@ -30,7 +30,7 @@
       "scenes": [
         ["Aurora",10,"ocean",0.5,0.15,0],
         ["Bokeh lights",9,"rose",0.5,0.1,0],
-        ["Colour drift",8,"sunset",0.5,0.15,0],
+        ["Color drift",8,"sunset",0.5,0.15,0],
         ["Star drift",19,"ice",0.5,0.1,0],
         ["Soft tunnel",0,"afterhours",0.25,0.15,0],
         ["Ripples",15,"ocean",0.5,0.2,0],
@@ -180,7 +180,7 @@
         ["Star drift",19,"heaven",0.5,0.15,0],
         ["Silk ribbons",25,"gold",0.5,0.15,0],
         ["Moonlit sea",21,"night",0.5,0.15,0],
-        ["Colour drift",8,"heaven",0.5,0.15,0],
+        ["Color drift",8,"heaven",0.5,0.15,0],
         ["Bokeh lights",9,"gold",0.5,0.15,0],
         ["Northern lights",10,"heaven",0.5,0.15,0],
         ["Morning rays",16,"blush",0.5,0.15,0],
@@ -234,7 +234,7 @@
         ["Blue lightning",48,"royal",1,0.7,0],
         ["Broken glass",47,"crimson",1,0.7,0]
       ]},
-    {"name": "Latin", "bpm": 100, "fade": 1, "desc": "Salsa, reggaeton, bachata, cumbia. Hot colours, sun and fiesta.",
+    {"name": "Latin", "bpm": 100, "fade": 1, "desc": "Salsa, reggaeton, bachata, cumbia. Hot colors, sun and fiesta.",
       "scenes": [
         ["Confetti",51,"fiesta",1,0.5,0.5],
         ["Fiesta sunburst",37,"fiesta",0.5,0.5,0.5],
