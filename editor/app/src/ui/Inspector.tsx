@@ -103,7 +103,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
         </label>
         <div className="insp__row">
           <span className="field__label">Color</span>
-          {['#4fb3bf', '#e0473b', '#d6a73a', '#3f8f5a', '#7a5bb0', '#d6d8dc'].map((c) => (
+          {['#5a8fd0', '#e0473b', '#d6a73a', '#3f8f5a', '#7a5bb0', '#d6d8dc'].map((c) => (
             <button
               key={c}
               type="button"

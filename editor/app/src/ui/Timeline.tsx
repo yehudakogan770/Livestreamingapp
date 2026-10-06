@@ -1138,7 +1138,7 @@ function Wave({
     cv.width = width;
     cv.height = h;
     ctx.clearRect(0, 0, width, h);
-    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillStyle = 'rgba(255,255,255,0.42)';
     const mid = h / 2;
     for (let px = 0; px < width; px++) {
       const f0 = (from + px) / zoom;
@@ -1291,7 +1291,7 @@ function Meters({ engine }: { engine: Engine }) {
         holds[i] = Math.max(db, (holds[i] ?? -90) - 0.25);
         const y = (d: number) => h - (Math.max(0, d + 60) / 66) * h;
         const x = 3 + i * 9;
-        ctx.fillStyle = '#20242a';
+        ctx.fillStyle = '#1c1c1e';
         ctx.fillRect(x, 0, 7, h);
         const top = y(peaks[i] ?? -90);
         const grad = ctx.createLinearGradient(0, h, 0, 0);
