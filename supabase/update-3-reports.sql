@@ -135,3 +135,14 @@ $$;
 drop trigger if exists problem_report_limit on public.problem_reports;
 create trigger problem_report_limit before insert or update on public.problem_reports
   for each row execute function public.problem_report_limit();
+
+-- The Lumora team's on/off switch for problem reports (update 9), if there.
+do $$
+begin
+  if to_regprocedure('public.feature_guard()') is not null then
+    execute 'drop trigger if exists lumora_feature on public.problem_reports';
+    execute 'create trigger lumora_feature before insert on public.problem_reports
+      for each row execute function public.feature_guard(''problem_reports'')';
+  end if;
+end
+$$;

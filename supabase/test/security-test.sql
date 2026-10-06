@@ -121,7 +121,8 @@ set role authenticated;
 insert into problem_reports (kind, app) values ('error', 'lumora');
 reset role;
 
--- Resetting two-step: the team at aal2 only.
+-- Resetting two-step: a team account with two-step on needs its code (aal2).
+insert into auth.mfa_factors (user_id, status) values ('00000000-0000-0000-0000-00000000000a', 'verified');
 select pg_temp.as_user('a', 'aal1');
 set role authenticated;
 do $$ begin
@@ -134,7 +135,7 @@ end $$;
 reset role;
 select pg_temp.as_user('a', 'aal2');
 set role authenticated;
-select pg_temp.check((select count(*) from admin_two_step_people()) = 1, 'team sees who has two-step');
+select pg_temp.check((select count(*) from admin_two_step_people()) = 2, 'team sees who has two-step');
 select pg_temp.check(admin_reset_two_step('00000000-0000-0000-0000-00000000000b') = 1, 'team resets it');
 reset role;
 
