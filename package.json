@@ -17,6 +17,7 @@
     "planner:build": "vite build --config planner/vite.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "streamdeck:pack": "node streamdeck/scripts/pack.mjs",
     "check": "npm run typecheck && npm run test && cargo fmt --all --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace"
   },
   "dependencies": {

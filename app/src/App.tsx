@@ -23,6 +23,7 @@ import { ZmanimDialog } from './views/ZmanimDialog';
 import { ShabbosGuard } from './views/ShabbosGuard';
 import { DataDialog, DataWatcher } from './views/DataDialog';
 import { RemoteDialog } from './views/RemoteDialog';
+import { StreamDeckDialog, StreamDeckOffer, useDeck } from './streamdeck/StreamDeck';
 import { barActions, defaultPesukim } from './engine/pesukim';
 import { BroadcastProvider } from './broadcast/BroadcastContext';
 import { CaptionsDialog } from './captions/CaptionsDialog';
@@ -127,6 +128,9 @@ function ControlApp() {
   useEffect(() => client.watchEventFiles(setFiles), [client]);
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
   const [remoteOpen, setRemoteOpen] = useState(false);
+  // Lumora's Stream Deck buttons (offered once when a Stream Deck is found).
+  const [deck, refreshDeck, setDeck] = useDeck();
+  const [deckOpen, setDeckOpen] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const openBroadcast = useCallback(() => setBroadcastOpen(true), []);
   const [captionsOpen, setCaptionsOpen] = useState(false);
@@ -205,6 +209,14 @@ function ControlApp() {
       {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
+      },
+      {
+        label: 'Stream Deck…',
+        hint: 'Lumora’s buttons for the Elgato Stream Deck',
+        onClick: () => {
+          refreshDeck();
+          setDeckOpen(true);
+        },
       },
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
@@ -365,6 +377,7 @@ function ControlApp() {
     access,
     signOut,
     remote,
+    refreshDeck,
     openBroadcast,
     show?.sources,
     show?.overlays,
@@ -471,6 +484,19 @@ function ControlApp() {
       {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
+      <StreamDeckOffer status={deck} onChange={setDeck} />
+      {deckOpen && (
+        <StreamDeckDialog
+          status={deck}
+          remote={remote}
+          onChange={setDeck}
+          onRemote={() => {
+            setDeckOpen(false);
+            setRemoteOpen(true);
+          }}
+          onClose={() => setDeckOpen(false)}
+        />
+      )}
       {confirmNew && (
         <div className="modal" role="dialog" aria-modal="true" aria-label="New event">
           <div className="modal__box confirm">
