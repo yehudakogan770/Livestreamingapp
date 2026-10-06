@@ -6,6 +6,8 @@ import { toSrt, toVtt } from '../model/captions';
 import { baseName, inApp, native } from '../native';
 import type { DeliveryPlan } from './deliver';
 import { Exporter } from './exporter';
+import { loudnessReport } from './loudness';
+import { manageNative } from '../manage/native';
 import { EMPTY_QUEUE, nextToRun, reduce, type QueueEvent, type QueueJob, type QueueState } from './queue';
 
 interface Work {
@@ -132,6 +134,21 @@ export class RenderQueue {
         out.push(`The caption files weren't saved: ${e instanceof Error ? e.message : String(e)}`),
       );
     }
+    const th = w.plan.thumbnail;
+    if (th)
+      await manageNative
+        .thumbnail(path, th.seconds, th.width, th.out)
+        .then(() => out.push(`Thumbnail: ${baseName(th.out)}.`))
+        .catch((e: unknown) => out.push(`The thumbnail wasn't saved: ${e instanceof Error ? e.message : String(e)}`));
+    // How loud it came out, against the preset's target.
+    if (w.plan.loudnessTarget !== undefined && !/%0\dd/.test(path))
+      await manageNative
+        .measureLoudness(path)
+        .then((m) => {
+          const r = loudnessReport(m, w.plan.loudnessTarget ?? null);
+          out.push(r.line, ...(r.advice ? [r.advice] : []));
+        })
+        .catch(() => out.push('The loudness could not be measured.'));
     if (w.toLumora)
       await native
         .sendToLumora(path, baseName(path), seconds)
