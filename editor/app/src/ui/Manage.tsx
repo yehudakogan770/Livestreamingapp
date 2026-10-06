@@ -1,6 +1,7 @@
 // Media management windows: undo history, collect files (archive), backups
 // and crash recovery, clip info (stars, tags, notes), where a clip is used,
 // smart bins and workspaces.
+import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { duration, readProject } from '../model/build';
@@ -273,7 +274,7 @@ export function WorkspacesDialog({ ui, onClose }: { ui: Ui; onClose: () => void 
                     setMine(deleteWorkspace(w.name));
                   }}
                 >
-                  ✕
+                  <X />
                 </span>
               )}
             </button>
@@ -586,12 +587,13 @@ export function SmartBinDialog({ doc, id, onClose }: { doc: Doc; id: string | nu
               <RuleValue rule={r} onChange={(nr) => setBin({ ...bin, rules: bin.rules.map((x, j) => (j === i ? nr : x)) })} />
               <span className="dlv__note">{describeRule(r)}</span>
               <button type="button" className="tbtn" aria-label="Remove rule" onClick={() => setBin({ ...bin, rules: bin.rules.filter((_, j) => j !== i) })}>
-                ✕
+                <X />
               </button>
             </div>
           ))}
           <button type="button" className="linkbtn" onClick={() => setBin({ ...bin, rules: [...bin.rules, defaultRule('rating')] })}>
-            + Add a rule
+            <Plus />
+            Add a rule
           </button>
         </div>
         <div className="form__foot">

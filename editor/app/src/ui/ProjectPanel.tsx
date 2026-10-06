@@ -1,3 +1,23 @@
+import {
+  ArrowRightLeft,
+  AudioLines,
+  Blend,
+  ChevronDown,
+  ChevronRight,
+  Clapperboard,
+  FileVideo,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  Import,
+  Shapes,
+  SlidersHorizontal,
+  Square,
+  SquarePlus,
+  Type,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { useState } from 'react';
 import { duration, GENERATORS } from '../model/build';
 import { EFFECTS, TRANSITIONS } from '../model/effects';
@@ -24,12 +44,13 @@ export function ProjectPanel({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: 
       <div className="tabs" role="tablist">
         {(
           [
-            ['media', 'Media'],
-            ['effects', 'Effects'],
-            ['text', 'Text & more'],
-          ] as [Tab, string][]
-        ).map(([t, name]) => (
+            ['media', 'Media', FolderOpen],
+            ['effects', 'Effects', Blend],
+            ['text', 'Text & more', Type],
+          ] as [Tab, string, LucideIcon][]
+        ).map(([t, name, Icon]) => (
           <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? 'is-on' : ''} onClick={() => setTab(t)}>
+            <Icon />
             {name}
           </button>
         ))}
@@ -140,13 +161,16 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
           onClick={() => void chooseAndImport(doc, bin)}
           title="Add video, sound and pictures (Ctrl+I)"
         >
+          <Import />
           Import…
         </button>
         <button type="button" className="btn btn--sm" onClick={addBin} title="A folder to keep things tidy">
-          New bin
+          <FolderPlus />
+          Bin
         </button>
         <button type="button" className="btn btn--sm" onClick={() => ui.set({ dialog: 'newSequence' })} title="A new timeline">
-          New sequence
+          <SquarePlus />
+          Sequence
         </button>
         <input
           className="media__search"
@@ -163,7 +187,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
             <span>{x.name}</span>
             {x.problem ? (
               <button type="button" className="linkbtn" onClick={() => dismissProblem(x.path)}>
-                Could not be read ✕
+                Could not be read <X />
               </button>
             ) : (
               <i style={{ width: `${Math.round(x.done * 100)}%` }} />
@@ -184,7 +208,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
             onDoubleClick={() => ui.set({ dialog: 'sequence' })}
             title="A sequence: click to open it on the timeline, or drag it into another sequence"
           >
-            <span className="media__icon">▤</span>
+            <Clapperboard className="media__icon" />
             <span className="media__name">{s.name}</span>
             <span className="media__meta">
               {s.width}×{s.height} · {s.fps}
@@ -218,7 +242,8 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
                       setOpen(n);
                     }}
                   >
-                    {isOpen ? '▾' : '▸'}
+                    {isOpen ? <ChevronDown /> : <ChevronRight />}
+                    {isOpen ? <FolderOpen className="media__folder" /> : <Folder className="media__folder" />}
                   </button>
                   {renaming === b.id ? (
                     <input
@@ -253,7 +278,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
                       )
                     }
                   >
-                    ✕
+                    <X />
                   </button>
                 </div>
                 {isOpen && <div className="media__items">{items.map(row)}</div>}
@@ -330,8 +355,8 @@ function MediaRow({
             }}
           />
         )}
-        {m.kind === 'audio' && '♪'}
-        {m.kind === 'video' && !strip && '▶'}
+        {m.kind === 'audio' && <AudioLines />}
+        {m.kind === 'video' && !strip && <FileVideo />}
       </span>
       {renaming ? (
         <input
@@ -395,6 +420,7 @@ function EffectsTab({ doc, actions }: { doc: Doc; actions: Actions }) {
                 }}
                 onClick={() => actions.transition(kind, t.type)}
               >
+                <ArrowRightLeft />
                 {t.name}
               </button>
             ))}
@@ -419,6 +445,7 @@ function EffectsTab({ doc, actions }: { doc: Doc; actions: Actions }) {
                 }}
                 onClick={() => actions.addEffect(ids, e.type)}
               >
+                {e.kind === 'audio' ? <AudioLines /> : <SlidersHorizontal />}
                 {e.name}
               </button>
             ))}
@@ -455,6 +482,7 @@ function TextTab({ actions }: { actions: Actions }) {
         <h3>Generated</h3>
         {GENERATORS.map((g) => (
           <button key={g.gen} type="button" className="fxlist__item fxlist__item--gen" onClick={() => actions.addGenerator(g.gen)}>
+            <Square />
             {g.name}
           </button>
         ))}
@@ -463,6 +491,7 @@ function TextTab({ actions }: { actions: Actions }) {
         <h3>Shapes</h3>
         {SHAPE_KINDS.map(([kind, name]) => (
           <button key={kind} type="button" className="fxlist__item fxlist__item--gen" onClick={() => actions.addShape(kind)}>
+            <Shapes />
             {name}
           </button>
         ))}

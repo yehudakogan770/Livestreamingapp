@@ -1,3 +1,4 @@
+import { Lock, MessageSquare, MessageSquarePlus, PenLine, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useDoc, type Doc } from '../doc';
 import { timecode } from '../model/build';
@@ -86,6 +87,7 @@ export function LockBanner({ collab, doc }: { collab: Collab; doc: Doc }) {
   if (!body && !problem) return null;
   return (
     <div className={`lockbar${v.kind === 'mine' ? ' is-mine' : ''}`} role="status">
+      {v.kind === 'mine' ? <PenLine /> : <Lock />}
       {body}
       {problem && <span className="lockbar__problem">{problem}</span>}
     </div>
@@ -196,6 +198,7 @@ export function CommentsPanel({ collab, doc, engine }: { collab: Collab; doc: Do
           </label>
           <span className="comments__count">{openCount(cs.comments, s.id)} open</span>
           <button type="submit" className="btn btn--primary btn--sm" disabled={busy || !text.trim()}>
+            <MessageSquarePlus />
             Add at {timecode(t, fps)}
           </button>
         </div>
@@ -246,6 +249,7 @@ function CommentItem({
   return (
     <li data-id={c.id} className={`comment${c.resolved ? ' is-done' : ''}${focused ? ' is-focus' : ''}`}>
       <button type="button" className="comment__go" onClick={onGo} title="Go to this frame">
+        <MessageSquare className="comment__icon" />
         <span className="comment__time">{timecode(c.frame, fps)}</span>
         <span className="comment__who">{c.authorName}</span>
         <span className="comment__when">{new Date(c.at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
@@ -256,7 +260,8 @@ function CommentItem({
           <input type="checkbox" checked={c.resolved} onChange={(e) => onResolve(e.target.checked)} /> Done
         </label>
         {(mine || owner) && (
-          <button type="button" className="linkbtn" onClick={onDelete}>
+          <button type="button" className="linkbtn comment__del" onClick={onDelete}>
+            <Trash2 />
             Delete
           </button>
         )}

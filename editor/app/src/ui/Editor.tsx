@@ -1,3 +1,22 @@
+import {
+  AudioLines,
+  Check,
+  ChevronDown,
+  CircleAlert,
+  Cloud,
+  FileText,
+  FileVideo,
+  Film,
+  MessageSquare,
+  Palette,
+  Redo2,
+  Save,
+  SlidersHorizontal,
+  SquarePlay,
+  Undo2,
+  Upload,
+  X,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -15,7 +34,7 @@ import { HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
 import { DeliverDialog, QueueChip } from './Deliver';
 import { ManagePanels } from './Manage';
 import { panels } from './panels';
-import { shortcutFor } from './shortcuts';
+import { keys, shortcutFor } from './shortcuts';
 import { applyWorkspace, BUILT_IN_WORKSPACES, savedWorkspaces } from './workspaces';
 import { Autosaver } from '../manage/recovery';
 import { typing } from './hooks';
@@ -483,45 +502,43 @@ export function Editor({
               }}
             >
               {name}
+              <ChevronDown className="ed__caret" />
             </button>
           ))}
         </nav>
         <span className="ed__name" title={collab ? 'Shared project (online)' : path || 'Not saved yet'}>
-          {state.project.name}
+          {collab ? <Cloud /> : <FileVideo />}
+          <span>{state.project.name}</span>
         </span>
         {collab && <HereChips collab={collab} doc={doc} />}
-        <div className="ed__pages" role="tablist" aria-label="Pages">
-          {(
-            [
-              ['edit', 'Edit'],
-              ['color', 'Color'],
-              ['audio', 'Audio'],
-            ] as const
-          ).map(([p, n]) => (
-            <button key={p} type="button" role="tab" aria-selected={u.page === p} className={u.page === p ? 'is-on' : ''} onClick={() => ui.set({ page: p })}>
-              {n}
-            </button>
-          ))}
-        </div>
         <span className="ed__fill" />
-        <button type="button" className="tbtn" disabled={!state.canUndo} title={`Undo ${doc.undoLabel} (Ctrl+Z)`} aria-label="Undo" onClick={actions.undo}>
-          ↶
+        <button
+          type="button"
+          className="tbtn tbtn--icon"
+          disabled={!state.canUndo}
+          title={`Undo ${doc.undoLabel} (Ctrl+Z)`}
+          aria-label="Undo"
+          onClick={actions.undo}
+        >
+          <Undo2 />
         </button>
         <button
           type="button"
-          className="tbtn"
+          className="tbtn tbtn--icon"
           disabled={!state.canRedo}
           title={`Redo ${doc.redoLabel} (Ctrl+Shift+Z)`}
           aria-label="Redo"
           onClick={actions.redo}
         >
-          ↷
+          <Redo2 />
         </button>
         <span className={`ed__saved${problemShown ? ' is-problem' : ''}`} title={savedText}>
+          {problemShown ? <CircleAlert /> : savedText === 'Saved' ? <Check /> : <Save />}
           {savedText}
         </span>
         <QueueChip ui={ui} />
         <button type="button" className="btn btn--primary ed__export" onClick={() => ui.set({ dialog: 'export' })} title="Make the finished film (Ctrl+M)">
+          <Upload />
           Export
         </button>
       </header>
@@ -533,7 +550,7 @@ export function Editor({
             Find them…
           </button>
           <button type="button" className="ed__warnx" aria-label="Hide" onClick={() => setMissing([])}>
-            ✕
+            <X />
           </button>
         </div>
       )}
@@ -567,10 +584,31 @@ export function Editor({
       )}
 
       <footer className="ed__status">
-        <span>{u.note || (doc.undoLabel ? `Last: ${doc.undoLabel}` : 'Ready')}</span>
-        <span className="ed__fill" />
-        <span>
-          {s.name} · {s.width}×{s.height} · {s.fps} fps{path ? ` · ${folderOf(path)}` : ''}
+        <span className="ed__note">{u.note || (doc.undoLabel ? `Last: ${doc.undoLabel}` : 'Ready')}</span>
+        <div className="ed__pages" role="tablist" aria-label="Pages">
+          {(
+            [
+              ['edit', 'Edit', Film, 'Cut and arrange', 'pageEdit'],
+              ['color', 'Color', Palette, 'Grade the picture: wheels, curves, nodes and scopes', 'pageColor'],
+              ['audio', 'Audio', AudioLines, 'Mix the sound: faders, meters and tracks', 'pageAudio'],
+            ] as const
+          ).map(([p, n, Icon, tip, cmd]) => (
+            <button
+              key={p}
+              type="button"
+              role="tab"
+              aria-selected={u.page === p}
+              className={u.page === p ? 'is-on' : ''}
+              title={`${tip}${keys.keysFor(cmd) ? ` (${keys.keysFor(cmd)})` : ''}`}
+              onClick={() => ui.set({ page: p })}
+            >
+              <Icon />
+              {n}
+            </button>
+          ))}
+        </div>
+        <span className="ed__seqinfo" title={path ? folderOf(path) : 'Not saved yet'}>
+          {s.name} · {s.width}×{s.height} · {s.fps} fps
         </span>
       </footer>
 
@@ -634,6 +672,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               className={leftTab === 'controls' ? 'is-on' : ''}
               onClick={() => setLeftTab('controls')}
             >
+              <SlidersHorizontal />
               Effect controls
             </button>
             <button
@@ -643,6 +682,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               className={leftTab === 'source' ? 'is-on' : ''}
               onClick={() => setLeftTab('source')}
             >
+              <SquarePlay />
               Source
             </button>
             <button
@@ -652,6 +692,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               className={leftTab === 'transcript' ? 'is-on' : ''}
               onClick={() => setLeftTab('transcript')}
             >
+              <FileText />
               Transcript
             </button>
             {collab && (
@@ -662,6 +703,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
                 className={leftTab === 'comments' ? 'is-on' : ''}
                 onClick={() => setLeftTab('comments')}
               >
+                <MessageSquare />
                 Comments
               </button>
             )}

@@ -1,6 +1,24 @@
 // Delivery: the export window (presets for every destination, codec and
 // encoder settings, range, chapters, captions) and the render queue that
 // makes the exports in the background.
+import {
+  ArrowDown,
+  AudioLines,
+  Bookmark,
+  BookmarkPlus,
+  ChevronDown,
+  ChevronRight,
+  Globe,
+  HardDrive,
+  Image,
+  ListPlus,
+  Settings2,
+  Smartphone,
+  Tv,
+  Upload,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { duration } from '../model/build';
@@ -26,6 +44,16 @@ import {
   type VideoCodec,
   type VideoSpec,
 } from '../export/presets';
+
+const GROUP_ICONS: Record<PresetGroup, LucideIcon> = {
+  web: Globe,
+  social: Smartphone,
+  broadcast: Tv,
+  master: HardDrive,
+  audio: AudioLines,
+  image: Image,
+  custom: Bookmark,
+};
 import { isActive, isFinished, overall, type QueueJob } from '../export/queue';
 import { renderQueue, useQueue } from '../export/renderQueue';
 import { manageNative } from '../manage/native';
@@ -179,7 +207,13 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
         <div className="dlv__presets" role="listbox" aria-label="Presets">
           {groups.map((g) => (
             <div key={g} className="dlv__group">
-              <span className="dlv__gname">{GROUP_NAMES[g]}</span>
+              <span className="dlv__gname">
+                {(() => {
+                  const Icon = GROUP_ICONS[g];
+                  return <Icon />;
+                })()}
+                {GROUP_NAMES[g]}
+              </span>
               {presets
                 .filter((x) => x.group === g)
                 .map((x) => (
@@ -204,7 +238,7 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
                           setPresetId('match');
                         }}
                       >
-                        ✕
+                        <X />
                       </span>
                     )}
                   </button>
@@ -239,7 +273,9 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
           />
         </div>
         <button type="button" className="linkbtn dlv__more" aria-expanded={settings} onClick={() => setSettings(!settings)}>
-          {settings ? '▾' : '▸'} Settings: {describe(p, s)}
+          {settings ? <ChevronDown /> : <ChevronRight />}
+          <Settings2 />
+          Settings: {describe(p, s)}
         </button>
         {settings && <PresetSettings p={p} setP={setP} setVideo={setVideo} seqHeight={s.height} />}
         {(p.container === 'mp4' || p.container === 'mov' || p.container === 'm4a') && (
@@ -303,6 +339,7 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
           </span>
           {naming === null ? (
             <button type="button" className="btn" disabled={problems.length > 0} onClick={() => setNaming(p.group === 'custom' ? p.name : `${p.name} (mine)`)}>
+              <BookmarkPlus />
               Save preset…
             </button>
           ) : (
@@ -335,6 +372,7 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
             </span>
           )}
           <button type="button" className="btn" disabled={seconds <= 0 || problems.length > 0 || typeof plan === 'string'} onClick={() => void queue(false)}>
+            <ListPlus />
             Add to queue
           </button>
           <button
@@ -343,6 +381,7 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
             disabled={seconds <= 0 || problems.length > 0 || typeof plan === 'string'}
             onClick={() => void queue(true)}
           >
+            <Upload />
             Export
           </button>
         </div>
@@ -729,7 +768,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
                       ↑
                     </button>
                     <button type="button" className="tbtn" aria-label="Later" disabled={i === q.jobs.length - 1} onClick={() => renderQueue.move(j.id, 1)}>
-                      ↓
+                      <ArrowDown />
                     </button>
                   </>
                 )}
@@ -764,7 +803,7 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
                 )}
                 {isFinished(j) && (
                   <button type="button" className="tbtn" aria-label="Take off the list" onClick={() => renderQueue.remove(j.id)}>
-                    ✕
+                    <X />
                   </button>
                 )}
               </div>

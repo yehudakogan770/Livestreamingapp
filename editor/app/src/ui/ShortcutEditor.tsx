@@ -1,5 +1,6 @@
 // The keyboard shortcut editor: pick a ready-made set, then give any command
 // other keys (press them); keys another command has are pointed out.
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { assign, COMMANDS, comboOf, conflicts, holderOf, keys, PRESETS, unassign, useKeys } from './shortcuts';
 import { Modal } from './controls';
@@ -95,7 +96,7 @@ export function ShortcutEditor({ onClose }: { onClose: () => void }) {
                           aria-label={`Remove ${combo} from ${c.label}`}
                           onClick={() => keys.setBindings(unassign(k.bindings, c.id, combo))}
                         >
-                          ✕
+                          <X />
                         </button>
                       </span>
                     ))}
