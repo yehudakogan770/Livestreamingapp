@@ -401,23 +401,23 @@ section {
 }
 .hero__mon {
   position: absolute;
-  top: 14.889%;
-  width: 33.875%;
-  height: 33.889%;
+  top: 8.611%;
+  width: 36.771%;
+  height: 36.759%;
   border-radius: 2px;
 }
 .hero__mon--next {
-  left: 13.625%;
+  left: 11.354%;
 }
 .hero__mon--pgm {
-  left: 65.375%;
+  left: 62.76%;
 }
 .hero__take {
   position: absolute;
-  left: 48.25%;
-  top: 14.889%;
-  width: 16.375%;
-  height: 5.11%;
+  left: 53.958%;
+  top: 20.556%;
+  width: 7.813%;
+  height: 5.185%;
   border-radius: 6px;
   opacity: 0;
   box-shadow:

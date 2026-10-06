@@ -1,283 +1,79 @@
 // The Lumora website: a small working switcher, the three screens that follow
-// it, the run of show, and the PANIC button. Every picture is drawn here.
+// it, the run of show, and the PANIC button. The inputs are real footage of
+// one event (media/, see img/CREDITS.md), looped like a camera feed.
 (() => {
   const W = 640;
   const H = 360;
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const MARK = [
-    ['M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z', '#4fb3bf'],
-    ['M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z', '#d6d8dc'],
-    ['M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z', '#8f949c'],
-  ].map(([d, c]) => [new Path2D(d), c]);
   const FONT = "'Archivo', 'Segoe UI', sans-serif";
 
-  /** The Lumora mark, `size` px wide, centred at x, y. */
-  function mark(c, x, y, size, spin = 0) {
-    c.save();
-    c.translate(x, y);
-    c.rotate(spin);
-    c.scale(size / 48, size / 48);
-    c.translate(-24, -24);
-    for (const [p, col] of MARK) {
-      c.fillStyle = col;
-      c.fill(p);
-    }
-    c.beginPath();
-    c.arc(24, 24, 5.6, 0, Math.PI * 2);
-    c.fillStyle = '#e0473b';
-    c.fill();
-    c.restore();
+  /** Draws `img` to cover the whole frame. */
+  function cover(c, img, iw, ih) {
+    if (!iw || !ih) return false;
+    const s = Math.max(W / iw, H / ih);
+    const w = iw * s;
+    const h = ih * s;
+    c.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    return true;
   }
 
-  function haze(c, t, tint) {
-    c.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < 3; i++) {
-      const x = W * (0.2 + 0.3 * i) + Math.sin(t * 0.13 + i * 2) * 60;
-      const y = H * 0.45 + Math.cos(t * 0.11 + i) * 30;
-      const g = c.createRadialGradient(x, y, 0, x, y, 220);
-      g.addColorStop(0, tint);
-      g.addColorStop(1, 'rgba(0,0,0,0)');
-      c.fillStyle = g;
-      c.fillRect(0, 0, W, H);
-    }
-    c.globalCompositeOperation = 'source-over';
-  }
+  // WebM where the browser plays it, MP4 (H.264) everywhere else.
+  const EXT = document.createElement('video').canPlayType('video/webm; codecs="vp9"') ? 'webm' : 'mp4';
 
-  function vignette(c) {
-    const g = c.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, W * 0.62);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(1, 'rgba(0,0,0,0.7)');
-    c.fillStyle = g;
-    c.fillRect(0, 0, W, H);
-  }
-
-  /** Someone at a lectern under a spotlight. */
-  function stage(c, t) {
-    const sway = Math.sin(t * 0.5) * 4;
-    const bg = c.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#24130f');
-    bg.addColorStop(1, '#0b0706');
-    c.fillStyle = bg;
-    c.fillRect(0, 0, W, H);
-    // Curtains.
-    for (let i = 0; i < 28; i++) {
-      const x = (i / 28) * W;
-      const g = c.createLinearGradient(x, 0, x + W / 28, 0);
-      g.addColorStop(0, 'rgba(120,28,22,0.55)');
-      g.addColorStop(0.5, 'rgba(60,10,8,0.2)');
-      g.addColorStop(1, 'rgba(120,28,22,0.55)');
-      c.fillStyle = g;
-      c.fillRect(x, 0, W / 28 + 1, H * 0.8);
-    }
-    // Floor.
-    const fl = c.createLinearGradient(0, H * 0.78, 0, H);
-    fl.addColorStop(0, '#1c1310');
-    fl.addColorStop(1, '#070505');
-    c.fillStyle = fl;
-    c.fillRect(0, H * 0.78, W, H * 0.22);
-    // Spotlight.
-    const sx = W * 0.56 + sway;
-    c.globalCompositeOperation = 'lighter';
-    const cone = c.createLinearGradient(0, 0, 0, H * 0.85);
-    cone.addColorStop(0, 'rgba(255,226,180,0.42)');
-    cone.addColorStop(1, 'rgba(255,200,140,0.04)');
-    c.fillStyle = cone;
-    c.beginPath();
-    c.moveTo(sx - 14, 0);
-    c.lineTo(sx + 14, 0);
-    c.lineTo(sx + 118, H * 0.86);
-    c.lineTo(sx - 118, H * 0.86);
-    c.fill();
-    const pool = c.createRadialGradient(sx, H * 0.86, 0, sx, H * 0.86, 140);
-    pool.addColorStop(0, 'rgba(255,214,160,0.5)');
-    pool.addColorStop(1, 'rgba(0,0,0,0)');
-    c.fillStyle = pool;
-    c.save();
-    c.scale(1, 0.25);
-    c.fillRect(0, (H * 0.86) / 0.25 - 160, W, 320);
-    c.restore();
-    c.globalCompositeOperation = 'source-over';
-    haze(c, t, 'rgba(255,190,140,0.06)');
-    // The speaker.
-    const px = W * 0.56;
-    const breathe = Math.sin(t * 1.3) * 1.2;
-    c.fillStyle = '#0a0706';
-    c.beginPath();
-    c.arc(px, H * 0.42 + breathe, 22, 0, Math.PI * 2);
-    c.fill();
-    c.beginPath();
-    c.moveTo(px - 62, H * 0.66);
-    c.quadraticCurveTo(px - 58, H * 0.5 + breathe, px - 20, H * 0.49 + breathe);
-    c.lineTo(px + 20, H * 0.49 + breathe);
-    c.quadraticCurveTo(px + 58, H * 0.5 + breathe, px + 62, H * 0.66);
-    c.fill();
-    // Rim light.
-    c.strokeStyle = 'rgba(255,214,160,0.55)';
-    c.lineWidth = 2;
-    c.beginPath();
-    c.arc(px, H * 0.42 + breathe, 22, Math.PI * 1.1, Math.PI * 1.9);
-    c.stroke();
-    // Lectern.
-    const lg = c.createLinearGradient(0, H * 0.58, 0, H * 0.88);
-    lg.addColorStop(0, '#3a2a22');
-    lg.addColorStop(1, '#140d0a');
-    c.fillStyle = lg;
-    c.beginPath();
-    c.moveTo(px - 60, H * 0.58);
-    c.lineTo(px + 60, H * 0.58);
-    c.lineTo(px + 48, H * 0.88);
-    c.lineTo(px - 48, H * 0.88);
-    c.fill();
-    c.fillStyle = 'rgba(255,214,160,0.35)';
-    c.fillRect(px - 60, H * 0.58, 120, 3);
-    mark(c, px, H * 0.7, 30);
-    vignette(c);
-  }
-
-  /** The hall from the back: lights sweeping, the crowd in front. */
-  function wide(c, t) {
-    const bg = c.createLinearGradient(0, 0, 0, H);
-    bg.addColorStop(0, '#05060a');
-    bg.addColorStop(1, '#0d0f18');
-    c.fillStyle = bg;
-    c.fillRect(0, 0, W, H);
-    // The big screen on stage shows the logo.
-    const sg = c.createLinearGradient(0, 40, 0, 150);
-    sg.addColorStop(0, '#15464c');
-    sg.addColorStop(1, '#0a2226');
-    c.fillStyle = sg;
-    c.fillRect(W * 0.32, 40, W * 0.36, 112);
-    mark(c, W / 2, 96, 54, Math.sin(t * 0.4) * 0.15);
-    // Beams.
-    c.globalCompositeOperation = 'lighter';
-    const cols = ['255,59,47', '79,179,191', '255,230,200', '79,179,191', '255,59,47'];
-    for (let i = 0; i < 5; i++) {
-      const ox = W * (0.14 + i * 0.18);
-      const a = Math.sin(t * 0.7 + i * 1.7) * 0.42 + (i - 2) * 0.08;
-      c.save();
-      c.translate(ox, 0);
-      c.rotate(a);
-      const g = c.createLinearGradient(0, 0, 0, H);
-      g.addColorStop(0, `rgba(${cols[i]},0.5)`);
-      g.addColorStop(1, `rgba(${cols[i]},0)`);
-      c.fillStyle = g;
-      c.beginPath();
-      c.moveTo(-4, 0);
-      c.lineTo(4, 0);
-      c.lineTo(44, H * 1.05);
-      c.lineTo(-44, H * 1.05);
-      c.fill();
-      c.restore();
-    }
-    haze(c, t, 'rgba(120,160,220,0.05)');
-    c.globalCompositeOperation = 'source-over';
-    // Stage.
-    c.fillStyle = '#16171d';
-    c.fillRect(0, H * 0.6, W, H * 0.06);
-    c.fillStyle = 'rgba(79,179,191,0.6)';
-    c.fillRect(0, H * 0.6, W, 2);
-    // Performers.
-    c.fillStyle = '#020203';
-    for (const [x, s] of [
-      [0.36, 1],
-      [0.5, 1.1],
-      [0.64, 0.95],
-    ]) {
-      const bx = W * x;
-      const by = H * 0.6;
-      c.beginPath();
-      c.arc(bx, by - 52 * s, 8 * s, 0, Math.PI * 2);
-      c.fill();
-      c.fillRect(bx - 10 * s, by - 44 * s, 20 * s, 44 * s);
-    }
-    // Crowd.
-    for (let row = 0; row < 2; row++) {
-      for (let k = 0; k < 15; k++) {
-        const x = (k + (row ? 0.5 : 0)) * (W / 14) - 10;
-        const bob = Math.max(0, Math.sin(t * 3.2 + k * 1.3 + row)) * 6;
-        const y = H * (0.86 + row * 0.08) - bob;
-        c.fillStyle = row ? '#000' : '#050507';
-        c.beginPath();
-        c.arc(x, y - 26, 15, 0, Math.PI * 2);
-        c.fill();
-        c.beginPath();
-        c.ellipse(x, y + 20, 28, 34, 0, 0, Math.PI * 2);
-        c.fill();
-        if ((k * 7 + row) % 5 === 0) {
-          c.strokeStyle = c.fillStyle;
-          c.lineWidth = 7;
-          c.lineCap = 'round';
-          c.beginPath();
-          c.moveTo(x + 14, y);
-          c.lineTo(x + 26, y - 56 - bob);
-          c.stroke();
+  /** A camera: a short clip that loops, its first frame until it plays. */
+  function camera(name, file) {
+    const poster = new Image();
+    poster.src = `media/${file}.jpg`;
+    const v = document.createElement('video');
+    v.muted = true;
+    v.loop = true;
+    v.playsInline = true;
+    v.preload = 'none';
+    v.setAttribute('aria-hidden', 'true');
+    let started = false;
+    return {
+      name,
+      poster,
+      play() {
+        if (still) return;
+        if (!started) {
+          started = true;
+          v.src = `media/${file}.${EXT}`;
         }
-      }
-    }
-    vignette(c);
+        if (v.paused) v.play().catch(() => {});
+      },
+      pause() {
+        if (started && !v.paused) v.pause();
+      },
+      draw(c) {
+        if (v.readyState >= 2 && cover(c, v, v.videoWidth, v.videoHeight)) return;
+        if (!cover(c, poster, poster.naturalWidth, poster.naturalHeight)) {
+          c.fillStyle = '#16181d';
+          c.fillRect(0, 0, W, H);
+        }
+      },
+    };
   }
 
-  /** The show countdown, like the app's. */
-  function countdown(c, t) {
-    const g = c.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.6);
-    g.addColorStop(0, '#1f6f79');
-    g.addColorStop(1, '#071a1d');
-    c.fillStyle = g;
-    c.fillRect(0, 0, W, H);
-    const left = 300 - (Math.floor(t) % 300);
-    const s = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
-    c.fillStyle = '#fff';
-    c.textAlign = 'center';
-    c.textBaseline = 'alphabetic';
-    c.font = `700 22px ${FONT}`;
-    c.letterSpacing = '8px';
-    c.fillText('STARTING SOON', W / 2 + 4, H * 0.36);
-    c.letterSpacing = '0px';
-    c.font = `900 128px ${FONT}`;
-    c.fillText(s, W / 2, H * 0.72);
-    c.fillStyle = 'rgba(255,255,255,0.18)';
-    c.fillRect(W * 0.2, H * 0.84, W * 0.6, 4);
-    c.fillStyle = '#ff3b2f';
-    c.fillRect(W * 0.2, H * 0.84, W * 0.6 * (1 - left / 300), 4);
+  /** A picture: the speaker's slides. */
+  function picture(name, file) {
+    const img = new Image();
+    img.src = `media/${file}`;
+    return {
+      name,
+      poster: img,
+      play() {},
+      pause() {},
+      draw(c) {
+        if (!cover(c, img, img.naturalWidth, img.naturalHeight)) {
+          c.fillStyle = '#f6f4f0';
+          c.fillRect(0, 0, W, H);
+        }
+      },
+    };
   }
 
-  /** Music visuals for the back screen, on the beat. */
-  function visuals(c, t) {
-    c.fillStyle = '#040507';
-    c.fillRect(0, 0, W, H);
-    const beat = Math.exp(-((t * 2) % 1) * 5);
-    const n = 64;
-    c.save();
-    c.translate(W / 2, H / 2);
-    c.globalCompositeOperation = 'lighter';
-    for (let i = 0; i < n; i++) {
-      const a = (i / n) * Math.PI * 2 + t * 0.2;
-      const len = 30 + 70 * Math.abs(Math.sin(t * 1.7 + i * 0.6)) + beat * 40;
-      c.save();
-      c.rotate(a);
-      c.fillStyle = i % 2 ? 'rgba(79,179,191,0.85)' : 'rgba(255,59,47,0.85)';
-      c.fillRect(70 + beat * 8, -3, len, 6);
-      c.restore();
-    }
-    for (let r = 0; r < 4; r++) {
-      const rad = ((t * 60 + r * 90) % 360) + 20;
-      c.strokeStyle = `rgba(255,255,255,${0.25 * (1 - rad / 380)})`;
-      c.lineWidth = 2;
-      c.beginPath();
-      c.arc(0, 0, rad, 0, Math.PI * 2);
-      c.stroke();
-    }
-    c.globalCompositeOperation = 'source-over';
-    c.restore();
-    mark(c, W / 2, H / 2, 70 + beat * 10, t * 0.3);
-  }
-
-  const SOURCES = [
-    { name: 'Stage', draw: stage },
-    { name: 'Wide', draw: wide },
-    { name: 'Countdown', draw: countdown },
-    { name: 'Visuals', draw: visuals },
-  ];
+  const SOURCES = [camera('Podium', 'podium'), camera('Wide', 'wide'), camera('Audience', 'audience'), picture('Slides', 'slides.jpg')];
   const frames = SOURCES.map(() => {
     const cv = document.createElement('canvas');
     cv.width = W;
@@ -307,10 +103,10 @@
     c.textAlign = 'left';
     c.fillStyle = '#fff';
     c.font = `800 25px ${FONT}`;
-    c.fillText('Sarah Mitchell', x + 22, y + 32);
+    c.fillText('Daniel Brooks', x + 22, y + 32);
     c.fillStyle = '#8fd3db';
     c.font = `500 16px ${FONT}`;
-    c.fillText('Keynote speaker', x + 22, y + 53);
+    c.fillText('Chief Product Officer · Northwind', x + 22, y + 53);
     c.restore();
   }
 
@@ -410,8 +206,14 @@
   backWide.height = 270;
   function drawBack() {
     const c = backWide.getContext('2d');
-    const img = st.backLive ? program : frames[3];
-    c.drawImage(img, 0, (H - 270) / 2, W, 270, 0, 0, 640, 270);
+    if (st.backLive) {
+      c.drawImage(program, 0, (H - 270) / 2, W, 270, 0, 0, 640, 270);
+      return;
+    }
+    // The slides, whole, in the middle of the wide projector screen.
+    c.fillStyle = '#0b0c0f';
+    c.fillRect(0, 0, 640, 270);
+    c.drawImage(frames[3], 80, 0, 480, 270);
   }
   const msg = $('[data-msg]');
   const mon = $('[data-monitor]');
@@ -496,9 +298,13 @@
     if (now - last < 1000 / 30) return;
     last = now;
     texts(now);
-    if (!visible.size) return;
-    const t = now / 1000;
-    SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d'), t));
+    // The clips only play while some of this can be seen.
+    if (!visible.size) {
+      SOURCES.forEach((s) => s.pause());
+      return;
+    }
+    SOURCES.forEach((s) => s.play());
+    SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d')));
     drawProgram(now);
     if (hero && visible.has(hero)) drawHero(now);
     if (visible.has(sw)) {
@@ -515,9 +321,8 @@
   label();
   if (still) {
     // One still picture of each, no movement.
-    const t = 12;
-    SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d'), t));
     const redraw = () => {
+      SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d')));
       drawProgram(performance.now() + 1e4);
       if (hero) drawHero(0);
       frames.forEach((f, i) => show(`src${i}`, f));
@@ -529,6 +334,7 @@
       texts(performance.now());
     };
     redraw();
+    SOURCES.forEach((s) => s.poster.addEventListener('load', redraw));
     document.addEventListener('click', () => setTimeout(redraw, 0));
     addEventListener('keydown', () => setTimeout(redraw, 0));
   } else requestAnimationFrame(frame);

@@ -10,7 +10,10 @@
     />
     <meta property="og:title" content="Meet Lumora" />
     <meta property="og:description" content="The live production studio for every event. Switch. Stream. Record." />
-    <meta property="og:image" content="img/main.jpg" />
+    <meta property="og:image" content="img/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#0b0c0f" />
     <link rel="icon" href="img/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="icon" href="img/lumora-mark.svg" type="image/svg+xml" />
@@ -50,7 +53,10 @@
             <article class="fam__card">
               <header>
                 <img src="img/lumora-mark.svg" alt="" width="40" height="40" />
-                <div><h2 class="fam__name">Lumora</h2><p class="fam__role">Live production</p></div>
+                <div>
+                  <h2 class="fam__name">Lumora</h2>
+                  <p class="fam__role">Live production</p>
+                </div>
               </header>
               <p>Cameras, titles, streaming and every screen in the room, from one Windows computer.</p>
               <div class="fam__go">
@@ -61,11 +67,16 @@
             <article class="fam__card fam__card--studio">
               <header>
                 <img src="img/studio-mark.svg" alt="" width="40" height="40" />
-                <div><h2 class="fam__name">Lumora Studio</h2><p class="fam__role">Video editing</p></div>
+                <div>
+                  <h2 class="fam__name">Lumora Studio</h2>
+                  <p class="fam__role">Video editing</p>
+                </div>
               </header>
               <p>Every camera from the event, already synced. Edit, grade, mix, caption and export.</p>
               <div class="fam__go">
-                <a class="btn btn--amber" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">Download Lumora Studio</a>
+                <a class="btn btn--amber" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe"
+                  >Download Lumora Studio</a
+                >
                 <a class="fam__more" href="#studio">Explore Studio</a>
               </div>
             </article>
@@ -83,8 +94,8 @@
             <div class="win__stage">
               <img
                 src="img/main.jpg"
-                width="1600"
-                height="900"
+                width="1920"
+                height="1080"
                 alt="The Lumora main screen: Next on the left, On air on the right, TAKE and CUT in the middle, inputs and the sound mixer below."
               />
               <canvas class="hero__mon hero__mon--next" data-hero="next" width="640" height="360" aria-hidden="true"></canvas>
@@ -236,22 +247,22 @@
                 </button>
               </div>
               <figure class="mon mon--pgm">
-                <figcaption><i></i>On air <span data-pgm-name>Stage</span></figcaption>
+                <figcaption><i></i>On air <span data-pgm-name>Podium</span></figcaption>
                 <canvas data-view="program" width="640" height="360" aria-label="The picture on air"></canvas>
               </figure>
             </div>
             <div class="sw__srcs" role="group" aria-label="Inputs">
               <button type="button" class="src" data-src="0">
-                <canvas data-view="src0" width="320" height="180"></canvas><span><b>1</b> Stage</span>
+                <canvas data-view="src0" width="320" height="180"></canvas><span><b>1</b> Podium</span>
               </button>
               <button type="button" class="src" data-src="1">
                 <canvas data-view="src1" width="320" height="180"></canvas><span><b>2</b> Wide</span>
               </button>
               <button type="button" class="src" data-src="2">
-                <canvas data-view="src2" width="320" height="180"></canvas><span><b>3</b> Countdown</span>
+                <canvas data-view="src2" width="320" height="180"></canvas><span><b>3</b> Audience</span>
               </button>
               <button type="button" class="src" data-src="3">
-                <canvas data-view="src3" width="320" height="180"></canvas><span><b>4</b> Visuals</span>
+                <canvas data-view="src3" width="320" height="180"></canvas><span><b>4</b> Slides</span>
               </button>
             </div>
           </div>
@@ -265,7 +276,13 @@
             <div class="win__bar">
               <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora</span><i></i><i></i><i></i>
             </div>
-            <img src="img/look.jpg" width="1600" height="900" loading="lazy" alt="Lumora's Event look window with eight ready-made title designs." />
+            <img
+              src="img/look.jpg"
+              width="1920"
+              height="1080"
+              loading="lazy"
+              alt="Lumora's Event look window with eight ready-made title designs over a camera shot of the speaker."
+            />
           </div>
           <div class="split__text">
             <p class="eyebrow">Event look</p>
@@ -819,10 +836,10 @@
             </div>
             <img
               src="img/edit.jpg"
-              width="1600"
-              height="900"
+              width="1920"
+              height="1080"
               loading="lazy"
-              alt="Lumora Studio editing a recorded event: the program monitor, the media panel with four cameras, and a timeline of camera cuts over three sound tracks."
+              alt="Lumora Studio editing a four-camera conference keynote: the speaker's name title in the program monitor, the cameras in the media panel, and a timeline of camera cuts, titles, markers and sound."
             />
           </div>
           <ul class="pages">
@@ -999,10 +1016,10 @@
             </div>
             <img
               src="img/studio-color.jpg"
-              width="1600"
-              height="900"
+              width="1920"
+              height="1080"
               loading="lazy"
-              alt="The Lumora Studio Color page: the picture beside a waveform scope, a node graph, color wheels, primaries and curves."
+              alt="The Lumora Studio Color page grading the podium camera: the picture beside a waveform scope, a two-node grade, color wheels, primaries and curves."
             />
           </div>
         </div>
@@ -1051,13 +1068,17 @@
               <img src="img/lumora-mark.svg" alt="" width="56" height="56" />
               <h3>Lumora</h3>
               <p>Live production, streaming and recording.</p>
-              <a class="btn btn--red btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe">Download Lumora</a>
+              <a class="btn btn--red btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Setup.exe"
+                >Download Lumora</a
+              >
             </article>
             <article class="dlcard dlcard--studio">
               <img src="img/studio-mark.svg" alt="" width="56" height="56" />
               <h3>Lumora Studio</h3>
               <p>Video editing, color, sound and captions.</p>
-              <a class="btn btn--amber btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe">Download Lumora Studio</a>
+              <a class="btn btn--amber btn--big" href="https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/Lumora-Studio-Setup.exe"
+                >Download Lumora Studio</a
+              >
             </article>
           </div>
           <ul class="dl__more">
