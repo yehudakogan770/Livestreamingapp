@@ -1,3 +1,22 @@
+import {
+  AudioLines,
+  Check,
+  ChevronDown,
+  CircleAlert,
+  Cloud,
+  FileText,
+  FileVideo,
+  Film,
+  MessageSquare,
+  Palette,
+  Redo2,
+  Save,
+  SlidersHorizontal,
+  SquarePlay,
+  Undo2,
+  Upload,
+  X,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -15,11 +34,13 @@ import { HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
 import { DeliverDialog, QueueChip } from './Deliver';
 import { ManagePanels } from './Manage';
 import { panels } from './panels';
-import { shortcutFor } from './shortcuts';
+import { keys, shortcutFor } from './shortcuts';
 import { applyWorkspace, BUILT_IN_WORKSPACES, savedWorkspaces } from './workspaces';
 import { Autosaver } from '../manage/recovery';
 import { typing } from './hooks';
-import { chooseAndImport, importFiles, makeProxies, MEDIA_EXTENSIONS } from './importer';
+import { chooseAndImport, importFiles, makeProxies, MEDIA_EXTENSIONS, proxyOptions, setProxyFocus } from './importer';
+import { renderCache } from '../cache/manager';
+import { CacheDialog, cacheMenu } from '../cache/CacheDialog';
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { SmartDialogs, smartMenu } from '../smart/SmartTools';
@@ -36,6 +57,7 @@ import { canEdit } from '../collab/lock';
 import { CommentsPanel, ConflictDialog, HereChips, LockBanner } from '../collab/CollabUi';
 import { HistoryDialog, ShareDialog } from '../collab/CollabDialogs';
 import { nativePlayback } from '../render/native/client';
+import { openProblemReport, useErrorReports } from '../../../../app/src/reports/ReportUI';
 
 export function Editor({
   project,
@@ -71,6 +93,7 @@ export function Editor({
   const [saveProblem, setSaveProblem] = useState('');
   const [missing, setMissing] = useState<string[]>([]);
   const { access, signOut } = useAccess();
+  const [reportsOn, toggleReports] = useErrorReports();
   const userId = access?.userId ?? '';
   const userName = access ? access.name || access.email : '';
 
@@ -106,6 +129,21 @@ export function Editor({
   useEffect(() => {
     engine.useProxies = u.proxies;
   }, [engine, u.proxies]);
+  // The render cache plays heavy stretches from cached files and makes them while playback is stopped;
+  // proxies are made nearest the playhead first.
+  useEffect(() => {
+    engine.cached = renderCache.opsAt;
+    proxyOptions.hardware = renderCache.settings.hwEncode;
+    const focus = () => ({ project: engine.project, playing: engine.isPlaying, playhead: Math.floor(engine.time), proxies: engine.useProxies });
+    void renderCache.start(focus);
+    setProxyFocus(() => ({ p: engine.project, playhead: Math.floor(engine.time) }));
+    const redraw = renderCache.subscribe(() => engine.redraw());
+    return () => {
+      redraw();
+      renderCache.stop();
+      engine.cached = null;
+    };
+  }, [engine]);
 
   // Look for files that have moved since the project was saved (or, in a
   // shared project, that someone else added and this computer doesn't have).
@@ -366,6 +404,7 @@ export function Editor({
         { label: 'Playback: quarter', checked: u.quality === 0.25, run: () => ui.set({ quality: 0.25 }) },
         { label: 'Use proxies for playback', checked: u.proxies, run: () => ui.set({ proxies: !u.proxies }) },
         { label: 'Native playback (beta)', checked: nativePlayback.enabled, run: () => nativePlayback.setEnabled(!nativePlayback.enabled) },
+        ...cacheMenu(doc, doc.state.selection?.kind === 'clips' ? doc.state.selection.ids : []),
         { label: 'Safe margins', checked: u.safeMargins, run: () => ui.set({ safeMargins: !u.safeMargins }) },
         'sep',
         { label: 'Zoom in', keys: '=', run: () => actions.zoom(1.5) },
@@ -429,7 +468,15 @@ export function Editor({
     ],
     ['Smart', () => smartMenu(state.project)],
     ['AI', () => extrasMenu(state.project, doc, ui)],
-    ['Help', () => [{ label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) }]],
+    [
+      'Help',
+      () => [
+        { label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) },
+        'sep',
+        { label: 'Report a problem…', run: openProblemReport },
+        { label: 'Send anonymous error reports', checked: reportsOn, run: toggleReports },
+      ],
+    ],
   ];
 
   const savedText = cs
@@ -472,45 +519,43 @@ export function Editor({
               }}
             >
               {name}
+              <ChevronDown className="ed__caret" />
             </button>
           ))}
         </nav>
         <span className="ed__name" title={collab ? 'Shared project (online)' : path || 'Not saved yet'}>
-          {state.project.name}
+          {collab ? <Cloud /> : <FileVideo />}
+          <span>{state.project.name}</span>
         </span>
         {collab && <HereChips collab={collab} doc={doc} />}
-        <div className="ed__pages" role="tablist" aria-label="Pages">
-          {(
-            [
-              ['edit', 'Edit'],
-              ['color', 'Color'],
-              ['audio', 'Audio'],
-            ] as const
-          ).map(([p, n]) => (
-            <button key={p} type="button" role="tab" aria-selected={u.page === p} className={u.page === p ? 'is-on' : ''} onClick={() => ui.set({ page: p })}>
-              {n}
-            </button>
-          ))}
-        </div>
         <span className="ed__fill" />
-        <button type="button" className="tbtn" disabled={!state.canUndo} title={`Undo ${doc.undoLabel} (Ctrl+Z)`} aria-label="Undo" onClick={actions.undo}>
-          ↶
+        <button
+          type="button"
+          className="tbtn tbtn--icon"
+          disabled={!state.canUndo}
+          title={`Undo ${doc.undoLabel} (Ctrl+Z)`}
+          aria-label="Undo"
+          onClick={actions.undo}
+        >
+          <Undo2 />
         </button>
         <button
           type="button"
-          className="tbtn"
+          className="tbtn tbtn--icon"
           disabled={!state.canRedo}
           title={`Redo ${doc.redoLabel} (Ctrl+Shift+Z)`}
           aria-label="Redo"
           onClick={actions.redo}
         >
-          ↷
+          <Redo2 />
         </button>
         <span className={`ed__saved${problemShown ? ' is-problem' : ''}`} title={savedText}>
+          {problemShown ? <CircleAlert /> : savedText === 'Saved' ? <Check /> : <Save />}
           {savedText}
         </span>
         <QueueChip ui={ui} />
         <button type="button" className="btn btn--primary ed__export" onClick={() => ui.set({ dialog: 'export' })} title="Make the finished film (Ctrl+M)">
+          <Upload />
           Export
         </button>
       </header>
@@ -522,7 +567,7 @@ export function Editor({
             Find them…
           </button>
           <button type="button" className="ed__warnx" aria-label="Hide" onClick={() => setMissing([])}>
-            ✕
+            <X />
           </button>
         </div>
       )}
@@ -556,10 +601,31 @@ export function Editor({
       )}
 
       <footer className="ed__status">
-        <span>{u.note || (doc.undoLabel ? `Last: ${doc.undoLabel}` : 'Ready')}</span>
-        <span className="ed__fill" />
-        <span>
-          {s.name} · {s.width}×{s.height} · {s.fps} fps{path ? ` · ${folderOf(path)}` : ''}
+        <span className="ed__note">{u.note || (doc.undoLabel ? `Last: ${doc.undoLabel}` : 'Ready')}</span>
+        <div className="ed__pages" role="tablist" aria-label="Pages">
+          {(
+            [
+              ['edit', 'Edit', Film, 'Cut and arrange', 'pageEdit'],
+              ['color', 'Color', Palette, 'Grade the picture: wheels, curves, nodes and scopes', 'pageColor'],
+              ['audio', 'Audio', AudioLines, 'Mix the sound: faders, meters and tracks', 'pageAudio'],
+            ] as const
+          ).map(([p, n, Icon, tip, cmd]) => (
+            <button
+              key={p}
+              type="button"
+              role="tab"
+              aria-selected={u.page === p}
+              className={u.page === p ? 'is-on' : ''}
+              title={`${tip}${keys.keysFor(cmd) ? ` (${keys.keysFor(cmd)})` : ''}`}
+              onClick={() => ui.set({ page: p })}
+            >
+              <Icon />
+              {n}
+            </button>
+          ))}
+        </div>
+        <span className="ed__seqinfo" title={path ? folderOf(path) : 'Not saved yet'}>
+          {s.name} · {s.width}×{s.height} · {s.fps} fps
         </span>
       </footer>
 
@@ -591,6 +657,7 @@ export function Editor({
       <SmartDialogs doc={doc} engine={engine} ui={ui} />
       <ManagePanels doc={doc} ui={ui} engine={engine} autosaver={autosaver} />
       <ExtrasDialogs doc={doc} engine={engine} ui={ui} />
+      <CacheDialog />
     </div>
   );
 }
@@ -622,6 +689,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               className={leftTab === 'controls' ? 'is-on' : ''}
               onClick={() => setLeftTab('controls')}
             >
+              <SlidersHorizontal />
               Effect controls
             </button>
             <button
@@ -631,6 +699,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               className={leftTab === 'source' ? 'is-on' : ''}
               onClick={() => setLeftTab('source')}
             >
+              <SquarePlay />
               Source
             </button>
             <button
@@ -640,6 +709,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               className={leftTab === 'transcript' ? 'is-on' : ''}
               onClick={() => setLeftTab('transcript')}
             >
+              <FileText />
               Transcript
             </button>
             {collab && (
@@ -650,6 +720,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
                 className={leftTab === 'comments' ? 'is-on' : ''}
                 onClick={() => setLeftTab('comments')}
               >
+                <MessageSquare />
                 Comments
               </button>
             )}

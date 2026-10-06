@@ -1,6 +1,6 @@
 //! Reading video frames: one long-lived FFmpeg per clip, decoding on the
-//! graphics card where it can (`-hwaccel auto`: D3D11VA/DXVA2 on Windows,
-//! VAAPI/VDPAU elsewhere), writing NV12 frames down a pipe into a small ring
+//! graphics card where it can (the app's choice of `-hwaccel`: NVDEC, Quick
+//! Sync, D3D11VA…, or `auto`), writing NV12 frames down a pipe into a small ring
 //! that stays a few frames ahead of the playhead. A jump (a cut, scrubbing,
 //! playing backwards) starts FFmpeg again at the new moment; it seeks to the
 //! keyframe before it and decodes up to the exact frame.
@@ -170,13 +170,13 @@ pub struct Source {
 }
 
 /// The arguments for one run of FFmpeg.
-pub fn ffmpeg_args(src: &Source, from: f64, hardware: bool) -> Vec<String> {
+pub fn ffmpeg_args(src: &Source, from: f64, hwaccel: Option<&str>) -> Vec<String> {
     let mut a: Vec<String> = ["-hide_banner", "-loglevel", "error", "-nostdin"]
         .iter()
         .map(|s| (*s).to_owned())
         .collect();
-    if hardware {
-        a.extend(["-hwaccel".into(), "auto".into()]);
+    if let Some(m) = hwaccel.filter(|m| !m.is_empty()) {
+        a.extend(["-hwaccel".into(), m.to_owned()]);
     }
     a.extend([
         "-ss".into(),
@@ -238,9 +238,14 @@ impl Stream {
     ///
     /// # Errors
     /// FFmpeg could not start.
-    pub fn open(ffmpeg: &Path, source: Source, from: f64, hardware: bool) -> Result<Self, String> {
+    pub fn open(
+        ffmpeg: &Path,
+        source: Source,
+        from: f64,
+        hwaccel: Option<&str>,
+    ) -> Result<Self, String> {
         let mut child = quiet(ffmpeg)
-            .args(ffmpeg_args(&source, from, hardware))
+            .args(ffmpeg_args(&source, from, hwaccel))
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -385,7 +390,8 @@ pub struct Got {
 /// Every clip's decoder.
 pub struct Decoders {
     ffmpeg: PathBuf,
-    pub hardware: bool,
+    /// FFmpeg's hardware decoder (`-hwaccel`), or none for software.
+    pub hwaccel: Option<String>,
     streams: HashMap<String, (Stream, u64)>,
     runs: u64,
     /// Files that failed with hardware decoding and are read in software.
@@ -397,10 +403,10 @@ pub struct Decoders {
 const IDLE: Duration = Duration::from_secs(4);
 
 impl Decoders {
-    pub fn new(ffmpeg: PathBuf, hardware: bool) -> Self {
+    pub fn new(ffmpeg: PathBuf, hwaccel: Option<String>) -> Self {
         Self {
             ffmpeg,
-            hardware,
+            hwaccel,
             streams: HashMap::new(),
             runs: 0,
             software: HashMap::new(),
@@ -414,7 +420,10 @@ impl Decoders {
 
     fn restart(&mut self, key: &str, source: Source, from: f64) -> Result<(), String> {
         self.streams.remove(key);
-        let hw = self.hardware && !self.software.contains_key(&source.path);
+        let hw = self
+            .hwaccel
+            .as_deref()
+            .filter(|_| !self.software.contains_key(&source.path));
         let s = Stream::open(&self.ffmpeg, source, from, hw)?;
         self.runs += 1;
         self.streams.insert(key.to_owned(), (s, self.runs));
@@ -470,7 +479,7 @@ impl Decoders {
                     if let Some(e) = s.error() {
                         // Hardware decoding failed for this file: read it in software from now on.
                         self.last_error = Some(e);
-                        if attempt > 0 || !self.hardware {
+                        if attempt > 0 || self.hwaccel.is_none() {
                             return None;
                         }
                         self.software.insert(source.path.clone(), true);
@@ -580,10 +589,10 @@ mod tests {
                 h: 1080,
             },
             12.5,
-            true,
+            Some("d3d11va"),
         );
         let s = a.join(" ");
-        assert!(s.contains("-hwaccel auto -ss 12.500000 -i /v.mov"));
+        assert!(s.contains("-hwaccel d3d11va -ss 12.500000 -i /v.mov"));
         assert!(s.contains("-fps_mode cfr -r 23.976"));
         assert!(s.contains("scale=1920:1080:flags=fast_bilinear,format=nv12"));
         assert!(s.ends_with("-f rawvideo -pix_fmt nv12 pipe:1"));
@@ -595,7 +604,7 @@ mod tests {
                 h: 2
             },
             -1.0,
-            false
+            None
         )
         .join(" ")
         .contains("hwaccel"));
@@ -628,7 +637,7 @@ mod tests {
             w: 64,
             h: 48,
         };
-        let mut d = Decoders::new(ffmpeg, false);
+        let mut d = Decoders::new(ffmpeg, None);
         let deadline = || Instant::now() + Duration::from_secs(20);
         for (t, n) in [(1.0, 25u8), (1.04, 26), (1.08, 27), (0.2, 5), (1.6, 40)] {
             let g = d.get("clip", &src, t, deadline()).expect("a frame");

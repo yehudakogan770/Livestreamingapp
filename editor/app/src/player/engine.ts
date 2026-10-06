@@ -12,7 +12,7 @@ import { matteFor, mattes } from '../vision/mattes';
 import type { NativeTick } from '../render/native/client';
 import { audioAt, dbToGain, heardTracks, type Heard } from './audio';
 import { playbackFile } from './files';
-import { FrameCache, aheadCount, framesAhead } from './framecache';
+import { FrameCache, aheadCount, frameKey, framesAhead } from './framecache';
 import { VoiceChain, type Measure } from './voice';
 
 /** Sound and stills: the original, or its edit-friendly copy. */
@@ -28,6 +28,10 @@ export interface PlaybackStats {
   late: number;
   /** How long drawing a frame takes (ms, averaged). */
   composeMs: number;
+  /** Frames drawn in the last second while playing (what playback achieves). */
+  fps: number;
+  /** Frames drawn from the render cache while playing. */
+  cached: number;
 }
 
 /** How often the panels hear about the playhead while playing (the playhead line and clock follow every frame on their own). */
@@ -110,9 +114,13 @@ export class Engine {
   private rvfc = false;
   private opsAt: { p: Project | null; frame: number } = { p: null, frame: -1 };
   private ahead: { p: Project | null; frame: number; ops: Op[] } = { p: null, frame: -1e9, ops: [] };
-  readonly stats: PlaybackStats = { drawn: 0, dropped: 0, late: 0, composeMs: 0 };
+  readonly stats: PlaybackStats = { drawn: 0, dropped: 0, late: 0, composeMs: 0, fps: 0, cached: 0 };
   /** Native playback (beta): draws the program monitor instead of WebGL when it can (render/native/client.ts). */
   native: { drive(t: NativeTick): boolean } | null = null;
+  /** When frames were drawn while playing (the last second's, for the frame rate achieved). */
+  private drawTimes: number[] = [];
+  /** Cached pictures of heavy stretches (the render cache), when made and up to date. */
+  cached: ((p: Project, s: Sequence, frame: number) => Op[] | null) | null = null;
 
   constructor() {
     this.cache.onReady = () => (this.dirty = true);
@@ -134,7 +142,49 @@ export class Engine {
 
   /** Start counting dropped frames again. */
   resetStats() {
-    Object.assign(this.stats, { drawn: 0, dropped: 0, late: 0 });
+    Object.assign(this.stats, { drawn: 0, dropped: 0, late: 0, fps: 0, cached: 0 });
+    this.drawTimes = [];
+  }
+
+  /** The project being played (null before one is opened). */
+  get project(): Project | null {
+    return this.p;
+  }
+
+  /** The sequence's frame rate (what playback aims for). */
+  get targetFps(): number {
+    return this.seq ? rate(this.seq) : 30;
+  }
+
+  /**
+   * What to draw at a frame: the render cache's picture when it has one and
+   * its file is ready to show, else every layer (the cache file is loaded
+   * meanwhile, so the next frames come from it).
+   */
+  private opsFor(s: Sequence, frame: number, slot: 'now' | 'ahead'): Op[] {
+    const p = this.p as Project;
+    // A grade node's matte shows the real layers.
+    const c = this.matte ? null : (this.cached?.(p, s, frame) ?? null);
+    this.warming.delete(slot);
+    // While playing through a cached stretch it stays cached (a video catching up shows its nearest decoded frame).
+    const still =
+      slot === 'now' && this.playing && c?.[0]?.kind === 'layer' && this.lastOps[0]?.kind === 'layer' && this.lastOps[0].layer.key === c[0].layer.key;
+    if (c && (still || this.ready(c))) return c;
+    if (c) this.warming.set(slot, c);
+    return frameOps(p, s, frame);
+  }
+
+  /** Cached pictures being loaded (shown once ready). */
+  private warming = new Map<'now' | 'ahead', Op[]>();
+
+  /** Can a cached picture be shown now (its video showing, or the frame decoded)? */
+  private ready(ops: Op[]): boolean {
+    const op = ops[0];
+    const l = op?.kind === 'layer' ? op.layer : null;
+    if (l?.source?.kind !== 'video') return true;
+    const v = this.videos.get(l.key);
+    if (v && v.el.readyState >= 2 && !v.el.seeking) return true;
+    return !!this.cache.store.peek(frameKey(this.videoFile(l.source.media), l.source.time, l.source.media.fps || 30));
   }
 
   get time(): number {
@@ -325,10 +375,17 @@ export class Engine {
       if (performance.now() - this.lastEmit >= UI_EVERY_MS) this.emit();
     }
     const frame = Math.floor(this.frame);
+    // A cached picture that was loading is ready: show it.
+    const now = this.warming.get('now');
+    if (now && this.ready(now)) {
+      this.warming.delete('now');
+      this.opsAt.frame = -1;
+      this.dirty = true;
+    }
     // The frame's layers are worked out once per frame (not every screen refresh).
     let ops = this.lastOps;
     if (this.opsAt.p !== this.p || this.opsAt.frame !== frame) {
-      ops = frameOps(this.p, s, frame);
+      ops = this.opsFor(s, frame, 'now');
       this.lastOps = ops;
       this.opsAt = { p: this.p, frame };
     }
@@ -345,6 +402,11 @@ export class Engine {
           if (jump > allowed && jump < fps * 2) this.stats.dropped += jump - allowed;
         }
         this.stats.drawn++;
+        if (ops.length === 1 && ops[0]?.kind === 'layer' && ops[0].layer.key.startsWith('rcache:')) this.stats.cached++;
+        const now = performance.now();
+        this.drawTimes.push(now);
+        while (this.drawTimes.length && (this.drawTimes[0] as number) < now - 1000) this.drawTimes.shift();
+        this.stats.fps = this.drawTimes.length;
         this.lastDrawn = frame;
       }
       this.dirty = false;
@@ -405,7 +467,7 @@ export class Engine {
     const a = this.ahead;
     if (!this.p) return [];
     if (a.p !== this.p || Math.abs(frame - a.frame) >= 6) {
-      this.ahead = { p: this.p, frame, ops: frameOps(this.p, s, frame + Math.round(fps * 0.8 * Math.max(1, this.speed))) };
+      this.ahead = { p: this.p, frame, ops: this.opsFor(s, frame + Math.round(fps * 0.8 * Math.max(1, this.speed)), 'ahead') };
     }
     return this.ahead.ops;
   }
@@ -494,6 +556,8 @@ export class Engine {
   private syncVideo(ops: Op[], s: Sequence, frame: number, fps: number) {
     const now = performance.now();
     const needs = videoNeeds(ops);
+    // Render cache files about to be shown are loaded too.
+    for (const w of this.warming.values()) for (const n of videoNeeds(w)) if (!needs.some((x) => x.key === n.key)) needs.push(n);
     // Get the next second ready too, so cuts don't wait for the file to load.
     if (this.playing && this.speed > 0 && this.p) {
       for (const n of videoNeeds(this.aheadOps(s, frame, fps))) if (!needs.some((x) => x.key === n.key)) needs.push(n);

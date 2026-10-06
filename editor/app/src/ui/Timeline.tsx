@@ -1,5 +1,31 @@
+import {
+  ArrowLeftToLine,
+  Bookmark,
+  ChevronsLeftRight,
+  Eye,
+  EyeOff,
+  Film,
+  Hand,
+  Headphones,
+  Link2,
+  Lock,
+  LockOpen,
+  Magnet,
+  Maximize2,
+  MousePointer2,
+  MoveHorizontal,
+  Scissors,
+  Type,
+  type LucideIcon,
+  UnfoldHorizontal,
+  Volume2,
+  VolumeX,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { valueAt } from '../model/anim';
+import { CacheBar } from '../cache/CacheBar';
 import { duration, parseTimecode, timecode } from '../model/build';
 import {
   addSequenceClip,
@@ -34,21 +60,27 @@ import { pins, type Pin } from '../collab/comments';
 import { useCollab, type Collab } from '../collab/session';
 
 const RULER = 28;
+/** Level meter zones: [from dB, to dB, color]. */
+export const METER_ZONES: [number, number, string][] = [
+  [-90, -18, '#2f9a55'],
+  [-18, -6, '#d6a93a'],
+  [-6, 6, '#e0453a'],
+];
 const HEAD = 190;
 const EDGE = 7;
 
 type Preview = { ids: Set<string>; frames: number; dv: number; da: number; copy: boolean } | null;
 type Marquee = { x0: number; y0: number; x1: number; y1: number } | null;
 
-const TOOLS: [Tool, string, string, string][] = [
-  ['select', '↖', 'Selection', 'V'],
-  ['ripple', '⇤', 'Ripple edit: trims and moves what follows', 'B'],
-  ['roll', '⇹', 'Rolling edit: moves a cut between two clips', 'N'],
-  ['razor', '✂', 'Razor: cut a clip in two', 'C'],
-  ['slip', '⇔', 'Slip: show another part of the clip, in the same place', 'Y'],
-  ['slide', '⇆', 'Slide: move a clip between its neighbors', 'U'],
-  ['hand', '✥', 'Hand: drag the timeline along', 'H'],
-  ['text', 'T', 'Type: click on the timeline to add words', 'T'],
+const TOOLS: [Tool, LucideIcon, string, string][] = [
+  ['select', MousePointer2, 'Selection', 'V'],
+  ['ripple', ArrowLeftToLine, 'Ripple edit: trims and moves what follows', 'B'],
+  ['roll', UnfoldHorizontal, 'Rolling edit: moves a cut between two clips', 'N'],
+  ['razor', Scissors, 'Razor: cut a clip in two', 'C'],
+  ['slip', ChevronsLeftRight, 'Slip: show another part of the clip, in the same place', 'Y'],
+  ['slide', MoveHorizontal, 'Slide: move a clip between its neighbors', 'U'],
+  ['hand', Hand, 'Hand: drag the timeline along', 'H'],
+  ['text', Type, 'Type: click on the timeline to add words', 'T'],
 ];
 
 export function clipColor(p: Project, c: Clip): string {
@@ -521,7 +553,7 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
         <SequenceTabs doc={doc} ui={ui} />
         <PlayheadTime engine={engine} fps={fps} />
         <div className="tl__toolset" role="toolbar" aria-label="Tools">
-          {TOOLS.map(([t, icon, name, key]) => (
+          {TOOLS.map(([t, Icon, name, key]) => (
             <button
               key={t}
               type="button"
@@ -531,7 +563,7 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
               aria-pressed={u.tool === t}
               onClick={() => actions.tool(t)}
             >
-              {icon}
+              <Icon />
             </button>
           ))}
         </div>
@@ -542,7 +574,8 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
           aria-pressed={u.snapping}
           onClick={actions.snapping}
         >
-          ⊓ Snap
+          <Magnet />
+          Snap
         </button>
         <button
           type="button"
@@ -551,15 +584,17 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
           aria-pressed={u.linked}
           onClick={actions.linkedSelection}
         >
+          <Link2 />
           Linked
         </button>
         <button type="button" className="tl__toggle" title="Add a marker (M)" onClick={actions.marker}>
-          ▾ Marker
+          <Bookmark />
+          Marker
         </button>
         <span className="tl__fill" />
         <span className="tl__len">{duration(len / fps)}</span>
-        <button type="button" className="tbtn" aria-label="Zoom out" title="Zoom out (-)" onClick={() => actions.zoom(1 / 1.5)}>
-          −
+        <button type="button" className="tbtn tbtn--icon" aria-label="Zoom out" title="Zoom out (-)" onClick={() => actions.zoom(1 / 1.5)}>
+          <ZoomOut />
         </button>
         <input
           className="tl__zoom"
@@ -571,10 +606,11 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
           aria-label="Zoom"
           onChange={(e) => ui.set({ zoom: Math.exp(Number(e.target.value)) })}
         />
-        <button type="button" className="tbtn" aria-label="Zoom in" title="Zoom in (=)" onClick={() => actions.zoom(1.5)}>
-          +
+        <button type="button" className="tbtn tbtn--icon" aria-label="Zoom in" title="Zoom in (=)" onClick={() => actions.zoom(1.5)}>
+          <ZoomIn />
         </button>
         <button type="button" className="btn btn--sm" title="See the whole sequence (\)" onClick={() => actions.zoomToFit(size.w)}>
+          <Maximize2 />
           Fit
         </button>
       </div>
@@ -714,7 +750,8 @@ function SequenceTabs({ doc, ui }: { doc: Doc; ui: Ui }) {
   if (project.sequences.length < 2)
     return (
       <button type="button" className="tl__seq" title="Sequence settings" onClick={() => ui.set({ dialog: 'sequence' })}>
-        {current(project).name}
+        <Film />
+        <span>{current(project).name}</span>
       </button>
     );
   return (
@@ -812,7 +849,7 @@ function TrackHead({
       <button
         type="button"
         className={`th__target${targeted ? ' is-on' : ''}`}
-        title="Target: Insert and Overwrite put clips on this track"
+        title={`Target ${t.name}: Insert and Overwrite put clips on this track`}
         aria-pressed={targeted}
         onClick={() => ui.set(t.kind === 'video' ? { targetVideo: targeted ? null : t.id } : { targetAudio: targeted ? null : t.id })}
       >
@@ -844,20 +881,22 @@ function TrackHead({
           type="button"
           className={`th__btn${t.locked ? ' is-on' : ''}`}
           title={t.locked ? 'Unlock' : 'Lock (nothing on it changes)'}
+          aria-label="Lock"
           aria-pressed={t.locked}
           onClick={() => set({ locked: !t.locked }, 'Lock track')}
         >
-          {t.locked ? 'Locked' : 'Lock'}
+          {t.locked ? <Lock /> : <LockOpen />}
         </button>
         {t.kind === 'video' ? (
           <button
             type="button"
             className={`th__btn${t.off ? ' is-on' : ''}`}
             title={t.off ? 'Show this track' : 'Hide this track'}
+            aria-label="Hide"
             aria-pressed={t.off}
             onClick={() => set({ off: !t.off }, 'Hide track')}
           >
-            {t.off ? '◌' : '◉'}
+            {t.off ? <EyeOff /> : <Eye />}
           </button>
         ) : (
           <>
@@ -865,19 +904,21 @@ function TrackHead({
               type="button"
               className={`th__btn th__btn--m${t.off ? ' is-on' : ''}`}
               title="Mute"
+              aria-label="Mute"
               aria-pressed={t.off}
               onClick={() => set({ off: !t.off }, 'Mute track')}
             >
-              M
+              {t.off ? <VolumeX /> : <Volume2 />}
             </button>
             <button
               type="button"
               className={`th__btn th__btn--s${t.solo ? ' is-on' : ''}`}
               title="Solo (hear only this)"
+              aria-label="Solo"
               aria-pressed={t.solo}
               onClick={() => set({ solo: !t.solo }, 'Solo track')}
             >
-              S
+              <Headphones />
             </button>
             <button
               type="button"
@@ -989,7 +1030,7 @@ const ClipBox = memo(function ClipBox({
       {kind === 'video' && m && m.kind !== 'audio' && h >= 34 && w > 40 && (
         <Thumbs c={c} m={m} fps={fps} zoom={zoom} h={h - 4} from={visFrom} to={visTo} offset={angleOffset} />
       )}
-      {kind === 'audio' && peaks && <Wave c={c} m={m} peaks={peaks} fps={fps} zoom={zoom} h={h - 4} from={visFrom} to={visTo} />}
+      {kind === 'audio' && peaks && <Wave c={c} m={m} peaks={peaks} fps={fps} zoom={zoom} h={Math.max(8, h - 20)} from={visFrom} to={visTo} />}
       <span className="clip__name" style={{ left: Math.max(4, visFrom - 36) }}>
         {fx && (
           <b className="clip__fx" title="Has effects">
@@ -1139,8 +1180,10 @@ function Wave({
     cv.width = width;
     cv.height = h;
     ctx.clearRect(0, 0, width, h);
-    ctx.fillStyle = 'rgba(255,255,255,0.42)';
-    const mid = h / 2;
+    const mid = Math.round(h / 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(0, mid, width, 1);
+    ctx.fillStyle = 'rgba(190,208,198,0.62)';
     for (let px = 0; px < width; px++) {
       const f0 = (from + px) / zoom;
       const f1 = (from + px + 1) / zoom;
@@ -1150,8 +1193,8 @@ function Wave({
       const b = Math.max(a + 1, Math.ceil(Math.max(t0, t1) * 100));
       let peak = 0;
       for (; a < b; a++) peak = Math.max(peak, peaks[a] ?? 0);
-      const v = (peak / 255) * (h / 2 - 2);
-      ctx.fillRect(px, mid - v, 1, v * 2);
+      const v = Math.round((peak / 255) * (h / 2 - 3));
+      if (v > 0) ctx.fillRect(px, mid - v, 1, v * 2 + 1);
     }
   }, [c, m, peaks, fps, zoom, h, from, width]);
   return <canvas ref={ref} className="clip__wave" style={{ left: from, width, height: h }} />;
@@ -1218,6 +1261,7 @@ function Ruler({
           {m.name && zoom * 60 > m.name.length * 6 ? <span>{m.name}</span> : null}
         </button>
       ))}
+      <CacheBar p={doc.project} s={s} zoom={zoom} from={from} width={width} />
       {commentPins.map((p) => (
         <button
           key={`c${p.frame}`}
@@ -1292,15 +1336,18 @@ function Meters({ engine }: { engine: Engine }) {
         holds[i] = Math.max(db, (holds[i] ?? -90) - 0.25);
         const y = (d: number) => h - (Math.max(0, d + 60) / 66) * h;
         const x = 3 + i * 9;
-        ctx.fillStyle = '#1c1c1e';
+        ctx.fillStyle = '#121417';
         ctx.fillRect(x, 0, 7, h);
         const top = y(peaks[i] ?? -90);
-        const grad = ctx.createLinearGradient(0, h, 0, 0);
-        grad.addColorStop(0, '#2f8f4e');
-        grad.addColorStop(0.75, '#c9b23a');
-        grad.addColorStop(0.92, '#d2453a');
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, top, 7, h - top);
+        // Solid zones, as on a desk: green to -18 dB, amber to -6, red above.
+        for (const [lo, hi, col] of METER_ZONES) {
+          const a = Math.max(top, y(hi));
+          const b = y(lo);
+          if (b > a) {
+            ctx.fillStyle = col;
+            ctx.fillRect(x, a, 7, b - a);
+          }
+        }
         ctx.fillStyle = (holds[i] ?? -90) > -1 ? '#ff4b3e' : '#e8e8e8';
         ctx.fillRect(x, y(holds[i] ?? -90), 7, 1.5);
       });

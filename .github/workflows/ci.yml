@@ -114,6 +114,110 @@ jobs:
             target/release/bundle/nsis/Lumora Studio_*.sig
           if-no-files-found: error
 
+  # The real programs, started and clicked through on Windows (tauri-driver +
+  # WebdriverIO, see e2e/). It runs after the installers are made and reports
+  # (job summary, screenshots in the e2e-results artifact), but never blocks a
+  # release: nothing needs it, and it may fail without failing the run.
+  #   1. The installers from the jobs above: installed, they start and ask to sign in.
+  #   2. Test builds made here with VITE_LUMORA_E2E=1, which skips the sign-in
+  #      (app/src/e2e.ts). They are never uploaded or shipped; the installers
+  #      are built without it, so people can't skip the sign-in.
+  e2e:
+    name: End-to-end smoke tests (Windows)
+    runs-on: windows-latest
+    needs: [windows, windows-edit]
+    continue-on-error: true
+    timeout-minutes: 120
+    env:
+      LUMORA_VERSION: 0.1.${{ github.run_number }}
+      # The test builds don't ship: build them quicker.
+      CARGO_PROFILE_RELEASE_LTO: 'off'
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: '16'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@1.98.1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: e2e
+      - uses: actions/cache@v4
+        with:
+          path: ffmpeg-cache
+          key: ffmpeg-win64-7.1-v1
+      - run: npm ci
+
+      - name: Download the installers
+        uses: actions/download-artifact@v4
+        with:
+          name: Lumora-Setup-windows
+          path: installers/lumora
+      - uses: actions/download-artifact@v4
+        with:
+          name: Lumora-Studio-Setup-windows
+          path: installers/studio
+      - name: Install them (silently, as an administrator would)
+        shell: pwsh
+        run: |
+          foreach ($p in @(@('lumora', 'LUMORA_INSTALLED', 'Lumora'), @('studio', 'STUDIO_INSTALLED', 'Lumora Studio'))) {
+            $setup = Get-ChildItem "installers/$($p[0])" -Filter *.exe | Select-Object -First 1
+            Write-Host "Installing $($setup.Name)"
+            Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait
+            $dirs = @("$env:ProgramFiles\$($p[2])", "$env:LOCALAPPDATA\Programs\$($p[2])", "$env:LOCALAPPDATA\$($p[2])")
+            $exe = Get-ChildItem $dirs -Filter *.exe -ErrorAction SilentlyContinue |
+              Where-Object { $_.Name -notmatch '^(uninstall|ffmpeg)' } | Select-Object -First 1
+            if ($exe) { "$($p[1])=$($exe.FullName)" >> $env:GITHUB_ENV; Write-Host "Installed: $($exe.FullName)" }
+            else { Write-Host "::warning::$($p[2]) was not found after installing" }
+          }
+
+      - name: Get the test builds ready (version, FFmpeg)
+        shell: bash
+        run: |
+          scripts/ci-windows.sh src-tauri/tauri.conf.json src-tauri
+          scripts/ci-windows.sh editor/src-tauri/tauri.conf.json editor/src-tauri
+      - name: Make the test builds (no sign-in; never shipped)
+        shell: bash
+        env:
+          VITE_LUMORA_E2E: '1'
+        run: |
+          npx tauri build --no-bundle
+          (cd editor && npx tauri build --no-bundle)
+          ls -la target/release/*.exe
+          studio=$(ls "target/release/Lumora Studio.exe" target/release/lumora-edit.exe 2>/dev/null | head -1 || true)
+          echo "LUMORA_TEST=$(cygpath -w "$PWD/target/release/lumora.exe")" >> "$GITHUB_ENV"
+          echo "STUDIO_TEST=$(cygpath -w "$PWD/$studio")" >> "$GITHUB_ENV"
+
+      - name: tauri-driver, and msedgedriver to match WebView2
+        shell: pwsh
+        run: |
+          cargo install tauri-driver --locked
+          ./e2e/setup-msedgedriver.ps1
+      - name: Demo media for Lumora Studio
+        shell: bash
+        run: |
+          ffmpeg=$(cygpath -w "$PWD/ffmpeg-cache/ffmpeg.exe")
+          media=$(cygpath -w "$RUNNER_TEMP/demo-media")
+          FFMPEG="$ffmpeg" node e2e/make-media.mjs "$media"
+          echo "FFMPEG=$ffmpeg" >> "$GITHUB_ENV"
+          echo "E2E_MEDIA=$media" >> "$GITHUB_ENV"
+
+      - name: Run the smoke tests
+        shell: bash
+        working-directory: e2e
+        run: |
+          npm ci --no-audit --no-fund
+          node run.mjs
+      - name: Keep the screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: e2e/results
+          if-no-files-found: warn
+          retention-days: 14
+
   release:
     name: Public download and update
     runs-on: ubuntu-latest

@@ -1,3 +1,4 @@
+import { Activity, ChevronLeft, ChevronRight, ClipboardPaste, Copy, Layers, Palette, Plus, RotateCcw, Split, Trash2, Workflow } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { valueAt, setValue } from '../model/anim';
 import {
@@ -156,13 +157,18 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
     <div className="colorp">
       <div className="colorp__nodes">
         <div className="ngraph__bar">
+          <span className="ngraph__title">
+            <Workflow />
+            Nodes
+          </span>
           <button
             type="button"
             className="btn btn--sm"
             title="A new node after this one"
             onClick={() => addNode('Add node', (g, id, n) => addSerial(g, id, n))}
           >
-            + Serial
+            <Plus />
+            Serial
           </button>
           <button
             type="button"
@@ -170,7 +176,8 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
             title="A new node beside this one: both start from the same picture and their changes are added up"
             onClick={() => addNode('Add parallel node', (g, id, n) => addBeside(g, id, 'parallel', n))}
           >
-            + Parallel
+            <Split />
+            Parallel
           </button>
           <button
             type="button"
@@ -178,7 +185,8 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
             title="A new node layered over this one: where its qualifier or window lets it, it covers the nodes under it"
             onClick={() => addNode('Add layer node', (g, id, n) => addBeside(g, id, 'layer', n))}
           >
-            + Layer
+            <Layers />
+            Layer
           </button>
           <span className="ngraph__gap" />
           <button
@@ -188,7 +196,7 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
             aria-label="Move node earlier"
             onClick={() => change('Move node', (g, id) => nudgeNode(g, id, -1))}
           >
-            ◂
+            <ChevronLeft />
           </button>
           <button
             type="button"
@@ -197,13 +205,15 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
             aria-label="Move node later"
             onClick={() => change('Move node', (g, id) => nudgeNode(g, id, 1))}
           >
-            ▸
+            <ChevronRight />
           </button>
           <button type="button" className="btn btn--sm" title="Back to doing nothing" onClick={() => change('Reset node', (g, id) => resetNode(g, id))}>
-            Reset node
+            <RotateCcw />
+            Reset
           </button>
           <button type="button" className="btn btn--sm" title="Take this node out" onClick={() => change('Delete node', (g, id) => removeNode(g, id))}>
-            Delete node
+            <Trash2 />
+            Delete
           </button>
           <span className="ngraph__gap" />
           <button
@@ -216,6 +226,7 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
               ui.note(`Copied the grade of ${clip.name}`);
             }}
           >
+            <Copy />
             Copy grade
           </button>
           <button
@@ -225,6 +236,7 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
             title="Put the copied grade on the selected clips (or this one)"
             onClick={pasteGrade}
           >
+            <ClipboardPaste />
             Paste grade
           </button>
         </div>
@@ -241,6 +253,7 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
       </div>
       <div className="colorp__col colorp__col--wheels">
         <h3>
+          <Palette />
           Color wheels{' '}
           <small>
             {clip.name} · node {tag}
@@ -256,7 +269,7 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
               )
             }
           >
-            ↺
+            <RotateCcw />
           </button>
         </h3>
         <div className="wheels">
@@ -303,7 +316,7 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
                 )
               }
             >
-              ↺
+              <RotateCcw />
             </button>
           }
         >
@@ -336,7 +349,8 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
             + LUT
           </button>
           <button type="button" className="btn btn--sm" onClick={() => actions.addEffect([clip.id], 'vignette')}>
-            + Vignette
+            <Plus />
+            Vignette
           </button>
           <button
             type="button"
@@ -757,7 +771,7 @@ function CurvesEditor({ set, onChange }: { set: CurveSet; onChange: (s: CurveSet
             )
           }
         >
-          ↺
+          <RotateCcw />
         </button>
       }
     >
@@ -846,6 +860,8 @@ export function Scopes({ engine, ui }: { engine: Engine; ui: Ui }) {
   return (
     <div className="scopes">
       <div className="scopes__head">
+        <Activity />
+        <span className="scopes__title">Scopes</span>
         <Choice
           value={u.scope}
           options={[

@@ -46,8 +46,8 @@ pub enum Target {
 #[derive(Debug, Clone)]
 pub struct Config {
     pub ffmpeg: PathBuf,
-    /// Decode on the graphics card when FFmpeg can.
-    pub hardware: bool,
+    /// FFmpeg's hardware decoder (`-hwaccel` method: `d3d11va`, `cuda`, `auto`…), or none for software.
+    pub hwaccel: Option<String>,
 }
 
 #[derive(Default)]
@@ -258,7 +258,7 @@ impl Worker {
         Ok(Self {
             gpu,
             surface: surface.map(|s| (s, None)),
-            decoders: Decoders::new(config.ffmpeg, config.hardware),
+            decoders: Decoders::new(config.ffmpeg, config.hwaccel),
             shared,
             events,
             queue: Queue::new(),

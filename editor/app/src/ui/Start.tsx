@@ -1,3 +1,4 @@
+import { Cctv, Clapperboard, FileDown, FolderOpen, History, Plus, X } from 'lucide-react';
 import { useState } from 'react';
 import { forget, recentList } from '../recent';
 import { folderOf } from '../native';
@@ -30,22 +31,35 @@ export function Start({
           </p>
           <div className="start__buttons">
             <button type="button" className="btn btn--primary btn--big start__open" onClick={onNew}>
+              <Plus />
               New project…
             </button>
             <button type="button" className="btn btn--big start__open" onClick={onChoose}>
+              <FolderOpen />
               Open…
             </button>
           </div>
-          <p className="start__hint">Or drag a project or event file onto this window.</p>
+          <p className="start__hint">
+            <FileDown />
+            Or drag a project or event file onto this window.
+          </p>
           {problem && <p className="start__problem">{problem}</p>}
         </div>
         <div className="start__recent">
-          <h2>Recent</h2>
+          <h2>
+            <History />
+            Recent
+          </h2>
           {recent.length === 0 && <p className="start__empty">Events you open show up here.</p>}
           <ul>
             {recent.map((r) => (
               <li key={r.path}>
                 <button type="button" className="start__item" onClick={() => onOpen(r.path)} title={r.path}>
+                  {/\.lumora$/i.test(r.path) ? (
+                    <Cctv className="start__kind" aria-label="An event Lumora recorded" />
+                  ) : (
+                    <Clapperboard className="start__kind" aria-label="A Lumora Studio project" />
+                  )}
                   <span className="start__name">{r.name}</span>
                   <span className="start__where">{folderOf(r.path)}</span>
                   <span className="start__when">{new Date(r.at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -60,7 +74,7 @@ export function Start({
                     setRecent(recentList());
                   }}
                 >
-                  ✕
+                  <X />
                 </button>
               </li>
             ))}

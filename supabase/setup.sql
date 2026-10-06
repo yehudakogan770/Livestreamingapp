@@ -2,7 +2,8 @@
 -- (Supabase → SQL Editor → New query → paste all of this → Run).
 --
 -- It also sets up Lumora Studio's team projects (at the end; the same as
--- update-2-editor-collab.sql).
+-- update-2-editor-collab.sql). Afterwards, run update-3-reports.sql too
+-- (error reports and "Report a problem").
 --
 -- Every account gets a profile. New accounts wait for approval. The very first
 -- account made is the Lumora team's: approved, and able to approve others.

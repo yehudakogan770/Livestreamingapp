@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { authOn } from './config';
+import { TEST_BUILD } from '../e2e';
 import type { Access } from './access';
 import { checkAccess, onSignInChange, signIn, signOut, signUp } from './auth';
 import '../views/ControlView.css';
@@ -30,11 +31,13 @@ export function Gate({ children }: { children: ReactNode }) {
       .then((access) => setGate(access ? { s: 'in', access } : { s: 'out' }))
       .catch((e: unknown) => setGate({ s: 'error', message: e instanceof Error ? e.message : String(e) }));
   }, []);
+  // The end-to-end test build (CI only, never an installer) has no sign-in: see e2e.ts.
+  const locked = authOn() && !TEST_BUILD;
   useEffect(() => {
-    if (!authOn()) return;
+    if (!locked) return;
     check();
     return onSignInChange(check);
-  }, [check]);
+  }, [check, locked]);
   // Waiting for approval: look again every 20 seconds.
   const waiting = gate.s === 'in' && gate.access.state === 'pending';
   useEffect(() => {
@@ -44,7 +47,7 @@ export function Gate({ children }: { children: ReactNode }) {
   }, [waiting, check]);
   const leave = useCallback(() => void signOut().then(() => setGate({ s: 'out' })), []);
 
-  if (!authOn()) return <>{children}</>;
+  if (!locked) return <>{children}</>;
   if (gate.s === 'in' && gate.access.state === 'approved') {
     return <AccessCtx.Provider value={{ access: gate.access, signOut: leave }}>{children}</AccessCtx.Provider>;
   }

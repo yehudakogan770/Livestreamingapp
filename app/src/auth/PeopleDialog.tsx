@@ -2,8 +2,9 @@ import { Users, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { Profile } from './access';
 import { listPeople, setPerson } from './auth';
+import { ReportsAdmin } from '../reports/ReportsAdmin';
 
-type Filter = 'waiting' | 'approved' | 'blocked' | 'all';
+type Filter = 'waiting' | 'approved' | 'blocked' | 'all' | 'problems';
 const stateOf = (p: Profile) => (p.blocked ? 'blocked' : p.approved ? 'approved' : 'pending');
 
 /** For the Lumora team: approve new accounts, or turn access off. */
@@ -53,8 +54,16 @@ export function PeopleDialog({ onClose }: { onClose: () => void }) {
               {f === 'waiting' ? `Waiting (${waiting})` : f === 'approved' ? 'Approved' : f === 'blocked' ? 'Blocked' : 'Everyone'}
             </button>
           ))}
+          <button type="button" className="seg" aria-pressed={filter === 'problems'} onClick={() => setFilter('problems')}>
+            Problems reported
+          </button>
         </div>
-        <div className="people__body">
+        {filter === 'problems' && (
+          <div className="people__body">
+            <ReportsAdmin />
+          </div>
+        )}
+        <div className="people__body" hidden={filter === 'problems'}>
           {error && <p className="field__note">{error}</p>}
           {people === null && !error && <p className="people__empty">Loading…</p>}
           {people !== null && shown.length === 0 && (

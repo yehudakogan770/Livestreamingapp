@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useState } from 'react';
 import { addSequence, duration, updateSequence } from '../model/build';
 import { current, rate } from '../model/seq';
@@ -54,7 +55,7 @@ export function SequenceDialog({ doc, ui, fresh }: { doc: Doc; ui: Ui; fresh: bo
               aria-label="Width"
               onChange={(e) => setW(Number(e.target.value))}
             />
-            ×
+            <X />
             <input
               className="text text--num"
               type="number"

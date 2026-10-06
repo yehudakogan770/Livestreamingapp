@@ -3,18 +3,33 @@
 //! made from the original rather than from its edit-friendly copy.
 
 use std::collections::HashMap;
+use std::ffi::OsString;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdout, Stdio};
 use std::sync::Mutex;
 
-use crate::formats::{plan, reader_args};
+use crate::formats::{plan, reader_args_with};
 use crate::media::{probe, quiet};
 
 struct Reader {
     child: Child,
     out: ChildStdout,
     frame: usize,
+    /// How to start FFmpeg again in software when the hardware decoder gives nothing.
+    again: Option<(PathBuf, Vec<OsString>)>,
+}
+
+/// Start FFmpeg handing over frames.
+fn spawn(ffmpeg: &Path, args: &[OsString]) -> Result<(Child, ChildStdout), String> {
+    let mut child = quiet(ffmpeg)
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|e| format!("FFmpeg could not start: {e}"))?;
+    let out = child.stdout.take().ok_or("FFmpeg gave no frames.")?;
+    Ok((child, out))
 }
 
 impl Drop for Reader {
@@ -61,25 +76,37 @@ impl Readers {
         }
         let info = probe(ffmpeg, file)?;
         let plan = plan(file, &info);
-        let mut child = quiet(ffmpeg)
-            .args(reader_args(
+        let args = |decode: &[OsString]| {
+            reader_args_with(
                 file,
                 &plan,
                 from.max(0.0),
                 rate,
-                width,
-                height,
+                (width, height),
                 plan.tone_map,
-            ))
-            .stdout(Stdio::piped())
-            .stderr(Stdio::null())
-            .spawn()
-            .map_err(|e| format!("FFmpeg could not start: {e}"))?;
-        let out = child.stdout.take().ok_or("FFmpeg gave no frames.")?;
+                decode,
+            )
+        };
+        // The hardware decoder first (software again if it gives nothing).
+        let decode = crate::hwaccel::global().args(ffmpeg);
+        let soft = args(&[]);
+        let (child, out, again) = if decode.is_empty() {
+            let (c, o) = spawn(ffmpeg, &soft)?;
+            (c, o, None)
+        } else {
+            match spawn(ffmpeg, &args(&decode)) {
+                Ok((c, o)) => (c, o, Some((ffmpeg.to_path_buf(), soft))),
+                Err(_) => {
+                    let (c, o) = spawn(ffmpeg, &soft)?;
+                    (c, o, None)
+                }
+            }
+        };
         let reader = Reader {
             child,
             out,
             frame: frame_bytes(width, height),
+            again,
         };
         let id = {
             let mut n = self.next.lock().map_err(|e| e.to_string())?;
@@ -106,7 +133,22 @@ impl Readers {
             .remove(&id)
             .ok_or("That reader is closed.")?;
         let mut buf = vec![0u8; r.frame];
-        let got = read_full(&mut r.out, &mut buf);
+        let mut got = read_full(&mut r.out, &mut buf);
+        // The first frame: the hardware decoder gave nothing, so read in software.
+        if let Some((ffmpeg, soft)) = r.again.take() {
+            if got < buf.len() {
+                if let Ok((child, out)) = spawn(&ffmpeg, &soft) {
+                    let _ = r.child.kill();
+                    let _ = r.child.wait();
+                    r.child = child;
+                    r.out = out;
+                    got = read_full(&mut r.out, &mut buf);
+                    if got == buf.len() {
+                        crate::hwaccel::global().failed("hardware device setup failed");
+                    }
+                }
+            }
+        }
         if got == buf.len() {
             self.open.lock().map_err(|e| e.to_string())?.insert(id, r);
             Ok(buf)

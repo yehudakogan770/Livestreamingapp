@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import type { Engine, PlaybackStats } from '../player/engine';
 import type { Ui } from './state';
+import { renderCache } from '../cache/manager';
+import { playbackReport } from '../cache/report';
 
 /** How playback is keeping up, from the counts: idle (nothing played yet), ok, warn or bad. */
 export function dropLevel(s: Pick<PlaybackStats, 'drawn' | 'dropped' | 'late'>): 'idle' | 'ok' | 'warn' | 'bad' {
@@ -17,15 +19,17 @@ export function DroppedFrames({ engine }: { engine: Engine }) {
     const id = window.setInterval(() => {
       const now = engine.stats;
       setS((was) =>
-        was.dropped === now.dropped && was.late === now.late && was.drawn === now.drawn && Math.abs(was.composeMs - now.composeMs) < 0.2 ? was : { ...now },
+        was.dropped === now.dropped && was.late === now.late && was.drawn === now.drawn && was.fps === now.fps && Math.abs(was.composeMs - now.composeMs) < 0.2
+          ? was
+          : { ...now },
       );
     }, 500);
     return () => window.clearInterval(id);
   }, [engine]);
   const level = dropLevel(s);
   const title =
-    `Dropped frames: ${s.dropped} · late pictures: ${s.late} · drawn: ${s.drawn} · ${s.composeMs.toFixed(1)} ms per frame` +
-    (level === 'bad' || level === 'warn' ? '\nTry proxies, or a lower playback quality.' : '') +
+    playbackReport(s, engine.targetFps, { ...renderCache.stats, mode: renderCache.settings.mode }).join('\n') +
+    (level === 'bad' || level === 'warn' ? '\nTry proxies, the render cache, or a lower playback quality.' : '') +
     '\nClick to count again.';
   return (
     <button type="button" className={`vmon__drops vmon__drops--${level}`} title={title} aria-label="Dropped frames" onClick={() => engine.resetStats()}>

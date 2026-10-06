@@ -19,6 +19,7 @@ serde_json.workspace = true
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+lumora-crash = { path = "../../crates/crash" }
 studio-engine = { package = "lumora-studio-engine", path = "../../crates/studio-engine" }
 
 [target.'cfg(windows)'.dependencies]

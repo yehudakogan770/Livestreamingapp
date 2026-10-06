@@ -110,10 +110,13 @@ pub async fn native_view_start(
         };
         let _ = emitter.emit("native-view", note);
     });
-    let config = Config {
-        ffmpeg,
-        hardware: true,
-    };
+    // The app's hardware decoding (found once, and turned off by the person or after a failure).
+    let probe = ffmpeg.clone();
+    let hwaccel =
+        tauri::async_runtime::spawn_blocking(move || crate::hwaccel::global().method(&probe))
+            .await
+            .map_err(|e| e.to_string())?;
+    let config = Config { ffmpeg, hwaccel };
 
     #[cfg(windows)]
     let running = {

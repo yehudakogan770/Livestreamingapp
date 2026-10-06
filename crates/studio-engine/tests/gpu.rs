@@ -180,7 +180,7 @@ fn the_engine_decodes_converts_and_draws_a_video_frame() {
     let engine = Engine::start(
         Config {
             ffmpeg: ffmpeg.into(),
-            hardware: false,
+            hwaccel: None,
         },
         Target::Offscreen,
         programs(),
@@ -231,7 +231,7 @@ fn the_engine_shows_queued_frames_on_its_clock() {
     let engine = Engine::start(
         Config {
             ffmpeg: "ffmpeg".into(),
-            hardware: false,
+            hwaccel: None,
         },
         Target::Offscreen,
         programs(),

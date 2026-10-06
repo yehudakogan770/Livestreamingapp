@@ -17,6 +17,8 @@ import { demoProject } from './demo';
 import { openShared as loadShared } from './collab/cloud';
 import { applyLinks, loadLinks } from './collab/links';
 import type { Role } from './collab/lock';
+import { ReportingHost } from '../../../app/src/reports/ReportUI';
+import { e2e } from '../../../app/src/e2e';
 
 /** A project opened from online (shared with a team). */
 export interface SharedOpen {
@@ -42,6 +44,7 @@ export function App() {
     <Gate>
       <Main />
       <UpdateBar product="Lumora Studio" />
+      <ReportingHost product="Lumora Studio" />
     </Gate>
   );
 }
@@ -116,6 +119,20 @@ function Main() {
     await native.writeText(picked, JSON.stringify(project));
     remember(picked, project.name);
     setScreen({ s: 'edit', project, savePath: picked });
+  }, []);
+
+  // The end-to-end test build opens the demo project with media the test made (e2e.ts).
+  useEffect(() => {
+    const hooks = e2e();
+    if (!hooks) return;
+    hooks.openDemo = (folder: string) =>
+      void demoProject().then((p) => {
+        // Its media, and the event's own folder (where exports go), are the test's folder.
+        const dir = folder.replace(/\\/g, '/').replace(/\/$/, '');
+        const json = JSON.stringify(p).replaceAll('"/demo/', `"${dir}/`).replaceAll('C:/Users/You/Videos/Lumora/', `${dir}/`);
+        const project = JSON.parse(json) as Project;
+        setScreen({ s: 'edit', project, savePath: '' });
+      });
   }, []);
 
   // Opened by double-clicking a file, or a file dropped on the start screen.

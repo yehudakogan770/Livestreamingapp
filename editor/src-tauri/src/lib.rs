@@ -6,11 +6,13 @@ mod encode;
 mod export;
 mod formats;
 mod frames;
+mod hwaccel;
 mod library;
 mod manage;
 mod mattes;
 mod media;
 mod native_view;
+mod rendercache;
 mod speech;
 
 use std::path::{Path, PathBuf};
@@ -127,19 +129,40 @@ async fn probe_media(state: State<'_, AppState>, path: String) -> Result<media::
 }
 
 /// A lighter copy of a heavy file for smooth playback (progress as `proxy-progress`: [path, 0–1]).
+/// Several are made side by side, each with `threads` of FFmpeg's; the graphics
+/// card's encoder is used when one works (`hardware`, on by default).
 #[tauri::command]
 async fn make_proxy(
     app: tauri::AppHandle,
     state: State<'_, AppState>,
     path: String,
+    threads: Option<u32>,
+    hardware: Option<bool>,
 ) -> Result<String, String> {
     let ffmpeg = state.ffmpeg()?;
     let cache = state.cache.join("proxies");
+    let enc = Arc::clone(&state.encoders);
     tauri::async_runtime::spawn_blocking(move || {
         let p = path.clone();
-        media::playback_proxy(&ffmpeg, Path::new(&path), &cache, &move |done| {
-            let _ = app.emit("proxy-progress", (p.clone(), done));
-        })
+        let encoder = if hardware.unwrap_or(true) {
+            rendercache::hardware_h264(&enc.available(&ffmpeg))
+        } else {
+            None
+        };
+        let how = formats::CopyEncoding {
+            encoder,
+            threads: threads.map(|t| t.clamp(1, 64)),
+            decode: Vec::new(),
+        };
+        media::playback_proxy_with(
+            &ffmpeg,
+            Path::new(&path),
+            &cache,
+            &move |done| {
+                let _ = app.emit("proxy-progress", (p.clone(), done));
+            },
+            &how,
+        )
     })
     .await
     .map_err(|e| e.to_string())?
@@ -406,6 +429,16 @@ fn reveal(path: String) {
     }
 }
 
+/// Crashes since last time (see crates/crash); the screens send them only if
+/// the person agreed to error reports.
+#[tauri::command]
+fn take_crash_reports(app: tauri::AppHandle) -> Vec<lumora_crash::CrashReport> {
+    app.path()
+        .app_data_dir()
+        .map(|dir| lumora_crash::take(&dir))
+        .unwrap_or_default()
+}
+
 /// # Panics
 /// The window can't be made.
 pub fn run() {
@@ -414,6 +447,10 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .setup(|app| {
+            // A crash leaves a note for an (opt-in) error report next time.
+            if let Ok(dir) = app.path().app_data_dir() {
+                lumora_crash::install(dir, app.package_info().version.to_string());
+            }
             let cache = app
                 .path()
                 .app_cache_dir()
@@ -432,6 +469,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            take_crash_reports,
             ffmpeg_found,
             initial_file,
             read_text,
@@ -477,6 +515,15 @@ pub fn run() {
             native_view::native_view_place,
             native_view::native_view_reset,
             native_view::native_view_pixels,
+            rendercache::rcache_folder,
+            rendercache::rcache_list,
+            rendercache::rcache_open,
+            rendercache::rcache_finish,
+            rendercache::rcache_abort,
+            rendercache::rcache_trim,
+            rendercache::rcache_clear,
+            rendercache::hwaccel_status,
+            rendercache::hwaccel_set,
         ])
         .run(tauri::generate_context!())
         .expect("Lumora Studio could not start");

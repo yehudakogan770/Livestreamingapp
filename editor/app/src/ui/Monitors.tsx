@@ -1,3 +1,23 @@
+import {
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ArrowUpFromLine,
+  AudioLines,
+  BetweenHorizontalStart,
+  Cctv,
+  Contrast,
+  FoldHorizontal,
+  MonitorPlay,
+  Pause,
+  Play,
+  Repeat,
+  Replace,
+  Scan,
+  Square,
+  SquarePlay,
+  StepBack,
+  StepForward,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { valueAt, setValue } from '../model/anim';
 import { clockAt, duration, timecode } from '../model/build';
@@ -17,6 +37,7 @@ import { NativeBadge } from './NativeBadge';
 import { nativePlayback } from '../render/native/client';
 import { useUi, type Ui } from './state';
 import { TrackOverlay } from './Tracking';
+import { MarkIn, MarkOut } from './icons';
 
 /** The program monitor: the sequence as it plays, drawn by the compositor. */
 export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine: Engine; ui: Ui; actions: Actions }) {
@@ -60,7 +81,10 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
   return (
     <div className="vmon vmon--program">
       <div className="vmon__head">
-        <span className="vmon__title">Program: {s.name}</span>
+        <span className="vmon__title">
+          <MonitorPlay />
+          Program <small>{s.name}</small>
+        </span>
         {clock && <span className="vmon__clock">{clock}</span>}
         <span className="vmon__fill" />
         <select
@@ -79,11 +103,12 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
         <NativeBadge />
         <button
           type="button"
-          className={`tbtn${u.safeMargins ? ' is-on' : ''}`}
+          className={`tbtn tbtn--icon${u.safeMargins ? ' is-on' : ''}`}
+          aria-label="Safe margins"
           title="Safe margins (keep words inside the inner box)"
           onClick={() => ui.set({ safeMargins: !u.safeMargins })}
         >
-          ⊡
+          <Scan />
         </button>
         {u.page === 'color' && (
           <button
@@ -92,6 +117,7 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
             title="Show the chosen grade node's matte (white: where the node changes the picture)"
             onClick={() => ui.set({ showMatte: !u.showMatte })}
           >
+            <Contrast />
             Matte
           </button>
         )}
@@ -196,37 +222,66 @@ function Transport({
   outPoint: number | null;
 }) {
   const playing = usePlaying(engine);
+  const [loop, setLoop] = useState(engine.loop);
   return (
     <div className="vtransport">
       <PlayheadTime engine={engine} fps={fps} big />
       <span className="vtransport__fill" />
-      <button type="button" className="tbtn" title="Mark in (I)" aria-label="Mark in" onClick={actions.markIn}>
-        {'{'}
-      </button>
-      <button type="button" className="tbtn" title="Mark out (O)" aria-label="Mark out" onClick={actions.markOut}>
-        {'}'}
-      </button>
-      <button type="button" className="tbtn" title="Go to in (Shift+I)" aria-label="Go to in" onClick={actions.toIn}>
-        {'{←'}
-      </button>
-      <button type="button" className="tbtn" title="Step back one frame (←)" aria-label="Step back" onClick={() => actions.step(-1)}>
-        ◂|
-      </button>
-      <button type="button" className="tbtn tbtn--play" aria-label={playing ? 'Pause' : 'Play'} title="Play / pause (Space)" onClick={actions.toggle}>
-        {playing ? '❚❚' : '▶'}
-      </button>
-      <button type="button" className="tbtn" title="Step forward one frame (→)" aria-label="Step forward" onClick={() => actions.step(1)}>
-        |▸
-      </button>
-      <button type="button" className="tbtn" title="Go to out (Shift+O)" aria-label="Go to out" onClick={actions.toOut}>
-        {'→}'}
-      </button>
-      <button type="button" className="tbtn" title="Lift the marked part (;)" aria-label="Lift" onClick={actions.liftMarked}>
-        ⇡
-      </button>
-      <button type="button" className="tbtn" title="Extract the marked part and close up (')" aria-label="Extract" onClick={actions.extractMarked}>
-        ⇞
-      </button>
+      <span className="vtransport__group">
+        <button type="button" className="tbtn tbtn--icon" title="Mark in (I)" aria-label="Mark in" onClick={actions.markIn}>
+          <MarkIn />
+        </button>
+        <button type="button" className="tbtn tbtn--icon" title="Mark out (O)" aria-label="Mark out" onClick={actions.markOut}>
+          <MarkOut />
+        </button>
+      </span>
+      <span className="vtransport__group">
+        <button type="button" className="tbtn tbtn--icon" title="Go to in (Shift+I)" aria-label="Go to in" onClick={actions.toIn}>
+          <ArrowLeftToLine />
+        </button>
+        <button type="button" className="tbtn tbtn--icon" title="Step back one frame (←)" aria-label="Step back" onClick={() => actions.step(-1)}>
+          <StepBack />
+        </button>
+        <button type="button" className="tbtn tbtn--icon" title="Stop" aria-label="Stop" onClick={actions.stop}>
+          <Square />
+        </button>
+        <button
+          type="button"
+          className={`tbtn tbtn--play${playing ? ' is-on' : ''}`}
+          aria-label={playing ? 'Pause' : 'Play'}
+          title="Play / pause (Space)"
+          onClick={actions.toggle}
+        >
+          {playing ? <Pause /> : <Play />}
+        </button>
+        <button type="button" className="tbtn tbtn--icon" title="Step forward one frame (→)" aria-label="Step forward" onClick={() => actions.step(1)}>
+          <StepForward />
+        </button>
+        <button type="button" className="tbtn tbtn--icon" title="Go to out (Shift+O)" aria-label="Go to out" onClick={actions.toOut}>
+          <ArrowRightToLine />
+        </button>
+        <button
+          type="button"
+          className={`tbtn tbtn--icon${loop ? ' is-on' : ''}`}
+          title="Loop: play the marked part over and over"
+          aria-label="Loop"
+          aria-pressed={loop}
+          onClick={() => {
+            actions.toggleLoop();
+            setLoop(engine.loop);
+          }}
+        >
+          <Repeat />
+        </button>
+      </span>
+      <span className="vtransport__group">
+        <button type="button" className="tbtn tbtn--icon" title="Lift the marked part (;)" aria-label="Lift" onClick={actions.liftMarked}>
+          <ArrowUpFromLine />
+        </button>
+        <button type="button" className="tbtn tbtn--icon" title="Extract the marked part and close up (')" aria-label="Extract" onClick={actions.extractMarked}>
+          <FoldHorizontal />
+        </button>
+      </span>
       <span className="vtransport__fill" />
       <span className="vtransport__len" title="Marked length">
         {inPoint !== null || outPoint !== null ? `${duration(((outPoint ?? inPoint ?? 0) - (inPoint ?? 0)) / fps)} marked` : ''}
@@ -307,6 +362,7 @@ export function SourceMonitor({ doc, ui, actions, engine }: { doc: Doc; ui: Ui; 
           />
         )}
         <span className="vmon__title">
+          {u.sourceTab === 'source' ? <SquarePlay /> : <Cctv />}
           {u.sourceTab === 'source' ? (m ? m.name : 'Source (double-click a clip in the bin)') : 'Cameras: click or press 1–9 to cut'}
         </span>
       </div>
@@ -335,7 +391,12 @@ export function SourceMonitor({ doc, ui, actions, engine }: { doc: Doc; ui: Ui; 
                 onClick={(e) => (e.currentTarget.paused ? void e.currentTarget.play() : e.currentTarget.pause())}
               />
             )}
-            {m?.kind === 'audio' && <span className="vmon__audioonly">♪ {m.name}</span>}
+            {m?.kind === 'audio' && (
+              <span className="vmon__audioonly">
+                <AudioLines />
+                {m.name}
+              </span>
+            )}
             {!m && (
               <p className="vmon__empty">Double-click a clip in the bin to see it here. Mark the part you want (I and O), then Insert (,) or Overwrite (.).</p>
             )}
@@ -364,11 +425,11 @@ export function SourceMonitor({ doc, ui, actions, engine }: { doc: Doc; ui: Ui; 
           <div className="vtransport">
             <span className="tc tc--big">{timecode(Math.round(time * fps), fps)}</span>
             <span className="vtransport__fill" />
-            <button type="button" className="tbtn" title="Mark in (I)" aria-label="Mark in" disabled={!m} onClick={() => mark('in')}>
-              {'{'}
+            <button type="button" className="tbtn tbtn--icon" title="Mark in (I)" aria-label="Mark in" disabled={!m} onClick={() => mark('in')}>
+              <MarkIn />
             </button>
-            <button type="button" className="tbtn" title="Mark out (O)" aria-label="Mark out" disabled={!m} onClick={() => mark('out')}>
-              {'}'}
+            <button type="button" className="tbtn tbtn--icon" title="Mark out (O)" aria-label="Mark out" disabled={!m} onClick={() => mark('out')}>
+              <MarkOut />
             </button>
             <button
               type="button"
@@ -380,7 +441,7 @@ export function SourceMonitor({ doc, ui, actions, engine }: { doc: Doc; ui: Ui; 
                 if (v) v.paused ? void v.play() : v.pause();
               }}
             >
-              {playing ? '❚❚' : '▶'}
+              {playing ? <Pause /> : <Play />}
             </button>
             <button
               type="button"
@@ -389,9 +450,11 @@ export function SourceMonitor({ doc, ui, actions, engine }: { doc: Doc; ui: Ui; 
               disabled={!m}
               onClick={() => actions.insertSource('insert')}
             >
+              <BetweenHorizontalStart />
               Insert
             </button>
             <button type="button" className="btn btn--sm" title="Overwrite at the playhead (.)" disabled={!m} onClick={() => actions.insertSource('overwrite')}>
+              <Replace />
               Overwrite
             </button>
             <span className="vtransport__fill" />

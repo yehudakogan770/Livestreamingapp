@@ -38,6 +38,7 @@ import { usePtzFollow } from './engine/ptzFollow';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
 import { StageContext } from './engine/CountdownContext';
+import { openProblemReport, ReportingHost, useErrorReports } from './reports/ReportUI';
 import './App.css';
 
 export function App() {
@@ -54,6 +55,7 @@ function Control() {
       <ProblemsProvider store={problems}>
         <ControlApp />
       </ProblemsProvider>
+      <ReportingHost product="Lumora" />
     </Gate>
   );
 }
@@ -106,6 +108,7 @@ function ControlApp() {
   const [confirmNew, setConfirmNew] = useState(false);
   const [textSize, setTextSize] = useState<TextSize>(loadTextSize);
   const [jewish, setJewish] = useState(loadJewishTools);
+  const [reportsOn, toggleReports] = useErrorReports();
   useEffect(() => saveJewishTools(jewish), [jewish]);
   useEffect(() => applyTextSize(textSize), [textSize]);
   // Ctrl + / Ctrl − / Ctrl 0, like any app.
@@ -221,6 +224,11 @@ function ControlApp() {
         hint: '12 Pesukim, Tanach & Tehillim, the Hebrew date and zmanim (hidden when off)',
         onClick: () => setJewish((j) => !j),
       },
+      {
+        label: `${reportsOn ? '● ' : '    '}Send anonymous error reports`,
+        hint: 'When something goes wrong, the error and the last log lines go to the Lumora team (never your show, files, keys or passwords)',
+        onClick: toggleReports,
+      },
     ];
     // 12 Pesukim: line one up in Next (making one if there is none); the card has the rest.
     const screen = controlling === 'monitor' ? 'live' : controlling;
@@ -328,6 +336,8 @@ function ControlApp() {
       { label: 'How to use Lumora', onClick: () => sendCommand({ type: 'help' }) },
       { label: 'Keyboard shortcuts', onClick: () => sendCommand({ type: 'shortcuts' }) },
       { label: 'Check for updates…', onClick: checkForUpdates },
+      null,
+      { label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport },
     ];
     return {
       Event: event,
@@ -350,6 +360,8 @@ function ControlApp() {
     textSize,
     jewish,
     jewishOn,
+    reportsOn,
+    toggleReports,
     access,
     signOut,
     remote,

@@ -31,7 +31,7 @@ export const native = {
   /** What a file is and whether a copy will be made (quick: nothing is made yet). */
   probeMedia: (path: string) => invoke<Prepared>('probe_media', { path }),
   /** A lighter copy of a heavy file for smooth playback (made once, kept). */
-  makeProxy: (path: string) => invoke<string>('make_proxy', { path }),
+  makeProxy: (path: string, threads?: number, hardware?: boolean) => invoke<string>('make_proxy', { path, threads, hardware }),
   /** Read an original's frames through FFmpeg (RGBA), for making the film from files the app can't decode. */
   framesOpen: (path: string, from: number, rate: number, width: number, height: number) => invoke<number>('frames_open', { path, from, rate, width, height }),
   framesNext: async (id: number): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>('frames_next', { id })),

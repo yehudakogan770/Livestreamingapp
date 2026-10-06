@@ -1,0 +1,30 @@
+/* The render cache's line over the timeline ruler: red where a heavy stretch
+   isn't cached yet, blue where it is, and the segment being made. */
+.rcache {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  pointer-events: none;
+}
+.rcache__run {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.rcache__run--uncached {
+  background: #d2453a;
+}
+.rcache__run--cached {
+  background: #3d7fd6;
+}
+.rcache__run--making {
+  background: repeating-linear-gradient(90deg, #3d7fd6 0 4px, transparent 4px 8px);
+  opacity: 0.9;
+}
+.rcache__stat {
+  font-family: var(--mono, monospace);
+  font-size: 11px;
+  color: var(--text-dim, #9aa0a6);
+}
