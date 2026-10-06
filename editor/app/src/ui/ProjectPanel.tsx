@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { duration, GENERATORS } from '../model/build';
 import { EFFECTS, TRANSITIONS } from '../model/effects';
+import { SHAPE_KINDS } from '../model/shapes';
 import { newSequence, type Bin, type MediaItem, type Project } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
 import { inApp, mediaUrl, native } from '../native';
@@ -454,6 +455,14 @@ function TextTab({ actions }: { actions: Actions }) {
         {GENERATORS.map((g) => (
           <button key={g.gen} type="button" className="fxlist__item fxlist__item--gen" onClick={() => actions.addGenerator(g.gen)}>
             {g.name}
+          </button>
+        ))}
+      </div>
+      <div className="fxlist__group">
+        <h3>Shapes</h3>
+        {SHAPE_KINDS.map(([kind, name]) => (
+          <button key={kind} type="button" className="fxlist__item fxlist__item--gen" onClick={() => actions.addShape(kind)}>
+            {name}
           </button>
         ))}
       </div>

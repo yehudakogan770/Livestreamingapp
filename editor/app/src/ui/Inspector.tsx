@@ -12,6 +12,8 @@ import type { Engine } from '../player/engine';
 import { fileName, inApp } from '../native';
 import { TEXT_PRESETS } from '../render/text';
 import { TitleExtras } from './Templates';
+import { BLEND_LIST } from '../model/blend';
+import { ProMotionSections } from './ProMotion';
 import type { Actions } from './actions';
 import { Choice, ColorField, ParamRow, Scrub, Section } from './controls';
 import { usePlayhead } from './hooks';
@@ -54,17 +56,7 @@ export const FONTS = [
   'Chakra Petch',
 ];
 
-const BLENDS: [BlendMode, string][] = [
-  ['normal', 'Normal'],
-  ['multiply', 'Multiply'],
-  ['screen', 'Screen'],
-  ['overlay', 'Overlay'],
-  ['softlight', 'Soft light'],
-  ['add', 'Add'],
-  ['darken', 'Darken'],
-  ['lighten', 'Lighten'],
-  ['difference', 'Difference'],
-];
+const BLENDS = BLEND_LIST;
 
 const ANIMS: [TextAnim, string][] = [
   ['none', 'None'],
@@ -103,7 +95,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
         </label>
         <div className="insp__row">
           <span className="field__label">Color</span>
-          {['#4fb3bf', '#e0473b', '#d6a73a', '#3f8f5a', '#7a5bb0', '#d6d8dc'].map((c) => (
+          {['#5a8fd0', '#e0473b', '#d6a73a', '#3f8f5a', '#7a5bb0', '#d6d8dc'].map((c) => (
             <button
               key={c}
               type="button"
@@ -288,6 +280,8 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
           />
         </Section>
       )}
+
+      <ProMotionSections doc={doc} actions={actions} clip={main} local={local} isVideo={isVideoClip(main)} onSeek={seek} upd={upd} />
 
       {main.effects
         .filter((e) => effectDef(e.type)?.kind === 'video')

@@ -15,6 +15,7 @@ const HEAD_DIM = 64;
 const SOT = 50258;
 const EOT = 50257;
 const TRANSCRIBE = 50359;
+const TRANSLATE = 50358;
 const NO_TIMESTAMPS = 50363;
 const FIRST_LANG = 50259;
 const LAST_LANG = 50357;
@@ -175,8 +176,12 @@ export class Whisper {
     return new Whisper(ort, encoder, decoder, new ByteWords(f.tokenizer), f.generation.suppress_tokens ?? [], f.generation.begin_suppress_tokens ?? []);
   }
 
-  /** The words in `audio` (16 kHz) in `language` (a code like "he"; null: work it out). */
-  async transcribe(audio: Float32Array, language: string | null): Promise<{ text: string; language: string }> {
+  /**
+   * The words in `audio` (16 kHz) in `language` (a code like "he"; null: work it out).
+   * With `task` "translate", what is said is written down in English, whatever language it is in.
+   */
+  async transcribe(audio: Float32Array, language: string | null, task: 'transcribe' | 'translate' = 'transcribe'): Promise<{ text: string; language: string }> {
+    const TASK = task === 'translate' ? TRANSLATE : TRANSCRIBE;
     const { ort } = this;
     if (audio.length < 1600) return { text: '', language: language ?? '' };
     const features = new ort.Tensor('float32', logMel(audio), [1, MELS, FRAMES]);
@@ -209,12 +214,12 @@ export class Whisper {
     let first: Float32Array;
     if (language && LANGUAGES.includes(language)) {
       langId = FIRST_LANG + LANGUAGES.indexOf(language);
-      first = await run([SOT, langId, TRANSCRIBE, NO_TIMESTAMPS]);
+      first = await run([SOT, langId, TASK, NO_TIMESTAMPS]);
     } else {
       const l = await run([SOT]);
       langId = FIRST_LANG;
       for (let id = FIRST_LANG; id <= LAST_LANG; id++) if (l[id]! > l[langId]!) langId = id;
-      first = await run([langId, TRANSCRIBE, NO_TIMESTAMPS]);
+      first = await run([langId, TASK, NO_TIMESTAMPS]);
     }
     const ids: number[] = [];
     let logits = first;

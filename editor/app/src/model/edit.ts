@@ -477,7 +477,7 @@ export function transitionAtPlayhead(p: Project, frame: number, kind: TrackKind,
   return next;
 }
 
-export function addMarker(p: Project, at: number, name = '', color = '#4fb3bf'): { project: Project; id: string } {
+export function addMarker(p: Project, at: number, name = '', color = '#5a8fd0'): { project: Project; id: string } {
   const m: Marker = { id: uid('m'), at, length: 0, name, color };
   return { project: editSeq(p, (s) => ({ ...s, markers: [...s.markers.filter((x) => x.at !== at), m].sort((a, b) => a.at - b.at) })), id: m.id };
 }

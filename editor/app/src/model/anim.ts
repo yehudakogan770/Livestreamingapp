@@ -1,8 +1,7 @@
+import { segmentValue } from './interp';
 import type { Anim, Ease, Key, Param } from './types';
 
 export const isAnim = (p: Param | undefined): p is Anim => typeof p === 'object' && p !== null && Array.isArray(p.k);
-
-const smooth = (x: number): number => x * x * (3 - 2 * x);
 
 /** The value at a frame (from the clip's start). */
 export function valueAt(p: Param | undefined, t: number, fallback = 0): number {
@@ -13,13 +12,8 @@ export function valueAt(p: Param | undefined, t: number, fallback = 0): number {
   const first = k[0] as Key;
   if (t <= first.t) return first.v;
   for (let i = 0; i < k.length - 1; i++) {
-    const a = k[i] as Key;
     const b = k[i + 1] as Key;
-    if (t < b.t) {
-      if (a.e === 'hold') return a.v;
-      const x = (t - a.t) / (b.t - a.t);
-      return a.v + (b.v - a.v) * (a.e === 'ease' ? smooth(x) : x);
-    }
+    if (t < b.t) return segmentValue(k, i, t);
   }
   return (k[k.length - 1] as Key).v;
 }
@@ -27,7 +21,9 @@ export function valueAt(p: Param | undefined, t: number, fallback = 0): number {
 /** A keyframe at a frame (replacing one already there). */
 export function setKey(p: Param | undefined, t: number, v: number, e: Ease = 'linear'): Anim {
   const k = isAnim(p) ? p.k.filter((x) => x.t !== t) : [];
-  k.push({ t, v, e: isAnim(p) ? (p.k.find((x) => x.t === t)?.e ?? e) : e });
+  // A key already there keeps how it moves on (and its handles).
+  const had = isAnim(p) ? p.k.find((x) => x.t === t) : undefined;
+  k.push(had ? { ...had, v } : { t, v, e });
   k.sort((a, b) => a.t - b.t);
   return { k };
 }
@@ -60,7 +56,8 @@ export function shiftKeys(p: Param, by: number): Param {
 /** Keyframes stretched when a clip's speed changes. */
 export function scaleKeys(p: Param, by: number): Param {
   if (!isAnim(p)) return p;
-  return { k: p.k.map((x) => ({ ...x, t: Math.round(x.t * by) })) };
+  const h = (x: [number, number] | undefined): [number, number] | undefined => (x ? [x[0] * by, x[1]] : undefined);
+  return { k: p.k.map((x) => ({ ...x, t: Math.round(x.t * by), ...(x.i ? { i: h(x.i) } : {}), ...(x.o ? { o: h(x.o) } : {}) })) };
 }
 
 export function setEase(p: Param, t: number, e: Ease): Param {
