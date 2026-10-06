@@ -1,0 +1,252 @@
+{
+  "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+  "UUID": "com.lumora.streamdeck",
+  "Name": "Lumora",
+  "Version": "1.0.0.0",
+  "Author": "Lumora",
+  "Description": "Run Lumora live productions from a Stream Deck: TAKE and CUT, inputs with red and green tally, overlays, presets, instant replay, recording and going live.",
+  "URL": "https://github.com/yehudakogan770/Livestreamingapp",
+  "Icon": "imgs/plugin/icon",
+  "Category": "Lumora",
+  "CategoryIcon": "imgs/plugin/category",
+  "CodePath": "bin/plugin.js",
+  "SDKVersion": 2,
+  "Software": {
+    "MinimumVersion": "6.5"
+  },
+  "OS": [
+    {
+      "Platform": "windows",
+      "MinimumVersion": "10"
+    }
+  ],
+  "Nodejs": {
+    "Version": "20"
+  },
+  "Actions": [
+    {
+      "UUID": "com.lumora.streamdeck.take",
+      "Name": "TAKE",
+      "Tooltip": "Send what is in Next to air",
+      "Icon": "imgs/actions/take",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/take",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.cut",
+      "Name": "CUT",
+      "Tooltip": "Cut what is in Next to air",
+      "Icon": "imgs/actions/cut",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/cut",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.blank",
+      "Name": "Blank / Fade to black",
+      "Tooltip": "Black out a screen, or fade it to black",
+      "Icon": "imgs/actions/blank",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/blank",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.panic",
+      "Name": "PANIC",
+      "Tooltip": "Hold to black out everything except the stage monitor",
+      "Icon": "imgs/actions/panic",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/keys/panic",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.input",
+      "Name": "Input",
+      "Tooltip": "Put an input in Next (press twice: cut to air); shows its tally",
+      "Icon": "imgs/actions/input",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/input",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.overlay",
+      "Name": "Overlay",
+      "Tooltip": "Put an overlay channel on air or take it off",
+      "Icon": "imgs/actions/overlay",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/overlay",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.preset",
+      "Name": "Preset",
+      "Tooltip": "Pick a preset",
+      "Icon": "imgs/actions/preset",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/preset",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.replay",
+      "Name": "Instant replay",
+      "Tooltip": "Replay the last few seconds into Next",
+      "Icon": "imgs/actions/replay",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/replay",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.record",
+      "Name": "Record",
+      "Tooltip": "Start or stop recording",
+      "Icon": "imgs/actions/record",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/record",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.golive",
+      "Name": "Go live",
+      "Tooltip": "Hold to start or end the stream",
+      "Icon": "imgs/actions/golive",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/keys/golive",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.countdown",
+      "Name": "Countdown",
+      "Tooltip": "Start or pause a countdown; shows the time left",
+      "Icon": "imgs/actions/countdown",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/countdown",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.nextcue",
+      "Name": "Next cue",
+      "Tooltip": "Run the next cue in the run of show",
+      "Icon": "imgs/actions/nextcue",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/nextcue",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.screen",
+      "Name": "Screen",
+      "Tooltip": "Switch the keys between the Live and Back screens",
+      "Icon": "imgs/actions/screen",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/screen",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.rehearsal",
+      "Name": "Rehearsal",
+      "Tooltip": "Switch rehearsal on or off before going live",
+      "Icon": "imgs/actions/rehearsal",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/rehearsal",
+          "ShowTitle": false
+        }
+      ]
+    }
+  ]
+}

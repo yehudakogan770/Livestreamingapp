@@ -11,6 +11,10 @@
 //! - Phones get each new version of the show the moment it changes
 //!   (Server-Sent Events), plus the computer's clock so their countdown
 //!   matches the screens to the second.
+//! - Control surfaces (the Stream Deck plugin) can also start and stop the
+//!   recording, the stream, rehearsal and instant replay. Those run in the
+//!   control window, so the request is passed on to it; the control window
+//!   then tells everyone connected what is running (`event: app`).
 
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
@@ -54,6 +58,45 @@ pub trait Backend: Send + Sync + 'static {
     fn apply(&self, action: Action) -> Result<(), ActionError>;
     /// The number of phones connected changed.
     fn phones_changed(&self);
+    /// Pass a recording / stream / replay request on to the control window.
+    fn app_command(&self, command: AppCommand) -> Result<(), String> {
+        let _ = command;
+        Err("not available".to_owned())
+    }
+}
+
+/// What a control surface may ask of the control window: recording,
+/// streaming, rehearsal and instant replay. Kept apart from the engine's
+/// actions because these run in the control window, not in the show.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "command", rename_all = "camelCase", deny_unknown_fields)]
+pub enum AppCommand {
+    /// Start (`on`) or stop the recording.
+    Record { on: bool },
+    /// Go live (`on`) or end the stream.
+    Stream { on: bool },
+    /// Choose rehearsal (only before going live).
+    Rehearsal { on: bool },
+    /// Keep the last minute ready to replay (or stop keeping it).
+    ReplayBuffer { on: bool },
+    /// Replay the last few seconds into Next.
+    Replay {
+        seconds: u32,
+        #[serde(default)]
+        slow: bool,
+    },
+}
+
+impl AppCommand {
+    /// The longest replay: the buffer keeps one minute.
+    pub const MAX_REPLAY_S: u32 = 60;
+
+    fn valid(&self) -> bool {
+        match self {
+            AppCommand::Replay { seconds, .. } => (1..=Self::MAX_REPLAY_S).contains(seconds),
+            _ => true,
+        }
+    }
 }
 
 /// Remembered between starts.
@@ -232,6 +275,8 @@ struct Shared {
     asked: Mutex<HashMap<String, u64>>,
     /// Where photos sent to a messages wall are kept.
     photos: Option<PathBuf>,
+    /// What the control window says is running (recording, stream…), as JSON.
+    app_state: Mutex<String>,
 }
 
 impl Shared {
@@ -300,6 +345,7 @@ impl Remote {
                 votes: Mutex::new(HashMap::new()),
                 asked: Mutex::new(HashMap::new()),
                 photos: dir.map(|d| d.join("wall-photos")),
+                app_state: Mutex::new("{}".to_owned()),
             }),
             config: Mutex::new(config),
             running: Mutex::new(None),
@@ -416,6 +462,25 @@ impl Remote {
             return;
         }
         self.shared.send_all(&show_event(snapshot));
+    }
+
+    /// What the control window says is running (recording, stream,
+    /// rehearsal, replay). Everyone connected is told when it changes.
+    pub fn set_app_state(&self, state: &serde_json::Value) {
+        if !state.is_object() {
+            return;
+        }
+        let text = state.to_string();
+        {
+            let mut current = lock(&self.shared.app_state);
+            if *current == text {
+                return;
+            }
+            current.clone_from(&text);
+        }
+        if lock(&self.running).is_some() {
+            self.shared.send_all(&app_event(&text));
+        }
     }
 
     fn save(&self) {
@@ -542,6 +607,10 @@ fn show_event(snapshot: &str) -> String {
         "event: show\ndata: {{\"now\":{},\"snapshot\":{snapshot}}}\n\n",
         now_ms()
     )
+}
+
+fn app_event(state: &str) -> String {
+    format!("event: app\ndata: {state}\n\n")
 }
 
 // ---------------------------------------------------------------------------
@@ -800,7 +869,7 @@ fn handle(shared: &Shared, mut request: Request) {
                 ),
             }
         }
-        (method, "/api/check" | "/api/show" | "/api/events" | "/api/action") => {
+        (method, "/api/check" | "/api/show" | "/api/events" | "/api/action" | "/api/app") => {
             if !authorised(shared, &request, query) {
                 // Slow down anyone guessing.
                 std::thread::sleep(Duration::from_millis(500));
@@ -819,6 +888,15 @@ fn handle(shared: &Shared, mut request: Request) {
                 (Method::Get, "/api/events") => stream(shared, request),
                 (Method::Post, "/api/action") => match action(shared, &mut request) {
                     Ok(()) => json(request, 200, "{}"),
+                    Err((status, body)) => json(request, status, &body),
+                },
+                (Method::Get, "/api/app") => {
+                    let state = lock(&shared.app_state).clone();
+                    json(request, 200, &state);
+                }
+                // Passed on: the control window's answer comes as `event: app`.
+                (Method::Post, "/api/app") => match app_command(shared, &mut request) {
+                    Ok(()) => json(request, 202, "{}"),
                     Err((status, body)) => json(request, status, &body),
                 },
                 _ => json(request, 405, r#"{"code":"wrongMethod"}"#),
@@ -1263,6 +1341,25 @@ fn action(shared: &Shared, request: &mut Request) -> Result<(), (u16, String)> {
         .map_err(|e| (400, serde_json::to_string(&e).unwrap_or_default()))
 }
 
+fn app_command(shared: &Shared, request: &mut Request) -> Result<(), (u16, String)> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| (400, r#"{"code":"badRequest"}"#.to_owned()))?;
+    let command = serde_json::from_str::<AppCommand>(&body)
+        .ok()
+        .filter(AppCommand::valid)
+        .ok_or_else(|| (400, r#"{"code":"badRequest"}"#.to_owned()))?;
+    shared.backend.app_command(command).map_err(|e| {
+        (
+            503,
+            serde_json::json!({"code": "notAvailable", "error": e}).to_string(),
+        )
+    })
+}
+
 /// Live updates for one phone, until it goes away.
 fn stream(shared: &Shared, request: Request) {
     let Some(snapshot) = shared.backend.snapshot() else {
@@ -1271,9 +1368,15 @@ fn stream(shared: &Shared, request: Request) {
     let (tx, rx) = mpsc::sync_channel::<String>(PHONE_QUEUE);
     let mut out = request.into_writer();
     let head = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: keep-alive\r\n\r\n";
+    // What is running, once the control window has said (control surfaces show it).
+    let app = Some(lock(&shared.app_state).clone())
+        .filter(|s| s != "{}")
+        .map(|s| app_event(&s))
+        .unwrap_or_default();
     if out
         .write_all(head.as_bytes())
         .and_then(|()| out.write_all(show_event(&snapshot).as_bytes()))
+        .and_then(|()| out.write_all(app.as_bytes()))
         .and_then(|()| out.flush())
         .is_err()
     {
@@ -1858,6 +1961,122 @@ mod tests {
         let changed = r.change_pin();
         assert_eq!(changed.phones, 0);
         assert_ne!(changed.pin, st.pin);
+    }
+
+    /// A control window that keeps what it was asked to do.
+    #[derive(Default)]
+    struct Window {
+        commands: Mutex<Vec<AppCommand>>,
+    }
+
+    impl Backend for Arc<Window> {
+        fn snapshot(&self) -> Option<String> {
+            Some(format!(
+                "{{\"revision\":0,\"show\":{}}}",
+                serde_json::to_string(Engine::new().show()).unwrap()
+            ))
+        }
+        fn apply(&self, _: Action) -> Result<(), ActionError> {
+            Ok(())
+        }
+        fn phones_changed(&self) {}
+        fn app_command(&self, command: AppCommand) -> Result<(), String> {
+            lock(&self.commands).push(command);
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn control_surfaces_record_and_go_live_through_the_control_window() {
+        let window = Arc::new(Window::default());
+        let first = PORT.fetch_add(PORTS_TO_TRY, Ordering::SeqCst);
+        let r = Remote::new(None, first, Arc::clone(&window));
+        let st = r.set_enabled(true);
+        let port = st.port.unwrap();
+        let rec = r#"{"command":"record","on":true}"#;
+        assert_eq!(request(port, "POST", "/api/app", "0000x", rec).0, 401);
+        assert_eq!(request(port, "POST", "/api/app", &st.pin, rec).0, 202);
+        let replay = r#"{"command":"replay","seconds":10,"slow":true}"#;
+        assert_eq!(request(port, "POST", "/api/app", &st.pin, replay).0, 202);
+        for bad in [
+            r#"{"command":"replay","seconds":0}"#,
+            r#"{"command":"replay","seconds":600}"#,
+            r#"{"command":"deleteEverything"}"#,
+            r#"{"command":"stream","on":true,"extra":1}"#,
+            "not json",
+        ] {
+            assert_eq!(
+                request(port, "POST", "/api/app", &st.pin, bad).0,
+                400,
+                "{bad}"
+            );
+        }
+        assert_eq!(
+            *lock(&window.commands),
+            vec![
+                AppCommand::Record { on: true },
+                AppCommand::Replay {
+                    seconds: 10,
+                    slow: true
+                }
+            ]
+        );
+        // The engine-free default: a remote without a control window says so.
+        let (r2, _) = remote();
+        let st2 = r2.set_enabled(true);
+        let (code, body) = request(st2.port.unwrap(), "POST", "/api/app", &st2.pin, rec);
+        assert_eq!(code, 503);
+        assert!(body.contains("notAvailable"));
+    }
+
+    #[test]
+    fn control_surfaces_are_told_what_is_running() {
+        let (r, _) = remote();
+        let st = r.set_enabled(true);
+        let port = st.port.unwrap();
+        assert_eq!(request(port, "GET", "/api/app", &st.pin, "").1, "{}");
+        assert_eq!(request(port, "GET", "/api/app", "", "").0, 401);
+        r.set_app_state(&serde_json::json!({"recording": true}));
+        assert_eq!(
+            request(port, "GET", "/api/app", &st.pin, "").1,
+            r#"{"recording":true}"#
+        );
+        // Connecting: the show, then what is running; changes follow.
+        let mut s = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        write!(
+            s,
+            "GET /api/events?pin={} HTTP/1.1\r\nHost: x\r\n\r\n",
+            st.pin
+        )
+        .unwrap();
+        s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut lines = BufReader::new(s).lines();
+        let mut next = || loop {
+            let l = lines.next().unwrap().unwrap();
+            if let Some(e) = l.strip_prefix("event: ") {
+                let data = lines.next().unwrap().unwrap();
+                return (e.to_owned(), data);
+            }
+        };
+        assert_eq!(next().0, "show");
+        assert_eq!(next(), ("app".into(), r#"data: {"recording":true}"#.into()));
+        for _ in 0..50 {
+            if r.status().phones == 1 {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        // The same state again is not sent; a change is. Anything but an object is ignored.
+        r.set_app_state(&serde_json::json!({"recording": true}));
+        r.set_app_state(&serde_json::json!(5));
+        r.set_app_state(&serde_json::json!({"recording": false, "streaming": true}));
+        assert_eq!(
+            next(),
+            (
+                "app".into(),
+                r#"data: {"recording":false,"streaming":true}"#.into()
+            )
+        );
     }
 
     #[test]

@@ -17,7 +17,7 @@ export default defineConfig({
   test: {
     root: '.',
     environment: 'jsdom',
-    include: ['app/src/**/*.test.{ts,tsx}', 'editor/app/src/**/*.test.{ts,tsx}', 'planner/src/**/*.test.{ts,tsx}'],
+    include: ['app/src/**/*.test.{ts,tsx}', 'editor/app/src/**/*.test.{ts,tsx}', 'planner/src/**/*.test.{ts,tsx}', 'streamdeck/src/**/*.test.ts'],
     setupFiles: ['app/src/test-setup.ts'],
     testTimeout: 20000,
   },
