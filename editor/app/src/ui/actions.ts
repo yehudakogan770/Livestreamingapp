@@ -33,6 +33,8 @@ import type { Clip, Project } from '../model/types';
 import type { Engine } from '../player/engine';
 import { TEXT_PRESETS } from '../render/text';
 import { addTemplate, templateById } from '../model/templates';
+import { addShape } from '../model/shapes';
+import type { ShapeData } from '../model/types';
 import { selectedIds, type Doc } from '../doc';
 import type { Tool, Ui } from './state';
 import { chooseAndImport } from './importer';
@@ -375,6 +377,15 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
       let id = '';
       edit('Add generator', (p) => {
         const r = addGenerator(p, here(), Math.round(fps() * 5), gen, settings);
+        id = r.id;
+        return r.project;
+      });
+      if (id) doc.select({ kind: 'clips', ids: [id] });
+    },
+    addShape: (kind: ShapeData['kind']) => {
+      let id = '';
+      edit('Add shape', (p) => {
+        const r = addShape(p, here(), Math.round(fps() * 5), kind);
         id = r.id;
         return r.project;
       });

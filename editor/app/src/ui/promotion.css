@@ -1,0 +1,133 @@
+/* Pro motion and timing: the keyframe graph editor, text animators, shapes. */
+
+.graph {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  outline: none;
+}
+.graph:focus-visible {
+  box-shadow: 0 0 0 1px #4fb3bf;
+  border-radius: 4px;
+}
+.graph__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.graph__modes {
+  display: inline-flex;
+  border: 1px solid #3a3f47;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.graph__modes button {
+  background: transparent;
+  border: 0;
+  color: #c9ccd1;
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+.graph__modes button.is-on {
+  background: #3a3f47;
+  color: #fff;
+}
+.graph__plot {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  touch-action: none;
+  user-select: none;
+  cursor: crosshair;
+}
+.graph__bg {
+  fill: #15171b;
+}
+.graph__grid {
+  stroke: #262a30;
+  stroke-width: 1;
+}
+.graph__zero {
+  stroke: #4a505a;
+  stroke-dasharray: 4 3;
+}
+.graph__head {
+  stroke: #e0473b;
+  stroke-width: 1;
+}
+.graph__curve {
+  fill: none;
+  stroke: #4fb3bf;
+  stroke-width: 2;
+}
+.graph__key {
+  fill: #c9ccd1;
+  stroke: #15171b;
+  stroke-width: 1.5;
+  cursor: move;
+}
+.graph__key.is-hold {
+  fill: #8a8f98;
+}
+.graph__key.is-on {
+  fill: #f0c850;
+}
+.graph__mark {
+  stroke: #5a606a;
+  stroke-width: 1;
+}
+.graph__mark.is-on {
+  stroke: #f0c850;
+}
+.graph__arm {
+  stroke: #f0c850;
+  stroke-width: 1;
+  opacity: 0.8;
+}
+.graph__handle {
+  fill: #15171b;
+  stroke: #f0c850;
+  stroke-width: 1.5;
+  cursor: grab;
+}
+.graph__box {
+  fill: rgba(79, 179, 191, 0.12);
+  stroke: #4fb3bf;
+  stroke-dasharray: 4 3;
+}
+.graph__label {
+  fill: #7d838d;
+  font-size: 10px;
+}
+.graph__note {
+  color: #8a8f98;
+  font-size: 11px;
+}
+
+.promo__btns {
+  flex-wrap: wrap;
+}
+.promo__box {
+  border: 1px solid #2c3036;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin: 6px 0;
+}
+.promo__boxhead {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.promo__boxacts {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.promo__name {
+  flex: 1;
+  min-width: 0;
+}
