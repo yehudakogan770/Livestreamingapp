@@ -595,10 +595,19 @@ impl Capture {
             .map_err(|e| format!("FFmpeg could not start: {e}"))?;
         let stdin = child.stdin.take().ok_or("FFmpeg could not start")?;
         let errors = Arc::new(Mutex::new(String::new()));
+        let pid = child.id();
         if let Some(err) = child.stderr.take() {
             let errors = Arc::clone(&errors);
             thread::spawn(move || {
                 for line in BufReader::new(err).lines().map_while(Result::ok) {
+                    // After a failed start FFmpeg can hang (busy, never exiting):
+                    // end it, so the failure is reported and nothing is left running.
+                    if gave_up(&line) {
+                        thread::spawn(move || {
+                            thread::sleep(Duration::from_secs(2));
+                            kill_pid(pid);
+                        });
+                    }
                     let mut e = lock(&errors);
                     // Keep the last few lines, to explain a failure.
                     e.push_str(&line);
@@ -1247,6 +1256,35 @@ pub fn quiet(program: impl AsRef<std::ffi::OsStr>) -> Command {
     cmd
 }
 
+/// FFmpeg's words for "the stream can't go on".
+fn gave_up(line: &str) -> bool {
+    [
+        "Could not write header",
+        "All tee outputs failed",
+        "Error opening output",
+        "Conversion failed",
+    ]
+    .iter()
+    .any(|w| line.contains(w))
+}
+
+/// End a process that has stopped answering (it may already be gone).
+fn kill_pid(pid: u32) {
+    #[cfg(windows)]
+    let mut cmd = {
+        let mut c = quiet("taskkill");
+        c.args(["/PID", &pid.to_string(), "/T", "/F"]);
+        c
+    };
+    #[cfg(not(windows))]
+    let mut cmd = {
+        let mut c = quiet("kill");
+        c.args(["-9", &pid.to_string()]);
+        c
+    };
+    let _ = cmd.stdout(Stdio::null()).stderr(Stdio::null()).status();
+}
+
 /// FFmpeg next to Lumora, or on the computer.
 pub fn find_ffmpeg() -> Option<PathBuf> {
     let exe = if cfg!(windows) {
@@ -1656,7 +1694,8 @@ mod tests {
         }
         assert!(
             wait_for(|| c.status().failure.is_some()),
-            "the failure is reported"
+            "the failure is reported: {:?}",
+            c.status()
         );
         let f = c.status().failure.unwrap();
         assert_eq!(f.kind, Kind::Stream);

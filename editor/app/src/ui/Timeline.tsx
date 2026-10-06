@@ -61,6 +61,7 @@ export function clipColor(p: Project, c: Clip): string {
   if (src.kind === 'sequence') return '#6b7a3a';
   if (src.kind === 'generator') return '#3a6b6b';
   if (src.kind === 'caption') return '#8a7a2e';
+  if (src.kind === 'shape') return '#4a7a9a';
   return '#3d6fa8';
 }
 

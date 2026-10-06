@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { duration, GENERATORS } from '../model/build';
 import { EFFECTS, TRANSITIONS } from '../model/effects';
+import { SHAPE_KINDS } from '../model/shapes';
 import { newSequence, type Bin, type MediaItem, type Project } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
 import { inApp, mediaUrl, native } from '../native';
@@ -10,6 +11,8 @@ import type { Actions } from './actions';
 import { ColorField, PopMenu, type MenuEntry } from './controls';
 import { chooseAndImport, dismissProblem, newBinId, useImporting } from './importer';
 import { useStrip } from './peaks';
+import { searchMatches } from '../manage/smartbins';
+import { mediaManageMenu, SmartBinsSection } from './SmartBins';
 import type { Ui } from './state';
 
 type Tab = 'media' | 'effects' | 'text';
@@ -48,7 +51,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
   const [renaming, setRenaming] = useState<string | null>(null);
   const loading = useImporting();
   const q = search.trim().toLowerCase();
-  const matches = (m: MediaItem) => !q || m.name.toLowerCase().includes(q);
+  const matches = (m: MediaItem) => searchMatches(m, q);
   const used = new Set(project.sequences.flatMap((s) => s.clips.map((c) => (c.source.kind === 'media' ? c.source.media : ''))));
   for (const g of project.groups) for (const a of g.angles) used.add(a.media);
 
@@ -66,7 +69,10 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
       x: e.clientX,
       y: e.clientY,
       items: [
-        { label: 'Open in source monitor', run: () => ui.set({ source: { media: m.id, time: 0, in: null, out: null }, sourceTab: 'source' }) },
+        {
+          label: 'Open in source monitor',
+          run: () => ui.set({ source: { media: m.id, time: m.range?.[0] ?? 0, in: m.range?.[0] ?? null, out: m.range?.[1] ?? null }, sourceTab: 'source' }),
+        },
         { label: 'Rename', run: () => setRenaming(m.id) },
         {
           label: 'New sequence from this clip',
@@ -88,6 +94,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
           ],
         },
         ...(inApp() ? [{ label: 'Show in folder', run: () => void native.reveal(m.path) }] : []),
+        ...mediaManageMenu(doc, ui, m),
         'sep',
         {
           label: used.has(m.id) ? 'Remove (it is used in a sequence)' : 'Remove from project',
@@ -116,7 +123,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
         setRenaming(null);
       }}
       onClick={() => setSelected(m.id)}
-      onOpen={() => ui.set({ source: { media: m.id, time: 0, in: null, out: null }, sourceTab: 'source' })}
+      onOpen={() => ui.set({ source: { media: m.id, time: m.range?.[0] ?? 0, in: m.range?.[0] ?? null, out: m.range?.[1] ?? null }, sourceTab: 'source' })}
       onMenu={(e) => mediaMenu(e, m)}
     />
   );
@@ -183,6 +190,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
             </span>
           </button>
         ))}
+        <SmartBinsSection doc={doc} ui={ui} row={row} search={matches} />
         {project.bins
           .filter((b) => !b.parent)
           .map((b) => {
@@ -447,6 +455,14 @@ function TextTab({ actions }: { actions: Actions }) {
         {GENERATORS.map((g) => (
           <button key={g.gen} type="button" className="fxlist__item fxlist__item--gen" onClick={() => actions.addGenerator(g.gen)}>
             {g.name}
+          </button>
+        ))}
+      </div>
+      <div className="fxlist__group">
+        <h3>Shapes</h3>
+        {SHAPE_KINDS.map(([kind, name]) => (
+          <button key={kind} type="button" className="fxlist__item fxlist__item--gen" onClick={() => actions.addShape(kind)}>
+            {name}
           </button>
         ))}
       </div>

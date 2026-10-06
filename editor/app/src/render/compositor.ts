@@ -2,7 +2,10 @@
 // blend mode; transitions; adjustment layers. Used for the viewer and for
 // making the film, so what you see is what you get.
 import { curvesImage, flatCurve, hexToRgb, type Cube, type CurveSet } from './color';
-import type { EffectNow, Layer, MotionNow, Op } from './frame';
+import { flowSize, opticalFlow, toGray, type Gray } from './flow';
+import { shifted, type EffectNow, type Layer, type MotionNow, type Op } from './frame';
+import { ACCUM_FS, FLOW_WARP_FS, FRAME_MIX_FS } from './motionfx';
+import { drawShape, shapeStamp } from './shape';
 import { nodeUniforms, planGrade, wheelVectors } from './grade';
 import type { NodeNow } from '../model/grade';
 import { CUTOUT_FS, LIMIT_FS } from './maskfx';
@@ -22,12 +25,15 @@ import {
   TRANSITION_FS,
   TRANSITION_TYPES,
 } from './shaders';
+import { OUT_FS } from './shaders';
 
 type Source = TexImageSource;
 
 /** Gives the picture for a layer (a playing video, a decoded frame, a still), or nothing yet. */
 export interface Pictures {
   picture(layer: Layer): Source | null;
+  /** The second frame of a remapped clip between two of its file's frames (blended or interpolated), if ready. */
+  next?(layer: Layer): Source | null;
   /** A LUT file's contents, once read (null until then). */
   cube?(path: string): Cube | null;
   /** An AI mask's matte at this frame (the picture's shape, 0–255; `stamp` changes when it does), or null while it isn't ready. */
@@ -73,6 +79,10 @@ export class Compositor {
   private lutTex = new Map<string, { tex: WebGLTexture; size: number }>();
   private empty: WebGLTexture;
   private textCanvas: HTMLCanvasElement | OffscreenCanvas | null = null;
+  /** Optical flow between a clip's two frames, kept while the same two are shown. */
+  private flows = new Map<string, { tex: WebGLTexture; stamp: string; w: number; h: number }>();
+  /** A small target pictures are read back from (for optical flow). */
+  private small: { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number } | null = null;
   private float: boolean;
   private seed = 0;
   /** Show one grade node's matte instead of the picture (the Color page's "show matte"). */
@@ -282,7 +292,8 @@ export class Compositor {
   }
 
   private textSource(layer: Layer): Source | null {
-    if (layer.source?.kind !== 'text') return null;
+    const src = layer.source;
+    if (src?.kind !== 'text' && src?.kind !== 'shape') return null;
     if (!this.textCanvas) this.textCanvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(this.w, this.h) : document.createElement('canvas');
     const c = this.textCanvas;
     if (c.width !== this.w || c.height !== this.h) {
@@ -292,7 +303,8 @@ export class Compositor {
     const ctx = c.getContext('2d') as CanvasRenderingContext2D | null;
     if (!ctx) return null;
     ctx.clearRect(0, 0, this.w, this.h);
-    drawText(ctx, layer.source.text, this.w, this.h, layer.source.local, layer.source.length, layer.fps);
+    if (src.kind === 'shape') drawShape(ctx, src.shape, this.w, this.h, src.local);
+    else drawText(ctx, src.text, this.w, this.h, src.local, src.length, layer.fps);
     return c;
   }
 
@@ -330,10 +342,11 @@ export class Compositor {
       tex = made.tex;
       sw = this.w;
       sh = this.h;
-    } else if (src.kind === 'text') {
-      // Words are drawn again only when they look different (while they come on or go off, or are changed).
+    } else if (src.kind === 'text' || src.kind === 'shape') {
+      // Words and shapes are drawn again only when they look different (while they animate, or are changed).
       const key = `text:${layer.key}`;
-      const stamp = `${this.w}x${this.h}|${textStamp(src.text, src.local, src.length, layer.fps)}`;
+      const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : textStamp(src.text, src.local, src.length, layer.fps);
+      const stamp = `${this.w}x${this.h}|${look}`;
       const have = this.textures.get(key);
       if (have && have.stamp === stamp) tex = have.tex;
       else {
@@ -354,10 +367,99 @@ export class Compositor {
       tex = up.tex;
       sw = up.w;
       sh = up.h;
+      // Time remapping between two of the file's frames: blended, or interpolated along the optical flow.
+      const between = src.kind === 'video' && src.next ? this.between(layer, up.tex, up.w, up.h, pics) : null;
+      if (between) {
+        nested = between;
+        tex = between.tex;
+      }
     }
-    this.place(tex, sw, sh, layer.motion, target);
+    if (layer.motionBlur) this.placeBlurred(tex, sw, sh, layer, target);
+    else this.place(tex, sw, sh, layer.motion, target);
     this.give(nested);
     return true;
+  }
+
+  /** Motion blur: the picture drawn where it is at each moment the shutter is open, averaged. */
+  private placeBlurred(tex: WebGLTexture, sw: number, sh: number, layer: Layer, target: Target) {
+    const mb = layer.motionBlur as NonNullable<Layer['motionBlur']>;
+    const n = mb.samples.length;
+    let acc: Target | null = null;
+    const one = this.take();
+    for (const m of mb.samples) {
+      this.clear(one);
+      this.place(tex, sw, sh, shifted(m, mb.base, layer.motion), one);
+      const next: Target = acc ? this.pass('accum', ACCUM_FS, one, { uBase: [acc.tex, 1], uW: 1 / n }) : this.pass('copy', COPY_FS, one, { uOpacity: 1 / n });
+      this.give(acc);
+      acc = next;
+    }
+    this.give(one);
+    if (acc) this.pass('copy', COPY_FS, acc, { uOpacity: 1 }, target);
+    this.give(acc);
+  }
+
+  /** A remapped clip's picture between two frames of its file (null: the second frame isn't ready, the first is shown). */
+  private between(layer: Layer, texA: WebGLTexture, sw: number, sh: number, pics: Pictures): Target | null {
+    const src = layer.source;
+    if (src?.kind !== 'video' || !src.next || !pics.next) return null;
+    const picB = pics.next(layer);
+    if (!picB) return null;
+    const upB = this.upload(`vid2:${layer.key}`, picB, '');
+    if (!upB) return null;
+    if (src.next.mode === 'blend') return this.pass('framemix', FRAME_MIX_FS, texA, { uB: [upB.tex, 1], uMix: src.next.mix });
+    const flow = this.flowBetween(layer.key, `${src.media.id}|${src.time}|${src.next.time}`, texA, upB.tex, sw, sh);
+    if (!flow) return this.pass('framemix', FRAME_MIX_FS, texA, { uB: [upB.tex, 1], uMix: src.next.mix });
+    return this.pass('flowwarp', FLOW_WARP_FS, texA, { uB: [upB.tex, 1], uFlow: [flow.tex, 2], uFlowSize: [flow.w, flow.h], uMix: src.next.mix });
+  }
+
+  /** A picture made small and gray, read back for working out optical flow. */
+  private grayOf(tex: WebGLTexture, w: number, h: number): Gray {
+    const gl = this.gl;
+    if (!this.small || this.small.w !== w || this.small.h !== h) {
+      if (this.small) {
+        gl.deleteFramebuffer(this.small.fb);
+        gl.deleteTexture(this.small.tex);
+      }
+      const t = this.makeTexture();
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      const fb = gl.createFramebuffer() as WebGLFramebuffer;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+      this.small = { fb, tex: t, w, h };
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.small.fb);
+    gl.viewport(0, 0, w, h);
+    this.use(this.program('copy', FULL_VS, COPY_FS), { uTex: [tex, 0], uSize: [w, h], uOpacity: 1 });
+    this.drawFull();
+    const px = new Uint8Array(w * h * 4);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    return toGray(px, w, h);
+  }
+
+  /** The optical flow from one frame to the next (worked out once for each pair). */
+  private flowBetween(
+    key: string,
+    stamp: string,
+    a: WebGLTexture,
+    b: WebGLTexture,
+    sw: number,
+    sh: number,
+  ): { tex: WebGLTexture; w: number; h: number } | null {
+    const have = this.flows.get(key);
+    if (have && have.stamp === stamp) return have;
+    const gl = this.gl;
+    const [w, h] = flowSize(sw, sh);
+    try {
+      const flow = opticalFlow(this.grayOf(a, w, h), this.grayOf(b, w, h));
+      const f = have ?? { tex: this.makeTexture(), stamp: '', w: 0, h: 0 };
+      gl.bindTexture(gl.TEXTURE_2D, f.tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG16F, w, h, 0, gl.RG, gl.FLOAT, flow.data);
+      Object.assign(f, { stamp, w, h });
+      this.flows.set(key, f);
+      return f;
+    } catch {
+      return null;
+    }
   }
 
   /** Draw a picture (sw × sh) into a target where Motion puts it: position, size, turn, tilt and crop. */
@@ -709,7 +811,7 @@ export class Compositor {
           t = this.applyEffect(e, t, pics, op.layer);
           if (this.matteShown) break;
         }
-        const mixed = this.composite(acc, t, op.layer.motion.opacity / 100, 'normal');
+        const mixed = this.composite(acc, t, op.layer.motion.opacity / 100, op.layer.motion.blend ?? 'normal');
         this.give(t);
         acc = mixed;
         empty = false;
@@ -729,6 +831,42 @@ export class Compositor {
     this.use(p, { uTex: [acc.tex, 0], uSize: [this.w, this.h], uBack: hexToRgb(background), uFlip: flip ? 1 : 0 });
     this.drawFull();
     this.give(acc);
+  }
+
+  private outTarget: { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number } | null = null;
+
+  /**
+   * A whole frame as RGBA bytes, top row first, for exports FFmpeg encodes:
+   * over the background, or (with \`alpha\`) see-through where nothing covers it.
+   */
+  readFrame(ops: Op[], pics: Pictures, background: string, alpha: boolean): Uint8Array {
+    const gl = this.gl;
+    for (const t of this.targets) t.busy = false;
+    gl.disable(gl.BLEND);
+    const acc = this.compose(ops, pics);
+    let o = this.outTarget;
+    if (!o || o.w !== this.w || o.h !== this.h) {
+      if (o) {
+        gl.deleteFramebuffer(o.fb);
+        gl.deleteTexture(o.tex);
+      }
+      const tex = this.makeTexture();
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.w, this.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      const fb = gl.createFramebuffer() as WebGLFramebuffer;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      o = { fb, tex, w: this.w, h: this.h };
+      this.outTarget = o;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, o.fb);
+    gl.viewport(0, 0, this.w, this.h);
+    this.use(this.program('out', FULL_VS, OUT_FS), { uTex: [acc.tex, 0], uBack: hexToRgb(background), uAlpha: alpha ? 1 : 0 });
+    this.drawFull();
+    this.give(acc);
+    const px = new Uint8Array(this.w * this.h * 4);
+    gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return px;
   }
 
   /** A made picture (gradient, noise, particles, light leak) drawn into a target. */

@@ -12,8 +12,15 @@ export interface Key {
   t: number;
   v: number;
   e: Ease;
+  /** Custom bezier handles (frames, value) relative to the key: `i` reaches back toward the previous key, `o` ahead toward the next. Used by 'bezier'. */
+  i?: [number, number];
+  o?: [number, number];
 }
-export type Ease = 'linear' | 'ease' | 'hold';
+/**
+ * How a key moves on to the next one: straight, smooth both ends (the original ease), held, slowing into the
+ * next key (easeIn), leaving this key slowly (easeOut), an automatic bezier through the neighbors, or custom handles.
+ */
+export type Ease = 'linear' | 'ease' | 'hold' | 'easeIn' | 'easeOut' | 'auto' | 'bezier';
 
 export interface MediaItem {
   id: string;
@@ -40,6 +47,13 @@ export interface MediaItem {
   preparing?: boolean;
   /** The words spoken in it (made by Transcribe). */
   transcript?: Transcript;
+  /** Media management: stars (0–5), tags, notes, and when it was added (ms since 1970). */
+  rating?: number;
+  tags?: string[];
+  notes?: string;
+  addedAt?: number;
+  /** A subclip: only this part of the file (seconds), e.g. one shot found by scene detection. */
+  range?: [number, number];
 }
 
 /** What a file is (FFmpeg looked when it was imported) and how Lumora Studio handles it. */
@@ -150,7 +164,24 @@ export interface CaptionStyle {
   lines: number;
 }
 
-export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'add' | 'darken' | 'lighten' | 'difference' | 'softlight';
+export type BlendMode =
+  | 'normal'
+  | 'multiply'
+  | 'screen'
+  | 'overlay'
+  | 'add'
+  | 'darken'
+  | 'lighten'
+  | 'difference'
+  | 'softlight'
+  | 'hardlight'
+  | 'colordodge'
+  | 'colorburn'
+  | 'exclusion'
+  | 'hue'
+  | 'saturation'
+  | 'color'
+  | 'luminosity';
 
 export interface Motion {
   /** Pixels from the middle of the frame. */
@@ -237,6 +268,79 @@ export interface TextData {
   caps?: boolean;
   /** The box and bar grow in with the words (and shrink away with them). */
   boxGrow?: boolean;
+  /** Letters, words or lines animated one after another (see model/textanim.ts). */
+  animators?: TextAnimator[];
+}
+
+/** Which letters, words or lines an animator moves, and how much of its properties each gets. */
+export interface TextAnimator {
+  id: string;
+  name: string;
+  on: boolean;
+  /** What the range counts: letters (spaces skipped), words or lines. */
+  by: 'char' | 'word' | 'line';
+  /** The range (percent of the units), moved along by `offset`. */
+  start: Param;
+  end: Param;
+  offset: Param;
+  /** How the amount falls off across the range. */
+  shape: 'square' | 'rampUp' | 'rampDown' | 'triangle' | 'round' | 'smooth';
+  /** Square: each unit is fully in or out (no partial coverage). */
+  hard?: boolean;
+  /** Count from the last unit back. */
+  reverse?: boolean;
+  /** Percent of the properties applied where selected. */
+  amount: Param;
+  /** The properties at full selection: opacity and scale (percent), position (px for a 1080-high frame), rotation (degrees), blur and tracking (px). */
+  opacity?: Param;
+  x?: Param;
+  y?: Param;
+  scale?: Param;
+  rotation?: Param;
+  blur?: Param;
+  tracking?: Param;
+}
+
+/** A drawn shape (sizes are for a 1080-high frame). */
+export interface ShapeData {
+  kind: 'rect' | 'ellipse' | 'polygon' | 'star' | 'line';
+  w: number;
+  h: number;
+  /** Where its middle sits before Motion moves it (0–1 across and down). */
+  px: number;
+  py: number;
+  /** Polygon sides and star points. */
+  sides: number;
+  /** A star's inner radius (percent of the outer). */
+  inner: number;
+  /** Rounded corners (rectangle, polygon, star). */
+  corner: number;
+  fillOn: boolean;
+  fill: string;
+  strokeOn: boolean;
+  stroke: string;
+  strokeWidth: number;
+  /** Trim paths: the part of the outline drawn (percent), moved along by `trimOffset` (percent). */
+  trimStart: Param;
+  trimEnd: Param;
+  trimOffset: Param;
+}
+
+/** A clip's time remapping: its speed over the clip (keyframes make ramps; 0 is a freeze; negative plays backwards). */
+export interface TimeRemap {
+  /** Percent of normal speed. */
+  speed: Param;
+  /** How frames between the file's frames are made: the nearest frame, two frames blended, or optical-flow interpolation. */
+  sampling: 'nearest' | 'blend' | 'flow';
+  /** The sound keeps its pitch when sped up or slowed down (otherwise it changes like tape). */
+  pitch: boolean;
+}
+
+/** Motion blur for moving pictures: how long the shutter is open (degrees, 180 = half a frame) and how many looks are averaged. */
+export interface MotionBlur {
+  on: boolean;
+  shutter: number;
+  samples: number;
 }
 export type TextAnim = 'none' | 'fade' | 'up' | 'down' | 'left' | 'right' | 'pop' | 'type' | 'blur' | 'wipe';
 
@@ -251,7 +355,9 @@ export type ClipSource =
   /** A picture made here: a gradient, noise, particles… */
   | { kind: 'generator'; gen: string; settings: Record<string, number | string> }
   /** A caption block on a captions track (the track says how it looks). */
-  | { kind: 'caption'; text: string };
+  | { kind: 'caption'; text: string }
+  /** A drawn shape: rectangle, ellipse, polygon, star or line. */
+  | { kind: 'shape'; shape: ShapeData };
 
 /**
  * A spot (or a region) followed through a clip: motion tracking. Places are
@@ -329,6 +435,10 @@ export interface Clip {
   follow?: Follow | null;
   /** Steadied with one of its own tracks. */
   stabilize?: Stabilize | null;
+  /** Time remapping: keyframed speed, freezes and backwards parts (replaces `reverse`; `speed` still scales it). */
+  remap?: TimeRemap | null;
+  /** Motion blur for its animated movement. */
+  motionBlur?: MotionBlur | null;
 }
 
 export interface Marker {
@@ -371,7 +481,26 @@ export interface Project {
   sequences: Sequence[];
   /** The sequence on the timeline. */
   open: string;
+  /** Bins that fill themselves by rules (type, rating, tag…). */
+  smartBins?: SmartBin[];
 }
+
+/** A bin that shows the media matching its rules (all of them, or any). */
+export interface SmartBin {
+  id: string;
+  name: string;
+  match: 'all' | 'any';
+  rules: SmartRule[];
+}
+export type SmartRule =
+  | { field: 'kind'; is: 'video' | 'audio' | 'image' }
+  | { field: 'rating'; atLeast: number }
+  | { field: 'tag'; has: string }
+  | { field: 'resolution'; atLeast: number }
+  | { field: 'added'; withinDays: number }
+  | { field: 'transcript'; has: boolean }
+  | { field: 'used'; is: boolean }
+  | { field: 'text'; has: string };
 
 export const FRAME_RATES = [23.976, 24, 25, 29.97, 30, 50, 59.94, 60] as const;
 export const exactRate = (fps: number): number =>

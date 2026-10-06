@@ -68,7 +68,7 @@ pub fn progress_seconds(line: &str) -> Option<f64> {
 }
 
 /// FFmpeg's own words about what went wrong, made short.
-fn explain(said: &str) -> String {
+pub(crate) fn explain(said: &str) -> String {
     let last = said
         .lines()
         .map(str::trim)

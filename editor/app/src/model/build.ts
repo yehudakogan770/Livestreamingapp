@@ -63,6 +63,7 @@ export function mediaFrom(prepared: Prepared, name: string, bin: string | null =
     hasVideo: image || prepared.hasVideo,
     hasAudio: !image && prepared.hasAudio,
     bin,
+    addedAt: Date.now(),
     ...(prepared.source ? { source: sourceInfo(prepared.source) } : {}),
     ...(prepared.pending ? { preparing: true } : {}),
   };
@@ -219,8 +220,8 @@ export function addMedia(
   const m = p.media.find((x) => x.id === mediaId);
   if (!m) return p;
   const fps = rate(s);
-  const from = range?.in ?? 0;
-  const to = range?.out ?? (m.kind === 'image' ? STILL_SECONDS : m.duration);
+  const from = range?.in ?? m.range?.[0] ?? 0;
+  const to = range?.out ?? m.range?.[1] ?? (m.kind === 'image' ? STILL_SECONDS : m.duration);
   const length = Math.max(1, Math.round((to - from) * fps));
   const vTrack = video ?? s.tracks.find((t) => t.kind === 'video' && !t.locked)?.id;
   const aTrack = audio ?? s.tracks.find((t) => t.kind === 'audio' && !t.locked)?.id;

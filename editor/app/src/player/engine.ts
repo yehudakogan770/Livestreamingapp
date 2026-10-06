@@ -7,6 +7,7 @@ import type { MediaItem, Project, Sequence } from '../model/types';
 import { Compositor, type Pictures } from '../render/compositor';
 import { parseCube, type Cube } from '../render/color';
 import { allLayers, frameOps, sourceAt, videoNeeds, type Layer, type Op } from '../render/frame';
+import { rateAt } from '../model/remap';
 import { matteFor, mattes } from '../vision/mattes';
 import { audioAt, dbToGain, heardTracks, type Heard } from './audio';
 import { playbackFile } from './files';
@@ -357,17 +358,20 @@ export class Engine {
       if (l.source?.kind !== 'video') return;
       const m = l.source.media;
       const mfps = m.fps || 30;
-      const r = dir * l.clip.speed * (l.clip.reverse ? -1 : 1);
+      const r = dir * rateAt(l.clip, l.local);
       // Stopped: the frame and the next few (for stepping); playing: the frames coming up.
       const step = r === 0 ? 1 / mfps : r / fps;
       const time = sourceAt(l.clip, local, fps);
-      this.cache.want(this.videoFile(m), framesAhead({ time, fps: mfps, step, count, duration: m.duration }), mfps);
+      const times = framesAhead({ time, fps: mfps, step, count, duration: m.duration });
+      // Time remapping between two frames: the second one too.
+      if (l.source.next && !times.includes(l.source.next.time)) times.unshift(l.source.next.time);
+      this.cache.want(this.videoFile(m), times, mfps);
     };
     for (const l of allLayers(ops)) {
       if (l.source?.kind !== 'video') continue;
-      const r = dir * l.clip.speed * (l.clip.reverse ? -1 : 1);
+      const r = dir * rateAt(l.clip, l.local);
       // Video elements follow normal forward playback well; decoded frames carry the rest.
-      if (!this.playing || r < 0 || Math.abs(r) > 2) want(l, l.local, aheadCount(r, this.playing));
+      if (!this.playing || r < 0 || Math.abs(r) > 2 || l.source.next) want(l, l.local, aheadCount(r, this.playing));
     }
     // The first frames of clips about to start (looked for every few frames).
     if (!this.playing || this.speed <= 0) return;
@@ -426,9 +430,9 @@ export class Engine {
       const url = this.videoFile(src.media);
       const mfps = src.media.fps || 30;
       const exact = this.cache.frame(url, src.time, mfps);
-      const r = this.speed * layer.clip.speed * (layer.clip.reverse ? -1 : 1);
+      const r = this.speed * rateAt(layer.clip, layer.local);
       // Stopped, backwards or fast: the exact decoded frame is best (a video element would still be seeking).
-      if (!this.playing || r < 0 || Math.abs(r) > 2) {
+      if (!this.playing || r < 0 || Math.abs(r) > 2 || src.next) {
         if (exact) return exact;
         if (this.playing) this.stats.late++;
         return el ?? this.cache.near(url, src.time, mfps) ?? null;
@@ -438,6 +442,12 @@ export class Engine {
       const ready = exact ?? this.cache.near(url, src.time, mfps);
       if (!exact) this.stats.late++;
       return ready ?? el;
+    },
+    // Time remapping between two frames of a file: the second, once decoded (until then the first is shown alone).
+    next: (layer: Layer) => {
+      const src = layer.source;
+      if (src?.kind !== 'video' || !src.next) return null;
+      return this.cache.frame(this.videoFile(src.media), src.next.time, src.media.fps || 30) ?? null;
     },
     // AI masks: worked out in the background, from the playhead on, the first time they're needed.
     matte: (layer, effect) =>
@@ -673,7 +683,7 @@ export class Engine {
       }
       slot.used = now;
       this.applySound(slot, h);
-      this.follow(slot.el, h.time, true, this.speed * h.clip.speed);
+      this.follow(slot.el, h.time, true, this.speed * rateAt(h.clip, frame - h.clip.start));
     }
     for (const [k, slot] of this.sounds) {
       if (heard.some((h) => h.key === k)) continue;

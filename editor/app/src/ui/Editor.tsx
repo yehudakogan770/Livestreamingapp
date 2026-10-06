@@ -11,12 +11,19 @@ import { fileName, folderOf, inApp, native } from '../native';
 import { makeActions, type Actions } from './actions';
 import { ColorPanel, Scopes } from './ColorPage';
 import { PopMenu, type MenuEntry } from './controls';
-import { ExportDialog, HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
+import { HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
+import { DeliverDialog, QueueChip } from './Deliver';
+import { ManagePanels } from './Manage';
+import { panels } from './panels';
+import { shortcutFor } from './shortcuts';
+import { applyWorkspace, BUILT_IN_WORKSPACES, savedWorkspaces } from './workspaces';
+import { Autosaver } from '../manage/recovery';
 import { typing } from './hooks';
 import { chooseAndImport, importFiles, makeProxies, MEDIA_EXTENSIONS } from './importer';
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { SmartDialogs, smartMenu } from '../smart/SmartTools';
+import { ExtrasDialogs, extrasMenu } from '../extras/ExtrasTools';
 import { Mixer } from './Mixer';
 import { ProgramMonitor, SourceMonitor } from './Monitors';
 import { ProjectPanel } from './ProjectPanel';
@@ -149,6 +156,22 @@ export function Editor({
     return () => clearTimeout(saving.current);
   }, [collab, state.dirty, state.project, path, doc, engine]);
 
+  // Autosaved every minute into the recovery folder (versioned backups, and crash recovery).
+  const pathNow = useRef(path);
+  pathNow.current = path;
+  const autosaver = useMemo(() => (shared ? null : new Autosaver(doc, () => pathNow.current)), [doc, shared]);
+  useEffect(() => {
+    if (!autosaver) return;
+    autosaver.start();
+    const bye = () => void autosaver.stop();
+    window.addEventListener('beforeunload', bye);
+    return () => {
+      window.removeEventListener('beforeunload', bye);
+      void autosaver.stop();
+    };
+  }, [autosaver]);
+  useEffect(() => autosaver?.moved(), [autosaver, path]);
+
   const saveAs = async () => {
     if (!inApp()) return;
     const picked = await save({
@@ -206,9 +229,11 @@ export function Editor({
   // The keyboard.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (typing(e) || ui.state.dialog) return;
+      if (typing(e) || ui.state.dialog || panels.open) return;
       if ((e.target as HTMLElement | null)?.closest?.('.vmon--source')) return;
-      const run = keymap(e, actions, ui);
+      // The shortcut editor's keys first; older key handling only for keys it doesn't know.
+      const sc = shortcutFor(e, actions, ui);
+      const run = sc === 'claimed' ? null : (sc ?? keymap(e, actions, ui));
       if (run) {
         e.preventDefault();
         run();
@@ -230,6 +255,10 @@ export function Editor({
         'sep',
         { label: 'Import…', keys: 'Ctrl+I', run: () => void chooseAndImport(doc, null), disabled: !inApp() },
         { label: 'Export…', keys: 'Ctrl+M', run: () => ui.set({ dialog: 'export' }) },
+        { label: 'Render queue…', run: () => panels.show({ kind: 'queue' }) },
+        'sep',
+        { label: 'Collect files / archive…', disabled: !inApp(), run: () => panels.show({ kind: 'archive' }) },
+        { label: 'Backups (autosaved versions)…', disabled: !autosaver || !inApp(), run: () => panels.show({ kind: 'backups' }) },
         'sep',
         { label: 'Find missing files…', disabled: missing.length === 0, run: () => void relink() },
         ...(authOn()
@@ -248,6 +277,7 @@ export function Editor({
       () => [
         { label: `Undo ${doc.undoLabel}`, keys: 'Ctrl+Z', run: actions.undo, disabled: !state.canUndo },
         { label: `Redo ${doc.redoLabel}`, keys: 'Ctrl+Shift+Z', run: actions.redo, disabled: !state.canRedo },
+        { label: 'Undo history…', keys: 'Ctrl+Alt+Z', run: () => panels.show({ kind: 'undo' }) },
         'sep',
         { label: 'Cut', keys: 'Ctrl+X', run: actions.cut },
         { label: 'Copy', keys: 'Ctrl+C', run: actions.copy },
@@ -334,6 +364,15 @@ export function Editor({
         { label: 'Zoom in', keys: '=', run: () => actions.zoom(1.5) },
         { label: 'Zoom out', keys: '-', run: () => actions.zoom(1 / 1.5) },
         { label: 'Reset panel sizes', run: () => ui.set({ left: 330, right: 330, bottom: 330 }) },
+        'sep',
+        {
+          label: 'Workspaces',
+          items: [
+            ...[...BUILT_IN_WORKSPACES, ...savedWorkspaces()].map((w) => ({ label: w.name, run: () => applyWorkspace(ui, w) })),
+            { label: 'Save or remove workspaces…', run: () => panels.show({ kind: 'workspaces' }) },
+          ],
+        },
+        { label: 'Keyboard shortcuts…', keys: 'Ctrl+Alt+K', run: () => panels.show({ kind: 'shortcuts' }) },
       ],
     ],
     [
@@ -382,6 +421,7 @@ export function Editor({
       },
     ],
     ['Smart', () => smartMenu(state.project)],
+    ['AI', () => extrasMenu(state.project, doc, ui)],
     ['Help', () => [{ label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) }]],
   ];
 
@@ -462,6 +502,7 @@ export function Editor({
         <span className={`ed__saved${problemShown ? ' is-problem' : ''}`} title={savedText}>
           {savedText}
         </span>
+        <QueueChip ui={ui} />
         <button type="button" className="btn btn--primary ed__export" onClick={() => ui.set({ dialog: 'export' })} title="Make the finished film (Ctrl+M)">
           Export
         </button>
@@ -516,7 +557,7 @@ export function Editor({
       </footer>
 
       {menu && <PopMenu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
-      {u.dialog === 'export' && <ExportDialog doc={doc} ui={ui} />}
+      {u.dialog === 'export' && <DeliverDialog doc={doc} ui={ui} />}
       {u.dialog === 'sequence' && <SequenceDialog doc={doc} ui={ui} fresh={false} />}
       {u.dialog === 'newSequence' && <SequenceDialog doc={doc} ui={ui} fresh />}
       {u.dialog === 'speed' && <SpeedDialog doc={doc} ui={ui} actions={actions} />}
@@ -541,6 +582,8 @@ export function Editor({
       {collab && <ConflictDialog collab={collab} onOpenShared={onOpenShared} />}
       {u.dialog === 'transcribe' && <TranscribeDialog doc={doc} ui={ui} />}
       <SmartDialogs doc={doc} engine={engine} ui={ui} />
+      <ManagePanels doc={doc} ui={ui} engine={engine} autosaver={autosaver} />
+      <ExtrasDialogs doc={doc} engine={engine} ui={ui} />
     </div>
   );
 }

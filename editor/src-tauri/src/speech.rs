@@ -18,6 +18,21 @@ struct Model {
     files: &'static [(&'static str, &'static str, u64)],
 }
 
+/// An English-to-`lang` translation model (Opus-MT, converted for ONNX Runtime).
+macro_rules! mt {
+    ($lang:literal) => {
+        Model {
+            name: concat!("mt-en-", $lang),
+            home: concat!(
+                "https://huggingface.co/Xenova/opus-mt-en-",
+                $lang,
+                "/resolve/main"
+            ),
+            files: MT_FILES,
+        }
+    };
+}
+
 const MODELS: &[Model] = &[
     Model {
         name: "whisper-base",
@@ -55,6 +70,44 @@ const MODELS: &[Model] = &[
             ("generation_config.json", "generation_config.json", 1_000),
         ],
     },
+    // Translating captions from English, on this computer: one Opus-MT model a language.
+    mt!("de"),
+    mt!("fr"),
+    mt!("es"),
+    mt!("it"),
+    mt!("nl"),
+    mt!("ru"),
+    mt!("uk"),
+    mt!("sv"),
+    mt!("fi"),
+    mt!("cs"),
+    mt!("ro"),
+    mt!("vi"),
+    mt!("id"),
+    mt!("hi"),
+    mt!("jap"),
+    // Scene labels for media search (MediaPipe's image classifier).
+    Model {
+        name: "vision-classifier",
+        home: "https://storage.googleapis.com/mediapipe-models/image_classifier/efficientnet_lite0/int8/latest",
+        files: &[("efficientnet_lite0.tflite", "efficientnet_lite0.tflite", 4_000_000)],
+    },
+];
+
+/// The files of an Opus-MT translation model (quantized ONNX).
+const MT_FILES: &[(&str, &str, u64)] = &[
+    (
+        "encoder_model_quantized.onnx",
+        "onnx/encoder_model_quantized.onnx",
+        25_000_000,
+    ),
+    (
+        "decoder_model_merged_quantized.onnx",
+        "onnx/decoder_model_merged_quantized.onnx",
+        30_000_000,
+    ),
+    ("tokenizer.json", "tokenizer.json", 1_000_000),
+    ("config.json", "config.json", 500),
 ];
 
 /// Lumora's website keeps a copy of every model (tried first).
@@ -215,6 +268,22 @@ mod tests {
         );
         assert!(model(&ours, None, "nope", &|_| {}).is_err());
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn translation_and_vision_models_are_known() {
+        let de = MODELS.iter().find(|m| m.name == "mt-en-de").unwrap();
+        assert_eq!(
+            de.home,
+            "https://huggingface.co/Xenova/opus-mt-en-de/resolve/main"
+        );
+        assert_eq!(de.files.len(), 4);
+        assert!(MODELS.iter().any(|m| m.name == "vision-classifier"));
+        // Every name is its own.
+        let mut names: Vec<_> = MODELS.iter().map(|m| m.name).collect();
+        names.sort_unstable();
+        names.dedup();
+        assert_eq!(names.len(), MODELS.len());
     }
 
     #[test]

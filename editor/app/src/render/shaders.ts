@@ -1,5 +1,6 @@
 // The GPU programs that draw the picture. Colors are kept "premultiplied"
 // (color already multiplied by how see-through it is), so layers stack cleanly.
+import { BLEND_NAMES } from '../model/blend';
 
 export const FULL_VS = `#version 300 es
 in vec2 aPos;
@@ -62,12 +63,38 @@ void main() {
   outColor = vec4(c.rgb + uBack * (1.0 - c.a), 1.0);
 }`;
 
-export const BLEND_MODES = ['normal', 'multiply', 'screen', 'overlay', 'add', 'darken', 'lighten', 'difference', 'softlight'];
+/** A frame for reading back (flipped): over the background, or with \`uAlpha\` see-through with straight (not premultiplied) color. */
+export const OUT_FS = `${HEAD}
+uniform vec3 uBack;
+uniform float uAlpha;
+void main() {
+  vec4 c = texture(uTex, vec2(vUv.x, 1.0 - vUv.y));
+  outColor = uAlpha > 0.5 ? vec4(unpre(c), c.a) : vec4(c.rgb + uBack * (1.0 - c.a), 1.0);
+}`;
+
+export const BLEND_MODES = BLEND_NAMES;
 
 export const COMPOSITE_FS = `${HEAD}
 uniform sampler2D uBase;
 uniform float uOpacity;
 uniform int uMode;
+float lumW(vec3 c) { return dot(c, vec3(0.3, 0.59, 0.11)); }
+vec3 clipColor(vec3 c) {
+  float l = lumW(c);
+  float n = min(c.r, min(c.g, c.b));
+  float x = max(c.r, max(c.g, c.b));
+  if (n < 0.0) c = l + (c - l) * l / max(1e-5, l - n);
+  if (x > 1.0) c = l + (c - l) * (1.0 - l) / max(1e-5, x - l);
+  return c;
+}
+vec3 setLum(vec3 c, float l) { return clipColor(c + (l - lumW(c))); }
+float satOf(vec3 c) { return max(c.r, max(c.g, c.b)) - min(c.r, min(c.g, c.b)); }
+vec3 setSat(vec3 c, float s) {
+  float x = max(c.r, max(c.g, c.b));
+  float n = min(c.r, min(c.g, c.b));
+  return x > n ? (c - n) * s / (x - n) : vec3(0.0);
+}
+vec3 hardLight(vec3 b, vec3 s) { return mix(b * 2.0 * s, b + (2.0 * s - 1.0) - b * (2.0 * s - 1.0), step(0.5001, s)); }
 vec3 blendOne(vec3 b, vec3 s) {
   if (uMode == 1) return b * s;
   if (uMode == 2) return b + s - b * s;
@@ -80,6 +107,14 @@ vec3 blendOne(vec3 b, vec3 s) {
     vec3 d = mix(((16.0 * b - 12.0) * b + 4.0) * b, sqrt(b), step(0.25, b));
     return mix(b - (1.0 - 2.0 * s) * b * (1.0 - b), b + (2.0 * s - 1.0) * (d - b), step(0.5, s));
   }
+  if (uMode == 9) return hardLight(b, s);
+  if (uMode == 10) return mix(min(vec3(1.0), b / max(vec3(1e-5), 1.0 - s)), vec3(1.0), step(0.99999, s)) * step(1e-6, b);
+  if (uMode == 11) return mix(1.0 - min(vec3(1.0), (1.0 - b) / max(vec3(1e-5), s)), vec3(0.0), step(s, vec3(1e-6))) * (1.0 - step(0.99999, b)) + step(0.99999, b);
+  if (uMode == 12) return b + s - 2.0 * b * s;
+  if (uMode == 13) return setLum(setSat(s, satOf(b)), lumW(b));
+  if (uMode == 14) return setLum(setSat(b, satOf(s)), lumW(b));
+  if (uMode == 15) return setLum(s, lumW(b));
+  if (uMode == 16) return setLum(b, lumW(s));
   return s;
 }
 void main() {

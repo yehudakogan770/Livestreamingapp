@@ -1,7 +1,8 @@
 import { scaleKeys, shiftKeys } from './anim';
 import { gradeOf, mapGradeParams } from './grade';
 import { retimeTracks } from '../track/paths';
-import { exactRate, type Clip, type MediaItem, type Motion, type Project, type Sequence, type Track } from './types';
+import { remapPosition, remapSourceAt } from './remap';
+import { exactRate, type Clip, type MediaItem, type Motion, type Param, type Project, type Sequence, type ShapeData, type TextData, type Track } from './types';
 
 export const end = (c: Clip): number => c.start + c.length;
 
@@ -46,6 +47,7 @@ export function mediaOf(p: Project, c: Clip): MediaItem | undefined {
 
 /** Seconds into the clip's source at a frame of the clip. */
 export function sourceTime(c: Clip, into: number, fps: number): number {
+  if (c.remap) return remapSourceAt(c, c.remap, Math.max(0, into), fps);
   const f = c.reverse ? c.length - 1 - into : into;
   return ('in' in c.source ? c.source.in : 0) + (Math.max(0, f) * c.speed) / fps;
 }
@@ -101,8 +103,23 @@ export function mapParams(c: Clip, f: (p: Motion['x']) => Motion['x']): Clip {
       // A node grade's keyframes move too.
       ...(e.type === 'grade' ? { d: mapGradeParams(gradeOf(e), f) as unknown as Record<string, unknown> } : {}),
     })),
+    ...(c.remap ? { remap: { ...c.remap, speed: f(c.remap.speed) } } : {}),
+    ...(c.source.kind === 'shape' ? { source: { ...c.source, shape: mapShape(c.source.shape, f) } } : {}),
+    ...(c.source.kind === 'text' && c.source.text.animators?.length ? { source: { ...c.source, text: mapAnimators(c.source.text, f) } } : {}),
   };
 }
+
+const mapShape = (s: ShapeData, f: (p: Param) => Param): ShapeData => ({ ...s, trimStart: f(s.trimStart), trimEnd: f(s.trimEnd), trimOffset: f(s.trimOffset) });
+
+const ANIMATOR_PARAMS = ['start', 'end', 'offset', 'amount', 'opacity', 'x', 'y', 'scale', 'rotation', 'blur', 'tracking'] as const;
+const mapAnimators = (t: TextData, f: (p: Param) => Param): TextData => ({
+  ...t,
+  animators: t.animators?.map((a) => {
+    const out = { ...a };
+    for (const k of ANIMATOR_PARAMS) if (a[k] !== undefined) out[k] = f(a[k] as Param);
+    return out;
+  }),
+});
 
 const withIn = (c: Clip, delta: number): Clip => ('in' in c.source ? { ...c, source: { ...c.source, in: Math.max(0, c.source.in + delta) } } : c);
 
@@ -112,6 +129,8 @@ export function trimLeft(c: Clip, d: number, fps: number): Clip {
     mapParams({ ...c, start: c.start + d, length: c.length - d }, (x) => shiftKeys(x, -d)),
     (t) => t - d,
   );
+  // A remapped clip starts where its speed had carried it by then.
+  if (c.remap) return withIn(moved, (remapPosition(c.remap, c.length, d) * c.speed) / fps);
   return c.reverse ? moved : withIn(moved, (d * c.speed) / fps);
 }
 

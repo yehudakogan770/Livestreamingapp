@@ -6,6 +6,7 @@ import { end, rate } from '../model/seq';
 import type { Clip, Project, Sequence, Track } from '../model/types';
 import { dbToGain, duckOf, heardTracks, audioAt, type Duck } from '../player/audio';
 import { isAudioEffect, sourceAt } from '../render/frame';
+import { soundPieces } from '../model/remap';
 
 /** A sound effect on a piece: its settings at the start, and (when keyframed) how they change, by seconds from the piece's start. */
 export interface PartEffect {
@@ -30,6 +31,8 @@ export interface Part {
   effects: PartEffect[];
   /** Turned down under the speech tracks (FFmpeg's sidechain compressor). */
   duck: Duck | null;
+  /** false: the pitch follows the speed (like tape); otherwise it is kept. */
+  pitch?: boolean;
 }
 
 /** Every piece of sound in [from, to), joined up where clips simply follow on. */
@@ -55,6 +58,13 @@ export function audioParts(p: Project, s: Sequence, from: number, to: number, de
       const next = clips.find((o) => o.start === end(c) && o.id !== c.id);
       let w0 = c.start - (c.tIn && prev ? Math.floor(c.tIn.length / 2) : 0);
       let w1 = end(c) + (next?.tIn ? next.tIn.length - Math.floor(next.tIn.length / 2) : 0);
+      // Time remapping: the sound in pieces of one speed each (freezes are silent).
+      if (c.remap) {
+        const lo = Math.max(w0, from);
+        const hi = Math.min(w1, to);
+        for (const x of remapParts(p, s, c, t, m.missing && m.proxy ? m.proxy : m.path, m.duration, lo, hi, fps)) parts.push({ ...x, clip: c });
+        continue;
+      }
       // Only the part of the file that exists.
       const firstOk = Math.ceil(c.start + ((c.reverse ? 0 : -src.in) * fps) / c.speed);
       if (!c.reverse) w0 = Math.max(w0, firstOk);
@@ -98,6 +108,38 @@ export function audioParts(p: Project, s: Sequence, from: number, to: number, de
     }
   }
   return join(parts, fps);
+}
+
+/** A remapped clip's sound over [w0, w1): a part for each stretch of one speed and direction. */
+function remapParts(p: Project, s: Sequence, c: Clip, t: Track, path: string, duration: number, w0: number, w1: number, fps: number): Part[] {
+  const out: Part[] = [];
+  if (w1 <= w0) return out;
+  for (const piece of soundPieces(c, w0, w1, fps)) {
+    if (Math.abs(piece.rate) < 1e-3) continue;
+    const a = sourceAt(c, piece.from - c.start, fps);
+    const b = sourceAt(c, piece.to - c.start, fps);
+    const lo = Math.min(a, b);
+    const hi = Math.max(a, b);
+    if (hi <= 0 || lo >= duration) continue;
+    const marks = new Set<number>([piece.from, piece.to - 1]);
+    for (let f = piece.from; f < piece.to; f += Math.max(1, Math.round(fps / 4))) marks.add(f);
+    const lc = Math.max(0, Math.min(c.length - 1, piece.from - c.start));
+    out.push({
+      path,
+      track: t,
+      from: piece.from,
+      to: piece.to,
+      srcFrom: Math.max(0, lo),
+      speed: ((hi - lo) * fps) / (piece.to - piece.from),
+      reverse: b < a,
+      envelope: thin([...marks].sort((x, y) => x - y).map((f) => [(f - piece.from) / fps, gainOf(p, s, c, f)] as [number, number])),
+      pan: Math.max(-1, Math.min(1, valueAt(c.pan, lc) / 100)),
+      effects: partEffects(c, piece.from, piece.to, fps),
+      duck: duckOf(c, t, lc),
+      pitch: c.remap?.pitch !== false,
+    });
+  }
+  return out;
 }
 
 /** A clip's sound effects for the piece [w0, w1): keyframed settings are followed every tenth of a second. */
@@ -264,7 +306,14 @@ export function envelopeExpr(e: [number, number][]): string {
   return `if(lt(t,${num(t0)}),${num(v0)},${expr})`;
 }
 
-function tempo(speed: number): string[] {
+/** Faster or slower with the pitch following (like tape): the sound's rate changed, then made 48 kHz again. */
+export function varispeed(speed: number): string[] {
+  if (Math.abs(speed - 1) < 1e-4) return [];
+  return [`asetrate=${num(48000 * Math.max(0.05, speed))}`, 'aresample=48000'];
+}
+
+/** Faster or slower keeping the pitch (FFmpeg's atempo, chained for big changes). */
+export function tempo(speed: number): string[] {
   const out: string[] = [];
   let s = speed;
   while (s > 2) {
@@ -421,7 +470,7 @@ export function soundGraph(
   fps: number,
   from: number,
   firstInput: number,
-  loudness: boolean,
+  loudness: boolean | string,
   speech: string | null = null,
 ): SoundGraph {
   const inputs: string[] = [];
@@ -440,7 +489,7 @@ export function soundGraph(
       'aresample=48000',
       'aformat=sample_fmts=fltp:channel_layouts=stereo',
       ...(x.reverse ? ['atrim=duration=' + num(srcDur), 'areverse'] : []),
-      ...tempo(x.speed),
+      ...(x.pitch === false ? varispeed(x.speed) : tempo(x.speed)),
       `atrim=duration=${num(dur)}`,
       'asetpts=PTS-STARTPTS',
       ...effectChain(x.effects, i),
@@ -467,7 +516,7 @@ export function soundGraph(
     'aformat=sample_fmts=fltp:channel_layouts=stereo',
     `apad=whole_dur=${total}`,
     `atrim=duration=${total}`,
-    ...(loudness ? ['loudnorm=I=-16:TP=-1.5:LRA=11'] : []),
+    ...(loudness === true ? ['loudnorm=I=-16:TP=-1.5:LRA=11'] : loudness ? [loudness] : []),
   ];
   if (labels.length === 0) filters.push(`anullsrc=r=48000:cl=stereo,${tail.join(',')}[aout]`);
   else if (labels.length === 1) filters.push(`[${labels[0]}]${tail.join(',')}[aout]`);
@@ -486,6 +535,14 @@ export interface Job {
 
 export type SoundFormat = 'aac' | 'mp3' | 'wav';
 
+/** Delivery's own choices for the last run (a preset's sound codec, chapters, embedded captions). */
+export interface FinishOptions {
+  /** The sound encoder's arguments (otherwise those of `sound`). */
+  audio?: string[];
+  /** More inputs and what to do with them; `first` is the number the first of them gets. */
+  extra?: (first: number) => { inputs: string[]; args: string[] };
+}
+
 /**
  * The runs that make the sound and join it to the picture. When something
  * ducks under speech, the speech tracks are mixed first (the key the
@@ -498,7 +555,8 @@ export function finishJobs(
   range: { from: number; to: number },
   video: { file: string; copy: boolean; crf: number } | null,
   sound: SoundFormat,
-  loudness: boolean,
+  loudness: boolean | string,
+  opts: FinishOptions = {},
 ): Job[] {
   const fps = rate(s);
   const seconds = (range.to - range.from) / fps;
@@ -531,7 +589,14 @@ export function finishJobs(
     });
   }
   const graph = soundGraph(parts, seconds, fps, range.from, video ? 1 : 0, loudness, speech);
-  const audioCodec = sound === 'mp3' ? ['-c:a', 'libmp3lame', '-q:a', '2'] : sound === 'wav' ? ['-c:a', 'pcm_s16le'] : ['-c:a', 'aac', '-b:a', '256k'];
+  const extra = opts.extra?.((video ? 1 : 0) + graph.inputs.filter((x) => x === '-i').length) ?? { inputs: [], args: [] };
+  const audioCodec = opts.audio
+    ? opts.audio
+    : sound === 'mp3'
+      ? ['-c:a', 'libmp3lame', '-q:a', '2']
+      : sound === 'wav'
+        ? ['-c:a', 'pcm_s16le']
+        : ['-c:a', 'aac', '-b:a', '256k'];
   const videoArgs = video
     ? [
         '-map',
@@ -543,12 +608,14 @@ export function finishJobs(
     args: [
       ...(video ? ['-i', video.file] : []),
       ...graph.inputs,
+      ...extra.inputs,
       '-filter_complex',
       graph.graph,
       ...videoArgs,
       '-map',
       '[aout]',
       ...audioCodec,
+      ...extra.args,
       '-ar',
       '48000',
       ...(video ? ['-movflags', '+faststart', '-t', num(seconds)] : []),
