@@ -2,6 +2,9 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { blankCue, type Plan, type PlanCue } from './model';
 import type { PlanStore } from './usePlan';
+import type { ChatStore } from './useChat';
+import type { BlockStore } from './useBlocks';
+import { blankBlock } from './blocks';
 
 // A phone-sized window: every media query matches (the phone layout's).
 beforeAll(() => {
@@ -55,7 +58,22 @@ const store: PlanStore = {
   uncomment: vi.fn(),
   reloadRole: vi.fn(),
 };
+const chatStore: ChatStore = { messages: [], loaded: true, error: '', unread: 0, send: vi.fn(async () => {}), remove: vi.fn(), markRead: vi.fn() };
+const blockStore: BlockStore = {
+  blocks: [
+    { ...blankBlock('p', 'k1', '2026-10-20', 1), starts: '15:00', ends: '17:00', title: 'Load-in', location: 'Loading dock', who: 'Crew' },
+    { ...blankBlock('p', 'k2', '2026-10-20', 2), starts: '17:00', ends: '18:00', title: 'Sound check', who: 'Audio' },
+  ],
+  loaded: true,
+  error: '',
+  add: vi.fn(() => 'k1'),
+  addMany: vi.fn(),
+  edit: vi.fn(),
+  remove: vi.fn(),
+};
 vi.mock('./usePlan', () => ({ usePlan: () => store }));
+vi.mock('./useChat', () => ({ useChat: () => chatStore }));
+vi.mock('./useBlocks', () => ({ useBlocks: () => blockStore }));
 vi.mock('./session', () => ({ db: () => ({}) }));
 
 const { PlanView } = await import('./PlanView');
@@ -73,7 +91,8 @@ describe('plan view on a phone', () => {
     expect(card).toHaveTextContent('Speaker');
     expect(card).toHaveTextContent('Dana · Camera 1 · Fade');
     expect(document.querySelector('.cards__section')).toHaveTextContent('Opening');
-    expect(screen.getByRole('navigation', { name: 'Plan actions' })).toHaveTextContent('Add cue');
+    expect(within(screen.getByRole('navigation', { name: 'Plan actions' })).getByRole('button', { name: 'Share' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add cue' })).toBeInTheDocument();
     expect(screen.getByText(/3 cues · Total/)).toBeInTheDocument();
   });
 
@@ -147,5 +166,31 @@ describe('plan view on a phone', () => {
     expect(screen.queryByLabelText('Show starts')).toBeNull();
     fireEvent.click(when);
     expect(screen.getByLabelText('Show starts')).toHaveAttribute('type', 'time');
+  });
+
+  it('shows the schedule as a list by day, and a block opens in a sheet', () => {
+    const onTab = vi.fn();
+    render(<PlanView planId="p" me={{ id: 'me', name: 'Sam Lee' }} onBack={() => {}} tab="schedule" onTab={onTab} />);
+    expect(screen.getByText('Tuesday, October 20, 2026')).toBeInTheDocument();
+    const row = screen.getByRole('button', { name: /Load-in/ });
+    expect(row).toHaveTextContent('3:00 – 5:00 PM');
+    expect(row).toHaveTextContent('Loading dock');
+    fireEvent.click(screen.getByRole('button', { name: 'My schedule' }));
+    expect(screen.queryByRole('button', { name: /Load-in/ })).toBeNull();
+    fireEvent.change(screen.getByLabelText('Also show blocks for my roles'), { target: { value: 'Audio' } });
+    fireEvent.click(screen.getByRole('button', { name: /Sound check/ }));
+    const sheet = screen.getByRole('dialog', { name: 'Schedule block' });
+    expect(within(sheet).getByDisplayValue('Sound check')).toBeInTheDocument();
+    expect(within(sheet).getByLabelText('Starts')).toHaveAttribute('type', 'time');
+    localStorage.removeItem('lumora.planner.myRoles');
+  });
+
+  it('has Run of show, Schedule and Chat tabs', () => {
+    const onTab = vi.fn();
+    render(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} tab="chat" onTab={onTab} />);
+    expect(screen.getByRole('tab', { name: 'Chat' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('No messages yet.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Schedule' }));
+    expect(onTab).toHaveBeenCalledWith('schedule');
   });
 });

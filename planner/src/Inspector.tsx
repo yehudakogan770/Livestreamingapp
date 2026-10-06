@@ -4,7 +4,7 @@ import { ClockInput, DurationInput, MinSecInput, TimeInput } from './fields';
 import { SEGMENTS, TRANSITION_NAMES, clock12, formatDuration, type PlanComment, type PlanCue, type Schedule, type Segment } from './model';
 import type { PlanStore } from './usePlan';
 
-/** "Camera 1 · Fade · Lower third: Rabbi" — the Lumora hints in short. */
+/** "Camera 1 · Fade · Lower third" — the Lumora hints in short. */
 export function hintText(c: PlanCue): string {
   return [c.input, c.transition, c.overlay]
     .map((s) => s.trim())
@@ -94,7 +94,14 @@ export function Inspector({
       )}
       <label className="field">
         <span>Cue</span>
-        <input className="input" value={cue.title} maxLength={120} readOnly={!canEdit} onChange={(e) => set({ title: e.target.value })} />
+        <input
+          className="input input--title"
+          value={cue.title}
+          maxLength={120}
+          readOnly={!canEdit}
+          placeholder="Untitled cue"
+          onChange={(e) => set({ title: e.target.value })}
+        />
       </label>
       <div className="grid2">
         <label className="field">
@@ -153,7 +160,13 @@ export function Inspector({
         ) : (
           <label className="field">
             <span>Length</span>
-            <DurationInput value={cue.durationSec} readOnly={!canEdit} placeholder="Minutes, e.g. 5 or 4:30" label="Length" onChange={(v) => set({ durationSec: v })} />
+            <DurationInput
+              value={cue.durationSec}
+              readOnly={!canEdit}
+              placeholder="Minutes, e.g. 5 or 4:30"
+              label="Length"
+              onChange={(v) => set({ durationSec: v })}
+            />
           </label>
         )}
       </div>

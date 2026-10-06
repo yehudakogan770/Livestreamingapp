@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { blankCue, type Plan, type PlanCue } from './model';
 import type { PlanStore } from './usePlan';
+import type { ChatStore } from './useChat';
+import type { BlockStore } from './useBlocks';
 
 const plan: Plan = {
   id: 'p',
@@ -37,7 +39,19 @@ const store: PlanStore = {
   uncomment: vi.fn(),
   reloadRole: vi.fn(),
 };
+const chatStore: ChatStore = {
+  messages: [{ id: 'm1', planId: 'p', author: 'dana', authorName: 'Dana', body: 'Is #2 still five minutes?', createdAt: Date.parse('2026-10-06T18:00:00') }],
+  loaded: true,
+  error: '',
+  unread: 1,
+  send: vi.fn(async () => {}),
+  remove: vi.fn(),
+  markRead: vi.fn(),
+};
+const blockStore: BlockStore = { blocks: [], loaded: true, error: '', add: vi.fn(() => 'blk'), addMany: vi.fn(), edit: vi.fn(), remove: vi.fn() };
 vi.mock('./usePlan', () => ({ usePlan: () => store }));
+vi.mock('./useChat', () => ({ useChat: () => chatStore }));
+vi.mock('./useBlocks', () => ({ useBlocks: () => blockStore }));
 vi.mock('./session', () => ({ db: () => ({}) }));
 
 const { PlanView } = await import('./PlanView');
@@ -62,5 +76,50 @@ describe('plan view', () => {
     expect(screen.getByText('Mic check first')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Move up'));
     expect(store.move).toHaveBeenCalledWith(1, 0);
+  });
+
+  it('shows an unread count on the chat tab, and a #2 in a message shows cue 2', () => {
+    render(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} />);
+    const chatTab = screen.getByRole('tab', { name: /Chat/ });
+    expect(chatTab).toHaveTextContent('Chat1');
+    fireEvent.click(chatTab);
+    expect(screen.getByRole('article', { name: /^Dana, / })).toHaveTextContent('Is #2 still five minutes?');
+    fireEvent.click(screen.getByRole('button', { name: '#2' }));
+    expect(document.getElementById('cue-b')).toHaveClass('is-sel');
+    expect(screen.getByLabelText('Message')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Yes' } });
+    fireEvent.keyDown(screen.getByLabelText('Message'), { key: 'Enter' });
+    expect(chatStore.send).toHaveBeenCalledWith('Yes');
+  });
+
+  it('marks an untitled cue as a placeholder and points at what is missing', () => {
+    const before = [...store.cues];
+    store.cues = [...before, { ...blankCue('p', 'c', 3), segment: 'camera' }];
+    store.plan = { ...plan, startTime: '' };
+    try {
+      render(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} />);
+      expect(screen.getByLabelText('Cue 3')).toHaveValue('');
+      expect(screen.getByLabelText('Cue 3')).toHaveAttribute('placeholder', 'Untitled cue');
+      expect(screen.getByText('Set a start time to see when each cue begins')).toBeInTheDocument();
+      fireEvent.click(screen.getByText('1 without a length'));
+      expect(document.getElementById('cue-c')).toHaveClass('is-sel');
+    } finally {
+      store.cues = before;
+      store.plan = plan;
+    }
+  });
+
+  it('switches to the schedule', () => {
+    const onTab = vi.fn();
+    const { rerender } = render(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} onTab={onTab} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Schedule/ }));
+    expect(onTab).toHaveBeenCalledWith('schedule');
+    rerender(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} onTab={onTab} tab="schedule" />);
+    expect(screen.getByText('No schedule yet.')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Start from a typical show day'));
+    expect(blockStore.addMany).toHaveBeenCalled();
+    const made = (blockStore.addMany as ReturnType<typeof vi.fn>).mock.calls[0]![0] as { title: string; day: string }[];
+    expect(made.map((b) => b.title)).toContain('Sound check');
+    expect(made[0]!.day).toBe('2026-10-20');
   });
 });

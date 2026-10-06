@@ -22,6 +22,9 @@ export const SEGMENTS: { id: Segment; name: string; short: string }[] = [
 export const segmentName = (s: Segment): string => SEGMENTS.find((x) => x.id === s)?.name ?? 'Custom';
 export const isSegment = (s: unknown): s is Segment => SEGMENTS.some((x) => x.id === s);
 
+/** A cue's name to show: its title, or "Untitled cue" (shown as a placeholder, not as data). */
+export const cueLabel = (c: { title: string }): string => c.title.trim() || 'Untitled cue';
+
 export interface Plan {
   id: string;
   owner: string;

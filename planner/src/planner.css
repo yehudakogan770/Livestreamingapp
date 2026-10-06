@@ -20,6 +20,9 @@
   --accent-hover: #383837;
   --accent-ink: #ffffff;
   --sel: #efefed;
+  --side: #f0f0ee;
+  --side-hover: #e7e7e4;
+  --side-on: #e1e1de;
   --live: #c4271f;
   --live-bg: #fcefee;
   --warn: #9a5800;
@@ -53,6 +56,9 @@
     --accent-hover: #ffffff;
     --accent-ink: #141413;
     --sel: #2b2b29;
+    --side: #181817;
+    --side-hover: #222221;
+    --side-on: #2c2c2a;
     --live: #f0574e;
     --live-bg: #34201e;
     --warn: #e2a640;
@@ -81,6 +87,9 @@
   --accent-hover: #ffffff;
   --accent-ink: #141413;
   --sel: #2b2b29;
+  --side: #181817;
+  --side-hover: #222221;
+  --side-on: #2c2c2a;
   --live: #f0574e;
   --live-bg: #34201e;
   --warn: #e2a640;
@@ -579,11 +588,262 @@ input[type='time']::-webkit-calendar-picker-indicator:hover {
   letter-spacing: -0.015em;
 }
 
-/* ---- App frame ---- */
-.app {
+/* ---- App frame: a sidebar and the page, like a desktop app ---- */
+.shell {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  height: 100%;
+}
+.shell__main {
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+.side {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 10px 8px 8px;
+  border-right: 1px solid var(--line);
+  background: var(--side);
+}
+.side__brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 36px;
+  padding: 0 8px;
+  margin-bottom: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.side__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.side__item,
+.side__plan {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: var(--r);
+  color: var(--text);
+  text-decoration: none;
+}
+.side__item svg {
+  color: var(--dim);
+}
+.side__item:hover,
+.side__plan:hover {
+  background: var(--side-hover);
+}
+.side__item.is-on,
+.side__plan.is-on {
+  background: var(--side-on);
+  font-weight: 500;
+}
+.side__item.is-on svg {
+  color: var(--text);
+}
+.side__count {
+  margin-left: auto;
+  color: var(--faint);
+  font-size: 12px;
+}
+.side__group {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 18px;
+}
+.side__label {
+  padding: 0 8px 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--faint);
+}
+.side__none {
+  margin: 0;
+  padding: 2px 8px;
+  color: var(--faint);
+  font-size: 12px;
+}
+.side__plans {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.side__plan {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+  min-height: 42px;
+  padding: 4px 8px;
+}
+.side__plan-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.side__plan-when {
+  color: var(--dim);
+  font-size: 11.5px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.side__foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.side__clock {
+  padding: 2px 8px;
+  font: 500 12px var(--mono);
+  color: var(--dim);
+}
+.side__row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.side__row .account {
+  flex: 1;
+  min-width: 0;
+}
+.side__row .account__btn {
+  width: 100%;
+}
+.side .btn--theme .btn__label {
+  display: none;
+}
+.side .btn--theme {
+  width: var(--h);
+  padding: 0;
+}
+.side .popover {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+  right: auto;
+}
+.account__who {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.mark {
+  display: block;
+  flex: 0 0 auto;
+}
+.loading {
   height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.loading__name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Segmented control (List / Calendar, Month / Week / Agenda, Everyone / My schedule) */
+.seg {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 2px;
+  gap: 2px;
+  border-radius: 7px;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+}
+.seg__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: calc(var(--h) - 6px);
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: var(--dim);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.seg__btn:hover {
+  color: var(--text);
+}
+.seg__btn.is-on {
+  background: var(--surface);
+  border-color: var(--line-2);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+.seg__n {
+  font-weight: 600;
+  color: var(--text);
+}
+.seg--block {
+  display: flex;
+}
+.seg--block .seg__btn {
+  flex: 1;
+}
+
+/* Tabs under the plan's header (Run of show / Schedule) */
+.tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  align-self: stretch;
+}
+.tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--dim);
+  font-weight: 500;
+  cursor: pointer;
+}
+.tabs__tab:hover {
+  color: var(--text);
+}
+.tabs__tab[aria-selected='true'] {
+  color: var(--text);
+  border-bottom-color: var(--text);
+}
+.tabs__n {
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 400;
 }
 .bar {
   flex: 0 0 auto;
@@ -2386,6 +2646,1170 @@ html {
   }
 }
 
+/* ==== Planner v3: the plan's header, tabs and side panel; chat; schedule; calendar ==== */
+
+/* Pages */
+.page--wide {
+  max-width: none;
+}
+.page__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page__acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.page__new {
+  margin: -4px 0 20px;
+  max-width: 520px;
+}
+.page__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+}
+.empty--center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  margin: 24px auto;
+  padding: 36px 28px;
+}
+.empty--center .mark {
+  margin-bottom: 12px;
+  opacity: 0.9;
+}
+.empty--center p {
+  max-width: 460px;
+}
+.empty--quiet {
+  border: 0;
+  background: none;
+}
+.empty__acts {
+  justify-content: center;
+  margin-top: 14px;
+}
+
+/* One plan: a compact bar, the event's details, tabs, then the sheet and a side panel */
+.plan__bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.plan__bar .plan__crumbs {
+  height: auto;
+  font-size: 14px;
+}
+.plan__bar .plan__name {
+  flex: 1 1 200px;
+  height: 34px;
+  margin-left: -4px;
+  font-size: 17px;
+}
+.plan__bar .tools__save {
+  min-width: 0;
+  margin: 0 6px;
+}
+.plan__meta {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.plan__meta .mini {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.plan__meta .mini > span:first-child {
+  font-size: 12px;
+}
+.plan__meta .input {
+  height: 28px;
+}
+.mini__in {
+  display: contents;
+}
+.plan__tabs {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 12px 0 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.plan__tabs .btn {
+  height: 30px;
+}
+.popover__item--danger,
+.popover__item--danger svg {
+  color: var(--live);
+}
+
+/* The side panel: the cue (or block) being edited, or the chat */
+.panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+.panel__tabs {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.panel__tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: var(--r);
+  background: none;
+  color: var(--dim);
+  font-weight: 500;
+  cursor: pointer;
+}
+.panel__tab:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+.panel__tab[aria-selected='true'] {
+  color: var(--text);
+  background: var(--sel);
+}
+.panel__n {
+  color: var(--text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.panel__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.panel__body > .inspector {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The cue sheet: a cue with no name says so as a placeholder, not as data */
+.cell--title::placeholder,
+.input--title::placeholder {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--faint);
+}
+.card__title.is-empty,
+.nownext__title.is-empty {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--faint);
+}
+.th__hint {
+  margin-left: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font: inherit;
+  font-weight: 400;
+  text-decoration: underline;
+  text-decoration-color: var(--line-3);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.th__hint:hover {
+  color: var(--text);
+}
+.status__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line-3);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.status__link:hover {
+  color: var(--text);
+  text-decoration-color: currentColor;
+}
+.status__link.warn-text {
+  color: var(--warn);
+}
+.cues__row:target td,
+.cues__row.is-sel td {
+  background: var(--sel);
+}
+
+/* ---- Chat ---- */
+.chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+}
+.chat__list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 0 12px;
+}
+.chat__note {
+  margin: 12px 16px;
+}
+.chat__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.chat__empty .mark {
+  margin-bottom: 8px;
+}
+.chat__empty p {
+  margin: 0;
+}
+.chat__empty p:first-of-type {
+  font-weight: 600;
+}
+.chat__day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 16px 6px;
+  color: var(--faint);
+  font-size: 12px;
+}
+.chat__day::before,
+.chat__day::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.msg {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 0 10px;
+  padding: 1px 12px 1px 14px;
+}
+.msg--head {
+  margin-top: 10px;
+}
+.msg:hover {
+  background: var(--hover);
+}
+.msg__avatar {
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+}
+.msg__gutter {
+  align-self: center;
+  font-size: 10px;
+  color: var(--faint);
+  text-align: right;
+  opacity: 0;
+}
+.msg:hover .msg__gutter {
+  opacity: 1;
+}
+.msg__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.msg__body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+.msg__cue {
+  padding: 0 2px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--surface-3);
+  color: var(--text);
+  font: 500 12px var(--mono);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--line-3);
+  text-underline-offset: 2px;
+}
+.msg__cue:hover {
+  background: var(--sel);
+}
+.msg__del {
+  width: 26px;
+  height: 26px;
+  align-self: start;
+  opacity: 0;
+}
+.msg:hover .msg__del,
+.msg__del:focus-visible {
+  opacity: 1;
+}
+.chat__compose {
+  flex: 0 0 auto;
+  padding: 10px 12px 10px;
+  border-top: 1px solid var(--line);
+}
+.chat__row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+textarea.chat__input {
+  flex: 1;
+  min-height: 34px;
+  max-height: 160px;
+  resize: none;
+  field-sizing: content;
+}
+.chat__send {
+  flex: 0 0 auto;
+  height: 34px;
+  width: 34px;
+}
+.chat__tip {
+  margin: 6px 0 0;
+  font-size: 11.5px;
+}
+.chat__err {
+  margin: 0 0 6px;
+}
+
+/* ---- Schedule ---- */
+.sched {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+.sched__tools {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.sched__tools .btn {
+  height: 30px;
+}
+.sched__roles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.sched__roles .input {
+  height: 28px;
+  width: 200px;
+}
+.sched__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.sched__note {
+  margin: 16px;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px 10px;
+}
+.grid3 > :first-child {
+  grid-column: 1 / -1;
+}
+.inspector__head--solo {
+  margin: 0;
+  padding: 12px 16px;
+}
+.block-ed {
+  padding-top: 16px;
+}
+
+/* The day timeline: one column per day, an hour per 60px */
+.tl {
+  --axis: 64px;
+  min-width: calc(var(--axis) + var(--days) * 220px);
+}
+.tl__heads,
+.tl__untimed {
+  position: sticky;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: var(--axis) repeat(var(--days), minmax(220px, 1fr));
+  background: var(--surface);
+}
+.tl__heads {
+  top: 0;
+  border-bottom: 1px solid var(--line);
+}
+.tl__head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 12px;
+  border-left: 1px solid var(--line);
+}
+.tl__untimed {
+  top: 41px;
+  border-bottom: 1px solid var(--line);
+}
+.tl__corner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+.tl__untimed-col {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px;
+  border-left: 1px solid var(--line);
+}
+.tl__grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--axis) repeat(var(--days), minmax(220px, 1fr));
+  margin-bottom: 24px;
+}
+.tl__axis {
+  position: relative;
+}
+.tl__hour {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font: 11px var(--mono);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.tl__hour:first-child {
+  transform: none;
+}
+.tl__col {
+  position: relative;
+  border-left: 1px solid var(--line);
+}
+.tl__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px solid var(--line);
+  pointer-events: none;
+}
+.tblock {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  padding: 5px 8px;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--line-3);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.tblock:hover {
+  background: var(--hover);
+  border-color: var(--line-3);
+}
+.tblock.is-sel {
+  background: var(--sel);
+  border-color: var(--text);
+  border-left-color: var(--text);
+  z-index: 2;
+}
+.tblock--small {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.tblock--flat {
+  position: static;
+  padding: 3px 8px;
+  border-left-width: 1px;
+}
+.tblock__title {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.tblock__title.is-empty {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--faint);
+}
+.tblock__time {
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.tblock__sub {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* The schedule as a list (phones) */
+.slist {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.slist__title {
+  margin: 0 2px 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.slist__items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.slist__items li + li {
+  border-top: 1px solid var(--line);
+}
+.srow {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  padding: 12px 14px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.srow:active,
+.srow.is-sel {
+  background: var(--hover);
+}
+.srow__time {
+  padding-top: 1px;
+  font-size: 13px;
+  color: var(--dim);
+}
+.srow__main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.srow__title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.srow__title.is-empty {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--faint);
+}
+.srow__sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: 13px;
+  color: var(--dim);
+}
+.srow__sub span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- Calendar ---- */
+.cal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cal__bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.cal__title {
+  min-width: 190px;
+  font-size: 18px;
+  letter-spacing: -0.015em;
+}
+.cal__nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.cal__note {
+  margin: 0;
+}
+.month {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.month__head,
+.month__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.month__head span {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
+}
+.month__week + .month__week {
+  border-top: 1px solid var(--line);
+}
+.month__day {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 6px 6px 8px;
+}
+.month__day + .month__day {
+  border-left: 1px solid var(--line);
+}
+.month__day.is-new {
+  cursor: pointer;
+}
+.month__day.is-new:hover {
+  background: var(--surface-2);
+}
+.month__day.is-out {
+  background: var(--surface-2);
+}
+.month__day.is-out .month__n {
+  color: var(--faint);
+}
+.month__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.month__day.is-today .month__n {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.month__plans {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.calchip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--text);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.calchip:hover {
+  background: var(--hover);
+}
+.calchip__time {
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 18px;
+}
+.calchip__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  line-height: 18px;
+}
+.calchip__venue {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 11.5px;
+}
+.month__more {
+  align-self: flex-start;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+.month__more:hover {
+  color: var(--text);
+}
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+  min-height: 420px;
+}
+.week__day {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.week__day + .week__day {
+  border-left: 1px solid var(--line);
+}
+.week__day.is-new {
+  cursor: pointer;
+}
+.week__day.is-new:hover {
+  background: var(--surface-2);
+}
+.week__head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.week__n {
+  font-size: 18px;
+  font-weight: 600;
+}
+.week__day.is-today .week__n {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+.week__plans {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+.weekcard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 9px;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--text);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.weekcard:hover {
+  background: var(--hover);
+}
+.weekcard__time {
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.weekcard__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.weekcard__venue,
+.weekcard__meta {
+  font-size: 12px;
+}
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 760px;
+}
+.agenda__title {
+  margin: 0 2px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dim);
+}
+.agenda__title.is-today {
+  color: var(--text);
+}
+.agenda__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.agenda__list li + li {
+  border-top: 1px solid var(--line);
+}
+.agenda__item {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--text);
+  text-decoration: none;
+}
+.agenda__item:hover {
+  background: var(--hover);
+}
+.agenda__time {
+  padding-top: 1px;
+  color: var(--dim);
+}
+.agenda__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.agenda__name {
+  font-weight: 600;
+}
+.agenda__sub {
+  font-size: 12px;
+}
+.dialog__box--small {
+  width: min(420px, 100%);
+}
+.dialog__acts {
+  margin-top: 4px;
+}
+
+/* Account page (phones) */
+.group {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.group--gap {
+  margin-top: 24px;
+}
+.group__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 16px;
+}
+.group__btn {
+  border: 0;
+  background: none;
+  color: var(--live);
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+.person__id {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bottom tab bar and the add button (phones only) */
+.tabbar,
+.fab {
+  display: none;
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .shell {
+    grid-template-columns: 208px minmax(0, 1fr);
+  }
+  .plan__bar .tools__here .muted,
+  .plan__bar .tools__save {
+    display: none;
+  }
+}
+
+@media (max-width: 760px), (pointer: coarse) and (max-height: 500px) {
+  .shell {
+    display: flex;
+    flex-direction: column;
+  }
+  .shell__main {
+    flex: 1;
+  }
+  .page__head {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .page__title h1 {
+    font-size: 24px;
+  }
+  .page__new {
+    margin: 0 0 18px;
+  }
+  .page__mark {
+    width: 26px;
+    height: 26px;
+  }
+  .tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    padding: 4px 4px env(safe-area-inset-bottom);
+    border-top: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .tabbar__btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 52px;
+    padding: 4px 0 2px;
+    border: 0;
+    background: none;
+    color: var(--faint);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tabbar__btn.is-on {
+    color: var(--text);
+  }
+  .tabbar__icon {
+    position: relative;
+    display: flex;
+  }
+  .tabbar__badge {
+    position: absolute;
+    top: -4px;
+    left: calc(100% - 2px);
+    padding: 0 3px;
+    background: var(--surface);
+    color: var(--text);
+    font: 600 12px/16px var(--font);
+  }
+  .phone {
+    position: relative;
+  }
+  .phone__acts {
+    display: flex;
+    gap: 0;
+    margin-right: -8px;
+  }
+  .phone__acts .btn svg {
+    color: var(--text);
+  }
+  .phone__tabs {
+    margin: 6px 0 2px;
+  }
+  .phone__tabs .seg__btn {
+    height: 36px;
+    font-size: 14px;
+  }
+  .phone__chat {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone__chat .chat__compose {
+    padding: 8px 12px;
+  }
+  .phone__chat .chat__tip {
+    display: none;
+  }
+  .chat__input {
+    min-height: 44px;
+  }
+  .chat__send {
+    width: 44px;
+    height: 44px;
+  }
+  .msg__del {
+    opacity: 0.4;
+    width: 36px;
+    height: 36px;
+  }
+  .phone__mine {
+    margin-bottom: 14px;
+  }
+  .phone__roles {
+    margin-bottom: 16px;
+  }
+  .phone--run .phone__list,
+  .phone--schedule .phone__list {
+    padding-bottom: 88px;
+  }
+  .fab {
+    position: absolute;
+    right: 16px;
+    bottom: 16px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border: 0;
+    border-radius: 28px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+  .fab:active {
+    background: var(--accent-hover);
+  }
+  .plancard {
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+  }
+  .plancard__date {
+    flex: 0 0 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 0;
+    border: 1px solid var(--line-2);
+    border-radius: 8px;
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.2;
+  }
+  .plancard__date b {
+    font-size: 18px;
+    color: var(--text);
+  }
+  .plancard__main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .plancard__go {
+    color: var(--faint);
+  }
+  .cal__title {
+    min-width: 0;
+    font-size: 20px;
+  }
+  .cal__bar .btn--primary {
+    margin-left: auto;
+  }
+  .agenda__item {
+    grid-template-columns: 84px minmax(0, 1fr);
+    min-height: 60px;
+    padding: 12px 14px;
+  }
+  .agenda__name {
+    font-size: 16px;
+  }
+  .agenda__sub {
+    font-size: 13px;
+  }
+  .grid3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .grid3 > :first-child {
+    grid-column: 1 / -1;
+  }
+  .block-ed {
+    gap: 16px;
+    padding: 16px 16px 28px;
+  }
+  .dialog__box--small {
+    width: 100%;
+  }
+}
+
 /* Paper: only the print sheet, black on white. */
 .print-only {
   display: none;
@@ -2401,8 +3825,11 @@ html {
   html,
   body,
   #root,
-  .app {
+  .shell,
+  .shell__main {
+    display: block;
     height: auto;
+    overflow: visible;
     background: #fff;
     color: #000;
   }
@@ -2489,6 +3916,27 @@ html {
     font-size: 10pt !important;
     font-weight: 600;
     border-bottom: 1pt solid #000;
+  }
+  .print__id {
+    display: flex;
+    align-items: center;
+    gap: 10pt;
+  }
+  .print__untitled {
+    color: #666;
+  }
+  .print__sched {
+    margin-top: 16pt;
+    break-inside: auto;
+  }
+  .print__sched h2 {
+    font-size: 12pt;
+    padding-bottom: 4pt;
+    border-bottom: 1.5pt solid #000;
+  }
+  .print__sched .print__cues td:nth-child(3) {
+    font-family: var(--font);
+    font-size: 9.5pt;
   }
   .print__foot {
     margin-top: 10pt;

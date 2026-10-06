@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ffffff" data-auto="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#1d1d1c" data-auto="#1d1d1c" media="(prefers-color-scheme: dark)" />
-    <meta name="description" content="Lumora Planner: the run of show your team plans together, ready to load into Lumora's cues." />
+    <meta name="description" content="Lumora Planner: the run of show, the crew schedule and a chat your team shares, ready to load into Lumora's cues." />
     <meta name="robots" content="noindex" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -15,7 +15,8 @@
     <meta name="format-detection" content="telephone=no" />
     <title>Lumora Planner</title>
     <link rel="icon" href="./mark.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="./icon-180.png" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./icon-180.png" sizes="180x180" />
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,9 +24,20 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
     />
+    <style>
+      /* Before the app has loaded: the mark and the name, on the app's own background. */
+      .boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+        background: #f5f5f4; color: #1a1a19; font: 600 15px 'IBM Plex Sans', system-ui, sans-serif; }
+      @media (prefers-color-scheme: dark) { .boot { background: #141413; color: #ececea; } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot" role="status" aria-label="Loading Lumora Planner">
+        <img src="./mark.svg" alt="" width="40" height="40" />
+        <span>Lumora Planner</span>
+      </div>
+    </div>
     <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

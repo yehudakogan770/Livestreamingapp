@@ -1,13 +1,21 @@
-// One plan on a phone: a compact header, what is on now and next (on the event
-// day), the cues as a list of cards, and the actions in a bar at the bottom.
-// Tapping a cue opens everything about it in a full-screen sheet.
+// One plan on a phone: a compact header with the plan's actions, tabs for the
+// run of show, the schedule and the chat, what is on now and next (on the
+// event day), and the cues as a list of cards. Tapping a cue (or a schedule
+// block) opens everything about it in a full-screen sheet.
 
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronLeft, Ellipsis, Plus, Printer, UserPlus } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronLeft, Ellipsis, Plus, UserPlus } from 'lucide-react';
+import { byDay, isMine, splitRoles } from './blocks';
+import { Chat } from './Chat';
 import { TimeInput } from './fields';
 import { Inspector, hintText, initials } from './Inspector';
-import { clock12, formatDuration, segmentName, shortDate, showClock, type PlanCue, type Schedule } from './model';
+import { Mark } from './Mark';
+import { clock12, cueLabel, formatDuration, segmentName, shortDate, showClock, type PlanCue, type Schedule } from './model';
+import type { PlanTab } from './PlanView';
+import { BlockEditor, ScheduleList, useMine } from './Schedule';
 import { useBackToClose, useReorder } from './touch';
+import type { BlockStore } from './useBlocks';
+import type { ChatStore } from './useChat';
 import type { PlanStore } from './usePlan';
 
 const ROLE_WORDS = { owner: 'You own this plan', editor: 'You can edit', viewer: 'View only' } as const;
@@ -26,18 +34,48 @@ export interface PhonePlanProps {
   onBack: () => void;
   onShare: () => void;
   onLeaveOrDelete: () => void;
+  tab: PlanTab;
+  onTab: (t: PlanTab) => void;
+  chat: ChatStore;
+  blocks: BlockStore;
+  blockSel: string | null;
+  onBlockSel: (id: string | null) => void;
+  onCue: (n: number) => void;
+  onFirstUntimed: () => void;
 }
 
-const cueName = (c: PlanCue) => c.title || segmentName(c.segment);
-
-export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, commentCount, me, onBack, onShare, onLeaveOrDelete }: PhonePlanProps) {
+export function PhonePlan({
+  store,
+  sched,
+  sel,
+  onSel,
+  canEdit,
+  onNow,
+  nowSec,
+  commentCount,
+  me,
+  onBack,
+  onShare,
+  onLeaveOrDelete,
+  tab,
+  onTab,
+  chat,
+  blocks,
+  blockSel,
+  onBlockSel,
+  onCue,
+  onFirstUntimed,
+}: PhonePlanProps) {
   const { plan, cues, comments, role, here, saving } = store;
   const [details, setDetails] = useState(false);
   const [menu, setMenu] = useState(false);
+  const { mine, setMine, roles, setRoles } = useMine();
   const { listRef, handle, rowClass } = useReorder<HTMLOListElement>(cues.length, store.move, canEdit);
   const selIndex = cues.findIndex((c) => c.id === sel);
   const selected = selIndex >= 0 ? cues[selIndex]! : null;
+  const block = blocks.blocks.find((b) => b.id === blockSel) ?? null;
   useBackToClose(selected !== null, () => onSel(null));
+  useBackToClose(block !== null, () => onBlockSel(null));
 
   // A cue just added or moved is scrolled into view when the sheet closes.
   const lastSel = useRef<string | null>(null);
@@ -60,12 +98,16 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
   if (!plan) return null;
   const when = [shortDate(plan.eventDate) || 'No date yet', showClock(plan.startTime), plan.venue].filter(Boolean).join(' · ');
   const add = () => {
-    const id = store.addCue(sel);
-    if (id) onSel(id);
+    if (tab === 'schedule') onBlockSel(blocks.add(plan.eventDate));
+    else {
+      const id = store.addCue(sel);
+      if (id) onSel(id);
+    }
   };
+  const shownBlocks = mine ? blocks.blocks.filter((b) => isMine(b, me.name, splitRoles(roles))) : blocks.blocks;
 
   return (
-    <main className="phone no-print">
+    <main className={`phone phone--${tab} no-print`}>
       <header className="phone__head">
         <div className="phone__top">
           <a className="phone__back" href="#/" onClick={onBack}>
@@ -85,6 +127,21 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
           <span className={`phone__save tools__save--${saving}`} role="status">
             {SAVE_WORDS[saving]}
           </span>
+          <nav className="phone__acts" aria-label="Plan actions">
+            <button type="button" className="btn btn--quiet btn--icon" onClick={onShare} aria-label="Share">
+              <UserPlus size={20} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="btn btn--quiet btn--icon"
+              aria-haspopup="menu"
+              aria-expanded={menu}
+              onClick={() => setMenu(!menu)}
+              aria-label="More"
+            >
+              <Ellipsis size={20} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+          </nav>
         </div>
         <input
           className="phone__name"
@@ -135,108 +192,171 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
                 maxLength={8000}
                 value={plan.notes}
                 readOnly={!canEdit}
-                placeholder="Load-in, crew call, contacts, stream details…"
+                placeholder="Contacts, parking, stream details…"
                 onChange={(e) => store.editPlan({ notes: e.target.value })}
               />
             </label>
           </div>
         )}
+        <div className="seg seg--block phone__tabs" role="tablist" aria-label="Plan">
+          <button type="button" role="tab" className={`seg__btn${tab === 'run' ? ' is-on' : ''}`} aria-selected={tab === 'run'} onClick={() => onTab('run')}>
+            Run of show
+          </button>
+          <button
+            type="button"
+            role="tab"
+            className={`seg__btn${tab === 'schedule' ? ' is-on' : ''}`}
+            aria-selected={tab === 'schedule'}
+            onClick={() => onTab('schedule')}
+          >
+            Schedule
+          </button>
+          <button type="button" role="tab" className={`seg__btn${tab === 'chat' ? ' is-on' : ''}`} aria-selected={tab === 'chat'} onClick={() => onTab('chat')}>
+            Chat
+            {chat.unread > 0 && <span className="seg__n">{chat.unread}</span>}
+          </button>
+        </div>
       </header>
 
-      {nowSec !== null && <NowNext sched={sched} cues={cues} nowSec={nowSec} onNow={onNow} onOpen={onSel} />}
+      {tab === 'run' && nowSec !== null && <NowNext sched={sched} cues={cues} nowSec={nowSec} onNow={onNow} onOpen={onSel} />}
       {store.error && <p className="warn plan__error">{store.error}</p>}
 
-      <div className="phone__list">
-        <ol className="cards" ref={listRef} aria-label="Cues">
-          {cues.map((c, i) => {
-            const t = sched.rows[i]!;
-            const section = c.section && c.section !== cues[i - 1]?.section ? c.section : null;
-            const sub = [c.who, hintText(c)].filter(Boolean).join(' · ') || c.notes.split('\n')[0];
-            const n = commentCount.get(c.id);
-            return [
-              section ? (
-                <li key={`s-${c.id}`} className="cards__section">
-                  {section}
-                </li>
-              ) : null,
-              <li
-                key={c.id}
-                id={`cue-${c.id}`}
-                data-reorder
-                className={`card${onNow === i ? ' is-now' : ''}${sel === c.id ? ' is-sel' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}
-              >
-                <button type="button" className="card__open" onClick={() => onSel(c.id)} aria-label={`Cue ${i + 1}: ${cueName(c)}`}>
-                  <span className="card__when">
-                    <span className={`card__time${t.fixed ? ' is-fixed' : ''}`}>{t.start !== null ? clock12(t.start) : '—'}</span>
-                    <span className="card__len">{formatDuration(c.durationSec) || 'no length'}</span>
-                  </span>
-                  <span className="card__main">
-                    <span className="card__line">
-                      <span className="card__type">{segmentName(c.segment)}</span>
-                      {t.drift !== null && t.drift !== 0 && (
-                        <span className={`drift drift--inline${t.drift < 0 ? ' drift--over' : ''}`}>
-                          {t.drift < 0 ? `runs over ${formatDuration(-t.drift)}` : `gap ${formatDuration(t.drift)}`}
-                        </span>
-                      )}
-                      {n ? (
-                        <span className="com__n" aria-label={`${n} comment${n === 1 ? '' : 's'}`}>
-                          {n}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className={`card__title${c.title ? '' : ' is-empty'}`}>{cueName(c)}</span>
-                    {sub && <span className="card__sub">{sub}</span>}
-                  </span>
-                </button>
-                {canEdit && (
-                  <span className="card__grip" {...handle(i)} aria-hidden="true" title="Drag to reorder">
-                    <span className="grip" />
-                  </span>
-                )}
-              </li>,
-            ];
-          })}
-        </ol>
-        {cues.length === 0 ? (
-          <div className="empty phone__empty">
-            <p>No cues yet.</p>
-            {canEdit && <p className="muted">Add cue starts the list: each cue is one moment of the show, in order.</p>}
-          </div>
-        ) : (
-          <p className="phone__totals">
-            {cues.length} cue{cues.length === 1 ? '' : 's'} · Total <b>{formatDuration(sched.totalSec) || '0:00'}</b>
-            {plan.startTime && sched.endSec !== null && (
-              <>
-                {' '}
-                · Ends <b>{clock12(sched.endSec)}</b>
-              </>
-            )}
-            {sched.untimed > 0 && <span className="warn-text"> · {sched.untimed} without a length</span>}
-          </p>
-        )}
-        <p className="phone__role muted small">{ROLE_WORDS[role ?? 'viewer']}</p>
-      </div>
+      {tab === 'chat' && (
+        <div className="phone__chat">
+          <Chat chat={chat} me={me.id} isOwner={role === 'owner'} cueCount={cues.length} onCue={onCue} planName={plan.name} />
+        </div>
+      )}
 
-      <nav className="phone__bar" aria-label="Plan actions">
-        {canEdit && (
-          <button type="button" className="btn btn--primary phone__add" onClick={add}>
-            <Plus size={18} strokeWidth={2} aria-hidden="true" />
-            Add cue
-          </button>
-        )}
-        <button type="button" className="btn phone__act" onClick={onShare}>
-          <UserPlus size={18} strokeWidth={1.75} aria-hidden="true" />
-          Share
+      {tab === 'schedule' && (
+        <div className="phone__list">
+          <div className="seg seg--block phone__mine" role="group" aria-label="Whose schedule">
+            <button type="button" className={`seg__btn${mine ? '' : ' is-on'}`} aria-pressed={!mine} onClick={() => setMine(false)}>
+              Everyone
+            </button>
+            <button type="button" className={`seg__btn${mine ? ' is-on' : ''}`} aria-pressed={mine} onClick={() => setMine(true)}>
+              My schedule
+            </button>
+          </div>
+          {mine && (
+            <label className="field phone__roles">
+              <span>Also show blocks for my roles</span>
+              <input className="input" value={roles} placeholder="e.g. Audio, Camera" maxLength={120} onChange={(e) => setRoles(e.target.value)} />
+            </label>
+          )}
+          {blocks.error && <p className="warn">{blocks.error}</p>}
+          {!blocks.loaded && !blocks.error && <p className="muted">Loading the schedule…</p>}
+          {blocks.loaded && blocks.blocks.length === 0 && (
+            <div className="empty empty--center phone__empty">
+              <Mark size={28} />
+              <p>No schedule yet.</p>
+              <p className="muted">Crew call, load-in, sound check, doors, show and strike: who, where and when.</p>
+            </div>
+          )}
+          {blocks.loaded && blocks.blocks.length > 0 && shownBlocks.length === 0 && (
+            <div className="empty phone__empty">
+              <p>Nothing on your schedule.</p>
+              <p className="muted">Blocks show here when their “Who” names you, one of your roles, or everyone.</p>
+            </div>
+          )}
+          {shownBlocks.length > 0 && <ScheduleList days={byDay(shownBlocks)} sel={blockSel} onSel={onBlockSel} />}
+        </div>
+      )}
+
+      {tab === 'run' && (
+        <div className="phone__list">
+          <ol className="cards" ref={listRef} aria-label="Cues">
+            {cues.map((c, i) => {
+              const t = sched.rows[i]!;
+              const section = c.section && c.section !== cues[i - 1]?.section ? c.section : null;
+              const sub = [c.who, hintText(c)].filter(Boolean).join(' · ') || c.notes.split('\n')[0];
+              const n = commentCount.get(c.id);
+              return [
+                section ? (
+                  <li key={`s-${c.id}`} className="cards__section">
+                    {section}
+                  </li>
+                ) : null,
+                <li
+                  key={c.id}
+                  id={`cue-${c.id}`}
+                  data-reorder
+                  className={`card${onNow === i ? ' is-now' : ''}${sel === c.id ? ' is-sel' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}
+                >
+                  <button type="button" className="card__open" onClick={() => onSel(c.id)} aria-label={`Cue ${i + 1}: ${cueLabel(c)}`}>
+                    <span className="card__when">
+                      <span className={`card__time${t.fixed ? ' is-fixed' : ''}`}>{t.start !== null ? clock12(t.start) : '—'}</span>
+                      <span className="card__len">{formatDuration(c.durationSec) || 'no length'}</span>
+                    </span>
+                    <span className="card__main">
+                      <span className="card__line">
+                        <span className="card__type">{segmentName(c.segment)}</span>
+                        {t.drift !== null && t.drift !== 0 && (
+                          <span className={`drift drift--inline${t.drift < 0 ? ' drift--over' : ''}`}>
+                            {t.drift < 0 ? `runs over ${formatDuration(-t.drift)}` : `gap ${formatDuration(t.drift)}`}
+                          </span>
+                        )}
+                        {n ? (
+                          <span className="com__n" aria-label={`${n} comment${n === 1 ? '' : 's'}`}>
+                            {n}
+                          </span>
+                        ) : null}
+                      </span>
+                      <span className={`card__title${c.title.trim() ? '' : ' is-empty'}`}>{cueLabel(c)}</span>
+                      {sub && <span className="card__sub">{sub}</span>}
+                    </span>
+                  </button>
+                  {canEdit && (
+                    <span className="card__grip" {...handle(i)} aria-hidden="true" title="Drag to reorder">
+                      <span className="grip" />
+                    </span>
+                  )}
+                </li>,
+              ];
+            })}
+          </ol>
+          {cues.length === 0 ? (
+            <div className="empty empty--center phone__empty">
+              <Mark size={28} />
+              <p>No cues yet.</p>
+              {canEdit && <p className="muted">Add cue starts the list: each cue is one moment of the show, in order.</p>}
+            </div>
+          ) : (
+            <p className="phone__totals">
+              {cues.length} cue{cues.length === 1 ? '' : 's'} · Total <b>{formatDuration(sched.totalSec) || '0:00'}</b>
+              {plan.startTime && sched.endSec !== null && (
+                <>
+                  {' '}
+                  · Ends <b>{clock12(sched.endSec)}</b>
+                </>
+              )}
+              {sched.untimed > 0 && (
+                <>
+                  {' · '}
+                  <button type="button" className="status__link warn-text" onClick={onFirstUntimed}>
+                    {sched.untimed} without a length
+                  </button>
+                </>
+              )}
+              {!plan.startTime && (
+                <>
+                  <br />
+                  <button type="button" className="status__link" onClick={() => setDetails(true)}>
+                    Set a start time to see when each cue begins
+                  </button>
+                </>
+              )}
+            </p>
+          )}
+          <p className="phone__role muted small">{ROLE_WORDS[role ?? 'viewer']}</p>
+        </div>
+      )}
+
+      {canEdit && tab !== 'chat' && (
+        <button type="button" className="fab" onClick={add} aria-label={tab === 'schedule' ? 'Add block' : 'Add cue'}>
+          <Plus size={24} strokeWidth={2} aria-hidden="true" />
         </button>
-        <button type="button" className="btn phone__act" onClick={() => window.print()}>
-          <Printer size={18} strokeWidth={1.75} aria-hidden="true" />
-          Print
-        </button>
-        <button type="button" className="btn phone__act" aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu(!menu)}>
-          <Ellipsis size={18} strokeWidth={1.75} aria-hidden="true" />
-          More
-        </button>
-      </nav>
+      )}
+
       {menu && (
         <div className="menu-back" onPointerDown={(e) => e.target === e.currentTarget && setMenu(false)}>
           <div className="menu" role="menu" aria-label="More">
@@ -249,6 +369,16 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
               }}
             >
               Event details and notes
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenu(false);
+                window.print();
+              }}
+            >
+              Print or save as PDF
             </button>
             <button
               type="button"
@@ -327,6 +457,35 @@ export function PhonePlan({ store, sched, sel, onSel, canEdit, onNow, nowSec, co
           </footer>
         </div>
       )}
+
+      {block && (
+        <div className="cuesheet" role="dialog" aria-modal="true" aria-label="Schedule block">
+          <header className="cuesheet__head">
+            <button type="button" className="btn btn--quiet cuesheet__back" onClick={() => onBlockSel(null)}>
+              <ChevronLeft size={22} strokeWidth={1.75} aria-hidden="true" />
+              Schedule
+            </button>
+            <b className="cuesheet__title">{block.title || 'Untitled block'}</b>
+            <span className="cuesheet__move" />
+          </header>
+          <div className="cuesheet__body">
+            <BlockEditor key={block.id} block={block} store={blocks} canEdit={canEdit} onClose={() => onBlockSel(null)} phone />
+          </div>
+          <footer className="cuesheet__foot">
+            <span className="phone__save">{canEdit ? (blocks.error ? 'Not saved — retrying' : 'Saved as you type') : 'View only'}</span>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={() => {
+                (document.activeElement as HTMLElement | null)?.blur?.();
+                onBlockSel(null);
+              }}
+            >
+              Done
+            </button>
+          </footer>
+        </div>
+      )}
     </main>
   );
 }
@@ -355,7 +514,7 @@ function NowNext({
           <span className="nownext__label">
             <i className="tally" /> Now
           </span>
-          <span className="nownext__title">{cueName(cues[onNow]!)}</span>
+          <span className={`nownext__title${cues[onNow]!.title.trim() ? '' : ' is-empty'}`}>{cueLabel(cues[onNow]!)}</span>
           {cur.end !== null && <span className="nownext__time">{formatDuration(cur.end - nowSec)} left</span>}
         </button>
       ) : (
@@ -367,7 +526,7 @@ function NowNext({
       {next >= 0 && (
         <button type="button" className="nownext__next" onClick={() => onOpen(cues[next]!.id)}>
           <span className="nownext__label">Next</span>
-          <span className="nownext__title">{cueName(cues[next]!)}</span>
+          <span className={`nownext__title${cues[next]!.title.trim() ? '' : ' is-empty'}`}>{cueLabel(cues[next]!)}</span>
           <span className="nownext__time">
             {clock12(sched.rows[next]!.start!)} · in {formatDuration(sched.rows[next]!.start! - nowSec)}
           </span>

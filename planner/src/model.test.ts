@@ -216,7 +216,7 @@ describe('live edits', () => {
   });
 
   it('round-trips a cue through its row', () => {
-    const c = cue('a', 3.5, { title: 'Welcome', segment: 'speaker', who: 'Rabbi', durationSec: 120, input: 'Cam 1', overlay: 'Name', transition: 'Fade' });
+    const c = cue('a', 3.5, { title: 'Welcome', segment: 'speaker', who: 'Host', durationSec: 120, input: 'Cam 1', overlay: 'Name', transition: 'Fade' });
     const back = cueFromRow({ ...cueToRow(c), updated_at: '2026-10-06T19:00:00Z', updated_by_name: 'Dana' });
     expect(back).toEqual({ ...c, updatedAt: Date.parse('2026-10-06T19:00:00Z'), updatedBy: 'Dana' });
     expect(cueFromRow({ ...cueToRow(c), segment: 'nonsense' }).segment).toBe('custom');

@@ -18,12 +18,17 @@ import {
   type Role,
   type SummaryRow,
 } from './model';
+import { messageFromRow, MAX_MESSAGE, type Message, type MessageRow } from './chatModel';
+import { blockFromRow, blockToRow, type Block, type BlockRow } from './blocks';
 
 export type Db = SupabaseClient;
 
 /** Plain words for what went wrong. */
 export function plain(e: unknown): Error {
   const m = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String((e as { message: unknown }).message) : String(e);
+  if (/planner_messages|planner_schedule/i.test(m) && /could not find|does not exist|schema cache/i.test(m))
+    return new Error('Chat and schedules are not switched on yet on the Lumora account server. (Its owner runs supabase/update-8-planner.sql once.)');
+  if (/too many at once/i.test(m)) return new Error('Too many at once from this account. Please wait a moment and try again.');
   if (/could not find the function|function .* does not exist|relation .* does not exist|schema cache|PGRST20[02]/i.test(m))
     return new Error('The Planner is not switched on yet on the Lumora account server. (Its owner runs supabase/update-5-planner.sql once.)');
   if (/fetch|network|failed to|load failed/i.test(m)) return new Error('Cannot reach the Lumora account server. Check the internet connection and try again.');
@@ -73,11 +78,11 @@ export async function myRole(db: Db, planId: string): Promise<Role | null> {
 }
 
 /** A new plan, with you as its owner. */
-export async function createPlan(db: Db, name: string, userId: string): Promise<Plan> {
+export async function createPlan(db: Db, name: string, userId: string, eventDate = ''): Promise<Plan> {
   const row = await data<PlanRow>(
     db
       .from('planner_plans')
-      .insert({ name: name.trim().slice(0, 120) || 'Untitled plan', owner: userId })
+      .insert({ name: name.trim().slice(0, 120) || 'Untitled plan', owner: userId, ...(eventDate ? { event_date: eventDate } : {}) })
       .select('*')
       .single(),
   );
@@ -219,5 +224,77 @@ export function watchPlan(db: Db, planId: string, me: { id: string; name: string
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') void ch.track({ name: me.name });
     });
+  return () => void db.removeChannel(ch);
+}
+
+// ---- Chat (supabase/update-8-planner.sql) ----
+
+/** The latest messages on a plan, oldest first. */
+export async function loadMessages(db: Db, planId: string, limit = 500): Promise<Message[]> {
+  const rows = await data<MessageRow[] | null>(
+    db.from('planner_messages').select('*').eq('plan_id', planId).order('created_at', { ascending: false }).limit(limit),
+  );
+  return (rows ?? []).map(messageFromRow).reverse();
+}
+
+export async function sendMessage(db: Db, planId: string, body: string, userId: string): Promise<Message> {
+  const row = await data<MessageRow>(
+    db
+      .from('planner_messages')
+      .insert({ plan_id: planId, body: body.trim().slice(0, MAX_MESSAGE), author: userId })
+      .select('*')
+      .single(),
+  );
+  return messageFromRow(row);
+}
+
+export async function deleteMessage(db: Db, id: string): Promise<void> {
+  await data(db.from('planner_messages').delete().eq('id', id));
+}
+
+/** New and deleted messages as they happen. */
+export function watchChat(db: Db, planId: string, on: { message: (m: Message) => void; gone: (id: string) => void }): () => void {
+  const ch: RealtimeChannel = db.channel(`lumora-planner-chat:${planId}`);
+  ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'planner_messages', filter: `plan_id=eq.${planId}` }, (p) =>
+    on.message(messageFromRow(p.new as MessageRow)),
+  )
+    // Deleted rows only carry their id (and can't be filtered): unknown ids are ignored.
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'planner_messages' }, (p) => {
+      const id = (p.old as { id?: string }).id;
+      if (id) on.gone(id);
+    })
+    .subscribe();
+  return () => void db.removeChannel(ch);
+}
+
+// ---- Schedule (supabase/update-8-planner.sql) ----
+
+export async function loadBlocks(db: Db, planId: string): Promise<Block[]> {
+  const rows = await data<BlockRow[] | null>(db.from('planner_schedule').select('*').eq('plan_id', planId));
+  return (rows ?? []).map(blockFromRow);
+}
+
+/** Save blocks as they are now (new or changed); the server stamps when and who. */
+export async function saveBlocks(db: Db, blocks: Block[]): Promise<Block[]> {
+  if (!blocks.length) return [];
+  const rows = await data<BlockRow[] | null>(db.from('planner_schedule').upsert(blocks.map(blockToRow)).select('*'));
+  return (rows ?? []).map(blockFromRow);
+}
+
+export async function deleteBlock(db: Db, id: string): Promise<void> {
+  await data(db.from('planner_schedule').delete().eq('id', id));
+}
+
+/** Everyone's schedule changes as they happen. */
+export function watchBlocks(db: Db, planId: string, on: { block: (b: Block) => void; gone: (id: string) => void }): () => void {
+  const ch: RealtimeChannel = db.channel(`lumora-planner-schedule:${planId}`);
+  const f = `plan_id=eq.${planId}`;
+  ch.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'planner_schedule', filter: f }, (p) => on.block(blockFromRow(p.new as BlockRow)))
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'planner_schedule', filter: f }, (p) => on.block(blockFromRow(p.new as BlockRow)))
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'planner_schedule' }, (p) => {
+      const id = (p.old as { id?: string }).id;
+      if (id) on.gone(id);
+    })
+    .subscribe();
   return () => void db.removeChannel(ch);
 }
