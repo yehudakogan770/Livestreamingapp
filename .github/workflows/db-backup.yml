@@ -1,0 +1,117 @@
+name: Database backup
+
+# Once a week (and whenever started by hand from the Actions tab): a copy of
+# the Supabase database, encrypted with BACKUP_PASSPHRASE, kept as a workflow
+# artifact for 90 days. The repository is public, so backups are only ever
+# uploaded encrypted. How to set it up and restore: docs/backup-restore.md.
+#
+# Secrets (repo Settings → Secrets and variables → Actions):
+#   SUPABASE_DB_URL     the Supabase "Session pooler" connection string (port 5432)
+#   BACKUP_PASSPHRASE   the passphrase that encrypts (and later opens) the backup
+
+on:
+  schedule:
+    - cron: '17 7 * * 0' # Sundays, 07:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Back up the database
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Only true/false reaches this step, never the secrets themselves.
+      - name: Check the secrets are set
+        id: secrets
+        env:
+          HAS_URL: ${{ secrets.SUPABASE_DB_URL != '' }}
+          HAS_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE != '' }}
+        run: |
+          if [ "$HAS_URL" != "true" ] || [ "$HAS_PASSPHRASE" != "true" ]; then
+            echo "::notice title=Database backup skipped::Add the SUPABASE_DB_URL and BACKUP_PASSPHRASE secrets to turn on backups (see docs/backup-restore.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install the PostgreSQL 17 client (it can dump Postgres 15 and 17 servers)
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          # shellcheck source=/dev/null
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" |
+            sudo tee /etc/apt/sources.list.d/pgdg.list > /dev/null
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+
+      - name: Dump, compress and encrypt
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          umask 077
+          PG_BIN=/usr/lib/postgresql/17/bin
+          stamp="$(date -u +%Y-%m-%d_%H%M)"
+          out="backup"
+          mkdir -p "$out"
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+
+          # Everything in public (all of Lumora's tables) and auth (the accounts).
+          # If the auth schema can't be read with these credentials, public is
+          # still backed up and a warning says so.
+          if "$PG_BIN/pg_dump" --dbname="$SUPABASE_DB_URL" --format=custom \
+            --schema=public --schema=auth --file="$work/lumora-$stamp.dump" 2> "$work/err.txt"; then
+            echo "Dumped schemas: public, auth"
+            schemas="public auth"
+          else
+            echo "::warning title=auth schema not backed up::Dumping public and auth together failed; trying public only. Accounts (auth.users) are NOT in this backup."
+            sed -E 's#postgres(ql)?://[^ ]*#<connection string>#g' "$work/err.txt" >&2 || true
+            "$PG_BIN/pg_dump" --dbname="$SUPABASE_DB_URL" --format=custom \
+              --schema=public --file="$work/lumora-$stamp.dump"
+            schemas="public"
+          fi
+
+          # A readable copy of the structure (tables, functions, row-level security rules).
+          schema_args=()
+          for s in $schemas; do schema_args+=(--schema="$s"); done
+          "$PG_BIN/pg_dump" --dbname="$SUPABASE_DB_URL" --schema-only \
+            "${schema_args[@]}" --file="$work/lumora-$stamp-schema.sql"
+
+          for f in "$work/lumora-$stamp.dump" "$work/lumora-$stamp-schema.sql"; do
+            gzip -9 "$f"
+            # The passphrase goes in on a private file descriptor: never on the
+            # command line, never in the log.
+            gpg --batch --yes --quiet --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+              --passphrase-fd 3 --output "$out/$(basename "$f").gz.gpg" "$f.gz" 3<<< "$BACKUP_PASSPHRASE"
+          done
+
+          {
+            echo "Lumora database backup, $stamp UTC"
+            echo "Schemas: $schemas"
+            echo "Decrypt: gpg -d FILE.gpg > FILE.gz, then gunzip FILE.gz (see docs/backup-restore.md)"
+          } > "$out/README.txt"
+          ls -l "$out"
+          echo "BACKUP_NAME=lumora-db-backup-$stamp" >> "$GITHUB_ENV"
+
+      - name: Keep the encrypted backup (90 days)
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.BACKUP_NAME }}
+          path: backup/
+          retention-days: 90
+          if-no-files-found: error
+          compression-level: 0

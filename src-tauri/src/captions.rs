@@ -75,7 +75,6 @@ const WHISPER_FILES_SMALL: &[(&str, &str, u64)] = &[
 ];
 
 /// Lumora's own website keeps a copy of every model (tried first).
-const SITE: &str = "https://yehudakogan770.github.io/Livestreamingapp/models";
 
 fn hidden(cmd: &mut Command) -> &mut Command {
     #[cfg(windows)]
@@ -121,7 +120,7 @@ pub fn model(dir: &Path, name: &str) -> Result<PathBuf, String> {
         }
         let part = folder.join(format!("{file}.part"));
         let urls = [
-            format!("{SITE}/{}/{file}", m.name),
+            format!("{}models/{}/{file}", crate::SITE_URL, m.name),
             format!("{}/{path}", m.home),
         ];
         let got = urls

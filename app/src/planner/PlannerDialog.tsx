@@ -8,11 +8,12 @@ import { authOn } from '../auth/config';
 import { isInsideLumora } from '../engine/client';
 import type { Cue } from '../engine/types/Cue';
 import type { Show } from '../engine/types/Show';
+import { PLANNER_URL } from '../site';
 import { combine, DEFAULT_OPTIONS, MAX_CUES, planToCues, type ConvertOptions } from './fromPlanner';
 import './PlannerDialog.css';
 
 /** Where the web Planner is (the same address Lumora opens in the browser). */
-export const PLANNER_URL = 'https://yehudakogan770.github.io/Livestreamingapp/planner/';
+export { PLANNER_URL };
 
 /** Opens the web Planner in the browser. */
 export function openPlanner(): void {

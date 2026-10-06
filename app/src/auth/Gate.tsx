@@ -5,6 +5,7 @@ import { TEST_BUILD } from '../e2e';
 import { mayUse, PRODUCT_NAME, type Access, type Product } from './access';
 import { checkAccess, MIN_PASSWORD, onSignInChange, signIn, signOut, signUp, supabase } from './auth';
 import { CodeForm } from './TwoStep';
+import { openSitePage } from '../site';
 import '../views/ControlView.css';
 import './Gate.css';
 
@@ -242,6 +243,19 @@ function SignIn() {
         />
       </label>
       {mode === 'new' && <p className="gate__note small">At least {MIN_PASSWORD} characters, with letters and numbers.</p>}
+      {mode === 'new' && (
+        <p className="gate__note small">
+          By creating an account, you agree to the{' '}
+          <button type="button" className="linkish" onClick={() => openSitePage('terms.html')}>
+            Terms of Use
+          </button>{' '}
+          and{' '}
+          <button type="button" className="linkish" onClick={() => openSitePage('privacy.html')}>
+            Privacy Policy
+          </button>
+          .
+        </p>
+      )}
       {message && <p className={`gate__msg${message.bad ? ' is-bad' : ''}`}>{message.text}</p>}
       <button type="submit" className="btn btn--primary gate__go" disabled={busy}>
         {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Make my account'}

@@ -149,3 +149,21 @@ test('with two-step sign-in on, the app opens only after the code', async () => 
   await act(async () => changed());
   expect(screen.getByText('The show')).toBeInTheDocument();
 });
+
+test('making an account links to the Terms of Use and Privacy Policy, opened in the browser', async () => {
+  answer = () => Promise.resolve(null);
+  const open = vi.spyOn(window, 'open').mockReturnValue(null);
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.queryByRole('button', { name: 'Terms of Use' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Make an account' }));
+  expect(screen.getByText(/By creating an account, you agree to the/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Terms of Use' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Privacy Policy' }));
+  expect(open.mock.calls.map((c) => c[0])).toEqual([expect.stringMatching(/\/terms\.html$/), expect.stringMatching(/\/privacy\.html$/)]);
+  open.mockRestore();
+});

@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import { getVersion } from '@tauri-apps/api/app';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { BrandMark, type MarkOf } from './Logo';
+import { openSitePage, SITE_LABEL } from '../site';
 import './About.css';
 
 let open = false;
@@ -55,7 +56,16 @@ export function AboutDialog({ app, onClose }: { app: MarkOf; onClose: () => void
           <p className="about__name">{name}</p>
           <p className="about__line">{LINE[app]}</p>
           {version && <p className="about__version">Version {version}</p>}
-          <p className="about__site">yehudakogan770.github.io/Livestreamingapp</p>
+          <p className="about__site">{SITE_LABEL}</p>
+          <p className="about__legal">
+            <button type="button" className="linkish" onClick={() => openSitePage('terms.html')}>
+              Terms of Use
+            </button>
+            {' · '}
+            <button type="button" className="linkish" onClick={() => openSitePage('privacy.html')}>
+              Privacy Policy
+            </button>
+          </p>
         </div>
         <footer className="modal__foot">
           <button type="button" className="btn btn--primary" onClick={onClose} autoFocus>

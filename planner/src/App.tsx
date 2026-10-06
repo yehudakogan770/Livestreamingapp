@@ -512,6 +512,19 @@ function SignIn({ onDone, themeButton }: { onDone: () => void; themeButton: Reac
             />
           </label>
           {mode === 'new' && <p className="muted small">At least {MIN_PASSWORD} characters, with letters and numbers.</p>}
+          {mode === 'new' && (
+            <p className="muted small">
+              By creating an account, you agree to the{' '}
+              <a href="../terms.html" target="_blank" rel="noopener">
+                Terms of Use
+              </a>{' '}
+              and{' '}
+              <a href="../privacy.html" target="_blank" rel="noopener">
+                Privacy Policy
+              </a>
+              .
+            </p>
+          )}
           {error && <p className="warn">{error}</p>}
           {note && <p>{note}</p>}
           <button type="submit" className="btn btn--primary btn--block" disabled={busy}>
@@ -534,6 +547,11 @@ function SignIn({ onDone, themeButton }: { onDone: () => void; themeButton: Reac
           <p className="muted small">
             To make plans of your own, use an account the Lumora team has set up for Lumora. <a href="../">Back to the Lumora website</a>
           </p>
+          {mode === 'in' && (
+            <p className="muted small">
+              <a href="../terms.html">Terms of Use</a> · <a href="../privacy.html">Privacy Policy</a>
+            </p>
+          )}
         </form>
       </div>
     </main>
