@@ -2123,6 +2123,7 @@ dependencies = [
  "lumora-crash",
  "lumora-engine",
  "lumora-selftest",
+ "lumora-testevent",
  "png 0.18.1",
  "qrcode",
  "serde",
@@ -2192,6 +2193,14 @@ dependencies = [
  "serde_json",
  "wgpu",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "lumora-testevent"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
