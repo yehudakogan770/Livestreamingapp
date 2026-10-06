@@ -125,7 +125,7 @@ function Meter({ engine, id, stereo }: { engine: Engine; id: string; stereo?: bo
         shown[i] = Math.max(lv[i] ?? -90, (shown[i] ?? -90) - 1.2);
         const top = h - (Math.max(0, (shown[i] ?? -90) + 60) / 66) * h;
         const x = i * 8;
-        ctx.fillStyle = '#1b1e23';
+        ctx.fillStyle = '#1c1c1e';
         ctx.fillRect(x, 0, 6, h);
         const grad = ctx.createLinearGradient(0, h, 0, 0);
         grad.addColorStop(0, '#2f8f4e');
