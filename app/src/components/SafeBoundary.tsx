@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { BrandMark } from './Logo';
 
 /**
  * Catches anything that breaks while drawing. An audience screen goes plain
@@ -28,7 +29,8 @@ export class SafeBoundary extends Component<{ audience: boolean; reloadAfterMs?:
     if (this.props.audience) return <div style={{ position: 'fixed', inset: 0, background: '#000' }} data-crashed />;
     return (
       <div style={{ margin: 'auto', padding: 24, textAlign: 'center', color: '#e4e5e7' }} data-crashed>
-        <h2 style={{ margin: '0 0 8px' }}>Something went wrong on this screen</h2>
+        <BrandMark size={40} />
+        <h2 style={{ margin: '12px 0 8px' }}>Something went wrong on this screen</h2>
         <p style={{ margin: 0, color: '#a9abb0' }}>Reloading it now. Your show is safe and nothing on the outputs changed.</p>
       </div>
     );

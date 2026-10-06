@@ -7,6 +7,8 @@ import { isMultiview, outputScreen } from './engine/role';
 import { MultiviewView } from './views/MultiviewView';
 import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar, type MenuItem, type Tool } from './components/TitleBar';
+import { BrandMark } from './components/Logo';
+import { AboutHost, openAbout } from './components/About';
 import { CircleHelp, Layers, LibraryBig, ListChecks, Radio, SquarePlus, Spotlight, Type } from 'lucide-react';
 import { Gate, useAccess } from './auth/Gate';
 import { PeopleDialog } from './auth/PeopleDialog';
@@ -60,6 +62,7 @@ function Control() {
       </ProblemsProvider>
       <ReportingHost product="Lumora" />
       <SystemCheckHost app="lumora" />
+      <AboutHost app="lumora" />
     </Gate>
   );
 }
@@ -364,6 +367,8 @@ function ControlApp() {
       { label: 'Check this computer…', hint: 'Can this computer handle a live event?', onClick: openSystemCheck },
       null,
       { label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport },
+      null,
+      { label: 'About Lumora', onClick: openAbout },
     ];
     return {
       Event: event,
@@ -476,7 +481,10 @@ function ControlApp() {
             </SoundProvider>
           </SafeBoundary>
         ) : (
-          <div className="loading">{error ? `The engine did not answer: ${error}` : 'Starting…'}</div>
+          <div className="loading">
+            <BrandMark size={40} />
+            <span>{error ? `The engine did not answer: ${error}` : 'Starting…'}</span>
+          </div>
         )}
       </main>
       {showSetup && show && (

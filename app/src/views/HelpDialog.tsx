@@ -1,4 +1,5 @@
-import { BookOpen, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { BrandMark } from '../components/Logo';
 import { useEffect, useMemo, useState } from 'react';
 import { MANUAL, searchManual } from '../help/manual';
 import './HelpDialog.css';
@@ -19,7 +20,7 @@ export function HelpDialog({ onClose, jewish = false }: { onClose: () => void; j
       <div className="modal__box hlp">
         <header className="modal__head">
           <h2>
-            <BookOpen className="modal__icon" aria-hidden="true" />
+            <BrandMark className="modal__icon" />
             How to use Lumora
           </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>

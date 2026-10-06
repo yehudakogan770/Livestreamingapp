@@ -9,6 +9,7 @@ import { TEST_BUILD } from '../e2e';
 import { onConsentChange, readConsent, setConsent, shouldAsk, type Consent } from './consent';
 import { appLog } from './logs';
 import { collectCrashReports, sendProblemReport } from './reporter';
+import { BrandMark } from '../components/Logo';
 import './reports.css';
 
 // ---- "Report a problem" opens from any menu ----
@@ -181,7 +182,7 @@ export function ReportDialog({ product, onClose }: { product: string; onClose: (
       <div className="modal__box rp" onPaste={paste}>
         <header className="modal__head">
           <h2>
-            <Bug className="modal__icon" aria-hidden="true" />
+            <BrandMark of={product === 'Lumora Studio' ? 'studio' : 'lumora'} className="modal__icon" />
             Report a problem
           </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>

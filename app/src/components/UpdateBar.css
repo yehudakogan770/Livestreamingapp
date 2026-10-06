@@ -37,3 +37,6 @@
   background: var(--accent);
   transition: width 0.2s;
 }
+.upd__mark {
+  flex-shrink: 0;
+}

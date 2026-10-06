@@ -4,7 +4,8 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { getVersion } from '@tauri-apps/api/app';
-import { Check as CheckIcon, Copy, Gauge, Send, X } from 'lucide-react';
+import { Check as CheckIcon, Copy, Send, X } from 'lucide-react';
+import { BrandMark } from '../components/Logo';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import { TEST_BUILD } from '../e2e';
 import { openProblemReport } from '../reports/ReportUI';
@@ -233,7 +234,7 @@ export function SystemCheckDialog({ app, first, onClose, onRan }: { app: AppId; 
       <div className="modal__box sc">
         <header className="modal__head">
           <h2>
-            <Gauge className="modal__icon" aria-hidden="true" />
+            <BrandMark of={app} className="modal__icon" />
             Check this computer
           </h2>
           <button type="button" className="icon" aria-label="Close" onClick={onClose}>
