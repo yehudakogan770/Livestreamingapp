@@ -93,7 +93,7 @@
     };
   }
 
-  /** A picture: the speaker's slides. */
+  /** A picture: the event graphic (tonight's running order). */
   function picture(name, file) {
     const pic = stillPicture(file);
     const img = pic.img;
@@ -107,14 +107,14 @@
         if (drawn) return;
         if (pic.ok && cover(c, img, img.naturalWidth, img.naturalHeight)) drawn = true;
         else {
-          c.fillStyle = '#f6f4f0';
+          c.fillStyle = '#14110d';
           c.fillRect(0, 0, W, H);
         }
       },
     };
   }
 
-  const SOURCES = [camera('Speaker', 'speaker'), camera('Wide', 'wide'), camera('Audience', 'audience'), picture('Slides', 'slides')];
+  const SOURCES = [camera('Host', 'speaker'), camera('Wide', 'wide'), camera('Audience', 'audience'), picture('Tonight', 'slides')];
   const frames = SOURCES.map(() => {
     const cv = document.createElement('canvas');
     cv.width = W;
@@ -144,10 +144,10 @@
     c.textAlign = 'left';
     c.fillStyle = '#fff';
     c.font = `800 25px ${FONT}`;
-    c.fillText('Daniel Brooks', x + 22, y + 32);
+    c.fillText('Marco Reyes', x + 22, y + 32);
     c.fillStyle = '#8fd3db';
     c.font = `500 16px ${FONT}`;
-    c.fillText('Chief Product Officer · Northwind', x + 22, y + 53);
+    c.fillText('Host · Northwind Live', x + 22, y + 53);
     c.restore();
   }
 
@@ -251,7 +251,7 @@
       c.drawImage(program, 0, (H - 270) / 2, W, 270, 0, 0, 640, 270);
       return;
     }
-    // The slides, whole, in the middle of the wide projector screen.
+    // The event graphic, whole, in the middle of the wide projector screen.
     c.fillStyle = '#0b0c0f';
     c.fillRect(0, 0, 640, 270);
     c.drawImage(frames[3], 80, 0, 480, 270);
