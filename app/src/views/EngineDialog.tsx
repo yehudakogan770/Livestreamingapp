@@ -18,8 +18,7 @@ const MODES: { mode: EngineMode; label: string; hint: string }[] = [
 
 /** What Unified (beta) does not do yet (docs/ENGINE.md, "Phase 2"). */
 const NOT_YET = [
-  'Green screen, color adjustments and the frame delay are not applied to cameras yet (crop, zoom, move and flip are).',
-  'Stream, web page, screen capture and guest inputs are not in the engine yet.',
+  'Background removal, blur behind people and auto-framing are not applied to cameras yet (green screen, light and color, crop, zoom, move, flip and the picture delay are).',
   'A camera or video behind slides or behind Pesukim words is not shown yet (the slides and words are).',
   'Captions written into the stream picture, and instant replay, are not in Unified (beta) yet.',
   'In the multiview, the Next tiles show no graphics, and a graphics input’s tile shows it only while it is on air on the Live Screen.',

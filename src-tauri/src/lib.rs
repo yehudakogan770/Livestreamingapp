@@ -1230,7 +1230,11 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
-            app.manage(live::Live::new(&dir, ffmpeg.clone()));
+            app.manage(live::Live::new(
+                &dir,
+                ffmpeg.clone(),
+                Some(std::sync::Arc::clone(&browsers.frames) as _),
+            ));
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,

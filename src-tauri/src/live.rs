@@ -74,6 +74,8 @@ struct Inner {
 pub struct Live {
     file: PathBuf,
     ffmpeg: Option<PathBuf>,
+    /// Stream, web page, screen-capture and guest inputs' pictures (`browser.rs`'s store).
+    pictures: Option<Arc<dyn live_engine::source::EncodedFrames>>,
     inner: Mutex<Inner>,
     /// The control window's sound mixes, to the engine's encoders.
     audio: Arc<AudioBus>,
@@ -176,7 +178,11 @@ pub fn sync_renderers(app: &AppHandle) {
 }
 
 impl Live {
-    pub fn new(dir: &Path, ffmpeg: Option<PathBuf>) -> Self {
+    pub fn new(
+        dir: &Path,
+        ffmpeg: Option<PathBuf>,
+        pictures: Option<Arc<dyn live_engine::source::EncodedFrames>>,
+    ) -> Self {
         let file = dir.join(FILE);
         let saved: Saved = std::fs::read(&file)
             .ok()
@@ -185,6 +191,7 @@ impl Live {
         Live {
             file,
             ffmpeg,
+            pictures,
             inner: Mutex::new(Inner {
                 mode: saved.mode,
                 ..Inner::default()
@@ -208,7 +215,8 @@ impl Live {
             return;
         }
         let fake = std::env::var_os("LUMORA_FAKE_CAMERAS").is_some();
-        let factory = DefaultFactory::new(self.ffmpeg.clone(), fake);
+        let mut factory = DefaultFactory::new(self.ffmpeg.clone(), fake);
+        factory.pictures = self.pictures.clone();
         match Runner::start(Config::default(), Box::new(factory)) {
             Ok(r) => {
                 r.set_show(show.clone());

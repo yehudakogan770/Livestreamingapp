@@ -203,6 +203,11 @@ impl Feeds {
         }
     }
 
+    /// Feed `id`'s encoder has started.
+    pub fn running(&self, id: u64) -> bool {
+        self.feeds.get(&id).is_some_and(|f| f.enc.is_some())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.feeds.is_empty()
     }

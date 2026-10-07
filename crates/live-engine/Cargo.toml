@@ -8,6 +8,9 @@ license.workspace = true
 [lib]
 name = "live_engine"
 
+[dev-dependencies]
+jpeg-encoder = "0.7"
+
 [[bin]]
 name = "live-bench"
 path = "src/bin/live-bench.rs"
@@ -17,6 +20,9 @@ lumora-engine = { path = "../engine" }
 serde.workspace = true
 serde_json.workspace = true
 pollster = "1"
+# Pictures from stream, web page, screen-capture and guest inputs arrive as JPEG (or PNG when see-through).
+zune-jpeg = "0.4"
+png = "0.17"
 
 # Direct3D 12 on Windows (the target), Vulkan or OpenGL elsewhere (tests and development), Metal on macOS.
 # The same wgpu as crates/studio-engine, so the app carries one copy.

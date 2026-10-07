@@ -50,6 +50,8 @@ pub struct Placement {
     pub flip: [bool; 2],
     /// Degrees.
     pub rotate: f32,
+    /// Green screen and light and color (None: the picture as it is).
+    pub look: Option<crate::look::Look>,
 }
 
 impl Default for Placement {
@@ -62,6 +64,7 @@ impl Default for Placement {
             pan: [0.0; 2],
             flip: [false; 2],
             rotate: 0.0,
+            look: None,
         }
     }
 }
@@ -210,6 +213,7 @@ fn placement_of(src: &Source, frame: Rect) -> Placement {
         pan: [pan(a.pan_x), pan(a.pan_y)],
         flip: [a.flip_h, a.flip_v],
         rotate: if a.rotate.is_finite() { a.rotate } else { 0.0 },
+        look: crate::look::Look::of(&src.key, a),
     }
 }
 

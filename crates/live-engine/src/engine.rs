@@ -21,7 +21,9 @@ use crate::multiview::{self, Tally, TileContent};
 use crate::overlay::{self, OverlayStats};
 use crate::present::{NativeOutput, Placement};
 use crate::scene::{self, ScreenScene};
-use crate::source::{FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource};
+use crate::source::{
+    EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource,
+};
 
 /// How the engine runs.
 #[derive(Debug, Clone)]
@@ -65,6 +67,8 @@ pub struct DefaultFactory {
     pub fake_cameras: bool,
     /// Where a show's media path is on disk.
     pub resolve: Box<dyn Fn(&str) -> PathBuf + Send>,
+    /// The app's store of stream, web page, screen-capture and guest pictures.
+    pub pictures: Option<Arc<dyn EncodedFrames>>,
     seed: usize,
 }
 
@@ -74,6 +78,7 @@ impl DefaultFactory {
             ffmpeg,
             fake_cameras,
             resolve: Box::new(|p: &str| PathBuf::from(p)),
+            pictures: None,
             seed: 0,
         }
     }
@@ -86,7 +91,8 @@ impl SourceFactory for DefaultFactory {
             SourceKind::Video { path, .. } => format!("video:{path}"),
             SourceKind::Image { path } => format!("image:{path}"),
             SourceKind::Pattern => "pattern".into(),
-            other => format!("other:{}", kind_name(other)),
+            // Their pictures come from the app's frame store by input: one source each.
+            other => format!("pictures:{}", kind_name(other)),
         }
     }
 
@@ -115,8 +121,18 @@ impl SourceFactory for DefaultFactory {
                     "FFmpeg is needed to play files in the unified engine.",
                 )),
             },
+            SourceKind::Stream(_)
+            | SourceKind::Screen(_)
+            | SourceKind::Guest(_)
+            | SourceKind::Browser(_) => match &self.pictures {
+                Some(p) => Box::new(EncodedSource::start(src.id.as_str(), Arc::clone(p))),
+                None => Box::new(Unavailable::new(format!(
+                    "{} inputs need the app's picture server.",
+                    kind_name(&src.kind)
+                ))),
+            },
             other => Box::new(Unavailable::new(format!(
-                "{} inputs are not in the unified engine yet (Phase 2).",
+                "{} inputs are not in the unified engine yet.",
                 kind_name(other)
             ))),
         }
@@ -276,6 +292,8 @@ pub struct LiveEngine {
     sources: HashMap<SourceId, (String, Box<dyn VideoSource>)>,
     outputs: HashMap<ScreenId, NativeOutput>,
     feeds: Feeds,
+    /// Cameras held back (their picture's delay).
+    delays: HashMap<SourceId, crate::delay::DelayLine>,
     /// The multiview's window, and its layout for the show now.
     multiview: Option<NativeOutput>,
     mv_layout: Option<multiview::Layout>,
@@ -308,6 +326,7 @@ impl LiveEngine {
             sources: HashMap::new(),
             outputs: HashMap::new(),
             feeds: Feeds::default(),
+            delays: HashMap::new(),
             multiview: None,
             mv_layout: None,
             graphics: GraphicsTally::default(),
@@ -590,6 +609,11 @@ impl LiveEngine {
         rx
     }
 
+    /// Feed `id`'s encoder has started.
+    pub fn feed_running(&self, id: u64) -> bool {
+        self.feeds.running(id)
+    }
+
     /// Stop feed `id`: its encoder, for the caller to finish (off the engine's thread).
     pub fn stop_feed(&mut self, id: u64) -> Option<EncoderFeed> {
         self.feeds.stop(&mut self.gpu, id)
@@ -603,6 +627,7 @@ impl LiveEngine {
     /// Draw and send out one frame at show time `now`.
     pub fn frame(&mut self, now: u64) {
         let t0 = Instant::now();
+        self.gpu.set_time(now);
         let preview_frame = self
             .frame_no
             .is_multiple_of(u64::from(self.config.preview_every.max(1)));
@@ -658,7 +683,25 @@ impl LiveEngine {
         needed.sort();
         needed.dedup();
         for id in needed {
-            if let Some(f) = self.sources.get(id).and_then(|(_, s)| s.latest()) {
+            let f = self.sources.get(id).and_then(|(_, s)| s.latest());
+            let delay = show
+                .source(id)
+                .and_then(|s| s.video_delay_ms)
+                .filter(|d| *d > 0);
+            let f = match delay {
+                Some(ms) => {
+                    let line = self.delays.entry(id.clone()).or_default();
+                    if let Some(f) = f {
+                        line.push(now, f);
+                    }
+                    line.get(now, u64::from(ms))
+                }
+                None => {
+                    self.delays.remove(id);
+                    f
+                }
+            };
+            if let Some(f) = f {
                 self.gpu.upload(id, &f);
             }
         }

@@ -92,6 +92,19 @@ impl Frames {
     }
 }
 
+/// The unified engine takes stream, web page, screen-capture and guest
+/// inputs' pictures straight from here (no HTTP), decoding them itself.
+impl live_engine::source::EncodedFrames for Frames {
+    fn next(
+        &self,
+        id: &str,
+        after: u64,
+        wait: Duration,
+    ) -> Option<(u64, Arc<Vec<u8>>, &'static str)> {
+        Frames::next(self, id, after, wait).map(|f| (f.n, f.bytes, f.mime))
+    }
+}
+
 /// Live sound (raw 48 kHz stereo 16-bit) from stream inputs, handed to
 /// everyone listening. Nothing is kept: late listeners hear from now on.
 /// One listener's feed of sound pieces.

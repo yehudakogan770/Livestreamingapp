@@ -452,6 +452,152 @@ pub fn camera_name(label: &str) -> &str {
     t
 }
 
+// ---------------------------------------------------------------------------
+// Pictures served by the app: stream, web page, screen-capture and guest inputs
+
+/// Where the app keeps the newest picture of each stream, web page,
+/// screen-capture and guest input (`browser.rs`'s frame store: streams are
+/// received by FFmpeg in `streams.rs`, pages and screens captured with
+/// Windows Graphics Capture), JPEG or PNG.
+pub trait EncodedFrames: Send + Sync {
+    /// Input `id`'s first picture newer than number `after`, waiting up to
+    /// `wait`: its number, its bytes and their type (`image/jpeg`, `image/png`).
+    fn next(
+        &self,
+        id: &str,
+        after: u64,
+        wait: Duration,
+    ) -> Option<(u64, Arc<Vec<u8>>, &'static str)>;
+}
+
+/// A JPEG or PNG as RGBA (straight alpha), from `pool`.
+pub fn decode_picture(bytes: &[u8], mime: &str, pool: &FramePool, seq: u64) -> Option<VideoFrame> {
+    if mime == "image/png" {
+        let mut d = png::Decoder::new(std::io::Cursor::new(bytes));
+        d.set_transformations(
+            png::Transformations::EXPAND
+                | png::Transformations::ALPHA
+                | png::Transformations::STRIP_16,
+        );
+        let mut r = d.read_info().ok()?;
+        let mut buf = vec![0; r.output_buffer_size()];
+        let info = r.next_frame(&mut buf).ok()?;
+        let (w, h) = (info.width, info.height);
+        let px = (w as usize) * (h as usize);
+        return match info.color_type {
+            png::ColorType::Rgba if buf.len() >= px * 4 => Some(VideoFrame::build(
+                pool,
+                w,
+                h,
+                PixelFormat::Rgba8,
+                seq,
+                |out| {
+                    out.copy_from_slice(&buf[..px * 4]);
+                },
+            )),
+            png::ColorType::GrayscaleAlpha if buf.len() >= px * 2 => Some(VideoFrame::build(
+                pool,
+                w,
+                h,
+                PixelFormat::Rgba8,
+                seq,
+                |out| {
+                    for (o, g) in out
+                        .as_chunks_mut::<4>()
+                        .0
+                        .iter_mut()
+                        .zip(buf.as_chunks::<2>().0)
+                    {
+                        *o = [g[0], g[0], g[0], g[1]];
+                    }
+                },
+            )),
+            _ => None,
+        };
+    }
+    use zune_jpeg::zune_core::{colorspace::ColorSpace, options::DecoderOptions};
+    let options = DecoderOptions::default()
+        .jpeg_set_out_colorspace(ColorSpace::RGBA)
+        .set_max_width(MAX_SIDE as usize)
+        .set_max_height(MAX_SIDE as usize);
+    let mut d = zune_jpeg::JpegDecoder::new_with_options(bytes, options);
+    let rgba = d.decode().ok()?;
+    let (w, h) = d.dimensions()?;
+    let (w, h) = (u32::try_from(w).ok()?, u32::try_from(h).ok()?);
+    if rgba.len() < (w as usize) * (h as usize) * 4 {
+        return None;
+    }
+    Some(VideoFrame::build(
+        pool,
+        w,
+        h,
+        PixelFormat::Rgba8,
+        seq,
+        |out| {
+            out.copy_from_slice(&rgba[..out.len()]);
+        },
+    ))
+}
+
+/// The largest picture taken from the frame store (each side).
+const MAX_SIDE: u32 = 4096;
+
+/// A stream, web page, screen-capture or guest input: its pictures from the
+/// app's frame store, decoded on this source's own thread as they come.
+pub struct EncodedSource {
+    mailbox: Arc<Mailbox>,
+    id: String,
+}
+
+impl EncodedSource {
+    pub fn start(id: &str, frames: Arc<dyn EncodedFrames>) -> Self {
+        let mailbox = Mailbox::new();
+        let mb = Arc::clone(&mailbox);
+        let key = id.to_owned();
+        let _ = thread::Builder::new()
+            .name(format!("lumora-live-pictures-{id}"))
+            .spawn(move || {
+                let pool = FramePool::new(4);
+                let mut after = 0u64;
+                let mut seq = 0u64;
+                while !mb.stopped() {
+                    let Some((n, bytes, mime)) =
+                        frames.next(&key, after, Duration::from_millis(250))
+                    else {
+                        continue;
+                    };
+                    after = n;
+                    if let Some(f) = decode_picture(&bytes, mime, &pool, seq) {
+                        seq += 1;
+                        mb.put(f);
+                    }
+                }
+            });
+        EncodedSource {
+            mailbox,
+            id: id.to_owned(),
+        }
+    }
+}
+
+impl VideoSource for EncodedSource {
+    fn latest(&self) -> Option<VideoFrame> {
+        self.mailbox.latest()
+    }
+    fn health(&self) -> SourceHealth {
+        self.mailbox.health()
+    }
+    fn describe(&self) -> String {
+        format!("Pictures from the app: {}", self.id)
+    }
+}
+
+impl Drop for EncodedSource {
+    fn drop(&mut self) {
+        self.mailbox.stop();
+    }
+}
+
 /// A source that never has a picture, with a reason (an input kind the
 /// unified engine can't open yet, a camera on a computer with no camera API).
 pub struct Unavailable {
@@ -485,6 +631,83 @@ impl VideoSource for Unavailable {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A frame store with one picture of input "p".
+    struct OnePicture(Vec<u8>, &'static str);
+    impl EncodedFrames for OnePicture {
+        fn next(
+            &self,
+            id: &str,
+            after: u64,
+            wait: Duration,
+        ) -> Option<(u64, Arc<Vec<u8>>, &'static str)> {
+            if id == "p" && after == 0 {
+                return Some((1, Arc::new(self.0.clone()), self.1));
+            }
+            thread::sleep(wait.min(Duration::from_millis(20)));
+            None
+        }
+    }
+
+    fn png_of(w: u32, h: u32, rgba: [u8; 4]) -> Vec<u8> {
+        let mut out = Vec::new();
+        {
+            let mut e = png::Encoder::new(&mut out, w, h);
+            e.set_color(png::ColorType::Rgba);
+            e.set_depth(png::BitDepth::Eight);
+            let mut wr = e.write_header().unwrap();
+            let data: Vec<u8> = (0..w * h).flat_map(|_| rgba).collect();
+            wr.write_image_data(&data).unwrap();
+        }
+        out
+    }
+
+    #[test]
+    fn pictures_from_the_app_are_decoded_jpeg_or_png() {
+        let pool = FramePool::new(2);
+        // A see-through web page (PNG) keeps its alpha.
+        let f =
+            decode_picture(&png_of(4, 2, [10, 20, 30, 128]), "image/png", &pool, 7).expect("png");
+        assert_eq!(
+            (f.width, f.height, f.seq, f.format),
+            (4, 2, 7, PixelFormat::Rgba8)
+        );
+        assert_eq!(&f.data.as_slice()[..4], &[10, 20, 30, 128]);
+        // A JPEG (a stream's picture), made by the app's own encoder.
+        let mut jpeg = Vec::new();
+        let px: Vec<u8> = (0..16 * 8).flat_map(|_| [200u8, 40, 40, 255]).collect();
+        jpeg_encoder::Encoder::new(&mut jpeg, 95)
+            .encode(&px, 16, 8, jpeg_encoder::ColorType::Rgba)
+            .unwrap();
+        let f = decode_picture(&jpeg, "image/jpeg", &pool, 1).expect("jpeg");
+        assert_eq!((f.width, f.height), (16, 8));
+        let p = &f.data.as_slice()[..4];
+        assert!(
+            p[0].abs_diff(200) < 8 && p[1].abs_diff(40) < 8 && p[3] == 255,
+            "{p:?}"
+        );
+        // Not a picture: nothing.
+        assert!(decode_picture(&[1, 2, 3], "image/jpeg", &pool, 2).is_none());
+    }
+
+    #[test]
+    fn an_input_from_the_app_goes_live_with_its_pictures() {
+        let src = EncodedSource::start(
+            "p",
+            Arc::new(OnePicture(png_of(3, 3, [1, 2, 3, 255]), "image/png")),
+        );
+        let t = Instant::now();
+        while src.latest().is_none() && t.elapsed() < Duration::from_secs(5) {
+            thread::sleep(Duration::from_millis(10));
+        }
+        let f = src.latest().expect("a picture");
+        assert_eq!((f.width, f.height), (3, 3));
+        assert_eq!(src.health().state, SourceState::Live);
+        // Another input's pictures never arrive: it is still starting.
+        let other = EncodedSource::start("q", Arc::new(OnePicture(Vec::new(), "image/png")));
+        thread::sleep(Duration::from_millis(50));
+        assert_eq!(other.health().state, SourceState::Starting);
+    }
 
     #[test]
     fn a_test_pattern_delivers_frames_and_reports_live() {

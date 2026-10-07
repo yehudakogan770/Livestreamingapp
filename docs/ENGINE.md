@@ -265,13 +265,36 @@ copies) is not opened at all. Not yet: graphics inputs' tiles show only while
 they are on air on the Live Screen (their planes are the renderer's), the Next
 tiles show no graphics, and the timecodes count seconds, not frames.
 
+### More inputs and the picture processor on the GPU (Phase 2)
+
+- **Stream, web page, screen-capture and guest inputs**: their pictures are
+  already in the app's frame store (`browser.rs`: streams received by FFmpeg
+  in `streams.rs`, pages, guests and screens captured with Windows Graphics
+  Capture), as JPEG or PNG. The engine takes them from there directly (no
+  HTTP: `EncodedFrames`, `EncodedSource`) and decodes them on each input's own
+  thread (`zune-jpeg`, `png`), see-through PNGs keeping their alpha.
+- **Green screen and light and color** (`look.rs`, `compose.wgsl: look`): the
+  web picture processor's settings and order (`chroma.ts`) in the engine's one
+  shader — blur or sharpness, the key on the colors as the camera saw them
+  (chroma distance, softness, spill), white balance, exposure, brightness,
+  shadows and highlights, contrast, gamma, saturation, black and white,
+  vignette, grain — per picture, in the same pass that places it (no extra
+  copy). Background removal, blur behind people and auto-framing need the web
+  processor's person-finding model and are not in the engine.
+- **Picture delay** (`delay.rs`): a camera held back by its delay keeps its
+  last frames (up to four seconds) and shows the one from that long ago.
+- **Group opacity**: a layer of several pictures (a split screen) that fades,
+  wipes, blurs or luma-wipes is drawn whole into a see-through scratch target
+  and faded as one (`gpu::needs_group`), so its background no longer shows
+  through its boxes mid-fade.
+
 ### What Unified (beta) does not do yet
 
 Listed in the Engine dialog too:
 
-- Green screen, colour adjustments, frame delay, auto-framing on cameras (crop,
-  zoom, pan, flip, rotate are done).
-- Stream (SRT/RTMP), web page, screen-capture and guest inputs; NDI inputs.
+- Background removal, blur behind people and auto-framing on cameras (green
+  screen, light and colour, crop, zoom, pan, flip, rotate and the picture delay
+  are done).
 - A camera or video **behind** slides or Pesukim words (the slides and words
   are drawn; what is behind them is one of the engine's pictures, and a
   graphics plane can't have a picture inside it yet).
@@ -280,8 +303,6 @@ Listed in the Engine dialog too:
 - The Monitor (all words) stays a WebView window; the Next previews (and the
   multiview's Next tiles) show no graphics; in the multiview a graphics
   input's tile shows it only while it is on air on the Live Screen.
-- Group opacity: a layer made of several pictures (a split screen) fades each
-  picture separately, so its background shows through its boxes mid-fade.
 - Device-lost recovery (driver reset / TDR) — the engine reports GPU errors
   and carries on, but doesn't rebuild the device yet.
 - The vertical version has no drop shadow under the picture (the Standard
@@ -396,6 +417,12 @@ late frames).
   planes, a lower third staying over a dip, PANIC black at once then its logo,
   three feeds at once (scaled, vertical, a camera's ISO) checked pixel by
   pixel, the test event's probe.
+- Phase 2, more: the multiview layout (classic, both screens, inputs only,
+  wrapping, the JSON the web side reads) and its drawing on the GPU (each
+  tile's picture, tally borders, the words plane on top); group opacity (a
+  split fading as one picture); green screen and brightness in the shader
+  (pixels checked); JPEG and PNG pictures from the app's frame store and an
+  input going live with them; the picture delay.
 - Phase 2, vitest: `overlayWire` (same bytes as Rust), `overlayDirty` (tiles,
   joining, bounding box, pacing, back-pressure), `overlayPlanes` (which planes
   at which sizes), `overlayRenderer` (the real compositor in graphics-only
@@ -444,9 +471,10 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
   see "Graphics" above); stingers (the `top` plane); recording, streaming,
   vertical, NDI and ISO files from the engine with the WebView's sound mix as
   PCM (no camera opened by the control window); the test event in Unified
-  mode; the multiview drawn by the engine in its own window. Next: NV12 uploads and read-back;
-  stream/NDI/file inputs with hardware decode (`-hwaccel d3d11va`); chroma key
-  and colour adjustments in the shader (port of `chroma.ts`); group opacity;
+  mode; the multiview drawn by the engine in its own window; stream, web page,
+  screen-capture and guest inputs; green screen and light and colour in the
+  shader (port of `chroma.ts`); the picture delay; group opacity. Next: NV12
+  uploads and read-back; files with hardware decode (`-hwaccel d3d11va`);
   device-lost recovery.
 - **Phase 3** — zero-copy encode (D3D texture → NVENC/AMF/QSV), HDR output,
   per-output adapters, Unified as the default.

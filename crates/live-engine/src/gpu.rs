@@ -16,8 +16,8 @@ use crate::scene::{fit_rect, Content, Layer, Placement, Rect, ScreenScene, FULL}
 pub const TARGET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 const SHADER: &str = include_str!("compose.wgsl");
-/// One draw's uniforms: ten vec4s.
-const DRAW_FLOATS: usize = 40;
+/// One draw's uniforms: sixteen vec4s.
+const DRAW_FLOATS: usize = 64;
 const DRAW_BYTES: u64 = (DRAW_FLOATS * 4) as u64;
 
 struct Tex {
@@ -152,6 +152,8 @@ pub struct Compositor {
     rings: HashMap<Dest, Ring>,
     /// Bytes uploaded to the GPU since the last [`Compositor::take_upload_bytes`].
     uploaded: u64,
+    /// Seconds (0 – 100) for the grain effect.
+    time: f32,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -261,6 +263,28 @@ fn kind_of(t: wgpu::DeviceType) -> &'static str {
 /// A pass ready to encode: where, which part, and its draws.
 type Planned = (Dest, Option<[u32; 4]>, Vec<(DrawU, TexKey)>);
 
+/// Layers drawn whole into a scratch target first (see [`needs_group`]):
+/// (an overlay channel, its index) → the scratch target.
+type Groups = HashMap<(bool, usize), usize>;
+
+/// Scratch targets (layers composited as a group) are numbered from here; they start see-through.
+const SCRATCH: usize = 64;
+
+/// A layer of several pictures (a split screen, a picture with its bars)
+/// that fades, wipes or blurs is drawn whole first and then faded as one, as
+/// the web fades a box with its contents: faded picture by picture, its
+/// background would show through its boxes mid-fade.
+pub fn needs_group(l: &Layer) -> bool {
+    let pictures = l
+        .pictures
+        .iter()
+        .filter(|p| !matches!(p.content, Content::Bars(_)))
+        .count();
+    pictures > 1
+        && l.opacity > 0.0
+        && (l.opacity < 1.0 || l.blur > 0.0 || l.shape != Shape::Whole || l.luma.is_some())
+}
+
 /// One draw's uniforms.
 #[derive(Clone, Copy)]
 struct DrawU([f32; DRAW_FLOATS]);
@@ -304,6 +328,8 @@ const FX: usize = 6;
 const CUT: usize = 7;
 const LUMA: usize = 8;
 const CLIP: usize = 9;
+/// Green screen and light and color: six vec4s from here (see [`crate::look::Look::uniforms`]).
+const LOOK: usize = 10;
 
 /// Map a rect given in a box's own fractions into output fractions.
 fn within(outer: Rect, inner: Rect) -> Rect {
@@ -440,6 +466,7 @@ impl Compositor {
             reads: HashMap::new(),
             rings: HashMap::new(),
             uploaded: 0,
+            time: 0.0,
         };
         c.pipeline(TARGET_FORMAT);
         Ok(c)
@@ -619,6 +646,11 @@ impl Compositor {
         }
     }
 
+    /// The show clock (ms), for effects that move (grain).
+    pub fn set_time(&mut self, now_ms: u64) {
+        self.time = (now_ms % 100_000) as f32 / 1000.0;
+    }
+
     /// Bytes sent to the GPU since last asked.
     pub fn take_upload_bytes(&mut self) -> u64 {
         std::mem::take(&mut self.uploaded)
@@ -793,17 +825,22 @@ impl Compositor {
     /// The draws that paint `scene` on an output of `out_w` × `out_h`, with
     /// the graphics planes of slot `planes` (back to front: the pictures,
     /// dip, flash, the overlay channels, the `top` plane, blank, PANIC and its logo).
+    #[allow(clippy::too_many_arguments)]
     fn scene_draws(
         &self,
         scene: &ScreenScene,
         planes: Option<usize>,
         out_w: u32,
         out_h: u32,
+        groups: &Groups,
         draws: &mut Vec<(DrawU, TexKey)>,
     ) {
         let out_aspect = out_w as f32 / out_h.max(1) as f32;
-        for layer in &scene.layers {
-            self.layer_draws(layer, planes, out_w, out_h, draws);
+        for (i, layer) in scene.layers.iter().enumerate() {
+            match groups.get(&(false, i)) {
+                Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, out_w, out_h, draws),
+            }
         }
         let solid = |c: [f32; 4], a: f32, draws: &mut Vec<(DrawU, TexKey)>| {
             if a > 0.0 {
@@ -826,8 +863,11 @@ impl Compositor {
         };
         solid([0.0, 0.0, 0.0, 1.0], scene.black, draws);
         solid([1.0, 1.0, 1.0, 1.0], scene.white, draws);
-        for layer in &scene.overlays {
-            self.layer_draws(layer, planes, out_w, out_h, draws);
+        for (i, layer) in scene.overlays.iter().enumerate() {
+            match groups.get(&(true, i)) {
+                Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, out_w, out_h, draws),
+            }
         }
         if let Some(slot) = planes {
             whole(slot, crate::overlay::TOP, 1.0, draws);
@@ -839,6 +879,41 @@ impl Compositor {
         if let Some(slot) = planes {
             whole(slot, crate::overlay::PANIC, scene.panic, draws);
         }
+    }
+
+    /// A layer drawn whole into scratch target `t` (unmoved, opaque), put on
+    /// as one picture with the layer's move, fade, shape, luma wipe and blur.
+    fn group_draw(
+        &self,
+        layer: &Layer,
+        t: usize,
+        out_w: u32,
+        out_h: u32,
+        draws: &mut Vec<(DrawU, TexKey)>,
+    ) {
+        let out_aspect = out_w as f32 / out_h.max(1) as f32;
+        let lb = layer_box(layer);
+        let lw = (lb[2] - lb[0]) * out_w as f32;
+        let lh = (lb[3] - lb[1]) * out_h as f32;
+        let mut d = DrawU::new();
+        d.set(LAYER, lb).set(DST, lb);
+        let (shape_kind, size) = match layer.shape {
+            Shape::Whole => (0.0, 0.0),
+            Shape::Rect { t, r, b, l } => {
+                d.set(CUT, [t, r, b, l]);
+                (1.0, 0.0)
+            }
+            Shape::Circle { r } => (2.0, r),
+            Shape::Diamond { r } => (3.0, r),
+        };
+        d.set(FX, [layer.opacity, layer.blur, shape_kind, size]);
+        let (pattern, p) = layer
+            .luma
+            .map_or((0.0, 0.0), |(pat, p)| (pat.code() as f32, p));
+        let layer_aspect = if lh > 0.0 { lw / lh } else { out_aspect };
+        d.set(LUMA, [pattern, p, layer_aspect, out_aspect]);
+        d.set(MISC, [1.0, 1.0, layer_aspect, 2.0]);
+        draws.push((d, TexKey::Target(t)));
     }
 
     /// The draws of one layer (an input with its transition, or an overlay channel).
@@ -929,6 +1004,11 @@ impl Compositor {
                             mode,
                         ],
                     );
+                    if let Some(look) = &pl.look {
+                        for (k, v) in look.uniforms(self.time).into_iter().enumerate() {
+                            d.set(LOOK + k, v);
+                        }
+                    }
                     draws.push((d, TexKey::Source(id.clone())));
                 }
                 Content::Graphic(id) => {
@@ -967,6 +1047,7 @@ impl Compositor {
     /// Paint every pass in one submission. Targets painted whole are cleared to black first.
     pub fn render(&mut self, passes: &[Pass<'_>]) {
         let mut plan: Vec<Planned> = Vec::new();
+        let mut scratch = SCRATCH;
         for p in passes {
             let Some((tw, th)) = self.dest_size(p.dest) else {
                 continue;
@@ -975,7 +1056,29 @@ impl Compositor {
             let mut draws = Vec::new();
             match &p.paint {
                 Paint::Scene { scene, planes } => {
-                    self.scene_draws(scene, *planes, w, h, &mut draws)
+                    // Layers faded as a whole: drawn into scratch targets first.
+                    let mut groups = Groups::new();
+                    for (overlay, list) in [(false, &scene.layers), (true, &scene.overlays)] {
+                        for (i, l) in list.iter().enumerate().filter(|(_, l)| needs_group(l)) {
+                            let t = scratch;
+                            scratch += 1;
+                            self.ensure_target(t, w, h);
+                            let whole = Layer {
+                                opacity: 1.0,
+                                blur: 0.0,
+                                shape: Shape::Whole,
+                                luma: None,
+                                shift: [0.0, 0.0],
+                                scale: 1.0,
+                                ..l.clone()
+                            };
+                            let mut d = Vec::new();
+                            self.layer_draws(&whole, *planes, w, h, &mut d);
+                            plan.push((Dest::Target(t), None, d));
+                            groups.insert((overlay, i), t);
+                        }
+                    }
+                    self.scene_draws(scene, *planes, w, h, &groups, &mut draws)
                 }
                 Paint::Target(i) => {
                     let mut d = DrawU::new();
@@ -1083,7 +1186,13 @@ impl Compositor {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: if whole {
-                            wgpu::LoadOp::Clear(wgpu::Color::BLACK)
+                            wgpu::LoadOp::Clear(
+                                if matches!(dest, Dest::Target(i) if *i >= SCRATCH) {
+                                    wgpu::Color::TRANSPARENT
+                                } else {
+                                    wgpu::Color::BLACK
+                                },
+                            )
                         } else {
                             wgpu::LoadOp::Load
                         },

@@ -21,11 +21,13 @@
 //! own copy in its WebView) stays the default.
 
 pub mod audio;
+pub mod delay;
 pub mod encoder;
 pub mod engine;
 pub mod feeds;
 pub mod frame;
 pub mod gpu;
+pub mod look;
 pub mod mix;
 pub mod multiview;
 pub mod overlay;

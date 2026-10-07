@@ -96,6 +96,113 @@ fn setup(g: &mut Compositor) {
 }
 
 #[test]
+fn a_split_screen_fades_as_one_picture() {
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    // A split: black background, blue in the left half; fading in at 50 % over red.
+    let split = Layer {
+        source: SourceId::new("split"),
+        pictures: vec![
+            Picture {
+                content: Content::Color([0.0, 0.0, 0.0, 1.0]),
+                placement: Placement::default(),
+            },
+            Picture {
+                content: Content::Video(SourceId::new("blue")),
+                placement: Placement {
+                    frame: [0.0, 0.0, 0.5, 1.0],
+                    fit: Fit::Cover,
+                    ..Placement::default()
+                },
+            },
+        ],
+        ..layer("split", 0.5)
+    };
+    assert!(live_engine::gpu::needs_group(&split));
+    let sc = ScreenScene {
+        layers: vec![layer("red", 1.0), split],
+        ..ScreenScene::default()
+    };
+    let img = draw(&mut g, &sc);
+    // The box mixes with the red evenly (its background doesn't show through it)…
+    assert!(
+        near(px(&img, 10, 18), [128, 0, 128, 255]),
+        "{:?}",
+        px(&img, 10, 18)
+    );
+    // …and the background fades over the red too.
+    assert!(
+        near(px(&img, 50, 18), [128, 0, 0, 255]),
+        "{:?}",
+        px(&img, 50, 18)
+    );
+    // A single camera (with its bars) is not grouped: nothing to see through.
+    assert!(!live_engine::gpu::needs_group(&layer("blue", 0.5)));
+}
+
+#[test]
+fn green_screen_and_light_and_color_on_the_gpu() {
+    use live_engine::look::Look;
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    // A camera in front of a green screen: all green, but a white square in the middle.
+    let pool = FramePool::new(1);
+    let keyed = VideoFrame::build(&pool, W, H, PixelFormat::Rgba8, 1, |px| {
+        for (i, p) in px.as_chunks_mut::<4>().0.iter_mut().enumerate() {
+            let (x, y) = (i as u32 % W, i as u32 / W);
+            *p = if (24..40).contains(&x) && (10..26).contains(&y) {
+                [255, 255, 255, 255]
+            } else {
+                [0, 177, 64, 255]
+            };
+        }
+    });
+    g.upload(&SourceId::new("green"), &keyed);
+    let key = lumora_engine::ChromaKey {
+        enabled: true,
+        ..Default::default()
+    };
+    let mut cam = layer("green", 1.0);
+    cam.pictures[0].placement.look = Look::of(&key, &Default::default());
+    assert!(cam.pictures[0].placement.look.is_some());
+    let sc = ScreenScene {
+        layers: vec![layer("red", 1.0), cam],
+        ..ScreenScene::default()
+    };
+    let img = draw(&mut g, &sc);
+    // The green is gone (the red input behind shows), the person stays.
+    assert!(
+        near(px(&img, 5, 5), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 5, 5)
+    );
+    assert!(
+        near(px(&img, 32, 18), [255, 255, 255, 255]),
+        "{:?}",
+        px(&img, 32, 18)
+    );
+    // Brightness +100: a quarter more light in every channel (the processor's sum).
+    let mut blue = layer("blue", 1.0);
+    let a = lumora_engine::adjust::Adjust {
+        brightness: 100.0,
+        ..Default::default()
+    };
+    blue.pictures[0].placement.look = Look::of(&Default::default(), &a);
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![blue],
+            ..ScreenScene::default()
+        },
+    );
+    assert!(
+        near(px(&img, 10, 10), [64, 64, 255, 255]),
+        "{:?}",
+        px(&img, 10, 10)
+    );
+}
+
+#[test]
 fn a_fade_mixes_the_two_inputs() {
     let Some(mut g) = gpu() else { return };
     setup(&mut g);
@@ -643,10 +750,16 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
     for r in [a, b, c] {
         r.recv().unwrap().expect("starts");
     }
-    // Half a second of frames in real time.
-    let t0 = live_engine::engine::now_ms();
-    while live_engine::engine::now_ms() < t0 + 500 {
-        e.frame(live_engine::engine::now_ms());
+    // Frames in real time until every encoder runs (the camera's starts
+    // with its first frame), then half a second more.
+    let now = live_engine::engine::now_ms;
+    let t0 = now();
+    let mut until = None;
+    while until.is_none_or(|u| now() < u) && now() < t0 + 10_000 {
+        e.frame(now());
+        if until.is_none() && [1, 2, 3].iter().all(|id| e.feed_running(*id)) {
+            until = Some(now() + 500);
+        }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
     let stats: Vec<_> = [1, 2, 3]
