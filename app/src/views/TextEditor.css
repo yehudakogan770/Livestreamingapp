@@ -21,10 +21,10 @@
   border: 1px solid var(--border);
 }
 .txed__stage--dark {
-  background: #34404c;
+  background: #3e3e3e;
 }
 .txed__stage--light {
-  background: #d9dce3;
+  background: #dcdcdc;
 }
 .txed__stage--checker {
   background: repeating-conic-gradient(var(--button) 0 25%, var(--panel) 0 50%) 0 0 / 24px 24px;

@@ -78,7 +78,7 @@
 .aud-card__setup summary {
   cursor: pointer;
   font-size: 13px;
-  color: var(--text-dim, #aab);
+  color: var(--text-dim, #ababab);
 }
 .aud-card__setup[open] {
   display: flex;

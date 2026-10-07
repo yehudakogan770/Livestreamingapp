@@ -1,14 +1,15 @@
 /* Lumora Remote: made for thumbs. Same colours as the control window. */
 :root {
-  --bg: #15171b;
-  --bar: #1a1d22;
-  --panel: #1e2127;
-  --button: #2a2e36;
-  --border: #2c3038;
-  --text: #e4e5e7;
-  --text-dim: #a9abb0;
-  --accent: #4fb3bf;
-  --accent-deep: #1f6f79;
+  --bg: #171717;
+  --bar: #1d1d1d;
+  --panel: #212121;
+  --button: #2e2e2e;
+  --border: #303030;
+  --text: #e5e5e5;
+  --text-dim: #ababab;
+  --accent: #e6e4df; /* selection and focus: a neutral light (no blue) */
+  --accent-deep: #e6e4df; /* the primary button, with dark text */
+  --on-accent: #141414;
   --program: #c7372f;
   --program-bright: #e0473b;
   --preview: #2f8f4e;
@@ -69,6 +70,7 @@ textarea {
 .btn--primary {
   background: var(--accent-deep);
   border-color: var(--accent);
+  color: var(--on-accent);
 }
 .btn--big {
   min-height: 60px;
@@ -129,7 +131,7 @@ textarea {
   flex: none;
 }
 .brand span {
-  color: var(--accent);
+  color: var(--text-dim);
   font-weight: 400;
 }
 .login p {
@@ -621,7 +623,8 @@ main {
   font-weight: 600;
 }
 .tabs__btn--on {
-  color: var(--accent);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.07);
 }
 .tabs__link {
   text-decoration: none;
@@ -634,7 +637,7 @@ main {
   z-index: 10;
   padding: 12px 14px;
   border-radius: var(--radius);
-  background: #3a3f49;
+  background: #3f3f3f;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
   text-align: center;
 }

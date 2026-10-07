@@ -53,7 +53,7 @@
   right: 0;
   bottom: 0;
   border-radius: 0;
-  background: #6a6a70;
+  background: #6a6a6a;
   pointer-events: none;
 }
 .fader__handle {
@@ -64,7 +64,7 @@
   margin-left: -13px;
   transform: translateY(50%);
   border-radius: var(--radius-sm);
-  background: #cfcfd2;
+  background: #cfcfcf;
   border: 1px solid #000;
   cursor: grab;
 }
