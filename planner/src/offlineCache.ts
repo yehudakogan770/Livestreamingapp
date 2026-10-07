@@ -7,6 +7,7 @@ import type { Block } from './blocks';
 import type { Message } from './chatModel';
 import type { Plan, PlanComment, PlanCue, PlanSummary, Role } from './model';
 import type { Who } from './session';
+import { offlineDaysOf } from '../../app/src/auth/access';
 
 const PREFIX = 'lumora.planner.cache.';
 /** The Supabase session's storage key (see session.ts). */
@@ -89,6 +90,8 @@ export function offlineWho(): Extract<Who, { s: 'in' }> | null {
   if (!id) return null;
   const c = read(id);
   if (!c.who || c.who.access.userId !== id || !c.plans) return null;
+  // Not checked in for longer than the Lumora team allows (Sign-in settings → Offline use).
+  if (c.plansAt && Date.now() - c.plansAt > offlineDaysOf(c.who.access) * 86_400_000) return null;
   setCacheUser(id);
   return { ...c.who, access: { ...c.who.access, offline: true } };
 }

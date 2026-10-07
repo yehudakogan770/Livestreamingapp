@@ -2,6 +2,7 @@ import { LayoutGrid, X } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import type { RemoteStatus } from '../engine/client';
 import { NO_DECK, deckOffer, deckStatus, deckSummary, dismissDeck, installDeck, type DeckStatus } from './deckApi';
+import { useFeature } from '../auth/accessContext';
 import './StreamDeck.css';
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -20,12 +21,14 @@ export function StreamDeckOffer({ status, onChange }: { status: DeckStatus; onCh
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+  // The Lumora team can turn the offer off (Features); the Stream Deck… menu still works.
+  const offerOn = useFeature('stream_deck');
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 6000);
     return () => clearTimeout(t);
   }, []);
   const offer = deckOffer(status);
-  if (!ready || (!offer && !problem)) return null;
+  if (!ready || !offerOn || (!offer && !problem)) return null;
   const add = () => {
     setBusy(true);
     installDeck()

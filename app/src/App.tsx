@@ -10,7 +10,7 @@ import { TitleBar, type MenuItem, type Tool } from './components/TitleBar';
 import { BrandMark } from './components/Logo';
 import { AboutHost, openAbout } from './components/About';
 import { CircleHelp, Layers, LibraryBig, ListChecks, Radio, SquarePlus, Spotlight, Type } from 'lucide-react';
-import { Gate, useAccess } from './auth/Gate';
+import { Gate, useAccess, useFeature } from './auth/Gate';
 import { PeopleDialog } from './auth/PeopleDialog';
 import { AccountDialog } from './auth/AccountDialog';
 import { UpdateBar, checkForUpdates } from './components/UpdateBar';
@@ -100,6 +100,9 @@ function ControlApp() {
   const [brandOpen, setBrandOpen] = useState(false);
   // Signed in (when Lumora's sign-in is on): who, and the Lumora team's approvals.
   const { access, signOut } = useAccess();
+  // The Lumora team's switches (Features): something in use stays on.
+  const captionsFeature = useFeature('captions', !!show?.captions?.on);
+  const reportFeature = useFeature('problem_reports');
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [zmanimOpen, setZmanimOpen] = useState(false);
@@ -207,11 +210,15 @@ function ControlApp() {
         hint: 'Names come on by themselves when people talk',
         onClick: () => setSpeakersOpen(true),
       },
-      {
-        label: `Live captions…${show?.captions?.on ? ' (on)' : ''}`,
-        hint: 'Write what is said for the stream’s viewers',
-        onClick: () => setCaptionsOpen(true),
-      },
+      ...(captionsFeature
+        ? [
+            {
+              label: `Live captions…${show?.captions?.on ? ' (on)' : ''}`,
+              hint: 'Write what is said for the stream’s viewers',
+              onClick: () => setCaptionsOpen(true),
+            },
+          ]
+        : []),
       {
         label: `Backup lineup…${show?.event.backup?.on === false ? ' (off)' : ''}`,
         hint: 'If the camera on air goes out, the next one in the lineup goes on air by itself',
@@ -371,8 +378,7 @@ function ControlApp() {
       { label: 'Check for updates…', onClick: checkForUpdates },
       { label: 'Check this computer…', hint: 'Can this computer handle a live event?', onClick: openSystemCheck },
       null,
-      { label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport },
-      null,
+      ...(reportFeature ? [{ label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport }, null] : []),
       { label: 'About Lumora', onClick: openAbout },
     ];
     return {
@@ -398,6 +404,9 @@ function ControlApp() {
     jewishOn,
     reportsOn,
     toggleReports,
+    captionsFeature,
+    reportFeature,
+    show?.captions?.on,
     access,
     signOut,
     remote,

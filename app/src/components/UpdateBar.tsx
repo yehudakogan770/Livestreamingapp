@@ -5,6 +5,7 @@ import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
 import { BrandMark } from './Logo';
 import './UpdateBar.css';
+import { useFeature } from '../auth/accessContext';
 
 const isInsideLumora = () => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 
@@ -47,15 +48,17 @@ export function UpdateBar({ product = 'Lumora' }: { product?: string }) {
       .then((update) => setSt(update ? { s: 'ready', update } : asked ? { s: 'none' } : { s: 'idle' }))
       .catch((e: unknown) => setSt(asked ? { s: 'error', message: e instanceof Error ? e.message : String(e) } : { s: 'idle' }));
   }, []);
+  // The Lumora team can turn off the automatic prompt (Features); “Check for updates” still works.
+  const auto = useFeature('update_prompt');
   useEffect(() => {
-    const t = setTimeout(() => run(false), 8000);
+    const t = auto ? setTimeout(() => run(false), 8000) : undefined;
     const asked = () => run(true);
     window.addEventListener('lumora-check-updates', asked);
     return () => {
       clearTimeout(t);
       window.removeEventListener('lumora-check-updates', asked);
     };
-  }, [run]);
+  }, [run, auto]);
   const [current, setCurrent] = useState('');
   useEffect(() => {
     if (isInsideLumora()) void getVersion().then(setCurrent);

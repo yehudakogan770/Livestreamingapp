@@ -5,8 +5,12 @@ import { listPeople, resetTwoStep, setPerson, supabase, twoStepPeople, twoStepSt
 import type { TwoStepState } from './mfa';
 import { CodeForm } from './TwoStep';
 import { ReportsAdmin } from '../reports/ReportsAdmin';
+import { loadAdminSettings, type AdminSettings } from './settings';
+import { FeaturesTab, InvitesTab, PersonFeatures, SignInSettingsTab } from './TeamSettings';
 
-type Filter = 'waiting' | 'approved' | 'blocked' | 'all' | 'problems';
+type Filter = 'waiting' | 'approved' | 'blocked' | 'all' | 'invited' | 'problems' | 'signin' | 'features';
+/** Tabs that are not a list of people. */
+const OTHER: Filter[] = ['invited', 'problems', 'signin', 'features'];
 const stateOf = (p: Profile) => (p.blocked ? 'blocked' : p.approved ? 'approved' : 'pending');
 type App = 'lumora' | 'studio';
 // Accounts from before apps could be chosen have both.
@@ -71,6 +75,23 @@ function People() {
   const [resetting, setResetting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('waiting');
+  // Sign-in settings, features, invitations (update 9 on the server).
+  const [admin, setAdmin] = useState<AdminSettings | null>(null);
+  const [adminError, setAdminError] = useState('');
+  const [featuresOf, setFeaturesOf] = useState<string | null>(null);
+  const loadAdmin = useCallback(
+    () =>
+      loadAdminSettings()
+        .then((d) => {
+          setAdmin(d);
+          setAdminError('');
+        })
+        .catch((e: unknown) => setAdminError(e instanceof Error ? e.message : String(e))),
+    [],
+  );
+  useEffect(() => {
+    void loadAdmin();
+  }, [loadAdmin]);
   const load = useCallback(() => {
     listPeople()
       .then((p) => {
@@ -174,6 +195,17 @@ function People() {
               Unblock
             </button>
           )}
+          {admin && (
+            <button
+              type="button"
+              className="btn"
+              aria-expanded={featuresOf === p.id}
+              onClick={() => setFeaturesOf(featuresOf === p.id ? null : p.id)}
+              title="Turn features on or off just for this person"
+            >
+              Features{admin.overrides.some((o) => o.user_id === p.id) ? ` (${admin.overrides.filter((o) => o.user_id === p.id).length})` : ''}
+            </button>
+          )}
           {twoStep.has(p.id) && (
             <button
               type="button"
@@ -187,6 +219,7 @@ function People() {
         </div>
         {st === 'pending' && noApps(p) && <p className="people__hint">Tick Lumora and/or Studio, then approve.</p>}
         {st === 'approved' && noApps(p) && <p className="people__hint">No apps are on, so this account can't open Lumora or Studio.</p>}
+        {admin && featuresOf === p.id && <PersonFeatures userId={p.id} name={p.name || p.email} admin={p.is_admin} data={admin} onChanged={loadAdmin} />}
       </div>
     );
   };
@@ -198,8 +231,17 @@ function People() {
             {f === 'waiting' ? `Waiting (${waiting})` : f === 'approved' ? 'Approved' : f === 'blocked' ? 'Blocked' : 'Everyone'}
           </button>
         ))}
+        <button type="button" className="seg" aria-pressed={filter === 'invited'} onClick={() => setFilter('invited')}>
+          Invited{admin?.invites.length ? ` (${admin.invites.length})` : ''}
+        </button>
         <button type="button" className="seg" aria-pressed={filter === 'problems'} onClick={() => setFilter('problems')}>
           Problems reported
+        </button>
+        <button type="button" className="seg" aria-pressed={filter === 'signin'} onClick={() => setFilter('signin')}>
+          Sign-in settings
+        </button>
+        <button type="button" className="seg" aria-pressed={filter === 'features'} onClick={() => setFilter('features')}>
+          Features
         </button>
       </div>
       {filter === 'problems' && (
@@ -207,7 +249,24 @@ function People() {
           <ReportsAdmin />
         </div>
       )}
-      <div className="people__body" hidden={filter === 'problems'}>
+      {(filter === 'invited' || filter === 'signin' || filter === 'features') && (
+        <div className="people__body">
+          {adminError && <p className="field__note">{adminError}</p>}
+          {!admin && !adminError && <p className="people__empty">Loading…</p>}
+          {admin && filter === 'invited' && (
+            <InvitesTab
+              data={admin}
+              onChanged={() => {
+                void loadAdmin();
+                load();
+              }}
+            />
+          )}
+          {admin && filter === 'signin' && <SignInSettingsTab data={admin} onSaved={setAdmin} />}
+          {admin && filter === 'features' && <FeaturesTab data={admin} onSaved={setAdmin} />}
+        </div>
+      )}
+      <div className="people__body" hidden={OTHER.includes(filter)}>
         {error && <p className="field__note">{error}</p>}
         {people === null && !error && <p className="people__empty">Loading…</p>}
         {people !== null && shown.length === 0 && <p className="people__empty">{filter === 'waiting' ? 'Nobody is waiting for approval.' : 'Nobody here.'}</p>}

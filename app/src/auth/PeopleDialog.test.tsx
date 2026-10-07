@@ -19,6 +19,18 @@ vi.mock('./TwoStep', () => ({
   CodeForm: () => <p>Type your code</p>,
 }));
 vi.mock('../reports/ReportsAdmin', () => ({ ReportsAdmin: () => null }));
+let adminData: unknown = null;
+vi.mock('./settings', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./settings')>();
+  return {
+    ...real,
+    loadAdminSettings: () =>
+      adminData
+        ? Promise.resolve(real.adminSettingsFrom(adminData))
+        : Promise.reject(new Error('These settings need the latest update on the Lumora account server.')),
+    setOverride: () => Promise.resolve(),
+  };
+});
 
 const { PeopleDialog } = await import('./PeopleDialog');
 
@@ -31,6 +43,12 @@ beforeEach(() => {
   setPerson.mockClear();
   resetTwoStep.mockClear();
   people = [newcomer, editor];
+  adminData = {
+    settings: { two_step: 'optional' },
+    invites: [{ email: 'z@x.org', lumora: true, studio: false, invited_by_name: 'Ann', created_at: '2026-10-01' }],
+    overrides: [{ user_id: 'e', feature: 'captions', enabled: false }],
+    log: [],
+  };
 });
 afterEach(cleanup);
 
@@ -108,4 +126,29 @@ test('a lost phone: the team resets two-step sign-in, after a second click', asy
   expect(resetTwoStep).not.toHaveBeenCalled();
   await act(async () => fireEvent.click(within(r).getByRole('button', { name: 'Sure? Reset' })));
   expect(resetTwoStep).toHaveBeenCalledWith('e');
+});
+
+test('the Lumora team controls sign-in and features from here', async () => {
+  await open('Sign-in settings');
+  expect(screen.getByRole('radio', { name: /Need my approval/ })).toBeChecked();
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Features' })));
+  expect(screen.getByRole('switch', { name: 'Live captions' })).toBeChecked();
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Invited (1)' })));
+  expect(screen.getByText('z@x.org')).toBeInTheDocument();
+});
+
+test('one person’s features open from their row', async () => {
+  await open('Approved');
+  const r = row('Eli');
+  await act(async () => fireEvent.click(within(r).getByRole('button', { name: 'Features (1)' })));
+  expect(within(r).getByRole('combobox', { name: 'Live captions for Eli' })).toHaveValue('off');
+});
+
+test('before the server update, People still works and the settings say what to run', async () => {
+  adminData = null;
+  await open();
+  expect(screen.getByText('Nina')).toBeInTheDocument();
+  expect(within(row('Nina')).queryByRole('button', { name: /^Features/ })).toBeNull();
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Sign-in settings' })));
+  expect(screen.getByText(/need the latest update/)).toBeInTheDocument();
 });

@@ -10,6 +10,7 @@ import { onConsentChange, readConsent, setConsent, shouldAsk, type Consent } fro
 import { appLog } from './logs';
 import { collectCrashReports, sendProblemReport } from './reporter';
 import { BrandMark } from '../components/Logo';
+import { useFeature } from '../auth/accessContext';
 import './reports.css';
 
 // ---- "Report a problem" opens from any menu ----
@@ -152,6 +153,8 @@ export function ReportDialog({ product, onClose }: { product: string; onClose: (
   const [problem, setProblem] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  // The Lumora team can turn problem reports off (Features; the server refuses them too).
+  const reportsOn = useFeature('problem_reports');
   const file = useRef<HTMLInputElement>(null);
   const fail = useCallback((e: unknown) => setProblem(e instanceof Error ? e.message : String(e)), []);
   useEffect(() => {
@@ -189,7 +192,18 @@ export function ReportDialog({ product, onClose }: { product: string; onClose: (
             <X aria-hidden="true" />
           </button>
         </header>
-        {sent ? (
+        {!reportsOn && !sent ? (
+          <div className="rp__body">
+            <p className="field__note" role="status">
+              Problem reports are turned off by the Lumora team right now. If something is wrong, contact them directly.
+            </p>
+            <footer className="modal__foot">
+              <button type="button" className="btn btn--primary" onClick={onClose} autoFocus>
+                Close
+              </button>
+            </footer>
+          </div>
+        ) : sent ? (
           <div className="rp__body">
             <p className="rp__sent" role="status">
               <Check aria-hidden="true" /> Sent. Thank you — the Lumora team reads every report.

@@ -5,6 +5,7 @@ import { AUTH_KEY, AUTH_URL } from './config';
 import { accessFrom, cachedAccess, forgetAccess, isOffline, loadAccess, saveAccess, type Access, type Profile } from './access';
 import { aalOf, twoStepState, type TwoStepState } from './mfa';
 import { MIN_PASSWORD, weakPassword } from './password';
+import { DEFAULT_RULES, rulesFrom, type SignInRules } from './rules';
 
 const STORAGE_KEY = 'lumora.signin';
 let client: SupabaseClient | null = null;
@@ -23,6 +24,7 @@ function say(e: unknown): Error {
   const m = e instanceof Error ? e.message : e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : String(e);
   if (/invalid login credentials/i.test(m)) return new Error('That email and password do not match. Check them and try again.');
   if (/already registered|already been registered/i.test(m)) return new Error('There is already an account with that email. Sign in instead.');
+  if (/sign-ups are closed|database error saving new user/i.test(m)) return new Error(SIGNUPS_CLOSED);
   if (/password should be at least|password.*(weak|characters)/i.test(m))
     return new Error(`The password needs at least ${MIN_PASSWORD} characters, with letters and numbers.`);
   if (/email not confirmed/i.test(m)) return new Error('Please confirm your email first (check your inbox), then sign in.');
@@ -31,6 +33,43 @@ function say(e: unknown): Error {
   if (/fetch|network|failed to/i.test(m)) return new Error('Lumora cannot reach the internet. Check the connection and try again.');
   return new Error(m);
 }
+
+/** What a closed sign-up says (Sign-in settings → New sign-ups → Closed). */
+export const SIGNUPS_CLOSED = 'New sign-ups are closed. Ask the Lumora team to invite you, then make your account with the invited email.';
+
+/** Is the server just older than this app (the function is not there yet)? */
+export const missingFunction = (e: unknown): boolean => {
+  const { code, message } = (e ?? {}) as { code?: unknown; message?: unknown };
+  return code === 'PGRST202' || code === '42883' || /could not find the function|does not exist/i.test(String(message ?? ''));
+};
+
+/**
+ * The Lumora team's sign-in rules for this account. Before update 9 (or if
+ * the server can't say for another reason) the usual ones; with no internet,
+ * the error (the remembered answer is used then).
+ */
+export async function fetchRules(db: SupabaseClient, remembered?: SignInRules): Promise<SignInRules> {
+  try {
+    const r = await db.rpc('sign_in_rules');
+    if (r.error) throw r.error;
+    return rulesFrom(r.data);
+  } catch (e) {
+    if (isOffline(e)) throw e;
+    return missingFunction(e) ? DEFAULT_RULES : (remembered ?? DEFAULT_RULES);
+  }
+}
+
+/** May new accounts be made? (Asked before signing in; true when the server can't say. Invited emails always can.) */
+export async function signUpsOpenOn(db: SupabaseClient): Promise<boolean> {
+  try {
+    const r = await db.rpc('sign_ups_open');
+    return r.error ? true : r.data !== false;
+  } catch {
+    return true;
+  }
+}
+
+export const signUpsOpen = (): Promise<boolean> => signUpsOpenOn(sb());
 
 /** Did the server say this sign-in is over (account deleted, session ended), rather than some other trouble? */
 function signedOutByServer(e: unknown): boolean {
@@ -52,7 +91,8 @@ function storedSession(): { user: { id: string }; access_token: string } | null 
  * Who is signed in and whether they may use Lumora (null: nobody is signed
  * in). With internet the account is always checked again with the server
  * (still there, approved, not blocked, set up for the app); only without
- * internet is the last answer used, for OFFLINE_DAYS.
+ * internet is the last answer used, for the days the Lumora team chose
+ * (OFFLINE_DAYS unless changed).
  */
 export async function checkAccess(): Promise<Access | null> {
   const { data, error } = await sb().auth.getSession();
@@ -90,16 +130,30 @@ export async function checkAccess(): Promise<Access | null> {
     return null;
   }
   let p: Profile;
+  let rules: SignInRules;
   try {
-    const r = await sb().from('profiles').select('*').eq('id', userId).maybeSingle<Profile>();
+    const saved = loadAccess();
+    const [r, got] = await Promise.all([
+      sb().from('profiles').select('*').eq('id', userId).maybeSingle<Profile>(),
+      fetchRules(sb(), saved?.userId === userId ? saved.rules : undefined),
+    ]);
     if (r.error) throw r.error;
     if (!r.data) throw new Error('This account was not found on the Lumora account server. Sign out, then make a new account.');
     p = r.data;
+    rules = got;
   } catch (e) {
     return offline(e);
   }
   const twoStep = (user.factors ?? []).some((f) => f.status === 'verified');
-  const a: Access = { ...accessFrom(p), twoStep, aal2: aal === 'aal2', codeNeeded: twoStep && aal !== 'aal2' };
+  const a: Access = {
+    ...accessFrom(p),
+    twoStep,
+    aal2: aal === 'aal2',
+    codeNeeded: twoStep && aal !== 'aal2',
+    // Required by the Lumora team, and not set up yet: set it up first.
+    setupNeeded: rules.twoStepRequired && !twoStep,
+    rules,
+  };
   // Made in the Planner, now opening Lumora or Studio: ask the team for access.
   if (p.planner_only && a.state === 'pending')
     void sb()

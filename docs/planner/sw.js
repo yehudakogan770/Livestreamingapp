@@ -4,8 +4,8 @@
 // with no internet. Account data (Supabase) is never cached here: those requests
 // go straight to the network, as if there were no service worker.
 
-const VERSION = '66cfffa48b12';
-const FILES = ["./assets/index-BwyoR4_7.js","./assets/index-D73id7s6.css","./index.html","./favicon-32.png","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
+const VERSION = 'd606a7b5b0a0';
+const FILES = ["./assets/index-c6duzW54.js","./assets/index-D73id7s6.css","./index.html","./favicon-32.png","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
 const SHELL = `planner-shell-${VERSION}`;
 const FONTS = 'planner-fonts-1';
 

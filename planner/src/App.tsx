@@ -19,8 +19,10 @@ import { Calendar } from './Calendar';
 import { upcoming } from './calDates';
 import { PageHead, PlanList } from './PlanList';
 import { PlanView, type PlanTab } from './PlanView';
-import { db, onSignInChange, signIn, signOut, signUp, whoAmI, type Who } from './session';
-import { CodeForm } from '../../app/src/auth/TwoStep';
+import { db, onSignInChange, signIn, signOut, signUp, signUpsOpen, whoAmI, type Who } from './session';
+import { CodeForm, TwoStepSetup } from '../../app/src/auth/TwoStep';
+import { featureOn } from '../../app/src/auth/rules';
+import { PlannerFeaturesCtx } from './features';
 import { MIN_PASSWORD } from '../../app/src/auth/password';
 import { initials } from './Inspector';
 import { Brand, Mark } from './Mark';
@@ -248,9 +250,28 @@ export function App() {
         </div>
       </main>
     );
+  if (gate.s === 'setup')
+    return (
+      <main className="gate">
+        <div className="gate__box">
+          <Brand />
+          <h1 className="gate__title">Set up two-step sign-in</h1>
+          <p className="muted">
+            The Lumora team asks {gate.access.rules?.twoStep === 'team' ? 'its team accounts' : 'everyone'} to use two-step sign-in: a 6-digit code from an
+            authenticator app on your phone, each time you sign in.
+          </p>
+          <TwoStepSetup db={db()} issuer="Lumora Planner" onDone={check} />
+          <div className="row">
+            <button type="button" className="btn" onClick={() => void signOut()}>
+              Sign out
+            </button>
+          </div>
+        </div>
+      </main>
+    );
   if (gate.s === 'denied')
     return (
-      <Notice title="You can’t use the Planner yet" text={gate.why}>
+      <Notice title={gate.title ?? 'You can’t use the Planner yet'} text={gate.why}>
         <p className="muted">Signed in as {gate.access.email}.</p>
         <button type="button" className="btn" onClick={() => void signOut()}>
           Sign out
@@ -310,28 +331,31 @@ export function App() {
     );
 
   const planId = route.page === 'plan' ? route.id : null;
+  const rules = gate.access.rules;
   return (
-    <div className={`shell${route.page === 'plan' ? ' shell--plan' : ''}`}>
-      {!phone && (
-        <Sidebar
-          route={route}
-          plans={shownPlans}
-          planId={planId}
-          go={go}
-          themeButton={themeButton}
-          name={gate.access.name}
-          email={gate.access.email}
-          canInstall={installing.offer === 'prompt'}
-          rail={rail}
-          shortcuts={layout.device === 'computer'}
-        />
-      )}
-      <div className="shell__main">
-        {offline && <OfflineBar fromCopy={fromCopy || savedAt > 0} at={copyPlans?.at ?? savedAt} />}
-        {content}
+    <PlannerFeaturesCtx.Provider value={{ chat: featureOn(rules, 'planner_chat'), sharing: featureOn(rules, 'planner_sharing') }}>
+      <div className={`shell${route.page === 'plan' ? ' shell--plan' : ''}`}>
+        {!phone && (
+          <Sidebar
+            route={route}
+            plans={shownPlans}
+            planId={planId}
+            go={go}
+            themeButton={themeButton}
+            name={gate.access.name}
+            email={gate.access.email}
+            canInstall={installing.offer === 'prompt'}
+            rail={rail}
+            shortcuts={layout.device === 'computer'}
+          />
+        )}
+        <div className="shell__main">
+          {offline && <OfflineBar fromCopy={fromCopy || savedAt > 0} at={copyPlans?.at ?? savedAt} />}
+          {content}
+        </div>
+        {phone && <TabBar route={route} go={go} back={back} unread={unread} />}
       </div>
-      {phone && <TabBar route={route} go={go} back={back} unread={unread} />}
-    </div>
+    </PlannerFeaturesCtx.Provider>
   );
 }
 
@@ -688,6 +712,15 @@ function SignIn({ onDone, themeButton }: { onDone: () => void; themeButton: Reac
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+  // New sign-ups closed by the Lumora team: only invited emails make an account (the server decides).
+  const [open, setOpen] = useState(true);
+  useEffect(() => {
+    let live = true;
+    void signUpsOpen().then((o) => live && setOpen(o));
+    return () => {
+      live = false;
+    };
+  }, []);
   const submit = (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
@@ -725,7 +758,9 @@ function SignIn({ onDone, themeButton }: { onDone: () => void; themeButton: Reac
           <p className="muted">
             {mode === 'in'
               ? 'Plan the run of show with your team, then load it into Lumora’s cues. Sign in with your Lumora account.'
-              : 'For teammates: with an account, you see and work on the plans someone invites you to (by this email).'}
+              : open
+                ? 'For teammates: with an account, you see and work on the plans someone invites you to (by this email).'
+                : 'New sign-ups are closed: use the email address you were invited with.'}
           </p>
           {mode === 'new' && (
             <label className="field">
@@ -769,7 +804,7 @@ function SignIn({ onDone, themeButton }: { onDone: () => void; themeButton: Reac
             {busy ? 'One moment…' : mode === 'in' ? 'Sign in' : 'Create my account'}
           </button>
           <p className="muted small">
-            {mode === 'in' ? 'Invited to a plan and no account yet? ' : 'Already have an account? '}
+            {mode === 'in' ? (open ? 'Invited to a plan and no account yet? ' : 'Invited and no account yet? ') : 'Already have an account? '}
             <button
               type="button"
               className="link"

@@ -3,6 +3,7 @@ import type { EngineClient, RemoteStatus } from '../engine/client';
 import type { GuestWifi } from '../engine/types/GuestWifi';
 import type { Act } from './act';
 import { useStage } from '../engine/CountdownContext';
+import { useFeature } from '../auth/accessContext';
 
 /** The address phones join at: the internet link when it is up, else this network's. */
 export function audienceAddress(remote: RemoteStatus | null): { voteUrl: string; voteQr: string; internet: boolean } | null {
@@ -72,6 +73,8 @@ export function JoinSetup({ remote, what, client, act }: { remote: RemoteStatus 
   const wifi = useStage()?.event.wifi ?? { name: '', password: '', qr: '', show: false };
   const address = audienceAddress(remote);
   const net = remote?.internet;
+  // The Lumora team can turn the internet link off (Features); a link already on stays on until it is switched off.
+  const internetOn = useFeature('audience_link', !!net?.on);
   return (
     <div className="join">
       {address ? (
@@ -87,10 +90,14 @@ export function JoinSetup({ remote, what, client, act }: { remote: RemoteStatus 
           <input type="checkbox" checked={!!remote?.running} onChange={(e) => void client.setRemote(e.target.checked).catch(() => {})} /> Same Wi-Fi as this
           computer
         </label>
-        <label className="check">
-          <input type="checkbox" checked={!!net?.on} onChange={(e) => void client.setAudienceInternet(e.target.checked).catch(() => {})} /> Anyone with internet
-          (needs internet on this computer)
-        </label>
+        {internetOn ? (
+          <label className="check">
+            <input type="checkbox" checked={!!net?.on} onChange={(e) => void client.setAudienceInternet(e.target.checked).catch(() => {})} /> Anyone with
+            internet (needs internet on this computer)
+          </label>
+        ) : (
+          <span className="field__note">The internet link is turned off by the Lumora team.</span>
+        )}
         {net?.on && net.phase !== 'on' && <span className="join__phase">{PHASE[net.phase]}</span>}
       </div>
       {net?.error && <p className="field__note field__note--warn">Internet link: {net.error}</p>}
