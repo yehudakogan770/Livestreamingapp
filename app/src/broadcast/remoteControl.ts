@@ -22,6 +22,8 @@ export interface RemoteOps {
   busy: Record<CaptureKind, boolean>;
   rehearsal: boolean;
   replayOn: boolean;
+  /** The stream dropped and Lumora is trying again (which try). */
+  reconnecting?: { attempt: number } | null;
   start(kind: CaptureKind): Promise<void>;
   stop(kind: CaptureKind): Promise<void>;
   setRehearsal(on: boolean): void;
@@ -63,6 +65,8 @@ export interface RemoteAppState {
   rehearsal: boolean;
   replay: boolean;
   busy: boolean;
+  /** Which try at reconnecting the stream (0: not reconnecting). */
+  reconnecting: number;
   error: { message: string; at: number } | null;
 }
 
@@ -74,6 +78,7 @@ export function remoteAppState(ops: RemoteOps, error: RemoteAppState['error']): 
     rehearsal: ops.rehearsal,
     replay: ops.replayOn,
     busy: ops.busy.record || ops.busy.stream,
+    reconnecting: ops.status.streaming ? 0 : (ops.reconnecting?.attempt ?? 0),
     error,
   };
 }

@@ -687,6 +687,65 @@ async fn read_data_file(path: String) -> Result<String, String> {
     Ok(text.trim_start_matches('\u{feff}').to_owned())
 }
 
+/// What went wrong with a Google Sheet or CSV link, from its answer.
+fn data_url_problem(status: u16, body_start: &str) -> Option<String> {
+    const SHARE: &str =
+        "share it with \"Anyone with the link\" or publish it to the web as CSV (File → Share → Publish to web)";
+    match status {
+        401 | 403 | 404 => Some(format!("the sheet answered {status} — {SHARE}")),
+        200..=299 => {
+            let t = body_start.trim_start();
+            // A sign-in page instead of the sheet: it is not shared.
+            (t.starts_with("<!DOCTYPE html")
+                || t.starts_with("<!doctype html")
+                || t.starts_with("<html"))
+            .then(|| format!("a web page came back instead of the sheet — {SHARE}"))
+        }
+        _ => Some(format!("the link answered {status}")),
+    }
+}
+
+/// A data file from the web: a Google Sheet's CSV or any CSV or JSON link.
+/// Fetched here, not in the WebView, so any site works (no browser limits).
+#[tauri::command]
+async fn read_data_url(url: String) -> Result<String, String> {
+    const MAX: usize = 4_000_000;
+    let url = url.trim();
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("the link must start with https://".to_owned());
+    }
+    if rustls::crypto::CryptoProvider::get_default().is_none() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    }
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .user_agent(concat!("Lumora/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| format!("could not reach the internet ({e})"))?;
+    let res = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("could not reach it ({e}) — is the internet working?"))?;
+    let status = res.status().as_u16();
+    if res.content_length().is_some_and(|n| n > MAX as u64) {
+        return Err("the sheet is too big (over 4 MB)".to_owned());
+    }
+    let bytes = res
+        .bytes()
+        .await
+        .map_err(|e| format!("it stopped half way ({e})"))?;
+    if bytes.len() > MAX {
+        return Err("the sheet is too big (over 4 MB)".to_owned());
+    }
+    let text = String::from_utf8_lossy(&bytes);
+    let start: String = text.chars().take(200).collect();
+    if let Some(problem) = data_url_problem(status, &start) {
+        return Err(problem);
+    }
+    Ok(text.trim_start_matches('\u{feff}').to_owned())
+}
+
 /// Save the chapter list (what was on air when) next to the recording.
 #[tauri::command]
 fn save_chapters(
@@ -1253,6 +1312,7 @@ pub fn run() {
             disconnect_speaker,
             set_audience_internet,
             read_data_file,
+            read_data_url,
             qr_code,
             capture_status,
             capture_settings,
@@ -1342,7 +1402,19 @@ fn smoke_test(app: tauri::AppHandle) {
 
 #[cfg(test)]
 mod tests {
-    use super::snapshot_name;
+    use super::{data_url_problem, snapshot_name};
+
+    #[test]
+    fn a_sheet_that_is_not_shared_is_explained() {
+        assert_eq!(data_url_problem(200, "Name,Score\nA,1"), None);
+        assert!(data_url_problem(200, "  <!DOCTYPE html><html>Sign in")
+            .is_some_and(|p| p.contains("Anyone with the link")));
+        assert!(data_url_problem(403, "").is_some_and(|p| p.contains("403")));
+        assert_eq!(
+            data_url_problem(500, "").as_deref(),
+            Some("the link answered 500")
+        );
+    }
 
     #[test]
     fn snapshot_names_are_plain_files() {

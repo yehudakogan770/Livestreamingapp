@@ -3120,3 +3120,60 @@ button.strip__name:hover {
   margin-right: 4px;
   color: var(--text-dim);
 }
+
+/* Loudness (LUFS) of the Stream mix, in the mixer's head. */
+.lufs {
+  position: relative;
+  margin-right: 4px;
+}
+.lufs__btn {
+  font-variant-numeric: tabular-nums;
+}
+.lufs__num {
+  min-width: 3.2em;
+  text-align: right;
+  font-family: var(--mono);
+}
+.lufs__btn.lufs--ok .lufs__num,
+.lufs__hint.lufs--ok {
+  color: var(--preview-bright);
+}
+.lufs__btn.lufs--low .lufs__num,
+.lufs__btn.lufs--high .lufs__num,
+.lufs__hint.lufs--low,
+.lufs__hint.lufs--high {
+  color: var(--warning);
+}
+.lufs__pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  width: 270px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-pop);
+  font-size: 12px;
+}
+.lufs__list {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  margin: 0;
+}
+.lufs__list dt {
+  color: var(--text-dim);
+}
+.lufs__list dd {
+  margin: 0;
+  font-family: var(--mono);
+  text-align: right;
+}
+.lufs__hint {
+  margin: 0;
+}

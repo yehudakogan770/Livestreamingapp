@@ -53,3 +53,7 @@
 .dat__table tr.is-on {
   background: rgba(47, 128, 237, 0.2);
 }
+.dat__link {
+  flex: 1;
+  min-width: 0;
+}

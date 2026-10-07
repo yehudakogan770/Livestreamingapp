@@ -705,6 +705,8 @@ pub fn tally(show: &Value, app: &Value) -> Value {
         "streaming": app["streaming"].as_bool().unwrap_or(false),
         "rehearsal": app["rehearsal"].as_bool().unwrap_or(false),
         "replay": app["replay"].as_bool().unwrap_or(false),
+        // Which try at reconnecting a dropped stream (0: not reconnecting).
+        "reconnecting": app["reconnecting"].as_u64().unwrap_or(0),
     })
 }
 

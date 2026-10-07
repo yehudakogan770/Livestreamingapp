@@ -33,7 +33,11 @@ export function ControlApiDialog({ onClose }: { onClose: () => void }) {
   const [confirmNew, setConfirmNew] = useState(false);
   useEffect(() => {
     let live = true;
-    const read = () => void apiStatus().then((s) => live && setSt(s), () => {});
+    const read = () =>
+      void apiStatus().then(
+        (s) => live && setSt(s),
+        () => {},
+      );
     read();
     // The number of connected clients changes by itself.
     const id = setInterval(read, 3000);
@@ -98,7 +102,9 @@ export function ControlApiDialog({ onClose }: { onClose: () => void }) {
               </label>
             </section>
             {st.osc && !st.oscLocalOnly && (
-              <p className="field__note field__note--warn">OSC has no token: anyone on this network can send it commands. Turn this on only on a network you trust.</p>
+              <p className="field__note field__note--warn">
+                OSC has no token: anyone on this network can send it commands. Turn this on only on a network you trust.
+              </p>
             )}
             {st.error && <p className="field__note field__note--warn">{st.error}</p>}
 
@@ -189,8 +195,8 @@ export function ControlApiDialog({ onClose }: { onClose: () => void }) {
               </table>
               <p className="field__note">
                 WebSocket: <code>{`${ws}/api/ws?token=…`}</code> — send <code>{'{"cmd":"take","screen":"live"}'}</code>; the tally and what is running come by
-                themselves. OSC: <code>/lumora/cut</code>, <code>/lumora/preview 3</code>, <code>/lumora/overlay 1 1</code>, <code>/lumora/macro "Start show"</code>.
-                Every command is in Help → How to use Lumora → Control API.
+                themselves. OSC: <code>/lumora/cut</code>, <code>/lumora/preview 3</code>, <code>/lumora/overlay 1 1</code>,{' '}
+                <code>/lumora/macro "Start show"</code>. Every command is in Help → How to use Lumora → Control API.
               </p>
             </details>
           </div>

@@ -1,9 +1,9 @@
-import { Sheet, X } from 'lucide-react';
+import { Link2, Sheet, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Show } from '../engine/types/Show';
 import type { ScoreLink } from '../engine/types/ScoreLink';
-import { parseData } from '../engine/data';
+import { isDataUrl, MIN_URL_EVERY_MS, parseData, sheetCsvUrl } from '../engine/data';
 import './StingerDialog.css';
 import './DataDialog.css';
 import './LyricsCard.css';
@@ -34,7 +34,8 @@ export function DataWatcher({ show, client }: { show: Show; client: EngineClient
       await client.dispatch({ type: 'dataRows', ...next }).catch(() => {});
     };
     void read();
-    const id = setInterval(() => void read(), Math.max(250, everyMs));
+    // A web link is read no more often than every few seconds.
+    const id = setInterval(() => void read(), Math.max(isDataUrl(path) ? MIN_URL_EVERY_MS : 250, everyMs));
     return () => {
       stopped = true;
       clearInterval(id);
@@ -55,6 +56,9 @@ const LINKS: [keyof ScoreLink, string][] = [
 export function DataDialog({ show, client, onClose }: { show: Show; client: EngineClient; onClose: () => void }) {
   const d = show.data;
   const [copied, setCopied] = useState('');
+  const [link, setLink] = useState(isDataUrl(d.path) ? d.path : '');
+  const [linkProblem, setLinkProblem] = useState('');
+  const web = isDataUrl(d.path);
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
@@ -64,6 +68,13 @@ export function DataDialog({ show, client, onClose }: { show: Show; client: Engi
   const choose = async () => {
     const path = await client.pickDataFile();
     if (path) act({ type: 'setDataFile', path, everyMs: d.everyMs });
+  };
+  const applyLink = () => {
+    const url = sheetCsvUrl(link);
+    if (!url) return setLinkProblem('Paste a link that starts with https://');
+    setLinkProblem('');
+    setLink(url);
+    act({ type: 'setDataFile', path: url, everyMs: Math.max(MIN_URL_EVERY_MS, d.everyMs) });
   };
   const copy = (h: string) => {
     void navigator.clipboard?.writeText(`{${h}}`).catch(() => {});
@@ -84,12 +95,12 @@ export function DataDialog({ show, client, onClose }: { show: Show; client: Engi
         </header>
         <div className="stg__body">
           <p className="field__note">
-            Keep scores, names or anything else in a spreadsheet saved as CSV (or a JSON file). Lumora reads it again by itself, so what you change there shows
-            on screen in a moment. The first row names the columns.
+            Keep scores, names or anything else in a spreadsheet saved as CSV (or a JSON file), or in a Google Sheet. Lumora reads it again by itself, so what
+            you change there shows on screen in a moment. The first row names the columns.
           </p>
           <div className="lyc__row dat__file">
             <b className="dat__path" title={d.path}>
-              {d.path || 'No file chosen'}
+              {d.path ? (web ? 'Google Sheet or web link' : d.path) : 'No file chosen'}
             </b>
             <button type="button" className="btn btn--primary" onClick={() => void choose()}>
               {d.path ? 'Choose another…' : 'Choose a file…'}
@@ -102,14 +113,39 @@ export function DataDialog({ show, client, onClose }: { show: Show; client: Engi
             <label className="field dat__every">
               <span className="field__label">Read every</span>
               <select className="text" value={d.everyMs} onChange={(e) => act({ type: 'setDataFile', path: d.path, everyMs: Number(e.target.value) })}>
-                {[500, 1000, 2000, 5000, 10_000].map((ms) => (
-                  <option key={ms} value={ms}>
-                    {ms / 1000} s
-                  </option>
-                ))}
+                {[500, 1000, 2000, 5000, 10_000, 15_000, 30_000, 60_000]
+                  .filter((ms) => !web || ms >= MIN_URL_EVERY_MS)
+                  .map((ms) => (
+                    <option key={ms} value={ms}>
+                      {ms / 1000} s
+                    </option>
+                  ))}
               </select>
             </label>
           </div>
+          <div className="lyc__row dat__file">
+            <label className="field dat__link">
+              <span className="field__label">Or a Google Sheet link</span>
+              <input
+                className="text"
+                value={link}
+                placeholder="https://docs.google.com/spreadsheets/d/…"
+                autoComplete="off"
+                onChange={(e) => setLink(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && applyLink()}
+                aria-label="Google Sheet link"
+              />
+            </label>
+            <button type="button" className="btn" onClick={applyLink} disabled={!link.trim() || link.trim() === d.path}>
+              <Link2 aria-hidden="true" /> Use this link
+            </button>
+          </div>
+          {linkProblem && <p className="field__note field__note--warn">{linkProblem}</p>}
+          <p className="field__note">
+            In Google Sheets, either share the sheet with “Anyone with the link” and paste its link, or use File → Share → Publish to web → CSV and paste that
+            link. Google can take a few minutes to show changes in a published sheet; a shared link updates sooner. Any other link to a CSV or JSON file works
+            too.
+          </p>
           {d.error && <p className="field__note field__note--warn">Could not read it: {d.error}</p>}
           {d.path && !d.error && d.updatedAt > 0 && (
             <p className="field__note">

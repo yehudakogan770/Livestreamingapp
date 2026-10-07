@@ -13,6 +13,7 @@ export const KINDS = [
   'input',
   'overlay',
   'preset',
+  'macro',
   'replay',
   'record',
   'golive',
@@ -62,6 +63,9 @@ export interface KeySettings {
   /** Countdown: its id, and "toggle" (default), "start", "pause" or "reset". */
   countdown?: string;
   countdownName?: string;
+  /** Macro: its id, and its name (to find it again if the id changes). */
+  macro?: string;
+  macroName?: string;
   /** Slide keys: the slideshow's id and name (left out: the one on air). */
   slideshow?: string;
   slideshowName?: string;
@@ -97,6 +101,10 @@ export function findInput(state: DeckState, s: KeySettings) {
 
 export function findPreset(state: DeckState, s: KeySettings) {
   return state.presets.find((p) => p.id === s.preset) ?? (s.presetName ? state.presets.find((p) => p.name === s.presetName) : undefined);
+}
+
+export function findMacro(state: DeckState, s: KeySettings) {
+  return state.macros.find((m) => m.id === s.macro) ?? (s.macroName ? state.macros.find((m) => m.name === s.macroName) : undefined);
 }
 
 export function findCountdown(state: DeckState, s: KeySettings) {
@@ -207,6 +215,10 @@ export function request(kind: Kind, s: KeySettings, state: DeckState | null, dec
       return state.run.cues ? { to: 'action', body: { type: 'nextCue' } } : { to: 'none', why: 'no cues' };
     case 'backup':
       return { to: 'action', body: { type: 'setBackupOn', value: !state.backup } };
+    case 'macro': {
+      const m = findMacro(state, s);
+      return m ? { to: 'action', body: { type: 'runMacro', id: m.id } } : { to: 'none', why: 'choose a macro' };
+    }
     case 'slidenext':
     case 'slideback':
     case 'slidefirst': {

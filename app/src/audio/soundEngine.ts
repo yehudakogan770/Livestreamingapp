@@ -17,6 +17,7 @@ import { channelLevel, defaultFilters, DUCK_HOLD_MS, duckGain, duckStep, mixSend
 import { syncMedia } from '../engine/mediaSync';
 import { PcmStream } from './pcmStream';
 import { servedUrl } from '../engine/browser';
+import { LoudnessMeter, measureLoudness } from './loudness';
 
 type OutputName = Mix | 'phones';
 
@@ -117,6 +118,9 @@ export class SoundEngine {
   readonly levels = new Map<string, number>();
   /** Channels whose device or file could not be opened. */
   readonly problems = new Set<string>();
+  /** The Stream mix's loudness (LUFS). */
+  readonly loudness = new LoudnessMeter();
+  private stopLoudness: (() => void) | null = null;
 
   constructor(private readonly client: EngineClient) {
     this.ctx = new AudioContext({ latencyHint: 'interactive' });
@@ -144,6 +148,10 @@ export class SoundEngine {
     this.outputs.master.gain.connect(this.phonesFromStream);
     this.phonesFromStream.connect(this.outputs.phones.input);
     this.timer = setInterval(() => this.tick(), 33);
+    void measureLoudness(this.ctx, this.outputs.master.gain, this.loudness).then(
+      (stop) => (this.stopLoudness = stop),
+      () => {},
+    );
     // Browsers only start sound after the operator touches something.
     const wake = () => void this.ctx.resume().catch(() => {});
     window.addEventListener('pointerdown', wake);
@@ -226,6 +234,7 @@ export class SoundEngine {
   dispose(): void {
     clearInterval(this.timer);
     this.unwake();
+    this.stopLoudness?.();
     for (const id of [...this.channels.keys()]) this.drop(id);
     for (const o of Object.values(this.outputs)) {
       o.player?.pause();

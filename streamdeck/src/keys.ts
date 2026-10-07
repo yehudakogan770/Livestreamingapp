@@ -1,7 +1,19 @@
 // What each key looks like: a 144 × 144 picture drawn from Lumora's state.
 // Tally colors follow switchers everywhere: red is on air, green is in Next.
 
-import { channelOf, findCountdown, findInput, findPreset, findSlideshow, needsHold, screenFor, secondsOf, type KeySettings, type Kind } from './actions';
+import {
+  channelOf,
+  findCountdown,
+  findInput,
+  findMacro,
+  findPreset,
+  findSlideshow,
+  needsHold,
+  screenFor,
+  secondsOf,
+  type KeySettings,
+  type Kind,
+} from './actions';
 import { ICONS, type IconName } from './icons';
 import { clock, remaining, tally, type DeckState, type ScreenId } from './show';
 import type { Connection } from './protocol';
@@ -202,6 +214,11 @@ function baseModel(kind: Kind, s: KeySettings, { state, deck, now }: KeyContext)
       const p = state ? findPreset(state, s) : undefined;
       if (!p) return { icon: 'preset', label: s.presetName || 'PRESET', sub: state ? 'Choose preset' : null, tone: 'idle' };
       return { icon: 'preset', label: p.name, sub: `Preset ${p.number}`, tone: state?.activePreset === p.id ? 'on' : 'idle' };
+    }
+    case 'macro': {
+      const m = state ? findMacro(state, s) : undefined;
+      if (!m) return { icon: 'macro', label: s.macroName || 'MACRO', sub: state ? 'Choose macro' : null, tone: 'idle' };
+      return { icon: 'macro', label: m.name, sub: `Macro ${m.number}`, tone: 'idle' };
     }
     case 'replay': {
       const label = `${secondsOf(s)}s${s.slow ? ' ½×' : ''}`;

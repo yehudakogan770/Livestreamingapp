@@ -366,7 +366,19 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
           level: 'warning',
           title: `${dropped.join(', ')} dropped out of the stream`,
           detail: 'The other destinations carry on.',
-          fix: 'Check that destination’s stream key and that its live event is still open. Stop and start the stream to try it again.',
+          fix: 'Check that destination’s stream key and that its live event is still open. Stop and start the stream to try it again (a destination with a backup server tries that one next).',
+        }
+      : null,
+  );
+  const onBackup = [...(status.streaming?.onBackup ?? []), ...(status.vertical?.onBackup ?? [])];
+  useReportProblem(
+    onBackup.length
+      ? {
+          key: 'stream:backup',
+          level: 'warning',
+          title: `${onBackup.join(', ')} is on the backup server`,
+          detail: 'The main server failed, so Lumora reconnected to the backup server.',
+          fix: 'Nothing to do: viewers keep watching. If the backup fails too, Lumora goes back to the main server.',
         }
       : null,
   );

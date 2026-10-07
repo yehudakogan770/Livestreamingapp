@@ -73,7 +73,11 @@ describe('requests from a control surface', () => {
 describe('what control surfaces are told', () => {
   it('says what is running', () => {
     const o = ops({ rehearsal: true, replayOn: true, busy: { record: false, stream: true } }, { recording: running });
-    expect(remoteAppState(o, null)).toEqual({ recording: true, streaming: false, rehearsal: true, replay: true, busy: true, error: null });
+    expect(remoteAppState(o, null)).toEqual({ recording: true, streaming: false, rehearsal: true, replay: true, busy: true, reconnecting: 0, error: null });
+  });
+  it('says which try at reconnecting the stream it is on', () => {
+    const o = { ...ops({}), reconnecting: { attempt: 3 } };
+    expect(remoteAppState(o, null).reconnecting).toBe(3);
   });
 });
 

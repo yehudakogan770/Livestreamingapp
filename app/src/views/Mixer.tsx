@@ -8,6 +8,7 @@ import { defaultFilters, soundSources } from '../engine/audio';
 import { Meter, useSound } from '../audio/SoundContext';
 import { Fader } from '../components/Fader';
 import { SoundOutputsDialog } from './SoundOutputsDialog';
+import { LoudnessReadout } from './LoudnessMeter';
 import type { Act } from './act';
 
 /** Fader value (0–1) as dB on the fader's curve. */
@@ -29,6 +30,7 @@ export function Mixer({ show, act }: { show: Show; act: Act }) {
         <span className="mixer__title">Audio mixer</span>
         {!sound && <span className="mixer__note">sound starts inside Lumora</span>}
         <span className="grow" />
+        <LoudnessReadout />
         <button type="button" className="btn" onClick={() => setOutputs(true)} title="Choose the speakers each mix plays on">
           <Speaker aria-hidden="true" />
           Speakers…

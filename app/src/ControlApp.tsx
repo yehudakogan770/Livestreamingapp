@@ -351,7 +351,11 @@ function ControlApp() {
       })),
       null,
       { label: 'Live chat and audience questions…', onClick: () => sendCommand({ type: 'chat' }) },
-      { label: 'Data file (spreadsheet)…', hint: 'Titles and scoreboards take their words from a CSV or JSON file', onClick: () => setDataOpen(true) },
+      {
+        label: 'Data file (spreadsheet)…',
+        hint: 'Titles and scoreboards take their words from a CSV file or a Google Sheet',
+        onClick: () => setDataOpen(true),
+      },
     ];
     const slides = show?.sources.filter((x) => x.kind.type === 'slideshow') ?? [];
     const slideshow: MenuItem[] = [
