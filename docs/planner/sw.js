@@ -1,13 +1,15 @@
 // Lumora Planner's service worker. The build (planner/vite.config.ts) writes it
 // to sw.js with the list of files below filled in; its scope is the folder it
 // is served from. It keeps the app itself on the device so it opens at once and
-// with no internet. Account data (Supabase) is never cached here: those requests
-// go straight to the network, as if there were no service worker.
+// with no internet (every part of the app, including the parts loaded only when
+// a plan or the calendar opens). Account data (Supabase) is never cached here:
+// those requests go straight to the network, as if there were no service worker.
 
-const VERSION = '66cfffa48b12';
-const FILES = ["./assets/index-BwyoR4_7.js","./assets/index-D73id7s6.css","./index.html","./favicon-32.png","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
+const VERSION = 'e6cd15cc6c88';
+const FILES = ["./assets/Calendar-Vr-A3mCu.js","./assets/chevron-left-B6fPe7JP.js","./assets/index-D73id7s6.css","./assets/index-D9fVp1JD.js","./assets/jsx-runtime-DLNB9Qsn.js","./assets/PlanView-l7E7Etxz.js","./assets/TwoStep-DApLF_PB.js","./index.html","./favicon-32.png","./fonts/plex-mono-400-latin.woff2","./fonts/plex-mono-500-latin.woff2","./fonts/plex-mono-600-latin.woff2","./fonts/plex-sans-latin.woff2","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
 const SHELL = `planner-shell-${VERSION}`;
-const FONTS = 'planner-fonts-1';
+/** The fonts' other alphabets, kept once first used (their file names never change). */
+const FONTS = 'planner-fonts-2';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -22,10 +24,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
+  const old = (k) => (k.startsWith('planner-shell-') && k !== SHELL) || (k.startsWith('planner-fonts-') && k !== FONTS);
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k.startsWith('planner-shell-') && k !== SHELL).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter(old).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -39,24 +42,6 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-
-  // The IBM Plex fonts from Google Fonts: from the cache, refreshed in the background.
-  if (url.origin === 'https://fonts.googleapis.com' || url.origin === 'https://fonts.gstatic.com') {
-    event.respondWith(
-      caches.open(FONTS).then((c) =>
-        c.match(req).then((hit) => {
-          const fresh = fetch(req)
-            .then((res) => {
-              if (res.ok || res.type === 'opaque') c.put(req, res.clone());
-              return res;
-            })
-            .catch(() => hit || Response.error());
-          return hit || fresh;
-        }),
-      ),
-    );
-    return;
-  }
 
   // Anything else not from the Planner's own folder (the account server above all): the network only.
   const scope = new URL(self.registration.scope);
@@ -73,11 +58,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // The app's own files: from this version's cache, else the network.
+  // The app's own files: from this version's cache, else (a font's other alphabets) the fonts
+  // kept on first use, else the network.
+  const font = url.pathname.startsWith(`${scope.pathname}fonts/`);
   event.respondWith(
     caches
       .open(SHELL)
       .then((c) => c.match(req, { ignoreSearch: true }))
-      .then((hit) => hit || fetch(req)),
+      .then(
+        (hit) =>
+          hit ||
+          (font
+            ? caches.open(FONTS).then((c) =>
+                c.match(req).then(
+                  (kept) =>
+                    kept ||
+                    fetch(req).then((res) => {
+                      if (res.ok) c.put(req, res.clone());
+                      return res;
+                    }),
+                ),
+              )
+            : fetch(req)),
+      ),
   );
 });

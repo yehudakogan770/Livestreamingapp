@@ -1,13 +1,14 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App';
+import { App, loadApp } from './App';
 import { lockDown } from './engine/lockdown';
 import { installRangeFill } from './rangeFill';
 import { installErrorReporting, reactError } from './reports/reporter';
 import { TEST_BUILD } from './e2e';
 import { startSelfTest } from './selftest/start';
 import { lumoraScenario } from './selftest/lumora';
-import './styles.css';
+// (The base styles, styles.css, are imported at the end of ControlApp.tsx so
+// they come after the control window's own, as they always have.)
 // Lumora's own type: Inter for the controls, JetBrains Mono for times and numbers.
 import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
@@ -32,10 +33,14 @@ installRangeFill();
 const root = document.getElementById('root');
 if (!root) throw new Error('Lumora: #root element missing from index.html');
 
-createRoot(root, { onCaughtError: reactError, onUncaughtError: reactError }).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+// This window's part (control, output or multiview) is loaded first, so it is
+// drawn at once.
+void loadApp().then(() =>
+  createRoot(root, { onCaughtError: reactError, onUncaughtError: reactError }).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  ),
 );
 
 // The CI test build's self-test (LUMORA_SELFTEST). Never in the installers

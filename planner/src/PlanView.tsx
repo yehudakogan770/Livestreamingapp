@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Check, ChevronRight, CircleAlert, Ellipsis, LoaderCircle, MessageSquare, PanelRight, Plus, Printer, StickyNote, UserPlus, X } from 'lucide-react';
 import { deletePlan, removePerson } from './api';
 import { Chat } from './Chat';
@@ -703,6 +703,26 @@ function CueSheet({
       store.move(i, i + 1);
     }
   };
+  // What the rows do, the same functions every time (so a row only draws again when it changes:
+  // typing in one cue does not redraw the other hundreds).
+  const live = useRef({ onSel, editCue: store.editCue, keys, handle, onOpen });
+  live.current = { onSel, editCue: store.editCue, keys, handle, onOpen };
+  const act = useMemo<RowActions>(
+    () => ({
+      sel: (id) => live.current.onSel(id),
+      edit: (id, change) => live.current.editCue(id, change),
+      keys: (e, i) => live.current.keys(e, i),
+      handle: (i) => ({
+        onPointerDown: (e) => live.current.handle(i).onPointerDown(e),
+        onPointerMove: (e) => live.current.handle(i).onPointerMove(e),
+        onPointerUp: () => live.current.handle(i).onPointerUp(),
+        onPointerCancel: () => live.current.handle(i).onPointerCancel(),
+        onClick: (e) => live.current.handle(i).onClick(e),
+      }),
+      open: (id) => live.current.onOpen?.(id),
+    }),
+    [],
+  );
 
   return (
     <div className="sheet" ref={box}>
@@ -748,123 +768,24 @@ function CueSheet({
         <tbody ref={listRef}>
           {cues.map((c, i) => {
             const t = sched.rows[i]!;
-            const section = c.section && c.section !== cues[i - 1]?.section ? c.section : null;
-            return [
-              section ? (
-                <tr key={`s-${c.id}`} className="cues__section">
-                  <td colSpan={10}>{section}</td>
-                </tr>
-              ) : null,
-              <tr
+            return (
+              <CueRow
                 key={c.id}
-                id={`cue-${c.id}`}
-                data-reorder
-                className={`cues__row${sel === c.id ? ' is-sel' : ''}${onNow === i ? ' is-now' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}
-                onClick={() => onSel(c.id)}
-                onFocus={() => sel !== c.id && onSel(c.id)}
-                onKeyDown={(e) => keys(e, i)}
-              >
-                <td
-                  className={`handle${canEdit ? '' : ' handle--off'}`}
-                  {...handle(i)}
-                  title={canEdit ? 'Drag to reorder (or Alt+↑/↓)' : undefined}
-                  aria-hidden="true"
-                >
-                  {canEdit && <span className="grip" />}
-                </td>
-                <td className="num mono">
-                  {onNow === i && <i className="tally" aria-hidden="true" />}
-                  {i + 1}
-                </td>
-                <td className={`mono${t.fixed ? ' is-fixed' : ''}`}>
-                  {canEdit ? (
-                    <ClockInput
-                      className="cell mono"
-                      value={c.startTime}
-                      placeholder={t.start !== null ? clock12(t.start) : ''}
-                      label={`Start of cue ${i + 1}`}
-                      onChange={(v) => store.editCue(c.id, { startTime: v })}
-                    />
-                  ) : (
-                    <span className="cell-text">{t.start !== null ? clock12(t.start) : ''}</span>
-                  )}
-                  {t.drift !== null && t.drift !== 0 && (
-                    <span
-                      className={`drift ${t.drift < 0 ? 'drift--over' : ''}`}
-                      title={t.drift < 0 ? 'The cue before runs past this time' : 'A gap before this cue'}
-                    >
-                      {t.drift < 0 ? `−${formatDuration(-t.drift)}` : `+${formatDuration(t.drift)}`}
-                    </span>
-                  )}
-                </td>
-                <td className="mono">
-                  <DurationInput
-                    className="cell mono"
-                    value={c.durationSec}
-                    readOnly={!canEdit}
-                    placeholder="—"
-                    label={`Length of cue ${i + 1}`}
-                    onChange={(v) => store.editCue(c.id, { durationSec: v })}
-                  />
-                </td>
-                <td className="type">
-                  <select
-                    className="cell cell--seg"
-                    value={c.segment}
-                    disabled={!canEdit}
-                    aria-label={`Type of cue ${i + 1}`}
-                    onChange={(e) => store.editCue(c.id, { segment: e.target.value as Segment })}
-                  >
-                    {SEGMENTS.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <input
-                    className="cell cell--title"
-                    value={c.title}
-                    maxLength={120}
-                    readOnly={!canEdit}
-                    placeholder="Untitled cue"
-                    aria-label={`Cue ${i + 1}`}
-                    onChange={(e) => store.editCue(c.id, { title: e.target.value })}
-                  />
-                </td>
-                <td>
-                  <input
-                    className="cell"
-                    value={c.who}
-                    maxLength={80}
-                    readOnly={!canEdit}
-                    aria-label={`Who for cue ${i + 1}`}
-                    onChange={(e) => store.editCue(c.id, { who: e.target.value })}
-                  />
-                </td>
-                <td className="cell-text hint">{hintText(c)}</td>
-                <td className="cell-text notes">{c.notes.split('\n')[0]}</td>
-                <td className="num com">
-                  {onOpen ? (
-                    <button
-                      type="button"
-                      className="com__open"
-                      aria-label={`Details of cue ${i + 1}${commentCount.get(c.id) ? `, ${commentCount.get(c.id)} comments` : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpen(c.id);
-                      }}
-                    >
-                      {commentCount.get(c.id) ? <span className="com__n">{commentCount.get(c.id)}</span> : null}
-                      <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
-                    </button>
-                  ) : commentCount.get(c.id) ? (
-                    <span className="com__n">{commentCount.get(c.id)}</span>
-                  ) : null}
-                </td>
-              </tr>,
-            ];
+                c={c}
+                i={i}
+                section={c.section && c.section !== cues[i - 1]?.section ? c.section : null}
+                start={t.start}
+                fixed={t.fixed}
+                drift={t.drift}
+                isSel={sel === c.id}
+                isNow={onNow === i}
+                extra={rowClass(i)}
+                canEdit={canEdit}
+                comments={commentCount.get(c.id) ?? 0}
+                canOpen={!!onOpen}
+                act={act}
+              />
+            );
           })}
         </tbody>
         <tfoot>
@@ -882,3 +803,157 @@ function CueSheet({
     </div>
   );
 }
+
+interface RowActions {
+  sel: (id: string) => void;
+  edit: (id: string, change: Partial<PlanCue>) => void;
+  keys: (e: KeyboardEvent, i: number) => void;
+  handle: (i: number) => ReturnType<ReturnType<typeof useReorder>['handle']>;
+  open: (id: string) => void;
+}
+
+/** One cue in the sheet (and the section heading above it, if it starts one). */
+const CueRow = memo(function CueRow({
+  c,
+  i,
+  section,
+  start,
+  fixed,
+  drift,
+  isSel,
+  isNow,
+  extra,
+  canEdit,
+  comments,
+  canOpen,
+  act,
+}: {
+  c: PlanCue;
+  i: number;
+  section: string | null;
+  start: number | null;
+  fixed: boolean;
+  drift: number | null;
+  isSel: boolean;
+  isNow: boolean;
+  extra: string;
+  canEdit: boolean;
+  comments: number;
+  canOpen: boolean;
+  act: RowActions;
+}) {
+  return (
+    <>
+      {section ? (
+        <tr className="cues__section">
+          <td colSpan={10}>{section}</td>
+        </tr>
+      ) : null}
+      <tr
+        id={`cue-${c.id}`}
+        data-reorder
+        className={`cues__row${isSel ? ' is-sel' : ''}${isNow ? ' is-now' : ''}${c.segment === 'break' ? ' is-break' : ''}${extra}`}
+        onClick={() => act.sel(c.id)}
+        onFocus={() => !isSel && act.sel(c.id)}
+        onKeyDown={(e) => act.keys(e, i)}
+      >
+        <td
+          className={`handle${canEdit ? '' : ' handle--off'}`}
+          {...act.handle(i)}
+          title={canEdit ? 'Drag to reorder (or Alt+↑/↓)' : undefined}
+          aria-hidden="true"
+        >
+          {canEdit && <span className="grip" />}
+        </td>
+        <td className="num mono">
+          {isNow && <i className="tally" aria-hidden="true" />}
+          {i + 1}
+        </td>
+        <td className={`mono${fixed ? ' is-fixed' : ''}`}>
+          {canEdit ? (
+            <ClockInput
+              className="cell mono"
+              value={c.startTime}
+              placeholder={start !== null ? clock12(start) : ''}
+              label={`Start of cue ${i + 1}`}
+              onChange={(v) => act.edit(c.id, { startTime: v })}
+            />
+          ) : (
+            <span className="cell-text">{start !== null ? clock12(start) : ''}</span>
+          )}
+          {drift !== null && drift !== 0 && (
+            <span className={`drift ${drift < 0 ? 'drift--over' : ''}`} title={drift < 0 ? 'The cue before runs past this time' : 'A gap before this cue'}>
+              {drift < 0 ? `−${formatDuration(-drift)}` : `+${formatDuration(drift)}`}
+            </span>
+          )}
+        </td>
+        <td className="mono">
+          <DurationInput
+            className="cell mono"
+            value={c.durationSec}
+            readOnly={!canEdit}
+            placeholder="—"
+            label={`Length of cue ${i + 1}`}
+            onChange={(v) => act.edit(c.id, { durationSec: v })}
+          />
+        </td>
+        <td className="type">
+          <select
+            className="cell cell--seg"
+            value={c.segment}
+            disabled={!canEdit}
+            aria-label={`Type of cue ${i + 1}`}
+            onChange={(e) => act.edit(c.id, { segment: e.target.value as Segment })}
+          >
+            {SEGMENTS.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </td>
+        <td>
+          <input
+            className="cell cell--title"
+            value={c.title}
+            maxLength={120}
+            readOnly={!canEdit}
+            placeholder="Untitled cue"
+            aria-label={`Cue ${i + 1}`}
+            onChange={(e) => act.edit(c.id, { title: e.target.value })}
+          />
+        </td>
+        <td>
+          <input
+            className="cell"
+            value={c.who}
+            maxLength={80}
+            readOnly={!canEdit}
+            aria-label={`Who for cue ${i + 1}`}
+            onChange={(e) => act.edit(c.id, { who: e.target.value })}
+          />
+        </td>
+        <td className="cell-text hint">{hintText(c)}</td>
+        <td className="cell-text notes">{c.notes.split('\n')[0]}</td>
+        <td className="num com">
+          {canOpen ? (
+            <button
+              type="button"
+              className="com__open"
+              aria-label={`Details of cue ${i + 1}${comments ? `, ${comments} comments` : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                act.open(c.id);
+              }}
+            >
+              {comments ? <span className="com__n">{comments}</span> : null}
+              <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
+            </button>
+          ) : comments ? (
+            <span className="com__n">{comments}</span>
+          ) : null}
+        </td>
+      </tr>
+    </>
+  );
+});

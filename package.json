@@ -15,6 +15,7 @@
     "edit:ui:build": "node scripts/vision-files.mjs && vite build --config editor/vite.config.ts",
     "planner:dev": "vite --config planner/vite.config.ts",
     "planner:build": "vite build --config planner/vite.config.ts",
+    "site:images": "python3 scripts/site_images.py",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "streamdeck:pack": "node streamdeck/scripts/pack.mjs",
