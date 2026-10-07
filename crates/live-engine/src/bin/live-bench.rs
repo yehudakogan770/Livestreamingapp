@@ -15,8 +15,9 @@
 
 use std::time::{Duration, Instant};
 
-use live_engine::encoder::EncoderFeed;
+use live_engine::encoder::{EncoderFeed, FeedArgs};
 use live_engine::engine::{Config, DefaultFactory, LiveEngine};
+use live_engine::feeds::{FeedSource, FeedSpec};
 use live_engine::gpu::{Compositor, Dest, Paint, Pass};
 use lumora_engine::{
     ActiveTransition, Fit, ScreenId, Show, Source, SourceAudio, SourceId, SourceKind, Split,
@@ -132,9 +133,36 @@ fn main() {
             .iter()
             .map(|s| (*s).to_owned())
             .collect();
-        match EncoderFeed::start(&ff, w, h, fps, &enc, &container, Box::new(|_| {})) {
-            Ok(f) => engine.start_feed(ScreenId::Live, f),
-            Err(e) => eprintln!("encode skipped: {e}"),
+        let started = engine.start_feed(
+            1,
+            FeedSpec {
+                source: FeedSource::Screen {
+                    screen: ScreenId::Live,
+                    vertical: false,
+                },
+                width: w,
+                height: h,
+                fps,
+            },
+            Box::new(move |shape| {
+                EncoderFeed::start(
+                    &ff,
+                    FeedArgs {
+                        width: shape.width,
+                        height: shape.height,
+                        fps: shape.fps,
+                        pix_fmt: shape.pix_fmt,
+                        encode: enc,
+                        container,
+                        audio: None,
+                    },
+                    Box::new(|_| {}),
+                    None,
+                )
+            }),
+        );
+        if let Ok(Err(e)) = started.recv() {
+            eprintln!("encode skipped: {e}");
         }
     }
     // Let the synthetic cameras deliver their first frames.
@@ -245,7 +273,7 @@ fn main() {
         "  scene maths (CPU, three screens): {:.4} ms/frame",
         scene_ms / frames as f64
     );
-    if let Some(f) = engine.stop_feed() {
+    if let Some(f) = engine.stop_feed(1).map(EncoderFeed::finish) {
         println!(
             "encoder feed: {} frames in, {} dropped{}",
             f.frames_in,

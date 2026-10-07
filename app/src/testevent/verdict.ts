@@ -2,6 +2,7 @@
 // found (critical / problem / note, each with where a developer should look),
 // plain-English advice, and the verdict for running a real event like this.
 
+import type { EngineMeasured } from './engineReport';
 import type { StepKind } from './plan';
 
 export type Phase = StepKind | 'setup' | 'finish';
@@ -130,6 +131,8 @@ export interface Measured {
   /** The person's show came back exactly. */
   restored: boolean | null;
   stopped: boolean;
+  /** The unified engine's own numbers (when it drew the screens and recorded). */
+  engine?: EngineMeasured | null;
 }
 
 export interface FeatureStats {

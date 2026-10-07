@@ -13,17 +13,24 @@
 //!   encoder ([`encoder`]), and small previews for the control window
 //!   ([`engine`]).
 //!
-//! Graphics (titles, countdowns, scoreboards…) stay drawn by web code: each
-//! screen has an overlay layer that takes transparent RGBA frames.
+//! Graphics (titles, countdowns, scoreboards…) stay drawn by web code: a
+//! hidden web overlay renderer per screen draws them into transparent planes
+//! and sends what changed ([`overlay`]); the engine draws them in their place.
 //!
 //! Selected in Settings → Engine; the Standard engine (every window draws its
 //! own copy in its WebView) stays the default.
 
+pub mod audio;
+pub mod delay;
 pub mod encoder;
 pub mod engine;
+pub mod feeds;
 pub mod frame;
 pub mod gpu;
+pub mod look;
 pub mod mix;
+pub mod multiview;
+pub mod overlay;
 pub mod present;
 pub mod scene;
 pub mod source;

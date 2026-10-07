@@ -2,14 +2,20 @@
 //! WARP): scenes drawn offscreen and read back. Skipped, with a note, on a
 //! computer with no graphics adapter at all.
 
+use std::sync::{Arc, Mutex};
+
+use live_engine::encoder::{EncoderFeed, FeedArgs};
 use live_engine::engine::{Config, LiveEngine, SourceFactory};
+use live_engine::feeds::{FeedSource, FeedSpec, MakeFeed};
 use live_engine::frame::{FramePool, PixelFormat, VideoFrame};
 use live_engine::gpu::{Compositor, Dest, Paint, Pass};
 use live_engine::mix::Shape;
+use live_engine::overlay::{encode, parse, Op};
 use live_engine::scene::{Content, Layer, Picture, Placement, ScreenScene};
 use live_engine::source::{SourceHealth, SourceState, VideoSource};
 use lumora_engine::{
-    ActiveTransition, Fit, Show, Source, SourceAudio, SourceId, SourceKind, TransitionKind,
+    ActiveTransition, Fit, ScreenId, Show, Source, SourceAudio, SourceId, SourceKind,
+    TransitionKind,
 };
 
 fn gpu() -> Option<Compositor> {
@@ -69,7 +75,7 @@ fn draw(g: &mut Compositor, sc: &ScreenScene) -> Vec<u8> {
         viewport: None,
         paint: Paint::Scene {
             scene: sc,
-            overlay: None,
+            planes: None,
         },
     }]);
     g.read(Dest::Target(0)).expect("read back").2
@@ -87,6 +93,160 @@ fn near(a: [u8; 4], b: [u8; 4]) -> bool {
 fn setup(g: &mut Compositor) {
     g.upload(&SourceId::new("red"), &solid([255, 0, 0, 255], W, H, 1));
     g.upload(&SourceId::new("blue"), &solid([0, 0, 255, 255], W, H, 1));
+}
+
+#[test]
+fn a_split_screen_fades_as_one_picture() {
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    // A split: black background, blue in the left half; fading in at 50 % over red.
+    let split = Layer {
+        source: SourceId::new("split"),
+        pictures: vec![
+            Picture {
+                content: Content::Color([0.0, 0.0, 0.0, 1.0]),
+                placement: Placement::default(),
+            },
+            Picture {
+                content: Content::Video(SourceId::new("blue")),
+                placement: Placement {
+                    frame: [0.0, 0.0, 0.5, 1.0],
+                    fit: Fit::Cover,
+                    ..Placement::default()
+                },
+            },
+        ],
+        ..layer("split", 0.5)
+    };
+    assert!(live_engine::gpu::needs_group(&split));
+    let sc = ScreenScene {
+        layers: vec![layer("red", 1.0), split],
+        ..ScreenScene::default()
+    };
+    let img = draw(&mut g, &sc);
+    // The box mixes with the red evenly (its background doesn't show through it)…
+    assert!(
+        near(px(&img, 10, 18), [128, 0, 128, 255]),
+        "{:?}",
+        px(&img, 10, 18)
+    );
+    // …and the background fades over the red too.
+    assert!(
+        near(px(&img, 50, 18), [128, 0, 0, 255]),
+        "{:?}",
+        px(&img, 50, 18)
+    );
+    // A single camera (with its bars) is not grouped: nothing to see through.
+    assert!(!live_engine::gpu::needs_group(&layer("blue", 0.5)));
+}
+
+#[test]
+fn green_screen_and_light_and_color_on_the_gpu() {
+    use live_engine::look::Look;
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    // A camera in front of a green screen: all green, but a white square in the middle.
+    let pool = FramePool::new(1);
+    let keyed = VideoFrame::build(&pool, W, H, PixelFormat::Rgba8, 1, |px| {
+        for (i, p) in px.as_chunks_mut::<4>().0.iter_mut().enumerate() {
+            let (x, y) = (i as u32 % W, i as u32 / W);
+            *p = if (24..40).contains(&x) && (10..26).contains(&y) {
+                [255, 255, 255, 255]
+            } else {
+                [0, 177, 64, 255]
+            };
+        }
+    });
+    g.upload(&SourceId::new("green"), &keyed);
+    let key = lumora_engine::ChromaKey {
+        enabled: true,
+        ..Default::default()
+    };
+    let mut cam = layer("green", 1.0);
+    cam.pictures[0].placement.look = Look::of(&key, &Default::default());
+    assert!(cam.pictures[0].placement.look.is_some());
+    let sc = ScreenScene {
+        layers: vec![layer("red", 1.0), cam],
+        ..ScreenScene::default()
+    };
+    let img = draw(&mut g, &sc);
+    // The green is gone (the red input behind shows), the person stays.
+    assert!(
+        near(px(&img, 5, 5), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 5, 5)
+    );
+    assert!(
+        near(px(&img, 32, 18), [255, 255, 255, 255]),
+        "{:?}",
+        px(&img, 32, 18)
+    );
+    // Brightness +100: a quarter more light in every channel (the processor's sum).
+    let mut blue = layer("blue", 1.0);
+    let a = lumora_engine::adjust::Adjust {
+        brightness: 100.0,
+        ..Default::default()
+    };
+    blue.pictures[0].placement.look = Look::of(&Default::default(), &a);
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![blue],
+            ..ScreenScene::default()
+        },
+    );
+    assert!(
+        near(px(&img, 10, 10), [64, 64, 255, 255]),
+        "{:?}",
+        px(&img, 10, 10)
+    );
+}
+
+/// A camera's NV12 frame of one color (Y, U, V as the camera would send them).
+fn nv12(w: u32, h: u32, yuv: [u8; 3]) -> VideoFrame {
+    let pool = FramePool::new(1);
+    VideoFrame::build(&pool, w, h, PixelFormat::Nv12, 1, |px| {
+        let ylen = (w * h) as usize;
+        px[..ylen].fill(yuv[0]);
+        for uv in px[ylen..].as_chunks_mut::<2>().0 {
+            *uv = [yuv[1], yuv[2]];
+        }
+    })
+}
+
+#[test]
+fn cameras_in_nv12_are_made_rgb_on_the_gpu() {
+    let Some(mut g) = gpu() else { return };
+    // Red as a small camera sends it (BT.601) …
+    g.upload(&SourceId::new("sd"), &nv12(W, H, [81, 90, 240]));
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("sd", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    assert!(
+        near(px(&img, 10, 10), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 10, 10)
+    );
+    // … and as an HD camera sends it (BT.709).
+    g.upload(&SourceId::new("hd"), &nv12(1280, 720, [63, 102, 240]));
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("hd", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    let p = px(&img, 10, 10);
+    assert!(p[0] >= 250 && p[1] <= 5 && p[2] <= 5, "{p:?}");
+    // 12 bits a pixel crossed to the GPU, not 32.
+    assert_eq!(
+        g.take_upload_bytes(),
+        (W * H * 3 / 2 + 1280 * 720 * 3 / 2) as u64
+    );
 }
 
 #[test]
@@ -144,7 +304,7 @@ fn pipelined_read_back_is_one_frame_late() {
             viewport: None,
             paint: Paint::Scene {
                 scene: sc,
-                overlay: None,
+                planes: None,
             },
         }]);
     };
@@ -237,7 +397,7 @@ fn the_overlay_layer_goes_over_the_inputs() {
         viewport: None,
         paint: Paint::Scene {
             scene: &sc,
-            overlay: Some(0),
+            planes: Some(0),
         },
     }]);
     let img = g.read(Dest::Target(0)).unwrap().2;
@@ -309,6 +469,42 @@ fn cam(id: &str) -> Source {
 }
 
 #[test]
+fn a_lost_graphics_device_is_replaced_and_the_show_goes_on() {
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    e.frame(1000);
+    // A driver reset (Windows' TDR), as far as the engine can tell.
+    e.gpu.device.destroy();
+    let _ = e
+        .gpu
+        .device
+        .poll(live_engine::wgpu::PollType::wait_indefinitely());
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while !e.gpu.is_lost() && std::time::Instant::now() < deadline {
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(e.gpu.is_lost(), "the loss is noticed");
+    e.frame(1016);
+    assert!(!e.gpu.is_lost(), "a new device");
+    assert_eq!(e.stats.recoveries, 1);
+    assert!(
+        e.graphics_lost,
+        "the renderers are asked for everything again"
+    );
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(
+        near(px(&live, 30, 20), [255, 0, 0, 255]),
+        "{:?}",
+        px(&live, 30, 20)
+    );
+}
+
+#[test]
 fn the_engine_draws_the_show_and_its_previews() {
     let Some(g) = gpu() else { return };
     let config = Config {
@@ -358,4 +554,386 @@ fn the_engine_draws_the_show_and_its_previews() {
     // The health of each input, for the backup lineup.
     assert_eq!(e.health().len(), 2);
     assert!(e.stats.adapter.is_some());
+}
+
+// ---------------------------------------------------------------------------
+// Graphics from the web overlay renderer
+
+fn text_input(id: &str) -> Source {
+    Source {
+        kind: SourceKind::Text(Default::default()),
+        ..cam(id)
+    }
+}
+
+/// A plane of one color, as the web renderer sends it whole.
+fn plane_msg(screen: ScreenId, name: &str, w: u32, h: u32, rgba: [u8; 4]) -> Vec<u8> {
+    let px: Vec<u8> = (0..w * h).flat_map(|_| rgba).collect();
+    encode(&[(
+        Op::Patch,
+        screen,
+        name,
+        w,
+        h,
+        0,
+        vec![([0, 0, w, h], &px[..])],
+    )])
+}
+
+fn engine() -> Option<LiveEngine> {
+    let g = gpu()?;
+    let config = Config {
+        width: W,
+        height: H,
+        fps: 60,
+        preview_w: 16,
+        preview_h: 9,
+        preview_every: 1000,
+    };
+    Some(LiveEngine::new(config, g, Box::new(Colors)))
+}
+
+fn apply(e: &mut LiveEngine, bytes: Vec<u8>) {
+    let m = parse(bytes).expect("a good message");
+    e.apply_graphics(&m);
+}
+
+#[test]
+fn a_graphics_input_fades_in_its_place_among_the_pictures() {
+    let Some(mut e) = engine() else { return };
+    // Camera a (red) on air; a title (green, from the web) taking over with a fade.
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.previous = Some(SourceId::new("a"));
+    show.screens.live.program = Some(SourceId::new("t"));
+    show.screens.live.transition = Some(ActiveTransition {
+        kind: TransitionKind::Fade,
+        duration_ms: 1000,
+        started_at: 1000,
+    });
+    e.set_show(show);
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, "g:t", W, H, [0, 255, 0, 255]),
+    );
+    e.frame(1500);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    // Half red, half green: the title is mixed in like a camera, not pasted on top.
+    assert!(
+        near(px(&live, 30, 20), [128, 128, 0, 255]),
+        "{:?}",
+        px(&live, 30, 20)
+    );
+    e.frame(2100);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 30, 20), [0, 255, 0, 255]));
+    assert_eq!(e.gpu.plane_count(), 1);
+    // The test event's check: what is on air is really drawn.
+    let p = e.probe(ScreenId::Live);
+    assert_eq!(p.in_sync, Some(true));
+    assert_eq!((p.width, p.height, p.window), (W, H, false));
+    apply(
+        &mut e,
+        encode(&[(Op::Clear, ScreenId::Live, "g:t", W, H, 0, vec![])]),
+    );
+    assert_eq!(e.probe(ScreenId::Live).in_sync, Some(false));
+    assert_eq!(e.probe(ScreenId::Back).in_sync, None);
+}
+
+#[test]
+fn only_the_changed_rectangle_is_sent_and_cleared_planes_go() {
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("t"));
+    e.set_show(show);
+    // A see-through title: transparent everywhere but where it is drawn.
+    apply(&mut e, plane_msg(ScreenId::Live, "g:t", W, H, [0, 0, 0, 0]));
+    let white: Vec<u8> = (0..8 * 4).flat_map(|_| [255u8, 255, 255, 255]).collect();
+    apply(
+        &mut e,
+        encode(&[(
+            Op::Patch,
+            ScreenId::Live,
+            "g:t",
+            W,
+            H,
+            0,
+            vec![([4, 4, 8, 4], &white[..])],
+        )]),
+    );
+    e.frame(1000);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 6, 6), [255, 255, 255, 255]));
+    // The screen's black everywhere else.
+    assert!(near(px(&live, 30, 20), [0, 0, 0, 255]));
+    apply(
+        &mut e,
+        encode(&[(Op::Clear, ScreenId::Live, "g:t", W, H, 0, vec![])]),
+    );
+    assert_eq!(e.gpu.plane_count(), 0);
+    e.frame(1001);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 6, 6), [0, 0, 0, 255]));
+}
+
+#[test]
+fn channels_dip_and_panic_keep_the_web_order() {
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b"), text_input("name")],
+        ..Show::default()
+    };
+    show.screens.live.previous = Some(SourceId::new("a"));
+    show.screens.live.program = Some(SourceId::new("b"));
+    // A dip to black half way: the inputs are black, the lower third stays.
+    show.screens.live.transition = Some(ActiveTransition {
+        kind: TransitionKind::Dip,
+        duration_ms: 1000,
+        started_at: 1000,
+    });
+    show.overlays = lumora_engine::overlays::channels();
+    let o = &mut show.overlays[0];
+    o.source_id = Some(SourceId::new("name"));
+    o.frame = lumora_engine::overlays::Frame {
+        x: 0.0,
+        y: 50.0,
+        w: 100.0,
+        h: 50.0,
+    };
+    o.anim_ms = 0;
+    o.set_on(true, 0);
+    e.set_show(show.clone());
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, "g:name", W, H / 2, [255, 255, 0, 255]),
+    );
+    e.frame(1500);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(
+        near(px(&live, 30, 5), [0, 0, 0, 255]),
+        "dipped: {:?}",
+        px(&live, 30, 5)
+    );
+    assert!(
+        near(px(&live, 30, 30), [255, 255, 0, 255]),
+        "the channel stays over the dip: {:?}",
+        px(&live, 30, 30)
+    );
+    // PANIC: black over everything at once, then the logo from the web over that.
+    show.screens.live.transition = None;
+    show.panic = true;
+    show.panic_changed_at = 0;
+    e.set_show(show);
+    e.frame(5000);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(
+        near(px(&live, 30, 30), [0, 0, 0, 255]),
+        "{:?}",
+        px(&live, 30, 30)
+    );
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, "panic", W, H, [0, 0, 0, 0]),
+    );
+    let logo: Vec<u8> = (0..4).flat_map(|_| [255u8, 255, 255, 255]).collect();
+    apply(
+        &mut e,
+        encode(&[(
+            Op::Patch,
+            ScreenId::Live,
+            "panic",
+            W,
+            H,
+            0,
+            vec![([30, 16, 2, 2], &logo[..])],
+        )]),
+    );
+    e.frame(5001);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 31, 17), [255, 255, 255, 255]));
+    assert!(near(px(&live, 5, 5), [0, 0, 0, 255]));
+}
+
+// ---------------------------------------------------------------------------
+// Feeds: the recording, the vertical version and a camera's ISO at once
+
+/// A feed whose "encoder" hands back the raw frames it was given.
+fn raw_feed(out: Arc<Mutex<Vec<u8>>>) -> MakeFeed {
+    Box::new(move |shape| {
+        EncoderFeed::start(
+            std::path::Path::new("ffmpeg"),
+            FeedArgs {
+                width: shape.width,
+                height: shape.height,
+                fps: shape.fps,
+                pix_fmt: shape.pix_fmt,
+                encode: vec![
+                    "-c:v".into(),
+                    "rawvideo".into(),
+                    "-pix_fmt".into(),
+                    "rgba".into(),
+                ],
+                container: vec!["-f".into(), "rawvideo".into(), "-".into()],
+                audio: None,
+            },
+            Box::new(move |c| out.lock().unwrap().extend(c)),
+            None,
+        )
+    })
+}
+
+#[test]
+fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
+    if std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_err()
+    {
+        eprintln!("no FFmpeg here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    let (small, vertical, iso) = (
+        Arc::new(Mutex::new(Vec::new())),
+        Arc::new(Mutex::new(Vec::new())),
+        Arc::new(Mutex::new(Vec::new())),
+    );
+    let screen = |vertical: bool, w: u32, h: u32| FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical,
+        },
+        width: w,
+        height: h,
+        fps: 30,
+    };
+    let a = e.start_feed(1, screen(false, 32, 18), raw_feed(Arc::clone(&small)));
+    let b = e.start_feed(2, screen(true, 18, 32), raw_feed(Arc::clone(&vertical)));
+    let c = e.start_feed(
+        3,
+        FeedSpec {
+            source: FeedSource::Input(SourceId::new("b")),
+            width: 0,
+            height: 0,
+            fps: 30,
+        },
+        raw_feed(Arc::clone(&iso)),
+    );
+    for r in [a, b, c] {
+        r.recv().unwrap().expect("starts");
+    }
+    // Frames in real time until every encoder runs (the camera's starts
+    // with its first frame), then half a second more.
+    let now = live_engine::engine::now_ms;
+    let t0 = now();
+    let mut until = None;
+    while until.is_none_or(|u| now() < u) && now() < t0 + 10_000 {
+        e.frame(now());
+        if until.is_none() && [1, 2, 3].iter().all(|id| e.feed_running(*id)) {
+            until = Some(now() + 500);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let stats: Vec<_> = [1, 2, 3]
+        .into_iter()
+        .map(|id| e.stop_feed(id).expect("running").finish())
+        .collect();
+    eprintln!("{stats:?}");
+    // The recording: red (camera a), scaled to 32 × 18.
+    let small = small.lock().unwrap();
+    assert!(small.len() >= 32 * 18 * 4 * 8, "{}", small.len());
+    assert_eq!(small.len() % (32 * 18 * 4), 0);
+    let last = &small[small.len() - 32 * 18 * 4..];
+    assert!(near([last[0], last[1], last[2], last[3]], [255, 0, 0, 255]));
+    // The vertical version: the picture across the middle, darkened red above and below.
+    let v = vertical.lock().unwrap();
+    assert_eq!(v.len() % (18 * 32 * 4), 0);
+    let last = &v[v.len() - 18 * 32 * 4..];
+    let at = |x: usize, y: usize| {
+        let i = (y * 18 + x) * 4;
+        [last[i], last[i + 1], last[i + 2], last[i + 3]]
+    };
+    assert!(near(at(9, 16), [255, 0, 0, 255]), "{:?}", at(9, 16));
+    assert!(near(at(9, 1), [140, 0, 0, 255]), "{:?}", at(9, 1));
+    // The ISO: camera b's own frames (blue), at its own size.
+    let iso = iso.lock().unwrap();
+    assert!(
+        iso.len() >= W as usize * H as usize * 4 * 5,
+        "{}",
+        iso.len()
+    );
+    assert!(near([iso[0], iso[1], iso[2], iso[3]], [0, 0, 255, 255]));
+}
+
+// ---------------------------------------------------------------------------
+// The multiview, from the same frames
+
+#[test]
+fn the_multiview_shows_the_screens_and_inputs_with_tally_and_words() {
+    use live_engine::engine::{MULTIVIEW, MULTIVIEW_PLANE};
+    use live_engine::multiview::{layout, Tally, TileContent, SIZE};
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    show.screens.live.preview = Some(SourceId::new("b"));
+    e.set_show(show.clone());
+    // The words from the overlay renderer: one white pixel in the header.
+    let dot = [255u8, 255, 255, 255];
+    apply(
+        &mut e,
+        encode(&[(
+            Op::Patch,
+            ScreenId::Live,
+            MULTIVIEW_PLANE,
+            SIZE.0,
+            SIZE.1,
+            0,
+            vec![([10, 10, 1, 1], &dot[..])],
+        )]),
+    );
+    e.frame(1000);
+    e.draw_multiview();
+    let (w, _, img) = e.gpu.read(Dest::Target(MULTIVIEW)).unwrap();
+    assert_eq!(w, SIZE.0);
+    let at = |x: u32, y: u32| {
+        let i = ((y * SIZE.0 + x) * 4) as usize;
+        [img[i], img[i + 1], img[i + 2], img[i + 3]]
+    };
+    let mid = |r: [u32; 4]| (r[0] + r[2] / 2, r[1] + r[3] / 2);
+    let l = layout(&show, SIZE.0, SIZE.1);
+    for t in &l.tiles {
+        let (x, y) = mid(t.picture);
+        let want = match &t.content {
+            TileContent::Program(_) => [255, 0, 0, 255],
+            TileContent::Next(_) => [0, 0, 255, 255],
+            TileContent::Input(id) if id.as_str() == "a" => [255, 0, 0, 255],
+            TileContent::Input(_) => [0, 0, 255, 255],
+        };
+        assert!(near(at(x, y), want), "{t:?}: {:?}", at(x, y));
+        // Its border: red on air, green next, gray otherwise.
+        let edge = at(t.rect[0], t.rect[1] + t.rect[3] / 2);
+        let border = match t.tally {
+            Tally::Pgm => [255, 75, 62, 255],
+            Tally::Pvw => [52, 210, 107, 255],
+            Tally::None => [39, 39, 39, 255],
+        };
+        assert!(near(edge, border), "{t:?}: {edge:?}");
+    }
+    // The frame around the tiles, and the words over everything.
+    assert!(near(at(1, 1), [11, 11, 11, 255]));
+    assert!(near(at(10, 10), [255, 255, 255, 255]));
 }

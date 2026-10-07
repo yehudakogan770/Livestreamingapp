@@ -9,6 +9,7 @@ import type { EventInfo } from '../engine/types/EventInfo';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { programLayers, type StingerPlay } from '../components/ScreenView';
+import { ENGINE_DRAWN, type PlaneSpec } from '../engine/overlayPlanes';
 import { lumaMask } from '../engine/luma';
 import { acquireCamera, fullResolution, releaseCamera } from '../engine/cameras';
 import { syncMedia } from '../engine/mediaSync';
@@ -260,6 +261,74 @@ export class ProgramCompositor {
       ctx.restore();
     }
     ctx.globalAlpha = 1;
+  }
+
+  // ---- the unified engine's overlay renderer ----
+
+  /**
+   * Graphics only (the unified engine's overlay renderer): inputs the engine
+   * draws itself — cameras, files, pictures, streams, colors — are left
+   * see-through and never opened; only graphics are drawn, each into its own
+   * plane (see engine/overlayPlanes.ts).
+   */
+  graphicsOnly = false;
+
+  /** Start a frame of planes (keeps build-on animations running from when each input came on). */
+  beginPlanes(): void {
+    this.drawnBefore = this.drawnNow;
+    this.drawnNow = new Set();
+    for (const id of this.starts.keys()) if (!this.drawnBefore.has(id)) this.starts.delete(id);
+  }
+
+  /** Draw one plane at `now` into `target` (cleared to transparent first), exactly as the recording draws it. */
+  drawPlane(target: CanvasRenderingContext2D, plane: PlaneSpec, now: number): void {
+    const show = this.show;
+    if (!show) return;
+    const main = this.ctx;
+    this.ctx = target;
+    try {
+      target.setTransform(1, 0, 0, 1, 0, 0);
+      target.globalAlpha = 1;
+      target.globalCompositeOperation = 'source-over';
+      target.filter = 'none';
+      target.clearRect(0, 0, plane.w, plane.h);
+      const { w, h } = plane;
+      switch (plane.kind) {
+        case 'input': {
+          const src = show.sources.find((s) => s.id === plane.sourceId);
+          if (src) this.safely(src.id, () => this.drawSource(src, show.event, now, w, h));
+          return;
+        }
+        case 'channel': {
+          const src = show.sources.find((s) => s.id === plane.sourceId);
+          if (!src) return;
+          // What it shows can have its own entrance (the Pesukim bar), from when it came on.
+          this.onSince = plane.changedAt;
+          this.safely(`overlay:${src.id}`, () => this.drawSource(src, show.event, now, w, h));
+          this.onSince = null;
+          return;
+        }
+        case 'top':
+          this.safely('stinger', () => this.drawSting(plane.stinger, now, w, h));
+          return;
+        case 'multiview':
+          // Drawn by the overlay renderer itself (engine/multiviewLabels.ts).
+          return;
+        case 'panic': {
+          // The engine draws PANIC's black itself; the logo comes from here.
+          const logo = this.picture(eventLogo(show.event));
+          if (logo) this.safely('panic', () => this.centred(logo, w * 0.5, h * 0.5, w, h));
+          return;
+        }
+      }
+    } finally {
+      this.ctx = main;
+    }
+  }
+
+  /** No plane plays the stinger any more. */
+  endSting(): void {
+    this.stopSting();
   }
 
   /** Inputs that failed to draw (each is said once). */
@@ -1721,6 +1790,8 @@ export class ProgramCompositor {
   private drawSource(src: Source, event: EventInfo, now: number, w: number, h: number) {
     const ctx = this.ctx;
     const k = src.kind;
+    // The unified engine draws these itself (and opens the cameras): left see-through.
+    if (this.graphicsOnly && ENGINE_DRAWN.has(k.type)) return;
     // The control window sees no picture from it (the backup lineup): the safe screen, never a frozen picture.
     if (this.show?.noSignal?.includes(src.id)) return this.safeScreen(event, 'failure', w, h);
     switch (k.type) {

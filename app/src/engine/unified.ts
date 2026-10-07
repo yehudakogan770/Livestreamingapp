@@ -10,13 +10,26 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { isInsideLumora } from './client';
+import { isInsideLumora, type CaptureRunning, type SessionKind } from './client';
 import { inputHealth, type InputHealth } from './inputHealth';
 
 export type EngineMode = 'standard' | 'unified';
 
+/** How one of the engine's encoder feeds is doing. */
+export interface EngineFeedStats {
+  framesIn: number;
+  framesDropped: number;
+  bytesOut: number;
+  /** Sound samples written (silence included), and silence filled in. */
+  audioSamples: number;
+  audioSilence: number;
+  error: string | null;
+}
+
 export interface EngineStats {
   frames: number;
+  /** Frames drawn in the last second. */
+  fps: number;
   msPerFrame: number;
   uploadMs: number;
   renderMs: number;
@@ -26,14 +39,22 @@ export interface EngineStats {
   uploadMbPerS: number;
   adapter: { name: string; backend: string; kind: string } | null;
   outputs: string[];
-  feed: { framesIn: number; framesDropped: number; bytesOut: number; error: string | null } | null;
+  feed: EngineFeedStats | null;
+  /** Every feed: the recording, the stream, the vertical version, NDI (screens) and each camera's ISO file (inputs). */
+  feeds: { id: number; kind: 'screen' | 'vertical' | 'input'; stats: EngineFeedStats | null; error: string | null }[];
+  /** The graphics from the overlay renderers. */
+  overlay: { framesPerS: number; mbPerS: number; latencyMs: number; planes: number; refused: number };
   notes: string[];
   error: string | null;
+  /** Times the graphics card was reset (a driver reset) and the engine started again on it. */
+  recoveries?: number;
 }
 
 export interface EngineInfo {
   mode: EngineMode;
   running: boolean;
+  /** The size and rate the engine draws every screen at (null when it isn't running). */
+  size: { width: number; height: number; fps: number } | null;
   error: string | null;
   stats: EngineStats | null;
   /** The engine shows the Live and Back Screens in its own windows (Windows). */
@@ -106,10 +127,70 @@ export function testEngineRecording(seconds = 10): Promise<string> {
   return invoke<string>('live_engine_test_record', { seconds });
 }
 
+// ---- recording and streaming from the engine ----
+
+export interface EngineCaptureRequest {
+  kind: SessionKind;
+  name: string;
+  rehearse: boolean;
+  width: number;
+  height: number;
+  fps: number;
+  vertical: boolean;
+  /** `master`: the Stream mix; `b`: the Recording mix. */
+  mix: 'master' | 'b';
+  sampleRate: number;
+  iso: boolean;
+  isoSkip: string[];
+  isoKbps: number | null;
+}
+
+export interface EngineIsoFile {
+  id: number;
+  sourceId: string;
+  name: string;
+  path: string;
+}
+
+/** Start a recording or stream the engine encodes (with each camera's ISO file from the engine's frames). */
+export function engineCaptureStart(request: EngineCaptureRequest): Promise<{ running: CaptureRunning; isos: EngineIsoFile[] }> {
+  return invoke<{ running: CaptureRunning; isos: EngineIsoFile[] }>('live_engine_capture_start', { request }).catch((e: unknown) => {
+    throw new Error(String(e));
+  });
+}
+
+/** Stop it; resolves once the last of it is written. */
+export function engineCaptureStop(session: number): Promise<void> {
+  return invoke('live_engine_capture_stop', { session });
+}
+
+/** A piece of a mix's sound for the engine's encoders. */
+export function sendEngineSound(mix: 'master' | 'b', pcm: Uint8Array, atMs: number, rate: number): Promise<void> {
+  return invoke('live_engine_audio', pcm, { headers: { mix, at: String(atMs), rate: String(rate) } });
+}
+
+/** The engine's own encoder stopped by itself (the session is started again, as for the WebView's). */
+export function onEngineFeedLost(cb: (kind: SessionKind, session: number, message: string) => void): () => void {
+  if (!isInsideLumora()) return () => {};
+  let stop: (() => void) | null = null;
+  let gone = false;
+  void listen<{ kind: SessionKind; session: number; message: string }>('live-engine-feed-lost', (e) =>
+    cb(e.payload.kind, e.payload.session, e.payload.message),
+  ).then(
+    (u) => (gone ? u() : (stop = u)),
+    () => {},
+  );
+  return () => {
+    gone = true;
+    stop?.();
+  };
+}
+
 /** Why the test event can't run now (null: it can). */
 export function unifiedBlocksTestEvent(): string | null {
-  return unifiedOn()
-    ? 'The test event checks the Standard engine’s screen windows. It is not yet supported in Unified (beta): switch to Standard in Settings → Engine to run it.'
+  start();
+  return info && info.mode === 'unified' && !info.running
+    ? `The unified engine is chosen but not running${info.error ? ` (${info.error})` : ''}. Switch to Standard in Settings → Engine, or start Lumora again, to run the test event.`
     : null;
 }
 

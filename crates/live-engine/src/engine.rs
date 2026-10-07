@@ -15,10 +15,15 @@ use lumora_engine::{ScreenId, Show, Source, SourceId, SourceKind};
 use serde::Serialize;
 
 use crate::encoder::{EncoderFeed, FeedStats};
+use crate::feeds::{FeedInfo, FeedSpec, Feeds, MakeFeed};
 use crate::gpu::{AdapterInfo, Compositor, Dest, Paint, Pass};
+use crate::multiview::{self, Tally, TileContent};
+use crate::overlay::{self, OverlayStats};
 use crate::present::{NativeOutput, Placement};
 use crate::scene::{self, ScreenScene};
-use crate::source::{FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource};
+use crate::source::{
+    EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource,
+};
 
 /// How the engine runs.
 #[derive(Debug, Clone)]
@@ -62,6 +67,8 @@ pub struct DefaultFactory {
     pub fake_cameras: bool,
     /// Where a show's media path is on disk.
     pub resolve: Box<dyn Fn(&str) -> PathBuf + Send>,
+    /// The app's store of stream, web page, screen-capture and guest pictures.
+    pub pictures: Option<Arc<dyn EncodedFrames>>,
     seed: usize,
 }
 
@@ -71,6 +78,7 @@ impl DefaultFactory {
             ffmpeg,
             fake_cameras,
             resolve: Box::new(|p: &str| PathBuf::from(p)),
+            pictures: None,
             seed: 0,
         }
     }
@@ -83,7 +91,8 @@ impl SourceFactory for DefaultFactory {
             SourceKind::Video { path, .. } => format!("video:{path}"),
             SourceKind::Image { path } => format!("image:{path}"),
             SourceKind::Pattern => "pattern".into(),
-            other => format!("other:{}", kind_name(other)),
+            // Their pictures come from the app's frame store by input: one source each.
+            other => format!("pictures:{}", kind_name(other)),
         }
     }
 
@@ -112,8 +121,18 @@ impl SourceFactory for DefaultFactory {
                     "FFmpeg is needed to play files in the unified engine.",
                 )),
             },
+            SourceKind::Stream(_)
+            | SourceKind::Screen(_)
+            | SourceKind::Guest(_)
+            | SourceKind::Browser(_) => match &self.pictures {
+                Some(p) => Box::new(EncodedSource::start(src.id.as_str(), Arc::clone(p))),
+                None => Box::new(Unavailable::new(format!(
+                    "{} inputs need the app's picture server.",
+                    kind_name(&src.kind)
+                ))),
+            },
             other => Box::new(Unavailable::new(format!(
-                "{} inputs are not in the unified engine yet (Phase 2).",
+                "{} inputs are not in the unified engine yet.",
                 kind_name(other)
             ))),
         }
@@ -170,6 +189,20 @@ pub struct Preview {
     pub frame: u64,
 }
 
+/// A screen as the test event checks it (see [`LiveEngine::probe`]).
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScreenProbe {
+    pub fps: f32,
+    pub in_sync: Option<bool>,
+    pub black: Option<bool>,
+    pub overlays: Option<bool>,
+    pub width: u32,
+    pub height: u32,
+    /// Shown in the engine's own window now.
+    pub window: bool,
+}
+
 /// What the engine reports.
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -177,6 +210,8 @@ pub struct Stats {
     pub frames: u64,
     /// Average over the last second: the whole frame, and its parts.
     pub ms_per_frame: f32,
+    /// Frames drawn in the last second.
+    pub fps: f32,
     pub upload_ms: f32,
     pub render_ms: f32,
     pub present_ms: f32,
@@ -186,7 +221,14 @@ pub struct Stats {
     pub upload_mb_per_s: f32,
     pub adapter: Option<AdapterInfo>,
     pub outputs: Vec<String>,
+    /// The first screen feed (the recording or stream).
     pub feed: Option<FeedStats>,
+    /// Every feed: screens (recording, stream, vertical, NDI) and inputs (ISO files).
+    pub feeds: Vec<FeedInfo>,
+    /// Times the graphics device was lost and made again.
+    pub recoveries: u64,
+    /// How the graphics from the web overlay renderers arrive.
+    pub overlay: OverlayStats,
     /// Things that don't work in the unified engine yet, in words for the operator.
     pub notes: Vec<String>,
     pub error: Option<String>,
@@ -199,6 +241,15 @@ const PROGRAM: [(ScreenId, usize); 3] = [
     (ScreenId::Monitor, 2),
 ];
 const NEXT: [(ScreenId, usize); 2] = [(ScreenId::Live, 3), (ScreenId::Back, 4)];
+/// The multiview is drawn here (feeds' targets come after it).
+pub const MULTIVIEW: usize = 8;
+/// The multiview's background, borders and tally (`MultiviewView.css`: --chrome, #272727, --program-bright, --preview-bright).
+const MV_CHROME: [f32; 4] = [11.0 / 255.0, 11.0 / 255.0, 11.0 / 255.0, 1.0];
+const MV_BORDER: [f32; 4] = [39.0 / 255.0, 39.0 / 255.0, 39.0 / 255.0, 1.0];
+const MV_PGM: [f32; 4] = [1.0, 75.0 / 255.0, 62.0 / 255.0, 1.0];
+const MV_PVW: [f32; 4] = [52.0 / 255.0, 210.0 / 255.0, 107.0 / 255.0, 1.0];
+/// The plane of words (names, tally tags, clock) the Live Screen's overlay renderer draws for it.
+pub const MULTIVIEW_PLANE: &str = "mv";
 /// Preview tiles per row of the atlas.
 const ATLAS_COLUMNS: u32 = 6;
 
@@ -211,6 +262,15 @@ pub fn now_ms() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| d.as_millis() as u64)
+}
+
+/// Graphics frames since the statistics were last worked out.
+#[derive(Default)]
+struct GraphicsTally {
+    messages: u32,
+    records: u32,
+    bytes: u64,
+    latency_ms: f64,
 }
 
 #[derive(Default)]
@@ -233,8 +293,15 @@ pub struct LiveEngine {
     show: Option<Show>,
     sources: HashMap<SourceId, (String, Box<dyn VideoSource>)>,
     outputs: HashMap<ScreenId, NativeOutput>,
-    feed: Option<(ScreenId, EncoderFeed)>,
-    overlays: HashMap<ScreenId, bool>,
+    feeds: Feeds,
+    /// The graphics planes went with a lost device: the renderers send everything again.
+    pub graphics_lost: bool,
+    /// Cameras held back (their picture's delay).
+    delays: HashMap<SourceId, crate::delay::DelayLine>,
+    /// The multiview's window, and its layout for the show now.
+    multiview: Option<NativeOutput>,
+    mv_layout: Option<multiview::Layout>,
+    graphics: GraphicsTally,
     previews: HashMap<String, Preview>,
     frame_no: u64,
     timing: Timing,
@@ -262,8 +329,12 @@ impl LiveEngine {
             show: None,
             sources: HashMap::new(),
             outputs: HashMap::new(),
-            feed: None,
-            overlays: HashMap::new(),
+            feeds: Feeds::default(),
+            delays: HashMap::new(),
+            graphics_lost: false,
+            multiview: None,
+            mv_layout: None,
+            graphics: GraphicsTally::default(),
             previews: HashMap::new(),
             frame_no: 0,
             timing: Timing::default(),
@@ -293,7 +364,61 @@ impl LiveEngine {
                     .keys()
                     .any(|id| k == &PreviewId::Source(id.clone()).key())
         });
+        self.mv_layout = Some(multiview::layout(
+            &show,
+            multiview::SIZE.0,
+            multiview::SIZE.1,
+        ));
         self.show = Some(show);
+    }
+
+    /// How a screen is doing, as the test event asks the output windows:
+    /// what is on air is really drawn (its frames or its graphics are
+    /// there), whether the picture is black, whether the overlays on air are drawn.
+    pub fn probe(&self, screen: ScreenId) -> ScreenProbe {
+        let mut p = ScreenProbe {
+            fps: self.stats.fps,
+            width: self.config.width,
+            height: self.config.height,
+            window: self.outputs.contains_key(&screen),
+            ..ScreenProbe::default()
+        };
+        let Some(show) = &self.show else { return p };
+        let slot = program_target(screen);
+        let drawn = |id: &SourceId| match show.source(id).map(|s| &s.kind) {
+            Some(k) if scene::is_video_kind(k) => self.gpu.source_size(id).is_some(),
+            Some(SourceKind::Color { .. } | SourceKind::Split(_)) => true,
+            Some(_) => self
+                .gpu
+                .has_plane(slot, &overlay::graphic_plane(id.as_str())),
+            None => false,
+        };
+        let sc = show.screens.get(screen);
+        p.in_sync = sc.program.as_ref().map(&drawn);
+        if !sc.blank && !show.panic {
+            if let Some(t) = self.previews.get(&PreviewId::Program(screen).key()) {
+                let px = t.rgba.as_chunks::<4>().0;
+                let sum: f64 = px
+                    .iter()
+                    .map(|c| {
+                        0.2126 * f64::from(c[0])
+                            + 0.7152 * f64::from(c[1])
+                            + 0.0722 * f64::from(c[2])
+                    })
+                    .sum();
+                p.black = Some(sum / (px.len().max(1) as f64) < 3.0);
+            }
+        }
+        let on: Vec<&SourceId> = show
+            .overlays
+            .iter()
+            .filter(|o| o.on && o.screens.contains(&screen))
+            .filter_map(|o| o.source_id.as_ref())
+            .collect();
+        if !on.is_empty() {
+            p.overlays = Some(on.into_iter().all(drawn));
+        }
+        p
     }
 
     /// Each input's health, for the backup lineup's watch.
@@ -329,24 +454,174 @@ impl LiveEngine {
         Ok(())
     }
 
+    /// Open (or move) the multiview's window; None closes it.
+    ///
+    /// # Errors
+    /// The window could not be made (and on computers other than Windows).
+    pub fn set_multiview(&mut self, placement: Option<Placement>) -> Result<(), String> {
+        match placement {
+            None => {
+                self.multiview = None;
+                self.gpu.drop_target(MULTIVIEW);
+            }
+            Some(p) => {
+                if let Some(o) = self.multiview.as_mut() {
+                    o.place(p);
+                } else {
+                    self.multiview = Some(NativeOutput::open(&self.gpu.instance, p)?);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// The multiview's layout (for its words), when it is open.
+    pub fn multiview_layout(&self) -> Option<multiview::Layout> {
+        self.multiview.as_ref().and(self.mv_layout.clone())
+    }
+
+    /// Draw the multiview (into its own target) from this frame's pictures.
+    pub fn draw_multiview(&mut self) {
+        let (Some(show), Some(l)) = (&self.show, &self.mv_layout) else {
+            return;
+        };
+        self.gpu.ensure_target(MULTIVIEW, l.width, l.height);
+        let (w, h) = (self.config.width as f32, self.config.height as f32);
+        let aspect = w / h.max(1.0);
+        let scenes: Vec<(usize, ScreenScene)> = l
+            .tiles
+            .iter()
+            .enumerate()
+            .filter_map(|(i, t)| match &t.content {
+                TileContent::Input(id) => Some((i, scene::source_scene(show, id))),
+                _ => None,
+            })
+            .collect();
+        let mut passes: Vec<Pass<'_>> = vec![Pass {
+            dest: Dest::Target(MULTIVIEW),
+            viewport: None,
+            paint: Paint::Solid(MV_CHROME),
+        }];
+        let border = l.scale.max(1.0).round() as u32;
+        for (i, t) in l.tiles.iter().enumerate() {
+            let [x, y, tw, th] = t.rect;
+            let (color, b) = match t.tally {
+                Tally::Pgm => (MV_PGM, border * 2),
+                Tally::Pvw => (MV_PVW, border * 2),
+                Tally::None => (MV_BORDER, border),
+            };
+            // The box: its border, then black inside.
+            passes.push(Pass {
+                dest: Dest::Target(MULTIVIEW),
+                viewport: Some(t.rect),
+                paint: Paint::Solid(color),
+            });
+            passes.push(Pass {
+                dest: Dest::Target(MULTIVIEW),
+                viewport: Some([
+                    x + b,
+                    y + b,
+                    tw.saturating_sub(2 * b).max(1),
+                    th.saturating_sub(2 * b).max(1),
+                ]),
+                paint: Paint::Solid([0.0, 0.0, 0.0, 1.0]),
+            });
+            let pic = multiview::fit(t.picture, aspect);
+            let paint = match &t.content {
+                TileContent::Program(s) => Paint::Target(program_target(*s)),
+                TileContent::Next(s) => match NEXT.iter().find(|n| n.0 == *s) {
+                    Some(n) => Paint::Target(n.1),
+                    None => continue,
+                },
+                TileContent::Input(_) => match scenes.iter().find(|(n, _)| *n == i) {
+                    // A graphics input shows when the Live Screen's renderer has it (on air there).
+                    Some((_, sc)) => Paint::Scene {
+                        scene: sc,
+                        planes: Some(program_target(ScreenId::Live)),
+                    },
+                    None => continue,
+                },
+            };
+            passes.push(Pass {
+                dest: Dest::Target(MULTIVIEW),
+                viewport: Some(pic),
+                paint,
+            });
+        }
+        passes.push(Pass {
+            dest: Dest::Target(MULTIVIEW),
+            // Over what is drawn (a whole-target pass would clear it first).
+            viewport: Some([0, 0, l.width, l.height]),
+            paint: Paint::Plane {
+                slot: program_target(ScreenId::Live),
+                name: MULTIVIEW_PLANE,
+            },
+        });
+        self.gpu.render(&passes);
+    }
+
     pub fn open_outputs(&self) -> Vec<ScreenId> {
         self.outputs.keys().copied().collect()
     }
 
-    /// A screen's graphics layer (straight-alpha RGBA at any size; None clears it).
+    /// A screen's whole-screen `top` graphics plane (straight-alpha RGBA at
+    /// any size; None clears it). The benchmark and tests use it; the web
+    /// renderer sends [`LiveEngine::apply_graphics`].
     pub fn set_overlay(&mut self, screen: ScreenId, frame: Option<(u32, u32, &[u8])>) {
-        self.overlays.insert(screen, frame.is_some());
         self.gpu.set_overlay(program_target(screen), frame);
     }
 
-    /// Start feeding a screen to an encoder (one at a time for now).
-    pub fn start_feed(&mut self, screen: ScreenId, feed: EncoderFeed) {
-        self.feed = Some((screen, feed));
+    /// Changed graphics from a screen's web overlay renderer (dirty
+    /// rectangles of its planes; see [`crate::overlay`]).
+    pub fn apply_graphics(&mut self, m: &overlay::Message) {
+        let now = now_ms();
+        for r in &m.records {
+            let slot = program_target(r.screen);
+            match r.op {
+                overlay::Op::Patch => {
+                    let rects: Vec<([u32; 4], &[u8])> = r
+                        .rects
+                        .iter()
+                        .map(|x| ([x.x, x.y, x.w, x.h], m.pixels(x)))
+                        .collect();
+                    self.gpu.patch_plane(slot, &r.name, r.w, r.h, &rects);
+                    self.graphics.latency_ms += now as f64 - r.at as f64;
+                    self.graphics.records += 1;
+                }
+                overlay::Op::Clear => self.gpu.clear_plane(slot, &r.name, r.w, r.h),
+                overlay::Op::Reset => self.gpu.reset_planes(slot),
+            }
+        }
+        self.graphics.messages += 1;
+        self.graphics.bytes += m.pixel_bytes();
     }
 
-    /// Stop the encoder feed; FFmpeg finishes on its own thread.
-    pub fn stop_feed(&mut self) -> Option<FeedStats> {
-        self.feed.take().map(|(_, f)| f.finish())
+    /// A graphics frame that could not be read.
+    pub fn refuse_graphics(&mut self) {
+        self.stats.overlay.refused += 1;
+    }
+
+    /// Start feed `id` (see [`crate::feeds`]); the answer says whether its encoder started.
+    pub fn start_feed(
+        &mut self,
+        id: u64,
+        spec: FeedSpec,
+        make: MakeFeed,
+    ) -> Receiver<Result<(), String>> {
+        let (tx, rx) = channel();
+        let size = (self.config.width, self.config.height);
+        self.feeds.start(&mut self.gpu, id, spec, make, size, tx);
+        rx
+    }
+
+    /// Feed `id`'s encoder has started.
+    pub fn feed_running(&self, id: u64) -> bool {
+        self.feeds.running(id)
+    }
+
+    /// Stop feed `id`: its encoder, for the caller to finish (off the engine's thread).
+    pub fn stop_feed(&mut self, id: u64) -> Option<EncoderFeed> {
+        self.feeds.stop(&mut self.gpu, id)
     }
 
     /// The newest preview tiles.
@@ -354,9 +629,53 @@ impl LiveEngine {
         &self.previews
     }
 
+    /// The graphics device was lost (a driver reset, the card removed): make
+    /// a new one and carry on. Pictures, windows and encoders continue; the
+    /// graphics planes are asked for again (`graphics_lost`). Returns whether
+    /// the engine can draw now.
+    pub fn recover(&mut self) -> bool {
+        if !self.gpu.is_lost() {
+            return true;
+        }
+        let gpu = match self.gpu.renew() {
+            Ok(g) => g,
+            Err(e) => {
+                self.stats.error = Some(format!("The graphics card stopped; trying again: {e}"));
+                return false;
+            }
+        };
+        self.gpu = gpu;
+        for (_, i) in PROGRAM {
+            self.gpu
+                .ensure_target(i, self.config.width, self.config.height);
+        }
+        for (_, i) in NEXT {
+            self.gpu
+                .ensure_target(i, self.config.width / 2, self.config.height / 2);
+        }
+        for o in self.outputs.values_mut() {
+            o.out.reset();
+        }
+        if let Some(o) = self.multiview.as_mut() {
+            o.out.reset();
+        }
+        self.feeds.renew(&mut self.gpu);
+        self.stats.recoveries += 1;
+        self.stats.adapter = Some(self.gpu.describe());
+        self.stats.error =
+            Some("The graphics card was reset; the engine started again on it.".into());
+        self.graphics_lost = true;
+        true
+    }
+
     /// Draw and send out one frame at show time `now`.
     pub fn frame(&mut self, now: u64) {
+        if !self.recover() {
+            self.frame_no += 1;
+            return;
+        }
         let t0 = Instant::now();
+        self.gpu.set_time(now);
         let preview_frame = self
             .frame_no
             .is_multiple_of(u64::from(self.config.preview_every.max(1)));
@@ -393,16 +712,44 @@ impl LiveEngine {
             Vec::new()
         };
         // 2. Each needed source's newest frame to the GPU (once, however many screens show it).
+        // The multiview shows every input at the engine's full rate.
+        let all: Vec<&SourceId> = if self.multiview.is_some() {
+            scene::video_inputs(show)
+                .into_iter()
+                .map(|s| &s.id)
+                .collect()
+        } else {
+            Vec::new()
+        };
         let mut needed: Vec<&SourceId> = program
             .iter()
             .flat_map(|p| p.2.videos())
             .chain(next.iter().flat_map(|n| n.1.videos()))
             .chain(inputs.iter().map(|i| &i.0))
+            .chain(all)
             .collect();
         needed.sort();
         needed.dedup();
         for id in needed {
-            if let Some(f) = self.sources.get(id).and_then(|(_, s)| s.latest()) {
+            let f = self.sources.get(id).and_then(|(_, s)| s.latest());
+            let delay = show
+                .source(id)
+                .and_then(|s| s.video_delay_ms)
+                .filter(|d| *d > 0);
+            let f = match delay {
+                Some(ms) => {
+                    let line = self.delays.entry(id.clone()).or_default();
+                    if let Some(f) = f {
+                        line.push(now, f);
+                    }
+                    line.get(now, u64::from(ms))
+                }
+                None => {
+                    self.delays.remove(id);
+                    f
+                }
+            };
+            if let Some(f) = f {
                 self.gpu.upload(id, &f);
             }
         }
@@ -415,7 +762,7 @@ impl LiveEngine {
                 viewport: None,
                 paint: Paint::Scene {
                     scene: sc,
-                    overlay: self.overlays.get(s).copied().unwrap_or(false).then_some(*i),
+                    planes: (*s != ScreenId::Monitor).then_some(*i),
                 },
             });
         }
@@ -425,7 +772,7 @@ impl LiveEngine {
                 viewport: None,
                 paint: Paint::Scene {
                     scene: sc,
-                    overlay: None,
+                    planes: None,
                 },
             });
         }
@@ -470,7 +817,7 @@ impl LiveEngine {
                     viewport: Some(r),
                     paint: Paint::Scene {
                         scene: sc,
-                        overlay: None,
+                        planes: None,
                     },
                 });
             }
@@ -485,13 +832,22 @@ impl LiveEngine {
             let (w, h) = o.size();
             self.gpu.present(&mut o.out, program_target(*s), w, h);
         }
-        let t3 = Instant::now();
-        // 5. The encoder, and the previews.
-        // One frame late, so the engine never waits for the GPU to finish the copy.
-        if let Some((s, feed)) = &self.feed {
-            if let Some((_, _, px)) = self.gpu.read_pipelined(Dest::Target(program_target(*s))) {
-                feed.push(px);
+        if self.multiview.is_some() {
+            self.draw_multiview();
+            if let Some(o) = self.multiview.as_mut() {
+                let _ = o.pump();
+                let (w, h) = o.size();
+                self.gpu.present(&mut o.out, MULTIVIEW, w, h);
             }
+        }
+        let t3 = Instant::now();
+        // 5. The encoders (read back one frame late, so the engine never
+        // waits for the GPU to finish a copy), and the previews.
+        if !self.feeds.is_empty() {
+            let sources = &self.sources;
+            let latest = |id: &SourceId| sources.get(id).and_then(|(_, s)| s.latest());
+            self.feeds
+                .tick(&mut self.gpu, now, &program_target, &latest);
         }
         if preview_frame && !tiles.is_empty() {
             if let Ok((aw, _, px)) = self.gpu.read(Dest::Atlas) {
@@ -538,6 +894,7 @@ impl LiveEngine {
         if span >= 1.0 {
             let n = f64::from(tm.frames);
             self.stats.ms_per_frame = (tm.total / n) as f32;
+            self.stats.fps = (n / span) as f32;
             self.stats.upload_ms = (tm.upload / n) as f32;
             self.stats.render_ms = (tm.render / n) as f32;
             self.stats.present_ms = (tm.present / n) as f32;
@@ -547,8 +904,27 @@ impl LiveEngine {
                 .outputs
                 .keys()
                 .map(|s| screen_name(*s).to_owned())
+                .chain(self.multiview.as_ref().map(|_| "multiview".to_owned()))
                 .collect();
-            self.stats.feed = self.feed.as_ref().map(|(_, f)| f.stats());
+            self.stats.feeds = self.feeds.info();
+            self.stats.feed = self
+                .stats
+                .feeds
+                .iter()
+                .find(|f| f.kind != "input")
+                .and_then(|f| f.stats.clone());
+            let g = std::mem::take(&mut self.graphics);
+            self.stats.overlay = OverlayStats {
+                frames_per_s: (f64::from(g.messages) / span) as f32,
+                mb_per_s: (g.bytes as f64 / span / 1e6) as f32,
+                latency_ms: if g.records > 0 {
+                    (g.latency_ms / f64::from(g.records)) as f32
+                } else {
+                    self.stats.overlay.latency_ms
+                },
+                planes: self.gpu.plane_count(),
+                refused: self.stats.overlay.refused,
+            };
             self.stats.notes = self.notes();
             self.timing = Timing::default();
         }
@@ -558,27 +934,17 @@ impl LiveEngine {
     fn notes(&self) -> Vec<String> {
         let mut notes = Vec::new();
         let Some(show) = &self.show else { return notes };
-        let graphics = show
-            .sources
-            .iter()
-            .filter(|s| {
-                !scene::is_video_kind(&s.kind)
-                    && !matches!(
-                        s.kind,
-                        SourceKind::Color { .. }
-                            | SourceKind::Split(_)
-                            | SourceKind::Microphone { .. }
-                    )
-            })
-            .count();
-        if graphics > 0 {
-            notes.push(format!(
-                "{graphics} graphics input(s) (titles, countdowns, scoreboards…) show only through the overlay layer, which the web renderer fills in Phase 2."
-            ));
-        }
-        if show.settings.stingers.iter().any(|s| !s.path.is_empty()) {
+        let behind = show.sources.iter().any(|s| match &s.kind {
+            SourceKind::Slideshow(k) => k
+                .behind
+                .as_ref()
+                .and_then(|id| show.source(id))
+                .is_some_and(|b| scene::is_video_kind(&b.kind)),
+            _ => false,
+        });
+        if behind {
             notes.push(
-                "Stinger videos are not drawn yet: the pictures cut at the stinger's cut point."
+                "A camera or video behind slides is not shown yet in the unified engine (the slides are)."
                     .into(),
             );
         }
@@ -593,12 +959,12 @@ enum Command {
     Show(Box<Show>),
     Output(ScreenId, Option<Placement>, Sender<Result<(), String>>),
     Overlay(ScreenId, Option<(u32, u32, Vec<u8>)>),
-    StartFeed(
-        ScreenId,
-        Box<dyn FnOnce(u32, u32, u32) -> Result<EncoderFeed, String> + Send>,
-        Sender<Result<(), String>>,
-    ),
-    StopFeed(Sender<Option<FeedStats>>),
+    Graphics(Box<overlay::Message>),
+    StartFeed(u64, FeedSpec, MakeFeed, Sender<Result<(), String>>),
+    StopFeed(u64, Sender<Option<FeedStats>>),
+    Probe(ScreenId, Sender<ScreenProbe>),
+    Multiview(Option<Placement>, Sender<Result<(), String>>),
+    MultiviewLayout(Sender<Option<multiview::Layout>>),
     Stop,
 }
 
@@ -608,6 +974,9 @@ pub struct Shared {
     pub stats: Mutex<Stats>,
     pub previews: Mutex<HashMap<String, Preview>>,
     pub health: Mutex<Vec<(SourceId, SourceHealth)>>,
+    /// The graphics planes were lost (a new graphics device): the next
+    /// graphics frame is refused so the renderers send everything again.
+    pub graphics_lost: std::sync::atomic::AtomicBool,
 }
 
 /// The engine running on its own thread at a steady frame rate.
@@ -678,31 +1047,77 @@ impl Runner {
         let _ = self.tx.send(Command::Overlay(screen, frame));
     }
 
-    /// Feed a screen to an encoder made by `make(width, height, fps)`.
+    /// A graphics frame from a web overlay renderer (checked here, applied
+    /// on the engine's thread before its next frame).
+    ///
+    /// # Errors
+    /// The frame is malformed (nothing of it is applied).
+    pub fn graphics(&self, bytes: Vec<u8>) -> Result<(), String> {
+        if self
+            .shared
+            .graphics_lost
+            .swap(false, std::sync::atomic::Ordering::SeqCst)
+        {
+            return Err(
+                "The engine started again on a new graphics device: send everything.".into(),
+            );
+        }
+        let m = overlay::parse(bytes)?;
+        self.tx
+            .send(Command::Graphics(Box::new(m)))
+            .map_err(|_| "The unified engine has stopped.".to_owned())
+    }
+
+    /// Start feed `id`: a screen or an input to an encoder `make` starts
+    /// (see [`crate::feeds`]).
     ///
     /// # Errors
     /// The encoder could not start.
-    pub fn start_feed(
-        &self,
-        screen: ScreenId,
-        make: Box<dyn FnOnce(u32, u32, u32) -> Result<EncoderFeed, String> + Send>,
-    ) -> Result<(), String> {
+    pub fn start_feed(&self, id: u64, spec: FeedSpec, make: MakeFeed) -> Result<(), String> {
         let (tx, rx) = channel();
         self.tx
-            .send(Command::StartFeed(screen, make, tx))
+            .send(Command::StartFeed(id, spec, make, tx))
             .map_err(|_| "The unified engine has stopped.".to_owned())?;
-        rx.recv_timeout(Duration::from_secs(10))
+        rx.recv_timeout(Duration::from_secs(15))
             .map_err(|_| "The unified engine did not answer.".to_owned())?
     }
 
-    pub fn stop_feed(&self) -> Option<FeedStats> {
+    /// Stop feed `id`; waits until FFmpeg has written the last of it.
+    pub fn stop_feed(&self, id: u64) -> Option<FeedStats> {
         let (tx, rx) = channel();
-        self.tx.send(Command::StopFeed(tx)).ok()?;
+        self.tx.send(Command::StopFeed(id, tx)).ok()?;
         rx.recv_timeout(Duration::from_secs(40)).ok().flatten()
     }
 
     pub fn stats(&self) -> Stats {
         lock(&self.shared.stats).clone()
+    }
+
+    /// Open, move or (None) close the multiview's window.
+    ///
+    /// # Errors
+    /// The window could not be made.
+    pub fn set_multiview(&self, placement: Option<Placement>) -> Result<(), String> {
+        let (tx, rx) = channel();
+        self.tx
+            .send(Command::Multiview(placement, tx))
+            .map_err(|_| "The unified engine has stopped.".to_owned())?;
+        rx.recv_timeout(Duration::from_secs(5))
+            .map_err(|_| "The unified engine did not answer.".to_owned())?
+    }
+
+    /// The multiview's layout while it is open (for its words).
+    pub fn multiview_layout(&self) -> Option<multiview::Layout> {
+        let (tx, rx) = channel();
+        self.tx.send(Command::MultiviewLayout(tx)).ok()?;
+        rx.recv_timeout(Duration::from_secs(5)).ok().flatten()
+    }
+
+    /// Check a screen (the test event).
+    pub fn probe(&self, screen: ScreenId) -> Option<ScreenProbe> {
+        let (tx, rx) = channel();
+        self.tx.send(Command::Probe(screen, tx)).ok()?;
+        rx.recv_timeout(Duration::from_secs(5)).ok()
     }
 
     pub fn preview(&self, key: &str) -> Option<Preview> {
@@ -737,17 +1152,34 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
                 Ok(Command::Overlay(s, f)) => {
                     engine.set_overlay(s, f.as_ref().map(|(w, h, px)| (*w, *h, px.as_slice())));
                 }
-                Ok(Command::StartFeed(s, make, reply)) => {
-                    let (w, h, fps) =
-                        (engine.config.width, engine.config.height, engine.config.fps);
-                    let r = make(w, h, fps).map(|f| engine.start_feed(s, f));
-                    let _ = reply.send(r);
+                Ok(Command::Graphics(m)) => engine.apply_graphics(&m),
+                Ok(Command::Probe(s, reply)) => {
+                    let _ = reply.send(engine.probe(s));
                 }
-                Ok(Command::StopFeed(reply)) => {
-                    let _ = reply.send(engine.stop_feed());
+                Ok(Command::Multiview(p, reply)) => {
+                    let _ = reply.send(engine.set_multiview(p));
+                }
+                Ok(Command::MultiviewLayout(reply)) => {
+                    let _ = reply.send(engine.multiview_layout());
+                }
+                Ok(Command::StartFeed(id, spec, make, reply)) => {
+                    let started = engine.start_feed(id, spec, make);
+                    // The answer comes from the thread starting FFmpeg.
+                    thread::spawn(move || {
+                        let r = started
+                            .recv()
+                            .unwrap_or_else(|_| Err("The encoder could not start.".to_owned()));
+                        let _ = reply.send(r);
+                    });
+                }
+                Ok(Command::StopFeed(id, reply)) => {
+                    let feed = engine.stop_feed(id);
+                    thread::spawn(move || {
+                        let _ = reply.send(feed.map(EncoderFeed::finish));
+                    });
                 }
                 Ok(Command::Stop) | Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                    engine.stop_feed();
+                    engine.feeds.stop_all(&mut engine.gpu);
                     return;
                 }
                 Err(std::sync::mpsc::TryRecvError::Empty) => break,
@@ -755,6 +1187,11 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
         }
         let caught =
             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| engine.frame(now_ms())));
+        if std::mem::take(&mut engine.graphics_lost) {
+            shared
+                .graphics_lost
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+        }
         if caught.is_err() {
             engine.stats.error = Some("A frame failed to draw (the engine carries on).".into());
         }

@@ -29,6 +29,19 @@ struct Draw {
   luma: vec4<f32>,
   // Nothing outside this rect is drawn (a split screen's box): x0, y0, x1, y1.
   clip: vec4<f32>,
+  // Green screen and light and color (look.rs; chroma.ts's processor):
+  // on, key on, blur, sharpness
+  look0: vec4<f32>,
+  // key color, similarity
+  look1: vec4<f32>,
+  // smoothness, spill, exposure, brightness
+  look2: vec4<f32>,
+  // contrast, highlights, shadows, gamma
+  look3: vec4<f32>,
+  // white balance gains, saturation
+  look4: vec4<f32>,
+  // vignette, black and white, grain, time
+  look5: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> d: Draw;
@@ -111,6 +124,97 @@ fn sample_at(s: vec2<f32>, blur: vec2<f32>) -> vec4<f32> {
   return acc / n;
 }
 
+fn chroma_of(c: vec3<f32>) -> vec2<f32> {
+  return vec2<f32>(-0.169 * c.r - 0.331 * c.g + 0.5 * c.b, 0.5 * c.r - 0.419 * c.g - 0.081 * c.b);
+}
+
+fn luma3(c: vec3<f32>) -> f32 {
+  return dot(c, vec3<f32>(0.2126, 0.7152, 0.0722));
+}
+
+// The picture processor (app/src/engine/chroma.ts) on one pixel: `rgb` and
+// `alpha` straight, `s` where in the source, `t` where in the picture (0 – 1).
+fn look(rgb_in: vec3<f32>, alpha_in: f32, s: vec2<f32>, t: vec2<f32>) -> vec4<f32> {
+  var rgb = rgb_in;
+  var alpha = alpha_in;
+  let texel = 1.0 / vec2<f32>(textureDimensions(tex));
+  if (d.look0.z > 0.0) {
+    var acc = rgb;
+    let r = d.look0.z * 10.0;
+    for (var i = 0; i < 12; i++) {
+      let a = f32(i) * 0.5236;
+      let o = vec2<f32>(cos(a), sin(a)) * texel * r;
+      acc += textureSampleLevel(tex, samp, s + o, 0.0).rgb + textureSampleLevel(tex, samp, s + o * 0.5, 0.0).rgb;
+    }
+    rgb = acc / 25.0;
+  } else if (d.look0.w > 0.0) {
+    let around = (textureSampleLevel(tex, samp, s + vec2<f32>(texel.x, 0.0), 0.0).rgb
+      + textureSampleLevel(tex, samp, s - vec2<f32>(texel.x, 0.0), 0.0).rgb
+      + textureSampleLevel(tex, samp, s + vec2<f32>(0.0, texel.y), 0.0).rgb
+      + textureSampleLevel(tex, samp, s - vec2<f32>(0.0, texel.y), 0.0).rgb) * 0.25;
+    rgb = rgb + (rgb - around) * d.look0.w * 2.0;
+  }
+  // Green screen, on the colors as the camera saw them.
+  if (d.look0.y > 0.5) {
+    let sim = d.look1.w * 0.25;
+    let dist = distance(chroma_of(rgb_in), chroma_of(d.look1.rgb));
+    alpha *= smoothstep(sim, sim + d.look2.x * 0.25 + 0.0001, dist);
+    let sp = pow(clamp(dist / (sim + 0.0001), 0.0, 1.0), 1.5);
+    rgb = mix(rgb, vec3<f32>(luma3(rgb)), (1.0 - sp) * d.look2.y);
+  }
+  // Light and color.
+  rgb *= d.look4.rgb;
+  rgb *= exp2(d.look2.z);
+  rgb += d.look2.w * 0.25;
+  var l = luma3(rgb);
+  rgb += d.look3.z * 0.25 * (1.0 - smoothstep(0.0, 0.5, l));
+  rgb += d.look3.y * 0.25 * smoothstep(0.5, 1.0, l);
+  rgb = (rgb - 0.5) * (1.0 + d.look3.x) + 0.5;
+  rgb = pow(max(rgb, vec3<f32>(0.0)), vec3<f32>(1.0 / max(d.look3.w, 0.01)));
+  l = luma3(rgb);
+  rgb = mix(vec3<f32>(l), rgb, 1.0 + d.look4.w);
+  rgb = mix(rgb, vec3<f32>(luma3(rgb)), d.look5.y);
+  // Effects on the finished picture.
+  if (d.look5.x > 0.0) {
+    var w = t - 0.5;
+    w.x *= d.misc.z;
+    rgb *= 1.0 - d.look5.x * smoothstep(0.35, 0.95, length(w) * 1.25);
+  }
+  if (d.look5.z > 0.0) {
+    let n = fract(sin(dot(t * 1000.0 + d.look5.w, vec2<f32>(12.9898, 78.233))) * 43758.5453) - 0.5;
+    rgb += n * d.look5.z * 0.2;
+  }
+  return vec4<f32>(clamp(rgb, vec3<f32>(0.0), vec3<f32>(1.0)), alpha);
+}
+
+// A drawn screen (`tex`, opaque RGBA) as NV12 for the encoders, in one R8
+// target of W × 1.5 H: the Y plane (W × H), then the U and V samples of each
+// 2 × 2 block side by side (W × H / 2). BT.709, limited range, as the
+// recordings are tagged. A third of the bytes of RGBA to read back, and what
+// the hardware encoders take as they are.
+@fragment
+fn fs_nv12(v: V) -> @location(0) vec4<f32> {
+  let size = vec2<i32>(textureDimensions(tex));
+  let p = vec2<i32>(floor(v.pos.xy));
+  if (p.y < size.y) {
+    let c = textureLoad(tex, min(p, size - 1), 0).rgb;
+    let y = dot(c, vec3<f32>(0.2126, 0.7152, 0.0722));
+    return vec4<f32>((16.0 + 219.0 * y) / 255.0, 0.0, 0.0, 1.0);
+  }
+  let pair = p.x / 2;
+  let s = vec2<i32>(pair * 2, (p.y - size.y) * 2);
+  let m = size - 1;
+  let c = (textureLoad(tex, min(s, m), 0).rgb + textureLoad(tex, min(s + vec2<i32>(1, 0), m), 0).rgb
+    + textureLoad(tex, min(s + vec2<i32>(0, 1), m), 0).rgb + textureLoad(tex, min(s + vec2<i32>(1, 1), m), 0).rgb) * 0.25;
+  var k: f32;
+  if (p.x - pair * 2 == 0) {
+    k = -0.1146 * c.r - 0.3854 * c.g + 0.5 * c.b;
+  } else {
+    k = 0.5 * c.r - 0.4542 * c.g - 0.0458 * c.b;
+  }
+  return vec4<f32>((128.0 + 224.0 * k) / 255.0, 0.0, 0.0, 1.0);
+}
+
 @fragment
 fn fs(v: V) -> @location(0) vec4<f32> {
   let o = v.o;
@@ -166,7 +270,18 @@ fn fs(v: V) -> @location(0) vec4<f32> {
     let qw = max(d.dst.z - d.dst.x, 1e-6);
     let blur = vec2<f32>(d.fx.y / d.luma.w / qw, d.fx.y / qh) * span / zoom;
     let px = sample_at(s, blur);
-    if (d.misc.w > 2.5) {
+    if (d.look0.x > 0.5) {
+      // Straight colors for the processor, premultiplied after it.
+      var a0 = px.a;
+      var rgb0 = px.rgb;
+      if (d.misc.w > 2.5) {
+        a0 = 1.0;
+      } else if (d.misc.w > 1.5) {
+        rgb0 = px.rgb / max(px.a, 1e-5);
+      }
+      let o = look(rgb0, a0, s, t);
+      c = vec4<f32>(o.rgb * o.a, o.a);
+    } else if (d.misc.w > 2.5) {
       c = vec4<f32>(px.rgb, 1.0);
     } else if (d.misc.w > 1.5) {
       c = px;

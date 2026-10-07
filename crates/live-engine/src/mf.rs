@@ -4,9 +4,11 @@
 //!
 //! The camera is found by its name (the show keeps the browser's label, which
 //! Chrome ends with " (vid:pid)" for USB cameras; that part is ignored). The
-//! largest mode up to 1080p at the highest frame rate is chosen and Media
-//! Foundation's video processor turns it into RGB32 (B, G, R, x). An
-//! unplugged camera is retried every two seconds until it is back.
+//! largest mode up to 1080p at the highest frame rate is chosen, delivered as
+//! NV12 (most cameras' own format, 12 bits a pixel: converted to RGB on the
+//! GPU) or, when the camera can't, turned into RGB32 (B, G, R, x) by Media
+//! Foundation's video processor. An unplugged camera is retried every two
+//! seconds until it is back.
 #![allow(unsafe_code)]
 
 use std::sync::Arc;
@@ -17,7 +19,7 @@ use windows::core::PWSTR;
 use windows::Win32::Media::MediaFoundation::{
     IMFActivate, IMFAttributes, IMFMediaSource, IMFMediaType, IMFSourceReader, MFCreateAttributes,
     MFCreateMediaType, MFCreateSourceReaderFromMediaSource, MFEnumDeviceSources, MFMediaType_Video,
-    MFShutdown, MFStartup, MFVideoFormat_RGB32, MFSTARTUP_FULL,
+    MFShutdown, MFStartup, MFVideoFormat_NV12, MFVideoFormat_RGB32, MFSTARTUP_FULL,
     MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
     MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID, MF_MT_DEFAULT_STRIDE, MF_MT_FRAME_RATE,
     MF_MT_FRAME_SIZE, MF_MT_MAJOR_TYPE, MF_MT_SUBTYPE, MF_SOURCE_READERF_ENDOFSTREAM,
@@ -214,14 +216,23 @@ fn run(name: &str, mb: &Mailbox, pool: &FramePool, seq: &mut u64) -> Result<(), 
         if let Some(mode) = best_mode(&reader) {
             let _ = reader.SetCurrentMediaType(STREAM, None, &mode);
         }
-        let rgb: IMFMediaType = MFCreateMediaType().map_err(|e| e.to_string())?;
-        rgb.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)
-            .map_err(|e| e.to_string())?;
-        rgb.SetGUID(&MF_MT_SUBTYPE, &MFVideoFormat_RGB32)
-            .map_err(|e| e.to_string())?;
-        reader
-            .SetCurrentMediaType(STREAM, None, &rgb)
-            .map_err(|e| format!("The camera can't give pictures Lumora can use: {e}"))?;
+        let wanted = |subtype: &windows::core::GUID| -> Result<IMFMediaType, String> {
+            let t: IMFMediaType = MFCreateMediaType().map_err(|e| e.to_string())?;
+            t.SetGUID(&MF_MT_MAJOR_TYPE, &MFMediaType_Video)
+                .map_err(|e| e.to_string())?;
+            t.SetGUID(&MF_MT_SUBTYPE, subtype)
+                .map_err(|e| e.to_string())?;
+            Ok(t)
+        };
+        // NV12 first (no conversion on the processor), RGB32 when the camera can't.
+        let nv12 = reader
+            .SetCurrentMediaType(STREAM, None, &wanted(&MFVideoFormat_NV12)?)
+            .is_ok();
+        if !nv12 {
+            reader
+                .SetCurrentMediaType(STREAM, None, &wanted(&MFVideoFormat_RGB32)?)
+                .map_err(|e| format!("The camera can't give pictures Lumora can use: {e}"))?;
+        }
         let current = reader
             .GetCurrentMediaType(STREAM)
             .map_err(|e| e.to_string())?;
@@ -229,11 +240,13 @@ fn run(name: &str, mb: &Mailbox, pool: &FramePool, seq: &mut u64) -> Result<(), 
         if w == 0 || h == 0 {
             return Err("The camera did not say its picture size.".into());
         }
+        let (w, h) = if nv12 { (w & !1, h & !1) } else { (w, h) };
+        let bpp = if nv12 { 1 } else { 4 };
         // A negative stride means the picture is stored bottom row first.
         let stride = current
             .GetUINT32(&MF_MT_DEFAULT_STRIDE)
-            .map_or(i64::from(w) * 4, |s| i64::from(s as i32));
-        let row = w as usize * 4;
+            .map_or(i64::from(w) * bpp, |s| i64::from(s as i32));
+        let row = w as usize * bpp as usize;
         while !mb.stopped() {
             let mut flags = 0u32;
             let mut sample = None;
@@ -255,11 +268,18 @@ fn run(name: &str, mb: &Mailbox, pool: &FramePool, seq: &mut u64) -> Result<(), 
                 .Lock(&mut data, None, Some(&mut len))
                 .map_err(|e| e.to_string())?;
             let pitch = stride.unsigned_abs() as usize;
-            if !data.is_null() && (len as usize) >= pitch * (h as usize - 1) + row {
+            // NV12: the Y rows, then half as many rows of U and V.
+            let rows = if nv12 { h as usize * 3 / 2 } else { h as usize };
+            if !data.is_null() && (len as usize) >= pitch * (rows - 1) + row {
                 let src = std::slice::from_raw_parts(data, len as usize);
-                let f = VideoFrame::build(pool, w, h, PixelFormat::Bgrx8, *seq, |px| {
-                    for y in 0..h as usize {
-                        let from = if stride < 0 { h as usize - 1 - y } else { y } * pitch;
+                let format = if nv12 {
+                    PixelFormat::Nv12
+                } else {
+                    PixelFormat::Bgrx8
+                };
+                let f = VideoFrame::build(pool, w, h, format, *seq, |px| {
+                    for y in 0..rows {
+                        let from = if stride < 0 { rows - 1 - y } else { y } * pitch;
                         px[y * row..(y + 1) * row].copy_from_slice(&src[from..from + row]);
                     }
                 });

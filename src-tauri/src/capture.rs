@@ -377,6 +377,17 @@ pub struct Running {
     pub on_backup: Vec<String>,
 }
 
+impl CaptureStatus {
+    /// The running session `session`, whichever kind it is.
+    pub fn running_session(&self, session: u64) -> Option<Running> {
+        [&self.recording, &self.streaming, &self.vertical, &self.ndi]
+            .into_iter()
+            .flatten()
+            .find(|r| r.session == session)
+            .cloned()
+    }
+}
+
 impl Running {
     fn new(session: u64, path: Option<String>, destinations: Vec<String>, encoder: String) -> Self {
         Running {
@@ -615,6 +626,28 @@ impl Capture {
     fn family(&self, settings: &CaptureSettings, codec: Codec) -> Family {
         let s = lock(&self.shared.status);
         encode::pick(settings.encoder, codec, &s.hw_encoders, &s.hw_failed)
+    }
+
+    /// The encoder the unified engine's own feed uses now (as FFmpeg's would be chosen).
+    pub fn engine_family(&self) -> Family {
+        self.family(&self.settings(), Codec::H264)
+    }
+
+    /// The unified engine's feed found a graphics card's encoder failing:
+    /// it is not chosen again this time (as when FFmpeg's here fails).
+    pub fn engine_hw_failed(&self, family: Family) {
+        self.shared.hw_failed(family);
+    }
+
+    /// The picture of this session is encoded by the unified engine (not
+    /// the WebView): say so where the operator sees the encoder.
+    pub fn engine_source(&self, kind: Kind, session: u64, label: &str) {
+        self.shared.running(kind, session, |r| {
+            r.encoder = r
+                .encoder
+                .replace("the app’s own encoder (WebView2)", label)
+                .replace("The app’s own encoder (WebView2)", label);
+        });
     }
 
     pub fn settings(&self) -> CaptureSettings {

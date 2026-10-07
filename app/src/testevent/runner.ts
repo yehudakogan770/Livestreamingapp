@@ -26,6 +26,8 @@ import type { TransitionKind } from '../engine/types/TransitionKind';
 import type { Problem } from '../problems/problems';
 import { scrub } from '../reports/scrub';
 import { PROBE_EVENT, PROBE_RESULT, type ProbeAnswer } from './outputProbe';
+import { refreshEngineInfo, unifiedOn } from '../engine/unified';
+import { noteEngine, type EngineMeasured } from './engineReport';
 import { pictureInputs, planInputs, planShow, transitions, type PlannedInput, type PlannedStep, type TestEnv, type TestOptions } from './plan';
 import { withTestSession, type SessionApi } from './session';
 import type { Measured, OutputCheck, OutputName, Phase, Probe, Reach, Sample, StepRecord, StreamCheck } from './verdict';
@@ -237,6 +239,8 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
 
   // ----- measuring, about once a second -----
   let sampling = true;
+  // The unified engine's own numbers, when it draws and records.
+  let engine: EngineMeasured | null = null;
   let firstSession = Number.MAX_SAFE_INTEGER;
   const sampleLoop = (async () => {
     while (sampling) {
@@ -244,6 +248,10 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
         const b = deps.broadcast();
         const fs = b?.frameStats() ?? null;
         const perf = await client.perfStats().catch((): PerfStats | null => null);
+        if (unifiedOn()) {
+          const info = await refreshEngineInfo().catch(() => null);
+          if (info?.stats) engine = noteEngine(engine, info.stats);
+        }
         const mem = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
         const levels = deps.levels();
         const mics: Record<string, number> = {};
@@ -716,6 +724,37 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
         await act({ type: 'setOverlayOn', channel: 0, value: true });
         await sleep(1500);
         const answers = await probeOutputs(2000);
+        // The unified engine's screens are its own windows: it answers for them.
+        if (unifiedOn())
+          for (const o of ['live', 'back'] as const) {
+            if (answers.some((a) => a.output === o)) continue;
+            const p = await call<{
+              fps: number;
+              inSync: boolean | null;
+              black: boolean | null;
+              overlays: boolean | null;
+              width: number;
+              height: number;
+            } | null>('live_engine_probe', { screen: o }).catch(() => null);
+            if (p)
+              answers.push({
+                id: 0,
+                output: o,
+                fps: p.fps,
+                inSync: p.inSync,
+                black: p.black,
+                overlays: p.overlays,
+                tally: null,
+                width: p.width,
+                height: p.height,
+              });
+          }
+        // And for its multiview (its tally comes from the show itself).
+        if (unifiedOn() && !answers.some((a) => a.output === 'multiview')) {
+          const s = (await refreshEngineInfo().catch(() => null))?.stats;
+          if (s?.outputs.includes('multiview'))
+            answers.push({ id: 0, output: 'multiview', fps: s.fps, inSync: null, black: null, overlays: null, tally: true, width: 1920, height: 1080 });
+        }
         await act({ type: 'setOverlayOn', channel: 0, value: false });
         await act({ type: 'updateOverlay', channel: 0, patch: { autoHideMs: 4000 } });
         for (const c of outputs) {
@@ -978,6 +1017,7 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
     console: consoleLines,
     captureFailures,
     encoders: (noteEncoders(), encoders),
+    engine,
     restored: session.restored,
     stopped,
   };

@@ -16,8 +16,9 @@ use crate::scene::{fit_rect, Content, Layer, Placement, Rect, ScreenScene, FULL}
 pub const TARGET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 const SHADER: &str = include_str!("compose.wgsl");
-/// One draw's uniforms: ten vec4s.
-const DRAW_FLOATS: usize = 40;
+const YUV_SHADER: &str = include_str!("yuv.wgsl");
+/// One draw's uniforms: sixteen vec4s.
+const DRAW_FLOATS: usize = 64;
 const DRAW_BYTES: u64 = (DRAW_FLOATS * 4) as u64;
 
 struct Tex {
@@ -26,12 +27,37 @@ struct Tex {
     bind: wgpu::BindGroup,
     w: u32,
     h: u32,
+    format: wgpu::TextureFormat,
+}
+
+/// The NV12 targets' format (one byte a texel: see `fs_nv12`).
+pub const NV12_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
+
+/// Bytes a texel of a target.
+fn bytes_per_texel(f: wgpu::TextureFormat) -> u32 {
+    if f == NV12_FORMAT {
+        1
+    } else {
+        4
+    }
 }
 
 struct SourceTex {
     tex: Tex,
     format: PixelFormat,
     seq: u64,
+    /// NV12 sources: their Y and UV planes as they arrive (made into `tex` on the GPU).
+    planes: Option<(wgpu::Texture, wgpu::Texture, wgpu::BindGroup)>,
+}
+
+/// A graphics plane from the web overlay renderer: the slot (screen) it
+/// belongs to, its name (`g:<input>`, `top`, `panic`: see [`crate::overlay`]) and size.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PlaneId {
+    pub slot: usize,
+    pub name: String,
+    pub w: u32,
+    pub h: u32,
 }
 
 /// What a draw samples.
@@ -40,18 +66,30 @@ enum TexKey {
     White,
     Source(SourceId),
     Target(usize),
-    Overlay(usize),
+    Plane(PlaneId),
 }
 
 /// What a pass paints.
 pub enum Paint<'a> {
-    /// A scene, and the overlay layer (the screen's graphics) to put over its inputs.
+    /// A scene, and the slot whose graphics planes (from the web overlay
+    /// renderer) it shows: graphics inputs in their places, the `top` plane
+    /// over everything but blank and PANIC, the PANIC logo.
     Scene {
         scene: &'a ScreenScene,
-        overlay: Option<usize>,
+        planes: Option<usize>,
     },
     /// Another target, stretched over the viewport (a preview of a screen).
     Target(usize),
+    /// The 9:16 version of target `src` (the recorder's `VerticalFrame`):
+    /// the whole picture across the middle, over a soft, darkened copy of
+    /// it filling the frame (stretched up from the tiny target `small`).
+    Vertical { src: usize, small: usize },
+    /// A flat color (premultiplied) over the viewport.
+    Solid([f32; 4]),
+    /// A graphics plane of `slot` over the viewport, at whatever size it is held (the multiview's words).
+    Plane { slot: usize, name: &'static str },
+    /// Target `src` as NV12 (into an NV12 target, see [`Compositor::ensure_nv12_target`]).
+    Nv12(usize),
 }
 
 /// Where a pass paints.
@@ -74,6 +112,7 @@ struct Pending {
     rx: std::sync::mpsc::Receiver<Result<(), wgpu::BufferAsyncError>>,
     w: u32,
     h: u32,
+    bpp: u32,
 }
 
 /// Two read-back buffers taking turns (see [`Compositor::read_pipelined`]).
@@ -97,6 +136,11 @@ impl SurfaceOut {
             config: None,
         }
     }
+
+    /// Configure it again on the next present (a new graphics device).
+    pub fn reset(&mut self) {
+        self.config = None;
+    }
 }
 
 /// A graphics card the engine could use.
@@ -117,6 +161,9 @@ pub struct Compositor {
     draw_layout: wgpu::BindGroupLayout,
     pipeline_layout: wgpu::PipelineLayout,
     module: wgpu::ShaderModule,
+    /// NV12 to RGBA (`yuv.wgsl`): its layout and its pipelines (BT.709, BT.601).
+    yuv_layout: wgpu::BindGroupLayout,
+    yuv_pipes: [wgpu::RenderPipeline; 2],
     sampler: wgpu::Sampler,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
     uniforms: wgpu::Buffer,
@@ -126,12 +173,16 @@ pub struct Compositor {
     white: Tex,
     sources: HashMap<SourceId, SourceTex>,
     targets: Vec<Option<Tex>>,
-    overlays: HashMap<usize, Tex>,
+    planes: HashMap<PlaneId, Tex>,
     atlas: Option<Tex>,
     reads: HashMap<(u32, u32), wgpu::Buffer>,
     rings: HashMap<Dest, Ring>,
     /// Bytes uploaded to the GPU since the last [`Compositor::take_upload_bytes`].
     uploaded: u64,
+    /// Seconds (0 – 100) for the grain effect.
+    time: f32,
+    /// The graphics device was lost (a driver reset, the card removed): the engine makes a new one.
+    lost: Arc<std::sync::atomic::AtomicBool>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -187,6 +238,7 @@ fn make_tex(
         bind,
         w: w.max(1),
         h: h.max(1),
+        format,
     }
 }
 
@@ -241,6 +293,28 @@ fn kind_of(t: wgpu::DeviceType) -> &'static str {
 /// A pass ready to encode: where, which part, and its draws.
 type Planned = (Dest, Option<[u32; 4]>, Vec<(DrawU, TexKey)>);
 
+/// Layers drawn whole into a scratch target first (see [`needs_group`]):
+/// (an overlay channel, its index) → the scratch target.
+type Groups = HashMap<(bool, usize), usize>;
+
+/// Scratch targets (layers composited as a group) are numbered from here; they start see-through.
+const SCRATCH: usize = 64;
+
+/// A layer of several pictures (a split screen, a picture with its bars)
+/// that fades, wipes or blurs is drawn whole first and then faded as one, as
+/// the web fades a box with its contents: faded picture by picture, its
+/// background would show through its boxes mid-fade.
+pub fn needs_group(l: &Layer) -> bool {
+    let pictures = l
+        .pictures
+        .iter()
+        .filter(|p| !matches!(p.content, Content::Bars(_)))
+        .count();
+    pictures > 1
+        && l.opacity > 0.0
+        && (l.opacity < 1.0 || l.blur > 0.0 || l.shape != Shape::Whole || l.luma.is_some())
+}
+
 /// One draw's uniforms.
 #[derive(Clone, Copy)]
 struct DrawU([f32; DRAW_FLOATS]);
@@ -284,6 +358,8 @@ const FX: usize = 6;
 const CUT: usize = 7;
 const LUMA: usize = 8;
 const CLIP: usize = 9;
+/// Green screen and light and color: six vec4s from here (see [`crate::look::Look::uniforms`]).
+const LOOK: usize = 10;
 
 /// Map a rect given in a box's own fractions into output fractions.
 fn within(outer: Rect, inner: Rect) -> Rect {
@@ -334,6 +410,13 @@ impl Compositor {
         .map_err(|e| format!("The graphics card could not start: {e}"))?;
         // A mistake on the GPU is reported, never a crash in the middle of a show.
         device.on_uncaptured_error(Arc::new(|e| eprintln!("live engine GPU: {e}")));
+        // A lost device (a driver reset — Windows' TDR —, the card removed) is noticed and replaced.
+        let lost = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let l = Arc::clone(&lost);
+        device.set_device_lost_callback(move |reason, why| {
+            eprintln!("live engine GPU lost ({reason:?}): {why}");
+            l.store(true, std::sync::atomic::Ordering::SeqCst);
+        });
         let align = u64::from(device.limits().min_uniform_buffer_offset_alignment).max(DRAW_BYTES);
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("linear-clamp"),
@@ -384,6 +467,69 @@ impl Compositor {
             label: Some("compose"),
             source: wgpu::ShaderSource::Wgsl(SHADER.into()),
         });
+        let plane = |binding: u32| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        };
+        let yuv_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("nv12"),
+            entries: &[
+                plane(0),
+                plane(1),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+        let yuv_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("nv12"),
+            source: wgpu::ShaderSource::Wgsl(YUV_SHADER.into()),
+        });
+        let yuv_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("nv12"),
+            bind_group_layouts: &[Some(&yuv_layout)],
+            immediate_size: 0,
+        });
+        let yuv_pipe = |entry: &str| {
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("nv12"),
+                layout: Some(&yuv_pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &yuv_module,
+                    entry_point: Some("vs"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleStrip,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &yuv_module,
+                    entry_point: Some(entry),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                multiview_mask: None,
+                cache: None,
+            })
+        };
+        let yuv_pipes = [yuv_pipe("fs_709"), yuv_pipe("fs_601")];
         let white = make_tex(
             &device,
             &tex_layout,
@@ -406,6 +552,8 @@ impl Compositor {
             draw_layout,
             pipeline_layout,
             module,
+            yuv_layout,
+            yuv_pipes,
             sampler,
             pipelines: HashMap::new(),
             uniforms,
@@ -415,14 +563,30 @@ impl Compositor {
             white,
             sources: HashMap::new(),
             targets: Vec::new(),
-            overlays: HashMap::new(),
+            planes: HashMap::new(),
             atlas: None,
             reads: HashMap::new(),
             rings: HashMap::new(),
             uploaded: 0,
+            time: 0.0,
+            lost,
         };
         c.pipeline(TARGET_FORMAT);
         Ok(c)
+    }
+
+    /// The device was lost: nothing drawn with it shows any more.
+    pub fn is_lost(&self) -> bool {
+        self.lost.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// A new device on the best card (after a loss), from the same instance
+    /// (windows' surfaces stay valid; they are configured again).
+    ///
+    /// # Errors
+    /// No usable graphics card (yet: the driver may still be resetting).
+    pub fn renew(&self) -> Result<Self, String> {
+        Self::new(self.instance.clone(), None)
     }
 
     /// Start without any window (tests, the benchmark).
@@ -493,11 +657,17 @@ impl Compositor {
                 multisample: wgpu::MultisampleState::default(),
                 fragment: Some(wgpu::FragmentState {
                     module: &self.module,
-                    entry_point: Some("fs"),
+                    // NV12 targets get the NV12 conversion (and no blending).
+                    entry_point: Some(if format == NV12_FORMAT {
+                        "fs_nv12"
+                    } else {
+                        "fs"
+                    }),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format,
-                        blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+                        blend: (format != NV12_FORMAT)
+                            .then_some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
                 }),
@@ -530,6 +700,38 @@ impl Compositor {
         }
     }
 
+    /// Make sure target `i` exists as an NV12 target for a `w` × `h` picture
+    /// (one byte a texel, `w` × 1.5 `h`; `w` and `h` even).
+    pub fn ensure_nv12_target(&mut self, i: usize, w: u32, h: u32) {
+        if self.targets.len() <= i {
+            self.targets.resize_with(i + 1, || None);
+        }
+        let (tw, th) = (w, h * 3 / 2);
+        let ok = self.targets[i]
+            .as_ref()
+            .is_some_and(|t| t.w == tw && t.h == th && t.format == NV12_FORMAT);
+        if !ok {
+            self.targets[i] = Some(make_tex(
+                &self.device,
+                &self.tex_layout,
+                &self.sampler,
+                tw,
+                th,
+                NV12_FORMAT,
+                true,
+                "nv12",
+            ));
+        }
+    }
+
+    /// Let target `i` go (a feed ended).
+    pub fn drop_target(&mut self, i: usize) {
+        if let Some(t) = self.targets.get_mut(i) {
+            *t = None;
+        }
+        self.rings.remove(&Dest::Target(i));
+    }
+
     /// Make sure the preview atlas exists at `w` × `h`.
     pub fn ensure_atlas(&mut self, w: u32, h: u32) {
         let ok = self.atlas.as_ref().is_some_and(|t| t.w == w && t.h == h);
@@ -549,8 +751,12 @@ impl Compositor {
 
     /// The newest frame of a source to the GPU (nothing happens when it was already sent).
     pub fn upload(&mut self, id: &SourceId, f: &VideoFrame) {
+        if f.format == PixelFormat::Nv12 {
+            self.upload_nv12(id, f);
+            return;
+        }
         let format = match f.format {
-            PixelFormat::Rgba8 => wgpu::TextureFormat::Rgba8Unorm,
+            PixelFormat::Rgba8 | PixelFormat::Nv12 => wgpu::TextureFormat::Rgba8Unorm,
             PixelFormat::Bgra8 | PixelFormat::Bgrx8 => wgpu::TextureFormat::Bgra8Unorm,
         };
         let fresh = match self.sources.get(id) {
@@ -579,6 +785,7 @@ impl Compositor {
                     tex,
                     format: f.format,
                     seq: u64::MAX,
+                    planes: None,
                 },
             );
         }
@@ -589,6 +796,153 @@ impl Compositor {
             }
             s.seq = f.seq;
         }
+    }
+
+    /// An NV12 frame: its two planes to the GPU (12 bits a pixel), made into
+    /// the source's RGBA picture there.
+    fn upload_nv12(&mut self, id: &SourceId, f: &VideoFrame) {
+        let (w, h) = (f.width & !1, f.height & !1);
+        if w == 0
+            || h == 0
+            || f.data.as_slice().len() < PixelFormat::Nv12.frame_len(f.width, f.height)
+        {
+            return;
+        }
+        let fresh = match self.sources.get(id) {
+            Some(s) if s.tex.w == w && s.tex.h == h && s.format == PixelFormat::Nv12 => {
+                if s.seq == f.seq {
+                    return;
+                }
+                false
+            }
+            _ => true,
+        };
+        if fresh {
+            let tex = make_tex(
+                &self.device,
+                &self.tex_layout,
+                &self.sampler,
+                w,
+                h,
+                wgpu::TextureFormat::Rgba8Unorm,
+                true,
+                "camera",
+            );
+            let plane = |pw: u32, ph: u32, format: wgpu::TextureFormat| {
+                self.device.create_texture(&wgpu::TextureDescriptor {
+                    label: Some("camera-plane"),
+                    size: wgpu::Extent3d {
+                        width: pw,
+                        height: ph,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                    view_formats: &[],
+                })
+            };
+            let y = plane(w, h, wgpu::TextureFormat::R8Unorm);
+            let uv = plane(w / 2, h / 2, wgpu::TextureFormat::Rg8Unorm);
+            let bind = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("camera-planes"),
+                layout: &self.yuv_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(
+                            &y.create_view(&wgpu::TextureViewDescriptor::default()),
+                        ),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(
+                            &uv.create_view(&wgpu::TextureViewDescriptor::default()),
+                        ),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::Sampler(&self.sampler),
+                    },
+                ],
+            });
+            self.sources.insert(
+                id.clone(),
+                SourceTex {
+                    tex,
+                    format: PixelFormat::Nv12,
+                    seq: u64::MAX,
+                    planes: Some((y, uv, bind)),
+                },
+            );
+        }
+        let Some(s) = self.sources.get_mut(id) else {
+            return;
+        };
+        let Some((y, uv, bind)) = &s.planes else {
+            return;
+        };
+        let data = f.data.as_slice();
+        let stride = f.width as usize;
+        let ylen = stride * f.height as usize;
+        let write = |t: &wgpu::Texture, bytes: &[u8], row: u32, tw: u32, th: u32| {
+            self.queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: t,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                bytes,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(row),
+                    rows_per_image: Some(th),
+                },
+                wgpu::Extent3d {
+                    width: tw,
+                    height: th,
+                    depth_or_array_layers: 1,
+                },
+            );
+        };
+        write(y, &data[..ylen], f.width, w, h);
+        write(uv, &data[ylen..], f.width, w / 2, h / 2);
+        self.uploaded += PixelFormat::Nv12.frame_len(w, h) as u64;
+        // HD cameras speak BT.709; smaller ones BT.601.
+        let pipe = &self.yuv_pipes[usize::from(h < 720)];
+        let mut enc = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("nv12"),
+            });
+        {
+            let mut rp = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("nv12"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &s.tex.view,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                ..Default::default()
+            });
+            rp.set_pipeline(pipe);
+            rp.set_bind_group(0, bind, &[]);
+            rp.draw(0..4, 0..1);
+        }
+        self.queue.submit([enc.finish()]);
+        s.seq = f.seq;
+    }
+
+    /// The show clock (ms), for effects that move (grain).
+    pub fn set_time(&mut self, now_ms: u64) {
+        self.time = (now_ms % 100_000) as f32 / 1000.0;
     }
 
     /// Bytes sent to the GPU since last asked.
@@ -606,17 +960,41 @@ impl Compositor {
         self.sources.get(id).map(|s| (s.tex.w, s.tex.h))
     }
 
-    /// Set (or clear) overlay layer `slot`: straight-alpha RGBA, top row first.
+    /// Set (or clear) slot `slot`'s whole-screen `top` plane: straight-alpha
+    /// RGBA, top row first (the benchmark and tests; the overlay renderer
+    /// sends dirty rectangles through [`Compositor::patch_plane`]).
     pub fn set_overlay(&mut self, slot: usize, frame: Option<(u32, u32, &[u8])>) {
         let Some((w, h, px)) = frame else {
-            self.overlays.remove(&slot);
+            self.planes
+                .retain(|k, _| !(k.slot == slot && k.name == crate::overlay::TOP));
             return;
         };
-        let ok = self
-            .overlays
-            .get(&slot)
-            .is_some_and(|t| t.w == w && t.h == h);
-        if !ok {
+        if px.len() >= (w * h * 4) as usize {
+            self.planes.retain(|k, _| {
+                !(k.slot == slot && k.name == crate::overlay::TOP && (k.w, k.h) != (w, h))
+            });
+            self.patch_plane(slot, crate::overlay::TOP, w, h, &[([0, 0, w, h], px)]);
+        }
+    }
+
+    /// New pixels for some rectangles of a plane (made, transparent, when new).
+    /// Rectangles that don't fit are left out.
+    pub fn patch_plane(
+        &mut self,
+        slot: usize,
+        name: &str,
+        w: u32,
+        h: u32,
+        rects: &[([u32; 4], &[u8])],
+    ) {
+        let id = PlaneId {
+            slot,
+            name: name.to_owned(),
+            w,
+            h,
+        };
+        if !self.planes.contains_key(&id) {
+            // New textures start out transparent (wgpu zeroes them).
             let t = make_tex(
                 &self.device,
                 &self.tex_layout,
@@ -625,16 +1003,85 @@ impl Compositor {
                 h,
                 wgpu::TextureFormat::Rgba8Unorm,
                 false,
-                "overlay",
+                "graphics",
             );
-            self.overlays.insert(slot, t);
+            self.planes.insert(id.clone(), t);
         }
-        if let Some(t) = self.overlays.get(&slot) {
-            if px.len() >= (w * h * 4) as usize {
-                write_tex(&self.queue, t, px);
-                self.uploaded += u64::from(w) * u64::from(h) * 4;
+        let Some(t) = self.planes.get(&id) else {
+            return;
+        };
+        for &([x, y, rw, rh], px) in rects {
+            let fits = rw > 0
+                && rh > 0
+                && x.checked_add(rw).is_some_and(|e| e <= t.w)
+                && y.checked_add(rh).is_some_and(|e| e <= t.h)
+                && px.len() >= (rw as usize) * (rh as usize) * 4;
+            if !fits {
+                continue;
             }
+            self.queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &t.texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d { x, y, z: 0 },
+                    aspect: wgpu::TextureAspect::All,
+                },
+                px,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(rw * 4),
+                    rows_per_image: Some(rh),
+                },
+                wgpu::Extent3d {
+                    width: rw,
+                    height: rh,
+                    depth_or_array_layers: 1,
+                },
+            );
+            self.uploaded += u64::from(rw) * u64::from(rh) * 4;
         }
+    }
+
+    /// A plane is no longer shown.
+    pub fn clear_plane(&mut self, slot: usize, name: &str, w: u32, h: u32) {
+        self.planes.remove(&PlaneId {
+            slot,
+            name: name.to_owned(),
+            w,
+            h,
+        });
+    }
+
+    /// Every plane of a slot goes (its renderer started again).
+    pub fn reset_planes(&mut self, slot: usize) {
+        self.planes.retain(|k, _| k.slot != slot);
+    }
+
+    /// Whether slot `slot` has a plane `name` (at any size).
+    pub fn has_plane(&self, slot: usize, name: &str) -> bool {
+        self.planes.keys().any(|k| k.slot == slot && k.name == name)
+    }
+
+    /// Planes held now.
+    pub fn plane_count(&self) -> usize {
+        self.planes.len()
+    }
+
+    /// The plane `name` of `slot` closest in size to `want` pixels.
+    fn plane(&self, slot: usize, name: &str, want: (u32, u32)) -> Option<PlaneId> {
+        let (w, h) = crate::overlay::closest(
+            self.planes
+                .keys()
+                .filter(|k| k.slot == slot && k.name == name)
+                .map(|k| (k.w, k.h)),
+            want,
+        )?;
+        Some(PlaneId {
+            slot,
+            name: name.to_owned(),
+            w,
+            h,
+        })
     }
 
     /// Where a source's picture lands (output fractions), which part of it
@@ -669,107 +1116,27 @@ impl Compositor {
         Some((within(within(lb, f), dst_in), uv, mode))
     }
 
-    /// The draws that paint `scene` on an output of `out_w` × `out_h`.
+    /// The draws that paint `scene` on an output of `out_w` × `out_h`, with
+    /// the graphics planes of slot `planes` (back to front: the pictures,
+    /// dip, flash, the overlay channels, the `top` plane, blank, PANIC and its logo).
+    #[allow(clippy::too_many_arguments)]
     fn scene_draws(
         &self,
         scene: &ScreenScene,
-        overlay: Option<usize>,
+        planes: Option<usize>,
         out_w: u32,
         out_h: u32,
+        groups: &Groups,
         draws: &mut Vec<(DrawU, TexKey)>,
     ) {
         let out_aspect = out_w as f32 / out_h.max(1) as f32;
-        for layer in &scene.layers {
-            if layer.opacity <= 0.0 {
-                continue;
-            }
-            let lb = layer_box(layer);
-            let lw = (lb[2] - lb[0]) * out_w as f32;
-            let lh = (lb[3] - lb[1]) * out_h as f32;
-            for (n, pic) in layer.pictures.iter().enumerate() {
-                let frame = within(lb, pic.placement.frame);
-                let mut d = DrawU::new();
-                d.set(LAYER, lb).set(CLIP, frame);
-                let (shape_kind, size) = match layer.shape {
-                    Shape::Whole => (0.0, 0.0),
-                    Shape::Rect { t, r, b, l } => {
-                        d.set(CUT, [t, r, b, l]);
-                        (1.0, 0.0)
-                    }
-                    Shape::Circle { r } => (2.0, r),
-                    Shape::Diamond { r } => (3.0, r),
-                };
-                d.set(FX, [layer.opacity, layer.blur, shape_kind, size]);
-                let (pattern, p) = layer
-                    .luma
-                    .map_or((0.0, 0.0), |(pat, p)| (pat.code() as f32, p));
-                let layer_aspect = if lh > 0.0 { lw / lh } else { out_aspect };
-                d.set(LUMA, [pattern, p, layer_aspect, out_aspect]);
-                let color_rect = |r: Rect, c: [f32; 4], draws: &mut Vec<(DrawU, TexKey)>| {
-                    if r[2] - r[0] > 1e-5 && r[3] - r[1] > 1e-5 {
-                        let mut d = d;
-                        d.set(DST, r).set(COLOR, c);
-                        d.0[MISC * 4 + 3] = 1.0;
-                        draws.push((d, TexKey::White));
-                    }
-                };
-                match &pic.content {
-                    Content::Color(c) => color_rect(frame, *c, draws),
-                    Content::Bars(c) => {
-                        // Only around the picture that follows: under it, its own
-                        // opacity would let the bars show through mid-fade.
-                        let covered = layer
-                            .pictures
-                            .get(n + 1)
-                            .and_then(|next| self.video_dst(next, lb, lw, lh));
-                        match covered {
-                            Some((v, _, _)) => {
-                                let [f0, f1, f2, f3] = frame;
-                                let [v0, v1, v2, v3] = v;
-                                for r in [
-                                    [f0, f1, v0, f3],
-                                    [v2, f1, f2, f3],
-                                    [v0, f1, v2, v1],
-                                    [v0, v3, v2, f3],
-                                ] {
-                                    color_rect(r, *c, draws);
-                                }
-                            }
-                            None => color_rect(frame, *c, draws),
-                        }
-                    }
-                    Content::Video(id) => {
-                        let Some((dst, uv, mode)) = self.video_dst(pic, lb, lw, lh) else {
-                            continue;
-                        };
-                        let pl = &pic.placement;
-                        let qw = (dst[2] - dst[0]) * out_w as f32;
-                        let qh = (dst[3] - dst[1]) * out_h as f32;
-                        d.set(DST, dst).set(UV, uv).set(
-                            VIEW,
-                            [pl.zoom, pl.pan[0], pl.pan[1], pl.rotate.to_radians()],
-                        );
-                        d.set(
-                            MISC,
-                            [
-                                if pl.flip[0] { -1.0 } else { 1.0 },
-                                if pl.flip[1] { -1.0 } else { 1.0 },
-                                if qh > 0.0 { qw / qh } else { 1.0 },
-                                mode,
-                            ],
-                        );
-                        draws.push((d, TexKey::Source(id.clone())));
-                    }
-                    Content::Graphic(_) => {}
-                }
+        for (i, layer) in scene.layers.iter().enumerate() {
+            match groups.get(&(false, i)) {
+                Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, out_w, out_h, draws),
             }
         }
-        if let Some(slot) = overlay.filter(|s| self.overlays.contains_key(s)) {
-            let mut d = DrawU::new();
-            d.set(LUMA, [0.0, 0.0, out_aspect, out_aspect]);
-            draws.push((d, TexKey::Overlay(slot)));
-        }
-        let mut solid = |c: [f32; 4], a: f32| {
+        let solid = |c: [f32; 4], a: f32, draws: &mut Vec<(DrawU, TexKey)>| {
             if a > 0.0 {
                 let mut d = DrawU::new();
                 d.set(COLOR, c).set(FX, [a, 0.0, 0.0, 0.0]);
@@ -777,11 +1144,202 @@ impl Compositor {
                 draws.push((d, TexKey::White));
             }
         };
-        solid([0.0, 0.0, 0.0, 1.0], scene.black);
-        solid([1.0, 1.0, 1.0, 1.0], scene.white);
-        solid([0.0, 0.0, 0.0, 1.0], scene.blank);
-        // PANIC: the safe screen (black; the event logo arrives with the overlay renderer).
-        solid([0.0, 0.0, 0.0, 1.0], scene.panic);
+        let whole = |slot: usize, name: &str, a: f32, draws: &mut Vec<(DrawU, TexKey)>| {
+            if a <= 0.0 {
+                return;
+            }
+            if let Some(id) = self.plane(slot, name, (out_w, out_h)) {
+                let mut d = DrawU::new();
+                d.set(LUMA, [0.0, 0.0, out_aspect, out_aspect])
+                    .set(FX, [a, 0.0, 0.0, 0.0]);
+                draws.push((d, TexKey::Plane(id)));
+            }
+        };
+        solid([0.0, 0.0, 0.0, 1.0], scene.black, draws);
+        solid([1.0, 1.0, 1.0, 1.0], scene.white, draws);
+        for (i, layer) in scene.overlays.iter().enumerate() {
+            match groups.get(&(true, i)) {
+                Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, out_w, out_h, draws),
+            }
+        }
+        if let Some(slot) = planes {
+            whole(slot, crate::overlay::TOP, 1.0, draws);
+        }
+        solid([0.0, 0.0, 0.0, 1.0], scene.blank, draws);
+        // PANIC: the safe screen — black at once (here, whatever the web
+        // renderer is doing), then the event's logo from it.
+        solid([0.0, 0.0, 0.0, 1.0], scene.panic, draws);
+        if let Some(slot) = planes {
+            whole(slot, crate::overlay::PANIC, scene.panic, draws);
+        }
+    }
+
+    /// A layer drawn whole into scratch target `t` (unmoved, opaque), put on
+    /// as one picture with the layer's move, fade, shape, luma wipe and blur.
+    fn group_draw(
+        &self,
+        layer: &Layer,
+        t: usize,
+        out_w: u32,
+        out_h: u32,
+        draws: &mut Vec<(DrawU, TexKey)>,
+    ) {
+        let out_aspect = out_w as f32 / out_h.max(1) as f32;
+        let lb = layer_box(layer);
+        let lw = (lb[2] - lb[0]) * out_w as f32;
+        let lh = (lb[3] - lb[1]) * out_h as f32;
+        let mut d = DrawU::new();
+        d.set(LAYER, lb).set(DST, lb);
+        let (shape_kind, size) = match layer.shape {
+            Shape::Whole => (0.0, 0.0),
+            Shape::Rect { t, r, b, l } => {
+                d.set(CUT, [t, r, b, l]);
+                (1.0, 0.0)
+            }
+            Shape::Circle { r } => (2.0, r),
+            Shape::Diamond { r } => (3.0, r),
+        };
+        d.set(FX, [layer.opacity, layer.blur, shape_kind, size]);
+        let (pattern, p) = layer
+            .luma
+            .map_or((0.0, 0.0), |(pat, p)| (pat.code() as f32, p));
+        let layer_aspect = if lh > 0.0 { lw / lh } else { out_aspect };
+        d.set(LUMA, [pattern, p, layer_aspect, out_aspect]);
+        d.set(MISC, [1.0, 1.0, layer_aspect, 2.0]);
+        draws.push((d, TexKey::Target(t)));
+    }
+
+    /// The draws of one layer (an input with its transition, or an overlay channel).
+    fn layer_draws(
+        &self,
+        layer: &Layer,
+        planes: Option<usize>,
+        out_w: u32,
+        out_h: u32,
+        draws: &mut Vec<(DrawU, TexKey)>,
+    ) {
+        if layer.opacity <= 0.0 {
+            return;
+        }
+        let out_aspect = out_w as f32 / out_h.max(1) as f32;
+        let lb = layer_box(layer);
+        let lw = (lb[2] - lb[0]) * out_w as f32;
+        let lh = (lb[3] - lb[1]) * out_h as f32;
+        for (n, pic) in layer.pictures.iter().enumerate() {
+            let frame = within(lb, pic.placement.frame);
+            let mut d = DrawU::new();
+            d.set(LAYER, lb).set(CLIP, frame);
+            let (shape_kind, size) = match layer.shape {
+                Shape::Whole => (0.0, 0.0),
+                Shape::Rect { t, r, b, l } => {
+                    d.set(CUT, [t, r, b, l]);
+                    (1.0, 0.0)
+                }
+                Shape::Circle { r } => (2.0, r),
+                Shape::Diamond { r } => (3.0, r),
+            };
+            d.set(FX, [layer.opacity, layer.blur, shape_kind, size]);
+            let (pattern, p) = layer
+                .luma
+                .map_or((0.0, 0.0), |(pat, p)| (pat.code() as f32, p));
+            let layer_aspect = if lh > 0.0 { lw / lh } else { out_aspect };
+            d.set(LUMA, [pattern, p, layer_aspect, out_aspect]);
+            let color_rect = |r: Rect, c: [f32; 4], draws: &mut Vec<(DrawU, TexKey)>| {
+                if r[2] - r[0] > 1e-5 && r[3] - r[1] > 1e-5 {
+                    let mut d = d;
+                    d.set(DST, r).set(COLOR, c);
+                    d.0[MISC * 4 + 3] = 1.0;
+                    draws.push((d, TexKey::White));
+                }
+            };
+            match &pic.content {
+                Content::Color(c) => color_rect(frame, *c, draws),
+                Content::Bars(c) => {
+                    // Only around the picture that follows: under it, its own
+                    // opacity would let the bars show through mid-fade.
+                    let covered = layer
+                        .pictures
+                        .get(n + 1)
+                        .and_then(|next| self.video_dst(next, lb, lw, lh));
+                    match covered {
+                        Some((v, _, _)) => {
+                            let [f0, f1, f2, f3] = frame;
+                            let [v0, v1, v2, v3] = v;
+                            for r in [
+                                [f0, f1, v0, f3],
+                                [v2, f1, f2, f3],
+                                [v0, f1, v2, v1],
+                                [v0, v3, v2, f3],
+                            ] {
+                                color_rect(r, *c, draws);
+                            }
+                        }
+                        None => color_rect(frame, *c, draws),
+                    }
+                }
+                Content::Video(id) => {
+                    let Some((dst, uv, mode)) = self.video_dst(pic, lb, lw, lh) else {
+                        continue;
+                    };
+                    let pl = &pic.placement;
+                    let qw = (dst[2] - dst[0]) * out_w as f32;
+                    let qh = (dst[3] - dst[1]) * out_h as f32;
+                    d.set(DST, dst).set(UV, uv).set(
+                        VIEW,
+                        [pl.zoom, pl.pan[0], pl.pan[1], pl.rotate.to_radians()],
+                    );
+                    d.set(
+                        MISC,
+                        [
+                            if pl.flip[0] { -1.0 } else { 1.0 },
+                            if pl.flip[1] { -1.0 } else { 1.0 },
+                            if qh > 0.0 { qw / qh } else { 1.0 },
+                            mode,
+                        ],
+                    );
+                    if let Some(look) = &pl.look {
+                        for (k, v) in look.uniforms(self.time).into_iter().enumerate() {
+                            d.set(LOOK + k, v);
+                        }
+                    }
+                    draws.push((d, TexKey::Source(id.clone())));
+                }
+                Content::Graphic(id) => {
+                    // Drawn by the web renderer at the size it is shown (the
+                    // layer's own box, before a slide or zoom moved it).
+                    let Some(slot) = planes else { continue };
+                    let f = pic.placement.frame;
+                    let want = (
+                        ((f[2] - f[0]) * out_w as f32).round().max(1.0) as u32,
+                        ((f[3] - f[1]) * out_h as f32).round().max(1.0) as u32,
+                    );
+                    let Some(plane) =
+                        self.plane(slot, &crate::overlay::graphic_plane(id.as_str()), want)
+                    else {
+                        continue;
+                    };
+                    let (qw, qh) = (
+                        (frame[2] - frame[0]) * out_w as f32,
+                        (frame[3] - frame[1]) * out_h as f32,
+                    );
+                    d.set(DST, frame);
+                    d.set(MISC, [1.0, 1.0, if qh > 0.0 { qw / qh } else { 1.0 }, 0.0]);
+                    draws.push((d, TexKey::Plane(plane)));
+                }
+            }
+        }
+    }
+
+    fn dest_bpp(&self, dest: Dest) -> u32 {
+        match dest {
+            Dest::Target(i) => self
+                .targets
+                .get(i)
+                .and_then(Option::as_ref)
+                .map_or(4, |t| bytes_per_texel(t.format)),
+            Dest::Atlas => 4,
+        }
     }
 
     fn dest_size(&self, dest: Dest) -> Option<(u32, u32)> {
@@ -794,6 +1352,7 @@ impl Compositor {
     /// Paint every pass in one submission. Targets painted whole are cleared to black first.
     pub fn render(&mut self, passes: &[Pass<'_>]) {
         let mut plan: Vec<Planned> = Vec::new();
+        let mut scratch = SCRATCH;
         for p in passes {
             let Some((tw, th)) = self.dest_size(p.dest) else {
                 continue;
@@ -801,13 +1360,79 @@ impl Compositor {
             let (w, h) = p.viewport.map_or((tw, th), |v| (v[2], v[3]));
             let mut draws = Vec::new();
             match &p.paint {
-                Paint::Scene { scene, overlay } => {
-                    self.scene_draws(scene, *overlay, w, h, &mut draws)
+                Paint::Scene { scene, planes } => {
+                    // Layers faded as a whole: drawn into scratch targets first.
+                    let mut groups = Groups::new();
+                    for (overlay, list) in [(false, &scene.layers), (true, &scene.overlays)] {
+                        for (i, l) in list.iter().enumerate().filter(|(_, l)| needs_group(l)) {
+                            let t = scratch;
+                            scratch += 1;
+                            self.ensure_target(t, w, h);
+                            let whole = Layer {
+                                opacity: 1.0,
+                                blur: 0.0,
+                                shape: Shape::Whole,
+                                luma: None,
+                                shift: [0.0, 0.0],
+                                scale: 1.0,
+                                ..l.clone()
+                            };
+                            let mut d = Vec::new();
+                            self.layer_draws(&whole, *planes, w, h, &mut d);
+                            plan.push((Dest::Target(t), None, d));
+                            groups.insert((overlay, i), t);
+                        }
+                    }
+                    self.scene_draws(scene, *planes, w, h, &groups, &mut draws)
                 }
                 Paint::Target(i) => {
                     let mut d = DrawU::new();
                     d.0[MISC * 4 + 3] = 2.0;
                     draws.push((d, TexKey::Target(*i)));
+                }
+                Paint::Solid(c) => {
+                    let mut d = DrawU::new();
+                    d.set(COLOR, *c);
+                    d.0[MISC * 4 + 3] = 1.0;
+                    draws.push((d, TexKey::White));
+                }
+                Paint::Nv12(src) => {
+                    draws.push((DrawU::new(), TexKey::Target(*src)));
+                }
+                Paint::Plane { slot, name } => {
+                    if let Some(id) = self.plane(*slot, name, (w, h)) {
+                        draws.push((DrawU::new(), TexKey::Plane(id)));
+                    }
+                }
+                Paint::Vertical { src, small } => {
+                    let (sw, sh) = self.dest_size(Dest::Target(*src)).unwrap_or((16, 9));
+                    let (ow, oh) = (w as f32, h as f32);
+                    // Behind: the tiny copy, stretched to the frame's height (a cheap, smooth blur).
+                    let cw = oh * sw as f32 / sh as f32 / ow;
+                    let mut d = DrawU::new();
+                    d.set(DST, [0.5 - cw / 2.0, 0.0, 0.5 + cw / 2.0, 1.0]);
+                    d.0[MISC * 4 + 3] = 2.0;
+                    draws.push((d, TexKey::Target(*small)));
+                    let mut dark = DrawU::new();
+                    dark.set(COLOR, [0.0, 0.0, 0.0, 1.0])
+                        .set(FX, [0.45, 0.0, 0.0, 0.0]);
+                    dark.0[MISC * 4 + 3] = 1.0;
+                    draws.push((dark, TexKey::White));
+                    // In front: the whole picture, nothing cut off.
+                    let k = (ow / sw as f32).min(oh / sh as f32);
+                    let (fw, fh) = (sw as f32 * k / ow, sh as f32 * k / oh);
+                    let mut d = DrawU::new();
+                    d.set(
+                        DST,
+                        [
+                            (1.0 - fw) / 2.0,
+                            (1.0 - fh) / 2.0,
+                            (1.0 + fw) / 2.0,
+                            (1.0 + fh) / 2.0,
+                        ],
+                    );
+                    d.0[MISC * 4 + 3] = 2.0;
+                    draws.push((d, TexKey::Target(*src)));
                 }
             }
             plan.push((p.dest, p.viewport, draws));
@@ -841,6 +1466,10 @@ impl Compositor {
             self.queue.write_buffer(&self.uniforms, 0, &bytes);
         }
         let target_pipe = self.pipeline(TARGET_FORMAT);
+        let nv12_pipe = plan
+            .iter()
+            .any(|(d, _, _)| self.dest_bpp(*d) == 1)
+            .then(|| self.pipeline(NV12_FORMAT));
         let surface_pipe = surface.map(|(_, f)| self.pipeline(f));
         let mut enc = self
             .device
@@ -849,14 +1478,14 @@ impl Compositor {
             });
         let mut n = 0u64;
         for (dest, viewport, draws) in &plan {
-            let (view, size) = match (dest, surface) {
-                (Dest::Target(usize::MAX), Some((v, _))) => (v, None),
+            let (view, size, nv12) = match (dest, surface) {
+                (Dest::Target(usize::MAX), Some((v, _))) => (v, None, false),
                 (Dest::Target(i), _) => match self.targets.get(*i).and_then(Option::as_ref) {
-                    Some(t) => (&t.view, Some((t.w, t.h))),
+                    Some(t) => (&t.view, Some((t.w, t.h)), t.format == NV12_FORMAT),
                     None => continue,
                 },
                 (Dest::Atlas, _) => match &self.atlas {
-                    Some(t) => (&t.view, Some((t.w, t.h))),
+                    Some(t) => (&t.view, Some((t.w, t.h)), false),
                     None => continue,
                 },
             };
@@ -869,7 +1498,13 @@ impl Compositor {
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: if whole {
-                            wgpu::LoadOp::Clear(wgpu::Color::BLACK)
+                            wgpu::LoadOp::Clear(
+                                if matches!(dest, Dest::Target(i) if *i >= SCRATCH) {
+                                    wgpu::Color::TRANSPARENT
+                                } else {
+                                    wgpu::Color::BLACK
+                                },
+                            )
                         } else {
                             wgpu::LoadOp::Load
                         },
@@ -880,6 +1515,8 @@ impl Compositor {
             });
             let pipe = if size.is_none() {
                 surface_pipe.as_ref().unwrap_or(&target_pipe)
+            } else if nv12 {
+                nv12_pipe.as_ref().unwrap_or(&target_pipe)
             } else {
                 &target_pipe
             };
@@ -902,7 +1539,7 @@ impl Compositor {
                         .get(*i)
                         .and_then(Option::as_ref)
                         .map(|t| &t.bind),
-                    TexKey::Overlay(i) => self.overlays.get(i).map(|t| &t.bind),
+                    TexKey::Plane(id) => self.planes.get(id).map(|t| &t.bind),
                 };
                 let offset = (n * self.align) as u32;
                 n += 1;
@@ -1007,8 +1644,8 @@ impl Compositor {
     }
 
     /// A read-back buffer for `w` × `h` (bytes per row padded as the GPU wants).
-    fn read_buffer(&self, w: u32, h: u32) -> wgpu::Buffer {
-        let row = (w * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+    fn read_buffer(&self, w: u32, h: u32, bpp: u32) -> wgpu::Buffer {
+        let row = (w * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
         self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("read"),
             size: u64::from(row) * u64::from(h),
@@ -1025,7 +1662,14 @@ impl Compositor {
         }
         .ok_or("Nothing to read.")?;
         let (w, h) = (t.w, t.h);
-        let row = (w * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+        let bpp = bytes_per_texel(t.format);
+        if buffer.size()
+            < u64::from((w * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT))
+                * u64::from(h)
+        {
+            return Err("The read-back buffer is too small.".into());
+        }
+        let row = (w * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
         let mut enc = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -1062,6 +1706,7 @@ impl Compositor {
             rx,
             w,
             h,
+            bpp,
         })
     }
 
@@ -1078,15 +1723,15 @@ impl Compositor {
         ready
             .ok_or("The read-back was lost.")?
             .map_err(|e| e.to_string())?;
-        let (w, h) = (p.w, p.h);
-        let row = (w * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) as usize;
-        let mut px = Vec::with_capacity((w * h * 4) as usize);
+        let (w, h, bpp) = (p.w, p.h, p.bpp as usize);
+        let row = (w as usize * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize);
+        let mut px = Vec::with_capacity(w as usize * h as usize * bpp);
         {
             let slice = p.buffer.slice(..);
             let mapped = slice.get_mapped_range().map_err(|e| e.to_string())?;
             for y in 0..h as usize {
                 let start = y * row;
-                px.extend_from_slice(&mapped[start..start + w as usize * 4]);
+                px.extend_from_slice(&mapped[start..start + w as usize * bpp]);
             }
         }
         p.buffer.unmap();
@@ -1099,11 +1744,12 @@ impl Compositor {
     /// The target doesn't exist or the GPU failed.
     pub fn read(&mut self, dest: Dest) -> Result<(u32, u32, Vec<u8>), String> {
         let (w, h) = self.dest_size(dest).ok_or("Nothing to read.")?;
-        let buffer = match self.reads.get(&(w, h)) {
+        let bpp = self.dest_bpp(dest);
+        let buffer = match self.reads.get(&(w * bpp, h)) {
             Some(b) => b.clone(),
             None => {
-                let b = self.read_buffer(w, h);
-                self.reads.insert((w, h), b.clone());
+                let b = self.read_buffer(w, h, bpp);
+                self.reads.insert((w * bpp, h), b.clone());
                 b
             }
         };
@@ -1116,10 +1762,11 @@ impl Compositor {
     /// has normally long finished. Two buffers take turns. None on the first call.
     pub fn read_pipelined(&mut self, dest: Dest) -> Option<(u32, u32, Vec<u8>)> {
         let size = self.dest_size(dest)?;
+        let bpp = self.dest_bpp(dest);
         if self.rings.get(&dest).is_none_or(|r| r.size != size) {
             let buffers = vec![
-                self.read_buffer(size.0, size.1),
-                self.read_buffer(size.0, size.1),
+                self.read_buffer(size.0, size.1, bpp),
+                self.read_buffer(size.0, size.1, bpp),
             ];
             self.rings.insert(
                 dest,

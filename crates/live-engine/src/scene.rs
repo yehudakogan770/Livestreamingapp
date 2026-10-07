@@ -7,7 +7,9 @@
 //! black) and PANIC go over everything.
 
 use lumora_engine::{
-    timing::transition_progress, Fit, ScreenId, Show, Source, SourceId, SourceKind, TransitionKind,
+    overlays::{Overlay, OverlayAnim},
+    timing::transition_progress,
+    Fit, ScreenId, Show, Source, SourceId, SourceKind, TransitionKind,
 };
 
 use crate::mix::{fade_amount, mix_at, stinger_slot, LumaPattern, Mix, Shape};
@@ -23,7 +25,8 @@ pub enum Content {
     /// picture), so a fading picture never shows it through itself.
     Bars([f32; 4]),
     /// Drawn by the web overlay renderer (titles, countdowns, scoreboards…):
-    /// arrives through the screen's overlay layer, not drawn here.
+    /// arrives as the screen's plane `g:<id>` ([`crate::overlay`]) at the
+    /// size of this picture's frame, and is drawn here like a picture.
     Graphic(SourceId),
 }
 
@@ -47,6 +50,8 @@ pub struct Placement {
     pub flip: [bool; 2],
     /// Degrees.
     pub rotate: f32,
+    /// Green screen and light and color (None: the picture as it is).
+    pub look: Option<crate::look::Look>,
 }
 
 impl Default for Placement {
@@ -59,6 +64,7 @@ impl Default for Placement {
             pan: [0.0; 2],
             flip: [false; 2],
             rotate: 0.0,
+            look: None,
         }
     }
 }
@@ -88,7 +94,7 @@ pub struct Layer {
     pub top: bool,
 }
 
-/// A stinger playing over the switch (drawn by the web overlay renderer in Phase 2).
+/// A stinger playing over the switch (drawn by the web overlay renderer into the `top` plane).
 #[derive(Debug, Clone, PartialEq)]
 pub struct StingerPlay {
     pub path: String,
@@ -103,6 +109,9 @@ pub struct ScreenScene {
     pub black: f32,
     /// White over the inputs (flash).
     pub white: f32,
+    /// The overlay channels showing (lower thirds, logos, picture-in-picture),
+    /// over the dip and flash, channel 1 first.
+    pub overlays: Vec<Layer>,
     /// The screen's own fade to black (blank).
     pub blank: f32,
     /// PANIC: the safe screen over everything.
@@ -115,6 +124,7 @@ impl ScreenScene {
     pub fn videos(&self) -> impl Iterator<Item = &SourceId> {
         self.layers
             .iter()
+            .chain(&self.overlays)
             .flat_map(|l| l.pictures.iter())
             .filter_map(|p| match &p.content {
                 Content::Video(id) => Some(id),
@@ -126,6 +136,7 @@ impl ScreenScene {
     pub fn graphics(&self) -> impl Iterator<Item = &SourceId> {
         self.layers
             .iter()
+            .chain(&self.overlays)
             .flat_map(|l| l.pictures.iter())
             .filter_map(|p| match &p.content {
                 Content::Graphic(id) => Some(id),
@@ -202,6 +213,7 @@ fn placement_of(src: &Source, frame: Rect) -> Placement {
         pan: [pan(a.pan_x), pan(a.pan_y)],
         flip: [a.flip_h, a.flip_v],
         rotate: if a.rotate.is_finite() { a.rotate } else { 0.0 },
+        look: crate::look::Look::of(&src.key, a),
     }
 }
 
@@ -277,6 +289,7 @@ pub fn program_scene(show: &Show, screen: ScreenId, now: u64) -> ScreenScene {
     let mut scene = ScreenScene {
         blank: fade_amount(sc.blank, sc.blank_changed_at, now, sc.blank_fade_ms),
         panic: fade_amount(show.panic, show.panic_changed_at, now, 0),
+        overlays: overlay_layers(show, screen, now),
         ..ScreenScene::default()
     };
     let pair = |scene: &mut ScreenScene, out: Option<&SourceId>, inc: Option<&SourceId>, m: Mix| {
@@ -360,6 +373,133 @@ pub fn program_scene(show: &Show, screen: ScreenId, now: u64) -> ScreenScene {
         .layers
         .extend(sc.program.as_ref().and_then(|id| plain_layer(show, id)));
     scene
+}
+
+/// How an overlay channel looks at one moment (a port of `overlayLook` in
+/// `app/src/engine/overlays.ts`): its opacity, its offset in boxes, its size
+/// and how much of it a wipe has revealed.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct OverlayLook {
+    pub opacity: f32,
+    pub dx: f32,
+    pub dy: f32,
+    pub scale: f32,
+    pub reveal: f32,
+}
+
+/// On air, or still animating out (`overlayShowing`).
+pub fn overlay_showing(o: &Overlay, now: u64) -> bool {
+    o.source_id.is_some()
+        && (o.on || (now as i128 - i128::from(o.changed_at)) < i128::from(o.anim_ms))
+}
+
+/// The channel's look at `now`; None when it isn't showing.
+pub fn overlay_look(o: &Overlay, now: u64) -> Option<OverlayLook> {
+    if !overlay_showing(o, now) {
+        return None;
+    }
+    let p = if o.anim_ms > 0 {
+        ((now as f64 - o.changed_at as f64) / f64::from(o.anim_ms)).clamp(0.0, 1.0) as f32
+    } else {
+        1.0
+    };
+    let anim = if o.on { o.anim_in } else { o.anim_out };
+    let e = if o.on {
+        1.0 - (1.0 - p).powi(3)
+    } else {
+        p * p * p
+    };
+    // t: 1 = fully shown, 0 = hidden.
+    let t = if anim == OverlayAnim::Cut {
+        if o.on || p < 1.0 {
+            1.0
+        } else {
+            0.0
+        }
+    } else if o.on {
+        e
+    } else {
+        1.0 - e
+    };
+    let off = 1.0 - t;
+    Some(OverlayLook {
+        opacity: o.opacity
+            * if matches!(anim, OverlayAnim::Fade | OverlayAnim::Zoom) {
+                t
+            } else {
+                1.0
+            },
+        dx: match anim {
+            OverlayAnim::SlideLeft => -1.1 * off,
+            OverlayAnim::SlideRight => 1.1 * off,
+            _ => 0.0,
+        },
+        dy: if anim == OverlayAnim::SlideUp {
+            1.1 * off
+        } else {
+            0.0
+        },
+        scale: if anim == OverlayAnim::Zoom {
+            0.6 + 0.4 * t
+        } else {
+            1.0
+        },
+        reveal: if anim == OverlayAnim::Wipe { t } else { 1.0 },
+    })
+}
+
+/// The overlay channels showing on a screen as layers, channel 1 first (as
+/// the compositor's `drawOverlay`: the box moved and sized by the animation,
+/// a wipe revealing it from the left).
+pub fn overlay_layers(show: &Show, screen: ScreenId, now: u64) -> Vec<Layer> {
+    let mut out = Vec::new();
+    for o in &show.overlays {
+        if !o.screens.contains(&screen) {
+            continue;
+        }
+        let Some(look) = overlay_look(o, now) else {
+            continue;
+        };
+        let Some(src) = o.source_id.as_ref().and_then(|id| show.source(id)) else {
+            continue;
+        };
+        if look.opacity <= 0.0 {
+            continue;
+        }
+        let f = o.frame;
+        let (bw, bh) = (f.w / 100.0, f.h / 100.0);
+        let x0 = f.x / 100.0 + look.dx * bw;
+        let y0 = f.y / 100.0 + look.dy * bh;
+        let (cx, cy) = (x0 + bw / 2.0, y0 + bh / 2.0);
+        let (hw, hh) = (bw * look.scale / 2.0, bh * look.scale / 2.0);
+        let frame = [cx - hw, cy - hh, cx + hw, cy + hh];
+        let shape = if look.reveal < 1.0 {
+            // Only the left part of the box shows (in the layer's box: the whole screen).
+            Shape::Rect {
+                t: 0.0,
+                r: (1.0 - (frame[0] + (frame[2] - frame[0]) * look.reveal)).clamp(0.0, 1.0),
+                b: 0.0,
+                l: 0.0,
+            }
+        } else {
+            Shape::Whole
+        };
+        let mut pictures = pictures_in(show, src, frame, false);
+        // A picture in a channel has no bars: the program shows around it (as recorded).
+        pictures.retain(|p| !matches!(p.content, Content::Bars(_)));
+        out.push(Layer {
+            source: src.id.clone(),
+            pictures,
+            opacity: look.opacity.clamp(0.0, 1.0),
+            shift: [0.0, 0.0],
+            scale: 1.0,
+            blur: 0.0,
+            shape,
+            luma: None,
+            top: false,
+        });
+    }
+    out
 }
 
 /// Layers marked `top` are drawn last (`zIndex: 1` on the web).
@@ -691,6 +831,100 @@ mod tests {
             2,
             "only cameras, files and streams are opened"
         );
+    }
+
+    #[test]
+    fn overlay_channels_go_over_the_picture_with_their_animation() {
+        let mut s = show();
+        s.sources
+            .push(src("name", SourceKind::Text(Default::default())));
+        s.overlays = lumora_engine::overlays::channels();
+        let o = &mut s.overlays[1];
+        o.source_id = Some(SourceId::new("name"));
+        o.frame = lumora_engine::overlays::Frame {
+            x: 6.0,
+            y: 72.0,
+            w: 50.0,
+            h: 16.0,
+        };
+        o.anim_in = OverlayAnim::SlideLeft;
+        o.anim_ms = 1000;
+        o.set_on(true, 1000);
+        // Halfway in: sliding from the left, fully opaque.
+        let sc = program_scene(&s, ScreenId::Live, 1500);
+        assert_eq!(sc.overlays.len(), 1);
+        let l = &sc.overlays[0];
+        assert_eq!(l.opacity, 1.0);
+        let f = l.pictures[0].placement.frame;
+        let t = 1.0 - 0.5f32.powi(3);
+        assert!((f[0] - (0.06 - 1.1 * (1.0 - t) * 0.5)).abs() < 1e-5);
+        assert!((f[3] - 0.88).abs() < 1e-5);
+        assert_eq!(
+            l.pictures[0].content,
+            Content::Graphic(SourceId::new("name"))
+        );
+        assert_eq!(sc.graphics().count(), 1);
+        // Not on the Back Screen; gone once it has animated out.
+        assert!(program_scene(&s, ScreenId::Back, 1500).overlays.is_empty());
+        s.overlays[1].set_on(false, 3000);
+        assert_eq!(program_scene(&s, ScreenId::Live, 3500).overlays.len(), 1);
+        assert!(program_scene(&s, ScreenId::Live, 4000).overlays.is_empty());
+    }
+
+    #[test]
+    fn overlay_looks_match_the_web() {
+        let mut o = Overlay {
+            source_id: Some(SourceId::new("x")),
+            anim_ms: 1000,
+            ..Overlay::default()
+        };
+        o.set_on(true, 0);
+        // Fade in: eased opacity.
+        let l = overlay_look(&o, 500).unwrap();
+        assert!((l.opacity - 0.875).abs() < 1e-5);
+        // Zoom: from 60 % size.
+        o.anim_in = OverlayAnim::Zoom;
+        assert!((overlay_look(&o, 0).unwrap().scale - 0.6).abs() < 1e-5);
+        // Wipe: revealed from the left.
+        o.anim_in = OverlayAnim::Wipe;
+        let l = overlay_look(&o, 500).unwrap();
+        assert!((l.reveal - 0.875).abs() < 1e-5 && l.opacity == 1.0);
+        // A cut out stays until its time is up, then goes.
+        o.anim_out = OverlayAnim::Cut;
+        o.set_on(false, 2000);
+        assert_eq!(overlay_look(&o, 2500).unwrap().opacity, 1.0);
+        assert!(overlay_look(&o, 3000).is_none());
+        // Nothing in the channel: never shows.
+        o.source_id = None;
+        o.on = true;
+        assert!(overlay_look(&o, 3000).is_none());
+    }
+
+    #[test]
+    fn a_wiping_channel_shows_only_its_left_part() {
+        let mut s = show();
+        s.sources
+            .push(src("logo", SourceKind::Text(Default::default())));
+        s.overlays = lumora_engine::overlays::channels();
+        let o = &mut s.overlays[0];
+        o.source_id = Some(SourceId::new("logo"));
+        o.frame = lumora_engine::overlays::Frame {
+            x: 50.0,
+            y: 0.0,
+            w: 50.0,
+            h: 50.0,
+        };
+        o.anim_in = OverlayAnim::Wipe;
+        o.anim_ms = 1000;
+        o.set_on(true, 0);
+        let sc = program_scene(&s, ScreenId::Live, 1000);
+        assert_eq!(sc.overlays[0].shape, Shape::Whole);
+        let sc = program_scene(&s, ScreenId::Live, 500);
+        let Shape::Rect { r, .. } = sc.overlays[0].shape else {
+            panic!("a wipe cuts")
+        };
+        let shown = 0.5 + 0.5 * (1.0 - 0.5f32.powi(3));
+        assert!((r - (1.0 - shown)).abs() < 1e-5);
     }
 
     #[test]

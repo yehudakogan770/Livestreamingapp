@@ -16,11 +16,19 @@ pub enum PixelFormat {
     Bgra8,
     /// B, G, R and a byte to ignore (Windows `RGB32` from Media Foundation: opaque).
     Bgrx8,
+    /// NV12 (cameras: Media Foundation's own format): the Y plane, then the U
+    /// and V of each 2 × 2 block side by side. 12 bits a pixel; even sizes.
+    Nv12,
 }
 
 impl PixelFormat {
-    pub const fn bytes_per_pixel(self) -> usize {
-        4
+    /// Bytes of a `w` × `h` frame.
+    pub const fn frame_len(self, w: u32, h: u32) -> usize {
+        let px = w as usize * h as usize;
+        match self {
+            PixelFormat::Nv12 => px * 3 / 2,
+            _ => px * 4,
+        }
     }
 }
 
@@ -132,7 +140,7 @@ impl VideoFrame {
         seq: u64,
         fill: impl FnOnce(&mut [u8]),
     ) -> Self {
-        let mut buf = pool.take(width as usize * height as usize * format.bytes_per_pixel());
+        let mut buf = pool.take(format.frame_len(width, height));
         fill(buf.as_mut_slice());
         VideoFrame {
             width,
