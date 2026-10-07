@@ -189,15 +189,14 @@ pub fn sequence_args(seq: &ImageSequence, fps: f64, out: &Path) -> Vec<String> {
         "-frames:v".into(),
         seq.frames.to_string(),
         "-vf".into(),
-        "pad=ceil(iw/2)*2:ceil(ih/2)*2,format=yuv420p".into(),
+        // ProRes 422 HQ (10-bit 4:2:2), so DPX and EXR plates keep room to grade.
+        "pad=ceil(iw/2)*2:ceil(ih/2)*2,format=yuv422p10le".into(),
         "-c:v".into(),
-        "libx264".into(),
-        "-preset".into(),
-        "medium".into(),
-        "-crf".into(),
-        "12".into(),
-        "-movflags".into(),
-        "+faststart".into(),
+        "prores_ks".into(),
+        "-profile:v".into(),
+        "3".into(),
+        "-vendor".into(),
+        "apl0".into(),
         out.to_string_lossy().into_owned(),
     ]
 }
@@ -220,7 +219,7 @@ pub fn make_sequence_video(ffmpeg: &Path, first: &Path, fps: f64) -> Result<Path
     } else {
         &seq.stem
     };
-    let out = folder.join(format!("{stem} ({} frames).mp4", seq.frames));
+    let out = folder.join(format!("{stem} ({} frames).mov", seq.frames));
     let status = quiet(ffmpeg)
         .args(sequence_args(&seq, fps, &out))
         .stdout(Stdio::null())
@@ -371,7 +370,7 @@ mod tests {
             frames: 4,
             stem: "plate".into(),
         };
-        let a = sequence_args(&s, 23.976, Path::new("/shots/plate.mp4"));
+        let a = sequence_args(&s, 23.976, Path::new("/shots/plate.mov"));
         assert!(a
             .windows(2)
             .any(|w| w[0] == "-start_number" && w[1] == "998"));
@@ -379,6 +378,8 @@ mod tests {
             .windows(2)
             .any(|w| w[0] == "-framerate" && w[1] == "23.976"));
         assert!(a.windows(2).any(|w| w[0] == "-frames:v" && w[1] == "4"));
-        assert_eq!(a.last().map(String::as_str), Some("/shots/plate.mp4"));
+        assert!(a.windows(2).any(|w| w[0] == "-c:v" && w[1] == "prores_ks"));
+        assert!(a.windows(2).any(|w| w[0] == "-profile:v" && w[1] == "3"));
+        assert_eq!(a.last().map(String::as_str), Some("/shots/plate.mov"));
     }
 }
