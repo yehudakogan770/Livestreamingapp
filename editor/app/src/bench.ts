@@ -18,8 +18,8 @@ export function bigProject(opts: { minutes?: number; cuts?: number; markers?: nu
   const ms = minutes * 60_000;
   const cams = [
     { id: 'wide', name: 'Wide', path: '/demo/wide.webm' },
-    { id: 'side', name: 'Stage left', path: '/demo/side.webm' },
-    { id: 'close', name: 'Podium close-up', path: '/demo/close.webm' },
+    { id: 'side', name: 'Stage', path: '/demo/side.webm' },
+    { id: 'close', name: 'Host close-up', path: '/demo/close.webm' },
     { id: 'aud', name: 'Audience', path: '/demo/wide.webm#aud' },
   ];
   // A steady pseudo-random sequence, so every run measures the same project.
@@ -35,7 +35,7 @@ export function bigProject(opts: { minutes?: number; cuts?: number; markers?: nu
     program: { path: null, mp4: '/demo/live.webm' },
     files: [
       ...cams.map((c) => ({ kind: 'camera' as const, sourceId: c.id, name: c.name, path: c.path, startMs: 0 })),
-      { kind: 'microphone' as const, sourceId: 'm1', name: 'Podium mic (sound)', path: '/demo/podium.webm', startMs: 0 },
+      { kind: 'microphone' as const, sourceId: 'm1', name: 'Host mic (sound)', path: '/demo/podium.webm', startMs: 0 },
       { kind: 'microphone' as const, sourceId: 'm2', name: 'Handheld 1 (sound)', path: '/demo/hand.webm', startMs: 0 },
     ],
     // Cuts that always change camera, so none are joined.

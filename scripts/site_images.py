@@ -24,7 +24,7 @@ from PIL import Image, features
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
 SCREENSHOTS = ['main', 'look', 'edit', 'studio-color']
 BACKGROUNDS = ['hall']
-FRAMES = ['podium', 'wide', 'audience', 'slides']
+FRAMES = ['speaker', 'wide', 'audience', 'slides']
 WIDTHS = (640, 1280, 1920)
 AVIF_Q = 80
 WEBP_Q = 92

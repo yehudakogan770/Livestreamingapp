@@ -144,8 +144,8 @@ const PAGE_HOOKS = () => {
     await A({ type: 'take', screen: 'live', transition: 'cut' });
     await A({ type: 'setPreview', screen: 'live', sourceId: 'cam-wide' });
     // A lower third on air.
-    const lt = { type: 'text', ...window.__text.TEXT_TEMPLATES[0].make(), text: 'Daniel Brooks', sub: 'Chief Product Officer' };
-    await A({ type: 'addSource', source: { id: 'lt', name: 'Daniel Brooks', kind: lt } });
+    const lt = { type: 'text', ...window.__text.TEXT_TEMPLATES[0].make(), text: 'Marco Reyes', sub: 'Host' };
+    await A({ type: 'addSource', source: { id: 'lt', name: 'Marco Reyes', kind: lt } });
     await A({ type: 'setOverlaySource', channel: 1, sourceId: 'lt' });
     await A({ type: 'setOverlayInNext', channel: 1, value: false });
     await A({ type: 'setOverlayOn', channel: 1, value: true });

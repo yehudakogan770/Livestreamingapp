@@ -4,13 +4,13 @@
 (() => {
   const CAMS = [
     ['cam-wide', 'Wide', '/perf-media/cam1.webm'],
-    ['cam-left', 'Stage left', '/perf-media/cam2.webm'],
-    ['cam-close', 'Podium close-up', '/perf-media/cam3.webm'],
+    ['cam-left', 'Stage', '/perf-media/cam2.webm'],
+    ['cam-close', 'Host close-up', '/perf-media/cam3.webm'],
     ['cam-aud', 'Audience', '/perf-media/cam4.webm'],
   ];
   // [id, name, level (0-1), kind]
   const MICS = [
-    ['mic-podium', 'Podium', 0.55, 'speech'],
+    ['mic-podium', 'Host', 0.55, 'speech'],
     ['mic-h1', 'HH 1', 0.25, 'speech'],
     ['mic-h2', 'HH 2', 0.03, 'idle'],
     ['mic-play', 'Video', 0.0, 'idle'],
