@@ -522,7 +522,14 @@ mod tests {
         );
         mb.fail("unplugged");
         assert_eq!(mb.health().state, SourceState::Failed("unplugged".into()));
-        mb.put(VideoFrame::build(&pool, 2, 2, PixelFormat::Rgba8, 1, |_| {}));
+        mb.put(VideoFrame::build(
+            &pool,
+            2,
+            2,
+            PixelFormat::Rgba8,
+            1,
+            |_| {},
+        ));
         assert_eq!(mb.health().state, SourceState::Live, "plugged back in");
     }
 
