@@ -38,7 +38,7 @@ export interface UiState {
   /** The grade node chosen on the Color page, and whether the viewer shows its matte. */
   gradeNode: string | null;
   showMatte: boolean;
-  dialog: null | 'export' | 'sequence' | 'newSequence' | 'help' | 'speed' | 'marker' | 'project' | 'share' | 'history' | 'transcribe';
+  dialog: null | 'export' | 'sequence' | 'newSequence' | 'help' | 'guide' | 'speed' | 'marker' | 'project' | 'share' | 'history' | 'transcribe';
   /** A short message at the bottom (what just happened). */
   note: string;
 }

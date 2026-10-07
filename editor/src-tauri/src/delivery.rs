@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use tauri::{Emitter, Manager, State};
 
-use crate::{is_work_file, manage, AppState};
+use crate::{finishing, is_work_file, manage, AppState};
 
 /// The encoders that work on this computer (hardware ones are tried for real, once).
 #[tauri::command]
@@ -84,6 +84,53 @@ pub async fn scene_cuts(
     let ffmpeg = state.ffmpeg()?;
     tauri::async_runtime::spawn_blocking(move || {
         manage::scene_cuts(&ffmpeg, Path::new(&path), threshold)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// How loud a finished file is (integrated loudness, true peak, loudness range).
+#[tauri::command]
+pub async fn measure_loudness(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<finishing::Loudness, String> {
+    let ffmpeg = state.ffmpeg()?;
+    tauri::async_runtime::spawn_blocking(move || {
+        finishing::measure_loudness(&ffmpeg, Path::new(&path))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Make the numbered image sequence a picture belongs to into one video (next to the pictures).
+#[tauri::command]
+pub async fn image_sequence(
+    state: State<'_, AppState>,
+    path: String,
+    fps: f64,
+) -> Result<String, String> {
+    let ffmpeg = state.ffmpeg()?;
+    tauri::async_runtime::spawn_blocking(move || {
+        finishing::make_sequence_video(&ffmpeg, Path::new(&path), fps)
+            .map(|p| p.to_string_lossy().into_owned())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Save one frame of a finished film as a JPEG thumbnail (`width` wide).
+#[tauri::command]
+pub async fn thumbnail(
+    state: State<'_, AppState>,
+    film: String,
+    seconds: f64,
+    width: u32,
+    out: String,
+) -> Result<(), String> {
+    let ffmpeg = state.ffmpeg()?;
+    tauri::async_runtime::spawn_blocking(move || {
+        finishing::make_thumbnail(&ffmpeg, Path::new(&film), seconds, width, Path::new(&out))
     })
     .await
     .map_err(|e| e.to_string())?

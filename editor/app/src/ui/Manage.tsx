@@ -17,6 +17,7 @@ import { fileName, folderOf, inApp, native } from '../native';
 import { Choice, Modal } from './controls';
 import { panels, usePanel } from './panels';
 import { QueuePanel } from './Deliver';
+import { ExportTimelineDialog, ImportTimelineDialog } from '../interchange/InterchangeDialogs';
 import { ShortcutEditor } from './ShortcutEditor';
 import type { Ui } from './state';
 import { useUi } from './state';
@@ -55,6 +56,10 @@ export function ManagePanels({ doc, ui, engine, autosaver }: { doc: Doc; ui: Ui;
       return <MediaInfoDialog doc={doc} media={p.media} engine={engine} onClose={close} usesOnly />;
     case 'smartBin':
       return <SmartBinDialog doc={doc} id={p.id} onClose={close} />;
+    case 'timelineExport':
+      return <ExportTimelineDialog doc={doc} ui={ui} onClose={close} />;
+    case 'timelineImport':
+      return <ImportTimelineDialog doc={doc} ui={ui} onClose={close} />;
   }
 }
 

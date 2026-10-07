@@ -21,12 +21,14 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
-import { duration } from '../model/build';
+import { duration, timecode } from '../model/build';
 import { captionTracks } from '../model/captions';
 import { rate } from '../model/seq';
 import { selectedIds, useDoc, type Doc } from '../doc';
 import { chaptersFrom, youtubeChapters } from '../export/chapters';
-import { estimateMb, planDelivery, rangeFor, type RangeKind } from '../export/deliver';
+import { estimateMb, planDelivery, planStems, rangeFor, reframeHint, type RangeKind } from '../export/deliver';
+import { STEM_NAMES, stemsIn } from '../export/loudness';
+import { openSmart } from '../smart/open';
 import { hardwareName } from '../export/encoders';
 import {
   allPresets,
@@ -117,6 +119,8 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
   const [embed, setEmbed] = useState(false);
   const [sidecar, setSidecar] = useState(false);
   const [toLumora, setToLumora] = useState(false);
+  const [stems, setStems] = useState(false);
+  const [thumbAt, setThumbAt] = useState<number | null>(null);
   const [settings, setSettings] = useState(false);
   const [naming, setNaming] = useState<string | null>(null);
   const [encoders, setEncoders] = useState<string[] | null>(inApp() ? null : []);
@@ -151,6 +155,9 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
   const v = p.video;
   const problems = presetProblems(p);
   const chapterList = chaptersFrom(s.markers, fps, range);
+  const stemKinds = p.audio ? stemsIn(s, range) : [];
+  const reframe = reframeHint(project, s.id, p);
+  const markersIn = s.markers.filter((m) => m.at >= range.from && m.at < range.to).sort((a, b) => a.at - b.at);
   const plan = (() => {
     if (problems.length || encoders === null) return null;
     try {
@@ -163,6 +170,7 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
         captions: { burn, embed, sidecar },
         encoders,
         app: inApp(),
+        thumbnailAt: thumbAt,
       });
     } catch (e) {
       return e instanceof Error ? e.message : String(e);
@@ -182,7 +190,7 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
       setOut(picked);
     }
     try {
-      const made = planDelivery(doc.project, {
+      const req = {
         preset: p,
         seq: s.id,
         range,
@@ -191,8 +199,13 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
         captions: { burn, embed, sidecar },
         encoders: encoders ?? [],
         app: inApp(),
-      });
+        thumbnailAt: thumbAt,
+      };
+      const made = planDelivery(doc.project, req);
+      // Stems are planned before the film is queued, so a problem stops both.
+      const stemPlans = stems && stemKinds.length ? planStems(doc.project, req) : [];
       renderQueue.add(made, s.name, p.name, toLumora && !!v);
+      for (const x of stemPlans) renderQueue.add(x.plan, s.name, x.name);
       ui.note(`${s.name} · ${p.name} is in the render queue`);
       close();
       if (andShow) panels.show({ kind: 'queue' });
@@ -308,6 +321,58 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
         {v && p.container === 'mp4' && (
           <label className="check form__check">
             <input type="checkbox" checked={toLumora} onChange={(e) => setToLumora(e.target.checked)} /> Put it in Lumora’s library, ready to show live
+          </label>
+        )}
+        {reframe && (
+          <p className="dlv__hint">
+            {reframe.ready ? (
+              <>
+                This crops the wide picture to the middle. There is a reframed version that follows the people: “{reframe.ready.name}”.{' '}
+                <button type="button" className="linkbtn" onClick={() => reframe.ready && setSeqId(reframe.ready.id)}>
+                  Export that one
+                </button>
+              </>
+            ) : (
+              <>
+                This crops the wide picture to the middle.{' '}
+                <button
+                  type="button"
+                  className="linkbtn"
+                  onClick={() => {
+                    close();
+                    openSmart('reframe', reframe.aspect);
+                  }}
+                >
+                  Auto reframe to {reframe.aspect}…
+                </button>{' '}
+                makes a version that follows the people in it.
+              </>
+            )}
+          </p>
+        )}
+        {stemKinds.length > 0 && (
+          <label className="check form__check" title="One 24-bit WAV for each, as long as the film, so they line up and add up to the mix">
+            <input type="checkbox" checked={stems} onChange={(e) => setStems(e.target.checked)} /> Also save stems:{' '}
+            {stemKinds.map((k) => STEM_NAMES[k]).join(', ')} (WAV)
+          </label>
+        )}
+        {v && p.container !== 'png' && p.container !== 'gif' && (
+          <label className="form__row">
+            <span>Thumbnail</span>
+            <select
+              className="text"
+              aria-label="Thumbnail from a marker"
+              value={thumbAt ?? ''}
+              onChange={(e) => setThumbAt(e.target.value === '' ? null : Number(e.target.value))}
+              disabled={!markersIn.length}
+            >
+              <option value="">{markersIn.length ? 'None' : 'None (add a marker on the frame you want)'}</option>
+              {markersIn.map((m) => (
+                <option key={m.id} value={m.at}>
+                  At marker “{m.name || 'Marker'}” ({timecode(m.at, s.fps)})
+                </option>
+              ))}
+            </select>
           </label>
         )}
         <label className="form__row">

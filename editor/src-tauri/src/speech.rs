@@ -110,7 +110,7 @@ const MT_FILES: &[(&str, &str, u64)] = &[
     ("config.json", "config.json", 500),
 ];
 
-/// Lumora's website keeps a copy of every model (tried first).
+// Lumora's website keeps a copy of every model (tried first).
 
 fn complete(p: &Path, min: u64) -> bool {
     std::fs::metadata(p).is_ok_and(|m| m.len() >= min)

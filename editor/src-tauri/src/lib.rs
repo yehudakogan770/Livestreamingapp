@@ -4,6 +4,7 @@
 mod delivery;
 mod encode;
 mod export;
+mod finishing;
 mod formats;
 mod frames;
 mod hwaccel;
@@ -577,6 +578,9 @@ pub fn run() {
             delivery::encode_close,
             delivery::encode_abort,
             delivery::scene_cuts,
+            delivery::measure_loudness,
+            delivery::image_sequence,
+            delivery::thumbnail,
             delivery::collect_files,
             delivery::recovery_write,
             delivery::recovery_read,

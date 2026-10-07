@@ -7,6 +7,8 @@ import { fileName, inApp, native, onImportProgress, onProxyProgress } from '../n
 import { wantsProxy } from '../player/files';
 import { shotsAfterImport } from '../manage/shots';
 import { ProxyScheduler } from '../cache/proxyqueue';
+import { manageNative } from '../manage/native';
+import { numberedRuns, rawCameraProblem, RAW_EXTENSIONS } from './camerafiles';
 
 export const MEDIA_EXTENSIONS = [
   'mp4',
@@ -46,6 +48,10 @@ export const MEDIA_EXTENSIONS = [
   'heic',
   'heif',
   'avif',
+  'dpx',
+  'exr',
+  // Camera RAW: not read, but chosen and dropped files say how to convert them.
+  ...RAW_EXTENSIONS,
 ];
 
 export interface Importing {
@@ -78,7 +84,29 @@ export function useImporting(): Importing[] {
 
 /** Add files to the project (in a bin), each made ready to edit. */
 export async function importFiles(doc: Doc, paths: string[], bin: string | null): Promise<string[]> {
-  const fresh = paths.filter((p) => !doc.project.media.some((m) => m.path === p));
+  let fresh = paths.filter((p) => !doc.project.media.some((m) => m.path === p));
+  // Camera RAW files: say how to convert them.
+  const raw = fresh.filter((p) => rawCameraProblem(p));
+  if (raw.length) importing.set([...importing.list, ...raw.map((path) => ({ path, name: fileName(path), done: 0, problem: rawCameraProblem(path) ?? '' }))]);
+  fresh = fresh.filter((p) => !rawCameraProblem(p));
+  // Numbered pictures (ten or more) come in as one clip at the sequence's frame rate.
+  const { sequences, rest } = numberedRuns(fresh);
+  if (sequences.length && inApp()) {
+    const fps = doc.project.sequences.find((s) => s.id === doc.project.open)?.fps ?? 30;
+    fresh = rest;
+    for (const seq of sequences) {
+      const key = `sequence:${seq.first}`;
+      importing.set([...importing.list, { path: key, name: `${fileName(seq.first)} and ${seq.count - 1} more frames`, done: 0 }]);
+      try {
+        const video = await manageNative.imageSequence(seq.first, fps);
+        importing.set(importing.list.filter((x) => x.path !== key));
+        if (!doc.project.media.some((m) => m.path === video)) fresh.push(video);
+      } catch (e) {
+        const problem = e instanceof Error ? e.message : String(e);
+        importing.set(importing.list.map((x) => (x.path === key ? { ...x, problem } : x)));
+      }
+    }
+  }
   if (!fresh.length) return [];
   importing.set([...importing.list, ...fresh.map((path) => ({ path, name: fileName(path), done: 0 }))]);
   const added: string[] = [];

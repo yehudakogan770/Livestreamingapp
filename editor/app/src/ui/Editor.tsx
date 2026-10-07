@@ -31,6 +31,7 @@ import { fileName, folderOf, inApp, native } from '../native';
 import { makeActions, type Actions } from './actions';
 import { PopMenu, type MenuEntry } from './controls';
 import { HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
+import { GuideDialog } from './GuideDialog';
 import { DeliverDialog, QueueChip } from './Deliver';
 import { ManagePanels } from './Manage';
 import { panels } from './panels';
@@ -334,6 +335,9 @@ export function Editor({
         { label: 'Export…', keys: 'Ctrl+M', run: () => ui.set({ dialog: 'export' }) },
         { label: 'Render queue…', run: () => panels.show({ kind: 'queue' }) },
         'sep',
+        { label: 'Import a timeline (FCPXML, XML, EDL, OTIO)…', run: () => panels.show({ kind: 'timelineImport' }) },
+        { label: 'Export timeline for other editors…', run: () => panels.show({ kind: 'timelineExport' }) },
+        'sep',
         { label: 'Collect files / archive…', disabled: !inApp(), run: () => panels.show({ kind: 'archive' }) },
         { label: 'Backups (autosaved versions)…', disabled: !autosaver || !inApp(), run: () => panels.show({ kind: 'backups' }) },
         'sep',
@@ -509,6 +513,7 @@ export function Editor({
     [
       'Help',
       () => [
+        { label: 'Help topics…', run: () => ui.set({ dialog: 'guide' }) },
         { label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) },
         { label: 'Check this computer…', run: openSystemCheck },
         'sep',
@@ -683,6 +688,7 @@ export function Editor({
       {u.dialog === 'newSequence' && <SequenceDialog doc={doc} ui={ui} fresh />}
       {u.dialog === 'speed' && <SpeedDialog doc={doc} ui={ui} actions={actions} />}
       {u.dialog === 'help' && <HelpDialog ui={ui} />}
+      {u.dialog === 'guide' && <GuideDialog onClose={() => ui.set({ dialog: null })} />}
       {u.dialog === 'share' && (
         <ShareDialog
           doc={doc}

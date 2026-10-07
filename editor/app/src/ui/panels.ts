@@ -11,7 +11,9 @@ export type Panel =
   | { kind: 'workspaces' }
   | { kind: 'mediaInfo'; media: string }
   | { kind: 'uses'; media: string }
-  | { kind: 'smartBin'; id: string | null };
+  | { kind: 'smartBin'; id: string | null }
+  | { kind: 'timelineExport' }
+  | { kind: 'timelineImport' };
 
 class Panels {
   open: Panel | null = null;

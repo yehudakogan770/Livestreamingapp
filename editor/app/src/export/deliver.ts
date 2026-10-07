@@ -9,7 +9,9 @@ import { chaptersFrom, ffmetadata } from './chapters';
 import { fallbackEncoder, pickVideoEncoder, type EncoderChoice } from './encoders';
 import { suggestedMbps, type ExportSettings } from './exporter';
 import { audioArgs, loudnormFilter, needsFfmpegPicture, outputSize, pictureArgs, pictureFile, renderSize } from './ffargs';
-import { numbered, type DeliveryPreset } from './presets';
+import { aspectSize, type Aspect } from '../smart/reframe';
+import { stemPath, stemProject, stemsIn, STEM_NAMES, type StemKind } from './loudness';
+import { BUILT_IN, numbered, type DeliveryPreset } from './presets';
 
 export type RangeKind = 'all' | 'marked' | 'selected';
 
@@ -44,6 +46,8 @@ export interface DeliveryRequest {
   encoders: readonly string[];
   /** Running in the program (FFmpeg is there). */
   app: boolean;
+  /** Also save this frame of the sequence (from a marker) as a JPEG thumbnail next to the film. */
+  thumbnailAt?: number | null;
 }
 
 export interface DeliveryPlan {
@@ -57,6 +61,10 @@ export interface DeliveryPlan {
   sidecar: Cue[];
   /** Things to know before it starts (none stop it). */
   notes: string[];
+  /** The finished file's loudness is measured against this (null: measured, no target); absent: not measured (no sound). */
+  loudnessTarget?: { lufs: number; truePeak: number } | null;
+  /** A thumbnail to save from the finished film. */
+  thumbnail?: { seconds: number; width: number; out: string };
 }
 
 const LANG: Record<string, string> = {
@@ -114,6 +122,8 @@ export function planDelivery(p: Project, req: DeliveryRequest): DeliveryPlan {
   });
   const loudness = preset.loudness !== null ? loudnormFilter(preset.loudness, preset.truePeak) : false;
   const sidecar = req.captions.sidecar ? cues : [];
+  const thumb = thumbnailFor(req, s, preset);
+  const measured = preset.audio ? { loudnessTarget: preset.loudness !== null ? { lufs: preset.loudness, truePeak: preset.truePeak } : null } : {};
 
   if (!v) {
     if (!preset.audio) throw new Error('This preset makes nothing.');
@@ -133,6 +143,8 @@ export function planDelivery(p: Project, req: DeliveryRequest): DeliveryPlan {
       encoder: null,
       sidecar,
       notes,
+      ...measured,
+      ...thumb,
     };
   }
 
@@ -154,6 +166,8 @@ export function planDelivery(p: Project, req: DeliveryRequest): DeliveryPlan {
       encoder: null,
       sidecar,
       notes,
+      ...measured,
+      ...thumb,
     };
   }
   const enc = pickVideoEncoder(v.codec, v.bitDepth, v.hardware, req.encoders);
@@ -185,6 +199,8 @@ export function planDelivery(p: Project, req: DeliveryRequest): DeliveryPlan {
     encoder: enc,
     sidecar,
     notes,
+    ...measured,
+    ...thumb,
   };
 }
 
@@ -203,4 +219,51 @@ export function estimateMb(preset: DeliveryPreset, seq: Sequence, seconds: numbe
   else if (v.codec === 'gif') mbps = (px * 0.5) / 1e6;
   else mbps = v.rate.mode === 'quality' ? suggestedMbps(out.height, seq.fps, v.rate.q >= 85 ? 'high' : v.rate.q >= 65 ? 'good' : 'small') : v.rate.mbps;
   return ((mbps + audioMbps) * seconds) / 8;
+}
+
+/** Stems for a delivery: one 24-bit WAV for each of dialogue, music and effects that has sound in the range (not loudness-matched, so they add up to the mix). */
+export function planStems(p: Project, req: DeliveryRequest): { stem: StemKind; name: string; plan: DeliveryPlan }[] {
+  const s = p.sequences.find((x) => x.id === req.seq);
+  const wav = BUILT_IN.find((x) => x.id === 'wav') as DeliveryPreset;
+  if (!s) return [];
+  return stemsIn(s, req.range).map((stem) => ({
+    stem,
+    name: `${STEM_NAMES[stem]} stem`,
+    plan: planDelivery(stemProject(p, s.id, stem), {
+      ...req,
+      preset: wav,
+      out: stemPath(req.out, stem),
+      chapters: false,
+      captions: { burn: false, embed: false, sidecar: false },
+    }),
+  }));
+}
+
+/** The thumbnail a delivery saves (a marker's frame, from the finished film): YouTube wants 1280 wide. */
+export function thumbnailFor(req: DeliveryRequest, s: Sequence, preset: DeliveryPreset): { thumbnail?: { seconds: number; width: number; out: string } } {
+  const at = req.thumbnailAt;
+  const v = preset.video;
+  if (at === null || at === undefined || !v || preset.container === 'png' || preset.container === 'gif') return {};
+  if (at < req.range.from || at >= req.range.to) return {};
+  const out = outputSize(s, v);
+  const width = out.width >= out.height ? Math.min(1280, out.width) : Math.min(1080, out.width);
+  return { thumbnail: { seconds: (at - req.range.from) / rate(s), width, out: `${req.out.replace(/\.[^.\\/]+$/, '')} - thumbnail.jpg` } };
+}
+
+/**
+ * A vertical, square or 4:5 preset for a wide sequence: its picture is cropped
+ * to the middle. Auto reframe makes a version that follows the people; this
+ * says which shape, and the reframed sequence when there already is one.
+ */
+export function reframeHint(p: Project, seq: string, preset: DeliveryPreset): { aspect: Aspect; ready: Sequence | null } | null {
+  const s = p.sequences.find((x) => x.id === seq);
+  const v = preset.video;
+  if (!s || !v || v.width === null || v.height === null) return null;
+  const want = v.width / v.height;
+  const have = s.width / s.height;
+  if (want > 1.01 || have < 1.2) return null;
+  const aspect: Aspect = Math.abs(want - 1) < 0.02 ? '1:1' : Math.abs(want - 0.8) < 0.02 ? '4:5' : '9:16';
+  const size = aspectSize(s, aspect);
+  const ready = p.sequences.find((x) => x.id !== s.id && x.name === `${s.name} (${aspect})` && x.width * size.height === x.height * size.width) ?? null;
+  return { aspect, ready };
 }
