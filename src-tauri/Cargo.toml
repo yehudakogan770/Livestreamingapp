@@ -18,6 +18,7 @@ lumora-crash = { path = "../crates/crash" }
 lumora-selftest = { path = "../crates/selftest" }
 lumora-syscheck = { path = "../crates/syscheck" }
 lumora-testevent = { path = "../crates/testevent" }
+lumora-live-engine = { path = "../crates/live-engine" }
 tauri = { version = "2", features = ["protocol-asset"] }
 serde.workspace = true
 serde_json.workspace = true

@@ -10,6 +10,7 @@ mod events;
 mod export;
 mod iso;
 mod library;
+mod live;
 mod media;
 mod ndi;
 mod outputs;
@@ -229,6 +230,7 @@ fn apply(app: &tauri::AppHandle, state: &AppState, action: Action) -> Result<(),
         if let Some(w) = app.get_webview_window(&outputs::label(screen)) {
             let _ = outputs::place(app, &w, &snapshot.show, screen);
         }
+        app.state::<live::Live>().place(app, &snapshot.show, screen);
     }
     announce(app, state, &snapshot);
     Ok(())
@@ -240,6 +242,9 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.browsers.sync(&snapshot.show);
     state.streams.sync(&snapshot.show);
     state.desktop.sync(&snapshot.show);
+    if let Some(live) = app.try_state::<live::Live>() {
+        live.sync(&snapshot.show);
+    }
     let _ = app.emit("show-changed", snapshot);
     if let Ok(json) = serde_json::to_string(snapshot) {
         state.remote.broadcast(&json);
@@ -362,7 +367,7 @@ fn list_displays(app: tauri::AppHandle) -> Vec<Display> {
 /// Screens whose output window is open.
 #[tauri::command]
 fn open_outputs(app: tauri::AppHandle) -> Vec<ScreenId> {
-    outputs::open_screens(&app)
+    live::all_open(&app)
 }
 
 #[tauri::command]
@@ -372,6 +377,10 @@ fn open_output(
     app: tauri::AppHandle,
 ) -> Result<(), String> {
     let show = lock(&state).show().clone();
+    // Settings → Engine → Unified (beta): the engine shows it in its own window.
+    if app.state::<live::Live>().open_output(&app, &show, screen)? {
+        return Ok(());
+    }
     outputs::open(&app, &show, screen).map_err(|e| e.to_string())
 }
 
@@ -446,6 +455,9 @@ fn multiview_open(app: tauri::AppHandle) -> bool {
 
 #[tauri::command]
 fn close_output(screen: ScreenId, app: tauri::AppHandle) -> Result<(), String> {
+    if app.state::<live::Live>().close_output(&app, screen) {
+        return Ok(());
+    }
     outputs::close(&app, screen).map_err(|e| e.to_string())
 }
 
@@ -1099,6 +1111,7 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
+            app.manage(live::Live::new(&dir, ffmpeg.clone()));
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -1134,6 +1147,7 @@ pub fn run() {
                     .unwrap_or_default();
                 state.capture.set_hw_encoders(working);
             });
+            live::start_saved(app.handle());
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
             // The CI self-test: close (with a failed result) if it never finishes.
@@ -1233,7 +1247,12 @@ pub fn run() {
             remote_app_state,
             streamdeck_status,
             streamdeck_install,
-            streamdeck_dismiss
+            streamdeck_dismiss,
+            live::live_engine_info,
+            live::live_engine_set_mode,
+            live::live_engine_preview,
+            live::live_engine_health,
+            live::live_engine_test_record
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

@@ -2122,6 +2122,7 @@ dependencies = [
  "libloading 0.8.9",
  "lumora-crash",
  "lumora-engine",
+ "lumora-live-engine",
  "lumora-selftest",
  "lumora-syscheck",
  "lumora-testevent",
