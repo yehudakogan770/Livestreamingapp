@@ -429,6 +429,12 @@ pub fn live_engine_set_mode(
     if live.mode() == mode {
         return Ok(live.info());
     }
+    // Each engine records and streams its own way: switching in the middle would end them.
+    let st = state.capture.status();
+    if st.recording.is_some() || st.streaming.is_some() || st.vertical.is_some() || st.ndi.is_some()
+    {
+        return Err("Stop recording, streaming and NDI before switching engines.".to_owned());
+    }
     let show = crate::lock(&state).show().clone();
     let data = serde_json::to_string_pretty(&Saved { mode }).map_err(|e| e.to_string())?;
     write_file_atomic(&live.file, &data).map_err(|e| e.to_string())?;
