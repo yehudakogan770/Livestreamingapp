@@ -27,6 +27,8 @@ export interface EngineStats {
   adapter: { name: string; backend: string; kind: string } | null;
   outputs: string[];
   feed: { framesIn: number; framesDropped: number; bytesOut: number; error: string | null } | null;
+  /** The graphics from the overlay renderers. */
+  overlay: { framesPerS: number; mbPerS: number; latencyMs: number; planes: number; refused: number };
   notes: string[];
   error: string | null;
 }
@@ -34,6 +36,8 @@ export interface EngineStats {
 export interface EngineInfo {
   mode: EngineMode;
   running: boolean;
+  /** The size and rate the engine draws every screen at (null when it isn't running). */
+  size: { width: number; height: number; fps: number } | null;
   error: string | null;
   stats: EngineStats | null;
   /** The engine shows the Live and Back Screens in its own windows (Windows). */

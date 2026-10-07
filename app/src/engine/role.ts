@@ -14,6 +14,12 @@ export function isMultiview(): boolean {
   return isInsideLumora() ? getCurrentWindow().label === 'output-multiview' : new URLSearchParams(window.location.search).get('output') === 'multiview';
 }
 
+/** The unified engine's hidden graphics renderer for a screen (`overlay-live`, `overlay-back`), or null. */
+export function overlayScreen(): 'live' | 'back' | null {
+  const name = isInsideLumora() ? getCurrentWindow().label.replace(/^overlay-/, '') : new URLSearchParams(window.location.search).get('overlay');
+  return name === 'live' || name === 'back' ? name : null;
+}
+
 export function outputScreen(): ScreenId | null {
   const name = isInsideLumora() ? getCurrentWindow().label.replace(/^output-/, '') : new URLSearchParams(window.location.search).get('output');
   return SCREENS.find((s) => s === name) ?? null;

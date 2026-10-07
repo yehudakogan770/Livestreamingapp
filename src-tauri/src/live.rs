@@ -7,6 +7,10 @@
 //! In Unified mode:
 //! - the Live and Back Screens' output windows are the engine's own native
 //!   windows (the Monitor, all words, stays a WebView window for now);
+//! - each engine screen's graphics (titles, lower thirds, countdowns…) are
+//!   drawn by a hidden overlay renderer window (`overlay-live`,
+//!   `overlay-back`: `app/src/engine/overlayRenderer.ts`) that sends what
+//!   changed (`live_engine_graphics`);
 //! - the control window's camera pictures are the engine's small previews
 //!   (`live_engine_preview`), so the WebView never opens a camera itself;
 //! - each input's health comes from the engine (`live_engine_health`), for
@@ -24,7 +28,7 @@ use live_engine::present::Placement;
 use live_engine::source::SourceState;
 use lumora_engine::{ScreenId, Show};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use crate::capture::Kind;
 use crate::encode::{self, Codec, Rate, VideoEncode};
@@ -65,12 +69,22 @@ fn lock(m: &Mutex<Inner>) -> MutexGuard<'_, Inner> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
+/// The size and rate every engine screen is drawn at.
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct Size {
+    pub width: u32,
+    pub height: u32,
+    pub fps: u32,
+}
+
 /// What the Engine settings show.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Info {
     pub mode: Mode,
     pub running: bool,
+    /// The engine's screens (for the overlay renderers); None when it isn't running.
+    pub size: Option<Size>,
     pub error: Option<String>,
     pub stats: Option<Stats>,
     /// The engine shows the Live and Back Screens in its own windows here (Windows).
@@ -91,6 +105,60 @@ pub struct Health {
 /// The screens the engine draws in its own windows (the stage monitor is all words: still a WebView).
 fn native_screen(screen: ScreenId) -> bool {
     cfg!(windows) && matches!(screen, ScreenId::Live | ScreenId::Back)
+}
+
+/// The hidden graphics renderer window of a screen.
+pub fn renderer_label(screen: ScreenId) -> &'static str {
+    match screen {
+        ScreenId::Back => "overlay-back",
+        _ => "overlay-live",
+    }
+}
+
+/// The overlay renderers' web view runs its own browser process (its own data
+/// folder) so it can be told never to slow down while hidden: a hidden page's
+/// timers and drawing are otherwise throttled.
+const RENDERER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection \
+--autoplay-policy=no-user-gesture-required --disable-background-timer-throttling \
+--disable-renderer-backgrounding --disable-backgrounding-occluded-windows";
+
+/// Open (or close) the screens' overlay renderers: the Live Screen's while
+/// the engine runs (the recording and stream need its graphics too), the
+/// Back Screen's while the engine shows it.
+pub fn sync_renderers(app: &AppHandle) {
+    let Some(live) = app.try_state::<Live>() else {
+        return;
+    };
+    let (running, native) = {
+        let inner = lock(&live.inner);
+        (inner.runner.is_some(), inner.native.clone())
+    };
+    for screen in [ScreenId::Live, ScreenId::Back] {
+        let wanted = running && (screen == ScreenId::Live || native.contains(&screen));
+        let label = renderer_label(screen);
+        let open = app.get_webview_window(label);
+        match (wanted, open) {
+            (true, None) => {
+                let mut b = WebviewWindowBuilder::new(app, label, WebviewUrl::default())
+                    .title(format!("Lumora — {} graphics", screen.label()))
+                    .visible(false)
+                    .focused(false)
+                    .skip_taskbar(true)
+                    .inner_size(320.0, 180.0)
+                    .additional_browser_args(RENDERER_ARGS);
+                if let Ok(dir) = app.path().app_local_data_dir() {
+                    b = b.data_directory(dir.join("overlay-webview"));
+                }
+                if let Err(e) = b.build() {
+                    eprintln!("lumora: the {screen:?} graphics renderer could not start: {e}");
+                }
+            }
+            (false, Some(w)) => {
+                let _ = w.close();
+            }
+            _ => {}
+        }
+    }
 }
 
 impl Live {
@@ -149,9 +217,15 @@ impl Live {
 
     fn info(&self) -> Info {
         let inner = lock(&self.inner);
+        let c = Config::default();
         Info {
             mode: inner.mode,
             running: inner.runner.is_some(),
+            size: inner.runner.as_ref().map(|_| Size {
+                width: c.width,
+                height: c.height,
+                fps: c.fps,
+            }),
             error: inner.error.clone(),
             stats: inner.runner.as_ref().map(|r| r.stats()),
             native_outputs: cfg!(windows),
@@ -201,6 +275,7 @@ impl Live {
             }
         }
         notify(app);
+        sync_renderers(app);
         Ok(true)
     }
 
@@ -217,6 +292,7 @@ impl Live {
                 let _ = r.set_output(screen, None);
             }
             notify(app);
+            sync_renderers(app);
         }
         was
     }
@@ -255,6 +331,7 @@ pub fn start_saved(app: &AppHandle) {
     };
     let show = crate::lock(&state).show().clone();
     l.start(&show);
+    sync_renderers(app);
 }
 
 #[tauri::command]
@@ -308,9 +385,24 @@ pub fn live_engine_set_mode(
         }
     }
     notify(&app);
+    sync_renderers(&app);
     let info = live.info();
     let _ = app.emit("live-engine-changed", &info);
     Ok(info)
+}
+
+/// Changed graphics from a screen's overlay renderer (the wire format in
+/// `crates/live-engine/src/overlay.rs`); checked before the engine takes it.
+#[tauri::command]
+pub fn live_engine_graphics(
+    request: tauri::ipc::Request<'_>,
+    live: State<'_, Live>,
+) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let r = live.runner().ok_or("The unified engine is not running.")?;
+    r.graphics(bytes.clone())
 }
 
 /// A preview tile as JPEG (`program/live`, `next/back`, `source/<id>`); empty when there is none yet.
