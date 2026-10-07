@@ -107,7 +107,7 @@ the compositor, and the Standard engine keeps working the whole time.
 | Frame pool       | `frame.rs`                                                                                                    | Pixel buffers reused (one allocation per buffer size, tested).                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | Compositor       | `gpu.rs`, `compose.wgsl`                                                                                      | One WGSL program: a quad per picture; shape (wipe rect, iris, diamond), luma wipe (patterns computed in the shader), blur, opacity, premultiplied "over"; bars around contained pictures drawn only outside the picture (so a fading picture never shows them through itself). Overlay layer per screen. Previews: every screen and input drawn small into one atlas, read back once.                                                                                                                        |
 | Outputs          | `present.rs`                                                                                                  | Windows: borderless popup covering the assigned display (or a 960×540 window), `WS_EX_NOACTIVATE` (never takes focus from the control window), Alt+F4 ignored (an audience screen never closes by accident); wgpu surface, Mailbox/Immediate present (three displays never stall the engine on vsync); letterboxed.                                                                                                                                                                                          |
-| Encoder feed     | `encoder.rs`                                                                                                  | Read back the Live Screen → raw RGBA into FFmpeg (wall-clock timestamps, CFR out; a frame FFmpeg can't take is dropped and counted, never queued without end) → encoded Matroska chunks → `capture.rs`'s normal recording/stream session (so files, destinations, reconnects and failure reporting are today's). Encoder arguments from `encode.rs` (hardware family picked as today).                                                                                                                       |
+| Encoder feed     | `encoder.rs`                                                                                                  | Read back the Live Screen (pipelined: one frame late, never a stall) → raw RGBA into FFmpeg (wall-clock timestamps, CFR out; a frame FFmpeg can't take is dropped and counted, never queued without end) → encoded Matroska chunks → `capture.rs`'s normal recording/stream session (so files, destinations, reconnects and failure reporting are today's). Encoder arguments from `encode.rs` (hardware family picked as today).                                                                            |
 | Engine loop      | `engine.rs`                                                                                                   | `LiveEngine::frame(now)` and `Runner` (own thread, fixed rate, catches a panicking frame and carries on).                                                                                                                                                                                                                                                                                                                                                                                                    |
 | App glue         | `src-tauri/src/live.rs`                                                                                       | Mode saved in `live-engine.json`; `live_engine_info / set_mode / preview / health / test_record`; `open_output`/`close_output` route Live/Back to the engine in Unified mode; show changes forwarded from `announce`.                                                                                                                                                                                                                                                                                        |
 | UI               | `app/src/engine/unified.ts`, `components/EnginePreview.tsx`, `views/EngineDialog.tsx`, `views/engineHost.tsx` | Settings → Engine; in Unified mode `SourceView` shows cameras from the engine's previews (the WebView never opens them); `EngineHealthWatch` feeds `inputHealth` (the backup lineup) from the engine; the test event says it is not supported in Unified (beta).                                                                                                                                                                                                                                             |
@@ -146,14 +146,14 @@ does: wall-clock timestamps on both).
 **Per frame, 1080p60, 4 cameras, 3 screens + encoder** (estimates for a
 mid-range discrete GPU, to be confirmed on the hardware matrix below):
 
-| Work                    | Cost                                                                  | Note                                                                                                                                            |
-| ----------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Upload 4 camera frames  | 4 × 8.3 MB RGBA = 2 GB/s over PCIe (≈ 15–20 % of PCIe 3 x16)          | Phase 2: NV12 from MF (12 bit/px: 0.75 GB/s) converted in the shader (Studio's `yuv.rs` has it). On integrated GPUs uploads are memory copies.  |
-| Draw 3 screens + 2 Next | ~10 full-screen quads at 1080p ≈ 20 Mpx of simple fragments           | < 1 ms on any discrete GPU; ~2 ms on Intel Iris Xe.                                                                                             |
-| Present 2 windows       | blits                                                                 | < 0.3 ms                                                                                                                                        |
-| Encoder read-back       | 8.3 MB/frame = 500 MB/s download, ~1–2 ms stall (synchronous map)     | Phase 2: NV12 on the GPU before read-back (190 MB/s) and a two-buffer ring (no stall); Phase 3: hand the D3D texture to NVENC/AMF/QSV directly. |
-| Previews                | one 1920×540 atlas read back 10×/s + JPEG of ~9 tiles                 | ~1 ms every 6th frame                                                                                                                           |
-| Engine CPU              | scene maths for 3 screens: **0.01 ms**; the rest is driver submission | Measured (below).                                                                                                                               |
+| Work                    | Cost                                                                                   | Note                                                                                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Upload 4 camera frames  | 4 × 8.3 MB RGBA = 2 GB/s over PCIe (≈ 15–20 % of PCIe 3 x16)                           | Phase 2: NV12 from MF (12 bit/px: 0.75 GB/s) converted in the shader (Studio's `yuv.rs` has it). On integrated GPUs uploads are memory copies. |
+| Draw 3 screens + 2 Next | ~10 full-screen quads at 1080p ≈ 20 Mpx of simple fragments                            | < 1 ms on any discrete GPU; ~2 ms on Intel Iris Xe.                                                                                            |
+| Present 2 windows       | blits                                                                                  | < 0.3 ms                                                                                                                                       |
+| Encoder read-back       | 8.3 MB/frame = 500 MB/s download; pipelined (two buffers, one frame late), so no stall | Phase 2: NV12 on the GPU before read-back (190 MB/s); Phase 3: hand the D3D texture to NVENC/AMF/QSV directly.                                 |
+| Previews                | one 1920×540 atlas read back 10×/s + JPEG of ~9 tiles                                  | ~1 ms every 6th frame                                                                                                                          |
+| Engine CPU              | scene maths for 3 screens: **0.01 ms**; the rest is driver submission                  | Measured (below).                                                                                                                              |
 
 The WebView path, by comparison, spends its time in the control window's main
 thread (94 % busy with recording on a software canvas, `PERFORMANCE.md`) plus
@@ -171,17 +171,24 @@ four-way split; Monitor and Live have an overlay re-uploaded every second;
 three screens drawn and copied to three stand-in windows; Live read back every
 frame for the encoder; previews 10×/s.
 
-Measured on the development container (4 vCPU shared with other jobs, load
-≈ 10, **no GPU: llvmpipe, Mesa's software rasterizer, through OpenGL**), so
-every pixel is drawn by the CPU — these numbers are a floor for correctness and
-an upper bound for cost, not a prediction for an event PC:
+Measured on the development container (4 vCPU shared with other jobs,
+**no GPU: llvmpipe, Mesa's software rasterizer, through OpenGL**), so every
+pixel is drawn by the CPU — these numbers are a floor for correctness and an
+upper bound for cost, not a prediction for an event PC. The machine's load
+moved a lot between runs (shown), so compare rows with the same load only:
 
-| Run                                   | ms / frame (avg / p95) | Of which                                               |
-| ------------------------------------- | ---------------------- | ------------------------------------------------------ |
-| 1080p, 300 frames                     | 342 / 576              | upload 51, draw 64, outputs 156, encoder read-back 107 |
-| 640×360, 120 frames                   | 88.7 / 131             | upload 30, draw 19, outputs 26, read-back 11           |
-| 640×360 + FFmpeg x264 feed, 90 frames | 98.9 / 161             | 90 frames in, **0 dropped**                            |
-| Scene maths, 3 screens (CPU)          | **0.009 ms**           |                                                        |
+| Run (load average)                                | ms / frame (avg / p95) | Of which                                               |
+| ------------------------------------------------- | ---------------------- | ------------------------------------------------------ |
+| 1080p, 300 frames, synchronous read-back (≈ 10)   | 342 / 576              | upload 51, draw 64, outputs 156, encoder read-back 107 |
+| 1080p, 150 frames, pipelined read-back (≈ 5)      | 149 / 185              | upload 26, draw 43, outputs 73, encoder read-back 5    |
+| 640×360, 120 frames, synchronous read-back (≈ 10) | 88.7 / 131             | upload 30, draw 19, outputs 26, read-back 11           |
+| 640×360, 120 frames, pipelined read-back (≈ 5)    | 53.7 / 66              | upload 26, draw 11, outputs 15, read-back 0.6          |
+| 640×360 + FFmpeg x264 feed, 90 frames (≈ 10)      | 98.9 / 161             | 90 frames in, **0 dropped**                            |
+| Scene maths, 3 screens (CPU only, any run)        | **0.01 ms**            |                                                        |
+
+The encoder read-back is pipelined (`Compositor::read_pipelined`: two buffers
+take turns, each frame returns the previous frame's pixels, so the engine
+never waits for the copy): 107 → 5 ms at 1080p here, part of it the lower load.
 
 For comparison, the web numbers in `PERFORMANCE.md` were measured on the same
 kind of GPU-less VM: control window 17.4 ms of main thread per frame without
@@ -219,7 +226,8 @@ late frames).
   pool reuse, encoder arguments and a real FFmpeg encode (skipped without
   FFmpeg).
 - `tests/gpu.rs`: offscreen renders read back (fade mixes, wipe halves, slide
-  moves, blank/flash cover, contain pillarboxes, overlay over inputs, the whole
+  moves, blank/flash cover, contain pillarboxes, overlay over inputs, pipelined
+  read-back one frame late, the whole
   engine with previews). Skipped with a note when there is no adapter; runs on
   llvmpipe on Linux CI; on Windows with `LUMORA_GPU_TESTS=1` (WARP), as the
   Studio engine's tests.

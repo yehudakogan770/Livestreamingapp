@@ -203,7 +203,7 @@ fn main() {
         let t2 = Instant::now();
         // The encoder's copy (when no FFmpeg feed is running: just the read-back).
         if !encode {
-            let _ = engine.gpu.read(Dest::Target(0));
+            let _ = engine.gpu.read_pipelined(Dest::Target(0));
         } else {
             engine.gpu.finish();
         }

@@ -126,6 +126,42 @@ fn a_wipe_shows_the_new_input_on_the_left() {
 }
 
 #[test]
+fn pipelined_read_back_is_one_frame_late() {
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    let red = ScreenScene {
+        layers: vec![layer("red", 1.0)],
+        ..ScreenScene::default()
+    };
+    let blue = ScreenScene {
+        layers: vec![layer("blue", 1.0)],
+        ..ScreenScene::default()
+    };
+    g.ensure_target(0, W, H);
+    let paint = |g: &mut Compositor, sc: &ScreenScene| {
+        g.render(&[Pass {
+            dest: Dest::Target(0),
+            viewport: None,
+            paint: Paint::Scene {
+                scene: sc,
+                overlay: None,
+            },
+        }]);
+    };
+    paint(&mut g, &red);
+    assert!(
+        g.read_pipelined(Dest::Target(0)).is_none(),
+        "nothing yet on the first call"
+    );
+    paint(&mut g, &blue);
+    let (_, _, img) = g.read_pipelined(Dest::Target(0)).expect("the red frame");
+    assert!(near(px(&img, 5, 5), [255, 0, 0, 255]));
+    paint(&mut g, &red);
+    let (_, _, img) = g.read_pipelined(Dest::Target(0)).expect("the blue frame");
+    assert!(near(px(&img, 5, 5), [0, 0, 255, 255]));
+}
+
+#[test]
 fn blank_and_panic_cover_everything() {
     let Some(mut g) = gpu() else { return };
     setup(&mut g);

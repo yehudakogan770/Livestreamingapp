@@ -487,8 +487,9 @@ impl LiveEngine {
         }
         let t3 = Instant::now();
         // 5. The encoder, and the previews.
+        // One frame late, so the engine never waits for the GPU to finish the copy.
         if let Some((s, feed)) = &self.feed {
-            if let Ok((_, _, px)) = self.gpu.read(Dest::Target(program_target(*s))) {
+            if let Some((_, _, px)) = self.gpu.read_pipelined(Dest::Target(program_target(*s))) {
                 feed.push(px);
             }
         }
