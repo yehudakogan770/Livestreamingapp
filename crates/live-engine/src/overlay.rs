@@ -241,8 +241,20 @@ pub fn parse(bytes: Vec<u8>) -> Result<Message, String> {
     Ok(Message { bytes, records })
 }
 
+/// One record to write: what, which screen, the plane's name and size, the
+/// time it was drawn for, and its rectangles (`[x, y, w, h]` and their pixels).
+pub type OutRecord<'a> = (
+    Op,
+    ScreenId,
+    &'a str,
+    u32,
+    u32,
+    u64,
+    Vec<([u32; 4], &'a [u8])>,
+);
+
 /// Write a message (the renderer's side, in Rust: tests and the benchmark).
-pub fn encode(records: &[(Op, ScreenId, &str, u32, u32, u64, Vec<([u32; 4], &[u8])>)]) -> Vec<u8> {
+pub fn encode(records: &[OutRecord<'_>]) -> Vec<u8> {
     let mut out = Vec::new();
     out.extend_from_slice(MAGIC);
     out.extend_from_slice(&(records.len() as u16).to_le_bytes());

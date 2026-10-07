@@ -2,7 +2,11 @@
 //! WARP): scenes drawn offscreen and read back. Skipped, with a note, on a
 //! computer with no graphics adapter at all.
 
+use std::sync::{Arc, Mutex};
+
+use live_engine::encoder::{EncoderFeed, FeedArgs};
 use live_engine::engine::{Config, LiveEngine, SourceFactory};
+use live_engine::feeds::{FeedSource, FeedSpec, MakeFeed};
 use live_engine::frame::{FramePool, PixelFormat, VideoFrame};
 use live_engine::gpu::{Compositor, Dest, Paint, Pass};
 use live_engine::mix::Shape;
@@ -553,4 +557,115 @@ fn channels_dip_and_panic_keep_the_web_order() {
     let live = e.gpu.read(Dest::Target(0)).unwrap().2;
     assert!(near(px(&live, 31, 17), [255, 255, 255, 255]));
     assert!(near(px(&live, 5, 5), [0, 0, 0, 255]));
+}
+
+// ---------------------------------------------------------------------------
+// Feeds: the recording, the vertical version and a camera's ISO at once
+
+/// A feed whose "encoder" hands back the raw frames it was given.
+fn raw_feed(out: Arc<Mutex<Vec<u8>>>) -> MakeFeed {
+    Box::new(move |shape| {
+        EncoderFeed::start(
+            std::path::Path::new("ffmpeg"),
+            FeedArgs {
+                width: shape.width,
+                height: shape.height,
+                fps: shape.fps,
+                pix_fmt: shape.pix_fmt,
+                encode: vec![
+                    "-c:v".into(),
+                    "rawvideo".into(),
+                    "-pix_fmt".into(),
+                    "rgba".into(),
+                ],
+                container: vec!["-f".into(), "rawvideo".into(), "-".into()],
+                audio: None,
+            },
+            Box::new(move |c| out.lock().unwrap().extend(c)),
+            None,
+        )
+    })
+}
+
+#[test]
+fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
+    if std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_err()
+    {
+        eprintln!("no FFmpeg here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    let (small, vertical, iso) = (
+        Arc::new(Mutex::new(Vec::new())),
+        Arc::new(Mutex::new(Vec::new())),
+        Arc::new(Mutex::new(Vec::new())),
+    );
+    let screen = |vertical: bool, w: u32, h: u32| FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical,
+        },
+        width: w,
+        height: h,
+        fps: 30,
+    };
+    let a = e.start_feed(1, screen(false, 32, 18), raw_feed(Arc::clone(&small)));
+    let b = e.start_feed(2, screen(true, 18, 32), raw_feed(Arc::clone(&vertical)));
+    let c = e.start_feed(
+        3,
+        FeedSpec {
+            source: FeedSource::Input(SourceId::new("b")),
+            width: 0,
+            height: 0,
+            fps: 30,
+        },
+        raw_feed(Arc::clone(&iso)),
+    );
+    for r in [a, b, c] {
+        r.recv().unwrap().expect("starts");
+    }
+    // Half a second of frames in real time.
+    let t0 = live_engine::engine::now_ms();
+    while live_engine::engine::now_ms() < t0 + 500 {
+        e.frame(live_engine::engine::now_ms());
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    let stats: Vec<_> = [1, 2, 3]
+        .into_iter()
+        .map(|id| e.stop_feed(id).expect("running").finish())
+        .collect();
+    eprintln!("{stats:?}");
+    // The recording: red (camera a), scaled to 32 × 18.
+    let small = small.lock().unwrap();
+    assert!(small.len() >= 32 * 18 * 4 * 8, "{}", small.len());
+    assert_eq!(small.len() % (32 * 18 * 4), 0);
+    let last = &small[small.len() - 32 * 18 * 4..];
+    assert!(near([last[0], last[1], last[2], last[3]], [255, 0, 0, 255]));
+    // The vertical version: the picture across the middle, darkened red above and below.
+    let v = vertical.lock().unwrap();
+    assert_eq!(v.len() % (18 * 32 * 4), 0);
+    let last = &v[v.len() - 18 * 32 * 4..];
+    let at = |x: usize, y: usize| {
+        let i = (y * 18 + x) * 4;
+        [last[i], last[i + 1], last[i + 2], last[i + 3]]
+    };
+    assert!(near(at(9, 16), [255, 0, 0, 255]), "{:?}", at(9, 16));
+    assert!(near(at(9, 1), [140, 0, 0, 255]), "{:?}", at(9, 1));
+    // The ISO: camera b's own frames (blue), at its own size.
+    let iso = iso.lock().unwrap();
+    assert!(
+        iso.len() >= W as usize * H as usize * 4 * 5,
+        "{}",
+        iso.len()
+    );
+    assert!(near([iso[0], iso[1], iso[2], iso[3]], [0, 0, 255, 255]));
 }

@@ -15,6 +15,7 @@ use lumora_engine::{ScreenId, Show, Source, SourceId, SourceKind};
 use serde::Serialize;
 
 use crate::encoder::{EncoderFeed, FeedStats};
+use crate::feeds::{FeedInfo, FeedSpec, Feeds, MakeFeed};
 use crate::gpu::{AdapterInfo, Compositor, Dest, Paint, Pass};
 use crate::overlay::{self, OverlayStats};
 use crate::present::{NativeOutput, Placement};
@@ -187,7 +188,10 @@ pub struct Stats {
     pub upload_mb_per_s: f32,
     pub adapter: Option<AdapterInfo>,
     pub outputs: Vec<String>,
+    /// The first screen feed (the recording or stream).
     pub feed: Option<FeedStats>,
+    /// Every feed: screens (recording, stream, vertical, NDI) and inputs (ISO files).
+    pub feeds: Vec<FeedInfo>,
     /// How the graphics from the web overlay renderers arrive.
     pub overlay: OverlayStats,
     /// Things that don't work in the unified engine yet, in words for the operator.
@@ -245,7 +249,7 @@ pub struct LiveEngine {
     show: Option<Show>,
     sources: HashMap<SourceId, (String, Box<dyn VideoSource>)>,
     outputs: HashMap<ScreenId, NativeOutput>,
-    feed: Option<(ScreenId, EncoderFeed)>,
+    feeds: Feeds,
     graphics: GraphicsTally,
     previews: HashMap<String, Preview>,
     frame_no: u64,
@@ -274,7 +278,7 @@ impl LiveEngine {
             show: None,
             sources: HashMap::new(),
             outputs: HashMap::new(),
-            feed: None,
+            feeds: Feeds::default(),
             graphics: GraphicsTally::default(),
             previews: HashMap::new(),
             frame_no: 0,
@@ -382,14 +386,22 @@ impl LiveEngine {
         self.stats.overlay.refused += 1;
     }
 
-    /// Start feeding a screen to an encoder (one at a time for now).
-    pub fn start_feed(&mut self, screen: ScreenId, feed: EncoderFeed) {
-        self.feed = Some((screen, feed));
+    /// Start feed `id` (see [`crate::feeds`]); the answer says whether its encoder started.
+    pub fn start_feed(
+        &mut self,
+        id: u64,
+        spec: FeedSpec,
+        make: MakeFeed,
+    ) -> Receiver<Result<(), String>> {
+        let (tx, rx) = channel();
+        let size = (self.config.width, self.config.height);
+        self.feeds.start(&mut self.gpu, id, spec, make, size, tx);
+        rx
     }
 
-    /// Stop the encoder feed; FFmpeg finishes on its own thread.
-    pub fn stop_feed(&mut self) -> Option<FeedStats> {
-        self.feed.take().map(|(_, f)| f.finish())
+    /// Stop feed `id`: its encoder, for the caller to finish (off the engine's thread).
+    pub fn stop_feed(&mut self, id: u64) -> Option<EncoderFeed> {
+        self.feeds.stop(&mut self.gpu, id)
     }
 
     /// The newest preview tiles.
@@ -529,12 +541,13 @@ impl LiveEngine {
             self.gpu.present(&mut o.out, program_target(*s), w, h);
         }
         let t3 = Instant::now();
-        // 5. The encoder, and the previews.
-        // One frame late, so the engine never waits for the GPU to finish the copy.
-        if let Some((s, feed)) = &self.feed {
-            if let Some((_, _, px)) = self.gpu.read_pipelined(Dest::Target(program_target(*s))) {
-                feed.push(px);
-            }
+        // 5. The encoders (read back one frame late, so the engine never
+        // waits for the GPU to finish a copy), and the previews.
+        if !self.feeds.is_empty() {
+            let sources = &self.sources;
+            let latest = |id: &SourceId| sources.get(id).and_then(|(_, s)| s.latest());
+            self.feeds
+                .tick(&mut self.gpu, now, &program_target, &latest);
         }
         if preview_frame && !tiles.is_empty() {
             if let Ok((aw, _, px)) = self.gpu.read(Dest::Atlas) {
@@ -591,7 +604,13 @@ impl LiveEngine {
                 .keys()
                 .map(|s| screen_name(*s).to_owned())
                 .collect();
-            self.stats.feed = self.feed.as_ref().map(|(_, f)| f.stats());
+            self.stats.feeds = self.feeds.info();
+            self.stats.feed = self
+                .stats
+                .feeds
+                .iter()
+                .find(|f| f.kind != "input")
+                .and_then(|f| f.stats.clone());
             let g = std::mem::take(&mut self.graphics);
             self.stats.overlay = OverlayStats {
                 frames_per_s: (f64::from(g.messages) / span) as f32,
@@ -639,12 +658,8 @@ enum Command {
     Output(ScreenId, Option<Placement>, Sender<Result<(), String>>),
     Overlay(ScreenId, Option<(u32, u32, Vec<u8>)>),
     Graphics(Box<overlay::Message>),
-    StartFeed(
-        ScreenId,
-        Box<dyn FnOnce(u32, u32, u32) -> Result<EncoderFeed, String> + Send>,
-        Sender<Result<(), String>>,
-    ),
-    StopFeed(Sender<Option<FeedStats>>),
+    StartFeed(u64, FeedSpec, MakeFeed, Sender<Result<(), String>>),
+    StopFeed(u64, Sender<Option<FeedStats>>),
     Stop,
 }
 
@@ -736,26 +751,24 @@ impl Runner {
             .map_err(|_| "The unified engine has stopped.".to_owned())
     }
 
-    /// Feed a screen to an encoder made by `make(width, height, fps)`.
+    /// Start feed `id`: a screen or an input to an encoder `make` starts
+    /// (see [`crate::feeds`]).
     ///
     /// # Errors
     /// The encoder could not start.
-    pub fn start_feed(
-        &self,
-        screen: ScreenId,
-        make: Box<dyn FnOnce(u32, u32, u32) -> Result<EncoderFeed, String> + Send>,
-    ) -> Result<(), String> {
+    pub fn start_feed(&self, id: u64, spec: FeedSpec, make: MakeFeed) -> Result<(), String> {
         let (tx, rx) = channel();
         self.tx
-            .send(Command::StartFeed(screen, make, tx))
+            .send(Command::StartFeed(id, spec, make, tx))
             .map_err(|_| "The unified engine has stopped.".to_owned())?;
-        rx.recv_timeout(Duration::from_secs(10))
+        rx.recv_timeout(Duration::from_secs(15))
             .map_err(|_| "The unified engine did not answer.".to_owned())?
     }
 
-    pub fn stop_feed(&self) -> Option<FeedStats> {
+    /// Stop feed `id`; waits until FFmpeg has written the last of it.
+    pub fn stop_feed(&self, id: u64) -> Option<FeedStats> {
         let (tx, rx) = channel();
-        self.tx.send(Command::StopFeed(tx)).ok()?;
+        self.tx.send(Command::StopFeed(id, tx)).ok()?;
         rx.recv_timeout(Duration::from_secs(40)).ok().flatten()
     }
 
@@ -796,17 +809,24 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
                     engine.set_overlay(s, f.as_ref().map(|(w, h, px)| (*w, *h, px.as_slice())));
                 }
                 Ok(Command::Graphics(m)) => engine.apply_graphics(&m),
-                Ok(Command::StartFeed(s, make, reply)) => {
-                    let (w, h, fps) =
-                        (engine.config.width, engine.config.height, engine.config.fps);
-                    let r = make(w, h, fps).map(|f| engine.start_feed(s, f));
-                    let _ = reply.send(r);
+                Ok(Command::StartFeed(id, spec, make, reply)) => {
+                    let started = engine.start_feed(id, spec, make);
+                    // The answer comes from the thread starting FFmpeg.
+                    thread::spawn(move || {
+                        let r = started
+                            .recv()
+                            .unwrap_or_else(|_| Err("The encoder could not start.".to_owned()));
+                        let _ = reply.send(r);
+                    });
                 }
-                Ok(Command::StopFeed(reply)) => {
-                    let _ = reply.send(engine.stop_feed());
+                Ok(Command::StopFeed(id, reply)) => {
+                    let feed = engine.stop_feed(id);
+                    thread::spawn(move || {
+                        let _ = reply.send(feed.map(EncoderFeed::finish));
+                    });
                 }
                 Ok(Command::Stop) | Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                    engine.stop_feed();
+                    engine.feeds.stop_all(&mut engine.gpu);
                     return;
                 }
                 Err(std::sync::mpsc::TryRecvError::Empty) => break,
