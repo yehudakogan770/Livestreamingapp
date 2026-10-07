@@ -197,3 +197,28 @@ svg.lucide {
 .keyed > img {
   opacity: 0;
 }
+
+/* The sign-in screen keeps the look the owner approved: its original
+   blue-gray surfaces and teal, separate from the neutral console. */
+.gate {
+  --bg: #0e1013;
+  --bar: #14171b;
+  --panel: #181b20;
+  --raised: #1f2329;
+  --button: #262a31;
+  --button-hover: #2f343c;
+  --button-active: #1c1f24;
+  --border: #252930;
+  --border-strong: #353a43;
+  --well: #08090b;
+  --text: #e9ebee;
+  --text-dim: #a0a7b1;
+  --text-faint: #6c737e;
+  --accent: #4fb3bf;
+  --accent-deep: #1d7783;
+  --accent-hover: #238896;
+  --on-accent: #fff;
+  --selected: #14363b;
+  --focus: #4fb3bf;
+  --signal: #4fb3bf;
+}
