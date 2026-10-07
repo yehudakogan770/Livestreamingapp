@@ -6,7 +6,7 @@
 //! every frame, previews ten times a second.
 //!
 //! ```sh
-//! cargo run -p lumora-live-engine --release --bin live-bench -- [frames] [--encode] [--paced]
+//! cargo run -p lumora-live-engine --release --bin live-bench -- [frames] [--encode] [--paced] [--size=WxH]
 //! ```
 //!
 //! `--encode` also pipes the read-back frames into FFmpeg (x264 ultrafast,
@@ -75,7 +75,16 @@ fn main() {
     };
     let info = gpu.describe();
     println!("adapter: {} ({}, {})", info.name, info.backend, info.kind);
-    let config = Config::default();
+    let size = args
+        .iter()
+        .find_map(|a| a.strip_prefix("--size="))
+        .and_then(|v| v.split_once('x'))
+        .and_then(|(w, h)| Some((w.parse().ok()?, h.parse().ok()?)));
+    let mut config = Config::default();
+    if let Some((w, h)) = size {
+        config.width = w;
+        config.height = h;
+    }
     let fps = config.fps;
     let (w, h) = (config.width, config.height);
     let mut engine = LiveEngine::new(config, gpu, Box::new(DefaultFactory::new(None, true)));
@@ -144,6 +153,7 @@ fn main() {
     let mut worst = 0f64;
     let mut times = Vec::with_capacity(frames as usize);
     let mut read_ms = 0f64;
+    let mut scene_ms = 0f64;
     let mut out_ms = 0f64;
     for n in 0..frames {
         let t0 = Instant::now();
@@ -164,6 +174,12 @@ fn main() {
             engine.set_overlay(ScreenId::Monitor, Some((w, h, &overlay)));
             engine.set_overlay(ScreenId::Live, Some((w, h, &overlay)));
         }
+        // The engine's own CPU work: working out the three screens' scenes.
+        let ts = Instant::now();
+        for screen in ScreenId::ALL {
+            std::hint::black_box(live_engine::scene::program_scene(&show, screen, now));
+        }
+        scene_ms += ts.elapsed().as_secs_f64() * 1000.0;
         engine.frame(now);
         // The three windows.
         let t1 = Instant::now();
@@ -225,6 +241,10 @@ fn main() {
         read_ms / frames as f64
     );
     println!("  uploads: {:.0} MB/s", s.upload_mb_per_s);
+    println!(
+        "  scene maths (CPU, three screens): {:.4} ms/frame",
+        scene_ms / frames as f64
+    );
     if let Some(f) = engine.stop_feed() {
         println!(
             "encoder feed: {} frames in, {} dropped{}",

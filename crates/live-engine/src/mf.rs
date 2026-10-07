@@ -175,7 +175,7 @@ fn best_mode(reader: &IMFSourceReader) -> Option<IMFMediaType> {
         if w == 0 || h == 0 || w > 1920 || h > 1080 {
             continue;
         }
-        let fps = if den == 0 { 0 } else { num / den };
+        let fps = num.checked_div(den).unwrap_or(0);
         let area = u64::from(w) * u64::from(h);
         if best.as_ref().is_none_or(|(a, f, _)| (area, fps) > (*a, *f)) {
             best = Some((area, fps, t));
