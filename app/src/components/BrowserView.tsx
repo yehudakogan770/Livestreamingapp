@@ -40,13 +40,13 @@ export function BrowserView({
 }) {
   const info = useBrowserInfo(client);
   const blank = page.url === 'https://';
-  if (!info || blank) return <div style={{ ...fill, background: audience ? 'transparent' : '#101216' }} data-kind="browser" />;
+  if (!info || blank) return <div style={{ ...fill, background: audience ? 'transparent' : '#121212' }} data-kind="browser" />;
   if (info.captured && info.port) return <FramePicture info={info} id={id} fit={fit} kind="browser" />;
   if (thumb) {
     const host = page.url.replace(/^[a-z]+:\/\//i, '').split('/')[0];
     return (
       <div
-        style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a9abb0', fontSize: 11, padding: 6 }}
+        style={{ ...fill, background: '#121212', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ababab', fontSize: 11, padding: 6 }}
         data-kind="browser"
       >
         {host}
@@ -82,7 +82,7 @@ export function StreamView({
         <FramePicture info={info} id={id} fit={fit} kind="stream" />
       ) : (
         !audience &&
-        info && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#8e9096', fontSize: 12 }}>{note}</span>
+        info && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#909090', fontSize: 12 }}>{note}</span>
       )}
     </div>
   );

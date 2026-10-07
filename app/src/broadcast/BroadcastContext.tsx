@@ -18,7 +18,7 @@ import { Broadcaster } from './recorder';
 import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
-import { useRemoteControl } from './remoteControl';
+import { useAppRequests, useRemoteControl } from './remoteControl';
 
 /** The highlights reel's input. */
 export const HIGHLIGHTS = 'highlights-reel';
@@ -366,7 +366,19 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
           level: 'warning',
           title: `${dropped.join(', ')} dropped out of the stream`,
           detail: 'The other destinations carry on.',
-          fix: 'Check that destination’s stream key and that its live event is still open. Stop and start the stream to try it again.',
+          fix: 'Check that destination’s stream key and that its live event is still open. Stop and start the stream to try it again (a destination with a backup server tries that one next).',
+        }
+      : null,
+  );
+  const onBackup = [...(status.streaming?.onBackup ?? []), ...(status.vertical?.onBackup ?? [])];
+  useReportProblem(
+    onBackup.length
+      ? {
+          key: 'stream:backup',
+          level: 'warning',
+          title: `${onBackup.join(', ')} is on the backup server`,
+          detail: 'The main server failed, so Lumora reconnected to the backup server.',
+          fix: 'Nothing to do: viewers keep watching. If the backup fails too, Lumora goes back to the main server.',
         }
       : null,
   );
@@ -706,5 +718,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   );
   // The Stream Deck (through the phone remote's server) records, goes live and replays too.
   useRemoteControl(value);
+  // Macros, triggers and cues record, go live and replay through the same requests.
+  useAppRequests(show.appRequests ?? [], value, (message, r) => setStartError({ kind: r.step.command === 'record' ? 'record' : 'stream', message }));
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

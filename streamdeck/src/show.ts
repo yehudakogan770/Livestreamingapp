@@ -35,6 +35,12 @@ export interface DeckPreset {
   name: string;
 }
 
+export interface DeckMacro {
+  id: string;
+  number: number;
+  name: string;
+}
+
 export interface DeckCountdown {
   id: string;
   name: string;
@@ -83,6 +89,8 @@ export interface DeckState {
   overlays: DeckOverlay[];
   presets: DeckPreset[];
   activePreset: string | null;
+  /** Macros (older Lumora: none). */
+  macros: DeckMacro[];
   panic: boolean;
   /** The backup lineup (automatic failover) is on. */
   backup: boolean;
@@ -128,6 +136,9 @@ export function deckState(show: unknown, app: AppState = NO_APP): DeckState {
   const presets = arr(s.presets)
     .map(obj)
     .map((p, i) => ({ id: str(p.id) ?? '', number: i + 1, name: str(p.name) ?? `Preset ${i + 1}` }));
+  const macros = arr(s.macros)
+    .map(obj)
+    .map((m, i) => ({ id: str(m.id) ?? '', number: i + 1, name: str(m.name) ?? `Macro ${i + 1}` }));
   const countdowns = sources
     .filter((x) => obj(x.kind).type === 'countdown')
     .map((x) => {
@@ -163,6 +174,7 @@ export function deckState(show: unknown, app: AppState = NO_APP): DeckState {
     overlays,
     presets,
     activePreset: str(s.activePreset),
+    macros,
     panic: s.panic === true,
     // On unless the event turned it off (older Lumora: no lineup at all).
     backup: obj(s.event).backup !== undefined && obj(obj(s.event).backup).on !== false,

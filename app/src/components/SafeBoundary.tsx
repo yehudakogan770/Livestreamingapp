@@ -28,10 +28,10 @@ export class SafeBoundary extends Component<{ audience: boolean; reloadAfterMs?:
     if (!this.state.failed) return this.props.children;
     if (this.props.audience) return <div style={{ position: 'fixed', inset: 0, background: '#000' }} data-crashed />;
     return (
-      <div style={{ margin: 'auto', padding: 24, textAlign: 'center', color: '#e4e5e7' }} data-crashed>
+      <div style={{ margin: 'auto', padding: 24, textAlign: 'center', color: '#e6e6e4' }} data-crashed>
         <BrandMark size={40} />
         <h2 style={{ margin: '12px 0 8px' }}>Something went wrong on this screen</h2>
-        <p style={{ margin: 0, color: '#a9abb0' }}>Reloading it now. Your show is safe and nothing on the outputs changed.</p>
+        <p style={{ margin: 0, color: '#ababab' }}>Reloading it now. Your show is safe and nothing on the outputs changed.</p>
       </div>
     );
   }

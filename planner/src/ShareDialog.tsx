@@ -4,6 +4,7 @@ import { cancelInvitation, invitations, invite, people, removePerson, setRole, t
 import type { Plan, Role } from './model';
 import { db } from './session';
 import { initials } from './Inspector';
+import { usePlannerFeatures } from './features';
 
 /** Who is on the plan; the owner adds people by email as editors or viewers. */
 export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan; role: Role | null; me: string; onClose: () => void; onChanged: () => void }) {
@@ -15,6 +16,7 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const owner = role === 'owner';
+  const { sharing } = usePlannerFeatures();
 
   const refresh = () =>
     Promise.all([people(db(), plan.id), owner ? invitations(db(), plan.id) : Promise.resolve([])])
@@ -62,7 +64,9 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
           </button>
         </header>
         <div className="dialog__body">
-          {owner ? (
+          {owner && !sharing ? (
+            <p className="muted small">The Lumora team has turned off sharing plans for now. The people already on this plan stay on it.</p>
+          ) : owner ? (
             <form className="row" onSubmit={add}>
               <input
                 className="input grow"

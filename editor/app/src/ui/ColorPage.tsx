@@ -1,4 +1,4 @@
-import { Activity, ChevronLeft, ChevronRight, ClipboardPaste, Copy, Layers, Palette, Plus, RotateCcw, Split, Trash2, Workflow } from 'lucide-react';
+import { Activity, ChevronLeft, ChevronRight, ClipboardPaste, Copy, FileDown, Layers, Palette, Plus, RotateCcw, Split, Trash2, Workflow } from 'lucide-react';
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { valueAt, setValue } from '../model/anim';
 import {
@@ -40,6 +40,7 @@ import type { Engine } from '../player/engine';
 import { curveTable, type CurvePoints, type CurveSet } from '../render/color';
 import type { Actions } from './actions';
 import { Choice, ParamRow, Scrub, Section } from './controls';
+import { LutExportDialog } from './LutExport';
 import { drag, usePlayhead } from './hooks';
 import { useUi, type Ui } from './state';
 
@@ -72,6 +73,7 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
   const u = useUi(ui);
   const t = usePlayhead(engine);
   const [, setCopied] = useState(0);
+  const [lutOut, setLutOut] = useState(false);
   const clip = gradedClip(doc, t);
   const grade = clip ? shownGrade(clip) : null;
   const node = grade ? chosenNode(grade, u.gradeNode) : undefined;
@@ -348,6 +350,11 @@ export function ColorPanel({ doc, engine, actions, ui }: { doc: Doc; engine: Eng
           <button type="button" className="btn btn--sm" onClick={() => actions.addEffect([clip.id], 'lut')}>
             + LUT
           </button>
+          <button type="button" className="btn btn--sm" title="Save this clip's color as a .cube LUT" onClick={() => setLutOut(true)}>
+            <FileDown />
+            Export LUT…
+          </button>
+          {lutOut && <LutExportDialog clip={clip} at={local} onClose={() => setLutOut(false)} onSaved={(m) => ui.note(m)} />}
           <button type="button" className="btn btn--sm" onClick={() => actions.addEffect([clip.id], 'vignette')}>
             <Plus />
             Vignette

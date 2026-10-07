@@ -345,3 +345,13 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.dlv__hint {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 2px solid var(--accent);
+  background: var(--well);
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.45;
+}

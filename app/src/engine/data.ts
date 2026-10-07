@@ -82,3 +82,37 @@ export function fill(text: string, values: Record<string, string> | undefined): 
 /** A title with its `{Column}`s filled in. */
 export const withData = (t: TextInput, values: Record<string, string> | undefined): TextInput =>
   values && Object.keys(values).length ? { ...t, text: fill(t.text, values), sub: fill(t.sub, values) } : t;
+
+/** The data comes from a web address (a Google Sheet or a CSV link), not a file. */
+export const isDataUrl = (path: string): boolean => /^https?:\/\//i.test(path.trim());
+
+/** Read a web address no more often than this (Google refreshes published sheets every few minutes anyway). */
+export const MIN_URL_EVERY_MS = 5000;
+
+/**
+ * The CSV address for a Google Sheet link, or the link itself for any other
+ * web address. A sheet's own link (…/edit#gid=…) becomes its CSV export (it
+ * must be shared with “Anyone with the link”); a link from File → Share →
+ * Publish to web (…/pub?…output=csv) is used as it is. `null`: not a web address.
+ */
+export function sheetCsvUrl(link: string): string | null {
+  const t = link.trim();
+  let u: URL;
+  try {
+    u = new URL(t);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+  if (u.hostname !== 'docs.google.com' || !u.pathname.startsWith('/spreadsheets/')) return t;
+  // Published to the web: ask for CSV if it said otherwise (output=html).
+  if (/\/pub(html)?$/.test(u.pathname)) {
+    u.pathname = u.pathname.replace(/\/pubhtml$/, '/pub');
+    u.searchParams.set('output', 'csv');
+    return u.toString();
+  }
+  const id = /^\/spreadsheets\/d\/([A-Za-z0-9_-]+)/.exec(u.pathname)?.[1];
+  if (!id || id === 'e') return t;
+  const gid = /gid=(\d+)/.exec(u.hash)?.[1] ?? u.searchParams.get('gid');
+  return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv${gid ? `&gid=${gid}` : ''}`;
+}

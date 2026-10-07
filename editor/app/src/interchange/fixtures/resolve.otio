@@ -1,0 +1,142 @@
+{
+    "OTIO_SCHEMA": "Timeline.1",
+    "metadata": {
+        "Resolve_OTIO": { "Resolve OTIO Meta Version": "1.0" }
+    },
+    "name": "Doc Assembly",
+    "global_start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 90000.0 },
+    "tracks": {
+        "OTIO_SCHEMA": "Stack.1",
+        "metadata": {},
+        "name": "",
+        "source_range": null,
+        "effects": [],
+        "markers": [
+            {
+                "OTIO_SCHEMA": "Marker.2",
+                "metadata": {},
+                "name": "Act two",
+                "color": "BLUE",
+                "marked_range": {
+                    "OTIO_SCHEMA": "TimeRange.1",
+                    "duration": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 1.0 },
+                    "start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 90100.0 }
+                },
+                "comment": ""
+            }
+        ],
+        "enabled": true,
+        "children": [
+            {
+                "OTIO_SCHEMA": "Track.1",
+                "metadata": {},
+                "name": "Video 1",
+                "source_range": null,
+                "effects": [],
+                "markers": [],
+                "enabled": true,
+                "children": [
+                    {
+                        "OTIO_SCHEMA": "Clip.1",
+                        "metadata": {},
+                        "name": "Archive_1987.mxf",
+                        "source_range": {
+                            "OTIO_SCHEMA": "TimeRange.1",
+                            "duration": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 100.0 },
+                            "start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 90050.0 }
+                        },
+                        "effects": [],
+                        "markers": [],
+                        "enabled": true,
+                        "media_reference": {
+                            "OTIO_SCHEMA": "ExternalReference.1",
+                            "metadata": {},
+                            "name": "Archive_1987.mxf",
+                            "available_range": {
+                                "OTIO_SCHEMA": "TimeRange.1",
+                                "duration": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 5000.0 },
+                                "start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 90000.0 }
+                            },
+                            "available_image_bounds": null,
+                            "target_url": "file:///Volumes/Archive/Archive_1987.mxf"
+                        }
+                    },
+                    {
+                        "OTIO_SCHEMA": "Gap.1",
+                        "metadata": {},
+                        "name": "",
+                        "source_range": {
+                            "OTIO_SCHEMA": "TimeRange.1",
+                            "duration": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 50.0 },
+                            "start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 0.0 }
+                        },
+                        "effects": [],
+                        "markers": [],
+                        "enabled": true
+                    },
+                    {
+                        "OTIO_SCHEMA": "Clip.1",
+                        "metadata": {},
+                        "name": "Interview_02.mov",
+                        "source_range": {
+                            "OTIO_SCHEMA": "TimeRange.1",
+                            "duration": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 75.0 },
+                            "start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 250.0 }
+                        },
+                        "effects": [
+                            { "OTIO_SCHEMA": "LinearTimeWarp.1", "metadata": {}, "name": "", "effect_name": "", "time_scalar": 0.5 }
+                        ],
+                        "markers": [],
+                        "enabled": true,
+                        "media_reference": {
+                            "OTIO_SCHEMA": "ExternalReference.1",
+                            "metadata": {},
+                            "name": "Interview_02.mov",
+                            "available_range": {
+                                "OTIO_SCHEMA": "TimeRange.1",
+                                "duration": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 3000.0 },
+                                "start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 0.0 }
+                            },
+                            "available_image_bounds": null,
+                            "target_url": "file:///Volumes/Media/Interview_02.mov"
+                        }
+                    }
+                ],
+                "kind": "Video"
+            },
+            {
+                "OTIO_SCHEMA": "Track.1",
+                "metadata": {},
+                "name": "Audio 1",
+                "source_range": null,
+                "effects": [],
+                "markers": [],
+                "enabled": true,
+                "children": [
+                    {
+                        "OTIO_SCHEMA": "Clip.1",
+                        "metadata": {},
+                        "name": "Narration.wav",
+                        "source_range": {
+                            "OTIO_SCHEMA": "TimeRange.1",
+                            "duration": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 225.0 },
+                            "start_time": { "OTIO_SCHEMA": "RationalTime.1", "rate": 25.0, "value": 0.0 }
+                        },
+                        "effects": [],
+                        "markers": [],
+                        "enabled": true,
+                        "media_reference": {
+                            "OTIO_SCHEMA": "ExternalReference.1",
+                            "metadata": {},
+                            "name": "Narration.wav",
+                            "available_range": null,
+                            "available_image_bounds": null,
+                            "target_url": "file:///Volumes/Media/Narration.wav"
+                        }
+                    }
+                ],
+                "kind": "Audio"
+            }
+        ]
+    }
+}

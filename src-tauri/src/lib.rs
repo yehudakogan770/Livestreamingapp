@@ -1,5 +1,6 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
+mod api;
 mod browser;
 mod captions;
 mod capture;
@@ -49,6 +50,7 @@ struct AppState {
     files: Mutex<events::EventFiles>,
     dir: std::path::PathBuf,
     remote: remote::Remote,
+    api: api::Api,
     capture: capture::Capture,
     library: library::Library,
     media: media::Media,
@@ -244,6 +246,7 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     if let Ok(json) = serde_json::to_string(snapshot) {
         state.remote.broadcast(&json);
     }
+    state.api.show_changed(&snapshot.show);
 }
 
 fn publish(app: &tauri::AppHandle, state: &AppState, engine: &Engine) {
@@ -684,6 +687,65 @@ async fn read_data_file(path: String) -> Result<String, String> {
     Ok(text.trim_start_matches('\u{feff}').to_owned())
 }
 
+/// What went wrong with a Google Sheet or CSV link, from its answer.
+fn data_url_problem(status: u16, body_start: &str) -> Option<String> {
+    const SHARE: &str =
+        "share it with \"Anyone with the link\" or publish it to the web as CSV (File → Share → Publish to web)";
+    match status {
+        401 | 403 | 404 => Some(format!("the sheet answered {status} — {SHARE}")),
+        200..=299 => {
+            let t = body_start.trim_start();
+            // A sign-in page instead of the sheet: it is not shared.
+            (t.starts_with("<!DOCTYPE html")
+                || t.starts_with("<!doctype html")
+                || t.starts_with("<html"))
+            .then(|| format!("a web page came back instead of the sheet — {SHARE}"))
+        }
+        _ => Some(format!("the link answered {status}")),
+    }
+}
+
+/// A data file from the web: a Google Sheet's CSV or any CSV or JSON link.
+/// Fetched here, not in the WebView, so any site works (no browser limits).
+#[tauri::command]
+async fn read_data_url(url: String) -> Result<String, String> {
+    const MAX: usize = 4_000_000;
+    let url = url.trim();
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("the link must start with https://".to_owned());
+    }
+    if rustls::crypto::CryptoProvider::get_default().is_none() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+    }
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .user_agent(concat!("Lumora/", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| format!("could not reach the internet ({e})"))?;
+    let res = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("could not reach it ({e}) — is the internet working?"))?;
+    let status = res.status().as_u16();
+    if res.content_length().is_some_and(|n| n > MAX as u64) {
+        return Err("the sheet is too big (over 4 MB)".to_owned());
+    }
+    let bytes = res
+        .bytes()
+        .await
+        .map_err(|e| format!("it stopped half way ({e})"))?;
+    if bytes.len() > MAX {
+        return Err("the sheet is too big (over 4 MB)".to_owned());
+    }
+    let text = String::from_utf8_lossy(&bytes);
+    let start: String = text.chars().take(200).collect();
+    if let Some(problem) = data_url_problem(status, &start) {
+        return Err(problem);
+    }
+    Ok(text.trim_start_matches('\u{feff}').to_owned())
+}
+
 /// Save the chapter list (what was on air when) next to the recording.
 #[tauri::command]
 fn save_chapters(
@@ -977,6 +1039,52 @@ impl remote::Backend for RemoteBackend {
 #[tauri::command]
 fn remote_app_state(app_state: serde_json::Value, state: State<'_, AppState>) {
     state.remote.set_app_state(&app_state);
+    state.api.set_app_state(&app_state);
+}
+
+/// Lets the control API reach the engine and the control window.
+struct ApiLink(tauri::AppHandle);
+
+impl api::ApiBackend for ApiLink {
+    fn show(&self) -> Option<serde_json::Value> {
+        let state = self.0.try_state::<AppState>()?;
+        let engine = lock(&state);
+        serde_json::to_value(engine.show()).ok()
+    }
+
+    fn apply(&self, action: Action) -> Result<(), String> {
+        let state = self
+            .0
+            .try_state::<AppState>()
+            .ok_or_else(|| "Lumora is still starting".to_owned())?;
+        apply(&self.0, &state, action).map_err(|e| e.to_string())
+    }
+
+    fn app_command(&self, command: remote::AppCommand) -> Result<(), String> {
+        // Recording, streaming and replay run in the control window.
+        self.0
+            .emit_to("control", "remote-command", command)
+            .map_err(|e| e.to_string())
+    }
+}
+
+/// The control API: its settings, token and addresses.
+#[tauri::command]
+fn api_status(state: State<'_, AppState>) -> api::ApiStatus {
+    state.api.status()
+}
+
+#[tauri::command]
+fn set_api(config: api::ApiConfig, state: State<'_, AppState>) -> api::ApiStatus {
+    state.api.set(config)
+}
+
+/// A new token for the control API (the old one stops working).
+#[tauri::command]
+fn new_api_token(state: State<'_, AppState>) -> api::ApiStatus {
+    let status = state.api.new_token();
+    state.remote.set_api_token(&status.config.token);
+    status
 }
 
 fn deck_places(app: &tauri::AppHandle) -> streamdeck::Places {
@@ -1068,6 +1176,8 @@ pub fn run() {
                 remote::DEFAULT_PORT,
                 RemoteBackend(app.handle().clone()),
             );
+            let control_api = api::Api::new(Some(&dir), ApiLink(app.handle().clone()));
+            remote.set_api_token(&control_api.token());
             let videos = app
                 .path()
                 .video_dir()
@@ -1105,6 +1215,7 @@ pub fn run() {
                 files: Mutex::new(files),
                 dir,
                 remote,
+                api: control_api,
                 capture,
                 library,
                 media,
@@ -1193,11 +1304,15 @@ pub fn run() {
             remote_status,
             set_remote,
             new_remote_pin,
+            api_status,
+            set_api,
+            new_api_token,
             set_speaker,
             new_speaker_pin,
             disconnect_speaker,
             set_audience_internet,
             read_data_file,
+            read_data_url,
             qr_code,
             capture_status,
             capture_settings,
@@ -1287,7 +1402,19 @@ fn smoke_test(app: tauri::AppHandle) {
 
 #[cfg(test)]
 mod tests {
-    use super::snapshot_name;
+    use super::{data_url_problem, snapshot_name};
+
+    #[test]
+    fn a_sheet_that_is_not_shared_is_explained() {
+        assert_eq!(data_url_problem(200, "Name,Score\nA,1"), None);
+        assert!(data_url_problem(200, "  <!DOCTYPE html><html>Sign in")
+            .is_some_and(|p| p.contains("Anyone with the link")));
+        assert!(data_url_problem(403, "").is_some_and(|p| p.contains("403")));
+        assert_eq!(
+            data_url_problem(500, "").as_deref(),
+            Some("the link answered 500")
+        );
+    }
 
     #[test]
     fn snapshot_names_are_plain_files() {

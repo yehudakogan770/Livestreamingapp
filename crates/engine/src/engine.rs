@@ -1682,6 +1682,45 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             s.triggers = clean;
             Ok(())
         }
+        Action::SetMacros { macros } => {
+            if macros.len() > crate::macros::MAX_MACROS {
+                return Err(ActionError::invalid("macros", "at most 100 macros"));
+            }
+            let mut clean = Vec::with_capacity(macros.len());
+            for mut m in macros {
+                if m.id.trim().is_empty() {
+                    return Err(ActionError::invalid("macros", "every macro needs an id"));
+                }
+                m.steps = clean_steps(m.steps)?;
+                m.repair();
+                clean.push(m);
+            }
+            s.macros = clean;
+            Ok(())
+        }
+        Action::RunMacro { id } => {
+            let m = s
+                .macros
+                .iter()
+                .find(|m| m.id == id)
+                .cloned()
+                .ok_or_else(|| ActionError::invalid("id", "there is no such macro"))?;
+            if m.steps.is_empty() {
+                return Ok(());
+            }
+            apply_to(
+                s,
+                Action::RunSteps {
+                    name: m.name,
+                    steps: m.steps,
+                },
+                now,
+            )
+        }
+        Action::RequestApp { step } => {
+            crate::macros::push_request(&mut s.app_requests, step);
+            Ok(())
+        }
         Action::FireTrigger { id } => {
             let t = s
                 .triggers
@@ -2012,28 +2051,65 @@ fn step_action(step: Step, main: Option<&SourceId>) -> Option<Action> {
         Step::Preset { preset_id } => Action::PickPreset {
             id: Some(preset_id),
         },
-        Step::Wait { .. } => return None,
+        Step::Record { on } => Action::RequestApp {
+            step: crate::macros::AppStep::Record { on },
+        },
+        Step::Stream { on } => Action::RequestApp {
+            step: crate::macros::AppStep::Stream { on },
+        },
+        Step::Replay { seconds, slow } => Action::RequestApp {
+            step: crate::macros::AppStep::Replay { seconds, slow },
+        },
+        Step::DataStep { delta } => Action::DataStep { delta },
+        // Macros start beside the steps (see `run_steps`).
+        Step::Wait { .. } | Step::Macro { .. } => return None,
     })
 }
 
 /// Run every step that is due. A step that cannot be done (say, its input
 /// was removed) is skipped so the rest still run.
 fn run_steps(s: &mut Show, now: Millis) {
-    let mut running = std::mem::take(&mut s.running);
-    for r in &mut running {
-        while r.resume_at <= now && r.next < r.steps.len() {
-            let step = r.steps[r.next].clone();
-            r.next += 1;
-            if let Step::Wait { ms } = step {
-                // Timed from when the wait was due, so waits never drift.
-                r.resume_at = r.resume_at.saturating_add(u64::from(ms));
-            } else if let Some(action) = step_action(step, s.main_countdown()) {
-                let _ = apply_to(s, action, now);
+    // A macro step starts the macro beside these steps; it runs in the next
+    // pass. Passes are limited, so a macro that runs itself can't loop forever.
+    for _pass in 0..8 {
+        let mut running = std::mem::take(&mut s.running);
+        let mut started = Vec::new();
+        for r in &mut running {
+            while r.resume_at <= now && r.next < r.steps.len() {
+                let step = r.steps[r.next].clone();
+                r.next += 1;
+                match step {
+                    // Timed from when the wait was due, so waits never drift.
+                    Step::Wait { ms } => r.resume_at = r.resume_at.saturating_add(u64::from(ms)),
+                    Step::Macro { macro_id } => {
+                        if let Some(m) = s.macros.iter().find(|m| m.id == macro_id) {
+                            started.push(RunningSteps {
+                                name: m.name.clone(),
+                                steps: m.steps.clone(),
+                                next: 0,
+                                resume_at: now,
+                            });
+                        }
+                    }
+                    step => {
+                        if let Some(action) = step_action(step, s.main_countdown()) {
+                            let _ = apply_to(s, action, now);
+                        }
+                    }
+                }
             }
         }
+        running.retain(|r| r.next < r.steps.len());
+        // Anything a step started itself (a cue's steps) is kept too.
+        running.append(&mut s.running);
+        let more = !started.is_empty();
+        running.extend(started);
+        running.truncate(crate::macros::MAX_RUNNING);
+        s.running = running;
+        if !more {
+            break;
+        }
     }
-    running.retain(|r| r.next < r.steps.len());
-    s.running = running;
 }
 
 // ---------- stage monitor and countdown ----------

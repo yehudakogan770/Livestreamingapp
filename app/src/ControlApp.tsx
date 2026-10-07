@@ -11,7 +11,7 @@ import { TitleBar, type MenuItem, type Tool } from './components/TitleBar';
 import { BrandMark } from './components/Logo';
 import { AboutHost, openAbout } from './components/About';
 import { CircleHelp, Layers, LibraryBig, ListChecks, Radio, SquarePlus, Spotlight, Type } from 'lucide-react';
-import { Gate, useAccess } from './auth/Gate';
+import { Gate, useAccess, useFeature } from './auth/Gate';
 import { UpdateBar, checkForUpdates } from './components/UpdateBar';
 import { jewishToolsOn, loadJewishTools, saveJewishTools } from './engine/jewishTools';
 import { TEXT_SIZES, applyTextSize, loadTextSize, stepTextSize, type TextSize } from './components/textSize';
@@ -47,6 +47,7 @@ import './styles.css';
 // Windows opened now and then: loaded the first time they open.
 const BrandDialog = lazyPart(() => import('./views/BrandDialog').then((m) => m.BrandDialog));
 const RemoteDialog = lazyPart(() => import('./views/RemoteDialog').then((m) => m.RemoteDialog));
+const ControlApiDialog = lazyPart(() => import('./views/ControlApiDialog').then((m) => m.ControlApiDialog));
 const CaptionsDialog = lazyPart(() => import('./captions/CaptionsDialog').then((m) => m.CaptionsDialog));
 const SpeakersDialog = lazyPart(() => import('./views/SpeakersDialog').then((m) => m.SpeakersDialog));
 const BroadcastDialog = lazyPart(() => import('./broadcast/BroadcastDialog').then((m) => m.BroadcastDialog));
@@ -101,6 +102,9 @@ function ControlApp() {
   const [brandOpen, setBrandOpen] = useState(false);
   // Signed in (when Lumora's sign-in is on): who, and the Lumora team's approvals.
   const { access, signOut } = useAccess();
+  // The Lumora team's switches (Features): something in use stays on.
+  const captionsFeature = useFeature('captions', !!show?.captions?.on);
+  const reportFeature = useFeature('problem_reports');
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [zmanimOpen, setZmanimOpen] = useState(false);
@@ -135,6 +139,7 @@ function ControlApp() {
   useEffect(() => client.watchEventFiles(setFiles), [client]);
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
   const [remoteOpen, setRemoteOpen] = useState(false);
+  const [apiOpen, setApiOpen] = useState(false);
   // The speaker's clicker (slides from another device), and a presentation clicker on this computer.
   const [speakerOpen, setSpeakerOpen] = useState(false);
   const [clicker, setClicker] = useState(loadClicker);
@@ -222,11 +227,15 @@ function ControlApp() {
         hint: 'Names come on by themselves when people talk',
         onClick: () => setSpeakersOpen(true),
       },
-      {
-        label: `Live captions…${show?.captions?.on ? ' (on)' : ''}`,
-        hint: 'Write what is said for the stream’s viewers',
-        onClick: () => setCaptionsOpen(true),
-      },
+      ...(captionsFeature
+        ? [
+            {
+              label: `Live captions…${show?.captions?.on ? ' (on)' : ''}`,
+              hint: 'Write what is said for the stream’s viewers',
+              onClick: () => setCaptionsOpen(true),
+            },
+          ]
+        : []),
       {
         label: `Backup lineup…${show?.event.backup?.on === false ? ' (off)' : ''}`,
         hint: 'If the camera on air goes out, the next one in the lineup goes on air by itself',
@@ -235,6 +244,11 @@ function ControlApp() {
       {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
+      },
+      {
+        label: 'Control API (Companion, OSC, tally)…',
+        hint: 'Stream Deck through Companion, X-keys, tally lights and show-control systems',
+        onClick: () => setApiOpen(true),
       },
       {
         label: `${clicker ? '● ' : '    '}Presentation clicker controls the slideshow`,
@@ -344,7 +358,11 @@ function ControlApp() {
       })),
       null,
       { label: 'Live chat and audience questions…', onClick: () => sendCommand({ type: 'chat' }) },
-      { label: 'Data file (spreadsheet)…', hint: 'Titles and scoreboards take their words from a CSV or JSON file', onClick: () => setDataOpen(true) },
+      {
+        label: 'Data file (spreadsheet)…',
+        hint: 'Titles and scoreboards take their words from a CSV file or a Google Sheet',
+        onClick: () => setDataOpen(true),
+      },
     ];
     const slides = show?.sources.filter((x) => x.kind.type === 'slideshow') ?? [];
     const slideshow: MenuItem[] = [
@@ -375,6 +393,7 @@ function ControlApp() {
     const cues: MenuItem[] = [
       { label: 'Run of show…', onClick: () => sendCommand({ type: 'runOfShow' }) },
       { label: 'Triggers (when this happens, do that)…', onClick: () => sendCommand({ type: 'triggers' }) },
+      { label: 'Macros (several steps with one button)…', onClick: () => sendCommand({ type: 'macros' }) },
       { label: 'Next cue (N)', onClick: () => void client.dispatch({ type: 'nextCue' }).catch(fail), disabled: !run?.cues.length },
       run?.running
         ? { label: run.paused ? 'Carry on' : 'Hold the show', onClick: () => void client.dispatch({ type: 'pauseShow', value: !run.paused }).catch(fail) }
@@ -401,8 +420,7 @@ function ControlApp() {
       { label: 'Check for updates…', onClick: checkForUpdates },
       { label: 'Check this computer…', hint: 'Can this computer handle a live event?', onClick: openSystemCheck },
       null,
-      { label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport },
-      null,
+      ...(reportFeature ? [{ label: 'Report a problem…', hint: 'Tell the Lumora team what went wrong', onClick: openProblemReport }, null] : []),
       { label: 'About Lumora', onClick: openAbout },
     ];
     return {
@@ -428,6 +446,9 @@ function ControlApp() {
     jewishOn,
     reportsOn,
     toggleReports,
+    captionsFeature,
+    reportFeature,
+    show?.captions?.on,
     access,
     signOut,
     remote,
@@ -545,6 +566,7 @@ function ControlApp() {
       {peopleOpen && <PeopleDialog onClose={() => setPeopleOpen(false)} />}
       {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
+      {apiOpen && <ControlApiDialog onClose={() => setApiOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       {speakerOpen && remote && (
         <SpeakerDialog client={client} status={remote} clicker={clicker} onClicker={changeClicker} onClose={() => setSpeakerOpen(false)} />

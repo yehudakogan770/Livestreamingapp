@@ -1,0 +1,20 @@
+TITLE: Timeline 1
+FCM: NON-DROP FRAME
+
+001  AX       V     C        00:00:05:00 00:00:10:00 01:00:00:00 01:00:05:00
+* FROM CLIP NAME: A001_C003.mov
+* SOURCE FILE: /Users/colorist/Footage/A001_C003.mov
+
+002  AX       AA    C        00:00:05:00 00:00:10:00 01:00:00:00 01:00:05:00
+* FROM CLIP NAME: A001_C003.mov
+
+003  AX       V     C        00:00:10:00 00:00:10:00 01:00:05:00 01:00:05:00
+003  AX       V     D    024 00:01:00:00 00:01:04:00 01:00:05:00 01:00:09:00
+* FROM CLIP NAME: A001_C003.mov
+* TO CLIP NAME: A002_C001.mov
+
+004  BL       V     C        00:00:00:00 00:00:01:00 01:00:09:00 01:00:10:00
+
+005  AX       V     C        00:00:20:00 00:00:24:00 01:00:10:00 01:00:12:00
+M2   AX       048.0                00:00:20:00
+* FROM CLIP NAME: A003_C010.mov

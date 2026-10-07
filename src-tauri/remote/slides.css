@@ -1,14 +1,15 @@
 /* Lumora Slides: the speaker's clicker. Same colors as the phone remote. */
 :root {
-  --bg: #15171b;
-  --bar: #1a1d22;
-  --panel: #1e2127;
-  --button: #2a2e36;
-  --border: #2c3038;
-  --text: #e4e5e7;
-  --text-dim: #a9abb0;
-  --accent: #4fb3bf;
-  --accent-deep: #1f6f79;
+  --bg: #171717;
+  --bar: #1d1d1d;
+  --panel: #212121;
+  --button: #2e2e2e;
+  --border: #303030;
+  --text: #e8e8e6;
+  --text-dim: #a3a3a0;
+  --accent: #e6e4df; /* selection and focus: a neutral light (no blue) */
+  --accent-deep: #e6e4df; /* the primary button, with dark text */
+  --on-accent: #141414;
   --program: #c7372f;
   --preview: #2f8f4e;
   --warn: #d4b23a;
@@ -70,6 +71,7 @@ select {
 .btn--primary {
   background: var(--accent-deep);
   border-color: var(--accent);
+  color: var(--on-accent);
 }
 .btn--big {
   min-height: 60px;
@@ -110,7 +112,7 @@ select {
   flex: none;
 }
 .brand span {
-  color: var(--accent);
+  color: var(--text-dim);
   font-weight: 400;
 }
 .login p {
@@ -131,7 +133,7 @@ select {
   letter-spacing: 0.3em;
 }
 .pin:focus {
-  outline: 2px solid var(--accent);
+  outline: 2px solid rgba(236, 234, 228, 0.65);
 }
 .login__error {
   min-height: 1.4em;
@@ -164,7 +166,7 @@ select {
   height: 10px;
   flex: none;
   border-radius: 50%;
-  background: #6b6f76;
+  background: #6f6f6f;
 }
 .conn--ok {
   background: var(--preview);
@@ -306,7 +308,7 @@ button.chip {
   cursor: pointer;
 }
 .frame--now:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid rgba(236, 234, 228, 0.65);
 }
 .frame--black img,
 .frame--black .frame__input {
