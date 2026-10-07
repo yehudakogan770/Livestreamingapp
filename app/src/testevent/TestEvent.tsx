@@ -5,7 +5,7 @@ import { getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
 import { ClipboardCheck, Copy, FileText, FolderOpen, Send, Square, X } from 'lucide-react';
 import { BrandMark } from '../components/Logo';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSound } from '../audio/SoundContext';
 import { useBroadcast } from '../broadcast/BroadcastContext';
 import { wantsVertical } from '../broadcast/recorder';
@@ -20,52 +20,11 @@ import { cannotStart, findDevices, runTestEvent, type BroadcastApi, type Progres
 import { OUTPUT_NAMES, VERDICT_WORDS, judge, type Finding } from './verdict';
 import './testevent.css';
 
-// ---- opening it from any menu (and from the system check's results) ----
-let open = false;
-const listeners = new Set<() => void>();
-function setOpen(v: boolean) {
-  open = v;
-  for (const l of listeners) l();
-}
-/** Open the test event window (Settings → Run a test event…). */
-export const openTestEvent = (): void => setOpen(true);
-const subscribe = (l: () => void) => {
-  listeners.add(l);
-  return () => listeners.delete(l);
-};
-
-/** Lives inside the control window's providers; shows the window when asked. */
-export function TestEventHost({ show, client }: { show: Show; client: EngineClient }) {
-  const isOpen = useSyncExternalStore(subscribe, () => open);
-  const [notice, setNotice] = useState<string | null>(null);
-  useEffect(() => {
-    if (!isInsideLumora()) return;
-    void invoke<boolean>('test_event_restored_at_start')
-      .then((r) => r && setNotice('A test event was cut short last time. Your event has been put back exactly as it was.'))
-      .catch(() => {});
-  }, []);
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(null), 9000);
-    return () => clearTimeout(t);
-  }, [notice]);
-  return (
-    <>
-      {isOpen && <TestEventDialog show={show} client={client} onClose={() => setOpen(false)} />}
-      {notice && (
-        <div className="app-notice" role="status">
-          {notice}
-        </div>
-      )}
-    </>
-  );
-}
-
 type Stage = { kind: 'setup' } | { kind: 'running'; progress: Progress | null } | { kind: 'report'; data: ReportData; markdown: string; json: string };
 
 const SEVERITY_LABEL = { critical: 'Critical', problem: 'Problem', note: 'Note' } as const;
 
-function TestEventDialog({ show, client, onClose }: { show: Show; client: EngineClient; onClose: () => void }) {
+export function TestEventDialog({ show, client, onClose }: { show: Show; client: EngineClient; onClose: () => void }) {
   const broadcast = useBroadcast();
   const sound = useSound();
   const problems = useProblemStore();
