@@ -359,7 +359,9 @@ fn run_file(
     let mut cmd = quiet(ffmpeg);
     cmd.args(["-hide_banner", "-loglevel", "error", "-nostdin"]);
     if !still {
-        cmd.args(["-re", "-stream_loop", "-1"]);
+        // Decoded by the graphics card where it can (D3D11 on Windows); FFmpeg
+        // falls back to the processor by itself when it can't.
+        cmd.args(["-hwaccel", "auto", "-re", "-stream_loop", "-1"]);
     }
     cmd.arg("-i").arg(file);
     if still {

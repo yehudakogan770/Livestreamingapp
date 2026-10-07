@@ -233,6 +233,22 @@ pub fn args(f: &FeedArgs, audio_port: Option<u16>) -> Vec<String> {
     .map(|s| (*s).to_owned())
     .collect();
     a.push(f.pix_fmt.to_owned());
+    if f.pix_fmt == "nv12" {
+        // The engine's NV12 is BT.709, limited range: said so, so it is encoded and played so.
+        a.extend(
+            [
+                "-color_range",
+                "tv",
+                "-colorspace",
+                "bt709",
+                "-color_primaries",
+                "bt709",
+                "-color_trc",
+                "bt709",
+            ]
+            .map(str::to_owned),
+        );
+    }
     a.push("-s".to_owned());
     a.push(format!("{}x{}", f.width, f.height));
     a.extend([
@@ -284,6 +300,16 @@ pub fn args(f: &FeedArgs, audio_port: Option<u16>) -> Vec<String> {
     }
     a.extend(f.container.iter().cloned());
     a
+}
+
+/// Bytes of one frame of `w` × `h` in FFmpeg's pixel format `pix_fmt`.
+pub fn frame_len(pix_fmt: &str, w: u32, h: u32) -> usize {
+    let px = w as usize * h as usize;
+    if pix_fmt == "nv12" {
+        px * 3 / 2
+    } else {
+        px * 4
+    }
 }
 
 /// Called once when FFmpeg ends: whether it was asked to (the feed
@@ -454,7 +480,7 @@ impl EncoderFeed {
             audio_silence,
             error,
             threads,
-            frame_len: f.width as usize * f.height as usize * 4,
+            frame_len: frame_len(f.pix_fmt, f.width, f.height),
         })
     }
 

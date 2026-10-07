@@ -69,6 +69,7 @@ pub fn pix_fmt(f: PixelFormat) -> &'static str {
         PixelFormat::Rgba8 => "rgba",
         PixelFormat::Bgra8 => "bgra",
         PixelFormat::Bgrx8 => "bgr0",
+        PixelFormat::Nv12 => "nv12",
     }
 }
 
@@ -86,6 +87,8 @@ struct Feed {
     /// Drawn at its own size (and the vertical's small copy).
     target: Option<usize>,
     small: Option<usize>,
+    /// Its NV12 copy, read back for the encoder (screens).
+    nv12: Option<usize>,
     /// The target's size.
     size: (u32, u32),
     error: Option<String>,
@@ -150,23 +153,28 @@ impl Feeds {
             pending: None,
             target: None,
             small: None,
-            size: (spec.width.max(2), spec.height.max(2)),
+            nv12: None,
+            size: (spec.width.max(2) & !1, spec.height.max(2) & !1),
             error: None,
         };
         match &spec.source {
             FeedSource::Screen { vertical, .. } => {
-                let (w, h) = (spec.width.max(2), spec.height.max(2));
+                let (w, h) = f.size;
                 if *vertical || (w, h) != screen_size {
                     f.target = Some(self.target(gpu, w, h));
                 }
                 if *vertical {
                     f.small = Some(self.target(gpu, SMALL.0, SMALL.1));
                 }
+                // Read back as NV12: a third of the bytes, what encoders take.
+                let n = self.target(gpu, 2, 2);
+                gpu.ensure_nv12_target(n, w, h);
+                f.nv12 = Some(n);
                 let shape = FeedShape {
                     width: w,
                     height: h,
                     fps: spec.fps,
-                    pix_fmt: "rgba",
+                    pix_fmt: "nv12",
                 };
                 f.pending = Some(spawn_make(make, shape, Some(reply)));
             }
@@ -181,7 +189,7 @@ impl Feeds {
     /// Stop feed `id`; the caller finishes it (off the engine's thread).
     pub fn stop(&mut self, gpu: &mut Compositor, id: u64) -> Option<EncoderFeed> {
         let f = self.feeds.remove(&id)?;
-        for t in [f.target, f.small].into_iter().flatten() {
+        for t in [f.target, f.small, f.nv12].into_iter().flatten() {
             gpu.drop_target(t);
             self.free.push(t);
         }
@@ -214,6 +222,9 @@ impl Feeds {
             }
             if let Some(t) = f.small {
                 gpu.ensure_target(t, SMALL.0, SMALL.1);
+            }
+            if let Some(t) = f.nv12 {
+                gpu.ensure_nv12_target(t, f.size.0, f.size.1);
             }
         }
     }
@@ -309,7 +320,7 @@ impl Feeds {
                 continue;
             }
             let src = program(*screen);
-            let dest = match (f.target, f.small) {
+            let picture = match (f.target, f.small) {
                 (Some(t), Some(small)) => {
                     passes.push(Pass {
                         dest: Dest::Target(small),
@@ -321,7 +332,7 @@ impl Feeds {
                         viewport: None,
                         paint: Paint::Vertical { src, small },
                     });
-                    Dest::Target(t)
+                    t
                 }
                 (Some(t), None) => {
                     passes.push(Pass {
@@ -329,11 +340,17 @@ impl Feeds {
                         viewport: None,
                         paint: Paint::Target(src),
                     });
-                    Dest::Target(t)
+                    t
                 }
-                _ => Dest::Target(src),
+                _ => src,
             };
-            due.push((*id, n, dest));
+            let Some(nv12) = f.nv12 else { continue };
+            passes.push(Pass {
+                dest: Dest::Target(nv12),
+                viewport: None,
+                paint: Paint::Nv12(picture),
+            });
+            due.push((*id, n, Dest::Target(nv12)));
         }
         if !passes.is_empty() {
             gpu.render(&passes);

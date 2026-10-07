@@ -16,6 +16,7 @@ use crate::scene::{fit_rect, Content, Layer, Placement, Rect, ScreenScene, FULL}
 pub const TARGET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 const SHADER: &str = include_str!("compose.wgsl");
+const YUV_SHADER: &str = include_str!("yuv.wgsl");
 /// One draw's uniforms: sixteen vec4s.
 const DRAW_FLOATS: usize = 64;
 const DRAW_BYTES: u64 = (DRAW_FLOATS * 4) as u64;
@@ -26,12 +27,27 @@ struct Tex {
     bind: wgpu::BindGroup,
     w: u32,
     h: u32,
+    format: wgpu::TextureFormat,
+}
+
+/// The NV12 targets' format (one byte a texel: see `fs_nv12`).
+pub const NV12_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Unorm;
+
+/// Bytes a texel of a target.
+fn bytes_per_texel(f: wgpu::TextureFormat) -> u32 {
+    if f == NV12_FORMAT {
+        1
+    } else {
+        4
+    }
 }
 
 struct SourceTex {
     tex: Tex,
     format: PixelFormat,
     seq: u64,
+    /// NV12 sources: their Y and UV planes as they arrive (made into `tex` on the GPU).
+    planes: Option<(wgpu::Texture, wgpu::Texture, wgpu::BindGroup)>,
 }
 
 /// A graphics plane from the web overlay renderer: the slot (screen) it
@@ -72,6 +88,8 @@ pub enum Paint<'a> {
     Solid([f32; 4]),
     /// A graphics plane of `slot` over the viewport, at whatever size it is held (the multiview's words).
     Plane { slot: usize, name: &'static str },
+    /// Target `src` as NV12 (into an NV12 target, see [`Compositor::ensure_nv12_target`]).
+    Nv12(usize),
 }
 
 /// Where a pass paints.
@@ -94,6 +112,7 @@ struct Pending {
     rx: std::sync::mpsc::Receiver<Result<(), wgpu::BufferAsyncError>>,
     w: u32,
     h: u32,
+    bpp: u32,
 }
 
 /// Two read-back buffers taking turns (see [`Compositor::read_pipelined`]).
@@ -142,6 +161,9 @@ pub struct Compositor {
     draw_layout: wgpu::BindGroupLayout,
     pipeline_layout: wgpu::PipelineLayout,
     module: wgpu::ShaderModule,
+    /// NV12 to RGBA (`yuv.wgsl`): its layout and its pipelines (BT.709, BT.601).
+    yuv_layout: wgpu::BindGroupLayout,
+    yuv_pipes: [wgpu::RenderPipeline; 2],
     sampler: wgpu::Sampler,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
     uniforms: wgpu::Buffer,
@@ -216,6 +238,7 @@ fn make_tex(
         bind,
         w: w.max(1),
         h: h.max(1),
+        format,
     }
 }
 
@@ -444,6 +467,69 @@ impl Compositor {
             label: Some("compose"),
             source: wgpu::ShaderSource::Wgsl(SHADER.into()),
         });
+        let plane = |binding: u32| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        };
+        let yuv_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("nv12"),
+            entries: &[
+                plane(0),
+                plane(1),
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+        });
+        let yuv_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("nv12"),
+            source: wgpu::ShaderSource::Wgsl(YUV_SHADER.into()),
+        });
+        let yuv_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("nv12"),
+            bind_group_layouts: &[Some(&yuv_layout)],
+            immediate_size: 0,
+        });
+        let yuv_pipe = |entry: &str| {
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("nv12"),
+                layout: Some(&yuv_pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &yuv_module,
+                    entry_point: Some("vs"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleStrip,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &yuv_module,
+                    entry_point: Some(entry),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                multiview_mask: None,
+                cache: None,
+            })
+        };
+        let yuv_pipes = [yuv_pipe("fs_709"), yuv_pipe("fs_601")];
         let white = make_tex(
             &device,
             &tex_layout,
@@ -466,6 +552,8 @@ impl Compositor {
             draw_layout,
             pipeline_layout,
             module,
+            yuv_layout,
+            yuv_pipes,
             sampler,
             pipelines: HashMap::new(),
             uniforms,
@@ -569,11 +657,17 @@ impl Compositor {
                 multisample: wgpu::MultisampleState::default(),
                 fragment: Some(wgpu::FragmentState {
                     module: &self.module,
-                    entry_point: Some("fs"),
+                    // NV12 targets get the NV12 conversion (and no blending).
+                    entry_point: Some(if format == NV12_FORMAT {
+                        "fs_nv12"
+                    } else {
+                        "fs"
+                    }),
                     compilation_options: Default::default(),
                     targets: &[Some(wgpu::ColorTargetState {
                         format,
-                        blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+                        blend: (format != NV12_FORMAT)
+                            .then_some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
                         write_mask: wgpu::ColorWrites::ALL,
                     })],
                 }),
@@ -606,6 +700,30 @@ impl Compositor {
         }
     }
 
+    /// Make sure target `i` exists as an NV12 target for a `w` × `h` picture
+    /// (one byte a texel, `w` × 1.5 `h`; `w` and `h` even).
+    pub fn ensure_nv12_target(&mut self, i: usize, w: u32, h: u32) {
+        if self.targets.len() <= i {
+            self.targets.resize_with(i + 1, || None);
+        }
+        let (tw, th) = (w, h * 3 / 2);
+        let ok = self.targets[i]
+            .as_ref()
+            .is_some_and(|t| t.w == tw && t.h == th && t.format == NV12_FORMAT);
+        if !ok {
+            self.targets[i] = Some(make_tex(
+                &self.device,
+                &self.tex_layout,
+                &self.sampler,
+                tw,
+                th,
+                NV12_FORMAT,
+                true,
+                "nv12",
+            ));
+        }
+    }
+
     /// Let target `i` go (a feed ended).
     pub fn drop_target(&mut self, i: usize) {
         if let Some(t) = self.targets.get_mut(i) {
@@ -633,8 +751,12 @@ impl Compositor {
 
     /// The newest frame of a source to the GPU (nothing happens when it was already sent).
     pub fn upload(&mut self, id: &SourceId, f: &VideoFrame) {
+        if f.format == PixelFormat::Nv12 {
+            self.upload_nv12(id, f);
+            return;
+        }
         let format = match f.format {
-            PixelFormat::Rgba8 => wgpu::TextureFormat::Rgba8Unorm,
+            PixelFormat::Rgba8 | PixelFormat::Nv12 => wgpu::TextureFormat::Rgba8Unorm,
             PixelFormat::Bgra8 | PixelFormat::Bgrx8 => wgpu::TextureFormat::Bgra8Unorm,
         };
         let fresh = match self.sources.get(id) {
@@ -663,6 +785,7 @@ impl Compositor {
                     tex,
                     format: f.format,
                     seq: u64::MAX,
+                    planes: None,
                 },
             );
         }
@@ -673,6 +796,148 @@ impl Compositor {
             }
             s.seq = f.seq;
         }
+    }
+
+    /// An NV12 frame: its two planes to the GPU (12 bits a pixel), made into
+    /// the source's RGBA picture there.
+    fn upload_nv12(&mut self, id: &SourceId, f: &VideoFrame) {
+        let (w, h) = (f.width & !1, f.height & !1);
+        if w == 0
+            || h == 0
+            || f.data.as_slice().len() < PixelFormat::Nv12.frame_len(f.width, f.height)
+        {
+            return;
+        }
+        let fresh = match self.sources.get(id) {
+            Some(s) if s.tex.w == w && s.tex.h == h && s.format == PixelFormat::Nv12 => {
+                if s.seq == f.seq {
+                    return;
+                }
+                false
+            }
+            _ => true,
+        };
+        if fresh {
+            let tex = make_tex(
+                &self.device,
+                &self.tex_layout,
+                &self.sampler,
+                w,
+                h,
+                wgpu::TextureFormat::Rgba8Unorm,
+                true,
+                "camera",
+            );
+            let plane = |pw: u32, ph: u32, format: wgpu::TextureFormat| {
+                self.device.create_texture(&wgpu::TextureDescriptor {
+                    label: Some("camera-plane"),
+                    size: wgpu::Extent3d {
+                        width: pw,
+                        height: ph,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                    view_formats: &[],
+                })
+            };
+            let y = plane(w, h, wgpu::TextureFormat::R8Unorm);
+            let uv = plane(w / 2, h / 2, wgpu::TextureFormat::Rg8Unorm);
+            let bind = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("camera-planes"),
+                layout: &self.yuv_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(
+                            &y.create_view(&wgpu::TextureViewDescriptor::default()),
+                        ),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::TextureView(
+                            &uv.create_view(&wgpu::TextureViewDescriptor::default()),
+                        ),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: wgpu::BindingResource::Sampler(&self.sampler),
+                    },
+                ],
+            });
+            self.sources.insert(
+                id.clone(),
+                SourceTex {
+                    tex,
+                    format: PixelFormat::Nv12,
+                    seq: u64::MAX,
+                    planes: Some((y, uv, bind)),
+                },
+            );
+        }
+        let Some(s) = self.sources.get_mut(id) else {
+            return;
+        };
+        let Some((y, uv, bind)) = &s.planes else {
+            return;
+        };
+        let data = f.data.as_slice();
+        let stride = f.width as usize;
+        let ylen = stride * f.height as usize;
+        let write = |t: &wgpu::Texture, bytes: &[u8], row: u32, tw: u32, th: u32| {
+            self.queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: t,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                bytes,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(row),
+                    rows_per_image: Some(th),
+                },
+                wgpu::Extent3d {
+                    width: tw,
+                    height: th,
+                    depth_or_array_layers: 1,
+                },
+            );
+        };
+        write(y, &data[..ylen], f.width, w, h);
+        write(uv, &data[ylen..], f.width, w / 2, h / 2);
+        self.uploaded += PixelFormat::Nv12.frame_len(w, h) as u64;
+        // HD cameras speak BT.709; smaller ones BT.601.
+        let pipe = &self.yuv_pipes[usize::from(h < 720)];
+        let mut enc = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("nv12"),
+            });
+        {
+            let mut rp = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("nv12"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &s.tex.view,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                ..Default::default()
+            });
+            rp.set_pipeline(pipe);
+            rp.set_bind_group(0, bind, &[]);
+            rp.draw(0..4, 0..1);
+        }
+        self.queue.submit([enc.finish()]);
+        s.seq = f.seq;
     }
 
     /// The show clock (ms), for effects that move (grain).
@@ -1066,6 +1331,17 @@ impl Compositor {
         }
     }
 
+    fn dest_bpp(&self, dest: Dest) -> u32 {
+        match dest {
+            Dest::Target(i) => self
+                .targets
+                .get(i)
+                .and_then(Option::as_ref)
+                .map_or(4, |t| bytes_per_texel(t.format)),
+            Dest::Atlas => 4,
+        }
+    }
+
     fn dest_size(&self, dest: Dest) -> Option<(u32, u32)> {
         match dest {
             Dest::Target(i) => self.targets.get(i)?.as_ref().map(|t| (t.w, t.h)),
@@ -1119,6 +1395,9 @@ impl Compositor {
                     d.set(COLOR, *c);
                     d.0[MISC * 4 + 3] = 1.0;
                     draws.push((d, TexKey::White));
+                }
+                Paint::Nv12(src) => {
+                    draws.push((DrawU::new(), TexKey::Target(*src)));
                 }
                 Paint::Plane { slot, name } => {
                     if let Some(id) = self.plane(*slot, name, (w, h)) {
@@ -1187,6 +1466,10 @@ impl Compositor {
             self.queue.write_buffer(&self.uniforms, 0, &bytes);
         }
         let target_pipe = self.pipeline(TARGET_FORMAT);
+        let nv12_pipe = plan
+            .iter()
+            .any(|(d, _, _)| self.dest_bpp(*d) == 1)
+            .then(|| self.pipeline(NV12_FORMAT));
         let surface_pipe = surface.map(|(_, f)| self.pipeline(f));
         let mut enc = self
             .device
@@ -1195,14 +1478,14 @@ impl Compositor {
             });
         let mut n = 0u64;
         for (dest, viewport, draws) in &plan {
-            let (view, size) = match (dest, surface) {
-                (Dest::Target(usize::MAX), Some((v, _))) => (v, None),
+            let (view, size, nv12) = match (dest, surface) {
+                (Dest::Target(usize::MAX), Some((v, _))) => (v, None, false),
                 (Dest::Target(i), _) => match self.targets.get(*i).and_then(Option::as_ref) {
-                    Some(t) => (&t.view, Some((t.w, t.h))),
+                    Some(t) => (&t.view, Some((t.w, t.h)), t.format == NV12_FORMAT),
                     None => continue,
                 },
                 (Dest::Atlas, _) => match &self.atlas {
-                    Some(t) => (&t.view, Some((t.w, t.h))),
+                    Some(t) => (&t.view, Some((t.w, t.h)), false),
                     None => continue,
                 },
             };
@@ -1232,6 +1515,8 @@ impl Compositor {
             });
             let pipe = if size.is_none() {
                 surface_pipe.as_ref().unwrap_or(&target_pipe)
+            } else if nv12 {
+                nv12_pipe.as_ref().unwrap_or(&target_pipe)
             } else {
                 &target_pipe
             };
@@ -1359,8 +1644,8 @@ impl Compositor {
     }
 
     /// A read-back buffer for `w` × `h` (bytes per row padded as the GPU wants).
-    fn read_buffer(&self, w: u32, h: u32) -> wgpu::Buffer {
-        let row = (w * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+    fn read_buffer(&self, w: u32, h: u32, bpp: u32) -> wgpu::Buffer {
+        let row = (w * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
         self.device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("read"),
             size: u64::from(row) * u64::from(h),
@@ -1377,7 +1662,14 @@ impl Compositor {
         }
         .ok_or("Nothing to read.")?;
         let (w, h) = (t.w, t.h);
-        let row = (w * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+        let bpp = bytes_per_texel(t.format);
+        if buffer.size()
+            < u64::from((w * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT))
+                * u64::from(h)
+        {
+            return Err("The read-back buffer is too small.".into());
+        }
+        let row = (w * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
         let mut enc = self
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -1414,6 +1706,7 @@ impl Compositor {
             rx,
             w,
             h,
+            bpp,
         })
     }
 
@@ -1430,15 +1723,15 @@ impl Compositor {
         ready
             .ok_or("The read-back was lost.")?
             .map_err(|e| e.to_string())?;
-        let (w, h) = (p.w, p.h);
-        let row = (w * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) as usize;
-        let mut px = Vec::with_capacity((w * h * 4) as usize);
+        let (w, h, bpp) = (p.w, p.h, p.bpp as usize);
+        let row = (w as usize * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT as usize);
+        let mut px = Vec::with_capacity(w as usize * h as usize * bpp);
         {
             let slice = p.buffer.slice(..);
             let mapped = slice.get_mapped_range().map_err(|e| e.to_string())?;
             for y in 0..h as usize {
                 let start = y * row;
-                px.extend_from_slice(&mapped[start..start + w as usize * 4]);
+                px.extend_from_slice(&mapped[start..start + w as usize * bpp]);
             }
         }
         p.buffer.unmap();
@@ -1451,11 +1744,12 @@ impl Compositor {
     /// The target doesn't exist or the GPU failed.
     pub fn read(&mut self, dest: Dest) -> Result<(u32, u32, Vec<u8>), String> {
         let (w, h) = self.dest_size(dest).ok_or("Nothing to read.")?;
-        let buffer = match self.reads.get(&(w, h)) {
+        let bpp = self.dest_bpp(dest);
+        let buffer = match self.reads.get(&(w * bpp, h)) {
             Some(b) => b.clone(),
             None => {
-                let b = self.read_buffer(w, h);
-                self.reads.insert((w, h), b.clone());
+                let b = self.read_buffer(w, h, bpp);
+                self.reads.insert((w * bpp, h), b.clone());
                 b
             }
         };
@@ -1468,10 +1762,11 @@ impl Compositor {
     /// has normally long finished. Two buffers take turns. None on the first call.
     pub fn read_pipelined(&mut self, dest: Dest) -> Option<(u32, u32, Vec<u8>)> {
         let size = self.dest_size(dest)?;
+        let bpp = self.dest_bpp(dest);
         if self.rings.get(&dest).is_none_or(|r| r.size != size) {
             let buffers = vec![
-                self.read_buffer(size.0, size.1),
-                self.read_buffer(size.0, size.1),
+                self.read_buffer(size.0, size.1, bpp),
+                self.read_buffer(size.0, size.1, bpp),
             ];
             self.rings.insert(
                 dest,

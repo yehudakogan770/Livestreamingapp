@@ -281,6 +281,13 @@ tiles show no graphics, and the timecodes count seconds, not frames.
   vignette, grain — per picture, in the same pass that places it (no extra
   copy). Background removal, blur behind people and auto-framing need the web
   processor's person-finding model and are not in the engine.
+- **NV12 both ways**: cameras' frames cross to the GPU as NV12 (two planes,
+  12 bits a pixel) and are made RGB there; the encoder feeds are made NV12 on
+  the GPU and read back at a third of RGBA's bytes (see the cost table).
+  Files are decoded with `-hwaccel auto` (D3D11 on Windows; FFmpeg falls back
+  to the processor by itself). Tested: NV12 red (BT.601 and BT.709) drawn red,
+  12 bits a pixel uploaded; the feeds' NV12 decoded back by FFmpeg to the
+  right colors.
 - **Picture delay** (`delay.rs`): a camera held back by its delay keeps its
   last frames (up to four seconds) and shows the one from that long ago.
 - **Device-lost recovery**: a lost graphics device (a driver reset — Windows'
@@ -328,14 +335,14 @@ does: wall-clock timestamps on both).
 **Per frame, 1080p60, 4 cameras, 3 screens + encoder** (estimates for a
 mid-range discrete GPU, to be confirmed on the hardware matrix below):
 
-| Work                    | Cost                                                                                   | Note                                                                                                                                           |
-| ----------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Upload 4 camera frames  | 4 × 8.3 MB RGBA = 2 GB/s over PCIe (≈ 15–20 % of PCIe 3 x16)                           | Phase 2: NV12 from MF (12 bit/px: 0.75 GB/s) converted in the shader (Studio's `yuv.rs` has it). On integrated GPUs uploads are memory copies. |
-| Draw 3 screens + 2 Next | ~10 full-screen quads at 1080p ≈ 20 Mpx of simple fragments                            | < 1 ms on any discrete GPU; ~2 ms on Intel Iris Xe.                                                                                            |
-| Present 2 windows       | blits                                                                                  | < 0.3 ms                                                                                                                                       |
-| Encoder read-back       | 8.3 MB/frame = 500 MB/s download; pipelined (two buffers, one frame late), so no stall | Phase 2: NV12 on the GPU before read-back (190 MB/s); Phase 3: hand the D3D texture to NVENC/AMF/QSV directly.                                 |
-| Previews                | one 1920×540 atlas read back 10×/s + JPEG of ~9 tiles                                  | ~1 ms every 6th frame                                                                                                                          |
-| Engine CPU              | scene maths for 3 screens: **0.01 ms**; the rest is driver submission                  | Measured (below).                                                                                                                              |
+| Work                    | Cost                                                                                                                     | Note                                                                                                                                                                                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Upload 4 camera frames  | 4 × 3.1 MB NV12 = 0.75 GB/s (it was 4 × 8.3 MB RGBA = 2 GB/s before Phase 2)                                             | Done in Phase 2: cameras deliver NV12 (Media Foundation's own format; RGB32 only when a camera can't), uploaded as two planes and made RGB on the GPU once per new frame (`yuv.wgsl`; BT.709 for HD, BT.601 below). On integrated GPUs uploads are memory copies. |
+| Draw 3 screens + 2 Next | ~10 full-screen quads at 1080p ≈ 20 Mpx of simple fragments                                                              | < 1 ms on any discrete GPU; ~2 ms on Intel Iris Xe.                                                                                                                                                                                                               |
+| Present 2 windows       | blits                                                                                                                    | < 0.3 ms                                                                                                                                                                                                                                                          |
+| Encoder read-back       | 3.1 MB/frame NV12 = 190 MB/s download (RGBA was 8.3 MB = 500 MB/s); pipelined (two buffers, one frame late), so no stall | Done in Phase 2: each screen feed is converted to NV12 on the GPU (`fs_nv12`, BT.709 limited, tagged so) and read back as such; hardware encoders take NV12 as it is. Phase 3: hand the D3D texture to NVENC/AMF/QSV directly.                                    |
+| Previews                | one 1920×540 atlas read back 10×/s + JPEG of ~9 tiles                                                                    | ~1 ms every 6th frame                                                                                                                                                                                                                                             |
+| Engine CPU              | scene maths for 3 screens: **0.01 ms**; the rest is driver submission                                                    | Measured (below).                                                                                                                                                                                                                                                 |
 
 The WebView path, by comparison, spends its time in the control window's main
 thread (94 % busy with recording on a software canvas, `PERFORMANCE.md`) plus
@@ -359,14 +366,16 @@ pixel is drawn by the CPU — these numbers are a floor for correctness and an
 upper bound for cost, not a prediction for an event PC. The machine's load
 moved a lot between runs (shown), so compare rows with the same load only:
 
-| Run (load average)                                | ms / frame (avg / p95) | Of which                                               |
-| ------------------------------------------------- | ---------------------- | ------------------------------------------------------ |
-| 1080p, 300 frames, synchronous read-back (≈ 10)   | 342 / 576              | upload 51, draw 64, outputs 156, encoder read-back 107 |
-| 1080p, 150 frames, pipelined read-back (≈ 5)      | 149 / 185              | upload 26, draw 43, outputs 73, encoder read-back 5    |
-| 640×360, 120 frames, synchronous read-back (≈ 10) | 88.7 / 131             | upload 30, draw 19, outputs 26, read-back 11           |
-| 640×360, 120 frames, pipelined read-back (≈ 5)    | 53.7 / 66              | upload 26, draw 11, outputs 15, read-back 0.6          |
-| 640×360 + FFmpeg x264 feed, 90 frames (≈ 10)      | 98.9 / 161             | 90 frames in, **0 dropped**                            |
-| Scene maths, 3 screens (CPU only, any run)        | **0.01 ms**            |                                                        |
+| Run (load average)                                      | ms / frame (avg / p95) | Of which                                                                                               |
+| ------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------ |
+| 1080p, 300 frames, synchronous read-back (≈ 10)         | 342 / 576              | upload 51, draw 64, outputs 156, encoder read-back 107                                                 |
+| 1080p, 150 frames, pipelined read-back (≈ 5)            | 149 / 185              | upload 26, draw 43, outputs 73, encoder read-back 5                                                    |
+| 640×360, 120 frames, synchronous read-back (≈ 10)       | 88.7 / 131             | upload 30, draw 19, outputs 26, read-back 11                                                           |
+| 640×360, 120 frames, pipelined read-back (≈ 5)          | 53.7 / 66              | upload 26, draw 11, outputs 15, read-back 0.6                                                          |
+| 640×360 + FFmpeg x264 feed, 90 frames (≈ 10)            | 98.9 / 161             | 90 frames in, **0 dropped**                                                                            |
+| Phase 2, 640×360 + x264 feed (NV12), 120 frames (≈ 1.6) | 44.0 / 53.9            | upload 20.8, draw 7.3, previews 11.8, feed (NV12 pass + read-back) 4.8; 114 frames in, **0 dropped**   |
+| Phase 2, 1080p + x264 feed (NV12), 150 frames (≈ 1.6)   | 132 / 155              | upload 23, draw 12, previews 45, feed 35.5 (the NV12 pass runs on the CPU here); 143 in, **0 dropped** |
+| Scene maths, 3 screens (CPU only, any run)              | **0.01 ms**            |                                                                                                        |
 
 The encoder read-back is pipelined (`Compositor::read_pipelined`: two buffers
 take turns, each frame returns the previous frame's pixels, so the engine
@@ -480,8 +489,14 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
   PCM (no camera opened by the control window); the test event in Unified
   mode; the multiview drawn by the engine in its own window; stream, web page,
   screen-capture and guest inputs; green screen and light and colour in the
-  shader (port of `chroma.ts`); the picture delay; group opacity. Next: NV12
-  uploads and read-back; files with hardware decode (`-hwaccel d3d11va`).
-  Device-lost recovery: done.
+  shader (port of `chroma.ts`); the picture delay; group opacity; NV12 uploads
+  and read-back; files with hardware decode; device-lost recovery. (Tested on
+  Linux with llvmpipe and FFmpeg; the Windows-only parts — Media Foundation
+  NV12, the native windows, WebView2's hidden renderers, D3D12 — compile-checked
+  and still to be run on the Windows matrix of §6.) Left for later: background
+  removal, blur behind people and auto-framing (the web's person model);
+  captions written into the stream picture; instant replay; the Monitor as an
+  engine window; graphics on the Next previews; frame-counting timecodes in
+  the multiview; a camera behind slides or Pesukim words.
 - **Phase 3** — zero-copy encode (D3D texture → NVENC/AMF/QSV), HDR output,
   per-output adapters, Unified as the default.

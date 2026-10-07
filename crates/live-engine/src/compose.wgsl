@@ -187,6 +187,34 @@ fn look(rgb_in: vec3<f32>, alpha_in: f32, s: vec2<f32>, t: vec2<f32>) -> vec4<f3
   return vec4<f32>(clamp(rgb, vec3<f32>(0.0), vec3<f32>(1.0)), alpha);
 }
 
+// A drawn screen (`tex`, opaque RGBA) as NV12 for the encoders, in one R8
+// target of W × 1.5 H: the Y plane (W × H), then the U and V samples of each
+// 2 × 2 block side by side (W × H / 2). BT.709, limited range, as the
+// recordings are tagged. A third of the bytes of RGBA to read back, and what
+// the hardware encoders take as they are.
+@fragment
+fn fs_nv12(v: V) -> @location(0) vec4<f32> {
+  let size = vec2<i32>(textureDimensions(tex));
+  let p = vec2<i32>(floor(v.pos.xy));
+  if (p.y < size.y) {
+    let c = textureLoad(tex, min(p, size - 1), 0).rgb;
+    let y = dot(c, vec3<f32>(0.2126, 0.7152, 0.0722));
+    return vec4<f32>((16.0 + 219.0 * y) / 255.0, 0.0, 0.0, 1.0);
+  }
+  let pair = p.x / 2;
+  let s = vec2<i32>(pair * 2, (p.y - size.y) * 2);
+  let m = size - 1;
+  let c = (textureLoad(tex, min(s, m), 0).rgb + textureLoad(tex, min(s + vec2<i32>(1, 0), m), 0).rgb
+    + textureLoad(tex, min(s + vec2<i32>(0, 1), m), 0).rgb + textureLoad(tex, min(s + vec2<i32>(1, 1), m), 0).rgb) * 0.25;
+  var k: f32;
+  if (p.x - pair * 2 == 0) {
+    k = -0.1146 * c.r - 0.3854 * c.g + 0.5 * c.b;
+  } else {
+    k = 0.5 * c.r - 0.4542 * c.g - 0.0458 * c.b;
+  }
+  return vec4<f32>((128.0 + 224.0 * k) / 255.0, 0.0, 0.0, 1.0);
+}
+
 @fragment
 fn fs(v: V) -> @location(0) vec4<f32> {
   let o = v.o;

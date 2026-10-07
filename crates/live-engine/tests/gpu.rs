@@ -202,6 +202,53 @@ fn green_screen_and_light_and_color_on_the_gpu() {
     );
 }
 
+/// A camera's NV12 frame of one color (Y, U, V as the camera would send them).
+fn nv12(w: u32, h: u32, yuv: [u8; 3]) -> VideoFrame {
+    let pool = FramePool::new(1);
+    VideoFrame::build(&pool, w, h, PixelFormat::Nv12, 1, |px| {
+        let ylen = (w * h) as usize;
+        px[..ylen].fill(yuv[0]);
+        for uv in px[ylen..].as_chunks_mut::<2>().0 {
+            *uv = [yuv[1], yuv[2]];
+        }
+    })
+}
+
+#[test]
+fn cameras_in_nv12_are_made_rgb_on_the_gpu() {
+    let Some(mut g) = gpu() else { return };
+    // Red as a small camera sends it (BT.601) …
+    g.upload(&SourceId::new("sd"), &nv12(W, H, [81, 90, 240]));
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("sd", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    assert!(
+        near(px(&img, 10, 10), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 10, 10)
+    );
+    // … and as an HD camera sends it (BT.709).
+    g.upload(&SourceId::new("hd"), &nv12(1280, 720, [63, 102, 240]));
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("hd", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    let p = px(&img, 10, 10);
+    assert!(p[0] >= 250 && p[1] <= 5 && p[2] <= 5, "{p:?}");
+    // 12 bits a pixel crossed to the GPU, not 32.
+    assert_eq!(
+        g.take_upload_bytes(),
+        (W * H * 3 / 2 + 1280 * 720 * 3 / 2) as u64
+    );
+}
+
 #[test]
 fn a_fade_mixes_the_two_inputs() {
     let Some(mut g) = gpu() else { return };
