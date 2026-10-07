@@ -2127,6 +2127,8 @@ dependencies = [
  "lumora-testevent",
  "png 0.18.1",
  "qrcode",
+ "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "sysinfo",

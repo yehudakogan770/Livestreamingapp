@@ -31,6 +31,7 @@ export interface Lists {
   address: string;
   inputs: { id: string; name: string; number: number }[];
   presets: { id: string; name: string; number: number }[];
+  macros: { id: string; name: string; number: number }[];
   overlays: { channel: number; name: string | null }[];
   countdowns: { id: string; name: string }[];
   slideshows: { id: string; name: string }[];
@@ -193,6 +194,7 @@ export class Deck {
       address: this.client.address,
       inputs: s?.inputs.map(({ id, name, number }) => ({ id, name, number })) ?? [],
       presets: s?.presets.map(({ id, name, number }) => ({ id, name, number })) ?? [],
+      macros: s?.macros.map(({ id, name, number }) => ({ id, name, number })) ?? [],
       overlays: s?.overlays.map(({ channel, name }) => ({ channel, name })) ?? [1, 2, 3, 4].map((channel) => ({ channel, name: null })),
       countdowns: s?.countdowns.map(({ id, name }) => ({ id, name })) ?? [],
       slideshows: s?.slideshows.map(({ id, name }) => ({ id, name })) ?? [],

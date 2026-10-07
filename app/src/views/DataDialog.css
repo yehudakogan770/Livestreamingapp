@@ -53,3 +53,7 @@
 .dat__table tr.is-on {
   background: var(--selected);
 }
+.dat__link {
+  flex: 1;
+  min-width: 0;
+}

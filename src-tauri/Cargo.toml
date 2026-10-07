@@ -31,6 +31,9 @@ jpeg-encoder = "0.7"
 png = "0.18"
 libloading = "0.8"
 sysinfo = { version = "0.33", default-features = false, features = ["system"] }
+# Google Sheets and CSV links for the data file (the same client the updater uses).
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 
 # Web page inputs are captured with the Windows Graphics Capture API.
 [target.'cfg(windows)'.dependencies]

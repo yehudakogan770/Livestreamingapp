@@ -234,11 +234,11 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 
 ## 21. Streaming
 
-- ★ Stream to several sites at once (YouTube, Facebook, custom RTMP/SRT)
+- ★ Stream to several sites at once (YouTube, Facebook, custom RTMP, RTMPS or SRT)
 - ★ Stream health: bitrate, dropped frames, connection status
-- ★ Automatic reconnect if the internet drops
+- ★ Automatic reconnect if the internet drops (backing off 2 s → 30 s, “Reconnecting (3)…” on the LIVE button; the recording never stops)
 - ◆ **Lumora stream page**: each event gets a branded viewer page
-- ◆ Backup stream / backup internet connection
+- ◆ Backup server per destination (YouTube's built in), switched to when the main one fails / ⬜ backup internet connection
 - ○ Live captions (offline speech-to-text)
 
 ## 22. Remotes (phones and tablets)
@@ -400,19 +400,19 @@ again; without internet they open for up to 7 days after the last check. Two-ste
 ### To build (most important first)
 1. ✅ **Sound from stream and web page inputs** into the mixer.
 2. ✅ **Screen capture** — this computer's screens or one window (OBS, vMix).
-3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM).
+3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM). HTTP + WebSocket with a token and OSC over UDP (docs/API.md); a Bitfocus Companion module (companion/) with tally feedbacks and presets; macros on the Stream Deck.
 4. ✅ **Guests by link** (through VDO.Ninja, free, no account; ⬜ several guests in one room, mix-minus) — up to 8 people join from a browser, with their own
    mix-minus (StreamYard, Restream, vMix Call, Ecamm).
 5. 🔶 **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs). YouTube and Twitch done; ⬜ Facebook.
 6. 🔶 **Audio filters** — noise suppression, noise gate, compressor, limiter,
-   EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter. ⬜ VST plugins.
+   EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter, per-input delay, LUFS loudness meter with −14 / −16 / −23 targets. ⬜ VST plugins.
 7. ✅ **Instant replay** with slow motion (vMix, Wirecast), and a **highlights reel**: "Keep as a highlight" adds the last seconds to one video input that plays them all.
 8. ⬜ **Virtual camera** and **NDI in / out** (OBS, vMix, Ecamm).
 9. ✅ **Song lyrics and Bible library** with presentations, themes, stage display
    of the next lines (ProPresenter). Songs, next lines on the stage monitor, and all of Tanach (see 26).
 10. ✅ **Video playlists / show loops** with auto-advance and shuffle (vMix, ProPresenter).
 11. ✅ **Stingers** (a video transition with a cut point) (vMix, OBS).
-12. ✅ **Scoreboards and timers** (vMix, Wirecast), and **data from spreadsheets**: a CSV or JSON file read again as it changes; titles show {Column} values from the chosen row (next row by button, Stream Deck or phone), and scoreboards can follow its columns (vMix data sources).
+12. ✅ **Scoreboards and timers** (vMix, Wirecast), and **data from spreadsheets**: a CSV or JSON file, or a Google Sheet link, read again as it changes; titles show {Column} values from the chosen row (next row by button, [ and ] keys, Stream Deck, phone, API or macro), and scoreboards can follow its columns (vMix data sources).
 13. ✅ **Animated title designer** with templates (vMix GT, Wirecast) — 6 title designs with build-on, and a free-layout designer: text, boxes and pictures anywhere by dragging, each coming in its own way, with {Column} data.
 14. 🔶 **Per-output resolution and frame rate**, performance stats (CPU, GPU, dropped frames). Stats done (processor, graphics card, memory, frames, dropped, data rates); ⬜ per-output size.
 15. ✅ **ISO recording** — each camera recorded separately; chapter markers (vMix, ATEM).

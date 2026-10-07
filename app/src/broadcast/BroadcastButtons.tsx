@@ -103,7 +103,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         {live
           ? `${b.rehearsal ? 'REHEARSING' : 'LIVE'} ${liveTime}`
           : reconnecting
-            ? 'Reconnecting…'
+            ? `Reconnecting (${reconnecting.attempt})…`
             : b.schedule
               ? `LIVE AT ${timeText(b.schedule.at)}`
               : b.rehearsal

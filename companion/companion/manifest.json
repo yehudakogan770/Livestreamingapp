@@ -1,0 +1,22 @@
+{
+  "$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+  "id": "lumora",
+  "name": "lumora",
+  "shortname": "lumora",
+  "description": "Control Lumora (live production) and show its tally on your buttons",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "",
+  "bugs": "",
+  "maintainers": [{ "name": "Lumora" }],
+  "legacyIds": [],
+  "runtime": {
+    "type": "node22",
+    "api": "nodejs-ipc",
+    "apiVersion": "0.0.0",
+    "entrypoint": "../src/main.js"
+  },
+  "manufacturer": "Lumora",
+  "products": ["Lumora"],
+  "keywords": ["switcher", "streaming", "tally", "vision mixer"]
+}
