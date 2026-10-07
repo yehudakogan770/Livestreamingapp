@@ -1,0 +1,50 @@
+[package]
+name = "lumora-live-engine"
+description = "Lumora's unified live engine (beta): opens each input once, composites every screen once on the GPU and feeds every output"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "live_engine"
+
+[[bin]]
+name = "live-bench"
+path = "src/bin/live-bench.rs"
+
+[dependencies]
+lumora-engine = { path = "../engine" }
+serde.workspace = true
+serde_json.workspace = true
+pollster = "1"
+
+# Direct3D 12 on Windows (the target), Vulkan or OpenGL elsewhere (tests and development), Metal on macOS.
+# The same wgpu as crates/studio-engine, so the app carries one copy.
+[target.'cfg(windows)'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "parking_lot", "wgsl", "naga-ir", "dx12"] }
+raw-window-handle = "0.6"
+windows-sys = { version = "0.61", features = [
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_System_LibraryLoader",
+  "Win32_UI_WindowsAndMessaging",
+] }
+# Cameras through Media Foundation (what the WebView's getUserMedia uses underneath).
+windows = { version = "0.62", features = [
+  "Win32_Foundation",
+  "Win32_Media_MediaFoundation",
+  "Win32_System_Com",
+] }
+
+[target.'cfg(target_vendor = "apple")'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "parking_lot", "wgsl", "naga-ir", "metal"] }
+
+[target.'cfg(not(any(windows, target_vendor = "apple")))'.dependencies]
+wgpu = { version = "30", default-features = false, features = ["std", "parking_lot", "wgsl", "naga-ir", "vulkan", "gles"] }
+
+[lints.rust]
+# Only the Windows modules (Win32 windows, Media Foundation) use unsafe, each with a SAFETY note.
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

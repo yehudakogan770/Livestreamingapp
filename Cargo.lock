@@ -2176,6 +2176,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "lumora-live-engine"
+version = "0.1.0"
+dependencies = [
+ "lumora-engine",
+ "pollster",
+ "raw-window-handle",
+ "serde",
+ "serde_json",
+ "wgpu",
+ "windows 0.62.2",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "lumora-selftest"
 version = "0.1.0"
 dependencies = [
