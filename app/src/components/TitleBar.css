@@ -34,8 +34,8 @@
 .titlebar__menu {
   display: flex;
   gap: 0;
-  flex: 0 1 auto;
-  min-width: 0;
+  /* The menu names never squeeze under the quick actions: those give way first. */
+  flex: none;
   /* Visible: the menus hang below the bar. */
   overflow: visible;
 }
@@ -73,6 +73,9 @@
 .titlebar__tools {
   display: flex;
   align-items: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   gap: 2px;
   padding: 0 8px;
   margin-right: 8px;
@@ -110,7 +113,8 @@
   background: var(--button-active);
 }
 .titlebar__event {
-  flex: 0 1 auto;
+  /* The event name gives way first, then the quick actions. */
+  flex: 0 4 auto;
   min-width: 0;
   display: inline-flex;
   align-items: center;
@@ -211,7 +215,7 @@
     display: none;
   }
 }
-@media (max-width: 1280px) {
+@media (max-width: 1440px) {
   .titlebar__brand {
     padding-right: 8px;
   }
