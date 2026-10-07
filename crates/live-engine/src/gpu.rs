@@ -34,21 +34,33 @@ struct SourceTex {
     seq: u64,
 }
 
+/// A graphics plane from the web overlay renderer: the slot (screen) it
+/// belongs to, its name (`g:<input>`, `top`, `panic`: see [`crate::overlay`]) and size.
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct PlaneId {
+    pub slot: usize,
+    pub name: String,
+    pub w: u32,
+    pub h: u32,
+}
+
 /// What a draw samples.
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 enum TexKey {
     White,
     Source(SourceId),
     Target(usize),
-    Overlay(usize),
+    Plane(PlaneId),
 }
 
 /// What a pass paints.
 pub enum Paint<'a> {
-    /// A scene, and the overlay layer (the screen's graphics) to put over its inputs.
+    /// A scene, and the slot whose graphics planes (from the web overlay
+    /// renderer) it shows: graphics inputs in their places, the `top` plane
+    /// over everything but blank and PANIC, the PANIC logo.
     Scene {
         scene: &'a ScreenScene,
-        overlay: Option<usize>,
+        planes: Option<usize>,
     },
     /// Another target, stretched over the viewport (a preview of a screen).
     Target(usize),
@@ -126,7 +138,7 @@ pub struct Compositor {
     white: Tex,
     sources: HashMap<SourceId, SourceTex>,
     targets: Vec<Option<Tex>>,
-    overlays: HashMap<usize, Tex>,
+    planes: HashMap<PlaneId, Tex>,
     atlas: Option<Tex>,
     reads: HashMap<(u32, u32), wgpu::Buffer>,
     rings: HashMap<Dest, Ring>,
@@ -415,7 +427,7 @@ impl Compositor {
             white,
             sources: HashMap::new(),
             targets: Vec::new(),
-            overlays: HashMap::new(),
+            planes: HashMap::new(),
             atlas: None,
             reads: HashMap::new(),
             rings: HashMap::new(),
@@ -606,17 +618,41 @@ impl Compositor {
         self.sources.get(id).map(|s| (s.tex.w, s.tex.h))
     }
 
-    /// Set (or clear) overlay layer `slot`: straight-alpha RGBA, top row first.
+    /// Set (or clear) slot `slot`'s whole-screen `top` plane: straight-alpha
+    /// RGBA, top row first (the benchmark and tests; the overlay renderer
+    /// sends dirty rectangles through [`Compositor::patch_plane`]).
     pub fn set_overlay(&mut self, slot: usize, frame: Option<(u32, u32, &[u8])>) {
         let Some((w, h, px)) = frame else {
-            self.overlays.remove(&slot);
+            self.planes
+                .retain(|k, _| !(k.slot == slot && k.name == crate::overlay::TOP));
             return;
         };
-        let ok = self
-            .overlays
-            .get(&slot)
-            .is_some_and(|t| t.w == w && t.h == h);
-        if !ok {
+        if px.len() >= (w * h * 4) as usize {
+            self.planes.retain(|k, _| {
+                !(k.slot == slot && k.name == crate::overlay::TOP && (k.w, k.h) != (w, h))
+            });
+            self.patch_plane(slot, crate::overlay::TOP, w, h, &[([0, 0, w, h], px)]);
+        }
+    }
+
+    /// New pixels for some rectangles of a plane (made, transparent, when new).
+    /// Rectangles that don't fit are left out.
+    pub fn patch_plane(
+        &mut self,
+        slot: usize,
+        name: &str,
+        w: u32,
+        h: u32,
+        rects: &[([u32; 4], &[u8])],
+    ) {
+        let id = PlaneId {
+            slot,
+            name: name.to_owned(),
+            w,
+            h,
+        };
+        if !self.planes.contains_key(&id) {
+            // New textures start out transparent (wgpu zeroes them).
             let t = make_tex(
                 &self.device,
                 &self.tex_layout,
@@ -625,16 +661,80 @@ impl Compositor {
                 h,
                 wgpu::TextureFormat::Rgba8Unorm,
                 false,
-                "overlay",
+                "graphics",
             );
-            self.overlays.insert(slot, t);
+            self.planes.insert(id.clone(), t);
         }
-        if let Some(t) = self.overlays.get(&slot) {
-            if px.len() >= (w * h * 4) as usize {
-                write_tex(&self.queue, t, px);
-                self.uploaded += u64::from(w) * u64::from(h) * 4;
+        let Some(t) = self.planes.get(&id) else {
+            return;
+        };
+        for &([x, y, rw, rh], px) in rects {
+            let fits = rw > 0
+                && rh > 0
+                && x.checked_add(rw).is_some_and(|e| e <= t.w)
+                && y.checked_add(rh).is_some_and(|e| e <= t.h)
+                && px.len() >= (rw as usize) * (rh as usize) * 4;
+            if !fits {
+                continue;
             }
+            self.queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: &t.texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d { x, y, z: 0 },
+                    aspect: wgpu::TextureAspect::All,
+                },
+                px,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(rw * 4),
+                    rows_per_image: Some(rh),
+                },
+                wgpu::Extent3d {
+                    width: rw,
+                    height: rh,
+                    depth_or_array_layers: 1,
+                },
+            );
+            self.uploaded += u64::from(rw) * u64::from(rh) * 4;
         }
+    }
+
+    /// A plane is no longer shown.
+    pub fn clear_plane(&mut self, slot: usize, name: &str, w: u32, h: u32) {
+        self.planes.remove(&PlaneId {
+            slot,
+            name: name.to_owned(),
+            w,
+            h,
+        });
+    }
+
+    /// Every plane of a slot goes (its renderer started again).
+    pub fn reset_planes(&mut self, slot: usize) {
+        self.planes.retain(|k, _| k.slot != slot);
+    }
+
+    /// Planes held now.
+    pub fn plane_count(&self) -> usize {
+        self.planes.len()
+    }
+
+    /// The plane `name` of `slot` closest in size to `want` pixels.
+    fn plane(&self, slot: usize, name: &str, want: (u32, u32)) -> Option<PlaneId> {
+        let (w, h) = crate::overlay::closest(
+            self.planes
+                .keys()
+                .filter(|k| k.slot == slot && k.name == name)
+                .map(|k| (k.w, k.h)),
+            want,
+        )?;
+        Some(PlaneId {
+            slot,
+            name: name.to_owned(),
+            w,
+            h,
+        })
     }
 
     /// Where a source's picture lands (output fractions), which part of it
@@ -669,107 +769,22 @@ impl Compositor {
         Some((within(within(lb, f), dst_in), uv, mode))
     }
 
-    /// The draws that paint `scene` on an output of `out_w` × `out_h`.
+    /// The draws that paint `scene` on an output of `out_w` × `out_h`, with
+    /// the graphics planes of slot `planes` (back to front: the pictures,
+    /// dip, flash, the overlay channels, the `top` plane, blank, PANIC and its logo).
     fn scene_draws(
         &self,
         scene: &ScreenScene,
-        overlay: Option<usize>,
+        planes: Option<usize>,
         out_w: u32,
         out_h: u32,
         draws: &mut Vec<(DrawU, TexKey)>,
     ) {
         let out_aspect = out_w as f32 / out_h.max(1) as f32;
         for layer in &scene.layers {
-            if layer.opacity <= 0.0 {
-                continue;
-            }
-            let lb = layer_box(layer);
-            let lw = (lb[2] - lb[0]) * out_w as f32;
-            let lh = (lb[3] - lb[1]) * out_h as f32;
-            for (n, pic) in layer.pictures.iter().enumerate() {
-                let frame = within(lb, pic.placement.frame);
-                let mut d = DrawU::new();
-                d.set(LAYER, lb).set(CLIP, frame);
-                let (shape_kind, size) = match layer.shape {
-                    Shape::Whole => (0.0, 0.0),
-                    Shape::Rect { t, r, b, l } => {
-                        d.set(CUT, [t, r, b, l]);
-                        (1.0, 0.0)
-                    }
-                    Shape::Circle { r } => (2.0, r),
-                    Shape::Diamond { r } => (3.0, r),
-                };
-                d.set(FX, [layer.opacity, layer.blur, shape_kind, size]);
-                let (pattern, p) = layer
-                    .luma
-                    .map_or((0.0, 0.0), |(pat, p)| (pat.code() as f32, p));
-                let layer_aspect = if lh > 0.0 { lw / lh } else { out_aspect };
-                d.set(LUMA, [pattern, p, layer_aspect, out_aspect]);
-                let color_rect = |r: Rect, c: [f32; 4], draws: &mut Vec<(DrawU, TexKey)>| {
-                    if r[2] - r[0] > 1e-5 && r[3] - r[1] > 1e-5 {
-                        let mut d = d;
-                        d.set(DST, r).set(COLOR, c);
-                        d.0[MISC * 4 + 3] = 1.0;
-                        draws.push((d, TexKey::White));
-                    }
-                };
-                match &pic.content {
-                    Content::Color(c) => color_rect(frame, *c, draws),
-                    Content::Bars(c) => {
-                        // Only around the picture that follows: under it, its own
-                        // opacity would let the bars show through mid-fade.
-                        let covered = layer
-                            .pictures
-                            .get(n + 1)
-                            .and_then(|next| self.video_dst(next, lb, lw, lh));
-                        match covered {
-                            Some((v, _, _)) => {
-                                let [f0, f1, f2, f3] = frame;
-                                let [v0, v1, v2, v3] = v;
-                                for r in [
-                                    [f0, f1, v0, f3],
-                                    [v2, f1, f2, f3],
-                                    [v0, f1, v2, v1],
-                                    [v0, v3, v2, f3],
-                                ] {
-                                    color_rect(r, *c, draws);
-                                }
-                            }
-                            None => color_rect(frame, *c, draws),
-                        }
-                    }
-                    Content::Video(id) => {
-                        let Some((dst, uv, mode)) = self.video_dst(pic, lb, lw, lh) else {
-                            continue;
-                        };
-                        let pl = &pic.placement;
-                        let qw = (dst[2] - dst[0]) * out_w as f32;
-                        let qh = (dst[3] - dst[1]) * out_h as f32;
-                        d.set(DST, dst).set(UV, uv).set(
-                            VIEW,
-                            [pl.zoom, pl.pan[0], pl.pan[1], pl.rotate.to_radians()],
-                        );
-                        d.set(
-                            MISC,
-                            [
-                                if pl.flip[0] { -1.0 } else { 1.0 },
-                                if pl.flip[1] { -1.0 } else { 1.0 },
-                                if qh > 0.0 { qw / qh } else { 1.0 },
-                                mode,
-                            ],
-                        );
-                        draws.push((d, TexKey::Source(id.clone())));
-                    }
-                    Content::Graphic(_) => {}
-                }
-            }
+            self.layer_draws(layer, planes, out_w, out_h, draws);
         }
-        if let Some(slot) = overlay.filter(|s| self.overlays.contains_key(s)) {
-            let mut d = DrawU::new();
-            d.set(LUMA, [0.0, 0.0, out_aspect, out_aspect]);
-            draws.push((d, TexKey::Overlay(slot)));
-        }
-        let mut solid = |c: [f32; 4], a: f32| {
+        let solid = |c: [f32; 4], a: f32, draws: &mut Vec<(DrawU, TexKey)>| {
             if a > 0.0 {
                 let mut d = DrawU::new();
                 d.set(COLOR, c).set(FX, [a, 0.0, 0.0, 0.0]);
@@ -777,11 +792,148 @@ impl Compositor {
                 draws.push((d, TexKey::White));
             }
         };
-        solid([0.0, 0.0, 0.0, 1.0], scene.black);
-        solid([1.0, 1.0, 1.0, 1.0], scene.white);
-        solid([0.0, 0.0, 0.0, 1.0], scene.blank);
-        // PANIC: the safe screen (black; the event logo arrives with the overlay renderer).
-        solid([0.0, 0.0, 0.0, 1.0], scene.panic);
+        let whole = |slot: usize, name: &str, a: f32, draws: &mut Vec<(DrawU, TexKey)>| {
+            if a <= 0.0 {
+                return;
+            }
+            if let Some(id) = self.plane(slot, name, (out_w, out_h)) {
+                let mut d = DrawU::new();
+                d.set(LUMA, [0.0, 0.0, out_aspect, out_aspect])
+                    .set(FX, [a, 0.0, 0.0, 0.0]);
+                draws.push((d, TexKey::Plane(id)));
+            }
+        };
+        solid([0.0, 0.0, 0.0, 1.0], scene.black, draws);
+        solid([1.0, 1.0, 1.0, 1.0], scene.white, draws);
+        for layer in &scene.overlays {
+            self.layer_draws(layer, planes, out_w, out_h, draws);
+        }
+        if let Some(slot) = planes {
+            whole(slot, crate::overlay::TOP, 1.0, draws);
+        }
+        solid([0.0, 0.0, 0.0, 1.0], scene.blank, draws);
+        // PANIC: the safe screen — black at once (here, whatever the web
+        // renderer is doing), then the event's logo from it.
+        solid([0.0, 0.0, 0.0, 1.0], scene.panic, draws);
+        if let Some(slot) = planes {
+            whole(slot, crate::overlay::PANIC, scene.panic, draws);
+        }
+    }
+
+    /// The draws of one layer (an input with its transition, or an overlay channel).
+    fn layer_draws(
+        &self,
+        layer: &Layer,
+        planes: Option<usize>,
+        out_w: u32,
+        out_h: u32,
+        draws: &mut Vec<(DrawU, TexKey)>,
+    ) {
+        if layer.opacity <= 0.0 {
+            return;
+        }
+        let out_aspect = out_w as f32 / out_h.max(1) as f32;
+        let lb = layer_box(layer);
+        let lw = (lb[2] - lb[0]) * out_w as f32;
+        let lh = (lb[3] - lb[1]) * out_h as f32;
+        for (n, pic) in layer.pictures.iter().enumerate() {
+            let frame = within(lb, pic.placement.frame);
+            let mut d = DrawU::new();
+            d.set(LAYER, lb).set(CLIP, frame);
+            let (shape_kind, size) = match layer.shape {
+                Shape::Whole => (0.0, 0.0),
+                Shape::Rect { t, r, b, l } => {
+                    d.set(CUT, [t, r, b, l]);
+                    (1.0, 0.0)
+                }
+                Shape::Circle { r } => (2.0, r),
+                Shape::Diamond { r } => (3.0, r),
+            };
+            d.set(FX, [layer.opacity, layer.blur, shape_kind, size]);
+            let (pattern, p) = layer
+                .luma
+                .map_or((0.0, 0.0), |(pat, p)| (pat.code() as f32, p));
+            let layer_aspect = if lh > 0.0 { lw / lh } else { out_aspect };
+            d.set(LUMA, [pattern, p, layer_aspect, out_aspect]);
+            let color_rect = |r: Rect, c: [f32; 4], draws: &mut Vec<(DrawU, TexKey)>| {
+                if r[2] - r[0] > 1e-5 && r[3] - r[1] > 1e-5 {
+                    let mut d = d;
+                    d.set(DST, r).set(COLOR, c);
+                    d.0[MISC * 4 + 3] = 1.0;
+                    draws.push((d, TexKey::White));
+                }
+            };
+            match &pic.content {
+                Content::Color(c) => color_rect(frame, *c, draws),
+                Content::Bars(c) => {
+                    // Only around the picture that follows: under it, its own
+                    // opacity would let the bars show through mid-fade.
+                    let covered = layer
+                        .pictures
+                        .get(n + 1)
+                        .and_then(|next| self.video_dst(next, lb, lw, lh));
+                    match covered {
+                        Some((v, _, _)) => {
+                            let [f0, f1, f2, f3] = frame;
+                            let [v0, v1, v2, v3] = v;
+                            for r in [
+                                [f0, f1, v0, f3],
+                                [v2, f1, f2, f3],
+                                [v0, f1, v2, v1],
+                                [v0, v3, v2, f3],
+                            ] {
+                                color_rect(r, *c, draws);
+                            }
+                        }
+                        None => color_rect(frame, *c, draws),
+                    }
+                }
+                Content::Video(id) => {
+                    let Some((dst, uv, mode)) = self.video_dst(pic, lb, lw, lh) else {
+                        continue;
+                    };
+                    let pl = &pic.placement;
+                    let qw = (dst[2] - dst[0]) * out_w as f32;
+                    let qh = (dst[3] - dst[1]) * out_h as f32;
+                    d.set(DST, dst).set(UV, uv).set(
+                        VIEW,
+                        [pl.zoom, pl.pan[0], pl.pan[1], pl.rotate.to_radians()],
+                    );
+                    d.set(
+                        MISC,
+                        [
+                            if pl.flip[0] { -1.0 } else { 1.0 },
+                            if pl.flip[1] { -1.0 } else { 1.0 },
+                            if qh > 0.0 { qw / qh } else { 1.0 },
+                            mode,
+                        ],
+                    );
+                    draws.push((d, TexKey::Source(id.clone())));
+                }
+                Content::Graphic(id) => {
+                    // Drawn by the web renderer at the size it is shown (the
+                    // layer's own box, before a slide or zoom moved it).
+                    let Some(slot) = planes else { continue };
+                    let f = pic.placement.frame;
+                    let want = (
+                        ((f[2] - f[0]) * out_w as f32).round().max(1.0) as u32,
+                        ((f[3] - f[1]) * out_h as f32).round().max(1.0) as u32,
+                    );
+                    let Some(plane) =
+                        self.plane(slot, &crate::overlay::graphic_plane(id.as_str()), want)
+                    else {
+                        continue;
+                    };
+                    let (qw, qh) = (
+                        (frame[2] - frame[0]) * out_w as f32,
+                        (frame[3] - frame[1]) * out_h as f32,
+                    );
+                    d.set(DST, frame);
+                    d.set(MISC, [1.0, 1.0, if qh > 0.0 { qw / qh } else { 1.0 }, 0.0]);
+                    draws.push((d, TexKey::Plane(plane)));
+                }
+            }
+        }
     }
 
     fn dest_size(&self, dest: Dest) -> Option<(u32, u32)> {
@@ -801,8 +953,8 @@ impl Compositor {
             let (w, h) = p.viewport.map_or((tw, th), |v| (v[2], v[3]));
             let mut draws = Vec::new();
             match &p.paint {
-                Paint::Scene { scene, overlay } => {
-                    self.scene_draws(scene, *overlay, w, h, &mut draws)
+                Paint::Scene { scene, planes } => {
+                    self.scene_draws(scene, *planes, w, h, &mut draws)
                 }
                 Paint::Target(i) => {
                     let mut d = DrawU::new();
@@ -902,7 +1054,7 @@ impl Compositor {
                         .get(*i)
                         .and_then(Option::as_ref)
                         .map(|t| &t.bind),
-                    TexKey::Overlay(i) => self.overlays.get(i).map(|t| &t.bind),
+                    TexKey::Plane(id) => self.planes.get(id).map(|t| &t.bind),
                 };
                 let offset = (n * self.align) as u32;
                 n += 1;

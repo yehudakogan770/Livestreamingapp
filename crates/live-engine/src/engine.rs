@@ -16,6 +16,7 @@ use serde::Serialize;
 
 use crate::encoder::{EncoderFeed, FeedStats};
 use crate::gpu::{AdapterInfo, Compositor, Dest, Paint, Pass};
+use crate::overlay::{self, OverlayStats};
 use crate::present::{NativeOutput, Placement};
 use crate::scene::{self, ScreenScene};
 use crate::source::{FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource};
@@ -187,6 +188,8 @@ pub struct Stats {
     pub adapter: Option<AdapterInfo>,
     pub outputs: Vec<String>,
     pub feed: Option<FeedStats>,
+    /// How the graphics from the web overlay renderers arrive.
+    pub overlay: OverlayStats,
     /// Things that don't work in the unified engine yet, in words for the operator.
     pub notes: Vec<String>,
     pub error: Option<String>,
@@ -213,6 +216,15 @@ pub fn now_ms() -> u64 {
         .map_or(0, |d| d.as_millis() as u64)
 }
 
+/// Graphics frames since the statistics were last worked out.
+#[derive(Default)]
+struct GraphicsTally {
+    messages: u32,
+    records: u32,
+    bytes: u64,
+    latency_ms: f64,
+}
+
 #[derive(Default)]
 struct Timing {
     since: Option<Instant>,
@@ -234,7 +246,7 @@ pub struct LiveEngine {
     sources: HashMap<SourceId, (String, Box<dyn VideoSource>)>,
     outputs: HashMap<ScreenId, NativeOutput>,
     feed: Option<(ScreenId, EncoderFeed)>,
-    overlays: HashMap<ScreenId, bool>,
+    graphics: GraphicsTally,
     previews: HashMap<String, Preview>,
     frame_no: u64,
     timing: Timing,
@@ -263,7 +275,7 @@ impl LiveEngine {
             sources: HashMap::new(),
             outputs: HashMap::new(),
             feed: None,
-            overlays: HashMap::new(),
+            graphics: GraphicsTally::default(),
             previews: HashMap::new(),
             frame_no: 0,
             timing: Timing::default(),
@@ -333,10 +345,41 @@ impl LiveEngine {
         self.outputs.keys().copied().collect()
     }
 
-    /// A screen's graphics layer (straight-alpha RGBA at any size; None clears it).
+    /// A screen's whole-screen `top` graphics plane (straight-alpha RGBA at
+    /// any size; None clears it). The benchmark and tests use it; the web
+    /// renderer sends [`LiveEngine::apply_graphics`].
     pub fn set_overlay(&mut self, screen: ScreenId, frame: Option<(u32, u32, &[u8])>) {
-        self.overlays.insert(screen, frame.is_some());
         self.gpu.set_overlay(program_target(screen), frame);
+    }
+
+    /// Changed graphics from a screen's web overlay renderer (dirty
+    /// rectangles of its planes; see [`crate::overlay`]).
+    pub fn apply_graphics(&mut self, m: &overlay::Message) {
+        let now = now_ms();
+        for r in &m.records {
+            let slot = program_target(r.screen);
+            match r.op {
+                overlay::Op::Patch => {
+                    let rects: Vec<([u32; 4], &[u8])> = r
+                        .rects
+                        .iter()
+                        .map(|x| ([x.x, x.y, x.w, x.h], m.pixels(x)))
+                        .collect();
+                    self.gpu.patch_plane(slot, &r.name, r.w, r.h, &rects);
+                    self.graphics.latency_ms += now as f64 - r.at as f64;
+                    self.graphics.records += 1;
+                }
+                overlay::Op::Clear => self.gpu.clear_plane(slot, &r.name, r.w, r.h),
+                overlay::Op::Reset => self.gpu.reset_planes(slot),
+            }
+        }
+        self.graphics.messages += 1;
+        self.graphics.bytes += m.pixel_bytes();
+    }
+
+    /// A graphics frame that could not be read.
+    pub fn refuse_graphics(&mut self) {
+        self.stats.overlay.refused += 1;
     }
 
     /// Start feeding a screen to an encoder (one at a time for now).
@@ -415,7 +458,7 @@ impl LiveEngine {
                 viewport: None,
                 paint: Paint::Scene {
                     scene: sc,
-                    overlay: self.overlays.get(s).copied().unwrap_or(false).then_some(*i),
+                    planes: (*s != ScreenId::Monitor).then_some(*i),
                 },
             });
         }
@@ -425,7 +468,7 @@ impl LiveEngine {
                 viewport: None,
                 paint: Paint::Scene {
                     scene: sc,
-                    overlay: None,
+                    planes: None,
                 },
             });
         }
@@ -470,7 +513,7 @@ impl LiveEngine {
                     viewport: Some(r),
                     paint: Paint::Scene {
                         scene: sc,
-                        overlay: None,
+                        planes: None,
                     },
                 });
             }
@@ -549,6 +592,18 @@ impl LiveEngine {
                 .map(|s| screen_name(*s).to_owned())
                 .collect();
             self.stats.feed = self.feed.as_ref().map(|(_, f)| f.stats());
+            let g = std::mem::take(&mut self.graphics);
+            self.stats.overlay = OverlayStats {
+                frames_per_s: (f64::from(g.messages) / span) as f32,
+                mb_per_s: (g.bytes as f64 / span / 1e6) as f32,
+                latency_ms: if g.records > 0 {
+                    (g.latency_ms / f64::from(g.records)) as f32
+                } else {
+                    self.stats.overlay.latency_ms
+                },
+                planes: self.gpu.plane_count(),
+                refused: self.stats.overlay.refused,
+            };
             self.stats.notes = self.notes();
             self.timing = Timing::default();
         }
@@ -558,27 +613,17 @@ impl LiveEngine {
     fn notes(&self) -> Vec<String> {
         let mut notes = Vec::new();
         let Some(show) = &self.show else { return notes };
-        let graphics = show
-            .sources
-            .iter()
-            .filter(|s| {
-                !scene::is_video_kind(&s.kind)
-                    && !matches!(
-                        s.kind,
-                        SourceKind::Color { .. }
-                            | SourceKind::Split(_)
-                            | SourceKind::Microphone { .. }
-                    )
-            })
-            .count();
-        if graphics > 0 {
-            notes.push(format!(
-                "{graphics} graphics input(s) (titles, countdowns, scoreboards…) show only through the overlay layer, which the web renderer fills in Phase 2."
-            ));
-        }
-        if show.settings.stingers.iter().any(|s| !s.path.is_empty()) {
+        let behind = show.sources.iter().any(|s| match &s.kind {
+            SourceKind::Slideshow(k) => k
+                .behind
+                .as_ref()
+                .and_then(|id| show.source(id))
+                .is_some_and(|b| scene::is_video_kind(&b.kind)),
+            _ => false,
+        });
+        if behind {
             notes.push(
-                "Stinger videos are not drawn yet: the pictures cut at the stinger's cut point."
+                "A camera or video behind slides is not shown yet in the unified engine (the slides are)."
                     .into(),
             );
         }
@@ -593,6 +638,7 @@ enum Command {
     Show(Box<Show>),
     Output(ScreenId, Option<Placement>, Sender<Result<(), String>>),
     Overlay(ScreenId, Option<(u32, u32, Vec<u8>)>),
+    Graphics(Box<overlay::Message>),
     StartFeed(
         ScreenId,
         Box<dyn FnOnce(u32, u32, u32) -> Result<EncoderFeed, String> + Send>,
@@ -678,6 +724,18 @@ impl Runner {
         let _ = self.tx.send(Command::Overlay(screen, frame));
     }
 
+    /// A graphics frame from a web overlay renderer (checked here, applied
+    /// on the engine's thread before its next frame).
+    ///
+    /// # Errors
+    /// The frame is malformed (nothing of it is applied).
+    pub fn graphics(&self, bytes: Vec<u8>) -> Result<(), String> {
+        let m = overlay::parse(bytes)?;
+        self.tx
+            .send(Command::Graphics(Box::new(m)))
+            .map_err(|_| "The unified engine has stopped.".to_owned())
+    }
+
     /// Feed a screen to an encoder made by `make(width, height, fps)`.
     ///
     /// # Errors
@@ -737,6 +795,7 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
                 Ok(Command::Overlay(s, f)) => {
                     engine.set_overlay(s, f.as_ref().map(|(w, h, px)| (*w, *h, px.as_slice())));
                 }
+                Ok(Command::Graphics(m)) => engine.apply_graphics(&m),
                 Ok(Command::StartFeed(s, make, reply)) => {
                     let (w, h, fps) =
                         (engine.config.width, engine.config.height, engine.config.fps);

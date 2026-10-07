@@ -6,10 +6,12 @@ use live_engine::engine::{Config, LiveEngine, SourceFactory};
 use live_engine::frame::{FramePool, PixelFormat, VideoFrame};
 use live_engine::gpu::{Compositor, Dest, Paint, Pass};
 use live_engine::mix::Shape;
+use live_engine::overlay::{encode, parse, Op};
 use live_engine::scene::{Content, Layer, Picture, Placement, ScreenScene};
 use live_engine::source::{SourceHealth, SourceState, VideoSource};
 use lumora_engine::{
-    ActiveTransition, Fit, Show, Source, SourceAudio, SourceId, SourceKind, TransitionKind,
+    ActiveTransition, Fit, ScreenId, Show, Source, SourceAudio, SourceId, SourceKind,
+    TransitionKind,
 };
 
 fn gpu() -> Option<Compositor> {
@@ -69,7 +71,7 @@ fn draw(g: &mut Compositor, sc: &ScreenScene) -> Vec<u8> {
         viewport: None,
         paint: Paint::Scene {
             scene: sc,
-            overlay: None,
+            planes: None,
         },
     }]);
     g.read(Dest::Target(0)).expect("read back").2
@@ -144,7 +146,7 @@ fn pipelined_read_back_is_one_frame_late() {
             viewport: None,
             paint: Paint::Scene {
                 scene: sc,
-                overlay: None,
+                planes: None,
             },
         }]);
     };
@@ -237,7 +239,7 @@ fn the_overlay_layer_goes_over_the_inputs() {
         viewport: None,
         paint: Paint::Scene {
             scene: &sc,
-            overlay: Some(0),
+            planes: Some(0),
         },
     }]);
     let img = g.read(Dest::Target(0)).unwrap().2;
@@ -358,4 +360,197 @@ fn the_engine_draws_the_show_and_its_previews() {
     // The health of each input, for the backup lineup.
     assert_eq!(e.health().len(), 2);
     assert!(e.stats.adapter.is_some());
+}
+
+// ---------------------------------------------------------------------------
+// Graphics from the web overlay renderer
+
+fn text_input(id: &str) -> Source {
+    Source {
+        kind: SourceKind::Text(Default::default()),
+        ..cam(id)
+    }
+}
+
+/// A plane of one color, as the web renderer sends it whole.
+fn plane_msg(screen: ScreenId, name: &str, w: u32, h: u32, rgba: [u8; 4]) -> Vec<u8> {
+    let px: Vec<u8> = (0..w * h).flat_map(|_| rgba).collect();
+    encode(&[(
+        Op::Patch,
+        screen,
+        name,
+        w,
+        h,
+        0,
+        vec![([0, 0, w, h], &px[..])],
+    )])
+}
+
+fn engine() -> Option<LiveEngine> {
+    let g = gpu()?;
+    let config = Config {
+        width: W,
+        height: H,
+        fps: 60,
+        preview_w: 16,
+        preview_h: 9,
+        preview_every: 1000,
+    };
+    Some(LiveEngine::new(config, g, Box::new(Colors)))
+}
+
+fn apply(e: &mut LiveEngine, bytes: Vec<u8>) {
+    let m = parse(bytes).expect("a good message");
+    e.apply_graphics(&m);
+}
+
+#[test]
+fn a_graphics_input_fades_in_its_place_among_the_pictures() {
+    let Some(mut e) = engine() else { return };
+    // Camera a (red) on air; a title (green, from the web) taking over with a fade.
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.previous = Some(SourceId::new("a"));
+    show.screens.live.program = Some(SourceId::new("t"));
+    show.screens.live.transition = Some(ActiveTransition {
+        kind: TransitionKind::Fade,
+        duration_ms: 1000,
+        started_at: 1000,
+    });
+    e.set_show(show);
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, "g:t", W, H, [0, 255, 0, 255]),
+    );
+    e.frame(1500);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    // Half red, half green: the title is mixed in like a camera, not pasted on top.
+    assert!(
+        near(px(&live, 30, 20), [128, 128, 0, 255]),
+        "{:?}",
+        px(&live, 30, 20)
+    );
+    e.frame(2100);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 30, 20), [0, 255, 0, 255]));
+    assert_eq!(e.gpu.plane_count(), 1);
+}
+
+#[test]
+fn only_the_changed_rectangle_is_sent_and_cleared_planes_go() {
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("t"));
+    e.set_show(show);
+    // A see-through title: transparent everywhere but where it is drawn.
+    apply(&mut e, plane_msg(ScreenId::Live, "g:t", W, H, [0, 0, 0, 0]));
+    let white: Vec<u8> = (0..8 * 4).flat_map(|_| [255u8, 255, 255, 255]).collect();
+    apply(
+        &mut e,
+        encode(&[(
+            Op::Patch,
+            ScreenId::Live,
+            "g:t",
+            W,
+            H,
+            0,
+            vec![([4, 4, 8, 4], &white[..])],
+        )]),
+    );
+    e.frame(1000);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 6, 6), [255, 255, 255, 255]));
+    // The screen's black everywhere else.
+    assert!(near(px(&live, 30, 20), [0, 0, 0, 255]));
+    apply(
+        &mut e,
+        encode(&[(Op::Clear, ScreenId::Live, "g:t", W, H, 0, vec![])]),
+    );
+    assert_eq!(e.gpu.plane_count(), 0);
+    e.frame(1001);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 6, 6), [0, 0, 0, 255]));
+}
+
+#[test]
+fn channels_dip_and_panic_keep_the_web_order() {
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b"), text_input("name")],
+        ..Show::default()
+    };
+    show.screens.live.previous = Some(SourceId::new("a"));
+    show.screens.live.program = Some(SourceId::new("b"));
+    // A dip to black half way: the inputs are black, the lower third stays.
+    show.screens.live.transition = Some(ActiveTransition {
+        kind: TransitionKind::Dip,
+        duration_ms: 1000,
+        started_at: 1000,
+    });
+    show.overlays = lumora_engine::overlays::channels();
+    let o = &mut show.overlays[0];
+    o.source_id = Some(SourceId::new("name"));
+    o.frame = lumora_engine::overlays::Frame {
+        x: 0.0,
+        y: 50.0,
+        w: 100.0,
+        h: 50.0,
+    };
+    o.anim_ms = 0;
+    o.set_on(true, 0);
+    e.set_show(show.clone());
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, "g:name", W, H / 2, [255, 255, 0, 255]),
+    );
+    e.frame(1500);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(
+        near(px(&live, 30, 5), [0, 0, 0, 255]),
+        "dipped: {:?}",
+        px(&live, 30, 5)
+    );
+    assert!(
+        near(px(&live, 30, 30), [255, 255, 0, 255]),
+        "the channel stays over the dip: {:?}",
+        px(&live, 30, 30)
+    );
+    // PANIC: black over everything at once, then the logo from the web over that.
+    show.screens.live.transition = None;
+    show.panic = true;
+    show.panic_changed_at = 0;
+    e.set_show(show);
+    e.frame(5000);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(
+        near(px(&live, 30, 30), [0, 0, 0, 255]),
+        "{:?}",
+        px(&live, 30, 30)
+    );
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, "panic", W, H, [0, 0, 0, 0]),
+    );
+    let logo: Vec<u8> = (0..4).flat_map(|_| [255u8, 255, 255, 255]).collect();
+    apply(
+        &mut e,
+        encode(&[(
+            Op::Patch,
+            ScreenId::Live,
+            "panic",
+            W,
+            H,
+            0,
+            vec![([30, 16, 2, 2], &logo[..])],
+        )]),
+    );
+    e.frame(5001);
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 31, 17), [255, 255, 255, 255]));
+    assert!(near(px(&live, 5, 5), [0, 0, 0, 255]));
 }
