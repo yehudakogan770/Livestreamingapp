@@ -65,7 +65,7 @@
   height: 14px;
   border-radius: var(--radius);
   background: var(--accent);
-  border: 2px solid #fff;
+  border: 2px solid #141414;
   cursor: nwse-resize;
 }
 .grc__guide {

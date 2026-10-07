@@ -6,9 +6,7 @@
   place-items: center;
   padding: 24px;
   overflow: auto;
-  background:
-    radial-gradient(700px 420px at 0% 100%, rgba(79, 179, 191, 0.16), transparent 70%),
-    radial-gradient(600px 380px at 100% 0%, rgba(224, 71, 59, 0.1), transparent 70%), #0e1013;
+  background: radial-gradient(900px 520px at 50% 0%, rgba(255, 255, 255, 0.045), transparent 70%), #101010;
 }
 .gate__card {
   width: min(440px, 100%);
@@ -48,7 +46,7 @@
   margin: 0;
   padding: 9px 12px;
   border-radius: 8px;
-  background: rgba(79, 179, 191, 0.12);
+  background: rgba(255, 255, 255, 0.06);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -70,7 +68,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--signal);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -184,16 +182,6 @@
 }
 .account__part .btn {
   align-self: flex-start;
-}
-
-/* The sign-in keeps its own teal button (the rest of Lumora uses gray). */
-.gate .btn--primary {
-  background: #1f6f78;
-  border-color: #4fb3bf;
-  color: #fff;
-}
-.gate .btn--primary:hover:not(:disabled) {
-  background: #26808b;
 }
 
 /* The account changed while the app is open: a note, never in the way. */
