@@ -5,6 +5,7 @@ import { useEventFonts } from '../engine/fonts';
 import { OverlayRenderer } from '../engine/overlayRenderer';
 import type { EngineInfo } from '../engine/unified';
 import { useShow } from '../engine/useShow';
+import type { MvLayout } from '../engine/multiviewLabels';
 
 /**
  * The unified engine's overlay renderer for one screen: a hidden window
@@ -39,6 +40,19 @@ export function OverlayView({ screen }: { screen: 'live' | 'back' }) {
   useEffect(() => {
     if (renderer && snapshot) renderer.setShow(snapshot.show);
   }, [renderer, snapshot]);
+
+  // The Live Screen's renderer also draws the words of the engine's multiview, while it shows one.
+  useEffect(() => {
+    if (!renderer || screen !== 'live') return;
+    const ask = () =>
+      void invoke<MvLayout | null>('live_engine_multiview_layout').then(
+        (l) => renderer.setMultiview(l),
+        () => {},
+      );
+    ask();
+    const id = setInterval(ask, 2000);
+    return () => clearInterval(id);
+  }, [renderer, screen, snapshot?.revision]);
 
   return null;
 }

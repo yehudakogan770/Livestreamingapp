@@ -22,6 +22,7 @@ const NOT_YET = [
   'Stream, web page, screen capture and guest inputs are not in the engine yet.',
   'A camera or video behind slides or behind Pesukim words is not shown yet (the slides and words are).',
   'Captions written into the stream picture, and instant replay, are not in Unified (beta) yet.',
+  'In the multiview, the Next tiles show no graphics, and a graphics input’s tile shows it only while it is on air on the Live Screen.',
 ];
 
 /** Settings → Engine: Standard or Unified (beta), and how the unified engine is doing. */

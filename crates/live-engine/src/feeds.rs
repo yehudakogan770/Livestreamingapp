@@ -74,8 +74,8 @@ pub fn pix_fmt(f: PixelFormat) -> &'static str {
 
 /// The small copy the vertical version's soft background is stretched from.
 const SMALL: (u32, u32) = (48, 27);
-/// Feed targets are numbered from here (the screens and Next come first).
-const FIRST_TARGET: usize = 8;
+/// Feed targets are numbered from here (the screens, Next and the multiview come first).
+const FIRST_TARGET: usize = 16;
 
 struct Feed {
     spec: FeedSpec,

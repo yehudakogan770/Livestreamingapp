@@ -246,6 +246,7 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.desktop.sync(&snapshot.show);
     if let Some(live) = app.try_state::<live::Live>() {
         live.sync(&snapshot.show);
+        live.place_multiview(app, &snapshot.show);
     }
     let _ = app.emit("show-changed", snapshot);
     if let Ok(json) = serde_json::to_string(snapshot) {
@@ -390,6 +391,10 @@ fn open_output(
 #[tauri::command]
 fn open_multiview(state: State<'_, AppState>, app: tauri::AppHandle) -> Result<(), String> {
     let show = lock(&state).show().clone();
+    // Settings → Engine → Unified (beta): the engine shows it in its own window.
+    if app.state::<live::Live>().open_multiview(&app, &show)? {
+        return Ok(());
+    }
     outputs::open_multiview(&app, &show).map_err(|e| e.to_string())
 }
 
@@ -448,12 +453,16 @@ fn open_planner() -> Result<(), String> {
 
 #[tauri::command]
 fn close_multiview(app: tauri::AppHandle) -> Result<(), String> {
+    if app.state::<live::Live>().close_multiview(&app) {
+        return Ok(());
+    }
     outputs::close_multiview(&app).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 fn multiview_open(app: tauri::AppHandle) -> bool {
     app.get_webview_window(outputs::MULTIVIEW).is_some()
+        || app.state::<live::Live>().multiview_open()
 }
 
 #[tauri::command]
@@ -1373,7 +1382,8 @@ pub fn run() {
             live::live_engine_audio_wanted,
             live::live_engine_capture_start,
             live::live_engine_capture_stop,
-            live::live_engine_probe
+            live::live_engine_probe,
+            live::live_engine_multiview_layout
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

@@ -245,6 +245,26 @@ any more (the double open of Phase 1 is gone); it only sends the sound.
   ms per frame, late frames, graphics updates and delay, each feed's frames,
   late frames, sound written and silence filled in).
 
+### The multiview from the engine (Phase 2)
+
+In Unified mode (Windows) Outputs → Multiview opens the engine's own window
+(`Live::open_multiview`; it follows its display choice; switching engines
+moves it over). The engine draws it from the **same GPU frames** as the
+screens, at its full rate (`multiview.rs`, `LiveEngine::draw_multiview`):
+the layout of `MultiviewView.css` (header strip; the Live Screen's Next and
+On air big — and the Back Screen's for "both screens"; every input in a grid
+of 260 px — 360 px for "inputs only" — tiles), each picture fitted in its
+tile, gray, red (on air) or green (next) borders. The words — event name,
+PANIC and blank tags, the clock, each tile's number, name, tally tags and
+time — are the Live Screen's overlay renderer's plane `mv`
+(`multiviewLabels.ts`), drawn at the engine's own layout (asked for with
+`live_engine_multiview_layout`; the Rust and TypeScript sides are tested
+against the same JSON). The clock changes once a second, so the plane sends
+one small rectangle a second. The WebView multiview window (and its camera
+copies) is not opened at all. Not yet: graphics inputs' tiles show only while
+they are on air on the Live Screen (their planes are the renderer's), the Next
+tiles show no graphics, and the timecodes count seconds, not frames.
+
 ### What Unified (beta) does not do yet
 
 Listed in the Engine dialog too:
@@ -257,8 +277,9 @@ Listed in the Engine dialog too:
   graphics plane can't have a picture inside it yet).
 - Captions written into the stream picture; instant replay (it would draw the
   picture in the WebView again, cameras and all: it says so instead).
-- The Monitor (all words) stays a WebView window; the Next previews show no
-  graphics.
+- The Monitor (all words) stays a WebView window; the Next previews (and the
+  multiview's Next tiles) show no graphics; in the multiview a graphics
+  input's tile shows it only while it is on air on the Live Screen.
 - Group opacity: a layer made of several pictures (a split screen) fades each
   picture separately, so its background shows through its boxes mid-fade.
 - Device-lost recovery (driver reset / TDR) — the engine reports GPU errors
@@ -423,7 +444,7 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
   see "Graphics" above); stingers (the `top` plane); recording, streaming,
   vertical, NDI and ISO files from the engine with the WebView's sound mix as
   PCM (no camera opened by the control window); the test event in Unified
-  mode. Next: multiview drawn by the engine; NV12 uploads and read-back;
+  mode; the multiview drawn by the engine in its own window. Next: NV12 uploads and read-back;
   stream/NDI/file inputs with hardware decode (`-hwaccel d3d11va`); chroma key
   and colour adjustments in the shader (port of `chroma.ts`); group opacity;
   device-lost recovery.

@@ -67,6 +67,8 @@ struct Inner {
     native: Vec<ScreenId>,
     /// Recordings and streams the engine encodes, with their ISO files.
     captures: std::collections::HashMap<u64, Vec<u64>>,
+    /// The engine shows the multiview in its own window (on this display: None, a window).
+    multiview: Option<Option<String>>,
 }
 
 pub struct Live {
@@ -228,6 +230,62 @@ impl Live {
         }
     }
 
+    /// The show changed: the engine's multiview follows a new display choice.
+    pub fn place_multiview(&self, app: &AppHandle, show: &Show) {
+        let moved = lock(&self.inner)
+            .multiview
+            .as_ref()
+            .is_some_and(|d| *d != show.settings.multiview.display);
+        if moved {
+            let _ = self.open_multiview(app, show);
+        }
+    }
+
+    /// Open (or move) the multiview in the engine's own window, drawn from
+    /// the same frames as the screens. False: not the engine's to show
+    /// (Standard mode, not on Windows).
+    ///
+    /// # Errors
+    /// The window could not be made.
+    pub fn open_multiview(&self, app: &AppHandle, show: &Show) -> Result<bool, String> {
+        let Some(r) = self.runner().filter(|_| cfg!(windows)) else {
+            return Ok(false);
+        };
+        let wanted = show.settings.multiview.display.clone();
+        let display = wanted
+            .as_deref()
+            .and_then(|id| {
+                crate::outputs::displays(app)
+                    .into_iter()
+                    .find(|d| d.id == id)
+            })
+            .map(|d| (d.x, d.y, d.width, d.height));
+        r.set_multiview(Some(Placement {
+            display,
+            title: "Lumora — Multiview".to_owned(),
+        }))?;
+        lock(&self.inner).multiview = Some(wanted);
+        notify(app);
+        Ok(true)
+    }
+
+    /// Close the engine's multiview. False: it wasn't open.
+    pub fn close_multiview(&self, app: &AppHandle) -> bool {
+        let was = lock(&self.inner).multiview.take().is_some();
+        if was {
+            if let Some(r) = self.runner() {
+                let _ = r.set_multiview(None);
+            }
+            notify(app);
+        }
+        was
+    }
+
+    /// The engine shows the multiview now.
+    pub fn multiview_open(&self) -> bool {
+        lock(&self.inner).multiview.is_some()
+    }
+
     fn info(&self) -> Info {
         let inner = lock(&self.inner);
         let c = Config::default();
@@ -370,7 +428,15 @@ pub fn live_engine_set_mode(
         Mode::Unified => {
             lock(&live.inner).mode = Mode::Unified;
             live.start(&show);
-            // The Live and Back windows become the engine's.
+            // The multiview and the Live and Back windows become the engine's.
+            if app.get_webview_window(crate::outputs::MULTIVIEW).is_some()
+                && live.runner().is_some()
+            {
+                let _ = crate::outputs::close_multiview(&app);
+                if !matches!(live.open_multiview(&app, &show), Ok(true)) {
+                    let _ = crate::outputs::open_multiview(&app, &show);
+                }
+            }
             for s in crate::outputs::open_screens(&app) {
                 if native_screen(s) && live.runner().is_some() {
                     let _ = crate::outputs::close(&app, s);
@@ -383,10 +449,12 @@ pub fn live_engine_set_mode(
         }
         Mode::Standard => {
             let reopen = live.open_screens();
+            let multiview = live.multiview_open();
             let runner = {
                 let mut inner = lock(&live.inner);
                 inner.mode = Mode::Standard;
                 inner.native.clear();
+                inner.multiview = None;
                 inner.error = None;
                 inner.runner.take()
             };
@@ -394,6 +462,9 @@ pub fn live_engine_set_mode(
             drop(runner);
             for s in reopen {
                 let _ = crate::outputs::open(&app, &show, s);
+            }
+            if multiview {
+                let _ = crate::outputs::open_multiview(&app, &show);
             }
         }
     }
@@ -505,6 +576,18 @@ pub fn live_engine_probe(
     live: State<'_, Live>,
 ) -> Option<live_engine::engine::ScreenProbe> {
     live.runner()?.probe(screen)
+}
+
+/// The engine's multiview layout while it shows the multiview (for its
+/// words, drawn by the Live Screen's overlay renderer); None otherwise.
+#[tauri::command]
+pub fn live_engine_multiview_layout(
+    live: State<'_, Live>,
+) -> Option<live_engine::multiview::Layout> {
+    if !live.multiview_open() {
+        return None;
+    }
+    live.runner()?.multiview_layout()
 }
 
 /// The mixes the engine's encoders are listening to (the control window taps only these).

@@ -12,6 +12,7 @@ import type { EngineClient } from './client';
 import { area, dirtyRects, Pacer } from './overlayDirty';
 import { overlayPlanes, planeKey, type PlaneSpec } from './overlayPlanes';
 import { cutRect, encodeWire, type WireRecord } from './overlayWire';
+import { drawMultiviewWords, type MvLayout } from './multiviewLabels';
 import type { ScreenId } from './types/ScreenId';
 import type { Show } from './types/Show';
 
@@ -45,6 +46,8 @@ export class OverlayRenderer {
   /** How far ahead of the clock a frame is drawn, so it is on the screen at its time (ms). */
   private lead = 0;
   private timer: { stop: () => void } | null = null;
+  /** The engine's multiview layout while it shows the multiview (its words are drawn here). */
+  private multiview: MvLayout | null = null;
   readonly stats: OverlayStats = { frames: 0, sent: 0, bytes: 0, drawMs: 0, planes: 0 };
 
   constructor(
@@ -64,6 +67,13 @@ export class OverlayRenderer {
   setShow(show: Show): void {
     this.show = show;
     this.compositor.setShow(show);
+    this.pacer.wake(this.clock());
+  }
+
+  /** The engine opened, changed or (null) closed its multiview. */
+  setMultiview(layout: MvLayout | null): void {
+    if (JSON.stringify(layout) === JSON.stringify(this.multiview)) return;
+    this.multiview = layout;
     this.pacer.wake(this.clock());
   }
 
@@ -122,6 +132,8 @@ export class OverlayRenderer {
       this.resync = false;
     }
     const specs = overlayPlanes(show, this.screen, at, this.width, this.height);
+    const mv = this.multiview;
+    if (mv && this.screen === 'live') specs.push({ kind: 'multiview', name: 'mv', w: mv.width, h: mv.height });
     const wanted = new Set(specs.map(planeKey));
     this.compositor.beginPlanes();
     for (const spec of specs) {
@@ -137,7 +149,8 @@ export class OverlayRenderer {
         this.planes.set(key, p);
       }
       p.spec = spec;
-      this.compositor.drawPlane(p.ctx, spec, at);
+      if (spec.kind === 'multiview' && mv) drawMultiviewWords(p.ctx, mv, show, at);
+      else this.compositor.drawPlane(p.ctx, spec, at);
       const img = p.ctx.getImageData(0, 0, spec.w, spec.h).data;
       const now = new Uint32Array(img.buffer, img.byteOffset, spec.w * spec.h);
       const rects = dirtyRects(p.sent, now, spec.w, spec.h);

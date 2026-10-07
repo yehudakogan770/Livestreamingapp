@@ -27,6 +27,7 @@ pub mod feeds;
 pub mod frame;
 pub mod gpu;
 pub mod mix;
+pub mod multiview;
 pub mod overlay;
 pub mod present;
 pub mod scene;

@@ -38,7 +38,9 @@ export type PlaneSpec =
   | { kind: 'input'; name: string; w: number; h: number; sourceId: string }
   | { kind: 'channel'; name: string; w: number; h: number; sourceId: string; changedAt: number }
   | { kind: 'top'; name: 'top'; w: number; h: number; stinger: StingerPlay }
-  | { kind: 'panic'; name: 'panic'; w: number; h: number };
+  | { kind: 'panic'; name: 'panic'; w: number; h: number }
+  /** The words of the engine's multiview (the Live Screen's renderer draws them). */
+  | { kind: 'multiview'; name: 'mv'; w: number; h: number };
 
 /** A plane's identity: its name and size. */
 export const planeKey = (p: { name: string; w: number; h: number }) => `${p.name}|${p.w}x${p.h}`;

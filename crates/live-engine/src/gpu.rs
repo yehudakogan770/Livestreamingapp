@@ -68,6 +68,10 @@ pub enum Paint<'a> {
     /// the whole picture across the middle, over a soft, darkened copy of
     /// it filling the frame (stretched up from the tiny target `small`).
     Vertical { src: usize, small: usize },
+    /// A flat color (premultiplied) over the viewport.
+    Solid([f32; 4]),
+    /// A graphics plane of `slot` over the viewport, at whatever size it is held (the multiview's words).
+    Plane { slot: usize, name: &'static str },
 }
 
 /// Where a pass paints.
@@ -977,6 +981,17 @@ impl Compositor {
                     let mut d = DrawU::new();
                     d.0[MISC * 4 + 3] = 2.0;
                     draws.push((d, TexKey::Target(*i)));
+                }
+                Paint::Solid(c) => {
+                    let mut d = DrawU::new();
+                    d.set(COLOR, *c);
+                    d.0[MISC * 4 + 3] = 1.0;
+                    draws.push((d, TexKey::White));
+                }
+                Paint::Plane { slot, name } => {
+                    if let Some(id) = self.plane(*slot, name, (w, h)) {
+                        draws.push((DrawU::new(), TexKey::Plane(id)));
+                    }
                 }
                 Paint::Vertical { src, small } => {
                     let (sw, sh) = self.dest_size(Dest::Target(*src)).unwrap_or((16, 9));

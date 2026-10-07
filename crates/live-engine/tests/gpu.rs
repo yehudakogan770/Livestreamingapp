@@ -679,3 +679,65 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
     );
     assert!(near([iso[0], iso[1], iso[2], iso[3]], [0, 0, 255, 255]));
 }
+
+// ---------------------------------------------------------------------------
+// The multiview, from the same frames
+
+#[test]
+fn the_multiview_shows_the_screens_and_inputs_with_tally_and_words() {
+    use live_engine::engine::{MULTIVIEW, MULTIVIEW_PLANE};
+    use live_engine::multiview::{layout, Tally, TileContent, SIZE};
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    show.screens.live.preview = Some(SourceId::new("b"));
+    e.set_show(show.clone());
+    // The words from the overlay renderer: one white pixel in the header.
+    let dot = [255u8, 255, 255, 255];
+    apply(
+        &mut e,
+        encode(&[(
+            Op::Patch,
+            ScreenId::Live,
+            MULTIVIEW_PLANE,
+            SIZE.0,
+            SIZE.1,
+            0,
+            vec![([10, 10, 1, 1], &dot[..])],
+        )]),
+    );
+    e.frame(1000);
+    e.draw_multiview();
+    let (w, _, img) = e.gpu.read(Dest::Target(MULTIVIEW)).unwrap();
+    assert_eq!(w, SIZE.0);
+    let at = |x: u32, y: u32| {
+        let i = ((y * SIZE.0 + x) * 4) as usize;
+        [img[i], img[i + 1], img[i + 2], img[i + 3]]
+    };
+    let mid = |r: [u32; 4]| (r[0] + r[2] / 2, r[1] + r[3] / 2);
+    let l = layout(&show, SIZE.0, SIZE.1);
+    for t in &l.tiles {
+        let (x, y) = mid(t.picture);
+        let want = match &t.content {
+            TileContent::Program(_) => [255, 0, 0, 255],
+            TileContent::Next(_) => [0, 0, 255, 255],
+            TileContent::Input(id) if id.as_str() == "a" => [255, 0, 0, 255],
+            TileContent::Input(_) => [0, 0, 255, 255],
+        };
+        assert!(near(at(x, y), want), "{t:?}: {:?}", at(x, y));
+        // Its border: red on air, green next, gray otherwise.
+        let edge = at(t.rect[0], t.rect[1] + t.rect[3] / 2);
+        let border = match t.tally {
+            Tally::Pgm => [255, 75, 62, 255],
+            Tally::Pvw => [52, 210, 107, 255],
+            Tally::None => [39, 39, 39, 255],
+        };
+        assert!(near(edge, border), "{t:?}: {edge:?}");
+    }
+    // The frame around the tiles, and the words over everything.
+    assert!(near(at(1, 1), [11, 11, 11, 255]));
+    assert!(near(at(10, 10), [255, 255, 255, 255]));
+}

@@ -749,6 +749,12 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
                 height: p.height,
               });
           }
+        // And for its multiview (its tally comes from the show itself).
+        if (unifiedOn() && !answers.some((a) => a.output === 'multiview')) {
+          const s = (await refreshEngineInfo().catch(() => null))?.stats;
+          if (s?.outputs.includes('multiview'))
+            answers.push({ id: 0, output: 'multiview', fps: s.fps, inSync: null, black: null, overlays: null, tally: true, width: 1920, height: 1080 });
+        }
         await act({ type: 'setOverlayOn', channel: 0, value: false });
         await act({ type: 'updateOverlay', channel: 0, patch: { autoHideMs: 4000 } });
         for (const c of outputs) {

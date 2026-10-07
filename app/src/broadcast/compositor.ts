@@ -311,6 +311,9 @@ export class ProgramCompositor {
         case 'top':
           this.safely('stinger', () => this.drawSting(plane.stinger, now, w, h));
           return;
+        case 'multiview':
+          // Drawn by the overlay renderer itself (engine/multiviewLabels.ts).
+          return;
         case 'panic': {
           // The engine draws PANIC's black itself; the logo comes from here.
           const logo = this.picture(eventLogo(show.event));
