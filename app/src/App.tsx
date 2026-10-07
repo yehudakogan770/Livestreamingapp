@@ -24,6 +24,7 @@ import { BrandDialog } from './views/BrandDialog';
 import { ZmanimDialog } from './views/ZmanimDialog';
 import { ShabbosGuard } from './views/ShabbosGuard';
 import { DataDialog, DataWatcher } from './views/DataDialog';
+import { ControlApiDialog } from './views/ControlApiDialog';
 import { RemoteDialog } from './views/RemoteDialog';
 import { StreamDeckDialog, StreamDeckOffer, useDeck } from './streamdeck/StreamDeck';
 import { barActions, defaultPesukim } from './engine/pesukim';
@@ -134,6 +135,7 @@ function ControlApp() {
   useEffect(() => client.watchEventFiles(setFiles), [client]);
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
   const [remoteOpen, setRemoteOpen] = useState(false);
+  const [apiOpen, setApiOpen] = useState(false);
   // Lumora's Stream Deck buttons (offered once when a Stream Deck is found).
   const [deck, refreshDeck, setDeck] = useDeck();
   const [deckOpen, setDeckOpen] = useState(false);
@@ -220,6 +222,11 @@ function ControlApp() {
       {
         label: `Phone remote…${remote?.running ? (phones ? ` (${phones} connected)` : ' (on)') : ''}`,
         onClick: () => setRemoteOpen(true),
+      },
+      {
+        label: 'Control API (Companion, OSC, tally)…',
+        hint: 'Stream Deck through Companion, X-keys, tally lights and show-control systems',
+        onClick: () => setApiOpen(true),
       },
       // Only on computers with the Stream Deck app.
       ...(deck.found
@@ -514,6 +521,7 @@ function ControlApp() {
       {peopleOpen && <PeopleDialog onClose={() => setPeopleOpen(false)} />}
       {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
+      {apiOpen && <ControlApiDialog onClose={() => setApiOpen(false)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       <StreamDeckOffer status={deck} onChange={setDeck} />
       {deckOpen && (
