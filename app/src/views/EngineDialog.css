@@ -1,0 +1,54 @@
+/* Settings → Engine (layout only: colors come from the app's tokens). */
+.eng {
+  width: min(640px, 94vw);
+}
+.eng__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 70vh;
+  overflow: auto;
+}
+.eng__modes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.eng__mode {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+.eng__mode > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.eng__mode input {
+  margin-top: 3px;
+}
+.eng__title {
+  margin: 8px 0 0;
+  font-size: 1em;
+}
+.eng__stats {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 0;
+}
+.eng__stats dt {
+  opacity: 0.75;
+}
+.eng__stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.eng__list {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.eng__list li + li {
+  margin-top: 4px;
+}

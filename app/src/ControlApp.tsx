@@ -39,6 +39,7 @@ import { StageContext } from './engine/CountdownContext';
 import { openProblemReport, ReportingHost, useErrorReports } from './reports/ReportUI';
 import { openSystemCheck, SystemCheckHost } from './syscheck/SystemCheck';
 import { openTestEvent, TestEventHost } from './testevent/host';
+import { EngineSettingsHost, openEngineSettings } from './views/engineHost';
 import { lazyPart } from './components/lazyPart';
 // Last: the base styles come after every other style (all windows share one
 // stylesheet; this keeps its order as it was when the app was one part).
@@ -256,6 +257,11 @@ function ControlApp() {
         : []),
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
+      {
+        label: 'Engine…',
+        hint: 'Standard, or the Unified engine (beta): each camera opened once, every screen drawn once on the graphics card',
+        onClick: openEngineSettings,
+      },
       {
         label: 'Run a test event…',
         hint: 'Lumora runs a whole event by itself and tells you if this computer is ready (your event is kept safe)',
@@ -492,6 +498,7 @@ function ControlApp() {
                   <ShabbosGuard show={show} />
                   <DataWatcher show={show} client={client} />
                   <TestEventHost show={show} client={client} />
+                  <EngineSettingsHost />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
                   {speakersOpen && <SpeakersDialog show={show} client={client} onClose={() => setSpeakersOpen(false)} />}
                   {captionsOpen && (

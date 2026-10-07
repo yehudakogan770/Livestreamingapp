@@ -105,6 +105,8 @@ impl Mailbox {
         {
             let mut s = lock(&self.status);
             let now = Instant::now();
+            // Pictures again (a camera plugged back in): it works.
+            s.error = None;
             s.last = Some(now);
             s.frames += 1;
             s.window_frames += 1;
@@ -520,6 +522,8 @@ mod tests {
         );
         mb.fail("unplugged");
         assert_eq!(mb.health().state, SourceState::Failed("unplugged".into()));
+        mb.put(VideoFrame::build(&pool, 2, 2, PixelFormat::Rgba8, 1, |_| {}));
+        assert_eq!(mb.health().state, SourceState::Live, "plugged back in");
     }
 
     #[test]

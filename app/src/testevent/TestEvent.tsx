@@ -17,6 +17,7 @@ import { sendProblemReport } from '../reports/reporter';
 import { LENGTHS, defaultOptions, planInputs, type TestEnv, type TestLength, type TestOptions } from './plan';
 import { buildJson, buildMarkdown, outputOk, reportName, type ReportData, type SystemInfo } from './report';
 import { cannotStart, findDevices, runTestEvent, type BroadcastApi, type Progress } from './runner';
+import { unifiedBlocksTestEvent } from '../engine/unified';
 import { OUTPUT_NAMES, VERDICT_WORDS, judge, type Finding } from './verdict';
 import './testevent.css';
 
@@ -64,7 +65,9 @@ export function TestEventDialog({ show, client, onClose }: { show: Show; client:
     [devices, broadcast, show],
   );
   const plan = useMemo(() => planInputs(opts, env), [opts, env]);
-  const blocked = !isInsideLumora() ? 'The test event runs in Lumora itself, not in the browser demo.' : cannotStart(broadcast?.status);
+  const blocked = !isInsideLumora()
+    ? 'The test event runs in Lumora itself, not in the browser demo.'
+    : (unifiedBlocksTestEvent() ?? cannotStart(broadcast?.status));
   const ownDestinations = (broadcast?.settings.destinations ?? []).filter((d) => d.enabled && d.url.trim() && !d.vertical);
   const realReady = !opts.realDestination || confirmReal;
 

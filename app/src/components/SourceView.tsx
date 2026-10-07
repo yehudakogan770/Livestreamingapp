@@ -38,6 +38,8 @@ import { defaultVisuals } from '../engine/visuals';
 import { acquireCamera, cameraProblem, fullResolution, rememberCameraName, releaseCamera, setCameraValues, type CameraValues } from '../engine/cameras';
 import { FrameDelay } from '../engine/frameDelay';
 import { inputHealth, watchFrames } from '../engine/inputHealth';
+import { useUnifiedOn } from '../engine/unified';
+import { EnginePreview } from './EnginePreview';
 
 // ---- views ----
 
@@ -103,6 +105,9 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
   }, [sharpCam, source.id]);
   const fit = source.fit === 'cover' ? 'cover' : 'contain';
   const k = source.kind;
+  // Settings → Engine → Unified (beta): the engine opened the camera; this is its preview.
+  const unified = useUnifiedOn();
+  if (unified && k.type === 'camera') return <EnginePreview previewKey={`source/${source.id}`} />;
   const keyed =
     needsProcessing(source.key, source.adjust, source.background, source.autoFrame) && (k.type === 'image' || k.type === 'camera' || k.type === 'video');
   if (keyed) {
