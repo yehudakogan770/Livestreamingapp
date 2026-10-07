@@ -11,7 +11,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getVersion } from '@tauri-apps/api/app';
 import { authOn } from '../auth/config';
-import { supabase } from '../auth/auth';
 import { e2e, TEST_BUILD } from '../e2e';
 import { mayAutoSend, readConsent } from './consent';
 import { appLog, watchConsole } from './logs';
@@ -58,6 +57,9 @@ export function makeRow(
 async function send(rows: ReportRow[]): Promise<void> {
   if (TEST_BUILD) return;
   if (!authOn()) throw new Error('There is no Lumora account server set up.');
+  // The account library is loaded only when something is sent (the show and
+  // output windows that never send anything never load it).
+  const { supabase } = await import('../auth/auth');
   const { data } = await supabase().auth.getSession();
   if (!data.session) throw new Error('Sign in first.');
   const { error } = await supabase().from('problem_reports').insert(rows);

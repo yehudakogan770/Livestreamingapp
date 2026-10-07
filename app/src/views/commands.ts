@@ -18,6 +18,8 @@ export type Command =
   | { type: 'midi' }
   | { type: 'chat' }
   | { type: 'arrange' }
+  /** Let the speaker change slides from another device (the speaker's clicker). */
+  | { type: 'speakerRemote' }
   /** The backup lineup settings (opened from an input: offered to add it). */
   | { type: 'backup'; input?: string };
 

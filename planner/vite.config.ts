@@ -5,8 +5,11 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const PUBLIC = resolve(__dirname, 'public');
-/** Public files the installed app does not need offline. */
-const NOT_OFFLINE = /^(screenshots|splash)\//;
+/**
+ * Public files not kept on the device at install: the store pictures, and the
+ * fonts' other alphabets (kept once first used instead; see sw-template.js).
+ */
+const NOT_OFFLINE = /^(screenshots|splash)\/|^fonts\/(?!.*-latin\.woff2$)/;
 
 function publicFiles(dir = PUBLIC): string[] {
   return readdirSync(dir).flatMap((name) => {

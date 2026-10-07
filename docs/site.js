@@ -19,11 +19,42 @@
 
   // WebM where the browser plays it, MP4 (H.264) everywhere else.
   const EXT = document.createElement('video').canPlayType('video/webm; codecs="vp9"') ? 'webm' : 'mp4';
+  // The first frames as WebP where the browser shows it (smaller), else JPG.
+  const PIC = (() => {
+    try {
+      const c = document.createElement('canvas');
+      c.width = c.height = 1;
+      return c.toDataURL('image/webp').startsWith('data:image/webp') ? 'webp' : 'jpg';
+    } catch {
+      return 'jpg';
+    }
+  })();
+  // The clips wait until the page itself has loaded (the first frames show until then),
+  // and stay as still pictures for people who asked their browser to save data.
+  const saveData = navigator.connection?.saveData === true;
+  const afterLoad = (f) => {
+    if (document.readyState === 'complete') setTimeout(f, 300);
+    else addEventListener('load', () => setTimeout(f, 300), { once: true });
+  };
+  let pageLoaded = false;
+  afterLoad(() => (pageLoaded = true));
+
+  /** A still picture, decoded away from the page's main work before it is first drawn. */
+  function stillPicture(file) {
+    const img = new Image();
+    img.src = `media/${file}.${PIC}`;
+    const pic = { img, ok: false, ready: null };
+    pic.ready = (img.decode ? img.decode() : new Promise((done, fail) => ((img.onload = done), (img.onerror = fail)))).then(
+      () => (pic.ok = true),
+      () => false,
+    );
+    return pic;
+  }
 
   /** A camera: a short clip that loops, its first frame until it plays. */
   function camera(name, file) {
-    const poster = new Image();
-    poster.src = `media/${file}.jpg`;
+    const pic = stillPicture(file);
+    const poster = pic.img;
     const v = document.createElement('video');
     v.muted = true;
     v.loop = true;
@@ -31,11 +62,13 @@
     v.preload = 'none';
     v.setAttribute('aria-hidden', 'true');
     let started = false;
+    /** The first frame is already on the canvas (it does not change: no need to draw it again). */
+    let drawn = false;
     return {
       name,
-      poster,
+      ready: pic.ready,
       play() {
-        if (still) return;
+        if (still || saveData || !pageLoaded) return;
         if (!started) {
           started = true;
           v.src = `media/${file}.${EXT}`;
@@ -46,8 +79,13 @@
         if (started && !v.paused) v.pause();
       },
       draw(c) {
-        if (v.readyState >= 2 && cover(c, v, v.videoWidth, v.videoHeight)) return;
-        if (!cover(c, poster, poster.naturalWidth, poster.naturalHeight)) {
+        if (v.readyState >= 2 && cover(c, v, v.videoWidth, v.videoHeight)) {
+          drawn = false;
+          return;
+        }
+        if (drawn) return;
+        if (pic.ok && cover(c, poster, poster.naturalWidth, poster.naturalHeight)) drawn = true;
+        else {
           c.fillStyle = '#16181d';
           c.fillRect(0, 0, W, H);
         }
@@ -57,15 +95,18 @@
 
   /** A picture: the speaker's slides. */
   function picture(name, file) {
-    const img = new Image();
-    img.src = `media/${file}`;
+    const pic = stillPicture(file);
+    const img = pic.img;
+    let drawn = false;
     return {
       name,
-      poster: img,
+      ready: pic.ready,
       play() {},
       pause() {},
       draw(c) {
-        if (!cover(c, img, img.naturalWidth, img.naturalHeight)) {
+        if (drawn) return;
+        if (pic.ok && cover(c, img, img.naturalWidth, img.naturalHeight)) drawn = true;
+        else {
           c.fillStyle = '#f6f4f0';
           c.fillRect(0, 0, W, H);
         }
@@ -73,7 +114,7 @@
     };
   }
 
-  const SOURCES = [camera('Podium', 'podium'), camera('Wide', 'wide'), camera('Audience', 'audience'), picture('Slides', 'slides.jpg')];
+  const SOURCES = [camera('Podium', 'podium'), camera('Wide', 'wide'), camera('Audience', 'audience'), picture('Slides', 'slides')];
   const frames = SOURCES.map(() => {
     const cv = document.createElement('canvas');
     cv.width = W;
@@ -235,16 +276,20 @@
   const clock = $('[data-clock]');
   const left = $('[data-left]');
   const pad = (n) => String(n).padStart(2, '0');
+  /** Only touches the page when the words change (not 30 times a second). */
+  const put = (el, text) => {
+    if (el && el.textContent !== text) el.textContent = text;
+  };
   function texts(now) {
     const ms = now - t0;
     const f = Math.floor((ms % 1000) / 40);
     const s = Math.floor(ms / 1000);
     const tc = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}:${pad(s % 60)}:${pad(f)}`;
-    tcs.forEach((el) => (el.textContent = tc));
+    tcs.forEach((el) => put(el, tc));
     const d = new Date();
-    clock.textContent = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    put(clock, d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }));
     const r = Math.max(0, 299 - (s % 300));
-    left.textContent = `${Math.floor(r / 60)}:${pad(r % 60)} left`;
+    put(left, `${Math.floor(r / 60)}:${pad(r % 60)} left`);
   }
 
   // Only draw what can be seen.
@@ -262,6 +307,9 @@
   io.observe(sw);
   io.observe(screens);
   if (hero) io.observe(hero);
+  // The moving hall at the top rests while it is scrolled out of sight.
+  const heroSection = $('.hero');
+  if (heroSection) new IntersectionObserver(([e]) => heroSection.classList.toggle('is-away', !e.isIntersecting)).observe(heroSection);
 
   // The app at the top runs by itself: a shot waits in Next, then TAKE.
   const hNext = $('[data-hero="next"]');
@@ -297,12 +345,12 @@
     requestAnimationFrame(frame);
     if (now - last < 1000 / 30) return;
     last = now;
-    texts(now);
-    // The clips only play while some of this can be seen.
+    // The clips only play (and the clocks only tick) while some of this can be seen.
     if (!visible.size) {
       SOURCES.forEach((s) => s.pause());
       return;
     }
+    texts(now);
     SOURCES.forEach((s) => s.play());
     SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d')));
     drawProgram(now);
@@ -334,10 +382,32 @@
       texts(performance.now());
     };
     redraw();
-    SOURCES.forEach((s) => s.poster.addEventListener('load', redraw));
+    SOURCES.forEach((s) => s.ready.then(redraw));
     document.addEventListener('click', () => setTimeout(redraw, 0));
     addEventListener('keydown', () => setTimeout(redraw, 0));
-  } else requestAnimationFrame(frame);
+  } else {
+    // While the page is still loading nothing moves yet: each first frame is drawn
+    // once as it arrives, and the pictures start running once the page has loaded.
+    let running = false;
+    const first = () => {
+      if (running) return;
+      const now = performance.now();
+      SOURCES.forEach((s, i) => s.draw(frames[i].getContext('2d')));
+      drawProgram(now);
+      if (hero) drawHero(Math.min(now, hs.nextTake - 1));
+      frames.forEach((f, i) => show(`src${i}`, f));
+      show('next', frames[st.next]);
+      show('program', program);
+      show('live', program);
+      drawBack();
+      show('back', backWide);
+    };
+    SOURCES.forEach((s) => s.ready.then(first));
+    afterLoad(() => {
+      running = true;
+      requestAnimationFrame(frame);
+    });
+  }
   document.fonts?.ready.then(() => (last = 0));
 
   // Feedback: sent through Web3Forms, so nobody has to sign in to anything.
@@ -403,15 +473,36 @@
       .join(' ');
   }
 
+  // On scroll: at most once a frame, and only writing styles (never measuring the page).
+  const onScroll = [];
+  let scrollQueued = false;
+  addEventListener(
+    'scroll',
+    () => {
+      if (scrollQueued) return;
+      scrollQueued = true;
+      requestAnimationFrame(() => {
+        scrollQueued = false;
+        onScroll.forEach((f) => f());
+      });
+    },
+    { passive: true },
+  );
+
   // The app window turns to face you as you scroll.
   if (hero && !still) {
+    let shown = '';
     const tilt = () => {
       const p = Math.min(1, Math.max(0, scrollY / (innerHeight * 0.55)));
-      hero.style.setProperty('--tilt', `${(12 * (1 - p)).toFixed(2)}deg`);
+      const t = `${(12 * (1 - p)).toFixed(2)}deg`;
+      // Further down it stays flat: nothing to change.
+      if (t === shown) return;
+      shown = t;
+      hero.style.setProperty('--tilt', t);
       hero.style.setProperty('--sc', (0.94 + 0.06 * p).toFixed(3));
     };
     tilt();
-    addEventListener('scroll', tilt, { passive: true });
+    onScroll.push(tilt);
   }
 
   // Sections glide in; the numbers count up.
@@ -465,7 +556,7 @@
   const top = document.querySelector('[data-top]');
   const solid = () => top?.classList.toggle('is-solid', scrollY > 40);
   solid();
-  addEventListener('scroll', solid, { passive: true });
+  onScroll.push(solid);
 
   // Packed with features: the tabs.
   const ftabs = document.querySelectorAll('[data-ftab]');

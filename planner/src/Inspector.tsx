@@ -12,14 +12,7 @@ export function hintText(c: PlanCue): string {
     .join(' · ');
 }
 
-/** "Eli Cohen" → "EC". */
-export const initials = (n: string): string =>
-  n
-    .split(/[\s@.]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]!.toUpperCase())
-    .join('');
+export { initials } from './model';
 
 /**
  * Everything about one cue, and its comments: in the side panel on larger

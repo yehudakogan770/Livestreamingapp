@@ -473,6 +473,10 @@ fn apply_visuals(s: &mut Show, action: Action, now: Millis) -> Result<()> {
 
 fn apply_slideshow(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     match action {
+        // Blacked out, a clicker's next or back first brings the slides back.
+        Action::SlideNext { id } | Action::SlidePrevious { id } if slideshow_mut(s, &id)?.black => {
+            slideshow_mut(s, &id)?.black = false;
+        }
         Action::SlideNext { id } => {
             if let Some(i) = slideshow_mut(s, &id)?.next_index() {
                 go_to_slide(s, &id, i, now)?;
@@ -483,11 +487,12 @@ fn apply_slideshow(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             go_to_slide(s, &id, i, now)?;
         }
         Action::SlideGo { id, index } => go_to_slide(s, &id, index, now)?,
+        Action::SlideBlack { id, value } => slideshow_mut(s, &id)?.black = value,
         Action::UpdateSlideshow { id, slideshow } => {
             // Slides and what is behind may only be pictures that exist, and
             // never a slideshow (nothing can contain itself).
             let inputs = slideshow.slides.iter().filter_map(|sl| match sl {
-                Slide::Input { source_id } => Some(source_id),
+                Slide::Input { source_id, .. } => Some(source_id),
                 Slide::Image { .. } => None,
             });
             for inner in inputs.chain(slideshow.behind.iter()) {
@@ -503,10 +508,11 @@ fn apply_slideshow(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 }
             }
             let sh = slideshow_mut(s, &id)?;
-            let (current, changed_at) = (sh.current, sh.changed_at);
+            let (current, changed_at, black) = (sh.current, sh.changed_at, sh.black);
             *sh = Slideshow {
                 current,
                 changed_at,
+                black,
                 ..slideshow
             };
             sh.repair();
@@ -769,7 +775,7 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                     }
                     SourceKind::Slideshow(sh) => {
                         sh.slides.retain(
-                            |sl| !matches!(sl, Slide::Input { source_id } if *source_id == id),
+                            |sl| !matches!(sl, Slide::Input { source_id, .. } if *source_id == id),
                         );
                         if sh.behind.as_ref() == Some(&id) {
                             sh.behind = None;
@@ -1623,6 +1629,7 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
         a @ (Action::SlideNext { .. }
         | Action::SlidePrevious { .. }
         | Action::SlideGo { .. }
+        | Action::SlideBlack { .. }
         | Action::UpdateSlideshow { .. }) => apply_slideshow(s, a, now),
         Action::UpdateSplit { id, split } => {
             // Each box shows a picture that exists, and never a split screen

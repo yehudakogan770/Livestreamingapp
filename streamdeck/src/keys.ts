@@ -1,7 +1,7 @@
 // What each key looks like: a 144 × 144 picture drawn from Lumora's state.
 // Tally colors follow switchers everywhere: red is on air, green is in Next.
 
-import { channelOf, findCountdown, findInput, findPreset, needsHold, screenFor, secondsOf, type KeySettings, type Kind } from './actions';
+import { channelOf, findCountdown, findInput, findPreset, findSlideshow, needsHold, screenFor, secondsOf, type KeySettings, type Kind } from './actions';
 import { ICONS, type IconName } from './icons';
 import { clock, remaining, tally, type DeckState, type ScreenId } from './show';
 import type { Connection } from './protocol';
@@ -234,6 +234,21 @@ function baseModel(kind: Kind, s: KeySettings, { state, deck, now }: KeyContext)
     case 'backup': {
       const on = !!state?.backup;
       return { icon: 'backup', label: 'BACKUP', sub: state ? (on ? 'Lineup on' : 'Lineup off') : null, tone: on ? 'on' : 'idle' };
+    }
+    case 'slidenext':
+    case 'slideback':
+    case 'slidefirst': {
+      const icon = kind === 'slidenext' ? 'slideNext' : kind === 'slideback' ? 'slideBack' : 'slideFirst';
+      const label = kind === 'slidenext' ? 'NEXT SLIDE' : kind === 'slideback' ? 'BACK' : 'FIRST SLIDE';
+      const sh = state ? findSlideshow(state, s, deck) : undefined;
+      if (!sh) return { icon, label, sub: state ? 'No slideshow' : null, tone: 'idle' };
+      // The slide showing now, like "3 / 12". Red while on air, green while in Next.
+      return {
+        icon,
+        label,
+        sub: sh.count ? `${sh.current + 1} / ${sh.count}` : 'No slides',
+        tone: sh.onAir ? 'program' : sh.inNext ? 'preview' : 'idle',
+      };
     }
   }
 }

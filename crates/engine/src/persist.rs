@@ -272,7 +272,7 @@ fn repair_links(s: &mut Show) {
     for src in &mut s.sources {
         if let SourceKind::Slideshow(sh) = &mut src.kind {
             sh.slides.retain(|sl| match sl {
-                crate::slideshow::Slide::Input { source_id } => slide_ok(source_id),
+                crate::slideshow::Slide::Input { source_id, .. } => slide_ok(source_id),
                 crate::slideshow::Slide::Image { .. } => true,
             });
             if sh.behind.as_ref().is_some_and(|b| !slide_ok(b)) {

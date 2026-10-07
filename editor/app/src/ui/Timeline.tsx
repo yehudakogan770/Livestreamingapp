@@ -23,7 +23,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { valueAt } from '../model/anim';
 import { CacheBar } from '../cache/CacheBar';
 import { duration, parseTimecode, timecode } from '../model/build';
@@ -68,6 +68,20 @@ export const METER_ZONES: [number, number, string][] = [
 ];
 const HEAD = 190;
 const EDGE = 7;
+/**
+ * The view moves on in steps this wide (pixels): the clips on screen and the
+ * ruler are worked out again when it moves a step, not on every scroll event.
+ */
+const VIEW_STEP = 512;
+/** Clips narrower than this (pixels, zoomed far out) are drawn together as one band per track. */
+const DENSE_PX = 3;
+
+/** The same function every render, calling the newest one (so memoized clips don't draw again for a new handler). */
+function useStable<A extends unknown[], R>(f: (...a: A) => R): (...a: A) => R {
+  const ref = useRef(f);
+  ref.current = f;
+  return useCallback((...a: A) => ref.current(...a), []);
+}
 
 type Preview = { ids: Set<string>; frames: number; dv: number; da: number; copy: boolean } | null;
 type Marquee = { x0: number; y0: number; x1: number; y1: number } | null;
@@ -536,7 +550,48 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
   };
 
   // ---- the view ----
-  const visible = (c: Clip) => end(c) * zoom >= scroll.x - 50 && c.start * zoom <= scroll.x + size.w + 50;
+  // What is drawn: the screen and one step past it (see VIEW_STEP), so scrolling within a step draws nothing again.
+  const viewFrom = scroll.x - 50;
+  const viewTo = scroll.x + size.w + VIEW_STEP + 50;
+  const rowOf = useMemo(() => new Map(rows.map((r) => [r.track.id, r])), [rows]);
+  // Zoomed far out, clips too narrow to tell apart are drawn as one band per track (thousands of clips stay a few shapes).
+  const { shown, dense } = useMemo(() => {
+    const shown: Clip[] = [];
+    const runs = new Map<string, [number, number][]>();
+    for (const c of s.clips) {
+      if (!(end(c) * zoom >= viewFrom && c.start * zoom <= viewTo)) continue;
+      if (c.length * zoom >= DENSE_PX || sel.has(c.id) || preview?.ids.has(c.id)) {
+        shown.push(c);
+        continue;
+      }
+      const list = runs.get(c.track) ?? [];
+      list.push([c.start * zoom, end(c) * zoom]);
+      runs.set(c.track, list);
+    }
+    const dense: { track: string; x0: number; x1: number }[] = [];
+    for (const [track, list] of runs) {
+      list.sort((a, b) => a[0] - b[0]);
+      let run: [number, number] | null = null;
+      for (const [x0, x1] of list) {
+        if (run && x0 <= run[1] + 2) run[1] = Math.max(run[1], x1);
+        else {
+          if (run) dense.push({ track, x0: run[0], x1: run[1] });
+          run = [x0, x1];
+        }
+      }
+      if (run) dense.push({ track, x0: run[0], x1: run[1] });
+    }
+    return { shown, dense };
+    // (`sel` is worked out from `selection`.)
+  }, [s.clips, zoom, viewFrom, viewTo, selection, preview]);
+  // Handlers that stay the same, so clips that didn't change aren't drawn again.
+  const onClipDownStable = useStable(onClipDown);
+  const clipMenuStable = useStable(clipMenu);
+  const openNestStable = useStable(openNest);
+  const onGain = useStable((c: Clip, db: number, final: boolean) =>
+    actions.update([c.id], 'Clip volume', (x) => ({ ...x, gain: db }), final ? undefined : `gain-${c.id}`),
+  );
+  const onTransition = useStable((c: Clip, side: 'in' | 'out') => doc.select({ kind: 'transition', clip: c.id, side }));
   const offset = (c: Clip): { dx: number; track: string } => {
     if (!preview || !preview.ids.has(c.id) || preview.copy) return { dx: 0, track: c.track };
     const t = s.tracks.find((x) => x.id === c.track);
@@ -623,7 +678,11 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
         <div
           className="tl__scroll"
           ref={scrollRef}
-          onScroll={(e) => setScroll({ x: e.currentTarget.scrollLeft, y: e.currentTarget.scrollTop })}
+          onScroll={(e) => {
+            const x = Math.floor(e.currentTarget.scrollLeft / VIEW_STEP) * VIEW_STEP;
+            const y = e.currentTarget.scrollTop;
+            setScroll((was) => (was.x === x && was.y === y ? was : { x, y }));
+          }}
           onWheel={(e) => {
             const el = scrollRef.current;
             if (!el) return;
@@ -651,7 +710,7 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
               zoom={zoom}
               fps={fps}
               from={scroll.x}
-              width={size.w}
+              width={size.w + VIEW_STEP}
               doc={doc}
               engine={engine}
               pins={cs ? pins(cs.comments, s.id) : []}
@@ -673,29 +732,47 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
                 style={{ left: (s.inPoint ?? 0) * zoom, width: Math.max(1, ((s.outPoint ?? len) - (s.inPoint ?? 0)) * zoom), height: rowsH }}
               />
             ) : null}
-            {s.clips.filter(visible).map((c) => {
+            {dense.map((d) => {
+              const r = rowOf.get(d.track);
+              return r ? (
+                <div
+                  key={`dense-${d.track}-${d.x0}`}
+                  className={`clip-dense clip-dense--${r.track.kind}`}
+                  style={{ left: d.x0, top: r.y + 2, width: Math.max(1, d.x1 - d.x0), height: r.h - 4 }}
+                />
+              ) : null;
+            })}
+            {shown.map((c) => {
               const o = offset(c);
-              const r = rows.find((x) => x.track.id === o.track);
+              const r = rowOf.get(o.track);
               if (!r) return null;
+              const m = mediaOf(project, c);
+              const src = c.source;
+              const x = c.start * zoom + o.dx;
               return (
                 <ClipBox
                   key={c.id}
-                  p={project}
+                  color={r.track.kind === 'audio' && !c.label ? '#3f8f5a' : clipColor(project, c)}
+                  m={m}
+                  angleOffset={
+                    src.kind === 'multicam' ? (project.groups.find((g) => g.id === src.group)?.angles.find((a) => a.id === src.angle)?.offset ?? 0) : 0
+                  }
                   c={c}
-                  x={c.start * zoom + o.dx}
+                  x={x}
                   y={r.y}
                   h={r.h}
                   zoom={zoom}
                   fps={fps}
                   kind={r.track.kind}
                   selected={sel.has(c.id)}
-                  view={[scroll.x, scroll.x + size.w]}
-                  peaks={r.track.kind === 'audio' ? peaksOf((mediaOf(project, c)?.proxy ?? mediaOf(project, c)?.path) || '') : null}
-                  onDown={onClipDown}
-                  onMenu={clipMenu}
-                  onOpen={openNest}
-                  onGain={(db, final) => actions.update([c.id], 'Clip volume', (x) => ({ ...x, gain: db }), final ? undefined : `gain-${c.id}`)}
-                  onTransition={(side) => doc.select({ kind: 'transition', clip: c.id, side })}
+                  vis0={Math.max(0, viewFrom - x)}
+                  vis1={Math.min(Math.max(2, c.length * zoom), viewTo - x)}
+                  peaks={r.track.kind === 'audio' ? peaksOf((m?.proxy ?? m?.path) || '') : null}
+                  onDown={onClipDownStable}
+                  onMenu={clipMenuStable}
+                  onOpen={openNestStable}
+                  onGain={onGain}
+                  onTransition={onTransition}
                   transitionSelected={selection?.kind === 'transition' && selection.clip === c.id ? selection.side : null}
                   tool={u.tool}
                 />
@@ -957,7 +1034,9 @@ const ROLE_TITLE = {
 const nextRole = (r: Track['role']): Track['role'] => (r === undefined ? 'dialogue' : r === 'dialogue' ? 'music' : undefined);
 
 const ClipBox = memo(function ClipBox({
-  p,
+  color,
+  m,
+  angleOffset,
   c,
   x,
   y,
@@ -966,7 +1045,8 @@ const ClipBox = memo(function ClipBox({
   fps,
   kind,
   selected,
-  view,
+  vis0,
+  vis1,
   peaks,
   onDown,
   onMenu,
@@ -976,7 +1056,11 @@ const ClipBox = memo(function ClipBox({
   transitionSelected,
   tool,
 }: {
-  p: Project;
+  /** The clip's color on the timeline. */
+  color: string;
+  m: MediaItem | undefined;
+  /** A camera angle's place in its group (seconds), for its pictures. */
+  angleOffset: number;
   c: Clip;
   x: number;
   y: number;
@@ -985,22 +1069,21 @@ const ClipBox = memo(function ClipBox({
   fps: number;
   kind: 'video' | 'audio';
   selected: boolean;
-  view: [number, number];
+  /** The part of the clip on screen (pixels from its start): only that is drawn in detail. */
+  vis0: number;
+  vis1: number;
   peaks: Uint8Array | null;
   onDown: (e: React.PointerEvent, c: Clip) => void;
   onMenu: (e: React.MouseEvent, c: Clip) => void;
   onOpen: (c: Clip) => void;
-  onGain: (db: number, final: boolean) => void;
-  onTransition: (side: 'in' | 'out') => void;
+  onGain: (c: Clip, db: number, final: boolean) => void;
+  onTransition: (c: Clip, side: 'in' | 'out') => void;
   transitionSelected: 'in' | 'out' | null;
   tool: Tool;
 }) {
   const w = Math.max(2, c.length * zoom);
-  const color = kind === 'audio' && !c.label ? '#3f8f5a' : clipColor(p, c);
-  const m = mediaOf(p, c);
-  // Only the part on screen is drawn in detail.
-  const visFrom = Math.max(0, view[0] - x - 40);
-  const visTo = Math.min(w, view[1] - x + 40);
+  const visFrom = vis0;
+  const visTo = vis1;
   const fx = c.effects.length > 0;
   const gain = valueAt(c.gain, 0);
   const gainY = (db: number) => {
@@ -1008,8 +1091,6 @@ const ClipBox = memo(function ClipBox({
     return h - 4 - g * (h - 10);
   };
   const half = c.tIn ? Math.floor(c.tIn.length / 2) : 0;
-  const src = c.source;
-  const angleOffset = src.kind === 'multicam' ? (p.groups.find((g) => g.id === src.group)?.angles.find((a) => a.id === src.angle)?.offset ?? 0) : 0;
   return (
     <div
       className={`clip clip--${kind}${selected ? ' is-sel' : ''}${c.enabled ? '' : ' is-off'}`}
@@ -1029,7 +1110,7 @@ const ClipBox = memo(function ClipBox({
       {kind === 'video' && m && m.kind !== 'audio' && h >= 34 && w > 40 && (
         <Thumbs c={c} m={m} fps={fps} zoom={zoom} h={h - 4} from={visFrom} to={visTo} offset={angleOffset} />
       )}
-      {kind === 'audio' && peaks && <Wave c={c} m={m} peaks={peaks} fps={fps} zoom={zoom} h={Math.max(8, h - 20)} from={visFrom} to={visTo} />}
+      {kind === 'audio' && peaks && w >= 6 && <Wave c={c} m={m} peaks={peaks} fps={fps} zoom={zoom} h={Math.max(8, h - 20)} from={visFrom} to={visTo} />}
       <span className="clip__name" style={{ left: Math.max(4, visFrom - 36) }}>
         {fx && (
           <b className="clip__fx" title="Has effects">
@@ -1054,11 +1135,11 @@ const ClipBox = memo(function ClipBox({
             e.stopPropagation();
             const y0 = e.clientY;
             const start = gain;
-            const move = (ev: PointerEvent) => onGain(Math.max(-60, Math.min(12, Math.round((start - (ev.clientY - y0) * 0.4) * 2) / 2)), false);
+            const move = (ev: PointerEvent) => onGain(c, Math.max(-60, Math.min(12, Math.round((start - (ev.clientY - y0) * 0.4) * 2) / 2)), false);
             const up = (ev: PointerEvent) => {
               window.removeEventListener('pointermove', move);
               window.removeEventListener('pointerup', up);
-              onGain(Math.max(-60, Math.min(12, Math.round((start - (ev.clientY - y0) * 0.4) * 2) / 2)), true);
+              onGain(c, Math.max(-60, Math.min(12, Math.round((start - (ev.clientY - y0) * 0.4) * 2) / 2)), true);
             };
             window.addEventListener('pointermove', move);
             window.addEventListener('pointerup', up);
@@ -1073,7 +1154,7 @@ const ClipBox = memo(function ClipBox({
           title={`${transitionDef(c.tIn.type)?.name ?? 'Transition'} · ${(c.tIn.length / fps).toFixed(2)} s`}
           onPointerDown={(e) => {
             e.stopPropagation();
-            onTransition('in');
+            onTransition(c, 'in');
           }}
         >
           {transitionDef(c.tIn.type)?.name ?? ''}
@@ -1087,7 +1168,7 @@ const ClipBox = memo(function ClipBox({
           title={`${transitionDef(c.tOut.type)?.name ?? 'Transition'} · ${(c.tOut.length / fps).toFixed(2)} s`}
           onPointerDown={(e) => {
             e.stopPropagation();
-            onTransition('out');
+            onTransition(c, 'out');
           }}
         >
           {transitionDef(c.tOut.type)?.name ?? ''}
@@ -1238,28 +1319,30 @@ function Ruler({
       ))}
       {small * zoom >= 8 &&
         ticks.flatMap((f) => [1, 2, 3, 4].map((i) => <i key={`${f}-${i}`} className="ruler__minor" style={{ left: (f + small * i) * zoom }} />))}
-      {s.markers.map((m) => (
-        <button
-          key={m.id}
-          type="button"
-          className="ruler__marker"
-          style={{ left: m.at * zoom, ['--mk' as string]: m.color }}
-          title={m.name || 'Marker'}
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            doc.select({ kind: 'marker', id: m.id });
-            engine.seek(m.at);
-            const key = `marker-${m.id}-${Date.now()}`;
-            drag(e, (dx) => {
-              const at = Math.max(0, m.at + Math.round(dx / zoom));
-              doc.edit((p) => updateMarker(p, m.id, { at }), 'Move marker', key);
-              engine.seek(at);
-            });
-          }}
-        >
-          {m.name && zoom * 60 > m.name.length * 6 ? <span>{m.name}</span> : null}
-        </button>
-      ))}
+      {s.markers
+        .filter((m) => m.at * zoom >= from - 200 && m.at * zoom <= from + width + 200)
+        .map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            className="ruler__marker"
+            style={{ left: m.at * zoom, ['--mk' as string]: m.color }}
+            title={m.name || 'Marker'}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              doc.select({ kind: 'marker', id: m.id });
+              engine.seek(m.at);
+              const key = `marker-${m.id}-${Date.now()}`;
+              drag(e, (dx) => {
+                const at = Math.max(0, m.at + Math.round(dx / zoom));
+                doc.edit((p) => updateMarker(p, m.id, { at }), 'Move marker', key);
+                engine.seek(at);
+              });
+            }}
+          >
+            {m.name && zoom * 60 > m.name.length * 6 ? <span>{m.name}</span> : null}
+          </button>
+        ))}
       <CacheBar p={doc.project} s={s} zoom={zoom} from={from} width={width} />
       {commentPins.map((p) => (
         <button

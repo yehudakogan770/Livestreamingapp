@@ -234,6 +234,7 @@ export type Action =
   | { type: 'slideNext'; id: SourceId }
   | { type: 'slidePrevious'; id: SourceId }
   | { type: 'slideGo'; id: SourceId; index: number }
+  | { type: 'slideBlack'; id: SourceId; value: boolean }
   | { type: 'updateSlideshow'; id: SourceId; slideshow: Slideshow }
   | { type: 'updateSplit'; id: SourceId; split: Split }
   | { type: 'updateCredits'; id: SourceId; credits: Credits }

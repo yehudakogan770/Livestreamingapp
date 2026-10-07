@@ -45,6 +45,17 @@ export interface DeckCountdown {
   remainingMs: number;
 }
 
+export interface DeckSlideshow {
+  id: string;
+  name: string;
+  /** The slide showing (0-based), and how many there are. */
+  current: number;
+  count: number;
+  /** The screen it is on air on, and the one it is in Next on (if any). */
+  onAir: ScreenId | null;
+  inNext: ScreenId | null;
+}
+
 export interface DeckRun {
   cues: number;
   current: number | null;
@@ -76,6 +87,7 @@ export interface DeckState {
   /** The backup lineup (automatic failover) is on. */
   backup: boolean;
   countdowns: DeckCountdown[];
+  slideshows: DeckSlideshow[];
   run: DeckRun;
   app: AppState;
 }
@@ -123,6 +135,24 @@ export function deckState(show: unknown, app: AppState = NO_APP): DeckState {
       const endsAt = num(t.endsAt);
       return { id: str(x.id) ?? '', name: str(x.name) ?? 'Countdown', running: endsAt !== null, endsAt, remainingMs: num(t.remainingMs) ?? 0 };
     });
+  const live = screen(obj(s.screens).live);
+  const back = screen(obj(s.screens).back);
+  const slideshows = sources
+    .filter((x) => obj(x.kind).type === 'slideshow')
+    .map((x) => {
+      const k = obj(x.kind);
+      const id = str(x.id) ?? '';
+      const count = arr(k.slides).length;
+      const where = (field: 'program' | 'preview'): ScreenId | null => (live[field] === id ? 'live' : back[field] === id ? 'back' : null);
+      return {
+        id,
+        name: str(x.name) ?? 'Slideshow',
+        current: Math.min(num(k.current) ?? 0, Math.max(0, count - 1)),
+        count,
+        onAir: where('program'),
+        inNext: where('preview'),
+      };
+    });
   const run = obj(s.run);
   const cues = arr(run.cues).map(obj);
   const current = num(run.current);
@@ -137,6 +167,7 @@ export function deckState(show: unknown, app: AppState = NO_APP): DeckState {
     // On unless the event turned it off (older Lumora: no lineup at all).
     backup: obj(s.event).backup !== undefined && obj(obj(s.event).backup).on !== false,
     countdowns,
+    slideshows,
     run: { cues: cues.length, current, running: run.running === true, next: nextCue ? (str(nextCue.name) ?? null) : null },
     app,
   };

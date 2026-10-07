@@ -623,6 +623,9 @@ main {
 .tabs__btn--on {
   color: var(--accent);
 }
+.tabs__link {
+  text-decoration: none;
+}
 .toast {
   position: fixed;
   left: 16px;

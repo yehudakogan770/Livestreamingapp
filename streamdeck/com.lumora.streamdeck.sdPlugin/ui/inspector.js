@@ -11,7 +11,7 @@ let context = '';
 let kind = '';
 let settings = {};
 let global = {};
-let lists = { connection: 'off', inputs: [], presets: [], overlays: [], countdowns: [] };
+let lists = { connection: 'off', inputs: [], presets: [], overlays: [], countdowns: [], slideshows: [] };
 
 const $ = (id) => document.getElementById(id);
 
@@ -119,6 +119,16 @@ const FIELDS = {
   ],
 };
 
+const SLIDESHOW = {
+  name: 'Slideshow',
+  key: 'slideshow',
+  remember: 'slideshowName',
+  options: () => pick(lists.slideshows || [], (s) => s.name, 'The one on air'),
+};
+FIELDS.slidenext = [SLIDESHOW];
+FIELDS.slideback = [SLIDESHOW];
+FIELDS.slidefirst = [SLIDESHOW];
+
 const HINTS = {
   take: 'Sends what is in Next to air.',
   cut: 'Sends what is in Next to air with a cut.',
@@ -135,6 +145,9 @@ const HINTS = {
   screen: 'Switches which screen the other keys work on: Live or Back.',
   rehearsal: 'Choose rehearsal before going live: everything runs as if live, with nothing sent anywhere.',
   backup: 'Turns the backup lineup on or off: if the camera on air goes out, the next one goes on air by itself. Lit while it is on.',
+  slidenext: 'The next slide. The key shows the slide showing (3 / 12). Red: the slideshow is on air. Green: in Next.',
+  slideback: 'The slide before. The key shows the slide showing (3 / 12).',
+  slidefirst: 'Back to the first slide. The key shows the slide showing (3 / 12).',
 };
 
 const STATUS = {

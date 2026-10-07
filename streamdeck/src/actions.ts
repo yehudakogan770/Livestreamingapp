@@ -21,6 +21,9 @@ export const KINDS = [
   'screen',
   'rehearsal',
   'backup',
+  'slidenext',
+  'slideback',
+  'slidefirst',
 ] as const;
 export type Kind = (typeof KINDS)[number];
 
@@ -59,6 +62,9 @@ export interface KeySettings {
   /** Countdown: its id, and "toggle" (default), "start", "pause" or "reset". */
   countdown?: string;
   countdownName?: string;
+  /** Slide keys: the slideshow's id and name (left out: the one on air). */
+  slideshow?: string;
+  slideshowName?: string;
 }
 
 /** The plugin-wide settings, shared by every key. */
@@ -99,6 +105,17 @@ export function findCountdown(state: DeckState, s: KeySettings) {
     (s.countdownName ? state.countdowns.find((c) => c.name === s.countdownName) : undefined) ??
     (s.countdown ? undefined : state.countdowns[0])
   );
+}
+
+/**
+ * The slideshow a slide key works on: the one chosen (by id, else by its
+ * remembered name), or — when none is chosen — the one on air on the deck's
+ * screen, then in Next there, then on air on the other screen, then the first.
+ */
+export function findSlideshow(state: DeckState, s: KeySettings, deck: ScreenId) {
+  const all = state.slideshows;
+  if (s.slideshow) return all.find((x) => x.id === s.slideshow) ?? (s.slideshowName ? all.find((x) => x.name === s.slideshowName) : undefined);
+  return all.find((x) => x.onAir === deck) ?? all.find((x) => x.inNext === deck) ?? all.find((x) => x.onAir !== null) ?? all[0];
 }
 
 export const channelOf = (s: KeySettings): number => {
@@ -190,5 +207,14 @@ export function request(kind: Kind, s: KeySettings, state: DeckState | null, dec
       return state.run.cues ? { to: 'action', body: { type: 'nextCue' } } : { to: 'none', why: 'no cues' };
     case 'backup':
       return { to: 'action', body: { type: 'setBackupOn', value: !state.backup } };
+    case 'slidenext':
+    case 'slideback':
+    case 'slidefirst': {
+      const sh = findSlideshow(state, s, deck);
+      if (!sh) return { to: 'none', why: 'no slideshow' };
+      if (kind === 'slidenext') return { to: 'action', body: { type: 'slideNext', id: sh.id } };
+      if (kind === 'slideback') return { to: 'action', body: { type: 'slidePrevious', id: sh.id } };
+      return { to: 'action', body: { type: 'slideGo', id: sh.id, index: 0 } };
+    }
   }
 }
