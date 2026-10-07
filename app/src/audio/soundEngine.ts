@@ -75,8 +75,34 @@ const channelKey = (s: Source) =>
 function peak(a: AnalyserNode, buf: Float32Array<ArrayBuffer>): number {
   a.getFloatTimeDomainData(buf);
   let p = 0;
-  for (const v of buf) p = Math.max(p, Math.abs(v));
+  for (let i = 0; i < buf.length; i++) {
+    const v = Math.abs(buf[i]!);
+    if (v > p) p = v;
+  }
   return Math.min(1, p);
+}
+
+/** What each setting was last told to move to (and how fast). */
+const targets = new WeakMap<AudioParam, { v: number; tc: number }>();
+
+/**
+ * Move a setting smoothly to `v` (setTargetAtTime), unless it is already on
+ * its way there: the mixer runs 30 times a second, and asking again for the
+ * same thing only fills the sound thread's list of changes.
+ */
+function glide(p: AudioParam, v: number, t: number, tc: number): void {
+  const last = targets.get(p);
+  if (last && last.v === v && last.tc === tc) return;
+  targets.set(p, { v, tc });
+  p.setTargetAtTime(v, t, tc);
+}
+
+/** Set a setting at once, only when it changes. */
+function put(p: AudioParam, v: number): void {
+  const last = targets.get(p);
+  if (last && last.v === v && last.tc === 0) return;
+  targets.set(p, { v, tc: 0 });
+  p.value = v;
 }
 
 export class SoundEngine {
@@ -372,16 +398,16 @@ export class SoundEngine {
   private setFilters(n: Pick<Channel, 'lowCut' | 'bass' | 'mid' | 'treble' | 'comp'>, src: Source) {
     const f = src.audio.filters ?? defaultFilters();
     const t = this.ctx.currentTime;
-    n.lowCut.frequency.setTargetAtTime(f.lowCut ? 100 : 10, t, 0.02);
-    n.bass.gain.setTargetAtTime(f.bassDb, t, 0.02);
-    n.mid.gain.setTargetAtTime(f.midDb, t, 0.02);
-    n.treble.gain.setTargetAtTime(f.trebleDb, t, 0.02);
+    glide(n.lowCut.frequency, f.lowCut ? 100 : 10, t, 0.02);
+    glide(n.bass.gain, f.bassDb, t, 0.02);
+    glide(n.mid.gain, f.midDb, t, 0.02);
+    glide(n.treble.gain, f.trebleDb, t, 0.02);
     // Voice compression when on; otherwise it lets everything through.
-    n.comp.threshold.setTargetAtTime(f.compressor ? -24 : 0, t, 0.02);
-    n.comp.ratio.setTargetAtTime(f.compressor ? 4 : 1, t, 0.02);
-    n.comp.knee.value = f.compressor ? 10 : 0;
-    n.comp.attack.value = 0.005;
-    n.comp.release.value = 0.2;
+    glide(n.comp.threshold, f.compressor ? -24 : 0, t, 0.02);
+    glide(n.comp.ratio, f.compressor ? 4 : 1, t, 0.02);
+    put(n.comp.knee, f.compressor ? 10 : 0);
+    put(n.comp.attack, 0.005);
+    put(n.comp.release, 0.2);
   }
 
   // ---- speakers ----
@@ -472,25 +498,25 @@ export class SoundEngine {
     const t = this.ctx.currentTime;
     const smooth = 0.012;
     const solo = show.audio.solo;
-    this.phonesFromStream.gain.setTargetAtTime(solo === null ? 1 : 0, t, smooth);
+    glide(this.phonesFromStream.gain, solo === null ? 1 : 0, t, smooth);
     this.reopenMicrophones(show, now);
     for (const src of soundSources(show)) {
       const ch = this.channels.get(src.id);
       if (!ch) continue;
       if (ch.el) syncMedia(ch.el, src, now);
-      ch.delay.delayTime.setTargetAtTime(src.audio.delayMs / 1000, t, 0.05);
+      glide(ch.delay.delayTime, src.audio.delayMs / 1000, t, 0.05);
       this.setFilters(ch, src);
       // The gate opens fast on sound and closes gently below the threshold.
       const f = src.audio.filters;
       if (f?.gate) {
         const level = peak(ch.gateMeter, this.buf);
         const open = level > 0 && 20 * Math.log10(level) > f.gateDb;
-        ch.gate.gain.setTargetAtTime(open ? 1 : 0, t, open ? 0.003 : 0.08);
-      } else ch.gate.gain.setTargetAtTime(1, t, 0.01);
+        glide(ch.gate.gain, open ? 1 : 0, t, open ? 0.003 : 0.08);
+      } else glide(ch.gate.gain, 1, t, 0.01);
       const duck = src.audio.filters?.duck ? this.duckGain(src.audio.filters.duckDb) : 1;
-      ch.fader.gain.setTargetAtTime(channelLevel(show, src, now) * duck, t, smooth);
-      for (const mix of ['master', 'a', 'b'] as const) ch.sends[mix].gain.setTargetAtTime(mixSend(show, src, mix), t, smooth);
-      ch.solo.gain.setTargetAtTime(solo === src.id ? 1 : 0, t, smooth);
+      glide(ch.fader.gain, channelLevel(show, src, now) * duck, t, smooth);
+      for (const mix of ['master', 'a', 'b'] as const) glide(ch.sends[mix].gain, mixSend(show, src, mix), t, smooth);
+      glide(ch.solo.gain, solo === src.id ? 1 : 0, t, smooth);
       this.levels.set(src.id, ch.failed ? 0 : peak(ch.meter, this.buf));
     }
     for (const name of ['master', 'a', 'b', 'phones'] as const) {

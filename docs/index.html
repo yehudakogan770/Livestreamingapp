@@ -18,9 +18,9 @@
     <link rel="icon" href="img/favicon-32.png" type="image/png" sizes="32x32" />
     <link rel="icon" href="img/lumora-mark.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="img/apple-touch-icon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&display=swap" rel="stylesheet" />
+    <!-- Fetched first: the font (from this site, no third party) and the hall behind the title. -->
+    <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="img/hall.avif" as="image" type="image/avif" fetchpriority="high" />
     <link rel="stylesheet" href="site.css" />
   </head>
   <body>
@@ -92,12 +92,28 @@
               <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora</span><i></i><i></i><i></i>
             </div>
             <div class="win__stage">
-              <img
-                src="img/main.jpg"
-                width="1920"
-                height="1080"
-                alt="The Lumora main screen: Next on the left, On air on the right, TAKE and CUT in the middle, inputs and the sound mixer below."
-              />
+              <picture>
+                <source
+                  type="image/avif"
+                  srcset="img/main-640.avif 640w, img/main-1280.avif 1280w, img/main-1920.avif 1920w"
+                  sizes="(min-width: 1240px) 1200px, calc(100vw - 40px)"
+                />
+                <source
+                  type="image/webp"
+                  srcset="img/main-640.webp 640w, img/main-1280.webp 1280w, img/main-1920.webp 1920w"
+                  sizes="(min-width: 1240px) 1200px, calc(100vw - 40px)"
+                />
+                <img
+                  src="img/main.jpg"
+                  srcset="img/main-640.jpg 640w, img/main-1280.jpg 1280w, img/main.jpg 1920w"
+                  sizes="(min-width: 1240px) 1200px, calc(100vw - 40px)"
+                  width="1920"
+                  height="1080"
+                  decoding="async"
+                  fetchpriority="low"
+                  alt="The Lumora main screen: Next on the left, On air on the right, TAKE and CUT in the middle, inputs and the sound mixer below."
+                />
+              </picture>
               <canvas class="hero__mon hero__mon--next" data-hero="next" width="640" height="360" aria-hidden="true"></canvas>
               <canvas class="hero__mon hero__mon--pgm" data-hero="pgm" width="640" height="360" aria-hidden="true"></canvas>
               <span class="hero__take" data-hero-take aria-hidden="true"></span>
@@ -276,13 +292,28 @@
             <div class="win__bar">
               <span><img src="img/lumora-mark.svg" alt="" width="14" height="14" />Lumora</span><i></i><i></i><i></i>
             </div>
-            <img
-              src="img/look.jpg"
-              width="1920"
-              height="1080"
-              loading="lazy"
-              alt="Lumora's Event look window with eight ready-made title designs over a camera shot of the speaker."
-            />
+            <picture>
+              <source
+                type="image/avif"
+                srcset="img/look-640.avif 640w, img/look-1280.avif 1280w, img/look-1920.avif 1920w"
+                sizes="(min-width: 1240px) 662px, (min-width: 1021px) 56vw, calc(100vw - 40px)"
+              />
+              <source
+                type="image/webp"
+                srcset="img/look-640.webp 640w, img/look-1280.webp 1280w, img/look-1920.webp 1920w"
+                sizes="(min-width: 1240px) 662px, (min-width: 1021px) 56vw, calc(100vw - 40px)"
+              />
+              <img
+                src="img/look.jpg"
+                srcset="img/look-640.jpg 640w, img/look-1280.jpg 1280w, img/look.jpg 1920w"
+                sizes="(min-width: 1240px) 662px, (min-width: 1021px) 56vw, calc(100vw - 40px)"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                decoding="async"
+                alt="Lumora's Event look window with eight ready-made title designs over a camera shot of the speaker."
+              />
+            </picture>
           </div>
           <div class="split__text">
             <p class="eyebrow">Event look</p>
@@ -834,13 +865,28 @@
             <div class="win__bar">
               <span><img src="img/studio-mark.svg" alt="" width="14" height="14" />Lumora Studio</span><i></i><i></i><i></i>
             </div>
-            <img
-              src="img/edit.jpg"
-              width="1920"
-              height="1080"
-              loading="lazy"
-              alt="Lumora Studio editing a four-camera arena keynote: the speaker's name title in the program monitor, the cameras in the media panel, and a timeline of camera cuts, titles, markers and sound."
-            />
+            <picture>
+              <source
+                type="image/avif"
+                srcset="img/edit-640.avif 640w, img/edit-1280.avif 1280w, img/edit-1920.avif 1920w"
+                sizes="(min-width: 1240px) 1200px, calc(100vw - 40px)"
+              />
+              <source
+                type="image/webp"
+                srcset="img/edit-640.webp 640w, img/edit-1280.webp 1280w, img/edit-1920.webp 1920w"
+                sizes="(min-width: 1240px) 1200px, calc(100vw - 40px)"
+              />
+              <img
+                src="img/edit.jpg"
+                srcset="img/edit-640.jpg 640w, img/edit-1280.jpg 1280w, img/edit.jpg 1920w"
+                sizes="(min-width: 1240px) 1200px, calc(100vw - 40px)"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                decoding="async"
+                alt="Lumora Studio editing a four-camera arena keynote: the speaker's name title in the program monitor, the cameras in the media panel, and a timeline of camera cuts, titles, markers and sound."
+              />
+            </picture>
           </div>
           <ul class="pages">
             <li><b>Edit</b><span>A multi-track timeline with the tools editors expect.</span></li>
@@ -1014,13 +1060,28 @@
             <div class="win__bar">
               <span><img src="img/studio-mark.svg" alt="" width="14" height="14" />Lumora Studio</span><i></i><i></i><i></i>
             </div>
-            <img
-              src="img/studio-color.jpg"
-              width="1920"
-              height="1080"
-              loading="lazy"
-              alt="The Lumora Studio Color page grading the speaker close-up camera: the picture beside a waveform scope, a two-node grade, color wheels, primaries and curves."
-            />
+            <picture>
+              <source
+                type="image/avif"
+                srcset="img/studio-color-640.avif 640w, img/studio-color-1280.avif 1280w, img/studio-color-1920.avif 1920w"
+                sizes="(min-width: 1240px) 662px, (min-width: 1021px) 56vw, calc(100vw - 40px)"
+              />
+              <source
+                type="image/webp"
+                srcset="img/studio-color-640.webp 640w, img/studio-color-1280.webp 1280w, img/studio-color-1920.webp 1920w"
+                sizes="(min-width: 1240px) 662px, (min-width: 1021px) 56vw, calc(100vw - 40px)"
+              />
+              <img
+                src="img/studio-color.jpg"
+                srcset="img/studio-color-640.jpg 640w, img/studio-color-1280.jpg 1280w, img/studio-color.jpg 1920w"
+                sizes="(min-width: 1240px) 662px, (min-width: 1021px) 56vw, calc(100vw - 40px)"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                decoding="async"
+                alt="The Lumora Studio Color page grading the speaker close-up camera: the picture beside a waveform scope, a two-node grade, color wheels, primaries and curves."
+              />
+            </picture>
           </div>
         </div>
       </section>

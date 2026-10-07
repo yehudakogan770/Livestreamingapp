@@ -17,7 +17,7 @@
 //!   then tells everyone connected what is running (`event: app`).
 
 use std::collections::hash_map::RandomState;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::{BuildHasher, Hasher};
 use std::io::{Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpStream};
@@ -30,6 +30,7 @@ use lumora_engine::{Action, ActionError};
 use serde::{Deserialize, Serialize};
 use tiny_http::{Header, Method, Request, Response, Server};
 
+use crate::speaker::{self, Access};
 use crate::store::write_file_atomic;
 
 const FILE: &str = "remote.json";
@@ -49,6 +50,13 @@ const SCRIPT: &str = include_str!("../remote/remote.js");
 const STYLE: &str = include_str!("../remote/remote.css");
 /// Scene names for the stage visuals (the same file the screens use).
 const VOTE_PAGE: &str = include_str!("../remote/vote.html");
+/// The speaker's slides page (see `speaker.rs`).
+const SLIDES_PAGE: &str = include_str!("../remote/slides.html");
+const SLIDES_SCRIPT: &str = include_str!("../remote/slides.js");
+const SLIDES_CORE: &str = include_str!("../remote/slides-core.js");
+const SLIDES_STYLE: &str = include_str!("../remote/slides.css");
+/// Largest slide picture sent to a device.
+const MAX_SLIDE_PICTURE: u64 = 40 * 1024 * 1024;
 const BANKS: &str = include_str!("../../app/src/visuals/banks.json");
 
 /// What the remote needs from the app.
@@ -107,6 +115,12 @@ pub struct RemoteConfig {
     pub pin: String,
     /// The audience page is also on the internet.
     pub internet: bool,
+    /// The speaker's PIN (slides only), 6 digits.
+    pub speaker_pin: String,
+    /// Speaker control paused by the operator.
+    pub speaker_locked: bool,
+    /// The speaker may black out the slides.
+    pub speaker_black: bool,
 }
 
 impl Default for RemoteConfig {
@@ -115,6 +129,18 @@ impl Default for RemoteConfig {
             enabled: false,
             pin: new_pin(),
             internet: false,
+            speaker_pin: speaker::new_speaker_pin(),
+            speaker_locked: false,
+            speaker_black: false,
+        }
+    }
+}
+
+impl RemoteConfig {
+    fn rules(&self) -> speaker::Rules {
+        speaker::Rules {
+            locked: self.speaker_locked,
+            black: self.speaker_black,
         }
     }
 }
@@ -129,6 +155,32 @@ pub struct RemoteAddress {
     /// The audience voting page, and its QR code.
     pub vote_url: String,
     pub vote_qr: String,
+    /// The speaker's slides page (short link), and a QR code that also
+    /// carries the speaker PIN (scanning it connects straight away).
+    pub slides_url: String,
+    pub slides_qr: String,
+}
+
+/// A device on the slides page.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SlidesDevice {
+    pub id: u64,
+    /// "iPhone", "iPad", "Windows computer"…
+    pub device: String,
+    /// Connected with the speaker PIN (slides only), not the remote's.
+    pub speaker: bool,
+}
+
+/// The speaker's clicker, for the control window.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpeakerStatus {
+    pub pin: String,
+    pub locked: bool,
+    pub black: bool,
+    /// Devices on the slides page now.
+    pub devices: Vec<SlidesDevice>,
 }
 
 /// What the control window shows about the remote.
@@ -146,6 +198,8 @@ pub struct RemoteStatus {
     pub error: Option<String>,
     /// The audience page on the internet.
     pub internet: InternetStatus,
+    /// The speaker's clicker (slides only).
+    pub speaker: SpeakerStatus,
 }
 
 /// The audience page's internet address (for phones on any network).
@@ -207,6 +261,7 @@ pub fn allowed(action: &Action) -> bool {
             | Action::SlideNext { .. }
             | Action::SlidePrevious { .. }
             | Action::SlideGo { .. }
+            | Action::SlideBlack { .. }
             | Action::PlaylistGo { .. }
             | Action::SetSpeed { .. }
             | Action::QnaShow { .. }
@@ -263,11 +318,30 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
 struct Phone {
     id: u64,
     tx: SyncSender<String>,
+    /// On the slides page: sent the slides view, not the whole show.
+    slides: bool,
+    access: Access,
+    device: &'static str,
+    ip: IpAddr,
+}
+
+impl Phone {
+    /// The phone remote's own page (gets the whole show and what is running).
+    fn full_remote(&self) -> bool {
+        !self.slides && self.access == Access::Full
+    }
 }
 
 struct Shared {
     backend: Box<dyn Backend>,
     pin: Mutex<String>,
+    /// The speaker's PIN (slides only) and what the speaker may do.
+    speaker_pin: Mutex<String>,
+    rules: Mutex<speaker::Rules>,
+    /// Speaker devices the operator disconnected (until a new speaker PIN).
+    kicked: Mutex<HashSet<IpAddr>>,
+    /// Recent slide changes from each speaker device (see `speaker::click_allowed`).
+    clicks: Mutex<HashMap<IpAddr, VecDeque<u64>>>,
     phones: Mutex<Vec<Phone>>,
     next_phone: Mutex<u64>,
     /// Each phone's vote in each poll round, so a phone votes once (and may change it).
@@ -293,12 +367,20 @@ impl Shared {
 
     /// Send to every phone, forgetting the ones that have gone.
     fn send_all(&self, message: &str) {
+        self.send_each(|_| Some(message.to_owned()));
+    }
+
+    /// Send each phone its own message (or nothing), forgetting the ones that have gone.
+    fn send_each(&self, mut message: impl FnMut(&Phone) -> Option<String>) {
         let before;
         let after;
         {
             let mut phones = lock(&self.phones);
             before = phones.len();
-            phones.retain(|p| p.tx.try_send(message.to_owned()).is_ok());
+            phones.retain(|p| match message(p) {
+                Some(m) => p.tx.try_send(m).is_ok(),
+                None => true,
+            });
             after = phones.len();
         }
         if before != after {
@@ -306,9 +388,47 @@ impl Shared {
         }
     }
 
+    /// Give the slides pages the show as it is now (after the operator
+    /// changed what the speaker may do).
+    fn push_slides(&self) {
+        if !lock(&self.phones).iter().any(|p| p.slides) {
+            return;
+        }
+        let rules = *lock(&self.rules);
+        let Some(event) = self
+            .backend
+            .snapshot()
+            .and_then(|s| slides_event(&s, rules))
+        else {
+            return;
+        };
+        self.send_each(|p| p.slides.then(|| event.clone()));
+    }
+
+    /// The devices on the slides page.
+    fn slides_devices(&self) -> Vec<SlidesDevice> {
+        lock(&self.phones)
+            .iter()
+            .filter(|p| p.slides)
+            .map(|p| SlidesDevice {
+                id: p.id,
+                device: p.device.to_owned(),
+                speaker: p.access == Access::Speaker,
+            })
+            .collect()
+    }
+
     fn disconnect_all(&self) {
-        let had = !lock(&self.phones).is_empty();
-        lock(&self.phones).clear();
+        self.disconnect_where(|_| true);
+    }
+
+    fn disconnect_where(&self, which: impl Fn(&Phone) -> bool) {
+        let had = {
+            let mut phones = lock(&self.phones);
+            let before = phones.len();
+            phones.retain(|p| !which(p));
+            before != phones.len()
+        };
         if had {
             self.backend.phones_changed();
         }
@@ -341,12 +461,22 @@ impl Remote {
             .and_then(|d| std::fs::read_to_string(d.join(FILE)).ok())
             .and_then(|t| serde_json::from_str::<RemoteConfig>(&t).ok())
             .filter(|c| valid_pin(&c.pin))
+            .map(|mut c| {
+                if !speaker::valid_speaker_pin(&c.speaker_pin) {
+                    c.speaker_pin = speaker::new_speaker_pin();
+                }
+                c
+            })
             .unwrap_or_default();
         let remote = Remote {
             dir: dir.map(Path::to_path_buf),
             shared: Arc::new(Shared {
                 backend: Box::new(backend),
                 pin: Mutex::new(config.pin.clone()),
+                speaker_pin: Mutex::new(config.speaker_pin.clone()),
+                rules: Mutex::new(config.rules()),
+                kicked: Mutex::new(HashSet::new()),
+                clicks: Mutex::new(HashMap::new()),
                 phones: Mutex::new(Vec::new()),
                 next_phone: Mutex::new(0),
                 votes: Mutex::new(HashMap::new()),
@@ -382,10 +512,18 @@ impl Remote {
             running: port.is_some(),
             pin: config.pin,
             port,
-            addresses: port.map(addresses).unwrap_or_default(),
+            addresses: port
+                .map(|p| addresses(p, &config.speaker_pin))
+                .unwrap_or_default(),
             phones: self.shared.phone_count(),
             error: lock(&self.error).clone(),
             internet: self.internet(config.internet),
+            speaker: SpeakerStatus {
+                pin: config.speaker_pin,
+                locked: config.speaker_locked,
+                black: config.speaker_black,
+                devices: self.shared.slides_devices(),
+            },
         }
     }
 
@@ -462,16 +600,80 @@ impl Remote {
         lock(&self.config).pin.clone_from(&pin);
         *lock(&self.shared.pin) = pin;
         self.save();
-        self.shared.disconnect_all();
+        // The speaker's devices have their own PIN and stay connected.
+        self.shared.disconnect_where(|p| p.access == Access::Full);
         self.status()
     }
 
-    /// Give every phone the new version of the show.
+    /// Pause speaker control (or let the speaker change slides again), and
+    /// whether the speaker may black out the slides. The speaker's devices
+    /// see the change at once.
+    pub fn set_speaker(&self, locked: Option<bool>, black: Option<bool>) -> RemoteStatus {
+        let rules = {
+            let mut c = lock(&self.config);
+            if let Some(l) = locked {
+                c.speaker_locked = l;
+            }
+            if let Some(b) = black {
+                c.speaker_black = b;
+            }
+            c.rules()
+        };
+        *lock(&self.shared.rules) = rules;
+        self.save();
+        self.shared.push_slides();
+        self.status()
+    }
+
+    /// A new speaker PIN: the speaker's devices are disconnected (and any
+    /// device the operator disconnected may connect again with the new PIN).
+    pub fn change_speaker_pin(&self) -> RemoteStatus {
+        let old = lock(&self.config).speaker_pin.clone();
+        let pin = std::iter::repeat_with(speaker::new_speaker_pin)
+            .find(|p| *p != old)
+            .unwrap_or_default();
+        lock(&self.config).speaker_pin.clone_from(&pin);
+        *lock(&self.shared.speaker_pin) = pin;
+        lock(&self.shared.kicked).clear();
+        self.save();
+        self.shared
+            .disconnect_where(|p| p.access == Access::Speaker);
+        self.status()
+    }
+
+    /// Disconnect one device from the slides page. A speaker's device can't
+    /// connect again until the speaker PIN is changed.
+    pub fn disconnect_device(&self, id: u64) -> RemoteStatus {
+        let ip = lock(&self.shared.phones)
+            .iter()
+            .find(|p| p.id == id && p.access == Access::Speaker)
+            .map(|p| p.ip);
+        if let Some(ip) = ip {
+            lock(&self.shared.kicked).insert(ip);
+            self.shared
+                .disconnect_where(|p| p.ip == ip && p.access == Access::Speaker);
+        }
+        self.status()
+    }
+
+    /// Give every phone the new version of the show (the slides pages get
+    /// just the slides).
     pub fn broadcast(&self, snapshot: &str) {
         if lock(&self.running).is_none() {
             return;
         }
-        self.shared.send_all(&show_event(snapshot));
+        let show = show_event(snapshot);
+        let rules = *lock(&self.shared.rules);
+        let mut slides: Option<Option<String>> = None;
+        self.shared.send_each(|p| {
+            if p.slides {
+                slides
+                    .get_or_insert_with(|| slides_event(snapshot, rules))
+                    .clone()
+            } else {
+                Some(show.clone())
+            }
+        });
     }
 
     /// What the control window says is running (recording, stream,
@@ -489,7 +691,9 @@ impl Remote {
             current.clone_from(&text);
         }
         if lock(&self.running).is_some() {
-            self.shared.send_all(&app_event(&text));
+            let event = app_event(&text);
+            self.shared
+                .send_each(|p| p.full_remote().then(|| event.clone()));
         }
     }
 
@@ -567,7 +771,7 @@ fn valid_pin(pin: &str) -> bool {
 }
 
 /// Addresses on this computer's networks that phones can reach.
-fn addresses(port: u16) -> Vec<RemoteAddress> {
+fn addresses(port: u16, speaker_pin: &str) -> Vec<RemoteAddress> {
     let mut ips: Vec<IpAddr> = if_addrs::get_if_addrs()
         .unwrap_or_default()
         .into_iter()
@@ -584,10 +788,14 @@ fn addresses(port: u16) -> Vec<RemoteAddress> {
         .map(|ip| {
             let url = format!("http://{ip}:{port}");
             let vote_url = format!("{url}/vote");
+            let slides_url = format!("{url}/slides");
             RemoteAddress {
                 qr: qr_svg(&url),
                 vote_qr: qr_svg(&vote_url),
                 vote_url,
+                // The PIN goes after "#": it never leaves the phone in a request.
+                slides_qr: qr_svg(&format!("{slides_url}#pin={speaker_pin}")),
+                slides_url,
                 url,
             }
         })
@@ -621,6 +829,26 @@ fn show_event(snapshot: &str) -> String {
 
 fn app_event(state: &str) -> String {
     format!("event: app\ndata: {state}\n\n")
+}
+
+/// The show in a snapshot (`{"revision":…,"show":…}`).
+fn show_of(snapshot: &str) -> Option<lumora_engine::Show> {
+    #[derive(Deserialize)]
+    struct Snapshot {
+        show: lumora_engine::Show,
+    }
+    serde_json::from_str::<Snapshot>(snapshot)
+        .ok()
+        .map(|s| s.show)
+}
+
+/// What a slides page is sent: just the slides (see `speaker::slides_view`).
+fn slides_event(snapshot: &str, rules: speaker::Rules) -> Option<String> {
+    let view = speaker::slides_view(&show_of(snapshot)?, rules);
+    Some(format!(
+        "event: slides\ndata: {{\"now\":{},\"view\":{view}}}\n\n",
+        now_ms()
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -714,6 +942,49 @@ fn handle(shared: &Shared, mut request: Request) {
         }
         (Method::Get, "/remote.css") => respond(request, 200, "text/css; charset=utf-8", STYLE),
         (Method::Get, "/banks.json") => respond(request, 200, "application/json", BANKS),
+        // The speaker's slides page (its PIN is asked for by the page).
+        (Method::Get, "/slides" | "/slides/") => {
+            respond(request, 200, "text/html; charset=utf-8", SLIDES_PAGE)
+        }
+        (Method::Get, "/slides.js") => respond(
+            request,
+            200,
+            "text/javascript; charset=utf-8",
+            SLIDES_SCRIPT,
+        ),
+        (Method::Get, "/slides-core.js") => {
+            respond(request, 200, "text/javascript; charset=utf-8", SLIDES_CORE)
+        }
+        (Method::Get, "/slides.css") => {
+            respond(request, 200, "text/css; charset=utf-8", SLIDES_STYLE)
+        }
+        (method, "/api/check" | "/api/events" | "/api/action" | "/api/slide-picture") => {
+            let access = match check_pin(shared, &request, query) {
+                Ok(a) => a,
+                Err(status) => return json(request, status, pin_refused(status)),
+            };
+            match (method, path) {
+                (Method::Post, "/api/check") => json(
+                    request,
+                    200,
+                    &serde_json::json!({ "access": access }).to_string(),
+                ),
+                (Method::Get, "/api/events") => {
+                    // The speaker's PIN only ever gets the slides.
+                    let slides = access == Access::Speaker
+                        || crate::control::parse_query(query)
+                            .iter()
+                            .any(|(k, v)| k == "view" && v == "slides");
+                    stream(shared, request, access, slides);
+                }
+                (Method::Post, "/api/action") => match action(shared, &mut request, access) {
+                    Ok(()) => json(request, 200, "{}"),
+                    Err((status, body)) => json(request, status, &body),
+                },
+                (Method::Get, "/api/slide-picture") => slide_picture(shared, request, query),
+                _ => json(request, 405, r#"{"code":"wrongMethod"}"#),
+            }
+        }
         // The audience: no PIN, and they can only see open polls and vote.
         (Method::Get, "/vote") => respond(request, 200, "text/html; charset=utf-8", VOTE_PAGE),
         (Method::Get, "/api/polls") => {
@@ -829,7 +1100,7 @@ fn handle(shared: &Shared, mut request: Request) {
             Err(status) => json(request, status, r#"{"code":"notTakingVotes"}"#),
         },
         (method, p) if p == "/api/tally" || p.starts_with("/api/do/") => {
-            if let Err(status) = check_pin(shared, &request, query) {
+            if let Err(status) = check_full(shared, &request, query) {
                 return json(request, status, pin_refused(status));
             }
             if !matches!(method, Method::Get | Method::Post) {
@@ -878,12 +1149,11 @@ fn handle(shared: &Shared, mut request: Request) {
                 ),
             }
         }
-        (method, "/api/check" | "/api/show" | "/api/events" | "/api/action" | "/api/app") => {
-            if let Err(status) = check_pin(shared, &request, query) {
+        (method, "/api/show" | "/api/app") => {
+            if let Err(status) = check_full(shared, &request, query) {
                 return json(request, status, pin_refused(status));
             }
             match (method, path) {
-                (Method::Post, "/api/check") => json(request, 200, "{}"),
                 (Method::Get, "/api/show") => match shared.backend.snapshot() {
                     Some(s) => json(
                         request,
@@ -891,11 +1161,6 @@ fn handle(shared: &Shared, mut request: Request) {
                         &format!("{{\"now\":{},\"snapshot\":{s}}}", now_ms()),
                     ),
                     None => json(request, 503, r#"{"code":"starting"}"#),
-                },
-                (Method::Get, "/api/events") => stream(shared, request),
-                (Method::Post, "/api/action") => match action(shared, &mut request) {
-                    Ok(()) => json(request, 200, "{}"),
-                    Err((status, body)) => json(request, status, &body),
                 },
                 (Method::Get, "/api/app") => {
                     let state = lock(&shared.app_state).clone();
@@ -1353,20 +1618,24 @@ fn wait_after(wrong: u32) -> Duration {
 /// The PIN, checked so it can't be guessed: a phone (address) that sends
 /// `FREE_GUESSES` wrong ones waits a minute, then longer each time; and
 /// wrong PINs are answered one at a time, half a second each, so even many
-/// phones together try at most two a second. 401: wrong; 429: wait.
-fn check_pin(shared: &Shared, request: &Request, query: &str) -> Result<(), u16> {
-    let ip = request
-        .remote_addr()
-        .map_or(IpAddr::from([0, 0, 0, 0]), SocketAddr::ip);
+/// phones together try at most two a second. 401: wrong; 429: wait; 410: a
+/// speaker's device the operator disconnected.
+///
+/// The phone remote's PIN gives full access; the speaker's PIN, the slides only.
+fn check_pin(shared: &Shared, request: &Request, query: &str) -> Result<Access, u16> {
+    let ip = ip_of(request);
     let now = std::time::Instant::now();
     if let Some(&(wrong, last)) = lock(&shared.guesses).get(&ip) {
         if now.duration_since(last) < wait_after(wrong) {
             return Err(429);
         }
     }
-    if authorised(shared, request, query) {
+    if let Some(access) = authorised(shared, request, query) {
         lock(&shared.guesses).remove(&ip);
-        return Ok(());
+        if access == Access::Speaker && lock(&shared.kicked).contains(&ip) {
+            return Err(410);
+        }
+        return Ok(access);
     }
     {
         let mut guesses = lock(&shared.guesses);
@@ -1380,17 +1649,33 @@ fn check_pin(shared: &Shared, request: &Request, query: &str) -> Result<(), u16>
     Err(401)
 }
 
-/// What a phone is told when its PIN is refused.
-fn pin_refused(status: u16) -> &'static str {
-    if status == 429 {
-        r#"{"code":"tooManyTries"}"#
-    } else {
-        r#"{"code":"wrongPin"}"#
+/// The phone remote's PIN only (the speaker's PIN is refused with 403).
+fn check_full(shared: &Shared, request: &Request, query: &str) -> Result<(), u16> {
+    match check_pin(shared, request, query)? {
+        Access::Full => Ok(()),
+        Access::Speaker => Err(403),
     }
 }
 
-fn authorised(shared: &Shared, request: &Request, query: &str) -> bool {
+fn ip_of(request: &Request) -> IpAddr {
+    request
+        .remote_addr()
+        .map_or(IpAddr::from([0, 0, 0, 0]), SocketAddr::ip)
+}
+
+/// What a phone is told when its PIN is refused.
+fn pin_refused(status: u16) -> &'static str {
+    match status {
+        429 => r#"{"code":"tooManyTries"}"#,
+        410 => r#"{"code":"disconnected"}"#,
+        403 => r#"{"code":"onlySlides"}"#,
+        _ => r#"{"code":"wrongPin"}"#,
+    }
+}
+
+fn authorised(shared: &Shared, request: &Request, query: &str) -> Option<Access> {
     let pin = lock(&shared.pin).clone();
+    let speaker_pin = lock(&shared.speaker_pin).clone();
     let given = request
         .headers()
         .iter()
@@ -1401,8 +1686,17 @@ fn authorised(shared: &Shared, request: &Request, query: &str) -> bool {
                 .split('&')
                 .find_map(|kv| kv.strip_prefix("pin="))
                 .map(str::to_owned)
-        });
-    given.is_some_and(|g| same(g.as_bytes(), pin.as_bytes()))
+        })?;
+    // Both compared every time, so the answer takes the same time either way.
+    let full = same(given.as_bytes(), pin.as_bytes());
+    let slides = same(given.as_bytes(), speaker_pin.as_bytes());
+    if full {
+        Some(Access::Full)
+    } else if slides {
+        Some(Access::Speaker)
+    } else {
+        None
+    }
 }
 
 /// Equal, taking the same time whichever character differs.
@@ -1410,7 +1704,7 @@ fn same(a: &[u8], b: &[u8]) -> bool {
     a.len() == b.len() && a.iter().zip(b).fold(0u8, |d, (x, y)| d | (x ^ y)) == 0
 }
 
-fn action(shared: &Shared, request: &mut Request) -> Result<(), (u16, String)> {
+fn action(shared: &Shared, request: &mut Request, access: Access) -> Result<(), (u16, String)> {
     let mut body = String::new();
     request
         .as_reader()
@@ -1419,8 +1713,20 @@ fn action(shared: &Shared, request: &mut Request) -> Result<(), (u16, String)> {
         .map_err(|_| (400, r#"{"code":"badRequest"}"#.to_owned()))?;
     let action: Action =
         serde_json::from_str(&body).map_err(|_| (400, r#"{"code":"badRequest"}"#.to_owned()))?;
-    if !allowed(&action) {
-        return Err((403, r#"{"code":"notFromRemote"}"#.to_owned()));
+    match access {
+        Access::Full => {
+            if !allowed(&action) {
+                return Err((403, r#"{"code":"notFromRemote"}"#.to_owned()));
+            }
+        }
+        // The speaker: the slides only, while the operator allows it, and not too fast.
+        Access::Speaker => {
+            let rules = *lock(&shared.rules);
+            speaker::speaker_may(&action, rules).map_err(|r| (r.status(), r.body().to_owned()))?;
+            if !speaker::click_allowed(&mut lock(&shared.clicks), ip_of(request), now_ms()) {
+                return Err((429, r#"{"code":"slowDown"}"#.to_owned()));
+            }
+        }
     }
     shared
         .backend
@@ -1447,22 +1753,73 @@ fn app_command(shared: &Shared, request: &mut Request) -> Result<(), (u16, Strin
     })
 }
 
-/// Live updates for one phone, until it goes away.
-fn stream(shared: &Shared, request: Request) {
+/// A slide's picture, for the slides page. Only pictures that are slides
+/// are ever sent (never any other file on this computer).
+fn slide_picture(shared: &Shared, request: Request, query: &str) {
+    let q = crate::control::parse_query(query);
+    let get = |k: &str| {
+        q.iter()
+            .find(|(key, _)| key == k)
+            .map(|(_, v)| v.as_str())
+            .unwrap_or_default()
+    };
+    let index = get("n").parse::<usize>().unwrap_or(usize::MAX);
+    let path = shared
+        .backend
+        .snapshot()
+        .and_then(|s| show_of(&s))
+        .and_then(|show| speaker::slide_picture(&show, get("id"), index));
+    let Some((path, kind)) = path.and_then(|p| speaker::picture_type(&p).map(|k| (p, k))) else {
+        return json(request, 404, r#"{"code":"noPicture"}"#);
+    };
+    let data = std::fs::File::open(&path).and_then(|f| {
+        let mut data = Vec::new();
+        f.take(MAX_SLIDE_PICTURE).read_to_end(&mut data)?;
+        Ok(data)
+    });
+    match data {
+        Ok(data) => {
+            // The address carries a tag of the picture's file, so it can be kept a while.
+            let response = Response::from_data(data)
+                .with_header(header("Content-Type", kind))
+                .with_header(header("Cache-Control", "private, max-age=3600"));
+            let _ = request.respond(response);
+        }
+        Err(_) => json(request, 404, r#"{"code":"noPicture"}"#),
+    }
+}
+
+/// Live updates for one phone, until it goes away. `slides`: the slides
+/// page (sent the slides view, not the whole show).
+fn stream(shared: &Shared, request: Request, access: Access, slides: bool) {
     let Some(snapshot) = shared.backend.snapshot() else {
         return json(request, 503, r#"{"code":"starting"}"#);
     };
+    let first = if slides {
+        let Some(event) = slides_event(&snapshot, *lock(&shared.rules)) else {
+            return json(request, 503, r#"{"code":"starting"}"#);
+        };
+        event
+    } else {
+        show_event(&snapshot)
+    };
+    let ip = ip_of(&request);
+    let device = request
+        .headers()
+        .iter()
+        .find(|h| h.field.equiv("User-Agent"))
+        .map_or("web browser", |h| speaker::device_name(h.value.as_str()));
     let (tx, rx) = mpsc::sync_channel::<String>(PHONE_QUEUE);
     let mut out = request.into_writer();
     let head = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nConnection: keep-alive\r\n\r\n";
     // What is running, once the control window has said (control surfaces show it).
     let app = Some(lock(&shared.app_state).clone())
-        .filter(|s| s != "{}")
+        .filter(|s| s != "{}" && !slides && access == Access::Full)
         .map(|s| app_event(&s))
         .unwrap_or_default();
     if out
         .write_all(head.as_bytes())
-        .and_then(|()| out.write_all(show_event(&snapshot).as_bytes()))
+        .and_then(|()| out.write_all(first.as_bytes()))
         .and_then(|()| out.write_all(app.as_bytes()))
         .and_then(|()| out.flush())
         .is_err()
@@ -1474,7 +1831,14 @@ fn stream(shared: &Shared, request: Request) {
         *next += 1;
         *next
     };
-    lock(&shared.phones).push(Phone { id, tx });
+    lock(&shared.phones).push(Phone {
+        id,
+        tx,
+        slides,
+        access,
+        device,
+        ip,
+    });
     shared.backend.phones_changed();
     while let Ok(message) = rx.recv() {
         if out
@@ -1556,7 +1920,14 @@ mod tests {
     fn a_phone_that_stopped_reading_is_let_go() {
         let (r, _) = remote();
         let (tx, rx) = mpsc::sync_channel(PHONE_QUEUE);
-        lock(&r.shared.phones).push(Phone { id: 1, tx });
+        lock(&r.shared.phones).push(Phone {
+            id: 1,
+            tx,
+            slides: false,
+            access: Access::Full,
+            device: "iPhone",
+            ip: IpAddr::from([127, 0, 0, 1]),
+        });
         // Hours of changes to a phone whose connection went quiet.
         for _ in 0..PHONE_QUEUE * 10 {
             r.shared.send_all("update");
@@ -2041,6 +2412,230 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&body).unwrap();
         assert!(v["now"].as_u64().unwrap() > 0);
         assert!(v["snapshot"]["show"]["screens"].is_object());
+    }
+
+    /// A remote with a slideshow ("talk", 3 slides) and a camera ("cam") in Next.
+    fn with_slides() -> (Remote, Arc<Fake>, RemoteStatus) {
+        let (r, fake) = remote();
+        let st = r.set_enabled(true);
+        {
+            let mut e = lock(&fake.engine);
+            for add in [
+                r##"{"type":"addSource","source":{"id":"cam","name":"Camera","kind":{"type":"color","color":"#ff0000"}}}"##,
+                r#"{"type":"addSource","source":{"id":"talk","name":"Talk","kind":{"type":"slideshow"}}}"#,
+                r#"{"type":"updateSlideshow","id":"talk","slideshow":{"slides":[{"type":"image","path":"/nowhere/1.png","notes":"Hello"},{"type":"image","path":"/nowhere/2.png"},{"type":"image","path":"/nowhere/3.png"}]}}"#,
+                r#"{"type":"cutTo","screen":"live","sourceId":"talk"}"#,
+                r#"{"type":"setPreview","screen":"live","sourceId":"cam"}"#,
+            ] {
+                e.apply(serde_json::from_str(add).unwrap(), 0).unwrap();
+            }
+        }
+        (r, fake, st)
+    }
+
+    fn current_slide(fake: &Fake) -> usize {
+        match &lock(&fake.engine)
+            .show()
+            .source(&lumora_engine::SourceId::new("talk"))
+            .unwrap()
+            .kind
+        {
+            lumora_engine::SourceKind::Slideshow(sh) => sh.current,
+            _ => unreachable!(),
+        }
+    }
+
+    #[test]
+    fn the_speaker_pin_changes_slides_and_nothing_else() {
+        let (r, fake, st) = with_slides();
+        let port = st.port.unwrap();
+        let sp = st.speaker.pin.clone();
+        assert!(speaker::valid_speaker_pin(&sp));
+        let (status, body) = request(port, "POST", "/api/check", &sp, "");
+        assert_eq!((status, body.as_str()), (200, r#"{"access":"speaker"}"#));
+        let (_, body) = request(port, "POST", "/api/check", &st.pin, "");
+        assert_eq!(body, r#"{"access":"full"}"#);
+
+        let next = r#"{"type":"slideNext","id":"talk"}"#;
+        assert_eq!(request(port, "POST", "/api/action", &sp, next).0, 200);
+        assert_eq!(current_slide(&fake), 1);
+        // Never a camera, never TAKE, never PANIC.
+        for never in [
+            r#"{"type":"take","screen":"live","transition":"cut"}"#,
+            r#"{"type":"cutTo","screen":"live","sourceId":"cam"}"#,
+            r#"{"type":"panic","value":true}"#,
+            r#"{"type":"setBlank","screens":["live"],"value":true}"#,
+        ] {
+            let (status, body) = request(port, "POST", "/api/action", &sp, never);
+            assert_eq!(status, 403, "{never}");
+            assert!(body.contains("onlySlides"));
+        }
+        let live = lock(&fake.engine).show().screens.live.clone();
+        assert_eq!(live.program, Some(lumora_engine::SourceId::new("talk")));
+        assert!(!lock(&fake.engine).show().panic);
+        // Nor the rest of the remote: the whole show, Stream Deck addresses, recording.
+        assert_eq!(request(port, "GET", "/api/show", &sp, "").0, 403);
+        assert_eq!(request(port, "GET", "/api/tally", &sp, "").0, 403);
+        assert_eq!(request(port, "GET", "/api/do/take", &sp, "").0, 403);
+        assert_eq!(
+            request(
+                port,
+                "POST",
+                "/api/app",
+                &sp,
+                r#"{"command":"stream","on":true}"#
+            )
+            .0,
+            403
+        );
+        // Black out only once the operator allows it.
+        let black = r#"{"type":"slideBlack","id":"talk","value":true}"#;
+        assert_eq!(request(port, "POST", "/api/action", &sp, black).0, 403);
+        let st = r.set_speaker(None, Some(true));
+        assert!(st.speaker.black);
+        assert_eq!(request(port, "POST", "/api/action", &sp, black).0, 200);
+        // Paused by the operator: nothing, until unpaused.
+        r.set_speaker(Some(true), None);
+        let (status, body) = request(port, "POST", "/api/action", &sp, next);
+        assert_eq!(
+            (status, body.as_str()),
+            (423, r#"{"code":"speakerLocked"}"#)
+        );
+        r.set_speaker(Some(false), None);
+        assert_eq!(request(port, "POST", "/api/action", &sp, next).0, 200);
+        // The operator's remote PIN still does everything it did.
+        assert_eq!(
+            request(
+                port,
+                "POST",
+                "/api/action",
+                &st.pin,
+                r#"{"type":"take","screen":"live"}"#
+            )
+            .0,
+            200
+        );
+    }
+
+    #[test]
+    fn the_speaker_pin_is_guarded_like_the_remote_pin() {
+        let (r, _, st) = with_slides();
+        let port = st.port.unwrap();
+        for _ in 0..FREE_GUESSES {
+            assert_eq!(request(port, "POST", "/api/check", "000000", "").0, 401);
+        }
+        assert_eq!(
+            request(port, "POST", "/api/check", &st.speaker.pin, "").0,
+            429,
+            "the same lockout"
+        );
+        let new = r.change_speaker_pin();
+        assert_ne!(new.speaker.pin, st.speaker.pin);
+        assert_eq!(new.pin, st.pin, "the remote's PIN stays");
+    }
+
+    #[test]
+    fn a_runaway_clicker_is_slowed_down() {
+        let (_r, _, st) = with_slides();
+        let port = st.port.unwrap();
+        let sp = &st.speaker.pin;
+        let go = r#"{"type":"slideGo","id":"talk","index":1}"#;
+        for _ in 0..speaker::CLICKS_PER_WINDOW {
+            assert_eq!(request(port, "POST", "/api/action", sp, go).0, 200);
+        }
+        let (status, body) = request(port, "POST", "/api/action", sp, go);
+        assert_eq!((status, body.as_str()), (429, r#"{"code":"slowDown"}"#));
+    }
+
+    #[test]
+    fn slide_pictures_are_sent_but_no_other_file() {
+        let dir = std::env::temp_dir().join(format!("lumora-slides-{}", new_pin()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let pic = dir.join("one.png");
+        std::fs::write(&pic, b"PNG fake").unwrap();
+        let (_r, fake, st) = with_slides();
+        let port = st.port.unwrap();
+        let slides = serde_json::json!({ "slides": [{ "type": "image", "path": pic }] });
+        lock(&fake.engine)
+            .apply(
+                serde_json::from_value(
+                    serde_json::json!({ "type": "updateSlideshow", "id": "talk", "slideshow": slides }),
+                )
+                .unwrap(),
+                0,
+            )
+            .unwrap();
+        let sp = &st.speaker.pin;
+        let (status, body) = request(port, "GET", "/api/slide-picture?id=talk&n=0", sp, "");
+        assert_eq!((status, body.as_str()), (200, "PNG fake"));
+        assert_eq!(
+            request(port, "GET", "/api/slide-picture?id=talk&n=0", "", "").0,
+            401
+        );
+        assert_eq!(
+            request(port, "GET", "/api/slide-picture?id=talk&n=5", sp, "").0,
+            404
+        );
+        assert_eq!(
+            request(port, "GET", "/api/slide-picture?id=cam&n=0", sp, "").0,
+            404
+        );
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn the_speaker_sees_the_slides_live_and_the_operator_can_disconnect_them() {
+        let (r, fake, st) = with_slides();
+        let port = st.port.unwrap();
+        let mut s = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        write!(
+            s,
+            "GET /api/events?pin={} HTTP/1.1\r\nHost: x\r\nUser-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X)\r\n\r\n",
+            st.speaker.pin
+        )
+        .unwrap();
+        s.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
+        let mut lines = BufReader::new(s).lines();
+        let mut next_event = || loop {
+            let l = lines.next().unwrap().unwrap();
+            if let Some(d) = l.strip_prefix("data: ") {
+                return serde_json::from_str::<serde_json::Value>(d).unwrap();
+            }
+        };
+        let first = next_event();
+        assert_eq!(first["view"]["slideshows"][0]["id"], "talk");
+        assert_eq!(
+            first["view"]["slideshows"][0]["slides"][0]["notes"],
+            "Hello"
+        );
+        assert!(first.get("snapshot").is_none(), "never the whole show");
+        for _ in 0..50 {
+            if !r.status().speaker.devices.is_empty() {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let devices = r.status().speaker.devices;
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].device, "iPhone");
+        assert!(devices[0].speaker);
+        // The operator pauses it: the speaker's page hears at once.
+        r.set_speaker(Some(true), None);
+        assert_eq!(next_event()["view"]["locked"], true);
+        // The operator changes the slide: the speaker's page hears it too.
+        r.broadcast(&fake.snapshot().unwrap());
+        assert!(next_event()["view"]["slideshows"].is_array());
+        // Disconnected: gone, and the speaker PIN no longer works from there…
+        let st = r.disconnect_device(devices[0].id);
+        assert!(st.speaker.devices.is_empty());
+        let (status, body) = request(port, "POST", "/api/check", &st.speaker.pin, "");
+        assert_eq!((status, body.as_str()), (410, r#"{"code":"disconnected"}"#));
+        // …until the operator chooses a new speaker PIN.
+        let st = r.change_speaker_pin();
+        assert_eq!(
+            request(port, "POST", "/api/check", &st.speaker.pin, "").0,
+            200
+        );
     }
 
     #[test]

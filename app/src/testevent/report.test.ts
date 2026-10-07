@@ -142,3 +142,21 @@ describe('the report', () => {
     expect(reportName(new Date(2026, 9, 6, 9, 5))).toBe('Lumora test report 2026-10-06 09.05');
   });
 });
+
+describe('the encoders', () => {
+  test('the report says which encoder did the work, and a fallback is a problem', () => {
+    const encoders = {
+      recording: 'NVIDIA NVENC (h264_nvenc), constant quality',
+      stream: 'NVIDIA NVENC (h264_nvenc)',
+      vertical: null,
+      hardware: ['h264_nvenc'],
+      failed: [],
+    };
+    const md = buildMarkdown(data({ ...goodRun(), encoders }));
+    expect(md).toContain('| Stream encoder | NVIDIA NVENC (h264_nvenc) |');
+    expect(md).toContain('| Graphics-card encoders found | h264_nvenc |');
+    const fell = judge({ ...goodRun(), encoders: { ...encoders, failed: ['nvenc'] } });
+    expect(fell.findings.some((f) => f.area === 'Encoder' && f.severity === 'problem')).toBe(true);
+    expect(judge({ ...goodRun(), encoders }).findings.some((f) => f.area === 'Encoder')).toBe(false);
+  });
+});

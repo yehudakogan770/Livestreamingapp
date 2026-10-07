@@ -136,6 +136,38 @@ export function effectsAt(c: Clip, local: number, kind: 'video' | 'audio', isAud
     }));
 }
 
+const BASIC_ZERO = ['exposure', 'contrast', 'highlights', 'shadows', 'whites', 'blacks', 'temperature', 'tint', 'vibrance'];
+
+/**
+ * A picture effect that changes nothing as it is set at this frame (a
+ * correction left at its defaults, an amount of 0): it isn't drawn, saving a
+ * full-frame pass per layer. Missing numbers count as the compositor reads them.
+ */
+export function idleEffect(e: Pick<EffectNow, 'type' | 'p'>): boolean {
+  const n = (k: string, d: number) => (Number.isFinite(e.p[k]) ? (e.p[k] as number) : d);
+  switch (e.type) {
+    case 'basic':
+      return BASIC_ZERO.every((k) => n(k, 0) === 0) && n('saturation', 100) === 100;
+    case 'hsl':
+      return n('shift', 0) === 0 && n('sat', 0) === 0 && n('light', 0) === 0;
+    case 'vignette':
+      return n('amount', 0) === 0;
+    case 'bw':
+    case 'invert':
+      return n('mix', 100) === 0;
+    case 'sharpen':
+      return n('amount', 60) === 0;
+    case 'grain':
+      return n('amount', 20) === 0;
+    case 'chromatic':
+      return n('amount', 30) === 0;
+    case 'blur':
+      return n('radius', 0) <= 0.2;
+    default:
+      return false;
+  }
+}
+
 /** A sound effect (the rest change the picture). */
 export const isAudioEffect = (type: string): boolean => effectDef(type)?.kind === 'audio';
 
@@ -171,7 +203,7 @@ const MAX_DEPTH = 4;
 export function layerFor(p: Project, c: Clip, frame: number, fps: number, prefix = '', depth = 0, inside: string[] = []): Layer {
   const local = frame - c.start;
   const motion = motionAt(c, local);
-  const effects = effectsAt(c, local, 'video', isAudioEffect);
+  const effects = effectsAt(c, local, 'video', isAudioEffect).filter((e) => !idleEffect(e));
   const src = c.source;
   let source: LayerSource | null = null;
   if (src.kind === 'media') {

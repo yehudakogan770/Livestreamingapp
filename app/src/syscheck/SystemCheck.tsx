@@ -78,8 +78,8 @@ async function runCheck(app: AppId): Promise<Run> {
   let plan: RecordingPlan | null = null;
   if (app === 'lumora' && inApp()) {
     try {
-      const s = await invoke<{ videoKbps: number; audioKbps: number; iso: boolean }>('capture_settings');
-      plan = { videoKbps: s.videoKbps, audioKbps: s.audioKbps, iso: s.iso, cameras: browser.cameras ?? 1 };
+      const s = await invoke<{ videoKbps: number; audioKbps: number; iso: boolean; isoKbps?: number }>('capture_settings');
+      plan = { videoKbps: s.videoKbps, audioKbps: s.audioKbps, iso: s.iso, cameras: browser.cameras ?? 1, isoKbps: s.isoKbps };
     } catch {
       // Without the settings, no hours of recording.
     }

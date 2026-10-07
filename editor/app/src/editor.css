@@ -2331,6 +2331,18 @@ button.tc:hover {
   opacity: 0.45;
   filter: grayscale(1);
 }
+/* Zoomed far out: clips too narrow to tell apart, drawn as one band per track. */
+.clip-dense {
+  position: absolute;
+  z-index: 2;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  background: repeating-linear-gradient(90deg, #4a6a8f 0 2px, #33495f 2px 4px);
+  box-shadow: inset 0 0 0 1px #0e1620;
+}
+.clip-dense--audio {
+  background: repeating-linear-gradient(90deg, #3f7a55 0 2px, #2c5240 2px 4px);
+}
 .clip__thumbs {
   position: absolute;
   inset: 16px 1px 1px;

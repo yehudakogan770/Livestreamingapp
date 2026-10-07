@@ -17,17 +17,10 @@ import { setLayout, swapped, useLayout, DEFAULT_LAYOUT, type BottomPart, type To
 import { OverlayBar } from './OverlayBar';
 import { CameraBar } from './CameraBar';
 import { useCommands, type Command } from './commands';
-import { ShortcutsDialog } from './ShortcutsDialog';
-import { HelpDialog } from './HelpDialog';
 import { CueBar, RunOfShowDialog } from './RunOfShow';
 import { LibraryDialog } from './LibraryDialog';
-import { VisualsPage } from './VisualsPage';
-import { LogoMaker } from './LogoMaker';
-import { StingerDialog } from './StingerDialog';
 import { MidiDialog, useMidiControl } from './MidiDialog';
-import { ChatPanel } from './ChatPanel';
 import { PerfChip } from '../broadcast/PerfChip';
-import { TriggersDialog } from './TriggersDialog';
 import { useCopying } from '../engine/copying';
 import { snapshot, snapshotName } from '../broadcast/snapshot';
 import { CreditsCard } from './CreditsCard';
@@ -51,6 +44,16 @@ import { Timecode } from './Timecode';
 import { Camera, LayoutGrid, OctagonAlert, Monitor, Projector, RadioTower, Link2, MonitorUp, VideoOff } from 'lucide-react';
 import { BackupDialog, BackupNotices, BackupWatcher } from './BackupLineup';
 import './ControlView.css';
+import { lazyPart } from '../components/lazyPart';
+
+// Windows opened now and then: loaded the first time they open.
+const ShortcutsDialog = lazyPart(() => import('./ShortcutsDialog').then((m) => m.ShortcutsDialog));
+const HelpDialog = lazyPart(() => import('./HelpDialog').then((m) => m.HelpDialog));
+const VisualsPage = lazyPart(() => import('./VisualsPage').then((m) => m.VisualsPage));
+const LogoMaker = lazyPart(() => import('./LogoMaker').then((m) => m.LogoMaker));
+const StingerDialog = lazyPart(() => import('./StingerDialog').then((m) => m.StingerDialog));
+const ChatPanel = lazyPart(() => import('./ChatPanel').then((m) => m.ChatPanel));
+const TriggersDialog = lazyPart(() => import('./TriggersDialog').then((m) => m.TriggersDialog));
 
 interface Toast {
   id: number;
@@ -602,6 +605,11 @@ function PanicButton({ on, act }: { on: boolean; act: Act }) {
  * card, never so much that the inputs lose their room. Re-measured when the
  * window or what is shown changes.
  */
+const onlyText = (nodes: NodeList) => {
+  for (let i = 0; i < nodes.length; i++) if (nodes[i]!.nodeType !== Node.TEXT_NODE) return false;
+  return true;
+};
+
 function useFitLayout() {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -670,10 +678,18 @@ function useFitLayout() {
     ro?.observe(w);
     // A card comes or goes (countdown, slides, pesukim…): placed before the
     // screen is drawn, so it never shows in the wrong place first.
-    const mo = typeof MutationObserver === 'undefined' ? null : new MutationObserver(measure);
+    // (Text put in place of text, like a clock ticking, moves nothing: the
+    // check a few times a second below is enough for that. Measuring makes
+    // the browser lay out the whole window, so not for every tick.)
+    const mo =
+      typeof MutationObserver === 'undefined'
+        ? null
+        : new MutationObserver((records) => {
+            if (records.some((r) => !onlyText(r.addedNodes) || !onlyText(r.removedNodes))) measure();
+          });
     mo?.observe(w, { childList: true, subtree: true });
     // Cards that grow or shrink as they run: check a few times a second.
-    const id = setInterval(measure, 400);
+    const id = setInterval(() => document.hidden || measure(), 400);
     return () => {
       ro?.disconnect();
       mo?.disconnect();

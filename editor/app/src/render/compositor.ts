@@ -59,6 +59,32 @@ const sizeOf = (s: Source): [number, number] => {
   return [x.width, x.height];
 };
 
+const pictureIds = new WeakMap<object, number>();
+let nextPictureId = 1;
+
+/**
+ * What a video layer's picture is, for not uploading the same pixels again
+ * (an edit, a panel or the scopes drawing a stopped frame again): a stopped
+ * video at its time, or a decoded frame (a canvas the decoder made, never
+ * drawn on again). '' when it may have moved on (a playing or seeking video):
+ * uploaded every time.
+ */
+export function pictureStamp(pic: Source): string {
+  if (typeof HTMLVideoElement !== 'undefined' && pic instanceof HTMLVideoElement) {
+    return pic.paused && !pic.seeking && pic.readyState >= 2 ? `v|${pic.currentSrc}|${pic.currentTime}|${pic.videoWidth}x${pic.videoHeight}` : '';
+  }
+  const canvas =
+    (typeof HTMLCanvasElement !== 'undefined' && pic instanceof HTMLCanvasElement) ||
+    (typeof OffscreenCanvas !== 'undefined' && pic instanceof OffscreenCanvas);
+  if (!canvas) return '';
+  let id = pictureIds.get(pic);
+  if (id === undefined) {
+    id = nextPictureId++;
+    pictureIds.set(pic, id);
+  }
+  return `c|${id}|${pic.width}x${pic.height}`;
+}
+
 export class Compositor {
   readonly gl: WebGL2RenderingContext;
   private w = 0;
@@ -368,7 +394,7 @@ export class Compositor {
     } else {
       const pic = pics.picture(layer);
       if (!pic) return false;
-      const stamp = src.kind === 'image' ? src.media.path : '';
+      const stamp = src.kind === 'image' ? src.media.path : pictureStamp(pic);
       const up = this.upload(src.kind === 'image' ? `img:${src.media.id}` : `vid:${layer.key}`, pic, stamp);
       if (!up) return false;
       tex = up.tex;

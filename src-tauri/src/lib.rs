@@ -5,6 +5,7 @@ mod captions;
 mod capture;
 mod control;
 mod desktop;
+mod encode;
 mod events;
 mod export;
 mod iso;
@@ -16,6 +17,7 @@ mod perf;
 mod ptz;
 mod remote;
 mod selftest;
+mod speaker;
 mod store;
 mod streamdeck;
 mod streams;
@@ -481,6 +483,39 @@ fn set_audience_internet(
 #[tauri::command]
 fn new_remote_pin(state: State<'_, AppState>, app: tauri::AppHandle) -> remote::RemoteStatus {
     let status = state.remote.change_pin();
+    let _ = app.emit("remote-changed", &status);
+    status
+}
+
+/// The speaker's clicker: pause it (or let it change slides again), and
+/// whether the speaker may black out the slides.
+#[tauri::command]
+fn set_speaker(
+    locked: Option<bool>,
+    black: Option<bool>,
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> remote::RemoteStatus {
+    let status = state.remote.set_speaker(locked, black);
+    let _ = app.emit("remote-changed", &status);
+    status
+}
+
+#[tauri::command]
+fn new_speaker_pin(state: State<'_, AppState>, app: tauri::AppHandle) -> remote::RemoteStatus {
+    let status = state.remote.change_speaker_pin();
+    let _ = app.emit("remote-changed", &status);
+    status
+}
+
+/// Disconnect a device from the slides page.
+#[tauri::command]
+fn disconnect_speaker(
+    id: u64,
+    state: State<'_, AppState>,
+    app: tauri::AppHandle,
+) -> remote::RemoteStatus {
+    let status = state.remote.disconnect_device(id);
     let _ = app.emit("remote-changed", &status);
     status
 }
@@ -1087,6 +1122,18 @@ pub fn run() {
                 std::thread::sleep(std::time::Duration::from_secs(20));
                 reveal(&late);
             });
+            // Which graphics-card encoders really work here (a tiny encode
+            // each, a few seconds, off the main thread).
+            let probe = app.handle().clone();
+            std::thread::spawn(move || {
+                let state = probe.state::<AppState>();
+                let working = state
+                    .ffmpeg
+                    .as_deref()
+                    .map(lumora_syscheck::working_hw_encoders)
+                    .unwrap_or_default();
+                state.capture.set_hw_encoders(working);
+            });
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
             // The CI self-test: close (with a failed result) if it never finishes.
@@ -1146,6 +1193,9 @@ pub fn run() {
             remote_status,
             set_remote,
             new_remote_pin,
+            set_speaker,
+            new_speaker_pin,
+            disconnect_speaker,
             set_audience_internet,
             read_data_file,
             qr_code,

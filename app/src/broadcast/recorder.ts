@@ -20,6 +20,7 @@ export const QUALITIES: Record<Quality, { name: string; width: number; height: n
   '1440p': { name: '1440p (2560 × 1440), 30 frames a second', width: 2560, height: 1440, fps: 30, kbps: 12000 },
   '1440p60': { name: '1440p, 60 frames a second (fast computer)', width: 2560, height: 1440, fps: 60, kbps: 18000 },
   '2160p': { name: '4K (3840 × 2160), 30 frames a second (recording; YouTube 4K)', width: 3840, height: 2160, fps: 30, kbps: 25000 },
+  '2160p60': { name: '4K, 60 frames a second (powerful computer with a graphics card)', width: 3840, height: 2160, fps: 60, kbps: 40000 },
   vertical: { name: 'Vertical 1080 × 1920 — Shorts, Reels, TikTok (the whole picture, fitted)', width: 1080, height: 1920, fps: 30, kbps: 6000 },
 };
 
@@ -182,7 +183,8 @@ export class Broadcaster {
     // The picture keeps the size it started with while anything is running.
     if (this.live.size === 0) compositor.resize(wide.width, wide.height);
     const running = await this.open(kind, vertical, q.fps, settings.videoKbps, settings, name, mime, rehearse);
-    if (kind === 'record') void this.startIsos(this.live.get('record')!, settings.videoKbps, settings.iso);
+    if (kind === 'record')
+      void this.startIsos(this.live.get('record')!, settings.isoKbps ?? Math.min(settings.videoKbps, 8000), settings.iso, settings.isoSkip ?? []);
     return running;
   }
 
@@ -250,7 +252,8 @@ export class Broadcaster {
     try {
       recorder = new MediaRecorder(stream, {
         mimeType: mime,
-        videoBitsPerSecond: videoKbps * 1000,
+        // When FFmpeg encodes again (a hardware encoder, a smaller stream), the app asks for more here.
+        videoBitsPerSecond: (running.sourceKbps ?? videoKbps) * 1000,
         audioBitsPerSecond: (settings.audioKbps || 160) * 1000,
         // A keyframe every 2 s, as streaming services ask (Chromium option).
         videoKeyFrameIntervalDuration: 2000,
@@ -290,6 +293,10 @@ export class Broadcaster {
     recorder.onerror = (e) => lost(`The video encoder stopped (${(e as Event & { error?: DOMException }).error?.message ?? 'error'}).`);
     recorder.onstop = () => lost('The video encoder stopped.');
     this.live.set(kind, live);
+    // The program's clock starts when its encoder does (the cameras' own files are timed from it).
+    recorder.onstart = () => {
+      live.startedAt = Math.round(performance.timeOrigin + performance.now());
+    };
     recorder.start(500);
     if (this.show) this.setShow(this.show);
     return running;
@@ -331,7 +338,7 @@ export class Broadcaster {
   /** The recording whose event file is kept up to date. */
   private recordLive: Live | null = null;
 
-  private async startIsos(live: Live, kbps: number, ownFiles: boolean) {
+  private async startIsos(live: Live, kbps: number, ownFiles: boolean, skip: string[] = []) {
     this.recordLive = live;
     const save = () => void this.client.saveEventFile(live.name, JSON.stringify(eventFile(live, null), null, 2)).catch(() => {});
     save();
@@ -340,7 +347,7 @@ export class Broadcaster {
     const sources = this.show?.sources ?? [];
     if (mime && navigator.mediaDevices?.getUserMedia) {
       for (const cam of sources) {
-        if (cam.kind.type !== 'camera') continue;
+        if (cam.kind.type !== 'camera' || skip.includes(cam.id)) continue;
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: { deviceId: { exact: cam.kind.deviceId }, width: { ideal: 1920 }, height: { ideal: 1080 } },
@@ -363,7 +370,7 @@ export class Broadcaster {
     const audioType = typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : null;
     if (sound && audioType) {
       for (const mic of sources) {
-        if (mic.kind.type !== 'microphone' || this.live.get('record') !== live) continue;
+        if (mic.kind.type !== 'microphone' || skip.includes(mic.id) || this.live.get('record') !== live) continue;
         try {
           const dest = sound.context.createMediaStreamDestination();
           const release = sound.listen(mic.id, dest, true);
@@ -400,6 +407,11 @@ export class Broadcaster {
         .then(() => e.data.arrayBuffer())
         .then((b) => this.client.isoChunk(iso.id, b))
         .catch(() => {});
+    };
+    // Lined up by when each encoder really began (its start event), on the
+    // same clock as the program recording's, so Studio can put them in step.
+    iso.recorder.onstart = () => {
+      iso.startMs = Math.max(0, Math.round(performance.timeOrigin + performance.now() - live.startedAt));
     };
     iso.recorder.start(1000);
     iso.startMs = Date.now() - live.startedAt;
