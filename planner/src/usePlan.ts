@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import * as api from './api';
 import { blankCue, mergeCue, moveCue, positionAfter, removeCue, sortCues, type Plan, type PlanComment, type PlanCue, type Role } from './model';
-import { savedPlan, rememberPlan } from './offlineCache';
+import { savedPlan, rememberPlan, unreachable } from './offlineCache';
 import { db } from './session';
 
 const SAVE_AFTER_MS = 600;
@@ -36,10 +36,7 @@ export interface PlanStore {
   reloadRole: () => void;
 }
 
-/** A failure to reach the server at all (not a refusal). */
-export const unreachable = (e: unknown): boolean =>
-  (typeof navigator !== 'undefined' && navigator.onLine === false) ||
-  /cannot reach|fetch|network|load failed/i.test(e instanceof Error ? e.message : String(e));
+export { unreachable } from './offlineCache';
 
 const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -105,12 +102,25 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
         }
         setError(e instanceof Error ? e.message : String(e));
       });
+    // Others' cue changes arrive one message each (a reorder of 200 cues is 200 of them):
+    // gathered for a moment and put on screen together, sorted once.
+    let waiting: ((list: PlanCue[]) => PlanCue[])[] = [];
+    let batch: ReturnType<typeof setTimeout> | null = null;
+    const later = (f: (list: PlanCue[]) => PlanCue[]) => {
+      waiting.push(f);
+      batch ??= setTimeout(() => {
+        const fs = waiting;
+        waiting = [];
+        batch = null;
+        if (live) setCues((list) => sortCues(fs.reduce((l, g) => g(l), list)));
+      }, 30);
+    };
     const stop = api.watchPlan(db(), planId, me, {
-      cue: (c) => setCues((list) => sortCues(mergeCue(list, c, new Set(dirty.current.keys())))),
+      cue: (c) => later((list) => mergeCue(list, c, new Set(dirty.current.keys()))),
       cueGone: (id) => {
         // Deleted by someone else: changes here to it are dropped, not brought back.
         dirty.current.delete(id);
-        setCues((list) => removeCue(list, id));
+        later((list) => removeCue(list, id));
         setComments((list) => list.filter((c) => c.cueId !== id));
       },
       plan: (p) =>
@@ -126,6 +136,7 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
     });
     return () => {
       live = false;
+      if (batch) clearTimeout(batch);
       stop();
     };
   }, [planId, me, reloadRole]);

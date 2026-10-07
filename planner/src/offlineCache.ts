@@ -35,6 +35,11 @@ interface Copy {
 
 let user: string | null = null;
 
+/** A failure to reach the server at all (not a refusal). */
+export const unreachable = (e: unknown): boolean =>
+  (typeof navigator !== 'undefined' && navigator.onLine === false) ||
+  /cannot reach|fetch|network|load failed/i.test(e instanceof Error ? e.message : String(e));
+
 /** Whose copy is read and written from now on (null: nobody's). */
 export function setCacheUser(userId: string | null): void {
   user = userId;
@@ -84,8 +89,11 @@ export function sessionUser(): string | null {
   }
 }
 
-/** With no internet: who this device is signed in as, if a copy of their plans is here. */
-export function offlineWho(): Extract<Who, { s: 'in' }> | null {
+/**
+ * Who this device is signed in as, as last checked with the server, if a copy
+ * of their plans is here: the app opens with it at once, then checks again.
+ */
+export function lastWho(): Extract<Who, { s: 'in' }> | null {
   const id = sessionUser();
   if (!id) return null;
   const c = read(id);
@@ -93,7 +101,13 @@ export function offlineWho(): Extract<Who, { s: 'in' }> | null {
   // Not checked in for longer than the Lumora team allows (Sign-in settings → Offline use).
   if (c.plansAt && Date.now() - c.plansAt > offlineDaysOf(c.who.access) * 86_400_000) return null;
   setCacheUser(id);
-  return { ...c.who, access: { ...c.who.access, offline: true } };
+  return { ...c.who, access: { ...c.who.access, offline: false } };
+}
+
+/** With no internet: who this device is signed in as, if a copy of their plans is here. */
+export function offlineWho(): Extract<Who, { s: 'in' }> | null {
+  const who = lastWho();
+  return who && { ...who, access: { ...who.access, offline: true } };
 }
 
 export function rememberPlans(plans: PlanSummary[]): void {

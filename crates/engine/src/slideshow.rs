@@ -11,6 +11,8 @@ use crate::overlays::Frame;
 
 /// Most slides.
 pub const MAX_SLIDES: usize = 500;
+/// Longest speaker notes on one slide (characters).
+pub const MAX_NOTES: usize = 4000;
 
 /// One slide.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
@@ -22,9 +24,38 @@ pub const MAX_SLIDES: usize = 500;
 #[ts(export)]
 pub enum Slide {
     /// A picture file (PDF pages are stored as pictures).
-    Image { path: String },
+    Image {
+        path: String,
+        /// Speaker notes (shown only on the speaker's remote).
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        notes: Option<String>,
+    },
     /// Another input shown as this slide (a video plays when it comes up).
-    Input { source_id: SourceId },
+    Input {
+        source_id: SourceId,
+        /// Speaker notes (shown only on the speaker's remote).
+        #[serde(default)]
+        #[ts(optional = nullable)]
+        notes: Option<String>,
+    },
+}
+
+impl Slide {
+    /// The speaker notes, if there are any.
+    pub fn notes(&self) -> Option<&str> {
+        match self {
+            Slide::Image { notes, .. } | Slide::Input { notes, .. } => {
+                notes.as_deref().filter(|n| !n.trim().is_empty())
+            }
+        }
+    }
+
+    fn notes_mut(&mut self) -> &mut Option<String> {
+        match self {
+            Slide::Image { notes, .. } | Slide::Input { notes, .. } => notes,
+        }
+    }
 }
 
 /// A slideshow input.
@@ -51,6 +82,9 @@ pub struct Slideshow {
     pub behind: Option<SourceId>,
     /// Fade between slides.
     pub fade: bool,
+    /// Blacked out: the slides' area shows black (what is behind stays).
+    /// Going to a slide brings the slides back.
+    pub black: bool,
 }
 
 impl Default for Slideshow {
@@ -66,6 +100,7 @@ impl Default for Slideshow {
             background: "#000000".to_owned(),
             behind: None,
             fade: true,
+            black: false,
         }
     }
 }
@@ -75,15 +110,17 @@ fn is_color(c: &str) -> bool {
 }
 
 impl Slideshow {
-    /// Go to a slide (clamped). Returns the input on the new slide, if any.
+    /// Go to a slide (clamped), out of black. Returns the input on the new
+    /// slide, if any.
     pub fn go(&mut self, index: usize, now: Millis) -> Option<SourceId> {
+        self.black = false;
         let index = index.min(self.slides.len().saturating_sub(1));
         if index != self.current {
             self.current = index;
             self.changed_at = now;
         }
         match self.slides.get(self.current) {
-            Some(Slide::Input { source_id }) => Some(source_id.clone()),
+            Some(Slide::Input { source_id, .. }) => Some(source_id.clone()),
             _ => None,
         }
     }
@@ -99,15 +136,27 @@ impl Slideshow {
         }
     }
 
-    /// Time to move on by itself.
+    /// Time to move on by itself (never while blacked out).
     pub fn due(&self, now: Millis) -> bool {
-        self.auto_ms
-            .is_some_and(|ms| now >= self.changed_at.saturating_add(u64::from(ms)))
+        !self.black
+            && self
+                .auto_ms
+                .is_some_and(|ms| now >= self.changed_at.saturating_add(u64::from(ms)))
             && self.next_index().is_some()
     }
 
     pub fn repair(&mut self) {
         self.slides.truncate(MAX_SLIDES);
+        for slide in &mut self.slides {
+            let notes = slide.notes_mut();
+            if notes.as_deref().is_some_and(|n| n.trim().is_empty()) {
+                *notes = None;
+            } else if let Some(n) = notes {
+                if n.chars().count() > MAX_NOTES {
+                    *n = n.chars().take(MAX_NOTES).collect();
+                }
+            }
+        }
         self.current = self.current.min(self.slides.len().saturating_sub(1));
         self.auto_ms = self.auto_ms.map(|ms| ms.clamp(1000, 600_000));
         self.area = self.area.clamped();

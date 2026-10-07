@@ -9,6 +9,9 @@ vi.mock('./auth/config', () => ({ AUTH_URL: '', AUTH_KEY: '', authOn: () => fals
 
 async function start({ keepSetup = false } = {}) {
   render(<App />);
+  // The control window's part is loaded when the window opens (the first
+  // time, the test runner compiles all of it: give it time).
+  await screen.findByTestId('engine-status', {}, { timeout: 15000 });
   await act(async () => {});
   // A new show asks the event setup questions first; most tests skip them.
   if (!keepSetup) {
@@ -401,9 +404,8 @@ describe('Recording and streaming', () => {
   it('GO LIVE with nowhere to stream opens the settings to add a destination', async () => {
     await start();
     fireEvent.click(screen.getByRole('button', { name: 'GO LIVE' }));
-    const dialog = screen.getByRole('dialog', {
-      name: 'Recording and streaming',
-    });
+    // (The settings window is loaded the first time it opens.)
+    const dialog = await screen.findByRole('dialog', { name: 'Recording and streaming' }, { timeout: 10000 });
     fireEvent.click(within(dialog).getByRole('button', { name: '+ Add a destination' }));
     expect(within(dialog).getByLabelText('Server address')).toHaveValue('rtmp://a.rtmp.youtube.com/live2');
     fireEvent.change(within(dialog).getByLabelText('Stream key'), {

@@ -3,7 +3,7 @@
 // event day), and the cues as a list of cards. Tapping a cue (or a schedule
 // block) opens everything about it in a full-screen sheet.
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronLeft, Ellipsis, Plus, UserPlus } from 'lucide-react';
 import { byDay, isMine, splitRoles } from './blocks';
 import { Chat } from './Chat';
@@ -71,6 +71,22 @@ export function PhonePlan({
   const [menu, setMenu] = useState(false);
   const { mine, setMine, roles, setRoles } = useMine();
   const { listRef, handle, rowClass } = useReorder<HTMLOListElement>(cues.length, store.move, canEdit);
+  // The same functions every time, so a card only draws again when it changes.
+  const live = useRef({ onSel, handle });
+  live.current = { onSel, handle };
+  const act = useMemo<CardActions>(
+    () => ({
+      sel: (id) => live.current.onSel(id),
+      handle: (i) => ({
+        onPointerDown: (e) => live.current.handle(i).onPointerDown(e),
+        onPointerMove: (e) => live.current.handle(i).onPointerMove(e),
+        onPointerUp: () => live.current.handle(i).onPointerUp(),
+        onPointerCancel: () => live.current.handle(i).onPointerCancel(),
+        onClick: (e) => live.current.handle(i).onClick(e),
+      }),
+    }),
+    [],
+  );
   const selIndex = cues.findIndex((c) => c.id === sel);
   const selected = selIndex >= 0 ? cues[selIndex]! : null;
   const block = blocks.blocks.find((b) => b.id === blockSel) ?? null;
@@ -268,51 +284,23 @@ export function PhonePlan({
           <ol className="cards" ref={listRef} aria-label="Cues">
             {cues.map((c, i) => {
               const t = sched.rows[i]!;
-              const section = c.section && c.section !== cues[i - 1]?.section ? c.section : null;
-              const sub = [c.who, hintText(c)].filter(Boolean).join(' · ') || c.notes.split('\n')[0];
-              const n = commentCount.get(c.id);
-              return [
-                section ? (
-                  <li key={`s-${c.id}`} className="cards__section">
-                    {section}
-                  </li>
-                ) : null,
-                <li
+              return (
+                <CueCard
                   key={c.id}
-                  id={`cue-${c.id}`}
-                  data-reorder
-                  className={`card${onNow === i ? ' is-now' : ''}${sel === c.id ? ' is-sel' : ''}${c.segment === 'break' ? ' is-break' : ''}${rowClass(i)}`}
-                >
-                  <button type="button" className="card__open" onClick={() => onSel(c.id)} aria-label={`Cue ${i + 1}: ${cueLabel(c)}`}>
-                    <span className="card__when">
-                      <span className={`card__time${t.fixed ? ' is-fixed' : ''}`}>{t.start !== null ? clock12(t.start) : '—'}</span>
-                      <span className="card__len">{formatDuration(c.durationSec) || 'no length'}</span>
-                    </span>
-                    <span className="card__main">
-                      <span className="card__line">
-                        <span className="card__type">{segmentName(c.segment)}</span>
-                        {t.drift !== null && t.drift !== 0 && (
-                          <span className={`drift drift--inline${t.drift < 0 ? ' drift--over' : ''}`}>
-                            {t.drift < 0 ? `runs over ${formatDuration(-t.drift)}` : `gap ${formatDuration(t.drift)}`}
-                          </span>
-                        )}
-                        {n ? (
-                          <span className="com__n" aria-label={`${n} comment${n === 1 ? '' : 's'}`}>
-                            {n}
-                          </span>
-                        ) : null}
-                      </span>
-                      <span className={`card__title${c.title.trim() ? '' : ' is-empty'}`}>{cueLabel(c)}</span>
-                      {sub && <span className="card__sub">{sub}</span>}
-                    </span>
-                  </button>
-                  {canEdit && (
-                    <span className="card__grip" {...handle(i)} aria-hidden="true" title="Drag to reorder">
-                      <span className="grip" />
-                    </span>
-                  )}
-                </li>,
-              ];
+                  c={c}
+                  i={i}
+                  section={c.section && c.section !== cues[i - 1]?.section ? c.section : null}
+                  start={t.start}
+                  fixed={t.fixed}
+                  drift={t.drift}
+                  isSel={sel === c.id}
+                  isNow={onNow === i}
+                  extra={rowClass(i)}
+                  canEdit={canEdit}
+                  comments={commentCount.get(c.id) ?? 0}
+                  act={act}
+                />
+              );
             })}
           </ol>
           {cues.length === 0 ? (
@@ -536,3 +524,78 @@ function NowNext({
     </div>
   );
 }
+
+interface CardActions {
+  sel: (id: string) => void;
+  handle: (i: number) => ReturnType<ReturnType<typeof useReorder>['handle']>;
+}
+
+/** One cue in the list (and the section heading above it, if it starts one). */
+const CueCard = memo(function CueCard({
+  c,
+  i,
+  section,
+  start,
+  fixed,
+  drift,
+  isSel,
+  isNow,
+  extra,
+  canEdit,
+  comments: n,
+  act,
+}: {
+  c: PlanCue;
+  i: number;
+  section: string | null;
+  start: number | null;
+  fixed: boolean;
+  drift: number | null;
+  isSel: boolean;
+  isNow: boolean;
+  extra: string;
+  canEdit: boolean;
+  comments: number;
+  act: CardActions;
+}) {
+  const sub = [c.who, hintText(c)].filter(Boolean).join(' · ') || c.notes.split('\n')[0];
+  return (
+    <>
+      {section ? <li className="cards__section">{section}</li> : null}
+      <li
+        id={`cue-${c.id}`}
+        data-reorder
+        className={`card${isNow ? ' is-now' : ''}${isSel ? ' is-sel' : ''}${c.segment === 'break' ? ' is-break' : ''}${extra}`}
+      >
+        <button type="button" className="card__open" onClick={() => act.sel(c.id)} aria-label={`Cue ${i + 1}: ${cueLabel(c)}`}>
+          <span className="card__when">
+            <span className={`card__time${fixed ? ' is-fixed' : ''}`}>{start !== null ? clock12(start) : '—'}</span>
+            <span className="card__len">{formatDuration(c.durationSec) || 'no length'}</span>
+          </span>
+          <span className="card__main">
+            <span className="card__line">
+              <span className="card__type">{segmentName(c.segment)}</span>
+              {drift !== null && drift !== 0 && (
+                <span className={`drift drift--inline${drift < 0 ? ' drift--over' : ''}`}>
+                  {drift < 0 ? `runs over ${formatDuration(-drift)}` : `gap ${formatDuration(drift)}`}
+                </span>
+              )}
+              {n ? (
+                <span className="com__n" aria-label={`${n} comment${n === 1 ? '' : 's'}`}>
+                  {n}
+                </span>
+              ) : null}
+            </span>
+            <span className={`card__title${c.title.trim() ? '' : ' is-empty'}`}>{cueLabel(c)}</span>
+            {sub && <span className="card__sub">{sub}</span>}
+          </span>
+        </button>
+        {canEdit && (
+          <span className="card__grip" {...act.handle(i)} aria-hidden="true" title="Drag to reorder">
+            <span className="grip" />
+          </span>
+        )}
+      </li>
+    </>
+  );
+});

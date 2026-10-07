@@ -17,8 +17,19 @@ const shown = new Set<HTMLElement>();
 let timer: ReturnType<typeof setInterval> | null = null;
 const tick = () => {
   const text = timecode(new Date());
-  for (const el of shown) el.textContent = text;
+  for (const el of shown) write(el, text);
 };
+/**
+ * Changes the text in place (no new text node), so it is cheap and the
+ * screen's layout watcher (a MutationObserver on added and removed nodes)
+ * does not measure the whole window again ten times a second.
+ */
+function write(el: HTMLElement, text: string) {
+  const t = el.firstChild;
+  if (t && t.nodeType === Node.TEXT_NODE && !t.nextSibling) {
+    if ((t as Text).data !== text) (t as Text).data = text;
+  } else el.textContent = text;
+}
 
 /** A small time-of-day timecode, as on a multiviewer's label strip. */
 export function Timecode({ className = 'tc' }: { className?: string }) {
@@ -27,7 +38,7 @@ export function Timecode({ className = 'tc' }: { className?: string }) {
     const el = ref.current;
     if (!el) return;
     shown.add(el);
-    el.textContent = timecode(new Date());
+    write(el, timecode(new Date()));
     if (!timer) timer = setInterval(tick, 100);
     return () => {
       shown.delete(el);

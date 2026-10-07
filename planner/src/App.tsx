@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import {
   CalendarDays,
   ChevronsUpDown,
@@ -15,23 +15,28 @@ import {
 } from 'lucide-react';
 import { authOn } from '../../app/src/auth/config';
 import { createPlan, listPlans } from './api';
-import { Calendar } from './Calendar';
 import { upcoming } from './calDates';
 import { PageHead, PlanList } from './PlanList';
-import { PlanView, type PlanTab } from './PlanView';
+import type { PlanTab } from './PlanView';
 import { db, onSignInChange, signIn, signOut, signUp, signUpsOpen, whoAmI, type Who } from './session';
-import { CodeForm, TwoStepSetup } from '../../app/src/auth/TwoStep';
 import { featureOn } from '../../app/src/auth/rules';
 import { PlannerFeaturesCtx } from './features';
 import { MIN_PASSWORD } from '../../app/src/auth/password';
-import { initials } from './Inspector';
 import { Brand, Mark } from './Mark';
-import { isoDate, shortDate, showClock, type PlanSummary } from './model';
-import { offlineWho, rememberPlans, rememberWho, savedPlans } from './offlineCache';
+import { initials, isoDate, shortDate, showClock, type PlanSummary } from './model';
+import { lastWho, offlineWho, rememberPlans, rememberWho, savedPlans, unreachable } from './offlineCache';
 import { install, useInstall, useOnline } from './pwa';
 import { InstallCard, IosSteps, OfflineBar } from './PwaBars';
 import { useLayout, type Device } from './device';
-import { unreachable } from './usePlan';
+
+// Loaded when first needed (the sign-in and the list come up sooner): a plan,
+// the calendar, and the two-step code form. The installed app has them all on the device.
+const loadPlanView = () => import('./PlanView');
+const PlanView = lazy(() => loadPlanView().then((m) => ({ default: m.PlanView })));
+const loadCalendar = () => import('./Calendar');
+const Calendar = lazy(() => loadCalendar().then((m) => ({ default: m.Calendar })));
+const CodeForm = lazy(() => import('../../app/src/auth/TwoStep').then((m) => ({ default: m.CodeForm })));
+const TwoStepSetup = lazy(() => import('../../app/src/auth/TwoStep').then((m) => ({ default: m.TwoStepSetup })));
 
 type Theme = 'auto' | 'light' | 'dark';
 const THEME_KEY = 'lumora.planner.theme';
@@ -122,9 +127,13 @@ function useRoute(): [Route, (r: Route) => void, () => void] {
   return [route, go, back];
 }
 
-/** The plans you own or are on, for the list, the calendar and the sidebar. */
-function usePlans(on: boolean): { plans: PlanSummary[] | null; error: string; refresh: () => Promise<void>; savedAt: number } {
-  const [plans, setPlans] = useState<PlanSummary[] | null>(null);
+/**
+ * The plans you own or are on, for the list, the calendar and the sidebar.
+ * Opening the app, the list kept on this device shows at once while the live
+ * one loads (and again once the sign-in has been checked: `checked` changes).
+ */
+function usePlans(on: boolean, checked: number): { plans: PlanSummary[] | null; error: string; refresh: () => Promise<void>; savedAt: number } {
+  const [plans, setPlans] = useState<PlanSummary[] | null>(() => (on ? (savedPlans()?.plans ?? null) : null));
   const [error, setError] = useState('');
   /** When the list shown was saved on this device (no internet), or 0: live. */
   const [savedAt, setSavedAt] = useState(0);
@@ -149,14 +158,27 @@ function usePlans(on: boolean): { plans: PlanSummary[] | null; error: string; re
   );
   useEffect(() => {
     if (on) void refresh();
-  }, [on, refresh]);
+  }, [on, refresh, checked]);
   return { plans, error, refresh, savedAt };
 }
 
 type Gate = { s: 'checking' } | { s: 'error'; message: string } | Who;
 
+/**
+ * Opening the app: signed in on this device before, it opens straight to your
+ * plans as they were last time (then checks the sign-in with the server, and
+ * goes on from there); otherwise it waits for that check.
+ */
+function firstGate(): Gate {
+  if (!authOn() || (typeof navigator !== 'undefined' && navigator.onLine === false)) return { s: 'checking' };
+  return lastWho() ?? { s: 'checking' };
+}
+
 export function App() {
-  const [gate, setGate] = useState<Gate>({ s: 'checking' });
+  const [gate, setGate] = useState<Gate>(firstGate);
+  /** Opened from what was kept on this device: the list loads again once the sign-in is checked (invitations may have been claimed). */
+  const [checked, setChecked] = useState(0);
+  const fromKept = useRef(gate.s === 'in');
   const [theme, nextTheme, setTheme] = useTheme();
   const [route, go, back] = useRoute();
   const layout = useLayout();
@@ -174,6 +196,10 @@ export function App() {
       .then((who) => {
         if (who.s === 'in') rememberWho(who);
         setGate(who);
+        if (fromKept.current) {
+          fromKept.current = false;
+          setChecked((n) => n + 1);
+        }
       })
       .catch((e: unknown) => {
         const saved = unreachable(e) ? offlineWho() : null;
@@ -192,8 +218,11 @@ export function App() {
   }, [online, fromCopy, check]);
 
   const access = gate.s === 'in' ? gate.access : null;
-  const me = useMemo(() => (access ? { id: access.userId, name: access.name || access.email } : null), [access]);
-  const { plans, error: plansError, refresh, savedAt } = usePlans(gate.s === 'in' && !fromCopy);
+  // The same object while it is the same person (each check of the sign-in makes a new `access`).
+  const meId = access?.userId;
+  const meName = access ? access.name || access.email : '';
+  const me = useMemo(() => (meId ? { id: meId, name: meName } : null), [meId, meName]);
+  const { plans, error: plansError, refresh, savedAt } = usePlans(gate.s === 'in' && !fromCopy, checked);
   // From the copy: the saved list (usePlans does not ask the server).
   const copyPlans = useMemo(() => (fromCopy ? savedPlans() : null), [fromCopy]);
   // Back on the list or calendar: names and dates may have changed in a plan.
@@ -209,6 +238,16 @@ export function App() {
   useEffect(() => {
     if (page !== 'plan') setUnread(0);
   }, [page]);
+  // Signed in, once the page has settled: fetch the plan and calendar parts, so they open at once.
+  const signedIn = gate.s === 'in';
+  useEffect(() => {
+    if (!signedIn) return;
+    const t = setTimeout(() => {
+      loadPlanView().catch(() => {});
+      loadCalendar().catch(() => {});
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [signedIn]);
 
   const ThemeIcon = theme === 'auto' ? Monitor : theme === 'light' ? Sun : Moon;
   const themeButton = (
@@ -240,13 +279,15 @@ export function App() {
       <main className="gate">
         <div className="gate__box">
           <Brand />
-          <CodeForm db={db()} onDone={check}>
-            <div className="row">
-              <button type="button" className="btn" onClick={() => void signOut()}>
-                Sign out
-              </button>
-            </div>
-          </CodeForm>
+          <Suspense fallback={null}>
+            <CodeForm db={db()} onDone={check}>
+              <div className="row">
+                <button type="button" className="btn" onClick={() => void signOut()}>
+                  Sign out
+                </button>
+              </div>
+            </CodeForm>
+          </Suspense>
         </div>
       </main>
     );
@@ -260,7 +301,9 @@ export function App() {
             The Lumora team asks {gate.access.rules?.twoStep === 'team' ? 'its team accounts' : 'everyone'} to use two-step sign-in: a 6-digit code from an
             authenticator app on your phone, each time you sign in.
           </p>
-          <TwoStepSetup db={db()} issuer="Lumora Planner" onDone={check} />
+          <Suspense fallback={null}>
+            <TwoStepSetup db={db()} issuer="Lumora Planner" onDone={check} />
+          </Suspense>
           <div className="row">
             <button type="button" className="btn" onClick={() => void signOut()}>
               Sign out
@@ -293,15 +336,17 @@ export function App() {
   let content: ReactNode;
   if (route.page === 'plan' && me)
     content = (
-      <PlanView
-        key={route.id}
-        planId={route.id}
-        me={me}
-        tab={route.tab}
-        onTab={(tab) => go({ page: 'plan', id: route.id, tab })}
-        onBack={back}
-        onUnread={setUnread}
-      />
+      <Suspense fallback={<OpeningPlan onBack={back} />}>
+        <PlanView
+          key={route.id}
+          planId={route.id}
+          me={me}
+          tab={route.tab}
+          onTab={(tab) => go({ page: 'plan', id: route.id, tab })}
+          onBack={back}
+          onUnread={setUnread}
+        />
+      </Suspense>
     );
   else if (route.page === 'account')
     content = (
@@ -312,7 +357,9 @@ export function App() {
       <main className="page page--wide">
         <PageHead title="Calendar" mode="calendar" phone={phone} />
         {plansError && <p className="warn">{plansError}</p>}
-        <Calendar plans={shownPlans} canPlan={canPlan} onOpen={open} onCreate={make} phone={phone} />
+        <Suspense fallback={null}>
+          <Calendar plans={shownPlans} canPlan={canPlan} onOpen={open} onCreate={make} phone={phone} />
+        </Suspense>
       </main>
     );
   else
@@ -680,6 +727,21 @@ function Account({ name, email, canInstall, shortcuts }: { name: string; email: 
   );
 }
 
+/** While a plan's part of the app loads: as the plan itself shows while it opens. */
+function OpeningPlan({ onBack }: { onBack: () => void }) {
+  return (
+    <main className="page">
+      <div className="empty empty--center empty--quiet">
+        <Mark size={32} />
+        <p className="muted">Opening the plan…</p>
+        <button type="button" className="btn" onClick={onBack}>
+          Back to plans
+        </button>
+      </div>
+    </main>
+  );
+}
+
 /** While the sign-in is checked: the mark, as the page itself shows before the app loads. */
 function Loading() {
   return (
@@ -888,4 +950,11 @@ function SheetPreview() {
       </div>
     </div>
   );
+}
+
+// Opened straight to a plan or the calendar: fetch that part now, alongside the rest.
+if (typeof location !== 'undefined') {
+  const first = readRoute(location.hash).page;
+  if (first === 'plan') void loadPlanView();
+  else if (first === 'calendar') void loadCalendar();
 }

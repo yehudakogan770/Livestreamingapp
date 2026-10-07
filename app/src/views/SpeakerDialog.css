@@ -1,0 +1,41 @@
+.spk__off {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.spk__who {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--well);
+}
+.spk__who .remote__status {
+  color: var(--text-dim);
+}
+.spk__device {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.spk__name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+.spk__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.spk__lock {
+  min-width: 240px;
+}
+.spk__clicker {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}

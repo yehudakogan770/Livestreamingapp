@@ -244,6 +244,7 @@ function checkSlideInput(s: Show, id: string) {
 /** Go to a slide; a video on the new slide starts. */
 function goToSlide(s: Show, id: string, index: number, now: number) {
   const sh = slideshowIn(s, id);
+  sh.black = false;
   const i = Math.min(Math.max(0, index), Math.max(0, sh.slides.length - 1));
   if (i !== sh.current) {
     sh.current = i;
@@ -1239,22 +1240,37 @@ function apply(s: Show, a: Action, now: number) {
       setRemaining(timer(s, a.id), a.ms, now);
       return;
     case 'slideNext': {
-      const i = nextSlideIndex(slideshowIn(s, a.id));
+      const sh = slideshowIn(s, a.id);
+      // Blacked out, a clicker's next (or back) first brings the slides back.
+      if (sh.black) {
+        sh.black = false;
+        return;
+      }
+      const i = nextSlideIndex(sh);
       if (i !== null) goToSlide(s, a.id, i, now);
       return;
     }
-    case 'slidePrevious':
-      goToSlide(s, a.id, Math.max(0, slideshowIn(s, a.id).current - 1), now);
+    case 'slidePrevious': {
+      const sh = slideshowIn(s, a.id);
+      if (sh.black) {
+        sh.black = false;
+        return;
+      }
+      goToSlide(s, a.id, Math.max(0, sh.current - 1), now);
       return;
+    }
     case 'slideGo':
       goToSlide(s, a.id, a.index, now);
+      return;
+    case 'slideBlack':
+      slideshowIn(s, a.id).black = a.value;
       return;
     case 'updateSlideshow': {
       for (const sl of a.slideshow.slides) if (sl.type === 'input') checkSlideInput(s, sl.sourceId);
       if (a.slideshow.behind) checkSlideInput(s, a.slideshow.behind);
       const sh = slideshowIn(s, a.id);
-      const { current, changedAt } = sh;
-      Object.assign(sh, structuredClone(a.slideshow), { changedAt });
+      const { current, changedAt, black } = sh;
+      Object.assign(sh, structuredClone(a.slideshow), { changedAt, black });
       sh.current = Math.min(current, Math.max(0, sh.slides.length - 1));
       return;
     }

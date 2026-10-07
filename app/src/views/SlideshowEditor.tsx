@@ -7,6 +7,7 @@ import type { Source } from '../engine/types/Source';
 import { AREAS, pdfToPictures } from '../engine/slideshow';
 import { SourceView } from '../components/SourceView';
 import type { Act } from './act';
+import { sendCommand } from './commands';
 import './SlideshowEditor.css';
 import './TextEditor.css';
 import './PesukimCard.css';
@@ -79,6 +80,15 @@ export function SlideshowSetup({
                 <span className="sls__input">{nameOf(sl.sourceId)}</span>
               )}
             </div>
+            <textarea
+              className="sls__notes"
+              rows={2}
+              maxLength={4000}
+              value={sl.notes ?? ''}
+              placeholder="Notes for the speaker (only the speaker’s device shows them)"
+              aria-label={`Notes for slide ${i + 1}`}
+              onChange={(e) => setSlides(sh.slides.map((x, j) => (j === i ? { ...x, notes: e.target.value || null } : x)))}
+            />
             <span className="sls__btns">
               <button type="button" className="icon" aria-label={`Move slide ${i + 1} earlier`} onClick={() => move(i, -1)} disabled={i === 0}>
                 ▲
@@ -223,6 +233,20 @@ export function SlideshowEditor({
           <SlideshowSetup sh={sh} sources={others} client={client} onChange={setSh} />
         </div>
         <footer className="modal__foot">
+          <button
+            type="button"
+            className="btn"
+            title="The speaker changes the slides from a phone, tablet or laptop"
+            onClick={() => {
+              // Keep what was changed here, then show how to connect the speaker.
+              act({ type: 'updateSlideshow', id: source.id, slideshow: sh });
+              onClose();
+              sendCommand({ type: 'speakerRemote' });
+            }}
+          >
+            Control from another device…
+          </button>
+          <span className="sled__spacer" />
           <button type="button" className="btn" onClick={onClose}>
             Cancel
           </button>

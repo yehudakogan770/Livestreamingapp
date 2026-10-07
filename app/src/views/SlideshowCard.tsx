@@ -64,7 +64,16 @@ export function SlideshowCard({ show, act, screen, client }: { show: Show; act: 
           ‹ Back
         </button>
         <button type="button" className="btn btn--primary pk__go" onClick={() => act({ type: 'slideNext', id })} title="Space, → or the clicker">
-          Next slide › <kbd>Space</kbd>
+          {sh.black ? 'Show the slides' : 'Next slide ›'} <kbd>Space</kbd>
+        </button>
+        <button
+          type="button"
+          className={`btn${sh.black ? ' btn--on' : ''}`}
+          aria-pressed={sh.black}
+          onClick={() => act({ type: 'slideBlack', id, value: !sh.black })}
+          title="Black out the slides (what is behind them stays)"
+        >
+          Black
         </button>
       </div>
       <div className="slc__strip" aria-label="Slides: click to jump">

@@ -179,19 +179,32 @@ export function watchFrames(id: string, video: HTMLVideoElement, health: InputHe
   let alive = true;
   let handle = 0;
   let last: number | null = null;
-  if (canShow) {
-    const next = () => {
-      if (!alive) return;
-      if (framesSent(v) === null) health.frame(id);
-      handle = v.requestVideoFrameCallback!(next);
-    };
+  // Shown frames are counted only while the camera's own count can't be read:
+  // once it can, the poll below does it, and nothing runs on every frame.
+  let showing = false;
+  const show = () => {
+    showing = true;
     handle = v.requestVideoFrameCallback!(next);
-  }
+  };
+  const next = () => {
+    if (!alive) return;
+    if (framesSent(v) !== null) {
+      showing = false;
+      return;
+    }
+    health.frame(id);
+    handle = v.requestVideoFrameCallback!(next);
+  };
+  if (canShow) show();
   const poll = setInterval(() => {
     const sent = framesSent(v);
     if (sent !== null) {
       if (sent !== last) health.frame(id);
       last = sent;
+    } else if (canShow && !showing) {
+      // The count went away (another stream): back to counting shown frames.
+      last = null;
+      show();
     } else if (!canShow || drawnElsewhere(v)) {
       // Nothing to judge by: never call it lost for that.
       health.frame(id);

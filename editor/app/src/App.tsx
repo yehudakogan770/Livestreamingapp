@@ -21,6 +21,7 @@ import { ReportingHost } from '../../../app/src/reports/ReportUI';
 import { SystemCheckHost } from '../../../app/src/syscheck/SystemCheck';
 import { AboutHost } from '../../../app/src/components/About';
 import { e2e } from '../../../app/src/e2e';
+import { BENCH } from './benchflag';
 
 /** A project opened from online (shared with a team). */
 export interface SharedOpen {
@@ -41,7 +42,7 @@ export const editPathFor = (eventPath: string): string => eventPath.replace(/\.l
 
 export function App() {
   // Trying the screens in a browser while building them (never in the program).
-  if (import.meta.env.DEV && !inApp() && /[?&](demo|start|empty)/.test(location.search)) return <Main />;
+  if (BENCH && !inApp() && /[?&](demo|start|empty|big)/.test(location.search)) return <Main />;
   return (
     <Gate product="studio">
       <Main />
@@ -144,6 +145,8 @@ function Main() {
     if (!inApp()) {
       const q = new URLSearchParams(location.search);
       if (q.has('demo')) void demoProject().then((project) => setScreen({ s: 'edit', project, savePath: '' }));
+      // A big made-up project for measuring speed (docs/PERFORMANCE.md).
+      if (q.has('big')) void import('./bench').then(({ bigProject }) => setScreen({ s: 'edit', project: bigProject(), savePath: '' }));
       if (q.has('empty')) setScreen({ s: 'edit', project: emptyProject('Untitled'), savePath: '' });
       return;
     }
