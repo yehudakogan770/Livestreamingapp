@@ -5,16 +5,16 @@
      and a 1px top highlight give panels their edge (no glows). Selection,
      focus and the primary button are a neutral light; broadcast colors mean
      one thing each: red = on air / recording, green = next (preview),
-     amber = warning. The logo's teal (--signal) is kept for one job only:
-     marking which screen you are controlling. */
-  --bg: #111111; /* the workspace */
-  --bar: #161616; /* title bar, tabs strip, bottom bar, side columns */
-  --panel: #1b1b1b; /* panels and dialog bodies */
-  --raised: #222222; /* menus, dialog headers, popovers */
-  --button: #2a2a2a;
-  --button-hover: #333333;
-  --button-active: #1f1f1f;
-  --border: #282828; /* 1px hairlines */
+     amber = warning. The logo's teal (--signal) is kept only where it means
+     something: which screen you are controlling, and text links. */
+  --bg: #141414; /* the workspace */
+  --bar: #1a1a1a; /* title bar, tabs strip, bottom bar, side columns */
+  --panel: #1e1e1e; /* panels and dialog bodies */
+  --raised: #242424; /* menus, dialog headers, popovers */
+  --button: #2b2b2b;
+  --button-hover: #343434;
+  --button-active: #202020;
+  --border: #303030; /* 1px hairlines */
   --border-strong: #3a3a3a; /* control outlines */
   --well: #0a0a0a; /* fields, meters, picture surrounds */
   --text: #e8e8e6;
@@ -26,7 +26,7 @@
   --on-accent: #141414; /* text on --accent / --accent-deep */
   --selected: #3a3a3a; /* the fill of a selected tab, row or segment */
   --focus: rgba(236, 234, 228, 0.65); /* keyboard focus ring */
-  --signal: #4fb3bf; /* the logo's teal: only the "controlling" screen marker */
+  --signal: #4fb3bf; /* the logo's teal: the "controlling" screen marker and links */
   --program: #d42f27;
   --program-bright: #ff4b3e;
   --preview: #18994a;

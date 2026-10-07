@@ -44,7 +44,7 @@ export function VisualsCard({ v }: { v: Visuals }) {
           bottom: 0,
           padding: '3px 6px',
           background: 'rgba(0, 0, 0, 0.72)',
-          color: '#e9ebee',
+          color: '#e8e8e6',
           fontSize: 11,
           fontWeight: 600,
           textAlign: 'center',

@@ -223,11 +223,11 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
         <div
           style={{
             ...fill,
-            background: '#101216',
+            background: '#121212',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#8e9096',
+            color: '#909090',
             fontSize: 16,
             fontWeight: 600,
           }}
@@ -399,7 +399,7 @@ function Logo3dInput({ logo, thumb, audience }: { logo: Logo3d; thumb: boolean; 
       <div
         style={{
           ...fill,
-          background: logo.background === 'colour' ? logo.bgColor : '#101216',
+          background: logo.background === 'colour' ? logo.bgColor : '#121212',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -415,7 +415,7 @@ function Logo3dInput({ logo, thumb, audience }: { logo: Logo3d; thumb: boolean; 
             style={{ maxWidth: '60%', maxHeight: '60%', transform: 'rotateY(-25deg)', filter: 'drop-shadow(4px 3px 0 rgba(0,0,0,.6))' }}
           />
         ) : (
-          <b style={{ color: '#b8c0c8', transform: 'rotateY(-25deg)', fontSize: 14 }}>3D LOGO</b>
+          <b style={{ color: '#bebebe', transform: 'rotateY(-25deg)', fontSize: 14 }}>3D LOGO</b>
         )}
       </div>
     );

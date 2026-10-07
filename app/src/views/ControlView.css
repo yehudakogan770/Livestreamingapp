@@ -59,21 +59,21 @@
   color: var(--accent);
 }
 .btn--primary {
-  background: #e0e0e0;
-  border-color: #e0e0e0;
-  border-top-color: #f3f3f3;
-  color: #0e0e0e;
+  background: var(--accent-deep);
+  border-color: var(--accent-deep);
+  border-top-color: #f6f5f2;
+  color: var(--on-accent);
   font-weight: 600;
 }
 .btn--primary svg.lucide {
-  color: #0e0e0e;
+  color: var(--on-accent);
 }
 .btn--primary:hover:not(:disabled) {
-  background: #eeeeee;
-  border-color: #eeeeee;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 .btn--primary:active:not(:disabled) {
-  background: #c8c8c8;
+  background: #cfcdc8;
 }
 .btn--big {
   height: 40px;
@@ -177,7 +177,7 @@
 .linkbtn {
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--signal);
   padding: 0;
   font-size: 12px;
 }
@@ -1388,7 +1388,7 @@
 }
 
 /* ---- dialogs ----
-   A raised window: a teal rule along the top, a header strip with the title
+   A raised window: a header strip with the title
    and a close key, a quiet body and a darker footer for the actions. */
 .modal {
   position: fixed;

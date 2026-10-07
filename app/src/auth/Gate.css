@@ -6,8 +6,7 @@
   place-items: center;
   padding: 24px;
   overflow: auto;
-  background:
-    radial-gradient(900px 520px at 50% 0%, rgba(255, 255, 255, 0.045), transparent 70%), #101010;
+  background: radial-gradient(900px 520px at 50% 0%, rgba(255, 255, 255, 0.045), transparent 70%), #101010;
 }
 .gate__card {
   width: min(440px, 100%);
@@ -69,7 +68,7 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
+  color: var(--signal);
   font: inherit;
   font-weight: 600;
   cursor: pointer;

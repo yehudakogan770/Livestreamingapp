@@ -5,11 +5,12 @@
   --panel: #212121;
   --button: #2e2e2e;
   --border: #303030;
-  --text: #e5e5e5;
-  --text-dim: #ababab;
+  --text: #e8e8e6;
+  --text-dim: #a3a3a0;
   --accent: #e6e4df; /* selection and focus: a neutral light (no blue) */
   --accent-deep: #e6e4df; /* the primary button, with dark text */
   --on-accent: #141414;
+  --signal: #4fb3bf; /* the logo's teal: only marks which screen you control */
   --program: #c7372f;
   --program-bright: #e0473b;
   --preview: #2f8f4e;
@@ -322,6 +323,7 @@ main {
 .seg__btn--on {
   background: var(--button);
   color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--signal);
 }
 #follows {
   margin-top: 10px;

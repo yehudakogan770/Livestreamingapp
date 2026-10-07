@@ -104,8 +104,8 @@ export function Logo3dView({
     logo.background === 'colour'
       ? logo.bgColor
       : logo.background === 'transparent' && checker
-        ? 'repeating-conic-gradient(#3a3f49 0 25%, #2a2e36 0 50%) 0 0 / 24px 24px'
+        ? 'repeating-conic-gradient(#3e3e3e 0 25%, #2d2d2d 0 50%) 0 0 / 24px 24px'
         : 'transparent';
-  if (broken) return <div style={{ ...fill, background: audience ? 'transparent' : '#101216' }} />;
+  if (broken) return <div style={{ ...fill, background: audience ? 'transparent' : '#121212' }} />;
   return <div ref={box} style={{ ...fill, background }} data-kind="logo3d" />;
 }
