@@ -1,6 +1,6 @@
 // The Lumora website: a small working switcher, the three screens that follow
 // it, the run of show, and the PANIC button. The inputs are real footage of
-// one event (media/, see img/CREDITS.md), looped like a camera feed.
+// big live events (media/, see img/CREDITS.md), looped like a camera feed.
 (() => {
   const W = 640;
   const H = 360;
@@ -73,7 +73,7 @@
     };
   }
 
-  const SOURCES = [camera('Podium', 'podium'), camera('Wide', 'wide'), camera('Audience', 'audience'), picture('Slides', 'slides.jpg')];
+  const SOURCES = [camera('Speaker', 'speaker'), camera('Wide', 'wide'), camera('Audience', 'audience'), picture('Slides', 'slides.jpg')];
   const frames = SOURCES.map(() => {
     const cv = document.createElement('canvas');
     cv.width = W;
