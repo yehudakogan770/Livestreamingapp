@@ -137,6 +137,22 @@
       ]
     },
     {
+      "UUID": "com.lumora.streamdeck.macro",
+      "Name": "Macro",
+      "Tooltip": "Run a macro (several steps with one key)",
+      "Icon": "imgs/actions/macro",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/macro",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
       "UUID": "com.lumora.streamdeck.replay",
       "Name": "Instant replay",
       "Tooltip": "Replay the last few seconds into Next",

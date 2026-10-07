@@ -186,9 +186,12 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
           <div key={x.path} className={`media__loading${x.problem ? ' is-bad' : ''}`} title={x.problem ?? x.path}>
             <span>{x.name}</span>
             {x.problem ? (
-              <button type="button" className="linkbtn" onClick={() => dismissProblem(x.path)}>
-                Could not be read <X />
-              </button>
+              <>
+                <button type="button" className="linkbtn" title="Dismiss" onClick={() => dismissProblem(x.path)}>
+                  Could not be read <X />
+                </button>
+                <p className="media__problem">{x.problem}</p>
+              </>
             ) : (
               <i style={{ width: `${Math.round(x.done * 100)}%` }} />
             )}

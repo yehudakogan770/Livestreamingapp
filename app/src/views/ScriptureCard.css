@@ -56,7 +56,7 @@
 .scr-card__what,
 .scr-card__range {
   font-size: 13px;
-  color: var(--text-dim, #aab);
+  color: var(--text-dim, #ababab);
 }
 .scr-card__hits {
   max-height: 240px;

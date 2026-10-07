@@ -1,9 +1,11 @@
 // Signing in to the Planner: the same Lumora accounts (and Supabase project)
 // as the app. Approved accounts that may use Lumora (and the Lumora team) make
-// plans; anyone with an account works on the plans they were invited to.
+// plans (or any account, when the Lumora team allows it in Sign-in settings);
+// anyone with an account works on the plans they were invited to.
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { accessFrom, mayUse, type Access, type Profile } from '../../app/src/auth/access';
+import { accessFrom, type Access, type Profile } from '../../app/src/auth/access';
+import { featureOn, rulesFrom, DEFAULT_RULES, type SignInRules } from '../../app/src/auth/rules';
 import { AUTH_KEY, AUTH_URL } from '../../app/src/auth/config';
 import { aalOf } from '../../app/src/auth/mfa';
 import { MIN_PASSWORD, weakPassword } from '../../app/src/auth/password';
@@ -19,14 +21,50 @@ export function db(): SupabaseClient {
  * Signed out; asked for the two-step code; in (making plans only with Lumora
  * access, otherwise a teammate on the plans shared with them); or not let in.
  */
-export type Who = { s: 'out' } | { s: 'code'; access: Access } | { s: 'in'; access: Access; canPlan: boolean } | { s: 'denied'; access: Access; why: string };
+export type Who =
+  | { s: 'out' }
+  | { s: 'code'; access: Access }
+  | { s: 'setup'; access: Access }
+  | { s: 'in'; access: Access; canPlan: boolean }
+  | { s: 'denied'; access: Access; why: string; title?: string };
 
 /** What this account may do in the Planner. */
 export function verdict(a: Access): Who {
   if (a.state === 'blocked') return { s: 'denied', access: a, why: 'This account has been turned off. Ask the Lumora team if you think that is a mistake.' };
   if (a.codeNeeded) return { s: 'code', access: a };
-  // Waiting for approval, or not set up for Lumora: a teammate (the plans shared with them only).
-  return { s: 'in', access: a, canPlan: mayUse(a, 'lumora') };
+  // Two-step sign-in required by the Lumora team, not set up yet.
+  if (a.setupNeeded) return { s: 'setup', access: a };
+  if (!a.admin && !featureOn(a.rules, 'planner'))
+    return {
+      s: 'denied',
+      access: a,
+      title: 'The Planner is paused',
+      why: a.rules?.pauseMessages.planner || 'The Lumora team has paused the Planner for now. Please try again later.',
+    };
+  // Waiting for approval, or not set up for Lumora: a teammate (the plans shared with them only),
+  // unless the Lumora team lets any account make plans (the server says).
+  const lumora = a.state === 'approved' && (a.admin || a.lumora !== false);
+  return { s: 'in', access: a, canPlan: a.rules?.canMakePlans ?? lumora };
+}
+
+/** The Lumora team's rules for this account (the usual ones before update 9). */
+async function rules(): Promise<SignInRules> {
+  const r = await db().rpc('sign_in_rules');
+  if (r.error) {
+    if (offline(r.error.message)) throw new Error(plainly(r.error.message));
+    return DEFAULT_RULES;
+  }
+  return rulesFrom(r.data);
+}
+
+/** May new accounts be made? (Before signing in. Invited emails always can; the server decides.) */
+export async function signUpsOpen(): Promise<boolean> {
+  try {
+    const r = await db().rpc('sign_ups_open');
+    return r.error ? true : r.data !== false;
+  } catch {
+    return true;
+  }
 }
 
 const offline = (m: string) => /fetch|network|failed/i.test(m);
@@ -46,11 +84,18 @@ export async function whoAmI(): Promise<Who> {
     clearCache();
     return { s: 'out' };
   }
-  const { data: p, error } = await db().from('profiles').select('*').eq('id', session.user.id).single<Profile>();
+  const [{ data: p, error }, r] = await Promise.all([db().from('profiles').select('*').eq('id', session.user.id).single<Profile>(), rules()]);
   if (error) throw new Error(plainly(error.message));
   const twoStep = (u.data.user.factors ?? []).some((f) => f.status === 'verified');
   const aal = aalOf(session.access_token);
-  const who = verdict({ ...accessFrom(p), twoStep, aal2: aal === 'aal2', codeNeeded: twoStep && aal !== 'aal2' });
+  const who = verdict({
+    ...accessFrom(p),
+    twoStep,
+    aal2: aal === 'aal2',
+    codeNeeded: twoStep && aal !== 'aal2',
+    setupNeeded: r.twoStepRequired && !twoStep,
+    rules: r,
+  });
   // Plans this email was invited to before the account existed.
   if (who.s === 'in')
     await db()
@@ -81,6 +126,8 @@ export async function signUp(name: string, email: string, password: string): Pro
   });
   if (!error) return data.session !== null;
   if (/already registered|already been registered/i.test(error.message)) throw new Error('There is already an account with that email. Sign in instead.');
+  if (/sign-ups are closed|database error saving new user/i.test(error.message))
+    throw new Error('New sign-ups are closed. Ask the plan’s owner or the Lumora team to invite this email first.');
   if (/password/i.test(error.message)) throw new Error(`The password needs at least ${MIN_PASSWORD} characters, with letters and numbers.`);
   throw new Error(plainly(error.message));
 }

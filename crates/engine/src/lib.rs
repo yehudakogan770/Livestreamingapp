@@ -27,6 +27,7 @@ pub mod event;
 pub mod graphic;
 pub mod logo3d;
 pub mod lyrics;
+pub mod macros;
 pub mod media;
 pub mod model;
 pub mod overlays;

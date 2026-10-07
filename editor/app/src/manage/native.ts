@@ -4,6 +4,13 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { inApp } from '../native';
 
+/** How loud a file measures: integrated loudness (LUFS), true peak (dBTP) and loudness range (LU). */
+export interface Loudness {
+  integrated: number;
+  truePeak: number;
+  range: number;
+}
+
 export interface RecoveryEntry {
   name: string;
   size: number;
@@ -39,6 +46,12 @@ export const manageNative = {
   recoveryRead: (name: string) => invoke<string>('recovery_read', { name }),
   recoveryList: () => invoke<RecoveryEntry[]>('recovery_list'),
   recoveryRemove: (name: string) => invoke<void>('recovery_remove', { name }),
+  /** A finished file's loudness (EBU R128). */
+  measureLoudness: (path: string) => invoke<Loudness>('measure_loudness', { path }),
+  /** Make the numbered image sequence a picture belongs to into one video; its path. */
+  imageSequence: (path: string, fps: number) => invoke<string>('image_sequence', { path, fps }),
+  /** One frame of a finished film as a JPEG. */
+  thumbnail: (film: string, seconds: number, width: number, out: string) => invoke<void>('thumbnail', { film, seconds, width, out }),
 };
 
 export function onCollectProgress(f: (p: CollectProgress) => void): () => void {

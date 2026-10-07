@@ -25,7 +25,7 @@
 //! card's encoder stops), the status says so and the control window starts a
 //! new one; a hardware encoder that failed is replaced by the processor's.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
@@ -77,6 +77,10 @@ pub struct Destination {
     pub captions_url: String,
     /// Its own video bitrate in kbit/s (`None`: the stream's).
     pub video_kbps: Option<u32>,
+    /// A second server for the same stream (YouTube's backup ingest, a
+    /// second SRT listener…). When the stream to one server fails, the next
+    /// try goes to the other.
+    pub backup_url: String,
 }
 
 impl Default for Destination {
@@ -90,19 +94,76 @@ impl Default for Destination {
             vertical: false,
             captions_url: String::new(),
             video_kbps: None,
+            backup_url: String::new(),
         }
     }
 }
 
 impl Destination {
     /// The full address FFmpeg sends to.
+    #[cfg(test)]
     fn target(&self) -> String {
-        let url = self.url.trim().trim_end_matches('/');
+        self.target_at(false)
+    }
+
+    /// The full address on the main server, or on the backup one (when it has one).
+    fn target_at(&self, backup: bool) -> String {
+        let url = if backup && self.has_backup() {
+            &self.backup_url
+        } else {
+            &self.url
+        };
+        let url = url.trim().trim_end_matches('/');
         let key = self.key.trim();
         if key.is_empty() {
             url.to_owned()
+        } else if url.starts_with("srt://") {
+            // SRT has no path: the key is its stream id (unless the address has one).
+            if url.contains("streamid=") {
+                url.to_owned()
+            } else {
+                let join = if url.contains('?') { '&' } else { '?' };
+                format!("{url}{join}streamid={key}")
+            }
         } else {
             format!("{url}/{key}")
+        }
+    }
+
+    fn has_backup(&self) -> bool {
+        !self.backup_url.trim().is_empty()
+    }
+}
+
+/// The muxer a stream address needs: MPEG-TS for SRT and UDP, FLV for RTMP and RTMPS.
+fn container_for(target: &str) -> &'static str {
+    let scheme = target.split_once("://").map_or("", |(s, _)| s);
+    match scheme.to_ascii_lowercase().as_str() {
+        "srt" | "udp" | "rtp" => "mpegts",
+        _ => "flv",
+    }
+}
+
+/// Which server each destination uses: the ids on their backup server now.
+/// A destination that fails goes to its other server on the next try.
+#[derive(Debug, Default)]
+struct Failover(Mutex<HashSet<String>>);
+
+impl Failover {
+    fn on_backup(&self, id: &str) -> bool {
+        lock(&self.0).contains(id)
+    }
+
+    /// These destinations failed: the ones with a backup switch servers.
+    fn switch(&self, ids: &[(String, bool)]) {
+        let mut on = lock(&self.0);
+        for (id, has_backup) in ids {
+            if !*has_backup {
+                continue;
+            }
+            if !on.remove(id) {
+                on.insert(id.clone());
+            }
         }
     }
 }
@@ -272,6 +333,7 @@ impl CaptureSettings {
                 .video_kbps
                 .filter(|k| *k > 0)
                 .map(|k| k.clamp(500, 80_000));
+            d.backup_url = d.backup_url.trim().to_owned();
         }
         self
     }
@@ -311,6 +373,8 @@ pub struct Running {
     pub source_kbps: Option<u32>,
     /// Destinations that dropped out while the rest carry on.
     pub dropped: Vec<String>,
+    /// Destinations sending to their backup server.
+    pub on_backup: Vec<String>,
 }
 
 impl Running {
@@ -325,6 +389,7 @@ impl Running {
             encoder,
             source_kbps: None,
             dropped: Vec::new(),
+            on_backup: Vec::new(),
         }
     }
 }
@@ -496,6 +561,7 @@ pub struct Capture {
     ffmpeg: Option<PathBuf>,
     max_queued: u64,
     stall: Duration,
+    failover: Arc<Failover>,
 }
 
 impl Capture {
@@ -528,6 +594,7 @@ impl Capture {
             ffmpeg,
             max_queued: MAX_QUEUED,
             stall: STALL,
+            failover: Arc::new(Failover::default()),
         }
     }
 
@@ -894,14 +961,30 @@ impl Capture {
             );
         }
         if !rehearse {
-            preflight(&dests)?;
+            self.preflight_or_backup(&dests)?;
         }
         let targets: Vec<(String, String, Option<u32>)> = if rehearse {
             Vec::new()
         } else {
             dests
                 .iter()
-                .map(|d| (d.name.clone(), d.target(), d.video_kbps))
+                .map(|d| {
+                    let backup = self.failover.on_backup(&d.id);
+                    (d.name.clone(), d.target_at(backup), d.video_kbps)
+                })
+                .collect()
+        };
+        // Each name's destination (id, has a backup), to switch servers when it fails.
+        let ids: Arc<Vec<(String, String, bool)>> = Arc::new(
+            dests
+                .iter()
+                .map(|d| (d.name.clone(), d.id.clone(), d.has_backup()))
+                .collect(),
+        );
+        let ids_of = |names: &[String]| -> Vec<(String, bool)> {
+            ids.iter()
+                .filter(|(n, _, _)| names.contains(n))
+                .map(|(_, id, b)| (id.clone(), *b))
                 .collect()
         };
         let family = self.family(&settings, Codec::H264);
@@ -950,9 +1033,16 @@ impl Capture {
             };
             let on_line = {
                 let (shared, names) = (Arc::clone(&self.shared), group.names.clone());
+                let (failover, ids) = (Arc::clone(&self.failover), Arc::clone(&ids));
                 move |line: &str| {
                     if let Some(name) = encode::dropped_output(line).and_then(|k| names.get(k)) {
                         eprintln!("lumora: {kind:?} {session}: {name} dropped out");
+                        let which: Vec<_> = ids
+                            .iter()
+                            .filter(|(n, _, _)| n == name)
+                            .map(|(_, id, b)| (id.clone(), *b))
+                            .collect();
+                        failover.switch(&which);
                         let name = name.clone();
                         shared.running(kind, session, |r| {
                             if !r.dropped.contains(&name) {
@@ -970,6 +1060,8 @@ impl Capture {
                     Arc::clone(&pids),
                 );
                 let names = group.names.clone();
+                let failover = Arc::clone(&self.failover);
+                let these = ids_of(&group.names);
                 let hw = enc.is_some_and(|e| e.family.hardware());
                 move |sent: bool, said: String| {
                     if sent {
@@ -992,6 +1084,8 @@ impl Capture {
                         );
                         lock(&pids).iter().copied().for_each(kill_pid);
                     } else if remaining.fetch_sub(1, Ordering::SeqCst) == 1 {
+                        // The next try goes to the other server (where there is one).
+                        failover.switch(&these);
                         shared.fail_how(
                             kind,
                             session,
@@ -1000,6 +1094,7 @@ impl Capture {
                         );
                     } else {
                         // The other destinations carry on.
+                        failover.switch(&these);
                         eprintln!("lumora: {kind:?} {session}: {names:?} stopped: {said}");
                         shared.running(kind, session, |r| {
                             for name in &names {
@@ -1046,6 +1141,13 @@ impl Capture {
             plan.label(),
         );
         running.source_kbps = Some(plan.source_kbps);
+        if !rehearse {
+            running.on_backup = dests
+                .iter()
+                .filter(|d| d.has_backup() && self.failover.on_backup(&d.id))
+                .map(|d| d.name.clone())
+                .collect();
+        }
         Ok((
             Box::new(FanOut(inputs)),
             running,
@@ -1055,6 +1157,45 @@ impl Capture {
 }
 
 impl Capture {
+    /// The destinations as they are sent to now: each on its main server or its backup.
+    fn on_servers(&self, dests: &[&Destination]) -> Vec<Destination> {
+        dests
+            .iter()
+            .map(|d| {
+                let mut d = (*d).clone();
+                if d.has_backup() && self.failover.on_backup(&d.id) {
+                    d.url.clone_from(&d.backup_url);
+                }
+                d
+            })
+            .collect()
+    }
+
+    /// The pre-flight check; when a server can't be reached and there is a
+    /// backup server, the backups are tried before giving up.
+    fn preflight_or_backup(&self, dests: &[&Destination]) -> Result<(), String> {
+        let now = self.on_servers(dests);
+        let Err(first) = preflight(&now.iter().collect::<Vec<_>>()) else {
+            return Ok(());
+        };
+        let switch: Vec<(String, bool)> = dests
+            .iter()
+            .filter(|d| d.has_backup())
+            .map(|d| (d.id.clone(), true))
+            .collect();
+        if switch.is_empty() {
+            return Err(first);
+        }
+        self.failover.switch(&switch);
+        let other = self.on_servers(dests);
+        if preflight(&other.iter().collect::<Vec<_>>()).is_ok() {
+            return Ok(());
+        }
+        // Neither answers: back as they were, and say why the first failed.
+        self.failover.switch(&switch);
+        Err(first)
+    }
+
     fn open_ndi(
         &self,
         session: u64,
@@ -1691,7 +1832,7 @@ fn stream_args(group: &encode::Group, video: Option<&VideoEncode>, audio_kbps: u
     let tee = group
         .targets
         .iter()
-        .map(|t| format!("[f=flv:onfail=ignore]{}", tee_escape(t)))
+        .map(|t| format!("[f={}:onfail=ignore]{}", container_for(t), tee_escape(t)))
         .collect::<Vec<_>>()
         .join("|");
     a.push(tee);
@@ -2243,6 +2384,106 @@ mod tests {
             plan.label().contains("+ the app’s own encoder"),
             "{}",
             plan.label()
+        );
+    }
+
+    #[test]
+    fn srt_goes_out_as_mpeg_ts_and_rtmps_as_flv() {
+        let s = CaptureSettings::default();
+        let args = &plan_args(
+            &s,
+            H264,
+            Family::Software,
+            &[
+                t("SRT", "srt://ingest.example:9000?streamid=abc", None),
+                t("FB", "rtmps://live-api-s.facebook.com:443/rtmp/KEY", None),
+            ],
+        )[0];
+        assert_eq!(
+            args.last().unwrap(),
+            "[f=mpegts:onfail=ignore]srt://ingest.example:9000?streamid=abc|\
+             [f=flv:onfail=ignore]rtmps://live-api-s.facebook.com:443/rtmp/KEY"
+        );
+        // An SRT address carries its key as the stream id.
+        let d = Destination {
+            url: "srt://host:9000?streamid=x".into(),
+            key: "ignored".into(),
+            ..Destination::default()
+        };
+        assert_eq!(d.target(), "srt://host:9000?streamid=x");
+        let d = Destination {
+            url: "srt://host:9000?latency=2000000".into(),
+            key: "KEY".into(),
+            ..Destination::default()
+        };
+        assert_eq!(d.target(), "srt://host:9000?latency=2000000&streamid=KEY");
+    }
+
+    #[test]
+    fn a_main_server_that_does_not_answer_is_tried_on_its_backup() {
+        let closed = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let dead = closed.local_addr().unwrap().port();
+        drop(closed);
+        let alive = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = alive.local_addr().unwrap().port();
+        let d = Destination {
+            id: "x".into(),
+            name: "Ingest".into(),
+            url: format!("rtmp://127.0.0.1:{dead}/live"),
+            backup_url: format!("rtmp://127.0.0.1:{port}/live"),
+            key: "k".into(),
+            ..Destination::default()
+        };
+        let dir = temp_dir("preflight-backup");
+        let (c, _) = capture(&dir, None);
+        assert!(c.preflight_or_backup(&[&d]).is_ok());
+        assert!(c.failover.on_backup("x"));
+        // Neither answers: the error is the main server's, and nothing switched.
+        drop(alive);
+        let c2 = capture(&dir, None).0;
+        let none = Destination {
+            backup_url: format!("rtmp://127.0.0.1:{dead}/b"),
+            ..d
+        };
+        assert!(c2.preflight_or_backup(&[&none]).is_err());
+        assert!(!c2.failover.on_backup("x"));
+    }
+
+    #[test]
+    fn a_failed_destination_switches_to_its_backup_and_back() {
+        let d = Destination {
+            id: "yt".into(),
+            url: "rtmp://a.rtmp.youtube.com/live2".into(),
+            backup_url: "rtmp://b.rtmp.youtube.com/live2?backup=1".into(),
+            key: "KEY".into(),
+            ..Destination::default()
+        };
+        assert_eq!(d.target_at(false), "rtmp://a.rtmp.youtube.com/live2/KEY");
+        // YouTube's backup server takes the key after its options, as OBS sends it.
+        assert_eq!(
+            d.target_at(true),
+            "rtmp://b.rtmp.youtube.com/live2?backup=1/KEY"
+        );
+        let none = Destination {
+            id: "fb".into(),
+            url: "rtmps://f/rtmp".into(),
+            key: "K".into(),
+            ..Destination::default()
+        };
+        assert_eq!(
+            none.target_at(true),
+            "rtmps://f/rtmp/K",
+            "no backup: always the main server"
+        );
+        let f = Failover::default();
+        assert!(!f.on_backup("yt"));
+        f.switch(&[("yt".into(), true), ("fb".into(), false)]);
+        assert!(f.on_backup("yt"));
+        assert!(!f.on_backup("fb"), "nothing to switch to");
+        f.switch(&[("yt".into(), true)]);
+        assert!(
+            !f.on_backup("yt"),
+            "the backup failing goes back to the main server"
         );
     }
 

@@ -62,7 +62,7 @@
 }
 @keyframes cambar-auto {
   50% {
-    box-shadow: 0 0 0 3px rgba(90, 143, 208, 0.25);
+    box-shadow: 0 0 0 3px rgba(236, 234, 228, 0.22);
   }
 }
 @media (prefers-reduced-motion: reduce) {

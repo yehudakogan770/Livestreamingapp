@@ -20,7 +20,7 @@ import {
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
-import { useAccess } from '../../../../app/src/auth/Gate';
+import { useAccess, useFeature } from '../../../../app/src/auth/Gate';
 import { AccountDialog } from '../../../../app/src/auth/AccountDialog';
 import { Doc, useDoc } from '../doc';
 import { addCaptionTrack, captionTracks, mergeCaptions, splitCaption } from '../model/captions';
@@ -31,6 +31,7 @@ import { fileName, folderOf, inApp, native } from '../native';
 import { makeActions, type Actions } from './actions';
 import { PopMenu, type MenuEntry } from './controls';
 import { HelpDialog, SequenceDialog, SpeedDialog } from './Dialogs';
+import { GuideDialog } from './GuideDialog';
 import { DeliverDialog, QueueChip } from './Deliver';
 import { ManagePanels } from './Manage';
 import { panels } from './panels';
@@ -125,6 +126,10 @@ export function Editor({
     [shared, userId, userName, doc],
   );
   const cs = useCollab(collab);
+  // The Lumora team can turn team sharing and comments off (Features; the server refuses them too).
+  // A shared project already open keeps working until it is closed.
+  const sharingOn = useFeature('studio_sharing', !!collab);
+  const aiOn = useFeature('ai_tools');
   useEffect(() => {
     if (!collab) return;
     collab.onNote = (t) => ui.note(t);
@@ -330,6 +335,9 @@ export function Editor({
         { label: 'Export…', keys: 'Ctrl+M', run: () => ui.set({ dialog: 'export' }) },
         { label: 'Render queue…', run: () => panels.show({ kind: 'queue' }) },
         'sep',
+        { label: 'Import a timeline (FCPXML, XML, EDL, OTIO)…', run: () => panels.show({ kind: 'timelineImport' }) },
+        { label: 'Export timeline for other editors…', run: () => panels.show({ kind: 'timelineExport' }) },
+        'sep',
         { label: 'Collect files / archive…', disabled: !inApp(), run: () => panels.show({ kind: 'archive' }) },
         { label: 'Backups (autosaved versions)…', disabled: !autosaver || !inApp(), run: () => panels.show({ kind: 'backups' }) },
         'sep',
@@ -337,7 +345,7 @@ export function Editor({
         ...(authOn()
           ? [
               'sep' as const,
-              { label: collab ? 'People on this project…' : 'Share project…', run: () => ui.set({ dialog: 'share' }) },
+              { label: collab ? 'People on this project…' : 'Share project…', disabled: !sharingOn, run: () => ui.set({ dialog: 'share' }) },
               { label: 'Version history…', disabled: !collab, run: () => ui.set({ dialog: 'history' }) },
             ]
           : []),
@@ -495,11 +503,17 @@ export function Editor({
         ];
       },
     ],
-    ['Smart', () => smartMenu(state.project)],
-    ['AI', () => extrasMenu(state.project, doc, ui)],
+    // The Lumora team can turn the AI features off (Features); a job already running finishes.
+    ...(aiOn
+      ? ([
+          ['Smart', () => smartMenu(state.project)],
+          ['AI', () => extrasMenu(state.project, doc, ui)],
+        ] as [string, () => MenuEntry[]][])
+      : []),
     [
       'Help',
       () => [
+        { label: 'Help topics…', run: () => ui.set({ dialog: 'guide' }) },
         { label: 'Keyboard shortcuts', keys: 'F1', run: () => ui.set({ dialog: 'help' }) },
         { label: 'Check this computer…', run: openSystemCheck },
         'sep',
@@ -607,7 +621,7 @@ export function Editor({
       {collab && <LockBanner collab={collab} doc={doc} />}
       <NativeOffer />
 
-      {u.page === 'edit' && <EditPage doc={doc} engine={engine} ui={ui} actions={actions} collab={collab} />}
+      {u.page === 'edit' && <EditPage doc={doc} engine={engine} ui={ui} actions={actions} collab={collab} comments={sharingOn} />}
       {u.page === 'color' && (
         <div className="page page--color">
           <div className="page__top">
@@ -674,6 +688,7 @@ export function Editor({
       {u.dialog === 'newSequence' && <SequenceDialog doc={doc} ui={ui} fresh />}
       {u.dialog === 'speed' && <SpeedDialog doc={doc} ui={ui} actions={actions} />}
       {u.dialog === 'help' && <HelpDialog ui={ui} />}
+      {u.dialog === 'guide' && <GuideDialog onClose={() => ui.set({ dialog: null })} />}
       {u.dialog === 'share' && (
         <ShareDialog
           doc={doc}
@@ -702,7 +717,22 @@ export function Editor({
   );
 }
 
-function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engine; ui: Ui; actions: Actions; collab: Collab | null }) {
+function EditPage({
+  doc,
+  engine,
+  ui,
+  actions,
+  collab,
+  comments,
+}: {
+  doc: Doc;
+  engine: Engine;
+  ui: Ui;
+  actions: Actions;
+  collab: Collab | null;
+  /** Comments are on (Features). */
+  comments: boolean;
+}) {
   const u = useUi(ui);
   const cs = useCollab(collab);
   const [leftTab, setLeftTab] = useState<'controls' | 'source' | 'transcript' | 'comments'>('controls');
@@ -752,7 +782,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               <FileText />
               Transcript
             </button>
-            {collab && (
+            {collab && comments && (
               <button
                 type="button"
                 role="tab"
@@ -765,7 +795,7 @@ function EditPage({ doc, engine, ui, actions, collab }: { doc: Doc; engine: Engi
               </button>
             )}
           </div>
-          {leftTab === 'comments' && collab ? (
+          {leftTab === 'comments' && collab && comments ? (
             <CommentsPanel collab={collab} doc={doc} engine={engine} />
           ) : leftTab === 'controls' ? (
             <Inspector doc={doc} engine={engine} ui={ui} actions={actions} />

@@ -8,6 +8,7 @@ import { initials } from './Inspector';
 import type { ChatStore } from './useChat';
 import type { Message } from './chatModel';
 import { Mark } from './Mark';
+import { usePlannerFeatures } from './features';
 
 export function Chat({
   chat,
@@ -25,6 +26,7 @@ export function Chat({
   planName: string;
 }) {
   const { messages, loaded, error } = chat;
+  const { chat: chatOn } = usePlannerFeatures();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -91,37 +93,43 @@ export function Chat({
           />
         ))}
       </div>
-      <form
-        className="chat__compose"
-        onSubmit={(e) => {
-          e.preventDefault();
-          send();
-        }}
-      >
-        {err && <p className="warn small chat__err">{err}</p>}
-        <div className="chat__row">
-          <textarea
-            className="input chat__input"
-            rows={1}
-            maxLength={MAX_MESSAGE}
-            value={text}
-            placeholder="Message everyone on this plan"
-            aria-label="Message"
-            enterKeyHint="send"
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault();
-                send();
-              }
-            }}
-          />
-          <button type="submit" className="btn btn--primary btn--icon chat__send" disabled={busy || !text.trim()} aria-label="Send">
-            <ArrowUp size={16} strokeWidth={2} aria-hidden="true" />
-          </button>
-        </div>
-        <p className="chat__tip muted">Enter sends · Shift+Enter for a new line · #4 links to cue 4</p>
-      </form>
+      {!chatOn ? (
+        <p className="chat__compose muted small" role="status">
+          The Lumora team has turned off Planner chat for now. You can still read the messages.
+        </p>
+      ) : (
+        <form
+          className="chat__compose"
+          onSubmit={(e) => {
+            e.preventDefault();
+            send();
+          }}
+        >
+          {err && <p className="warn small chat__err">{err}</p>}
+          <div className="chat__row">
+            <textarea
+              className="input chat__input"
+              rows={1}
+              maxLength={MAX_MESSAGE}
+              value={text}
+              placeholder="Message everyone on this plan"
+              aria-label="Message"
+              enterKeyHint="send"
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+            />
+            <button type="submit" className="btn btn--primary btn--icon chat__send" disabled={busy || !text.trim()} aria-label="Send">
+              <ArrowUp size={16} strokeWidth={2} aria-hidden="true" />
+            </button>
+          </div>
+          <p className="chat__tip muted">Enter sends · Shift+Enter for a new line · #4 links to cue 4</p>
+        </form>
+      )}
     </section>
   );
 }

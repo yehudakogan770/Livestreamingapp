@@ -8,7 +8,8 @@ import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { SourceView } from '../components/SourceView';
 import { autoBalance, ChromaKeyer, defaultAdjust, defaultAutoFrame, defaultBackground, isAdjusted } from '../engine/chroma';
-import { maxZoom, visionFailed } from '../engine/vision';
+import { maxZoom, usesVision, visionFailed } from '../engine/vision';
+import { useFeature } from '../auth/accessContext';
 import { currentSet, SETS } from '../visuals/sets';
 import type { AutoFrame } from '../engine/types/AutoFrame';
 import type { Background } from '../engine/types/Background';
@@ -452,6 +453,8 @@ const BG_MODES: [Background['mode'], string][] = [
 function SmartTab({ source, act, client, cameraWidth }: { source: Source; act: Act; client: EngineClient; cameraWidth: number }) {
   const bg = source.background ?? defaultBackground();
   const af = source.autoFrame ?? defaultAutoFrame();
+  // The Lumora team can turn AI features off (Features); what this input already uses keeps working.
+  const aiOn = useFeature('ai_tools', usesVision(source.background, source.autoFrame));
   const setBg = (p: Partial<Background>) => act({ type: 'updateSource', id: source.id, patch: { background: { ...bg, ...p } } });
   const setAf = (p: Partial<AutoFrame>) => act({ type: 'updateSource', id: source.id, patch: { autoFrame: { ...af, ...p } } });
   const choosePicture = () =>
@@ -466,6 +469,7 @@ function SmartTab({ source, act, client, cameraWidth }: { source: Source; act: A
       <em>{value < 0.34 ? low : value > 0.66 ? high : 'Medium'}</em>
     </div>
   );
+  if (!aiOn) return <p className="field__note">The Lumora team has turned off AI features (background without a green screen, and auto-framing) for now.</p>;
   return (
     <>
       {visionFailed() && (

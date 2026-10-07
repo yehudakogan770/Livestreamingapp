@@ -5,8 +5,8 @@
 // a plan or the calendar opens). Account data (Supabase) is never cached here:
 // those requests go straight to the network, as if there were no service worker.
 
-const VERSION = 'e6cd15cc6c88';
-const FILES = ["./assets/Calendar-Vr-A3mCu.js","./assets/chevron-left-B6fPe7JP.js","./assets/index-D73id7s6.css","./assets/index-D9fVp1JD.js","./assets/jsx-runtime-DLNB9Qsn.js","./assets/PlanView-l7E7Etxz.js","./assets/TwoStep-DApLF_PB.js","./index.html","./favicon-32.png","./fonts/plex-mono-400-latin.woff2","./fonts/plex-mono-500-latin.woff2","./fonts/plex-mono-600-latin.woff2","./fonts/plex-sans-latin.woff2","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
+const VERSION = 'b8a8d51a343d';
+const FILES = ["./assets/Calendar-CqcXg7cK.js","./assets/chevron-left-Dz1PRZ5J.js","./assets/index-D73id7s6.css","./assets/index-DRlgqdbx.js","./assets/jsx-runtime-DLNB9Qsn.js","./assets/PlanView-Bj5lwaIN.js","./assets/TwoStep-CRbFd6Z9.js","./index.html","./favicon-32.png","./fonts/plex-mono-400-latin.woff2","./fonts/plex-mono-500-latin.woff2","./fonts/plex-mono-600-latin.woff2","./fonts/plex-sans-latin.woff2","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
 const SHELL = `planner-shell-${VERSION}`;
 /** The fonts' other alphabets, kept once first used (their file names never change). */
 const FONTS = 'planner-fonts-2';

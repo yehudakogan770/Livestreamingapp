@@ -111,7 +111,7 @@
 }
 .is__hist i {
   flex: 1 1 0;
-  background: #6a6a6f;
+  background: #6a6a6a;
   border-radius: var(--radius-sm);
 }
 .is__tabs {

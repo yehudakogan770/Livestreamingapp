@@ -1352,6 +1352,23 @@ function apply(s: Show, a: Action, now: number) {
       if (a.triggers.length > 100) throw new Refused({ code: 'invalidValue', field: 'triggers', reason: 'at most 100 triggers' });
       s.triggers = structuredClone(a.triggers);
       return;
+    case 'setMacros':
+      if (a.macros.length > 100) throw new Refused({ code: 'invalidValue', field: 'macros', reason: 'at most 100 macros' });
+      if (a.macros.some((m) => !m.id.trim())) throw new Refused({ code: 'invalidValue', field: 'macros', reason: 'every macro needs an id' });
+      s.macros = a.macros.map((m) => ({ ...structuredClone(m), name: oneLine(m.name, 40) || 'Macro', hotkey: m.hotkey.trim().slice(0, 40) }));
+      return;
+    case 'runMacro': {
+      const m = s.macros.find((x) => x.id === a.id);
+      if (!m) throw new Refused({ code: 'invalidValue', field: 'id', reason: 'there is no such macro' });
+      if (m.steps.length) apply(s, { type: 'runSteps', name: m.name, steps: structuredClone(m.steps) }, now);
+      return;
+    }
+    case 'requestApp': {
+      const seq = Math.max(0, ...s.appRequests.map((r) => r.seq)) + 1;
+      const step = a.step.command === 'replay' ? { ...a.step, seconds: Math.min(60, Math.max(1, a.step.seconds)) } : a.step;
+      s.appRequests = [...s.appRequests, { seq, step }].slice(-16);
+      return;
+    }
     case 'fireTrigger': {
       const t = s.triggers.find((x) => x.id === a.id);
       if (!t) throw new Refused({ code: 'invalidValue', field: 'id', reason: 'there is no such trigger' });
@@ -1589,33 +1606,49 @@ function stepAction(st: Step, main: string | null): Action | null {
       return { type: 'setOverlayOn', channel: st.channel, value: st.value };
     case 'preset':
       return { type: 'pickPreset', id: st.presetId };
+    case 'record':
+    case 'stream':
+      return { type: 'requestApp', step: { command: st.type, on: st.on } };
+    case 'replay':
+      return { type: 'requestApp', step: { command: 'replay', seconds: st.seconds, slow: st.slow } };
+    case 'dataStep':
+      return { type: 'dataStep', delta: st.delta };
     case 'wait':
+    case 'macro':
       return null;
   }
 }
 
 /** Run every step that is due; a step that cannot run is skipped (mirrors the engine). */
 function runSteps(s: Show, now: number) {
-  const running = s.running;
-  s.running = [];
-  for (const r of running) {
-    while (r.resumeAt <= now && r.next < r.steps.length) {
-      const st = r.steps[r.next]!;
-      r.next++;
-      if (st.type === 'wait') r.resumeAt += st.ms;
-      else {
-        const act = stepAction(st, mainCountdown(s));
-        if (act) {
-          try {
-            apply(s, act, now);
-          } catch {
-            // Skipped: the rest still run.
+  // A macro step starts the macro beside these steps (next pass); passes are limited (mirrors the engine).
+  for (let pass = 0; pass < 8; pass++) {
+    const running = s.running;
+    s.running = [];
+    const started: Show['running'] = [];
+    for (const r of running) {
+      while (r.resumeAt <= now && r.next < r.steps.length) {
+        const st = r.steps[r.next]!;
+        r.next++;
+        if (st.type === 'wait') r.resumeAt += st.ms;
+        else if (st.type === 'macro') {
+          const m = s.macros.find((x) => x.id === st.macroId);
+          if (m) started.push({ name: m.name, steps: structuredClone(m.steps), next: 0, resumeAt: now });
+        } else {
+          const act = stepAction(st, mainCountdown(s));
+          if (act) {
+            try {
+              apply(s, act, now);
+            } catch {
+              // Skipped: the rest still run.
+            }
           }
         }
       }
     }
+    s.running = [...running.filter((r) => r.next < r.steps.length), ...s.running, ...started].slice(0, 16);
+    if (!started.length) break;
   }
-  s.running = running.filter((r) => r.next < r.steps.length);
 }
 
 /** Let time pass (mirrors Engine::tick): runs each countdown's at-zero action once, and button steps. */

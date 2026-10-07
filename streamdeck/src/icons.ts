@@ -14,6 +14,8 @@ export const ICONS = {
   panic: '<path d="M8.2 2.8h7.6l5.4 5.4v7.6l-5.4 5.4H8.2l-5.4-5.4V8.2z"/><path d="M12 7.5v5.5"/><path d="M12 16.4v.1"/>',
   // A camera.
   input: '<rect x="2.5" y="6.5" width="13" height="11" rx="1.5"/><path d="m15.5 10.5 6-3.5v10l-6-3.5"/>',
+  // A list of steps with a play arrow: several steps with one key.
+  macro: '<path d="M4 6h9"/><path d="M4 11h9"/><path d="M4 16h6"/><path d="m14.5 13.5 6 3.5-6 3.5z"/>',
   // Layers.
   overlay: '<path d="m12 3 9 5-9 5-9-5z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 16.5 9 5 9-5"/>',
   // A grid of four.

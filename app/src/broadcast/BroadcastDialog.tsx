@@ -41,11 +41,33 @@ export const SERVICES: { name: string; url: string; keyHelp: string; vertical?: 
     vertical: true,
   },
   {
-    name: 'Other (RTMP)',
+    name: 'SRT',
+    url: '',
+    keyHelp: 'The stream ID, if the receiver asks for one (or put streamid= in the address)',
+  },
+  {
+    name: 'Other (RTMP or RTMPS)',
     url: '',
     keyHelp: 'The server address and stream key from your streaming service',
   },
 ];
+
+/** Where each service's backup server is, when it has one. */
+export const BACKUP_SERVERS: Record<string, string> = {
+  YouTube: 'rtmp://b.rtmp.youtube.com/live2?backup=1',
+  'YouTube Shorts': 'rtmp://b.rtmp.youtube.com/live2?backup=1',
+};
+
+/** What is wrong with a stream address, or null when it looks usable. */
+export function addressProblem(url: string): string | null {
+  const u = url.trim();
+  if (!u) return null;
+  const scheme = /^([a-z][a-z0-9+.-]*):\/\//i.exec(u)?.[1]?.toLowerCase();
+  if (!scheme) return 'Start the address with rtmp://, rtmps:// or srt://';
+  if (!['rtmp', 'rtmps', 'srt'].includes(scheme)) return `Lumora streams over RTMP, RTMPS and SRT, not ${scheme}://`;
+  if (scheme === 'srt' && !/:\d+/.test(u.slice(6))) return 'An SRT address needs a port, like srt://192.168.1.50:9000';
+  return null;
+}
 
 const BITRATES = [
   { kbps: 3000, name: '3 Mbps — slow internet' },
@@ -369,7 +391,11 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
               <p className="field__note">Nowhere yet. Add YouTube, Facebook or another service; you can stream to several at once.</p>
             )}
             {draft.destinations.map((d) => {
-              const service = SERVICES.find((s) => s.name === d.name) ?? SERVICES.find((s) => s.url && s.url === d.url) ?? SERVICES[SERVICES.length - 1]!;
+              const service =
+                SERVICES.find((s) => s.name === d.name) ??
+                SERVICES.find((s) => s.url && s.url === d.url) ??
+                SERVICES.find((s) => s.name === (/^srt:/i.test(d.url.trim()) ? 'SRT' : '')) ??
+                SERVICES[SERVICES.length - 1]!;
               return (
                 <div key={d.id} className={`bcd__dest${d.enabled ? '' : ' is-off'}`}>
                   <label className="check">
@@ -416,10 +442,12 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                     <input
                       className="text"
                       value={d.url}
-                      placeholder="rtmp://server/app"
+                      placeholder={service.name === 'SRT' ? 'srt://192.168.1.50:9000' : 'rtmp://server/app'}
                       onChange={(e) => setDest(d.id, { url: e.target.value })}
                       aria-label="Server address"
+                      aria-invalid={!!addressProblem(d.url)}
                     />
+                    {addressProblem(d.url) && <span className="field__note field__note--warn">{addressProblem(d.url)}</span>}
                     <span className="bcd__row">
                       <input
                         className="text bcd__grow"
@@ -449,6 +477,29 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                           </option>
                         ))}
                       </select>
+                    </label>
+                    <label className="field">
+                      <span className="field__label">Backup server (optional)</span>
+                      <span className="bcd__row">
+                        <input
+                          className="text bcd__grow"
+                          value={d.backupUrl ?? ''}
+                          placeholder={BACKUP_SERVERS[service.name] ?? 'rtmp://backup-server/app'}
+                          autoComplete="off"
+                          onChange={(e) => setDest(d.id, { backupUrl: e.target.value })}
+                          aria-label={`Backup server for ${d.name}`}
+                          aria-invalid={!!addressProblem(d.backupUrl ?? '')}
+                        />
+                        {BACKUP_SERVERS[service.name] && !d.backupUrl && (
+                          <button type="button" className="btn" onClick={() => setDest(d.id, { backupUrl: BACKUP_SERVERS[service.name] })}>
+                            Use {service.name}’s
+                          </button>
+                        )}
+                      </span>
+                      {addressProblem(d.backupUrl ?? '') && <span className="field__note field__note--warn">{addressProblem(d.backupUrl ?? '')}</span>}
+                      <span className="field__note">
+                        If the stream to one server fails, Lumora reconnects to the other with the same key. The recording never stops.
+                      </span>
                     </label>
                     {(service.name.startsWith('YouTube') || d.captionsUrl) && (
                       <label className="field">

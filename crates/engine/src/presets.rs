@@ -94,6 +94,28 @@ pub enum Step {
     Wait {
         ms: u32,
     },
+    /// Start (`on`) or stop the recording (done by the control window).
+    Record {
+        on: bool,
+    },
+    /// Go live (`on`) or end the stream (done by the control window).
+    Stream {
+        on: bool,
+    },
+    /// Replay the last seconds into Next (done by the control window).
+    Replay {
+        seconds: u32,
+        #[serde(default)]
+        slow: bool,
+    },
+    /// Run a macro (it runs beside these steps).
+    Macro {
+        macro_id: String,
+    },
+    /// Show the next (`delta` 1) or previous (-1) row of the data file.
+    DataStep {
+        delta: i32,
+    },
 }
 
 /// A named button: its steps run in order when pressed.

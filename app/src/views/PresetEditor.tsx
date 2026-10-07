@@ -32,6 +32,11 @@ export const STEP_KINDS: { type: Step['type']; name: string }[] = [
   { type: 'backFollowsLive', name: 'Back = Live on / off' },
   { type: 'preset', name: 'Pick another preset' },
   { type: 'overlay', name: 'Overlay on / off' },
+  { type: 'record', name: 'Start or stop recording' },
+  { type: 'stream', name: 'Go live or end the stream' },
+  { type: 'replay', name: 'Instant replay into Next' },
+  { type: 'dataStep', name: 'Next or previous data row' },
+  { type: 'macro', name: 'Run a macro' },
 ];
 
 const pictures = (show: Show) => show.sources.filter((s) => s.kind.type !== 'microphone' && !(s.kind.type === 'video' && isSoundFile(s.kind.path)));
@@ -65,6 +70,15 @@ export function newStep(type: Step['type'], show: Show, screen: ScreenId): Step 
       return { type, presetId: show.presets[0]?.id ?? '' };
     case 'overlay':
       return { type, channel: 0, value: true };
+    case 'record':
+    case 'stream':
+      return { type, on: true };
+    case 'replay':
+      return { type, seconds: 8, slow: false };
+    case 'dataStep':
+      return { type, delta: 1 };
+    case 'macro':
+      return { type, macroId: show.macros[0]?.id ?? '' };
     case 'clearMonitorMessage':
     case 'startCountdown':
     case 'pauseCountdown':
@@ -102,6 +116,16 @@ export function describeStep(st: Step, show: Show): string {
       return `Preset: ${show.presets.find((p) => p.id === st.presetId)?.name ?? '(removed)'}`;
     case 'overlay':
       return `Overlay ${st.channel + 1} ${st.value ? 'on' : 'off'}`;
+    case 'record':
+      return st.on ? 'Start recording' : 'Stop recording';
+    case 'stream':
+      return st.on ? 'Go live' : 'End the stream';
+    case 'replay':
+      return `Replay the last ${st.seconds} s${st.slow ? ' (slow)' : ''}`;
+    case 'dataStep':
+      return st.delta < 0 ? 'Previous data row' : 'Next data row';
+    case 'macro':
+      return `Macro: ${show.macros.find((m) => m.id === st.macroId)?.name ?? '(removed)'}`;
     default:
       return STEP_KINDS.find((k) => k.type === st.type)?.name ?? st.type;
   }
@@ -532,6 +556,60 @@ function StepFields({ show, step, onChange }: { show: Show; step: Step; onChange
             <option value="off">off</option>
           </select>
         </>
+      );
+      break;
+    case 'record':
+    case 'stream':
+      fields = (
+        <select aria-label="Start or stop" value={step.on ? 'on' : 'off'} onChange={(e) => onChange({ ...step, on: e.target.value === 'on' })}>
+          <option value="on">{step.type === 'record' ? 'start' : 'go live'}</option>
+          <option value="off">{step.type === 'record' ? 'stop' : 'end'}</option>
+        </select>
+      );
+      break;
+    case 'replay':
+      fields = (
+        <>
+          <label className="pe__num">
+            <input
+              type="number"
+              min={1}
+              max={60}
+              value={step.seconds}
+              aria-label="Seconds to replay"
+              onChange={(e) => onChange({ ...step, seconds: Math.round(Math.max(1, Math.min(60, Number(e.target.value)))) })}
+            />{' '}
+            s
+          </label>
+          <select aria-label="Speed" value={step.slow ? 'slow' : 'normal'} onChange={(e) => onChange({ ...step, slow: e.target.value === 'slow' })}>
+            <option value="normal">normal speed</option>
+            <option value="slow">slow motion</option>
+          </select>
+        </>
+      );
+      break;
+    case 'dataStep':
+      fields = (
+        <select
+          aria-label="Next or previous"
+          value={step.delta < 0 ? 'prev' : 'next'}
+          onChange={(e) => onChange({ ...step, delta: e.target.value === 'prev' ? -1 : 1 })}
+        >
+          <option value="next">next row</option>
+          <option value="prev">previous row</option>
+        </select>
+      );
+      break;
+    case 'macro':
+      fields = (
+        <select aria-label="Macro" value={step.macroId} onChange={(e) => onChange({ ...step, macroId: e.target.value })}>
+          {!show.macros.some((m) => m.id === step.macroId) && <option value={step.macroId}>Choose…</option>}
+          {show.macros.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.name}
+            </option>
+          ))}
+        </select>
       );
       break;
     default:

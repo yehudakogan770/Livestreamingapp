@@ -1757,7 +1757,7 @@ export class ProgramCompositor {
         const frame = this.pageFrame(src.id);
         if (frame) this.fit(frame, src.fit, w, h);
         else if (!k.transparent) {
-          ctx.fillStyle = '#101216';
+          ctx.fillStyle = '#121212';
           ctx.fillRect(0, 0, w, h);
         }
         return;

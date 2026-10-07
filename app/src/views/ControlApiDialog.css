@@ -1,0 +1,83 @@
+.modal__box.capi {
+  width: min(760px, calc(100vw - 24px));
+  max-height: calc(100vh - 58px);
+}
+.capi__body {
+  padding: 14px 16px 18px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.capi__section {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.capi__switch {
+  min-width: 170px;
+  align-self: center;
+  font-weight: 600;
+}
+.capi__state {
+  align-self: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.capi__state.is-on {
+  color: var(--preview-bright);
+}
+.capi__port .text {
+  width: 90px;
+  font-family: var(--mono);
+}
+.capi__port .text[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+.capi__token {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.capi__token code {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--well);
+  font-family: var(--mono);
+  font-size: 12px;
+  user-select: all;
+}
+.capi__token .btn svg {
+  width: 13px;
+  height: 13px;
+  vertical-align: -2px;
+}
+.capi__addrs {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+}
+.capi__examples table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.capi__examples td {
+  padding: 4px 6px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+.capi__examples td code {
+  word-break: break-all;
+  font-family: var(--mono);
+}
+.capi__examples summary {
+  cursor: pointer;
+  font-weight: 600;
+}

@@ -11,7 +11,7 @@ let context = '';
 let kind = '';
 let settings = {};
 let global = {};
-let lists = { connection: 'off', inputs: [], presets: [], overlays: [], countdowns: [], slideshows: [] };
+let lists = { connection: 'off', inputs: [], presets: [], macros: [], overlays: [], countdowns: [], slideshows: [] };
 
 const $ = (id) => document.getElementById(id);
 
@@ -90,6 +90,14 @@ const FIELDS = {
       options: () => [...pick(lists.presets, (p) => `${p.number}. ${p.name}`, 'Choose a preset'), ['next', 'Next preset'], ['previous', 'Previous preset']],
     },
   ],
+  macro: [
+    {
+      name: 'Macro',
+      key: 'macro',
+      remember: 'macroName',
+      options: () => pick(lists.macros || [], (m) => `${m.number}. ${m.name}`, 'Choose a macro'),
+    },
+  ],
   replay: [
     {
       name: 'Replay the last',
@@ -137,6 +145,7 @@ const HINTS = {
   input: 'Red: on air. Green: in Next.',
   overlay: 'Press to put the overlay on air or take it off. Red: on air.',
   preset: 'Lit while the preset is the one picked.',
+  macro: 'Runs the macro’s steps one after another (set them up in Lumora: Cues → Macros).',
   replay: 'The first press switches instant replay on (it keeps the last minute). After that, each press puts a replay in Next.',
   record: 'Press to record the Live Screen. Red while recording.',
   golive: 'Hold the key for one second to go live, and again to end the stream. Uses the destinations set in Lumora.',

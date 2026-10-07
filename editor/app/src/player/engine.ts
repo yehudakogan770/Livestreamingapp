@@ -6,6 +6,7 @@ import { current, rate, seqLength } from '../model/seq';
 import type { MediaItem, Project, Sequence } from '../model/types';
 import { Compositor, type Pictures } from '../render/compositor';
 import { parseCube, type Cube } from '../render/color';
+import { builtinCube } from '../render/luts';
 import { allLayers, frameOps, sourceAt, videoNeeds, type Layer, type Op } from '../render/frame';
 import { rateAt } from '../model/remap';
 import { matteFor, mattes } from '../vision/mattes';
@@ -96,6 +97,14 @@ export class Engine {
   readText: ((path: string) => Promise<string>) | null = null;
   /** Called with each drawn frame (for the scopes). */
   onFrame: (() => void) | null = null;
+  /** Others told of each drawn frame (the exposure overlay in the viewer). */
+  private watchers = new Set<() => void>();
+  /** Be told of each drawn frame (until the returned function is called). */
+  watchFrames(f: () => void): () => void {
+    this.watchers.add(f);
+    this.dirty = true;
+    return () => this.watchers.delete(f);
+  }
   /** A grade node's matte shown instead of its clip's picture (Color page). */
   private matte: { clip: string; node: string } | null = null;
   /** Draw at full size, half or a quarter while playing (a lighter load). */
@@ -428,7 +437,7 @@ export class Engine {
     for (const v of this.videos.values()) if (!v.el.paused) v.el.pause();
     this.syncSound(s, frame);
     // Stopped with the scopes open: they read the WebGL picture, so it is drawn too (one frame).
-    if (this.dirty && !this.playing && this.onFrame) this.draw(ops, s);
+    if (this.dirty && !this.playing && (this.onFrame || this.watchers.size)) this.draw(ops, s);
     this.dirty = false;
     return true;
   }
@@ -489,6 +498,7 @@ export class Engine {
       console.error(e);
     }
     this.onFrame?.();
+    for (const f of this.watchers) f();
   }
 
   /** The pictures for each layer, for the compositor. */
@@ -538,6 +548,8 @@ export class Engine {
         if (this.p) mattes.analyze(this.p, layer.clip, effect.id, layer.fps, layer.local);
       }),
     cube: (path: string) => {
+      const builtin = builtinCube(path);
+      if (builtin) return builtin;
       const have = this.cubes.get(path);
       if (have && typeof have === 'object') return have;
       if (!have && this.readText) {

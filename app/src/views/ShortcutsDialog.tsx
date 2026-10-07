@@ -29,6 +29,14 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     keys: [['Shift + 1 – 4', 'Overlay 1 – 4 on / off']],
   },
   {
+    title: 'Cues, data and macros',
+    keys: [
+      ['N', 'Next cue in the run of show'],
+      ['[  ·  ]', 'Previous / next row of the data file or sheet'],
+      ['The macro’s key', 'Run that macro (set in Cues → Macros)'],
+    ],
+  },
+  {
     title: 'Slideshow (when on air or in Next)',
     keys: [
       ['Space · → · Page Down', 'Next slide (presenter clickers too)'],

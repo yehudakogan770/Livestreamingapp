@@ -3,7 +3,7 @@
 // one analyzes first (with progress, and a Stop button), shows what it would
 // do, and only then changes the project, as one step that Undo takes back.
 import { ArrowDown } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { timecode } from '../model/build';
 import { current, rate } from '../model/seq';
 import type { Clip, MulticamGroup, Project, Sequence } from '../model/types';
@@ -53,26 +53,10 @@ import {
   type Removal,
 } from './silence';
 import './smart.css';
+import { openSmart, reframeAspect, useOpen } from './open';
 
-export type SmartTool = 'multicam' | 'silence' | 'reframe' | 'highlights';
-
-// ---------------------------------------------------------------------------
-// Which dialog is open (kept here so the rest of the editor needs no changes).
-
-let open: SmartTool | null = null;
-const listeners = new Set<() => void>();
-export function openSmart(t: SmartTool | null): void {
-  open = t;
-  for (const f of listeners) f();
-}
-const useOpen = () =>
-  useSyncExternalStore(
-    (f) => {
-      listeners.add(f);
-      return () => listeners.delete(f);
-    },
-    () => open,
-  );
+export type { SmartTool } from './open';
+export { openSmart };
 
 /** The Smart menu. */
 export function smartMenu(p: Project): MenuEntry[] {
@@ -522,7 +506,7 @@ function SilenceDialog({ doc, engine, ui, onClose }: { doc: Doc; engine: Engine;
 function ReframeDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onClose: () => void }) {
   const { project } = useDoc(doc);
   const s = current(project);
-  const [aspect, setAspect] = useState<Aspect>('9:16');
+  const [aspect, setAspect] = useState<Aspect>(reframeAspect());
   const [zoom, setZoom] = useState(100);
   const [lag, setLag] = useState(REFRAME_DEFAULTS.lag);
   const [every, setEvery] = useState(REFRAME_DEFAULTS.every);

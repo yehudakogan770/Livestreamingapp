@@ -1,10 +1,12 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, test, vi } from 'vitest';
 import type { Access } from './access';
+import { rulesFrom } from './rules';
 
 const approved: Access = { userId: 'u1', email: 'a@b.c', name: 'A', state: 'approved', admin: false, lumora: true, studio: true };
 let answer: () => Promise<Access | null> = () => Promise.resolve(approved);
 let changed: () => void = () => {};
+let signUpsAreOpen = true;
 vi.mock('./config', () => ({ AUTH_URL: 'x', AUTH_KEY: 'x', authOn: () => true }));
 vi.mock('../e2e', () => ({ TEST_BUILD: false }));
 vi.mock('./auth', () => ({
@@ -16,14 +18,18 @@ vi.mock('./auth', () => ({
   signIn: vi.fn(),
   signOut: () => Promise.resolve(),
   signUp: vi.fn(),
+  signUpsOpen: () => Promise.resolve(signUpsAreOpen),
   supabase: () => ({}),
   MIN_PASSWORD: 10,
 }));
-vi.mock('./TwoStep', () => ({ CodeForm: () => <p>Type your code</p> }));
+vi.mock('./TwoStep', () => ({ CodeForm: () => <p>Type your code</p>, TwoStepSetup: () => <p>Scan this code</p> }));
 
-const { Gate } = await import('./Gate');
+const { Gate, useFeature } = await import('./Gate');
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  signUpsAreOpen = true;
+});
 
 test('a sign-in that lapses during the event never closes Lumora', async () => {
   answer = () => Promise.resolve(approved);
@@ -166,4 +172,112 @@ test('making an account links to the Terms of Use and Privacy Policy, opened in 
   fireEvent.click(screen.getByRole('button', { name: 'Privacy Policy' }));
   expect(open.mock.calls.map((c) => c[0])).toEqual([expect.stringMatching(/\/terms\.html$/), expect.stringMatching(/\/privacy\.html$/)]);
   open.mockRestore();
+});
+
+// ---- The Lumora team's sign-in settings and features ----
+
+test('the waiting and no-access screens show the Lumora team’s own words', async () => {
+  const rules = rulesFrom({ waiting_message: 'Email help@mycompany.com and we’ll set you up.' });
+  answer = () => Promise.resolve({ ...approved, studio: false, rules });
+  render(
+    <Gate product="studio">
+      <p>The editor</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.getByRole('heading')).toHaveTextContent("Your account isn't set up for Lumora Studio.");
+  expect(screen.getByText('Email help@mycompany.com and we’ll set you up.')).toBeInTheDocument();
+  expect(screen.queryByText('Contact the Lumora team for help.')).toBeNull();
+  cleanup();
+  answer = () => Promise.resolve({ ...approved, state: 'pending', rules });
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.getByText('Waiting for approval')).toBeInTheDocument();
+  expect(screen.getByText('Email help@mycompany.com and we’ll set you up.')).toBeInTheDocument();
+});
+
+test('two-step sign-in required by the Lumora team: set it up first', async () => {
+  answer = () => Promise.resolve({ ...approved, setupNeeded: true, rules: rulesFrom({ two_step: 'everyone', two_step_required: true }) });
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.queryByText('The show')).toBeNull();
+  expect(screen.getByRole('heading', { name: 'Set up two-step sign-in' })).toBeInTheDocument();
+  expect(screen.getByText('Scan this code')).toBeInTheDocument();
+  answer = () => Promise.resolve({ ...approved, twoStep: true, aal2: true });
+  await act(async () => changed());
+  expect(screen.getByText('The show')).toBeInTheDocument();
+});
+
+test('a paused app shows the Lumora team’s message; a show already running is never closed', async () => {
+  const pausedRules = rulesFrom({ features: { lumora: false }, pause_messages: { lumora: 'Paused for maintenance until 6 PM.' } });
+  answer = () => Promise.resolve({ ...approved, rules: pausedRules });
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.getByRole('heading', { name: 'Lumora is paused' })).toBeInTheDocument();
+  expect(screen.getByText('Paused for maintenance until 6 PM.')).toBeInTheDocument();
+  cleanup();
+  answer = () => Promise.resolve(approved);
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  answer = () => Promise.resolve({ ...approved, rules: pausedRules });
+  await act(async () => changed());
+  expect(screen.getByText('The show')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('The Lumora team has paused Lumora: Paused for maintenance until 6 PM.');
+});
+
+function Captions({ inUse }: { inUse: boolean }) {
+  return <p>{useFeature('captions', inUse) ? 'Captions available' : 'Captions off'}</p>;
+}
+
+test('a feature switched off while open: what is in use keeps working, and a note says so', async () => {
+  answer = () => Promise.resolve(approved);
+  const { rerender } = render(
+    <Gate product="lumora">
+      <Captions inUse />
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.getByText('Captions available')).toBeInTheDocument();
+  answer = () => Promise.resolve({ ...approved, rules: rulesFrom({ features: { captions: false } }) });
+  await act(async () => changed());
+  expect(screen.getByText('Captions available')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('The Lumora team turned off Live captions. Anything in use keeps working');
+  // Stopped: now it is off.
+  rerender(
+    <Gate product="lumora">
+      <Captions inUse={false} />
+    </Gate>,
+  );
+  expect(screen.getByText('Captions off')).toBeInTheDocument();
+});
+
+test('closed sign-ups: no “Make an account”, except for invited people', async () => {
+  signUpsAreOpen = false;
+  answer = () => Promise.resolve(null);
+  render(
+    <Gate product="lumora">
+      <p>The show</p>
+    </Gate>,
+  );
+  await act(async () => {});
+  expect(screen.queryByRole('button', { name: 'Make an account' })).toBeNull();
+  expect(screen.getByText(/Invited by the Lumora team\?/)).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Make your account' }));
+  expect(screen.getByText('New sign-ups are closed: use the email address the Lumora team invited.')).toBeInTheDocument();
 });

@@ -4,6 +4,7 @@ import type { Access } from './access';
 import { changeName, changePassword, MIN_PASSWORD, supabase, twoStepStatus } from './auth';
 import { turnOffTwoStep, type TwoStepState } from './mfa';
 import { TwoStepSetup as TwoStepSetupForm } from './TwoStep';
+import { PeopleDialog } from './PeopleDialog';
 
 type Note = { text: string; bad: boolean } | null;
 
@@ -16,11 +17,16 @@ export function AccountDialog({ access, onClose }: { access: Access; onClose: ()
   const [again, setAgain] = useState('');
   const [pwNote, setPwNote] = useState<Note>(null);
   const [busy, setBusy] = useState<'name' | 'pw' | null>(null);
+  // The Lumora team: People and approvals (with Sign-in settings and Features) from here too (Lumora Studio has no other way in).
+  const [people, setPeople] = useState(false);
   useEffect(() => {
+    if (people) return;
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
-  }, [onClose]);
+  }, [onClose, people]);
+
+  if (people) return <PeopleDialog onClose={() => setPeople(false)} />;
 
   const saveName = (e: FormEvent) => {
     e.preventDefault();
@@ -113,7 +119,16 @@ export function AccountDialog({ access, onClose }: { access: Access; onClose: ()
               {busy === 'pw' ? 'Changing…' : 'Change password'}
             </button>
           </form>
-          <TwoStepPart admin={access.admin} />
+          <TwoStepPart admin={access.admin} required={access.rules?.twoStepRequired === true} />
+          {access.admin && (
+            <div className="account__part">
+              <h3>Lumora team</h3>
+              <p className="field__note">Approve people, invite them, and choose how sign-in and features work for everyone.</p>
+              <button type="button" className="btn" onClick={() => setPeople(true)}>
+                People and approvals…
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -121,7 +136,7 @@ export function AccountDialog({ access, onClose }: { access: Access; onClose: ()
 }
 
 /** Two-step sign-in: on or off, and turning it on (scan a code) or off (with the current code). */
-export function TwoStepPart({ admin }: { admin: boolean }) {
+export function TwoStepPart({ admin, required = false }: { admin: boolean; required?: boolean }) {
   const [st, setSt] = useState<TwoStepState | null>(null);
   const [mode, setMode] = useState<'view' | 'on' | 'off'>('view');
   const [code, setCode] = useState('');
@@ -156,7 +171,7 @@ export function TwoStepPart({ admin }: { admin: boolean }) {
         <>
           <p className="field__note">
             Off. With it on, signing in also needs a 6-digit code from an app on your phone, so a stolen password alone can’t open your account.
-            {admin ? ' The Lumora team needs it to approve people and see problem reports.' : ''}
+            {required ? ' The Lumora team requires it for your account.' : ''}
           </p>
           <button type="button" className="btn btn--primary" onClick={() => setMode('on')}>
             Turn on two-step sign-in
@@ -177,16 +192,20 @@ export function TwoStepPart({ admin }: { admin: boolean }) {
       {st?.on && mode === 'view' && (
         <>
           <p className="field__note">On: signing in asks for the code from your authenticator app.</p>
-          <button type="button" className="btn" onClick={() => setMode('off')}>
-            Turn off…
-          </button>
+          {required ? (
+            <p className="field__note">The Lumora team requires two-step sign-in, so it stays on.</p>
+          ) : (
+            <button type="button" className="btn" onClick={() => setMode('off')}>
+              Turn off…
+            </button>
+          )}
         </>
       )}
       {mode === 'off' && (
         <form className="twostep" onSubmit={off}>
           <p className="field__note">
             Type the current code from your authenticator app to turn two-step sign-in off.
-            {admin ? ' Without it, People and approvals stops working for you.' : ''}
+            {admin ? ' (You can turn it on again any time in My account.)' : ''}
           </p>
           <label className="field">
             <span className="field__label">6-digit code</span>

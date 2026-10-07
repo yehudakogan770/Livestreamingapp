@@ -1,6 +1,8 @@
 // Who is using Lumora, and whether they may: worked out from their profile,
 // and remembered so the app keeps working offline during an event.
 
+import { DEFAULT_OFFLINE_DAYS, featureOn, rulesFrom, type SignInRules } from './rules';
+
 export type AccessState = 'pending' | 'approved' | 'blocked';
 
 export interface Access {
@@ -21,6 +23,10 @@ export interface Access {
   codeNeeded?: boolean;
   /** This session gave the code (needed for the Lumora team's actions). */
   aal2?: boolean;
+  /** Two-step sign-in is required (Sign-in settings) but not set up yet: set it up first. */
+  setupNeeded?: boolean;
+  /** The Lumora team's sign-in rules and switches, for this account (missing before update 9). */
+  rules?: SignInRules;
 }
 
 export interface Profile {
@@ -55,16 +61,28 @@ export function accessFrom(p: Profile): Access {
   };
 }
 
-/** May this person open this app now? (Approved, set up for it, and the code given if they use two-step sign-in.) */
-export function mayUse(a: Access, product: Product): boolean {
-  return a.state === 'approved' && (a.admin || a[product] !== false) && !a.codeNeeded;
+/** Has the Lumora team paused this app (Features)? Never for the Lumora team. */
+export function paused(a: Access, product: Product): boolean {
+  return !a.admin && !featureOn(a.rules, product);
 }
 
 /**
- * How long Lumora keeps working without checking in (offline events). With
+ * May this person open this app now? (Approved, set up for it, the code given
+ * if they use two-step sign-in, two-step set up if required, and the app not paused.)
+ */
+export function mayUse(a: Access, product: Product): boolean {
+  return a.state === 'approved' && (a.admin || a[product] !== false) && !a.codeNeeded && !a.setupNeeded && !paused(a, product);
+}
+
+/**
+ * How long Lumora keeps working without checking in (offline events), unless
+ * the Lumora team chose another number (Sign-in settings → Offline use). With
  * internet it always checks the account again when it starts.
  */
-export const OFFLINE_DAYS = 7;
+export const OFFLINE_DAYS = DEFAULT_OFFLINE_DAYS;
+
+/** The days the remembered answer is good for (as the Lumora team set it when it was remembered). */
+export const offlineDaysOf = (a: { rules?: SignInRules } | null | undefined): number => (a?.rules ? rulesFrom(a.rules).offlineDays : OFFLINE_DAYS);
 const KEY = 'lumora.access';
 
 interface Saved extends Access {
@@ -78,11 +96,12 @@ interface Saved extends Access {
  */
 export function cachedAccess(saved: Saved | null, userId: string, now: number, aal: string | null = null): Access | null {
   if (!saved || saved.userId !== userId) return null;
-  if (!(now >= saved.at) || now - saved.at > OFFLINE_DAYS * 86_400_000) return null;
+  if (!(now >= saved.at) || now - saved.at > offlineDaysOf(saved) * 86_400_000) return null;
   if (saved.twoStep && aal !== 'aal2') return null;
+  if (saved.setupNeeded) return null;
   const { at: _at, ...a } = saved;
   // Remembered before accounts had apps: both, as on the server.
-  return { ...a, lumora: a.lumora !== false, studio: a.studio !== false, offline: true, codeNeeded: false };
+  return { ...a, lumora: a.lumora !== false, studio: a.studio !== false, offline: true, codeNeeded: false, ...(a.rules ? { rules: rulesFrom(a.rules) } : {}) };
 }
 
 /** Is this "no internet" (so the remembered answer may be used), not a real answer from the server? */
@@ -96,7 +115,7 @@ export function isOffline(e: unknown): boolean {
 
 export function saveAccess(a: Access): void {
   // An account with two-step sign-in is remembered only once the code was given.
-  if (a.codeNeeded) return;
+  if (a.codeNeeded || a.setupNeeded) return;
   try {
     localStorage.setItem(KEY, JSON.stringify({ ...a, offline: undefined, codeNeeded: undefined, at: Date.now() }));
   } catch {

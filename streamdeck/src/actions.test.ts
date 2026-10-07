@@ -34,6 +34,16 @@ describe('what each key sends', () => {
     expect(body(request('overlay', { channel: '9' }, state(), 'live'))).toEqual({ type: 'setOverlayOn', channel: 0, value: false });
   });
 
+  it('macros: by id, else by the name remembered', () => {
+    const show = { ...sampleShow(), macros: [{ id: 'm1', name: 'Start show', steps: [], hotkey: '' }] };
+    expect(state({}, show).macros).toEqual([{ id: 'm1', number: 1, name: 'Start show' }]);
+    expect(body(request('macro', { macro: 'm1' }, state({}, show), 'live'))).toEqual({ type: 'runMacro', id: 'm1' });
+    expect(body(request('macro', { macro: 'gone', macroName: 'Start show' }, state({}, show), 'live'))).toEqual({ type: 'runMacro', id: 'm1' });
+    expect(request('macro', {}, state({}, show), 'live')).toEqual({ to: 'none', why: 'choose a macro' });
+    // Older Lumora: no macros at all.
+    expect(state().macros).toEqual([]);
+  });
+
   it('the backup lineup: on and off (on unless the event turned it off)', () => {
     const on = { ...sampleShow(), event: { backup: { on: true } } };
     const off = { ...sampleShow(), event: { backup: { on: false } } };

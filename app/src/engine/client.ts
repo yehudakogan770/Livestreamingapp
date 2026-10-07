@@ -20,6 +20,7 @@ import { listen } from '@tauri-apps/api/event';
 import { demoApply, demoTick } from './demo';
 import { channels } from './overlays';
 import { emptyRun } from './cues';
+import { isDataUrl } from './data';
 import type { LibraryItem } from './library';
 import type { BrowserInfo } from './browser';
 
@@ -151,6 +152,8 @@ export interface Destination {
   captionsUrl?: string;
   /** Its own video bitrate, kbit/s (null or missing: the stream's). */
   videoKbps?: number | null;
+  /** A second server for the same stream; when one fails, the next try goes to the other. */
+  backupUrl?: string;
 }
 
 export interface CaptureSettings {
@@ -203,6 +206,8 @@ export interface CaptureRunning {
   sourceKbps?: number | null;
   /** Destinations that dropped out while the rest carry on. */
   dropped?: string[];
+  /** Destinations sending to their backup server now. */
+  onBackup?: string[];
 }
 
 export interface CaptureStatus {
@@ -286,7 +291,7 @@ export interface EngineClient {
   disconnectSpeaker(id: number): Promise<RemoteStatus>;
   /** Choose a data file (CSV or JSON) where it is: it is read again as it changes. Null if canceled. */
   pickDataFile(): Promise<string | null>;
-  /** Read the data file's text. */
+  /** Read the data file’s text, or the Google Sheet / CSV link’s. */
   readDataFile(path: string): Promise<string>;
   /** Put the audience page on the internet (or take it off). */
   setAudienceInternet(on: boolean): Promise<RemoteStatus>;
@@ -480,6 +485,8 @@ export function emptyShow(): Show {
     noSignal: [],
     qna: { open: false, questions: [], nextId: 0 },
     triggers: [],
+    macros: [],
+    appRequests: [],
     settings: {
       displays: { live: null, back: null, monitor: null },
       autoPlayOnTake: true,
@@ -692,7 +699,8 @@ class TauriClient implements EngineClient {
   }
 
   readDataFile(path: string): Promise<string> {
-    return invoke<string>('read_data_file', { path });
+    // A Google Sheet or CSV link is fetched by the app (no browser limits on which sites).
+    return isDataUrl(path) ? invoke<string>('read_data_url', { url: path }) : invoke<string>('read_data_file', { path });
   }
 
   qrCode(text: string): Promise<string> {
@@ -1106,6 +1114,8 @@ export class DemoClient implements EngineClient {
   }
 
   readDataFile(path: string): Promise<string> {
+    if (isDataUrl(path))
+      return fetch(path).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`the sheet answered ${r.status} — is it shared or published?`))));
     const t = this.dataFiles.get(path);
     return t === undefined ? Promise.reject(new Error('choose the file again (the browser demo cannot read files by itself)')) : Promise.resolve(t);
   }
