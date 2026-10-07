@@ -488,10 +488,33 @@ mod tests {
             ("h264 (High 4:2:2), yuv422p(tv, bt709, top first), 1920x1080, 29.97 fps, 59.94 tbr", "a.mts"),
             ("wmv3 (Main) (WMV3 / 0x33564D57), yuv420p, 1280x720, 30 fps, 30 tbr", "a.wmv"),
             ("mpeg4 (Simple Profile) (XVID / 0x44495658), yuv420p, 640x480, 25 fps, 25 tbr", "a.avi"),
+            // AVC-Intra 100 and XAVC Intra in MXF, and 10-bit 4:2:2 HEVC from mirrorless cameras.
+            ("h264 (High 4:2:2 Intra), yuv422p10le(tv, bt709), 1920x1080, 29.97 fps, 29.97 tbr", "AVCI100.mxf"),
+            ("h264 (High 4:2:2 Intra) (avc1 / 0x31637661), yuv422p10le(tv, bt709), 3840x2160, 23.98 fps, 23.98 tbr", "C0001.MXF"),
+            ("hevc (Main 4:2:2 10), yuv422p10le(tv, bt709), 3840x2160, 25 fps, 25 tbr", "A001.MOV"),
+            ("mpeg2video (4:2:2), yuv422p(tv, bt709, top first), 1920x1080, 29.97 fps, 59.94 tbr", "XDCAMHD.mxf"),
         ] {
             let plan = plan(Path::new(file), &probe(stream, ""));
             assert_eq!(plan.need, Needs::Optimize, "{stream}");
             assert_eq!(plan.export_via, "ffmpeg", "{stream}");
+        }
+    }
+
+    #[test]
+    fn high_frame_rates_are_kept() {
+        for (rate, tbr) in [
+            ("119.88", "119.88"),
+            ("120", "120"),
+            ("240", "240"),
+            ("59.94", "59.94"),
+        ] {
+            let p = probe(
+                &format!("h264 (High), yuv420p(tv, bt709), 1920x1080, {rate} fps, {tbr} tbr"),
+                "",
+            );
+            let plan = plan(Path::new("slowmo.mp4"), &p);
+            assert!(!plan.vfr, "{rate}");
+            assert_eq!(plan.cfr, None, "{rate}");
         }
     }
 
