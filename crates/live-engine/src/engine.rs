@@ -172,6 +172,20 @@ pub struct Preview {
     pub frame: u64,
 }
 
+/// A screen as the test event checks it (see [`LiveEngine::probe`]).
+#[derive(Debug, Clone, Default, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ScreenProbe {
+    pub fps: f32,
+    pub in_sync: Option<bool>,
+    pub black: Option<bool>,
+    pub overlays: Option<bool>,
+    pub width: u32,
+    pub height: u32,
+    /// Shown in the engine's own window now.
+    pub window: bool,
+}
+
 /// What the engine reports.
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -179,6 +193,8 @@ pub struct Stats {
     pub frames: u64,
     /// Average over the last second: the whole frame, and its parts.
     pub ms_per_frame: f32,
+    /// Frames drawn in the last second.
+    pub fps: f32,
     pub upload_ms: f32,
     pub render_ms: f32,
     pub present_ms: f32,
@@ -310,6 +326,55 @@ impl LiveEngine {
                     .any(|id| k == &PreviewId::Source(id.clone()).key())
         });
         self.show = Some(show);
+    }
+
+    /// How a screen is doing, as the test event asks the output windows:
+    /// what is on air is really drawn (its frames or its graphics are
+    /// there), whether the picture is black, whether the overlays on air are drawn.
+    pub fn probe(&self, screen: ScreenId) -> ScreenProbe {
+        let mut p = ScreenProbe {
+            fps: self.stats.fps,
+            width: self.config.width,
+            height: self.config.height,
+            window: self.outputs.contains_key(&screen),
+            ..ScreenProbe::default()
+        };
+        let Some(show) = &self.show else { return p };
+        let slot = program_target(screen);
+        let drawn = |id: &SourceId| match show.source(id).map(|s| &s.kind) {
+            Some(k) if scene::is_video_kind(k) => self.gpu.source_size(id).is_some(),
+            Some(SourceKind::Color { .. } | SourceKind::Split(_)) => true,
+            Some(_) => self
+                .gpu
+                .has_plane(slot, &overlay::graphic_plane(id.as_str())),
+            None => false,
+        };
+        let sc = show.screens.get(screen);
+        p.in_sync = sc.program.as_ref().map(&drawn);
+        if !sc.blank && !show.panic {
+            if let Some(t) = self.previews.get(&PreviewId::Program(screen).key()) {
+                let px = t.rgba.as_chunks::<4>().0;
+                let sum: f64 = px
+                    .iter()
+                    .map(|c| {
+                        0.2126 * f64::from(c[0])
+                            + 0.7152 * f64::from(c[1])
+                            + 0.0722 * f64::from(c[2])
+                    })
+                    .sum();
+                p.black = Some(sum / (px.len().max(1) as f64) < 3.0);
+            }
+        }
+        let on: Vec<&SourceId> = show
+            .overlays
+            .iter()
+            .filter(|o| o.on && o.screens.contains(&screen))
+            .filter_map(|o| o.source_id.as_ref())
+            .collect();
+        if !on.is_empty() {
+            p.overlays = Some(on.into_iter().all(drawn));
+        }
+        p
     }
 
     /// Each input's health, for the backup lineup's watch.
@@ -594,6 +659,7 @@ impl LiveEngine {
         if span >= 1.0 {
             let n = f64::from(tm.frames);
             self.stats.ms_per_frame = (tm.total / n) as f32;
+            self.stats.fps = (n / span) as f32;
             self.stats.upload_ms = (tm.upload / n) as f32;
             self.stats.render_ms = (tm.render / n) as f32;
             self.stats.present_ms = (tm.present / n) as f32;
@@ -660,6 +726,7 @@ enum Command {
     Graphics(Box<overlay::Message>),
     StartFeed(u64, FeedSpec, MakeFeed, Sender<Result<(), String>>),
     StopFeed(u64, Sender<Option<FeedStats>>),
+    Probe(ScreenId, Sender<ScreenProbe>),
     Stop,
 }
 
@@ -776,6 +843,13 @@ impl Runner {
         lock(&self.shared.stats).clone()
     }
 
+    /// Check a screen (the test event).
+    pub fn probe(&self, screen: ScreenId) -> Option<ScreenProbe> {
+        let (tx, rx) = channel();
+        self.tx.send(Command::Probe(screen, tx)).ok()?;
+        rx.recv_timeout(Duration::from_secs(5)).ok()
+    }
+
     pub fn preview(&self, key: &str) -> Option<Preview> {
         lock(&self.shared.previews).get(key).cloned()
     }
@@ -809,6 +883,9 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
                     engine.set_overlay(s, f.as_ref().map(|(w, h, px)| (*w, *h, px.as_slice())));
                 }
                 Ok(Command::Graphics(m)) => engine.apply_graphics(&m),
+                Ok(Command::Probe(s, reply)) => {
+                    let _ = reply.send(engine.probe(s));
+                }
                 Ok(Command::StartFeed(id, spec, make, reply)) => {
                     let started = engine.start_feed(id, spec, make);
                     // The answer comes from the thread starting FFmpeg.

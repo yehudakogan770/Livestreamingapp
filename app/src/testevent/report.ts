@@ -4,6 +4,7 @@
 // Everything that came from outside Lumora's own words is cleaned first
 // (../reports/scrub.ts): no stream keys, passwords, emails or folders.
 
+import { engineRows } from './engineReport';
 import { LIMITS, scrub } from '../reports/scrub';
 import { LENGTHS, stepLabel, type PlannedInput, type Skipped, type TestOptions } from './plan';
 import { OUTPUT_NAMES, VERDICT_WORDS, type Finding, type Measured, type Sample, type Stats, type Verdict, type Phase } from './verdict';
@@ -198,6 +199,7 @@ export function buildMarkdown(d: ReportData): string {
         ['Stream encoder speed (min)', n(st.streamSpeedMin, '×')],
         ['Recording drive', `${n(st.diskMBps, ' MB/s')} (needs ${n(Math.round(m.neededMBps * 10) / 10, ' MB/s')})`],
         ...encoderRows(m.encoders),
+        ...engineRows(m.engine),
       ],
     ),
   );

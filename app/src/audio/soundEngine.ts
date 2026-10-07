@@ -215,6 +215,19 @@ export class SoundEngine {
     };
   }
 
+  /** Feed a mix into `into` (the unified engine's sound tap); returns how to stop. */
+  tapMix(mix: 'master' | 'b', into: AudioNode): () => void {
+    this.outputs[mix].gain.connect(into);
+    void this.ctx.resume().catch(() => {});
+    return () => {
+      try {
+        this.outputs[mix].gain.disconnect(into);
+      } catch {
+        // Already gone.
+      }
+    };
+  }
+
   /** Stop feeding a stream made by {@link mixStream}. */
   endMixStream(stream: MediaStream): void {
     const tap = this.taps.get(stream);

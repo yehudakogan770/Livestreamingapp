@@ -2,6 +2,11 @@
 // Stream mix are encoded by the WebView (hardware encoder where there is one)
 // and sent, chunk by chunk and in order, to the app, which writes the file or
 // feeds FFmpeg. See src-tauri/src/capture.rs.
+//
+// With the unified engine (Settings → Engine → Unified), the engine encodes
+// its own picture of the Live Screen and this window only sends it the
+// sound mix (audio/engineTap.ts): no compositor here, no camera opened.
+// Chapters, cuts, the event file and the microphones' own files stay here.
 
 import type { CaptureKind, CaptureRunning, CaptureSettings, EngineClient, Quality, SessionKind } from '../engine/client';
 import type { Show } from '../engine/types/Show';
@@ -11,6 +16,8 @@ import { ReplayBuffer, type Piece } from './replay';
 import { VerticalFrame } from './vertical';
 import { CaptionLayer } from './captionLayer';
 import type { Captions } from '../engine/types/Captions';
+import { EngineTap } from '../audio/engineTap';
+import { engineCaptureStart, engineCaptureStop, onEngineFeedLost, refreshEngineInfo, sendEngineSound, unifiedOn } from '../engine/unified';
 
 export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number; kbps: number }> = {
   '720p': { name: '720p (1280 × 720), 30 frames a second', width: 1280, height: 720, fps: 30, kbps: 3000 },
@@ -35,9 +42,12 @@ export function recordingType(): string | null {
 
 interface Live {
   running: CaptureRunning;
-  recorder: MediaRecorder;
-  video: MediaStream;
+  /** The WebView's encoder (null: the unified engine encodes it). */
+  recorder: MediaRecorder | null;
+  video: MediaStream | null;
   audio: MediaStream | null;
+  /** The mix the unified engine is sent (its sessions only). */
+  engineMix: 'master' | 'b' | null;
   /** Chunks are sent one after another, never out of order. */
   sending: Promise<void>;
   /** Each camera's own recording (ISO). */
@@ -54,8 +64,9 @@ interface Live {
 
 interface Iso {
   id: number;
-  recorder: MediaRecorder;
-  stream: MediaStream;
+  /** Null: the unified engine records it (from its own frames of the camera). */
+  recorder: MediaRecorder | null;
+  stream: MediaStream | null;
   sending: Promise<void>;
   kind: 'camera' | 'microphone';
   /** The input it records. */
@@ -140,7 +151,127 @@ export class Broadcaster {
   constructor(
     private readonly client: EngineClient,
     private readonly sound: SoundEngine | null,
-  ) {}
+  ) {
+    // The unified engine's own encoder stopping is a lost session too.
+    onEngineFeedLost((kind, session, message) => {
+      if (this.live.get(kind)?.running.session === session) this.onLost?.(kind, session, message);
+    });
+  }
+
+  // ---- the unified engine ----
+
+  /** One tap per mix the engine is sent, shared by the sessions that use it. */
+  private readonly taps = new Map<'master' | 'b', { tap: EngineTap; users: number }>();
+
+  private tapMix(mix: 'master' | 'b'): void {
+    const t = this.taps.get(mix);
+    if (t) {
+      t.users++;
+      return;
+    }
+    const sound = this.sound;
+    if (!sound) return;
+    const tap = new EngineTap(
+      sound.context,
+      (into) => sound.tapMix(mix, into),
+      (pcm, at, rate) => sendEngineSound(mix, pcm, at, rate),
+    );
+    this.taps.set(mix, { tap, users: 1 });
+  }
+
+  private untapMix(mix: 'master' | 'b'): void {
+    const t = this.taps.get(mix);
+    if (!t || --t.users > 0) return;
+    t.tap.stop();
+    this.taps.delete(mix);
+  }
+
+  /** The engine's encoder, as {@link frameStats} reports the WebView's: frames a second sent, and late ones. */
+  private engineFrames: { fps: number; target: number; dropped: number } | null = null;
+  private enginePoll: ReturnType<typeof setInterval> | null = null;
+
+  private watchEngine(target: number): void {
+    if (this.enginePoll) return;
+    let last: { n: number; t: number } | null = null;
+    this.engineFrames = { fps: 0, target, dropped: 0 };
+    this.enginePoll = setInterval(() => {
+      void refreshEngineInfo()
+        .then((i) => {
+          const f = i?.stats?.feed;
+          if (!f || !this.engineFrames) return;
+          const now = performance.now();
+          if (last && now > last.t) this.engineFrames.fps = Math.round(((f.framesIn - last.n) / ((now - last.t) / 1000)) * 10) / 10;
+          this.engineFrames.dropped = f.framesDropped;
+          last = { n: f.framesIn, t: now };
+        })
+        .catch(() => {});
+    }, 1000);
+  }
+
+  private unwatchEngine(): void {
+    if ([...this.live.values()].some((l) => l.engineMix)) return;
+    if (this.enginePoll) clearInterval(this.enginePoll);
+    this.enginePoll = null;
+    this.engineFrames = null;
+  }
+
+  /** Start a session the unified engine encodes (its picture of the Live Screen, this window's sound). */
+  private async openEngine(
+    kind: SessionKind,
+    q: { width: number; height: number; fps: number },
+    vertical: boolean,
+    settings: CaptureSettings,
+    name: string,
+    rehearse: boolean,
+  ): Promise<CaptureRunning> {
+    if (this.live.has(kind)) throw new Error(kind === 'record' ? 'Already recording.' : 'Already streaming.');
+    const mix = kind === 'record' && settings.recordMix === 'recording' ? 'b' : 'master';
+    const { running, isos } = await engineCaptureStart({
+      kind,
+      name,
+      rehearse,
+      width: q.width,
+      height: q.height,
+      fps: q.fps,
+      vertical,
+      mix,
+      sampleRate: this.sound?.context.sampleRate ?? 48000,
+      iso: kind === 'record' && settings.iso,
+      isoSkip: settings.isoSkip ?? [],
+      isoKbps: settings.isoKbps ?? null,
+    });
+    this.tapMix(mix);
+    this.watchEngine(q.fps);
+    const live: Live = {
+      running,
+      recorder: null,
+      video: null,
+      audio: null,
+      engineMix: mix,
+      sending: Promise.resolve(),
+      isos: isos.map((i) => ({
+        id: i.id,
+        recorder: null,
+        stream: null,
+        sending: Promise.resolve(),
+        kind: 'camera' as const,
+        sourceId: i.sourceId,
+        name: i.name,
+        path: i.path,
+        startMs: 0,
+      })),
+      chapters: kind === 'record' && settings.chapters ? [] : null,
+      cuts: [],
+      name,
+      startedAt: running.startedAt || Date.now(),
+      vertical,
+    };
+    this.live.set(kind, live);
+    if (this.show) this.setShow(this.show);
+    // The microphones' own files and the event file (the cameras' are the engine's).
+    if (kind === 'record') void this.startIsos(live, 0, false, settings.isoSkip ?? [], settings.iso);
+    return running;
+  }
 
   setShow(show: Show): void {
     this.show = show;
@@ -167,6 +298,10 @@ export class Broadcaster {
    */
   async start(kind: CaptureKind, settings: CaptureSettings, name: string, rehearse = false): Promise<CaptureRunning> {
     if (this.live.has(kind)) throw new Error(kind === 'record' ? 'Already recording.' : 'Already streaming.');
+    if (unifiedOn()) {
+      const vertical = settings.quality === 'vertical';
+      return this.openEngine(kind, QUALITIES[settings.quality], vertical, settings, name, rehearse);
+    }
     const mime = recordingType();
     if (!mime) throw new Error('This computer’s web view can’t record video. Recording and streaming work in the Windows app.');
     const q = QUALITIES[settings.quality];
@@ -184,7 +319,7 @@ export class Broadcaster {
     if (this.live.size === 0) compositor.resize(wide.width, wide.height);
     const running = await this.open(kind, vertical, q.fps, settings.videoKbps, settings, name, mime, rehearse);
     if (kind === 'record')
-      void this.startIsos(this.live.get('record')!, settings.isoKbps ?? Math.min(settings.videoKbps, 8000), settings.iso, settings.isoSkip ?? []);
+      void this.startIsos(this.live.get('record')!, settings.isoKbps ?? Math.min(settings.videoKbps, 8000), settings.iso, settings.isoSkip ?? [], settings.iso);
     return running;
   }
 
@@ -194,6 +329,7 @@ export class Broadcaster {
    */
   async startVertical(settings: CaptureSettings, name: string, rehearse = false): Promise<CaptureRunning | null> {
     if (this.live.has('vertical') || !this.live.has('stream') || !wantsVertical(settings)) return null;
+    if (unifiedOn()) return this.openEngine('vertical', QUALITIES.vertical, true, settings, name, rehearse);
     const mime = recordingType();
     if (!mime) return null;
     const q = QUALITIES.vertical;
@@ -206,6 +342,7 @@ export class Broadcaster {
    */
   async startNdi(settings: CaptureSettings): Promise<CaptureRunning> {
     if (this.live.has('ndi')) throw new Error('Already sending NDI.');
+    if (unifiedOn()) return this.openEngine('ndi', QUALITIES[settings.quality === 'vertical' ? '1080p' : settings.quality], false, settings, 'NDI', false);
     const mime = recordingType();
     if (!mime) throw new Error('This computer’s web view can’t encode video for NDI.');
     const q = QUALITIES[settings.quality === 'vertical' ? '1080p' : settings.quality];
@@ -269,6 +406,7 @@ export class Broadcaster {
       recorder,
       video,
       audio,
+      engineMix: null,
       sending: Promise.resolve(),
       isos: [],
       chapters: kind === 'record' && settings.chapters ? [] : null,
@@ -309,22 +447,28 @@ export class Broadcaster {
     const live = this.live.get(kind);
     if (!live) return;
     this.live.delete(kind);
-    if (live.recorder.state !== 'inactive') {
+    if (live.engineMix) {
+      // The engine writes the last of the picture and sound (and the cameras' files), then the session ends.
+      await engineCaptureStop(live.running.session).catch(() => {});
+      this.untapMix(live.engineMix);
+      this.unwatchEngine();
+    } else if (live.recorder && live.recorder.state !== 'inactive') {
+      const recorder = live.recorder;
       // The last chunk arrives before `stop` fires.
       await new Promise<void>((resolve) => {
-        live.recorder.addEventListener('stop', () => resolve(), { once: true });
-        live.recorder.stop();
+        recorder.addEventListener('stop', () => resolve(), { once: true });
+        recorder.stop();
       });
     }
     await live.sending;
     await Promise.all(live.isos.map((i) => this.stopIso(i)));
-    await this.client.captureStop(live.running.session).catch(() => {});
+    if (!live.engineMix) await this.client.captureStop(live.running.session).catch(() => {});
     if (live.chapters?.length) await this.client.saveChapters(live.name, chapterText(live.chapters)).catch(() => {});
     if (live === this.recordLive) {
       this.recordLive = null;
       await this.client.saveEventFile(live.name, JSON.stringify(eventFile(live, Date.now()), null, 2)).catch(() => {});
     }
-    this.release(live.video, live.audio);
+    if (live.video) this.release(live.video, live.audio);
     if (this.live.size === 0 && !this.replay) this.run(0);
   }
 
@@ -338,14 +482,14 @@ export class Broadcaster {
   /** The recording whose event file is kept up to date. */
   private recordLive: Live | null = null;
 
-  private async startIsos(live: Live, kbps: number, ownFiles: boolean, skip: string[] = []) {
+  private async startIsos(live: Live, kbps: number, cameras: boolean, skip: string[] = [], ownFiles = cameras) {
     this.recordLive = live;
     const save = () => void this.client.saveEventFile(live.name, JSON.stringify(eventFile(live, null), null, 2)).catch(() => {});
     save();
     if (!ownFiles) return;
     const mime = recordingType();
     const sources = this.show?.sources ?? [];
-    if (mime && navigator.mediaDevices?.getUserMedia) {
+    if (cameras && mime && navigator.mediaDevices?.getUserMedia) {
       for (const cam of sources) {
         if (cam.kind.type !== 'camera' || skip.includes(cam.id)) continue;
         try {
@@ -400,7 +544,7 @@ export class Broadcaster {
   }
 
   /** Start a camera's or microphone's own recording, noting when it began. */
-  private keep(live: Live, iso: Iso) {
+  private keep(live: Live, iso: Iso & { recorder: MediaRecorder }) {
     iso.recorder.ondataavailable = (e) => {
       if (!e.data.size) return;
       iso.sending = iso.sending
@@ -419,15 +563,18 @@ export class Broadcaster {
   }
 
   private async stopIso(iso: Iso) {
-    if (iso.recorder.state !== 'inactive') {
+    // The engine's own (cameras in Unified): stopped with its session.
+    const recorder = iso.recorder;
+    if (!recorder) return;
+    if (recorder.state !== 'inactive') {
       await new Promise<void>((resolve) => {
-        iso.recorder.addEventListener('stop', () => resolve(), { once: true });
-        iso.recorder.stop();
+        recorder.addEventListener('stop', () => resolve(), { once: true });
+        recorder.stop();
       });
     }
     await iso.sending;
     iso.release?.();
-    iso.stream.getTracks().forEach((t) => t.stop());
+    iso.stream?.getTracks().forEach((t) => t.stop());
     await this.client.isoStop(iso.id).catch(() => {});
   }
 
@@ -442,6 +589,8 @@ export class Broadcaster {
   /** Keep the last minute of the Live Screen for replays. */
   startReplay(): void {
     if (this.replay) return;
+    // It would draw the picture here again, cameras and all.
+    if (unifiedOn()) throw new Error('Instant replay is not in the unified engine yet (beta). Switch to Standard in Settings → Engine to use it.');
     if (!this.compositor) {
       const q = QUALITIES['1080p'];
       this.compositor = new ProgramCompositor(this.client, q.width, q.height);
@@ -497,6 +646,7 @@ export class Broadcaster {
 
   /** Frames drawn in the last second and frames late (dropped) since drawing began; null when not drawing. */
   frameStats(): { fps: number; target: number; dropped: number } | null {
+    if (this.engineFrames) return { ...this.engineFrames };
     if (!this.fps) return null;
     const now = performance.now();
     return { fps: this.drawn.filter((t) => now - t <= 1000).length, target: this.fps, dropped: this.late };

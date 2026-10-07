@@ -440,6 +440,16 @@ fn a_graphics_input_fades_in_its_place_among_the_pictures() {
     let live = e.gpu.read(Dest::Target(0)).unwrap().2;
     assert!(near(px(&live, 30, 20), [0, 255, 0, 255]));
     assert_eq!(e.gpu.plane_count(), 1);
+    // The test event's check: what is on air is really drawn.
+    let p = e.probe(ScreenId::Live);
+    assert_eq!(p.in_sync, Some(true));
+    assert_eq!((p.width, p.height, p.window), (W, H, false));
+    apply(
+        &mut e,
+        encode(&[(Op::Clear, ScreenId::Live, "g:t", W, H, 0, vec![])]),
+    );
+    assert_eq!(e.probe(ScreenId::Live).in_sync, Some(false));
+    assert_eq!(e.probe(ScreenId::Back).in_sync, None);
 }
 
 #[test]

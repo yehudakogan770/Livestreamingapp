@@ -1368,7 +1368,12 @@ pub fn run() {
             live::live_engine_preview,
             live::live_engine_health,
             live::live_engine_test_record,
-            live::live_engine_graphics
+            live::live_engine_graphics,
+            live::live_engine_audio,
+            live::live_engine_audio_wanted,
+            live::live_engine_capture_start,
+            live::live_engine_capture_stop,
+            live::live_engine_probe
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

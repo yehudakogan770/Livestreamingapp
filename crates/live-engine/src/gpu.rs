@@ -727,6 +727,11 @@ impl Compositor {
         self.planes.retain(|k, _| k.slot != slot);
     }
 
+    /// Whether slot `slot` has a plane `name` (at any size).
+    pub fn has_plane(&self, slot: usize, name: &str) -> bool {
+        self.planes.keys().any(|k| k.slot == slot && k.name == name)
+    }
+
     /// Planes held now.
     pub fn plane_count(&self) -> usize {
         self.planes.len()
