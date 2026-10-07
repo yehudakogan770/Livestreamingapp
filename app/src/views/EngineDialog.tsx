@@ -96,6 +96,7 @@ export function EngineDialog({ onClose }: { onClose: () => void }) {
                   <dt>Late frames</dt>
                   <dd>
                     {s.lateFrames} of {s.frames}
+                    {s.recoveries ? ` (the graphics card was reset ${s.recoveries} time${s.recoveries === 1 ? '' : 's'}; the engine carried on)` : ''}
                   </dd>
                   <dt>Graphics</dt>
                   <dd>

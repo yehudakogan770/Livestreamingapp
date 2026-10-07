@@ -225,6 +225,8 @@ pub struct Stats {
     pub feed: Option<FeedStats>,
     /// Every feed: screens (recording, stream, vertical, NDI) and inputs (ISO files).
     pub feeds: Vec<FeedInfo>,
+    /// Times the graphics device was lost and made again.
+    pub recoveries: u64,
     /// How the graphics from the web overlay renderers arrive.
     pub overlay: OverlayStats,
     /// Things that don't work in the unified engine yet, in words for the operator.
@@ -292,6 +294,8 @@ pub struct LiveEngine {
     sources: HashMap<SourceId, (String, Box<dyn VideoSource>)>,
     outputs: HashMap<ScreenId, NativeOutput>,
     feeds: Feeds,
+    /// The graphics planes went with a lost device: the renderers send everything again.
+    pub graphics_lost: bool,
     /// Cameras held back (their picture's delay).
     delays: HashMap<SourceId, crate::delay::DelayLine>,
     /// The multiview's window, and its layout for the show now.
@@ -327,6 +331,7 @@ impl LiveEngine {
             outputs: HashMap::new(),
             feeds: Feeds::default(),
             delays: HashMap::new(),
+            graphics_lost: false,
             multiview: None,
             mv_layout: None,
             graphics: GraphicsTally::default(),
@@ -624,8 +629,51 @@ impl LiveEngine {
         &self.previews
     }
 
+    /// The graphics device was lost (a driver reset, the card removed): make
+    /// a new one and carry on. Pictures, windows and encoders continue; the
+    /// graphics planes are asked for again (`graphics_lost`). Returns whether
+    /// the engine can draw now.
+    pub fn recover(&mut self) -> bool {
+        if !self.gpu.is_lost() {
+            return true;
+        }
+        let gpu = match self.gpu.renew() {
+            Ok(g) => g,
+            Err(e) => {
+                self.stats.error = Some(format!("The graphics card stopped; trying again: {e}"));
+                return false;
+            }
+        };
+        self.gpu = gpu;
+        for (_, i) in PROGRAM {
+            self.gpu
+                .ensure_target(i, self.config.width, self.config.height);
+        }
+        for (_, i) in NEXT {
+            self.gpu
+                .ensure_target(i, self.config.width / 2, self.config.height / 2);
+        }
+        for o in self.outputs.values_mut() {
+            o.out.reset();
+        }
+        if let Some(o) = self.multiview.as_mut() {
+            o.out.reset();
+        }
+        self.feeds.renew(&mut self.gpu);
+        self.stats.recoveries += 1;
+        self.stats.adapter = Some(self.gpu.describe());
+        self.stats.error =
+            Some("The graphics card was reset; the engine started again on it.".into());
+        self.graphics_lost = true;
+        true
+    }
+
     /// Draw and send out one frame at show time `now`.
     pub fn frame(&mut self, now: u64) {
+        if !self.recover() {
+            self.frame_no += 1;
+            return;
+        }
         let t0 = Instant::now();
         self.gpu.set_time(now);
         let preview_frame = self
@@ -926,6 +974,9 @@ pub struct Shared {
     pub stats: Mutex<Stats>,
     pub previews: Mutex<HashMap<String, Preview>>,
     pub health: Mutex<Vec<(SourceId, SourceHealth)>>,
+    /// The graphics planes were lost (a new graphics device): the next
+    /// graphics frame is refused so the renderers send everything again.
+    pub graphics_lost: std::sync::atomic::AtomicBool,
 }
 
 /// The engine running on its own thread at a steady frame rate.
@@ -1002,6 +1053,15 @@ impl Runner {
     /// # Errors
     /// The frame is malformed (nothing of it is applied).
     pub fn graphics(&self, bytes: Vec<u8>) -> Result<(), String> {
+        if self
+            .shared
+            .graphics_lost
+            .swap(false, std::sync::atomic::Ordering::SeqCst)
+        {
+            return Err(
+                "The engine started again on a new graphics device: send everything.".into(),
+            );
+        }
         let m = overlay::parse(bytes)?;
         self.tx
             .send(Command::Graphics(Box::new(m)))
@@ -1127,6 +1187,11 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
         }
         let caught =
             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| engine.frame(now_ms())));
+        if std::mem::take(&mut engine.graphics_lost) {
+            shared
+                .graphics_lost
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+        }
         if caught.is_err() {
             engine.stats.error = Some("A frame failed to draw (the engine carries on).".into());
         }

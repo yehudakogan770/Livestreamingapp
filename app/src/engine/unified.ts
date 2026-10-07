@@ -46,6 +46,8 @@ export interface EngineStats {
   overlay: { framesPerS: number; mbPerS: number; latencyMs: number; planes: number; refused: number };
   notes: string[];
   error: string | null;
+  /** Times the graphics card was reset (a driver reset) and the engine started again on it. */
+  recoveries?: number;
 }
 
 export interface EngineInfo {

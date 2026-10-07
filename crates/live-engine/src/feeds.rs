@@ -86,6 +86,8 @@ struct Feed {
     /// Drawn at its own size (and the vertical's small copy).
     target: Option<usize>,
     small: Option<usize>,
+    /// The target's size.
+    size: (u32, u32),
     error: Option<String>,
 }
 
@@ -148,6 +150,7 @@ impl Feeds {
             pending: None,
             target: None,
             small: None,
+            size: (spec.width.max(2), spec.height.max(2)),
             error: None,
         };
         match &spec.source {
@@ -199,6 +202,18 @@ impl Feeds {
         for id in ids {
             if let Some(e) = self.stop(gpu, id) {
                 thread::spawn(move || drop(e.finish()));
+            }
+        }
+    }
+
+    /// A new graphics device: the feeds' targets are made again on it.
+    pub fn renew(&mut self, gpu: &mut Compositor) {
+        for f in self.feeds.values() {
+            if let Some(t) = f.target {
+                gpu.ensure_target(t, f.size.0, f.size.1);
+            }
+            if let Some(t) = f.small {
+                gpu.ensure_target(t, SMALL.0, SMALL.1);
             }
         }
     }

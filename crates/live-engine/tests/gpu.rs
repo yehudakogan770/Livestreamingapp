@@ -422,6 +422,42 @@ fn cam(id: &str) -> Source {
 }
 
 #[test]
+fn a_lost_graphics_device_is_replaced_and_the_show_goes_on() {
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    e.frame(1000);
+    // A driver reset (Windows' TDR), as far as the engine can tell.
+    e.gpu.device.destroy();
+    let _ = e
+        .gpu
+        .device
+        .poll(live_engine::wgpu::PollType::wait_indefinitely());
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while !e.gpu.is_lost() && std::time::Instant::now() < deadline {
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    assert!(e.gpu.is_lost(), "the loss is noticed");
+    e.frame(1016);
+    assert!(!e.gpu.is_lost(), "a new device");
+    assert_eq!(e.stats.recoveries, 1);
+    assert!(
+        e.graphics_lost,
+        "the renderers are asked for everything again"
+    );
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(
+        near(px(&live, 30, 20), [255, 0, 0, 255]),
+        "{:?}",
+        px(&live, 30, 20)
+    );
+}
+
+#[test]
 fn the_engine_draws_the_show_and_its_previews() {
     let Some(g) = gpu() else { return };
     let config = Config {

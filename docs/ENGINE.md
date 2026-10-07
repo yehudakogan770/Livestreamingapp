@@ -283,6 +283,15 @@ tiles show no graphics, and the timecodes count seconds, not frames.
   processor's person-finding model and are not in the engine.
 - **Picture delay** (`delay.rs`): a camera held back by its delay keeps its
   last frames (up to four seconds) and shows the one from that long ago.
+- **Device-lost recovery**: a lost graphics device (a driver reset — Windows'
+  TDR —, the card removed) is noticed (`set_device_lost_callback`) and a new
+  one made from the same instance on the next frame (`LiveEngine::recover`):
+  the screens' and feeds' targets are made again, the windows' surfaces
+  configured again, the sources upload their next frames, and the overlay
+  renderers' next frame is refused once so they send every plane whole. The
+  Engine dialog counts the resets. Tested with `Device::destroy` on Linux
+  (`a_lost_graphics_device_is_replaced_and_the_show_goes_on`); a real TDR
+  (`dxcap -forcetdr`) needs Windows.
 - **Group opacity**: a layer of several pictures (a split screen) that fades,
   wipes, blurs or luma-wipes is drawn whole into a see-through scratch target
   and faded as one (`gpu::needs_group`), so its background no longer shows
@@ -303,8 +312,6 @@ Listed in the Engine dialog too:
 - The Monitor (all words) stays a WebView window; the Next previews (and the
   multiview's Next tiles) show no graphics; in the multiview a graphics
   input's tile shows it only while it is on air on the Live Screen.
-- Device-lost recovery (driver reset / TDR) — the engine reports GPU errors
-  and carries on, but doesn't rebuild the device yet.
 - The vertical version has no drop shadow under the picture (the Standard
   one has a soft shadow).
 
@@ -474,7 +481,7 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
   mode; the multiview drawn by the engine in its own window; stream, web page,
   screen-capture and guest inputs; green screen and light and colour in the
   shader (port of `chroma.ts`); the picture delay; group opacity. Next: NV12
-  uploads and read-back; files with hardware decode (`-hwaccel d3d11va`);
-  device-lost recovery.
+  uploads and read-back; files with hardware decode (`-hwaccel d3d11va`).
+  Device-lost recovery: done.
 - **Phase 3** — zero-copy encode (D3D texture → NVENC/AMF/QSV), HDR output,
   per-output adapters, Unified as the default.

@@ -117,6 +117,11 @@ impl SurfaceOut {
             config: None,
         }
     }
+
+    /// Configure it again on the next present (a new graphics device).
+    pub fn reset(&mut self) {
+        self.config = None;
+    }
 }
 
 /// A graphics card the engine could use.
@@ -154,6 +159,8 @@ pub struct Compositor {
     uploaded: u64,
     /// Seconds (0 – 100) for the grain effect.
     time: f32,
+    /// The graphics device was lost (a driver reset, the card removed): the engine makes a new one.
+    lost: Arc<std::sync::atomic::AtomicBool>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -380,6 +387,13 @@ impl Compositor {
         .map_err(|e| format!("The graphics card could not start: {e}"))?;
         // A mistake on the GPU is reported, never a crash in the middle of a show.
         device.on_uncaptured_error(Arc::new(|e| eprintln!("live engine GPU: {e}")));
+        // A lost device (a driver reset — Windows' TDR —, the card removed) is noticed and replaced.
+        let lost = Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let l = Arc::clone(&lost);
+        device.set_device_lost_callback(move |reason, why| {
+            eprintln!("live engine GPU lost ({reason:?}): {why}");
+            l.store(true, std::sync::atomic::Ordering::SeqCst);
+        });
         let align = u64::from(device.limits().min_uniform_buffer_offset_alignment).max(DRAW_BYTES);
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("linear-clamp"),
@@ -467,9 +481,24 @@ impl Compositor {
             rings: HashMap::new(),
             uploaded: 0,
             time: 0.0,
+            lost,
         };
         c.pipeline(TARGET_FORMAT);
         Ok(c)
+    }
+
+    /// The device was lost: nothing drawn with it shows any more.
+    pub fn is_lost(&self) -> bool {
+        self.lost.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    /// A new device on the best card (after a loss), from the same instance
+    /// (windows' surfaces stay valid; they are configured again).
+    ///
+    /// # Errors
+    /// No usable graphics card (yet: the driver may still be resetting).
+    pub fn renew(&self) -> Result<Self, String> {
+        Self::new(self.instance.clone(), None)
     }
 
     /// Start without any window (tests, the benchmark).
