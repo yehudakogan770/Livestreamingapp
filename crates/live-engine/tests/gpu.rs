@@ -943,7 +943,9 @@ fn the_multiview_shows_the_screens_and_inputs_with_tally_and_words() {
 
 /// A mask with a person in the left half.
 fn left_person() -> Vec<u8> {
-    (0..8 * 4).map(|i| if i % 8 < 4 { 255 } else { 0 }).collect()
+    (0..8 * 4)
+        .map(|i| if i % 8 < 4 { 255 } else { 0 })
+        .collect()
 }
 
 fn backdrop(mode: f32) -> live_engine::scene::Backdrop {
@@ -972,8 +974,16 @@ fn the_person_mask_takes_the_background_away_or_puts_a_picture_behind() {
     g.set_vision_mask(&red, Some((8, 4, &left_person())));
     assert_eq!(g.vision_of(&red), (true, None, false));
     let img = draw(&mut g, &sc);
-    assert!(near(px(&img, 8, 18), [255, 0, 0, 255]), "{:?}", px(&img, 8, 18));
-    assert!(near(px(&img, 56, 18), [0, 0, 0, 255]), "{:?}", px(&img, 56, 18));
+    assert!(
+        near(px(&img, 8, 18), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 8, 18)
+    );
+    assert!(
+        near(px(&img, 56, 18), [0, 0, 0, 255]),
+        "{:?}",
+        px(&img, 56, 18)
+    );
     // A picture behind them (green), once it is there.
     l.pictures[0].placement.backdrop = Some(backdrop(3.0));
     let sc = ScreenScene {
@@ -983,8 +993,16 @@ fn the_person_mask_takes_the_background_away_or_puts_a_picture_behind() {
     let green: Vec<u8> = (0..4).flat_map(|_| [0, 255, 0, 255]).collect();
     g.set_vision_picture(&red, false, Some((2, 2, &green)));
     let img = draw(&mut g, &sc);
-    assert!(near(px(&img, 8, 18), [255, 0, 0, 255]), "{:?}", px(&img, 8, 18));
-    assert!(near(px(&img, 56, 18), [0, 255, 0, 255]), "{:?}", px(&img, 56, 18));
+    assert!(
+        near(px(&img, 8, 18), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 8, 18)
+    );
+    assert!(
+        near(px(&img, 56, 18), [0, 255, 0, 255]),
+        "{:?}",
+        px(&img, 56, 18)
+    );
     // The models paused (no mask): the picture shows as it is again.
     g.set_vision_mask(&red, None);
     g.set_vision_picture(&red, false, None);
@@ -1035,7 +1053,11 @@ fn the_engine_sends_small_frames_only_of_inputs_that_use_the_models_and_frames_t
     e.set_show(show.clone());
     e.frame(1000);
     let sent: Vec<&str> = e.vision_out.iter().map(|f| f.id.as_str()).collect();
-    assert_eq!(sent, ["a"], "b uses no effect: nothing of it goes to the models");
+    assert_eq!(
+        sent,
+        ["a"],
+        "b uses no effect: nothing of it goes to the models"
+    );
     let f = &e.vision_out[0];
     assert_eq!((f.w, f.h), (W, H), "small frames are at most 320 wide");
     assert_eq!(&f.rgba[..4], &[255, 0, 0, 255]);

@@ -459,8 +459,9 @@ impl Compositor {
             eprintln!("live engine GPU lost ({reason:?}): {why}");
             l.store(true, std::sync::atomic::Ordering::SeqCst);
         });
-        let align = DRAW_BYTES
-            .next_multiple_of(u64::from(device.limits().min_uniform_buffer_offset_alignment));
+        let align = DRAW_BYTES.next_multiple_of(u64::from(
+            device.limits().min_uniform_buffer_offset_alignment,
+        ));
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("linear-clamp"),
             mag_filter: wgpu::FilterMode::Linear,
@@ -517,11 +518,7 @@ impl Compositor {
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("compose"),
-            bind_group_layouts: &[
-                Some(&draw_layout),
-                Some(&tex_layout),
-                Some(&vision_layout),
-            ],
+            bind_group_layouts: &[Some(&draw_layout), Some(&tex_layout), Some(&vision_layout)],
             immediate_size: 0,
         });
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -1109,8 +1106,8 @@ impl Compositor {
                 return;
             }
         }
-        let made =
-            mask.and_then(|(w, h, px)| self.small_texture(w, h, wgpu::TextureFormat::R8Unorm, 1, px));
+        let made = mask
+            .and_then(|(w, h, px)| self.small_texture(w, h, wgpu::TextureFormat::R8Unorm, 1, px));
         if made.is_none() && self.vision.get(id).is_none_or(|v| v.mask.is_none()) {
             return;
         }

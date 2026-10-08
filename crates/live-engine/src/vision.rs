@@ -97,7 +97,11 @@ fn yuv_rgb(y: u8, u: u8, v: u8, hd: bool) -> [u8; 3] {
     let (r, g, b) = if hd {
         (y + 1.5748 * v, y - 0.1873 * u - 0.4681 * v, y + 1.8556 * u)
     } else {
-        (y + 1.402 * v, y - 0.344_136 * u - 0.714_136 * v, y + 1.772 * u)
+        (
+            y + 1.402 * v,
+            y - 0.344_136 * u - 0.714_136 * v,
+            y + 1.772 * u,
+        )
     };
     [clamp8(r), clamp8(g), clamp8(b)]
 }
@@ -481,7 +485,10 @@ mod tests {
             }
         });
         let s = downscale(&SourceId::new("a"), &f, SIDE).unwrap();
-        assert_eq!((s.w, s.h, s.seq, s.rgba.len()), (320, 180, 7, 320 * 180 * 4));
+        assert_eq!(
+            (s.w, s.h, s.seq, s.rgba.len()),
+            (320, 180, 7, 320 * 180 * 4)
+        );
         let p = &s.rgba[..4];
         assert!(p[0] > 240 && p[1] < 15 && p[2] < 15 && p[3] == 255, "{p:?}");
         // Windows RGB32: blue, green, red, nothing — opaque.
@@ -546,6 +553,42 @@ mod tests {
         huge.extend_from_slice(&1u16.to_le_bytes());
         assert!(parse_results(&huge).unwrap_err().contains("can't be"));
         assert!(parse_results(b"NOPE\x00\x00").is_err());
+    }
+
+    #[test]
+    fn the_same_bytes_as_the_web_side() {
+        // visionWire.test.ts checks these very bytes.
+        let frames = encode_frames(&[LowRes {
+            id: SourceId::new("cam"),
+            seq: 7,
+            w: 1,
+            h: 1,
+            rgba: vec![9, 8, 7, 255],
+        }]);
+        let hex = |b: &[u8]| b.iter().map(|x| format!("{x:02x}")).collect::<String>();
+        assert_eq!(
+            hex(&frames),
+            "4c5646310100030063616d07000000000000000100000001000000090807ff"
+        );
+        let results = encode_results(&[VisionResult {
+            id: SourceId::new("cam"),
+            mask: Some((2, 1, vec![0, 255])),
+            shot: Some(Shot {
+                cx: 0.25,
+                cy: 0.5,
+                zoom: 2.0,
+            }),
+            back: Some(Some(Image {
+                w: 1,
+                h: 1,
+                rgba: vec![1, 2, 3, 255],
+            })),
+            front: Some(None),
+        }]);
+        assert_eq!(
+            hex(&results),
+            "4c5652310100030063616d0f0200010000ff0000803e0000003f0000004001000100010203ff00000000"
+        );
     }
 
     #[test]

@@ -247,6 +247,7 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     if let Some(live) = app.try_state::<live::Live>() {
         live.sync(&snapshot.show);
         live.place_multiview(app, &snapshot.show);
+        live.sync_vision(app, &snapshot.show);
     }
     let _ = app.emit("show-changed", snapshot);
     if let Ok(json) = serde_json::to_string(snapshot) {
@@ -1387,7 +1388,9 @@ pub fn run() {
             live::live_engine_capture_start,
             live::live_engine_capture_stop,
             live::live_engine_probe,
-            live::live_engine_multiview_layout
+            live::live_engine_multiview_layout,
+            live::live_engine_vision_frames,
+            live::live_engine_vision_result
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

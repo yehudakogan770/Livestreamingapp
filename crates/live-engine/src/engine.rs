@@ -527,7 +527,9 @@ impl LiveEngine {
             .iter()
             .enumerate()
             .filter_map(|(i, t)| match &t.content {
-                TileContent::Input(id) => Some((i, framed(scene::source_scene(show, id), &self.shots))),
+                TileContent::Input(id) => {
+                    Some((i, framed(scene::source_scene(show, id), &self.shots)))
+                }
                 _ => None,
             })
             .collect();
@@ -825,7 +827,12 @@ impl LiveEngine {
         let inputs: Vec<(SourceId, ScreenScene)> = if preview_frame {
             scene::video_inputs(show)
                 .into_iter()
-                .map(|s| (s.id.clone(), framed(scene::source_scene(show, &s.id), shots)))
+                .map(|s| {
+                    (
+                        s.id.clone(),
+                        framed(scene::source_scene(show, &s.id), shots),
+                    )
+                })
                 .collect()
         } else {
             Vec::new()

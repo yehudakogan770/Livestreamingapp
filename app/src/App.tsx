@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { isMultiview, outputScreen, overlayScreen } from './engine/role';
+import { isMultiview, isVisionWorker, outputScreen, overlayScreen } from './engine/role';
 import { lazyPart } from './components/lazyPart';
 import './App.css';
 
@@ -10,6 +10,7 @@ const Control = lazyPart(() => import('./ControlApp').then((m) => m.Control));
 const OutputView = lazyPart(() => import('./views/OutputView').then((m) => m.OutputView));
 const MultiviewView = lazyPart(() => import('./views/MultiviewView').then((m) => m.MultiviewView));
 const OverlayView = lazyPart(() => import('./views/OverlayView').then((m) => m.OverlayView));
+const VisionView = lazyPart(() => import('./views/VisionView').then((m) => m.VisionView));
 
 /**
  * Loads this window's part. Which window this is is known at once, so it
@@ -18,7 +19,7 @@ const OverlayView = lazyPart(() => import('./views/OverlayView').then((m) => m.O
  * could not be loaded shows its error when drawn.
  */
 export function loadApp(): Promise<void> {
-  const part = overlayScreen() ? OverlayView : isMultiview() ? MultiviewView : outputScreen() ? OutputView : Control;
+  const part = isVisionWorker() ? VisionView : overlayScreen() ? OverlayView : isMultiview() ? MultiviewView : outputScreen() ? OutputView : Control;
   return part.preload().then(
     () => {},
     () => {},
@@ -29,6 +30,8 @@ export function App() {
   const output = useMemo(outputScreen, []);
   const multiview = useMemo(isMultiview, []);
   const overlay = useMemo(overlayScreen, []);
+  const vision = useMemo(isVisionWorker, []);
+  if (vision) return <VisionView />;
   if (overlay) return <OverlayView screen={overlay} />;
   if (multiview) return <MultiviewView />;
   return output ? <OutputView screen={output} /> : <Control />;

@@ -69,6 +69,9 @@ struct Inner {
     captures: std::collections::HashMap<u64, Vec<u64>>,
     /// The engine shows the multiview in its own window (on this display: None, a window).
     multiview: Option<Option<String>>,
+    /// An input uses background removal, blur behind people or auto-framing:
+    /// the vision worker (`overlay-vision`) runs the person-finding models.
+    vision: bool,
 }
 
 pub struct Live {
@@ -123,6 +126,10 @@ fn native_screen(screen: ScreenId) -> bool {
     cfg!(windows) && matches!(screen, ScreenId::Live | ScreenId::Back)
 }
 
+/// The hidden window that runs the person-finding models for the engine
+/// (`app/src/engine/visionWorker.ts`; see `crates/live-engine/src/vision.rs`).
+pub const VISION_LABEL: &str = "overlay-vision";
+
 /// The hidden graphics renderer window of a screen.
 pub fn renderer_label(screen: ScreenId) -> &'static str {
     match screen {
@@ -140,23 +147,35 @@ const RENDERER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScree
 
 /// Open (or close) the screens' overlay renderers: the Live Screen's while
 /// the engine runs (the recording and stream need its graphics too), the
-/// Back Screen's while the engine shows it.
+/// Back Screen's while the engine shows it; and the vision worker while an
+/// input uses the person-finding models.
 pub fn sync_renderers(app: &AppHandle) {
     let Some(live) = app.try_state::<Live>() else {
         return;
     };
-    let (running, native) = {
+    let (running, native, vision) = {
         let inner = lock(&live.inner);
-        (inner.runner.is_some(), inner.native.clone())
+        (inner.runner.is_some(), inner.native.clone(), inner.vision)
     };
-    for screen in [ScreenId::Live, ScreenId::Back] {
-        let wanted = running && (screen == ScreenId::Live || native.contains(&screen));
-        let label = renderer_label(screen);
+    let windows = [
+        (
+            renderer_label(ScreenId::Live),
+            "Live Screen graphics".to_owned(),
+            running,
+        ),
+        (
+            renderer_label(ScreenId::Back),
+            "Back Screen graphics".to_owned(),
+            running && native.contains(&ScreenId::Back),
+        ),
+        (VISION_LABEL, "person finding".to_owned(), running && vision),
+    ];
+    for (label, what, wanted) in windows {
         let open = app.get_webview_window(label);
         match (wanted, open) {
             (true, None) => {
                 let mut b = WebviewWindowBuilder::new(app, label, WebviewUrl::default())
-                    .title(format!("Lumora — {} graphics", screen.label()))
+                    .title(format!("Lumora — {what}"))
                     .visible(false)
                     .focused(false)
                     .skip_taskbar(true)
@@ -166,7 +185,7 @@ pub fn sync_renderers(app: &AppHandle) {
                     b = b.data_directory(dir.join("overlay-webview"));
                 }
                 if let Err(e) = b.build() {
-                    eprintln!("lumora: the {screen:?} graphics renderer could not start: {e}");
+                    eprintln!("lumora: the {what} window could not start: {e}");
                 }
             }
             (false, Some(w)) => {
@@ -220,6 +239,7 @@ impl Live {
         match Runner::start(Config::default(), Box::new(factory)) {
             Ok(r) => {
                 r.set_show(show.clone());
+                inner.vision = live_engine::vision::wanted(show);
                 inner.runner = Some(Arc::new(r));
                 inner.error = None;
                 eprintln!("lumora: unified engine started");
@@ -235,6 +255,19 @@ impl Live {
     pub fn sync(&self, show: &Show) {
         if let Some(r) = self.runner() {
             r.set_show(show.clone());
+        }
+    }
+
+    /// The show changed: the vision worker runs while an input uses the
+    /// person-finding models (and only then).
+    pub fn sync_vision(&self, app: &AppHandle, show: &Show) {
+        let changed = {
+            let mut inner = lock(&self.inner);
+            let wanted = inner.runner.is_some() && live_engine::vision::wanted(show);
+            std::mem::replace(&mut inner.vision, wanted) != wanted
+        };
+        if changed {
+            sync_renderers(app);
         }
     }
 
@@ -501,6 +534,39 @@ pub fn live_engine_graphics(
     };
     let r = live.runner().ok_or("The unified engine is not running.")?;
     r.graphics(bytes.clone())
+}
+
+/// The newest small frames of the inputs that use the person-finding models,
+/// for the vision worker (`crates/live-engine/src/vision.rs`, "LVF1"); waits
+/// a moment for some to come, so the worker has each frame at once.
+#[tauri::command]
+pub async fn live_engine_vision_frames(
+    live: State<'_, Live>,
+) -> Result<tauri::ipc::Response, String> {
+    let Some(r) = live.runner() else {
+        return Ok(tauri::ipc::Response::new(Vec::new()));
+    };
+    let frames = tauri::async_runtime::spawn_blocking(move || {
+        r.vision_frames(std::time::Duration::from_millis(250))
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(
+        live_engine::vision::encode_frames(&frames),
+    ))
+}
+
+/// What the vision worker found: masks, shots and pictures behind people ("LVR1").
+#[tauri::command]
+pub fn live_engine_vision_result(
+    request: tauri::ipc::Request<'_>,
+    live: State<'_, Live>,
+) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let r = live.runner().ok_or("The unified engine is not running.")?;
+    r.vision(bytes)
 }
 
 /// A preview tile as JPEG (`program/live`, `next/back`, `source/<id>`); empty when there is none yet.
