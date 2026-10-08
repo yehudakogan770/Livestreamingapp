@@ -51,6 +51,8 @@ const MAX_OWED: u64 = 600;
 pub const AUDIO_LAG_MS: u64 = 300;
 /// A chunk this close to where the sound stream already is goes on as it is (no click).
 const AUDIO_SLACK_MS: f64 = 20.0;
+/// "The picture ends here" (instead of a number of copies).
+const END: u64 = u64::MAX;
 
 /// How the feed is doing.
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
@@ -197,6 +199,18 @@ pub struct AudioIn {
     pub chunks: Receiver<PcmChunk>,
 }
 
+/// The picture arrives already encoded (zero-copy: the graphics card's
+/// encoder took the engine's texture, see [`crate::zerocopy`]) as an H.264
+/// or HEVC elementary stream when `pix_fmt` is `h264` or `hevc`: FFmpeg's
+/// demuxer for it.
+pub fn encoded_input(pix_fmt: &str) -> Option<&'static str> {
+    match pix_fmt {
+        "h264" => Some("h264"),
+        "hevc" => Some("hevc"),
+        _ => None,
+    }
+}
+
 /// What a feed encodes and how.
 pub struct FeedArgs {
     pub width: u32,
@@ -225,15 +239,32 @@ pub fn args(f: &FeedArgs, audio_port: Option<u16>) -> Vec<String> {
         "32",
         "-analyzeduration",
         "0",
-        "-f",
-        "rawvideo",
-        "-pix_fmt",
     ]
     .iter()
     .map(|s| (*s).to_owned())
     .collect();
-    a.push(f.pix_fmt.to_owned());
-    if f.pix_fmt == "nv12" {
+    let encoded = encoded_input(f.pix_fmt);
+    if let Some(demuxer) = encoded {
+        // Already encoded on the graphics card (zero-copy): timestamps are
+        // the frame count at the feed's rate (the encoder was given one
+        // frame for every slot of the constant frame rate).
+        a.extend([
+            "-fflags".to_owned(),
+            "+genpts".to_owned(),
+            "-f".to_owned(),
+            demuxer.to_owned(),
+            "-framerate".to_owned(),
+            f.fps.to_string(),
+            "-i".to_owned(),
+            "-".to_owned(),
+        ]);
+    } else {
+        a.extend(["-f", "rawvideo", "-pix_fmt"].map(str::to_owned));
+        a.push(f.pix_fmt.to_owned());
+    }
+    if encoded.is_some() {
+        // The stream says its size and colors itself.
+    } else if f.pix_fmt == "nv12" {
         // The engine's NV12 is BT.709, limited range: said so, so it is encoded and played so.
         a.extend(
             [
@@ -249,14 +280,16 @@ pub fn args(f: &FeedArgs, audio_port: Option<u16>) -> Vec<String> {
             .map(str::to_owned),
         );
     }
-    a.push("-s".to_owned());
-    a.push(format!("{}x{}", f.width, f.height));
-    a.extend([
-        "-framerate".to_owned(),
-        f.fps.to_string(),
-        "-i".to_owned(),
-        "-".to_owned(),
-    ]);
+    if encoded.is_none() {
+        a.push("-s".to_owned());
+        a.push(format!("{}x{}", f.width, f.height));
+        a.extend([
+            "-framerate".to_owned(),
+            f.fps.to_string(),
+            "-i".to_owned(),
+            "-".to_owned(),
+        ]);
+    }
     if let (Some(port), Some(audio)) = (audio_port, &f.audio) {
         a.extend(
             [
@@ -285,13 +318,18 @@ pub fn args(f: &FeedArgs, audio_port: Option<u16>) -> Vec<String> {
     } else {
         a.push("-an".to_owned());
     }
-    a.extend([
-        "-fps_mode".to_owned(),
-        "cfr".to_owned(),
-        "-r".to_owned(),
-        f.fps.to_string(),
-    ]);
-    a.extend(f.encode.iter().cloned());
+    if encoded.is_some() {
+        // Encoded with the app's settings already (`zerocopy::Settings`): copied as it is.
+        a.extend(["-c:v", "copy"].map(str::to_owned));
+    } else {
+        a.extend([
+            "-fps_mode".to_owned(),
+            "cfr".to_owned(),
+            "-r".to_owned(),
+            f.fps.to_string(),
+        ]);
+        a.extend(f.encode.iter().cloned());
+    }
     if let (Some(_), Some(audio)) = (audio_port, &f.audio) {
         if audio.rate != 48_000 {
             a.extend(["-af".to_owned(), "aresample=48000".to_owned()]);
@@ -305,10 +343,44 @@ pub fn args(f: &FeedArgs, audio_port: Option<u16>) -> Vec<String> {
 /// Bytes of one frame of `w` × `h` in FFmpeg's pixel format `pix_fmt`.
 pub fn frame_len(pix_fmt: &str, w: u32, h: u32) -> usize {
     let px = w as usize * h as usize;
-    if pix_fmt == "nv12" {
+    if encoded_input(pix_fmt).is_some() {
+        // Pieces of an encoded stream have no fixed size.
+        0
+    } else if pix_fmt == "nv12" {
         px * 3 / 2
     } else {
         px * 4
+    }
+}
+
+/// Where an encoder on the graphics card writes a feed's encoded picture
+/// (zero-copy, [`crate::zerocopy`]); FFmpeg copies it into the container
+/// with the sound.
+#[derive(Clone)]
+pub struct Bitstream {
+    tx: SyncSender<(Arc<Pixels>, u64)>,
+    frames: Arc<AtomicU64>,
+    error: Arc<Mutex<Option<String>>>,
+}
+
+impl Bitstream {
+    /// A piece of the encoded stream (waits while FFmpeg is busy: none may
+    /// be lost). False once the feed has ended.
+    pub fn write(&self, bytes: Vec<u8>) -> bool {
+        bytes.is_empty() || self.tx.send((Arc::new(Pixels::Owned(bytes)), 1)).is_ok()
+    }
+
+    /// `n` more frames were encoded.
+    pub fn count(&self, n: u64) {
+        self.frames.fetch_add(n, Ordering::Relaxed);
+    }
+
+    /// The encoder stopped working: the picture ends here and `why` is the
+    /// reason the feed reports (the app starts the session again, on the
+    /// read-back path).
+    pub fn fail(&self, why: &str) {
+        lock(&self.error).get_or_insert_with(|| why.to_owned());
+        let _ = self.tx.send((Arc::new(Pixels::Owned(Vec::new())), END));
     }
 }
 
@@ -389,13 +461,26 @@ impl EncoderFeed {
         let audio_silence = Arc::new(AtomicU64::new(0));
         let mut threads = Vec::new();
         let fr = Arc::clone(&frames);
-        let ready = Arc::new(AtomicBool::new(false));
+        let encoded = encoded_input(f.pix_fmt).is_some();
+        // An encoded picture starts at once: FFmpeg only copies it (the
+        // graphics card's encoder has no start-up to wait for here).
+        let ready = Arc::new(AtomicBool::new(encoded));
         let rd = Arc::clone(&ready);
         threads.push(
             thread::Builder::new()
                 .name("lumora-live-encode-in".into())
                 .spawn(move || {
                     'frames: for (px, copies) in rx {
+                        if copies == END {
+                            break;
+                        }
+                        if encoded {
+                            // A piece of the encoded stream (its frames are counted by the encoder).
+                            if stdin.write_all(px.as_slice()).is_err() {
+                                break;
+                            }
+                            continue;
+                        }
                         for _ in 0..copies {
                             if stdin.write_all(px.as_slice()).is_err() {
                                 break 'frames;
@@ -451,9 +536,15 @@ impl EncoderFeed {
                         .rev()
                         .find(|l| !l.trim().is_empty())
                         .map(str::to_owned);
-                    if let Some(l) = &last {
-                        *lock(&e) = Some(l.clone());
-                    }
+                    // The graphics card's encoder said why it ended the picture (zero-copy):
+                    // that is the reason, FFmpeg only finished the file.
+                    let last = {
+                        let mut err = lock(&e);
+                        if err.is_none() {
+                            err.clone_from(&last);
+                        }
+                        err.clone()
+                    };
                     // Ended without being asked: it can't take more (the sound
                     // thread hears it too).
                     let asked = fin.swap(true, Ordering::SeqCst);
@@ -471,7 +562,7 @@ impl EncoderFeed {
             last: None,
             start,
             ready,
-            primed: false,
+            primed: encoded,
             finishing,
             frames,
             dropped: Arc::default(),
@@ -546,6 +637,35 @@ impl EncoderFeed {
     /// The size of the frames it takes.
     pub fn frame_len(&self) -> usize {
         self.frame_len
+    }
+
+    /// Frames due now for an encoder that takes the picture on the graphics
+    /// card (zero-copy): `copies` plus those owed. They are owed until
+    /// [`EncoderFeed::handed_over`] or [`EncoderFeed::missed`] says what happened.
+    pub fn with_owed(&self, copies: u64) -> u64 {
+        copies + self.owed
+    }
+
+    /// The graphics card's encoder took the picture for all frames due.
+    pub fn handed_over(&mut self) {
+        self.owed = 0;
+    }
+
+    /// The graphics card's encoder could not take the picture now: `copies`
+    /// were late, `total` (with those owed before) go with the next picture.
+    pub fn missed(&mut self, copies: u64, total: u64) {
+        self.dropped.fetch_add(copies, Ordering::Relaxed);
+        self.owed = total.min(MAX_OWED);
+    }
+
+    /// Where an encoder on the graphics card writes this feed's encoded
+    /// picture (a feed started with an `h264` or `hevc` picture).
+    pub fn bitstream(&self) -> Option<Bitstream> {
+        Some(Bitstream {
+            tx: self.tx.clone()?,
+            frames: Arc::clone(&self.frames),
+            error: Arc::clone(&self.error),
+        })
     }
 
     pub fn stats(&self) -> FeedStats {
@@ -703,6 +823,130 @@ mod tests {
         );
         assert!(s.contains(" -an "), "{s}");
         assert!(s.ends_with("-c:v libx264 -f matroska -"), "{s}");
+    }
+
+    #[test]
+    fn an_encoded_picture_is_copied_as_it_is() {
+        let mut f = feed_args(None);
+        f.pix_fmt = "h264";
+        let s = args(&f, None).join(" ");
+        assert!(
+            s.contains("-fflags +genpts -f h264 -framerate 30 -i -"),
+            "{s}"
+        );
+        assert!(!s.contains("rawvideo"), "{s}");
+        assert!(!s.contains("libx264"), "the app's encode is not used: {s}");
+        assert!(s.ends_with("-an -c:v copy -f matroska -"), "{s}");
+        assert_eq!(frame_len("h264", 1920, 1080), 0);
+        assert_eq!(encoded_input("hevc"), Some("hevc"));
+        assert_eq!(encoded_input("nv12"), None);
+    }
+
+    /// The zero-copy path's FFmpeg side, when FFmpeg is installed: an H.264
+    /// elementary stream written in odd-sized pieces (as a graphics card's
+    /// encoder hands them out) comes out as a Matroska file with every
+    /// frame; an encoder that fails ends the picture with its reason.
+    #[test]
+    fn an_encoded_stream_goes_into_the_file_when_ffmpeg_is_present() {
+        let Some(ffmpeg) = ffmpeg() else { return };
+        let h264 = quiet(&ffmpeg)
+            .args([
+                "-v",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=size=128x72:rate=30",
+                "-frames:v",
+                "45",
+                "-c:v",
+                "libx264",
+                "-g",
+                "60",
+                "-bf",
+                "0",
+                "-f",
+                "h264",
+                "-",
+            ])
+            .output()
+            .expect("FFmpeg runs");
+        if !h264.status.success() || h264.stdout.is_empty() {
+            eprintln!("no libx264 here; skipped");
+            return;
+        }
+        let out = Arc::new(Mutex::new(Vec::<u8>::new()));
+        let o = Arc::clone(&out);
+        let ended = Arc::new(Mutex::new(None));
+        let e2 = Arc::clone(&ended);
+        let start = |on_end: Option<OnEnd>| {
+            let o = Arc::clone(&o);
+            EncoderFeed::start(
+                &ffmpeg,
+                FeedArgs {
+                    pix_fmt: "h264",
+                    ..feed_args(None)
+                },
+                Box::new(move |c| o.lock().unwrap().extend(c)),
+                on_end,
+            )
+            .expect("starts")
+        };
+        let mut feed = start(None);
+        assert!(feed.due(1000) > 0, "an encoded feed needs no priming");
+        let bits = feed.bitstream().expect("a bitstream");
+        for piece in h264.stdout.chunks(1777) {
+            assert!(bits.write(piece.to_vec()));
+        }
+        bits.count(45);
+        drop(bits);
+        let stats = feed.finish();
+        assert_eq!(stats.frames_in, 45, "{stats:?}");
+        let mkv = out.lock().unwrap().clone();
+        assert_eq!(&mkv[..4], &[0x1a, 0x45, 0xdf, 0xa3], "Matroska");
+        let dir = std::env::temp_dir().join(format!("lumora-zc-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let path = dir.join("copy.mkv");
+        std::fs::write(&path, &mkv).unwrap();
+        let probe = quiet(&ffmpeg)
+            .args(["-v", "error", "-i"])
+            .arg(&path)
+            .args(["-f", "null", "-c:v", "rawvideo", "-"])
+            .output()
+            .unwrap();
+        let count = quiet(&ffmpeg)
+            .args(["-v", "error", "-i"])
+            .arg(&path)
+            .args(["-vf", "scale=1:1", "-f", "rawvideo", "-pix_fmt", "gray", "-"])
+            .output()
+            .unwrap()
+            .stdout
+            .len();
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(probe.status.success(), "{probe:?}");
+        assert_eq!(count, 45, "every frame is in the file");
+
+        // An encoder that stops: the feed ends by itself, with its reason.
+        let feed = start(Some(Box::new(move |asked, said| {
+            *e2.lock().unwrap() = Some((asked, said));
+        })));
+        let bits = feed.bitstream().expect("a bitstream");
+        assert!(bits.write(h264.stdout[..4000.min(h264.stdout.len())].to_vec()));
+        bits.fail("The graphics card's encoder stopped (test).");
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while ended.lock().unwrap().is_none() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        let got = ended.lock().unwrap().clone();
+        assert_eq!(
+            got,
+            Some((
+                false,
+                Some("The graphics card's encoder stopped (test).".to_owned())
+            ))
+        );
+        assert!(!bits.write(vec![0; 4]) || !feed.alive());
+        drop(feed);
     }
 
     #[test]
