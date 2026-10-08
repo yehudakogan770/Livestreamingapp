@@ -501,6 +501,7 @@ impl Accounts {
         settings: &BroadcastSettings,
         now: u64,
     ) -> Result<Broadcast, AccountError> {
+        settings.check()?;
         let req = youtube::insert_broadcast(settings, &crate::time::rfc3339(now + 60));
         let resp = self.yt_call(http, secrets, now, &req)?;
         youtube::parse_one_broadcast(&resp)
@@ -576,6 +577,7 @@ impl Accounts {
         let stream = self.yt_stream(http, secrets, now)?;
         let mut note = None;
         let mut broadcast = if link.broadcast_id.trim().is_empty() {
+            link.settings.check()?;
             let req = youtube::insert_broadcast(&link.settings, &crate::time::rfc3339(now));
             let resp = self.yt_call(http, secrets, now, &req)?;
             let b = youtube::parse_one_broadcast(&resp)?;
@@ -1167,11 +1169,20 @@ mod tests {
                 200,
                 r#"{"id":"New0Broadcast1","contentDetails":{"boundStreamId":"Abc123StreamId"}}"#,
             );
+        let mut settings = BroadcastSettings {
+            title: "Spring concert".into(),
+            ..BroadcastSettings::default()
+        };
+        // YouTube needs the made-for-kids answer: nothing is made without it.
+        let unanswered = AccountLink::Youtube(YoutubeLink {
+            settings: settings.clone(),
+            ..YoutubeLink::default()
+        });
+        let (_, failed) = a.prepare(&http, &store, &[("yt".into(), unanswered)], 1_791_484_200);
+        assert!(failed[0].error.message.contains("made for kids"));
+        settings.kids_chosen = true;
         let link = AccountLink::Youtube(YoutubeLink {
-            settings: BroadcastSettings {
-                title: "Spring concert".into(),
-                ..BroadcastSettings::default()
-            },
+            settings,
             ..YoutubeLink::default()
         });
         let (ready, failed) = a.prepare(&http, &store, &[("yt".into(), link)], 1_791_484_200);

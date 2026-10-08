@@ -86,6 +86,8 @@ pub struct BroadcastSettings {
     pub scheduled_start: String,
     /// Required by YouTube (COPPA): is it made for children?
     pub made_for_kids: bool,
+    /// The operator answered that question (YouTube needs an answer, never a guess).
+    pub kids_chosen: bool,
     pub latency: Latency,
     /// Viewers can rewind while it's live.
     pub dvr: bool,
@@ -103,11 +105,33 @@ impl Default for BroadcastSettings {
             privacy: Privacy::Unlisted,
             scheduled_start: String::new(),
             made_for_kids: false,
+            kids_chosen: false,
             latency: Latency::Normal,
             dvr: true,
             auto_start: false,
             auto_stop: false,
         }
+    }
+}
+
+impl BroadcastSettings {
+    /// What must be fixed before YouTube gets these settings.
+    ///
+    /// # Errors
+    /// What is missing, in words.
+    pub fn check(&self) -> Result<(), AccountError> {
+        if !self.kids_chosen {
+            return Err(AccountError::new(
+                "YouTube needs to know whether the broadcast is made for kids. Choose Yes or No \
+                 in Settings → Recording and streaming.",
+            ));
+        }
+        if self.title.trim().chars().count() > 100 {
+            return Err(AccountError::new(
+                "The broadcast’s title is too long: YouTube takes at most 100 characters.",
+            ));
+        }
+        Ok(())
     }
 }
 
