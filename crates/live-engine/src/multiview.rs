@@ -147,7 +147,7 @@ pub fn layout(show: &Show, w: u32, h: u32) -> Layout {
     let gap = 4.0 * s;
     let (gx, gy, gw, gh) = (pad, pad, wf - 2.0 * pad, hf - 2.0 * pad);
     let header = r(gx, gy, gw, 32.0 * s);
-    // The clock: 26 px high, 6 px in from the header's right end, centred in it.
+    // The clock: 26 px high, 6 px in from the header's right end, centered in it.
     let clock = r(
         gx + gw - 6.0 * s - CLOCK_W * s,
         gy + 3.0 * s,

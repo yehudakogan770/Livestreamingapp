@@ -135,7 +135,7 @@ export function drawMonitorWords(ctx: CanvasRenderingContext2D, W: number, H: nu
   ctx.textBaseline = 'middle';
   const top = m.shabbos && !m.prompter ? 10 * ch : 0;
 
-  /** A clock or countdown cell centred at (x, y): its tag above its number. */
+  /** A clock or countdown cell centered at (x, y): its tag above its number. */
   const cell = (kind: 'clock' | 'timer', x: number, y: number, num: number, tagPx = 3.2 * ch) => {
     const tag = kind === 'clock' ? 'TIME' : (m.timer?.tag ?? '');
     const text = kind === 'clock' ? (m.clock?.time ?? '') : (m.timer?.text ?? '');
