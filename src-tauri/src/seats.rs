@@ -77,6 +77,12 @@ impl SeatBackend for ShowSide {
         crate::apply(&self.0, &state, action).map_err(|e| e.to_string())
     }
 
+    fn event_name(&self) -> Option<String> {
+        let state = self.0.try_state::<AppState>()?;
+        let name = crate::lock(&state).show().event.name.clone();
+        Some(name)
+    }
+
     fn command(&self, command: SeatCommand) -> Result<(), String> {
         // The same requests as the phone remote's, run by the control window.
         let command: crate::remote::AppCommand =

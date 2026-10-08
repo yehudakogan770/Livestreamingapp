@@ -39,6 +39,8 @@ const SILENT: Duration = Duration::from_secs(8);
 const PAIRING_WAIT: Duration = Duration::from_secs(5 * 60);
 const MAX_PENDING: usize = 4;
 const MAX_CONNECTED: usize = 12;
+/// Connections allowed in the key exchange at once.
+const MAX_GREETING: usize = 16;
 /// Requests per seat: a burst of this many, refilled at `RATE` a second.
 const BURST: f64 = 40.0;
 const RATE: f64 = 20.0;
@@ -82,6 +84,12 @@ pub trait SeatBackend: Send + Sync + 'static {
     fn picture(&self, key: &str) -> Option<Vec<u8>> {
         let _ = key;
         None
+    }
+    /// The event's name (seats see it with this computer's name). The usual
+    /// way reads the whole show; the app has a cheaper one.
+    fn event_name(&self) -> Option<String> {
+        self.snapshot()
+            .and_then(|(_, s)| s["event"]["name"].as_str().map(str::to_owned))
     }
     /// Something the Operators panel shows changed.
     fn changed(&self) {}
@@ -271,6 +279,8 @@ struct Inner {
     pictures: Mutex<HashMap<String, (Vec<u8>, Instant)>>,
     meters: Mutex<Option<Value>>,
     stop: AtomicBool,
+    /// Connections still in the key exchange (a flood of them is turned away).
+    greeting: AtomicUsize,
 }
 
 struct Running {
@@ -307,6 +317,7 @@ impl SeatServer {
             pictures: Mutex::new(HashMap::new()),
             meters: Mutex::new(None),
             stop: AtomicBool::new(false),
+            greeting: AtomicUsize::new(0),
         });
         inner.save();
         for (name, run) in [
@@ -647,11 +658,7 @@ impl Inner {
         let event = lock(&self.latest)
             .as_ref()
             .and_then(|(_, s)| s["event"]["name"].as_str().map(str::to_owned))
-            .or_else(|| {
-                self.backend
-                    .snapshot()
-                    .and_then(|(_, s)| s["event"]["name"].as_str().map(str::to_owned))
-            })
+            .or_else(|| self.backend.event_name())
             .filter(|n| !n.trim().is_empty());
         let computer = computer_name();
         match event {
@@ -1147,9 +1154,32 @@ fn read_sealed(stream: &mut TcpStream, opener: &mut Opener) -> io::Result<FromSe
 }
 
 /// One connection, from the key exchange to the end.
-fn serve(mut stream: TcpStream, inner: &Arc<Inner>) -> io::Result<()> {
+/// Counts a connection as still greeting until dropped.
+struct Greeting<'a>(&'a AtomicUsize);
+
+impl Drop for Greeting<'_> {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, Ordering::SeqCst);
+    }
+}
+
+fn serve(stream: TcpStream, inner: &Arc<Inner>) -> io::Result<()> {
+    if inner.greeting.fetch_add(1, Ordering::SeqCst) >= MAX_GREETING {
+        inner.greeting.fetch_sub(1, Ordering::SeqCst);
+        let _ = stream.shutdown(Shutdown::Both);
+        return Ok(());
+    }
+    let greeting = Greeting(&inner.greeting);
+    serve_counted(stream, inner, greeting)
+}
+
+fn serve_counted(
+    mut stream: TcpStream,
+    inner: &Arc<Inner>,
+    greeting: Greeting<'_>,
+) -> io::Result<()> {
     let ip = stream.peer_addr()?.ip();
-    stream.set_read_timeout(Some(Duration::from_secs(10)))?;
+    stream.set_read_timeout(Some(Duration::from_secs(5)))?;
     stream.set_nodelay(true)?;
     let hello = read_plain(&mut stream)?;
     if !lock(&inner.config).enabled {
@@ -1309,6 +1339,7 @@ fn serve(mut stream: TcpStream, inner: &Arc<Inner>) -> io::Result<()> {
     } else {
         None
     };
+    drop(greeting);
     stream.set_read_timeout(Some(SILENT))?;
     let (tx, rx) = mpsc::sync_channel::<Out>(QUEUE);
     let backlog = Arc::new(AtomicUsize::new(0));

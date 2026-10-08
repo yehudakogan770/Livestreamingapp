@@ -127,6 +127,14 @@ fn setup() -> (Arc<Show>, Arc<SeatServer>, String) {
     (show, server, address)
 }
 
+/// The show computer lists the request a moment after the seat asks for the code.
+fn waiting_one(server: &SeatServer) -> Vec<lumora_seats::server::PendingView> {
+    wait("the show lists the request", || {
+        server.status().pending.len() == 1
+    });
+    server.status().pending
+}
+
 fn engine_show(show: &Show) -> Value {
     serde_json::to_value(show.engine.lock().unwrap().show()).unwrap()
 }
@@ -151,7 +159,7 @@ fn two_seats_run_one_show() {
     wait("A is asked for the code", || {
         matches!(a.status(), LinkStatus::EnterCode { .. })
     });
-    let pending = server.status().pending;
+    let pending = waiting_one(&server);
     assert_eq!(pending.len(), 1);
     assert_eq!(pending[0].name, "Graphics laptop");
     let code = pending[0].code.clone();
@@ -192,7 +200,7 @@ fn two_seats_run_one_show() {
     wait("B is asked for the code", || {
         matches!(b.status(), LinkStatus::EnterCode { .. })
     });
-    let p = server.status().pending[0].clone();
+    let p = waiting_one(&server)[0].clone();
     server.approve(p.id, Role::Director).unwrap();
     assert!(!connected(&b), "not before the code is typed");
     b.enter_code(&p.code).unwrap();
@@ -389,7 +397,7 @@ fn a_denied_computer_is_told_and_a_wrong_code_attempt_is_dropped() {
     wait("asked for the code", || {
         matches!(link.status(), LinkStatus::EnterCode { .. })
     });
-    let p = server.status().pending[0].clone();
+    let p = waiting_one(&server)[0].clone();
     server.deny(p.id);
     wait("told no", || {
         matches!(link.status(), LinkStatus::Ended { .. })
