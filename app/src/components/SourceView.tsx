@@ -10,7 +10,9 @@ import { GraphicView } from './GraphicView';
 import { PollView } from './PollView';
 import { LyricsView } from './LyricsView';
 import { ScoreboardView } from './ScoreboardView';
-import { createContext, useContext, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { TitlerView } from '../titler/TitlerView';
+import { showFromStage } from '../titler/titlerSource';
 import { useReportProblem } from '../problems/problems';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -90,6 +92,13 @@ export function SourceView(props: SourceViewProps) {
 function NoSignalCover({ id }: { id: string }) {
   const stage = useStage();
   return stage?.noSignal?.includes(id) ? <SafeScreenView /> : null;
+}
+
+/** A Lumora Titler graphic, with what this window knows of the show (fields filled from the scoreboard, countdown, data file). */
+function TitlerInput({ source, client, thumb }: { source: Source; client: EngineClient; thumb: boolean }) {
+  const stage = useStage();
+  const show = useMemo(() => showFromStage(stage), [stage]);
+  return <TitlerView source={source} show={show} urlFor={(p) => client.mediaUrl(p)} thumb={thumb} />;
 }
 
 const Who = createContext<{ id: string; name: string; kind: Source['kind']['type'] } | null>(null);
@@ -185,6 +194,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       return <FundraiserView f={k} thumb={thumb} />;
     case 'graphic':
       return <GraphicView g={k} url={(p) => client.mediaUrl(p)} thumb={thumb} />;
+    case 'titler':
+      return <TitlerInput source={source} client={client} thumb={thumb} />;
     case 'seating':
       return <SeatingView s={k} thumb={thumb} />;
     case 'trivia':

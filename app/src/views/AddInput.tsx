@@ -8,6 +8,8 @@ import { defaultScripture } from '../engine/tanach';
 import { defaultTrivia } from '../engine/trivia';
 import { defaultSeating } from '../engine/seating';
 import { fromTemplate } from '../engine/graphic';
+import { fromTemplate as fromTitlerTemplate, starterTemplates } from '../../../titler/src/core/templates';
+import { titlerKind } from '../titler/titlerSource';
 import { newRoom } from '../engine/guest';
 import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
@@ -55,6 +57,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'stream', name: 'Stream / IP / NDI camera', hint: 'NDI, SRT, RTMP, RTSP camera, HLS link…' },
   { kind: 'raffle', name: 'Raffle', hint: 'People enter from their phones; the draw is on screen' },
   { kind: 'fundraiser', name: 'Fundraiser', hint: 'Goal, total and donors on screen; pledges from phones' },
+  { kind: 'titler', name: 'Titler graphic', hint: 'Lower thirds, bugs, tickers, scoreboards and cards, animated (Lumora Titler)' },
   { kind: 'graphic', name: 'Designed title', hint: 'Your own title: text, boxes and pictures anywhere (the title designer)' },
   { kind: 'seating', name: 'Table finder', hint: 'Guests type their name on their phone and see their table' },
   { kind: 'trivia', name: 'Trivia game', hint: 'Questions on screen, answers from phones, a leaderboard' },
@@ -79,7 +82,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
 const GROUPS: { name: string; kinds: Kind[] }[] = [
   { name: 'Cameras and people', kinds: ['camera', 'stream', 'guest', 'screen'] },
   { name: 'Videos, pictures and slides', kinds: ['video', 'image', 'slideshow', 'browser', 'color', 'pattern'] },
-  { name: 'Text and titles', kinds: ['text', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'pesukim', 'scripture', 'zmanim'] },
+  { name: 'Text and titles', kinds: ['text', 'titler', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'pesukim', 'scripture', 'zmanim'] },
   { name: 'The audience’s phones', kinds: ['poll', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
   { name: 'Layouts and visuals', kinds: ['split', 'visuals', 'logo3d'] },
   { name: 'Sound', kinds: ['microphone', 'sound'] },
@@ -144,6 +147,7 @@ export function AddInput({
   const [path, setPath] = useState<string | null>(null);
   const [color, setColor] = useState('#2b2f36');
   const [template, setTemplate] = useState(initialTemplate ?? 0);
+  const [titlerTemplate, setTitlerTemplate] = useState(0);
   const [split, setSplit] = useState<Split>(defaultSplit);
   const [slideshow, setSlideshow] = useState<Slideshow>(defaultSlideshow);
   const [words, setWords] = useState('');
@@ -232,6 +236,10 @@ export function AddInput({
       }
       case 'graphic':
         return { name: n || 'Designed title', kind: { type: 'graphic', ...fromTemplate(0) } };
+      case 'titler': {
+        const t = starterTemplates()[titlerTemplate] ?? starterTemplates()[0]!;
+        return { name: n || t.name, kind: titlerKind(fromTitlerTemplate(t)) };
+      }
       case 'seating':
         return { name: n || 'Table finder', kind: { type: 'seating', ...defaultSeating() } };
       case 'trivia':
@@ -567,6 +575,22 @@ export function AddInput({
                 />
                 <span className="field__note">A second column (or “Name — role”) shows the role smaller. Edit more on its card when it is on air.</span>
               </label>
+            )}
+
+            {kind === 'titler' && (
+              <div className="field">
+                <span className="field__label">Start from</span>
+                <div className="addinput__list">
+                  {starterTemplates().map((t, i) => (
+                    <button key={t.id} type="button" className="seg" aria-pressed={titlerTemplate === i} onClick={() => setTitlerTemplate(i)} title={t.description}>
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+                <span className="field__note">
+                  Fill in its fields on its card, live. To change how it looks or moves, open it in Titler (the Text menu, or “Edit in Titler…” on its card). It takes the event’s look.
+                </span>
+              </div>
             )}
 
             {kind === 'text' && (

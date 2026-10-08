@@ -1,0 +1,20 @@
+{
+  "name": "Lumora Titler",
+  "short_name": "Titler",
+  "description": "Design titles, lower thirds, scoreboards, tickers and cards for Lumora and Lumora Studio.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#141413",
+  "theme_color": "#181817",
+  "lang": "en-US",
+  "dir": "ltr",
+  "categories": ["productivity", "photo"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

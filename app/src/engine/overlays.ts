@@ -7,6 +7,7 @@ import type { Overlay } from './types/Overlay';
 import type { OverlayAnim } from './types/OverlayAnim';
 import type { ScreenId } from './types/ScreenId';
 import type { Show } from './types/Show';
+import { titlerOutMs } from '../titler/titlerSource';
 
 export const CHANNELS = 4;
 
@@ -162,7 +163,7 @@ export function overlaysOn(overlays: Overlay[], screen: ScreenId, now: number): 
 }
 
 /** Inputs that go over the picture (names, scoreboards…), never instead of it. */
-export const OVERLAY_KINDS: ReadonlySet<string> = new Set(['text', 'scoreboard', 'graphic', 'comment', 'lyrics']);
+export const OVERLAY_KINDS: ReadonlySet<string> = new Set(['text', 'scoreboard', 'graphic', 'titler', 'comment', 'lyrics']);
 
 /** The overlay channel for an input: the one it is in, else an empty one, else one not on air (else the last). */
 export function overlayChannel(show: Show, id: string): number {
@@ -185,12 +186,15 @@ export function overlayActions(show: Show, id: string, screen: ScreenId, onAir: 
   if (fresh) acts.push({ type: 'setOverlaySource', channel, sourceId: id });
   // A name goes away by itself after a few seconds; a scoreboard stays.
   // Once placed, the seconds set in the overlay's settings are kept.
-  const kind = show.sources.find((s) => s.id === id)?.kind.type;
+  const src = show.sources.find((s) => s.id === id);
+  const kind = src?.kind.type;
   const hide = fresh ? { autoHideMs: kind === 'text' ? NAME_HOLD_MS : 0 } : {};
+  // A Titler graphic plays its own IN and OUT: the channel cuts, and stays on for the OUT.
+  const titler = kind === 'titler' ? { animIn: 'cut' as const, animOut: 'cut' as const, animMs: titlerOutMs(src) } : {};
   acts.push({
     type: 'updateOverlay',
     channel,
-    patch: { frame: { x: 0, y: 0, w: 100, h: 100 }, opacity: 1, screens: [screen === 'monitor' ? 'live' : screen], ...hide },
+    patch: { frame: { x: 0, y: 0, w: 100, h: 100 }, opacity: 1, screens: [screen === 'monitor' ? 'live' : screen], ...hide, ...titler },
   });
   acts.push(onAir ? { type: 'setOverlayOn', channel, value: true } : { type: 'setOverlayInNext', channel, value: true });
   return acts;

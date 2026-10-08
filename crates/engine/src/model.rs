@@ -298,6 +298,8 @@ pub enum SourceKind {
     Seating(Box<crate::seating::Seating>),
     /// A free-layout graphic made in the title designer.
     Graphic(Box<crate::graphic::Graphic>),
+    /// A graphic made in Lumora Titler (lower thirds, scoreboards, tickers…).
+    Titler(Box<crate::titler::TitlerGraphic>),
     /// A guest joining by link (camera and sound from their phone or computer).
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.

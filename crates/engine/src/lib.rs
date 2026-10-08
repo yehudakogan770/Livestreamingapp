@@ -50,6 +50,7 @@ pub mod stage;
 pub mod stream;
 pub mod text;
 pub mod timing;
+pub mod titler;
 pub mod triggers;
 pub mod trivia;
 pub mod vision;

@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#181817" />
+    <meta name="description" content="Lumora Titler: design titles, lower thirds, scoreboards, tickers and cards for Lumora and Lumora Studio." />
+    <meta name="robots" content="noindex" />
+    <title>Lumora Titler</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="./favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./icon-180.png" sizes="180x180" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+        background: #141413;
+      }
+      /* Before the app has loaded: the mark and the name. */
+      .boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: #ececea;
+        font:
+          600 15px system-ui,
+          sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="boot" role="status" aria-label="Loading Lumora Titler">
+        <img src="./icon.svg" alt="" width="40" height="40" />
+        <span>Lumora Titler</span>
+      </div>
+    </div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

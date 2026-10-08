@@ -37,6 +37,7 @@ import {
   Video,
   Rows3,
   CircleHelp,
+  PanelBottom,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -57,6 +58,7 @@ export const KIND_ICON: Record<string, LucideIcon> = {
   raffle: Ticket,
   fundraiser: HandCoins,
   graphic: PenTool,
+  titler: PanelBottom,
   seating: Table2,
   trivia: CircleHelp,
   scripture: BookOpen,

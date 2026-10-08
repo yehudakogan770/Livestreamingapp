@@ -61,6 +61,7 @@ import { creditsMetrics, creditsPage, rollOffset, splitName, wallLayout } from '
 import type { Credits } from '../engine/types/Credits';
 import type { TextInput } from '../engine/types/TextInput';
 import type { Overlay } from '../engine/types/Overlay';
+import { TitlerPainter, type ChannelState } from '../titler/drawTitler';
 import {
   countdownDue,
   countdownFinished,
@@ -304,8 +305,10 @@ export class ProgramCompositor {
           if (!src) return;
           // What it shows can have its own entrance (the Pesukim bar), from when it came on.
           this.onSince = plane.changedAt;
+          this.channelOn = { on: plane.on ?? true, changedAt: plane.changedAt };
           this.safely(`overlay:${src.id}`, () => this.drawSource(src, show.event, now, w, h));
           this.onSince = null;
+          this.channelOn = null;
           return;
         }
         case 'top':
@@ -1930,6 +1933,10 @@ export class ProgramCompositor {
       case 'graphic':
         this.graphic(k, now, this.since(src.id, now), w, h);
         return;
+      case 'titler':
+        this.titlers ??= new TitlerPainter((p) => this.client.mediaUrl(p));
+        this.titlers.paint(this.ctx, src, k, this.show, now, w, h, this.channelOn, this.onSince ?? this.since(src.id, now));
+        return;
       case 'text':
         this.text(this.show ? withData(k, dataValues(this.show.data)) : k, now, w, h, this.since(src.id, now));
         return;
@@ -2615,8 +2622,10 @@ export class ProgramCompositor {
     ctx.clip();
     // What it shows can have its own entrance (the Pesukim bar), from when it came on.
     this.onSince = o.changedAt;
+    this.channelOn = { on: o.on, changedAt: o.changedAt };
     this.drawSource(src, show.event, now, bw, bh);
     this.onSince = null;
+    this.channelOn = null;
     ctx.restore();
   }
 
@@ -2735,6 +2744,10 @@ export class ProgramCompositor {
   /** The bar along the bottom (mirrors PesukimView's PesukimBar and its CSS). */
   /** When the overlay being drawn came on (for its content's own entrance). */
   private onSince: number | null = null;
+  /** The overlay channel being drawn: on or going off, and since when (Titler graphics' IN and OUT). */
+  private channelOn: ChannelState | null = null;
+  /** Lumora Titler graphics (made when the first one is drawn). */
+  private titlers: TitlerPainter | null = null;
 
   /** Apply an effect's move, size, turn and blur about (cx, cy). */
   private applyEffect(fx: EffectState, cx: number, cy: number, w: number, h: number) {

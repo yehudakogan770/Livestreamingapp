@@ -553,6 +553,22 @@ function apply(s: Show, a: Action, now: number) {
     case 'raffleReset':
       Object.assign(raffleIn(s, a.id), { winners: [], draw: null });
       return;
+    case 'updateTitler': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'titler') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a Titler graphic' });
+      Object.assign(src.kind, structuredClone(a.titler));
+      return;
+    }
+    case 'setTitlerValues': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'titler') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a Titler graphic' });
+      for (const v of a.values) {
+        const had = src.kind.values.find((x) => x.key === v.key);
+        if (had) had.value = v.value;
+        else src.kind.values.push({ ...v });
+      }
+      return;
+    }
     case 'updateGraphic': {
       const src = find(s, a.id);
       if (src.kind.type !== 'graphic') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a designed graphic' });

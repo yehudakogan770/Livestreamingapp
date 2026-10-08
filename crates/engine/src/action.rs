@@ -337,6 +337,16 @@ pub enum Action {
         id: SourceId,
         pledge: u32,
     },
+    /// Change a Lumora Titler graphic (its template and fields).
+    UpdateTitler {
+        id: SourceId,
+        titler: crate::titler::TitlerGraphic,
+    },
+    /// Change some fields of a Lumora Titler graphic (the others stay), e.g. while it is on air.
+    SetTitlerValues {
+        id: SourceId,
+        values: Vec<crate::titler::TitlerValue>,
+    },
     /// Change a designed graphic.
     UpdateGraphic {
         id: SourceId,

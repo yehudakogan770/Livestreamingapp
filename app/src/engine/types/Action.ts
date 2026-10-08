@@ -48,6 +48,8 @@ import type { Step } from './Step';
 import type { Stinger } from './Stinger';
 import type { StreamInput } from './StreamInput';
 import type { TextInput } from './TextInput';
+import type { TitlerGraphic } from './TitlerGraphic';
+import type { TitlerValue } from './TitlerValue';
 import type { Transition } from './Transition';
 import type { TransitionKind } from './TransitionKind';
 import type { Trigger } from './Trigger';
@@ -97,6 +99,8 @@ export type Action =
   | { type: 'addDonation'; id: SourceId; name: string; amount: number; message: string }
   | { type: 'pledgeApprove'; id: SourceId; pledge: number; value: boolean }
   | { type: 'pledgeRemove'; id: SourceId; pledge: number }
+  | { type: 'updateTitler'; id: SourceId; titler: TitlerGraphic }
+  | { type: 'setTitlerValues'; id: SourceId; values: Array<TitlerValue> }
   | { type: 'updateGraphic'; id: SourceId; graphic: Graphic }
   | { type: 'setDataFile'; path: string; everyMs: number }
   | { type: 'dataRows'; headers: Array<string>; rows: Array<Array<string>>; error: string }

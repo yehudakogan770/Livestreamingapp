@@ -41,7 +41,7 @@ export const ENGINE_DRAWN: ReadonlySet<string> = new Set([
 
 export type PlaneSpec =
   | { kind: 'input'; name: string; w: number; h: number; sourceId: string; screen?: ScreenId }
-  | { kind: 'channel'; name: string; w: number; h: number; sourceId: string; changedAt: number }
+  | { kind: 'channel'; name: string; w: number; h: number; sourceId: string; changedAt: number; on?: boolean }
   | { kind: 'top'; name: 'top'; w: number; h: number; stinger: StingerPlay }
   | { kind: 'panic'; name: 'panic'; w: number; h: number }
   /** The words of the engine's multiview (the Live Screen's renderer draws them). */
@@ -97,7 +97,7 @@ export function overlayPlanes(show: Show, screen: ScreenId, now: number, w: numb
       if (ENGINE_DRAWN.has(s.kind.type)) return;
       const size = { w: Math.max(1, Math.round(pw)), h: Math.max(1, Math.round(ph)) };
       const name = `g:${s.id}`;
-      add(channel ? { kind: 'channel', name, ...size, sourceId: s.id, changedAt: channel.changedAt } : { kind: 'input', name, ...size, sourceId: s.id });
+      add(channel ? { kind: 'channel', name, ...size, sourceId: s.id, changedAt: channel.changedAt, on: channel.on } : { kind: 'input', name, ...size, sourceId: s.id });
     };
     if (src.kind.type === 'split') {
       for (const b of src.kind.boxes) {

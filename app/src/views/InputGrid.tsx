@@ -41,6 +41,7 @@ import { isAdjusted } from '../engine/chroma';
 import { inputItem } from '../engine/library';
 
 const KIND_NAME: Record<Source['kind']['type'], string> = {
+  titler: 'Titler graphic',
   camera: 'Camera',
   video: 'Video',
   image: 'Picture',

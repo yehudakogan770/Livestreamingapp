@@ -5,6 +5,7 @@ import type { ScreenId } from '../engine/types/ScreenId';
 import type { Show } from '../engine/types/Show';
 import { overlayKeyframes, overlayShowing } from '../engine/overlays';
 import { SourceView } from './SourceView';
+import { TitlerChannel } from '../titler/TitlerView';
 
 const canAnimate = typeof Element !== 'undefined' && typeof Element.prototype.animate === 'function';
 
@@ -49,7 +50,10 @@ export function OverlaysView({
         const staged = next && o.inNext && !o.on;
         return (
           <OverlayBox key={channel} o={o} animate={!staged} staged={staged}>
-            <SourceView source={src} client={client} audience={audience} />
+            {/* A Titler graphic plays its own IN and OUT from the channel going on and off. */}
+            <TitlerChannel.Provider value={staged ? null : { on: o.on, changedAt: o.changedAt }}>
+              <SourceView source={src} client={client} audience={audience} />
+            </TitlerChannel.Provider>
           </OverlayBox>
         );
       })}

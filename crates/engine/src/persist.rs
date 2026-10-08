@@ -100,6 +100,7 @@ fn repair_audience(kind: &mut SourceKind) {
         SourceKind::Trivia(t) => t.repair(),
         SourceKind::Seating(s) => s.repair(),
         SourceKind::Graphic(g) => g.repair(),
+        SourceKind::Titler(t) => t.repair(),
         _ => {}
     }
 }

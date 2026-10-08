@@ -21,6 +21,7 @@ import type { Slideshow } from './Slideshow';
 import type { Split } from './Split';
 import type { StreamInput } from './StreamInput';
 import type { TextInput } from './TextInput';
+import type { TitlerGraphic } from './TitlerGraphic';
 import type { Trivia } from './Trivia';
 import type { Wall } from './Wall';
 import type { ZmanimCard } from './ZmanimCard';
@@ -65,6 +66,7 @@ export type SourceKind =
   | ({ type: 'trivia' } & Trivia)
   | ({ type: 'seating' } & Seating)
   | ({ type: 'graphic' } & Graphic)
+  | ({ type: 'titler' } & TitlerGraphic)
   | ({ type: 'guest' } & Guest)
   | ({ type: 'comment' } & CommentCard)
   | ({ type: 'poll' } & Poll)
