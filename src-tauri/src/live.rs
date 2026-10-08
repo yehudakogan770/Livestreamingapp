@@ -208,6 +208,12 @@ impl Live {
         lock(&self.inner).runner.clone()
     }
 
+    /// The running engine and FFmpeg, for feeds started elsewhere (a
+    /// Blackmagic card's program out, `decklink.rs`).
+    pub(crate) fn feed_parts(&self) -> Option<(Arc<Runner>, PathBuf)> {
+        Some((self.runner()?, self.ffmpeg.clone()?))
+    }
+
     /// Start the engine when Unified is chosen (at start-up and when switched on).
     fn start(&self, show: &Show) {
         let mut inner = lock(&self.inner);

@@ -469,6 +469,29 @@ fn manage(
             if readers.contains_key(&id) {
                 continue;
             }
+            // A Blackmagic capture card: read with the DeckLink API (`decklink.rs`).
+            if crate::decklink::is_card(&st.url) {
+                let stop = Arc::new(AtomicBool::new(false));
+                crate::decklink::spawn(
+                    id.clone(),
+                    st.url.clone(),
+                    Arc::clone(frames),
+                    Arc::clone(sounds),
+                    Arc::clone(status),
+                    Arc::clone(&stop),
+                );
+                readers.insert(
+                    id,
+                    Reader {
+                        url: st.url,
+                        buffer_ms: st.buffer_ms,
+                        stop,
+                        child: Arc::new(Mutex::new(None)),
+                        sound: Arc::new(Mutex::new(None)),
+                    },
+                );
+                continue;
+            }
             // An NDI source: read with the NDI runtime, not FFmpeg.
             if let Some(name) = st.url.strip_prefix("ndi://").map(str::to_owned) {
                 let stop = Arc::new(AtomicBool::new(false));

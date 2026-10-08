@@ -53,6 +53,9 @@ pub fn run(t: &dyn Target, cmd: &str, q: &[(String, String)]) -> Result<(), Stri
         let (cam, c) = ptz(&show, q)?;
         return crate::ptz::send(&cam, c);
     }
+    if cmd.eq_ignore_ascii_case("atem") {
+        return crate::atem::control(q);
+    }
     match command_for(&show, &t.app_state(), cmd, q)? {
         Command::Show(a) => {
             if !crate::remote::allowed(&a) {
@@ -108,6 +111,10 @@ pub const COMMANDS: &[(&str, &str)] = &[
         "input or name (the main countdown if left out), do (start, pause, toggle, reset, add), minutes",
     ),
     ("ptz", "input or name, preset, move, zoom, speed"),
+    (
+        "atem",
+        "do (cut, auto, program, preview, ftb, style, rate, dsk, usk, macro, stopmacro), input, keyer, number or name, state, style, frames",
+    ),
 ];
 
 /// The main parameter of each command, for senders that give values without
@@ -121,7 +128,7 @@ pub fn main_key(cmd: &str) -> &'static str {
         "replay" => "seconds",
         "blank" | "panic" | "record" | "stream" | "replaybuffer" | "clock" => "state",
         "datarow" | "slide" | "verse" | "lyrics" => "to",
-        "prompter" | "timer" => "do",
+        "prompter" | "timer" | "atem" => "do",
         "take" | "cut" | "ftb" => "screen",
         _ => "input",
     }
