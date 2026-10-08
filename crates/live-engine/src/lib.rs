@@ -32,6 +32,7 @@ pub mod mix;
 pub mod multiview;
 pub mod overlay;
 pub mod present;
+pub mod replay;
 pub mod scene;
 pub mod source;
 pub mod vision;
