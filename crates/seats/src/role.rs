@@ -229,7 +229,7 @@ fn new_source_group(kind: &lumora_engine::SourceKind) -> Group {
         .and_then(|v| v.get("type").and_then(|t| t.as_str()).map(str::to_owned))
         .unwrap_or_default();
     match tag.as_str() {
-        "text" | "graphic" | "credits" => Group::Titles,
+        "text" | "graphic" | "titler" | "credits" => Group::Titles,
         "countdown" => Group::Countdowns,
         "scoreboard" => Group::Scoreboards,
         "lyrics" => Group::Lyrics,
@@ -296,6 +296,8 @@ pub fn group_of(action: &Action) -> Option<Group> {
 
         A::UpdateText { .. }
         | A::UpdateGraphic { .. }
+        | A::UpdateTitler { .. }
+        | A::SetTitlerValues { .. }
         | A::UpdateCredits { .. }
         | A::CreditsPlay { .. }
         | A::CreditsRestart { .. }

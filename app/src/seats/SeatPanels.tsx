@@ -1,6 +1,7 @@
 // The seat window's panels: graphics, the mixer and cameras. Every control
 // is shown to every seat; the ones outside its role are greyed out.
 
+import { TitlerFields } from '../titler/TitlerFields';
 import {
   ArrowDown,
   ArrowLeft,
@@ -64,6 +65,7 @@ export function GraphicsPanel({ show }: { show: Show }) {
   const countdowns = by('countdown');
   useTick(countdowns.some((c) => c.kind.type === 'countdown' && c.kind.timer.endsAt !== null));
   const texts = sources.filter((s) => s.kind.type === 'text');
+  const titlers = sources.filter((s) => s.kind.type === 'titler');
   return (
     <div className="seat-panel" data-testid="graphics-panel">
       <Section title="Overlays">
@@ -94,6 +96,15 @@ export function GraphicsPanel({ show }: { show: Show }) {
           <SeatGate group="titles" className="seat-list">
             {texts.map((s) => (
               <TitleEditor key={s.id} source={s} />
+            ))}
+          </SeatGate>
+        </Section>
+      )}
+      {titlers.length > 0 && (
+        <Section title="Titler graphics">
+          <SeatGate group="titles" className="seat-list">
+            {titlers.map((s) => (
+              <TitlerFields key={s.id} source={s} show={show} act={act} />
             ))}
           </SeatGate>
         </Section>
