@@ -42,6 +42,8 @@ export interface EngineStats {
   feed: EngineFeedStats | null;
   /** Every feed: the recording, the stream, the vertical version, NDI (screens) and each camera's ISO file (inputs). */
   feeds: { id: number; kind: 'screen' | 'vertical' | 'input'; stats: EngineFeedStats | null; error: string | null }[];
+  /** Background removal, blur behind people and auto-framing: inputs using them, frames sent to the vision worker, its answers, masks held. */
+  vision?: { inputs: number; frames: number; answers: number; masks: number };
   /** The graphics from the overlay renderers. */
   overlay: { framesPerS: number; mbPerS: number; latencyMs: number; planes: number; refused: number };
   notes: string[];

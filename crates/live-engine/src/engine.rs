@@ -255,9 +255,24 @@ pub struct Stats {
     pub recoveries: u64,
     /// How the graphics from the web overlay renderers arrive.
     pub overlay: OverlayStats,
+    /// Background removal, blur behind people and auto-framing (the vision worker).
+    pub vision: VisionStats,
     /// Things that don't work in the unified engine yet, in words for the operator.
     pub notes: Vec<String>,
     pub error: Option<String>,
+}
+
+/// The person-finding models' work for the engine (since it started).
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct VisionStats {
+    /// Inputs that use them now.
+    pub inputs: u32,
+    /// Small frames sent to the vision worker, and its answers taken.
+    pub frames: u64,
+    pub answers: u64,
+    /// Inputs with a person mask now.
+    pub masks: u32,
 }
 
 /// Draw targets.
@@ -710,6 +725,7 @@ impl LiveEngine {
                 );
             }
             self.framing.entry(r.id.clone()).or_default().target = r.shot.unwrap_or(vision::WIDE);
+            self.stats.vision.answers += 1;
         }
     }
 
@@ -735,6 +751,7 @@ impl LiveEngine {
                 self.vision_sent.insert(s.id.clone(), f.seq);
                 self.vision_out.retain(|o| o.id != s.id);
                 self.vision_out.push(small);
+                self.stats.vision.frames += 1;
             }
         }
     }
@@ -1117,6 +1134,16 @@ impl LiveEngine {
                 refused: self.stats.overlay.refused,
             };
             self.stats.notes = self.notes();
+            if let Some(show) = &self.show {
+                let using: Vec<&SourceId> = scene::video_inputs(show)
+                    .into_iter()
+                    .filter(|s| vision::uses_vision(s))
+                    .map(|s| &s.id)
+                    .collect();
+                self.stats.vision.inputs = using.len() as u32;
+                self.stats.vision.masks =
+                    using.iter().filter(|id| self.gpu.vision_of(id).0).count() as u32;
+            }
             self.timing = Timing::default();
         }
     }
