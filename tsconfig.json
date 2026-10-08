@@ -24,7 +24,10 @@
     "editor/vite.config.ts",
     "planner/src",
     "planner/vite.config.ts",
-    "streamdeck/src"
+    "streamdeck/src",
+    "titler/src",
+    "titler/app",
+    "titler/vite.config.ts"
   ],
   "exclude": ["streamdeck/src/plugin.ts"]
 }
