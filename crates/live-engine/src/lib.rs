@@ -20,6 +20,7 @@
 //! Selected in Settings → Engine; the Standard engine (every window draws its
 //! own copy in its WebView) stays the default.
 
+pub mod adapters;
 pub mod audio;
 pub mod delay;
 pub mod encoder;

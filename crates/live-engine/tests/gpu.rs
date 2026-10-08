@@ -514,6 +514,7 @@ fn the_engine_draws_the_show_and_its_previews() {
         preview_w: 16,
         preview_h: 9,
         preview_every: 1,
+        adapter: None,
     };
     let mut e = LiveEngine::new(config, g, Box::new(Colors));
     let mut show = Show {
@@ -589,6 +590,7 @@ fn engine() -> Option<LiveEngine> {
         preview_w: 16,
         preview_h: 9,
         preview_every: 1000,
+        adapter: None,
     };
     Some(LiveEngine::new(config, g, Box::new(Colors)))
 }
@@ -877,6 +879,160 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
         iso.len()
     );
     assert!(near([iso[0], iso[1], iso[2], iso[3]], [0, 0, 255, 255]));
+}
+
+// ---------------------------------------------------------------------------
+// Graphics cards and HDR windows
+
+#[test]
+fn an_output_on_another_card_gets_the_picture_copied_across() {
+    use live_engine::adapters::{key_in, Bridge};
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    let red = ScreenScene {
+        layers: vec![layer("red", 1.0)],
+        ..ScreenScene::default()
+    };
+    draw(&mut g, &red);
+    // The "other card" is a second device on the same one here (one GPU in CI).
+    let key = key_in(&g.instance, &g.adapter).expect("the engine's card has a key");
+    let mut b = Bridge::open(&g.instance, &key).expect("a device for the window");
+    assert!(
+        !b.carry(&mut g, 0),
+        "nothing yet: the copy is one frame late"
+    );
+    draw(&mut g, &red);
+    assert!(b.carry(&mut g, 0));
+    let (w, h, img) = b.gpu.read(Dest::Target(b.target())).expect("read back");
+    assert_eq!((w, h), (W, H));
+    assert!(
+        near(px(&img, 10, 10), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 10, 10)
+    );
+}
+
+/// One texel of a window texture of `format` drawn by `draw_output`.
+fn output_texel(
+    g: &mut Compositor,
+    format: wgpu::TextureFormat,
+    color: live_engine::gpu::OutColor,
+) -> Vec<u8> {
+    let tex = g.device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("window"),
+        size: wgpu::Extent3d {
+            width: 64,
+            height: 36,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    });
+    let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
+    assert!(g.draw_output(0, &view, format, (64, 36), color));
+    let bpp = format.block_copy_size(None).unwrap();
+    let row = (64 * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+    let buf = g.device.create_buffer(&wgpu::BufferDescriptor {
+        label: None,
+        size: u64::from(row * 36),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut enc = g.device.create_command_encoder(&Default::default());
+    enc.copy_texture_to_buffer(
+        tex.as_image_copy(),
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buf,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(row),
+                rows_per_image: Some(36),
+            },
+        },
+        tex.size(),
+    );
+    g.queue.submit([enc.finish()]);
+    buf.slice(..).map_async(wgpu::MapMode::Read, |_| {});
+    let _ = g.device.poll(wgpu::PollType::wait_indefinitely());
+    let at = (10 * row + 10 * bpp) as usize;
+    let v = buf.slice(..).get_mapped_range().unwrap()[at..at + bpp as usize].to_vec();
+    v
+}
+
+fn f16(b: [u8; 2]) -> f32 {
+    let h = u16::from_le_bytes(b);
+    let (s, e, m) = (h >> 15, (h >> 10) & 0x1f, h & 0x3ff);
+    let v = if e == 0 {
+        f32::from(m) / 1024.0 * 2f32.powi(-14)
+    } else {
+        (1.0 + f32::from(m) / 1024.0) * 2f32.powi(i32::from(e) - 15)
+    };
+    if s == 1 {
+        -v
+    } else {
+        v
+    }
+}
+
+#[test]
+fn hdr_windows_show_sdr_white_at_its_level() {
+    use live_engine::gpu::OutColor;
+    let Some(mut g) = gpu() else { return };
+    // White and 50 % gray (sRGB) side by side.
+    g.upload(
+        &SourceId::new("white"),
+        &solid([255, 255, 255, 255], W, H, 1),
+    );
+    draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("white", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    // scRGB: 1.0 is 80 nits, so 203-nit white is 2.54.
+    let t = output_texel(
+        &mut g,
+        wgpu::TextureFormat::Rgba16Float,
+        OutColor::ScRgb { white: 203 },
+    );
+    let r = f16([t[0], t[1]]);
+    assert!((r - 203.0 / 80.0).abs() < 0.02, "scRGB white {r}");
+    // HDR10: 203 nits is 58 % of the PQ signal.
+    let t = output_texel(
+        &mut g,
+        wgpu::TextureFormat::Rgb10a2Unorm,
+        OutColor::Pq { white: 203 },
+    );
+    let v = u32::from_le_bytes([t[0], t[1], t[2], t[3]]);
+    let r = (v & 0x3ff) as f32 / 1023.0;
+    assert!((r - 0.5807).abs() < 0.01, "PQ white {r}");
+    // SDR stays as it is.
+    let t = output_texel(&mut g, wgpu::TextureFormat::Rgba8Unorm, OutColor::Sdr);
+    assert!(t[0] >= 254, "{t:?}");
+    // 50 % gray in scRGB: linear 0.214 of white.
+    g.upload(
+        &SourceId::new("gray"),
+        &solid([128, 128, 128, 255], W, H, 1),
+    );
+    draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("gray", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    let t = output_texel(
+        &mut g,
+        wgpu::TextureFormat::Rgba16Float,
+        OutColor::ScRgb { white: 80 },
+    );
+    let r = f16([t[0], t[1]]);
+    assert!((r - 0.2158).abs() < 0.01, "scRGB gray {r}");
 }
 
 // ---------------------------------------------------------------------------

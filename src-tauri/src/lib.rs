@@ -1379,6 +1379,7 @@ pub fn run() {
             streamdeck_dismiss,
             live::live_engine_info,
             live::live_engine_set_mode,
+            live::live_engine_set_options,
             live::live_engine_preview,
             live::live_engine_health,
             live::live_engine_test_record,

@@ -17,8 +17,8 @@ pub const TARGET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 const SHADER: &str = include_str!("compose.wgsl");
 const YUV_SHADER: &str = include_str!("yuv.wgsl");
-/// One draw's uniforms: eighteen vec4s.
-const DRAW_FLOATS: usize = 72;
+/// One draw's uniforms: nineteen vec4s.
+const DRAW_FLOATS: usize = 76;
 const DRAW_BYTES: u64 = (DRAW_FLOATS * 4) as u64;
 
 struct Tex {
@@ -134,10 +134,90 @@ struct Ring {
     pending: Option<Pending>,
 }
 
+/// How a window's pixels are meant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum OutColor {
+    /// sRGB, as everything else (the default).
+    #[default]
+    Sdr,
+    /// HDR10: BT.2020 primaries, PQ (`Rgb10a2Unorm`); SDR white at `white` nits.
+    Pq { white: u32 },
+    /// scRGB: linear BT.709, 1.0 = 80 nits (`Rgba16Float`); SDR white at `white` nits.
+    ScRgb { white: u32 },
+}
+
+impl OutColor {
+    /// For the operator.
+    pub fn label(self) -> String {
+        match self {
+            OutColor::Sdr => "SDR".into(),
+            OutColor::Pq { white } => format!("HDR10 (PQ), SDR white at {white} nits"),
+            OutColor::ScRgb { white } => format!("HDR (scRGB), SDR white at {white} nits"),
+        }
+    }
+
+    /// The draw's `hdr` uniform: encoding and SDR white.
+    fn uniform(self) -> [f32; 4] {
+        match self {
+            OutColor::Sdr => [0.0; 4],
+            OutColor::ScRgb { white } => [1.0, white as f32, 0.0, 0.0],
+            OutColor::Pq { white } => [2.0, white as f32, 0.0, 0.0],
+        }
+    }
+}
+
+/// The SDR white level of HDR outputs unless the operator sets another (BT.2408: 203 nits).
+pub const SDR_WHITE_NITS: u32 = 203;
+
+/// Whether a display shows HDR now (what Windows says about it).
+pub fn display_is_hdr(info: &wgpu::DisplayHdrInfo) -> bool {
+    info.coarse
+        .and_then(|c| c.high_dynamic_range)
+        .unwrap_or(false)
+        || info
+            .luminance
+            .and_then(|l| l.max_nits)
+            .is_some_and(|n| n >= 400.0)
+}
+
+/// The best HDR way to show in a surface that offers `caps`: HDR10 (PQ) first, then scRGB.
+pub fn hdr_format(
+    caps: &wgpu::SurfaceCapabilities,
+    white: u32,
+) -> Option<(wgpu::TextureFormat, wgpu::SurfaceColorSpace, OutColor)> {
+    let has =
+        |f: wgpu::TextureFormat, cs: wgpu::SurfaceColorSpaces| caps.color_spaces(f).contains(cs);
+    if has(
+        wgpu::TextureFormat::Rgb10a2Unorm,
+        wgpu::SurfaceColorSpaces::BT2100_PQ,
+    ) {
+        Some((
+            wgpu::TextureFormat::Rgb10a2Unorm,
+            wgpu::SurfaceColorSpace::Bt2100Pq,
+            OutColor::Pq { white },
+        ))
+    } else if has(
+        wgpu::TextureFormat::Rgba16Float,
+        wgpu::SurfaceColorSpaces::EXTENDED_SRGB_LINEAR,
+    ) {
+        Some((
+            wgpu::TextureFormat::Rgba16Float,
+            wgpu::SurfaceColorSpace::ExtendedSrgbLinear,
+            OutColor::ScRgb { white },
+        ))
+    } else {
+        None
+    }
+}
+
 /// A window (or anything with a wgpu surface) being drawn into.
 pub struct SurfaceOut {
     pub surface: wgpu::Surface<'static>,
     config: Option<wgpu::SurfaceConfiguration>,
+    /// HDR asked for (SDR white in nits); None: SDR.
+    hdr_white: Option<u32>,
+    /// How it shows now.
+    pub color: OutColor,
 }
 
 impl SurfaceOut {
@@ -145,12 +225,22 @@ impl SurfaceOut {
         SurfaceOut {
             surface,
             config: None,
+            hdr_white: None,
+            color: OutColor::Sdr,
         }
     }
 
     /// Configure it again on the next present (a new graphics device).
     pub fn reset(&mut self) {
         self.config = None;
+    }
+
+    /// Show HDR when the display can, SDR white at `white` nits (None: SDR).
+    pub fn set_hdr(&mut self, white: Option<u32>) {
+        if self.hdr_white != white {
+            self.hdr_white = white;
+            self.config = None;
+        }
     }
 }
 
@@ -161,6 +251,12 @@ pub struct AdapterInfo {
     pub backend: String,
     /// "discrete", "integrated", "software", "virtual" or "other".
     pub kind: &'static str,
+    /// Its key (Settings → Engine's choice, [`crate::adapters::Card::key`]).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+    /// Why the engine is on it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub choice: Option<String>,
 }
 
 pub struct Compositor {
@@ -201,6 +297,10 @@ pub struct Compositor {
     time: f32,
     /// The graphics device was lost (a driver reset, the card removed): the engine makes a new one.
     lost: Arc<std::sync::atomic::AtomicBool>,
+    /// The card asked for in Settings → Engine (None: automatic).
+    wanted: Option<String>,
+    /// Why this card, in words.
+    choice: String,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -313,12 +413,14 @@ pub fn adapters() -> Vec<AdapterInfo> {
                 kind: kind_of(i.device_type),
                 backend: format!("{:?}", i.backend),
                 name: i.name,
+                key: None,
+                choice: None,
             }
         })
         .collect()
 }
 
-fn kind_of(t: wgpu::DeviceType) -> &'static str {
+pub fn kind_of(t: wgpu::DeviceType) -> &'static str {
     match t {
         wgpu::DeviceType::DiscreteGpu => "discrete",
         wgpu::DeviceType::IntegratedGpu => "integrated",
@@ -402,6 +504,8 @@ const LOOK: usize = 10;
 /// picture behind them (its shape, a desk in front).
 const BG: usize = 16;
 const BG2: usize = 17;
+/// An HDR window's encoding and SDR white (`compose.wgsl`'s `hdr`).
+const HDR: usize = 18;
 
 /// Map a rect given in a box's own fractions into output fractions.
 fn within(outer: Rect, inner: Rect) -> Rect {
@@ -442,6 +546,43 @@ impl Compositor {
             apply_limit_buckets: false,
         }))
         .map_err(|e| format!("No graphics card for the unified engine: {e}"))?;
+        let mut c = Self::on_adapter(instance, adapter)?;
+        c.choice = "the high-performance graphics card (automatic)".into();
+        Ok(c)
+    }
+
+    /// Start on the card `key` (Settings → Engine; see [`crate::adapters`]),
+    /// or the high-performance one when it is automatic or the card is gone.
+    ///
+    /// # Errors
+    /// No usable graphics card.
+    pub fn with_card(instance: wgpu::Instance, key: Option<&str>) -> Result<Self, String> {
+        let Some(key) = key else {
+            return Self::new(instance, None);
+        };
+        match crate::adapters::find(&instance, key) {
+            Some(a) => {
+                let mut c = Self::on_adapter(instance, a)?;
+                c.wanted = Some(key.to_owned());
+                c.choice = "chosen in Settings → Engine".into();
+                Ok(c)
+            }
+            None => {
+                let mut c = Self::new(instance, None)?;
+                c.wanted = Some(key.to_owned());
+                c.choice =
+                    "the high-performance graphics card (the one chosen in Settings → Engine is not here)"
+                        .into();
+                Ok(c)
+            }
+        }
+    }
+
+    /// Start on `adapter`.
+    ///
+    /// # Errors
+    /// The card could not start.
+    pub fn on_adapter(instance: wgpu::Instance, adapter: wgpu::Adapter) -> Result<Self, String> {
         let limits = wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits());
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             label: Some("lumora-live-engine"),
@@ -648,6 +789,8 @@ impl Compositor {
             uploaded: 0,
             time: 0.0,
             lost,
+            wanted: None,
+            choice: String::new(),
         };
         c.pipeline(TARGET_FORMAT);
         Ok(c)
@@ -664,7 +807,7 @@ impl Compositor {
     /// # Errors
     /// No usable graphics card (yet: the driver may still be resetting).
     pub fn renew(&self) -> Result<Self, String> {
-        Self::new(self.instance.clone(), None)
+        Self::with_card(self.instance.clone(), self.wanted.as_deref())
     }
 
     /// Start without any window (tests, the benchmark).
@@ -672,8 +815,16 @@ impl Compositor {
     /// # Errors
     /// No usable graphics card.
     pub fn headless() -> Result<Self, String> {
+        Self::headless_on(None)
+    }
+
+    /// Start without any window on the card `key` (None: the high-performance one).
+    ///
+    /// # Errors
+    /// No usable graphics card.
+    pub fn headless_on(key: Option<&str>) -> Result<Self, String> {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        Self::new(instance, None)
+        Self::with_card(instance, key)
     }
 
     fn uniform_buffer(
@@ -709,6 +860,21 @@ impl Compositor {
             kind: kind_of(i.device_type),
             backend: format!("{:?}", i.backend),
             name: i.name,
+            key: crate::adapters::key_in(&self.instance, &self.adapter),
+            choice: Some(self.choice.clone()).filter(|c| !c.is_empty()),
+        }
+    }
+
+    /// Put `rgba` (`w` × `h`, top row first) into target `i` (an output
+    /// presented by another card: [`crate::adapters::Bridge`]).
+    pub fn write_target(&mut self, i: usize, w: u32, h: u32, rgba: &[u8]) {
+        if rgba.len() < (w as usize) * (h as usize) * 4 {
+            return;
+        }
+        self.ensure_target(i, w, h);
+        if let Some(t) = self.targets.get(i).and_then(Option::as_ref) {
+            write_tex(&self.queue, t, rgba);
+            self.uploaded += u64::from(w) * u64::from(h) * 4;
         }
     }
 
@@ -1822,7 +1988,12 @@ impl Compositor {
             .is_none_or(|c| c.width != w || c.height != h);
         if stale {
             let caps = out.surface.get_capabilities(&self.adapter);
-            let Some(format) = caps
+            // HDR when asked for and the display shows HDR now; SDR otherwise.
+            let hdr = out
+                .hdr_white
+                .filter(|_| display_is_hdr(&out.surface.display_hdr_info(&self.adapter)))
+                .and_then(|white| hdr_format(&caps, white));
+            let sdr = caps
                 .formats
                 .iter()
                 .copied()
@@ -1832,10 +2003,13 @@ impl Compositor {
                         wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Rgba8Unorm
                     )
                 })
-                .or_else(|| caps.formats.first().copied())
-            else {
-                return false;
+                .or_else(|| caps.formats.first().copied());
+            let (format, color_space, color) = match (hdr, sdr) {
+                (Some(h), _) => h,
+                (None, Some(f)) => (f, wgpu::SurfaceColorSpace::Auto, OutColor::Sdr),
+                (None, None) => return false,
             };
+            out.color = color;
             // Never wait for the display: three windows on three displays
             // would each hold the engine for a refresh.
             let mode = [wgpu::PresentMode::Mailbox, wgpu::PresentMode::Immediate]
@@ -1855,7 +2029,7 @@ impl Compositor {
                     .copied()
                     .unwrap_or(wgpu::CompositeAlphaMode::Auto),
                 view_formats: vec![],
-                color_space: Default::default(),
+                color_space,
             };
             out.surface.configure(&self.device, &c);
             out.config = Some(c);
@@ -1878,6 +2052,24 @@ impl Compositor {
         let view = tex
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+        if !self.draw_output(i, &view, format, (w, h), out.color) {
+            return false;
+        }
+        self.queue.present(tex);
+        true
+    }
+
+    /// Draw target `i` letterboxed into `view` (a window's texture of
+    /// `format` and `size`), encoded for `color` (SDR, or SDR placed at its
+    /// white level in HDR10 or scRGB). False when the target doesn't exist.
+    pub fn draw_output(
+        &mut self,
+        i: usize,
+        view: &wgpu::TextureView,
+        format: wgpu::TextureFormat,
+        (w, h): (u32, u32),
+        color: OutColor,
+    ) -> bool {
         let Some(src) = self.targets.get(i).and_then(Option::as_ref) else {
             return false;
         };
@@ -1893,11 +2085,11 @@ impl Compositor {
         let mut d = DrawU::new();
         d.set(DST, dst);
         d.0[MISC * 4 + 3] = 2.0;
+        d.set(HDR, color.uniform());
         self.submit(
             vec![(Dest::Target(usize::MAX), None, vec![(d, TexKey::Target(i))])],
-            Some((&view, format)),
+            Some((view, format)),
         );
-        self.queue.present(tex);
         true
     }
 
