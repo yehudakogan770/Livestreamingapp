@@ -881,6 +881,43 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
     assert!(near([iso[0], iso[1], iso[2], iso[3]], [0, 0, 255, 255]));
 }
 
+#[test]
+fn the_vertical_version_has_a_soft_shadow_under_the_picture() {
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("red", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    g.ensure_target(1, 48, 27);
+    g.ensure_target(2, 360, 640);
+    g.render(&[
+        Pass {
+            dest: Dest::Target(1),
+            viewport: None,
+            paint: Paint::Target(0),
+        },
+        Pass {
+            dest: Dest::Target(2),
+            viewport: None,
+            paint: Paint::Vertical { src: 0, small: 1 },
+        },
+    ]);
+    let (w, _, img) = g.read(Dest::Target(2)).unwrap();
+    let at = |x: u32, y: u32| img[((y * w + x) * 4) as usize];
+    // The picture (red) across the middle, 202 px high from y = 219.
+    assert!(at(180, 320) > 250);
+    // Far above it: the darkened copy; just above its edge: darker still (the shadow).
+    let (far, near_edge) = (at(180, 100), at(180, 214));
+    assert!((130..150).contains(&far), "{far}");
+    assert!(near_edge + 10 < far, "shadow {near_edge} vs {far}");
+    // It fades out: well away from the picture, no shadow.
+    assert!(at(180, 190).abs_diff(far) <= 3, "{} vs {far}", at(180, 190));
+}
+
 // ---------------------------------------------------------------------------
 // Graphics cards and HDR windows
 
