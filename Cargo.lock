@@ -2123,6 +2123,7 @@ dependencies = [
  "lumora-crash",
  "lumora-engine",
  "lumora-live-engine",
+ "lumora-seats",
  "lumora-selftest",
  "lumora-syscheck",
  "lumora-testevent",

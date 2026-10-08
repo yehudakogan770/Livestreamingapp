@@ -204,7 +204,7 @@ impl Live {
         lock(&self.inner).mode
     }
 
-    fn runner(&self) -> Option<Arc<Runner>> {
+    pub(crate) fn runner(&self) -> Option<Arc<Runner>> {
         lock(&self.inner).runner.clone()
     }
 

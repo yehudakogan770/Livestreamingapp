@@ -18,6 +18,7 @@ mod outputs;
 mod perf;
 mod ptz;
 mod remote;
+mod seats;
 mod selftest;
 mod speaker;
 mod store;
@@ -253,6 +254,9 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
         state.remote.broadcast(&json);
     }
     state.api.show_changed(&snapshot.show);
+    if let Some(seats) = app.try_state::<seats::Seats>() {
+        seats.show_changed(snapshot.revision, &snapshot.show);
+    }
 }
 
 fn publish(app: &tauri::AppHandle, state: &AppState, engine: &Engine) {
@@ -1058,9 +1062,14 @@ impl remote::Backend for RemoteBackend {
 /// The control window says what is running (recording, stream, rehearsal,
 /// replay), for control surfaces such as the Stream Deck.
 #[tauri::command]
-fn remote_app_state(app_state: serde_json::Value, state: State<'_, AppState>) {
+fn remote_app_state(
+    app_state: serde_json::Value,
+    state: State<'_, AppState>,
+    seats: State<'_, seats::Seats>,
+) {
     state.remote.set_app_state(&app_state);
     state.api.set_app_state(&app_state);
+    seats.server.set_app_state(&app_state);
 }
 
 /// Lets the control API reach the engine and the control window.
@@ -1174,6 +1183,11 @@ pub fn run() {
                         state.capture.stop_all();
                     }
                     app.exit(0);
+                } else if window.label() == seats::WINDOW {
+                    // Closing the seat window leaves that show (it carries on).
+                    if let Some(seats) = app.try_state::<seats::Seats>() {
+                        seats.link.leave();
+                    }
                 } else if window.label() != "splash" {
                     outputs::notify(app);
                 }
@@ -1235,6 +1249,8 @@ pub fn run() {
                 ffmpeg.clone(),
                 Some(std::sync::Arc::clone(&browsers.frames) as _),
             ));
+            // Other computers joining this show, and this one joining others.
+            app.manage(seats::Seats::new(app.handle(), &dir));
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -1387,7 +1403,33 @@ pub fn run() {
             live::live_engine_capture_start,
             live::live_engine_capture_stop,
             live::live_engine_probe,
-            live::live_engine_multiview_layout
+            live::live_engine_multiview_layout,
+            seats::seats_status,
+            seats::seats_set_enabled,
+            seats::seats_approve,
+            seats::seats_deny,
+            seats::seats_set_role,
+            seats::seats_set_locked,
+            seats::seats_remove,
+            seats::seats_watched,
+            seats::seats_picture,
+            seats::seats_meters,
+            seats::seat_discover,
+            seats::seat_computer_name,
+            seats::seat_saved,
+            seats::seat_join,
+            seats::seat_rejoin,
+            seats::seat_forget,
+            seats::seat_code,
+            seats::seat_open_window,
+            seats::seat_leave,
+            seats::seat_status,
+            seats::seat_document,
+            seats::seat_action,
+            seats::seat_command,
+            seats::seat_ptz,
+            seats::seat_watch,
+            seats::seat_picture
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");
