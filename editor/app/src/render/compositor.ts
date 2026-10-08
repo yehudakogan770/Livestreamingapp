@@ -1,6 +1,7 @@
 // Draws a frame on the GPU: every layer with its position, crop, effects and
 // blend mode; transitions; adjustment layers. Used for the viewer and for
 // making the film, so what you see is what you get.
+import { drawTitler, titlerStamp } from '../titler/titlerClip';
 import { curvesImage, flatCurve, hexToRgb, type Cube, type CurveSet } from './color';
 import { flowSize, opticalFlow, toGray, type Gray } from './flow';
 import { shifted, type EffectNow, type Layer, type MotionNow, type Op } from './frame';
@@ -324,7 +325,7 @@ export class Compositor {
 
   private textSource(layer: Layer): Source | null {
     const src = layer.source;
-    if (src?.kind !== 'text' && src?.kind !== 'shape') return null;
+    if (src?.kind !== 'text' && src?.kind !== 'shape' && src?.kind !== 'titler') return null;
     if (!this.textCanvas) this.textCanvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(this.w, this.h) : document.createElement('canvas');
     const c = this.textCanvas;
     if (c.width !== this.w || c.height !== this.h) {
@@ -335,6 +336,7 @@ export class Compositor {
     if (!ctx) return null;
     ctx.clearRect(0, 0, this.w, this.h);
     if (src.kind === 'shape') drawShape(ctx, src.shape, this.w, this.h, src.local);
+    else if (src.kind === 'titler') drawTitler(ctx, src, this.w, this.h);
     else drawText(ctx, src.text, this.w, this.h, src.local, src.length, layer.fps);
     return c;
   }
@@ -373,10 +375,10 @@ export class Compositor {
       tex = made.tex;
       sw = this.w;
       sh = this.h;
-    } else if (src.kind === 'text' || src.kind === 'shape') {
+    } else if (src.kind === 'text' || src.kind === 'shape' || src.kind === 'titler') {
       // Words and shapes are drawn again only when they look different (while they animate, or are changed).
       const key = `text:${layer.key}`;
-      const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : textStamp(src.text, src.local, src.length, layer.fps);
+      const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : src.kind === 'titler' ? titlerStamp(src) : textStamp(src.text, src.local, src.length, layer.fps);
       const stamp = `${this.w}x${this.h}|${look}`;
       const have = this.textures.get(key);
       if (have && have.stamp === stamp) {

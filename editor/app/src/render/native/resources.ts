@@ -2,6 +2,7 @@
 // (drawn on a canvas, as the WebGL path draws them), stills, curve tables,
 // LUTs and AI-mask mattes. Each is sent once (by a name that changes when the
 // picture does) and let go when no frame has used it for a while.
+import { drawTitler, titlerStamp } from '../../titler/titlerClip';
 import { curvesImage, hexToRgb, type CurveSet } from '../color';
 import type { Pictures } from '../compositor';
 import type { EffectNow, Layer } from '../frame';
@@ -123,14 +124,15 @@ export class NativeResources implements Resources {
 
   text(layer: Layer, w: number, h: number): string | null {
     const src = layer.source;
-    if (src?.kind !== 'text' && src?.kind !== 'shape') return null;
-    const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : textStamp(src.text, src.local, src.length, layer.fps);
+    if (src?.kind !== 'text' && src?.kind !== 'shape' && src?.kind !== 'titler') return null;
+    const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : src.kind === 'titler' ? titlerStamp(src) : textStamp(src.text, src.local, src.length, layer.fps);
     const id = `text:${layer.key}|${hash(`${w}x${h}|${look}`)}`;
     const ok = this.use(id, () => {
       const ctx = canvas(w, h);
       if (!ctx) return null;
       ctx.clearRect(0, 0, w, h);
       if (src.kind === 'shape') drawShape(ctx as CanvasRenderingContext2D, src.shape, w, h, src.local);
+      else if (src.kind === 'titler') drawTitler(ctx as CanvasRenderingContext2D, src, w, h);
       else drawText(ctx as CanvasRenderingContext2D, src.text, w, h, src.local, src.length, layer.fps);
       return { w, h, d: 0, kind: 'straight', data: new Uint8Array(ctx.getImageData(0, 0, w, h).data.buffer) };
     });

@@ -1,6 +1,7 @@
 // Lumora Studio's project: media in bins, sequences with many video and audio
 // tracks, and clips with keyframed effects. Sequence times are whole frames;
 // times inside a media file are seconds.
+import type { TitleProject } from '../../../../titler/src/core/types';
 
 /** A number that can change over the clip (keyframes), or stays the same. */
 export type Param = number | Anim;
@@ -357,7 +358,9 @@ export type ClipSource =
   /** A caption block on a captions track (the track says how it looks). */
   | { kind: 'caption'; text: string }
   /** A drawn shape: rectangle, ellipse, polygon, star or line. */
-  | { kind: 'shape'; shape: ShapeData };
+  | { kind: 'shape'; shape: ShapeData }
+  /** A Lumora Titler graphic (lower third, bug, ticker, card…): IN from the clip's start, OUT to its end. */
+  | { kind: 'titler'; project: TitleProject; values: Record<string, string> };
 
 /**
  * A spot (or a region) followed through a clip: motion tracking. Places are

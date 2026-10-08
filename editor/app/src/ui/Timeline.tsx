@@ -23,6 +23,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react';
+import { TitlerClipMarks } from '../titler/StudioTitler';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { valueAt } from '../model/anim';
 import { CacheBar } from '../cache/CacheBar';
@@ -108,6 +109,7 @@ export function clipColor(p: Project, c: Clip): string {
   if (src.kind === 'generator') return '#3a6b6b';
   if (src.kind === 'caption') return '#8a7a2e';
   if (src.kind === 'shape') return '#4a7a9a';
+  if (src.kind === 'titler') return '#5f5491';
   return '#3d6fa8';
 }
 
@@ -1125,6 +1127,7 @@ const ClipBox = memo(function ClipBox({
         ) : null}
         {c.name}
       </span>
+      {c.source.kind === 'titler' && w > 24 && <TitlerClipMarks clip={c} fps={fps} zoom={zoom} />}
       {kind === 'audio' && h >= 30 && typeof c.gain === 'number' && (
         <div
           className="clip__gain"

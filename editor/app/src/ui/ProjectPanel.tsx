@@ -18,6 +18,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
+import { TitlerSection } from '../titler/StudioTitler';
 import { useState } from 'react';
 import { duration, GENERATORS } from '../model/build';
 import { EFFECTS, TRANSITIONS } from '../model/effects';
@@ -465,6 +466,7 @@ function TextTab({ actions }: { actions: Actions }) {
     <div className="fxlist">
       <p className="fxlist__hint">Added at the playhead, on the first free track above the pictures.</p>
       <TemplatesSection actions={actions} />
+      <TitlerSection onAdd={actions.addTitler} />
       <div className="fxlist__group">
         <h3>Text</h3>
         <div className="tpresets">

@@ -17,6 +17,7 @@ import {
   Upload,
   X,
 } from 'lucide-react';
+import { StudioTitlerHost } from '../titler/StudioTitler';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
@@ -816,6 +817,7 @@ function EditPage({
         <Splitter ui={ui} which="left" />
         <Timeline doc={doc} engine={engine} ui={ui} actions={actions} collab={collab} />
       </div>
+      <StudioTitlerHost clipOf={actions.clipById} onUse={(t, id) => (id ? actions.useTitler(t, id) : actions.addTitler(t))} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { AlignCenter, AlignLeft, AlignRight, ChevronDown, ChevronUp, Minus, Plus, RotateCcw, X } from 'lucide-react';
+import { TitlerClipEditor } from '../titler/StudioTitler';
 import { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { GENERATORS, timecode } from '../model/build';
@@ -243,6 +244,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
         </Section>
       )}
       {main.source.kind === 'generator' && <GeneratorEditor clip={main} upd={upd} />}
+      {main.source.kind === 'titler' && <TitlerClipEditor clip={main} fps={rate(current(project))} upd={upd} />}
       {main.source.kind === 'color' && (
         <Section title="Color">
           <ColorField

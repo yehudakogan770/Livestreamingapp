@@ -185,7 +185,7 @@ export class Recorder {
       tex = tref(made);
       sw = this.w;
       sh = this.h;
-    } else if (src.kind === 'text' || src.kind === 'shape') {
+    } else if (src.kind === 'text' || src.kind === 'shape' || src.kind === 'titler') {
       const id = this.res.text(layer, this.w, this.h);
       if (!id) return false;
       tex = `r:${id}`;

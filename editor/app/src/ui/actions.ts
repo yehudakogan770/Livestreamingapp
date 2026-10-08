@@ -34,6 +34,8 @@ import type { Engine } from '../player/engine';
 import { TEXT_PRESETS } from '../render/text';
 import { addTemplate, templateById } from '../model/templates';
 import { addShape } from '../model/shapes';
+import { addTitlerClip } from '../titler/titlerClip';
+import type { TitleProject } from '../../../../titler/src/core/types';
 import type { ShapeData } from '../model/types';
 import { selectedIds, type Doc } from '../doc';
 import type { Tool, Ui } from './state';
@@ -382,6 +384,27 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
       });
       if (id) doc.select({ kind: 'clips', ids: [id] });
     },
+    /** A Lumora Titler graphic at the playhead (as long as the title). */
+    addTitler: (title: TitleProject) => {
+      let id = '';
+      edit(`Add ${title.name}`, (p) => {
+        const r = addTitlerClip(p, here(), fps(), title);
+        id = r.id;
+        return r.project;
+      });
+      if (id) doc.select({ kind: 'clips', ids: [id] });
+    },
+    /** A title clip takes a new design from the Titler (its fields' values stay). */
+    useTitler: (title: TitleProject, clipId: string) =>
+      edit('Change title design', (p) => ({
+        ...p,
+        sequences: p.sequences.map((s) => ({
+          ...s,
+          clips: s.clips.map((c) => (c.id === clipId && c.source.kind === 'titler' ? { ...c, name: title.name, source: { ...c.source, project: title } } : c)),
+        })),
+      })),
+    /** A clip by id in the open sequence. */
+    clipById: (id: string) => seq().clips.find((c) => c.id === id),
     addShape: (kind: ShapeData['kind']) => {
       let id = '';
       edit('Add shape', (p) => {

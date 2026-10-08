@@ -9,11 +9,13 @@ import { gradeAt, gradeOf, type GradeNow } from '../model/grade';
 import { rateAt, remapSourceAt, sampleFrames } from '../model/remap';
 import type { BlendMode, Clip, MediaItem, Project, Sequence, ShapeData, TextData } from '../model/types';
 import { withTracking } from '../track/paths';
+import type { TitlerLayerSource } from '../titler/titlerClip';
 
 export type LayerSource =
   /** `next`: a second frame mixed in (time remapping between the file's frames: blended or by optical flow). */
   | { kind: 'video'; media: MediaItem; time: number; next?: { time: number; mix: number; mode: 'blend' | 'flow' } }
   | { kind: 'shape'; shape: ShapeData; local: number; length: number }
+  | TitlerLayerSource
   | { kind: 'image'; media: MediaItem }
   | { kind: 'text'; text: TextData; local: number; length: number }
   | { kind: 'color'; color: string }
@@ -221,6 +223,7 @@ export function layerFor(p: Project, c: Clip, frame: number, fps: number, prefix
     }
   } else if (src.kind === 'text') source = { kind: 'text', text: src.text, local, length: c.length };
   else if (src.kind === 'shape') source = { kind: 'shape', shape: src.shape, local, length: c.length };
+  else if (src.kind === 'titler') source = { kind: 'titler', project: src.project, values: src.values, local, length: c.length, fps };
   else if (src.kind === 'color') source = { kind: 'color', color: src.color };
   else if (src.kind === 'generator') source = { kind: 'generator', gen: src.gen, settings: src.settings, local, length: c.length, fps };
   else if (src.kind === 'sequence') {
