@@ -281,9 +281,12 @@ fn parse_provider(p: &str) -> Result<Provider, String> {
 
 // ---- commands ----
 
+// Commands that wait for the accounts run off the main thread: a status read
+// may be on its way to YouTube while they ask.
+
 #[tauri::command]
-pub fn accounts_info(la: State<'_, LiveAccounts>) -> AccountsInfo {
-    la.info()
+pub async fn accounts_info(app: AppHandle) -> Result<AccountsInfo, String> {
+    blocking(app, |la| Ok(la.info())).await
 }
 
 /// Sign in through the browser and wait for it to come back (up to 5 minutes).
@@ -370,13 +373,16 @@ pub fn accounts_cancel(la: State<'_, LiveAccounts>) {
 
 /// Facebook's manual sign-in: opens the browser on Facebook's own finish page.
 #[tauri::command]
-pub fn accounts_facebook_manual(la: State<'_, LiveAccounts>) -> Result<String, String> {
-    let (url, pending) = lock(&la.accounts)
-        .begin(Provider::Facebook, facebook::MANUAL_REDIRECT)
-        .map_err(|e| e.message)?;
-    *lock(&la.manual) = Some(pending);
-    let _ = open_browser(&url);
-    Ok(url)
+pub async fn accounts_facebook_manual(app: AppHandle) -> Result<String, String> {
+    blocking(app, |la| {
+        let (url, pending) = lock(&la.accounts)
+            .begin(Provider::Facebook, facebook::MANUAL_REDIRECT)
+            .map_err(|e| e.message)?;
+        *lock(&la.manual) = Some(pending);
+        let _ = open_browser(&url);
+        Ok(url)
+    })
+    .await
 }
 
 /// …and the address that page ended on, pasted back.
@@ -595,8 +601,8 @@ pub async fn accounts_finish(app: AppHandle) -> Result<Vec<Failed>, String> {
 
 /// How each connected destination is doing.
 #[tauri::command]
-pub fn accounts_sessions(la: State<'_, LiveAccounts>) -> Vec<SessionView> {
-    lock(&la.accounts).sessions()
+pub async fn accounts_sessions(app: AppHandle) -> Result<Vec<SessionView>, String> {
+    blocking(app, |la| Ok(lock(&la.accounts).sessions())).await
 }
 
 #[cfg(test)]
