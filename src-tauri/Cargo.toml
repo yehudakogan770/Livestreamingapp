@@ -15,6 +15,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 lumora-engine = { path = "../crates/engine" }
 lumora-crash = { path = "../crates/crash" }
+titler-host = { package = "lumora-titler-host", path = "../crates/titler-host" }
 lumora-selftest = { path = "../crates/selftest" }
 lumora-syscheck = { path = "../crates/syscheck" }
 lumora-testevent = { path = "../crates/testevent" }

@@ -1,12 +1,12 @@
 [package]
-name = "lumora-edit"
-description = "Lumora Studio — edit the whole event, every camera"
+name = "lumora-titler"
+description = "Lumora Titler: motion graphics for live events and edits"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "lumora_edit"
+name = "lumora_titler"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -21,12 +21,6 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 lumora-crash = { path = "../../crates/crash" }
 titler-host = { package = "lumora-titler-host", path = "../../crates/titler-host" }
-lumora-selftest = { path = "../../crates/selftest" }
-lumora-syscheck = { path = "../../crates/syscheck" }
-studio-engine = { package = "lumora-studio-engine", path = "../../crates/studio-engine" }
-
-[target.'cfg(windows)'.dependencies]
-raw-window-handle = "0.6"
 
 [lints.rust]
 unsafe_code = "forbid"

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lumora Titler",
+  "mainBinaryName": "Lumora Titler",
+  "version": "0.1.0",
+  "identifier": "app.lumora.titler",
+  "build": {
+    "beforeDevCommand": "npm --prefix .. run titler:ui:dev",
+    "devUrl": "http://localhost:1433",
+    "beforeBuildCommand": "npm --prefix .. run titler:ui:build",
+    "frontendDist": "../../dist-titler"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Lumora Titler",
+        "width": 1480,
+        "height": 920,
+        "minWidth": 1180,
+        "minHeight": 700,
+        "backgroundColor": "#141413",
+        "center": true,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https: asset: http://asset.localhost; img-src 'self' asset: http://asset.localhost data: blob:; media-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data: blob:; worker-src 'self' blob:; script-src 'self' blob: 'wasm-unsafe-eval'",
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "publisher": "Lumora",
+    "category": "Video",
+    "shortDescription": "Motion graphics for live events and edits",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "fileAssociations": [
+      {
+        "ext": ["lumtitle"],
+        "name": "Lumora title",
+        "description": "Lumora Titler graphic",
+        "role": "Editor"
+      }
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine",
+        "installerIcon": "icons/icon.ico"
+      }
+    },
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI1OThFREY0OEQxQ0ZCM0MKUldROCt4eU45TzJZSlNnMGxnZGF6MnEvV1ZhNXhOTFU1SXBIaE1pWlRRYmhXYTVBQkpOQkxBMEUK",
+      "endpoints": ["https://github.com/yehudakogan770/Livestreamingapp/releases/latest/download/latest-titler.json"],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

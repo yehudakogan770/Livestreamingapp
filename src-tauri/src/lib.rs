@@ -1231,6 +1231,8 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
+            // Lumora Titler: its window, the shared title library and films through FFmpeg.
+            app.manage(titler_host::Renders::default());
             app.manage(live::Live::new(
                 &dir,
                 ffmpeg.clone(),
@@ -1285,6 +1287,19 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            titler_host::titler_library_dir,
+            titler_host::titler_library_list,
+            titler_host::titler_read,
+            titler_host::titler_write,
+            titler_host::titler_remove,
+            titler_host::titler_data_url,
+            titler_host::titler_autosave,
+            titler_host::titler_recover,
+            titler_host::titler_open_window,
+            titler_host::titler_render_start,
+            titler_host::titler_render_frame,
+            titler_host::titler_render_finish,
+            titler_host::titler_render_cancel,
             syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,

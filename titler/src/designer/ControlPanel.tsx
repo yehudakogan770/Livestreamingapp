@@ -4,6 +4,7 @@
 // Lumora's Titler card while live, and in Studio's title clip.
 
 import type { TitleProject, Values, Variable } from '../core/types';
+import './controlPanel.css';
 
 export interface ControlPanelProps {
   project: TitleProject;

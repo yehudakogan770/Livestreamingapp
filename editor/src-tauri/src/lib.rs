@@ -531,6 +531,8 @@ pub fn run() {
                 encoders: Arc::default(),
             });
             app.manage(native_view::NativeView::default());
+            // Lumora Titler: its window, the shared title library and films through FFmpeg.
+            app.manage(titler_host::Renders::default());
             // The CI self-test: close (with a failed result) if it never finishes.
             let quit = app.handle().clone();
             lumora_selftest::watchdog(move || quit.exit(1));
@@ -538,6 +540,19 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            titler_host::titler_library_dir,
+            titler_host::titler_library_list,
+            titler_host::titler_read,
+            titler_host::titler_write,
+            titler_host::titler_remove,
+            titler_host::titler_data_url,
+            titler_host::titler_autosave,
+            titler_host::titler_recover,
+            titler_host::titler_open_window,
+            titler_host::titler_render_start,
+            titler_host::titler_render_frame,
+            titler_host::titler_render_finish,
+            titler_host::titler_render_cancel,
             open_site_page,
             syscheck::system_facts,
             selftest::selftest_config,

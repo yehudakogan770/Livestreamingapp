@@ -41,6 +41,7 @@ import { openSystemCheck, SystemCheckHost } from './syscheck/SystemCheck';
 import { openTestEvent, TestEventHost } from './testevent/host';
 import { EngineSettingsHost, openEngineSettings } from './views/engineHost';
 import { lazyPart } from './components/lazyPart';
+import { openTitler, TitlerHost } from './titler/LumoraTitler';
 // Last: the base styles come after every other style (all windows share one
 // stylesheet; this keeps its order as it was when the app was one part).
 import './styles.css';
@@ -344,6 +345,8 @@ function ControlApp() {
         ];
     const overlays: MenuItem[] = [
       { label: 'Set up overlays…', onClick: () => setOverlaysOpen(true) },
+      { label: 'Titler…', hint: 'Design animated lower thirds, bugs, tickers, scoreboards and cards', onClick: () => openTitler(null) },
+      { label: 'Add a Titler graphic…', onClick: () => sendCommand({ type: 'addInput', kind: 'titler' }) },
       {
         label: 'Take every overlay off',
         onClick: () => void client.dispatch({ type: 'overlaysOff' }).catch(fail),
@@ -362,6 +365,9 @@ function ControlApp() {
         hint: t.hint,
         onClick: () => sendCommand({ type: 'addInput', kind: 'text', template: i }),
       })),
+      null,
+      { label: 'Titler…', hint: 'Design animated titles in Lumora Titler (opens in its own window)', onClick: () => openTitler(null) },
+      { label: 'Add a Titler graphic…', onClick: () => sendCommand({ type: 'addInput', kind: 'titler' }) },
       null,
       { label: 'Live chat and audience questions…', onClick: () => sendCommand({ type: 'chat' }) },
       {
@@ -517,6 +523,7 @@ function ControlApp() {
                 <BroadcastProvider show={show} client={client}>
                   <ControlView show={show} screen={controlling} client={client} onBroadcastSettings={openBroadcast} />
                   <ShabbosGuard show={show} />
+                  <TitlerHost client={client} show={show} />
                   <DataWatcher show={show} client={client} />
                   <TestEventHost show={show} client={client} />
                   <EngineSettingsHost />

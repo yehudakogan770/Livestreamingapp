@@ -1,0 +1,17 @@
+[package]
+name = "lumora-titler-host"
+description = "Lumora Titler's files for the apps that open it: the shared title library (Documents/Lumora/Titles), .lumtitle files, autosave, the Titler window, and rendering to a film with FFmpeg."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2" }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

@@ -7,18 +7,25 @@ import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
 import { Designer } from '../src/designer/Designer';
 import { webHost, type Host } from '../src/designer/host';
+import type { TitleProject } from '../src/core/types';
 
 const desktop = import.meta.env.VITE_TITLER_DESKTOP === '1';
 
 function App() {
   const [host, setHost] = useState<Host | null>(desktop ? null : webHost());
+  const [initial, setInitial] = useState<TitleProject | null>(null);
   useEffect(() => {
     if (!desktop) return;
-    // The desktop app's files, library and FFmpeg (loaded only there).
-    void import('../src/desktop/desktopHost').then((m) => m.desktopHost().then(setHost));
+    // The desktop app's files, library and FFmpeg (loaded only there), and the title it was opened with.
+    void import('../src/desktop/desktopHost').then(async (m) => {
+      const h = await m.desktopHost();
+      const file = await m.initialFile();
+      if (file) setInitial((await h.readLibrary(file)).project);
+      setHost(h);
+    });
   }, []);
   if (!host) return null;
-  return <Designer host={host} />;
+  return <Designer host={host} initial={initial} />;
 }
 
 /** The service worker keeps the app on the device (web version, production builds). */
