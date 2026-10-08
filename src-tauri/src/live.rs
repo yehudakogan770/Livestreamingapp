@@ -81,6 +81,8 @@ struct Inner {
     /// An input uses background removal, blur behind people or auto-framing:
     /// the vision worker (`overlay-vision`) runs the person-finding models.
     vision: bool,
+    /// Instant replay: the ring of pieces the engine's replay feed writes.
+    replay: Option<Arc<Mutex<live_engine::replay::Ring>>>,
 }
 
 pub struct Live {
@@ -507,14 +509,27 @@ pub fn live_engine_set_mode(
         Mode::Standard => {
             let reopen = live.open_screens();
             let multiview = live.multiview_open();
-            let runner = {
+            let (runner, replay) = {
                 let mut inner = lock(&live.inner);
                 inner.mode = Mode::Standard;
                 inner.native.clear();
                 inner.multiview = None;
                 inner.error = None;
-                inner.runner.take()
+                (inner.runner.take(), inner.replay.take())
             };
+            // Instant replay was the engine's: it stops with it (turned on again, it is the WebView's).
+            if let Some(ring) = replay {
+                let dir = ring
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .dir
+                    .clone();
+                let _ = std::fs::remove_dir_all(dir);
+                let _ = app.emit(
+                    "live-engine-replay-lost",
+                    "Instant replay stopped: the engine was switched.",
+                );
+            }
             // Dropping the last handle stops the engine thread (and its windows).
             drop(runner);
             for s in reopen {
@@ -780,6 +795,184 @@ pub struct EngineCapture {
 
 /// ISO feeds are numbered apart from the sessions' own.
 const ISO_FEEDS: u64 = 1 << 40;
+/// The instant replay's feed.
+const REPLAY_FEED: u64 = 1 << 41;
+
+/// Keep the last minute of the engine's Live Screen (and the Stream mix's
+/// sound) for instant replays: pieces of a few seconds, encoded with the
+/// recordings' hardware encoder, on disk (`crates/live-engine/src/replay.rs`).
+#[tauri::command]
+pub async fn live_engine_replay_start(
+    sample_rate: u32,
+    live: State<'_, Live>,
+    state: State<'_, crate::AppState>,
+    app: AppHandle,
+) -> Result<(), String> {
+    use live_engine::replay::{container_args, keyframe_args, Ring, PIECE_S};
+    let runner = live
+        .runner()
+        .ok_or("The unified engine is not running (Settings → Engine).")?;
+    if lock(&live.inner).replay.is_some() {
+        return Ok(());
+    }
+    let ffmpeg = live
+        .ffmpeg
+        .clone()
+        .ok_or("FFmpeg is needed for instant replay with the unified engine.")?;
+    let ring = Ring::new(&state.dir.join("replay-ring"), PIECE_S)
+        .map_err(|e| format!("Could not keep replays: {e}"))?;
+    let settings = state.capture.settings();
+    let family = state.capture.engine_family();
+    let c = Config::default();
+    // As the WebView's replay buffer: 30 frames a second, 8 Mb/s.
+    let mut video = encode::video_args(&VideoEncode {
+        family,
+        codec: Codec::H264,
+        rate: Rate::Cbr { kbps: 8000 },
+        preset: settings.preset,
+        fps: 30,
+        size: None,
+    });
+    video.extend(keyframe_args(PIECE_S));
+    let audio = live_engine::encoder::AudioIn {
+        rate: sample_rate,
+        encode: ["-c:a", "libopus", "-b:a", "160k"]
+            .map(str::to_owned)
+            .to_vec(),
+        chunks: live.audio.subscribe("master"),
+    };
+    let dir = ring.dir.clone();
+    let to = app.clone();
+    let on_end: live_engine::encoder::OnEnd = Box::new(move |asked, said| {
+        if asked {
+            return;
+        }
+        let said = said.unwrap_or_else(|| "it stopped".to_owned());
+        eprintln!("lumora: the engine's replay encoder stopped: {said}");
+        if let Some(l) = to.try_state::<Live>() {
+            lock(&l.inner).replay = None;
+        }
+        let _ = to.emit(
+            "live-engine-replay-lost",
+            format!("Instant replay stopped ({said})."),
+        );
+    });
+    let make: MakeFeed = Box::new(move |shape| {
+        EncoderFeed::start(
+            &ffmpeg,
+            FeedArgs {
+                width: shape.width,
+                height: shape.height,
+                fps: shape.fps,
+                pix_fmt: shape.pix_fmt,
+                encode: video,
+                container: container_args(&dir, PIECE_S),
+                audio: Some(audio),
+            },
+            Box::new(|_| {}),
+            Some(on_end),
+        )
+    });
+    let spec = FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions: false,
+        },
+        width: c.width,
+        height: c.height,
+        fps: 30,
+    };
+    let r = Arc::clone(&runner);
+    tauri::async_runtime::spawn_blocking(move || r.start_feed(REPLAY_FEED, spec, make))
+        .await
+        .map_err(|e| e.to_string())??;
+    let ring = Arc::new(Mutex::new(Ring {
+        t0_ms: live_engine::engine::now_ms(),
+        ..ring
+    }));
+    lock(&live.inner).replay = Some(Arc::clone(&ring));
+    // Only the last minute is kept.
+    let to = app.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let on = to.try_state::<Live>().is_some_and(|l| {
+            lock(&l.inner)
+                .replay
+                .as_ref()
+                .is_some_and(|r| Arc::ptr_eq(r, &ring))
+        });
+        if !on {
+            break;
+        }
+        ring.lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .prune(live_engine::engine::now_ms());
+    });
+    Ok(())
+}
+
+/// Stop keeping replays (the pieces kept go; replays already made stay).
+#[tauri::command]
+pub async fn live_engine_replay_stop(live: State<'_, Live>) -> Result<(), String> {
+    let ring = lock(&live.inner).replay.take();
+    if let Some(r) = live.runner() {
+        tauri::async_runtime::spawn_blocking(move || r.stop_feed(REPLAY_FEED))
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+    if let Some(ring) = ring {
+        let dir = ring
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .dir
+            .clone();
+        let _ = std::fs::remove_dir_all(dir);
+    }
+    Ok(())
+}
+
+/// One piece of a replay, kept in the replays folder.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplayFile {
+    pub path: String,
+    pub duration_s: f64,
+}
+
+/// The last `seconds` of the Live Screen as pieces copied into the replays
+/// folder (named `<name>-<n>.mkv`): the piece being written is finished first.
+#[tauri::command]
+pub async fn live_engine_replay_take(
+    seconds: f64,
+    name: String,
+    live: State<'_, Live>,
+    state: State<'_, crate::AppState>,
+) -> Result<Vec<ReplayFile>, String> {
+    let ring = lock(&live.inner)
+        .replay
+        .clone()
+        .ok_or("Turn on instant replay first.")?;
+    let to = state.dir.join("replays");
+    let ms = (seconds.clamp(1.0, 60.0) * 1000.0) as u64;
+    let now = live_engine::engine::now_ms();
+    let files = tauri::async_runtime::spawn_blocking(move || {
+        let ring = ring.lock().unwrap_or_else(PoisonError::into_inner);
+        let wait = std::time::Duration::from_secs(u64::from(ring.piece_s) + 2);
+        let pieces = ring.take(ms, now, wait);
+        live_engine::replay::copy_out(&pieces, &to, &name)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("Could not keep the replay: {e}"))?;
+    Ok(files
+        .into_iter()
+        .map(|(p, d)| ReplayFile {
+            path: p.to_string_lossy().into_owned(),
+            duration_s: d,
+        })
+        .collect())
+}
 
 /// An encoder feed from the engine into `on_chunk`, with sound from `audio` (when given).
 fn engine_feed(

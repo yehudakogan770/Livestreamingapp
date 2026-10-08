@@ -169,6 +169,35 @@ export function sendEngineSound(mix: 'master' | 'b', pcm: Uint8Array, atMs: numb
   return invoke('live_engine_audio', pcm, { headers: { mix, at: String(atMs), rate: String(rate) } });
 }
 
+/** Instant replay from the engine: keep the last minute of its Live Screen (with the Stream mix's sound). */
+export function engineReplayStart(sampleRate: number): Promise<void> {
+  return invoke('live_engine_replay_start', { sampleRate });
+}
+
+export function engineReplayStop(): Promise<void> {
+  return invoke('live_engine_replay_stop');
+}
+
+/** The last `seconds` as pieces kept in the replays folder (`<name>-<n>.mkv`). */
+export function engineReplayTake(seconds: number, name: string): Promise<{ path: string; durationS: number }[]> {
+  return invoke('live_engine_replay_take', { seconds, name });
+}
+
+/** The engine's replay encoder stopped (or the engine was switched): replay is off. */
+export function onEngineReplayLost(cb: (message: string) => void): () => void {
+  if (!isInsideLumora()) return () => {};
+  let stop: (() => void) | null = null;
+  let gone = false;
+  void listen<string>('live-engine-replay-lost', (e) => cb(e.payload)).then(
+    (u) => (gone ? u() : (stop = u)),
+    () => {},
+  );
+  return () => {
+    gone = true;
+    stop?.();
+  };
+}
+
 /** The engine's own encoder stopped by itself (the session is started again, as for the WebView's). */
 export function onEngineFeedLost(cb: (kind: SessionKind, session: number, message: string) => void): () => void {
   if (!isInsideLumora()) return () => {};
