@@ -2143,11 +2143,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "lumora-atem"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "lumora-crash"
 version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "lumora-decklink"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -2183,6 +2200,7 @@ name = "lumora-live-engine"
 version = "0.1.0"
 dependencies = [
  "jpeg-encoder",
+ "lumora-decklink",
  "lumora-engine",
  "png 0.17.16",
  "pollster",

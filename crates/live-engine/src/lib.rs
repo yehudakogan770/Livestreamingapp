@@ -21,6 +21,7 @@
 //! own copy in its WebView) stays the default.
 
 pub mod audio;
+pub mod decklink;
 pub mod delay;
 pub mod encoder;
 pub mod engine;
