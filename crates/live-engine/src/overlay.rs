@@ -45,6 +45,11 @@ pub fn graphic_plane(id: &str) -> String {
 pub const TOP: &str = "top";
 /// The PANIC safe screen's logo.
 pub const PANIC: &str = "panic";
+/// The live captions written in the stream picture (Live; drawn only into
+/// the stream and its vertical version, never on the screen or the recording).
+pub const CAPTIONS: &str = "cap";
+/// The stage monitor's words (the Monitor in the engine's own window).
+pub const MONITOR: &str = "mon";
 
 /// What a record does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

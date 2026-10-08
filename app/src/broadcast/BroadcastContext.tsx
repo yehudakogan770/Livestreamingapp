@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   defaultCaptureSettings,
+  isInsideLumora,
   type CaptureFailure,
   type CaptureKind,
   type CaptureSettings,
@@ -18,6 +19,9 @@ import { Broadcaster } from './recorder';
 import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
+import { emitTo } from '@tauri-apps/api/event';
+import { CAPTIONS_EVENT, relayCaptions } from '../engine/engineCaptions';
+import { unifiedOn } from '../engine/unified';
 import { useAppRequests, useRemoteControl } from './remoteControl';
 
 /** The highlights reel's input. */
@@ -580,6 +584,14 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       if (!live || !c?.on || !c.inPicture) return null;
       return { lines: live.lines.shown(c.lines, lineWidth(1920, 1080, c.size)), look: c };
     };
+  }, [broadcaster, live]);
+  // With the unified engine the Live Screen's overlay renderer writes them (the engine puts them on the stream only).
+  useEffect(() => {
+    if (!broadcaster || !live || !isInsideLumora()) return;
+    return relayCaptions(
+      () => (unifiedOn() ? broadcaster.captionsInPicture() : null),
+      (c) => void emitTo('overlay-live', CAPTIONS_EVENT, c).catch(() => {}),
+    );
   }, [broadcaster, live]);
   useReportProblem(
     captionState.state === 'failed' && cc?.on

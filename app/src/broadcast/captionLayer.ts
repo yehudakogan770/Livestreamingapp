@@ -34,21 +34,29 @@ export class CaptionLayer {
     }
     ctx.drawImage(src, 0, 0);
     if (!look || !lines.length) return;
-    const W = canvas.width;
-    const H = canvas.height;
-    const font = Math.round(H * 0.045 * look.size);
-    ctx.font = `600 ${font}px "Segoe UI", system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const lineH = Math.round(font * 1.3);
-    const boxW = Math.min(W * 0.9, Math.max(...lines.map((l) => ctx.measureText(l).width)) + font * 1.2);
-    const boxH = lineH * lines.length + font * 0.5;
-    const y = look.place === 'top' ? H * 0.06 : H - H * 0.07 - boxH;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
-    ctx.beginPath();
-    ctx.roundRect((W - boxW) / 2, y, boxW, boxH, font * 0.25);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    lines.forEach((l, i) => ctx.fillText(l, W / 2, y + font * 0.25 + lineH * (i + 0.5)));
+    drawCaptions(ctx, canvas.width, canvas.height, lines, look);
   }
+}
+
+/**
+ * Write `lines` as `look` says on a picture `W` × `H`: the box and its words
+ * (the stream's copy above; the unified engine's caption plane, see
+ * overlayRenderer.ts, on a see-through canvas).
+ */
+export function drawCaptions(ctx: CanvasRenderingContext2D, W: number, H: number, lines: string[], look: Captions): void {
+  if (!lines.length) return;
+  const font = Math.round(H * 0.045 * look.size);
+  ctx.font = `600 ${font}px "Segoe UI", system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const lineH = Math.round(font * 1.3);
+  const boxW = Math.min(W * 0.9, Math.max(...lines.map((l) => ctx.measureText(l).width)) + font * 1.2);
+  const boxH = lineH * lines.length + font * 0.5;
+  const y = look.place === 'top' ? H * 0.06 : H - H * 0.07 - boxH;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
+  ctx.beginPath();
+  ctx.roundRect((W - boxW) / 2, y, boxW, boxH, font * 0.25);
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  lines.forEach((l, i) => ctx.fillText(l, W / 2, y + font * 0.25 + lineH * (i + 0.5)));
 }

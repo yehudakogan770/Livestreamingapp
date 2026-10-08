@@ -429,6 +429,11 @@ impl LiveEngine {
         };
         let sc = show.screens.get(screen);
         p.in_sync = sc.program.as_ref().map(&drawn);
+        if screen == ScreenId::Monitor {
+            // All words: they are there once the renderer has sent them.
+            p.in_sync = Some(self.gpu.has_plane(slot, overlay::MONITOR));
+            return p;
+        }
         if !sc.blank && !show.panic {
             if let Some(t) = self.previews.get(&PreviewId::Program(screen).key()) {
                 let px = t.rgba.as_chunks::<4>().0;
@@ -593,6 +598,21 @@ impl LiveEngine {
                 name: MULTIVIEW_PLANE,
             },
         });
+        // The timecodes (with frames): two small planes that change every
+        // frame, so the big words plane changes only once a second.
+        let slot = program_target(ScreenId::Live);
+        let clocks = std::iter::once((l.clock, multiview::CLOCK_PLANE)).chain(
+            l.tiles
+                .iter()
+                .filter_map(|t| t.timecode.map(|r| (r, multiview::TIMECODE_PLANE))),
+        );
+        for (rect, name) in clocks {
+            passes.push(Pass {
+                dest: Dest::Target(MULTIVIEW),
+                viewport: Some(rect),
+                paint: Paint::Plane { slot, name },
+            });
+        }
         self.gpu.render(&passes);
     }
 
@@ -770,7 +790,8 @@ impl LiveEngine {
         if let Some(o) = self.multiview.as_mut() {
             o.out.reset();
         }
-        self.feeds.renew(&mut self.gpu);
+        self.feeds
+            .renew(&mut self.gpu, (self.config.width, self.config.height));
         // The masks went with the device: the worker sends everything again.
         self.vision_lost = true;
         self.vision_sent.clear();
@@ -895,14 +916,29 @@ impl LiveEngine {
                     planes: (*s != ScreenId::Monitor).then_some(*i),
                 },
             });
+            if *s == ScreenId::Monitor {
+                // The stage monitor's words (clock, countdown, message,
+                // teleprompter…): the Live Screen's overlay renderer's plane
+                // `mon`, over the engine's own PANIC black.
+                passes.push(Pass {
+                    dest: Dest::Target(*i),
+                    viewport: Some([0, 0, self.config.width, self.config.height]),
+                    paint: Paint::Plane {
+                        slot: *i,
+                        name: overlay::MONITOR,
+                    },
+                });
+            }
         }
         for (i, sc) in &next {
+            // The Next preview's graphics: its screen renderer's `n:` planes (sent while it is seen).
+            let screen = NEXT.iter().find(|n| n.1 == *i).map(|n| n.0);
             passes.push(Pass {
                 dest: Dest::Target(*i),
                 viewport: None,
                 paint: Paint::Scene {
                     scene: sc,
-                    planes: None,
+                    planes: screen.map(program_target),
                 },
             });
         }
@@ -1133,6 +1169,9 @@ pub struct Shared {
     /// The masks were lost (a new graphics device): the worker's next answer
     /// is refused so it sends its pictures again.
     pub vision_lost: std::sync::atomic::AtomicBool,
+    /// When each preview tile was last asked for (the Next previews' graphics
+    /// are drawn only while someone looks at them).
+    pub seen: Mutex<HashMap<String, Instant>>,
 }
 
 /// The engine running on its own thread at a steady frame rate.
@@ -1312,7 +1351,15 @@ impl Runner {
     }
 
     pub fn preview(&self, key: &str) -> Option<Preview> {
+        lock(&self.shared.seen).insert(key.to_owned(), Instant::now());
         lock(&self.shared.previews).get(key).cloned()
+    }
+
+    /// Preview tile `key` was asked for within `within`.
+    pub fn seen_recently(&self, key: &str, within: Duration) -> bool {
+        lock(&self.shared.seen)
+            .get(key)
+            .is_some_and(|t| t.elapsed() <= within)
     }
 
     pub fn health(&self) -> Vec<(SourceId, SourceHealth)> {

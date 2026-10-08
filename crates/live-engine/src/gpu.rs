@@ -802,6 +802,11 @@ impl Compositor {
         }
     }
 
+    /// Target `i`'s size, when it exists.
+    pub fn target_size(&self, i: usize) -> Option<(u32, u32)> {
+        self.dest_size(Dest::Target(i))
+    }
+
     /// Let target `i` go (a feed ended).
     pub fn drop_target(&mut self, i: usize) {
         if let Some(t) = self.targets.get_mut(i) {
@@ -1352,7 +1357,7 @@ impl Compositor {
         for (i, layer) in scene.layers.iter().enumerate() {
             match groups.get(&(false, i)) {
                 Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
-                None => self.layer_draws(layer, planes, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, scene.plane_prefix, out_w, out_h, draws),
             }
         }
         let solid = |c: [f32; 4], a: f32, draws: &mut Vec<(DrawU, TexKey)>| {
@@ -1379,7 +1384,7 @@ impl Compositor {
         for (i, layer) in scene.overlays.iter().enumerate() {
             match groups.get(&(true, i)) {
                 Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
-                None => self.layer_draws(layer, planes, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, scene.plane_prefix, out_w, out_h, draws),
             }
         }
         if let Some(slot) = planes {
@@ -1434,6 +1439,7 @@ impl Compositor {
         &self,
         layer: &Layer,
         planes: Option<usize>,
+        prefix: &str,
         out_w: u32,
         out_h: u32,
         draws: &mut Vec<(DrawU, TexKey)>,
@@ -1557,9 +1563,11 @@ impl Compositor {
                         ((f[2] - f[0]) * out_w as f32).round().max(1.0) as u32,
                         ((f[3] - f[1]) * out_h as f32).round().max(1.0) as u32,
                     );
-                    let Some(plane) =
-                        self.plane(slot, &crate::overlay::graphic_plane(id.as_str()), want)
-                    else {
+                    let Some(plane) = self.plane(
+                        slot,
+                        &format!("{prefix}{}", crate::overlay::graphic_plane(id.as_str())),
+                        want,
+                    ) else {
                         continue;
                     };
                     let (qw, qh) = (
@@ -1621,7 +1629,7 @@ impl Compositor {
                                 ..l.clone()
                             };
                             let mut d = Vec::new();
-                            self.layer_draws(&whole, *planes, w, h, &mut d);
+                            self.layer_draws(&whole, *planes, scene.plane_prefix, w, h, &mut d);
                             plan.push((Dest::Target(t), None, d));
                             groups.insert((overlay, i), t);
                         }

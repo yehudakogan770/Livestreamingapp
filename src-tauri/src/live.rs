@@ -5,12 +5,21 @@
 //! `docs/ENGINE.md`.
 //!
 //! In Unified mode:
-//! - the Live and Back Screens' output windows are the engine's own native
-//!   windows (the Monitor, all words, stays a WebView window for now);
+//! - the Live, Back and Monitor screens' output windows are the engine's own
+//!   native windows (the Monitor's words are drawn by the Live Screen's
+//!   overlay renderer);
 //! - each engine screen's graphics (titles, lower thirds, countdowns…) are
 //!   drawn by a hidden overlay renderer window (`overlay-live`,
 //!   `overlay-back`: `app/src/engine/overlayRenderer.ts`) that sends what
-//!   changed (`live_engine_graphics`);
+//!   changed (`live_engine_graphics`) — also the Next previews' graphics
+//!   while they are seen, the multiview's and the Monitor's words and the
+//!   captions written into the stream (`live_engine_renderer_wants`);
+//! - background removal, blur behind people and auto-framing run the web's
+//!   person-finding models in a hidden vision worker (`overlay-vision`,
+//!   `live_engine_vision_frames` / `live_engine_vision_result`), opened only
+//!   while an input uses them;
+//! - instant replay keeps the last minute of the engine's Live Screen as
+//!   hardware-encoded pieces on disk (`live_engine_replay_*`);
 //! - the control window's camera pictures are the engine's small previews
 //!   (`live_engine_preview`), so the WebView never opens a camera itself;
 //! - each input's health comes from the engine (`live_engine_health`), for
@@ -121,9 +130,10 @@ pub struct Health {
     pub frames: u64,
 }
 
-/// The screens the engine draws in its own windows (the stage monitor is all words: still a WebView).
+/// The screens the engine draws in its own windows: Live and Back, and the
+/// stage monitor (its words are the Live Screen's overlay renderer's plane `mon`).
 fn native_screen(screen: ScreenId) -> bool {
-    cfg!(windows) && matches!(screen, ScreenId::Live | ScreenId::Back)
+    cfg!(windows) && matches!(screen, ScreenId::Live | ScreenId::Back | ScreenId::Monitor)
 }
 
 /// The hidden window that runs the person-finding models for the engine
@@ -366,7 +376,7 @@ impl Live {
     }
 
     /// Open (or move) a screen in the engine's own window. False: not the
-    /// engine's to show (Standard mode, the Monitor, not on Windows).
+    /// engine's to show (Standard mode, not on Windows).
     ///
     /// # Errors
     /// The window could not be made.
@@ -658,6 +668,53 @@ pub fn live_engine_probe(
     live.runner()?.probe(screen)
 }
 
+/// What a screen's overlay renderer is asked to draw besides its screen's graphics.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RendererWants {
+    /// The multiview's words (the Live Screen's renderer, while the engine shows it).
+    pub multiview: Option<live_engine::multiview::Layout>,
+    /// The Next preview's graphics (while the control window or the multiview shows it).
+    pub next: bool,
+    /// The stage monitor's words (the Live Screen's renderer, while the engine shows the Monitor).
+    pub monitor: bool,
+}
+
+/// Next previews looked at within this long count as seen.
+const NEXT_SEEN: std::time::Duration = std::time::Duration::from_millis(2500);
+
+/// What `screen`'s overlay renderer draws now besides the screen's own graphics.
+#[tauri::command]
+pub fn live_engine_renderer_wants(screen: ScreenId, live: State<'_, Live>) -> RendererWants {
+    let Some(r) = live.runner() else {
+        return RendererWants {
+            multiview: None,
+            next: false,
+            monitor: false,
+        };
+    };
+    let multiview = live
+        .multiview_open()
+        .then(|| r.multiview_layout())
+        .flatten();
+    let in_multiview = multiview.as_ref().is_some_and(|l| {
+        l.tiles.iter().any(
+            |t| matches!(&t.content, live_engine::multiview::TileContent::Next(s) if *s == screen),
+        )
+    });
+    let next = in_multiview
+        || r.seen_recently(
+            &live_engine::engine::PreviewId::Next(screen).key(),
+            NEXT_SEEN,
+        );
+    let live_screen = screen == ScreenId::Live;
+    RendererWants {
+        multiview: multiview.filter(|_| live_screen),
+        next,
+        monitor: live_screen && live.open_screens().contains(&ScreenId::Monitor),
+    }
+}
+
 /// The engine's multiview layout while it shows the multiview (for its
 /// words, drawn by the Live Screen's overlay renderer); None otherwise.
 #[tauri::command]
@@ -827,6 +884,8 @@ pub async fn live_engine_capture_start(
         source: FeedSource::Screen {
             screen: ScreenId::Live,
             vertical: r.vertical,
+            // As the Standard recorder: the stream and its vertical version carry the captions (when asked), the recording never.
+            captions: matches!(r.kind, Kind::Stream | Kind::Vertical),
         },
         width: r.width.clamp(16, 7680) & !1,
         height: r.height.clamp(16, 4320) & !1,
@@ -987,6 +1046,7 @@ pub async fn live_engine_test_record(
         source: FeedSource::Screen {
             screen: ScreenId::Live,
             vertical: false,
+            captions: false,
         },
         width: c.width,
         height: c.height,

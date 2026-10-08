@@ -132,7 +132,13 @@ pub struct ScreenScene {
     /// PANIC: the safe screen over everything.
     pub panic: f32,
     pub stinger: Option<StingerPlay>,
+    /// Its graphics inputs' planes are named with this first (`n:` for the
+    /// Next preview's, drawn half size: [`NEXT_PREFIX`]).
+    pub plane_prefix: &'static str,
 }
+
+/// The prefix of the Next preview's graphics planes (`overlayPlanes.ts: nextPlanes`).
+pub const NEXT_PREFIX: &str = "n:";
 
 impl ScreenScene {
     /// The sources whose frames this scene needs.
@@ -536,7 +542,8 @@ fn sort_top(scene: &mut ScreenScene) {
     scene.layers.sort_by_key(|l| l.top);
 }
 
-/// What is lined up next on a screen (no blank or PANIC: Next is for the operator).
+/// What is lined up next on a screen (no blank or PANIC: Next is for the
+/// operator). Its graphics are the screen renderer's `n:` planes.
 pub fn preview_scene(show: &Show, screen: ScreenId) -> ScreenScene {
     let sc = show.screens.get(screen);
     ScreenScene {
@@ -546,6 +553,7 @@ pub fn preview_scene(show: &Show, screen: ScreenId) -> ScreenScene {
             .and_then(|id| plain_layer(show, id))
             .into_iter()
             .collect(),
+        plane_prefix: NEXT_PREFIX,
         ..ScreenScene::default()
     }
 }
