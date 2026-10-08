@@ -144,6 +144,7 @@ fn main() {
                 width: w,
                 height: h,
                 fps,
+                zero_copy: None,
             },
             Box::new(move |shape| {
                 EncoderFeed::start(

@@ -36,8 +36,11 @@ pub mod replay;
 pub mod scene;
 pub mod source;
 pub mod vision;
+pub mod zerocopy;
 
 #[cfg(windows)]
 pub mod mf;
+#[cfg(windows)]
+mod zerocopy_win;
 
 pub use wgpu;

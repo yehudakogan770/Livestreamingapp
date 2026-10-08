@@ -787,6 +787,18 @@ impl LiveEngine {
         rx
     }
 
+    /// Open zero-copy encoders with `opener` (tests and the benchmark: the
+    /// stand-in; None: screens are always read back). The engine starts with
+    /// this computer's ([`crate::zerocopy::platform`]).
+    pub fn set_zero_copy(&mut self, opener: Option<crate::zerocopy::Opener>) {
+        self.feeds.set_opener(opener);
+    }
+
+    /// Every feed and how it is doing now (the statistics have it once a second).
+    pub fn feed_info(&self) -> Vec<crate::feeds::FeedInfo> {
+        self.feeds.info()
+    }
+
     /// Feed `id`'s encoder has started.
     pub fn feed_running(&self, id: u64) -> bool {
         self.feeds.running(id)

@@ -818,6 +818,7 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
         width: w,
         height: h,
         fps: 30,
+        zero_copy: None,
     };
     let a = e.start_feed(1, screen(false, 32, 18), raw_feed(Arc::clone(&small)));
     let b = e.start_feed(2, screen(true, 18, 32), raw_feed(Arc::clone(&vertical)));
@@ -828,6 +829,7 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
             width: 0,
             height: 0,
             fps: 30,
+            zero_copy: None,
         },
         raw_feed(Arc::clone(&iso)),
     );
@@ -875,6 +877,187 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
         iso.len()
     );
     assert!(near([iso[0], iso[1], iso[2], iso[3]], [0, 0, 255, 255]));
+}
+
+// ---------------------------------------------------------------------------
+// Zero-copy: the picture handed over on the GPU (the stand-in encoder here)
+
+/// A feed that copies an encoded picture into Matroska (or encodes NV12
+/// with x264 when the picture is read back), into `out`.
+fn mkv_feed(out: Arc<Mutex<Vec<u8>>>, shapes: Arc<Mutex<Vec<&'static str>>>) -> MakeFeed {
+    Box::new(move |shape| {
+        shapes.lock().unwrap().push(shape.pix_fmt);
+        EncoderFeed::start(
+            std::path::Path::new("ffmpeg"),
+            FeedArgs {
+                width: shape.width,
+                height: shape.height,
+                fps: shape.fps,
+                pix_fmt: shape.pix_fmt,
+                encode: vec!["-c:v".into(), "libx264".into()],
+                container: vec!["-f".into(), "matroska".into(), "-".into()],
+                audio: None,
+            },
+            Box::new(move |c| out.lock().unwrap().extend(c)),
+            None,
+        )
+    })
+}
+
+/// Decode a Matroska file's frames, each as one averaged RGB pixel.
+fn decode_mkv(bytes: &[u8], tag: &str) -> Vec<[u8; 3]> {
+    let path = std::env::temp_dir().join(format!("lumora-{tag}-{}.mkv", std::process::id()));
+    std::fs::write(&path, bytes).unwrap();
+    let out = std::process::Command::new("ffmpeg")
+        .args(["-v", "error", "-i"])
+        .arg(&path)
+        .args(["-vf", "scale=1:1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_file(&path);
+    out.stdout.as_chunks::<3>().0.to_vec()
+}
+
+fn zero_copy_settings() -> live_engine::zerocopy::Settings {
+    use live_engine::zerocopy::{Rate, Settings, Speed, Vendor};
+    Settings {
+        vendor: Vendor::Nvidia,
+        hevc: false,
+        rate: Rate::Cbr { kbps: 2000 },
+        speed: Speed::Balanced,
+        gop: 60,
+    }
+}
+
+fn has_x264() -> bool {
+    std::process::Command::new("ffmpeg")
+        .args(["-v", "error", "-f", "lavfi", "-i", "color=size=64x36", "-frames:v", "1"])
+        .args(["-c:v", "libx264", "-f", "null", "-"])
+        .output()
+        .is_ok_and(|o| o.status.success())
+}
+
+#[test]
+fn zero_copy_hands_the_picture_over_on_the_gpu_and_the_file_has_every_frame() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    if !has_x264() {
+        eprintln!("no FFmpeg with x264 here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    let copies = Arc::new(AtomicUsize::new(0));
+    e.set_zero_copy(Some(live_engine::zerocopy::standin::opener(
+        "ffmpeg".into(),
+        Arc::clone(&copies),
+    )));
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show.clone());
+    let out = Arc::new(Mutex::new(Vec::new()));
+    let shapes = Arc::new(Mutex::new(Vec::new()));
+    let spec = FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions: false,
+        },
+        width: W,
+        height: H,
+        fps: 30,
+        zero_copy: Some(zero_copy_settings()),
+    };
+    e.start_feed(1, spec, mkv_feed(Arc::clone(&out), Arc::clone(&shapes)))
+        .recv()
+        .unwrap()
+        .expect("starts");
+    let now = live_engine::engine::now_ms;
+    let t0 = now();
+    let mut switched = false;
+    while now() < t0 + 1500 {
+        // Camera b (blue) takes over halfway.
+        if !switched && now() >= t0 + 750 {
+            show.screens.live.program = Some(SourceId::new("b"));
+            e.set_show(show.clone());
+            switched = true;
+        }
+        e.frame(now());
+        std::thread::sleep(std::time::Duration::from_millis(8));
+    }
+    let info = e.feed_info();
+    let route = info[0].route.clone().expect("a screen has a route");
+    assert!(route.zero_copy, "{route:?}");
+    assert!(route.path.contains("stand-in"), "{route:?}");
+    let stats = e.stop_feed(1).expect("running").finish();
+    eprintln!("{stats:?} {route:?}");
+    assert_eq!(*shapes.lock().unwrap(), vec!["h264"], "FFmpeg was given the encoded picture");
+    assert!(copies.load(Ordering::SeqCst) >= 20, "copied on the GPU");
+    let frames = decode_mkv(&out.lock().unwrap(), "zc");
+    // 1.5 s at 30 fps, counted on the wall clock (frames owed included).
+    assert!(
+        (38..=50).contains(&frames.len()),
+        "{} frames ({stats:?})",
+        frames.len()
+    );
+    assert_eq!(stats.frames_in as usize, frames.len(), "{stats:?}");
+    let first = frames[2];
+    let last = frames[frames.len() - 1];
+    assert!(first[0] > 200 && first[2] < 60, "red first: {first:?}");
+    assert!(last[2] > 200 && last[0] < 60, "blue last: {last:?}");
+}
+
+#[test]
+fn zero_copy_that_cannot_open_reads_back_and_says_why() {
+    if !has_x264() {
+        eprintln!("no FFmpeg with x264 here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    e.set_zero_copy(Some(Box::new(|_, _, _, _| {
+        Err("no NVIDIA NVENC on this graphics card".to_owned())
+    })));
+    let mut show = Show {
+        sources: vec![cam("a")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    let out = Arc::new(Mutex::new(Vec::new()));
+    let shapes = Arc::new(Mutex::new(Vec::new()));
+    let spec = FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions: false,
+        },
+        width: W,
+        height: H,
+        fps: 30,
+        zero_copy: Some(zero_copy_settings()),
+    };
+    e.start_feed(1, spec, mkv_feed(Arc::clone(&out), Arc::clone(&shapes)))
+        .recv()
+        .unwrap()
+        .expect("starts");
+    let now = live_engine::engine::now_ms;
+    let t0 = now();
+    while now() < t0 + 700 {
+        e.frame(now());
+        std::thread::sleep(std::time::Duration::from_millis(8));
+    }
+    let route = e.feed_info()[0].route.clone().expect("a route");
+    let stats = e.stop_feed(1).expect("running").finish();
+    assert!(!route.zero_copy);
+    assert_eq!(
+        route.path,
+        "read back as NV12 to FFmpeg (no NVIDIA NVENC on this graphics card)"
+    );
+    assert_eq!(*shapes.lock().unwrap(), vec!["nv12"]);
+    let frames = decode_mkv(&out.lock().unwrap(), "rb");
+    assert!(frames.len() >= 10, "{} ({stats:?})", frames.len());
+    assert!(frames[frames.len() - 1][0] > 200, "red: {:?}", frames.last());
 }
 
 // ---------------------------------------------------------------------------
@@ -1210,6 +1393,7 @@ fn captions_are_written_into_the_stream_but_not_the_recording_or_the_screen() {
         width: W,
         height: H,
         fps: 30,
+        zero_copy: None,
     };
     let a = e.start_feed(1, spec(false), raw_feed(Arc::clone(&rec)));
     let b = e.start_feed(2, spec(true), raw_feed(Arc::clone(&stream)));
@@ -1316,6 +1500,7 @@ fn instant_replay_keeps_pieces_of_the_live_screen_and_plays_them_as_an_input() {
         width: W,
         height: H,
         fps: 30,
+        zero_copy: None,
     };
     e.start_feed(9, spec, make).recv().unwrap().expect("starts");
     ring.t0_ms = live_engine::engine::now_ms();

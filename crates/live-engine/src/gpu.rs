@@ -2048,6 +2048,84 @@ impl Compositor {
         out
     }
 
+    /// Copy target `i` into `dest` (same size and format: a zero-copy
+    /// encoder's ring, [`crate::zerocopy`]) and submit it. False when the
+    /// target doesn't exist or the sizes differ.
+    pub fn copy_target_to(&mut self, i: usize, dest: &wgpu::Texture) -> bool {
+        let Some(t) = self.targets.get(i).and_then(Option::as_ref) else {
+            return false;
+        };
+        if (t.w, t.h) != (dest.width(), dest.height()) || t.format != dest.format() {
+            return false;
+        }
+        let mut enc = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("zero-copy"),
+            });
+        enc.copy_texture_to_texture(
+            t.texture.as_image_copy(),
+            dest.as_image_copy(),
+            wgpu::Extent3d {
+                width: t.w,
+                height: t.h,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.queue.submit([enc.finish()]);
+        true
+    }
+
+    /// Read any RGBA texture of `size` back (the zero-copy stand-in). Waits for the GPU.
+    ///
+    /// # Errors
+    /// The GPU failed.
+    pub fn read_texture(&mut self, tex: &wgpu::Texture, size: (u32, u32)) -> Result<Vec<u8>, String> {
+        let buffer = match self.reads.get(&(size.0 * 4, size.1)) {
+            Some(b) => b.clone(),
+            None => {
+                let b = self.read_buffer(size.0, size.1, 4);
+                self.reads.insert((size.0 * 4, size.1), b.clone());
+                b
+            }
+        };
+        let row = (size.0 * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+        let mut enc = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("read"),
+            });
+        enc.copy_texture_to_buffer(
+            tex.as_image_copy(),
+            wgpu::TexelCopyBufferInfo {
+                buffer: &buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(row),
+                    rows_per_image: Some(size.1),
+                },
+            },
+            wgpu::Extent3d {
+                width: size.0,
+                height: size.1,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.queue.submit([enc.finish()]);
+        let (tx, rx) = std::sync::mpsc::channel();
+        buffer.slice(..).map_async(wgpu::MapMode::Read, move |r| {
+            let _ = tx.send(r);
+        });
+        self.finish_read(Pending {
+            buffer,
+            rx,
+            w: size.0,
+            h: size.1,
+            bpp: 4,
+        })
+        .map(|(_, _, px)| px)
+    }
+
     /// Wait until the GPU has finished everything submitted (benchmarks).
     pub fn finish(&self) {
         let _ = self.device.poll(wgpu::PollType::wait_indefinitely());
