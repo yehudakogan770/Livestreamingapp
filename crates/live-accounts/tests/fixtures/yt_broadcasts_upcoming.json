@@ -1,0 +1,92 @@
+{
+  "kind": "youtube#liveBroadcastListResponse",
+  "etag": "pVh0k0x9V1",
+  "pageInfo": {
+    "totalResults": 2,
+    "resultsPerPage": 25
+  },
+  "items": [
+    {
+      "kind": "youtube#liveBroadcast",
+      "etag": "aa11",
+      "id": "Xq9hFm3kLw0",
+      "snippet": {
+        "publishedAt": "2026-10-01T15:02:11Z",
+        "channelId": "UCx1y2z3RiversideHall",
+        "title": "Sunday morning service",
+        "description": "Join us live.",
+        "thumbnails": {
+          "default": {
+            "url": "https://i.ytimg.com/vi/Xq9hFm3kLw0/default_live.jpg",
+            "width": 120,
+            "height": 90
+          },
+          "high": {
+            "url": "https://i.ytimg.com/vi/Xq9hFm3kLw0/hqdefault_live.jpg",
+            "width": 480,
+            "height": 360
+          }
+        },
+        "scheduledStartTime": "2026-10-11T14:00:00Z",
+        "isDefaultBroadcast": false,
+        "liveChatId": "KicKGFVDeDF5"
+      },
+      "status": {
+        "lifeCycleStatus": "ready",
+        "privacyStatus": "unlisted",
+        "recordingStatus": "notRecording",
+        "madeForKids": false,
+        "selfDeclaredMadeForKids": false
+      },
+      "contentDetails": {
+        "boundStreamId": "Abc123StreamId",
+        "boundStreamLastUpdateTimeMs": "2026-10-01T15:02:12Z",
+        "monitorStream": {
+          "enableMonitorStream": true,
+          "broadcastStreamDelayMs": 0,
+          "embedHtml": "<iframe></iframe>"
+        },
+        "enableEmbed": true,
+        "enableDvr": true,
+        "recordFromStart": true,
+        "enableClosedCaptions": false,
+        "closedCaptionsType": "closedCaptionsDisabled",
+        "enableLowLatency": true,
+        "latencyPreference": "low",
+        "projection": "rectangular",
+        "enableAutoStart": false,
+        "enableAutoStop": false
+      }
+    },
+    {
+      "kind": "youtube#liveBroadcast",
+      "etag": "bb22",
+      "id": "Pq7Rs8Tu9Vw",
+      "snippet": {
+        "publishedAt": "2026-10-02T09:00:00Z",
+        "channelId": "UCx1y2z3RiversideHall",
+        "title": "Fall festival",
+        "description": "",
+        "thumbnails": {},
+        "scheduledStartTime": "2026-10-18T17:00:00Z"
+      },
+      "status": {
+        "lifeCycleStatus": "created",
+        "privacyStatus": "public",
+        "recordingStatus": "notRecording",
+        "madeForKids": false,
+        "selfDeclaredMadeForKids": false
+      },
+      "contentDetails": {
+        "monitorStream": {
+          "enableMonitorStream": true,
+          "broadcastStreamDelayMs": 0
+        },
+        "enableDvr": true,
+        "latencyPreference": "normal",
+        "enableAutoStart": true,
+        "enableAutoStop": true
+      }
+    }
+  ]
+}

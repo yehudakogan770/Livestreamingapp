@@ -26,6 +26,10 @@ describe('Companion module', () => {
     expect(commandFor('macro', { name: '2' })).toEqual({ cmd: 'macro', number: '2' });
     expect(commandFor('timer', { do: 'start' })).toEqual({ cmd: 'timer', do: 'start' });
     expect(commandFor('timer', { do: 'add', minutes: 5 })).toEqual({ cmd: 'timer', do: 'add', minutes: '5' });
+    expect(commandFor('atem', {})).toEqual({ cmd: 'atem', do: 'cut' });
+    expect(commandFor('atem', { do: 'program', atemInput: 3 })).toEqual({ cmd: 'atem', do: 'program', input: '3' });
+    expect(commandFor('atem', { do: 'dsk', keyer: 2, state: 'on' })).toEqual({ cmd: 'atem', do: 'dsk', keyer: '2', state: 'on' });
+    expect(commandFor('atem', { do: 'macro', number: 4 })).toEqual({ cmd: 'atem', do: 'macro', number: '4' });
     expect(commandFor('nope', {})).toBeNull();
   });
 
@@ -53,6 +57,7 @@ describe('Companion module', () => {
       'datarow',
       'nextcue',
       'panic',
+      'atem',
     ]);
     for (const a of Object.values(ACTIONS)) expect(known.has(a.cmd)).toBe(true);
   });

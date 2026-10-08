@@ -42,6 +42,21 @@ describe('Recording and streaming settings', () => {
     expect(saveSettings.mock.calls[0]![0].destinations[0]!.backupUrl).toBe('rtmp://b.rtmp.youtube.com/live2?backup=1');
   });
 
+  it('adds YouTube through a connected account beside the stream-key destination', async () => {
+    saveSettings.mockClear();
+    render(<BroadcastDialog client={client} onClose={() => {}} />);
+    fireEvent.click(await screen.findByRole('button', { name: '+ YouTube with your account' }));
+    // Outside the Windows app, connecting isn't set up: it says so, and the stream-key destination is untouched.
+    expect(await screen.findByText(/isn’t set up in this copy of Lumora yet/)).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Server address' })).toHaveValue('rtmp://a.rtmp.youtube.com/live2');
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    const saved = saveSettings.mock.calls[0]![0].destinations;
+    expect(saved).toHaveLength(2);
+    expect(saved[0]).toMatchObject({ name: 'YouTube', key: 'k' });
+    expect(saved[0]!.account).toBeUndefined();
+    expect(saved[1]).toMatchObject({ url: '', key: '', account: { provider: 'youtube', broadcastId: '' } });
+  });
+
   it('warns about an address Lumora cannot stream to', async () => {
     render(<BroadcastDialog client={client} onClose={() => {}} />);
     const backup = await screen.findByRole('textbox', { name: 'Backup server for YouTube' });

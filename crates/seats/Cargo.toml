@@ -1,0 +1,22 @@
+[package]
+name = "lumora-seats"
+description = "Operator seats: more people run one show from other computers on the venue network (roles, pairing, encrypted link, show sync)."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+lumora-engine = { path = "../engine" }
+serde.workspace = true
+serde_json.workspace = true
+# The same crypto library the app already ships with (through rustls).
+ring = "0.17"
+# mDNS shares port 5353 with the computer's own mDNS (SO_REUSEADDR).
+socket2 = { version = "0.6", features = ["all"] }
+if-addrs = "0.15"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

@@ -2,6 +2,8 @@ import { Radio, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CaptureSettings, CaptureStatus, Destination, EncoderChoice, EngineClient, Quality } from '../engine/client';
 import { useBroadcast } from './BroadcastContext';
+import { AccountDestination, useAccountsInfo } from './AccountDestination';
+import { accountDestination, useAccountSessions, type Provider } from './accounts';
 import { QUALITIES, recordingType } from './recorder';
 import './broadcast.css';
 
@@ -115,6 +117,9 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
   const [problem, setProblem] = useState<string | null>(null);
   // The cameras and microphones that can be recorded on their own.
   const [inputs, setInputs] = useState<{ id: string; name: string; kind: 'camera' | 'microphone' }[]>([]);
+  // Connected YouTube and Facebook accounts, and how their broadcasts are doing.
+  const [accountsInfo, setAccountsInfo] = useAccountsInfo();
+  const sessions = useAccountSessions(!!b?.status.streaming);
   useEffect(() => {
     void client.captureFolder().then(setFolder, () => {});
     void client.getShow().then(
@@ -145,6 +150,7 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
       destinations: [...draft.destinations, { id, name: service.name, url: service.url, key: '', enabled: true, vertical: !!service.vertical }],
     });
   };
+  const addAccount = (provider: Provider) => set({ destinations: [...draft.destinations, accountDestination(provider, '')] });
   const choose = () =>
     void client.pickFolder().then(
       (f) => {
@@ -154,7 +160,12 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
       },
       (e: unknown) => setProblem(e instanceof Error ? e.message : String(e)),
     );
-  const done = () => void b.saveSettings(draft).then(onClose, (e: unknown) => setProblem(String(e)));
+  // A connected destination's address and key are Lumora's (filled in at GO LIVE): the latest are kept.
+  const latest = (d: Destination): Destination => {
+    const now = d.account ? b.settings.destinations.find((x) => x.id === d.id) : undefined;
+    return now ? { ...d, url: now.url, key: now.key, backupUrl: now.backupUrl } : d;
+  };
+  const done = () => void b.saveSettings({ ...draft, destinations: draft.destinations.map(latest) }).then(onClose, (e: unknown) => setProblem(String(e)));
   const canRecord = recordingType() !== null;
   const running = !!(b.status.recording || b.status.streaming);
 
@@ -391,6 +402,32 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
               <p className="field__note">Nowhere yet. Add YouTube, Facebook or another service; you can stream to several at once.</p>
             )}
             {draft.destinations.map((d) => {
+              if (d.account)
+                return (
+                  <div key={d.id} className={`bcd__dest${d.enabled ? '' : ' is-off'}`}>
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        checked={d.enabled}
+                        onChange={(e) => setDest(d.id, { enabled: e.target.checked })}
+                        aria-label={`Stream to ${d.name}`}
+                      />
+                    </label>
+                    {accountsInfo ? (
+                      <AccountDestination
+                        dest={d}
+                        info={accountsInfo}
+                        setInfo={setAccountsInfo}
+                        session={sessions.find((x) => x.destId === d.id)}
+                        client={client}
+                        onChange={(patch) => setDest(d.id, patch)}
+                        onRemove={() => set({ destinations: draft.destinations.filter((x) => x.id !== d.id) })}
+                      />
+                    ) : (
+                      <p className="field__note">Checking the connected accounts…</p>
+                    )}
+                  </div>
+                );
               const service =
                 SERVICES.find((s) => s.name === d.name) ??
                 SERVICES.find((s) => s.url && s.url === d.url) ??
@@ -528,9 +565,21 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
                 </div>
               );
             })}
-            <button type="button" className="btn" onClick={add}>
-              + Add a destination
-            </button>
+            <span className="bcd__row">
+              <button type="button" className="btn" onClick={add}>
+                + Add a destination
+              </button>
+              <button type="button" className="btn" onClick={() => addAccount('youtube')}>
+                + YouTube with your account
+              </button>
+              <button type="button" className="btn" onClick={() => addAccount('facebook')}>
+                + Facebook with your account
+              </button>
+            </span>
+            <span className="field__note">
+              With your account, Lumora makes the broadcast, fills in the server and key, takes it live and ends it — no stream key to copy. A destination with
+              a stream key works exactly as before.
+            </span>
           </section>
           <section className="bcd__section">
             <h3>NDI (video over the network)</h3>

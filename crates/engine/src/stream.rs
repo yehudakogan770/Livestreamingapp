@@ -29,17 +29,27 @@ impl Default for StreamInput {
 
 /// The kinds of address a stream input takes.
 const SCHEMES: &[&str] = &[
-    "srt://", "rtmp://", "rtmps://", "rtsp://", "rtsps://", "http://", "https://", "udp://",
+    "srt://",
+    "rtmp://",
+    "rtmps://",
+    "rtsp://",
+    "rtsps://",
+    "http://",
+    "https://",
+    "udp://",
     "rtp://", // An NDI source on the network, by its name ("PC (Camera 1)").
     "ndi://",
+    // A Blackmagic capture card (DeckLink, UltraStudio, Intensity), by its
+    // name: "decklink://DeckLink Duo (1)?input=sdi&audio=3-4".
+    "decklink://",
 ];
 
 /// A cleaned-up stream address, or None if it isn't one.
 pub fn clean_stream_url(url: &str) -> Option<String> {
     let t = url.trim();
     let lower = t.to_ascii_lowercase();
-    // NDI names have spaces; other addresses never do.
-    let spaces_ok = lower.starts_with("ndi://");
+    // NDI and capture card names have spaces; other addresses never do.
+    let spaces_ok = lower.starts_with("ndi://") || lower.starts_with("decklink://");
     if t.is_empty()
         || t.len() > MAX_STREAM_URL
         || t.chars().any(char::is_control)

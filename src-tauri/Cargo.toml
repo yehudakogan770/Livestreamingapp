@@ -19,6 +19,11 @@ lumora-selftest = { path = "../crates/selftest" }
 lumora-syscheck = { path = "../crates/syscheck" }
 lumora-testevent = { path = "../crates/testevent" }
 lumora-live-engine = { path = "../crates/live-engine" }
+lumora-live-accounts = { path = "../crates/live-accounts" }
+lumora-seats = { path = "../crates/seats" }
+# Blackmagic capture cards and ATEM switchers.
+lumora-decklink = { path = "../crates/decklink" }
+lumora-atem = { path = "../crates/atem" }
 tauri = { version = "2", features = ["protocol-asset"] }
 serde.workspace = true
 serde_json.workspace = true
@@ -39,6 +44,8 @@ rustls = { version = "0.23", default-features = false, features = ["ring"] }
 # Web page inputs are captured with the Windows Graphics Capture API.
 [target.'cfg(windows)'.dependencies]
 windows-capture = "2"
+# Connected YouTube and Facebook accounts keep their token in Windows Credential Manager.
+keyring = { version = "3", features = ["windows-native"] }
 
 [lints.rust]
 # Only ndi.rs (the NDI library is C) may use unsafe, with a reason each time.

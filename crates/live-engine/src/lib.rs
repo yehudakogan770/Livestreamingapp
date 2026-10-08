@@ -22,6 +22,7 @@
 
 pub mod adapters;
 pub mod audio;
+pub mod decklink;
 pub mod delay;
 pub mod encoder;
 pub mod engine;

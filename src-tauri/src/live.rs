@@ -290,8 +290,14 @@ impl Live {
         lock(&self.inner).mode
     }
 
-    fn runner(&self) -> Option<Arc<Runner>> {
+    pub(crate) fn runner(&self) -> Option<Arc<Runner>> {
         lock(&self.inner).runner.clone()
+    }
+
+    /// The running engine and FFmpeg, for feeds started elsewhere (a
+    /// Blackmagic card's program out, `decklink.rs`).
+    pub(crate) fn feed_parts(&self) -> Option<(Arc<Runner>, PathBuf)> {
+        Some((self.runner()?, self.ffmpeg.clone()?))
     }
 
     /// Start the engine when Unified is chosen (at start-up and when switched on).

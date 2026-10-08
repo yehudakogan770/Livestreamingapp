@@ -69,6 +69,14 @@ jobs:
       # (a repository secret; without it the installer is still made).
       SIGNING_KEY_AS_PASTED: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+      # Going live with a connected YouTube or Facebook account (docs/LIVE_ACCOUNTS.md):
+      # the owner's Google "Desktop app" OAuth client and Meta app ID, from the
+      # repository's Actions variables. Not secrets (a desktop app can't keep
+      # them); left empty, the installer is still made and the Connect buttons
+      # say the feature isn't set up yet.
+      LUMORA_YT_CLIENT_ID: ${{ vars.LUMORA_YT_CLIENT_ID }}
+      LUMORA_YT_CLIENT_SECRET: ${{ vars.LUMORA_YT_CLIENT_SECRET || secrets.LUMORA_YT_CLIENT_SECRET }}
+      LUMORA_FB_APP_ID: ${{ vars.LUMORA_FB_APP_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -17,6 +17,8 @@ path = "src/bin/live-bench.rs"
 
 [dependencies]
 lumora-engine = { path = "../engine" }
+# Blackmagic capture cards (DeckLink API through Desktop Video, Windows).
+lumora-decklink = { path = "../decklink" }
 serde.workspace = true
 serde_json.workspace = true
 pollster = "1"

@@ -108,6 +108,10 @@ impl SourceFactory for DefaultFactory {
             }
             SourceKind::Image { path } => format!("image:{path}"),
             SourceKind::Pattern => "pattern".into(),
+            // A Blackmagic card: opened directly (one capture per card and connector).
+            SourceKind::Stream(st) if crate::decklink::is_decklink(&st.url) => {
+                crate::decklink::key(&st.url)
+            }
             // Their pictures come from the app's frame store by input: one source each.
             other => format!("pictures:{}", kind_name(other)),
         }
@@ -144,6 +148,9 @@ impl SourceFactory for DefaultFactory {
                     "FFmpeg is needed to play files in the unified engine.",
                 )),
             },
+            SourceKind::Stream(st) if crate::decklink::is_decklink(&st.url) => {
+                crate::decklink::open(&st.url)
+            }
             SourceKind::Image { path } => match &self.ffmpeg {
                 Some(ff) => Box::new(FfmpegFile::start(ff, &(self.resolve)(path), true)),
                 None => Box::new(Unavailable::new(

@@ -23,6 +23,7 @@ import { emptyRun } from './cues';
 import { isDataUrl } from './data';
 import type { LibraryItem } from './library';
 import type { BrowserInfo } from './browser';
+import type { AccountLink } from '../broadcast/accounts';
 
 /**
  * Lumora keeps its own copy of every imported file, so the event still works
@@ -154,6 +155,8 @@ export interface Destination {
   videoKbps?: number | null;
   /** A second server for the same stream; when one fails, the next try goes to the other. */
   backupUrl?: string;
+  /** Set up through a connected YouTube or Facebook account: the address and key are filled in each time Lumora goes live. */
+  account?: AccountLink | null;
 }
 
 export interface CaptureSettings {

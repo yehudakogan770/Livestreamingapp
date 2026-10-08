@@ -1,0 +1,36 @@
+{
+  "kind": "youtube#liveStreamListResponse",
+  "etag": "gg77",
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 5
+  },
+  "items": [
+    {
+      "kind": "youtube#liveStream",
+      "etag": "hh88",
+      "id": "Abc123StreamId",
+      "status": {
+        "streamStatus": "active",
+        "healthStatus": {
+          "status": "bad",
+          "lastUpdateTimeSeconds": "1791484260",
+          "configurationIssues": [
+            {
+              "type": "bitrateLow",
+              "severity": "error",
+              "reason": "Check video settings",
+              "description": "The current bitrate (1500 Kbps) is lower than the recommended bitrate."
+            },
+            {
+              "type": "gopSizeLong",
+              "severity": "info",
+              "reason": "Keyframes",
+              "description": "Keyframe frequency is fine."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
