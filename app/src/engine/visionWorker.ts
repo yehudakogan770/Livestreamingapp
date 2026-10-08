@@ -117,7 +117,8 @@ export class VisionWorker {
     const loop = async () => {
       while (this.running) {
         try {
-          await this.step();
+          // Nothing came (the engine had none, or is not running): look again a moment later.
+          if ((await this.step()) === 0) await new Promise((r) => setTimeout(r, 50));
         } catch {
           // The engine stopped or is starting again: look again shortly.
           await new Promise((r) => setTimeout(r, 500));
@@ -131,11 +132,11 @@ export class VisionWorker {
     this.running = false;
   }
 
-  /** Wait for the engine's next frames, run the models on them and answer. */
-  async step(): Promise<void> {
+  /** Wait for the engine's next frames, run the models on them and answer; how many inputs were answered. */
+  async step(): Promise<number> {
     const frames = decodeFrames(await this.deps.frames());
     const show = this.show;
-    if (!show || !frames.length) return;
+    if (!show || !frames.length) return 0;
     const now = (this.deps.clock ?? (() => performance.now()))();
     const out: VisionOut[] = [];
     for (const f of frames) {
@@ -170,7 +171,7 @@ export class VisionWorker {
       }
       out.push(r);
     }
-    if (!out.length) return;
+    if (!out.length) return 0;
     try {
       await this.deps.send(encodeResults(out));
       this.stats.answers++;
@@ -179,6 +180,7 @@ export class VisionWorker {
       this.stats.refused++;
       this.sent.clear();
     }
+    return out.length;
   }
 
   private canvasFor(id: string, w: number, h: number): HTMLCanvasElement | null {
