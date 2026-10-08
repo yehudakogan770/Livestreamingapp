@@ -1316,6 +1316,42 @@ fn zero_copy_that_cannot_open_reads_back_and_says_why() {
 // The multiview, from the same frames
 
 #[test]
+fn a_camera_as_a_slide_comes_up_with_the_slides_fade() {
+    use lumora_engine::slideshow::{Slide, Slideshow};
+    let Some(mut e) = engine() else { return };
+    let slides = Slideshow {
+        slides: vec![Slide::Input {
+            source_id: SourceId::new("a"),
+            notes: None,
+        }],
+        changed_at: 10_000,
+        fade: true,
+        ..Slideshow::default()
+    };
+    let mut show = Show {
+        sources: vec![
+            cam("a"),
+            Source {
+                kind: SourceKind::Slideshow(Box::new(slides)),
+                ..cam("sl")
+            },
+        ],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("sl"));
+    e.set_show(show);
+    let red_at = |e: &mut LiveEngine, now: u64| {
+        e.frame(now);
+        px(&e.gpu.read(Dest::Target(0)).unwrap().2, 32, 18)[0]
+    };
+    // Over the slides' black background: nothing yet, partly (ease-out: ahead of linear), then all.
+    assert!(red_at(&mut e, 10_000) < 10);
+    let mid = red_at(&mut e, 10_100);
+    assert!((70..200).contains(&mid), "{mid}");
+    assert!(red_at(&mut e, 10_500) > 250);
+}
+
+#[test]
 fn the_multiview_shows_a_graphics_input_that_is_not_on_air() {
     use live_engine::engine::{MULTIVIEW, MULTIVIEW_INPUT_PREFIX};
     use live_engine::multiview::{layout, TileContent, SIZE};

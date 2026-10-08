@@ -301,6 +301,8 @@ pub struct Compositor {
     uploaded: u64,
     /// Seconds (0 – 100) for the grain effect.
     time: f32,
+    /// The show clock (ms): pictures that fade in by themselves (a slide).
+    now_ms: u64,
     /// The graphics device was lost (a driver reset, the card removed): the engine makes a new one.
     lost: Arc<std::sync::atomic::AtomicBool>,
     /// The card asked for in Settings → Engine (None: automatic).
@@ -884,6 +886,7 @@ impl Compositor {
             rings: HashMap::new(),
             uploaded: 0,
             time: 0.0,
+            now_ms: 0,
             lost,
             wanted: None,
             choice: String::new(),
@@ -1443,6 +1446,7 @@ impl Compositor {
     /// The show clock (ms), for effects that move (grain).
     pub fn set_time(&mut self, now_ms: u64) {
         self.time = (now_ms % 100_000) as f32 / 1000.0;
+        self.now_ms = now_ms;
     }
 
     /// Bytes sent to the GPU since last asked.
@@ -1925,6 +1929,11 @@ impl Compositor {
                         continue;
                     };
                     let pl = &pic.placement;
+                    if let Some((start, ms)) = pl.appear {
+                        // A slide's fade: this picture alone, over the background.
+                        d.0[FX * 4] =
+                            layer.opacity * crate::scene::appear_amount(start, ms, self.now_ms);
+                    }
                     let qw = (dst[2] - dst[0]) * out_w as f32;
                     let qh = (dst[3] - dst[1]) * out_h as f32;
                     d.set(DST, dst).set(UV, uv).set(

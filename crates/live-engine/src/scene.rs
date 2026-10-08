@@ -57,7 +57,43 @@ pub struct Placement {
     /// The background behind the people, without a green screen (None: kept).
     /// Applied once the vision worker has sent a person mask ([`crate::vision`]).
     pub backdrop: Option<Backdrop>,
+    /// It fades in from this time (show-clock ms) over this many ms, eased
+    /// out (a camera or video coming up as a slide: the slides' `slide-in`).
+    pub appear: Option<(u64, u32)>,
 }
+
+/// How much of a picture that appears from `start` over `ms` shows at `now`:
+/// CSS `ease-out` (`cubic-bezier(0, 0, 0.58, 1)`), as the slides' fade.
+pub fn appear_amount(start: u64, ms: u32, now: u64) -> f32 {
+    if ms == 0 {
+        return 1.0;
+    }
+    let x = now.saturating_sub(start) as f64 / f64::from(ms);
+    if x <= 0.0 {
+        return 0.0;
+    }
+    if x >= 1.0 {
+        return 1.0;
+    }
+    // The curve's x(s) = 3(1-s)s²·0.58 + s³ … solved for s by bisection, then y(s).
+    let (x1, x2) = (0.0, 0.58);
+    let bez = |s: f64, a: f64, b: f64| {
+        3.0 * (1.0 - s) * (1.0 - s) * s * a + 3.0 * (1.0 - s) * s * s * b + s * s * s
+    };
+    let (mut lo, mut hi) = (0.0, 1.0);
+    for _ in 0..30 {
+        let mid = (lo + hi) / 2.0;
+        if bez(mid, x1, x2) < x {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
+    bez((lo + hi) / 2.0, 0.0, 1.0) as f32
+}
+
+/// The slides' fade (`slide-in 0.4s` on the web).
+pub const SLIDE_FADE_MS: u32 = 400;
 
 /// What happens to the background behind the people (the input's `background`).
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -82,6 +118,7 @@ impl Default for Placement {
             rotate: 0.0,
             look: None,
             backdrop: None,
+            appear: None,
         }
     }
 }
@@ -243,6 +280,7 @@ fn placement_of(src: &Source, frame: Rect) -> Placement {
             blur: finite01(src.background.blur, 0.6),
             edge: finite01(src.background.edge, 0.4),
         }),
+        appear: None,
     }
 }
 
@@ -335,9 +373,14 @@ fn pictures_in(show: &Show, src: &Source, frame: Rect, nested: bool) -> Vec<Pict
                         fx0 + fw * (a.x + a.w) / 100.0,
                         fy0 + fh * (a.y + a.h) / 100.0,
                     ];
+                    let mut placement = placement_of(inner, r);
+                    // It comes up with the slides' fade, as any slide.
+                    if k.fade {
+                        placement.appear = Some((k.changed_at, SLIDE_FADE_MS));
+                    }
                     out.push(Picture {
                         content: Content::Video(inner.id.clone()),
-                        placement: placement_of(inner, r),
+                        placement,
                     });
                 }
             }
@@ -986,6 +1029,23 @@ mod tests {
         let w = what(&s, "sl");
         assert_eq!(w[3], ("video b".into(), [0.5, 0.0, 1.0, 0.5]));
         assert_eq!(w.len(), 5);
+        // … coming up with the slides' fade (0.4 s, eased out, from the change).
+        slides.changed_at = 7000;
+        s.sources[2].kind = SourceKind::Slideshow(Box::new(slides.clone()));
+        let pics = &source_scene(&s, &SourceId::new("sl")).layers[0].pictures;
+        assert_eq!(pics[3].placement.appear, Some((7000, SLIDE_FADE_MS)));
+        assert_eq!(appear_amount(7000, 400, 7000), 0.0);
+        assert!(
+            appear_amount(7000, 400, 7200) > 0.6,
+            "ease-out is ahead of linear"
+        );
+        assert_eq!(appear_amount(7000, 400, 7400), 1.0);
+        assert_eq!(appear_amount(7000, 0, 7000), 1.0);
+        slides.fade = false;
+        s.sources[2].kind = SourceKind::Slideshow(Box::new(slides.clone()));
+        let pics = &source_scene(&s, &SourceId::new("sl")).layers[0].pictures;
+        assert_eq!(pics[3].placement.appear, None, "no fade: at once");
+        slides.fade = true;
         // Blacked out: the slide's camera goes, what is behind stays.
         slides.black = true;
         s.sources[2].kind = SourceKind::Slideshow(Box::new(slides));
