@@ -30,7 +30,8 @@
   --tt-radius: 4px;
   position: relative;
   display: grid;
-  grid-template-rows: auto auto 1fr minmax(160px, 34%) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(170px, 36%) auto;
+  grid-template-areas: 'top' 'banner' 'main' 'timeline' 'status';
   height: 100%;
   min-height: 560px;
   background: var(--tt-bg);
@@ -93,6 +94,10 @@
   opacity: 0.4;
   cursor: default;
 }
+.tt input[type='checkbox'],
+.tt input[type='range'] {
+  accent-color: var(--tt-select);
+}
 .tt :focus-visible {
   outline: 1.5px solid var(--tt-select);
   outline-offset: 1px;
@@ -121,6 +126,7 @@
 
 /* ---- the top bar ---- */
 .tt-top {
+  grid-area: top;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -191,6 +197,7 @@
   border: 1px solid var(--tt-line-2) !important;
 }
 .tt-banner {
+  grid-area: banner;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -206,6 +213,7 @@
 
 /* ---- the three columns ---- */
 .tt-main {
+  grid-area: main;
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr) 320px;
   min-height: 0;
@@ -638,6 +646,7 @@
 
 /* ---- timeline ---- */
 .tt-timeline {
+  grid-area: timeline;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -931,7 +940,7 @@
 }
 .tt-graph {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: 20px;
 }
 .tt-graph-title {
@@ -990,6 +999,7 @@
 
 /* ---- the status bar and dialogs ---- */
 .tt-status {
+  grid-area: status;
   padding: 3px 10px;
   font-size: 11.5px;
   color: var(--tt-dim);

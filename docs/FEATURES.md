@@ -125,6 +125,13 @@ A feature only counts as finished when **all** of these are true:
 - ★ Many fonts included, import your own
 - ◆ Animated titles (fade, slide, typewriter)
 - ◆ Scrolling ticker
+- ◆ **Lumora Titler** (`titler/`): a motion-graphics designer for titles, lower thirds, scoreboards, tickers, full-screen cards and bugs — its own desktop app (Lumora-Titler-Setup.exe), a web app (docs/titler, works offline) and a window in Lumora and Lumora Studio, all one code base
+  - Versioned `.lumtitle` projects (pictures and fonts inside): compositions and precomps, layers (text with inline styling, shapes and pen paths, pictures and SVG logos, videos and image sequences, groups, nulls), parenting, masks and track mattes, optional effects, user-chosen gradients
+  - Keyframes with bezier easing (graph editor), motion paths, wipes, blur, text animators by letter/word/line; IN / HOLD / OUT markers and a loop; cue markers
+  - Typed fields (text, number, color, picture, list) filled live by the operator from a generated control panel, or by Lumora's scoreboard, countdown, clock and data file; data sources (CSV, Google Sheets, JSON) with refresh; brand tokens take the event look
+  - One renderer (Canvas 2D, deterministic in time) draws them in the designer, Lumora's screens, recordings and the unified engine's overlay renderer, and Studio's title clips; renders to ProRes 4444 with alpha, WebM with alpha, MP4 and PNG sequences
+  - 24 starter templates in a plain broadcast style; the title library in Documents/Lumora/Titles is shared by the three apps
+  - **Proven by:** golden frames, format/migration, easing, layout, binding and packaging tests, designer component tests, a Titler overlay taken in and out in Lumora, and a Studio title clip checked frame by frame
 
 ## 10. Stage Monitor
 

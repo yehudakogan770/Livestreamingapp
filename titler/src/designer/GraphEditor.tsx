@@ -11,7 +11,7 @@ import { useStore } from './store';
 
 const W = 560;
 const H = 200;
-const CW = 200;
+const CW = 140;
 
 export function GraphEditor({ store }: { store: Store }) {
   const project = useStore(store, (s) => s.project);
@@ -87,7 +87,7 @@ export function GraphEditor({ store }: { store: Store }) {
     const move = (ev: PointerEvent) => {
       const r = el.getBoundingClientRect();
       const nx = Math.min(1, Math.max(0, (ev.clientX - r.left - 20) / CW));
-      const ny = Math.round((1 - (ev.clientY - r.top - 40) / CW) * 100) / 100;
+      const ny = Math.round((1 - (ev.clientY - r.top - 30) / CW) * 100) / 100;
       const v: Vec2 = [Math.round(nx * 100) / 100, Math.min(2, Math.max(-1, ny))];
       if (which === 'o') setHandles(v, null);
       else setHandles(null, v);
@@ -102,7 +102,7 @@ export function GraphEditor({ store }: { store: Store }) {
   };
 
   const cx = (v: number) => 20 + v * CW;
-  const cy = (v: number) => 40 + (1 - v) * CW;
+  const cy = (v: number) => 30 + (1 - v) * CW;
   return (
     <div className="tt-graph">
       <div className="tt-graph-values">
@@ -129,8 +129,8 @@ export function GraphEditor({ store }: { store: Store }) {
           <div className="tt-graph-title">
             Easing {a.t.toFixed(2)} s → {b.t.toFixed(2)} s
           </div>
-          <svg ref={curve} width={CW + 40} height={CW + 80} role="img" aria-label="Easing curve">
-            <rect x={20} y={40} width={CW} height={CW} className="tt-graph-box" />
+          <svg ref={curve} width={CW + 40} height={CW + 60} role="img" aria-label="Easing curve">
+            <rect x={20} y={30} width={CW} height={CW} className="tt-graph-box" />
             {a.hold ? (
               <polyline points={`${cx(0)},${cy(0)} ${cx(1)},${cy(0)} ${cx(1)},${cy(1)}`} fill="none" className="tt-graph-curve" />
             ) : (
