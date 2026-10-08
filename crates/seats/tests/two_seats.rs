@@ -17,6 +17,7 @@ struct Show {
     engine: Mutex<Engine>,
     server: Mutex<Option<Arc<SeatServer>>>,
     commands: Mutex<Vec<SeatCommand>>,
+    ptz: Mutex<Vec<(String, Value)>>,
 }
 
 struct Backend(Arc<Show>);
@@ -42,6 +43,14 @@ impl SeatBackend for Backend {
     }
     fn command(&self, command: SeatCommand) -> Result<(), String> {
         self.0.commands.lock().unwrap().push(command);
+        Ok(())
+    }
+    fn ptz(&self, source: &str, command: Value) -> Result<(), String> {
+        self.0
+            .ptz
+            .lock()
+            .unwrap()
+            .push((source.to_owned(), command));
         Ok(())
     }
 }
@@ -286,13 +295,30 @@ fn two_seats_run_one_show() {
         .action(json!({"type": "startCountdown", "id": "clock"}))
         .unwrap_err();
     assert_eq!(err, "The show operator has locked your seat for now.");
+    // Graphics may not move cameras.
     server.set_locked(&a_id, false).unwrap();
+    wait(
+        "A hears it is unlocked",
+        || matches!(a.status(), LinkStatus::Connected { seat, .. } if !seat.locked),
+    );
+    assert_eq!(
+        a.ptz("cam1", json!({"type": "home"})).unwrap_err(),
+        "Your seat can’t do this."
+    );
+    assert!(show.ptz.lock().unwrap().is_empty());
     server.set_role(&a_id, Role::Cameras).unwrap();
     wait("A hears its new role", || {
         role_of(&a) == Some(Role::Cameras)
     });
     a.action(json!({"type": "setPreview", "screen": "live", "sourceId": "cam1"}))
         .unwrap();
+    a.ptz("cam1", json!({"type": "home"})).unwrap();
+    assert_eq!(show.ptz.lock().unwrap().len(), 1);
+    assert_eq!(
+        a.action(json!({"type": "take", "screen": "live"}))
+            .unwrap_err(),
+        "Your seat can’t do this."
+    );
 
     // --- The link drops (the show computer stops, then starts letting seats in
     // again): both come back by themselves, with no new code, and catch up.

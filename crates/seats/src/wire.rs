@@ -179,6 +179,12 @@ pub enum FromSeat {
     Action { id: u64, action: Value },
     /// Recording / streaming / replay (see `role::SeatCommand`).
     Command { id: u64, command: Value },
+    /// Move a PTZ camera (`source`: its input; `command` as the app's PTZ control takes it).
+    Ptz {
+        id: u64,
+        source: String,
+        command: Value,
+    },
     /// `rtt`: the last round trip, in milliseconds (shown to the operator).
     Ping {
         t: u64,

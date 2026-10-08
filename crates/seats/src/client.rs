@@ -259,6 +259,19 @@ impl SeatLink {
         self.request(|id| FromSeat::Command { id, command })
     }
 
+    /// Move a PTZ camera (the show computer talks to it).
+    ///
+    /// # Errors
+    /// As for [`SeatLink::action`].
+    pub fn ptz(&self, source: &str, command: Value) -> Result<(), String> {
+        let source = source.to_owned();
+        self.request(|id| FromSeat::Ptz {
+            id,
+            source,
+            command,
+        })
+    }
+
     /// The pictures and levels to receive (`program/live`, `next/live`, `source/<id>`, `meters`).
     pub fn watch(&self, keys: Vec<String>) {
         *lock(&self.inner.watch) = keys.clone();

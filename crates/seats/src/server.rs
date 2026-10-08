@@ -69,6 +69,14 @@ pub trait SeatBackend: Send + Sync + 'static {
     /// # Errors
     /// The control window can't be reached.
     fn command(&self, command: SeatCommand) -> Result<(), String>;
+    /// Move the PTZ camera of input `source` (the show computer talks to it).
+    ///
+    /// # Errors
+    /// No such camera, or it did not answer.
+    fn ptz(&self, source: &str, command: Value) -> Result<(), String> {
+        let _ = (source, command);
+        Err("PTZ cameras can’t be moved from here.".to_owned())
+    }
     /// A preview picture as JPEG, when the engine draws them itself (the
     /// Unified engine). Otherwise the control window sends them (`set_picture`).
     fn picture(&self, key: &str) -> Option<Vec<u8>> {
@@ -822,7 +830,9 @@ impl Inner {
             };
             let id = id.clone();
             match &m {
-                FromSeat::Action { .. } | FromSeat::Command { .. } => (id, c.bucket.take()),
+                FromSeat::Action { .. } | FromSeat::Command { .. } | FromSeat::Ptz { .. } => {
+                    (id, c.bucket.take())
+                }
                 _ => (id, true),
             }
         };
@@ -903,6 +913,44 @@ impl Inner {
                         ok: false,
                         refusal: None,
                         error: Some(e),
+                    },
+                })
+            }
+            FromSeat::Ptz {
+                id,
+                source,
+                command,
+            } => {
+                let record = self.seat(&seat_id)?;
+                let refusal = if record.locked {
+                    Some(Refusal::Locked)
+                } else if !record.role.allows(crate::role::Group::Cameras) {
+                    Some(Refusal::NotYourSeat)
+                } else if !allowed {
+                    Some(Refusal::TooFast)
+                } else {
+                    None
+                };
+                Some(match refusal {
+                    Some(r) => ToSeat::Result {
+                        id,
+                        ok: false,
+                        refusal: Some(r),
+                        error: Some(r.message().to_owned()),
+                    },
+                    None => match self.backend.ptz(&source, command) {
+                        Ok(()) => ToSeat::Result {
+                            id,
+                            ok: true,
+                            refusal: None,
+                            error: None,
+                        },
+                        Err(e) => ToSeat::Result {
+                            id,
+                            ok: false,
+                            refusal: None,
+                            error: Some(e),
+                        },
                     },
                 })
             }
