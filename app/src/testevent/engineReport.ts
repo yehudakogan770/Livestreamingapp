@@ -7,6 +7,10 @@ import type { EngineStats } from '../engine/unified';
 
 export interface EngineMeasured {
   adapter: string | null;
+  /** Why the engine is on that card (automatic: the high-performance one; chosen in Settings → Engine). */
+  adapterChoice: string | null;
+  /** Each output window as last seen: its colors (SDR or HDR) and the card that showed it. */
+  outputs: { output: string; color: string; presentedBy: string; copied: boolean }[];
   /** Frames drawn, and those that took longer than a frame's time (since the engine started). */
   frames: number;
   lateFrames: number;
@@ -23,8 +27,21 @@ export interface EngineMeasured {
   overlayRefused: number;
   /** Background removal and auto-framing (the vision worker): frames sent, answers, most masks held at once. */
   vision: { frames: number; answers: number; masks: number };
-  /** Each feed as last seen while it ran. */
-  feeds: { id: number; kind: string; framesIn: number; framesDropped: number; audioSeconds: number; silenceSeconds: number; error: string | null }[];
+  /**
+   * Each feed as last seen while it ran. `route`: how its picture reached the
+   * encoder (handed over on the graphics card — zero-copy — or read back, and why).
+   */
+  feeds: {
+    id: number;
+    kind: string;
+    framesIn: number;
+    framesDropped: number;
+    audioSeconds: number;
+    silenceSeconds: number;
+    error: string | null;
+    route: string | null;
+    zeroCopy: boolean | null;
+  }[];
 }
 
 /** Add one second's statistics (feeds are kept as last seen: they end before the report). */
@@ -33,6 +50,8 @@ export function noteEngine(prev: EngineMeasured | null, s: EngineStats, rate = 4
     ? { ...prev, feeds: [...prev.feeds] }
     : {
         adapter: null,
+        adapterChoice: null,
+        outputs: [],
         frames: 0,
         lateFrames: 0,
         msPerFrameMax: 0,
@@ -47,6 +66,8 @@ export function noteEngine(prev: EngineMeasured | null, s: EngineStats, rate = 4
         feeds: [],
       };
   m.adapter = s.adapter ? `${s.adapter.name} (${s.adapter.backend}, ${s.adapter.kind})` : m.adapter;
+  m.adapterChoice = s.adapter?.choice ?? m.adapterChoice;
+  if (s.outputCards?.length) m.outputs = s.outputCards.map((c) => ({ output: c.output, color: c.color, presentedBy: c.presentedBy, copied: c.copied }));
   m.frames = s.frames;
   m.lateFrames = s.lateFrames;
   m.msPerFrameMax = Math.max(m.msPerFrameMax, s.msPerFrame);
@@ -73,6 +94,8 @@ export function noteEngine(prev: EngineMeasured | null, s: EngineStats, rate = 4
       audioSeconds: Math.round(((f.stats?.audioSamples ?? 0) / rate) * 10) / 10,
       silenceSeconds: Math.round(((f.stats?.audioSilence ?? 0) / rate) * 10) / 10,
       error: f.error ?? f.stats?.error ?? null,
+      route: f.route?.path ?? null,
+      zeroCopy: f.route ? f.route.zeroCopy : null,
     };
     const i = m.feeds.findIndex((x) => x.id === f.id);
     if (i >= 0) m.feeds[i] = row;
@@ -88,7 +111,7 @@ const FEED_NAMES: Record<string, string> = { screen: 'Recording / stream', verti
 export function engineRows(e: EngineMeasured | null | undefined): string[][] {
   if (!e) return [];
   const rows = [
-    ['Engine', `Unified (beta) on ${e.adapter ?? 'an unknown graphics card'}`],
+    ['Engine', `Unified (beta) on ${e.adapter ?? 'an unknown graphics card'}${e.adapterChoice ? `: ${e.adapterChoice}` : ''}`],
     ['Engine time per frame (avg / worst second)', `${r1(e.msPerFrameAvg)} / ${r1(e.msPerFrameMax)} ms`],
     ['Engine late frames', `${e.lateFrames} of ${e.frames}${e.fpsMin !== null ? ` (lowest ${r1(e.fpsMin)} fps)` : ''}`],
     [
@@ -104,7 +127,9 @@ export function engineRows(e: EngineMeasured | null | undefined): string[][] {
   for (const f of e.feeds)
     rows.push([
       `Engine feed: ${FEED_NAMES[f.kind] ?? f.kind}`,
-      `${f.framesIn} frames, ${f.framesDropped} late${f.kind !== 'input' ? `; sound ${f.audioSeconds} s (${f.silenceSeconds} s filled with silence)` : ''}${f.error ? `; ${f.error}` : ''}`,
+      `${f.framesIn} frames, ${f.framesDropped} late${f.kind !== 'input' ? `; sound ${f.audioSeconds} s (${f.silenceSeconds} s filled with silence)` : ''}${f.route ? `; ${f.route}` : ''}${f.error ? `; ${f.error}` : ''}`,
     ]);
+  for (const o of e.outputs)
+    rows.push([`Engine window: ${o.output}`, `${o.color}, shown by ${o.presentedBy}${o.copied ? ' (copied across from the engine’s card)' : ''}`]);
   return rows;
 }
