@@ -7,6 +7,11 @@
 //   screen's box (that box's size) or in an overlay channel (the channel's box);
 // - `top` — the stinger video, over everything but blank and PANIC;
 // - `panic` — the PANIC safe screen's logo (the engine draws the black itself).
+// - `n:g:<input>` — a graphics input lined up in Next (the Next preview, drawn
+//   half size, only while the control window or the multiview shows it);
+// - `cap` — the live captions written into the stream (Live only; the engine
+//   puts it on the stream and its vertical version, never on the screen);
+// - `mon` — the stage monitor's words (the Monitor in the engine's window).
 //
 // Inputs the engine draws itself (cameras, files, pictures, streams, colors,
 // split-screen backgrounds) have no plane.
@@ -35,12 +40,45 @@ export const ENGINE_DRAWN: ReadonlySet<string> = new Set([
 ]);
 
 export type PlaneSpec =
-  | { kind: 'input'; name: string; w: number; h: number; sourceId: string }
+  | { kind: 'input'; name: string; w: number; h: number; sourceId: string; screen?: ScreenId }
   | { kind: 'channel'; name: string; w: number; h: number; sourceId: string; changedAt: number }
   | { kind: 'top'; name: 'top'; w: number; h: number; stinger: StingerPlay }
   | { kind: 'panic'; name: 'panic'; w: number; h: number }
   /** The words of the engine's multiview (the Live Screen's renderer draws them). */
-  | { kind: 'multiview'; name: 'mv'; w: number; h: number };
+  | { kind: 'multiview'; name: 'mv'; w: number; h: number }
+  /** Its timecodes (a small plane each, changing every frame): the header's, and the screens' tiles'. */
+  | { kind: 'timecode'; name: 'tc' | 'tc2'; w: number; h: number }
+  /** The live captions written into the stream picture. */
+  | { kind: 'captions'; name: 'cap'; w: number; h: number }
+  /** The stage monitor's words, for the Monitor's slot (`screen`: 'monitor'). */
+  | { kind: 'monitor'; name: 'mon'; w: number; h: number; screen: 'monitor' };
+
+/** The prefix of the Next preview's planes. */
+export const NEXT_PREFIX = 'n:';
+
+/**
+ * The planes of what is lined up in Next on `screen` (the engine draws the
+ * Next preview at `w` × `h`, half the screen): graphics inputs, and the
+ * graphics boxes of a split screen, named `n:g:<input>`.
+ */
+export function nextPlanes(show: Show, screen: ScreenId, w: number, h: number): PlaneSpec[] {
+  const id = show.screens[screen].preview;
+  const src = id === null ? undefined : show.sources.find((s) => s.id === id);
+  if (!src) return [];
+  const out: PlaneSpec[] = [];
+  const one = (s: Source, pw: number, ph: number) => {
+    if (ENGINE_DRAWN.has(s.kind.type)) return;
+    const name = `${NEXT_PREFIX}g:${s.id}`;
+    if (!out.some((p) => p.name === name)) out.push({ kind: 'input', name, w: Math.max(1, Math.round(pw)), h: Math.max(1, Math.round(ph)), sourceId: s.id });
+  };
+  if (src.kind.type === 'split') {
+    for (const b of src.kind.boxes) {
+      const inner = b.sourceId === null ? undefined : show.sources.find((s) => s.id === b.sourceId);
+      if (inner && inner.kind.type !== 'split') one(inner, (b.frame.w / 100) * w, (b.frame.h / 100) * h);
+    }
+  } else one(src, w, h);
+  return out;
+}
 
 /** A plane's identity: its name and size. */
 export const planeKey = (p: { name: string; w: number; h: number }) => `${p.name}|${p.w}x${p.h}`;

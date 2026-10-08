@@ -42,11 +42,21 @@ struct Draw {
   look4: vec4<f32>,
   // vignette, black and white, grain, time
   look5: vec4<f32>,
+  // The background behind people (vision.rs; chroma.ts's bgMode): mode (0 kept,
+  // 1 blurred, 2 taken away, 3 a picture behind), blur, edge, a mask came.
+  bg0: vec4<f32>,
+  // the picture behind's shape (width / height), a desk in front, -, -
+  bg1: vec4<f32>,
 };
 
 @group(0) @binding(0) var<uniform> d: Draw;
 @group(1) @binding(0) var tex: texture_2d<f32>;
 @group(1) @binding(1) var samp: sampler;
+// The person mask (red: how sure each spot is a person), the picture behind
+// the people and a virtual set's desk in front of them (the vision worker's).
+@group(2) @binding(0) var mask_tex: texture_2d<f32>;
+@group(2) @binding(1) var back_tex: texture_2d<f32>;
+@group(2) @binding(2) var front_tex: texture_2d<f32>;
 
 struct V {
   @builtin(position) pos: vec4<f32>,
@@ -133,8 +143,9 @@ fn luma3(c: vec3<f32>) -> f32 {
 }
 
 // The picture processor (app/src/engine/chroma.ts) on one pixel: `rgb` and
-// `alpha` straight, `s` where in the source, `t` where in the picture (0 – 1).
-fn look(rgb_in: vec3<f32>, alpha_in: f32, s: vec2<f32>, t: vec2<f32>) -> vec4<f32> {
+// `alpha` straight, `s` where in the source, `t` where in the picture (0 – 1),
+// `seen` the colors as the camera saw them (for the green screen).
+fn look(rgb_in: vec3<f32>, alpha_in: f32, s: vec2<f32>, t: vec2<f32>, seen: vec3<f32>) -> vec4<f32> {
   var rgb = rgb_in;
   var alpha = alpha_in;
   let texel = 1.0 / vec2<f32>(textureDimensions(tex));
@@ -157,7 +168,7 @@ fn look(rgb_in: vec3<f32>, alpha_in: f32, s: vec2<f32>, t: vec2<f32>) -> vec4<f3
   // Green screen, on the colors as the camera saw them.
   if (d.look0.y > 0.5) {
     let sim = d.look1.w * 0.25;
-    let dist = distance(chroma_of(rgb_in), chroma_of(d.look1.rgb));
+    let dist = distance(chroma_of(seen), chroma_of(d.look1.rgb));
     alpha *= smoothstep(sim, sim + d.look2.x * 0.25 + 0.0001, dist);
     let sp = pow(clamp(dist / (sim + 0.0001), 0.0, 1.0), 1.5);
     rgb = mix(rgb, vec3<f32>(luma3(rgb)), (1.0 - sp) * d.look2.y);
@@ -270,7 +281,8 @@ fn fs(v: V) -> @location(0) vec4<f32> {
     let qw = max(d.dst.z - d.dst.x, 1e-6);
     let blur = vec2<f32>(d.fx.y / d.luma.w / qw, d.fx.y / qh) * span / zoom;
     let px = sample_at(s, blur);
-    if (d.look0.x > 0.5) {
+    let bg = d.bg0.x;
+    if (d.look0.x > 0.5 || bg > 0.5) {
       // Straight colors for the processor, premultiplied after it.
       var a0 = px.a;
       var rgb0 = px.rgb;
@@ -279,7 +291,45 @@ fn fs(v: V) -> @location(0) vec4<f32> {
       } else if (d.misc.w > 1.5) {
         rgb0 = px.rgb / max(px.a, 1e-5);
       }
-      let o = look(rgb0, a0, s, t);
+      let seen = rgb0;
+      // The background without a green screen, as the processor: how sure
+      // this spot is a person, its edge softened.
+      var person = 1.0;
+      if (bg > 0.5 && d.bg0.w > 0.5) {
+        let e = 0.03 + d.bg0.z * 0.3;
+        person = smoothstep(0.5 - e, 0.5 + e, textureSampleLevel(mask_tex, samp, s, 0.0).r);
+      }
+      if (bg > 0.5 && bg < 1.5 && person < 0.999) {
+        // Portrait blur: the background softened, the people sharp.
+        let texel = 1.0 / vec2<f32>(textureDimensions(tex));
+        var acc = rgb0;
+        let r = 4.0 + d.bg0.y * 28.0;
+        for (var i = 0; i < 16; i++) {
+          let a = f32(i) * 0.3927;
+          let o = vec2<f32>(cos(a), sin(a)) * texel * r;
+          acc += textureSampleLevel(tex, samp, s + o, 0.0).rgb + textureSampleLevel(tex, samp, s + o * 0.5, 0.0).rgb;
+        }
+        rgb0 = mix(acc / 33.0, rgb0, person);
+      }
+      if (bg > 1.5 && bg < 2.5) {
+        a0 *= person;
+      }
+      var o = vec4<f32>(rgb0, a0);
+      if (d.look0.x > 0.5) {
+        o = look(rgb0, a0, s, t, seen);
+      }
+      if (bg > 2.5) {
+        // A picture (or virtual set) behind the people, filling the picture.
+        var b = v.t - 0.5;
+        let r = d.misc.z / max(d.bg1.x, 1e-3);
+        if (r > 1.0) { b.y /= r; } else { b.x *= r; }
+        var rgb = mix(textureSampleLevel(back_tex, samp, b + 0.5, 0.0).rgb, o.rgb, person * o.a);
+        if (d.bg1.y > 0.5) {
+          let f = textureSampleLevel(front_tex, samp, b + 0.5, 0.0);
+          rgb = mix(rgb, f.rgb, f.a);
+        }
+        o = vec4<f32>(rgb, 1.0);
+      }
       c = vec4<f32>(o.rgb * o.a, o.a);
     } else if (d.misc.w > 2.5) {
       c = vec4<f32>(px.rgb, 1.0);

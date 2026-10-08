@@ -205,11 +205,18 @@ export class InputVision {
   /** A frame failed: this input is left alone from now on. */
   broken = false;
 
+  /** Where auto-framing aims now (the shot moves toward it). */
+  get aim(): Shot {
+    return this.target;
+  }
+
   /**
    * Bring this input up to date with a new frame of `el` (sized w × h).
-   * `outW` is how wide it is shown (for "keep it sharp").
+   * `outW` is how wide it is shown (for "keep it sharp"). `moving`: frames
+   * of a moving picture (a camera's frames drawn on a canvas, for the
+   * unified engine); by default only a video element is one.
    */
-  update(el: Picture, w: number, h: number, bg: Background, af: AutoFrame, outW: number, now = performance.now()): void {
+  update(el: Picture, w: number, h: number, bg: Background, af: AutoFrame, outW: number, now = performance.now(), moving?: boolean): void {
     if (this.broken || !w || !h) return;
     if (visionPaused(now)) {
       this.mask = null;
@@ -218,7 +225,7 @@ export class InputVision {
     }
     const m = ready();
     if (!m) return;
-    const still = !(el instanceof HTMLVideoElement);
+    const still = moving === undefined ? !(el instanceof HTMLVideoElement) : !moving;
     try {
       // The mask, up to 30 times a second (a still picture: once).
       if (bg.mode !== 'keep' && m.segmenter && (still ? !this.stillDone : now - this.lastMask >= 33)) {

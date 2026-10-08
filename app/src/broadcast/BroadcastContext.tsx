@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   defaultCaptureSettings,
+  isInsideLumora,
   type CaptureFailure,
   type CaptureKind,
   type CaptureSettings,
@@ -18,6 +19,9 @@ import { Broadcaster } from './recorder';
 import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
+import { emitTo } from '@tauri-apps/api/event';
+import { CAPTIONS_EVENT, relayCaptions } from '../engine/engineCaptions';
+import { unifiedOn } from '../engine/unified';
 import { useAppRequests, useRemoteControl } from './remoteControl';
 import { accounts, PROVIDER_NAMES, useAccountSessions, usesAccounts, type Failed } from './accounts';
 
@@ -490,30 +494,58 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   const setReplay = useCallback(
     (on: boolean) => {
       if (!broadcaster) return;
-      try {
-        if (on) broadcaster.startReplay();
-        else broadcaster.stopReplay();
-        setReplayOn(broadcaster.replaying);
-      } catch (e) {
+      const failed = (e: unknown) => {
         setStartError({ kind: 'record', message: e instanceof Error ? e.message : String(e) });
+        setReplayOn(broadcaster.replaying);
+      };
+      try {
+        // With the unified engine it starts there (a moment later).
+        const started = on ? broadcaster.startReplay() : broadcaster.stopReplay();
+        setReplayOn(broadcaster.replaying);
+        if (started) started.catch(failed);
+      } catch (e) {
+        failed(e);
       }
     },
     [broadcaster],
   );
-  const makeReplay = useCallback(
-    async (seconds: number, speed: number) => {
-      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+  useEffect(() => {
+    if (!broadcaster) return;
+    broadcaster.onReplayLost = (message) => {
+      setReplayOn(broadcaster.replaying);
+      setStartError({ kind: 'record', message });
+    };
+    return () => {
+      broadcaster.onReplayLost = null;
+    };
+  }, [broadcaster]);
+  /** The last `seconds` as files in the replays folder (`<prefix>-<tag>-<n>`), named as `label` says. */
+  const replayItems = useCallback(
+    async (seconds: number, prefix: string, tag: string, label: (i: number) => string) => {
+      if (!broadcaster) return [];
+      // The unified engine keeps them on disk already.
+      if (broadcaster.replayInEngine) {
+        const files = await broadcaster.takeReplayFiles(seconds, `${prefix}-${tag}`);
+        return files.map((f, i) => ({ path: f.path, name: label(i), durationS: f.durationS }));
+      }
       const pieces = await broadcaster.takeReplay(seconds);
-      if (!pieces.length) throw new Error('Nothing to replay yet: wait a few seconds.');
-      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const tag = Date.now().toString(36);
-      const items = await Promise.all(
+      return Promise.all(
         pieces.map(async (p, i) => ({
-          path: await client.saveReplay(p.blob, `replay-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
-          name: `Replay ${stamp} (${i + 1})`,
+          path: await client.saveReplay(p.blob, `${prefix}-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
+          name: label(i),
           durationS: (p.end - p.start) / 1000,
         })),
       );
+    },
+    [broadcaster, client],
+  );
+  const makeReplay = useCallback(
+    async (seconds: number, speed: number) => {
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await replayItems(seconds, 'replay', tag, (i) => `Replay ${stamp} (${i + 1})`);
+      if (!items.length) throw new Error('Nothing to replay yet: wait a few seconds.');
       const id = `replay-${tag}`;
       const first = items[0]!;
       await client.dispatch({
@@ -531,23 +563,16 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       await client.dispatch({ type: 'setPreview', screen: 'live', sourceId: id });
       return id;
     },
-    [broadcaster, client],
+    [broadcaster, client, replayItems],
   );
 
   const saveHighlight = useCallback(
     async (seconds: number) => {
       if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
-      const pieces = await broadcaster.takeReplay(seconds);
-      if (!pieces.length) throw new Error('Nothing to keep yet: wait a few seconds.');
       const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const tag = Date.now().toString(36);
-      const items = await Promise.all(
-        pieces.map(async (p, i) => ({
-          path: await client.saveReplay(p.blob, `highlight-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
-          name: `Highlight ${stamp}`,
-          durationS: (p.end - p.start) / 1000,
-        })),
-      );
+      const items = await replayItems(seconds, 'highlight', tag, () => `Highlight ${stamp}`);
+      if (!items.length) throw new Error('Nothing to keep yet: wait a few seconds.');
       const reel = showRef.current.sources.find((s) => s.id === HIGHLIGHTS);
       const before = reel?.playlist?.items ?? [];
       const all = [...before, ...items];
@@ -565,7 +590,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       await client.dispatch({ type: 'setPlaylist', id: HIGHLIGHTS, playlist: { items: all, current: 0, autoNext: true, loopAll: false } });
       return new Set(all.map((x) => x.name)).size;
     },
-    [broadcaster, client],
+    [broadcaster, client, replayItems],
   );
 
   // ---- NDI output: kept running while it is switched on ----
@@ -636,6 +661,14 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       if (!live || !c?.on || !c.inPicture) return null;
       return { lines: live.lines.shown(c.lines, lineWidth(1920, 1080, c.size)), look: c };
     };
+  }, [broadcaster, live]);
+  // With the unified engine the Live Screen's overlay renderer writes them (the engine puts them on the stream only).
+  useEffect(() => {
+    if (!broadcaster || !live || !isInsideLumora()) return;
+    return relayCaptions(
+      () => (unifiedOn() ? broadcaster.captionsInPicture() : null),
+      (c) => void emitTo('overlay-live', CAPTIONS_EVENT, c).catch(() => {}),
+    );
   }, [broadcaster, live]);
   useReportProblem(
     captionState.state === 'failed' && cc?.on

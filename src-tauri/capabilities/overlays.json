@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "overlays",
-  "description": "The unified engine's hidden graphics renderers (overlay-live, overlay-back): they only draw the screen's graphics and send them to the engine. No window controls, file dialogs, updates or restarts.",
+  "description": "The unified engine's hidden windows (overlay-live, overlay-back: the screens' graphics; overlay-vision: the person-finding models): they only draw graphics or find people and send that to the engine. No window controls, file dialogs, updates or restarts.",
   "windows": ["overlay-*"],
   "permissions": ["core:default"]
 }

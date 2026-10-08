@@ -5,12 +5,21 @@
 //! `docs/ENGINE.md`.
 //!
 //! In Unified mode:
-//! - the Live and Back Screens' output windows are the engine's own native
-//!   windows (the Monitor, all words, stays a WebView window for now);
+//! - the Live, Back and Monitor screens' output windows are the engine's own
+//!   native windows (the Monitor's words are drawn by the Live Screen's
+//!   overlay renderer);
 //! - each engine screen's graphics (titles, lower thirds, countdowns…) are
 //!   drawn by a hidden overlay renderer window (`overlay-live`,
 //!   `overlay-back`: `app/src/engine/overlayRenderer.ts`) that sends what
-//!   changed (`live_engine_graphics`);
+//!   changed (`live_engine_graphics`) — also the Next previews' graphics
+//!   while they are seen, the multiview's and the Monitor's words and the
+//!   captions written into the stream (`live_engine_renderer_wants`);
+//! - background removal, blur behind people and auto-framing run the web's
+//!   person-finding models in a hidden vision worker (`overlay-vision`,
+//!   `live_engine_vision_frames` / `live_engine_vision_result`), opened only
+//!   while an input uses them;
+//! - instant replay keeps the last minute of the engine's Live Screen as
+//!   hardware-encoded pieces on disk (`live_engine_replay_*`);
 //! - the control window's camera pictures are the engine's small previews
 //!   (`live_engine_preview`), so the WebView never opens a camera itself;
 //! - each input's health comes from the engine (`live_engine_health`), for
@@ -69,6 +78,11 @@ struct Inner {
     captures: std::collections::HashMap<u64, Vec<u64>>,
     /// The engine shows the multiview in its own window (on this display: None, a window).
     multiview: Option<Option<String>>,
+    /// An input uses background removal, blur behind people or auto-framing:
+    /// the vision worker (`overlay-vision`) runs the person-finding models.
+    vision: bool,
+    /// Instant replay: the ring of pieces the engine's replay feed writes.
+    replay: Option<Arc<Mutex<live_engine::replay::Ring>>>,
 }
 
 pub struct Live {
@@ -118,10 +132,15 @@ pub struct Health {
     pub frames: u64,
 }
 
-/// The screens the engine draws in its own windows (the stage monitor is all words: still a WebView).
+/// The screens the engine draws in its own windows: Live and Back, and the
+/// stage monitor (its words are the Live Screen's overlay renderer's plane `mon`).
 fn native_screen(screen: ScreenId) -> bool {
-    cfg!(windows) && matches!(screen, ScreenId::Live | ScreenId::Back)
+    cfg!(windows) && matches!(screen, ScreenId::Live | ScreenId::Back | ScreenId::Monitor)
 }
+
+/// The hidden window that runs the person-finding models for the engine
+/// (`app/src/engine/visionWorker.ts`; see `crates/live-engine/src/vision.rs`).
+pub const VISION_LABEL: &str = "overlay-vision";
 
 /// The hidden graphics renderer window of a screen.
 pub fn renderer_label(screen: ScreenId) -> &'static str {
@@ -140,23 +159,35 @@ const RENDERER_ARGS: &str = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScree
 
 /// Open (or close) the screens' overlay renderers: the Live Screen's while
 /// the engine runs (the recording and stream need its graphics too), the
-/// Back Screen's while the engine shows it.
+/// Back Screen's while the engine shows it; and the vision worker while an
+/// input uses the person-finding models.
 pub fn sync_renderers(app: &AppHandle) {
     let Some(live) = app.try_state::<Live>() else {
         return;
     };
-    let (running, native) = {
+    let (running, native, vision) = {
         let inner = lock(&live.inner);
-        (inner.runner.is_some(), inner.native.clone())
+        (inner.runner.is_some(), inner.native.clone(), inner.vision)
     };
-    for screen in [ScreenId::Live, ScreenId::Back] {
-        let wanted = running && (screen == ScreenId::Live || native.contains(&screen));
-        let label = renderer_label(screen);
+    let windows = [
+        (
+            renderer_label(ScreenId::Live),
+            "Live Screen graphics".to_owned(),
+            running,
+        ),
+        (
+            renderer_label(ScreenId::Back),
+            "Back Screen graphics".to_owned(),
+            running && native.contains(&ScreenId::Back),
+        ),
+        (VISION_LABEL, "person finding".to_owned(), running && vision),
+    ];
+    for (label, what, wanted) in windows {
         let open = app.get_webview_window(label);
         match (wanted, open) {
             (true, None) => {
                 let mut b = WebviewWindowBuilder::new(app, label, WebviewUrl::default())
-                    .title(format!("Lumora — {} graphics", screen.label()))
+                    .title(format!("Lumora — {what}"))
                     .visible(false)
                     .focused(false)
                     .skip_taskbar(true)
@@ -166,7 +197,7 @@ pub fn sync_renderers(app: &AppHandle) {
                     b = b.data_directory(dir.join("overlay-webview"));
                 }
                 if let Err(e) = b.build() {
-                    eprintln!("lumora: the {screen:?} graphics renderer could not start: {e}");
+                    eprintln!("lumora: the {what} window could not start: {e}");
                 }
             }
             (false, Some(w)) => {
@@ -220,6 +251,7 @@ impl Live {
         match Runner::start(Config::default(), Box::new(factory)) {
             Ok(r) => {
                 r.set_show(show.clone());
+                inner.vision = live_engine::vision::wanted(show);
                 inner.runner = Some(Arc::new(r));
                 inner.error = None;
                 eprintln!("lumora: unified engine started");
@@ -235,6 +267,19 @@ impl Live {
     pub fn sync(&self, show: &Show) {
         if let Some(r) = self.runner() {
             r.set_show(show.clone());
+        }
+    }
+
+    /// The show changed: the vision worker runs while an input uses the
+    /// person-finding models (and only then).
+    pub fn sync_vision(&self, app: &AppHandle, show: &Show) {
+        let changed = {
+            let mut inner = lock(&self.inner);
+            let wanted = inner.runner.is_some() && live_engine::vision::wanted(show);
+            std::mem::replace(&mut inner.vision, wanted) != wanted
+        };
+        if changed {
+            sync_renderers(app);
         }
     }
 
@@ -333,7 +378,7 @@ impl Live {
     }
 
     /// Open (or move) a screen in the engine's own window. False: not the
-    /// engine's to show (Standard mode, the Monitor, not on Windows).
+    /// engine's to show (Standard mode, not on Windows).
     ///
     /// # Errors
     /// The window could not be made.
@@ -464,14 +509,27 @@ pub fn live_engine_set_mode(
         Mode::Standard => {
             let reopen = live.open_screens();
             let multiview = live.multiview_open();
-            let runner = {
+            let (runner, replay) = {
                 let mut inner = lock(&live.inner);
                 inner.mode = Mode::Standard;
                 inner.native.clear();
                 inner.multiview = None;
                 inner.error = None;
-                inner.runner.take()
+                (inner.runner.take(), inner.replay.take())
             };
+            // Instant replay was the engine's: it stops with it (turned on again, it is the WebView's).
+            if let Some(ring) = replay {
+                let dir = ring
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner)
+                    .dir
+                    .clone();
+                let _ = std::fs::remove_dir_all(dir);
+                let _ = app.emit(
+                    "live-engine-replay-lost",
+                    "Instant replay stopped: the engine was switched.",
+                );
+            }
             // Dropping the last handle stops the engine thread (and its windows).
             drop(runner);
             for s in reopen {
@@ -501,6 +559,39 @@ pub fn live_engine_graphics(
     };
     let r = live.runner().ok_or("The unified engine is not running.")?;
     r.graphics(bytes.clone())
+}
+
+/// The newest small frames of the inputs that use the person-finding models,
+/// for the vision worker (`crates/live-engine/src/vision.rs`, "LVF1"); waits
+/// a moment for some to come, so the worker has each frame at once.
+#[tauri::command]
+pub async fn live_engine_vision_frames(
+    live: State<'_, Live>,
+) -> Result<tauri::ipc::Response, String> {
+    let Some(r) = live.runner() else {
+        return Ok(tauri::ipc::Response::new(Vec::new()));
+    };
+    let frames = tauri::async_runtime::spawn_blocking(move || {
+        r.vision_frames(std::time::Duration::from_millis(250))
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+    Ok(tauri::ipc::Response::new(
+        live_engine::vision::encode_frames(&frames),
+    ))
+}
+
+/// What the vision worker found: masks, shots and pictures behind people ("LVR1").
+#[tauri::command]
+pub fn live_engine_vision_result(
+    request: tauri::ipc::Request<'_>,
+    live: State<'_, Live>,
+) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let r = live.runner().ok_or("The unified engine is not running.")?;
+    r.vision(bytes)
 }
 
 /// A preview tile as JPEG (`program/live`, `next/back`, `source/<id>`); empty when there is none yet.
@@ -592,6 +683,53 @@ pub fn live_engine_probe(
     live.runner()?.probe(screen)
 }
 
+/// What a screen's overlay renderer is asked to draw besides its screen's graphics.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RendererWants {
+    /// The multiview's words (the Live Screen's renderer, while the engine shows it).
+    pub multiview: Option<live_engine::multiview::Layout>,
+    /// The Next preview's graphics (while the control window or the multiview shows it).
+    pub next: bool,
+    /// The stage monitor's words (the Live Screen's renderer, while the engine shows the Monitor).
+    pub monitor: bool,
+}
+
+/// Next previews looked at within this long count as seen.
+const NEXT_SEEN: std::time::Duration = std::time::Duration::from_millis(2500);
+
+/// What `screen`'s overlay renderer draws now besides the screen's own graphics.
+#[tauri::command]
+pub fn live_engine_renderer_wants(screen: ScreenId, live: State<'_, Live>) -> RendererWants {
+    let Some(r) = live.runner() else {
+        return RendererWants {
+            multiview: None,
+            next: false,
+            monitor: false,
+        };
+    };
+    let multiview = live
+        .multiview_open()
+        .then(|| r.multiview_layout())
+        .flatten();
+    let in_multiview = multiview.as_ref().is_some_and(|l| {
+        l.tiles.iter().any(
+            |t| matches!(&t.content, live_engine::multiview::TileContent::Next(s) if *s == screen),
+        )
+    });
+    let next = in_multiview
+        || r.seen_recently(
+            &live_engine::engine::PreviewId::Next(screen).key(),
+            NEXT_SEEN,
+        );
+    let live_screen = screen == ScreenId::Live;
+    RendererWants {
+        multiview: multiview.filter(|_| live_screen),
+        next,
+        monitor: live_screen && live.open_screens().contains(&ScreenId::Monitor),
+    }
+}
+
 /// The engine's multiview layout while it shows the multiview (for its
 /// words, drawn by the Live Screen's overlay renderer); None otherwise.
 #[tauri::command]
@@ -657,6 +795,184 @@ pub struct EngineCapture {
 
 /// ISO feeds are numbered apart from the sessions' own.
 const ISO_FEEDS: u64 = 1 << 40;
+/// The instant replay's feed.
+const REPLAY_FEED: u64 = 1 << 41;
+
+/// Keep the last minute of the engine's Live Screen (and the Stream mix's
+/// sound) for instant replays: pieces of a few seconds, encoded with the
+/// recordings' hardware encoder, on disk (`crates/live-engine/src/replay.rs`).
+#[tauri::command]
+pub async fn live_engine_replay_start(
+    sample_rate: u32,
+    live: State<'_, Live>,
+    state: State<'_, crate::AppState>,
+    app: AppHandle,
+) -> Result<(), String> {
+    use live_engine::replay::{container_args, keyframe_args, Ring, PIECE_S};
+    let runner = live
+        .runner()
+        .ok_or("The unified engine is not running (Settings → Engine).")?;
+    if lock(&live.inner).replay.is_some() {
+        return Ok(());
+    }
+    let ffmpeg = live
+        .ffmpeg
+        .clone()
+        .ok_or("FFmpeg is needed for instant replay with the unified engine.")?;
+    let ring = Ring::new(&state.dir.join("replay-ring"), PIECE_S)
+        .map_err(|e| format!("Could not keep replays: {e}"))?;
+    let settings = state.capture.settings();
+    let family = state.capture.engine_family();
+    let c = Config::default();
+    // As the WebView's replay buffer: 30 frames a second, 8 Mb/s.
+    let mut video = encode::video_args(&VideoEncode {
+        family,
+        codec: Codec::H264,
+        rate: Rate::Cbr { kbps: 8000 },
+        preset: settings.preset,
+        fps: 30,
+        size: None,
+    });
+    video.extend(keyframe_args(PIECE_S));
+    let audio = live_engine::encoder::AudioIn {
+        rate: sample_rate,
+        encode: ["-c:a", "libopus", "-b:a", "160k"]
+            .map(str::to_owned)
+            .to_vec(),
+        chunks: live.audio.subscribe("master"),
+    };
+    let dir = ring.dir.clone();
+    let to = app.clone();
+    let on_end: live_engine::encoder::OnEnd = Box::new(move |asked, said| {
+        if asked {
+            return;
+        }
+        let said = said.unwrap_or_else(|| "it stopped".to_owned());
+        eprintln!("lumora: the engine's replay encoder stopped: {said}");
+        if let Some(l) = to.try_state::<Live>() {
+            lock(&l.inner).replay = None;
+        }
+        let _ = to.emit(
+            "live-engine-replay-lost",
+            format!("Instant replay stopped ({said})."),
+        );
+    });
+    let make: MakeFeed = Box::new(move |shape| {
+        EncoderFeed::start(
+            &ffmpeg,
+            FeedArgs {
+                width: shape.width,
+                height: shape.height,
+                fps: shape.fps,
+                pix_fmt: shape.pix_fmt,
+                encode: video,
+                container: container_args(&dir, PIECE_S),
+                audio: Some(audio),
+            },
+            Box::new(|_| {}),
+            Some(on_end),
+        )
+    });
+    let spec = FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions: false,
+        },
+        width: c.width,
+        height: c.height,
+        fps: 30,
+    };
+    let r = Arc::clone(&runner);
+    tauri::async_runtime::spawn_blocking(move || r.start_feed(REPLAY_FEED, spec, make))
+        .await
+        .map_err(|e| e.to_string())??;
+    let ring = Arc::new(Mutex::new(Ring {
+        t0_ms: live_engine::engine::now_ms(),
+        ..ring
+    }));
+    lock(&live.inner).replay = Some(Arc::clone(&ring));
+    // Only the last minute is kept.
+    let to = app.clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let on = to.try_state::<Live>().is_some_and(|l| {
+            lock(&l.inner)
+                .replay
+                .as_ref()
+                .is_some_and(|r| Arc::ptr_eq(r, &ring))
+        });
+        if !on {
+            break;
+        }
+        ring.lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .prune(live_engine::engine::now_ms());
+    });
+    Ok(())
+}
+
+/// Stop keeping replays (the pieces kept go; replays already made stay).
+#[tauri::command]
+pub async fn live_engine_replay_stop(live: State<'_, Live>) -> Result<(), String> {
+    let ring = lock(&live.inner).replay.take();
+    if let Some(r) = live.runner() {
+        tauri::async_runtime::spawn_blocking(move || r.stop_feed(REPLAY_FEED))
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+    if let Some(ring) = ring {
+        let dir = ring
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .dir
+            .clone();
+        let _ = std::fs::remove_dir_all(dir);
+    }
+    Ok(())
+}
+
+/// One piece of a replay, kept in the replays folder.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReplayFile {
+    pub path: String,
+    pub duration_s: f64,
+}
+
+/// The last `seconds` of the Live Screen as pieces copied into the replays
+/// folder (named `<name>-<n>.mkv`): the piece being written is finished first.
+#[tauri::command]
+pub async fn live_engine_replay_take(
+    seconds: f64,
+    name: String,
+    live: State<'_, Live>,
+    state: State<'_, crate::AppState>,
+) -> Result<Vec<ReplayFile>, String> {
+    let ring = lock(&live.inner)
+        .replay
+        .clone()
+        .ok_or("Turn on instant replay first.")?;
+    let to = state.dir.join("replays");
+    let ms = (seconds.clamp(1.0, 60.0) * 1000.0) as u64;
+    let now = live_engine::engine::now_ms();
+    let files = tauri::async_runtime::spawn_blocking(move || {
+        let ring = ring.lock().unwrap_or_else(PoisonError::into_inner);
+        let wait = std::time::Duration::from_secs(u64::from(ring.piece_s) + 2);
+        let pieces = ring.take(ms, now, wait);
+        live_engine::replay::copy_out(&pieces, &to, &name)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map_err(|e| format!("Could not keep the replay: {e}"))?;
+    Ok(files
+        .into_iter()
+        .map(|(p, d)| ReplayFile {
+            path: p.to_string_lossy().into_owned(),
+            duration_s: d,
+        })
+        .collect())
+}
 
 /// An encoder feed from the engine into `on_chunk`, with sound from `audio` (when given).
 fn engine_feed(
@@ -761,6 +1077,8 @@ pub async fn live_engine_capture_start(
         source: FeedSource::Screen {
             screen: ScreenId::Live,
             vertical: r.vertical,
+            // As the Standard recorder: the stream and its vertical version carry the captions (when asked), the recording never.
+            captions: matches!(r.kind, Kind::Stream | Kind::Vertical),
         },
         width: r.width.clamp(16, 7680) & !1,
         height: r.height.clamp(16, 4320) & !1,
@@ -921,6 +1239,7 @@ pub async fn live_engine_test_record(
         source: FeedSource::Screen {
             screen: ScreenId::Live,
             vertical: false,
+            captions: false,
         },
         width: c.width,
         height: c.height,

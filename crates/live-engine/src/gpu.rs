@@ -17,8 +17,8 @@ pub const TARGET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 const SHADER: &str = include_str!("compose.wgsl");
 const YUV_SHADER: &str = include_str!("yuv.wgsl");
-/// One draw's uniforms: sixteen vec4s.
-const DRAW_FLOATS: usize = 64;
+/// One draw's uniforms: eighteen vec4s.
+const DRAW_FLOATS: usize = 72;
 const DRAW_BYTES: u64 = (DRAW_FLOATS * 4) as u64;
 
 struct Tex {
@@ -58,6 +58,17 @@ pub struct PlaneId {
     pub name: String,
     pub w: u32,
     pub h: u32,
+}
+
+/// An input's person mask and the pictures behind and in front of its
+/// people, from the vision worker ([`crate::vision`]), bound with its picture.
+struct VisionTex {
+    mask: Option<(wgpu::Texture, wgpu::TextureView)>,
+    /// The picture behind the people, and its shape (width / height).
+    back: Option<(wgpu::Texture, wgpu::TextureView, f32)>,
+    /// A virtual set's desk in front of them.
+    front: Option<(wgpu::Texture, wgpu::TextureView)>,
+    bind: wgpu::BindGroup,
 }
 
 /// What a draw samples.
@@ -164,6 +175,13 @@ pub struct Compositor {
     /// NV12 to RGBA (`yuv.wgsl`): its layout and its pipelines (BT.709, BT.601).
     yuv_layout: wgpu::BindGroupLayout,
     yuv_pipes: [wgpu::RenderPipeline; 2],
+    /// Person masks and the pictures behind people (group 2 of `compose.wgsl`).
+    vision_layout: wgpu::BindGroupLayout,
+    /// No mask (a person everywhere), nothing behind or in front.
+    vision_none: wgpu::BindGroup,
+    vision: HashMap<SourceId, VisionTex>,
+    /// See-through, 1 × 1.
+    clear: Tex,
     sampler: wgpu::Sampler,
     pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>,
     uniforms: wgpu::Buffer,
@@ -240,6 +258,26 @@ fn make_tex(
         h: h.max(1),
         format,
     }
+}
+
+fn vision_bind(
+    device: &wgpu::Device,
+    layout: &wgpu::BindGroupLayout,
+    views: [&wgpu::TextureView; 3],
+) -> wgpu::BindGroup {
+    let entries: Vec<wgpu::BindGroupEntry<'_>> = views
+        .iter()
+        .enumerate()
+        .map(|(i, v)| wgpu::BindGroupEntry {
+            binding: i as u32,
+            resource: wgpu::BindingResource::TextureView(v),
+        })
+        .collect();
+    device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("vision"),
+        layout,
+        entries: &entries,
+    })
 }
 
 fn write_tex(queue: &wgpu::Queue, t: &Tex, data: &[u8]) {
@@ -360,6 +398,10 @@ const LUMA: usize = 8;
 const CLIP: usize = 9;
 /// Green screen and light and color: six vec4s from here (see [`crate::look::Look::uniforms`]).
 const LOOK: usize = 10;
+/// The background behind people (mode, blur, edge, a mask came) and the
+/// picture behind them (its shape, a desk in front).
+const BG: usize = 16;
+const BG2: usize = 17;
 
 /// Map a rect given in a box's own fractions into output fractions.
 fn within(outer: Rect, inner: Rect) -> Rect {
@@ -417,7 +459,9 @@ impl Compositor {
             eprintln!("live engine GPU lost ({reason:?}): {why}");
             l.store(true, std::sync::atomic::Ordering::SeqCst);
         });
-        let align = u64::from(device.limits().min_uniform_buffer_offset_alignment).max(DRAW_BYTES);
+        let align = DRAW_BYTES.next_multiple_of(u64::from(
+            device.limits().min_uniform_buffer_offset_alignment,
+        ));
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("linear-clamp"),
             mag_filter: wgpu::FilterMode::Linear,
@@ -458,9 +502,23 @@ impl Compositor {
                 count: None,
             }],
         });
+        let picture = |binding: u32| wgpu::BindGroupLayoutEntry {
+            binding,
+            visibility: wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Texture {
+                sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                view_dimension: wgpu::TextureViewDimension::D2,
+                multisampled: false,
+            },
+            count: None,
+        };
+        let vision_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("vision"),
+            entries: &[picture(0), picture(1), picture(2)],
+        });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("compose"),
-            bind_group_layouts: &[Some(&draw_layout), Some(&tex_layout)],
+            bind_group_layouts: &[Some(&draw_layout), Some(&tex_layout), Some(&vision_layout)],
             immediate_size: 0,
         });
         let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -541,6 +599,22 @@ impl Compositor {
             "white",
         );
         write_tex(&queue, &white, &[255; 4]);
+        let clear = make_tex(
+            &device,
+            &tex_layout,
+            &sampler,
+            1,
+            1,
+            wgpu::TextureFormat::Rgba8Unorm,
+            false,
+            "clear",
+        );
+        write_tex(&queue, &clear, &[0; 4]);
+        let vision_none = vision_bind(
+            &device,
+            &vision_layout,
+            [&white.view, &clear.view, &clear.view],
+        );
         let uniform_cap = align * 64;
         let (uniforms, draw_bind) = Self::uniform_buffer(&device, &draw_layout, uniform_cap);
         let mut c = Compositor {
@@ -554,6 +628,10 @@ impl Compositor {
             module,
             yuv_layout,
             yuv_pipes,
+            vision_layout,
+            vision_none,
+            vision: HashMap::new(),
+            clear,
             sampler,
             pipelines: HashMap::new(),
             uniforms,
@@ -722,6 +800,11 @@ impl Compositor {
                 "nv12",
             ));
         }
+    }
+
+    /// Target `i`'s size, when it exists.
+    pub fn target_size(&self, i: usize) -> Option<(u32, u32)> {
+        self.dest_size(Dest::Target(i))
     }
 
     /// Let target `i` go (a feed ended).
@@ -953,6 +1036,147 @@ impl Compositor {
     /// Forget sources no longer in the show.
     pub fn keep_sources(&mut self, keep: &dyn Fn(&SourceId) -> bool) {
         self.sources.retain(|id, _| keep(id));
+        self.vision.retain(|id, _| keep(id));
+    }
+
+    /// A small texture of `format` holding `px` (`bpp` bytes a texel).
+    fn small_texture(
+        &mut self,
+        w: u32,
+        h: u32,
+        format: wgpu::TextureFormat,
+        bpp: u32,
+        px: &[u8],
+    ) -> Option<(wgpu::Texture, wgpu::TextureView)> {
+        if w == 0 || h == 0 || px.len() < (w * h * bpp) as usize {
+            return None;
+        }
+        let t = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("vision"),
+            size: wgpu::Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.write_small(&t, w, h, bpp, px);
+        let v = t.create_view(&wgpu::TextureViewDescriptor::default());
+        Some((t, v))
+    }
+
+    fn write_small(&mut self, t: &wgpu::Texture, w: u32, h: u32, bpp: u32, px: &[u8]) {
+        self.queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: t,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &px[..(w * h * bpp) as usize],
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(w * bpp),
+                rows_per_image: Some(h),
+            },
+            wgpu::Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.uploaded += u64::from(w * h * bpp);
+    }
+
+    /// An input's person mask from the vision worker (`w` × `h`, a byte a
+    /// spot; None: no mask now, so its background shows as it is).
+    pub fn set_vision_mask(&mut self, id: &SourceId, mask: Option<(u32, u32, &[u8])>) {
+        if let Some((w, h, px)) = mask {
+            // The same size: the new bytes go into the mask it has.
+            let same = self
+                .vision
+                .get(id)
+                .and_then(|v| v.mask.as_ref())
+                .filter(|(t, _)| t.width() == w && t.height() == h)
+                .map(|(t, _)| t.clone());
+            if let Some(t) = same {
+                if px.len() >= (w * h) as usize {
+                    self.write_small(&t, w, h, 1, px);
+                }
+                return;
+            }
+        }
+        let made = mask
+            .and_then(|(w, h, px)| self.small_texture(w, h, wgpu::TextureFormat::R8Unorm, 1, px));
+        if made.is_none() && self.vision.get(id).is_none_or(|v| v.mask.is_none()) {
+            return;
+        }
+        self.update_vision(id, |v| v.mask = made);
+    }
+
+    /// The picture behind an input's people (`front`: a virtual set's desk in
+    /// front of them): straight-alpha RGBA; None takes it away.
+    pub fn set_vision_picture(
+        &mut self,
+        id: &SourceId,
+        front: bool,
+        pic: Option<(u32, u32, &[u8])>,
+    ) {
+        let made = pic.and_then(|(w, h, px)| {
+            self.small_texture(w, h, wgpu::TextureFormat::Rgba8Unorm, 4, px)
+                .map(|(t, v)| (t, v, w as f32 / h.max(1) as f32))
+        });
+        self.update_vision(id, |v| {
+            if front {
+                v.front = made.map(|(t, v, _)| (t, v));
+            } else {
+                v.back = made;
+            }
+        });
+    }
+
+    /// Everything the vision worker sent for an input goes (it no longer uses the models).
+    pub fn forget_vision(&mut self, id: &SourceId) {
+        self.vision.remove(id);
+    }
+
+    /// What the vision worker has sent for an input: a mask, the picture
+    /// behind's shape (width / height), a desk in front.
+    pub fn vision_of(&self, id: &SourceId) -> (bool, Option<f32>, bool) {
+        self.vision.get(id).map_or((false, None, false), |v| {
+            (
+                v.mask.is_some(),
+                v.back.as_ref().map(|b| b.2),
+                v.front.is_some(),
+            )
+        })
+    }
+
+    fn update_vision(&mut self, id: &SourceId, change: impl FnOnce(&mut VisionTex)) {
+        let mut v = self.vision.remove(id).unwrap_or_else(|| VisionTex {
+            mask: None,
+            back: None,
+            front: None,
+            bind: self.vision_none.clone(),
+        });
+        change(&mut v);
+        v.bind = vision_bind(
+            &self.device,
+            &self.vision_layout,
+            [
+                v.mask.as_ref().map_or(&self.white.view, |m| &m.1),
+                v.back.as_ref().map_or(&self.clear.view, |b| &b.1),
+                v.front.as_ref().map_or(&self.clear.view, |f| &f.1),
+            ],
+        );
+        if v.mask.is_some() || v.back.is_some() || v.front.is_some() {
+            self.vision.insert(id.clone(), v);
+        }
     }
 
     /// Size of a source's newest frame on the GPU.
@@ -1133,7 +1357,7 @@ impl Compositor {
         for (i, layer) in scene.layers.iter().enumerate() {
             match groups.get(&(false, i)) {
                 Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
-                None => self.layer_draws(layer, planes, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, scene.plane_prefix, out_w, out_h, draws),
             }
         }
         let solid = |c: [f32; 4], a: f32, draws: &mut Vec<(DrawU, TexKey)>| {
@@ -1160,7 +1384,7 @@ impl Compositor {
         for (i, layer) in scene.overlays.iter().enumerate() {
             match groups.get(&(true, i)) {
                 Some(t) => self.group_draw(layer, *t, out_w, out_h, draws),
-                None => self.layer_draws(layer, planes, out_w, out_h, draws),
+                None => self.layer_draws(layer, planes, scene.plane_prefix, out_w, out_h, draws),
             }
         }
         if let Some(slot) = planes {
@@ -1215,6 +1439,7 @@ impl Compositor {
         &self,
         layer: &Layer,
         planes: Option<usize>,
+        prefix: &str,
         out_w: u32,
         out_h: u32,
         draws: &mut Vec<(DrawU, TexKey)>,
@@ -1303,6 +1528,30 @@ impl Compositor {
                             d.set(LOOK + k, v);
                         }
                     }
+                    if let Some(b) = &pl.backdrop {
+                        // As the processor: on once a mask came (a picture
+                        // behind also with a green screen's edge alone), and a
+                        // picture behind only once it is there.
+                        let (mask, back, front) = self.vision_of(id);
+                        let keyed = pl.look.is_some_and(|l| l.key.is_some());
+                        let on = if b.mode > 2.5 {
+                            back.is_some() && (mask || keyed)
+                        } else {
+                            mask
+                        };
+                        if on {
+                            d.set(BG, [b.mode, b.blur, b.edge, f32::from(u8::from(mask))]);
+                            d.set(
+                                BG2,
+                                [
+                                    back.unwrap_or(16.0 / 9.0),
+                                    f32::from(u8::from(front)),
+                                    0.0,
+                                    0.0,
+                                ],
+                            );
+                        }
+                    }
                     draws.push((d, TexKey::Source(id.clone())));
                 }
                 Content::Graphic(id) => {
@@ -1314,9 +1563,11 @@ impl Compositor {
                         ((f[2] - f[0]) * out_w as f32).round().max(1.0) as u32,
                         ((f[3] - f[1]) * out_h as f32).round().max(1.0) as u32,
                     );
-                    let Some(plane) =
-                        self.plane(slot, &crate::overlay::graphic_plane(id.as_str()), want)
-                    else {
+                    let Some(plane) = self.plane(
+                        slot,
+                        &format!("{prefix}{}", crate::overlay::graphic_plane(id.as_str())),
+                        want,
+                    ) else {
                         continue;
                     };
                     let (qw, qh) = (
@@ -1378,7 +1629,7 @@ impl Compositor {
                                 ..l.clone()
                             };
                             let mut d = Vec::new();
-                            self.layer_draws(&whole, *planes, w, h, &mut d);
+                            self.layer_draws(&whole, *planes, scene.plane_prefix, w, h, &mut d);
                             plan.push((Dest::Target(t), None, d));
                             groups.insert((overlay, i), t);
                         }
@@ -1521,6 +1772,7 @@ impl Compositor {
                 &target_pipe
             };
             rp.set_pipeline(pipe);
+            rp.set_bind_group(2, &self.vision_none, &[]);
             if let Some([x, y, w, h]) = viewport {
                 if let Some((tw, th)) = size {
                     if x + w > tw || y + h > th || *w == 0 || *h == 0 {
@@ -1546,6 +1798,12 @@ impl Compositor {
                 let Some(bind) = bind else { continue };
                 rp.set_bind_group(0, &self.draw_bind, &[offset]);
                 rp.set_bind_group(1, bind, &[]);
+                if let TexKey::Source(id) = key {
+                    let v = self.vision.get(id).map_or(&self.vision_none, |v| &v.bind);
+                    rp.set_bind_group(2, v, &[]);
+                } else {
+                    rp.set_bind_group(2, &self.vision_none, &[]);
+                }
                 rp.draw(0..4, 0..1);
             }
         }
