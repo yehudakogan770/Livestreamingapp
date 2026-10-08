@@ -74,7 +74,38 @@ export const ACTIONS = {
   datarow: { name: 'Data row: next / previous', cmd: 'datarow', options: [TO('next, previous or a row number')] },
   nextcue: { name: 'Next cue (run of show)', cmd: 'nextcue', options: [] },
   panic: { name: 'PANIC', cmd: 'panic', options: [STATE] },
+  // An ATEM switcher connected to Lumora (Settings → ATEM switcher…).
+  atem: {
+    name: 'ATEM switcher',
+    cmd: 'atem',
+    options: [
+      {
+        type: 'dropdown',
+        id: 'do',
+        label: 'Do',
+        default: 'cut',
+        choices: [
+          { id: 'cut', label: 'Cut' },
+          { id: 'auto', label: 'Auto' },
+          { id: 'program', label: 'Input on program' },
+          { id: 'preview', label: 'Input on preview' },
+          { id: 'ftb', label: 'Fade to black' },
+          { id: 'dsk', label: 'Downstream key' },
+          { id: 'usk', label: 'Upstream key' },
+          { id: 'macro', label: 'Run a macro' },
+          { id: 'stopmacro', label: 'Stop the macro' },
+        ],
+      },
+      { type: 'number', id: 'atemInput', label: 'ATEM input (program, preview)', default: 1, min: 0, max: 20000 },
+      { type: 'number', id: 'keyer', label: 'Keyer (DSK, key)', default: 1, min: 1, max: 4 },
+      { type: 'number', id: 'number', label: 'Macro number', default: 1, min: 1, max: 100 },
+      STATE,
+    ],
+  },
 };
+
+/** The values an ATEM action sends, for what it does. */
+const ATEM_VALUES = { program: ['atemInput'], preview: ['atemInput'], ftb: ['state'], dsk: ['keyer', 'state'], usk: ['keyer', 'state'], macro: ['number'] };
 
 /** An input given as a number or a name. */
 function inputValue(v) {
@@ -87,6 +118,15 @@ export function commandFor(actionId, options = {}) {
   const a = ACTIONS[actionId];
   if (!a) return null;
   const msg = { cmd: a.cmd };
+  if (actionId === 'atem') {
+    const what = String(options.do ?? 'cut');
+    msg.do = what;
+    for (const id of ATEM_VALUES[what] ?? []) {
+      const o = a.options.find((x) => x.id === id);
+      msg[id === 'atemInput' ? 'input' : id] = String(options[id] ?? o.default);
+    }
+    return msg;
+  }
   for (const o of a.options) {
     const v = options[o.id] ?? o.default;
     if (o.id === 'input') Object.assign(msg, inputValue(v));

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { isMultiview, isVisionWorker, outputScreen, overlayScreen } from './engine/role';
+import { isMultiview, isSeatWindow, isVisionWorker, outputScreen, overlayScreen } from './engine/role';
 import { lazyPart } from './components/lazyPart';
 import './App.css';
 
@@ -15,6 +15,7 @@ const TitlerWindow = lazyPart(() => import('./titler/LumoraTitler').then((m) => 
 
 /** The Lumora Titler window (`?titler=<input or new>`, opened by "Titler…"). */
 const isTitlerWindow = () => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('titler');
+const SeatWindow = lazyPart(() => import('./seats/SeatApp').then((m) => m.SeatWindow));
 
 /**
  * Loads this window's part. Which window this is is known at once, so it
@@ -33,7 +34,9 @@ export function loadApp(): Promise<void> {
           ? MultiviewView
           : outputScreen()
             ? OutputView
-            : Control;
+            : isSeatWindow()
+              ? SeatWindow
+              : Control;
   return part.preload().then(
     () => {},
     () => {},
@@ -44,11 +47,13 @@ export function App() {
   const output = useMemo(outputScreen, []);
   const multiview = useMemo(isMultiview, []);
   const overlay = useMemo(overlayScreen, []);
+  const seat = useMemo(isSeatWindow, []);
   const vision = useMemo(isVisionWorker, []);
   const titler = useMemo(isTitlerWindow, []);
   if (titler) return <TitlerWindow />;
   if (vision) return <VisionView />;
   if (overlay) return <OverlayView screen={overlay} />;
+  if (seat) return <SeatWindow />;
   if (multiview) return <MultiviewView />;
   return output ? <OutputView screen={output} /> : <Control />;
 }

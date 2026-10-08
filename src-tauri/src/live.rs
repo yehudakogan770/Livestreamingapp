@@ -65,11 +65,62 @@ pub enum Mode {
 #[serde(rename_all = "camelCase", default)]
 struct Saved {
     mode: Mode,
+    options: EngineOptions,
+}
+
+/// Settings → Engine: the unified engine's graphics card, and how each
+/// output window shows (see `crates/live-engine/src/adapters.rs` and HDR in
+/// `present.rs`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct EngineOptions {
+    /// The graphics card's key; None: the high-performance one (automatic).
+    pub adapter: Option<String>,
+    /// Outputs (`live`, `back`, `monitor`, `multiview`) presented by the card
+    /// their display hangs off (the engine copies the picture across).
+    pub own_card: Vec<String>,
+    /// Outputs shown in HDR10 when their display shows HDR.
+    pub hdr: Vec<String>,
+    /// SDR white in HDR outputs, in nits.
+    pub sdr_white: u32,
+}
+
+impl Default for EngineOptions {
+    fn default() -> Self {
+        EngineOptions {
+            adapter: None,
+            own_card: Vec::new(),
+            hdr: Vec::new(),
+            sdr_white: live_engine::gpu::SDR_WHITE_NITS,
+        }
+    }
+}
+
+impl EngineOptions {
+    /// How output `name`'s window is placed: on `display`, with `title`.
+    fn placement(
+        &self,
+        name: &str,
+        display: Option<(i32, i32, u32, u32)>,
+        title: String,
+    ) -> Placement {
+        Placement {
+            display,
+            title,
+            own_card: self.own_card.iter().any(|o| o == name),
+            hdr_white: self
+                .hdr
+                .iter()
+                .any(|o| o == name)
+                .then_some(self.sdr_white.clamp(80, 1000)),
+        }
+    }
 }
 
 #[derive(Default)]
 struct Inner {
     mode: Mode,
+    options: EngineOptions,
     runner: Option<Arc<Runner>>,
     error: Option<String>,
     /// Screens shown in the engine's own windows.
@@ -83,6 +134,8 @@ struct Inner {
     vision: bool,
     /// Instant replay: the ring of pieces the engine's replay feed writes.
     replay: Option<Arc<Mutex<live_engine::replay::Ring>>>,
+    /// Counts replays started (an old one's encoder stopping leaves a new one alone).
+    replay_generation: u64,
 }
 
 pub struct Live {
@@ -119,6 +172,7 @@ pub struct Info {
     pub stats: Option<Stats>,
     /// The engine shows the Live and Back Screens in its own windows here (Windows).
     pub native_outputs: bool,
+    pub options: EngineOptions,
 }
 
 /// One input's health, as the engine sees it.
@@ -225,6 +279,7 @@ impl Live {
             pictures,
             inner: Mutex::new(Inner {
                 mode: saved.mode,
+                options: saved.options,
                 ..Inner::default()
             }),
             audio: Arc::default(),
@@ -235,8 +290,14 @@ impl Live {
         lock(&self.inner).mode
     }
 
-    fn runner(&self) -> Option<Arc<Runner>> {
+    pub(crate) fn runner(&self) -> Option<Arc<Runner>> {
         lock(&self.inner).runner.clone()
+    }
+
+    /// The running engine and FFmpeg, for feeds started elsewhere (a
+    /// Blackmagic card's program out, `decklink.rs`).
+    pub(crate) fn feed_parts(&self) -> Option<(Arc<Runner>, PathBuf)> {
+        Some((self.runner()?, self.ffmpeg.clone()?))
     }
 
     /// Start the engine when Unified is chosen (at start-up and when switched on).
@@ -248,7 +309,11 @@ impl Live {
         let fake = std::env::var_os("LUMORA_FAKE_CAMERAS").is_some();
         let mut factory = DefaultFactory::new(self.ffmpeg.clone(), fake);
         factory.pictures = self.pictures.clone();
-        match Runner::start(Config::default(), Box::new(factory)) {
+        let config = Config {
+            adapter: inner.options.adapter.clone(),
+            ..Config::default()
+        };
+        match Runner::start(config, Box::new(factory)) {
             Ok(r) => {
                 r.set_show(show.clone());
                 inner.vision = live_engine::vision::wanted(show);
@@ -313,10 +378,12 @@ impl Live {
                     .find(|d| d.id == id)
             })
             .map(|d| (d.x, d.y, d.width, d.height));
-        r.set_multiview(Some(Placement {
+        let placement = lock(&self.inner).options.placement(
+            "multiview",
             display,
-            title: "Lumora — Multiview".to_owned(),
-        }))?;
+            "Lumora — Multiview".to_owned(),
+        );
+        r.set_multiview(Some(placement))?;
         lock(&self.inner).multiview = Some(wanted);
         notify(app);
         Ok(true)
@@ -353,6 +420,7 @@ impl Live {
             error: inner.error.clone(),
             stats: inner.runner.as_ref().map(|r| r.stats()),
             native_outputs: cfg!(windows),
+            options: inner.options.clone(),
         }
     }
 
@@ -362,7 +430,7 @@ impl Live {
     }
 
     /// Where a screen's window goes (its assigned display, else a window).
-    fn placement(app: &AppHandle, show: &Show, screen: ScreenId) -> Placement {
+    fn placement(&self, app: &AppHandle, show: &Show, screen: ScreenId) -> Placement {
         let wanted = show.settings.displays.get(screen).as_deref();
         let display = wanted
             .and_then(|id| {
@@ -371,10 +439,11 @@ impl Live {
                     .find(|d| d.id == id)
             })
             .map(|d| (d.x, d.y, d.width, d.height));
-        Placement {
+        lock(&self.inner).options.placement(
+            live_engine::engine::screen_name(screen),
             display,
-            title: format!("Lumora — {} output", screen.label()),
-        }
+            format!("Lumora — {} output", screen.label()),
+        )
     }
 
     /// Open (or move) a screen in the engine's own window. False: not the
@@ -391,7 +460,7 @@ impl Live {
         let Some(r) = self.runner().filter(|_| native_screen(screen)) else {
             return Ok(false);
         };
-        r.set_output(screen, Some(Self::placement(app, show, screen)))?;
+        r.set_output(screen, Some(self.placement(app, show, screen)))?;
         {
             let mut inner = lock(&self.inner);
             if !inner.native.contains(&screen) {
@@ -481,7 +550,8 @@ pub fn live_engine_set_mode(
         return Err("Stop recording, streaming and NDI before switching engines.".to_owned());
     }
     let show = crate::lock(&state).show().clone();
-    let data = serde_json::to_string_pretty(&Saved { mode }).map_err(|e| e.to_string())?;
+    let options = lock(&live.inner).options.clone();
+    let data = serde_json::to_string_pretty(&Saved { mode, options }).map_err(|e| e.to_string())?;
     write_file_atomic(&live.file, &data).map_err(|e| e.to_string())?;
     match mode {
         Mode::Unified => {
@@ -539,6 +609,81 @@ pub fn live_engine_set_mode(
                 let _ = crate::outputs::open_multiview(&app, &show);
             }
         }
+    }
+    notify(&app);
+    sync_renderers(&app);
+    let info = live.info();
+    let _ = app.emit("live-engine-changed", &info);
+    Ok(info)
+}
+
+/// Settings → Engine's graphics card and output choices. A new graphics card
+/// starts the engine again on it (its windows reopen there; not while
+/// recording or streaming); the outputs' choices apply at once.
+#[tauri::command]
+pub fn live_engine_set_options(
+    options: EngineOptions,
+    live: State<'_, Live>,
+    state: State<'_, crate::AppState>,
+    app: AppHandle,
+) -> Result<Info, String> {
+    let before = lock(&live.inner).options.clone();
+    if before == options {
+        return Ok(live.info());
+    }
+    let new_card = before.adapter != options.adapter;
+    if new_card && live.runner().is_some() {
+        let st = state.capture.status();
+        if st.recording.is_some()
+            || st.streaming.is_some()
+            || st.vertical.is_some()
+            || st.ndi.is_some()
+            || lock(&live.inner).replay.is_some()
+        {
+            return Err(
+                "Stop recording, streaming, NDI and instant replay before changing the graphics card."
+                    .to_owned(),
+            );
+        }
+    }
+    let mode = live.mode();
+    let data = serde_json::to_string_pretty(&Saved {
+        mode,
+        options: options.clone(),
+    })
+    .map_err(|e| e.to_string())?;
+    write_file_atomic(&live.file, &data).map_err(|e| e.to_string())?;
+    lock(&live.inner).options = options;
+    let show = crate::lock(&state).show().clone();
+    let screens = live.open_screens();
+    let multiview = live.multiview_open();
+    if new_card && live.runner().is_some() {
+        // The engine again, on the other card: its windows reopen there and
+        // the graphics and person masks are sent again.
+        let old = {
+            let mut inner = lock(&live.inner);
+            inner.native.clear();
+            inner.multiview = None;
+            inner.runner.take()
+        };
+        drop(old);
+        live.start(&show);
+        if let Some(r) = live.runner() {
+            r.shared
+                .graphics_lost
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+            r.shared
+                .vision_lost
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+    for s in screens {
+        if let Err(e) = live.open_output(&app, &show, s) {
+            eprintln!("lumora: unified output {s:?}: {e}");
+        }
+    }
+    if multiview {
+        let _ = live.open_multiview(&app, &show);
     }
     notify(&app);
     sync_renderers(&app);
@@ -825,14 +970,15 @@ pub async fn live_engine_replay_start(
     let family = state.capture.engine_family();
     let c = Config::default();
     // As the WebView's replay buffer: 30 frames a second, 8 Mb/s.
-    let mut video = encode::video_args(&VideoEncode {
+    let ve = VideoEncode {
         family,
         codec: Codec::H264,
         rate: Rate::Cbr { kbps: 8000 },
         preset: settings.preset,
         fps: 30,
         size: None,
-    });
+    };
+    let mut video = encode::video_args(&ve);
     video.extend(keyframe_args(PIECE_S));
     let audio = live_engine::encoder::AudioIn {
         rate: sample_rate,
@@ -843,14 +989,47 @@ pub async fn live_engine_replay_start(
     };
     let dir = ring.dir.clone();
     let to = app.clone();
+    // This replay (a newer one started meanwhile is left alone).
+    let generation = {
+        let mut inner = lock(&live.inner);
+        inner.replay_generation += 1;
+        inner.replay_generation
+    };
     let on_end: live_engine::encoder::OnEnd = Box::new(move |asked, said| {
         if asked {
             return;
         }
         let said = said.unwrap_or_else(|| "it stopped".to_owned());
         eprintln!("lumora: the engine's replay encoder stopped: {said}");
+        // A hardware encoder that failed isn't used again (as for recordings).
+        if family.hardware() && encode::encoder_failed(&said) {
+            to.state::<crate::AppState>()
+                .capture
+                .engine_hw_failed(family);
+        }
         if let Some(l) = to.try_state::<Live>() {
-            lock(&l.inner).replay = None;
+            let (ring, runner) = {
+                let mut inner = lock(&l.inner);
+                if inner.replay_generation != generation {
+                    return;
+                }
+                (inner.replay.take(), inner.runner.clone())
+            };
+            // Off everywhere: the engine lets the dead feed go and the pieces go.
+            // (On its own thread: this is the encoder's, which finishing waits for.)
+            std::thread::spawn(move || {
+                if let Some(r) = runner {
+                    drop(r.stop_feed(REPLAY_FEED));
+                }
+                if let Some(ring) = ring {
+                    let dir = ring
+                        .lock()
+                        .unwrap_or_else(PoisonError::into_inner)
+                        .dir
+                        .clone();
+                    let _ = std::fs::remove_dir_all(dir);
+                }
+            });
         }
         let _ = to.emit(
             "live-engine-replay-lost",
@@ -882,6 +1061,8 @@ pub async fn live_engine_replay_start(
         width: c.width,
         height: c.height,
         fps: 30,
+        // A keyframe at every piece's start.
+        zero_copy: zero_copy(&ve, 30 * PIECE_S),
     };
     let r = Arc::clone(&runner);
     tauri::async_runtime::spawn_blocking(move || r.start_feed(REPLAY_FEED, spec, make))
@@ -974,6 +1155,38 @@ pub async fn live_engine_replay_take(
         .collect())
 }
 
+/// The settings for the graphics card's encoder to take the engine's picture
+/// as a texture (zero-copy, `live_engine::zerocopy`): the same encoder,
+/// bitrate and speed as FFmpeg would use (`encode.rs`), a keyframe every
+/// `gop` frames. None for the processor encoder (x264 reads back as before),
+/// or when `LUMORA_NO_ZERO_COPY` is set.
+fn zero_copy(e: &VideoEncode, gop: u32) -> Option<live_engine::zerocopy::Settings> {
+    use live_engine::zerocopy::{Rate as ZRate, Settings, Speed, Vendor};
+    if std::env::var_os("LUMORA_NO_ZERO_COPY").is_some() {
+        return None;
+    }
+    let vendor = match e.family {
+        encode::Family::Nvenc => Vendor::Nvidia,
+        encode::Family::Qsv => Vendor::Intel,
+        encode::Family::Amf => Vendor::Amd,
+        encode::Family::Software => return None,
+    };
+    Some(Settings {
+        vendor,
+        hevc: e.codec == Codec::Hevc,
+        rate: match e.rate {
+            Rate::Cbr { kbps } => ZRate::Cbr { kbps },
+            Rate::Quality { level, max_kbps } => ZRate::Quality { level, max_kbps },
+        },
+        speed: match e.preset {
+            encode::Preset::Speed => Speed::Speed,
+            encode::Preset::Balanced => Speed::Balanced,
+            encode::Preset::Quality => Speed::Quality,
+        },
+        gop,
+    })
+}
+
 /// An encoder feed from the engine into `on_chunk`, with sound from `audio` (when given).
 fn engine_feed(
     ffmpeg: PathBuf,
@@ -1029,14 +1242,15 @@ pub async fn live_engine_capture_start(
     let family = state.capture.engine_family();
     let fps = r.fps.clamp(1, 60);
     let kbps = running.source_kbps.unwrap_or(settings.video_kbps).max(500);
-    let video = encode::video_args(&VideoEncode {
+    let ve = VideoEncode {
         family,
         codec: Codec::H264,
         rate: Rate::Cbr { kbps },
         preset: settings.preset,
         fps,
         size: None,
-    });
+    };
+    let video = encode::video_args(&ve);
     let audio = live_engine::encoder::AudioIn {
         rate: r.sample_rate,
         encode: vec![
@@ -1083,6 +1297,7 @@ pub async fn live_engine_capture_start(
         width: r.width.clamp(16, 7680) & !1,
         height: r.height.clamp(16, 4320) & !1,
         fps,
+        zero_copy: zero_copy(&ve, fps * 2),
     };
     let make = engine_feed(ffmpeg.clone(), video, Some(audio), on_chunk, Some(on_end));
     let started = {
@@ -1135,6 +1350,7 @@ pub async fn live_engine_capture_start(
                 width: 0,
                 height: 0,
                 fps: 30,
+                zero_copy: None,
             };
             let make = engine_feed(ffmpeg.clone(), video, None, on_chunk, None);
             if runner.start_feed(ISO_FEEDS + id, spec, make).is_ok() {
@@ -1219,14 +1435,15 @@ pub async fn live_engine_test_record(
     let settings = state.capture.settings();
     let family = state.capture.engine_family();
     let c = Config::default();
-    let encode_args = encode::video_args(&VideoEncode {
+    let ve = VideoEncode {
         family,
         codec: Codec::H264,
         rate: Rate::Cbr { kbps: 12_000 },
         preset: settings.preset,
         fps: c.fps,
         size: None,
-    });
+    };
+    let encode_args = encode::video_args(&ve);
     let mime = "video/x-matroska;codecs=avc1";
     let running = state
         .capture
@@ -1244,6 +1461,7 @@ pub async fn live_engine_test_record(
         width: c.width,
         height: c.height,
         fps: c.fps,
+        zero_copy: zero_copy(&ve, c.fps * 2),
     };
     let make = engine_feed(ffmpeg, encode_args, None, on_chunk, None);
     let secs = seconds.unwrap_or(10).clamp(1, 120);
@@ -1251,15 +1469,24 @@ pub async fn live_engine_test_record(
     let stats = tauri::async_runtime::spawn_blocking(move || {
         r.start_feed(session, spec, make)?;
         std::thread::sleep(std::time::Duration::from_secs(u64::from(secs)));
-        Ok::<_, String>(r.stop_feed(session))
+        // How the picture reached the encoder (zero-copy or read back, and why).
+        let route = r
+            .stats()
+            .feeds
+            .into_iter()
+            .find(|f| f.id == session)
+            .and_then(|f| f.route);
+        Ok::<_, String>((r.stop_feed(session), route))
     })
     .await
     .map_err(|e| e.to_string())?;
     state.capture.stop(session);
-    let s = stats?.unwrap_or_default();
+    let (s, route) = stats?;
+    let s = s.unwrap_or_default();
     Ok(format!(
-        "Recorded {secs} s with {} ({} frames, {} late){}: {}",
+        "Recorded {secs} s with {}, {} ({} frames, {} late){}: {}",
         family.label(),
+        route.map_or_else(|| "read back".to_owned(), |r| r.path),
         s.frames_in,
         s.frames_dropped,
         s.error

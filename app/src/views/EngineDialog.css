@@ -52,3 +52,13 @@
 .eng__list li + li {
   margin-top: 4px;
 }
+.eng__outputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px 16px;
+}
+.eng__output {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

@@ -14,6 +14,11 @@ export function isMultiview(): boolean {
   return isInsideLumora() ? getCurrentWindow().label === 'output-multiview' : new URLSearchParams(window.location.search).get('output') === 'multiview';
 }
 
+/** This window is a seat on another computer's show (Settings → Join a show on this network…). */
+export function isSeatWindow(): boolean {
+  return isInsideLumora() ? getCurrentWindow().label === 'seat' : new URLSearchParams(window.location.search).has('seat');
+}
+
 /** The unified engine's hidden graphics renderer for a screen (`overlay-live`, `overlay-back`), or null. */
 export function overlayScreen(): 'live' | 'back' | null {
   const name = isInsideLumora() ? getCurrentWindow().label.replace(/^overlay-/, '') : new URLSearchParams(window.location.search).get('overlay');

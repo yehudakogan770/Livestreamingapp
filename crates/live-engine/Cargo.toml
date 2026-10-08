@@ -17,6 +17,8 @@ path = "src/bin/live-bench.rs"
 
 [dependencies]
 lumora-engine = { path = "../engine" }
+# Blackmagic capture cards (DeckLink API through Desktop Video, Windows).
+lumora-decklink = { path = "../decklink" }
 serde.workspace = true
 serde_json.workspace = true
 pollster = "1"
@@ -36,10 +38,21 @@ windows-sys = { version = "0.61", features = [
   "Win32_UI_WindowsAndMessaging",
 ] }
 # Cameras through Media Foundation (what the WebView's getUserMedia uses underneath).
+# Zero-copy encoding (zerocopy_win.rs): Direct3D 12 textures shared with Direct3D 11 and
+# the graphics card's Media Foundation encoder; DXGI for the displays' graphics cards.
 windows = { version = "0.62", features = [
   "Win32_Foundation",
+  "Win32_Graphics_Direct3D",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Direct3D12",
+  "Win32_Graphics_Dxgi",
+  "Win32_Graphics_Dxgi_Common",
+  "Win32_Graphics_Gdi",
   "Win32_Media_MediaFoundation",
+  "Win32_Security",
   "Win32_System_Com",
+  "Win32_System_Ole",
+  "Win32_System_Variant",
 ] }
 
 [target.'cfg(target_vendor = "apple")'.dependencies]

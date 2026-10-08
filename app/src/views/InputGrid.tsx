@@ -180,7 +180,7 @@ export function InputGrid({
                 }
               }}
             >
-              <span className="tile__thumb">
+              <span className="tile__thumb" data-seat-source={src.id}>
                 {soundFile ? (
                   <span className="tile__sound">
                     <Music aria-hidden="true" />

@@ -39,6 +39,8 @@ pub struct Config {
     pub preview_h: u32,
     /// Previews are drawn every this many frames (60 fps / 6 = 10 previews a second).
     pub preview_every: u32,
+    /// The graphics card (a [`crate::adapters::Card`] key; None: the high-performance one).
+    pub adapter: Option<String>,
 }
 
 impl Default for Config {
@@ -50,6 +52,7 @@ impl Default for Config {
             preview_w: 320,
             preview_h: 180,
             preview_every: 6,
+            adapter: None,
         }
     }
 }
@@ -105,6 +108,10 @@ impl SourceFactory for DefaultFactory {
             }
             SourceKind::Image { path } => format!("image:{path}"),
             SourceKind::Pattern => "pattern".into(),
+            // A Blackmagic card: opened directly (one capture per card and connector).
+            SourceKind::Stream(st) if crate::decklink::is_decklink(&st.url) => {
+                crate::decklink::key(&st.url)
+            }
             // Their pictures come from the app's frame store by input: one source each.
             other => format!("pictures:{}", kind_name(other)),
         }
@@ -141,6 +148,9 @@ impl SourceFactory for DefaultFactory {
                     "FFmpeg is needed to play files in the unified engine.",
                 )),
             },
+            SourceKind::Stream(st) if crate::decklink::is_decklink(&st.url) => {
+                crate::decklink::open(&st.url)
+            }
             SourceKind::Image { path } => match &self.ffmpeg {
                 Some(ff) => Box::new(FfmpegFile::start(ff, &(self.resolve)(path), true)),
                 None => Box::new(Unavailable::new(
@@ -247,6 +257,10 @@ pub struct Stats {
     pub upload_mb_per_s: f32,
     pub adapter: Option<AdapterInfo>,
     pub outputs: Vec<String>,
+    /// Each output window: the card that presents it and how (SDR or HDR).
+    pub output_cards: Vec<crate::adapters::OutputCard>,
+    /// Every graphics card here (for Settings → Engine's choice).
+    pub cards: Vec<crate::adapters::Card>,
     /// The first screen feed (the recording or stream).
     pub feed: Option<FeedStats>,
     /// Every feed: screens (recording, stream, vertical, NDI) and inputs (ISO files).
@@ -291,6 +305,8 @@ const MV_PGM: [f32; 4] = [1.0, 75.0 / 255.0, 62.0 / 255.0, 1.0];
 const MV_PVW: [f32; 4] = [52.0 / 255.0, 210.0 / 255.0, 107.0 / 255.0, 1.0];
 /// The plane of words (names, tally tags, clock) the Live Screen's overlay renderer draws for it.
 pub const MULTIVIEW_PLANE: &str = "mv";
+/// The prefix of the multiview's own copies of graphics inputs that aren't on air (`mv:g:<input>`).
+pub const MULTIVIEW_INPUT_PREFIX: &str = "mv:";
 /// Preview tiles per row of the atlas.
 const ATLAS_COLUMNS: u32 = 6;
 
@@ -371,6 +387,7 @@ impl LiveEngine {
         }
         let stats = Stats {
             adapter: Some(gpu.describe()),
+            cards: crate::adapters::cards(&gpu.instance),
             ..Stats::default()
         };
         LiveEngine {
@@ -522,10 +539,18 @@ impl LiveEngine {
                 self.outputs.remove(&screen);
             }
             Some(p) => {
+                // Another card for it (or none any more): a new window and surface.
+                let recard = self.outputs.get(&screen).is_some_and(|o| {
+                    o.placement().own_card != p.own_card || o.placement().display != p.display
+                });
+                if recard {
+                    self.outputs.remove(&screen);
+                }
                 if let Some(o) = self.outputs.get_mut(&screen) {
                     o.place(p);
                 } else {
-                    let o = NativeOutput::open(&self.gpu.instance, p)?;
+                    let mut o = NativeOutput::open(&self.gpu.instance, p)?;
+                    o.bridge = self.bridge_for(o.placement());
                     self.outputs.insert(screen, o);
                 }
             }
@@ -544,14 +569,45 @@ impl LiveEngine {
                 self.gpu.drop_target(MULTIVIEW);
             }
             Some(p) => {
+                let recard = self.multiview.as_ref().is_some_and(|o| {
+                    o.placement().own_card != p.own_card || o.placement().display != p.display
+                });
+                if recard {
+                    self.multiview = None;
+                }
                 if let Some(o) = self.multiview.as_mut() {
                     o.place(p);
                 } else {
-                    self.multiview = Some(NativeOutput::open(&self.gpu.instance, p)?);
+                    let mut o = NativeOutput::open(&self.gpu.instance, p)?;
+                    o.bridge = self.bridge_for(o.placement());
+                    self.multiview = Some(o);
                 }
             }
         }
         Ok(())
+    }
+
+    /// The card to present a window placed at `p` with, when it isn't the
+    /// engine's: the display's own card, when the operator asked for it and
+    /// that card is another one (see [`crate::adapters`]).
+    fn bridge_for(&mut self, p: &Placement) -> Option<crate::adapters::Bridge> {
+        let rect = p.display.filter(|_| p.own_card)?;
+        self.stats.cards = crate::adapters::cards(&self.gpu.instance);
+        let card = crate::adapters::card_for_display(&self.stats.cards, rect)?;
+        let mine = self.stats.adapter.as_ref().and_then(|a| a.key.clone());
+        if mine.as_deref() == Some(card.key.as_str()) {
+            return None;
+        }
+        match crate::adapters::Bridge::open(&self.gpu.instance, &card.key) {
+            Ok(b) => Some(b),
+            Err(e) => {
+                eprintln!(
+                    "lumora: {} can't present its own display ({e}); the engine's card does",
+                    card.name
+                );
+                None
+            }
+        }
     }
 
     /// The multiview's layout (for its words), when it is open.
@@ -573,7 +629,17 @@ impl LiveEngine {
             .enumerate()
             .filter_map(|(i, t)| match &t.content {
                 TileContent::Input(id) => {
-                    Some((i, framed(scene::source_scene(show, id), &self.shots)))
+                    let mut sc = framed(scene::source_scene(show, id), &self.shots);
+                    // A graphics input not on air: the multiview's own copy
+                    // of it (`overlayPlanes.ts: multiviewPlanes`).
+                    let own = format!(
+                        "{MULTIVIEW_INPUT_PREFIX}{}",
+                        overlay::graphic_plane(id.as_str())
+                    );
+                    if self.gpu.has_plane(program_target(ScreenId::Live), &own) {
+                        sc.plane_prefix = MULTIVIEW_INPUT_PREFIX;
+                    }
+                    Some((i, sc))
                 }
                 _ => None,
             })
@@ -785,6 +851,18 @@ impl LiveEngine {
         let size = (self.config.width, self.config.height);
         self.feeds.start(&mut self.gpu, id, spec, make, size, tx);
         rx
+    }
+
+    /// Open zero-copy encoders with `opener` (tests and the benchmark: the
+    /// stand-in; None: screens are always read back). The engine starts with
+    /// this computer's ([`crate::zerocopy::platform`]).
+    pub fn set_zero_copy(&mut self, opener: Option<crate::zerocopy::Opener>) {
+        self.feeds.set_opener(opener);
+    }
+
+    /// Every feed and how it is doing now (the statistics have it once a second).
+    pub fn feed_info(&self) -> Vec<crate::feeds::FeedInfo> {
+        self.feeds.info()
     }
 
     /// Feed `id`'s encoder has started.
@@ -1036,16 +1114,12 @@ impl LiveEngine {
         // 4. The screens in their windows. An audience screen never closes by
         // accident (Alt+F4 on the projector): a close request is ignored.
         for (s, o) in &mut self.outputs {
-            let _ = o.pump();
-            let (w, h) = o.size();
-            self.gpu.present(&mut o.out, program_target(*s), w, h);
+            show_in(&mut self.gpu, o, program_target(*s));
         }
         if self.multiview.is_some() {
             self.draw_multiview();
             if let Some(o) = self.multiview.as_mut() {
-                let _ = o.pump();
-                let (w, h) = o.size();
-                self.gpu.present(&mut o.out, MULTIVIEW, w, h);
+                show_in(&mut self.gpu, o, MULTIVIEW);
             }
         }
         let t3 = Instant::now();
@@ -1114,6 +1188,7 @@ impl LiveEngine {
                 .map(|s| screen_name(*s).to_owned())
                 .chain(self.multiview.as_ref().map(|_| "multiview".to_owned()))
                 .collect();
+            self.stats.output_cards = self.output_cards();
             self.stats.feeds = self.feeds.info();
             self.stats.feed = self
                 .stats
@@ -1148,30 +1223,74 @@ impl LiveEngine {
         }
     }
 
-    /// What doesn't work in the unified engine yet, for what is in the show
-    /// now (said to the operator in the Engine dialog).
+    /// Each output window's card and colors (the Engine dialog, the test event).
+    fn output_cards(&self) -> Vec<crate::adapters::OutputCard> {
+        let engine = self
+            .stats
+            .adapter
+            .as_ref()
+            .map_or_else(String::new, |a| a.name.clone());
+        let mut v: Vec<(String, &NativeOutput)> = self
+            .outputs
+            .iter()
+            .map(|(s, o)| (screen_name(*s).to_owned(), o))
+            .chain(self.multiview.as_ref().map(|o| ("multiview".to_owned(), o)))
+            .collect();
+        v.sort_by(|a, b| a.0.cmp(&b.0));
+        v.into_iter()
+            .map(|(output, o)| crate::adapters::OutputCard {
+                output,
+                display_card: o.placement().display.and_then(|r| {
+                    crate::adapters::card_for_display(&self.stats.cards, r).map(|c| c.name.clone())
+                }),
+                presented_by: o
+                    .bridge
+                    .as_ref()
+                    .map_or_else(|| engine.clone(), |b| b.gpu.adapter.get_info().name),
+                copied: o.bridge.is_some(),
+                color: o.out.color.label(),
+            })
+            .collect()
+    }
+
+    /// What the operator should know about the unified engine now (said in
+    /// the Engine dialog): a fallback that is in force.
     fn notes(&self) -> Vec<String> {
         let mut notes = Vec::new();
-        let Some(show) = &self.show else { return notes };
-        // An input slide fades in as a picture, not with the slide's own fade.
-        let slide_input = show.sources.iter().any(|s| match &s.kind {
-            SourceKind::Slideshow(k) => {
-                k.fade
-                    && matches!(
-                        k.slides.get(k.current),
-                        Some(lumora_engine::slideshow::Slide::Input { source_id, .. })
-                            if show.source(source_id).is_some_and(|i| scene::is_video_kind(&i.kind))
-                    )
+        if let Some(why) = crate::zerocopy::broken() {
+            notes.push(format!(
+                "Zero-copy encoding stopped ({why}); recordings and streams are read back from the graphics card until Lumora restarts."
+            ));
+        }
+        if let Some(c) = self
+            .stats
+            .adapter
+            .as_ref()
+            .and_then(|a| a.choice.as_deref())
+        {
+            if c.contains("is not here") {
+                notes.push(format!("The engine runs on {c}."));
             }
-            _ => false,
-        });
-        if slide_input {
-            notes.push(
-                "A camera or video used as a slide comes up without the slides' fade in the unified engine."
-                    .into(),
-            );
         }
         notes
+    }
+}
+
+/// Show target `i` in output window `o`: on the engine's card, or copied
+/// across to the card of its display (a bridge, one frame later).
+fn show_in(gpu: &mut Compositor, o: &mut NativeOutput, i: usize) {
+    let _ = o.pump();
+    let (w, h) = o.size();
+    match o.bridge.as_mut() {
+        Some(b) => {
+            if b.carry(gpu, i) {
+                let t = b.target();
+                b.gpu.present(&mut o.out, t, w, h);
+            }
+        }
+        None => {
+            gpu.present(&mut o.out, i, w, h);
+        }
     }
 }
 
@@ -1255,7 +1374,7 @@ impl Runner {
         let thread = thread::Builder::new()
             .name("lumora-live-engine".into())
             .spawn(move || {
-                let gpu = match Compositor::headless() {
+                let gpu = match Compositor::headless_on(config.adapter.as_deref()) {
                     Ok(g) => {
                         let _ = ready_tx.send(Ok(()));
                         g

@@ -1984,6 +1984,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyring"
+version = "3.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eebcc3aff044e5944a8fbaf69eb277d11986064cba30c468730e8b9909fb551c"
+dependencies = [
+ "byteorder",
+ "log",
+ "windows-sys 0.60.2",
+ "zeroize",
+]
+
+[[package]]
 name = "khronos-egl"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2119,10 +2131,15 @@ version = "0.1.0"
 dependencies = [
  "if-addrs",
  "jpeg-encoder",
+ "keyring",
  "libloading 0.8.9",
+ "lumora-atem",
  "lumora-crash",
+ "lumora-decklink",
  "lumora-engine",
+ "lumora-live-accounts",
  "lumora-live-engine",
+ "lumora-seats",
  "lumora-selftest",
  "lumora-syscheck",
  "lumora-testevent",
@@ -2144,11 +2161,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "lumora-atem"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "lumora-crash"
 version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "lumora-decklink"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -2181,10 +2216,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "lumora-live-accounts"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "getrandom 0.3.4",
+ "serde",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
 name = "lumora-live-engine"
 version = "0.1.0"
 dependencies = [
  "jpeg-encoder",
+ "lumora-decklink",
  "lumora-engine",
  "png 0.17.16",
  "pollster",
@@ -2195,6 +2242,18 @@ dependencies = [
  "windows 0.62.2",
  "windows-sys 0.61.2",
  "zune-jpeg",
+]
+
+[[package]]
+name = "lumora-seats"
+version = "0.1.0"
+dependencies = [
+ "if-addrs",
+ "lumora-engine",
+ "ring",
+ "serde",
+ "serde_json",
+ "socket2",
 ]
 
 [[package]]

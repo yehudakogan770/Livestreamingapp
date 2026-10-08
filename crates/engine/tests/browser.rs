@@ -85,4 +85,9 @@ fn stream_addresses() {
     assert!(clean_stream_url("file:///etc/passwd").is_none());
     assert!(clean_stream_url("srt://").is_none());
     assert!(clean_stream_url("example.com").is_none());
+    // Capture cards and NDI sources are named, with spaces.
+    assert!(clean_stream_url("decklink://DeckLink Duo (1)?input=sdi&audio=3-4").is_some());
+    assert!(clean_stream_url("ndi://PC (Camera 1)").is_some());
+    assert!(clean_stream_url("rtsp://cam local/1").is_none());
+    assert!(clean_stream_url("decklink://").is_none());
 }

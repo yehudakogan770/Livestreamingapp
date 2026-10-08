@@ -17,8 +17,9 @@ pub const TARGET_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Rgba8Unorm;
 
 const SHADER: &str = include_str!("compose.wgsl");
 const YUV_SHADER: &str = include_str!("yuv.wgsl");
-/// One draw's uniforms: eighteen vec4s.
-const DRAW_FLOATS: usize = 72;
+const HDR_SHADER: &str = include_str!("hdr.wgsl");
+/// One draw's uniforms: nineteen vec4s.
+const DRAW_FLOATS: usize = 76;
 const DRAW_BYTES: u64 = (DRAW_FLOATS * 4) as u64;
 
 struct Tex {
@@ -134,10 +135,90 @@ struct Ring {
     pending: Option<Pending>,
 }
 
+/// How a window's pixels are meant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum OutColor {
+    /// sRGB, as everything else (the default).
+    #[default]
+    Sdr,
+    /// HDR10: BT.2020 primaries, PQ (`Rgb10a2Unorm`); SDR white at `white` nits.
+    Pq { white: u32 },
+    /// scRGB: linear BT.709, 1.0 = 80 nits (`Rgba16Float`); SDR white at `white` nits.
+    ScRgb { white: u32 },
+}
+
+impl OutColor {
+    /// For the operator.
+    pub fn label(self) -> String {
+        match self {
+            OutColor::Sdr => "SDR".into(),
+            OutColor::Pq { white } => format!("HDR10 (PQ), SDR white at {white} nits"),
+            OutColor::ScRgb { white } => format!("HDR (scRGB), SDR white at {white} nits"),
+        }
+    }
+
+    /// The draw's `hdr` uniform: encoding and SDR white.
+    fn uniform(self) -> [f32; 4] {
+        match self {
+            OutColor::Sdr => [0.0; 4],
+            OutColor::ScRgb { white } => [1.0, white as f32, 0.0, 0.0],
+            OutColor::Pq { white } => [2.0, white as f32, 0.0, 0.0],
+        }
+    }
+}
+
+/// The SDR white level of HDR outputs unless the operator sets another (BT.2408: 203 nits).
+pub const SDR_WHITE_NITS: u32 = 203;
+
+/// Whether a display shows HDR now (what Windows says about it).
+pub fn display_is_hdr(info: &wgpu::DisplayHdrInfo) -> bool {
+    info.coarse
+        .and_then(|c| c.high_dynamic_range)
+        .unwrap_or(false)
+        || info
+            .luminance
+            .and_then(|l| l.max_nits)
+            .is_some_and(|n| n >= 400.0)
+}
+
+/// The best HDR way to show in a surface that offers `caps`: HDR10 (PQ) first, then scRGB.
+pub fn hdr_format(
+    caps: &wgpu::SurfaceCapabilities,
+    white: u32,
+) -> Option<(wgpu::TextureFormat, wgpu::SurfaceColorSpace, OutColor)> {
+    let has =
+        |f: wgpu::TextureFormat, cs: wgpu::SurfaceColorSpaces| caps.color_spaces(f).contains(cs);
+    if has(
+        wgpu::TextureFormat::Rgb10a2Unorm,
+        wgpu::SurfaceColorSpaces::BT2100_PQ,
+    ) {
+        Some((
+            wgpu::TextureFormat::Rgb10a2Unorm,
+            wgpu::SurfaceColorSpace::Bt2100Pq,
+            OutColor::Pq { white },
+        ))
+    } else if has(
+        wgpu::TextureFormat::Rgba16Float,
+        wgpu::SurfaceColorSpaces::EXTENDED_SRGB_LINEAR,
+    ) {
+        Some((
+            wgpu::TextureFormat::Rgba16Float,
+            wgpu::SurfaceColorSpace::ExtendedSrgbLinear,
+            OutColor::ScRgb { white },
+        ))
+    } else {
+        None
+    }
+}
+
 /// A window (or anything with a wgpu surface) being drawn into.
 pub struct SurfaceOut {
     pub surface: wgpu::Surface<'static>,
     config: Option<wgpu::SurfaceConfiguration>,
+    /// HDR asked for (SDR white in nits); None: SDR.
+    hdr_white: Option<u32>,
+    /// How it shows now.
+    pub color: OutColor,
 }
 
 impl SurfaceOut {
@@ -145,12 +226,22 @@ impl SurfaceOut {
         SurfaceOut {
             surface,
             config: None,
+            hdr_white: None,
+            color: OutColor::Sdr,
         }
     }
 
     /// Configure it again on the next present (a new graphics device).
     pub fn reset(&mut self) {
         self.config = None;
+    }
+
+    /// Show HDR when the display can, SDR white at `white` nits (None: SDR).
+    pub fn set_hdr(&mut self, white: Option<u32>) {
+        if self.hdr_white != white {
+            self.hdr_white = white;
+            self.config = None;
+        }
     }
 }
 
@@ -161,6 +252,12 @@ pub struct AdapterInfo {
     pub backend: String,
     /// "discrete", "integrated", "software", "virtual" or "other".
     pub kind: &'static str,
+    /// Its key (Settings → Engine's choice, [`crate::adapters::Card::key`]).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+    /// Why the engine is on it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub choice: Option<String>,
 }
 
 pub struct Compositor {
@@ -175,6 +272,11 @@ pub struct Compositor {
     /// NV12 to RGBA (`yuv.wgsl`): its layout and its pipelines (BT.709, BT.601).
     yuv_layout: wgpu::BindGroupLayout,
     yuv_pipes: [wgpu::RenderPipeline; 2],
+    /// HDR inputs to the SDR picture (`hdr.wgsl`): 10-bit RGB or P010, PQ or HLG.
+    hdr_layout: wgpu::BindGroupLayout,
+    hdr_pipes: [wgpu::RenderPipeline; 4],
+    /// Stand-ins for the planes an HDR format doesn't have (float, then two uint).
+    hdr_none: [wgpu::TextureView; 3],
     /// Person masks and the pictures behind people (group 2 of `compose.wgsl`).
     vision_layout: wgpu::BindGroupLayout,
     /// No mask (a person everywhere), nothing behind or in front.
@@ -199,8 +301,14 @@ pub struct Compositor {
     uploaded: u64,
     /// Seconds (0 – 100) for the grain effect.
     time: f32,
+    /// The show clock (ms): pictures that fade in by themselves (a slide).
+    now_ms: u64,
     /// The graphics device was lost (a driver reset, the card removed): the engine makes a new one.
     lost: Arc<std::sync::atomic::AtomicBool>,
+    /// The card asked for in Settings → Engine (None: automatic).
+    wanted: Option<String>,
+    /// Why this card, in words.
+    choice: String,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -313,12 +421,14 @@ pub fn adapters() -> Vec<AdapterInfo> {
                 kind: kind_of(i.device_type),
                 backend: format!("{:?}", i.backend),
                 name: i.name,
+                key: None,
+                choice: None,
             }
         })
         .collect()
 }
 
-fn kind_of(t: wgpu::DeviceType) -> &'static str {
+pub fn kind_of(t: wgpu::DeviceType) -> &'static str {
     match t {
         wgpu::DeviceType::DiscreteGpu => "discrete",
         wgpu::DeviceType::IntegratedGpu => "integrated",
@@ -402,6 +512,10 @@ const LOOK: usize = 10;
 /// picture behind them (its shape, a desk in front).
 const BG: usize = 16;
 const BG2: usize = 17;
+/// The vertical version's shadow under the picture (`VerticalFrame`: `rgba(0, 0, 0, 0.55)`).
+const VERTICAL_SHADOW: f32 = 0.55;
+/// An HDR window's encoding and SDR white (`compose.wgsl`'s `hdr`).
+const HDR: usize = 18;
 
 /// Map a rect given in a box's own fractions into output fractions.
 fn within(outer: Rect, inner: Rect) -> Rect {
@@ -442,6 +556,43 @@ impl Compositor {
             apply_limit_buckets: false,
         }))
         .map_err(|e| format!("No graphics card for the unified engine: {e}"))?;
+        let mut c = Self::on_adapter(instance, adapter)?;
+        c.choice = "the high-performance graphics card (automatic)".into();
+        Ok(c)
+    }
+
+    /// Start on the card `key` (Settings → Engine; see [`crate::adapters`]),
+    /// or the high-performance one when it is automatic or the card is gone.
+    ///
+    /// # Errors
+    /// No usable graphics card.
+    pub fn with_card(instance: wgpu::Instance, key: Option<&str>) -> Result<Self, String> {
+        let Some(key) = key else {
+            return Self::new(instance, None);
+        };
+        match crate::adapters::find(&instance, key) {
+            Some(a) => {
+                let mut c = Self::on_adapter(instance, a)?;
+                c.wanted = Some(key.to_owned());
+                c.choice = "chosen in Settings → Engine".into();
+                Ok(c)
+            }
+            None => {
+                let mut c = Self::new(instance, None)?;
+                c.wanted = Some(key.to_owned());
+                c.choice =
+                    "the high-performance graphics card (the one chosen in Settings → Engine is not here)"
+                        .into();
+                Ok(c)
+            }
+        }
+    }
+
+    /// Start on `adapter`.
+    ///
+    /// # Errors
+    /// The card could not start.
+    pub fn on_adapter(instance: wgpu::Instance, adapter: wgpu::Adapter) -> Result<Self, String> {
         let limits = wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits());
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             label: Some("lumora-live-engine"),
@@ -588,6 +739,93 @@ impl Compositor {
             })
         };
         let yuv_pipes = [yuv_pipe("fs_709"), yuv_pipe("fs_601")];
+        let hdr_entry =
+            |binding: u32, sample_type: wgpu::TextureSampleType| wgpu::BindGroupLayoutEntry {
+                binding,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type,
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            };
+        let hdr_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("hdr"),
+            entries: &[
+                hdr_entry(0, wgpu::TextureSampleType::Float { filterable: false }),
+                hdr_entry(1, wgpu::TextureSampleType::Uint),
+                hdr_entry(2, wgpu::TextureSampleType::Uint),
+            ],
+        });
+        let hdr_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("hdr"),
+            source: wgpu::ShaderSource::Wgsl(HDR_SHADER.into()),
+        });
+        let hdr_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("hdr"),
+            bind_group_layouts: &[Some(&hdr_layout)],
+            immediate_size: 0,
+        });
+        let hdr_pipe = |entry: &str| {
+            device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("hdr"),
+                layout: Some(&hdr_pipeline_layout),
+                vertex: wgpu::VertexState {
+                    module: &hdr_module,
+                    entry_point: Some("vs"),
+                    compilation_options: Default::default(),
+                    buffers: &[],
+                },
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleStrip,
+                    ..Default::default()
+                },
+                depth_stencil: None,
+                multisample: wgpu::MultisampleState::default(),
+                fragment: Some(wgpu::FragmentState {
+                    module: &hdr_module,
+                    entry_point: Some(entry),
+                    compilation_options: Default::default(),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format: wgpu::TextureFormat::Rgba8Unorm,
+                        blend: None,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                }),
+                multiview_mask: None,
+                cache: None,
+            })
+        };
+        let hdr_pipes = [
+            hdr_pipe("fs_rgb10_pq"),
+            hdr_pipe("fs_rgb10_hlg"),
+            hdr_pipe("fs_p010_pq"),
+            hdr_pipe("fs_p010_hlg"),
+        ];
+        let none = |format: wgpu::TextureFormat| {
+            device
+                .create_texture(&wgpu::TextureDescriptor {
+                    label: Some("hdr-none"),
+                    size: wgpu::Extent3d {
+                        width: 1,
+                        height: 1,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING,
+                    view_formats: &[],
+                })
+                .create_view(&wgpu::TextureViewDescriptor::default())
+        };
+        let hdr_none = [
+            none(wgpu::TextureFormat::Rgb10a2Unorm),
+            none(wgpu::TextureFormat::R16Uint),
+            none(wgpu::TextureFormat::Rg16Uint),
+        ];
         let white = make_tex(
             &device,
             &tex_layout,
@@ -628,6 +866,9 @@ impl Compositor {
             module,
             yuv_layout,
             yuv_pipes,
+            hdr_layout,
+            hdr_pipes,
+            hdr_none,
             vision_layout,
             vision_none,
             vision: HashMap::new(),
@@ -647,7 +888,10 @@ impl Compositor {
             rings: HashMap::new(),
             uploaded: 0,
             time: 0.0,
+            now_ms: 0,
             lost,
+            wanted: None,
+            choice: String::new(),
         };
         c.pipeline(TARGET_FORMAT);
         Ok(c)
@@ -664,7 +908,7 @@ impl Compositor {
     /// # Errors
     /// No usable graphics card (yet: the driver may still be resetting).
     pub fn renew(&self) -> Result<Self, String> {
-        Self::new(self.instance.clone(), None)
+        Self::with_card(self.instance.clone(), self.wanted.as_deref())
     }
 
     /// Start without any window (tests, the benchmark).
@@ -672,8 +916,16 @@ impl Compositor {
     /// # Errors
     /// No usable graphics card.
     pub fn headless() -> Result<Self, String> {
+        Self::headless_on(None)
+    }
+
+    /// Start without any window on the card `key` (None: the high-performance one).
+    ///
+    /// # Errors
+    /// No usable graphics card.
+    pub fn headless_on(key: Option<&str>) -> Result<Self, String> {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
-        Self::new(instance, None)
+        Self::with_card(instance, key)
     }
 
     fn uniform_buffer(
@@ -709,6 +961,21 @@ impl Compositor {
             kind: kind_of(i.device_type),
             backend: format!("{:?}", i.backend),
             name: i.name,
+            key: crate::adapters::key_in(&self.instance, &self.adapter),
+            choice: Some(self.choice.clone()).filter(|c| !c.is_empty()),
+        }
+    }
+
+    /// Put `rgba` (`w` × `h`, top row first) into target `i` (an output
+    /// presented by another card: [`crate::adapters::Bridge`]).
+    pub fn write_target(&mut self, i: usize, w: u32, h: u32, rgba: &[u8]) {
+        if rgba.len() < (w as usize) * (h as usize) * 4 {
+            return;
+        }
+        self.ensure_target(i, w, h);
+        if let Some(t) = self.targets.get(i).and_then(Option::as_ref) {
+            write_tex(&self.queue, t, rgba);
+            self.uploaded += u64::from(w) * u64::from(h) * 4;
         }
     }
 
@@ -838,9 +1105,13 @@ impl Compositor {
             self.upload_nv12(id, f);
             return;
         }
+        if f.format.hdr().is_some() {
+            self.upload_hdr(id, f);
+            return;
+        }
         let format = match f.format {
-            PixelFormat::Rgba8 | PixelFormat::Nv12 => wgpu::TextureFormat::Rgba8Unorm,
             PixelFormat::Bgra8 | PixelFormat::Bgrx8 => wgpu::TextureFormat::Bgra8Unorm,
+            _ => wgpu::TextureFormat::Rgba8Unorm,
         };
         let fresh = match self.sources.get(id) {
             Some(s) if s.tex.w == f.width && s.tex.h == f.height && s.format == f.format => {
@@ -1023,9 +1294,161 @@ impl Compositor {
         s.seq = f.seq;
     }
 
+    /// An HDR frame (10-bit RGB from a file, P010 from a camera): to the GPU
+    /// as it is, made into the source's SDR picture there (`hdr.wgsl`: the
+    /// highlights rolled off into SDR white, BT.2020 into BT.709).
+    fn upload_hdr(&mut self, id: &SourceId, f: &VideoFrame) {
+        let Some(hdr) = f.format.hdr() else { return };
+        let p010 = matches!(f.format, PixelFormat::P010(_));
+        let (w, h) = if p010 {
+            (f.width & !1, f.height & !1)
+        } else {
+            (f.width, f.height)
+        };
+        if w == 0 || h == 0 || f.data.as_slice().len() < f.format.frame_len(f.width, f.height) {
+            return;
+        }
+        let fresh = match self.sources.get(id) {
+            Some(s) if s.tex.w == w && s.tex.h == h && s.format == f.format => {
+                if s.seq == f.seq {
+                    return;
+                }
+                false
+            }
+            _ => true,
+        };
+        if fresh {
+            let tex = make_tex(
+                &self.device,
+                &self.tex_layout,
+                &self.sampler,
+                w,
+                h,
+                wgpu::TextureFormat::Rgba8Unorm,
+                true,
+                "hdr input",
+            );
+            let plane = |pw: u32, ph: u32, format: wgpu::TextureFormat| {
+                self.device.create_texture(&wgpu::TextureDescriptor {
+                    label: Some("hdr-plane"),
+                    size: wgpu::Extent3d {
+                        width: pw,
+                        height: ph,
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: wgpu::TextureDimension::D2,
+                    format,
+                    usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                    view_formats: &[],
+                })
+            };
+            let view = |t: &wgpu::Texture| t.create_view(&wgpu::TextureViewDescriptor::default());
+            let (a, b, views) = if p010 {
+                let y = plane(w, h, wgpu::TextureFormat::R16Uint);
+                let uv = plane(w / 2, h / 2, wgpu::TextureFormat::Rg16Uint);
+                let v = [self.hdr_none[0].clone(), view(&y), view(&uv)];
+                (y, uv, v)
+            } else {
+                let rgb = plane(w, h, wgpu::TextureFormat::Rgb10a2Unorm);
+                let v = [
+                    view(&rgb),
+                    self.hdr_none[1].clone(),
+                    self.hdr_none[2].clone(),
+                ];
+                (rgb.clone(), rgb, v)
+            };
+            let entries: Vec<wgpu::BindGroupEntry<'_>> = views
+                .iter()
+                .enumerate()
+                .map(|(i, v)| wgpu::BindGroupEntry {
+                    binding: i as u32,
+                    resource: wgpu::BindingResource::TextureView(v),
+                })
+                .collect();
+            let bind = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("hdr-planes"),
+                layout: &self.hdr_layout,
+                entries: &entries,
+            });
+            self.sources.insert(
+                id.clone(),
+                SourceTex {
+                    tex,
+                    format: f.format,
+                    seq: u64::MAX,
+                    planes: Some((a, b, bind)),
+                },
+            );
+        }
+        let Some(s) = self.sources.get_mut(id) else {
+            return;
+        };
+        let Some((a, b, bind)) = &s.planes else {
+            return;
+        };
+        let data = f.data.as_slice();
+        let write = |t: &wgpu::Texture, bytes: &[u8], row: u32, tw: u32, th: u32| {
+            self.queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture: t,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                bytes,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(row),
+                    rows_per_image: Some(th),
+                },
+                wgpu::Extent3d {
+                    width: tw,
+                    height: th,
+                    depth_or_array_layers: 1,
+                },
+            );
+        };
+        if p010 {
+            let ylen = f.width as usize * f.height as usize * 2;
+            write(a, &data[..ylen], f.width * 2, w, h);
+            write(b, &data[ylen..], f.width * 2, w / 2, h / 2);
+        } else {
+            write(a, data, f.width * 4, w, h);
+        }
+        self.uploaded += f.format.frame_len(w, h) as u64;
+        let pipe =
+            &self.hdr_pipes[usize::from(p010) * 2 + usize::from(hdr == crate::hdr::Hdr::Hlg)];
+        let mut enc = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("hdr") });
+        {
+            let mut rp = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("hdr"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &s.tex.view,
+                    depth_slice: None,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                ..Default::default()
+            });
+            rp.set_pipeline(pipe);
+            rp.set_bind_group(0, bind, &[]);
+            rp.draw(0..4, 0..1);
+        }
+        self.queue.submit([enc.finish()]);
+        s.seq = f.seq;
+    }
+
     /// The show clock (ms), for effects that move (grain).
     pub fn set_time(&mut self, now_ms: u64) {
         self.time = (now_ms % 100_000) as f32 / 1000.0;
+        self.now_ms = now_ms;
     }
 
     /// Bytes sent to the GPU since last asked.
@@ -1508,6 +1931,11 @@ impl Compositor {
                         continue;
                     };
                     let pl = &pic.placement;
+                    if let Some((start, ms)) = pl.appear {
+                        // A slide's fade: this picture alone, over the background.
+                        d.0[FX * 4] =
+                            layer.opacity * crate::scene::appear_amount(start, ms, self.now_ms);
+                    }
                     let qw = (dst[2] - dst[0]) * out_w as f32;
                     let qh = (dst[3] - dst[1]) * out_h as f32;
                     d.set(DST, dst).set(UV, uv).set(
@@ -1669,19 +2097,36 @@ impl Compositor {
                         .set(FX, [0.45, 0.0, 0.0, 0.0]);
                     dark.0[MISC * 4 + 3] = 1.0;
                     draws.push((dark, TexKey::White));
-                    // In front: the whole picture, nothing cut off.
+                    // In front: the whole picture, nothing cut off, with
+                    // `VerticalFrame`'s soft shadow under it (canvas
+                    // `shadowBlur` of 4 % of the width: a Gaussian of half that).
                     let k = (ow / sw as f32).min(oh / sh as f32);
                     let (fw, fh) = (sw as f32 * k / ow, sh as f32 * k / oh);
+                    let pic = [
+                        (1.0 - fw) / 2.0,
+                        (1.0 - fh) / 2.0,
+                        (1.0 + fw) / 2.0,
+                        (1.0 + fh) / 2.0,
+                    ];
+                    let sigma = [0.02, 0.02 * ow / oh];
+                    let mut shadow = DrawU::new();
+                    shadow
+                        .set(
+                            DST,
+                            [
+                                pic[0] - 3.0 * sigma[0],
+                                pic[1] - 3.0 * sigma[1],
+                                pic[2] + 3.0 * sigma[0],
+                                pic[3] + 3.0 * sigma[1],
+                            ],
+                        )
+                        .set(CUT, pic)
+                        .set(BG2, [sigma[0], sigma[1], 0.0, 0.0])
+                        .set(COLOR, [0.0, 0.0, 0.0, VERTICAL_SHADOW]);
+                    shadow.0[MISC * 4 + 3] = 4.0;
+                    draws.push((shadow, TexKey::White));
                     let mut d = DrawU::new();
-                    d.set(
-                        DST,
-                        [
-                            (1.0 - fw) / 2.0,
-                            (1.0 - fh) / 2.0,
-                            (1.0 + fw) / 2.0,
-                            (1.0 + fh) / 2.0,
-                        ],
-                    );
+                    d.set(DST, pic);
                     d.0[MISC * 4 + 3] = 2.0;
                     draws.push((d, TexKey::Target(*src)));
                 }
@@ -1822,7 +2267,12 @@ impl Compositor {
             .is_none_or(|c| c.width != w || c.height != h);
         if stale {
             let caps = out.surface.get_capabilities(&self.adapter);
-            let Some(format) = caps
+            // HDR when asked for and the display shows HDR now; SDR otherwise.
+            let hdr = out
+                .hdr_white
+                .filter(|_| display_is_hdr(&out.surface.display_hdr_info(&self.adapter)))
+                .and_then(|white| hdr_format(&caps, white));
+            let sdr = caps
                 .formats
                 .iter()
                 .copied()
@@ -1832,10 +2282,13 @@ impl Compositor {
                         wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Rgba8Unorm
                     )
                 })
-                .or_else(|| caps.formats.first().copied())
-            else {
-                return false;
+                .or_else(|| caps.formats.first().copied());
+            let (format, color_space, color) = match (hdr, sdr) {
+                (Some(h), _) => h,
+                (None, Some(f)) => (f, wgpu::SurfaceColorSpace::Auto, OutColor::Sdr),
+                (None, None) => return false,
             };
+            out.color = color;
             // Never wait for the display: three windows on three displays
             // would each hold the engine for a refresh.
             let mode = [wgpu::PresentMode::Mailbox, wgpu::PresentMode::Immediate]
@@ -1855,7 +2308,7 @@ impl Compositor {
                     .copied()
                     .unwrap_or(wgpu::CompositeAlphaMode::Auto),
                 view_formats: vec![],
-                color_space: Default::default(),
+                color_space,
             };
             out.surface.configure(&self.device, &c);
             out.config = Some(c);
@@ -1878,6 +2331,24 @@ impl Compositor {
         let view = tex
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+        if !self.draw_output(i, &view, format, (w, h), out.color) {
+            return false;
+        }
+        self.queue.present(tex);
+        true
+    }
+
+    /// Draw target `i` letterboxed into `view` (a window's texture of
+    /// `format` and `size`), encoded for `color` (SDR, or SDR placed at its
+    /// white level in HDR10 or scRGB). False when the target doesn't exist.
+    pub fn draw_output(
+        &mut self,
+        i: usize,
+        view: &wgpu::TextureView,
+        format: wgpu::TextureFormat,
+        (w, h): (u32, u32),
+        color: OutColor,
+    ) -> bool {
         let Some(src) = self.targets.get(i).and_then(Option::as_ref) else {
             return false;
         };
@@ -1893,11 +2364,11 @@ impl Compositor {
         let mut d = DrawU::new();
         d.set(DST, dst);
         d.0[MISC * 4 + 3] = 2.0;
+        d.set(HDR, color.uniform());
         self.submit(
             vec![(Dest::Target(usize::MAX), None, vec![(d, TexKey::Target(i))])],
-            Some((&view, format)),
+            Some((view, format)),
         );
-        self.queue.present(tex);
         true
     }
 
@@ -2046,6 +2517,88 @@ impl Compositor {
             ring.pending = started;
         }
         out
+    }
+
+    /// Copy target `i` into `dest` (same size and format: a zero-copy
+    /// encoder's ring, [`crate::zerocopy`]) and submit it. False when the
+    /// target doesn't exist or the sizes differ.
+    pub fn copy_target_to(&mut self, i: usize, dest: &wgpu::Texture) -> bool {
+        let Some(t) = self.targets.get(i).and_then(Option::as_ref) else {
+            return false;
+        };
+        if (t.w, t.h) != (dest.width(), dest.height()) || t.format != dest.format() {
+            return false;
+        }
+        let mut enc = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("zero-copy"),
+            });
+        enc.copy_texture_to_texture(
+            t.texture.as_image_copy(),
+            dest.as_image_copy(),
+            wgpu::Extent3d {
+                width: t.w,
+                height: t.h,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.queue.submit([enc.finish()]);
+        true
+    }
+
+    /// Read any RGBA texture of `size` back (the zero-copy stand-in). Waits for the GPU.
+    ///
+    /// # Errors
+    /// The GPU failed.
+    pub fn read_texture(
+        &mut self,
+        tex: &wgpu::Texture,
+        size: (u32, u32),
+    ) -> Result<Vec<u8>, String> {
+        let buffer = match self.reads.get(&(size.0 * 4, size.1)) {
+            Some(b) => b.clone(),
+            None => {
+                let b = self.read_buffer(size.0, size.1, 4);
+                self.reads.insert((size.0 * 4, size.1), b.clone());
+                b
+            }
+        };
+        let row = (size.0 * 4).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+        let mut enc = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("read"),
+            });
+        enc.copy_texture_to_buffer(
+            tex.as_image_copy(),
+            wgpu::TexelCopyBufferInfo {
+                buffer: &buffer,
+                layout: wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(row),
+                    rows_per_image: Some(size.1),
+                },
+            },
+            wgpu::Extent3d {
+                width: size.0,
+                height: size.1,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.queue.submit([enc.finish()]);
+        let (tx, rx) = std::sync::mpsc::channel();
+        buffer.slice(..).map_async(wgpu::MapMode::Read, move |r| {
+            let _ = tx.send(r);
+        });
+        self.finish_read(Pending {
+            buffer,
+            rx,
+            w: size.0,
+            h: size.1,
+            bpp: 4,
+        })
+        .map(|(_, _, px)| px)
     }
 
     /// Wait until the GPU has finished everything submitted (benchmarks).

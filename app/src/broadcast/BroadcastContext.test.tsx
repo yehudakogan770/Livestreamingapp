@@ -1,9 +1,10 @@
 import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
-import { DemoClient, type CaptureFailure, type CaptureRunning, type CaptureStatus } from '../engine/client';
+import { DemoClient, defaultCaptureSettings, type CaptureFailure, type CaptureRunning, type CaptureStatus } from '../engine/client';
 import type { Show } from '../engine/types/Show';
 import { BroadcastProvider, useBroadcast } from './BroadcastContext';
 import { Broadcaster } from './recorder';
+import { accountDestination, accounts } from './accounts';
 
 const running = (session: number, bytes = 0): CaptureRunning => ({ session, startedAt: 0, path: null, destinations: [], bytes, speed: 1 });
 
@@ -98,4 +99,43 @@ test('a failure is acted on once, however often the status repeats it', async ()
     await act(() => vi.advanceTimersByTimeAsync(1000));
   }
   expect(starts.filter((k) => k === 'stream')).toHaveLength(1);
+});
+
+test('connected YouTube and Facebook destinations are set up at GO LIVE (not on a reconnect) and ended at stop', async () => {
+  const prepare = vi.spyOn(accounts, 'prepare').mockResolvedValue({ ready: 1, failed: [] });
+  const finish = vi.spyOn(accounts, 'finish').mockResolvedValue([]);
+  const client = new DemoClient();
+  await client.setCaptureSettings({ ...defaultCaptureSettings(), destinations: [accountDestination('youtube', 'Concert', 'yt')] });
+  const show: Show = (await client.getShow()).show;
+  let ctx: ReturnType<typeof useBroadcast> = null;
+  function Grab() {
+    ctx = useBroadcast();
+    return null;
+  }
+  render(
+    <BroadcastProvider show={show} client={client}>
+      <Grab />
+    </BroadcastProvider>,
+  );
+  await act(() => vi.advanceTimersByTimeAsync(10));
+  await act(async () => {
+    await ctx!.start('stream');
+  });
+  expect(prepare).toHaveBeenCalledTimes(1);
+  expect(starts).toEqual(['stream', 'vertical']);
+  // A drop: Lumora reconnects with the same broadcast (nothing new is made).
+  const app = client as unknown as { capture: CaptureStatus; captureWatchers: Set<(s: CaptureStatus) => void> };
+  const dropped: CaptureFailure = { kind: 'stream', session: 7, message: 'dropped' };
+  act(() => {
+    app.capture = { ...app.capture, streaming: null, failure: dropped, failures: [dropped] };
+    for (const w of app.captureWatchers) w(structuredClone(app.capture));
+  });
+  await act(() => vi.advanceTimersByTimeAsync(3000));
+  expect(starts.filter((k) => k === 'stream')).toHaveLength(2);
+  expect(prepare).toHaveBeenCalledTimes(1);
+  expect(finish).not.toHaveBeenCalled();
+  await act(async () => {
+    await ctx!.stop('stream');
+  });
+  expect(finish).toHaveBeenCalledTimes(1);
 });

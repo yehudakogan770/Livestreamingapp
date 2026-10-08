@@ -9,6 +9,8 @@
 // - `panic` — the PANIC safe screen's logo (the engine draws the black itself).
 // - `n:g:<input>` — a graphics input lined up in Next (the Next preview, drawn
 //   half size, only while the control window or the multiview shows it);
+// - `mv:g:<input>` — a graphics input's tile in the engine's multiview while
+//   it isn't on air on the Live Screen (on air, its `g:` plane serves);
 // - `cap` — the live captions written into the stream (Live only; the engine
 //   puts it on the stream and its vertical version, never on the screen);
 // - `mon` — the stage monitor's words (the Monitor in the engine's window).
@@ -77,6 +79,35 @@ export function nextPlanes(show: Show, screen: ScreenId, w: number, h: number): 
       if (inner && inner.kind.type !== 'split') one(inner, (b.frame.w / 100) * w, (b.frame.h / 100) * h);
     }
   } else one(src, w, h);
+  return out;
+}
+
+/** The prefix of the multiview's own copies of graphics inputs (`mv:g:<input>`). */
+export const MV_PREFIX = 'mv:';
+
+/**
+ * The planes of the engine's multiview tiles that show a graphics input not
+ * on air on the Live Screen (so not drawn there already): `mv:g:<input>` at
+ * the tile picture's size (fitted to the screen's shape, `aspect` = w / h).
+ * Inputs the engine draws itself and splits need none.
+ */
+export function multiviewPlanes(
+  show: Show,
+  tiles: readonly { content: { type: string; id: string }; picture: [number, number, number, number] }[],
+  onAir: ReadonlySet<string>,
+  aspect: number,
+): PlaneSpec[] {
+  const out: PlaneSpec[] = [];
+  for (const t of tiles) {
+    if (t.content.type !== 'input') continue;
+    const s = show.sources.find((x) => x.id === t.content.id);
+    if (!s || ENGINE_DRAWN.has(s.kind.type) || onAir.has(`g:${s.id}`)) continue;
+    const name = `${MV_PREFIX}g:${s.id}`;
+    if (out.some((p) => p.name === name)) continue;
+    const [, , pw, ph] = t.picture;
+    const w = Math.max(1, Math.round(Math.min(pw, ph * aspect)));
+    out.push({ kind: 'input', name, w, h: Math.max(1, Math.round(w / aspect)), sourceId: s.id });
+  }
   return out;
 }
 

@@ -115,6 +115,9 @@ the compositor, and the Standard engine keeps working the whole time.
 | Encoder feed     | `encoder.rs`                                                                                                                           | Read back the Live Screen (pipelined: one frame late, never a stall) → raw RGBA into FFmpeg (wall-clock timestamps, CFR out; a frame FFmpeg can't take is dropped and counted, never queued without end) → encoded Matroska chunks → `capture.rs`'s normal recording/stream session (so files, destinations, reconnects and failure reporting are today's). Encoder arguments from `encode.rs` (hardware family picked as today).                                                                                                                                             |
 | Engine loop      | `engine.rs`                                                                                                                            | `LiveEngine::frame(now)` and `Runner` (own thread, fixed rate, catches a panicking frame and carries on).                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Vision           | `vision.rs`, `app/src/engine/vision{Worker,Wire}.ts`, `views/VisionView.tsx`                                                           | Background removal, blur behind people and auto-framing: small frames of the cameras that use them to the web's person-finding models in a hidden window; masks, shots and pictures behind people back; applied in the shader (below).                                                                                                                                                                                                                                                                                                                                        |
+| Zero-copy encode | `zerocopy.rs`, `zerocopy_win.rs`                                                                                                       | The screen feed's texture handed to the card's Media Foundation encoder (D3D12 → D3D11 shared texture and fences); read-back fallback; the route reported (below).                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Graphics cards   | `adapters.rs`                                                                                                                          | The engine's card (automatic: high performance, or chosen); outputs shown by their display's own card (`Bridge`).                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| HDR              | `hdr.rs`, `hdr.wgsl`, `gpu.rs` (`OutColor`)                                                                                            | HDR10/scRGB output windows; HDR10/HLG files and P010 cameras tone-mapped into the SDR picture.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | Instant replay   | `replay.rs`, `src-tauri/src/live.rs` (`live_engine_replay_*`)                                                                          | The last minute of the Live Screen as hardware-encoded pieces on disk, taken as a playlist video the engine plays (below).                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | App glue         | `src-tauri/src/live.rs`                                                                                                                | Mode saved in `live-engine.json`; `live_engine_info / set_mode / preview / health / test_record / graphics / audio / capture_start / capture_stop / probe / renderer_wants / vision_frames / vision_result / replay_start / replay_stop / replay_take`; `open_output`/`close_output` route Live, Back and the Monitor to the engine in Unified mode; the overlay renderer and vision worker windows opened and closed with it (`sync_renderers`); show changes forwarded from `announce`.                                                                                     |
 | UI               | `app/src/engine/unified.ts`, `components/EnginePreview.tsx`, `views/EngineDialog.tsx`, `views/engineHost.tsx`                          | Settings → Engine (how it is doing: frame time, late frames, graphics, encoding; what is not in it yet); in Unified mode `SourceView` shows cameras from the engine's previews (the WebView never opens them); `EngineHealthWatch` feeds `inputHealth` (the backup lineup) from the engine; recording and streaming go through the engine (`recorder.ts`); the test event runs with the engine answering for its screens.                                                                                                                                                     |
@@ -133,6 +136,7 @@ build-ons and show clock that recordings have today — into transparent
 | Plane             | What                                                                                                                                                                                         | Drawn by the engine                                                                                                         |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | `g:<input>`       | a graphics input (title, countdown, scoreboard, lyrics, slides, credits, stage visuals, 3D logo…) at the size it is shown: the whole screen, a split-screen box, or an overlay channel's box | in its own place among the pictures, with the transition's fade, wipe, slide, zoom, blur or luma wipe — exactly as a camera |
+| `mv:g:<input>`    | a graphics input's multiview tile while it isn't on air on the Live Screen, at the tile's size                                                                                               | in its multiview tile                                                                                                       |
 | `n:g:<input>`     | a graphics input lined up in Next, half size, only while the control window or the multiview shows that Next                                                                                 | in the Next preview, in its place                                                                                           |
 | `top`             | the stinger video                                                                                                                                                                            | over the overlay channels, under blank and PANIC                                                                            |
 | `panic`           | the PANIC safe screen's logo                                                                                                                                                                 | over the engine's own PANIC black (which is instant, whatever the renderer does)                                            |
@@ -215,7 +219,8 @@ any more (the double open of Phase 1 is gone); it only sends the sound.
   before it is read back (one read-back per picture per frame, shared by the
   feeds that use it); the vertical version is drawn on the GPU the way
   `VerticalFrame` draws it (the whole picture across the middle over a soft,
-  darkened copy stretched up from a 48 × 27 target). FFmpeg is started and
+  darkened copy stretched up from a 48 × 27 target, with its soft shadow
+  under the picture: a Gaussian-blurred rectangle, Phase 3). FFmpeg is started and
   finished on threads of its own (the engine never waits for a process).
 - **Sound** (`app/src/audio/engineTap.ts` → `live_engine_audio` →
   `audio.rs` → `encoder.rs`): an audio worklet taps the mix the session uses
@@ -274,8 +279,10 @@ included (see "Next previews" below). The **timecodes count frames**
 `Tile::timecode`), drawn by the engine in each of those boxes every frame, so
 only a few hundred bytes change a frame and the big words plane `mv` is drawn
 and compared once a second (the renderer skips a plane whose stamp — the show
-and the second — has not changed). Not yet: graphics inputs' tiles show only
-while they are on air on the Live Screen (their planes are the renderer's).
+and the second — has not changed). A graphics input's tile shows its `g:`
+plane while it is on air on the Live Screen; otherwise the Live Screen's
+renderer draws it for the multiview alone, at the tile's size
+(`mv:g:<input>`, `overlayPlanes.ts: multiviewPlanes`, Phase 3).
 
 ### More inputs and the picture processor on the GPU (Phase 2)
 
@@ -429,50 +436,156 @@ camera used as a slide, in the slides' area) is drawn by the engine: the
 input's pictures are the background color, what is behind and the slide's
 camera, with the slides' or words' plane over them; in graphics-only mode the
 renderer leaves the background out (see-through), so the engine's pictures
-show through. The layer is grouped when it fades, so it fades as one.
+show through. The layer is grouped when it fades, so it fades as one. A
+camera or video coming up as a slide fades in with the slides' `slide-in`
+(0.4 s, CSS ease-out, from the slide's change: `Placement::appear`), as the
+web's slide does.
 
-### Encoding, adapters and HDR: where Phase 3 goes next
+### Zero-copy encoding (Phase 3)
 
-- **Zero-copy encode.** Today each screen feed is converted to NV12 on the
-  GPU and read back (one frame late, 3.1 MB a frame at 1080p), then piped
-  to FFmpeg. The next step hands the D3D texture to the encoder: wgpu's
-  `Texture::as_hal::<Dx12>` gives the `ID3D12Resource`; a shared NT handle
-  (`CreateSharedHandle`) opened as an `ID3D11Texture2D` on FFmpeg's D3D11
-  device (`AVD3D11VADeviceContext`, `-init_hw_device d3d11va`) can be wrapped
-  in an `AVFrame` (`AV_PIX_FMT_D3D11`) and fed to `h264_nvenc` / `h264_qsv`
-  / `h264_amf` through `hwupload`-free paths — which means linking FFmpeg's
-  libraries (libavcodec) instead of piping to `ffmpeg.exe`, plus a fence per
-  frame (`ID3D12Fence` shared with D3D11) so the encoder never reads a frame
-  being drawn. It saves the read-back and the pipe (≈190 MB/s at 1080p60);
-  it needs Windows hardware to build and measure, and the pipe stays as the
-  fallback for any encoder that refuses the texture.
-- **Per-output adapters.** wgpu reports every adapter; DXGI's
-  `IDXGIAdapter::EnumOutputs` tells which adapter drives which display. The
-  plan: start the engine on the adapter that drives the most assigned
-  output displays (`outputs::displays` matched by monitor handle), and for a
-  window on another adapter, present a copy made with a shared texture
-  (cross-adapter, like Windows' own hybrid-GPU path) rather than letting DWM
-  do it every frame. Needs an Optimus / two-GPU machine.
-- **HDR passthrough.** The engine draws in 8-bit SDR (`Rgba8Unorm`) and DWM
-  shows it correctly on an HDR desktop. Passing HDR through (HDR10 cameras
-  and files to an HDR projector or an HDR stream) needs: `Rgba16Float` (scRGB)
-  targets and swapchains (`DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709`), sources
-  decoded as P010 with their transfer function (PQ / HLG) converted to linear
-  in `yuv.wgsl`, the graphics planes (sRGB) placed at SDR white (≈203 nits)
-  and tone-mapped down for SDR outputs, and the encoder fed P010 with BT.2020
-  / PQ tags. Nothing of it is built; the 8-bit path stays the default.
+Before, each screen feed was converted to NV12 on the GPU, read back (one
+frame late, 3.1 MB a frame at 1080p) and piped to FFmpeg, which handed it to
+NVENC, Quick Sync or AMF — ≈190 MB/s across the bus and the pipe at 1080p60
+for one feed. Now (`zerocopy.rs`, `zerocopy_win.rs`) the picture goes to the
+graphics card's own encoder **as a texture**:
+
+- **The path chosen: the vendors' Media Foundation hardware encoders.**
+  NVIDIA, Intel and AMD each install a hardware H.264/HEVC encoder MFT with
+  their display driver (`MFTEnumEx(MFT_ENUM_FLAG_HARDWARE)`); it takes
+  Direct3D 11 textures through `IMFDXGIDeviceManager`. Nothing has to be
+  shipped: linking libavcodec with D3D11 frames would mean shipping FFmpeg's
+  shared libraries next to the app (CI bundles only `ffmpeg.exe`, the static
+  "essentials" build) and a C build step; the three vendor SDKs (nvEncodeAPI,
+  AMF, oneVPL) are three APIs to keep up with. The MFTs are what Windows' own
+  camera app, Teams and the WebView's MediaRecorder use, so they are the most
+  likely to work on an event PC, and CI is unchanged.
+- **The hand-over.** Each feed gets a ring of three textures created by the
+  engine's own Direct3D 12 device as shared resources (`D3D12_HEAP_FLAG_SHARED`,
+  simultaneous access, so they decay to COMMON after every submit and D3D11
+  can read them), wrapped as wgpu textures (`create_texture_from_hal`), and
+  opened on a Direct3D 11 device made on the **same** card (matched by LUID).
+  Two shared `ID3D12Fence`s are opened on D3D11 (`OpenSharedFence`): each frame
+  the engine copies the feed's picture into the next ring texture — after a
+  GPU-side wait on `free` for that texture (`wgpu-hal`'s `add_wait_fence`) —
+  and signals `drawn` after the copy (`add_signal_fence`). The encoder's
+  thread (all COM objects live there) waits on `drawn` on the GPU
+  (`ID3D11DeviceContext4::Wait`), turns the RGBA texture into NV12 with the
+  card's video processor (BT.709, limited range: the colors the read-back
+  path's `fs_nv12` makes; `VideoProcessorSetOutputColorSpace1`), signals
+  `free`, and gives the NV12 texture to the encoder
+  (`MFCreateDXGISurfaceBuffer`, asynchronous MFTs driven by their
+  `METransformNeedInput` / `HaveOutput` events, synchronous ones too). No
+  pixel crosses to the processor and the engine never waits.
+- **Settings are the app's** (`encode.rs` → `live.rs: zero_copy`): the
+  operator's encoder choice picks the vendor (NVENC → NVIDIA's MFT, Quick Sync
+  → Intel's, AMF → AMD's), constant bitrate for streams or constant quality
+  with a ceiling, the speed preset (`CODECAPI_AVEncCommonQualityVsSpeed`), a
+  keyframe every 2 seconds (`CODECAPI_AVEncMPVGOPSize`; the replay's: one per
+  3-second piece), no B-frames, low-latency mode, High profile, BT.709 tags.
+  The processor encoder (x264) keeps the read-back path.
+- **Into the same sessions.** The encoded elementary stream is written to the
+  feed's FFmpeg, which now copies the picture (`-f h264 … -c:v copy`,
+  `encoder::encoded_input`) and adds the sound as before, so files,
+  destinations, reconnects, backups and NDI are unchanged. Parameter sets
+  kept out of the stream by an encoder are put in front of the first frame
+  (`MF_MT_MPEG_SEQUENCE_HEADER`).
+- **Feature detection and fallback.** The engine on Vulkan/GL (not D3D12), no
+  MFT of the chosen vendor on the engine's card, a video processor that can't
+  make NV12, settings or sizes the encoder refuses, or no answer within 10 s:
+  the feed reads back as before, and its route says why. An encoder that fails
+  mid-stream ends the picture with its reason (the session starts again as for
+  any lost encoder) and zero-copy is not tried again until Lumora restarts
+  (`zerocopy::broken`, shown in the Engine dialog); a lost graphics device
+  ends it too (its textures went with the device) without that.
+  `LUMORA_NO_ZERO_COPY=1` turns it off.
+- **Reported.** Each screen feed has a route (`FeedInfo.route`: "zero-copy:
+  NVIDIA NVENC H.264 on … (Media Foundation, …)" or "read back as NV12 to
+  FFmpeg (why)"), shown in the Engine dialog, the engine's test recording
+  ("Test the engine's recording") and the test event's report.
+- **Tested here** with a stand-in (`zerocopy::standin`): the same ring of
+  textures and GPU copies, read back and encoded by x264 in a second FFmpeg —
+  the engine's side, the frames owed and the encoded picture into the file are
+  checked end to end (`zero_copy_hands_the_picture_over_on_the_gpu…`), with
+  the fallback (`zero_copy_that_cannot_open_reads_back_and_says_why`). The
+  D3D12/D3D11/Media Foundation part compiles for Windows from Linux and needs
+  NVIDIA, Intel and AMD cards to run.
+
+### Graphics cards: the engine's and each output's (Phase 3)
+
+- **The engine's card** (Settings → Engine → Graphics card): automatic is the
+  high-performance card (`PowerPreference::HighPerformance`: on a hybrid
+  laptop the NVIDIA/AMD one; Windows' per-app graphics setting still wins), or
+  one chosen from the list (`adapters::cards`: every card with the displays it
+  drives, from DXGI `EnumOutputs`). The choice is kept in `live-engine.json`;
+  changing it starts the engine again on that card (its windows reopen there,
+  graphics and person masks are sent again; refused while recording,
+  streaming or keeping replays). A chosen card that is gone falls back to the
+  high-performance one, and says so.
+- **Each output window** (Live, Back, Monitor, multiview) is shown by the
+  engine's card by default — on a hybrid laptop with the projector on the other
+  GPU, Windows copies each frame across. Per output, "Shown by its display's
+  own graphics card" makes the engine do it instead (`adapters::Bridge`): a
+  small compositor on the card that drives that display (found by the
+  display's rectangle), the screen read back one frame late on the engine's
+  card (pipelined, never waiting) and uploaded there, and the window presented
+  and flipped on its own card. The Engine dialog and the test event list each
+  window's card, whether it was copied and its colors.
+
+### HDR (Phase 3)
+
+- **HDR outputs.** Per output, "HDR when its display shows HDR" (default off:
+  SDR). When the display reports HDR (wgpu's `display_hdr_info`, from DXGI)
+  the window's swap chain becomes HDR10 (`Rgb10a2Unorm`, BT.2100 PQ) or, where
+  only that is offered, scRGB (`Rgba16Float`, linear); the present pass
+  (`compose.wgsl: to_hdr`) puts the engine's SDR picture and graphics at SDR
+  white — 203 nits (BT.2408) by default, set in the dialog — instead of
+  leaving it to Windows' SDR brightness slider; BT.709 colors are placed in
+  BT.2020 unchanged. A display that isn't in HDR keeps SDR.
+- **HDR inputs.** A video file in HDR10 (PQ) or HLG (`ffprobe`'s
+  `color_transfer`) is decoded as 10-bit RGB (`x2bgr10le`) instead of being
+  clipped by FFmpeg; a camera or capture card whose mode is P010 with a PQ or
+  HLG transfer function is read as P010. On the GPU (`hdr.wgsl`, once per new
+  frame, like NV12) the signal becomes light (PQ absolute; HLG on BT.2100's
+  1000-nit reference display), BT.2020 becomes BT.709, diffuse white (203
+  nits) lands at the top of SDR and highlights roll off smoothly above 75 %
+  (a soft shoulder, never a hard clip). The same maths in `hdr.rs` makes the
+  vision worker's small frames, and the GPU test holds the shader to it.
+- **Still SDR inside.** The engine composites in 8-bit SDR (BT.709,
+  sRGB-encoded, as the web canvases), so an HDR input on an HDR output is
+  tone-mapped down and placed back at SDR white: no highlights above SDR white
+  on HDR displays and in recordings. Keeping HDR end to end would need 16-bit
+  float screen targets and an HDR10 encode (P010, BT.2020/PQ tags).
+
+### Blackmagic capture cards and program out
+
+- **Capture** (`crates/decklink`, `live-engine/src/decklink.rs`): a stream
+  input with a `decklink://<card>?input=sdi&audio=3-4` address is opened
+  through the DeckLink API of Blackmagic Desktop Video (COM, hand-written
+  interface definitions; FFmpeg's DeckLink support is "nonfree" and can't be
+  shipped). Format detection reopens the input in the signal's mode; 8-bit
+  YUV (UYVY) is made NV12 on the card's thread and made RGB on the GPU like a
+  camera's (v210 is unpacked first; RGB signals are passed on as BGRA). One
+  capture per card and connector is shared by the engine source, the
+  Standard engine's frame store (JPEG, 30 a second, `src-tauri/src/decklink.rs`)
+  and the mixer (the chosen pair of up to 16 embedded channels). Without
+  Desktop Video the input fails with how to install it.
+- **Program out**: an engine feed of the Live Screen whose FFmpeg writes
+  raw UYVY (no encoder), split into frames and shown with
+  `DisplayVideoFrameSync` on the card's output (Settings → Blackmagic
+  program out…). Picture only.
+- Compile-checked for Windows from Linux; needs a card to run (see the test
+  plan's hardware list).
 
 ### What Unified (beta) does not do yet
 
-Listed in the Engine dialog too:
+Everything in the Standard engine is in Unified. Listed in the Engine dialog
+are the parts still to be checked on Windows hardware (each falls back by
+itself, and the dialog and the test event say which way was used):
 
-- In the multiview a graphics input's tile shows it only while it is on air
-  on the Live Screen.
-- A camera or video used as a slide comes up without the slides' 0.4 s fade
-  (the slides themselves fade; the engine notes it when it happens).
-- The vertical version has no drop shadow under the picture (the Standard
-  one has a soft shadow).
-- Zero-copy encoding, per-output adapters and HDR (above).
+- zero-copy encoding on NVIDIA, Intel and AMD cards (else the read-back path);
+- the engine's card choice and outputs shown by their display's own card, on
+  hybrid laptops and two-card desktops (else the engine's card, Windows copying);
+- HDR outputs on HDR displays and HDR cameras and capture cards (else SDR).
 
 ## 4. Latency, CPU and GPU
 
@@ -487,14 +600,14 @@ does: wall-clock timestamps on both).
 **Per frame, 1080p60, 4 cameras, 3 screens + encoder** (estimates for a
 mid-range discrete GPU, to be confirmed on the hardware matrix below):
 
-| Work                    | Cost                                                                                                                     | Note                                                                                                                                                                                                                                                              |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Upload 4 camera frames  | 4 × 3.1 MB NV12 = 0.75 GB/s (it was 4 × 8.3 MB RGBA = 2 GB/s before Phase 2)                                             | Done in Phase 2: cameras deliver NV12 (Media Foundation's own format; RGB32 only when a camera can't), uploaded as two planes and made RGB on the GPU once per new frame (`yuv.wgsl`; BT.709 for HD, BT.601 below). On integrated GPUs uploads are memory copies. |
-| Draw 3 screens + 2 Next | ~10 full-screen quads at 1080p ≈ 20 Mpx of simple fragments                                                              | < 1 ms on any discrete GPU; ~2 ms on Intel Iris Xe.                                                                                                                                                                                                               |
-| Present 2 windows       | blits                                                                                                                    | < 0.3 ms                                                                                                                                                                                                                                                          |
-| Encoder read-back       | 3.1 MB/frame NV12 = 190 MB/s download (RGBA was 8.3 MB = 500 MB/s); pipelined (two buffers, one frame late), so no stall | Done in Phase 2: each screen feed is converted to NV12 on the GPU (`fs_nv12`, BT.709 limited, tagged so) and read back as such; hardware encoders take NV12 as it is. Phase 3: hand the D3D texture to NVENC/AMF/QSV directly.                                    |
-| Previews                | one 1920×540 atlas read back 10×/s + JPEG of ~9 tiles                                                                    | ~1 ms every 6th frame                                                                                                                                                                                                                                             |
-| Engine CPU              | scene maths for 3 screens: **0.01 ms**; the rest is driver submission                                                    | Measured (below).                                                                                                                                                                                                                                                 |
+| Work                    | Cost                                                                                                                     | Note                                                                                                                                                                                                                                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Upload 4 camera frames  | 4 × 3.1 MB NV12 = 0.75 GB/s (it was 4 × 8.3 MB RGBA = 2 GB/s before Phase 2)                                             | Done in Phase 2: cameras deliver NV12 (Media Foundation's own format; RGB32 only when a camera can't), uploaded as two planes and made RGB on the GPU once per new frame (`yuv.wgsl`; BT.709 for HD, BT.601 below). On integrated GPUs uploads are memory copies.                                             |
+| Draw 3 screens + 2 Next | ~10 full-screen quads at 1080p ≈ 20 Mpx of simple fragments                                                              | < 1 ms on any discrete GPU; ~2 ms on Intel Iris Xe.                                                                                                                                                                                                                                                           |
+| Present 2 windows       | blits                                                                                                                    | < 0.3 ms                                                                                                                                                                                                                                                                                                      |
+| Encoder read-back       | 3.1 MB/frame NV12 = 190 MB/s download (RGBA was 8.3 MB = 500 MB/s); pipelined (two buffers, one frame late), so no stall | Done in Phase 2: each screen feed is converted to NV12 on the GPU (`fs_nv12`, BT.709 limited, tagged so) and read back as such; hardware encoders take NV12 as it is. Phase 3 (Windows): none at all with zero-copy — the texture goes to the card's encoder (a GPU copy and an NV12 conversion on the card). |
+| Previews                | one 1920×540 atlas read back 10×/s + JPEG of ~9 tiles                                                                    | ~1 ms every 6th frame                                                                                                                                                                                                                                                                                         |
+| Engine CPU              | scene maths for 3 screens: **0.01 ms**; the rest is driver submission                                                    | Measured (below).                                                                                                                                                                                                                                                                                             |
 
 The WebView path, by comparison, spends its time in the control window's main
 thread (94 % busy with recording on a software canvas, `PERFORMANCE.md`) plus
@@ -549,8 +662,8 @@ late frames).
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Camera exclusive access | A camera opened by the engine (MF) and by a WebView (`getUserMedia` in the Standard recorder, Zoom/Teams) fails in one of them.                                                         | Windows 10 1809+ Frame Server shares most USB (UVC) cameras between processes; capture cards (Magewell, Elgato, Blackmagic) are often exclusive. Since Phase 2 the recorder is on the engine feed (ISO files too), so in Unified mode Lumora opens each camera exactly once. The engine reports "being used by another program" and retries every 2 s. |
 | DPI                     | Windows placed in logical pixels land wrong on a 150 % display.                                                                                                                         | The engine places windows in physical pixels from Tauri's monitor list (`outputs::displays`), and Tauri makes the process Per-Monitor-V2 aware, which the engine's own Win32 windows inherit.                                                                                                                                                          |
-| HDR displays            | An 8-bit swapchain on an HDR desktop looks washed out or dim.                                                                                                                           | DWM composites SDR swapchains correctly on HDR desktops (sRGB → scRGB); we use `Bgra8Unorm`. A real HDR output (scRGB/`Rgba16Float`) is Phase 3.                                                                                                                                                                                                       |
-| Hybrid-GPU laptops      | The engine picks the NVIDIA GPU (HighPerformance) while the projector's HDMI port hangs off the Intel GPU: every present is a cross-adapter copy; or Windows forces the integrated GPU. | wgpu reports the adapter (shown in the Engine dialog); test matrix includes Optimus/Advanced-Optimus laptops; Phase 2: pick the adapter that drives the most output displays (DXGI `EnumOutputs`), fall back to a per-output adapter.                                                                                                                  |
+| HDR displays            | An 8-bit swapchain on an HDR desktop looks washed out or dim.                                                                                                                           | DWM composites SDR swapchains correctly on HDR desktops (sRGB → scRGB); we use `Bgra8Unorm` by default. Phase 3: per output, an HDR10 (PQ) or scRGB swap chain with SDR white at a set level (203 nits) when the display is in HDR.                                                                                                                    |
+| Hybrid-GPU laptops      | The engine picks the NVIDIA GPU (HighPerformance) while the projector's HDMI port hangs off the Intel GPU: every present is a cross-adapter copy; or Windows forces the integrated GPU. | wgpu reports the adapter (shown in the Engine dialog, with why). Phase 3: the card can be chosen in Settings → Engine, and each output can be shown by its display's own card (DXGI `EnumOutputs`; the engine copies the picture across, one frame late). Test matrix includes Optimus/Advanced-Optimus laptops.                                       |
 | WebView2 GPU process    | Standard and Unified share the GPU: WebView2's GPU process (D3D11) and the engine (D3D12) contend; a driver reset kills both.                                                           | In Unified mode the WebViews draw much less (no camera video, no output windows). Device-lost recovery for the engine is Phase 2; the Standard engine is one switch away.                                                                                                                                                                              |
 | Fullscreen and focus    | A popup over the projector steals focus or is minimised by a focus change; Alt+F4 closes the projector.                                                                                 | `WS_EX_NOACTIVATE`, never minimised, `WM_CLOSE` ignored; borderless popups covering a monitor get DWM's independent flip.                                                                                                                                                                                                                              |
 | Antivirus / FFmpeg      | The FFmpeg pipe is slow or blocked.                                                                                                                                                     | Same FFmpeg the app already ships and probes (`capture::find_ffmpeg`); dropped feed frames are counted and shown.                                                                                                                                                                                                                                      |
@@ -603,13 +716,28 @@ late frames).
   Live Screen into FFmpeg's segment muxer, a piece played back in slow motion
   as an engine source; videos following playback (paused, slow motion paced,
   ending without looping); slides and Pesukim with a camera behind.
+- Phase 3, more (`cargo test -p lumora-live-engine`): an encoded picture
+  copied into the file (a real FFmpeg: every frame, pieces of any size, a
+  failing encoder ending the feed with its reason); zero-copy through the
+  stand-in (the GPU ring, frames owed, the file's frames and colors, the
+  route) and its fallback; Media Foundation's vendor names and the app's
+  settings in its words; parameter sets found in a stream; graphics cards'
+  keys and which card drives a display; an output copied to another device;
+  HDR windows (scRGB and PQ values of SDR white, read back from `Rgba16Float`
+  and `Rgb10a2Unorm`); HDR inputs (PQ and HLG maths, 10-bit RGB and P010 on
+  the GPU against `hdr.rs`, a real HDR10 file told apart and decoded as 10-bit
+  RGB); a camera as a slide fading in; the vertical version's shadow; a
+  graphics input's multiview tile while not on air. `cargo clippy -p
+lumora-live-engine --all-targets --target x86_64-pc-windows-msvc` checks
+  `zerocopy_win.rs` and the DXGI and Media Foundation parts.
 - Phase 3, vitest: `visionWire`, `visionWorker` (stand-in model: masks, aims,
   pictures behind sent once and again after a refusal), `engineCaptions`,
   `monitorWords` (layouts, fitting, flash, PANIC, the teleprompter),
   `overlayRenderer` (captions, Next, Monitor and timecode planes, stamps,
   slides leaving their background to the engine), `overlayPlanes`
-  (`nextPlanes`), `recorderUnified` (replay kept by the engine),
-  `engineReport` (person finding).
+  (`nextPlanes`, `multiviewPlanes`), `recorderUnified` (replay kept by the
+  engine), `engineReport` (person finding; the zero-copy route, the engine's
+  card and each window's card and colors).
 - Phase 2, vitest: `overlayWire` (same bytes as Rust), `overlayDirty` (tiles,
   joining, bounding box, pacing, back-pressure), `overlayPlanes` (which planes
   at which sizes), `overlayRenderer` (the real compositor in graphics-only
@@ -643,7 +771,18 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
 6. Glass-to-glass latency with a flashing phone in front of a camera filmed
    next to the projector (240 fps phone video): target ≤ 3 frames.
 7. "Test the engine's recording": file plays, 600 frames for 10 s at 60 fps,
-   0 dropped, with each hardware encoder.
+   0 dropped, with each hardware encoder — and says "zero-copy: …" on
+   NVIDIA, Intel and AMD (the GPU's encoder load in Task Manager, the
+   engine's read-back time near zero); a 2-hour stream at 6 Mb/s with
+   zero-copy, no drift between picture and sound.
+8. Graphics cards: an Optimus laptop with the projector on each GPU, the
+   engine automatic and on each card, each output "shown by its display's
+   own graphics card" on and off (latency, late frames, the dialog's window
+   list); a desktop with two cards.
+9. HDR: an HDR10 display in HDR mode with an output in HDR (white at 203
+   nits matches an SDR window beside it; graphics unchanged), an HDR10 and an
+   HLG file, an HDR capture card in P010 (tone mapped, no clipping, no hue
+   shifts); the same with the display in SDR (stays SDR).
 
 ## 7. Phases
 
@@ -678,6 +817,12 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
   cameras behind slides and Pesukim words; multiview timecodes with frames.
   (Tested on Linux with llvmpipe and FFmpeg; the vision worker's models,
   WebView2's hidden windows, Media Foundation and the native windows still
-  to be run on the Windows matrix of §6.) Left: zero-copy encode (D3D
-  texture → NVENC/AMF/QSV), per-output adapters, HDR (designs above), and
-  Unified as the default.
+  to be run on the Windows matrix of §6.) Then also: zero-copy encode (the
+  engine's D3D12 texture shared with D3D11 and the vendor's Media Foundation
+  hardware encoder, read-back fallback), the engine's graphics card and
+  outputs shown by their display's own card, HDR outputs (HDR10/scRGB) and
+  HDR inputs tone-mapped, a camera as a slide fading in, the vertical
+  version's shadow, graphics inputs in the multiview while not on air, the
+  replay's toggle following its encoder. (D3D12/D3D11/Media Foundation,
+  DXGI's displays and HDR swap chains compile-checked; to be run on items
+  7 – 9 of §6.) Left: running the Windows matrix, and Unified as the default.

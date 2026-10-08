@@ -31,11 +31,33 @@ test('the engine’s seconds add up; feeds are kept as last seen after they end'
   expect(m.fpsMin).toBe(55);
   expect(m.overlayFpsMax).toBe(30);
   expect(m.overlayLatencyMs).toBe(20);
-  expect(m.feeds).toEqual([{ id: 7, kind: 'screen', framesIn: 300, framesDropped: 1, audioSeconds: 10, silenceSeconds: 0.1, error: null }]);
+  expect(m.feeds).toEqual([
+    { id: 7, kind: 'screen', framesIn: 300, framesDropped: 1, audioSeconds: 10, silenceSeconds: 0.1, error: null, route: null, zeroCopy: null },
+  ]);
   const rows = engineRows(m);
   expect(rows[0]![1]).toBe('Unified (beta) on GPU (Dx12, discrete)');
   expect(rows.find((r) => r[0]!.startsWith('Engine feed'))![1]).toBe('300 frames, 1 late; sound 10 s (0.1 s filled with silence)');
   expect(engineRows(null)).toEqual([]);
+});
+
+test('the report says how the picture reached the encoder and which card showed each window', () => {
+  const feed = { framesIn: 600, framesDropped: 0, bytesOut: 1, audioSamples: 480_000, audioSilence: 0, error: null };
+  const path = 'zero-copy: NVIDIA NVENC H.264 on RTX 4070 (Media Foundation, NVIDIA H.264 Encoder MFT; Direct3D 12 → 11 shared texture)';
+  const m = noteEngine(
+    null,
+    stats({
+      adapter: { name: 'RTX 4070', backend: 'Dx12', kind: 'discrete', key: '10de-2786-Dx12-0', choice: 'the high-performance graphics card (automatic)' },
+      feeds: [{ id: 1, kind: 'screen', stats: feed, error: null, route: { zeroCopy: true, path } }],
+      outputCards: [{ output: 'live', displayCard: 'Intel Iris Xe', presentedBy: 'Intel Iris Xe', copied: true, color: 'HDR10 (PQ), SDR white at 203 nits' }],
+    }),
+  );
+  expect(m.feeds[0]!.zeroCopy).toBe(true);
+  const rows = engineRows(m);
+  expect(rows[0]![1]).toBe('Unified (beta) on RTX 4070 (Dx12, discrete): the high-performance graphics card (automatic)');
+  expect(rows.find((r) => r[0]!.startsWith('Engine feed'))![1]).toContain(`; ${path}`);
+  expect(rows.find((r) => r[0] === 'Engine window: live')![1]).toBe(
+    'HDR10 (PQ), SDR white at 203 nits, shown by Intel Iris Xe (copied across from the engine’s card)',
+  );
 });
 
 test('the person finding the engine asked for is in the report', () => {

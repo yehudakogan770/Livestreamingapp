@@ -1,10 +1,13 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
+mod accounts;
 mod api;
+mod atem;
 mod browser;
 mod captions;
 mod capture;
 mod control;
+mod decklink;
 mod desktop;
 mod encode;
 mod events;
@@ -18,6 +21,7 @@ mod outputs;
 mod perf;
 mod ptz;
 mod remote;
+mod seats;
 mod selftest;
 mod speaker;
 mod store;
@@ -254,6 +258,12 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
         state.remote.broadcast(&json);
     }
     state.api.show_changed(&snapshot.show);
+    if let Some(seats) = app.try_state::<seats::Seats>() {
+        seats.show_changed(snapshot.revision, &snapshot.show);
+    }
+    if let Some(atem) = atem::get() {
+        atem.show_changed(&snapshot.show);
+    }
 }
 
 fn publish(app: &tauri::AppHandle, state: &AppState, engine: &Engine) {
@@ -1059,9 +1069,14 @@ impl remote::Backend for RemoteBackend {
 /// The control window says what is running (recording, stream, rehearsal,
 /// replay), for control surfaces such as the Stream Deck.
 #[tauri::command]
-fn remote_app_state(app_state: serde_json::Value, state: State<'_, AppState>) {
+fn remote_app_state(
+    app_state: serde_json::Value,
+    state: State<'_, AppState>,
+    seats: State<'_, seats::Seats>,
+) {
     state.remote.set_app_state(&app_state);
     state.api.set_app_state(&app_state);
+    seats.server.set_app_state(&app_state);
 }
 
 /// Lets the control API reach the engine and the control window.
@@ -1175,6 +1190,11 @@ pub fn run() {
                         state.capture.stop_all();
                     }
                     app.exit(0);
+                } else if window.label() == seats::WINDOW {
+                    // Closing the seat window leaves that show (it carries on).
+                    if let Some(seats) = app.try_state::<seats::Seats>() {
+                        seats.link.leave();
+                    }
                 } else if window.label() != "splash" {
                     outputs::notify(app);
                 }
@@ -1233,11 +1253,28 @@ pub fn run() {
             desktop.sync(&show);
             // Lumora Titler: its window, the shared title library and films through FFmpeg.
             app.manage(titler_host::Renders::default());
+            // An ATEM switcher next to Lumora (Settings → ATEM switcher…).
+            let told = app.handle().clone();
+            atem::install(
+                &dir,
+                std::sync::Arc::new(move || {
+                    if let Some(a) = atem::get() {
+                        let _ = told.emit("atem-changed", a.status());
+                    }
+                    if let Some(state) = told.try_state::<AppState>() {
+                        state.api.refresh_tally();
+                    }
+                }),
+            );
+            app.manage(decklink::Output::default());
+            app.manage(accounts::LiveAccounts::new(&dir));
             app.manage(live::Live::new(
                 &dir,
                 ffmpeg.clone(),
                 Some(std::sync::Arc::clone(&browsers.frames) as _),
             ));
+            // Other computers joining this show, and this one joining others.
+            app.manage(seats::Seats::new(app.handle(), &dir));
             app.manage(AppState {
                 engine: Mutex::new(Engine::with_show(show)),
                 store,
@@ -1275,6 +1312,7 @@ pub fn run() {
                 state.capture.set_hw_encoders(working);
             });
             live::start_saved(app.handle());
+            accounts::load_names(app.handle());
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
             // The CI self-test: close (with a failed result) if it never finishes.
@@ -1300,6 +1338,20 @@ pub fn run() {
             titler_host::cmd::titler_render_frame,
             titler_host::cmd::titler_render_finish,
             titler_host::cmd::titler_render_cancel,
+            accounts::accounts_info,
+            accounts::accounts_connect,
+            accounts::accounts_cancel,
+            accounts::accounts_facebook_manual,
+            accounts::accounts_facebook_paste,
+            accounts::accounts_disconnect,
+            accounts::accounts_youtube_broadcasts,
+            accounts::accounts_youtube_create,
+            accounts::accounts_youtube_thumbnail,
+            accounts::accounts_save_thumbnail,
+            accounts::accounts_facebook_targets,
+            accounts::accounts_prepare,
+            accounts::accounts_finish,
+            accounts::accounts_sessions,
             syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,
@@ -1328,6 +1380,14 @@ pub fn run() {
             close_app,
             captions_model,
             ndi_sources,
+            decklink::decklink_devices,
+            decklink::decklink_signals,
+            decklink::decklink_output_start,
+            decklink::decklink_output_stop,
+            decklink::decklink_output_status,
+            atem::atem_status,
+            atem::atem_set,
+            atem::atem_send,
             captions_send,
             get_show,
             dispatch,
@@ -1394,6 +1454,7 @@ pub fn run() {
             streamdeck_dismiss,
             live::live_engine_info,
             live::live_engine_set_mode,
+            live::live_engine_set_options,
             live::live_engine_preview,
             live::live_engine_health,
             live::live_engine_test_record,
@@ -1409,7 +1470,33 @@ pub fn run() {
             live::live_engine_renderer_wants,
             live::live_engine_replay_start,
             live::live_engine_replay_stop,
-            live::live_engine_replay_take
+            live::live_engine_replay_take,
+            seats::seats_status,
+            seats::seats_set_enabled,
+            seats::seats_approve,
+            seats::seats_deny,
+            seats::seats_set_role,
+            seats::seats_set_locked,
+            seats::seats_remove,
+            seats::seats_watched,
+            seats::seats_picture,
+            seats::seats_meters,
+            seats::seat_discover,
+            seats::seat_computer_name,
+            seats::seat_saved,
+            seats::seat_join,
+            seats::seat_rejoin,
+            seats::seat_forget,
+            seats::seat_code,
+            seats::seat_open_window,
+            seats::seat_leave,
+            seats::seat_status,
+            seats::seat_document,
+            seats::seat_action,
+            seats::seat_command,
+            seats::seat_ptz,
+            seats::seat_watch,
+            seats::seat_picture
         ])
         .run(tauri::generate_context!())
         .expect("Lumora could not start");

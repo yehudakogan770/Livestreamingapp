@@ -19,18 +19,20 @@ use windows::core::PWSTR;
 use windows::Win32::Media::MediaFoundation::{
     IMFActivate, IMFAttributes, IMFMediaSource, IMFMediaType, IMFSourceReader, MFCreateAttributes,
     MFCreateMediaType, MFCreateSourceReaderFromMediaSource, MFEnumDeviceSources, MFMediaType_Video,
-    MFShutdown, MFStartup, MFVideoFormat_NV12, MFVideoFormat_RGB32, MFSTARTUP_FULL,
+    MFShutdown, MFStartup, MFVideoFormat_NV12, MFVideoFormat_P010, MFVideoFormat_P016,
+    MFVideoFormat_RGB32, MFVideoTransFunc_2084, MFVideoTransFunc_HLG, MFSTARTUP_FULL,
     MF_DEVSOURCE_ATTRIBUTE_FRIENDLY_NAME, MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE,
     MF_DEVSOURCE_ATTRIBUTE_SOURCE_TYPE_VIDCAP_GUID, MF_MT_DEFAULT_STRIDE, MF_MT_FRAME_RATE,
-    MF_MT_FRAME_SIZE, MF_MT_MAJOR_TYPE, MF_MT_SUBTYPE, MF_SOURCE_READERF_ENDOFSTREAM,
-    MF_SOURCE_READERF_ERROR, MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING,
-    MF_SOURCE_READER_FIRST_VIDEO_STREAM, MF_VERSION,
+    MF_MT_FRAME_SIZE, MF_MT_MAJOR_TYPE, MF_MT_SUBTYPE, MF_MT_TRANSFER_FUNCTION,
+    MF_SOURCE_READERF_ENDOFSTREAM, MF_SOURCE_READERF_ERROR,
+    MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, MF_SOURCE_READER_FIRST_VIDEO_STREAM, MF_VERSION,
 };
 use windows::Win32::System::Com::{
     CoInitializeEx, CoTaskMemFree, CoUninitialize, COINIT_MULTITHREADED,
 };
 
 use crate::frame::{FramePool, PixelFormat, VideoFrame};
+use crate::hdr::Hdr;
 use crate::source::{Mailbox, SourceHealth, VideoSource};
 
 pub struct Camera {
@@ -213,8 +215,20 @@ fn run(name: &str, mb: &Mailbox, pool: &FramePool, seq: &mut u64) -> Result<(), 
             .map_err(|e| e.to_string())?;
         let reader =
             MFCreateSourceReaderFromMediaSource(&source, &attrs).map_err(|e| e.to_string())?;
+        // An HDR camera (HDR10 or HLG, 10-bit): kept as P010 and made SDR on the GPU.
+        let mut hdr = None;
         if let Some(mode) = best_mode(&reader) {
             let _ = reader.SetCurrentMediaType(STREAM, None, &mode);
+            let trc = mode.GetUINT32(&MF_MT_TRANSFER_FUNCTION).unwrap_or(0);
+            let ten_bit = mode
+                .GetGUID(&MF_MT_SUBTYPE)
+                .is_ok_and(|s| s == MFVideoFormat_P010 || s == MFVideoFormat_P016);
+            hdr = match trc {
+                t if t == MFVideoTransFunc_2084.0 as u32 => Some(Hdr::Pq),
+                t if t == MFVideoTransFunc_HLG.0 as u32 => Some(Hdr::Hlg),
+                _ => None,
+            }
+            .filter(|_| ten_bit);
         }
         let wanted = |subtype: &windows::core::GUID| -> Result<IMFMediaType, String> {
             let t: IMFMediaType = MFCreateMediaType().map_err(|e| e.to_string())?;
@@ -224,10 +238,16 @@ fn run(name: &str, mb: &Mailbox, pool: &FramePool, seq: &mut u64) -> Result<(), 
                 .map_err(|e| e.to_string())?;
             Ok(t)
         };
-        // NV12 first (no conversion on the processor), RGB32 when the camera can't.
-        let nv12 = reader
-            .SetCurrentMediaType(STREAM, None, &wanted(&MFVideoFormat_NV12)?)
-            .is_ok();
+        // P010 for an HDR camera; NV12 first otherwise (no conversion on the
+        // processor), RGB32 when the camera can't.
+        let p010 = hdr.is_some()
+            && reader
+                .SetCurrentMediaType(STREAM, None, &wanted(&MFVideoFormat_P010)?)
+                .is_ok();
+        let nv12 = p010
+            || reader
+                .SetCurrentMediaType(STREAM, None, &wanted(&MFVideoFormat_NV12)?)
+                .is_ok();
         if !nv12 {
             reader
                 .SetCurrentMediaType(STREAM, None, &wanted(&MFVideoFormat_RGB32)?)
@@ -241,7 +261,13 @@ fn run(name: &str, mb: &Mailbox, pool: &FramePool, seq: &mut u64) -> Result<(), 
             return Err("The camera did not say its picture size.".into());
         }
         let (w, h) = if nv12 { (w & !1, h & !1) } else { (w, h) };
-        let bpp = if nv12 { 1 } else { 4 };
+        let bpp = if p010 {
+            2
+        } else if nv12 {
+            1
+        } else {
+            4
+        };
         // A negative stride means the picture is stored bottom row first.
         let stride = current
             .GetUINT32(&MF_MT_DEFAULT_STRIDE)
@@ -272,10 +298,10 @@ fn run(name: &str, mb: &Mailbox, pool: &FramePool, seq: &mut u64) -> Result<(), 
             let rows = if nv12 { h as usize * 3 / 2 } else { h as usize };
             if !data.is_null() && (len as usize) >= pitch * (rows - 1) + row {
                 let src = std::slice::from_raw_parts(data, len as usize);
-                let format = if nv12 {
-                    PixelFormat::Nv12
-                } else {
-                    PixelFormat::Bgrx8
+                let format = match hdr.filter(|_| p010) {
+                    Some(h) => PixelFormat::P010(h),
+                    None if nv12 => PixelFormat::Nv12,
+                    None => PixelFormat::Bgrx8,
                 };
                 let f = VideoFrame::build(pool, w, h, format, *seq, |px| {
                     for y in 0..rows {

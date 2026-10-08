@@ -20,13 +20,16 @@
 //! Selected in Settings → Engine; the Standard engine (every window draws its
 //! own copy in its WebView) stays the default.
 
+pub mod adapters;
 pub mod audio;
+pub mod decklink;
 pub mod delay;
 pub mod encoder;
 pub mod engine;
 pub mod feeds;
 pub mod frame;
 pub mod gpu;
+pub mod hdr;
 pub mod look;
 pub mod mix;
 pub mod multiview;
@@ -36,8 +39,11 @@ pub mod replay;
 pub mod scene;
 pub mod source;
 pub mod vision;
+pub mod zerocopy;
 
 #[cfg(windows)]
 pub mod mf;
+#[cfg(windows)]
+mod zerocopy_win;
 
 pub use wgpu;

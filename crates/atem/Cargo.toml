@@ -1,0 +1,18 @@
+[package]
+name = "lumora-atem"
+description = "Blackmagic ATEM switcher control over the network (UDP 9910): connect, read the switcher's state, cut, auto, program and preview, fade to black, keyers, macros and tally"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

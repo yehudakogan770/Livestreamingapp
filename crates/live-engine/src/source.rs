@@ -273,6 +273,25 @@ pub struct FfmpegFile {
 
 /// The picture size FFmpeg's `ffprobe` reports (None when it can't tell).
 pub fn probe_size(ffmpeg: &Path, file: &Path) -> Option<(u32, u32)> {
+    probe(ffmpeg, file).0
+}
+
+/// `ffprobe`'s line for the first video stream (`width,height,color_transfer`):
+/// its size, and its HDR transfer function when it is HDR.
+pub fn parse_probe(text: &str) -> (Option<(u32, u32)>, Option<crate::hdr::Hdr>) {
+    let line = text.lines().find(|l| !l.trim().is_empty()).unwrap_or("");
+    let mut it = line.split(',');
+    let mut num = || it.next().and_then(|v| v.trim().parse::<u32>().ok());
+    let size = match (num(), num()) {
+        (Some(w), Some(h)) if w > 0 && h > 0 => Some((w, h)),
+        _ => None,
+    };
+    let trc = line.split(',').nth(2).unwrap_or("");
+    (size, crate::hdr::Hdr::from_ffmpeg(trc))
+}
+
+/// A file's picture size and HDR transfer function (`ffprobe`).
+pub fn probe(ffmpeg: &Path, file: &Path) -> (Option<(u32, u32)>, Option<crate::hdr::Hdr>) {
     let probe = ffmpeg.with_file_name(if cfg!(windows) {
         "ffprobe.exe"
     } else {
@@ -285,18 +304,15 @@ pub fn probe_size(ffmpeg: &Path, file: &Path) -> Option<(u32, u32)> {
             "-select_streams",
             "v:0",
             "-show_entries",
-            "stream=width,height",
+            "stream=width,height,color_transfer",
             "-of",
             "csv=p=0",
         ])
         .arg(file)
-        .output()
-        .ok()?;
-    let text = String::from_utf8_lossy(&out.stdout);
-    let mut it = text.trim().split(',').map(|v| v.trim().parse::<u32>().ok());
-    match (it.next().flatten(), it.next().flatten()) {
-        (Some(w), Some(h)) if w > 0 && h > 0 => Some((w, h)),
-        _ => None,
+        .output();
+    match out {
+        Ok(o) => parse_probe(&String::from_utf8_lossy(&o.stdout)),
+        Err(_) => (None, None),
     }
 }
 
@@ -357,6 +373,19 @@ const PACED_FPS: f64 = 30.0;
 
 /// FFmpeg's arguments to decode `file` as `clip` says, at `w` × `h` RGBA (`still`: a picture).
 pub fn file_args(file: &Path, still: bool, clip: Clip, w: u32, h: u32) -> Vec<String> {
+    file_args_as(file, still, clip, (w, h), None)
+}
+
+/// [`file_args`] for a file that may be HDR: an HDR video is decoded as
+/// 10-bit RGB (`x2bgr10le`, its own BT.2020 colors and PQ or HLG signal),
+/// made SDR on the GPU (`hdr.wgsl`) instead of being clipped by FFmpeg.
+pub fn file_args_as(
+    file: &Path,
+    still: bool,
+    clip: Clip,
+    (w, h): (u32, u32),
+    hdr: Option<crate::hdr::Hdr>,
+) -> Vec<String> {
     let mut a: Vec<String> = ["-hide_banner", "-loglevel", "error", "-nostdin"]
         .map(str::to_owned)
         .to_vec();
@@ -392,7 +421,7 @@ pub fn file_args(file: &Path, still: bool, clip: Clip, w: u32, h: u32) -> Vec<St
         "-vf".to_owned(),
         format!("{fps}scale={w}:{h}:flags=bilinear"),
         "-pix_fmt".to_owned(),
-        "rgba".to_owned(),
+        if hdr.is_some() { "x2bgr10le" } else { "rgba" }.to_owned(),
         "-f".to_owned(),
         "rawvideo".to_owned(),
         "-".to_owned(),
@@ -435,9 +464,12 @@ fn run_file(
     mb: &Mailbox,
     child_slot: &Mutex<Option<Child>>,
 ) {
-    let (w, h) = delivered_size(probe_size(ffmpeg, file));
+    let (size, hdr) = probe(ffmpeg, file);
+    // HDR pictures (still images are always SDR here) come as 10-bit RGB.
+    let hdr = hdr.filter(|_| !still);
+    let (w, h) = delivered_size(size);
     let mut cmd = quiet(ffmpeg);
-    cmd.args(file_args(file, still, clip, w, h));
+    cmd.args(file_args_as(file, still, clip, (w, h), hdr));
     // A file at another speed is paced here: frame n at its time.
     let pace = (clip.playing && !still && (clip.speed - 1.0).abs() >= 1e-3)
         .then(|| Duration::from_secs_f64(1.0 / (PACED_FPS * f64::from(clip.speed.max(0.05)))));
@@ -470,7 +502,7 @@ fn run_file(
         mb.put(VideoFrame {
             width: w,
             height: h,
-            format: PixelFormat::Rgba8,
+            format: hdr.map_or(PixelFormat::Rgba8, PixelFormat::Rgb10),
             data: Arc::new(buf),
             seq,
         });
@@ -938,6 +970,68 @@ mod tests {
         assert_eq!(paused.health().frames, 1);
         assert_eq!(paused.health().state, SourceState::Live);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn hdr_files_are_told_apart_and_decoded_as_10_bit_rgb() {
+        use crate::hdr::Hdr;
+        assert_eq!(
+            parse_probe("1920,1080,smpte2084\n"),
+            (Some((1920, 1080)), Some(Hdr::Pq))
+        );
+        assert_eq!(
+            parse_probe("3840,2160,arib-std-b67"),
+            (Some((3840, 2160)), Some(Hdr::Hlg))
+        );
+        assert_eq!(parse_probe("1280,720,bt709"), (Some((1280, 720)), None));
+        assert_eq!(parse_probe("1280,720,unknown"), (Some((1280, 720)), None));
+        assert_eq!(parse_probe(""), (None, None));
+        let a = file_args_as(
+            Path::new("v.mkv"),
+            false,
+            Clip::LOOP,
+            (64, 36),
+            Some(Hdr::Pq),
+        )
+        .join(" ");
+        assert!(a.ends_with("-pix_fmt x2bgr10le -f rawvideo -"), "{a}");
+        // A real HDR10 file, when FFmpeg is here.
+        if quiet("ffmpeg").arg("-version").output().is_err() {
+            return;
+        }
+        let dir = std::env::temp_dir().join(format!("lumora-hdr-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let file = dir.join("pq.mkv");
+        let made = quiet("ffmpeg")
+            .args(["-y", "-loglevel", "error", "-f", "lavfi", "-i"])
+            .arg("color=c=white:size=64x36:rate=30:duration=1")
+            .args(["-vf", "format=yuv420p10le", "-c:v", "ffv1"])
+            .args([
+                "-color_trc",
+                "smpte2084",
+                "-color_primaries",
+                "bt2020",
+                "-colorspace",
+                "bt2020nc",
+            ])
+            .arg(&file)
+            .status();
+        if !made.is_ok_and(|s| s.success()) {
+            eprintln!("FFmpeg could not make the HDR test file; skipped");
+            return;
+        }
+        let src = FfmpegFile::start(Path::new("ffmpeg"), &file, false);
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while src.latest().is_none() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        let f = src.latest().expect("a frame");
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(f.format, PixelFormat::Rgb10(Hdr::Pq));
+        assert_eq!(f.data.as_slice().len(), 64 * 36 * 4);
+        // Full-scale white in the PQ signal: every channel near 1023.
+        let w = u32::from_le_bytes(f.data.as_slice()[..4].try_into().unwrap());
+        assert!(crate::hdr::rgb10(w).iter().all(|c| *c > 0.95), "{w:#x}");
     }
 
     #[test]

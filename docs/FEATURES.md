@@ -257,6 +257,7 @@ Built from the Stage Visuals Live project (`modules/stage-visuals`).
 - ★ If a remote disconnects, nothing on the screens changes; it reconnects by itself
 - ◆ Permissions per device (full control, monitor messages only, camera only, view only)
 - ◆ Second PC as an extra control screen or as an output only
+- ◆ **Operator seats** (Settings → Operators… / Join a show on this network…): more people run one show from other computers on the venue network — Director, Graphics, Audio, Replay, Cameras or Custom seats, chosen and checked on the show computer; 6-digit pairing code, encrypted link, small previews and meters; a seat that drops never affects the show (`crates/seats`)
 - ◆ Stream Deck, MIDI controllers and keyboard shortcuts (all customizable)
 - ◆ Tally lights on phone cameras (and hardware tally, see §27)
 

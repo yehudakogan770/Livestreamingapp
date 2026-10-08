@@ -40,6 +40,8 @@ import { openProblemReport, ReportingHost, useErrorReports } from './reports/Rep
 import { openSystemCheck, SystemCheckHost } from './syscheck/SystemCheck';
 import { openTestEvent, TestEventHost } from './testevent/host';
 import { EngineSettingsHost, openEngineSettings } from './views/engineHost';
+import { SeatFeed } from './seats/SeatFeed';
+import { ProHardwareHost, openAtemSettings, openCardOutput } from './views/proHost';
 import { lazyPart } from './components/lazyPart';
 import { openTitler, TitlerHost } from './titler/LumoraTitler';
 // Last: the base styles come after every other style (all windows share one
@@ -56,6 +58,9 @@ const BroadcastDialog = lazyPart(() => import('./broadcast/BroadcastDialog').the
 const PeopleDialog = lazyPart(() => import('./auth/PeopleDialog').then((m) => m.PeopleDialog));
 const SpeakerDialog = lazyPart(() => import('./views/SpeakerDialog').then((m) => m.SpeakerDialog));
 const AccountDialog = lazyPart(() => import('./auth/AccountDialog').then((m) => m.AccountDialog));
+const OperatorsDialog = lazyPart(() => import('./seats/OperatorsDialog').then((m) => m.OperatorsDialog));
+const JoinRequestNote = lazyPart(() => import('./seats/OperatorsDialog').then((m) => m.JoinRequestNote));
+const JoinDialog = lazyPart(() => import('./seats/JoinDialog').then((m) => m.JoinDialog));
 
 export function Control() {
   const [problems] = useState(() => new ProblemStore());
@@ -142,6 +147,9 @@ function ControlApp() {
   const [remote, setRemote] = useState<RemoteStatus | null>(null);
   const [remoteOpen, setRemoteOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
+  // Other computers running parts of this show, or this one joining another show.
+  const [operatorsOpen, setOperatorsOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
   // The speaker's clicker (slides from another device), and a presentation clicker on this computer.
   const [speakerOpen, setSpeakerOpen] = useState(false);
   const [clicker, setClicker] = useState(loadClicker);
@@ -248,6 +256,16 @@ function ControlApp() {
         onClick: () => setRemoteOpen(true),
       },
       {
+        label: 'Operators…',
+        hint: 'Other computers on this network run graphics, the mixer, replay or cameras for this show',
+        onClick: () => setOperatorsOpen(true),
+      },
+      {
+        label: 'Join a show on this network…',
+        hint: 'Run part of another computer’s show from this one',
+        onClick: () => setJoinOpen(true),
+      },
+      {
         label: 'Control API (Companion, OSC, tally)…',
         hint: 'Stream Deck through Companion, X-keys, tally lights and show-control systems',
         onClick: () => setApiOpen(true),
@@ -271,6 +289,16 @@ function ControlApp() {
           ]
         : []),
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
+      {
+        label: 'ATEM switcher…',
+        hint: 'Connect a Blackmagic ATEM: switch it from Lumora, or follow its tally',
+        onClick: openAtemSettings,
+      },
+      {
+        label: 'Blackmagic program out…',
+        hint: 'The Live Screen on a DeckLink or UltraStudio card’s SDI or HDMI output (Unified engine)',
+        onClick: openCardOutput,
+      },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
       {
         label: 'Engine…',
@@ -527,6 +555,8 @@ function ControlApp() {
                   <DataWatcher show={show} client={client} />
                   <TestEventHost show={show} client={client} />
                   <EngineSettingsHost />
+                  {client.live && <SeatFeed />}
+                  <ProHardwareHost sources={show.sources} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
                   {speakersOpen && <SpeakersDialog show={show} client={client} onClose={() => setSpeakersOpen(false)} />}
                   {captionsOpen && (
@@ -581,6 +611,9 @@ function ControlApp() {
       {accountOpen && access && <AccountDialog access={access} onClose={() => setAccountOpen(false)} />}
       {brandOpen && show && <BrandDialog show={show} client={client} onClose={() => setBrandOpen(false)} />}
       {apiOpen && <ControlApiDialog onClose={() => setApiOpen(false)} />}
+      {operatorsOpen && <OperatorsDialog onClose={() => setOperatorsOpen(false)} />}
+      {joinOpen && <JoinDialog onClose={() => setJoinOpen(false)} />}
+      {client.live && !operatorsOpen && <JoinRequestNote onOpen={() => setOperatorsOpen(true)} />}
       {remoteOpen && remote && <RemoteDialog client={client} status={remote} onClose={() => setRemoteOpen(false)} />}
       {speakerOpen && remote && (
         <SpeakerDialog client={client} status={remote} clicker={clicker} onClicker={changeClicker} onClose={() => setSpeakerOpen(false)} />

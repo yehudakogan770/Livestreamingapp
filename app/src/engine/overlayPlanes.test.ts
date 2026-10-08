@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { defaultCountdown, emptyShow } from './client';
 import { demoApply } from './demo';
-import { nextPlanes, overlayPlanes } from './overlayPlanes';
+import { multiviewPlanes, nextPlanes, overlayPlanes } from './overlayPlanes';
 import type { Action } from './types/Action';
 import type { Show } from './types/Show';
 
@@ -97,4 +97,17 @@ test('the Next preview’s graphics are `n:` planes at the size Next is drawn', 
   const c = build([...base, { type: 'setPreview', screen: 'live', sourceId: 'cam' }]);
   expect(nextPlanes(c, 'live', W / 2, H / 2)).toEqual([]);
   expect(nextPlanes(s, 'back', W / 2, H / 2)).toEqual([]);
+});
+
+test('the multiview shows a graphics input that is not on air from its own `mv:` plane', () => {
+  const s = build(base);
+  const tiles = [
+    { content: { type: 'program', id: 'live' }, picture: [0, 0, 960, 540] as [number, number, number, number] },
+    { content: { type: 'input', id: 'cam' }, picture: [0, 600, 480, 300] as [number, number, number, number] },
+    { content: { type: 'input', id: 'cd' }, picture: [480, 600, 480, 300] as [number, number, number, number] },
+  ];
+  // The countdown's tile gets a plane fitted to 16:9 inside the tile; the camera is the engine's.
+  expect(multiviewPlanes(s, tiles, new Set(), 16 / 9).map((p) => `${p.name} ${p.w}x${p.h}`)).toEqual(['mv:g:cd 480x270']);
+  // On air on the Live Screen already: its `g:` plane is used, nothing more is drawn.
+  expect(multiviewPlanes(s, tiles, new Set(['g:cd']), 16 / 9)).toEqual([]);
 });

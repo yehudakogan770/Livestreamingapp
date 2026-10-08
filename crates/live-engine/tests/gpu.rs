@@ -514,6 +514,7 @@ fn the_engine_draws_the_show_and_its_previews() {
         preview_w: 16,
         preview_h: 9,
         preview_every: 1,
+        adapter: None,
     };
     let mut e = LiveEngine::new(config, g, Box::new(Colors));
     let mut show = Show {
@@ -589,6 +590,7 @@ fn engine() -> Option<LiveEngine> {
         preview_w: 16,
         preview_h: 9,
         preview_every: 1000,
+        adapter: None,
     };
     Some(LiveEngine::new(config, g, Box::new(Colors)))
 }
@@ -818,6 +820,7 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
         width: w,
         height: h,
         fps: 30,
+        zero_copy: None,
     };
     let a = e.start_feed(1, screen(false, 32, 18), raw_feed(Arc::clone(&small)));
     let b = e.start_feed(2, screen(true, 18, 32), raw_feed(Arc::clone(&vertical)));
@@ -828,6 +831,7 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
             width: 0,
             height: 0,
             fps: 30,
+            zero_copy: None,
         },
         raw_feed(Arc::clone(&iso)),
     );
@@ -877,8 +881,551 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
     assert!(near([iso[0], iso[1], iso[2], iso[3]], [0, 0, 255, 255]));
 }
 
+#[test]
+fn the_vertical_version_has_a_soft_shadow_under_the_picture() {
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("red", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    g.ensure_target(1, 48, 27);
+    g.ensure_target(2, 360, 640);
+    g.render(&[
+        Pass {
+            dest: Dest::Target(1),
+            viewport: None,
+            paint: Paint::Target(0),
+        },
+        Pass {
+            dest: Dest::Target(2),
+            viewport: None,
+            paint: Paint::Vertical { src: 0, small: 1 },
+        },
+    ]);
+    let (w, _, img) = g.read(Dest::Target(2)).unwrap();
+    let at = |x: u32, y: u32| img[((y * w + x) * 4) as usize];
+    // The picture (red) across the middle, 202 px high from y = 219.
+    assert!(at(180, 320) > 250);
+    // Far above it: the darkened copy; just above its edge: darker still (the shadow).
+    let (far, near_edge) = (at(180, 100), at(180, 214));
+    assert!((130..150).contains(&far), "{far}");
+    assert!(near_edge + 10 < far, "shadow {near_edge} vs {far}");
+    // It fades out: well away from the picture, no shadow.
+    assert!(at(180, 190).abs_diff(far) <= 3, "{} vs {far}", at(180, 190));
+}
+
+// ---------------------------------------------------------------------------
+// Graphics cards and HDR windows
+
+#[test]
+fn an_output_on_another_card_gets_the_picture_copied_across() {
+    use live_engine::adapters::{key_in, Bridge};
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    let red = ScreenScene {
+        layers: vec![layer("red", 1.0)],
+        ..ScreenScene::default()
+    };
+    draw(&mut g, &red);
+    // The "other card" is a second device on the same one here (one GPU in CI).
+    let key = key_in(&g.instance, &g.adapter).expect("the engine's card has a key");
+    let mut b = Bridge::open(&g.instance, &key).expect("a device for the window");
+    assert!(
+        !b.carry(&mut g, 0),
+        "nothing yet: the copy is one frame late"
+    );
+    draw(&mut g, &red);
+    assert!(b.carry(&mut g, 0));
+    let (w, h, img) = b.gpu.read(Dest::Target(b.target())).expect("read back");
+    assert_eq!((w, h), (W, H));
+    assert!(
+        near(px(&img, 10, 10), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 10, 10)
+    );
+}
+
+/// One texel of a window texture of `format` drawn by `draw_output`.
+fn output_texel(
+    g: &mut Compositor,
+    format: wgpu::TextureFormat,
+    color: live_engine::gpu::OutColor,
+) -> Vec<u8> {
+    let tex = g.device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("window"),
+        size: wgpu::Extent3d {
+            width: 64,
+            height: 36,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    });
+    let view = tex.create_view(&wgpu::TextureViewDescriptor::default());
+    assert!(g.draw_output(0, &view, format, (64, 36), color));
+    let bpp = format.block_copy_size(None).unwrap();
+    let row = (64 * bpp).next_multiple_of(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT);
+    let buf = g.device.create_buffer(&wgpu::BufferDescriptor {
+        label: None,
+        size: u64::from(row * 36),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut enc = g.device.create_command_encoder(&Default::default());
+    enc.copy_texture_to_buffer(
+        tex.as_image_copy(),
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buf,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(row),
+                rows_per_image: Some(36),
+            },
+        },
+        tex.size(),
+    );
+    g.queue.submit([enc.finish()]);
+    buf.slice(..).map_async(wgpu::MapMode::Read, |_| {});
+    let _ = g.device.poll(wgpu::PollType::wait_indefinitely());
+    let at = (10 * row + 10 * bpp) as usize;
+    let v = buf.slice(..).get_mapped_range().unwrap()[at..at + bpp as usize].to_vec();
+    v
+}
+
+fn f16(b: [u8; 2]) -> f32 {
+    let h = u16::from_le_bytes(b);
+    let (s, e, m) = (h >> 15, (h >> 10) & 0x1f, h & 0x3ff);
+    let v = if e == 0 {
+        f32::from(m) / 1024.0 * 2f32.powi(-14)
+    } else {
+        (1.0 + f32::from(m) / 1024.0) * 2f32.powi(i32::from(e) - 15)
+    };
+    if s == 1 {
+        -v
+    } else {
+        v
+    }
+}
+
+/// An HDR input made SDR on the GPU agrees with `hdr.rs` (the processor's maths).
+#[test]
+fn hdr_inputs_are_tone_mapped_into_the_sdr_picture() {
+    use live_engine::hdr::{byte, p010_rgb, rgb10, signal_to_sdr, Hdr};
+    let Some(mut g) = gpu() else { return };
+    let pool = FramePool::new(1);
+    // Left half: a 10-bit RGB word; right half: another (files: x2bgr10le).
+    for (hdr, left, right) in [
+        // PQ: ~203-nit white, and a bright warm highlight.
+        (
+            Hdr::Pq,
+            592 | (592 << 10) | (592 << 20),
+            900 | (700 << 10) | (300 << 20),
+        ),
+        // HLG: 75 % white, and a dim blue.
+        (
+            Hdr::Hlg,
+            767 | (767 << 10) | (767 << 20),
+            100 | (150 << 10) | (500 << 20),
+        ),
+    ] {
+        let f = VideoFrame::build(&pool, W, H, PixelFormat::Rgb10(hdr), 1, |px| {
+            for (i, p) in px.as_chunks_mut::<4>().0.iter_mut().enumerate() {
+                let x = i as u32 % W;
+                p.copy_from_slice(&(if x < W / 2 { left } else { right } as u32).to_le_bytes());
+            }
+        });
+        g.upload(&SourceId::new("hdr"), &f);
+        let img = draw(
+            &mut g,
+            &ScreenScene {
+                layers: vec![layer("hdr", 1.0)],
+                ..ScreenScene::default()
+            },
+        );
+        for (x, word) in [(10, left), (W - 10, right)] {
+            let [r, gg, b] = signal_to_sdr(rgb10(word as u32), hdr).map(byte);
+            let got = px(&img, x, 10);
+            assert!(
+                near(got, [r, gg, b, 255]),
+                "{hdr:?} at {x}: GPU {got:?}, maths {:?}",
+                [r, gg, b]
+            );
+        }
+    }
+    // A camera's P010 (PQ): limited-range white-ish gray with neutral chroma.
+    let (yv, uv) = (700u16 << 6, 512u16 << 6);
+    let f = VideoFrame::build(&pool, W, H, PixelFormat::P010(Hdr::Pq), 2, |px| {
+        let ylen = (W * H * 2) as usize;
+        for (i, b) in px.as_chunks_mut::<2>().0.iter_mut().enumerate() {
+            let v = if i * 2 < ylen { yv } else { uv };
+            b.copy_from_slice(&v.to_le_bytes());
+        }
+    });
+    g.upload(&SourceId::new("cam"), &f);
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("cam", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    let [r, gg, b] = signal_to_sdr(p010_rgb(yv, uv, uv), Hdr::Pq).map(byte);
+    assert!(
+        near(px(&img, 20, 20), [r, gg, b, 255]),
+        "P010: {:?} vs {:?}",
+        px(&img, 20, 20),
+        [r, gg, b]
+    );
+}
+
+#[test]
+fn hdr_windows_show_sdr_white_at_its_level() {
+    use live_engine::gpu::OutColor;
+    let Some(mut g) = gpu() else { return };
+    // White and 50 % gray (sRGB) side by side.
+    g.upload(
+        &SourceId::new("white"),
+        &solid([255, 255, 255, 255], W, H, 1),
+    );
+    draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("white", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    // scRGB: 1.0 is 80 nits, so 203-nit white is 2.54.
+    let t = output_texel(
+        &mut g,
+        wgpu::TextureFormat::Rgba16Float,
+        OutColor::ScRgb { white: 203 },
+    );
+    let r = f16([t[0], t[1]]);
+    assert!((r - 203.0 / 80.0).abs() < 0.02, "scRGB white {r}");
+    // HDR10: 203 nits is 58 % of the PQ signal.
+    let t = output_texel(
+        &mut g,
+        wgpu::TextureFormat::Rgb10a2Unorm,
+        OutColor::Pq { white: 203 },
+    );
+    let v = u32::from_le_bytes([t[0], t[1], t[2], t[3]]);
+    let r = (v & 0x3ff) as f32 / 1023.0;
+    assert!((r - 0.5807).abs() < 0.01, "PQ white {r}");
+    // SDR stays as it is.
+    let t = output_texel(&mut g, wgpu::TextureFormat::Rgba8Unorm, OutColor::Sdr);
+    assert!(t[0] >= 254, "{t:?}");
+    // 50 % gray in scRGB: linear 0.214 of white.
+    g.upload(
+        &SourceId::new("gray"),
+        &solid([128, 128, 128, 255], W, H, 1),
+    );
+    draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("gray", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    let t = output_texel(
+        &mut g,
+        wgpu::TextureFormat::Rgba16Float,
+        OutColor::ScRgb { white: 80 },
+    );
+    let r = f16([t[0], t[1]]);
+    assert!((r - 0.2158).abs() < 0.01, "scRGB gray {r}");
+}
+
+// ---------------------------------------------------------------------------
+// Zero-copy: the picture handed over on the GPU (the stand-in encoder here)
+
+/// A feed that copies an encoded picture into Matroska (or encodes NV12
+/// with x264 when the picture is read back), into `out`.
+fn mkv_feed(out: Arc<Mutex<Vec<u8>>>, shapes: Arc<Mutex<Vec<&'static str>>>) -> MakeFeed {
+    Box::new(move |shape| {
+        shapes.lock().unwrap().push(shape.pix_fmt);
+        EncoderFeed::start(
+            std::path::Path::new("ffmpeg"),
+            FeedArgs {
+                width: shape.width,
+                height: shape.height,
+                fps: shape.fps,
+                pix_fmt: shape.pix_fmt,
+                encode: vec!["-c:v".into(), "libx264".into()],
+                container: vec!["-f".into(), "matroska".into(), "-".into()],
+                audio: None,
+            },
+            Box::new(move |c| out.lock().unwrap().extend(c)),
+            None,
+        )
+    })
+}
+
+/// Decode a Matroska file's frames, each as one averaged RGB pixel.
+fn decode_mkv(bytes: &[u8], tag: &str) -> Vec<[u8; 3]> {
+    let path = std::env::temp_dir().join(format!("lumora-{tag}-{}.mkv", std::process::id()));
+    std::fs::write(&path, bytes).unwrap();
+    let out = std::process::Command::new("ffmpeg")
+        .args(["-v", "error", "-i"])
+        .arg(&path)
+        .args([
+            "-vf",
+            "scale=1:1",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-",
+        ])
+        .output()
+        .unwrap();
+    let _ = std::fs::remove_file(&path);
+    out.stdout.as_chunks::<3>().0.to_vec()
+}
+
+fn zero_copy_settings() -> live_engine::zerocopy::Settings {
+    use live_engine::zerocopy::{Rate, Settings, Speed, Vendor};
+    Settings {
+        vendor: Vendor::Nvidia,
+        hevc: false,
+        rate: Rate::Cbr { kbps: 2000 },
+        speed: Speed::Balanced,
+        gop: 60,
+    }
+}
+
+fn has_x264() -> bool {
+    std::process::Command::new("ffmpeg")
+        .args([
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=size=64x36",
+            "-frames:v",
+            "1",
+        ])
+        .args(["-c:v", "libx264", "-f", "null", "-"])
+        .output()
+        .is_ok_and(|o| o.status.success())
+}
+
+#[test]
+fn zero_copy_hands_the_picture_over_on_the_gpu_and_the_file_has_every_frame() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    if !has_x264() {
+        eprintln!("no FFmpeg with x264 here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    let copies = Arc::new(AtomicUsize::new(0));
+    e.set_zero_copy(Some(live_engine::zerocopy::standin::opener(
+        "ffmpeg".into(),
+        Arc::clone(&copies),
+    )));
+    let mut show = Show {
+        sources: vec![cam("a"), cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show.clone());
+    let out = Arc::new(Mutex::new(Vec::new()));
+    let shapes = Arc::new(Mutex::new(Vec::new()));
+    let spec = FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions: false,
+        },
+        width: W,
+        height: H,
+        fps: 30,
+        zero_copy: Some(zero_copy_settings()),
+    };
+    e.start_feed(1, spec, mkv_feed(Arc::clone(&out), Arc::clone(&shapes)))
+        .recv()
+        .unwrap()
+        .expect("starts");
+    let now = live_engine::engine::now_ms;
+    let t0 = now();
+    let mut switched = false;
+    while now() < t0 + 1500 {
+        // Camera b (blue) takes over halfway.
+        if !switched && now() >= t0 + 750 {
+            show.screens.live.program = Some(SourceId::new("b"));
+            e.set_show(show.clone());
+            switched = true;
+        }
+        e.frame(now());
+        std::thread::sleep(std::time::Duration::from_millis(8));
+    }
+    let info = e.feed_info();
+    let route = info[0].route.clone().expect("a screen has a route");
+    assert!(route.zero_copy, "{route:?}");
+    assert!(route.path.contains("stand-in"), "{route:?}");
+    let stats = e.stop_feed(1).expect("running").finish();
+    eprintln!("{stats:?} {route:?}");
+    assert_eq!(
+        *shapes.lock().unwrap(),
+        vec!["h264"],
+        "FFmpeg was given the encoded picture"
+    );
+    assert!(copies.load(Ordering::SeqCst) >= 20, "copied on the GPU");
+    let frames = decode_mkv(&out.lock().unwrap(), "zc");
+    // 1.5 s at 30 fps, counted on the wall clock (frames owed included).
+    assert!(
+        (38..=50).contains(&frames.len()),
+        "{} frames ({stats:?})",
+        frames.len()
+    );
+    assert_eq!(stats.frames_in as usize, frames.len(), "{stats:?}");
+    let first = frames[2];
+    let last = frames[frames.len() - 1];
+    assert!(first[0] > 200 && first[2] < 60, "red first: {first:?}");
+    assert!(last[2] > 200 && last[0] < 60, "blue last: {last:?}");
+}
+
+#[test]
+fn zero_copy_that_cannot_open_reads_back_and_says_why() {
+    if !has_x264() {
+        eprintln!("no FFmpeg with x264 here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    e.set_zero_copy(Some(Box::new(|_, _, _, _| {
+        Err("no NVIDIA NVENC on this graphics card".to_owned())
+    })));
+    let mut show = Show {
+        sources: vec![cam("a")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    let out = Arc::new(Mutex::new(Vec::new()));
+    let shapes = Arc::new(Mutex::new(Vec::new()));
+    let spec = FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions: false,
+        },
+        width: W,
+        height: H,
+        fps: 30,
+        zero_copy: Some(zero_copy_settings()),
+    };
+    e.start_feed(1, spec, mkv_feed(Arc::clone(&out), Arc::clone(&shapes)))
+        .recv()
+        .unwrap()
+        .expect("starts");
+    let now = live_engine::engine::now_ms;
+    let t0 = now();
+    while now() < t0 + 700 {
+        e.frame(now());
+        std::thread::sleep(std::time::Duration::from_millis(8));
+    }
+    let route = e.feed_info()[0].route.clone().expect("a route");
+    let stats = e.stop_feed(1).expect("running").finish();
+    assert!(!route.zero_copy);
+    assert_eq!(
+        route.path,
+        "read back as NV12 to FFmpeg (no NVIDIA NVENC on this graphics card)"
+    );
+    assert_eq!(*shapes.lock().unwrap(), vec!["nv12"]);
+    let frames = decode_mkv(&out.lock().unwrap(), "rb");
+    assert!(frames.len() >= 10, "{} ({stats:?})", frames.len());
+    assert!(
+        frames[frames.len() - 1][0] > 200,
+        "red: {:?}",
+        frames.last()
+    );
+}
+
 // ---------------------------------------------------------------------------
 // The multiview, from the same frames
+
+#[test]
+fn a_camera_as_a_slide_comes_up_with_the_slides_fade() {
+    use lumora_engine::slideshow::{Slide, Slideshow};
+    let Some(mut e) = engine() else { return };
+    let slides = Slideshow {
+        slides: vec![Slide::Input {
+            source_id: SourceId::new("a"),
+            notes: None,
+        }],
+        changed_at: 10_000,
+        fade: true,
+        ..Slideshow::default()
+    };
+    let mut show = Show {
+        sources: vec![
+            cam("a"),
+            Source {
+                kind: SourceKind::Slideshow(Box::new(slides)),
+                ..cam("sl")
+            },
+        ],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("sl"));
+    e.set_show(show);
+    let red_at = |e: &mut LiveEngine, now: u64| {
+        e.frame(now);
+        px(&e.gpu.read(Dest::Target(0)).unwrap().2, 32, 18)[0]
+    };
+    // Over the slides' black background: nothing yet, partly (ease-out: ahead of linear), then all.
+    assert!(red_at(&mut e, 10_000) < 10);
+    let mid = red_at(&mut e, 10_100);
+    assert!((70..200).contains(&mid), "{mid}");
+    assert!(red_at(&mut e, 10_500) > 250);
+}
+
+#[test]
+fn the_multiview_shows_a_graphics_input_that_is_not_on_air() {
+    use live_engine::engine::{MULTIVIEW, MULTIVIEW_INPUT_PREFIX};
+    use live_engine::multiview::{layout, TileContent, SIZE};
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show.clone());
+    let l = layout(&show, SIZE.0, SIZE.1);
+    let tile = l
+        .tiles
+        .iter()
+        .find(|t| matches!(&t.content, TileContent::Input(id) if id.as_str() == "t"))
+        .expect("a tile for the title");
+    let (x, y) = (
+        tile.picture[0] + tile.picture[2] / 2,
+        tile.picture[1] + tile.picture[3] / 2,
+    );
+    let at = |e: &mut LiveEngine| {
+        e.draw_multiview();
+        let (w, _, img) = e.gpu.read(Dest::Target(MULTIVIEW)).unwrap();
+        let i = ((y * w + x) * 4) as usize;
+        [img[i], img[i + 1], img[i + 2], img[i + 3]]
+    };
+    e.frame(1000);
+    assert!(near(at(&mut e), [0, 0, 0, 255]), "nothing to show yet");
+    // The Live Screen's renderer draws the title for the multiview (it isn't on air).
+    let name = format!("{MULTIVIEW_INPUT_PREFIX}g:t");
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, &name, 32, 18, [0, 255, 0, 255]),
+    );
+    e.frame(1016);
+    assert!(near(at(&mut e), [0, 255, 0, 255]), "{:?}", at(&mut e));
+}
 
 #[test]
 fn the_multiview_shows_the_screens_and_inputs_with_tally_and_words() {
@@ -1210,6 +1757,7 @@ fn captions_are_written_into_the_stream_but_not_the_recording_or_the_screen() {
         width: W,
         height: H,
         fps: 30,
+        zero_copy: None,
     };
     let a = e.start_feed(1, spec(false), raw_feed(Arc::clone(&rec)));
     let b = e.start_feed(2, spec(true), raw_feed(Arc::clone(&stream)));
@@ -1316,6 +1864,7 @@ fn instant_replay_keeps_pieces_of_the_live_screen_and_plays_them_as_an_input() {
         width: W,
         height: H,
         fps: 30,
+        zero_copy: None,
     };
     e.start_feed(9, spec, make).recv().unwrap().expect("starts");
     ring.t0_ms = live_engine::engine::now_ms();

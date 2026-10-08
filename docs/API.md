@@ -73,9 +73,23 @@ Inputs are named by their number as shown on the tiles (`input=3`) or by name
 | `stopmacros`                            |                                                                                                                  | Stop every macro that is running                       |
 | `timer`                                 | `input` or `name` (the main countdown if left out), `do` (`start`, `pause`, `toggle`, `reset`, `add`), `minutes` | Countdown                                              |
 | `ptz`                                   | `input` or `name`, `preset`, `move`, `zoom`, `speed`                                                             | PTZ camera                                             |
+| `atem`                                  | `do` (see below), `input`, `keyer`, `number` or `name`, `state`, `style`, `frames`                               | An ATEM switcher connected to Lumora                   |
 
 `GET /api/commands` lists them, `GET /api/macros` lists the macros with their
 numbers.
+
+### ATEM switchers
+
+When a Blackmagic ATEM is connected (Settings → ATEM switcher…), the `atem`
+command switches it: `do=cut`, `do=auto`, `do=program&input=2`,
+`do=preview&input=3` (the ATEM's own input numbers), `do=ftb` (with `state`),
+`do=style&style=mix|dip|wipe|dve|stinger`, `do=rate&frames=30`,
+`do=dsk&keyer=1` (`state=on|off|toggle|auto`), `do=usk&keyer=1`,
+`do=macro&number=3` or `do=macro&name=Intro`, `do=stopmacro`. OSC:
+`/lumora/atem cut`. With "Follow the ATEM's tally" on, the tally lights
+Lumora's inputs mapped to the ATEM's cameras from the ATEM's own tally, and
+the tally message gains an `atem` part (`connected`, `program`, `preview`
+and their names).
 
 Examples:
 
@@ -172,3 +186,35 @@ Next), recording, streaming and reconnecting, and ready-made presets. See
 
 Without the module, Companion's **Generic HTTP** connection works with the
 `/api/do/...` addresses above.
+
+## Operator seats (other Lumora computers)
+
+Not part of the control API, but on the same network: Settings → Operators…
+lets other computers running Lumora join this show as **seats** (Director,
+Graphics, Audio, Replay, Cameras or Custom). The code is in `crates/seats`;
+the app side is `src-tauri/src/seats.rs` and `app/src/seats/`.
+
+- **Port 8097**: TCP for seats, and UDP on the same number for "is there a
+  show?" broadcasts. Shows are also announced over mDNS / Bonjour as
+  `_lumora._tcp.local` (TXT: `id`, `name`, `v`). The firewall must allow
+  Lumora on private networks.
+- **Pairing**: X25519 with a commitment, then a 6-digit code shown on the show
+  computer and typed at the seat (checked on the seat first, then by the show
+  computer); the show operator approves the seat and picks its role. Repeated
+  wrong codes lock the address out for a while.
+- **After pairing**: each connection makes fresh X25519 keys mixed with a
+  32-byte seat secret kept on both computers; every message is sealed with
+  ChaCha20-Poly1305 and numbered (no reading, changing, replaying or
+  reordering). No internet is needed.
+- **Messages**: length-prefixed JSON frames (`crates/seats/src/wire.rs`). The
+  seat gets the whole show (`{revision, show, app}`) on joining, then only what
+  changed (paths and new values) at most every 30 ms; actions are the engine's
+  own actions (the same JSON as `dispatch`), and the show computer checks each
+  against the seat's role (`crates/seats/src/role.rs`) before the engine sees
+  it. The show computer's own things (its screens, sound devices, files, data
+  file) are never accepted from a seat, whatever its role.
+- **Pictures and levels**: a seat asks for `program/<screen>`, `next/<screen>`,
+  `source/<id>` and `meters`; it gets small JPEGs about five times a second and
+  levels ten times a second, only while it asks.
+- A seat that drops, lags or misbehaves is let go; the show carries on. Seats
+  reconnect by themselves (and look for the show again if its address changed).

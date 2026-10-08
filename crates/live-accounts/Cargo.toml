@@ -1,0 +1,19 @@
+[package]
+name = "lumora-live-accounts"
+description = "Going live on YouTube and Facebook through a connected account (OAuth with PKCE, the YouTube Live and Facebook Live APIs) instead of a copied stream key."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sha2 = "0.10"
+base64 = "0.22"
+getrandom = "0.3"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
