@@ -144,6 +144,21 @@ export const MANUAL: Topic[] = [
     ],
   },
   {
+    id: 'titler',
+    title: 'Lumora Titler: animated lower thirds, bugs, tickers and scoreboards',
+    keywords: 'titler motion graphics lower third name role bug ticker crawl scoreboard card template animation keyframe fields lumtitle design',
+    body: [
+      'Lumora Titler designs graphics that animate in and out: lower thirds, logo and live bugs, tickers, scoreboards, countdown, quote and sponsor cards. They take the event look (Event → Event look) by themselves.',
+      '1. Text → Add a Titler graphic… (or Overlays → Add a Titler graphic…): choose a template, then Add input.',
+      '2. On its tile, ⋯ → Fields, take in and out…: type the name, role, scores and other fields. Changes show at once, even on air.',
+      '3. Take IN plays its animation in over the screen you control and it holds; Take OUT plays its animation out, then it is gone. The overlay buttons under On air do the same.',
+      '• Scores, the game clock, the countdown, the time of day and data file columns fill fields by themselves when the template asks for them.',
+      '• Text → Titler… (or Edit in Titler… on its card) opens the designer in its own window: layers, keyframes, the timeline with its IN, HOLD and OUT markers, fields and the look. Use in … puts the design back into the graphic; Add to Lumora makes a new one.',
+      '• Titles saved in the designer go to Documents/Lumora/Titles, shared with Lumora Studio and the Lumora Titler app. A .lumtitle file carries its pictures and fonts.',
+      'Tip: The same graphic looks the same on the screens, in the recording and in the stream: it is drawn by the same renderer everywhere.',
+    ],
+  },
+  {
     id: 'countdown',
     title: 'Countdown timer',
     keywords: 'countdown timer starting soon clock minutes',

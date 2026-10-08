@@ -81,6 +81,17 @@ export const GUIDE: GuideTopic[] = [
       'Camera RAW files (Blackmagic RAW .braw, RED .r3d, ARRIRAW .ari, Canon Cinema RAW Light .crm and Nikon N-RAW .nev) cannot be opened directly. Studio tells you which free program converts them. Convert them to ProRes 422 HQ or DNxHR HQX and import the converted files.',
     ],
   },
+  {
+    id: 'titler',
+    title: 'Titler graphics (Lumora Titler)',
+    where: 'Text & more > Titler graphics, and the Inspector for a title clip',
+    paragraphs: [
+      'Titler graphics are animated titles made in Lumora Titler: lower thirds, bugs, tickers, scoreboards and cards. Click a template (or one of your titles from Documents/Lumora/Titles) and it is added at the playhead, above the pictures, as long as the title was designed.',
+      'A title clip plays its IN from the clip’s start, holds, and plays its OUT so that it ends with the clip. Trim the clip to make it stay longer or shorter; the marks on the clip show where the IN ends and the OUT starts, and its keyframes.',
+      'Select the clip to fill in its fields in the Inspector (name, role, scores…). Edit in Titler… opens the designer over Studio with every layer, keyframe and easing curve; Use in this clip puts the new design back.',
+      'Title clips are drawn by the same renderer as Lumora uses on air, so a title looks the same live and in the edit, and in every export.',
+    ],
+  },
 ];
 
 /** Topics whose title or text has every word in `query` (case doesn't matter). */
