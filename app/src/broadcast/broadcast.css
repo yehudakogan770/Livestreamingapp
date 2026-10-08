@@ -144,6 +144,56 @@
   gap: 8px;
 }
 
+/* ---- a destination through a connected account ---- */
+.acct__kind {
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.acct__connect,
+.acct__fields,
+.acct__status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.acct__fields textarea {
+  resize: vertical;
+}
+.acct__kids {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+.acct__file {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct__health {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+.acct__health--good {
+  border-color: var(--preview-bright);
+  color: var(--preview-bright);
+}
+.acct__health--ok {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+.acct__health--bad {
+  border-color: var(--program-bright);
+  color: var(--program-bright);
+}
+.acct__health--noData {
+  color: var(--text-dim);
+}
+
 .bc-replay {
   position: relative;
   display: inline-flex;

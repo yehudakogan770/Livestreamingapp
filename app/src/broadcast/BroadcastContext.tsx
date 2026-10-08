@@ -19,6 +19,7 @@ import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
 import { useAppRequests, useRemoteControl } from './remoteControl';
+import { accounts, PROVIDER_NAMES, useAccountSessions, usesAccounts, type Failed } from './accounts';
 
 /** The highlights reel's input. */
 export const HIGHLIGHTS = 'highlights-reel';
@@ -161,6 +162,27 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   // A graphics-card encoder failed and the processor took over (until Lumora restarts).
   const [encoderFallback, setEncoderFallback] = useState<string | null>(null);
 
+  // Connected YouTube and Facebook destinations: set up at GO LIVE, ended at stop.
+  const [accountTrouble, setAccountTrouble] = useState<Failed[]>([]);
+  const accountsOn = useRef(false);
+  const prepareAccounts = useCallback(async () => {
+    setAccountTrouble([]);
+    const s = settingsRef.current;
+    if (rehearsalRef.current || !usesAccounts(s)) return;
+    const report = await accounts.prepare();
+    accountsOn.current = report.ready > 0;
+    setAccountTrouble(report.failed);
+    // Every destination goes through an account and none could be set up: say why.
+    const others = s.destinations.some((d) => d.enabled && !d.account && d.url.trim());
+    if (!report.ready && !others && report.failed[0]) throw new Error(report.failed[0].error.message);
+    if (report.ready) setSettings(await client.captureSettings());
+  }, [client]);
+  const finishAccounts = useCallback(() => {
+    if (!accountsOn.current) return;
+    accountsOn.current = false;
+    void accounts.finish().then(setAccountTrouble, () => {});
+  }, []);
+
   const start = useCallback(
     async (kind: CaptureKind) => {
       wanted.current[kind] = true;
@@ -169,9 +191,11 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       setBusy((b) => ({ ...b, [kind]: true }));
       setStartError(null);
       try {
+        if (kind === 'stream') await prepareAccounts();
         await launch(kind);
       } catch (e) {
         wanted.current[kind] = false;
+        if (kind === 'stream') finishAccounts();
         setStartError({
           kind,
           message: e instanceof Error ? e.message : String(e),
@@ -181,7 +205,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         setBusy((b) => ({ ...b, [kind]: false }));
       }
     },
-    [launch],
+    [launch, prepareAccounts, finishAccounts],
   );
 
   const stop = useCallback(
@@ -195,9 +219,10 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         await broadcaster?.stop(kind);
       } finally {
         setBusy((b) => ({ ...b, [kind]: false }));
+        if (kind === 'stream') finishAccounts();
       }
     },
-    [broadcaster],
+    [broadcaster, finishAccounts],
   );
 
   // A session that failed: stop its encoder, and try again while it is still wanted.
@@ -265,7 +290,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       // It never got going (first try): say so plainly instead of retrying in the background.
       if (kind === 'stream' && failure.neverStarted && !everLive.current) {
         wanted.current.stream = false;
-        void broadcaster.stop('stream');
+        void broadcaster.stop('stream').then(finishAccounts);
         setStartError({ kind, message: failure.message });
         return;
       }
@@ -281,7 +306,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         void broadcaster.stop(kind).then(() => launch(kind).catch(() => {}));
       });
     },
-    [broadcaster, launch, later],
+    [broadcaster, launch, later, finishAccounts],
   );
   // Each failure is handled once, however often the status repeats it.
   const handled = useRef(new Set<string>());
@@ -379,6 +404,37 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
           title: `${onBackup.join(', ')} is on the backup server`,
           detail: 'The main server failed, so Lumora reconnected to the backup server.',
           fix: 'Nothing to do: viewers keep watching. If the backup fails too, Lumora goes back to the main server.',
+        }
+      : null,
+  );
+  const firstTrouble = accountTrouble[0];
+  useReportProblem(
+    firstTrouble
+      ? {
+          key: 'stream:accounts',
+          level: 'warning',
+          title:
+            accountTrouble.length > 1
+              ? `${accountTrouble.length} connected destinations aren’t streaming`
+              : `${PROVIDER_NAMES[firstTrouble.provider]} (connected account) isn’t streaming`,
+          detail: firstTrouble.error.message,
+          fix: firstTrouble.error.reconnect
+            ? `Connect the ${PROVIDER_NAMES[firstTrouble.provider]} account again in Settings → Recording and streaming, then stop and start the stream.`
+            : 'The other destinations carry on. Fix it in Settings → Recording and streaming, then stop and start the stream.',
+          action: { label: 'Dismiss', run: () => setAccountTrouble([]) },
+        }
+      : null,
+  );
+  const sessions = useAccountSessions(!!status.streaming && accountsOn.current, 15000);
+  const poor = sessions.find((x) => x.health === 'bad' && x.phase !== 'complete');
+  useReportProblem(
+    poor && status.streaming
+      ? {
+          key: 'stream:account-health',
+          level: 'warning',
+          title: `${PROVIDER_NAMES[poor.provider]} says the stream is poor`,
+          detail: poor.issues[0] ?? 'YouTube is getting the stream with problems (too slow or uneven), so viewers may see it stop and start.',
+          fix: 'Use a wired connection or a lower bitrate (Settings → Recording and streaming).',
         }
       : null,
   );

@@ -214,6 +214,27 @@ export const MANUAL: Topic[] = [
     ],
   },
   {
+    id: 'accounts',
+    title: 'Going live with YouTube and Facebook accounts',
+    keywords: 'youtube facebook account connect sign in oauth broadcast stream key watch link thumbnail made for kids latency dvr page live video health',
+    body: [
+      'Instead of copying a stream key, connect your YouTube or Facebook account once. Lumora then makes the broadcast, fills in the server and key, takes it live when you press GO LIVE and ends it when you stop. Destinations with a stream key keep working exactly as before; use whichever you like.',
+      '1. Settings → Recording and streaming → “+ YouTube with your account” (or “+ Facebook with your account”).',
+      '2. Click Connect. Your browser opens YouTube’s (Google’s) or Facebook’s own sign-in page — Lumora never sees your password. Allow what Lumora asks for, then come back to Lumora.',
+      '3. YouTube: choose a broadcast planned in YouTube Studio, or “A new broadcast each time Lumora goes live” with its title, description, who can watch (public, unlisted or private), start time, delay (normal, low or ultra-low) and rewinding (DVR). YouTube requires an answer to “Is it made for kids?”.',
+      '4. Facebook: choose the Page to go live on, and a title and description.',
+      '5. Press GO LIVE. Next to the destination you see where the broadcast is (ready, testing, live, ended), the signal YouTube gets (good, OK, poor, no signal yet) and the watch link with a Copy button.',
+      '• “Make the broadcast now” makes the YouTube broadcast ahead of time, so you can share the watch link before the event.',
+      '• Thumbnail: choose a picture (JPG or PNG under 2 MB), or “Use the Live Screen now” for a picture of what is on the Live Screen. Custom thumbnails need a verified YouTube account (youtube.com/verify).',
+      '• Taking it live: unless you tick “YouTube goes live by itself”, Lumora moves the broadcast from ready to testing to live as soon as YouTube gets the stream. If the internet drops, the broadcast stays open while Lumora reconnects; only stopping the stream ends it.',
+      '• Backup: YouTube’s backup server is filled in by itself.',
+      '• Facebook keeps a connection for only an hour or two: connect again shortly before the event if Lumora says it runs out soon. If the browser ends on a page that says “Success”, choose “Connect by pasting the address” and paste that page’s address.',
+      '• The sign-in is kept in Windows Credential Manager on this computer (never in event files). Disconnect removes it.',
+      'Tip: “Live streaming isn’t turned on for this channel” — turn it on at youtube.com/features (YouTube asks to verify a phone number); the first time, YouTube takes up to 24 hours. “Daily limit used up” — YouTube allows each copy of Lumora a set amount of work a day; until midnight Pacific time, use a destination with a stream key instead.',
+      'Tip: “isn’t set up in this copy of Lumora yet” — the person who set up Lumora adds the Google and Meta app registrations once (see docs/LIVE_ACCOUNTS.md). Until then, stream keys work as always.',
+    ],
+  },
+  {
     id: 'encoders',
     title: 'Encoders and quality',
     keywords:
