@@ -59,7 +59,10 @@ export function DeckLinkOutputDialog({ onClose }: { onClose: () => void }) {
   const stop = () => {
     setBusy(true);
     cardOutputStop()
-      .then(() => setStatus({ device: null, mode: null }), () => {})
+      .then(
+        () => setStatus({ device: null, mode: null }),
+        () => {},
+      )
       .finally(() => setBusy(false));
   };
   return (
@@ -75,12 +78,8 @@ export function DeckLinkOutputDialog({ onClose }: { onClose: () => void }) {
           </button>
         </header>
         <div className="cardout__body">
-          <p className="field__note">
-            The Live Screen on a Blackmagic card’s SDI or HDMI output: to a projector, a recorder, a switcher or a long cable run.
-          </p>
-          {!unified && (
-            <p className="field__note field__note--warn">Program out comes from the Unified engine: turn it on first (Settings → Engine).</p>
-          )}
+          <p className="field__note">The Live Screen on a Blackmagic card’s SDI or HDMI output: to a projector, a recorder, a switcher or a long cable run.</p>
+          {!unified && <p className="field__note field__note--warn">Program out comes from the Unified engine: turn it on first (Settings → Engine).</p>}
           {cards === null && <p className="field__note">Looking for Blackmagic cards…</p>}
           {cards && cards.length === 0 && !problem && <p className="field__note">No Blackmagic card with an output was found.</p>}
           {cards && cards.length > 0 && (

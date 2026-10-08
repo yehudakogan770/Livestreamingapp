@@ -61,6 +61,8 @@ pub enum SignalState {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Signal {
+    /// Written as `"state": "live"` (and `"detail"` when it failed).
+    #[serde(flatten)]
     pub state: SignalState,
     /// "1080i59.94" (the detected signal).
     pub mode: Option<String>,
@@ -333,6 +335,24 @@ mod tests {
             std::thread::sleep(Duration::from_millis(5));
         }
         RUNS_ENDED.fetch_add(1, Ordering::SeqCst);
+    }
+
+    #[test]
+    fn the_status_reads_flat_in_json() {
+        let s = Signal {
+            state: SignalState::Failed("Install Desktop Video".into()),
+            ..Signal::default()
+        };
+        let v = serde_json::to_value(&s).unwrap();
+        assert_eq!(v["state"], "failed");
+        assert_eq!(v["detail"], "Install Desktop Video");
+        let v = serde_json::to_value(Signal {
+            state: SignalState::NoInput,
+            ..Signal::default()
+        })
+        .unwrap();
+        assert_eq!(v["state"], "noInput");
+        assert_eq!(v["frames"], 0);
     }
 
     #[test]

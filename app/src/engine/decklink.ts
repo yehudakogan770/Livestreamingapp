@@ -104,7 +104,12 @@ export function signalLine(s: CardSignal): string {
   if (s.state === 'failed') return s.detail ?? 'The card could not capture.';
   if (s.state === 'noInput') return 'No signal on the card’s input.';
   if (s.state === 'opening') return 'Opening the card…';
-  const parts = [s.mode ?? (s.width ? `${s.width} × ${s.height}` : null), s.pixels, s.channels ? `${s.channels} audio channels` : null, s.timecode ? `TC ${s.timecode}` : null];
+  const parts = [
+    s.mode ?? (s.width ? `${s.width} × ${s.height}` : null),
+    s.pixels,
+    s.channels ? `${s.channels} audio channels` : null,
+    s.timecode ? `TC ${s.timecode}` : null,
+  ];
   return parts.filter(Boolean).join(' · ');
 }
 

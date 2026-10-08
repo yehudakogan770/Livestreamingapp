@@ -261,8 +261,8 @@ export function AtemDialog({ sources, onClose }: { sources: Source[]; onClose: (
                   </button>
                 </div>
                 <label className="check">
-                  <input type="checkbox" checked={settings.driveBlank} onChange={(e) => save({ driveBlank: e.target.checked })} /> Lumora’s fade to black
-                  fades the ATEM too
+                  <input type="checkbox" checked={settings.driveBlank} onChange={(e) => save({ driveBlank: e.target.checked })} /> Lumora’s fade to black fades
+                  the ATEM too
                 </label>
               </div>
             )}
