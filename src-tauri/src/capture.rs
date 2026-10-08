@@ -81,6 +81,10 @@ pub struct Destination {
     /// second SRT listener…). When the stream to one server fails, the next
     /// try goes to the other.
     pub backup_url: String,
+    /// Set up through a connected YouTube or Facebook account: the address
+    /// and key are filled in each time Lumora goes live (`accounts.rs`).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account: Option<lumora_live_accounts::service::AccountLink>,
 }
 
 impl Default for Destination {
@@ -95,6 +99,7 @@ impl Default for Destination {
             captions_url: String::new(),
             video_kbps: None,
             backup_url: String::new(),
+            account: None,
         }
     }
 }

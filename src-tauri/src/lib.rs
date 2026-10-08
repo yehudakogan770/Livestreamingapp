@@ -1,5 +1,6 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
+mod accounts;
 mod api;
 mod browser;
 mod captions;
@@ -1230,6 +1231,7 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
+            app.manage(accounts::LiveAccounts::new(&dir));
             app.manage(live::Live::new(
                 &dir,
                 ffmpeg.clone(),
@@ -1272,6 +1274,7 @@ pub fn run() {
                 state.capture.set_hw_encoders(working);
             });
             live::start_saved(app.handle());
+            accounts::load_names(app.handle());
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
             // The CI self-test: close (with a failed result) if it never finishes.
@@ -1284,6 +1287,20 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            accounts::accounts_info,
+            accounts::accounts_connect,
+            accounts::accounts_cancel,
+            accounts::accounts_facebook_manual,
+            accounts::accounts_facebook_paste,
+            accounts::accounts_disconnect,
+            accounts::accounts_youtube_broadcasts,
+            accounts::accounts_youtube_create,
+            accounts::accounts_youtube_thumbnail,
+            accounts::accounts_save_thumbnail,
+            accounts::accounts_facebook_targets,
+            accounts::accounts_prepare,
+            accounts::accounts_finish,
+            accounts::accounts_sessions,
             syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,
