@@ -327,11 +327,90 @@ pub fn delivered_size(probed: Option<(u32, u32)>) -> (u32, u32) {
     (even(f64::from(w) * k), even(f64::from(h) * k))
 }
 
+/// How a video plays (from the show: its playback, speed and looping).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Clip {
+    /// Where it starts, seconds into the file.
+    pub start_s: f64,
+    /// 1 normal, below 1 slow motion (an instant replay), above 1 faster.
+    pub speed: f32,
+    /// Playing (false: paused, the picture at `start_s` held).
+    pub playing: bool,
+    /// Start again at the end (false: the last picture is held, as a video
+    /// element that ended).
+    pub looping: bool,
+}
+
+impl Clip {
+    /// The file from its start, looped, at its own speed (the engine's first way of playing files).
+    pub const LOOP: Clip = Clip {
+        start_s: 0.0,
+        speed: 1.0,
+        playing: true,
+        looping: true,
+    };
+}
+
+/// Frames a second a file playing at another speed is turned into (then
+/// paced here at that rate times the speed).
+const PACED_FPS: f64 = 30.0;
+
+/// FFmpeg's arguments to decode `file` as `clip` says, at `w` × `h` RGBA (`still`: a picture).
+pub fn file_args(file: &Path, still: bool, clip: Clip, w: u32, h: u32) -> Vec<String> {
+    let mut a: Vec<String> = ["-hide_banner", "-loglevel", "error", "-nostdin"]
+        .map(str::to_owned)
+        .to_vec();
+    let held = still || !clip.playing;
+    if !still && clip.start_s > 0.0 {
+        a.extend(["-ss".to_owned(), format!("{:.3}", clip.start_s)]);
+    }
+    if !held {
+        // Decoded by the graphics card where it can (D3D11 on Windows); FFmpeg
+        // falls back to the processor by itself when it can't.
+        a.extend(["-hwaccel", "auto"].map(str::to_owned));
+        // At its own speed FFmpeg paces it; at another, the engine does.
+        if (clip.speed - 1.0).abs() < 1e-3 {
+            a.push("-re".to_owned());
+        }
+        if clip.looping {
+            a.extend(["-stream_loop", "-1"].map(str::to_owned));
+        }
+    }
+    a.push("-i".to_owned());
+    a.push(file.to_string_lossy().into_owned());
+    if held {
+        a.extend(["-frames:v", "1"].map(str::to_owned));
+    }
+    let paced = !held && (clip.speed - 1.0).abs() >= 1e-3;
+    let fps = if paced {
+        format!("fps={PACED_FPS},")
+    } else {
+        String::new()
+    };
+    a.extend([
+        "-an".to_owned(),
+        "-vf".to_owned(),
+        format!("{fps}scale={w}:{h}:flags=bilinear"),
+        "-pix_fmt".to_owned(),
+        "rgba".to_owned(),
+        "-f".to_owned(),
+        "rawvideo".to_owned(),
+        "-".to_owned(),
+    ]);
+    a
+}
+
 impl FfmpegFile {
     /// Start decoding `file`. A still picture (`still`) is decoded once and kept.
     pub fn start(ffmpeg: &Path, file: &Path, still: bool) -> Self {
+        Self::play(ffmpeg, file, still, Clip::LOOP)
+    }
+
+    /// Start playing `file` as `clip` says (a paused video holds its picture
+    /// at the position; one that ends without looping holds its last).
+    pub fn play(ffmpeg: &Path, file: &Path, still: bool, clip: Clip) -> Self {
         let mailbox = Mailbox::new();
-        if still {
+        if still || !clip.playing {
             mailbox.set_still();
         }
         let child: Arc<Mutex<Option<Child>>> = Arc::default();
@@ -339,7 +418,7 @@ impl FfmpegFile {
         let (ffmpeg, file_owned) = (ffmpeg.to_owned(), file.to_owned());
         let _ = thread::Builder::new()
             .name("lumora-live-file".into())
-            .spawn(move || run_file(&ffmpeg, &file_owned, still, &mb, &ch));
+            .spawn(move || run_file(&ffmpeg, &file_owned, still, clip, &mb, &ch));
         FfmpegFile {
             mailbox,
             child,
@@ -352,31 +431,17 @@ fn run_file(
     ffmpeg: &Path,
     file: &Path,
     still: bool,
+    clip: Clip,
     mb: &Mailbox,
     child_slot: &Mutex<Option<Child>>,
 ) {
     let (w, h) = delivered_size(probe_size(ffmpeg, file));
     let mut cmd = quiet(ffmpeg);
-    cmd.args(["-hide_banner", "-loglevel", "error", "-nostdin"]);
-    if !still {
-        // Decoded by the graphics card where it can (D3D11 on Windows); FFmpeg
-        // falls back to the processor by itself when it can't.
-        cmd.args(["-hwaccel", "auto", "-re", "-stream_loop", "-1"]);
-    }
-    cmd.arg("-i").arg(file);
-    if still {
-        cmd.args(["-frames:v", "1"]);
-    }
-    cmd.args([
-        "-an",
-        "-vf",
-        &format!("scale={w}:{h}:flags=bilinear"),
-        "-pix_fmt",
-        "rgba",
-        "-f",
-        "rawvideo",
-        "-",
-    ]);
+    cmd.args(file_args(file, still, clip, w, h));
+    // A file at another speed is paced here: frame n at its time.
+    let pace = (clip.playing && !still && (clip.speed - 1.0).abs() >= 1e-3)
+        .then(|| Duration::from_secs_f64(1.0 / (PACED_FPS * f64::from(clip.speed.max(0.05)))));
+    let t0 = Instant::now();
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
     let mut child = match cmd.spawn() {
         Ok(c) => c,
@@ -395,6 +460,13 @@ fn run_file(
         if out.read_exact(buf.as_mut_slice()).is_err() {
             break;
         }
+        if let Some(p) = pace {
+            let due = t0 + p * u32::try_from(seq).unwrap_or(u32::MAX);
+            let now = Instant::now();
+            if due > now {
+                thread::sleep(due - now);
+            }
+        }
         mb.put(VideoFrame {
             width: w,
             height: h,
@@ -403,6 +475,10 @@ fn run_file(
             seq,
         });
         seq += 1;
+    }
+    // Played to the end (not looping): its last picture stays, as a video that ended.
+    if seq > 0 {
+        mb.set_still();
     }
     if seq == 0 && !mb.stopped() {
         let mut why = String::new();
@@ -756,6 +832,112 @@ mod tests {
             |_| {},
         ));
         assert_eq!(mb.health().state, SourceState::Live, "plugged back in");
+    }
+
+    #[test]
+    fn videos_play_as_the_show_says() {
+        let f = Path::new("clip.mkv");
+        let args = |c: Clip| file_args(f, false, c, 64, 36).join(" ");
+        // Playing at its own speed from 2.5 s, looping: FFmpeg paces it.
+        let a = args(Clip {
+            start_s: 2.5,
+            ..Clip::LOOP
+        });
+        assert!(
+            a.contains("-ss 2.500 -hwaccel auto -re -stream_loop -1 -i clip.mkv"),
+            "{a}"
+        );
+        assert!(a.contains("-vf scale=64:36"), "{a}");
+        // Slow motion, once through: turned into 30 frames a second, paced by the engine.
+        let a = args(Clip {
+            speed: 0.5,
+            looping: false,
+            ..Clip::LOOP
+        });
+        assert!(!a.contains("-re") && !a.contains("-stream_loop"), "{a}");
+        assert!(a.contains("-vf fps=30,scale=64:36"), "{a}");
+        // Paused at 4 s: that one picture, held.
+        let a = args(Clip {
+            start_s: 4.0,
+            playing: false,
+            ..Clip::LOOP
+        });
+        assert!(a.contains("-ss 4.000 -i clip.mkv -frames:v 1"), "{a}");
+        assert!(!a.contains("-re"));
+        // A picture: once, no seeking.
+        let a = file_args(Path::new("p.png"), true, Clip::LOOP, 64, 36).join(" ");
+        assert!(
+            a.contains("-i p.png -frames:v 1") && !a.contains("-ss"),
+            "{a}"
+        );
+    }
+
+    #[test]
+    fn slow_motion_is_paced_and_a_video_that_ends_holds_its_last_picture() {
+        if quiet("ffmpeg").arg("-version").output().is_err() {
+            eprintln!("no FFmpeg here; skipped");
+            return;
+        }
+        // One second of 30 fps test picture.
+        let dir = std::env::temp_dir().join(format!("lumora-clip-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let file = dir.join("one-second.mkv");
+        let made = quiet("ffmpeg")
+            .args(["-y", "-loglevel", "error", "-f", "lavfi", "-i"])
+            .arg("testsrc=size=64x36:rate=30:duration=1")
+            .args(["-c:v", "ffv1"])
+            .arg(&file)
+            .status();
+        if !made.is_ok_and(|s| s.success()) {
+            eprintln!("FFmpeg could not make the test file; skipped");
+            return;
+        }
+        let ff = Path::new("ffmpeg");
+        // At half speed one second takes two.
+        let src = FfmpegFile::play(
+            ff,
+            &file,
+            false,
+            Clip {
+                speed: 0.5,
+                looping: false,
+                ..Clip::LOOP
+            },
+        );
+        let t0 = Instant::now();
+        let deadline = t0 + Duration::from_secs(10);
+        while src.health().frames < 30 && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        let took = t0.elapsed();
+        assert!(src.health().frames >= 30, "{:?}", src.health());
+        assert!(
+            took >= Duration::from_millis(1800),
+            "30 frames at half speed take two seconds, not {took:?}"
+        );
+        // It ends (no loop) and holds its last picture without going "no signal".
+        thread::sleep(Duration::from_millis(2000));
+        assert_eq!(src.health().state, SourceState::Live);
+        assert!(src.latest().is_some());
+        // Paused: one picture, held.
+        let paused = FfmpegFile::play(
+            ff,
+            &file,
+            false,
+            Clip {
+                start_s: 0.5,
+                playing: false,
+                ..Clip::LOOP
+            },
+        );
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while paused.latest().is_none() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        thread::sleep(Duration::from_millis(1800));
+        assert_eq!(paused.health().frames, 1);
+        assert_eq!(paused.health().state, SourceState::Live);
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

@@ -1,0 +1,27 @@
+{
+  "kind": "youtube#channelListResponse",
+  "etag": "f1R7k6wnLx0tO4hQ2s3",
+  "pageInfo": {
+    "totalResults": 1,
+    "resultsPerPage": 5
+  },
+  "items": [
+    {
+      "kind": "youtube#channel",
+      "etag": "Zc9bq1Vf2Cw",
+      "id": "UCx1y2z3RiversideHall",
+      "snippet": {
+        "title": "Riverside Community Hall",
+        "description": "",
+        "publishedAt": "2019-03-04T12:00:00Z",
+        "thumbnails": {
+          "default": {
+            "url": "https://yt3.ggpht.com/abc=s88",
+            "width": 88,
+            "height": 88
+          }
+        }
+      }
+    }
+  ]
+}

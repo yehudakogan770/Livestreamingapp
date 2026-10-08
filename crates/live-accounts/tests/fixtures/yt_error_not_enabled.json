@@ -1,0 +1,14 @@
+{
+  "error": {
+    "code": 403,
+    "message": "The user is not enabled for live streaming.",
+    "errors": [
+      {
+        "message": "The user is not enabled for live streaming.",
+        "domain": "youtube.liveBroadcast",
+        "reason": "liveStreamingNotEnabled",
+        "extendedHelp": "https://support.google.com/youtube/answer/2474026"
+      }
+    ]
+  }
+}

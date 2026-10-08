@@ -11,7 +11,7 @@ and is unchanged.
 
 | Step                  | Where                                                                                                                                               | What it costs                                                                                                                                                                                                                                                                                                                                                                                                             |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cameras               | `app/src/engine/cameras.ts` (`acquireCamera`)                                                                                                       | `getUserMedia` per **window**: the control window, each output window and the multiview each open every camera they show (shared inside a window, never between windows). Each copy is decoded and colour-converted separately.                                                                                                                                                                                           |
+| Cameras               | `app/src/engine/cameras.ts` (`acquireCamera`)                                                                                                       | `getUserMedia` per **window**: the control window, each output window and the multiview each open every camera they show (shared inside a window, never between windows). Each copy is decoded and color-converted separately.                                                                                                                                                                                            |
 | Screen windows        | `src-tauri/src/outputs.rs` opens a WebView window per screen; `app/src/views/OutputView.tsx` → `ProgramView` in `app/src/components/ScreenView.tsx` | Each Live/Back window lays out the screen as DOM: one `<video>` per input, transitions as CSS/Web Animations (`transitionKeyframes`, sampled from `mixAt` in `app/src/engine/timing.ts`), luma wipes as CSS masks (`app/src/engine/luma.ts`), graphics as React components (`OverlaysView`, `SourceView`). The WebView's compositor (WebView2 GPU process) puts it on screen.                                             |
 | Monitor               | `OutputView` → `MonitorScreen`                                                                                                                      | Words only; no cameras.                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Multiview             | `app/src/views/MultiviewView.tsx`                                                                                                                   | Another set of `SourceView`s: another copy of every camera.                                                                                                                                                                                                                                                                                                                                                               |
@@ -102,20 +102,22 @@ the compositor, and the Standard engine keeps working the whole time.
                                     (files, RTMP fan-out, NDI, ISO files)
 ```
 
-| Part             | File                                                                                                          | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ---------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Transition maths | `crates/live-engine/src/mix.rs`                                                                               | Line-for-line port of `mixOf`/`mixAt` (`timing.ts`) and `lumaValue` (`luma.ts`); same test cases as `timing.test.ts`.                                                                                                                                                                                                                                                                                                                                                                                        |
-| Scene graph      | `crates/live-engine/src/scene.rs`                                                                             | `program_scene` = `programLayers` + `ProgramView`: TAKE progress from `lumora_engine::timing::transition_progress`, T-bar (cut/stinger fade on the bar), stinger cut point, dip/flash, blank (its own fade length, e.g. fade to black), PANIC; reveal/zoom-out on top. Inputs → pictures: crop/zoom/pan/flip/rotate from `Adjust` (same maths as `chroma.ts`), contain/cover, split screens (PiP, side by side, grid, custom boxes); graphics inputs are marked for the overlay renderer. Pure; unit tested. |
-| Sources          | `source.rs`, `mf.rs`                                                                                          | `VideoSource` trait; each source on its own thread, newest frame in a mailbox; health (starting / live / no signal after 1.5 s / failed, recovers on its own). Media Foundation camera (Windows; matched by name, Chrome's " (vid:pid)" dropped; ≤1080p, fastest mode; RGB32 via MF's video processor; retried every 2 s when unplugged). FFmpeg file/picture source (any OS). Test pattern.                                                                                                                 |
-| Frame pool       | `frame.rs`                                                                                                    | Pixel buffers reused (one allocation per buffer size, tested).                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Compositor       | `gpu.rs`, `compose.wgsl`                                                                                      | One WGSL program: a quad per picture; shape (wipe rect, iris, diamond), luma wipe (patterns computed in the shader), blur, opacity, premultiplied "over"; bars around contained pictures drawn only outside the picture (so a fading picture never shows them through itself). Overlay layer per screen. Previews: every screen and input drawn small into one atlas, read back once.                                                                                                                        |
-| Outputs          | `present.rs`                                                                                                  | Windows: borderless popup covering the assigned display (or a 960×540 window), `WS_EX_NOACTIVATE` (never takes focus from the control window), Alt+F4 ignored (an audience screen never closes by accident); wgpu surface, Mailbox/Immediate present (three displays never stall the engine on vsync); letterboxed.                                                                                                                                                                                          |
-| Overlay renderer | `overlay.rs`, `app/src/engine/overlay{Renderer,Planes,Dirty,Wire}.ts`, `views/OverlayView.tsx`                | Graphics drawn by the recorder's Canvas code in a hidden window per screen, sent as dirty rectangles of planes, drawn by the engine in their place among the pictures (below).                                                                                                                                                                                                                                                                                                                               |
-| Encoder feeds    | `feeds.rs`, `audio.rs`, `app/src/audio/engineTap.ts`                                                          | Recording, stream, vertical, NDI and ISO files at once, with the WebView's sound mix (below).                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Encoder feed     | `encoder.rs`                                                                                                  | Read back the Live Screen (pipelined: one frame late, never a stall) → raw RGBA into FFmpeg (wall-clock timestamps, CFR out; a frame FFmpeg can't take is dropped and counted, never queued without end) → encoded Matroska chunks → `capture.rs`'s normal recording/stream session (so files, destinations, reconnects and failure reporting are today's). Encoder arguments from `encode.rs` (hardware family picked as today).                                                                            |
-| Engine loop      | `engine.rs`                                                                                                   | `LiveEngine::frame(now)` and `Runner` (own thread, fixed rate, catches a panicking frame and carries on).                                                                                                                                                                                                                                                                                                                                                                                                    |
-| App glue         | `src-tauri/src/live.rs`                                                                                       | Mode saved in `live-engine.json`; `live_engine_info / set_mode / preview / health / test_record / graphics / audio / capture_start / capture_stop / probe`; `open_output`/`close_output` route Live/Back to the engine in Unified mode; the overlay renderer windows opened and closed with it (`sync_renderers`); show changes forwarded from `announce`.                                                                                                                                                   |
-| UI               | `app/src/engine/unified.ts`, `components/EnginePreview.tsx`, `views/EngineDialog.tsx`, `views/engineHost.tsx` | Settings → Engine (how it is doing: frame time, late frames, graphics, encoding; what is not in it yet); in Unified mode `SourceView` shows cameras from the engine's previews (the WebView never opens them); `EngineHealthWatch` feeds `inputHealth` (the backup lineup) from the engine; recording and streaming go through the engine (`recorder.ts`); the test event runs with the engine answering for its screens.                                                                                    |
+| Part             | File                                                                                                                                   | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Transition maths | `crates/live-engine/src/mix.rs`                                                                                                        | Line-for-line port of `mixOf`/`mixAt` (`timing.ts`) and `lumaValue` (`luma.ts`); same test cases as `timing.test.ts`.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Scene graph      | `crates/live-engine/src/scene.rs`                                                                                                      | `program_scene` = `programLayers` + `ProgramView`: TAKE progress from `lumora_engine::timing::transition_progress`, T-bar (cut/stinger fade on the bar), stinger cut point, dip/flash, blank (its own fade length, e.g. fade to black), PANIC; reveal/zoom-out on top. Inputs → pictures: crop/zoom/pan/flip/rotate from `Adjust` (same maths as `chroma.ts`), contain/cover, split screens (PiP, side by side, grid, custom boxes); graphics inputs are marked for the overlay renderer. Pure; unit tested.                                                                  |
+| Sources          | `source.rs`, `mf.rs`                                                                                                                   | `VideoSource` trait; each source on its own thread, newest frame in a mailbox; health (starting / live / no signal after 1.5 s / failed, recovers on its own). Media Foundation camera (Windows; matched by name, Chrome's " (vid:pid)" dropped; ≤1080p, fastest mode; RGB32 via MF's video processor; retried every 2 s when unplugged). FFmpeg file/picture source (any OS), playing as the show says (playing or paused, from where, how fast — slow motion paced by the engine —, looping or holding its last picture; a change opens it again from there). Test pattern. |
+| Frame pool       | `frame.rs`                                                                                                                             | Pixel buffers reused (one allocation per buffer size, tested).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Compositor       | `gpu.rs`, `compose.wgsl`                                                                                                               | One WGSL program: a quad per picture; shape (wipe rect, iris, diamond), luma wipe (patterns computed in the shader), blur, opacity, premultiplied "over"; bars around contained pictures drawn only outside the picture (so a fading picture never shows them through itself). Overlay layer per screen. Previews: every screen and input drawn small into one atlas, read back once.                                                                                                                                                                                         |
+| Outputs          | `present.rs`                                                                                                                           | Windows: borderless popup covering the assigned display (or a 960×540 window), `WS_EX_NOACTIVATE` (never takes focus from the control window), Alt+F4 ignored (an audience screen never closes by accident); wgpu surface, Mailbox/Immediate present (three displays never stall the engine on vsync); letterboxed.                                                                                                                                                                                                                                                           |
+| Overlay renderer | `overlay.rs`, `app/src/engine/overlay{Renderer,Planes,Dirty,Wire}.ts`, `views/OverlayView.tsx`, `monitorWords.ts`, `engineCaptions.ts` | Graphics drawn by the recorder's Canvas code in a hidden window per screen, sent as dirty rectangles of planes, drawn by the engine in their place among the pictures (below); also the Next previews' graphics, the stream's captions, the Monitor's words and the multiview's words and timecodes.                                                                                                                                                                                                                                                                          |
+| Encoder feeds    | `feeds.rs`, `audio.rs`, `app/src/audio/engineTap.ts`                                                                                   | Recording, stream, vertical, NDI and ISO files at once, with the WebView's sound mix (below).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Encoder feed     | `encoder.rs`                                                                                                                           | Read back the Live Screen (pipelined: one frame late, never a stall) → raw RGBA into FFmpeg (wall-clock timestamps, CFR out; a frame FFmpeg can't take is dropped and counted, never queued without end) → encoded Matroska chunks → `capture.rs`'s normal recording/stream session (so files, destinations, reconnects and failure reporting are today's). Encoder arguments from `encode.rs` (hardware family picked as today).                                                                                                                                             |
+| Engine loop      | `engine.rs`                                                                                                                            | `LiveEngine::frame(now)` and `Runner` (own thread, fixed rate, catches a panicking frame and carries on).                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Vision           | `vision.rs`, `app/src/engine/vision{Worker,Wire}.ts`, `views/VisionView.tsx`                                                           | Background removal, blur behind people and auto-framing: small frames of the cameras that use them to the web's person-finding models in a hidden window; masks, shots and pictures behind people back; applied in the shader (below).                                                                                                                                                                                                                                                                                                                                        |
+| Instant replay   | `replay.rs`, `src-tauri/src/live.rs` (`live_engine_replay_*`)                                                                          | The last minute of the Live Screen as hardware-encoded pieces on disk, taken as a playlist video the engine plays (below).                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| App glue         | `src-tauri/src/live.rs`                                                                                                                | Mode saved in `live-engine.json`; `live_engine_info / set_mode / preview / health / test_record / graphics / audio / capture_start / capture_stop / probe / renderer_wants / vision_frames / vision_result / replay_start / replay_stop / replay_take`; `open_output`/`close_output` route Live, Back and the Monitor to the engine in Unified mode; the overlay renderer and vision worker windows opened and closed with it (`sync_renderers`); show changes forwarded from `announce`.                                                                                     |
+| UI               | `app/src/engine/unified.ts`, `components/EnginePreview.tsx`, `views/EngineDialog.tsx`, `views/engineHost.tsx`                          | Settings → Engine (how it is doing: frame time, late frames, graphics, encoding; what is not in it yet); in Unified mode `SourceView` shows cameras from the engine's previews (the WebView never opens them); `EngineHealthWatch` feeds `inputHealth` (the backup lineup) from the engine; recording and streaming go through the engine (`recorder.ts`); the test event runs with the engine answering for its screens.                                                                                                                                                     |
 
 ### Graphics: the overlay renderer (Phase 2)
 
@@ -128,11 +130,15 @@ recorder's own Canvas code — `ProgramCompositor` in a **graphics-only mode**
 build-ons and show clock that recordings have today — into transparent
 **planes**, and sends the engine only the rectangles that changed:
 
-| Plane       | What                                                                                                                                                                                         | Drawn by the engine                                                                                                         |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `g:<input>` | a graphics input (title, countdown, scoreboard, lyrics, slides, credits, stage visuals, 3D logo…) at the size it is shown: the whole screen, a split-screen box, or an overlay channel's box | in its own place among the pictures, with the transition's fade, wipe, slide, zoom, blur or luma wipe — exactly as a camera |
-| `top`       | the stinger video                                                                                                                                                                            | over the overlay channels, under blank and PANIC                                                                            |
-| `panic`     | the PANIC safe screen's logo                                                                                                                                                                 | over the engine's own PANIC black (which is instant, whatever the renderer does)                                            |
+| Plane             | What                                                                                                                                                                                         | Drawn by the engine                                                                                                         |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `g:<input>`       | a graphics input (title, countdown, scoreboard, lyrics, slides, credits, stage visuals, 3D logo…) at the size it is shown: the whole screen, a split-screen box, or an overlay channel's box | in its own place among the pictures, with the transition's fade, wipe, slide, zoom, blur or luma wipe — exactly as a camera |
+| `n:g:<input>`     | a graphics input lined up in Next, half size, only while the control window or the multiview shows that Next                                                                                 | in the Next preview, in its place                                                                                           |
+| `top`             | the stinger video                                                                                                                                                                            | over the overlay channels, under blank and PANIC                                                                            |
+| `panic`           | the PANIC safe screen's logo                                                                                                                                                                 | over the engine's own PANIC black (which is instant, whatever the renderer does)                                            |
+| `cap`             | the live captions to write into the stream (Live)                                                                                                                                            | on the stream and its vertical version only — never on the screen or the recording (as the Standard recorder)               |
+| `mon`             | the stage monitor's words (Live's renderer, for the Monitor's slot)                                                                                                                          | the whole Monitor, over its PANIC black                                                                                     |
+| `mv`, `tc`, `tc2` | the multiview's words; its timecodes (header, screens' tiles)                                                                                                                                | over the multiview; the timecodes in their boxes                                                                            |
 
 Which planes a screen needs comes from the same rules on both sides
 (`overlayPlanes.ts` ↔ `scene.rs`): graphics layers of `programLayers`, the
@@ -261,9 +267,15 @@ time — are the Live Screen's overlay renderer's plane `mv`
 `live_engine_multiview_layout`; the Rust and TypeScript sides are tested
 against the same JSON). The clock changes once a second, so the plane sends
 one small rectangle a second. The WebView multiview window (and its camera
-copies) is not opened at all. Not yet: graphics inputs' tiles show only while
-they are on air on the Live Screen (their planes are the renderer's), the Next
-tiles show no graphics, and the timecodes count seconds, not frames.
+copies) is not opened at all. The Next tiles are the Next previews, graphics
+included (see "Next previews" below). The **timecodes count frames**
+(`HH:MM:SS:FF` at the engine's rate): they are two small planes of their own,
+`tc` (the header's clock box, `Layout::clock`) and `tc2` (the screens' tiles,
+`Tile::timecode`), drawn by the engine in each of those boxes every frame, so
+only a few hundred bytes change a frame and the big words plane `mv` is drawn
+and compared once a second (the renderer skips a plane whose stamp — the show
+and the second — has not changed). Not yet: graphics inputs' tiles show only
+while they are on air on the Live Screen (their planes are the renderer's).
 
 ### More inputs and the picture processor on the GPU (Phase 2)
 
@@ -279,8 +291,7 @@ tiles show no graphics, and the timecodes count seconds, not frames.
   (chroma distance, softness, spill), white balance, exposure, brightness,
   shadows and highlights, contrast, gamma, saturation, black and white,
   vignette, grain — per picture, in the same pass that places it (no extra
-  copy). Background removal, blur behind people and auto-framing need the web
-  processor's person-finding model and are not in the engine.
+  copy). Background removal, blur behind people and auto-framing: see below.
 - **NV12 both ways**: cameras' frames cross to the GPU as NV12 (two planes,
   12 bits a pixel) and are made RGB there; the encoder feeds are made NV12 on
   the GPU and read back at a third of RGBA's bytes (see the cost table).
@@ -304,23 +315,164 @@ tiles show no graphics, and the timecodes count seconds, not frames.
   and faded as one (`gpu::needs_group`), so its background no longer shows
   through its boxes mid-fade.
 
+### Background removal, blur behind people and auto-framing (Phase 3)
+
+The web's person-finding models (MediaPipe's selfie segmenter and person
+detector, `app/src/engine/vision.ts`: `InputVision`, the same code the
+Standard processor runs) run in a **vision worker**: a hidden window
+(`overlay-vision`, `views/VisionView.tsx`, `engine/visionWorker.ts`) in the
+overlay renderers' own browser process (no background throttling), opened by
+`live::sync_renderers` **only while an input uses** a background that isn't
+kept or digital auto-framing (a PTZ camera is steered instead), and closed
+when none does.
+
+- **Frames out** (`vision.rs`): every second engine frame (at most 30 a second
+  per camera, as the web's 33 ms), each such camera's newest frame — only a
+  new one — is made small on the processor (at most 320 wide, its own shape;
+  NV12 converted with the same BT.709/601 limited-range math as `yuv.wgsl`;
+  no GPU read-back) and put in a mailbox. The worker long-polls it
+  (`live_engine_vision_frames`, waits up to 250 ms; "LVF1": id, sequence,
+  size, RGBA). Cameras that use none of these effects are never copied.
+- **Answers back** (`live_engine_vision_result`, "LVR1", checked whole): the
+  person mask (a byte a spot, at the model's size; none while the models are
+  paused or failed, so the picture shows as it is), where auto-framing aims
+  (none: wide), and — once, and again only when it changes — the picture
+  behind the people (a file, or the virtual set's two layers, at most 1280
+  wide). Wire format tested on both sides against the same bytes.
+- **In the shader** (`compose.wgsl`, group 2: mask, picture behind, desk in
+  front; uniforms `bg0`/`bg1`): the processor's own steps in its order —
+  `person = smoothstep` of the mask with the edge's softness, portrait blur
+  where there is no person (33 taps), alpha × person for "remove", the
+  picture behind (filling the picture) and the virtual set's desk over it for
+  "picture"/"set" — in the same pass that places the camera, with the green
+  screen and light and color. A picture behind also works with a green
+  screen's edge alone, as on the web.
+- **Auto-framing**: the worker sends where the shot should go (the web's
+  `frameFor` / `worthMoving`, its `aim`); the engine moves the shot toward it
+  every frame (`step_shot`, a port of `stepShot`, at the input's speed) and
+  turns it into the picture's zoom and pan (`shot_to_view`), wherever the
+  camera shows (screens, Next, previews, multiview).
+- **Latency budget.** The small frame is made when the engine takes the
+  camera's frame; the worker has it within a millisecond (the long poll),
+  the models take 5–15 ms on a graphics card, and the answer is used from
+  the engine's next frame. So a mask is drawn on a picture 1–2 frames newer
+  than the one it was found on (2–3 when the models are slow); the web's
+  mask is blended with the last one too, so a moving edge trails a little in
+  both. The picture is never held back for the mask. When the models take
+  too long the web's safety net pauses them (no mask: the plain picture).
+- Device loss: the masks went with the device; the worker's next answer is
+  refused once and it sends everything again.
+- Measured here: the shader's remove / picture-behind / portrait-blur paths
+  and a mask sent and cleared, checked pixel by pixel (`tests/gpu.rs`); the
+  worker with a stand-in model (`visionWorker.test.ts`). The models
+  themselves (WebGL / WebGPU in WebView2) need Windows to be measured.
+
+### Captions written into the stream (Phase 3)
+
+As in Standard, the live captions (Moonshine / Whisper in the control
+window) are written into the **stream** picture and its vertical version
+when asked, never the recording: the control window passes the lines to the
+Live Screen's overlay renderer (`engineCaptions.ts`, a Tauri event, again
+every two seconds so a renderer that started since has them); it draws them
+with the Standard `CaptionLayer`'s own drawing (`drawCaptions`) into the
+plane `cap`, sent only when the lines change. The engine's stream and
+vertical feeds (`FeedSource::Screen { captions: true }`) draw the Live
+Screen into a target of their own and the `cap` plane over it — only while
+there is one, otherwise they read the screen directly as before.
+
+### Instant replay (Phase 3)
+
+`live_engine_replay_start` starts one more encoder feed of the Live Screen
+(30 fps, 8 Mb/s, the recordings' hardware encoder, the Stream mix's sound as
+Opus) whose output is FFmpeg's segment muxer: pieces of 3 s on disk
+(`<app data>/replay-ring`, each starting on a forced key frame), listed by
+FFmpeg in a CSV; pieces older than a minute are deleted every two seconds.
+`live_engine_replay_take` waits for the piece being written to finish (at
+most 5 s, as the WebView buffer finished its current piece), picks the pieces
+that cover the seconds asked and copies them into the replays folder; the
+control window lines them up as a playlist video (`replay-…`, and the
+highlights reel) exactly as before. **Playback is an engine source**: videos
+now follow the show's playback (play, pause, position, speed, looping), so a
+replay plays from its start when played, in slow motion when asked (turned
+into 30 fps by FFmpeg and paced by the engine at 30 × speed), and holds its
+last picture at the end; the playlist goes on to the next piece as the core
+engine says. Nothing is drawn or encoded in a WebView; switching engines
+stops the engine's replay (and says so).
+
+### Graphics on the Next previews (Phase 3)
+
+The Next previews (half size) are drawn with planes too: the screen's
+renderer draws what is lined up in Next (`nextPlanes`: a graphics input, or
+a split screen's graphics boxes) into `n:g:<input>` planes at Next's size,
+**only while that Next is seen** — its preview asked for within the last
+2.5 s by the control window, or the engine's multiview showing it
+(`live_engine_renderer_wants`, asked every second). The engine draws Next
+with the screen's planes and the `n:` prefix (`ScreenScene::plane_prefix`).
+
+### The Monitor in the engine's window (Phase 3)
+
+In Unified mode (Windows) the Monitor is one of the engine's own windows,
+like Live and Back. Its words — clock, countdown, message, a song's words
+and what comes next, the teleprompter, the candle-lighting band, flashing,
+blank and PANIC dimming — are drawn by the Live Screen's renderer into the
+plane `mon` (`monitorWords.ts`, a canvas port of `MonitorScreen.tsx` and its
+CSS: the three layouts, sizes, colors, text made smaller to fit) and sent
+for the Monitor's slot; the engine draws its own PANIC black under it. The
+plane is redrawn ten times a second at most (every frame while it flashes or
+the teleprompter rolls). The test event asks the engine about it as about
+Live and Back.
+
+### Behind slides and Pesukim words (Phase 3)
+
+A camera, video, picture or color behind slides or the Pesukim words (and a
+camera used as a slide, in the slides' area) is drawn by the engine: the
+input's pictures are the background color, what is behind and the slide's
+camera, with the slides' or words' plane over them; in graphics-only mode the
+renderer leaves the background out (see-through), so the engine's pictures
+show through. The layer is grouped when it fades, so it fades as one.
+
+### Encoding, adapters and HDR: where Phase 3 goes next
+
+- **Zero-copy encode.** Today each screen feed is converted to NV12 on the
+  GPU and read back (one frame late, 3.1 MB a frame at 1080p), then piped
+  to FFmpeg. The next step hands the D3D texture to the encoder: wgpu's
+  `Texture::as_hal::<Dx12>` gives the `ID3D12Resource`; a shared NT handle
+  (`CreateSharedHandle`) opened as an `ID3D11Texture2D` on FFmpeg's D3D11
+  device (`AVD3D11VADeviceContext`, `-init_hw_device d3d11va`) can be wrapped
+  in an `AVFrame` (`AV_PIX_FMT_D3D11`) and fed to `h264_nvenc` / `h264_qsv`
+  / `h264_amf` through `hwupload`-free paths — which means linking FFmpeg's
+  libraries (libavcodec) instead of piping to `ffmpeg.exe`, plus a fence per
+  frame (`ID3D12Fence` shared with D3D11) so the encoder never reads a frame
+  being drawn. It saves the read-back and the pipe (≈190 MB/s at 1080p60);
+  it needs Windows hardware to build and measure, and the pipe stays as the
+  fallback for any encoder that refuses the texture.
+- **Per-output adapters.** wgpu reports every adapter; DXGI's
+  `IDXGIAdapter::EnumOutputs` tells which adapter drives which display. The
+  plan: start the engine on the adapter that drives the most assigned
+  output displays (`outputs::displays` matched by monitor handle), and for a
+  window on another adapter, present a copy made with a shared texture
+  (cross-adapter, like Windows' own hybrid-GPU path) rather than letting DWM
+  do it every frame. Needs an Optimus / two-GPU machine.
+- **HDR passthrough.** The engine draws in 8-bit SDR (`Rgba8Unorm`) and DWM
+  shows it correctly on an HDR desktop. Passing HDR through (HDR10 cameras
+  and files to an HDR projector or an HDR stream) needs: `Rgba16Float` (scRGB)
+  targets and swapchains (`DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709`), sources
+  decoded as P010 with their transfer function (PQ / HLG) converted to linear
+  in `yuv.wgsl`, the graphics planes (sRGB) placed at SDR white (≈203 nits)
+  and tone-mapped down for SDR outputs, and the encoder fed P010 with BT.2020
+  / PQ tags. Nothing of it is built; the 8-bit path stays the default.
+
 ### What Unified (beta) does not do yet
 
 Listed in the Engine dialog too:
 
-- Background removal, blur behind people and auto-framing on cameras (green
-  screen, light and colour, crop, zoom, pan, flip, rotate and the picture delay
-  are done).
-- A camera or video **behind** slides or Pesukim words (the slides and words
-  are drawn; what is behind them is one of the engine's pictures, and a
-  graphics plane can't have a picture inside it yet).
-- Captions written into the stream picture; instant replay (it would draw the
-  picture in the WebView again, cameras and all: it says so instead).
-- The Monitor (all words) stays a WebView window; the Next previews (and the
-  multiview's Next tiles) show no graphics; in the multiview a graphics
-  input's tile shows it only while it is on air on the Live Screen.
+- In the multiview a graphics input's tile shows it only while it is on air
+  on the Live Screen.
+- A camera or video used as a slide comes up without the slides' 0.4 s fade
+  (the slides themselves fade; the engine notes it when it happens).
 - The vertical version has no drop shadow under the picture (the Standard
   one has a soft shadow).
+- Zero-copy encoding, per-output adapters and HDR (above).
 
 ## 4. Latency, CPU and GPU
 
@@ -439,6 +591,25 @@ late frames).
   split fading as one picture); green screen and brightness in the shader
   (pixels checked); JPEG and PNG pictures from the app's frame store and an
   input going live with them; the picture delay.
+- Phase 3, `cargo test -p lumora-live-engine`: the vision wire format (same
+  bytes as `visionWire.test.ts`, malformed refused), frames made small (NV12
+  and RGB32), the shot moving as `stepShot` and its zoom and pan; the mask
+  removing the background, a picture behind and portrait blur on the GPU,
+  pixel by pixel; only inputs with the effects sent to the models; the
+  stream's captions (a real FFmpeg feed: on the stream, not the recording or
+  the screen); Next previews with their `n:` planes; the Monitor's plane and
+  probe; the multiview's timecode planes in their boxes; the replay ring
+  (pieces parsed, pruned, taken and copied) and a real replay: the engine's
+  Live Screen into FFmpeg's segment muxer, a piece played back in slow motion
+  as an engine source; videos following playback (paused, slow motion paced,
+  ending without looping); slides and Pesukim with a camera behind.
+- Phase 3, vitest: `visionWire`, `visionWorker` (stand-in model: masks, aims,
+  pictures behind sent once and again after a refusal), `engineCaptions`,
+  `monitorWords` (layouts, fitting, flash, PANIC, the teleprompter),
+  `overlayRenderer` (captions, Next, Monitor and timecode planes, stamps,
+  slides leaving their background to the engine), `overlayPlanes`
+  (`nextPlanes`), `recorderUnified` (replay kept by the engine),
+  `engineReport` (person finding).
 - Phase 2, vitest: `overlayWire` (same bytes as Rust), `overlayDirty` (tiles,
   joining, bounding box, pacing, back-pressure), `overlayPlanes` (which planes
   at which sizes), `overlayRenderer` (the real compositor in graphics-only
@@ -488,7 +659,7 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
   vertical, NDI and ISO files from the engine with the WebView's sound mix as
   PCM (no camera opened by the control window); the test event in Unified
   mode; the multiview drawn by the engine in its own window; stream, web page,
-  screen-capture and guest inputs; green screen and light and colour in the
+  screen-capture and guest inputs; green screen and light and color in the
   shader (port of `chroma.ts`); the picture delay; group opacity; NV12 uploads
   and read-back; files with hardware decode; device-lost recovery. (Tested on
   Linux with llvmpipe and FFmpeg; the Windows-only parts — Media Foundation
@@ -498,5 +669,15 @@ x86_64-pc-windows-msvc -- -D warnings` type-checks the Windows-only code
   captions written into the stream picture; instant replay; the Monitor as an
   engine window; graphics on the Next previews; frame-counting timecodes in
   the multiview; a camera behind slides or Pesukim words.
-- **Phase 3** — zero-copy encode (D3D texture → NVENC/AMF/QSV), HDR output,
-  per-output adapters, Unified as the default.
+- **Phase 3** — done: background removal, blur behind people and
+  auto-framing (the web's models in a hidden vision worker, masks and shots
+  applied in the shader); captions written into the stream; instant replay
+  from the engine's own frames (hardware-encoded pieces on disk) played as an
+  engine input, with videos following the show's playback; graphics on the
+  Next previews (only while seen); the Monitor in the engine's window;
+  cameras behind slides and Pesukim words; multiview timecodes with frames.
+  (Tested on Linux with llvmpipe and FFmpeg; the vision worker's models,
+  WebView2's hidden windows, Media Foundation and the native windows still
+  to be run on the Windows matrix of §6.) Left: zero-copy encode (D3D
+  texture → NVENC/AMF/QSV), per-output adapters, HDR (designs above), and
+  Unified as the default.

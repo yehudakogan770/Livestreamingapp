@@ -42,6 +42,8 @@ export interface EngineStats {
   feed: EngineFeedStats | null;
   /** Every feed: the recording, the stream, the vertical version, NDI (screens) and each camera's ISO file (inputs). */
   feeds: { id: number; kind: 'screen' | 'vertical' | 'input'; stats: EngineFeedStats | null; error: string | null }[];
+  /** Background removal, blur behind people and auto-framing: inputs using them, frames sent to the vision worker, its answers, masks held. */
+  vision?: { inputs: number; frames: number; answers: number; masks: number };
   /** The graphics from the overlay renderers. */
   overlay: { framesPerS: number; mbPerS: number; latencyMs: number; planes: number; refused: number };
   notes: string[];
@@ -167,6 +169,35 @@ export function engineCaptureStop(session: number): Promise<void> {
 /** A piece of a mix's sound for the engine's encoders. */
 export function sendEngineSound(mix: 'master' | 'b', pcm: Uint8Array, atMs: number, rate: number): Promise<void> {
   return invoke('live_engine_audio', pcm, { headers: { mix, at: String(atMs), rate: String(rate) } });
+}
+
+/** Instant replay from the engine: keep the last minute of its Live Screen (with the Stream mix's sound). */
+export function engineReplayStart(sampleRate: number): Promise<void> {
+  return invoke('live_engine_replay_start', { sampleRate });
+}
+
+export function engineReplayStop(): Promise<void> {
+  return invoke('live_engine_replay_stop');
+}
+
+/** The last `seconds` as pieces kept in the replays folder (`<name>-<n>.mkv`). */
+export function engineReplayTake(seconds: number, name: string): Promise<{ path: string; durationS: number }[]> {
+  return invoke('live_engine_replay_take', { seconds, name });
+}
+
+/** The engine's replay encoder stopped (or the engine was switched): replay is off. */
+export function onEngineReplayLost(cb: (message: string) => void): () => void {
+  if (!isInsideLumora()) return () => {};
+  let stop: (() => void) | null = null;
+  let gone = false;
+  void listen<string>('live-engine-replay-lost', (e) => cb(e.payload)).then(
+    (u) => (gone ? u() : (stop = u)),
+    () => {},
+  );
+  return () => {
+    gone = true;
+    stop?.();
+  };
 }
 
 /** The engine's own encoder stopped by itself (the session is started again, as for the WebView's). */

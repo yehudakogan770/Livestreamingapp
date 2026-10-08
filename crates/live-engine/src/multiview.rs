@@ -56,6 +56,9 @@ pub struct Tile {
     pub big: bool,
     /// The input's number (1 …), for inputs.
     pub number: Option<u32>,
+    /// Where its timecode goes (the screens' tiles: the end of the label
+    /// strip), drawn from the small plane `tc2` every frame.
+    pub timecode: Option<[u32; 4]>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -64,10 +67,17 @@ pub struct Layout {
     pub width: u32,
     pub height: u32,
     pub header: [u32; 4],
+    /// The header's clock (a timecode with frames, from the small plane `tc`).
+    pub clock: [u32; 4],
     pub tiles: Vec<Tile>,
     /// CSS pixels to multiview pixels (the words are drawn at this scale).
     pub scale: f32,
 }
+
+/// The header clock's plane (`HH:MM:SS:FF`, one change a frame: kept small).
+pub const CLOCK_PLANE: &str = "tc";
+/// The screens' tiles' timecode plane (the same time, smaller words).
+pub const TIMECODE_PLANE: &str = "tc2";
 
 /// The inputs the multiview shows (everything with a picture).
 pub fn inputs(show: &Show) -> Vec<&lumora_engine::Source> {
@@ -109,7 +119,11 @@ fn tile(
     let b = s.max(1.0);
     let lh = if big { 27.0 } else { 23.0 } * s;
     let pic_h = (h - 2.0 * b - lh).max(1.0);
+    let screen = !matches!(content, TileContent::Input(_));
+    // The timecode at the end of a screen's label strip (12 px mono words, 8 px in from the edge).
+    let tc_w = (TIMECODE_W * s).min((w - 2.0 * b) / 2.0);
     Tile {
+        timecode: screen.then(|| r(x + w - b - tc_w, y + b + pic_h, tc_w, lh)),
         content,
         rect: r(x, y, w, h),
         picture: r(x + b, y + b, w - 2.0 * b, pic_h),
@@ -120,6 +134,11 @@ fn tile(
     }
 }
 
+/// Room for a tile's timecode (`00:00:00:00` at 12 px mono and its margin), CSS pixels.
+const TIMECODE_W: f32 = 104.0;
+/// The header clock's box (`00:00:00:00` at 16 px mono, 10 px each side), CSS pixels.
+const CLOCK_W: f32 = 132.0;
+
 /// The multiview's layout for this show, `w` × `h` pixels.
 pub fn layout(show: &Show, w: u32, h: u32) -> Layout {
     let (wf, hf) = (w as f32, h as f32);
@@ -128,6 +147,13 @@ pub fn layout(show: &Show, w: u32, h: u32) -> Layout {
     let gap = 4.0 * s;
     let (gx, gy, gw, gh) = (pad, pad, wf - 2.0 * pad, hf - 2.0 * pad);
     let header = r(gx, gy, gw, 32.0 * s);
+    // The clock: 26 px high, 6 px in from the header's right end, centered in it.
+    let clock = r(
+        gx + gw - 6.0 * s - CLOCK_W * s,
+        gy + 3.0 * s,
+        CLOCK_W * s,
+        26.0 * s,
+    );
     let mut y = gy + 32.0 * s + gap;
     let mut tiles = Vec::new();
     let live = &show.screens.live;
@@ -216,6 +242,7 @@ pub fn layout(show: &Show, w: u32, h: u32) -> Layout {
         width: w,
         height: h,
         header,
+        clock,
         tiles,
         scale: s,
     }
@@ -392,6 +419,10 @@ mod tests {
         assert_eq!(v["tiles"][2]["number"], 1);
         assert_eq!(v["header"].as_array().map(Vec::len), Some(4));
         assert_eq!(v["scale"], 1.0);
+        // The timecodes: the header's clock, and the screens' tiles' (not the inputs').
+        assert_eq!(v["clock"], serde_json::json!([1778, 7, 132, 26]));
+        assert_eq!(v["tiles"][1]["timecode"].as_array().map(Vec::len), Some(4));
+        assert!(v["tiles"][2]["timecode"].is_null());
     }
 
     #[test]

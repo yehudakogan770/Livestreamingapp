@@ -25,6 +25,11 @@ export function overlayScreen(): 'live' | 'back' | null {
   return name === 'live' || name === 'back' ? name : null;
 }
 
+/** The unified engine's hidden vision worker (`overlay-vision`: the person-finding models). */
+export function isVisionWorker(): boolean {
+  return isInsideLumora() ? getCurrentWindow().label === 'overlay-vision' : new URLSearchParams(window.location.search).get('overlay') === 'vision';
+}
+
 export function outputScreen(): ScreenId | null {
   const name = isInsideLumora() ? getCurrentWindow().label.replace(/^output-/, '') : new URLSearchParams(window.location.search).get('output');
   return SCREENS.find((s) => s === name) ?? null;

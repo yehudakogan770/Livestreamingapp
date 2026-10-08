@@ -16,12 +16,12 @@ const MODES: { mode: EngineMode; label: string; hint: string }[] = [
   },
 ];
 
-/** What Unified (beta) does not do yet (docs/ENGINE.md, "Phase 2"). */
+/** What Unified (beta) does not do yet (docs/ENGINE.md, "What Unified (beta) does not do yet"). */
 const NOT_YET = [
-  'Background removal, blur behind people and auto-framing are not applied to cameras yet (green screen, light and color, crop, zoom, move, flip and the picture delay are).',
-  'A camera or video behind slides or behind Pesukim words is not shown yet (the slides and words are).',
-  'Captions written into the stream picture, and instant replay, are not in Unified (beta) yet.',
-  'In the multiview, the Next tiles show no graphics, and a graphics input’s tile shows it only while it is on air on the Live Screen.',
+  'In the multiview, a graphics input’s tile shows it only while it is on air on the Live Screen.',
+  'A camera or video used as a slide comes up without the slides’ fade (a camera behind slides or Pesukim words is shown).',
+  'The vertical version has no drop shadow under the picture.',
+  'Recordings and streams are copied back from the graphics card before the hardware encoder takes them (not handed over directly yet); every screen is drawn by one graphics card, and HDR displays get the standard picture.',
 ];
 
 /** Settings → Engine: Standard or Unified (beta), and how the unified engine is doing. */
@@ -104,6 +104,15 @@ export function EngineDialog({ onClose }: { onClose: () => void }) {
                       ? `${s.overlay.framesPerS.toFixed(1)} updates a second (${s.overlay.mbPerS.toFixed(1)} MB/s), ${Math.round(s.overlay.latencyMs)} ms behind, ${s.overlay.planes} shown`
                       : '—'}
                   </dd>
+                  {!!s.vision?.inputs && (
+                    <>
+                      <dt>Person finding</dt>
+                      <dd>
+                        {s.vision.inputs} input{s.vision.inputs === 1 ? '' : 's'} (background or auto-framing): {s.vision.answers} answers,{' '}
+                        {s.vision.masks ? `${s.vision.masks} with a person mask` : 'no person mask yet'}
+                      </dd>
+                    </>
+                  )}
                   <dt>Encoding</dt>
                   <dd>
                     {s.feeds?.length

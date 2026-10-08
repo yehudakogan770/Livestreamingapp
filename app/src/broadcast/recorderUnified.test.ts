@@ -28,7 +28,24 @@ vi.mock('../engine/unified', () => ({
     lost = cb;
     return () => {};
   },
+  engineReplayStart: (rate: number) => {
+    calls.push({ name: 'replayStart', args: rate });
+    return Promise.resolve();
+  },
+  engineReplayStop: () => {
+    calls.push({ name: 'replayStop', args: null });
+    return Promise.resolve();
+  },
+  engineReplayTake: (seconds: number, name: string) => {
+    calls.push({ name: 'replayTake', args: [seconds, name] });
+    return Promise.resolve([{ path: `replays/${name}-1.mkv`, durationS: 3 }]);
+  },
+  onEngineReplayLost: (cb: typeof replayLost) => {
+    replayLost = cb;
+    return () => {};
+  },
 }));
+let replayLost: ((message: string) => void) | null = null;
 
 const taps: string[] = [];
 vi.mock('../audio/engineTap', () => ({
@@ -141,9 +158,28 @@ test('the engine’s encoder stopping is reported like the WebView’s', async (
   expect(seen).toEqual([['record', 7, 'NVENC stopped']]);
 });
 
-test('instant replay says it is not in the unified engine yet (it would open the cameras)', async () => {
+test('instant replay is kept by the engine: the Stream mix is sent, no camera is opened, nothing drawn here', async () => {
   const { Broadcaster } = await import('./recorder');
   const b = new Broadcaster(new DemoClient(), sound().engine as never);
-  expect(() => b.startReplay()).toThrow(/unified engine/);
+  const started = b.startReplay();
+  expect(b.replaying).toBe(true);
+  expect(b.replayInEngine).toBe(true);
+  await started;
+  expect(calls.map((c) => c.name)).toEqual(['replayStart']);
+  expect(taps).toEqual(['on']);
+  // A replay: the engine's pieces, already in the replays folder.
+  expect(await b.takeReplayFiles(8, 'replay-x')).toEqual([{ path: 'replays/replay-x-1.mkv', durationS: 3 }]);
+  expect(await b.takeReplay(8)).toEqual([]);
+  b.stopReplay();
+  expect(b.replaying).toBe(false);
+  expect(calls.map((c) => c.name)).toEqual(['replayStart', 'replayTake', 'replayStop']);
+  expect(taps).toEqual(['on', 'off']);
+  // The engine's replay encoder stopping turns it off, and says so.
+  const lostMessages: string[] = [];
+  b.onReplayLost = (m) => lostMessages.push(m);
+  await b.startReplay();
+  replayLost?.('Instant replay stopped (NVENC failed).');
+  expect(b.replaying).toBe(false);
+  expect(lostMessages).toEqual(['Instant replay stopped (NVENC failed).']);
   expect(gum).not.toHaveBeenCalled();
 });

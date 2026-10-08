@@ -21,6 +21,8 @@ export interface EngineMeasured {
   overlayMbPerSMax: number;
   overlayLatencyMs: number | null;
   overlayRefused: number;
+  /** Background removal and auto-framing (the vision worker): frames sent, answers, most masks held at once. */
+  vision: { frames: number; answers: number; masks: number };
   /** Each feed as last seen while it ran. */
   feeds: { id: number; kind: string; framesIn: number; framesDropped: number; audioSeconds: number; silenceSeconds: number; error: string | null }[];
 }
@@ -41,6 +43,7 @@ export function noteEngine(prev: EngineMeasured | null, s: EngineStats, rate = 4
         overlayMbPerSMax: 0,
         overlayLatencyMs: null,
         overlayRefused: 0,
+        vision: { frames: 0, answers: 0, masks: 0 },
         feeds: [],
       };
   m.adapter = s.adapter ? `${s.adapter.name} (${s.adapter.backend}, ${s.adapter.kind})` : m.adapter;
@@ -54,6 +57,12 @@ export function noteEngine(prev: EngineMeasured | null, s: EngineStats, rate = 4
   m.overlayMbPerSMax = Math.max(m.overlayMbPerSMax, s.overlay?.mbPerS ?? 0);
   if (s.overlay && s.overlay.framesPerS > 0) m.overlayLatencyMs = s.overlay.latencyMs;
   m.overlayRefused = s.overlay?.refused ?? m.overlayRefused;
+  if (s.vision)
+    m.vision = {
+      frames: Math.max(m.vision.frames, s.vision.frames),
+      answers: Math.max(m.vision.answers, s.vision.answers),
+      masks: Math.max(m.vision.masks, s.vision.masks),
+    };
   for (const f of s.feeds ?? []) {
     if (!f.stats && !f.error) continue;
     const row = {
@@ -87,6 +96,11 @@ export function engineRows(e: EngineMeasured | null | undefined): string[][] {
       `up to ${r1(e.overlayFpsMax)} frames/s, ${r1(e.overlayMbPerSMax)} MB/s${e.overlayLatencyMs !== null ? `, ${Math.round(e.overlayLatencyMs)} ms behind` : ''}${e.overlayRefused ? `, ${e.overlayRefused} refused` : ''}`,
     ],
   ];
+  if (e.vision.frames)
+    rows.push([
+      'Engine person finding (background, auto-framing)',
+      `${e.vision.frames} frames to the models, ${e.vision.answers} answers${e.vision.masks ? `, up to ${e.vision.masks} with a person mask` : ', no person mask came'}`,
+    ]);
   for (const f of e.feeds)
     rows.push([
       `Engine feed: ${FEED_NAMES[f.kind] ?? f.kind}`,

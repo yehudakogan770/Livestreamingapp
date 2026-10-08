@@ -39,6 +39,7 @@ pub fn test_settings(own: &CaptureSettings, folder: &Path) -> CaptureSettings {
         captions_url: String::new(),
         video_kbps: None,
         backup_url: String::new(),
+        account: None,
     };
     let mut destinations = vec![sink("lumora-test", false)];
     if wants_vertical {
@@ -326,6 +327,7 @@ pub fn test_event_receivers(
             captions_url: String::new(),
             video_kbps: None,
             backup_url: String::new(),
+            account: None,
         });
         out.push(ReceiverInfo {
             port,

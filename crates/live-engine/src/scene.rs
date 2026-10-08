@@ -8,6 +8,8 @@
 
 use lumora_engine::{
     overlays::{Overlay, OverlayAnim},
+    pesukim::PesukimMode,
+    slideshow::Slide,
     timing::transition_progress,
     Fit, ScreenId, Show, Source, SourceId, SourceKind, TransitionKind,
 };
@@ -52,6 +54,20 @@ pub struct Placement {
     pub rotate: f32,
     /// Green screen and light and color (None: the picture as it is).
     pub look: Option<crate::look::Look>,
+    /// The background behind the people, without a green screen (None: kept).
+    /// Applied once the vision worker has sent a person mask ([`crate::vision`]).
+    pub backdrop: Option<Backdrop>,
+}
+
+/// What happens to the background behind the people (the input's `background`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Backdrop {
+    /// 1 blurred, 2 taken away, 3 a picture (or virtual set) behind ([`crate::vision::mode_code`]).
+    pub mode: f32,
+    /// How strong the blur is, 0 – 1.
+    pub blur: f32,
+    /// How soft the edge around people is, 0 – 1.
+    pub edge: f32,
 }
 
 impl Default for Placement {
@@ -65,6 +81,7 @@ impl Default for Placement {
             flip: [false; 2],
             rotate: 0.0,
             look: None,
+            backdrop: None,
         }
     }
 }
@@ -117,7 +134,13 @@ pub struct ScreenScene {
     /// PANIC: the safe screen over everything.
     pub panic: f32,
     pub stinger: Option<StingerPlay>,
+    /// Its graphics inputs' planes are named with this first (`n:` for the
+    /// Next preview's, drawn half size: [`NEXT_PREFIX`]).
+    pub plane_prefix: &'static str,
 }
+
+/// The prefix of the Next preview's graphics planes (`overlayPlanes.ts: nextPlanes`).
+pub const NEXT_PREFIX: &str = "n:";
 
 impl ScreenScene {
     /// The sources whose frames this scene needs.
@@ -210,10 +233,24 @@ fn placement_of(src: &Source, frame: Rect) -> Placement {
         } else {
             1.0
         },
-        pan: [pan(a.pan_x), pan(a.pan_y)],
+        // The settings' "up" is positive; the shader's y goes down (`chroma.ts` passes -panY).
+        pan: [pan(a.pan_x), -pan(a.pan_y)],
         flip: [a.flip_h, a.flip_v],
         rotate: if a.rotate.is_finite() { a.rotate } else { 0.0 },
         look: crate::look::Look::of(&src.key, a),
+        backdrop: src.background.on().then(|| Backdrop {
+            mode: crate::vision::mode_code(src.background.mode),
+            blur: finite01(src.background.blur, 0.6),
+            edge: finite01(src.background.edge, 0.4),
+        }),
+    }
+}
+
+fn finite01(v: f32, d: f32) -> f32 {
+    if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        d
     }
 }
 
@@ -237,6 +274,13 @@ fn pictures_in(show: &Show, src: &Source, frame: Rect, nested: bool) -> Vec<Pict
                 placement: placement_of(src, frame),
             },
         ]
+    };
+    // What is behind slides or the Pesukim words, when the engine draws it
+    // (a camera, a file, a picture, a color; graphics behind are in the plane).
+    let behind = |b: &Source| match &b.kind {
+        k if is_video_kind(k) => video(b),
+        SourceKind::Color { color: c } => vec![full(Content::Color(color(c)))],
+        _ => Vec::new(),
     };
     match &src.kind {
         k if is_video_kind(k) => video(src),
@@ -264,6 +308,54 @@ fn pictures_in(show: &Show, src: &Source, frame: Rect, nested: bool) -> Vec<Pict
             out
         }
         SourceKind::Split(_) | SourceKind::Microphone { .. } => Vec::new(),
+        // Slides with a camera or video behind them (or one as a slide):
+        // the engine draws the background color and the pictures, the
+        // overlay renderer the slides over them (its plane is see-through
+        // where the pictures are).
+        SourceKind::Slideshow(k) => {
+            let mut out = vec![full(Content::Color(color(&k.background)))];
+            let other = |id: &Option<SourceId>| {
+                id.as_ref()
+                    .and_then(|i| show.source(i))
+                    .filter(|s| is_video_kind(&s.kind))
+            };
+            if let Some(b) = k.behind.as_ref().and_then(|i| show.source(i)) {
+                out.extend(behind(b));
+            }
+            if let (false, Some(Slide::Input { source_id, .. })) =
+                (k.black, k.slides.get(k.current))
+            {
+                if let Some(inner) = other(&Some(source_id.clone())) {
+                    let [fx0, fy0, fx1, fy1] = frame;
+                    let (fw, fh) = (fx1 - fx0, fy1 - fy0);
+                    let a = &k.area;
+                    let r = [
+                        fx0 + fw * a.x / 100.0,
+                        fy0 + fh * a.y / 100.0,
+                        fx0 + fw * (a.x + a.w) / 100.0,
+                        fy0 + fh * (a.y + a.h) / 100.0,
+                    ];
+                    out.push(Picture {
+                        content: Content::Video(inner.id.clone()),
+                        placement: placement_of(inner, r),
+                    });
+                }
+            }
+            out.push(full(Content::Graphic(src.id.clone())));
+            out
+        }
+        // The 12 Pesukim with a camera or video behind the words: the same.
+        SourceKind::Pesukim(p) => {
+            let mut out = Vec::new();
+            if p.look.mode != PesukimMode::Bar {
+                out.push(full(Content::Color(color(&p.look.background))));
+            }
+            if let Some(b) = p.look.behind.as_ref().and_then(|i| show.source(i)) {
+                out.extend(behind(b));
+            }
+            out.push(full(Content::Graphic(src.id.clone())));
+            out
+        }
         _ => vec![full(Content::Graphic(src.id.clone()))],
     }
 }
@@ -507,7 +599,8 @@ fn sort_top(scene: &mut ScreenScene) {
     scene.layers.sort_by_key(|l| l.top);
 }
 
-/// What is lined up next on a screen (no blank or PANIC: Next is for the operator).
+/// What is lined up next on a screen (no blank or PANIC: Next is for the
+/// operator). Its graphics are the screen renderer's `n:` planes.
 pub fn preview_scene(show: &Show, screen: ScreenId) -> ScreenScene {
     let sc = show.screens.get(screen);
     ScreenScene {
@@ -517,6 +610,7 @@ pub fn preview_scene(show: &Show, screen: ScreenId) -> ScreenScene {
             .and_then(|id| plain_layer(show, id))
             .into_iter()
             .collect(),
+        plane_prefix: NEXT_PREFIX,
         ..ScreenScene::default()
     }
 }
@@ -831,6 +925,88 @@ mod tests {
             2,
             "only cameras, files and streams are opened"
         );
+    }
+
+    #[test]
+    fn a_camera_behind_slides_or_the_pesukim_words_is_the_engines_picture_under_their_plane() {
+        use lumora_engine::pesukim::Pesukim;
+        use lumora_engine::slideshow::Slideshow;
+        let mut s = show();
+        let mut slides = Slideshow {
+            behind: Some(SourceId::new("a")),
+            background: "#0000ff".into(),
+            slides: vec![
+                Slide::Image {
+                    path: "one.png".into(),
+                    notes: None,
+                },
+                Slide::Input {
+                    source_id: SourceId::new("b"),
+                    notes: None,
+                },
+            ],
+            ..Slideshow::default()
+        };
+        slides.area = lumora_engine::overlays::Frame {
+            x: 50.0,
+            y: 0.0,
+            w: 50.0,
+            h: 50.0,
+        };
+        s.sources
+            .push(src("sl", SourceKind::Slideshow(Box::new(slides.clone()))));
+        let what = |s: &Show, id: &str| -> Vec<(String, Rect)> {
+            source_scene(s, &SourceId::new(id)).layers[0]
+                .pictures
+                .iter()
+                .map(|p| {
+                    let c = match &p.content {
+                        Content::Video(v) => format!("video {v}"),
+                        Content::Graphic(g) => format!("graphic {g}"),
+                        Content::Color(_) => "color".into(),
+                        Content::Bars(_) => "bars".into(),
+                    };
+                    (c, p.placement.frame)
+                })
+                .collect()
+        };
+        // The background, the camera behind (with its bars), then the slides' plane.
+        assert_eq!(
+            what(&s, "sl"),
+            vec![
+                ("color".into(), FULL),
+                ("bars".into(), FULL),
+                ("video a".into(), FULL),
+                ("graphic sl".into(), FULL)
+            ]
+        );
+        // A camera as the slide: in the slides' area.
+        slides.current = 1;
+        s.sources[2].kind = SourceKind::Slideshow(Box::new(slides.clone()));
+        let w = what(&s, "sl");
+        assert_eq!(w[3], ("video b".into(), [0.5, 0.0, 1.0, 0.5]));
+        assert_eq!(w.len(), 5);
+        // Blacked out: the slide's camera goes, what is behind stays.
+        slides.black = true;
+        s.sources[2].kind = SourceKind::Slideshow(Box::new(slides));
+        assert_eq!(what(&s, "sl").len(), 4);
+        // The Pesukim: big words over their background, a camera behind; the bar has no background.
+        let mut p = Pesukim::default();
+        p.look.behind = Some(SourceId::new("a"));
+        p.look.mode = PesukimMode::Word;
+        s.sources
+            .push(src("pk", SourceKind::Pesukim(Box::new(p.clone()))));
+        let w = what(&s, "pk");
+        assert_eq!(w[0].0, "color");
+        assert_eq!(w[2].0, "video a");
+        assert_eq!(w[3].0, "graphic pk");
+        p.look.mode = PesukimMode::Bar;
+        s.sources[3].kind = SourceKind::Pesukim(Box::new(p));
+        assert_eq!(what(&s, "pk")[0].0, "bars");
+        // Nothing behind: just the plane (and the background).
+        let plain = Slideshow::default();
+        s.sources[2].kind = SourceKind::Slideshow(Box::new(plain));
+        assert_eq!(what(&s, "sl").len(), 2);
     }
 
     #[test]

@@ -17,7 +17,18 @@ import { VerticalFrame } from './vertical';
 import { CaptionLayer } from './captionLayer';
 import type { Captions } from '../engine/types/Captions';
 import { EngineTap } from '../audio/engineTap';
-import { engineCaptureStart, engineCaptureStop, onEngineFeedLost, refreshEngineInfo, sendEngineSound, unifiedOn } from '../engine/unified';
+import {
+  engineCaptureStart,
+  engineCaptureStop,
+  engineReplayStart,
+  engineReplayStop,
+  engineReplayTake,
+  onEngineFeedLost,
+  onEngineReplayLost,
+  refreshEngineInfo,
+  sendEngineSound,
+  unifiedOn,
+} from '../engine/unified';
 
 export const QUALITIES: Record<Quality, { name: string; width: number; height: number; fps: number; kbps: number }> = {
   '720p': { name: '720p (1280 × 720), 30 frames a second', width: 1280, height: 720, fps: 30, kbps: 3000 },
@@ -155,6 +166,11 @@ export class Broadcaster {
     // The unified engine's own encoder stopping is a lost session too.
     onEngineFeedLost((kind, session, message) => {
       if (this.live.get(kind)?.running.session === session) this.onLost?.(kind, session, message);
+    });
+    onEngineReplayLost((message) => {
+      if (!this.engineReplay) return;
+      this.endEngineReplay();
+      this.onReplayLost?.(message);
     });
   }
 
@@ -582,15 +598,42 @@ export class Broadcaster {
 
   private replay: { buffer: ReplayBuffer; video: MediaStream; audio: MediaStream | null } | null = null;
 
+  /** With the unified engine: the engine keeps the replays (started, or starting). */
+  private engineReplay: Promise<void> | null = null;
+
   get replaying(): boolean {
-    return this.replay !== null;
+    return this.replay !== null || this.engineReplay !== null;
   }
 
-  /** Keep the last minute of the Live Screen for replays. */
-  startReplay(): void {
-    if (this.replay) return;
-    // It would draw the picture here again, cameras and all.
-    if (unifiedOn()) throw new Error('Instant replay is not in the unified engine yet (beta). Switch to Standard in Settings → Engine to use it.');
+  /** The unified engine keeps the replays (its own frames, encoded on the graphics card): take them with {@link takeReplayFiles}. */
+  get replayInEngine(): boolean {
+    return this.engineReplay !== null;
+  }
+
+  /** Replay stopped by itself (the engine's encoder stopped, or the engine was switched). */
+  onReplayLost: ((message: string) => void) | null = null;
+
+  private endEngineReplay(): void {
+    if (!this.engineReplay) return;
+    this.engineReplay = null;
+    this.untapMix('master');
+  }
+
+  /**
+   * Keep the last minute of the Live Screen for replays. With the unified
+   * engine the engine keeps it (resolves once it runs; nothing is drawn here).
+   */
+  startReplay(): void | Promise<void> {
+    if (this.replaying) return;
+    if (unifiedOn()) {
+      this.tapMix('master');
+      const started = engineReplayStart(this.sound?.context.sampleRate ?? 48000).catch((e: unknown) => {
+        if (this.engineReplay === started) this.endEngineReplay();
+        throw e;
+      });
+      this.engineReplay = started;
+      return started;
+    }
     if (!this.compositor) {
       const q = QUALITIES['1080p'];
       this.compositor = new ProgramCompositor(this.client, q.width, q.height);
@@ -610,6 +653,11 @@ export class Broadcaster {
   }
 
   stopReplay(): void {
+    if (this.engineReplay) {
+      this.endEngineReplay();
+      void engineReplayStop().catch(() => {});
+      return;
+    }
     const r = this.replay;
     if (!r) return;
     this.replay = null;
@@ -621,6 +669,13 @@ export class Broadcaster {
   /** The last `seconds` as pieces (empty if replay is off). */
   async takeReplay(seconds: number): Promise<Piece[]> {
     return this.replay ? this.replay.buffer.take(seconds * 1000) : [];
+  }
+
+  /** The unified engine's replay: the last `seconds`, kept in the replays folder as `<name>-<n>.mkv` (empty if replay is off). */
+  async takeReplayFiles(seconds: number, name: string): Promise<{ path: string; durationS: number }[]> {
+    if (!this.engineReplay) return [];
+    await this.engineReplay;
+    return engineReplayTake(seconds, name);
   }
 
   dispose(): void {

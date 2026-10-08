@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { defaultCountdown, emptyShow } from './client';
 import { demoApply } from './demo';
-import { overlayPlanes } from './overlayPlanes';
+import { nextPlanes, overlayPlanes } from './overlayPlanes';
 import type { Action } from './types/Action';
 import type { Show } from './types/Show';
 
@@ -88,4 +88,13 @@ test('a stinger is the top plane; PANIC with the logo is the panic plane', () =>
   expect(names(s)).toContain('panic 1920x1080');
   s.event.panicShows = 'black';
   expect(names(s)).not.toContain('panic 1920x1080');
+});
+
+test('the Next preview’s graphics are `n:` planes at the size Next is drawn', () => {
+  const s = build([...base, { type: 'setPreview', screen: 'live', sourceId: 'cd' }]);
+  expect(nextPlanes(s, 'live', W / 2, H / 2).map((p) => `${p.name} ${p.w}x${p.h}`)).toEqual(['n:g:cd 960x540']);
+  // A camera lined up: nothing (the engine draws it); nothing lined up on the Back Screen.
+  const c = build([...base, { type: 'setPreview', screen: 'live', sourceId: 'cam' }]);
+  expect(nextPlanes(c, 'live', W / 2, H / 2)).toEqual([]);
+  expect(nextPlanes(s, 'back', W / 2, H / 2)).toEqual([]);
 });

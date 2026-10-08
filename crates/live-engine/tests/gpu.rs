@@ -813,6 +813,7 @@ fn feeds_scale_make_the_vertical_version_and_send_cameras_as_they_come() {
         source: FeedSource::Screen {
             screen: ScreenId::Live,
             vertical,
+            captions: vertical,
         },
         width: w,
         height: h,
@@ -936,4 +937,417 @@ fn the_multiview_shows_the_screens_and_inputs_with_tally_and_words() {
     // The frame around the tiles, and the words over everything.
     assert!(near(at(1, 1), [11, 11, 11, 255]));
     assert!(near(at(10, 10), [255, 255, 255, 255]));
+    // The timecodes with frames: their small planes, stretched into the
+    // header's clock and each screen tile's place.
+    for (name, rgba) in [
+        (live_engine::multiview::CLOCK_PLANE, [255u8, 255, 0, 255]),
+        (live_engine::multiview::TIMECODE_PLANE, [0, 255, 255, 255]),
+    ] {
+        apply(&mut e, plane_msg(ScreenId::Live, name, 4, 2, rgba));
+    }
+    e.frame(1016);
+    e.draw_multiview();
+    let (_, _, img) = e.gpu.read(Dest::Target(MULTIVIEW)).unwrap();
+    let at = |x: u32, y: u32| {
+        let i = ((y * SIZE.0 + x) * 4) as usize;
+        [img[i], img[i + 1], img[i + 2], img[i + 3]]
+    };
+    let (x, y) = mid(l.clock);
+    assert!(near(at(x, y), [255, 255, 0, 255]), "{:?}", at(x, y));
+    let tc = l.tiles[1].timecode.expect("the screens' tiles have one");
+    let (x, y) = mid(tc);
+    assert!(near(at(x, y), [0, 255, 255, 255]), "{:?}", at(x, y));
+    assert!(l.tiles[2].timecode.is_none());
+}
+
+#[test]
+fn the_next_preview_shows_its_graphics_and_the_monitor_its_words() {
+    use live_engine::overlay::MONITOR;
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    show.screens.live.preview = Some(SourceId::new("t"));
+    e.set_show(show);
+    // Nothing sent for Next yet: black (the title is the renderer's).
+    e.frame(1000);
+    let next = e.gpu.read(Dest::Target(3)).unwrap();
+    assert_eq!((next.0, next.1), (W / 2, H / 2), "Next is drawn half size");
+    assert!(near(
+        [next.2[0], next.2[1], next.2[2], next.2[3]],
+        [0, 0, 0, 255]
+    ));
+    // The renderer's `n:` plane for it (green), at half size.
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, "n:g:t", W / 2, H / 2, [0, 255, 0, 255]),
+    );
+    // And the Monitor's words (white).
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Monitor, MONITOR, W, H, [255, 255, 255, 255]),
+    );
+    e.frame(1016);
+    let next = e.gpu.read(Dest::Target(3)).unwrap().2;
+    assert!(near([next[0], next[1], next[2], next[3]], [0, 255, 0, 255]));
+    // On air is untouched by the Next plane.
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 30, 20), [255, 0, 0, 255]));
+    let mon = e.gpu.read(Dest::Target(2)).unwrap().2;
+    assert!(near(px(&mon, 30, 20), [255, 255, 255, 255]));
+    assert_eq!(e.probe(ScreenId::Monitor).in_sync, Some(true));
+}
+
+// ---------------------------------------------------------------------------
+// Background removal, blur behind people and auto-framing (the vision worker's masks)
+
+/// A mask with a person in the left half.
+fn left_person() -> Vec<u8> {
+    (0..8 * 4)
+        .map(|i| if i % 8 < 4 { 255 } else { 0 })
+        .collect()
+}
+
+fn backdrop(mode: f32) -> live_engine::scene::Backdrop {
+    live_engine::scene::Backdrop {
+        mode,
+        blur: 0.6,
+        edge: 0.0,
+    }
+}
+
+#[test]
+fn the_person_mask_takes_the_background_away_or_puts_a_picture_behind() {
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    let red = SourceId::new("red");
+    let mut l = layer("red", 1.0);
+    l.pictures[0].placement.backdrop = Some(backdrop(2.0));
+    let sc = ScreenScene {
+        layers: vec![l.clone()],
+        ..ScreenScene::default()
+    };
+    // No mask yet: the picture as it is (the processor waits for one too).
+    let img = draw(&mut g, &sc);
+    assert!(near(px(&img, 50, 18), [255, 0, 0, 255]));
+    // The background taken away: black (the screen) shows where nobody is.
+    g.set_vision_mask(&red, Some((8, 4, &left_person())));
+    assert_eq!(g.vision_of(&red), (true, None, false));
+    let img = draw(&mut g, &sc);
+    assert!(
+        near(px(&img, 8, 18), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 8, 18)
+    );
+    assert!(
+        near(px(&img, 56, 18), [0, 0, 0, 255]),
+        "{:?}",
+        px(&img, 56, 18)
+    );
+    // A picture behind them (green), once it is there.
+    l.pictures[0].placement.backdrop = Some(backdrop(3.0));
+    let sc = ScreenScene {
+        layers: vec![l],
+        ..ScreenScene::default()
+    };
+    let green: Vec<u8> = (0..4).flat_map(|_| [0, 255, 0, 255]).collect();
+    g.set_vision_picture(&red, false, Some((2, 2, &green)));
+    let img = draw(&mut g, &sc);
+    assert!(
+        near(px(&img, 8, 18), [255, 0, 0, 255]),
+        "{:?}",
+        px(&img, 8, 18)
+    );
+    assert!(
+        near(px(&img, 56, 18), [0, 255, 0, 255]),
+        "{:?}",
+        px(&img, 56, 18)
+    );
+    // The models paused (no mask): the picture shows as it is again.
+    g.set_vision_mask(&red, None);
+    g.set_vision_picture(&red, false, None);
+    assert_eq!(g.vision_of(&red), (false, None, false));
+    let img = draw(&mut g, &sc);
+    assert!(near(px(&img, 56, 18), [255, 0, 0, 255]));
+}
+
+#[test]
+fn blur_behind_people_softens_only_the_background() {
+    let Some(mut g) = gpu() else { return };
+    // Stripes, one pixel wide: blurred they turn gray.
+    let pool = FramePool::new(1);
+    let stripes = VideoFrame::build(&pool, W, H, PixelFormat::Rgba8, 1, |px| {
+        for (i, p) in px.as_chunks_mut::<4>().0.iter_mut().enumerate() {
+            *p = if i % 2 == 0 { [255; 4] } else { [0, 0, 0, 255] };
+        }
+    });
+    let id = SourceId::new("stripes");
+    g.upload(&id, &stripes);
+    let mut l = layer("stripes", 1.0);
+    l.pictures[0].placement.backdrop = Some(backdrop(1.0));
+    let sc = ScreenScene {
+        layers: vec![l],
+        ..ScreenScene::default()
+    };
+    g.set_vision_mask(&id, Some((8, 4, &left_person())));
+    let img = draw(&mut g, &sc);
+    // The person (left) stays sharp: stripes side by side.
+    let (a, b) = (px(&img, 8, 18)[0], px(&img, 9, 18)[0]);
+    assert!(a.abs_diff(b) > 200, "{a} {b}");
+    // The background (right) is soft.
+    let (a, b) = (px(&img, 56, 18)[0], px(&img, 57, 18)[0]);
+    assert!(a.abs_diff(b) < 100 && a > 30 && b > 30, "{a} {b}");
+}
+
+#[test]
+fn the_engine_sends_small_frames_only_of_inputs_that_use_the_models_and_frames_the_shot() {
+    let Some(mut e) = engine() else { return };
+    let mut a = cam("a");
+    a.auto_frame.enabled = true;
+    a.auto_frame.speed = 1.0;
+    let mut show = Show {
+        sources: vec![a, cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show.clone());
+    e.frame(1000);
+    let sent: Vec<&str> = e.vision_out.iter().map(|f| f.id.as_str()).collect();
+    assert_eq!(
+        sent,
+        ["a"],
+        "b uses no effect: nothing of it goes to the models"
+    );
+    let f = &e.vision_out[0];
+    assert_eq!((f.w, f.h), (W, H), "small frames are at most 320 wide");
+    assert_eq!(&f.rgba[..4], &[255, 0, 0, 255]);
+    e.vision_out.clear();
+    // The same frame is not sent twice.
+    e.frame(1016);
+    e.frame(1033);
+    assert!(e.vision_out.is_empty());
+    // The worker aims at the left half (zoom 2): the shot moves there over a few frames.
+    let r = live_engine::vision::VisionResult {
+        id: SourceId::new("a"),
+        mask: None,
+        shot: Some(live_engine::vision::Shot {
+            cx: 0.25,
+            cy: 0.5,
+            zoom: 2.0,
+        }),
+        back: None,
+        front: None,
+    };
+    e.apply_vision(std::slice::from_ref(&r));
+    for i in 0..120 {
+        e.frame(1050 + i * 16);
+    }
+    // An input that turns its effects off forgets its mask and shot.
+    show.sources[0].auto_frame.enabled = false;
+    show.sources[0].background.mode = lumora_engine::vision::BackgroundMode::Remove;
+    e.set_show(show.clone());
+    e.apply_vision(&[live_engine::vision::VisionResult {
+        mask: Some((2, 2, vec![255; 4])),
+        ..r.clone()
+    }]);
+    assert!(e.gpu.vision_of(&SourceId::new("a")).0);
+    show.sources[0].background.mode = lumora_engine::vision::BackgroundMode::Keep;
+    e.set_show(show);
+    assert!(!e.gpu.vision_of(&SourceId::new("a")).0);
+}
+
+#[test]
+fn captions_are_written_into_the_stream_but_not_the_recording_or_the_screen() {
+    if std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_err()
+    {
+        eprintln!("no FFmpeg here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    // The overlay renderer's caption plane: a white box over the bottom half.
+    let cap: Vec<u8> = (0..W * H)
+        .flat_map(|i| {
+            if i / W >= H / 2 {
+                [255, 255, 255, 255]
+            } else {
+                [0, 0, 0, 0]
+            }
+        })
+        .collect();
+    apply(
+        &mut e,
+        encode(&[(
+            Op::Patch,
+            ScreenId::Live,
+            live_engine::overlay::CAPTIONS,
+            W,
+            H,
+            0,
+            vec![([0, 0, W, H], &cap[..])],
+        )]),
+    );
+    let (rec, stream) = (
+        Arc::new(Mutex::new(Vec::new())),
+        Arc::new(Mutex::new(Vec::new())),
+    );
+    let spec = |captions: bool| FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions,
+        },
+        width: W,
+        height: H,
+        fps: 30,
+    };
+    let a = e.start_feed(1, spec(false), raw_feed(Arc::clone(&rec)));
+    let b = e.start_feed(2, spec(true), raw_feed(Arc::clone(&stream)));
+    for r in [a, b] {
+        r.recv().unwrap().expect("starts");
+    }
+    let now = live_engine::engine::now_ms;
+    let t0 = now();
+    let mut until = None;
+    while until.is_none_or(|u| now() < u) && now() < t0 + 10_000 {
+        e.frame(now());
+        if until.is_none() && [1, 2].iter().all(|id| e.feed_running(*id)) {
+            until = Some(now() + 500);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    for id in [1, 2] {
+        e.stop_feed(id).expect("running").finish();
+    }
+    let frame = (W * H * 4) as usize;
+    let at = |v: &[u8], x: u32, y: u32| {
+        let last = &v[v.len() - frame..];
+        let i = ((y * W + x) * 4) as usize;
+        [last[i], last[i + 1], last[i + 2], last[i + 3]]
+    };
+    let rec = rec.lock().unwrap();
+    let stream = stream.lock().unwrap();
+    assert!(rec.len() >= frame * 4 && stream.len() >= frame * 4);
+    // The recording stays clean; the stream has the captions at the bottom.
+    assert!(
+        near(at(&rec, 30, 30), [255, 0, 0, 255]),
+        "{:?}",
+        at(&rec, 30, 30)
+    );
+    assert!(
+        near(at(&stream, 30, 5), [255, 0, 0, 255]),
+        "{:?}",
+        at(&stream, 30, 5)
+    );
+    let s = at(&stream, 30, 30);
+    assert!(s[1] > 200 && s[2] > 200, "{s:?}");
+    // The screen itself never shows them.
+    let live = e.gpu.read(Dest::Target(0)).unwrap().2;
+    assert!(near(px(&live, 30, 30), [255, 0, 0, 255]));
+}
+
+// ---------------------------------------------------------------------------
+// Instant replay from the engine's own frames
+
+#[test]
+fn instant_replay_keeps_pieces_of_the_live_screen_and_plays_them_as_an_input() {
+    use live_engine::replay::{container_args, keyframe_args, Ring};
+    if std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_err()
+    {
+        eprintln!("no FFmpeg here; skipped");
+        return;
+    }
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show);
+    let base = std::env::temp_dir().join(format!("lumora-replay-{}", std::process::id()));
+    let mut ring = Ring::new(&base.join("ring"), 1).unwrap();
+    let dir = ring.dir.clone();
+    let make: MakeFeed = Box::new(move |shape| {
+        let mut encode: Vec<String> = [
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-pix_fmt",
+            "yuv420p",
+        ]
+        .map(str::to_owned)
+        .to_vec();
+        encode.extend(keyframe_args(1));
+        EncoderFeed::start(
+            std::path::Path::new("ffmpeg"),
+            FeedArgs {
+                width: shape.width,
+                height: shape.height,
+                fps: shape.fps,
+                pix_fmt: shape.pix_fmt,
+                encode,
+                container: container_args(&dir, 1),
+                audio: None,
+            },
+            Box::new(|_| {}),
+            None,
+        )
+    });
+    let spec = FeedSpec {
+        source: FeedSource::Screen {
+            screen: ScreenId::Live,
+            vertical: false,
+            captions: false,
+        },
+        width: W,
+        height: H,
+        fps: 30,
+    };
+    e.start_feed(9, spec, make).recv().unwrap().expect("starts");
+    ring.t0_ms = live_engine::engine::now_ms();
+    let now = live_engine::engine::now_ms;
+    let until = now() + 3500;
+    while now() < until {
+        e.frame(now());
+        std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    // Pieces finished while it runs (the last is finished when the feed stops).
+    let during = ring.pieces();
+    assert!(during.len() >= 2, "{during:?}");
+    let took = ring.take(2000, now(), std::time::Duration::from_secs(3));
+    assert!(!took.is_empty());
+    e.stop_feed(9).expect("running").finish();
+    // A piece plays back as one of the engine's inputs, in slow motion: the red Live Screen.
+    let clip = live_engine::source::FfmpegFile::play(
+        std::path::Path::new("ffmpeg"),
+        &took[0].path,
+        false,
+        live_engine::source::Clip {
+            speed: 0.5,
+            looping: false,
+            ..live_engine::source::Clip::LOOP
+        },
+    );
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while clip.latest().is_none() && std::time::Instant::now() < deadline {
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let f = clip.latest().expect("a picture from the replay");
+    let p = f.data.as_slice();
+    assert!(p[0] > 200 && p[1] < 60 && p[2] < 60, "{:?}", &p[..4]);
+    let _ = std::fs::remove_dir_all(&base);
 }

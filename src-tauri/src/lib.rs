@@ -1,5 +1,6 @@
 //! The Lumora desktop app: opens the windows and connects them to the engine.
 
+mod accounts;
 mod api;
 mod browser;
 mod captions;
@@ -248,6 +249,7 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     if let Some(live) = app.try_state::<live::Live>() {
         live.sync(&snapshot.show);
         live.place_multiview(app, &snapshot.show);
+        live.sync_vision(app, &snapshot.show);
     }
     let _ = app.emit("show-changed", snapshot);
     if let Ok(json) = serde_json::to_string(snapshot) {
@@ -1244,6 +1246,7 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
+            app.manage(accounts::LiveAccounts::new(&dir));
             app.manage(live::Live::new(
                 &dir,
                 ffmpeg.clone(),
@@ -1288,6 +1291,7 @@ pub fn run() {
                 state.capture.set_hw_encoders(working);
             });
             live::start_saved(app.handle());
+            accounts::load_names(app.handle());
             heartbeat(app.handle().clone());
             media_keeper(app.handle().clone());
             // The CI self-test: close (with a failed result) if it never finishes.
@@ -1300,6 +1304,20 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             app_ready,
+            accounts::accounts_info,
+            accounts::accounts_connect,
+            accounts::accounts_cancel,
+            accounts::accounts_facebook_manual,
+            accounts::accounts_facebook_paste,
+            accounts::accounts_disconnect,
+            accounts::accounts_youtube_broadcasts,
+            accounts::accounts_youtube_create,
+            accounts::accounts_youtube_thumbnail,
+            accounts::accounts_save_thumbnail,
+            accounts::accounts_facebook_targets,
+            accounts::accounts_prepare,
+            accounts::accounts_finish,
+            accounts::accounts_sessions,
             syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,
@@ -1404,6 +1422,12 @@ pub fn run() {
             live::live_engine_capture_stop,
             live::live_engine_probe,
             live::live_engine_multiview_layout,
+            live::live_engine_vision_frames,
+            live::live_engine_vision_result,
+            live::live_engine_renderer_wants,
+            live::live_engine_replay_start,
+            live::live_engine_replay_stop,
+            live::live_engine_replay_take,
             seats::seats_status,
             seats::seats_set_enabled,
             seats::seats_approve,
