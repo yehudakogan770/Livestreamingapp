@@ -978,6 +978,77 @@ fn f16(b: [u8; 2]) -> f32 {
     }
 }
 
+/// An HDR input made SDR on the GPU agrees with `hdr.rs` (the processor's maths).
+#[test]
+fn hdr_inputs_are_tone_mapped_into_the_sdr_picture() {
+    use live_engine::hdr::{byte, p010_rgb, rgb10, signal_to_sdr, Hdr};
+    let Some(mut g) = gpu() else { return };
+    let pool = FramePool::new(1);
+    // Left half: a 10-bit RGB word; right half: another (files: x2bgr10le).
+    for (hdr, left, right) in [
+        // PQ: ~203-nit white, and a bright warm highlight.
+        (
+            Hdr::Pq,
+            592 | (592 << 10) | (592 << 20),
+            900 | (700 << 10) | (300 << 20),
+        ),
+        // HLG: 75 % white, and a dim blue.
+        (
+            Hdr::Hlg,
+            767 | (767 << 10) | (767 << 20),
+            100 | (150 << 10) | (500 << 20),
+        ),
+    ] {
+        let f = VideoFrame::build(&pool, W, H, PixelFormat::Rgb10(hdr), 1, |px| {
+            for (i, p) in px.as_chunks_mut::<4>().0.iter_mut().enumerate() {
+                let x = i as u32 % W;
+                p.copy_from_slice(&(if x < W / 2 { left } else { right } as u32).to_le_bytes());
+            }
+        });
+        g.upload(&SourceId::new("hdr"), &f);
+        let img = draw(
+            &mut g,
+            &ScreenScene {
+                layers: vec![layer("hdr", 1.0)],
+                ..ScreenScene::default()
+            },
+        );
+        for (x, word) in [(10, left), (W - 10, right)] {
+            let [r, gg, b] = signal_to_sdr(rgb10(word as u32), hdr).map(byte);
+            let got = px(&img, x, 10);
+            assert!(
+                near(got, [r, gg, b, 255]),
+                "{hdr:?} at {x}: GPU {got:?}, maths {:?}",
+                [r, gg, b]
+            );
+        }
+    }
+    // A camera's P010 (PQ): limited-range white-ish gray with neutral chroma.
+    let (yv, uv) = (700u16 << 6, 512u16 << 6);
+    let f = VideoFrame::build(&pool, W, H, PixelFormat::P010(Hdr::Pq), 2, |px| {
+        let ylen = (W * H * 2) as usize;
+        for (i, b) in px.as_chunks_mut::<2>().0.iter_mut().enumerate() {
+            let v = if i * 2 < ylen { yv } else { uv };
+            b.copy_from_slice(&v.to_le_bytes());
+        }
+    });
+    g.upload(&SourceId::new("cam"), &f);
+    let img = draw(
+        &mut g,
+        &ScreenScene {
+            layers: vec![layer("cam", 1.0)],
+            ..ScreenScene::default()
+        },
+    );
+    let [r, gg, b] = signal_to_sdr(p010_rgb(yv, uv, uv), Hdr::Pq).map(byte);
+    assert!(
+        near(px(&img, 20, 20), [r, gg, b, 255]),
+        "P010: {:?} vs {:?}",
+        px(&img, 20, 20),
+        [r, gg, b]
+    );
+}
+
 #[test]
 fn hdr_windows_show_sdr_white_at_its_level() {
     use live_engine::gpu::OutColor;

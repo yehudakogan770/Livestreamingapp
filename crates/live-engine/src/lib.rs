@@ -28,6 +28,7 @@ pub mod engine;
 pub mod feeds;
 pub mod frame;
 pub mod gpu;
+pub mod hdr;
 pub mod look;
 pub mod mix;
 pub mod multiview;
