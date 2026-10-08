@@ -1,0 +1,28 @@
+.modal__box.cardout {
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100vh - 58px);
+}
+.cardpick__icon {
+  width: 12px;
+  height: 12px;
+  vertical-align: -1px;
+}
+.cardout__body {
+  padding: 14px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cardout__state {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.cardout__state.is-on {
+  color: var(--program-bright);
+}
+.cardout__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}

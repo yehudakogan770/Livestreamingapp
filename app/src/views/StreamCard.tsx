@@ -5,6 +5,8 @@ import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { StreamView } from '../components/BrowserView';
 import { cleanStreamUrl } from '../engine/stream';
+import { isCardUrl } from '../engine/decklink';
+import { CardSignalLine } from './DeckLinkPicker';
 import type { Act } from './act';
 
 /** A stream input: its address, buffer, and whether it is coming in. */
@@ -57,6 +59,7 @@ export function StreamCard({ source, act, client, onClose }: { show: Show; sourc
             <div className="brc__stage" style={{ aspectRatio: '16 / 9' }}>
               <StreamView id={source.id} client={client} fit="contain" />
             </div>
+            {isCardUrl(st.url) && <CardSignalLine url={st.url} />}
             {(problem ?? status?.problem) && (
               <p className="field__note field__note--warn" role="alert">
                 {problem ?? status?.problem}

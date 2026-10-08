@@ -20,7 +20,7 @@ export function streamName(url: string): string {
   if (/^decklink:\/\//i.test(url)) {
     const [name, query = ''] = url.slice(11).split('?');
     const input = /(?:^|&)input=([a-z]+)/i.exec(query)?.[1];
-    return input ? `${name} ${input.toUpperCase()}` : name || 'Capture card';
+    return input ? `${name ?? ''} ${input.toUpperCase()}` : name || 'Capture card';
   }
   const rest = url.replace(/^[a-z]+:\/\//i, '');
   const host = rest.split('/')[0]!.split('@').pop()!;

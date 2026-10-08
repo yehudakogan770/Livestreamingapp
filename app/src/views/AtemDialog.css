@@ -1,0 +1,149 @@
+.modal__box.atem {
+  width: min(820px, calc(100vw - 24px));
+  max-height: calc(100vh - 58px);
+}
+.atem__body {
+  padding: 14px 16px 18px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.atem__section {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.atem__section--col {
+  flex-direction: column;
+  align-items: stretch;
+}
+.atem__connect {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.atem__host {
+  width: 200px;
+  font-family: var(--mono);
+}
+.atem__state {
+  align-self: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.atem__state.is-on {
+  color: var(--preview-bright);
+}
+.atem__switch {
+  font-weight: 600;
+}
+.atem__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+.atem__spacer {
+  flex: 1;
+}
+.atem__bus {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.atem__buslabel {
+  min-width: 64px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.atem__src {
+  min-width: 52px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--button);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.atem__src:hover {
+  background: var(--button-hover);
+}
+.atem__src.is-program {
+  border-color: var(--program);
+  background: var(--program);
+  color: var(--on-accent);
+}
+.atem__src.is-preview {
+  border-color: var(--preview);
+  background: var(--preview);
+  color: var(--on-accent);
+}
+.atem__seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.atem__rate {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.atem__rate .text {
+  width: 64px;
+}
+.atem .btn.is-danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.atem .btn.is-on {
+  border-color: var(--program);
+}
+.atem .btn svg {
+  width: 13px;
+  height: 13px;
+  vertical-align: -2px;
+}
+.atem__dsk {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.atem__carrier select {
+  max-width: 320px;
+}
+.atem__map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.atem__map td {
+  padding: 4px 6px;
+  border-top: 1px solid var(--border);
+}
+.atem__map select {
+  width: 100%;
+  max-width: 260px;
+}
+.atem__tally {
+  width: 80px;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.atem__tally.is-program {
+  color: var(--program-bright);
+}
+.atem__tally.is-preview {
+  color: var(--preview-bright);
+}
