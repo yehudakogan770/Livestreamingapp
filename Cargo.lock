@@ -2196,6 +2196,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "lumora-seats"
+version = "0.1.0"
+dependencies = [
+ "if-addrs",
+ "lumora-engine",
+ "ring",
+ "serde",
+ "serde_json",
+ "socket2",
+]
+
+[[package]]
 name = "lumora-selftest"
 version = "0.1.0"
 dependencies = [

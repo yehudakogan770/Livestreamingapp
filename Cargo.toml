@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/engine", "crates/crash", "crates/studio-engine", "crates/live-engine", "crates/selftest", "crates/syscheck", "crates/testevent", "src-tauri", "editor/src-tauri"]
+members = ["crates/engine", "crates/crash", "crates/studio-engine", "crates/live-engine", "crates/selftest", "crates/syscheck", "crates/testevent", "crates/seats", "src-tauri", "editor/src-tauri"]
 
 [workspace.package]
 version = "0.1.0"
