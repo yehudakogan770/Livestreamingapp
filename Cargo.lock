@@ -2126,6 +2126,7 @@ dependencies = [
  "lumora-selftest",
  "lumora-syscheck",
  "lumora-testevent",
+ "lumora-titler-host",
  "png 0.18.1",
  "qrcode",
  "reqwest",
@@ -2158,6 +2159,7 @@ dependencies = [
  "lumora-selftest",
  "lumora-studio-engine",
  "lumora-syscheck",
+ "lumora-titler-host",
  "raw-window-handle",
  "serde",
  "serde_json",
@@ -2232,6 +2234,30 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "lumora-titler"
+version = "0.1.0"
+dependencies = [
+ "lumora-crash",
+ "lumora-titler-host",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-process",
+ "tauri-plugin-updater",
+]
+
+[[package]]
+name = "lumora-titler-host"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
 ]
 
 [[package]]
