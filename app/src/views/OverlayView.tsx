@@ -2,10 +2,11 @@ import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useMemo, useState } from 'react';
 import { createEngineClient } from '../engine/client';
 import { useEventFonts } from '../engine/fonts';
-import { OverlayRenderer } from '../engine/overlayRenderer';
+import { OverlayRenderer, type RendererWants } from '../engine/overlayRenderer';
+import { listen } from '@tauri-apps/api/event';
+import { CAPTIONS_EVENT, type CaptionsInPicture } from '../engine/engineCaptions';
 import type { EngineInfo } from '../engine/unified';
 import { useShow } from '../engine/useShow';
-import type { MvLayout } from '../engine/multiviewLabels';
 
 /**
  * The unified engine's overlay renderer for one screen: a hidden window
@@ -41,18 +42,28 @@ export function OverlayView({ screen }: { screen: 'live' | 'back' }) {
     if (renderer && snapshot) renderer.setShow(snapshot.show);
   }, [renderer, snapshot]);
 
-  // The Live Screen's renderer also draws the words of the engine's multiview, while it shows one.
+  // What else the engine wants drawn now: the multiview's words (the Live
+  // Screen's renderer, while the engine shows one), the Next preview's
+  // graphics (while someone looks at it), the Monitor's words (the Live
+  // Screen's renderer, while the Monitor is in the engine's window).
   useEffect(() => {
-    if (!renderer || screen !== 'live') return;
+    if (!renderer) return;
     const ask = () =>
-      void invoke<MvLayout | null>('live_engine_multiview_layout').then(
-        (l) => renderer.setMultiview(l),
+      void invoke<RendererWants>('live_engine_renderer_wants', { screen }).then(
+        (w) => renderer.setWants(w),
         () => {},
       );
     ask();
-    const id = setInterval(ask, 2000);
+    const id = setInterval(ask, 1000);
     return () => clearInterval(id);
   }, [renderer, screen, snapshot?.revision]);
+
+  // The live captions written into the stream: the control window sends the lines here.
+  useEffect(() => {
+    if (!renderer || screen !== 'live') return;
+    const off = listen<CaptionsInPicture | null>(CAPTIONS_EVENT, (e) => renderer.setCaptions(e.payload));
+    return () => void off.then((f) => f()).catch(() => {});
+  }, [renderer, screen]);
 
   return null;
 }
