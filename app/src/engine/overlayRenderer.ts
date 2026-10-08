@@ -13,7 +13,7 @@ import type { EngineClient } from './client';
 import type { CaptionsInPicture } from './engineCaptions';
 import { drawMonitorWords, monitorMoving } from './monitorWords';
 import { area, dirtyRects, Pacer } from './overlayDirty';
-import { nextPlanes, overlayPlanes, planeKey, type PlaneSpec } from './overlayPlanes';
+import { multiviewPlanes, nextPlanes, overlayPlanes, planeKey, type PlaneSpec } from './overlayPlanes';
 import { cutRect, encodeWire, type WireRecord } from './overlayWire';
 import { drawMultiviewWords, drawTimecode, timecodeText, type MvLayout } from './multiviewLabels';
 import type { ScreenId } from './types/ScreenId';
@@ -186,6 +186,9 @@ export class OverlayRenderer {
       if (mv.clock) specs.push({ kind: 'timecode', name: 'tc', w: mv.clock[2], h: mv.clock[3] });
       const tc = mv.tiles.find((t) => t.timecode)?.timecode;
       if (tc) specs.push({ kind: 'timecode', name: 'tc2', w: tc[2], h: tc[3] });
+      // Graphics inputs' tiles while they aren't on air (on air, their `g:` plane serves).
+      const onAir = new Set(specs.map((p) => p.name));
+      specs.push(...multiviewPlanes(show, mv.tiles, onAir, this.width / this.height));
     }
     // Next is drawn half size (its graphics only while someone looks at it).
     if (this.wants.next) specs.push(...nextPlanes(show, this.screen, Math.round(this.width / 2), Math.round(this.height / 2)));

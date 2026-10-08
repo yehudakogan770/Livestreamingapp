@@ -1316,6 +1316,45 @@ fn zero_copy_that_cannot_open_reads_back_and_says_why() {
 // The multiview, from the same frames
 
 #[test]
+fn the_multiview_shows_a_graphics_input_that_is_not_on_air() {
+    use live_engine::engine::{MULTIVIEW, MULTIVIEW_INPUT_PREFIX};
+    use live_engine::multiview::{layout, TileContent, SIZE};
+    let Some(mut e) = engine() else { return };
+    let mut show = Show {
+        sources: vec![cam("a"), text_input("t")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show.clone());
+    let l = layout(&show, SIZE.0, SIZE.1);
+    let tile = l
+        .tiles
+        .iter()
+        .find(|t| matches!(&t.content, TileContent::Input(id) if id.as_str() == "t"))
+        .expect("a tile for the title");
+    let (x, y) = (
+        tile.picture[0] + tile.picture[2] / 2,
+        tile.picture[1] + tile.picture[3] / 2,
+    );
+    let at = |e: &mut LiveEngine| {
+        e.draw_multiview();
+        let (w, _, img) = e.gpu.read(Dest::Target(MULTIVIEW)).unwrap();
+        let i = ((y * w + x) * 4) as usize;
+        [img[i], img[i + 1], img[i + 2], img[i + 3]]
+    };
+    e.frame(1000);
+    assert!(near(at(&mut e), [0, 0, 0, 255]), "nothing to show yet");
+    // The Live Screen's renderer draws the title for the multiview (it isn't on air).
+    let name = format!("{MULTIVIEW_INPUT_PREFIX}g:t");
+    apply(
+        &mut e,
+        plane_msg(ScreenId::Live, &name, 32, 18, [0, 255, 0, 255]),
+    );
+    e.frame(1016);
+    assert!(near(at(&mut e), [0, 255, 0, 255]), "{:?}", at(&mut e));
+}
+
+#[test]
 fn the_multiview_shows_the_screens_and_inputs_with_tally_and_words() {
     use live_engine::engine::{MULTIVIEW, MULTIVIEW_PLANE};
     use live_engine::multiview::{layout, Tally, TileContent, SIZE};

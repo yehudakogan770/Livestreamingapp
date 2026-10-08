@@ -298,6 +298,8 @@ const MV_PGM: [f32; 4] = [1.0, 75.0 / 255.0, 62.0 / 255.0, 1.0];
 const MV_PVW: [f32; 4] = [52.0 / 255.0, 210.0 / 255.0, 107.0 / 255.0, 1.0];
 /// The plane of words (names, tally tags, clock) the Live Screen's overlay renderer draws for it.
 pub const MULTIVIEW_PLANE: &str = "mv";
+/// The prefix of the multiview's own copies of graphics inputs that aren't on air (`mv:g:<input>`).
+pub const MULTIVIEW_INPUT_PREFIX: &str = "mv:";
 /// Preview tiles per row of the atlas.
 const ATLAS_COLUMNS: u32 = 6;
 
@@ -620,7 +622,17 @@ impl LiveEngine {
             .enumerate()
             .filter_map(|(i, t)| match &t.content {
                 TileContent::Input(id) => {
-                    Some((i, framed(scene::source_scene(show, id), &self.shots)))
+                    let mut sc = framed(scene::source_scene(show, id), &self.shots);
+                    // A graphics input not on air: the multiview's own copy
+                    // of it (`overlayPlanes.ts: multiviewPlanes`).
+                    let own = format!(
+                        "{MULTIVIEW_INPUT_PREFIX}{}",
+                        overlay::graphic_plane(id.as_str())
+                    );
+                    if self.gpu.has_plane(program_target(ScreenId::Live), &own) {
+                        sc.plane_prefix = MULTIVIEW_INPUT_PREFIX;
+                    }
+                    Some((i, sc))
                 }
                 _ => None,
             })
