@@ -1,0 +1,74 @@
+{
+  "kind": "youtube#liveStreamListResponse",
+  "etag": "dd44",
+  "pageInfo": {
+    "totalResults": 2,
+    "resultsPerPage": 50
+  },
+  "items": [
+    {
+      "kind": "youtube#liveStream",
+      "etag": "ee55",
+      "id": "Old999StreamId",
+      "snippet": {
+        "publishedAt": "2024-01-01T00:00:00Z",
+        "channelId": "UCx1y2z3RiversideHall",
+        "title": "Default stream key",
+        "isDefaultStream": false
+      },
+      "cdn": {
+        "ingestionType": "rtmp",
+        "ingestionInfo": {
+          "streamName": "zzzz-zzzz-zzzz-zzzz-zzzz",
+          "ingestionAddress": "rtmp://a.rtmp.youtube.com/live2",
+          "backupIngestionAddress": "rtmp://b.rtmp.youtube.com/live2?backup=1"
+        },
+        "resolution": "variable",
+        "frameRate": "variable"
+      },
+      "status": {
+        "streamStatus": "inactive",
+        "healthStatus": {
+          "status": "noData"
+        }
+      },
+      "contentDetails": {
+        "isReusable": true
+      }
+    },
+    {
+      "kind": "youtube#liveStream",
+      "etag": "ff66",
+      "id": "Abc123StreamId",
+      "snippet": {
+        "publishedAt": "2026-09-01T00:00:00Z",
+        "channelId": "UCx1y2z3RiversideHall",
+        "title": "Lumora",
+        "description": "Made by Lumora.",
+        "isDefaultStream": false
+      },
+      "cdn": {
+        "ingestionType": "rtmp",
+        "ingestionInfo": {
+          "streamName": "abcd-efgh-ijkl-mnop-qrst",
+          "ingestionAddress": "rtmp://a.rtmp.youtube.com/live2",
+          "backupIngestionAddress": "rtmp://b.rtmp.youtube.com/live2?backup=1",
+          "rtmpsIngestionAddress": "rtmps://a.rtmps.youtube.com/live2",
+          "rtmpsBackupIngestionAddress": "rtmps://b.rtmps.youtube.com/live2?backup=1"
+        },
+        "resolution": "variable",
+        "frameRate": "variable"
+      },
+      "status": {
+        "streamStatus": "ready",
+        "healthStatus": {
+          "status": "noData"
+        }
+      },
+      "contentDetails": {
+        "closedCaptionsIngestionUrl": "http://upload.youtube.com/closedcaption?cid=abcd",
+        "isReusable": true
+      }
+    }
+  ]
+}

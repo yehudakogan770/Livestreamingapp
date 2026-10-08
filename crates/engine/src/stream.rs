@@ -29,7 +29,14 @@ impl Default for StreamInput {
 
 /// The kinds of address a stream input takes.
 const SCHEMES: &[&str] = &[
-    "srt://", "rtmp://", "rtmps://", "rtsp://", "rtsps://", "http://", "https://", "udp://",
+    "srt://",
+    "rtmp://",
+    "rtmps://",
+    "rtsp://",
+    "rtsps://",
+    "http://",
+    "https://",
+    "udp://",
     "rtp://", // An NDI source on the network, by its name ("PC (Camera 1)").
     "ndi://",
     // A Blackmagic capture card (DeckLink, UltraStudio, Intensity), by its

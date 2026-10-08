@@ -333,6 +333,8 @@ pub async fn decklink_output_start(
         source: live_engine::feeds::FeedSource::Screen {
             screen: lumora_engine::ScreenId::Live,
             vertical: false,
+            // Program out is the clean Live Screen (captions are for the stream only).
+            captions: false,
         },
         width,
         height,

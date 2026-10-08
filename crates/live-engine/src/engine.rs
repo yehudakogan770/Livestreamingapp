@@ -22,8 +22,10 @@ use crate::overlay::{self, OverlayStats};
 use crate::present::{NativeOutput, Placement};
 use crate::scene::{self, ScreenScene};
 use crate::source::{
-    EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource,
+    Clip, EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable,
+    VideoSource,
 };
+use crate::vision::{self, Framing, LowRes, VisionResult};
 
 /// How the engine runs.
 #[derive(Debug, Clone)]
@@ -88,7 +90,19 @@ impl SourceFactory for DefaultFactory {
     fn key(&self, src: &Source) -> String {
         match &src.kind {
             SourceKind::Camera { device_id, label } => format!("camera:{device_id}:{label}"),
-            SourceKind::Video { path, .. } => format!("video:{path}"),
+            // A video plays as the show says (playing or paused, where, how
+            // fast, looping): a change opens it again from there.
+            SourceKind::Video { path, playback, .. } => {
+                let speed = src.speed.unwrap_or(1.0);
+                if playback.playing {
+                    format!(
+                        "video:{path}|play:{}:{}:{speed}:{}",
+                        playback.pos_s, playback.at, src.looping
+                    )
+                } else {
+                    format!("video:{path}|pause:{}", playback.pos_s)
+                }
+            }
             SourceKind::Image { path } => format!("image:{path}"),
             SourceKind::Pattern => "pattern".into(),
             // A Blackmagic card: opened directly (one capture per card and connector).
@@ -115,11 +129,17 @@ impl SourceFactory for DefaultFactory {
             SourceKind::Pattern => {
                 Box::new(TestPattern::start(&src.name, 1920, 1080, 30, self.seed))
             }
-            SourceKind::Video { path, .. } | SourceKind::Image { path } => match &self.ffmpeg {
-                Some(ff) => Box::new(FfmpegFile::start(
+            SourceKind::Video { path, playback, .. } => match &self.ffmpeg {
+                Some(ff) => Box::new(FfmpegFile::play(
                     ff,
                     &(self.resolve)(path),
-                    matches!(src.kind, SourceKind::Image { .. }),
+                    false,
+                    Clip {
+                        start_s: lumora_engine::timing::source_position(src, now_ms()),
+                        speed: src.speed.unwrap_or(1.0).clamp(0.05, 16.0),
+                        playing: playback.playing,
+                        looping: src.looping,
+                    },
                 )),
                 None => Box::new(Unavailable::new(
                     "FFmpeg is needed to play files in the unified engine.",
@@ -128,6 +148,12 @@ impl SourceFactory for DefaultFactory {
             SourceKind::Stream(st) if crate::decklink::is_decklink(&st.url) => {
                 crate::decklink::open(&st.url)
             }
+            SourceKind::Image { path } => match &self.ffmpeg {
+                Some(ff) => Box::new(FfmpegFile::start(ff, &(self.resolve)(path), true)),
+                None => Box::new(Unavailable::new(
+                    "FFmpeg is needed to play files in the unified engine.",
+                )),
+            },
             SourceKind::Stream(_)
             | SourceKind::Screen(_)
             | SourceKind::Guest(_)
@@ -236,9 +262,24 @@ pub struct Stats {
     pub recoveries: u64,
     /// How the graphics from the web overlay renderers arrive.
     pub overlay: OverlayStats,
+    /// Background removal, blur behind people and auto-framing (the vision worker).
+    pub vision: VisionStats,
     /// Things that don't work in the unified engine yet, in words for the operator.
     pub notes: Vec<String>,
     pub error: Option<String>,
+}
+
+/// The person-finding models' work for the engine (since it started).
+#[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct VisionStats {
+    /// Inputs that use them now.
+    pub inputs: u32,
+    /// Small frames sent to the vision worker, and its answers taken.
+    pub frames: u64,
+    pub answers: u64,
+    /// Inputs with a person mask now.
+    pub masks: u32,
 }
 
 /// Draw targets.
@@ -310,6 +351,16 @@ pub struct LiveEngine {
     mv_layout: Option<multiview::Layout>,
     graphics: GraphicsTally,
     previews: HashMap<String, Preview>,
+    /// Auto-framing: each input's shot, moved a little every frame.
+    framing: HashMap<SourceId, Framing>,
+    /// This frame's zoom and pan of each auto-framed input.
+    shots: HashMap<SourceId, (f32, f32, f32)>,
+    /// The last frame of each input sent to the vision worker.
+    vision_sent: HashMap<SourceId, u64>,
+    /// Small frames for the vision worker, taken by the runner after each frame.
+    pub vision_out: Vec<LowRes>,
+    /// The vision worker's masks and pictures went with a lost device: it sends them again.
+    pub vision_lost: bool,
     frame_no: u64,
     timing: Timing,
     pub stats: Stats,
@@ -343,6 +394,11 @@ impl LiveEngine {
             mv_layout: None,
             graphics: GraphicsTally::default(),
             previews: HashMap::new(),
+            framing: HashMap::new(),
+            shots: HashMap::new(),
+            vision_sent: HashMap::new(),
+            vision_out: Vec::new(),
+            vision_lost: false,
             frame_no: 0,
             timing: Timing::default(),
             stats,
@@ -365,6 +421,24 @@ impl LiveEngine {
             }
         }
         self.gpu.keep_sources(&|id| wanted.contains_key(id));
+        // Inputs that no longer use the person-finding models: their masks go.
+        let using: Vec<SourceId> = scene::video_inputs(&show)
+            .into_iter()
+            .filter(|s| vision::uses_vision(s))
+            .map(|s| s.id.clone())
+            .collect();
+        let gone: Vec<SourceId> = self
+            .vision_sent
+            .keys()
+            .chain(self.framing.keys())
+            .filter(|id| !using.contains(id))
+            .cloned()
+            .collect();
+        for id in gone {
+            self.gpu.forget_vision(&id);
+            self.vision_sent.remove(&id);
+            self.framing.remove(&id);
+        }
         self.previews.retain(|k, _| {
             !k.starts_with("source/")
                 || wanted
@@ -402,6 +476,11 @@ impl LiveEngine {
         };
         let sc = show.screens.get(screen);
         p.in_sync = sc.program.as_ref().map(&drawn);
+        if screen == ScreenId::Monitor {
+            // All words: they are there once the renderer has sent them.
+            p.in_sync = Some(self.gpu.has_plane(slot, overlay::MONITOR));
+            return p;
+        }
         if !sc.blank && !show.panic {
             if let Some(t) = self.previews.get(&PreviewId::Program(screen).key()) {
                 let px = t.rgba.as_chunks::<4>().0;
@@ -500,7 +579,9 @@ impl LiveEngine {
             .iter()
             .enumerate()
             .filter_map(|(i, t)| match &t.content {
-                TileContent::Input(id) => Some((i, scene::source_scene(show, id))),
+                TileContent::Input(id) => {
+                    Some((i, framed(scene::source_scene(show, id), &self.shots)))
+                }
                 _ => None,
             })
             .collect();
@@ -564,6 +645,21 @@ impl LiveEngine {
                 name: MULTIVIEW_PLANE,
             },
         });
+        // The timecodes (with frames): two small planes that change every
+        // frame, so the big words plane changes only once a second.
+        let slot = program_target(ScreenId::Live);
+        let clocks = std::iter::once((l.clock, multiview::CLOCK_PLANE)).chain(
+            l.tiles
+                .iter()
+                .filter_map(|t| t.timecode.map(|r| (r, multiview::TIMECODE_PLANE))),
+        );
+        for (rect, name) in clocks {
+            passes.push(Pass {
+                dest: Dest::Target(MULTIVIEW),
+                viewport: Some(rect),
+                paint: Paint::Plane { slot, name },
+            });
+        }
         self.gpu.render(&passes);
     }
 
@@ -606,6 +702,83 @@ impl LiveEngine {
     /// A graphics frame that could not be read.
     pub fn refuse_graphics(&mut self) {
         self.stats.overlay.refused += 1;
+    }
+
+    /// What the vision worker found (see [`crate::vision`]): masks, pictures
+    /// behind people and where auto-framing aims.
+    pub fn apply_vision(&mut self, results: &[VisionResult]) {
+        let Some(show) = &self.show else { return };
+        for r in results {
+            // Only for inputs that (still) use the models.
+            if !show.source(&r.id).is_some_and(vision::uses_vision) {
+                continue;
+            }
+            self.gpu.set_vision_mask(
+                &r.id,
+                r.mask.as_ref().map(|(w, h, px)| (*w, *h, px.as_slice())),
+            );
+            if let Some(b) = &r.back {
+                self.gpu.set_vision_picture(
+                    &r.id,
+                    false,
+                    b.as_ref().map(|i| (i.w, i.h, i.rgba.as_slice())),
+                );
+            }
+            if let Some(f) = &r.front {
+                self.gpu.set_vision_picture(
+                    &r.id,
+                    true,
+                    f.as_ref().map(|i| (i.w, i.h, i.rgba.as_slice())),
+                );
+            }
+            self.framing.entry(r.id.clone()).or_default().target = r.shot.unwrap_or(vision::WIDE);
+            self.stats.vision.answers += 1;
+        }
+    }
+
+    /// Small copies of the newest frames of the inputs that use the models,
+    /// for the vision worker (at most [`vision::RATE`] a second each, only new frames).
+    fn vision_frames(&mut self) {
+        let Some(show) = &self.show else { return };
+        let every = u64::from((self.config.fps / vision::RATE).max(1));
+        if !self.frame_no.is_multiple_of(every) {
+            return;
+        }
+        for s in scene::video_inputs(show) {
+            if !vision::uses_vision(s) {
+                continue;
+            }
+            let Some(f) = self.sources.get(&s.id).and_then(|(_, src)| src.latest()) else {
+                continue;
+            };
+            if self.vision_sent.get(&s.id) == Some(&f.seq) {
+                continue;
+            }
+            if let Some(small) = vision::downscale(&s.id, &f, vision::SIDE) {
+                self.vision_sent.insert(s.id.clone(), f.seq);
+                self.vision_out.retain(|o| o.id != s.id);
+                self.vision_out.push(small);
+                self.stats.vision.frames += 1;
+            }
+        }
+    }
+
+    /// Each auto-framed input's shot a step on toward where it aims; the
+    /// zoom and pan the pictures use (`shotToView`).
+    fn step_framing(&mut self, now: u64) -> HashMap<SourceId, (f32, f32, f32)> {
+        let Some(show) = &self.show else {
+            return HashMap::new();
+        };
+        let mut out = HashMap::new();
+        for (id, f) in &mut self.framing {
+            let Some(src) = show.source(id) else { continue };
+            if !src.auto_frame.enabled || src.ptz.is_some() {
+                continue;
+            }
+            let shot = f.step(now, src.auto_frame.speed);
+            out.insert(id.clone(), vision::shot_to_view(shot));
+        }
+        out
     }
 
     /// Start feed `id` (see [`crate::feeds`]); the answer says whether its encoder started.
@@ -666,7 +839,11 @@ impl LiveEngine {
         if let Some(o) = self.multiview.as_mut() {
             o.out.reset();
         }
-        self.feeds.renew(&mut self.gpu);
+        self.feeds
+            .renew(&mut self.gpu, (self.config.width, self.config.height));
+        // The masks went with the device: the worker sends everything again.
+        self.vision_lost = true;
+        self.vision_sent.clear();
         self.stats.recoveries += 1;
         self.stats.adapter = Some(self.gpu.describe());
         self.stats.error =
@@ -686,6 +863,13 @@ impl LiveEngine {
         let preview_frame = self
             .frame_no
             .is_multiple_of(u64::from(self.config.preview_every.max(1)));
+        if self.show.is_none() {
+            self.frame_no += 1;
+            return;
+        }
+        self.vision_frames();
+        self.shots = self.step_framing(now);
+        let shots = &self.shots;
         let Some(show) = self.show.as_ref() else {
             self.frame_no += 1;
             return;
@@ -708,16 +892,25 @@ impl LiveEngine {
             .collect();
         let next: Vec<(usize, ScreenScene)> = NEXT
             .iter()
-            .map(|&(s, i)| (i, scene::preview_scene(show, s)))
+            .map(|&(s, i)| (i, framed(scene::preview_scene(show, s), shots)))
             .collect();
         let inputs: Vec<(SourceId, ScreenScene)> = if preview_frame {
             scene::video_inputs(show)
                 .into_iter()
-                .map(|s| (s.id.clone(), scene::source_scene(show, &s.id)))
+                .map(|s| {
+                    (
+                        s.id.clone(),
+                        framed(scene::source_scene(show, &s.id), shots),
+                    )
+                })
                 .collect()
         } else {
             Vec::new()
         };
+        let program: Vec<(ScreenId, usize, ScreenScene)> = program
+            .into_iter()
+            .map(|(s, i, sc)| (s, i, framed(sc, shots)))
+            .collect();
         // 2. Each needed source's newest frame to the GPU (once, however many screens show it).
         // The multiview shows every input at the engine's full rate.
         let all: Vec<&SourceId> = if self.multiview.is_some() {
@@ -772,14 +965,29 @@ impl LiveEngine {
                     planes: (*s != ScreenId::Monitor).then_some(*i),
                 },
             });
+            if *s == ScreenId::Monitor {
+                // The stage monitor's words (clock, countdown, message,
+                // teleprompter…): the Live Screen's overlay renderer's plane
+                // `mon`, over the engine's own PANIC black.
+                passes.push(Pass {
+                    dest: Dest::Target(*i),
+                    viewport: Some([0, 0, self.config.width, self.config.height]),
+                    paint: Paint::Plane {
+                        slot: *i,
+                        name: overlay::MONITOR,
+                    },
+                });
+            }
         }
         for (i, sc) in &next {
+            // The Next preview's graphics: its screen renderer's `n:` planes (sent while it is seen).
+            let screen = NEXT.iter().find(|n| n.1 == *i).map(|n| n.0);
             passes.push(Pass {
                 dest: Dest::Target(*i),
                 viewport: None,
                 paint: Paint::Scene {
                     scene: sc,
-                    planes: None,
+                    planes: screen.map(program_target),
                 },
             });
         }
@@ -933,30 +1141,64 @@ impl LiveEngine {
                 refused: self.stats.overlay.refused,
             };
             self.stats.notes = self.notes();
+            if let Some(show) = &self.show {
+                let using: Vec<&SourceId> = scene::video_inputs(show)
+                    .into_iter()
+                    .filter(|s| vision::uses_vision(s))
+                    .map(|s| &s.id)
+                    .collect();
+                self.stats.vision.inputs = using.len() as u32;
+                self.stats.vision.masks =
+                    using.iter().filter(|id| self.gpu.vision_of(id).0).count() as u32;
+            }
             self.timing = Timing::default();
         }
     }
 
-    /// What doesn't work in the unified engine yet, for what is in the show now.
+    /// What doesn't work in the unified engine yet, for what is in the show
+    /// now (said to the operator in the Engine dialog).
     fn notes(&self) -> Vec<String> {
         let mut notes = Vec::new();
         let Some(show) = &self.show else { return notes };
-        let behind = show.sources.iter().any(|s| match &s.kind {
-            SourceKind::Slideshow(k) => k
-                .behind
-                .as_ref()
-                .and_then(|id| show.source(id))
-                .is_some_and(|b| scene::is_video_kind(&b.kind)),
+        // An input slide fades in as a picture, not with the slide's own fade.
+        let slide_input = show.sources.iter().any(|s| match &s.kind {
+            SourceKind::Slideshow(k) => {
+                k.fade
+                    && matches!(
+                        k.slides.get(k.current),
+                        Some(lumora_engine::slideshow::Slide::Input { source_id, .. })
+                            if show.source(source_id).is_some_and(|i| scene::is_video_kind(&i.kind))
+                    )
+            }
             _ => false,
         });
-        if behind {
+        if slide_input {
             notes.push(
-                "A camera or video behind slides is not shown yet in the unified engine (the slides are)."
+                "A camera or video used as a slide comes up without the slides' fade in the unified engine."
                     .into(),
             );
         }
         notes
     }
+}
+
+/// Auto-framed inputs' pictures zoomed and panned to their shots (`shots`:
+/// zoom, pan x, pan y by input, as the processor's `view`).
+fn framed(mut sc: ScreenScene, shots: &HashMap<SourceId, (f32, f32, f32)>) -> ScreenScene {
+    if shots.is_empty() {
+        return sc;
+    }
+    for l in sc.layers.iter_mut().chain(sc.overlays.iter_mut()) {
+        for p in &mut l.pictures {
+            if let scene::Content::Video(id) = &p.content {
+                if let Some(&(zoom, x, y)) = shots.get(id) {
+                    p.placement.zoom = zoom;
+                    p.placement.pan = [x, y];
+                }
+            }
+        }
+    }
+    sc
 }
 
 // ---------------------------------------------------------------------------
@@ -967,6 +1209,7 @@ enum Command {
     Output(ScreenId, Option<Placement>, Sender<Result<(), String>>),
     Overlay(ScreenId, Option<(u32, u32, Vec<u8>)>),
     Graphics(Box<overlay::Message>),
+    Vision(Vec<VisionResult>),
     StartFeed(u64, FeedSpec, MakeFeed, Sender<Result<(), String>>),
     StopFeed(u64, Sender<Option<FeedStats>>),
     Probe(ScreenId, Sender<ScreenProbe>),
@@ -984,6 +1227,15 @@ pub struct Shared {
     /// The graphics planes were lost (a new graphics device): the next
     /// graphics frame is refused so the renderers send everything again.
     pub graphics_lost: std::sync::atomic::AtomicBool,
+    /// Small frames waiting for the vision worker (the newest of each input).
+    pub vision: Mutex<Vec<LowRes>>,
+    pub vision_ready: std::sync::Condvar,
+    /// The masks were lost (a new graphics device): the worker's next answer
+    /// is refused so it sends its pictures again.
+    pub vision_lost: std::sync::atomic::AtomicBool,
+    /// When each preview tile was last asked for (the Next previews' graphics
+    /// are drawn only while someone looks at them).
+    pub seen: Mutex<HashMap<String, Instant>>,
 }
 
 /// The engine running on its own thread at a steady frame rate.
@@ -1075,6 +1327,41 @@ impl Runner {
             .map_err(|_| "The unified engine has stopped.".to_owned())
     }
 
+    /// The newest small frames for the vision worker; waits up to `wait` for
+    /// some to come (a long poll: the worker gets each frame at once).
+    pub fn vision_frames(&self, wait: Duration) -> Vec<LowRes> {
+        let mut v = lock(&self.shared.vision);
+        if v.is_empty() {
+            v = self
+                .shared
+                .vision_ready
+                .wait_timeout(v, wait)
+                .map_or_else(|e| e.into_inner().0, |r| r.0);
+        }
+        std::mem::take(&mut *v)
+    }
+
+    /// What the vision worker found (checked here, applied on the engine's thread before its next frame).
+    ///
+    /// # Errors
+    /// The message is malformed, or the engine started again on a new
+    /// graphics device (the worker then sends everything again).
+    pub fn vision(&self, bytes: &[u8]) -> Result<(), String> {
+        if self
+            .shared
+            .vision_lost
+            .swap(false, std::sync::atomic::Ordering::SeqCst)
+        {
+            return Err(
+                "The engine started again on a new graphics device: send everything.".into(),
+            );
+        }
+        let r = vision::parse_results(bytes)?;
+        self.tx
+            .send(Command::Vision(r))
+            .map_err(|_| "The unified engine has stopped.".to_owned())
+    }
+
     /// Start feed `id`: a screen or an input to an encoder `make` starts
     /// (see [`crate::feeds`]).
     ///
@@ -1128,7 +1415,15 @@ impl Runner {
     }
 
     pub fn preview(&self, key: &str) -> Option<Preview> {
+        lock(&self.shared.seen).insert(key.to_owned(), Instant::now());
         lock(&self.shared.previews).get(key).cloned()
+    }
+
+    /// Preview tile `key` was asked for within `within`.
+    pub fn seen_recently(&self, key: &str, within: Duration) -> bool {
+        lock(&self.shared.seen)
+            .get(key)
+            .is_some_and(|t| t.elapsed() <= within)
     }
 
     pub fn health(&self) -> Vec<(SourceId, SourceHealth)> {
@@ -1160,6 +1455,7 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
                     engine.set_overlay(s, f.as_ref().map(|(w, h, px)| (*w, *h, px.as_slice())));
                 }
                 Ok(Command::Graphics(m)) => engine.apply_graphics(&m),
+                Ok(Command::Vision(r)) => engine.apply_vision(&r),
                 Ok(Command::Probe(s, reply)) => {
                     let _ = reply.send(engine.probe(s));
                 }
@@ -1199,6 +1495,19 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
                 .graphics_lost
                 .store(true, std::sync::atomic::Ordering::SeqCst);
         }
+        if std::mem::take(&mut engine.vision_lost) {
+            shared
+                .vision_lost
+                .store(true, std::sync::atomic::Ordering::SeqCst);
+        }
+        if !engine.vision_out.is_empty() {
+            let mut v = lock(&shared.vision);
+            for f in engine.vision_out.drain(..) {
+                v.retain(|o| o.id != f.id);
+                v.push(f);
+            }
+            shared.vision_ready.notify_all();
+        }
         if caught.is_err() {
             engine.stats.error = Some("A frame failed to draw (the engine carries on).".into());
         }
@@ -1214,6 +1523,45 @@ fn run(mut engine: LiveEngine, rx: &Receiver<Command>, shared: &Shared) {
         } else {
             // Fell behind: start counting again from now instead of racing to catch up.
             next = now;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::scene::{Content, Layer, Picture, Placement};
+
+    #[test]
+    fn auto_framed_pictures_take_their_shot_wherever_they_show() {
+        let pic = |id: &str| Picture {
+            content: Content::Video(SourceId::new(id)),
+            placement: Placement::default(),
+        };
+        let layer = Layer {
+            source: SourceId::new("split"),
+            pictures: vec![pic("a"), pic("b")],
+            opacity: 1.0,
+            shift: [0.0, 0.0],
+            scale: 1.0,
+            blur: 0.0,
+            shape: crate::mix::Shape::Whole,
+            luma: None,
+            top: false,
+        };
+        let sc = ScreenScene {
+            layers: vec![layer.clone()],
+            overlays: vec![layer],
+            ..ScreenScene::default()
+        };
+        let shots = HashMap::from([(SourceId::new("a"), (2.0, -1.0, 0.5))]);
+        let sc = framed(sc, &shots);
+        for l in sc.layers.iter().chain(&sc.overlays) {
+            assert_eq!(
+                (l.pictures[0].placement.zoom, l.pictures[0].placement.pan),
+                (2.0, [-1.0, 0.5])
+            );
+            assert_eq!(l.pictures[1].placement, Placement::default());
         }
     }
 }

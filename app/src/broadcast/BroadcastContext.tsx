@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   defaultCaptureSettings,
+  isInsideLumora,
   type CaptureFailure,
   type CaptureKind,
   type CaptureSettings,
@@ -18,7 +19,11 @@ import { Broadcaster } from './recorder';
 import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
+import { emitTo } from '@tauri-apps/api/event';
+import { CAPTIONS_EVENT, relayCaptions } from '../engine/engineCaptions';
+import { unifiedOn } from '../engine/unified';
 import { useAppRequests, useRemoteControl } from './remoteControl';
+import { accounts, PROVIDER_NAMES, useAccountSessions, usesAccounts, type Failed } from './accounts';
 
 /** The highlights reel's input. */
 export const HIGHLIGHTS = 'highlights-reel';
@@ -161,6 +166,27 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   // A graphics-card encoder failed and the processor took over (until Lumora restarts).
   const [encoderFallback, setEncoderFallback] = useState<string | null>(null);
 
+  // Connected YouTube and Facebook destinations: set up at GO LIVE, ended at stop.
+  const [accountTrouble, setAccountTrouble] = useState<Failed[]>([]);
+  const accountsOn = useRef(false);
+  const prepareAccounts = useCallback(async () => {
+    setAccountTrouble([]);
+    const s = settingsRef.current;
+    if (rehearsalRef.current || !usesAccounts(s)) return;
+    const report = await accounts.prepare();
+    accountsOn.current = report.ready > 0;
+    setAccountTrouble(report.failed);
+    // Every destination goes through an account and none could be set up: say why.
+    const others = s.destinations.some((d) => d.enabled && !d.account && d.url.trim());
+    if (!report.ready && !others && report.failed[0]) throw new Error(report.failed[0].error.message);
+    if (report.ready) setSettings(await client.captureSettings());
+  }, [client]);
+  const finishAccounts = useCallback(() => {
+    if (!accountsOn.current) return;
+    accountsOn.current = false;
+    void accounts.finish().then(setAccountTrouble, () => {});
+  }, []);
+
   const start = useCallback(
     async (kind: CaptureKind) => {
       wanted.current[kind] = true;
@@ -169,9 +195,11 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       setBusy((b) => ({ ...b, [kind]: true }));
       setStartError(null);
       try {
+        if (kind === 'stream') await prepareAccounts();
         await launch(kind);
       } catch (e) {
         wanted.current[kind] = false;
+        if (kind === 'stream') finishAccounts();
         setStartError({
           kind,
           message: e instanceof Error ? e.message : String(e),
@@ -181,7 +209,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         setBusy((b) => ({ ...b, [kind]: false }));
       }
     },
-    [launch],
+    [launch, prepareAccounts, finishAccounts],
   );
 
   const stop = useCallback(
@@ -195,9 +223,10 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         await broadcaster?.stop(kind);
       } finally {
         setBusy((b) => ({ ...b, [kind]: false }));
+        if (kind === 'stream') finishAccounts();
       }
     },
-    [broadcaster],
+    [broadcaster, finishAccounts],
   );
 
   // A session that failed: stop its encoder, and try again while it is still wanted.
@@ -265,7 +294,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       // It never got going (first try): say so plainly instead of retrying in the background.
       if (kind === 'stream' && failure.neverStarted && !everLive.current) {
         wanted.current.stream = false;
-        void broadcaster.stop('stream');
+        void broadcaster.stop('stream').then(finishAccounts);
         setStartError({ kind, message: failure.message });
         return;
       }
@@ -281,7 +310,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         void broadcaster.stop(kind).then(() => launch(kind).catch(() => {}));
       });
     },
-    [broadcaster, launch, later],
+    [broadcaster, launch, later, finishAccounts],
   );
   // Each failure is handled once, however often the status repeats it.
   const handled = useRef(new Set<string>());
@@ -382,6 +411,37 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         }
       : null,
   );
+  const firstTrouble = accountTrouble[0];
+  useReportProblem(
+    firstTrouble
+      ? {
+          key: 'stream:accounts',
+          level: 'warning',
+          title:
+            accountTrouble.length > 1
+              ? `${accountTrouble.length} connected destinations aren’t streaming`
+              : `${PROVIDER_NAMES[firstTrouble.provider]} (connected account) isn’t streaming`,
+          detail: firstTrouble.error.message,
+          fix: firstTrouble.error.reconnect
+            ? `Connect the ${PROVIDER_NAMES[firstTrouble.provider]} account again in Settings → Recording and streaming, then stop and start the stream.`
+            : 'The other destinations carry on. Fix it in Settings → Recording and streaming, then stop and start the stream.',
+          action: { label: 'Dismiss', run: () => setAccountTrouble([]) },
+        }
+      : null,
+  );
+  const sessions = useAccountSessions(!!status.streaming && accountsOn.current, 15000);
+  const poor = sessions.find((x) => x.health === 'bad' && x.phase !== 'complete');
+  useReportProblem(
+    poor && status.streaming
+      ? {
+          key: 'stream:account-health',
+          level: 'warning',
+          title: `${PROVIDER_NAMES[poor.provider]} says the stream is poor`,
+          detail: poor.issues[0] ?? 'YouTube is getting the stream with problems (too slow or uneven), so viewers may see it stop and start.',
+          fix: 'Use a wired connection or a lower bitrate (Settings → Recording and streaming).',
+        }
+      : null,
+  );
   const recordFailed = failure?.kind === 'record' && !status.recording && !wanted.current.record ? failure : null;
   useReportProblem(
     recordFailed
@@ -434,30 +494,58 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   const setReplay = useCallback(
     (on: boolean) => {
       if (!broadcaster) return;
-      try {
-        if (on) broadcaster.startReplay();
-        else broadcaster.stopReplay();
-        setReplayOn(broadcaster.replaying);
-      } catch (e) {
+      const failed = (e: unknown) => {
         setStartError({ kind: 'record', message: e instanceof Error ? e.message : String(e) });
+        setReplayOn(broadcaster.replaying);
+      };
+      try {
+        // With the unified engine it starts there (a moment later).
+        const started = on ? broadcaster.startReplay() : broadcaster.stopReplay();
+        setReplayOn(broadcaster.replaying);
+        if (started) started.catch(failed);
+      } catch (e) {
+        failed(e);
       }
     },
     [broadcaster],
   );
-  const makeReplay = useCallback(
-    async (seconds: number, speed: number) => {
-      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+  useEffect(() => {
+    if (!broadcaster) return;
+    broadcaster.onReplayLost = (message) => {
+      setReplayOn(broadcaster.replaying);
+      setStartError({ kind: 'record', message });
+    };
+    return () => {
+      broadcaster.onReplayLost = null;
+    };
+  }, [broadcaster]);
+  /** The last `seconds` as files in the replays folder (`<prefix>-<tag>-<n>`), named as `label` says. */
+  const replayItems = useCallback(
+    async (seconds: number, prefix: string, tag: string, label: (i: number) => string) => {
+      if (!broadcaster) return [];
+      // The unified engine keeps them on disk already.
+      if (broadcaster.replayInEngine) {
+        const files = await broadcaster.takeReplayFiles(seconds, `${prefix}-${tag}`);
+        return files.map((f, i) => ({ path: f.path, name: label(i), durationS: f.durationS }));
+      }
       const pieces = await broadcaster.takeReplay(seconds);
-      if (!pieces.length) throw new Error('Nothing to replay yet: wait a few seconds.');
-      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      const tag = Date.now().toString(36);
-      const items = await Promise.all(
+      return Promise.all(
         pieces.map(async (p, i) => ({
-          path: await client.saveReplay(p.blob, `replay-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
-          name: `Replay ${stamp} (${i + 1})`,
+          path: await client.saveReplay(p.blob, `${prefix}-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
+          name: label(i),
           durationS: (p.end - p.start) / 1000,
         })),
       );
+    },
+    [broadcaster, client],
+  );
+  const makeReplay = useCallback(
+    async (seconds: number, speed: number) => {
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await replayItems(seconds, 'replay', tag, (i) => `Replay ${stamp} (${i + 1})`);
+      if (!items.length) throw new Error('Nothing to replay yet: wait a few seconds.');
       const id = `replay-${tag}`;
       const first = items[0]!;
       await client.dispatch({
@@ -475,23 +563,16 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       await client.dispatch({ type: 'setPreview', screen: 'live', sourceId: id });
       return id;
     },
-    [broadcaster, client],
+    [broadcaster, client, replayItems],
   );
 
   const saveHighlight = useCallback(
     async (seconds: number) => {
       if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
-      const pieces = await broadcaster.takeReplay(seconds);
-      if (!pieces.length) throw new Error('Nothing to keep yet: wait a few seconds.');
       const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       const tag = Date.now().toString(36);
-      const items = await Promise.all(
-        pieces.map(async (p, i) => ({
-          path: await client.saveReplay(p.blob, `highlight-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
-          name: `Highlight ${stamp}`,
-          durationS: (p.end - p.start) / 1000,
-        })),
-      );
+      const items = await replayItems(seconds, 'highlight', tag, () => `Highlight ${stamp}`);
+      if (!items.length) throw new Error('Nothing to keep yet: wait a few seconds.');
       const reel = showRef.current.sources.find((s) => s.id === HIGHLIGHTS);
       const before = reel?.playlist?.items ?? [];
       const all = [...before, ...items];
@@ -509,7 +590,7 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       await client.dispatch({ type: 'setPlaylist', id: HIGHLIGHTS, playlist: { items: all, current: 0, autoNext: true, loopAll: false } });
       return new Set(all.map((x) => x.name)).size;
     },
-    [broadcaster, client],
+    [broadcaster, client, replayItems],
   );
 
   // ---- NDI output: kept running while it is switched on ----
@@ -580,6 +661,14 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       if (!live || !c?.on || !c.inPicture) return null;
       return { lines: live.lines.shown(c.lines, lineWidth(1920, 1080, c.size)), look: c };
     };
+  }, [broadcaster, live]);
+  // With the unified engine the Live Screen's overlay renderer writes them (the engine puts them on the stream only).
+  useEffect(() => {
+    if (!broadcaster || !live || !isInsideLumora()) return;
+    return relayCaptions(
+      () => (unifiedOn() ? broadcaster.captionsInPicture() : null),
+      (c) => void emitTo('overlay-live', CAPTIONS_EVENT, c).catch(() => {}),
+    );
   }, [broadcaster, live]);
   useReportProblem(
     captionState.state === 'failed' && cc?.on

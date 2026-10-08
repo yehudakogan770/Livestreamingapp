@@ -139,6 +139,7 @@ fn main() {
                 source: FeedSource::Screen {
                     screen: ScreenId::Live,
                     vertical: false,
+                    captions: false,
                 },
                 width: w,
                 height: h,

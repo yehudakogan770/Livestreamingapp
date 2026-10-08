@@ -1938,8 +1938,11 @@ export class ProgramCompositor {
         return;
       case 'slideshow': {
         const ctx = this.ctx;
-        ctx.fillStyle = k.background;
-        ctx.fillRect(0, 0, w, h);
+        // The unified engine draws the background and what is behind (a camera) itself, under this plane.
+        if (!this.graphicsOnly) {
+          ctx.fillStyle = k.background;
+          ctx.fillRect(0, 0, w, h);
+        }
         const other = (id: string | null) => (id ? this.show?.sources.find((x) => x.id === id && x.kind.type !== 'slideshow') : undefined);
         const behind = other(k.behind);
         if (behind) this.drawSource(behind, event, now, w, h);
@@ -2622,7 +2625,8 @@ export class ProgramCompositor {
     const ctx = this.ctx;
     const { look, place } = data;
     const bar = look.mode === 'bar';
-    if (!bar) {
+    // The unified engine draws the background and what is behind (a camera) itself, under this plane.
+    if (!bar && !this.graphicsOnly) {
       ctx.fillStyle = look.background;
       ctx.fillRect(0, 0, w, h);
     }

@@ -23,8 +23,15 @@ use crate::gpu::{Compositor, Dest, Paint, Pass};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FeedSource {
     /// A screen as drawn (the recording, the stream); `vertical`: the 9:16
-    /// version (the whole picture across the middle, a soft copy of it behind).
-    Screen { screen: ScreenId, vertical: bool },
+    /// version (the whole picture across the middle, a soft copy of it behind);
+    /// `captions`: the live captions written in the picture (the stream and
+    /// its vertical version, when asked: the screen's `cap` plane; the
+    /// recording stays clean).
+    Screen {
+        screen: ScreenId,
+        vertical: bool,
+        captions: bool,
+    },
     /// One input's own frames (a camera's ISO file).
     Input(SourceId),
 }
@@ -87,6 +94,8 @@ struct Feed {
     /// Drawn at its own size (and the vertical's small copy).
     target: Option<usize>,
     small: Option<usize>,
+    /// The screen with the captions written on it (the screen's size).
+    captioned: Option<usize>,
     /// Its NV12 copy, read back for the encoder (screens).
     nv12: Option<usize>,
     /// The target's size.
@@ -153,15 +162,21 @@ impl Feeds {
             pending: None,
             target: None,
             small: None,
+            captioned: None,
             nv12: None,
             size: (spec.width.max(2) & !1, spec.height.max(2) & !1),
             error: None,
         };
         match &spec.source {
-            FeedSource::Screen { vertical, .. } => {
+            FeedSource::Screen {
+                vertical, captions, ..
+            } => {
                 let (w, h) = f.size;
                 if *vertical || (w, h) != screen_size {
                     f.target = Some(self.target(gpu, w, h));
+                }
+                if *captions {
+                    f.captioned = Some(self.target(gpu, screen_size.0, screen_size.1));
                 }
                 if *vertical {
                     f.small = Some(self.target(gpu, SMALL.0, SMALL.1));
@@ -189,7 +204,10 @@ impl Feeds {
     /// Stop feed `id`; the caller finishes it (off the engine's thread).
     pub fn stop(&mut self, gpu: &mut Compositor, id: u64) -> Option<EncoderFeed> {
         let f = self.feeds.remove(&id)?;
-        for t in [f.target, f.small, f.nv12].into_iter().flatten() {
+        for t in [f.target, f.small, f.captioned, f.nv12]
+            .into_iter()
+            .flatten()
+        {
             gpu.drop_target(t);
             self.free.push(t);
         }
@@ -215,8 +233,11 @@ impl Feeds {
     }
 
     /// A new graphics device: the feeds' targets are made again on it.
-    pub fn renew(&mut self, gpu: &mut Compositor) {
+    pub fn renew(&mut self, gpu: &mut Compositor, screen_size: (u32, u32)) {
         for f in self.feeds.values() {
+            if let Some(t) = f.captioned {
+                gpu.ensure_target(t, screen_size.0, screen_size.1);
+            }
             if let Some(t) = f.target {
                 gpu.ensure_target(t, f.size.0, f.size.1);
             }
@@ -319,7 +340,28 @@ impl Feeds {
             if n == 0 {
                 continue;
             }
-            let src = program(*screen);
+            let mut src = program(*screen);
+            // Captions on the screen's picture first (only while there are some).
+            if let Some(c) = f
+                .captioned
+                .filter(|_| gpu.has_plane(src, crate::overlay::CAPTIONS))
+            {
+                let size = gpu.target_size(c).unwrap_or((1, 1));
+                passes.push(Pass {
+                    dest: Dest::Target(c),
+                    viewport: None,
+                    paint: Paint::Target(src),
+                });
+                passes.push(Pass {
+                    dest: Dest::Target(c),
+                    viewport: Some([0, 0, size.0, size.1]),
+                    paint: Paint::Plane {
+                        slot: src,
+                        name: crate::overlay::CAPTIONS,
+                    },
+                });
+                src = c;
+            }
             let picture = match (f.target, f.small) {
                 (Some(t), Some(small)) => {
                     passes.push(Pass {

@@ -625,7 +625,7 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
               const src = show().sources.find((x) => x.id === id);
               if (src?.kind.type === 'video') replays.push(src.kind.path, ...(src.playlist?.items.map((x) => x.path) ?? []));
               await act({ type: 'cutTo', screen: 'live', sourceId: nextPic(id) });
-              note('the last 5 seconds were replayed');
+              note(unifiedOn() ? 'the last 5 seconds were replayed (kept, encoded and played by the engine)' : 'the last 5 seconds were replayed');
               break;
             }
             case 'background':
@@ -643,6 +643,12 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
               await act({ type: 'updateSource', id: cam.id, patch });
               try {
                 await sleep(s.seconds * 1000 - 3000);
+                // The engine runs the models in its vision worker: say how it did.
+                const v = unifiedOn() ? (await refreshEngineInfo().catch(() => null))?.stats?.vision : null;
+                if (v)
+                  note(
+                    `engine: ${v.frames} frames to the person-finding models, ${v.answers} answers, ${v.masks ? 'a person mask in use' : 'no person mask yet'}`,
+                  );
               } finally {
                 await act({
                   type: 'updateSource',
@@ -726,7 +732,7 @@ export async function runTestEvent(opts: TestOptions, env: TestEnv, deps: Runner
         const answers = await probeOutputs(2000);
         // The unified engine's screens are its own windows: it answers for them.
         if (unifiedOn())
-          for (const o of ['live', 'back'] as const) {
+          for (const o of ['live', 'back', 'monitor'] as const) {
             if (answers.some((a) => a.output === o)) continue;
             const p = await call<{
               fps: number;

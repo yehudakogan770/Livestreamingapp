@@ -18,12 +18,16 @@ export interface MvTile {
   tally: 'pgm' | 'pvw' | 'none';
   big: boolean;
   number: number | null;
+  /** Where its timecode goes (the screens' tiles): drawn from the small plane `tc2`. */
+  timecode?: Rect4 | null;
 }
 
 export interface MvLayout {
   width: number;
   height: number;
   header: Rect4;
+  /** The header's clock box: its timecode (with frames) is the small plane `tc`. */
+  clock?: Rect4;
   tiles: MvTile[];
   /** CSS pixels to multiview pixels. */
   scale: number;
@@ -47,6 +51,34 @@ const C = {
 const pad = (n: number) => String(n).padStart(2, '0');
 /** The time of day, as the multiview's clock and timecodes show it (to the second: one change a second). */
 export const clockText = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+/** The time of day as a timecode with frames, `HH:MM:SS:FF` at `fps` (the engine's multiview). */
+export const timecodeText = (d: Date, fps: number) =>
+  `${clockText(d)}:${pad(Math.min(Math.max(1, Math.round(fps)) - 1, Math.floor((d.getMilliseconds() * fps) / 1000)))}`;
+
+/**
+ * One of the engine multiview's timecode planes (`tc`: the header's clock, big;
+ * `tc2`: the screens' tiles', small), `w` × `h`, see-through around the words.
+ * They change every frame, so they are small planes of their own.
+ */
+export function drawTimecode(ctx: CanvasRenderingContext2D, w: number, h: number, text: string, big: boolean, scale: number): void {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.clearRect(0, 0, w, h);
+  ctx.textBaseline = 'middle';
+  if (big) {
+    ctx.font = `600 ${Math.round(16 * scale)}px ${MONO}`;
+    ctx.fillStyle = C.text;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, w / 2, h / 2 + scale);
+  } else {
+    ctx.font = `500 ${Math.round(12 * scale)}px ${MONO}`;
+    ctx.fillStyle = C.faint;
+    ctx.textAlign = 'right';
+    ctx.fillText(text, w - 8 * scale, h / 2 + scale);
+  }
+  ctx.textAlign = 'left';
+}
 
 /** Where each source is on air ("LIVE", "BACK"), and what is next. */
 export function tallies(show: Show): { onAir: Map<string, string[]>; next: Set<string> } {
@@ -106,15 +138,19 @@ export function drawMultiviewWords(ctx: CanvasRenderingContext2D, layout: MvLayo
   if (show.screens.live.blank) x += tag('LIVE BLANK', x, hc, C.pgmBright, C.text) + 10 * s;
   if (show.screens.back.blank) x += tag('BACK BLANK', x, hc, C.pgmBright, C.text) + 10 * s;
   ctx.font = font(16, 600, true);
-  const cw = ctx.measureText(clock).width + 20 * s;
-  const ch = 26 * s;
-  const cx = hx + hw - 6 * s - cw;
+  // The engine's layout gives the clock a box of its own; its time (with
+  // frames) is the small plane `tc`, drawn there every frame.
+  const box = layout.clock;
+  const cw = box ? box[2] : ctx.measureText(clock).width + 20 * s;
+  const ch = box ? box[3] : 26 * s;
+  const cx = box ? box[0] : hx + hw - 6 * s - cw;
+  const cy = box ? box[1] : hc - ch / 2;
   ctx.fillStyle = '#000';
-  ctx.fillRect(cx, hc - ch / 2, cw, ch);
+  ctx.fillRect(cx, cy, cw, ch);
   ctx.strokeStyle = C.border;
   ctx.lineWidth = Math.max(1, s);
-  ctx.strokeRect(cx + 0.5, hc - ch / 2 + 0.5, cw - 1, ch - 1);
-  text(clock, cx + 10 * s, hc + s, font(16, 600, true), C.text);
+  ctx.strokeRect(cx + 0.5, cy + 0.5, cw - 1, ch - 1);
+  if (!box) text(clock, cx + 10 * s, hc + s, font(16, 600, true), C.text);
   // ---- the label strips ----
   const { onAir, next } = tallies(show);
   const nameOf = (id: string | null) => (id ? (show.sources.find((x) => x.id === id)?.name ?? '') : 'nothing');
@@ -155,10 +191,11 @@ export function drawMultiviewWords(ctx: CanvasRenderingContext2D, layout: MvLayo
       x = lx + bw + 8 * s;
       x += text(sc === 'live' ? 'LIVE' : 'BACK', x, cy, font(size, 600, true), C.dim) + 8 * s;
       ctx.font = font(12, 500, true);
-      const tcw = ctx.measureText(clock).width;
+      const tcw = t.timecode ? t.timecode[2] - 8 * s : ctx.measureText(clock).width;
       const scr = show.screens[sc];
       text(nameOf(t.content.type === 'program' ? scr.program : scr.preview), x, cy, font(size, 600), C.text, Math.max(10, lx + lw - x - tcw - 24 * s));
-      text(clock, lx + lw - 8 * s - tcw, cy, font(12, 500, true), C.faint);
+      // The engine's timecode (with frames) is the small plane `tc2`, drawn there every frame.
+      if (!t.timecode) text(clock, lx + lw - 8 * s - tcw, cy, font(12, 500, true), C.faint);
     }
     ctx.restore();
   }
