@@ -22,7 +22,8 @@ use crate::overlay::{self, OverlayStats};
 use crate::present::{NativeOutput, Placement};
 use crate::scene::{self, ScreenScene};
 use crate::source::{
-    EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource,
+    Clip, EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable,
+    VideoSource,
 };
 use crate::vision::{self, Framing, LowRes, VisionResult};
 
@@ -89,7 +90,19 @@ impl SourceFactory for DefaultFactory {
     fn key(&self, src: &Source) -> String {
         match &src.kind {
             SourceKind::Camera { device_id, label } => format!("camera:{device_id}:{label}"),
-            SourceKind::Video { path, .. } => format!("video:{path}"),
+            // A video plays as the show says (playing or paused, where, how
+            // fast, looping): a change opens it again from there.
+            SourceKind::Video { path, playback, .. } => {
+                let speed = src.speed.unwrap_or(1.0);
+                if playback.playing {
+                    format!(
+                        "video:{path}|play:{}:{}:{speed}:{}",
+                        playback.pos_s, playback.at, src.looping
+                    )
+                } else {
+                    format!("video:{path}|pause:{}", playback.pos_s)
+                }
+            }
             SourceKind::Image { path } => format!("image:{path}"),
             SourceKind::Pattern => "pattern".into(),
             // Their pictures come from the app's frame store by input: one source each.
@@ -112,12 +125,24 @@ impl SourceFactory for DefaultFactory {
             SourceKind::Pattern => {
                 Box::new(TestPattern::start(&src.name, 1920, 1080, 30, self.seed))
             }
-            SourceKind::Video { path, .. } | SourceKind::Image { path } => match &self.ffmpeg {
-                Some(ff) => Box::new(FfmpegFile::start(
+            SourceKind::Video { path, playback, .. } => match &self.ffmpeg {
+                Some(ff) => Box::new(FfmpegFile::play(
                     ff,
                     &(self.resolve)(path),
-                    matches!(src.kind, SourceKind::Image { .. }),
+                    false,
+                    Clip {
+                        start_s: lumora_engine::timing::source_position(src, now_ms()),
+                        speed: src.speed.unwrap_or(1.0).clamp(0.05, 16.0),
+                        playing: playback.playing,
+                        looping: src.looping,
+                    },
                 )),
+                None => Box::new(Unavailable::new(
+                    "FFmpeg is needed to play files in the unified engine.",
+                )),
+            },
+            SourceKind::Image { path } => match &self.ffmpeg {
+                Some(ff) => Box::new(FfmpegFile::start(ff, &(self.resolve)(path), true)),
                 None => Box::new(Unavailable::new(
                     "FFmpeg is needed to play files in the unified engine.",
                 )),
