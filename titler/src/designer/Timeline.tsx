@@ -75,16 +75,45 @@ export function Timeline({ store }: { store: Store }) {
     window.addEventListener('pointerup', up);
   };
 
-  const setMarkers = (fn: (m: Composition['markers']) => Composition['markers']) => store.edit('Move marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, markers: cleanMarkers(fn(cc.markers), cc.duration) })));
+  const setMarkers = (fn: (m: Composition['markers']) => Composition['markers']) =>
+    store.edit('Move marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, markers: cleanMarkers(fn(cc.markers), cc.duration) })));
 
   const rows: ReactNode[] = [];
   const walk = (list: Layer[], depth: number) => {
     for (const l of list) {
-      rows.push(<LayerRow key={l.id} store={store} c={c} l={l} depth={depth} x={x} selected={selection.includes(l.id)} keys={keys} open={open[l.id]} dragTime={dragTime} />);
+      rows.push(
+        <LayerRow
+          key={l.id}
+          store={store}
+          c={c}
+          l={l}
+          depth={depth}
+          x={x}
+          selected={selection.includes(l.id)}
+          keys={keys}
+          open={open[l.id]}
+          dragTime={dragTime}
+        />,
+      );
       const mode = open[l.id];
       if (mode) {
         const props = mode === 'animated' ? animatedProps(l) : propsOf(l);
-        for (const pi of props) rows.push(<PropRow key={`${l.id}:${pi.path}`} store={store} c={c} l={l} pi={pi} depth={depth} x={x} time={time} keys={keys} dragTime={dragTime} graph={graph} />);
+        for (const pi of props)
+          rows.push(
+            <PropRow
+              key={`${l.id}:${pi.path}`}
+              store={store}
+              c={c}
+              l={l}
+              pi={pi}
+              depth={depth}
+              x={x}
+              time={time}
+              keys={keys}
+              dragTime={dragTime}
+              graph={graph}
+            />,
+          );
       }
       if (l.type === 'group') walk(l.children, depth + 1);
     }
@@ -110,7 +139,14 @@ export function Timeline({ store }: { store: Store }) {
         <span className="tt-grow" />
         <label className="tt-dim tt-zoomlabel">
           Zoom
-          <input type="range" min={20} max={600} value={zoom} onChange={(e) => store.set({ timelineZoom: Number(e.target.value) })} aria-label="Timeline zoom" />
+          <input
+            type="range"
+            min={20}
+            max={600}
+            value={zoom}
+            onChange={(e) => store.set({ timelineZoom: Number(e.target.value) })}
+            aria-label="Timeline zoom"
+          />
         </label>
       </div>
       {tab === 'graph' ? (
@@ -133,7 +169,14 @@ export function Timeline({ store }: { store: Store }) {
                 <button
                   className="tt-link"
                   title="A cue marker (an audio cue or a note) at the playhead"
-                  onClick={() => store.edit('Add cue marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, cues: [...cc.cues, { id: uid('m'), t: time, name: `Cue ${cc.cues.length + 1}` }].sort((a, b) => a.t - b.t) })))}
+                  onClick={() =>
+                    store.edit('Add cue marker', (p) =>
+                      updateComp(p, c.id, (cc) => ({
+                        ...cc,
+                        cues: [...cc.cues, { id: uid('m'), t: time, name: `Cue ${cc.cues.length + 1}` }].sort((a, b) => a.t - b.t),
+                      })),
+                    )
+                  }
                 >
                   Add cue
                 </button>
@@ -143,13 +186,41 @@ export function Timeline({ store }: { store: Store }) {
                 <div className="tt-seg in" style={{ left: 0, width: x(inEnd) }} />
                 <div className="tt-seg hold" style={{ left: x(inEnd), width: x(outStart - inEnd) }} />
                 <div className="tt-seg out" style={{ left: x(outStart), width: x(c.duration - outStart) }} />
-                {loop && <div className="tt-loop" style={{ left: x(loop.start), width: x(loop.end - loop.start) }} onPointerDown={(e) => dragTime(e, 'Move loop', (dt) => setMarkers((m) => (m.loop ? { ...m, loop: { start: loop.start + dt, end: loop.end + dt } } : m)))} />}
-                <Marker at={x(inEnd)} label="IN ends" cls="in" onDown={(e) => dragTime(e, 'Move IN marker', (dt) => setMarkers((m) => ({ ...m, inEnd: inEnd + dt })))} />
-                <Marker at={x(outStart)} label="OUT starts" cls="out" onDown={(e) => dragTime(e, 'Move OUT marker', (dt) => setMarkers((m) => ({ ...m, outStart: outStart + dt })))} />
+                {loop && (
+                  <div
+                    className="tt-loop"
+                    style={{ left: x(loop.start), width: x(loop.end - loop.start) }}
+                    onPointerDown={(e) =>
+                      dragTime(e, 'Move loop', (dt) => setMarkers((m) => (m.loop ? { ...m, loop: { start: loop.start + dt, end: loop.end + dt } } : m)))
+                    }
+                  />
+                )}
+                <Marker
+                  at={x(inEnd)}
+                  label="IN ends"
+                  cls="in"
+                  onDown={(e) => dragTime(e, 'Move IN marker', (dt) => setMarkers((m) => ({ ...m, inEnd: inEnd + dt })))}
+                />
+                <Marker
+                  at={x(outStart)}
+                  label="OUT starts"
+                  cls="out"
+                  onDown={(e) => dragTime(e, 'Move OUT marker', (dt) => setMarkers((m) => ({ ...m, outStart: outStart + dt })))}
+                />
                 {loop && (
                   <>
-                    <Marker at={x(loop.start)} label="Loop start" cls="loop" onDown={(e) => dragTime(e, 'Move loop', (dt) => setMarkers((m) => (m.loop ? { ...m, loop: { ...m.loop, start: loop.start + dt } } : m)))} />
-                    <Marker at={x(loop.end)} label="Loop end" cls="loop" onDown={(e) => dragTime(e, 'Move loop', (dt) => setMarkers((m) => (m.loop ? { ...m, loop: { ...m.loop, end: loop.end + dt } } : m)))} />
+                    <Marker
+                      at={x(loop.start)}
+                      label="Loop start"
+                      cls="loop"
+                      onDown={(e) => dragTime(e, 'Move loop', (dt) => setMarkers((m) => (m.loop ? { ...m, loop: { ...m.loop, start: loop.start + dt } } : m)))}
+                    />
+                    <Marker
+                      at={x(loop.end)}
+                      label="Loop end"
+                      cls="loop"
+                      onDown={(e) => dragTime(e, 'Move loop', (dt) => setMarkers((m) => (m.loop ? { ...m, loop: { ...m.loop, end: loop.end + dt } } : m)))}
+                    />
                   </>
                 )}
                 {c.cues.map((q) => (
@@ -158,8 +229,19 @@ export function Timeline({ store }: { store: Store }) {
                     className="tt-cue"
                     style={{ left: x(q.t) }}
                     title={`${q.name}${q.sound ? ' (sound)' : ''}. Drag to move; double-click to remove.`}
-                    onDoubleClick={() => store.edit('Remove cue marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, cues: cc.cues.filter((x2) => x2.id !== q.id) })))}
-                    onPointerDown={(e) => dragTime(e, 'Move cue marker', (dt) => store.edit('Move cue marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, cues: cc.cues.map((x2) => (x2.id === q.id ? { ...x2, t: Math.min(cc.duration, Math.max(0, q.t + dt)) } : x2)) }))))}
+                    onDoubleClick={() =>
+                      store.edit('Remove cue marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, cues: cc.cues.filter((x2) => x2.id !== q.id) })))
+                    }
+                    onPointerDown={(e) =>
+                      dragTime(e, 'Move cue marker', (dt) =>
+                        store.edit('Move cue marker', (p) =>
+                          updateComp(p, c.id, (cc) => ({
+                            ...cc,
+                            cues: cc.cues.map((x2) => (x2.id === q.id ? { ...x2, t: Math.min(cc.duration, Math.max(0, q.t + dt)) } : x2)),
+                          })),
+                        ),
+                      )
+                    }
                   >
                     {q.name}
                   </div>
@@ -212,10 +294,12 @@ function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps 
   const [renaming, setRenaming] = useState(false);
   const select = (e: React.MouseEvent) => {
     const s = store.get();
-    if (e.shiftKey || e.metaKey || e.ctrlKey) store.set({ selection: s.selection.includes(l.id) ? s.selection.filter((x2) => x2 !== l.id) : [...s.selection, l.id] });
+    if (e.shiftKey || e.metaKey || e.ctrlKey)
+      store.set({ selection: s.selection.includes(l.id) ? s.selection.filter((x2) => x2 !== l.id) : [...s.selection, l.id] });
     else store.set({ selection: [l.id] });
   };
-  const toggle = (f: 'visible' | 'locked') => store.edit(f === 'visible' ? 'Show or hide layer' : 'Lock layer', (p) => updateLayers(p, c.id, [l.id], (x2) => ({ ...x2, [f]: !x2[f] })));
+  const toggle = (f: 'visible' | 'locked') =>
+    store.edit(f === 'visible' ? 'Show or hide layer' : 'Lock layer', (p) => updateLayers(p, c.id, [l.id], (x2) => ({ ...x2, [f]: !x2[f] })));
   const keyTimes = open ? [] : layerKeyTimes(l);
   const barDrag = (e: React.PointerEvent, part: 'move' | 'start' | 'end') => {
     select(e);
@@ -247,7 +331,11 @@ function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps 
           if (id && id !== l.id) store.edit('Reorder layers', (p) => moveBefore(p, c.id, id, l.id));
         }}
       >
-        <button className="tt-ico" onClick={(e) => (e.stopPropagation(), store.set((s) => ({ open: toggleOpen(s.open, l.id, 'all') })))} aria-label={open ? 'Close properties' : 'Show properties'}>
+        <button
+          className="tt-ico"
+          onClick={(e) => (e.stopPropagation(), store.set((s) => ({ open: toggleOpen(s.open, l.id, 'all') })))}
+          aria-label={open ? 'Close properties' : 'Show properties'}
+        >
           {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
         </button>
         <span
@@ -260,10 +348,20 @@ function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps 
             store.edit('Label color', (p) => updateLayers(p, c.id, [l.id], (x2) => ({ ...x2, label: LABELS[(i + 1) % LABELS.length] })));
           }}
         />
-        <button className="tt-ico" onClick={(e) => (e.stopPropagation(), toggle('visible'))} aria-label={l.visible ? 'Hide layer' : 'Show layer'} title={l.visible ? 'Hide' : 'Show'}>
+        <button
+          className="tt-ico"
+          onClick={(e) => (e.stopPropagation(), toggle('visible'))}
+          aria-label={l.visible ? 'Hide layer' : 'Show layer'}
+          title={l.visible ? 'Hide' : 'Show'}
+        >
           {l.visible ? <Eye size={13} /> : <EyeOff size={13} />}
         </button>
-        <button className="tt-ico" onClick={(e) => (e.stopPropagation(), toggle('locked'))} aria-label={l.locked ? 'Unlock layer' : 'Lock layer'} title={l.locked ? 'Unlock' : 'Lock'}>
+        <button
+          className="tt-ico"
+          onClick={(e) => (e.stopPropagation(), toggle('locked'))}
+          aria-label={l.locked ? 'Unlock layer' : 'Lock layer'}
+          title={l.locked ? 'Unlock' : 'Lock'}
+        >
           {l.locked ? <Lock size={12} /> : <Unlock size={12} className="tt-faint" />}
         </button>
         {renaming ? (
@@ -287,8 +385,16 @@ function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps 
             {l.name}
           </span>
         )}
-        {l.parent && <span className="tt-badge" title="Has a parent layer">↳</span>}
-        {l.matte && <span className="tt-badge" title="Seen through a track matte">M</span>}
+        {l.parent && (
+          <span className="tt-badge" title="Has a parent layer">
+            ↳
+          </span>
+        )}
+        {l.matte && (
+          <span className="tt-badge" title="Seen through a track matte">
+            M
+          </span>
+        )}
       </div>
       <div className="tt-tl-track">
         <div className={`tt-bar ${l.type}`} style={{ left: x(l.start), width: Math.max(2, x(l.end - l.start)) }} onPointerDown={(e) => barDrag(e, 'move')}>
@@ -320,12 +426,29 @@ function shiftKeys(l: Layer, orig: Layer, d: number): Layer {
   return next;
 }
 
-function PropRow({ store, c, l, pi, depth, x, time, keys, dragTime, graph }: RowProps & { pi: PropInfo; time: number; graph: { layer: string; path: string } | null }) {
+function PropRow({
+  store,
+  c,
+  l,
+  pi,
+  depth,
+  x,
+  time,
+  keys,
+  dragTime,
+  graph,
+}: RowProps & { pi: PropInfo; time: number; graph: { layer: string; path: string } | null }) {
   const p = getProp(l, pi.path);
   const anim = isAnimated(p);
   const value = valueAt(p as never, time, pi.fallback as never) as Value;
-  const set = (v: Value) => store.edit(`Change ${pi.label.toLowerCase()}`, (pr) => updateLayers(pr, c.id, [l.id], (x2) => withProp(x2, pi.path, anim ? setKey(getProp(x2, pi.path) as never, time, v as never) : { v })));
-  const stopwatch = () => store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) => updateLayers(pr, c.id, [l.id], (x2) => withProp(x2, pi.path, toggleKeys(getProp(x2, pi.path) as never, time, pi.fallback as never))));
+  const set = (v: Value) =>
+    store.edit(`Change ${pi.label.toLowerCase()}`, (pr) =>
+      updateLayers(pr, c.id, [l.id], (x2) => withProp(x2, pi.path, anim ? setKey(getProp(x2, pi.path) as never, time, v as never) : { v })),
+    );
+  const stopwatch = () =>
+    store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) =>
+      updateLayers(pr, c.id, [l.id], (x2) => withProp(x2, pi.path, toggleKeys(getProp(x2, pi.path) as never, time, pi.fallback as never))),
+    );
   const keyHere = anim && p.k.some((k) => Math.abs(k.t - time) < 1e-4);
   const addOrRemove = () =>
     store.edit(keyHere ? 'Remove keyframe' : 'Add keyframe', (pr) =>
@@ -359,18 +482,46 @@ function PropRow({ store, c, l, pi, depth, x, time, keys, dragTime, graph }: Row
   return (
     <div className={`tt-row prop${graph?.layer === l.id && graph.path === pi.path ? ' graphed' : ''}`} style={{ height: ROW }}>
       <div className="tt-tl-left" style={{ paddingLeft: 22 + depth * 14 }} onClick={() => store.set({ graphProp: { layer: l.id, path: pi.path } })}>
-        <button className={`tt-ico${anim ? ' on' : ''}`} onClick={(e) => (e.stopPropagation(), stopwatch())} title={anim ? 'Stop animating (keeps the value here)' : 'Animate (a keyframe here)'} aria-label={`Animate ${pi.label}`}>
+        <button
+          className={`tt-ico${anim ? ' on' : ''}`}
+          onClick={(e) => (e.stopPropagation(), stopwatch())}
+          title={anim ? 'Stop animating (keeps the value here)' : 'Animate (a keyframe here)'}
+          aria-label={`Animate ${pi.label}`}
+        >
           <Clock size={12} />
         </button>
         <span className="tt-propname">{pi.label}</span>
         <span className="tt-propval">
           {Array.isArray(value) ? (
             <>
-              <NumberField value={value[0]} step={pi.step ?? 1} onChange={(v) => set([v, (value as number[])[1]!])} onBegin={() => store.begin(pi.label)} onEnd={() => store.end()} label={`${pi.label} x`} />
-              <NumberField value={value[1]} step={pi.step ?? 1} onChange={(v) => set([(value as number[])[0]!, v])} onBegin={() => store.begin(pi.label)} onEnd={() => store.end()} label={`${pi.label} y`} />
+              <NumberField
+                value={value[0]}
+                step={pi.step ?? 1}
+                onChange={(v) => set([v, (value as number[])[1]!])}
+                onBegin={() => store.begin(pi.label)}
+                onEnd={() => store.end()}
+                label={`${pi.label} x`}
+              />
+              <NumberField
+                value={value[1]}
+                step={pi.step ?? 1}
+                onChange={(v) => set([(value as number[])[0]!, v])}
+                onBegin={() => store.begin(pi.label)}
+                onEnd={() => store.end()}
+                label={`${pi.label} y`}
+              />
             </>
           ) : (
-            <NumberField value={value} step={pi.step ?? 1} min={pi.min} max={pi.max} onChange={(v) => set(v)} onBegin={() => store.begin(pi.label)} onEnd={() => store.end()} label={pi.label} />
+            <NumberField
+              value={value}
+              step={pi.step ?? 1}
+              min={pi.min}
+              max={pi.max}
+              onChange={(v) => set(v)}
+              onBegin={() => store.begin(pi.label)}
+              onEnd={() => store.end()}
+              label={pi.label}
+            />
           )}
         </span>
         {anim && (
@@ -378,7 +529,11 @@ function PropRow({ store, c, l, pi, depth, x, time, keys, dragTime, graph }: Row
             <button className="tt-ico" onClick={(e) => (e.stopPropagation(), jump(-1))} aria-label="Previous keyframe">
               ‹
             </button>
-            <button className={`tt-ico${keyHere ? ' on' : ''}`} onClick={(e) => (e.stopPropagation(), addOrRemove())} aria-label={keyHere ? 'Remove keyframe here' : 'Add keyframe here'}>
+            <button
+              className={`tt-ico${keyHere ? ' on' : ''}`}
+              onClick={(e) => (e.stopPropagation(), addOrRemove())}
+              aria-label={keyHere ? 'Remove keyframe here' : 'Add keyframe here'}
+            >
               <Diamond size={10} />
             </button>
             <button className="tt-ico" onClick={(e) => (e.stopPropagation(), jump(1))} aria-label="Next keyframe">
@@ -421,7 +576,13 @@ export function moveKeys(p: ReturnType<Store['get']>['project'], compId: string,
         const ts = mine.filter((r) => r.path === path).map((r) => r.t);
         const moved = prop.k.map((k) => (ts.some((t) => Math.abs(t - k.t) < 1e-6) ? { ...k, t: Math.max(0, Math.round((k.t + dt) * 1e6) / 1e6) } : k));
         // Two keys on the same time: the moved one wins.
-        const out = moved.filter((k, i) => !moved.some((o, j) => j !== i && Math.abs(o.t - k.t) < 1e-6 && ts.some((t) => Math.abs(t + dt - o.t) < 1e-6) && !ts.some((t) => Math.abs(t + dt - k.t) < 1e-6)));
+        const out = moved.filter(
+          (k, i) =>
+            !moved.some(
+              (o, j) =>
+                j !== i && Math.abs(o.t - k.t) < 1e-6 && ts.some((t) => Math.abs(t + dt - o.t) < 1e-6) && !ts.some((t) => Math.abs(t + dt - k.t) < 1e-6),
+            ),
+        );
         out.sort((a, b) => a.t - b.t);
         next = withProp(next, path, { k: out });
       }

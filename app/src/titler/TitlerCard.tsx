@@ -17,7 +17,21 @@ import { TitlerView } from './TitlerView';
 import { projectOf, titlerKind, valuesOf } from './titlerSource';
 import './titler.css';
 
-export function TitlerCard({ source, show, act, client, screen = 'live', onClose }: { source: Source; show: Show; act: Act; client: EngineClient; screen?: ScreenId; onClose: () => void }) {
+export function TitlerCard({
+  source,
+  show,
+  act,
+  client,
+  screen = 'live',
+  onClose,
+}: {
+  source: Source;
+  show: Show;
+  act: Act;
+  client: EngineClient;
+  screen?: ScreenId;
+  onClose: () => void;
+}) {
   const k = source.kind.type === 'titler' ? source.kind : null;
   const project = useMemo(() => (k ? projectOf(k) : null), [k?.template]); // eslint-disable-line react-hooks/exhaustive-deps
   const [now, setNow] = useState(() => Date.now());
@@ -46,7 +60,13 @@ export function TitlerCard({ source, show, act, client, screen = 'live', onClose
     for (const a of overlayActions(show, source.id, screen, false)) act(a);
   };
   return (
-    <div className="modal" role="dialog" aria-modal="true" aria-label={`Titler graphic: ${source.name}`} onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Titler graphic: ${source.name}`}
+      onPointerDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="modal__box titler-card">
         <header className="modal__head">
           <h2>
@@ -62,7 +82,12 @@ export function TitlerCard({ source, show, act, client, screen = 'live', onClose
             <TitlerView source={source} show={show} urlFor={(p) => client.mediaUrl(p)} thumb />
           </div>
           {project ? (
-            <ControlPanel project={project} values={values} bound={bound} onChange={(key, value) => act({ type: 'setTitlerValues', id: source.id, values: [{ key, value }] })} />
+            <ControlPanel
+              project={project}
+              values={values}
+              bound={bound}
+              onChange={(key, value) => act({ type: 'setTitlerValues', id: source.id, values: [{ key, value }] })}
+            />
           ) : (
             <div className="titler-card__problem">
               This graphic&rsquo;s design could not be read.
@@ -78,7 +103,11 @@ export function TitlerCard({ source, show, act, client, screen = 'live', onClose
           {usesScore && scoreboards.length > 1 && (
             <label className="field">
               <span className="field__label">Scores from</span>
-              <select className="text" value={k.scoreboard ?? ''} onChange={(e) => act({ type: 'updateTitler', id: source.id, titler: { ...k, scoreboard: e.target.value || null } })}>
+              <select
+                className="text"
+                value={k.scoreboard ?? ''}
+                onChange={(e) => act({ type: 'updateTitler', id: source.id, titler: { ...k, scoreboard: e.target.value || null } })}
+              >
                 <option value="">The first scoreboard</option>
                 {scoreboards.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -102,7 +131,12 @@ export function TitlerCard({ source, show, act, client, screen = 'live', onClose
               Take OUT
             </button>
           ) : (
-            <button type="button" className="btn btn--primary" onClick={take} title={`Plays its IN on the ${screen === 'back' ? 'Back' : 'Live'} Screen, then holds`}>
+            <button
+              type="button"
+              className="btn btn--primary"
+              onClick={take}
+              title={`Plays its IN on the ${screen === 'back' ? 'Back' : 'Live'} Screen, then holds`}
+            >
               Take IN
             </button>
           )}

@@ -28,7 +28,17 @@ export class TitlerPainter {
    * in (on/off and when that changed); none when it is a screen's picture,
    * which plays its IN from `since` and holds.
    */
-  paint(ctx: CanvasRenderingContext2D, src: Source, k: TitlerGraphic, show: Show | null, now: number, w: number, h: number, channel: ChannelState | null, since: number): boolean {
+  paint(
+    ctx: CanvasRenderingContext2D,
+    src: Source,
+    k: TitlerGraphic,
+    show: Show | null,
+    now: number,
+    w: number,
+    h: number,
+    channel: ChannelState | null,
+    since: number,
+  ): boolean {
     const p = projectOf(k);
     if (!p) return false;
     let r;

@@ -42,10 +42,7 @@ export interface GradientStop {
 }
 
 /** A fill: one color, or a gradient only when the designer picks one. */
-export type Paint =
-  | { type: 'solid'; color: ColorRef }
-  | { type: 'linear'; angle: number; stops: GradientStop[] }
-  | { type: 'radial'; stops: GradientStop[] };
+export type Paint = { type: 'solid'; color: ColorRef } | { type: 'linear'; angle: number; stops: GradientStop[] } | { type: 'radial'; stops: GradientStop[] };
 
 export interface Stroke {
   paint: Paint;

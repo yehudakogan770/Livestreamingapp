@@ -489,7 +489,14 @@ export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
         const worldShift = [m[0] * shiftLocal[0] + m[2] * shiftLocal[1], m[1] * shiftLocal[0] + m[3] * shiftLocal[1]] as Vec2;
         const pd = toParent(c, l, t, worldShift);
         store.edit('Move anchor point', (pr) =>
-          updateLayers(pr, c.id, [l.id], (x) => setAt(setAt(x, 'transform.anchor', [round(a0[0] + shiftLocal[0]), round(a0[1] + shiftLocal[1])], t), 'transform.position', [round(pos[0] + pd[0]), round(pos[1] + pd[1])], t)),
+          updateLayers(pr, c.id, [l.id], (x) =>
+            setAt(
+              setAt(x, 'transform.anchor', [round(a0[0] + shiftLocal[0]), round(a0[1] + shiftLocal[1])], t),
+              'transform.position',
+              [round(pos[0] + pd[0]), round(pos[1] + pd[1])],
+              t,
+            ),
+          ),
         );
         return;
       }
@@ -562,7 +569,10 @@ export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
       const at: Vec2 = big ? [Math.round(b.x), Math.round(b.y)] : [Math.round(d.start[0]), Math.round(d.start[1])];
       const l = newShape(c, d.shape, at, size, '$box');
       l.end = c.duration;
-      store.edit(d.shape === 'ellipse' ? 'Add ellipse' : 'Add rectangle', (pr) => addLayers(pr, c.id, [l], s.selection[0] ?? null), { selection: [l.id], tool: 'select' });
+      store.edit(d.shape === 'ellipse' ? 'Add ellipse' : 'Add rectangle', (pr) => addLayers(pr, c.id, [l], s.selection[0] ?? null), {
+        selection: [l.id],
+        tool: 'select',
+      });
     } else if (d.kind === 'pen') {
       store.set({});
     } else if (d.kind === 'guide') {
@@ -717,7 +727,11 @@ function resized(l: Layer, w: number, h: number, box: { w: number; h: number }, 
           ...l,
           path: {
             ...l.path,
-            v: l.path.v.map((v) => ({ p: [round(v.p[0] * kx), round(v.p[1] * ky)], ...(v.i ? { i: [v.i[0] * kx, v.i[1] * ky] as Vec2 } : {}), ...(v.o ? { o: [v.o[0] * kx, v.o[1] * ky] as Vec2 } : {}) })),
+            v: l.path.v.map((v) => ({
+              p: [round(v.p[0] * kx), round(v.p[1] * ky)],
+              ...(v.i ? { i: [v.i[0] * kx, v.i[1] * ky] as Vec2 } : {}),
+              ...(v.o ? { o: [v.o[0] * kx, v.o[1] * ky] as Vec2 } : {}),
+            })),
           },
         };
       }

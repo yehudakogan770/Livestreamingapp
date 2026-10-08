@@ -34,7 +34,9 @@ describe('data sources', () => {
   });
 
   it('turns a Google Sheet link into its CSV address', () => {
-    expect(sheetCsvUrl('https://docs.google.com/spreadsheets/d/ABC_123/edit#gid=42')).toBe('https://docs.google.com/spreadsheets/d/ABC_123/export?format=csv&gid=42');
+    expect(sheetCsvUrl('https://docs.google.com/spreadsheets/d/ABC_123/edit#gid=42')).toBe(
+      'https://docs.google.com/spreadsheets/d/ABC_123/export?format=csv&gid=42',
+    );
     expect(sheetCsvUrl('https://docs.google.com/spreadsheets/d/ABC/pub?output=csv')).toBe('https://docs.google.com/spreadsheets/d/ABC/pub?output=csv');
     expect(sheetCsvUrl('https://example.com/a.csv')).toBe('https://example.com/a.csv');
   });

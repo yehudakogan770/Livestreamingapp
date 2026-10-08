@@ -49,7 +49,16 @@ export function drawJobFrame(canvas: OffscreenCanvas | HTMLCanvasElement, job: R
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  renderFrame(ctx, job.project, { comp: job.comp, time: t, clock: t, values: job.values, brand: job.brand, env: job.env, width: job.width, height: job.height });
+  renderFrame(ctx, job.project, {
+    comp: job.comp,
+    time: t,
+    clock: t,
+    values: job.values,
+    brand: job.brand,
+    env: job.env,
+    width: job.width,
+    height: job.height,
+  });
 }
 
 export interface Progress {
@@ -68,7 +77,10 @@ export async function renderVideo(job: RenderJob, target: VideoTarget, host: Hos
     for (let i = 0; i < times.length; i++) {
       if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
       drawJobFrame(canvas, job, times[i]!);
-      const blob = 'convertToBlob' in canvas ? await canvas.convertToBlob({ type: 'image/png' }) : await new Promise<Blob>((r) => (canvas as HTMLCanvasElement).toBlob((b) => r(b!), 'image/png'));
+      const blob =
+        'convertToBlob' in canvas
+          ? await canvas.convertToBlob({ type: 'image/png' })
+          : await new Promise<Blob>((r) => (canvas as HTMLCanvasElement).toBlob((b) => r(b!), 'image/png'));
       entries.push({ name: `${target.name}_${String(i).padStart(5, '0')}.png`, data: new Uint8Array(await blob.arrayBuffer()) });
       progress(i + 1, times.length);
     }
@@ -98,8 +110,14 @@ export async function renderVideo(job: RenderJob, target: VideoTarget, host: Hos
   const mb = await import('mediabunny');
   const webm = target.format === 'webm-alpha';
   const codec = webm ? 'vp9' : 'avc';
-  if (!(await mb.canEncodeVideo(codec, { width: job.width, height: job.height }))) throw new Error(`This browser can’t make ${webm ? 'WebM (VP9)' : 'MP4 (H.264)'} films. Try a PNG sequence${host.kind === 'desktop' ? ' or ProRes 4444' : ''}.`);
-  const output = new mb.Output({ format: webm ? new mb.WebMOutputFormat() : new mb.Mp4OutputFormat({ fastStart: 'in-memory' }), target: new mb.BufferTarget() });
+  if (!(await mb.canEncodeVideo(codec, { width: job.width, height: job.height })))
+    throw new Error(
+      `This browser can’t make ${webm ? 'WebM (VP9)' : 'MP4 (H.264)'} films. Try a PNG sequence${host.kind === 'desktop' ? ' or ProRes 4444' : ''}.`,
+    );
+  const output = new mb.Output({
+    format: webm ? new mb.WebMOutputFormat() : new mb.Mp4OutputFormat({ fastStart: 'in-memory' }),
+    target: new mb.BufferTarget(),
+  });
   const source = new mb.CanvasSource(canvas, { codec, quality: mb.QUALITY_HIGH, ...(webm ? { alpha: 'keep' as const } : {}) });
   output.addVideoTrack(source, { frameRate: job.fps });
   await output.start();

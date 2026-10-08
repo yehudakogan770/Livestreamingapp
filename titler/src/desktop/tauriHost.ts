@@ -95,7 +95,10 @@ export function tauriHost(kind: 'desktop' | 'lumora' | 'studio'): Host {
     },
     async renderTo(target, w, h, fps): Promise<FrameSink | null> {
       const { save } = await dialog();
-      const path = await save({ defaultPath: `${target.name}.${ext[target.format]}`, filters: [{ name: target.format === 'png-sequence' ? 'PNG sequence (a folder)' : 'Film', extensions: [ext[target.format]] }] });
+      const path = await save({
+        defaultPath: `${target.name}.${ext[target.format]}`,
+        filters: [{ name: target.format === 'png-sequence' ? 'PNG sequence (a folder)' : 'Film', extensions: [ext[target.format]] }],
+      });
       if (!path) return null;
       const id = await invoke<number>('titler_render_start', { path, width: w, height: h, fps, format: target.format });
       return {

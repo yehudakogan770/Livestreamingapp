@@ -54,11 +54,32 @@ export function textStyle(over: Partial<TextStyle> = {}): TextStyle {
   };
 }
 
-export function newText(comp: Composition | null, text = 'Text', position: Vec2 = [160, 160], box: Vec2 = [800, 90], style: Partial<TextStyle> = {}): TextLayer {
-  return { ...base(text.replace(/\{\{|\}\}/g, '').slice(0, 30) || 'Text', comp, position), type: 'text', text, style: textStyle(style), box, wrap: true, fit: 'shrink', minSize: 18 };
+export function newText(
+  comp: Composition | null,
+  text = 'Text',
+  position: Vec2 = [160, 160],
+  box: Vec2 = [800, 90],
+  style: Partial<TextStyle> = {},
+): TextLayer {
+  return {
+    ...base(text.replace(/\{\{|\}\}/g, '').slice(0, 30) || 'Text', comp, position),
+    type: 'text',
+    text,
+    style: textStyle(style),
+    box,
+    wrap: true,
+    fit: 'shrink',
+    minSize: 18,
+  };
 }
 
-export function newShape(comp: Composition | null, shape: ShapeLayer['shape'] = 'rect', position: Vec2 = [160, 160], size: Vec2 = [600, 120], color = '$box'): ShapeLayer {
+export function newShape(
+  comp: Composition | null,
+  shape: ShapeLayer['shape'] = 'rect',
+  position: Vec2 = [160, 160],
+  size: Vec2 = [600, 120],
+  color = '$box',
+): ShapeLayer {
   return {
     ...base(shape === 'ellipse' ? 'Ellipse' : shape === 'path' ? 'Path' : 'Rectangle', comp, position),
     type: 'shape',

@@ -118,7 +118,11 @@ export function ColorField({
   return (
     <span className="tt-color">
       <input type="color" aria-label={`${label} color`} value={isHex(swatch) ? swatch : '#000000'} onChange={(e) => onChange(e.target.value)} />
-      <select aria-label={`${label} brand color`} value={value.startsWith('$') || value.startsWith('{{') ? value : ''} onChange={(e) => e.target.value && onChange(e.target.value)}>
+      <select
+        aria-label={`${label} brand color`}
+        value={value.startsWith('$') || value.startsWith('{{') ? value : ''}
+        onChange={(e) => e.target.value && onChange(e.target.value)}
+      >
         <option value="">Custom</option>
         <optgroup label="Event look">
           {TOKEN_KEYS.filter((k) => !k.startsWith('font')).map((k) => (

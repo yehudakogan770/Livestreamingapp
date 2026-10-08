@@ -151,7 +151,14 @@ export class Store {
     if (!step) return;
     this.future.push({ project: this.state.project, label: step.label, selection: this.state.selection });
     this.version++;
-    this.state = { ...this.state, project: step.project, selection: step.selection, dirty: true, status: `Undid ${step.label.toLowerCase()}`, compId: fixComp(step.project, this.state.compId) };
+    this.state = {
+      ...this.state,
+      project: step.project,
+      selection: step.selection,
+      dirty: true,
+      status: `Undid ${step.label.toLowerCase()}`,
+      compId: fixComp(step.project, this.state.compId),
+    };
     this.emit();
   }
 
@@ -160,7 +167,14 @@ export class Store {
     if (!step) return;
     this.past.push({ project: this.state.project, label: step.label, selection: this.state.selection });
     this.version++;
-    this.state = { ...this.state, project: step.project, selection: step.selection, dirty: true, status: `Redid ${step.label.toLowerCase()}`, compId: fixComp(step.project, this.state.compId) };
+    this.state = {
+      ...this.state,
+      project: step.project,
+      selection: step.selection,
+      dirty: true,
+      status: `Redid ${step.label.toLowerCase()}`,
+      compId: fixComp(step.project, this.state.compId),
+    };
     this.emit();
   }
 
@@ -171,7 +185,21 @@ export class Store {
     this.gesture = null;
     this.version++;
     const comp = compOf(project, project.main);
-    this.state = { ...this.state, project, compId: comp.id, selection: [], keys: [], graphProp: null, time: comp.markers.inEnd, cue: null, playing: false, dirty: false, path: null, editingText: null, ...extra };
+    this.state = {
+      ...this.state,
+      project,
+      compId: comp.id,
+      selection: [],
+      keys: [],
+      graphProp: null,
+      time: comp.markers.inEnd,
+      cue: null,
+      playing: false,
+      dirty: false,
+      path: null,
+      editingText: null,
+      ...extra,
+    };
     this.emit();
   }
 

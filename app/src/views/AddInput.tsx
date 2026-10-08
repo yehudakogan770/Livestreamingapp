@@ -82,7 +82,10 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
 const GROUPS: { name: string; kinds: Kind[] }[] = [
   { name: 'Cameras and people', kinds: ['camera', 'stream', 'guest', 'screen'] },
   { name: 'Videos, pictures and slides', kinds: ['video', 'image', 'slideshow', 'browser', 'color', 'pattern'] },
-  { name: 'Text and titles', kinds: ['text', 'titler', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'pesukim', 'scripture', 'zmanim'] },
+  {
+    name: 'Text and titles',
+    kinds: ['text', 'titler', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'pesukim', 'scripture', 'zmanim'],
+  },
   { name: 'The audience’s phones', kinds: ['poll', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
   { name: 'Layouts and visuals', kinds: ['split', 'visuals', 'logo3d'] },
   { name: 'Sound', kinds: ['microphone', 'sound'] },
@@ -582,13 +585,21 @@ export function AddInput({
                 <span className="field__label">Start from</span>
                 <div className="addinput__list">
                   {starterTemplates().map((t, i) => (
-                    <button key={t.id} type="button" className="seg" aria-pressed={titlerTemplate === i} onClick={() => setTitlerTemplate(i)} title={t.description}>
+                    <button
+                      key={t.id}
+                      type="button"
+                      className="seg"
+                      aria-pressed={titlerTemplate === i}
+                      onClick={() => setTitlerTemplate(i)}
+                      title={t.description}
+                    >
                       {t.name}
                     </button>
                   ))}
                 </div>
                 <span className="field__note">
-                  Fill in its fields on its card, live. To change how it looks or moves, open it in Titler (the Text menu, or “Edit in Titler…” on its card). It takes the event’s look.
+                  Fill in its fields on its card, live. To change how it looks or moves, open it in Titler (the Text menu, or “Edit in Titler…” on its card). It
+                  takes the event’s look.
                 </span>
               </div>
             )}

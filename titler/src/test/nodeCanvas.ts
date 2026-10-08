@@ -79,7 +79,13 @@ export function diff(a: Uint8ClampedArray, b: Uint8ClampedArray, tol = 40): numb
   if (a.length !== b.length) return 1;
   let bad = 0;
   for (let k = 0; k < a.length; k += 4) {
-    if (Math.abs(a[k]! - b[k]!) > tol || Math.abs(a[k + 1]! - b[k + 1]!) > tol || Math.abs(a[k + 2]! - b[k + 2]!) > tol || Math.abs(a[k + 3]! - b[k + 3]!) > tol) bad++;
+    if (
+      Math.abs(a[k]! - b[k]!) > tol ||
+      Math.abs(a[k + 1]! - b[k + 1]!) > tol ||
+      Math.abs(a[k + 2]! - b[k + 2]!) > tol ||
+      Math.abs(a[k + 3]! - b[k + 3]!) > tol
+    )
+      bad++;
   }
   return bad / (a.length / 4);
 }

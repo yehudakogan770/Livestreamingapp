@@ -181,7 +181,16 @@ describe('text layout', () => {
 });
 
 describe('text animators', () => {
-  const a = (over: Partial<TextAnimator>): TextAnimator => ({ id: 'a', name: 'a', by: 'char', start: { v: 0 }, end: { v: 100 }, offset: { v: 0 }, shape: 'square', ...over });
+  const a = (over: Partial<TextAnimator>): TextAnimator => ({
+    id: 'a',
+    name: 'a',
+    by: 'char',
+    start: { v: 0 },
+    end: { v: 100 },
+    offset: { v: 0 },
+    shape: 'square',
+    ...over,
+  });
   it('a square range selects whole units and parts of units at its edge', () => {
     expect(selection(a({ start: { v: 50 } }), 0, 4, 0)).toBe(0);
     expect(selection(a({ start: { v: 50 } }), 3, 4, 0)).toBe(1);
@@ -361,7 +370,12 @@ describe('paths and parenting', () => {
 
   it('trims a path to part of its length', () => {
     const pts: number[][] = [];
-    const sink = { moveTo: (x: number, y: number) => pts.push([x, y]), lineTo: (x: number, y: number) => pts.push([x, y]), bezierCurveTo: () => {}, closePath: () => {} };
+    const sink = {
+      moveTo: (x: number, y: number) => pts.push([x, y]),
+      lineTo: (x: number, y: number) => pts.push([x, y]),
+      bezierCurveTo: () => {},
+      closePath: () => {},
+    };
     traceTrimmed(sink, { closed: false, v: [{ p: [0, 0] }, { p: [100, 0] }] }, 25, 75, 0);
     expect(pts[0]).toEqual([25, 0]);
     expect(pts[pts.length - 1]).toEqual([75, 0]);

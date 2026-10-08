@@ -144,7 +144,15 @@ export function TitlerSection({ onAdd }: { onAdd: (p: TitleProject) => void }) {
 }
 
 /** A title clip in the Inspector: its fields, where its IN and OUT are, and "Edit in Titler…". */
-export function TitlerClipEditor({ clip, fps, upd }: { clip: Clip; fps: number; upd: (c: Clip, label: string, f: (c: Clip) => Clip, final?: boolean, key?: string) => void }) {
+export function TitlerClipEditor({
+  clip,
+  fps,
+  upd,
+}: {
+  clip: Clip;
+  fps: number;
+  upd: (c: Clip, label: string, f: (c: Clip) => Clip, final?: boolean, key?: string) => void;
+}) {
   const src = clip.source;
   if (src.kind !== 'titler') return null;
   const values = Object.fromEntries(src.project.variables.map((v) => [v.key, src.values[v.key] ?? v.value]));
@@ -159,13 +167,20 @@ export function TitlerClipEditor({ clip, fps, upd }: { clip: Clip; fps: number; 
       </header>
       <div className="sect__body">
         <p className="insp__note">
-          {src.project.name}. The IN plays for {(marks.inEnd / fps).toFixed(2)} s from the clip&rsquo;s start; the OUT takes the last {((clip.length - marks.outStart) / fps).toFixed(2)} s.
+          {src.project.name}. The IN plays for {(marks.inEnd / fps).toFixed(2)} s from the clip&rsquo;s start; the OUT takes the last{' '}
+          {((clip.length - marks.outStart) / fps).toFixed(2)} s.
         </p>
         <ControlPanel
           project={src.project}
           values={values}
           onChange={(key, value) =>
-            upd(clip, 'Title field', (x) => (x.source.kind === 'titler' ? { ...x, source: { ...x.source, values: { ...x.source.values, [key]: value } } } : x), true, `titler-${clip.id}-${key}`)
+            upd(
+              clip,
+              'Title field',
+              (x) => (x.source.kind === 'titler' ? { ...x, source: { ...x.source, values: { ...x.source.values, [key]: value } } } : x),
+              true,
+              `titler-${clip.id}-${key}`,
+            )
           }
         />
         <div className="insp__row">

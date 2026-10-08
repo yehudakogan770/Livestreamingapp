@@ -97,7 +97,11 @@ export function overlayPlanes(show: Show, screen: ScreenId, now: number, w: numb
       if (ENGINE_DRAWN.has(s.kind.type)) return;
       const size = { w: Math.max(1, Math.round(pw)), h: Math.max(1, Math.round(ph)) };
       const name = `g:${s.id}`;
-      add(channel ? { kind: 'channel', name, ...size, sourceId: s.id, changedAt: channel.changedAt, on: channel.on } : { kind: 'input', name, ...size, sourceId: s.id });
+      add(
+        channel
+          ? { kind: 'channel', name, ...size, sourceId: s.id, changedAt: channel.changedAt, on: channel.on }
+          : { kind: 'input', name, ...size, sourceId: s.id },
+      );
     };
     if (src.kind.type === 'split') {
       for (const b of src.kind.boxes) {

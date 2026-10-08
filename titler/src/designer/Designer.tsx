@@ -189,22 +189,22 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       const c = store.comp();
       const frame = 1 / c.fps;
       const handled = () => e.preventDefault();
-      if (mod && k === 'z') return handled(), e.shiftKey ? store.redo() : store.undo();
-      if (mod && k === 'y') return handled(), store.redo();
-      if (mod && k === 's') return handled(), void (e.shiftKey ? exportFile() : saveToLibrary());
-      if (mod && k === 'o') return handled(), void openFile();
-      if (mod && e.shiftKey && k === 'c') return handled(), cmd.precompose();
-      if (mod && k === 'c') return handled(), cmd.copy();
-      if (mod && k === 'x') return handled(), cmd.cut();
-      if (mod && k === 'v') return handled(), cmd.paste();
-      if (mod && k === 'd') return handled(), cmd.duplicate();
-      if (mod && k === 'a') return handled(), store.set({ selection: c.layers.map((l) => l.id) });
-      if (mod && k === 'g') return handled(), e.shiftKey ? cmd.ungroup() : cmd.group();
-      if (mod && k === '0') return handled(), store.set({ zoom: 0, pan: [0, 0] });
-      if (mod && (k === '=' || k === '+')) return handled(), store.set((x) => ({ zoom: Math.min(8, (x.zoom || 0.5) * 1.25) }));
-      if (mod && k === '-') return handled(), store.set((x) => ({ zoom: Math.max(0.05, (x.zoom || 0.5) / 1.25) }));
-      if (mod && k === ']') return handled(), cmd.restack(e.shiftKey ? 'front' : 'forward');
-      if (mod && k === '[') return handled(), cmd.restack(e.shiftKey ? 'back' : 'backward');
+      if (mod && k === 'z') return (handled(), e.shiftKey ? store.redo() : store.undo());
+      if (mod && k === 'y') return (handled(), store.redo());
+      if (mod && k === 's') return (handled(), void (e.shiftKey ? exportFile() : saveToLibrary()));
+      if (mod && k === 'o') return (handled(), void openFile());
+      if (mod && e.shiftKey && k === 'c') return (handled(), cmd.precompose());
+      if (mod && k === 'c') return (handled(), cmd.copy());
+      if (mod && k === 'x') return (handled(), cmd.cut());
+      if (mod && k === 'v') return (handled(), cmd.paste());
+      if (mod && k === 'd') return (handled(), cmd.duplicate());
+      if (mod && k === 'a') return (handled(), store.set({ selection: c.layers.map((l) => l.id) }));
+      if (mod && k === 'g') return (handled(), e.shiftKey ? cmd.ungroup() : cmd.group());
+      if (mod && k === '0') return (handled(), store.set({ zoom: 0, pan: [0, 0] }));
+      if (mod && (k === '=' || k === '+')) return (handled(), store.set((x) => ({ zoom: Math.min(8, (x.zoom || 0.5) * 1.25) })));
+      if (mod && k === '-') return (handled(), store.set((x) => ({ zoom: Math.max(0.05, (x.zoom || 0.5) / 1.25) })));
+      if (mod && k === ']') return (handled(), cmd.restack(e.shiftKey ? 'front' : 'forward'));
+      if (mod && k === '[') return (handled(), cmd.restack(e.shiftKey ? 'back' : 'backward'));
       if (mod) return;
       switch (e.key) {
         case ' ':
@@ -237,7 +237,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         case 'ArrowUp':
         case 'ArrowDown': {
           if (!s.selection.length) {
-            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') store.set((x) => ({ time: Math.min(c.duration, Math.max(0, x.time + (e.key === 'ArrowRight' ? frame : -frame) * (e.shiftKey ? 10 : 1))) }));
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+              store.set((x) => ({ time: Math.min(c.duration, Math.max(0, x.time + (e.key === 'ArrowRight' ? frame : -frame) * (e.shiftKey ? 10 : 1))) }));
             handled();
             return;
           }
@@ -364,7 +365,14 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         <div className="tt-sep" />
         <div className="tt-tools" role="toolbar" aria-label="Tools">
           {tools.map(([id, name, icon, key]) => (
-            <button key={id} className={tool === id ? 'on' : ''} onClick={() => store.set({ tool: id })} title={`${name} (${key})`} aria-label={name} aria-pressed={tool === id}>
+            <button
+              key={id}
+              className={tool === id ? 'on' : ''}
+              onClick={() => store.set({ tool: id })}
+              title={`${name} (${key})`}
+              aria-label={name}
+              aria-pressed={tool === id}
+            >
               {icon}
             </button>
           ))}
@@ -381,14 +389,30 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               ['bottom', <AlignEndHorizontal key="b" size={15} />, 'Align bottom edges'],
             ] as const
           ).map(([how, icon, name]) => (
-            <button key={how} disabled={!selection.length} onClick={() => store.edit(name, (p) => align(p, store.get().compId, store.get().selection, how, store.get().time, boxOf))} title={`${name} (one layer: to the frame)`} aria-label={name}>
+            <button
+              key={how}
+              disabled={!selection.length}
+              onClick={() => store.edit(name, (p) => align(p, store.get().compId, store.get().selection, how, store.get().time, boxOf))}
+              title={`${name} (one layer: to the frame)`}
+              aria-label={name}
+            >
               {icon}
             </button>
           ))}
-          <button disabled={selection.length < 3} onClick={() => store.edit('Distribute across', (p) => distribute(p, store.get().compId, store.get().selection, 'x', store.get().time, boxOf))} title="Spread evenly across" aria-label="Distribute across">
+          <button
+            disabled={selection.length < 3}
+            onClick={() => store.edit('Distribute across', (p) => distribute(p, store.get().compId, store.get().selection, 'x', store.get().time, boxOf))}
+            title="Spread evenly across"
+            aria-label="Distribute across"
+          >
             ⇹
           </button>
-          <button disabled={selection.length < 3} onClick={() => store.edit('Distribute down', (p) => distribute(p, store.get().compId, store.get().selection, 'y', store.get().time, boxOf))} title="Spread evenly down" aria-label="Distribute down">
+          <button
+            disabled={selection.length < 3}
+            onClick={() => store.edit('Distribute down', (p) => distribute(p, store.get().compId, store.get().selection, 'y', store.get().time, boxOf))}
+            title="Spread evenly down"
+            aria-label="Distribute down"
+          >
             ⇵
           </button>
         </div>
@@ -450,12 +474,26 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               <Upload size={13} /> Project
             </button>
           </div>
-          {side === 'library' ? <LibraryPanel store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} /> : <ProjectPanel store={store} host={host} />}
+          {side === 'library' ? (
+            <LibraryPanel store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
+          ) : (
+            <ProjectPanel store={store} host={host} />
+          )}
         </aside>
         <section className="tt-center">
           <div className="tt-viewbar">
-            <input className="tt-projname" value={project.name} aria-label="Title name" onChange={(e) => store.edit('Rename title', (p) => ({ ...p, name: e.target.value }))} />
-            <select className="tt-select" aria-label="Category" value={project.category} onChange={(e) => store.edit('Category', (p) => ({ ...p, category: e.target.value }))}>
+            <input
+              className="tt-projname"
+              value={project.name}
+              aria-label="Title name"
+              onChange={(e) => store.edit('Rename title', (p) => ({ ...p, name: e.target.value }))}
+            />
+            <select
+              className="tt-select"
+              aria-label="Category"
+              value={project.category}
+              onChange={(e) => store.edit('Category', (p) => ({ ...p, category: e.target.value }))}
+            >
               {['Lower thirds', 'Bugs', 'Tickers and banners', 'Scoreboards', 'Full screen', 'Cards', 'Custom'].map((x) => (
                 <option key={x}>{x}</option>
               ))}
@@ -491,15 +529,27 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             <button onClick={() => store.set({ time: 0, cue: null, playing: false })} aria-label="Go to start" title="Start (Home)">
               <SkipBack size={15} />
             </button>
-            <button onClick={() => store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }))} aria-label={playing ? 'Pause' : 'Play'} title="Play / pause (Space); J, K, L for reverse, stop, forward">
+            <button
+              onClick={() => store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }))}
+              aria-label={playing ? 'Pause' : 'Play'}
+              title="Play / pause (Space); J, K, L for reverse, stop, forward"
+            >
               {playing ? <Pause size={15} /> : <Play size={15} />}
             </button>
             <span className="tt-sep" />
             <span className="tt-dim">Preview as on air:</span>
-            <button className={cue && cue.outAt === null ? 'on' : ''} onClick={() => store.set({ cue: { inAt: performance.now(), outAt: null }, playing: false })} title="Play the IN, then hold (and loop)">
+            <button
+              className={cue && cue.outAt === null ? 'on' : ''}
+              onClick={() => store.set({ cue: { inAt: performance.now(), outAt: null }, playing: false })}
+              title="Play the IN, then hold (and loop)"
+            >
               Take IN
             </button>
-            <button disabled={!cue || cue.outAt !== null} onClick={() => store.set((x) => ({ cue: x.cue ? { ...x.cue, outAt: performance.now() } : null }))} title="Play the OUT">
+            <button
+              disabled={!cue || cue.outAt !== null}
+              onClick={() => store.set((x) => ({ cue: x.cue ? { ...x.cue, outAt: performance.now() } : null }))}
+              title="Play the OUT"
+            >
               Take OUT
             </button>
             <span className="tt-grow" />
@@ -581,7 +631,10 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
         }
         if (!layers?.length) return;
         const copies = cloneLayers(layers);
-        store.edit('Paste', (p) => addLayers(p, compId(), copies, sel()[0] ?? null), { selection: copies.map((l) => l.id), status: `Pasted ${copies.length} layer${copies.length > 1 ? 's' : ''}` });
+        store.edit('Paste', (p) => addLayers(p, compId(), copies, sel()[0] ?? null), {
+          selection: copies.map((l) => l.id),
+          status: `Pasted ${copies.length} layer${copies.length > 1 ? 's' : ''}`,
+        });
       },
       duplicate() {
         if (!sel().length) return;
@@ -592,17 +645,21 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
         const s = store.get();
         if (s.keys.length) {
           // Keyframes selected: delete those.
-          store.edit('Delete keyframes', (p) => {
-            let next = p;
-            for (const r of s.keys)
-              next = updateLayers(next, s.compId, [r.layer], (l) => {
-                const prop = getProp(l, r.path);
-                if (!isAnimated(prop)) return l;
-                const k = prop.k.filter((x) => Math.abs(x.t - r.t) > 1e-6);
-                return withProp(l, r.path, k.length ? { k } : { v: prop.k[0]!.v });
-              });
-            return next;
-          }, { keys: [] });
+          store.edit(
+            'Delete keyframes',
+            (p) => {
+              let next = p;
+              for (const r of s.keys)
+                next = updateLayers(next, s.compId, [r.layer], (l) => {
+                  const prop = getProp(l, r.path);
+                  if (!isAnimated(prop)) return l;
+                  const k = prop.k.filter((x) => Math.abs(x.t - r.t) > 1e-6);
+                  return withProp(l, r.path, k.length ? { k } : { v: prop.k[0]!.v });
+                });
+              return next;
+            },
+            { keys: [] },
+          );
           return;
         }
         if (!s.selection.length) return;
@@ -621,7 +678,11 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
       precompose() {
         if (!sel().length) return;
         const r = precompose(store.get().project, compId(), sel());
-        if (r.id) store.edit('Precompose', () => r.project, { selection: [r.id], status: 'The layers are now in their own composition (double-click it in Project to open).' });
+        if (r.id)
+          store.edit('Precompose', () => r.project, {
+            selection: [r.id],
+            status: 'The layers are now in their own composition (double-click it in Project to open).',
+          });
       },
       restack(how: 'forward' | 'backward' | 'front' | 'back') {
         if (!sel().length) return;

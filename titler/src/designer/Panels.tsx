@@ -37,7 +37,12 @@ export function CompositionPanel({ store }: { store: Store }) {
     <div className="tt-inspector">
       <Section title="Composition">
         <Row label="Name">
-          <input className="tt-input" value={c.name} onChange={(e) => upd('Rename composition', (x) => ({ ...x, name: e.target.value }))} aria-label="Composition name" />
+          <input
+            className="tt-input"
+            value={c.name}
+            onChange={(e) => upd('Rename composition', (x) => ({ ...x, name: e.target.value }))}
+            aria-label="Composition name"
+          />
         </Row>
         <Row label="Size">
           <select
@@ -56,8 +61,22 @@ export function CompositionPanel({ store }: { store: Store }) {
           </select>
         </Row>
         <Row label="">
-          <NumberField value={c.width} min={16} max={8192} label="Width" unit="px" onChange={(width) => upd('Composition size', (x) => ({ ...x, width: Math.round(width) }))} />
-          <NumberField value={c.height} min={16} max={8192} label="Height" unit="px" onChange={(height) => upd('Composition size', (x) => ({ ...x, height: Math.round(height) }))} />
+          <NumberField
+            value={c.width}
+            min={16}
+            max={8192}
+            label="Width"
+            unit="px"
+            onChange={(width) => upd('Composition size', (x) => ({ ...x, width: Math.round(width) }))}
+          />
+          <NumberField
+            value={c.height}
+            min={16}
+            max={8192}
+            label="Height"
+            unit="px"
+            onChange={(height) => upd('Composition size', (x) => ({ ...x, height: Math.round(height) }))}
+          />
         </Row>
         <Row label="Frame rate">
           <Select
@@ -83,7 +102,13 @@ export function CompositionPanel({ store }: { store: Store }) {
             max={3600}
             label="Length"
             unit="s"
-            onChange={(duration) => upd('Length', (x) => ({ ...x, duration, markers: cleanMarkers({ ...x.markers, outStart: x.markers.outStart + (duration - x.duration) }, duration) }))}
+            onChange={(duration) =>
+              upd('Length', (x) => ({
+                ...x,
+                duration,
+                markers: cleanMarkers({ ...x.markers, outStart: x.markers.outStart + (duration - x.duration) }, duration),
+              }))
+            }
           />
         </Row>
         <Row label="Background">
@@ -99,30 +124,80 @@ export function CompositionPanel({ store }: { store: Store }) {
         </Row>
         {c.background && (
           <Row label="">
-            <ColorField value={c.background} onChange={(background) => upd('Background', (x) => ({ ...x, background }))} tokens={tokensFor(project, undefined)} values={valuesFor(project, {})} label="Background" />
+            <ColorField
+              value={c.background}
+              onChange={(background) => upd('Background', (x) => ({ ...x, background }))}
+              tokens={tokensFor(project, undefined)}
+              values={valuesFor(project, {})}
+              label="Background"
+            />
           </Row>
         )}
       </Section>
       <Section title="IN, HOLD and OUT">
-        <div className="tt-dim tt-small">The IN plays when the graphic is taken, then it holds (repeating the loop, if any) until it is taken off and the OUT plays.</div>
+        <div className="tt-dim tt-small">
+          The IN plays when the graphic is taken, then it holds (repeating the loop, if any) until it is taken off and the OUT plays.
+        </div>
         <Row label="IN ends">
-          <NumberField value={c.markers.inEnd} step={1 / c.fps} min={0} max={c.duration} label="IN ends" unit="s" onChange={(inEnd) => upd('IN marker', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, inEnd }, x.duration) }))} />
+          <NumberField
+            value={c.markers.inEnd}
+            step={1 / c.fps}
+            min={0}
+            max={c.duration}
+            label="IN ends"
+            unit="s"
+            onChange={(inEnd) => upd('IN marker', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, inEnd }, x.duration) }))}
+          />
         </Row>
         <Row label="OUT starts">
-          <NumberField value={c.markers.outStart} step={1 / c.fps} min={0} max={c.duration} label="OUT starts" unit="s" onChange={(outStart) => upd('OUT marker', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, outStart }, x.duration) }))} />
+          <NumberField
+            value={c.markers.outStart}
+            step={1 / c.fps}
+            min={0}
+            max={c.duration}
+            label="OUT starts"
+            unit="s"
+            onChange={(outStart) => upd('OUT marker', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, outStart }, x.duration) }))}
+          />
         </Row>
         {c.markers.loop && (
           <Row label="Loop">
-            <NumberField value={c.markers.loop.start} step={1 / c.fps} label="Loop start" unit="s" onChange={(start) => upd('Loop', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, loop: { start, end: x.markers.loop!.end } }, x.duration) }))} />
-            <NumberField value={c.markers.loop.end} step={1 / c.fps} label="Loop end" unit="s" onChange={(end) => upd('Loop', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, loop: { start: x.markers.loop!.start, end } }, x.duration) }))} />
+            <NumberField
+              value={c.markers.loop.start}
+              step={1 / c.fps}
+              label="Loop start"
+              unit="s"
+              onChange={(start) =>
+                upd('Loop', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, loop: { start, end: x.markers.loop!.end } }, x.duration) }))
+              }
+            />
+            <NumberField
+              value={c.markers.loop.end}
+              step={1 / c.fps}
+              label="Loop end"
+              unit="s"
+              onChange={(end) =>
+                upd('Loop', (x) => ({ ...x, markers: cleanMarkers({ ...x.markers, loop: { start: x.markers.loop!.start, end } }, x.duration) }))
+              }
+            />
           </Row>
         )}
       </Section>
       <Section title="Cue markers" open={c.cues.length > 0}>
         {c.cues.map((q, i) => (
           <Row key={q.id} label={`${q.t.toFixed(2)} s`}>
-            <input className="tt-input" value={q.name} aria-label="Cue name" onChange={(e) => upd('Rename cue', (x) => ({ ...x, cues: x.cues.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)) }))} />
-            <select className="tt-select" aria-label="Cue sound" value={q.sound ?? ''} onChange={(e) => upd('Cue sound', (x) => ({ ...x, cues: x.cues.map((y, j) => (j === i ? { ...y, sound: e.target.value || null } : y)) }))}>
+            <input
+              className="tt-input"
+              value={q.name}
+              aria-label="Cue name"
+              onChange={(e) => upd('Rename cue', (x) => ({ ...x, cues: x.cues.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)) }))}
+            />
+            <select
+              className="tt-select"
+              aria-label="Cue sound"
+              value={q.sound ?? ''}
+              onChange={(e) => upd('Cue sound', (x) => ({ ...x, cues: x.cues.map((y, j) => (j === i ? { ...y, sound: e.target.value || null } : y)) }))}
+            >
               <option value="">No sound</option>
               {project.assets
                 .filter((a) => a.kind === 'audio')
@@ -196,7 +271,13 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
               {v.type === 'list' ? (
                 <textarea className="tt-textarea" rows={3} aria-label="Sample value" value={v.value} onChange={(e) => set(i, { value: e.target.value })} />
               ) : (
-                <input className="tt-input" aria-label="Sample value" value={v.value.startsWith('data:') ? '(picture)' : v.value} onChange={(e) => set(i, { value: e.target.value })} disabled={v.value.startsWith('data:')} />
+                <input
+                  className="tt-input"
+                  aria-label="Sample value"
+                  value={v.value.startsWith('data:') ? '(picture)' : v.value}
+                  onChange={(e) => set(i, { value: e.target.value })}
+                  disabled={v.value.startsWith('data:')}
+                />
               )}
               {v.type === 'image' && (
                 <button
@@ -211,41 +292,93 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
               )}
             </Row>
             <Row label="Choices" hint="Offered to the operator (one a line); leave empty to type freely">
-              <textarea className="tt-textarea" rows={2} aria-label="Choices" value={(v.options ?? []).join('\n')} onChange={(e) => set(i, { options: e.target.value.split('\n').filter((x) => x.trim()) })} />
+              <textarea
+                className="tt-textarea"
+                rows={2}
+                aria-label="Choices"
+                value={(v.options ?? []).join('\n')}
+                onChange={(e) => set(i, { options: e.target.value.split('\n').filter((x) => x.trim()) })}
+              />
             </Row>
             {v.type === 'number' && (
               <Row label="Format">
-                <input className="tt-input short" aria-label="Before the number" placeholder="Before" value={v.prefix ?? ''} onChange={(e) => set(i, { prefix: e.target.value })} />
+                <input
+                  className="tt-input short"
+                  aria-label="Before the number"
+                  placeholder="Before"
+                  value={v.prefix ?? ''}
+                  onChange={(e) => set(i, { prefix: e.target.value })}
+                />
                 <NumberField value={v.decimals ?? 0} min={0} max={6} label="Decimals" onChange={(d) => set(i, { decimals: Math.round(d) })} />
-                <input className="tt-input short" aria-label="After the number" placeholder="After" value={v.suffix ?? ''} onChange={(e) => set(i, { suffix: e.target.value })} />
+                <input
+                  className="tt-input short"
+                  aria-label="After the number"
+                  placeholder="After"
+                  value={v.suffix ?? ''}
+                  onChange={(e) => set(i, { suffix: e.target.value })}
+                />
               </Row>
             )}
             {v.type === 'list' && (
               <Row label="On one line" hint="For a ticker: what goes between the items">
-                <input className="tt-input" aria-label="Separator" placeholder="(one item a line)" value={v.separator ?? ''} onChange={(e) => set(i, { separator: e.target.value || undefined })} />
+                <input
+                  className="tt-input"
+                  aria-label="Separator"
+                  placeholder="(one item a line)"
+                  value={v.separator ?? ''}
+                  onChange={(e) => set(i, { separator: e.target.value || undefined })}
+                />
               </Row>
             )}
             <Row label="In Lumora">
-              <select className="tt-select" aria-label="Filled from" value={v.bind?.startsWith('data:') ? 'data:' : (v.bind ?? '')} onChange={(e) => set(i, { bind: e.target.value ? (e.target.value === 'data:' ? `data:${v.label}` : e.target.value) : undefined })}>
+              <select
+                className="tt-select"
+                aria-label="Filled from"
+                value={v.bind?.startsWith('data:') ? 'data:' : (v.bind ?? '')}
+                onChange={(e) => set(i, { bind: e.target.value ? (e.target.value === 'data:' ? `data:${v.label}` : e.target.value) : undefined })}
+              >
                 {BINDINGS.map(([k, l]) => (
                   <option key={k} value={k}>
                     {l}
                   </option>
                 ))}
               </select>
-              {v.bind?.startsWith('data:') && <input className="tt-input" aria-label="Data column" value={v.bind.slice(5)} onChange={(e) => set(i, { bind: `data:${e.target.value}` })} />}
+              {v.bind?.startsWith('data:') && (
+                <input className="tt-input" aria-label="Data column" value={v.bind.slice(5)} onChange={(e) => set(i, { bind: `data:${e.target.value}` })} />
+              )}
             </Row>
             <Row label="Group">
-              <input className="tt-input" aria-label="Group in the control panel" placeholder="(none)" value={v.group ?? ''} onChange={(e) => set(i, { group: e.target.value || undefined })} />
+              <input
+                className="tt-input"
+                aria-label="Group in the control panel"
+                placeholder="(none)"
+                value={v.group ?? ''}
+                onChange={(e) => set(i, { group: e.target.value || undefined })}
+              />
             </Row>
           </div>
         ))}
         {missing.length > 0 && (
-          <button className="tt-btn" onClick={() => upd('Add fields', (vs) => [...vs, ...missing.map((k) => ({ key: k, label: k.replace(/_/g, ' ').replace(/^./, (ch) => ch.toUpperCase()), type: 'text' as const, value: '' }))])}>
+          <button
+            className="tt-btn"
+            onClick={() =>
+              upd('Add fields', (vs) => [
+                ...vs,
+                ...missing.map((k) => ({ key: k, label: k.replace(/_/g, ' ').replace(/^./, (ch) => ch.toUpperCase()), type: 'text' as const, value: '' })),
+              ])
+            }
+          >
             Add the fields used in the graphic: {missing.join(', ')}
           </button>
         )}
-        <NewField onAdd={(label, type) => upd('Add field', (vs) => [...vs, { key: uniqueKey(keyFrom(label), vs), label, type, value: type === 'number' ? '0' : type === 'color' ? '#ffffff' : '' }])} />
+        <NewField
+          onAdd={(label, type) =>
+            upd('Add field', (vs) => [
+              ...vs,
+              { key: uniqueKey(keyFrom(label), vs), label, type, value: type === 'number' ? '0' : type === 'color' ? '#ffffff' : '' },
+            ])
+          }
+        />
       </Section>
       <Section title="Control panel preview">
         <div className="tt-dim tt-small">What the operator sees in Lumora. Changes here only preview; the samples above are saved.</div>
@@ -304,10 +437,16 @@ export function LookPanel({ store, host }: { store: Store; host: Host }) {
   return (
     <div className="tt-inspector">
       <Section title="Look">
-        <div className="tt-dim tt-small">Graphics use these as $accent, $box… In Lumora the event&rsquo;s look takes their place, so one template fits every event.</div>
+        <div className="tt-dim tt-small">
+          Graphics use these as $accent, $box… In Lumora the event&rsquo;s look takes their place, so one template fits every event.
+        </div>
         <div className="tt-chips">
           {LOOKS.map((l) => (
-            <button key={l.name} className="tt-chip" onClick={() => store.edit(`Look: ${l.name}`, (p) => ({ ...p, tokens: { ...DEFAULT_TOKENS, ...l.tokens } }))}>
+            <button
+              key={l.name}
+              className="tt-chip"
+              onClick={() => store.edit(`Look: ${l.name}`, (p) => ({ ...p, tokens: { ...DEFAULT_TOKENS, ...l.tokens } }))}
+            >
               {l.name}
             </button>
           ))}
@@ -340,7 +479,11 @@ export function LookPanel({ store, host }: { store: Store; host: Host }) {
         {fonts.map((f) => (
           <Row key={f.id} label={f.family ?? f.name}>
             <span className="tt-dim">{f.name}</span>
-            <button className="tt-ico" aria-label={`Remove font ${f.name}`} onClick={() => store.edit('Remove font', (p) => ({ ...p, assets: p.assets.filter((a) => a.id !== f.id) }))}>
+            <button
+              className="tt-ico"
+              aria-label={`Remove font ${f.name}`}
+              onClick={() => store.edit('Remove font', (p) => ({ ...p, assets: p.assets.filter((a) => a.id !== f.id) }))}
+            >
               <Trash2 size={13} />
             </button>
           </Row>
@@ -398,13 +541,20 @@ export function DataPanel({ store }: { store: Store }) {
   return (
     <div className="tt-inspector">
       <Section title="Data sources">
-        <div className="tt-dim tt-small">A CSV file, a Google Sheet (shared with anyone with the link) or a JSON address. Columns named like a field fill it.</div>
+        <div className="tt-dim tt-small">
+          A CSV file, a Google Sheet (shared with anyone with the link) or a JSON address. Columns named like a field fill it.
+        </div>
         {list.map((src, i) => {
           const t = tables[src.id];
           return (
             <div key={src.id} className="tt-subcard">
               <Row label="Name">
-                <input className="tt-input" value={src.name} aria-label="Source name" onChange={(e) => upd('Rename source', (d) => d.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
+                <input
+                  className="tt-input"
+                  value={src.name}
+                  aria-label="Source name"
+                  onChange={(e) => upd('Rename source', (d) => d.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                />
                 <button className="tt-ico" aria-label="Remove source" onClick={() => upd('Remove source', (d) => d.filter((_, j) => j !== i))}>
                   <Trash2 size={13} />
                 </button>
@@ -422,11 +572,28 @@ export function DataPanel({ store }: { store: Store }) {
                 />
               </Row>
               <Row label="Address">
-                <input className="tt-input" value={src.url} aria-label="Address" placeholder="https://…" onChange={(e) => upd('Source address', (d) => d.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))} />
+                <input
+                  className="tt-input"
+                  value={src.url}
+                  aria-label="Address"
+                  placeholder="https://…"
+                  onChange={(e) => upd('Source address', (d) => d.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
+                />
               </Row>
               <Row label="Row">
-                <NumberField value={src.row + 1} min={1} label="Row" onChange={(r) => upd('Source row', (d) => d.map((x, j) => (j === i ? { ...x, row: Math.max(0, Math.round(r) - 1) } : x)))} />
-                <NumberField value={src.refresh} min={0} label="Read every (seconds, 0: once)" unit="s" onChange={(refresh) => upd('Source refresh', (d) => d.map((x, j) => (j === i ? { ...x, refresh } : x)))} />
+                <NumberField
+                  value={src.row + 1}
+                  min={1}
+                  label="Row"
+                  onChange={(r) => upd('Source row', (d) => d.map((x, j) => (j === i ? { ...x, row: Math.max(0, Math.round(r) - 1) } : x)))}
+                />
+                <NumberField
+                  value={src.refresh}
+                  min={0}
+                  label="Read every (seconds, 0: once)"
+                  unit="s"
+                  onChange={(refresh) => upd('Source refresh', (d) => d.map((x, j) => (j === i ? { ...x, refresh } : x)))}
+                />
                 <button className="tt-btn" onClick={() => void read(src)} disabled={!src.url}>
                   Read now
                 </button>
@@ -440,7 +607,12 @@ export function DataPanel({ store }: { store: Store }) {
             </div>
           );
         })}
-        <button className="tt-btn" onClick={() => upd('Add data source', (d) => [...d, { id: uid('d'), name: `Source ${d.length + 1}`, kind: 'sheet', url: '', refresh: 10, row: 0, map: {} }])}>
+        <button
+          className="tt-btn"
+          onClick={() =>
+            upd('Add data source', (d) => [...d, { id: uid('d'), name: `Source ${d.length + 1}`, kind: 'sheet', url: '', refresh: 10, row: 0, map: {} }])
+          }
+        >
           <Plus size={13} /> Add a data source
         </button>
       </Section>
@@ -483,7 +655,14 @@ export function ProjectPanel({ store, host }: { store: Store; host: Host }) {
     const files = await host.pickFiles(kind);
     if (!files.length) return;
     if (kind === 'sequence') {
-      const a: Asset = { id: uid('a'), name: `${files[0]!.name.replace(/\d+\.\w+$/, '')} sequence`, kind: 'sequence', src: files[0]!.src, frames: files.map((f) => f.src), fps: c.fps };
+      const a: Asset = {
+        id: uid('a'),
+        name: `${files[0]!.name.replace(/\d+\.\w+$/, '')} sequence`,
+        kind: 'sequence',
+        src: files[0]!.src,
+        frames: files.map((f) => f.src),
+        fps: c.fps,
+      };
       store.edit('Add image sequence', (p) => ({ ...p, assets: [...p.assets, a] }));
       return;
     }
@@ -491,7 +670,13 @@ export function ProjectPanel({ store, host }: { store: Store; host: Host }) {
       files.map(async (f) => {
         const isSvg = /\.svg$/i.test(f.name) || f.src.startsWith('data:image/svg');
         const size = kind === 'image' ? await imageSize(f.src, host) : null;
-        return { id: uid('a'), name: f.name, kind: kind === 'image' ? (isSvg ? 'svg' : 'image') : kind, src: f.src, ...(size ? { width: size[0], height: size[1] } : {}) } as Asset;
+        return {
+          id: uid('a'),
+          name: f.name,
+          kind: kind === 'image' ? (isSvg ? 'svg' : 'image') : kind,
+          src: f.src,
+          ...(size ? { width: size[0], height: size[1] } : {}),
+        } as Asset;
       }),
     );
     store.edit('Add files', (p) => ({ ...p, assets: [...p.assets, ...added] }));
@@ -501,7 +686,10 @@ export function ProjectPanel({ store, host }: { store: Store; host: Host }) {
     const cc = compOf(s.project, s.compId);
     const w = Math.min(a.width ?? 400, cc.width * 0.5);
     const h = a.width && a.height ? (w * a.height) / a.width : 300;
-    const l = a.kind === 'video' || a.kind === 'sequence' ? newVideo(cc, a.id, [cc.width, cc.height], a.name) : newImage(cc, a.id, [Math.round(w), Math.round(h)], [Math.round((cc.width - w) / 2), Math.round((cc.height - h) / 2)], a.name);
+    const l =
+      a.kind === 'video' || a.kind === 'sequence'
+        ? newVideo(cc, a.id, [cc.width, cc.height], a.name)
+        : newImage(cc, a.id, [Math.round(w), Math.round(h)], [Math.round((cc.width - w) / 2), Math.round((cc.height - h) / 2)], a.name);
     l.end = cc.duration;
     store.edit('Place file', (p) => addLayers(p, cc.id, [l], s.selection[0] ?? null), { selection: [l.id] });
   };
@@ -530,7 +718,12 @@ export function ProjectPanel({ store, host }: { store: Store; host: Host }) {
               Main
             </span>
           ) : (
-            <button className="tt-ico" title="Play this one on air" aria-label={`Make ${x.name} the main composition`} onClick={(e) => (e.stopPropagation(), store.edit('Main composition', (p) => ({ ...p, main: x.id })))}>
+            <button
+              className="tt-ico"
+              title="Play this one on air"
+              aria-label={`Make ${x.name} the main composition`}
+              onClick={(e) => (e.stopPropagation(), store.edit('Main composition', (p) => ({ ...p, main: x.id })))}
+            >
               <Star size={12} />
             </button>
           )}
@@ -551,7 +744,9 @@ export function ProjectPanel({ store, host }: { store: Store; host: Host }) {
               aria-label={`Delete ${x.name}`}
               onClick={(e) => {
                 e.stopPropagation();
-                store.edit('Delete composition', (p) => ({ ...p, compositions: p.compositions.filter((y) => y.id !== x.id) }), { compId: x.id === compId ? project.main : compId });
+                store.edit('Delete composition', (p) => ({ ...p, compositions: p.compositions.filter((y) => y.id !== x.id) }), {
+                  compId: x.id === compId ? project.main : compId,
+                });
               }}
             >
               <Trash2 size={12} />
@@ -565,19 +760,36 @@ export function ProjectPanel({ store, host }: { store: Store; host: Host }) {
         <button className="tt-ico" title="Add pictures or SVG logos" aria-label="Add pictures" onClick={() => void addAssets('image')}>
           <ImageIcon size={14} />
         </button>
-        <button className="tt-ico" title="Add videos (WebM with alpha, MP4, ProRes 4444 .mov in the desktop app)" aria-label="Add videos" onClick={() => void addAssets('video')}>
+        <button
+          className="tt-ico"
+          title="Add videos (WebM with alpha, MP4, ProRes 4444 .mov in the desktop app)"
+          aria-label="Add videos"
+          onClick={() => void addAssets('video')}
+        >
           <Film size={14} />
         </button>
-        <button className="tt-ico" title="Add an image sequence (choose all its frames)" aria-label="Add image sequence" onClick={() => void addAssets('sequence')}>
+        <button
+          className="tt-ico"
+          title="Add an image sequence (choose all its frames)"
+          aria-label="Add image sequence"
+          onClick={() => void addAssets('sequence')}
+        >
           <LayersIcon size={14} />
         </button>
         <button className="tt-ico" title="Add sounds (for cue markers)" aria-label="Add sounds" onClick={() => void addAssets('audio')}>
           <Music size={14} />
         </button>
       </div>
-      {project.assets.length === 0 && <div className="tt-dim tt-small tt-pad">Pictures, SVG logos, videos, image sequences, sounds and fonts used by this title.</div>}
+      {project.assets.length === 0 && (
+        <div className="tt-dim tt-small tt-pad">Pictures, SVG logos, videos, image sequences, sounds and fonts used by this title.</div>
+      )}
       {project.assets.map((a) => (
-        <div key={a.id} className="tt-side-item" onDoubleClick={() => a.kind !== 'font' && a.kind !== 'audio' && place(a)} title={a.kind === 'font' || a.kind === 'audio' ? a.name : 'Double-click to place it'}>
+        <div
+          key={a.id}
+          className="tt-side-item"
+          onDoubleClick={() => a.kind !== 'font' && a.kind !== 'audio' && place(a)}
+          title={a.kind === 'font' || a.kind === 'audio' ? a.name : 'Double-click to place it'}
+        >
           <span className="tt-kind">{a.kind}</span>
           <span className="tt-grow">{a.name}</span>
           {a.kind !== 'font' && a.kind !== 'audio' && (
@@ -585,7 +797,11 @@ export function ProjectPanel({ store, host }: { store: Store; host: Host }) {
               <Plus size={12} />
             </button>
           )}
-          <button className="tt-ico" aria-label={`Remove ${a.name}`} onClick={() => store.edit('Remove file', (p) => ({ ...p, assets: p.assets.filter((x) => x.id !== a.id) }))}>
+          <button
+            className="tt-ico"
+            aria-label={`Remove ${a.name}`}
+            onClick={() => store.edit('Remove file', (p) => ({ ...p, assets: p.assets.filter((x) => x.id !== a.id) }))}
+          >
             <Trash2 size={12} />
           </button>
         </div>
@@ -624,7 +840,11 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
     <div className="tt-library" data-testid="titler-library">
       <div className="tt-side-head">Your titles ({host.libraryName})</div>
       {error && <div className="tt-error">{error}</div>}
-      {mine.length === 0 && <div className="tt-dim tt-small tt-pad">Titles you save to the library appear here{host.kind === 'web' ? '' : ', for Lumora and Lumora Studio too'}.</div>}
+      {mine.length === 0 && (
+        <div className="tt-dim tt-small tt-pad">
+          Titles you save to the library appear here{host.kind === 'web' ? '' : ', for Lumora and Lumora Studio too'}.
+        </div>
+      )}
       {mine.map((m) => (
         <div key={m.id} className="tt-side-item">
           <button

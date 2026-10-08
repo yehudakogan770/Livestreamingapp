@@ -53,7 +53,8 @@ export function parseTable(text: string, kind: DataSource['kind']): Table {
       v = list ?? [o];
     }
     const list = v as unknown[];
-    if (list.length && Array.isArray(list[0])) return { headers: (list[0] as unknown[]).map(str), rows: list.slice(1).map((r) => (Array.isArray(r) ? r.map(str) : [str(r)])) };
+    if (list.length && Array.isArray(list[0]))
+      return { headers: (list[0] as unknown[]).map(str), rows: list.slice(1).map((r) => (Array.isArray(r) ? r.map(str) : [str(r)])) };
     const headers: string[] = [];
     for (const o of list) if (o && typeof o === 'object') for (const k of Object.keys(o)) if (!headers.includes(k)) headers.push(k);
     return { headers, rows: list.map((o) => headers.map((h) => str((o as Record<string, unknown>)?.[h]))) };
@@ -89,7 +90,11 @@ export function valuesFromRow(src: DataSource, t: Table, keys: string[]): Values
 }
 
 /** Read a data source (the browser's fetch; the desktop and Lumora pass their own). */
-export async function readSource(src: DataSource, get: (url: string) => Promise<string> = (u) => fetch(u, { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`The address answered ${r.status}`))))): Promise<Table> {
+export async function readSource(
+  src: DataSource,
+  get: (url: string) => Promise<string> = (u) =>
+    fetch(u, { cache: 'no-store' }).then((r) => (r.ok ? r.text() : Promise.reject(new Error(`The address answered ${r.status}`)))),
+): Promise<Table> {
   const url = src.kind === 'sheet' ? sheetCsvUrl(src.url) : src.url;
   return parseTable(await get(url), src.kind === 'sheet' ? 'csv' : src.kind);
 }

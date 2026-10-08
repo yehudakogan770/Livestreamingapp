@@ -96,13 +96,21 @@ export function boundValues(show: Show | null, t: Pick<TitlerGraphic, 'scoreboar
 }
 
 /** A show-like view of a window's Stage (what screen windows know of the show), for filling fields. */
-export function showFromStage(stage: { event: Show['event']; sources?: Source[]; screens?: Show['screens']; data?: Record<string, string> } | null): Show | null {
+export function showFromStage(
+  stage: { event: Show['event']; sources?: Source[]; screens?: Show['screens']; data?: Record<string, string> } | null,
+): Show | null {
   if (!stage) return null;
   const headers = Object.keys(stage.data ?? {});
   return {
     event: stage.event,
     sources: stage.sources ?? [],
-    screens: stage.screens ?? ({ live: { program: null, preview: null }, back: { program: null, preview: null }, monitor: { program: null, preview: null } } as unknown as Show['screens']),
+    screens:
+      stage.screens ??
+      ({
+        live: { program: null, preview: null },
+        back: { program: null, preview: null },
+        monitor: { program: null, preview: null },
+      } as unknown as Show['screens']),
     data: { path: '', everyMs: 0, headers, rows: [headers.map((h) => stage.data![h]!)], row: 0, error: '', updatedAt: 0 },
   } as unknown as Show;
 }
@@ -116,7 +124,12 @@ export function ticks(p: TitleProject): boolean {
  * The values to draw with: the sample values, then the operator's, then
  * Lumora's own (scoreboard, countdown, clock, data file) for bound fields.
  */
-export function valuesOf(p: TitleProject, t: Pick<TitlerGraphic, 'values' | 'scoreboard'>, show: Show | null, now: number): { values: Values; bound: Record<string, string> } {
+export function valuesOf(
+  p: TitleProject,
+  t: Pick<TitlerGraphic, 'values' | 'scoreboard'>,
+  show: Show | null,
+  now: number,
+): { values: Values; bound: Record<string, string> } {
   const values: Values = {};
   for (const v of p.variables) values[v.key] = v.value;
   for (const v of t.values) values[v.key] = v.value;

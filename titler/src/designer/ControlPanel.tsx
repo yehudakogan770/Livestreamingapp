@@ -42,7 +42,19 @@ export function ControlPanel({ project, values, onChange, bound = {}, pickImage,
   );
 }
 
-function Field({ v, value, onChange, bound, pickImage }: { v: Variable; value: string; onChange: (x: string) => void; bound?: string; pickImage?: (key: string) => void }) {
+function Field({
+  v,
+  value,
+  onChange,
+  bound,
+  pickImage,
+}: {
+  v: Variable;
+  value: string;
+  onChange: (x: string) => void;
+  bound?: string;
+  pickImage?: (key: string) => void;
+}) {
   const id = `tt-cp-${v.key}`;
   if (bound !== undefined)
     return (

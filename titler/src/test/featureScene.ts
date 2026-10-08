@@ -12,7 +12,14 @@ export function featureScene(): TitleProject {
   p.compositions.push(inner);
   // A rectangle with a mask cutting a circle out.
   const masked = newShape(c, 'rect', [100, 100], [500, 300], '$box');
-  masked.masks = [{ id: 'm', name: 'Hole', mode: 'subtract', path: { closed: true, v: ellipsePath(200, 200).v.map((v) => ({ ...v, p: [v.p[0] + 150, v.p[1] + 50] as Vec2 })) } }];
+  masked.masks = [
+    {
+      id: 'm',
+      name: 'Hole',
+      mode: 'subtract',
+      path: { closed: true, v: ellipsePath(200, 200).v.map((v) => ({ ...v, p: [v.p[0] + 150, v.p[1] + 50] as Vec2 })) },
+    },
+  ];
   // Words seen only through a turned shape (alpha matte).
   const matte = newShape(c, 'rect', [700, 100], [300, 300], '#ffffff');
   matte.transform.rotation = { v: 20 };

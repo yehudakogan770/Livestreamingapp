@@ -52,14 +52,19 @@ function fromV1(o: Json, notes: string[]): Json {
     category: typeof o.category === 'string' ? o.category : 'Custom',
     main: 'main',
     compositions: [comp],
-    variables: fields.filter(isObj).map((f) => ({ key: String(f.key ?? ''), label: String(f.label ?? f.key ?? ''), type: 'text', value: String(f.sample ?? '') })),
+    variables: fields
+      .filter(isObj)
+      .map((f) => ({ key: String(f.key ?? ''), label: String(f.label ?? f.key ?? ''), type: 'text', value: String(f.sample ?? '') })),
     tokens: isObj(o.brand) ? o.brand : { ...DEFAULT_TOKENS },
     assets: Array.isArray(o.assets) ? o.assets : [],
   };
 }
 
 function cleanProp(p: unknown, fallback: Value, notes: string[], where: string): Prop<Value> {
-  const okValue = (v: unknown) => (typeof fallback === 'number' ? typeof v === 'number' && Number.isFinite(v) : Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === 'number' && Number.isFinite(x)));
+  const okValue = (v: unknown) =>
+    typeof fallback === 'number'
+      ? typeof v === 'number' && Number.isFinite(v)
+      : Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === 'number' && Number.isFinite(x));
   if (isObj(p) && Array.isArray(p.k)) {
     const k = p.k.filter((x): x is Json => isObj(x) && typeof x.t === 'number' && Number.isFinite(x.t) && okValue(x.v));
     if (k.length !== p.k.length) notes.push(`${where}: removed keyframes that could not be read.`);
@@ -102,13 +107,26 @@ function cleanLayer(l: Json, comp: Composition, notes: string[], count: { n: num
   }
   if (l.type === 'group') {
     const kids = Array.isArray(l.children) ? l.children : [];
-    out.children = kids.filter(isObj).map((c) => cleanLayer(c, comp, notes, count)).filter((c): c is Layer => !!c);
+    out.children = kids
+      .filter(isObj)
+      .map((c) => cleanLayer(c, comp, notes, count))
+      .filter((c): c is Layer => !!c);
   }
   if (l.type === 'text') {
     if (typeof l.text !== 'string') out.text = '';
     if (!isObj(l.style)) {
       notes.push(`${where}: its text style was missing and was reset.`);
-      out.style = { font: '$font', weight: 600, italic: false, size: 56, fill: { type: 'solid', color: '$text' }, tracking: 0, lineHeight: 1.2, align: 'left', vAlign: 'middle' };
+      out.style = {
+        font: '$font',
+        weight: 600,
+        italic: false,
+        size: 56,
+        fill: { type: 'solid', color: '$text' },
+        tracking: 0,
+        lineHeight: 1.2,
+        align: 'left',
+        vAlign: 'middle',
+      };
     } else {
       const st = { ...l.style } as Json;
       st.size = Math.min(2000, Math.max(1, finite(st.size, 56)));
@@ -150,11 +168,18 @@ function cleanComp(c: Json, notes: string[], count: { n: number }): Composition 
   } as unknown as Composition;
   const m = isObj(c.markers) ? c.markers : {};
   comp.markers = cleanMarkers(
-    { inEnd: finite(m.inEnd, Math.min(1, duration / 3)), outStart: finite(m.outStart, duration - Math.min(1, duration / 3)), loop: isObj(m.loop) ? { start: finite(m.loop.start, 0), end: finite(m.loop.end, 0) } : null },
+    {
+      inEnd: finite(m.inEnd, Math.min(1, duration / 3)),
+      outStart: finite(m.outStart, duration - Math.min(1, duration / 3)),
+      loop: isObj(m.loop) ? { start: finite(m.loop.start, 0), end: finite(m.loop.end, 0) } : null,
+    },
     duration,
   );
   const layers = Array.isArray(c.layers) ? c.layers : [];
-  comp.layers = layers.filter(isObj).map((l) => cleanLayer(l, comp, notes, count)).filter((l): l is Layer => !!l);
+  comp.layers = layers
+    .filter(isObj)
+    .map((l) => cleanLayer(l, comp, notes, count))
+    .filter((l): l is Layer => !!l);
   return comp;
 }
 
@@ -242,7 +267,10 @@ export function readProject(input: unknown): ReadResult {
   if (version < 1) return { project: null, error: 'This Titler file has no version and cannot be read.', notes };
   if (version === 1) o = fromV1(o, notes);
   const count = { n: 0 };
-  const comps = (Array.isArray(o.compositions) ? o.compositions : []).filter(isObj).slice(0, MAX_COMPS).map((c) => cleanComp(c, notes, count));
+  const comps = (Array.isArray(o.compositions) ? o.compositions : [])
+    .filter(isObj)
+    .slice(0, MAX_COMPS)
+    .map((c) => cleanComp(c, notes, count));
   if (!comps.length) return { project: null, error: 'This Titler file has no compositions.', notes };
   const tokens = { ...DEFAULT_TOKENS, ...(isObj(o.tokens) ? (o.tokens as object) : {}) };
   const p: TitleProject = {

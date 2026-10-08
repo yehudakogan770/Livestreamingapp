@@ -26,7 +26,11 @@ export function GraphEditor({ store }: { store: Store }) {
   const pi = l && graph ? propsOf(l).find((x) => x.path === graph.path) : undefined;
   const prop = l && graph ? getProp(l, graph.path) : undefined;
   if (!l || !pi || !isAnimated(prop) || prop.k.length < 1)
-    return <div className="tt-graph-empty">Choose an animated property in the timeline (click its name) to see its curve. Select a keyframe to shape the easing after it.</div>;
+    return (
+      <div className="tt-graph-empty">
+        Choose an animated property in the timeline (click its name) to see its curve. Select a keyframe to shape the easing after it.
+      </div>
+    );
   const k = prop.k as Keyframe<Value>[];
   const t0 = Math.min(k[0]!.t, 0);
   const t1 = Math.max(k[k.length - 1]!.t, c.duration);
@@ -40,7 +44,7 @@ export function GraphEditor({ store }: { store: Store }) {
   }
   let lo = Infinity;
   let hi = -Infinity;
-  for (const s of samples) for (const v of s) (lo = Math.min(lo, v)), (hi = Math.max(hi, v));
+  for (const s of samples) for (const v of s) ((lo = Math.min(lo, v)), (hi = Math.max(hi, v)));
   if (hi - lo < 1e-6) {
     lo -= 1;
     hi += 1;
@@ -112,11 +116,26 @@ export function GraphEditor({ store }: { store: Store }) {
         <svg ref={svg} viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" role="img" aria-label={`${pi.label} over time`}>
           <line x1={X(time)} x2={X(time)} y1={0} y2={H} className="tt-graph-playhead" />
           {Array.from({ length: dims }, (_, d) => (
-            <polyline key={d} fill="none" stroke={colors[d]} strokeWidth={1.5} vectorEffect="non-scaling-stroke" points={samples.map((s, i) => `${(i / N) * W},${Y(s[d]!)}`).join(' ')} />
+            <polyline
+              key={d}
+              fill="none"
+              stroke={colors[d]}
+              strokeWidth={1.5}
+              vectorEffect="non-scaling-stroke"
+              points={samples.map((s, i) => `${(i / N) * W},${Y(s[d]!)}`).join(' ')}
+            />
           ))}
           {k.map((kk, i) =>
             (Array.isArray(kk.v) ? kk.v : [kk.v]).map((v, d) => (
-              <rect key={`${i}-${d}`} x={X(kk.t) - 3} y={Y(v) - 3} width={6} height={6} className={`tt-graph-key${i === idx ? ' sel' : ''}`} onClick={() => store.set({ keys: [{ layer: l.id, path: pi.path, t: kk.t }], time: kk.t })} />
+              <rect
+                key={`${i}-${d}`}
+                x={X(kk.t) - 3}
+                y={Y(v) - 3}
+                width={6}
+                height={6}
+                className={`tt-graph-key${i === idx ? ' sel' : ''}`}
+                onClick={() => store.set({ keys: [{ layer: l.id, path: pi.path, t: kk.t }], time: kk.t })}
+              />
             )),
           )}
         </svg>
@@ -145,7 +164,11 @@ export function GraphEditor({ store }: { store: Store }) {
           </svg>
           <div className="tt-eases">
             {EASES.map((e) => (
-              <button key={e.id} onClick={() => setHandles([...e.o] as Vec2, [...e.i] as Vec2)} className={!a.hold && o[0] === e.o[0] && o[1] === e.o[1] && iH[0] === e.i[0] && iH[1] === e.i[1] ? 'on' : ''}>
+              <button
+                key={e.id}
+                onClick={() => setHandles([...e.o] as Vec2, [...e.i] as Vec2)}
+                className={!a.hold && o[0] === e.o[0] && o[1] === e.o[1] && iH[0] === e.i[0] && iH[1] === e.i[1] ? 'on' : ''}
+              >
                 {e.name}
               </button>
             ))}

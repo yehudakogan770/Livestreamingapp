@@ -150,7 +150,12 @@ export function ungroup(p: TitleProject, compId: string, groupId: string): Title
 }
 
 /** Move layers into a new composition and put that composition in their place (precompose). */
-export function precompose(p: TitleProject, compId: string, ids: string[], name = 'Precomp'): { project: TitleProject; id: string | null; comp: string | null } {
+export function precompose(
+  p: TitleProject,
+  compId: string,
+  ids: string[],
+  name = 'Precomp',
+): { project: TitleProject; id: string | null; comp: string | null } {
   const c = compOf(p, compId);
   const top = c.layers.filter((l) => ids.includes(l.id));
   if (!top.length) return { project: p, id: null, comp: null };
@@ -191,12 +196,20 @@ export function boundsOf(pts: Vec2[]): Box {
 }
 
 /** Line selected layers up with each other (or with the composition when one is selected). */
-export function align(p: TitleProject, compId: string, ids: string[], how: 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom', t: number, boxOf: (l: Layer) => Box | null): TitleProject {
+export function align(
+  p: TitleProject,
+  compId: string,
+  ids: string[],
+  how: 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom',
+  t: number,
+  boxOf: (l: Layer) => Box | null,
+): TitleProject {
   const c = compOf(p, compId);
   const items = ids.map((id) => findLayer(c, id)).filter((l): l is Layer => !!l && l.type !== 'group');
   const boxes = items.map((l) => [l, boxOf(l)] as const).filter((x): x is readonly [Layer, Box] => !!x[1]);
   if (!boxes.length) return p;
-  const all: Box = boxes.length === 1 ? { x: 0, y: 0, w: c.width, h: c.height } : boundsOf(boxes.flatMap(([, b]) => [[b.x, b.y] as Vec2, [b.x + b.w, b.y + b.h] as Vec2]));
+  const all: Box =
+    boxes.length === 1 ? { x: 0, y: 0, w: c.width, h: c.height } : boundsOf(boxes.flatMap(([, b]) => [[b.x, b.y] as Vec2, [b.x + b.w, b.y + b.h] as Vec2]));
   let next = p;
   for (const [l, b] of boxes) {
     let dx = 0;

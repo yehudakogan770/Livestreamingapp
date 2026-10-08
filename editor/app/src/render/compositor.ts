@@ -378,7 +378,12 @@ export class Compositor {
     } else if (src.kind === 'text' || src.kind === 'shape' || src.kind === 'titler') {
       // Words and shapes are drawn again only when they look different (while they animate, or are changed).
       const key = `text:${layer.key}`;
-      const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : src.kind === 'titler' ? titlerStamp(src) : textStamp(src.text, src.local, src.length, layer.fps);
+      const look =
+        src.kind === 'shape'
+          ? shapeStamp(src.shape, src.local)
+          : src.kind === 'titler'
+            ? titlerStamp(src)
+            : textStamp(src.text, src.local, src.length, layer.fps);
       const stamp = `${this.w}x${this.h}|${look}`;
       const have = this.textures.get(key);
       if (have && have.stamp === stamp) {

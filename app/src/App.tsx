@@ -23,7 +23,17 @@ const isTitlerWindow = () => typeof window !== 'undefined' && new URLSearchParam
  * could not be loaded shows its error when drawn.
  */
 export function loadApp(): Promise<void> {
-  const part = isTitlerWindow() ? TitlerWindow : isVisionWorker() ? VisionView : overlayScreen() ? OverlayView : isMultiview() ? MultiviewView : outputScreen() ? OutputView : Control;
+  const part = isTitlerWindow()
+    ? TitlerWindow
+    : isVisionWorker()
+      ? VisionView
+      : overlayScreen()
+        ? OverlayView
+        : isMultiview()
+          ? MultiviewView
+          : outputScreen()
+            ? OutputView
+            : Control;
   return part.preload().then(
     () => {},
     () => {},

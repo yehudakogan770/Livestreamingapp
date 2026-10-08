@@ -8,21 +8,7 @@ import { num, vec } from './easing';
 import { layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
 import { ellipsePath, rectPath, traceTrimmed, tracePath } from './paths';
-import type {
-  Asset,
-  BrandTokens,
-  Composition,
-  Effect,
-  Layer,
-  Paint,
-  PathData,
-  ShapeLayer,
-  TextAnimator,
-  TextLayer,
-  TitleProject,
-  Values,
-  Vec2,
-} from './types';
+import type { Asset, BrandTokens, Composition, Effect, Layer, Paint, PathData, ShapeLayer, TextAnimator, TextLayer, TitleProject, Values, Vec2 } from './types';
 
 /** A 2D canvas context (browser, OffscreenCanvas or a test canvas). */
 export type Ctx = CanvasRenderingContext2D;

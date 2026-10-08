@@ -33,11 +33,21 @@ export function layerBox(look: Look, l: Layer): { x: number; y: number; w: numbe
   if (l.type === 'text') {
     if (l.box[0] > 0 && l.box[1] > 0) return { x: 0, y: 0, w: l.box[0], h: l.box[1] };
     if (!ctx) return { x: 0, y: 0, w: l.box[0] || 100, h: l.box[1] || l.style.size * l.style.lineHeight };
-    const lay = textLayout(l, valuesFor(look.project, look.values), tokensFor(look.project, look.brand ?? undefined), canvasMeasure(ctx), look.project.variables);
+    const lay = textLayout(
+      l,
+      valuesFor(look.project, look.values),
+      tokensFor(look.project, look.brand ?? undefined),
+      canvasMeasure(ctx),
+      look.project.variables,
+    );
     return { x: 0, y: 0, w: l.box[0] || lay.width, h: l.box[1] || lay.height };
   }
   if (l.type === 'shape' && l.fitTo && ctx) {
-    const f = fittedBox(ctx, l, { t, f: { values: valuesFor(look.project, look.values), tokens: tokensFor(look.project, look.brand ?? undefined), project: look.project }, index: layerIndex(look.comp) });
+    const f = fittedBox(ctx, l, {
+      t,
+      f: { values: valuesFor(look.project, look.values), tokens: tokensFor(look.project, look.brand ?? undefined), project: look.project },
+      index: layerIndex(look.comp),
+    });
     if (f) return { x: f.dx, y: 0, w: f.w, h: f.h };
   }
   if (l.type === 'shape' && l.shape === 'path' && l.path?.v.length) {

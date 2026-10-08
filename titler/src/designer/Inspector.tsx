@@ -18,7 +18,23 @@ import type { Store } from './store';
 import { useStore } from './store';
 import { loadStyles, saveStyle, styleOf, applyStyle, removeStyle } from './styles';
 
-const FONTS = ['$font', '$fontSub', 'Inter', 'Segoe UI', 'Arial', 'Georgia', 'Heebo', 'Frank Ruhl Libre', 'Bebas Neue', 'Chakra Petch', 'Times New Roman', 'Verdana', 'Tahoma', 'Calibri', 'Consolas'];
+const FONTS = [
+  '$font',
+  '$fontSub',
+  'Inter',
+  'Segoe UI',
+  'Arial',
+  'Georgia',
+  'Heebo',
+  'Frank Ruhl Libre',
+  'Bebas Neue',
+  'Chakra Petch',
+  'Times New Roman',
+  'Verdana',
+  'Tahoma',
+  'Calibri',
+  'Consolas',
+];
 
 export function Inspector({ store }: { store: Store }) {
   const project = useStore(store, (s) => s.project);
@@ -39,25 +55,53 @@ export function Inspector({ store }: { store: Store }) {
   const tokens = tokensFor(project, brand ?? undefined);
   const vals = valuesFor(project, values);
   const fieldKeys = project.variables.map((v) => v.key);
-  const upd = (label: string, fn: (x: Layer) => Layer) => store.edit(label, (p) => updateLayers(p, c.id, selection.length > 1 && selection.includes(l.id) ? selection : [l.id], fn));
+  const upd = (label: string, fn: (x: Layer) => Layer) =>
+    store.edit(label, (p) => updateLayers(p, c.id, selection.length > 1 && selection.includes(l.id) ? selection : [l.id], fn));
   const updOne = (label: string, fn: (x: Layer) => Layer) => store.edit(label, (p) => updateLayers(p, c.id, [l.id], fn));
   const prop = (path: string, label: string, fallback: Value, unit?: string, opt: { min?: number; max?: number; step?: number } = {}) => (
     <PropField store={store} layer={l} compId={c.id} path={path} label={label} fallback={fallback} time={time} unit={unit} {...opt} />
   );
-  const updMedia = (label: string, fn: (x: ImageLayer | VideoLayer) => ImageLayer | VideoLayer) => updOne(label, (x) => (x.type === 'image' || x.type === 'video' ? fn(x) : x));
+  const updMedia = (label: string, fn: (x: ImageLayer | VideoLayer) => ImageLayer | VideoLayer) =>
+    updOne(label, (x) => (x.type === 'image' || x.type === 'video' ? fn(x) : x));
   const others = flatLayers(c.layers).filter((x) => x.id !== l.id);
   return (
     <div className="tt-inspector" data-testid="titler-inspector">
       <Section title={selection.length > 1 ? `${selection.length} layers` : 'Layer'}>
         <Row label="Name">
-          <input className="tt-input" value={l.name} onChange={(e) => updOne('Rename layer', (x) => ({ ...x, name: e.target.value }))} aria-label="Layer name" />
+          <input
+            className="tt-input"
+            value={l.name}
+            onChange={(e) => updOne('Rename layer', (x) => ({ ...x, name: e.target.value }))}
+            aria-label="Layer name"
+          />
         </Row>
         <Row label="On screen" hint="When the layer starts and ends (seconds)">
-          <NumberField value={l.start} step={1 / c.fps} min={0} max={l.end} label="Starts" unit="s" onChange={(v) => upd('Layer start', (x) => ({ ...x, start: v }))} />
-          <NumberField value={l.end} step={1 / c.fps} min={l.start} max={c.duration} label="Ends" unit="s" onChange={(v) => upd('Layer end', (x) => ({ ...x, end: v }))} />
+          <NumberField
+            value={l.start}
+            step={1 / c.fps}
+            min={0}
+            max={l.end}
+            label="Starts"
+            unit="s"
+            onChange={(v) => upd('Layer start', (x) => ({ ...x, start: v }))}
+          />
+          <NumberField
+            value={l.end}
+            step={1 / c.fps}
+            min={l.start}
+            max={c.duration}
+            label="Ends"
+            unit="s"
+            onChange={(v) => upd('Layer end', (x) => ({ ...x, end: v }))}
+          />
         </Row>
         <Row label="Parent" hint="Moves, turns and scales with another layer">
-          <select className="tt-select" aria-label="Parent layer" value={l.parent ?? ''} onChange={(e) => store.edit('Set parent', (p) => setParent(p, c.id, l.id, e.target.value || null, time))}>
+          <select
+            className="tt-select"
+            aria-label="Parent layer"
+            value={l.parent ?? ''}
+            onChange={(e) => store.edit('Set parent', (p) => setParent(p, c.id, l.id, e.target.value || null, time))}
+          >
             <option value="">None</option>
             {others.map((o) => (
               <option key={o.id} value={o.id}>
@@ -126,7 +170,14 @@ export function Inspector({ store }: { store: Store }) {
               const pos = vec(l.transform.position, time, [0, 0]);
               const na: Vec2 = [b.x + b.w / 2, b.y + b.h / 2];
               // Keep it where it is: the position moves by the same amount (unscaled, unturned).
-              updOne('Center anchor point', (x) => ({ ...x, transform: { ...x.transform, anchor: { v: na }, position: isAnimated(x.transform.position) ? x.transform.position : { v: [pos[0] + na[0] - a[0], pos[1] + na[1] - a[1]] } } }));
+              updOne('Center anchor point', (x) => ({
+                ...x,
+                transform: {
+                  ...x.transform,
+                  anchor: { v: na },
+                  position: isAnimated(x.transform.position) ? x.transform.position : { v: [pos[0] + na[0] - a[0], pos[1] + na[1] - a[1]] },
+                },
+              }));
             }}
           >
             Center anchor point
@@ -136,11 +187,28 @@ export function Inspector({ store }: { store: Store }) {
 
       {l.type === 'text' && <TextSection store={store} l={l} compId={c.id} fieldKeys={fieldKeys} tokens={tokens} vals={vals} time={time} />}
       {l.type === 'text' && <AnimatorSection store={store} l={l} compId={c.id} />}
-      {l.type === 'shape' && <ShapeSection store={store} l={l} compId={c.id} fieldKeys={fieldKeys} tokens={tokens} vals={vals} time={time} prop={prop} texts={others.filter((o): o is TextLayer => o.type === 'text')} />}
+      {l.type === 'shape' && (
+        <ShapeSection
+          store={store}
+          l={l}
+          compId={c.id}
+          fieldKeys={fieldKeys}
+          tokens={tokens}
+          vals={vals}
+          time={time}
+          prop={prop}
+          texts={others.filter((o): o is TextLayer => o.type === 'text')}
+        />
+      )}
       {(l.type === 'image' || l.type === 'video') && (
         <Section title={l.type === 'image' ? 'Picture' : 'Video'}>
           <Row label="Shows">
-            <select className="tt-select" aria-label="Picture" value={l.asset} onChange={(e) => updOne('Change picture', (x) => ({ ...x, asset: e.target.value }))}>
+            <select
+              className="tt-select"
+              aria-label="Picture"
+              value={l.asset}
+              onChange={(e) => updOne('Change picture', (x) => ({ ...x, asset: e.target.value }))}
+            >
               {project.assets
                 .filter((a) => (l.type === 'image' ? a.kind === 'image' || a.kind === 'svg' : a.kind === 'video' || a.kind === 'sequence'))
                 .map((a) => (
@@ -155,7 +223,9 @@ export function Inspector({ store }: { store: Store }) {
                     Field: {v.label}
                   </option>
                 ))}
-              {!project.assets.some((a) => a.id === l.asset) && !l.asset.startsWith('{{') && <option value={l.asset}>{l.asset ? 'Linked file' : 'Nothing'}</option>}
+              {!project.assets.some((a) => a.id === l.asset) && !l.asset.startsWith('{{') && (
+                <option value={l.asset}>{l.asset ? 'Linked file' : 'Nothing'}</option>
+              )}
             </select>
           </Row>
           <Row label="Size">
@@ -178,7 +248,14 @@ export function Inspector({ store }: { store: Store }) {
             <>
               <Toggle value={l.loop} onChange={(loop) => updOne('Loop video', (x) => ({ ...x, loop }))} label="Loop" />
               <Row label="Starts at">
-                <NumberField value={l.offset} step={0.04} min={0} label="Video start" unit="s" onChange={(offset) => updOne('Video start', (x) => ({ ...x, offset }))} />
+                <NumberField
+                  value={l.offset}
+                  step={0.04}
+                  min={0}
+                  label="Video start"
+                  unit="s"
+                  onChange={(offset) => updOne('Video start', (x) => ({ ...x, offset }))}
+                />
               </Row>
             </>
           )}
@@ -187,7 +264,12 @@ export function Inspector({ store }: { store: Store }) {
       {l.type === 'comp' && (
         <Section title="Composition">
           <Row label="Shows">
-            <select className="tt-select" aria-label="Composition shown" value={l.comp} onChange={(e) => updOne('Change composition', (x) => ({ ...x, comp: e.target.value }))}>
+            <select
+              className="tt-select"
+              aria-label="Composition shown"
+              value={l.comp}
+              onChange={(e) => updOne('Change composition', (x) => ({ ...x, comp: e.target.value }))}
+            >
               {project.compositions
                 .filter((x) => x.id !== c.id)
                 .map((x) => (
@@ -198,7 +280,13 @@ export function Inspector({ store }: { store: Store }) {
             </select>
           </Row>
           <Row label="Time offset">
-            <NumberField value={l.offset} step={1 / c.fps} label="Time offset" unit="s" onChange={(offset) => updOne('Time offset', (x) => ({ ...x, offset }))} />
+            <NumberField
+              value={l.offset}
+              step={1 / c.fps}
+              label="Time offset"
+              unit="s"
+              onChange={(offset) => updOne('Time offset', (x) => ({ ...x, offset }))}
+            />
           </Row>
           <button className="tt-link" onClick={() => store.set({ compId: l.comp, selection: [] })}>
             Open this composition
@@ -218,7 +306,10 @@ export function Inspector({ store }: { store: Store }) {
             </button>
           </>
         ) : (
-          <button className="tt-link" onClick={() => updOne('Add wipe', (x) => ({ ...x, reveal: { left: { v: 0 }, right: { v: 0 }, top: { v: 0 }, bottom: { v: 0 } } }))}>
+          <button
+            className="tt-link"
+            onClick={() => updOne('Add wipe', (x) => ({ ...x, reveal: { left: { v: 0 }, right: { v: 0 }, top: { v: 0 }, bottom: { v: 0 } } }))}
+          >
             Add a wipe (crop each side)
           </button>
         )}
@@ -234,16 +325,47 @@ export function Inspector({ store }: { store: Store }) {
 }
 
 /** One animatable property: its value now, and the stopwatch. */
-function PropField({ store, layer, compId, path, label, fallback, time, unit, min, max, step = 1 }: { store: Store; layer: Layer; compId: string; path: string; label: string; fallback: Value; time: number; unit?: string; min?: number; max?: number; step?: number }) {
+function PropField({
+  store,
+  layer,
+  compId,
+  path,
+  label,
+  fallback,
+  time,
+  unit,
+  min,
+  max,
+  step = 1,
+}: {
+  store: Store;
+  layer: Layer;
+  compId: string;
+  path: string;
+  label: string;
+  fallback: Value;
+  time: number;
+  unit?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
   const p = getProp(layer, path);
   const anim = isAnimated(p);
   const v = valueAt(p as never, time, fallback as never) as Value;
-  const set = (nv: Value) => store.edit(`Change ${label.toLowerCase()}`, (pr) => updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, setValue(getProp(x, path) as never, time, nv as never))));
+  const set = (nv: Value) =>
+    store.edit(`Change ${label.toLowerCase()}`, (pr) =>
+      updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, setValue(getProp(x, path) as never, time, nv as never))),
+    );
   return (
     <Row label={label}>
       <button
         className={`tt-ico stopwatch${anim ? ' on' : ''}`}
-        onClick={() => store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) => updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, toggleKeys(getProp(x, path) as never, time, fallback as never))))}
+        onClick={() =>
+          store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) =>
+            updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, toggleKeys(getProp(x, path) as never, time, fallback as never))),
+          )
+        }
         title={anim ? 'Animated: click to stop animating' : 'Animate this (a keyframe at the playhead)'}
         aria-label={`Animate ${label}`}
         aria-pressed={anim}
@@ -252,11 +374,38 @@ function PropField({ store, layer, compId, path, label, fallback, time, unit, mi
       </button>
       {Array.isArray(v) ? (
         <>
-          <NumberField value={v[0]} step={step} label={`${label} x`} unit={unit} onChange={(n) => set([n, v[1]])} onBegin={() => store.begin(label)} onEnd={() => store.end()} />
-          <NumberField value={v[1]} step={step} label={`${label} y`} unit={unit} onChange={(n) => set([v[0], n])} onBegin={() => store.begin(label)} onEnd={() => store.end()} />
+          <NumberField
+            value={v[0]}
+            step={step}
+            label={`${label} x`}
+            unit={unit}
+            onChange={(n) => set([n, v[1]])}
+            onBegin={() => store.begin(label)}
+            onEnd={() => store.end()}
+          />
+          <NumberField
+            value={v[1]}
+            step={step}
+            label={`${label} y`}
+            unit={unit}
+            onChange={(n) => set([v[0], n])}
+            onBegin={() => store.begin(label)}
+            onEnd={() => store.end()}
+          />
         </>
       ) : (
-        <NumberField value={v} step={step} min={min} max={max} label={label} unit={unit} onChange={(n) => set(n)} onBegin={() => store.begin(label)} onEnd={() => store.end()} wide />
+        <NumberField
+          value={v}
+          step={step}
+          min={min}
+          max={max}
+          label={label}
+          unit={unit}
+          onChange={(n) => set(n)}
+          onBegin={() => store.begin(label)}
+          onEnd={() => store.end()}
+          wide
+        />
       )}
     </Row>
   );
@@ -267,7 +416,21 @@ interface Common {
   compId: string;
 }
 
-function PaintField({ paint, onChange, label, tokens, vals, fieldKeys }: { paint: Paint; onChange: (p: Paint) => void; label: string; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; fieldKeys: string[] }) {
+function PaintField({
+  paint,
+  onChange,
+  label,
+  tokens,
+  vals,
+  fieldKeys,
+}: {
+  paint: Paint;
+  onChange: (p: Paint) => void;
+  label: string;
+  tokens: ReturnType<typeof tokensFor>;
+  vals: Record<string, string>;
+  fieldKeys: string[];
+}) {
   return (
     <>
       <Row label={label}>
@@ -296,7 +459,14 @@ function PaintField({ paint, onChange, label, tokens, vals, fieldKeys }: { paint
       </Row>
       {paint.type === 'solid' ? (
         <Row label="">
-          <ColorField value={paint.color} onChange={(color) => onChange({ type: 'solid', color })} tokens={tokens} values={vals} label={label} fields={fieldKeys} />
+          <ColorField
+            value={paint.color}
+            onChange={(color) => onChange({ type: 'solid', color })}
+            tokens={tokens}
+            values={vals}
+            label={label}
+            fields={fieldKeys}
+          />
         </Row>
       ) : (
         <>
@@ -307,8 +477,22 @@ function PaintField({ paint, onChange, label, tokens, vals, fieldKeys }: { paint
           )}
           {paint.stops.map((s, i) => (
             <Row key={i} label={`Stop ${i + 1}`}>
-              <NumberField value={Math.round(s.at * 100)} min={0} max={100} label={`Stop ${i + 1} position`} unit="%" onChange={(at) => onChange({ ...paint, stops: paint.stops.map((x, j) => (j === i ? { ...x, at: at / 100 } : x)) })} />
-              <ColorField value={s.color} onChange={(color) => onChange({ ...paint, stops: paint.stops.map((x, j) => (j === i ? { ...x, color } : x)) })} tokens={tokens} values={vals} label={`Stop ${i + 1}`} fields={fieldKeys} />
+              <NumberField
+                value={Math.round(s.at * 100)}
+                min={0}
+                max={100}
+                label={`Stop ${i + 1} position`}
+                unit="%"
+                onChange={(at) => onChange({ ...paint, stops: paint.stops.map((x, j) => (j === i ? { ...x, at: at / 100 } : x)) })}
+              />
+              <ColorField
+                value={s.color}
+                onChange={(color) => onChange({ ...paint, stops: paint.stops.map((x, j) => (j === i ? { ...x, color } : x)) })}
+                tokens={tokens}
+                values={vals}
+                label={`Stop ${i + 1}`}
+                fields={fieldKeys}
+              />
             </Row>
           ))}
           <button className="tt-link" onClick={() => onChange({ ...paint, stops: [...paint.stops, { at: 1, color: '$text' }] })}>
@@ -320,9 +504,18 @@ function PaintField({ paint, onChange, label, tokens, vals, fieldKeys }: { paint
   );
 }
 
-function TextSection({ store, l, compId, fieldKeys, tokens, vals, time }: Common & { l: TextLayer; fieldKeys: string[]; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; time: number }) {
+function TextSection({
+  store,
+  l,
+  compId,
+  fieldKeys,
+  tokens,
+  vals,
+  time,
+}: Common & { l: TextLayer; fieldKeys: string[]; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; time: number }) {
   const editing = useStore(store, (s) => s.editingText === l.id);
-  const upd = (label: string, fn: (x: TextLayer) => TextLayer) => store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'text' ? fn(x) : x)));
+  const upd = (label: string, fn: (x: TextLayer) => TextLayer) =>
+    store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'text' ? fn(x) : x)));
   const st = l.style;
   const style = (label: string, patch: Partial<TextLayer['style']>) => upd(label, (x) => ({ ...x, style: { ...x.style, ...patch } }));
   const missing = variablesIn(l.text).filter((k) => !fieldKeys.includes(k));
@@ -335,7 +528,13 @@ function TextSection({ store, l, compId, fieldKeys, tokens, vals, time }: Common
         autoFocus={editing}
         value={l.text}
         rows={3}
-        onChange={(e) => upd('Edit text', (x) => ({ ...x, text: e.target.value, name: x.name === 'Text' || x.name === x.text.slice(0, 30) ? e.target.value.replace(/\{\{|\}\}|\[[^\]]*\]/g, '').slice(0, 30) || 'Text' : x.name }))}
+        onChange={(e) =>
+          upd('Edit text', (x) => ({
+            ...x,
+            text: e.target.value,
+            name: x.name === 'Text' || x.name === x.text.slice(0, 30) ? e.target.value.replace(/\{\{|\}\}|\[[^\]]*\]/g, '').slice(0, 30) || 'Text' : x.name,
+          }))
+        }
         onBlur={() => store.set({ editingText: null })}
       />
       <div className="tt-chips">
@@ -347,7 +546,15 @@ function TextSection({ store, l, compId, fieldKeys, tokens, vals, time }: Common
         {missing.length > 0 && (
           <button
             className="tt-chip warn"
-            onClick={() => store.edit('Add fields', (p) => ({ ...p, variables: [...p.variables, ...missing.map((k) => ({ key: k, label: k.replace(/_/g, ' ').replace(/^./, (ch) => ch.toUpperCase()), type: 'text' as const, value: '' }))] }))}
+            onClick={() =>
+              store.edit('Add fields', (p) => ({
+                ...p,
+                variables: [
+                  ...p.variables,
+                  ...missing.map((k) => ({ key: k, label: k.replace(/_/g, ' ').replace(/^./, (ch) => ch.toUpperCase()), type: 'text' as const, value: '' })),
+                ],
+              }))
+            }
             title="These fields are used here but not in the Fields list yet"
           >
             Add {missing.map((m) => `{{${m}}}`).join(', ')} to fields
@@ -388,12 +595,31 @@ function TextSection({ store, l, compId, fieldKeys, tokens, vals, time }: Common
       </Row>
       <PaintField paint={st.fill} label="Fill" onChange={(fill) => style('Text color', { fill })} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
       <Row label="Outline">
-        <Toggle value={!!st.stroke} onChange={(on) => style('Text outline', { stroke: on ? { paint: { type: 'solid', color: '$box' }, width: 2, join: 'round' } : null })} label="On" />
-        {st.stroke && <NumberField value={st.stroke.width} min={0} label="Outline width" unit="px" onChange={(width) => style('Outline width', { stroke: { ...st.stroke!, width } })} />}
+        <Toggle
+          value={!!st.stroke}
+          onChange={(on) => style('Text outline', { stroke: on ? { paint: { type: 'solid', color: '$box' }, width: 2, join: 'round' } : null })}
+          label="On"
+        />
+        {st.stroke && (
+          <NumberField
+            value={st.stroke.width}
+            min={0}
+            label="Outline width"
+            unit="px"
+            onChange={(width) => style('Outline width', { stroke: { ...st.stroke!, width } })}
+          />
+        )}
       </Row>
       {st.stroke && st.stroke.paint.type === 'solid' && (
         <Row label="">
-          <ColorField value={st.stroke.paint.color} onChange={(color) => style('Outline color', { stroke: { ...st.stroke!, paint: { type: 'solid', color } } })} tokens={tokens} values={vals} label="Outline" fields={fieldKeys} />
+          <ColorField
+            value={st.stroke.paint.color}
+            onChange={(color) => style('Outline color', { stroke: { ...st.stroke!, paint: { type: 'solid', color } } })}
+            tokens={tokens}
+            values={vals}
+            label="Outline"
+            fields={fieldKeys}
+          />
         </Row>
       )}
       <Row label="Align">
@@ -432,7 +658,12 @@ function TextSection({ store, l, compId, fieldKeys, tokens, vals, time }: Common
       </Row>
       <Row label="Limits">
         <NumberField value={l.minSize ?? 0} min={0} label="Smallest size" unit="px" onChange={(minSize) => upd('Smallest size', (x) => ({ ...x, minSize }))} />
-        <NumberField value={l.maxLines ?? 0} min={0} label="Most lines (0: any)" onChange={(maxLines) => upd('Most lines', (x) => ({ ...x, maxLines: Math.round(maxLines) }))} />
+        <NumberField
+          value={l.maxLines ?? 0}
+          min={0}
+          label="Most lines (0: any)"
+          onChange={(maxLines) => upd('Most lines', (x) => ({ ...x, maxLines: Math.round(maxLines) }))}
+        />
       </Row>
       <Row label="Ticker">
         <Select
@@ -443,9 +674,23 @@ function TextSection({ store, l, compId, fieldKeys, tokens, vals, time }: Common
             ['crawl', 'Crawl (moves left)'],
             ['roll', 'Roll (moves up)'],
           ]}
-          onChange={(m) => upd('Ticker', (x) => ({ ...x, scroll: m === 'none' ? null : { mode: m, speed: x.scroll?.speed ?? 120, gap: x.scroll?.gap ?? 120 }, wrap: m === 'crawl' ? false : x.wrap }))}
+          onChange={(m) =>
+            upd('Ticker', (x) => ({
+              ...x,
+              scroll: m === 'none' ? null : { mode: m, speed: x.scroll?.speed ?? 120, gap: x.scroll?.gap ?? 120 },
+              wrap: m === 'crawl' ? false : x.wrap,
+            }))
+          }
         />
-        {l.scroll && <NumberField value={l.scroll.speed} min={1} label="Ticker speed" unit="px/s" onChange={(speed) => upd('Ticker speed', (x) => ({ ...x, scroll: x.scroll ? { ...x.scroll, speed } : null }))} />}
+        {l.scroll && (
+          <NumberField
+            value={l.scroll.speed}
+            min={1}
+            label="Ticker speed"
+            unit="px/s"
+            onChange={(speed) => upd('Ticker speed', (x) => ({ ...x, scroll: x.scroll ? { ...x.scroll, speed } : null }))}
+          />
+        )}
       </Row>
     </Section>
   );
@@ -462,14 +707,23 @@ const ANIMATOR_PRESETS: { name: string; by: TextAnimator['by']; make: (a: TextAn
 
 function AnimatorSection({ store, l, compId }: Common & { l: TextLayer }) {
   const c = compOf(store.get().project, compId);
-  const upd = (label: string, fn: (x: TextLayer) => TextLayer) => store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'text' ? fn(x) : x)));
+  const upd = (label: string, fn: (x: TextLayer) => TextLayer) =>
+    store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'text' ? fn(x) : x)));
   const list = l.animators ?? [];
   const add = (i: number) => {
     const pre = ANIMATOR_PRESETS[i]!;
     const inEnd = c.markers.inEnd;
     const base: TextAnimator = { id: uid('a'), name: pre.name, by: pre.by, start: { v: 0 }, end: { v: 100 }, offset: { v: 0 }, shape: 'square' };
     // The range sweeps across during the IN.
-    const a = pre.make({ ...base, start: { k: [{ t: Math.max(0, inEnd - 0.8), v: 0, o: [0, 0] }, { t: inEnd, v: 100, i: [0.58, 1] }] } });
+    const a = pre.make({
+      ...base,
+      start: {
+        k: [
+          { t: Math.max(0, inEnd - 0.8), v: 0, o: [0, 0] },
+          { t: inEnd, v: 100, i: [0.58, 1] },
+        ],
+      },
+    });
     upd('Add text animator', (x) => ({ ...x, animators: [...(x.animators ?? []), a] }));
     store.set((s) => ({ open: { ...s.open, [l.id]: 'animated' } }));
   };
@@ -479,8 +733,17 @@ function AnimatorSection({ store, l, compId }: Common & { l: TextLayer }) {
       {list.map((a, i) => (
         <div key={a.id} className="tt-subcard">
           <Row label="Name">
-            <input className="tt-input" value={a.name} aria-label="Animator name" onChange={(e) => upd('Rename animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)) }))} />
-            <button className="tt-ico" aria-label="Remove animator" onClick={() => upd('Remove animator', (x) => ({ ...x, animators: x.animators!.filter((_, j) => j !== i) }))}>
+            <input
+              className="tt-input"
+              value={a.name}
+              aria-label="Animator name"
+              onChange={(e) => upd('Rename animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, name: e.target.value } : y)) }))}
+            />
+            <button
+              className="tt-ico"
+              aria-label="Remove animator"
+              onClick={() => upd('Remove animator', (x) => ({ ...x, animators: x.animators!.filter((_, j) => j !== i) }))}
+            >
               <Trash2 size={13} />
             </button>
           </Row>
@@ -507,7 +770,11 @@ function AnimatorSection({ store, l, compId }: Common & { l: TextLayer }) {
               ]}
               onChange={(shape) => upd('Animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, shape } : y)) }))}
             />
-            <Toggle value={!!a.reverse} onChange={(reverse) => upd('Animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, reverse } : y)) }))} label="Last first" />
+            <Toggle
+              value={!!a.reverse}
+              onChange={(reverse) => upd('Animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, reverse } : y)) }))}
+              label="Last first"
+            />
           </Row>
           {(['opacity', 'scale', 'rotation', 'blur'] as const).map((k) =>
             a[k] ? (
@@ -522,15 +789,46 @@ function AnimatorSection({ store, l, compId }: Common & { l: TextLayer }) {
           )}
           {a.position && (
             <Row label="Offset">
-              <NumberField value={vec(a.position, 0, [0, 0])[0]} label="Animator x" unit="px" onChange={(v) => upd('Animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, position: { v: [v, vec(y.position, 0, [0, 0])[1]] } } : y)) }))} />
-              <NumberField value={vec(a.position, 0, [0, 0])[1]} label="Animator y" unit="px" onChange={(v) => upd('Animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, position: { v: [vec(y.position, 0, [0, 0])[0], v] } } : y)) }))} />
+              <NumberField
+                value={vec(a.position, 0, [0, 0])[0]}
+                label="Animator x"
+                unit="px"
+                onChange={(v) =>
+                  upd('Animator', (x) => ({
+                    ...x,
+                    animators: x.animators!.map((y, j) => (j === i ? { ...y, position: { v: [v, vec(y.position, 0, [0, 0])[1]] } } : y)),
+                  }))
+                }
+              />
+              <NumberField
+                value={vec(a.position, 0, [0, 0])[1]}
+                label="Animator y"
+                unit="px"
+                onChange={(v) =>
+                  upd('Animator', (x) => ({
+                    ...x,
+                    animators: x.animators!.map((y, j) => (j === i ? { ...y, position: { v: [vec(y.position, 0, [0, 0])[0], v] } } : y)),
+                  }))
+                }
+              />
             </Row>
           )}
           <div className="tt-chips">
             {(['opacity', 'position', 'scale', 'rotation', 'blur'] as const)
               .filter((k) => !a[k])
               .map((k) => (
-                <button key={k} className="tt-chip" onClick={() => upd('Animator', (x) => ({ ...x, animators: x.animators!.map((y, j) => (j === i ? { ...y, [k]: k === 'position' ? { v: [0, 20] } : k === 'scale' ? { v: 50 } : { v: 0 } } : y)) }))}>
+                <button
+                  key={k}
+                  className="tt-chip"
+                  onClick={() =>
+                    upd('Animator', (x) => ({
+                      ...x,
+                      animators: x.animators!.map((y, j) =>
+                        j === i ? { ...y, [k]: k === 'position' ? { v: [0, 20] } : k === 'scale' ? { v: 50 } : { v: 0 } } : y,
+                      ),
+                    }))
+                  }
+                >
                   + {k}
                 </button>
               ))}
@@ -557,8 +855,17 @@ function ShapeSection({
   vals,
   prop,
   texts,
-}: Common & { l: ShapeLayer; fieldKeys: string[]; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; time: number; prop: (path: string, label: string, fallback: Value, unit?: string, opt?: { min?: number; max?: number }) => ReactElement; texts: TextLayer[] }) {
-  const upd = (label: string, fn: (x: ShapeLayer) => ShapeLayer) => store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'shape' ? fn(x) : x)));
+}: Common & {
+  l: ShapeLayer;
+  fieldKeys: string[];
+  tokens: ReturnType<typeof tokensFor>;
+  vals: Record<string, string>;
+  time: number;
+  prop: (path: string, label: string, fallback: Value, unit?: string, opt?: { min?: number; max?: number }) => ReactElement;
+  texts: TextLayer[];
+}) {
+  const upd = (label: string, fn: (x: ShapeLayer) => ShapeLayer) =>
+    store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'shape' ? fn(x) : x)));
   const stroke: Stroke = l.stroke ?? { paint: { type: 'solid', color: '$accent' }, width: 4 };
   return (
     <Section title="Shape">
@@ -574,25 +881,55 @@ function ShapeSection({
           onChange={(shape) =>
             upd('Shape kind', (x) => {
               const sz = vec(x.size, 0, [100, 100]);
-              return shape === 'path' && !x.path ? { ...x, shape, path: x.shape === 'ellipse' ? ellipsePath(sz[0], sz[1]) : rectPath(sz[0], sz[1], 0) } : { ...x, shape };
+              return shape === 'path' && !x.path
+                ? { ...x, shape, path: x.shape === 'ellipse' ? ellipsePath(sz[0], sz[1]) : rectPath(sz[0], sz[1], 0) }
+                : { ...x, shape };
             })
           }
         />
       </Row>
       {l.shape !== 'path' && prop('size', 'Size', [100, 100], 'px', { min: 0 })}
       {l.shape === 'rect' && prop('roundness', 'Corners', 0, 'px', { min: 0 })}
-      {l.shape === 'path' && <div className="tt-dim tt-small">Drawn with the pen: {l.path?.v.length ?? 0} points, {l.path?.closed ? 'closed' : 'open'}.</div>}
+      {l.shape === 'path' && (
+        <div className="tt-dim tt-small">
+          Drawn with the pen: {l.path?.v.length ?? 0} points, {l.path?.closed ? 'closed' : 'open'}.
+        </div>
+      )}
       <Row label="Fill">
         <Toggle value={!!l.fill} onChange={(on) => upd('Fill', (x) => ({ ...x, fill: on ? { type: 'solid', color: '$box' } : null }))} label="On" />
       </Row>
-      {l.fill && <PaintField paint={l.fill} label="Fill color" onChange={(fill) => upd('Fill', (x) => ({ ...x, fill }))} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />}
+      {l.fill && (
+        <PaintField
+          paint={l.fill}
+          label="Fill color"
+          onChange={(fill) => upd('Fill', (x) => ({ ...x, fill }))}
+          tokens={tokens}
+          vals={vals}
+          fieldKeys={fieldKeys}
+        />
+      )}
       <Row label="Stroke">
         <Toggle value={!!l.stroke} onChange={(on) => upd('Stroke', (x) => ({ ...x, stroke: on ? stroke : null }))} label="On" />
-        {l.stroke && <NumberField value={l.stroke.width} min={0} label="Stroke width" unit="px" onChange={(width) => upd('Stroke width', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, width } }))} />}
+        {l.stroke && (
+          <NumberField
+            value={l.stroke.width}
+            min={0}
+            label="Stroke width"
+            unit="px"
+            onChange={(width) => upd('Stroke width', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, width } }))}
+          />
+        )}
       </Row>
       {l.stroke && (
         <>
-          <PaintField paint={l.stroke.paint} label="Stroke color" onChange={(paint) => upd('Stroke color', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, paint } }))} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
+          <PaintField
+            paint={l.stroke.paint}
+            label="Stroke color"
+            onChange={(paint) => upd('Stroke color', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, paint } }))}
+            tokens={tokens}
+            vals={vals}
+            fieldKeys={fieldKeys}
+          />
           <Row label="Ends">
             <Select
               label="Line ends"
@@ -604,10 +941,18 @@ function ShapeSection({
               ]}
               onChange={(cap) => upd('Line ends', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, cap } }))}
             />
-            <Toggle value={!!l.stroke.dash?.length} onChange={(on) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: on ? [12, 8] : undefined } }))} label="Dashed" />
+            <Toggle
+              value={!!l.stroke.dash?.length}
+              onChange={(on) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: on ? [12, 8] : undefined } }))}
+              label="Dashed"
+            />
           </Row>
           <Row label="Trim">
-            <Toggle value={!!l.trim} onChange={(on) => upd('Trim path', (x) => ({ ...x, trim: on ? { start: { v: 0 }, end: { v: 100 }, offset: { v: 0 } } : null }))} label="Draw part of the outline" />
+            <Toggle
+              value={!!l.trim}
+              onChange={(on) => upd('Trim path', (x) => ({ ...x, trim: on ? { start: { v: 0 }, end: { v: 100 }, offset: { v: 0 } } : null }))}
+              label="Draw part of the outline"
+            />
           </Row>
           {l.trim && (
             <>
@@ -621,7 +966,19 @@ function ShapeSection({
       {l.shape !== 'path' && (
         <>
           <Row label="Follow text" hint="The box grows and shrinks with the words of a text layer">
-            <select className="tt-select" aria-label="Follow text layer" value={l.fitTo?.layer ?? ''} onChange={(e) => upd('Follow text', (x) => ({ ...x, fitTo: e.target.value ? { layer: e.target.value, pad: x.fitTo?.pad ?? [24, 12], min: x.fitTo?.min ?? [0, 0], axis: x.fitTo?.axis ?? 'x' } : null }))}>
+            <select
+              className="tt-select"
+              aria-label="Follow text layer"
+              value={l.fitTo?.layer ?? ''}
+              onChange={(e) =>
+                upd('Follow text', (x) => ({
+                  ...x,
+                  fitTo: e.target.value
+                    ? { layer: e.target.value, pad: x.fitTo?.pad ?? [24, 12], min: x.fitTo?.min ?? [0, 0], axis: x.fitTo?.axis ?? 'x' }
+                    : null,
+                }))
+              }
+            >
               <option value="">No</option>
               {texts.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -632,9 +989,23 @@ function ShapeSection({
           </Row>
           {l.fitTo && (
             <Row label="Padding">
-              <NumberField value={l.fitTo.pad[0]} label="Padding sides" unit="px" onChange={(v) => upd('Padding', (x) => ({ ...x, fitTo: x.fitTo ? { ...x.fitTo, pad: [v, x.fitTo.pad[1]] } : null }))} />
-              <NumberField value={l.fitTo.min?.[0] ?? 0} label="Smallest width" unit="px" onChange={(v) => upd('Smallest width', (x) => ({ ...x, fitTo: x.fitTo ? { ...x.fitTo, min: [v, x.fitTo.min?.[1] ?? 0] } : null }))} />
-              <Toggle value={l.fitTo.axis === 'both'} onChange={(b) => upd('Follow height', (x) => ({ ...x, fitTo: x.fitTo ? { ...x.fitTo, axis: b ? 'both' : 'x' } : null }))} label="Height too" />
+              <NumberField
+                value={l.fitTo.pad[0]}
+                label="Padding sides"
+                unit="px"
+                onChange={(v) => upd('Padding', (x) => ({ ...x, fitTo: x.fitTo ? { ...x.fitTo, pad: [v, x.fitTo.pad[1]] } : null }))}
+              />
+              <NumberField
+                value={l.fitTo.min?.[0] ?? 0}
+                label="Smallest width"
+                unit="px"
+                onChange={(v) => upd('Smallest width', (x) => ({ ...x, fitTo: x.fitTo ? { ...x.fitTo, min: [v, x.fitTo.min?.[1] ?? 0] } : null }))}
+              />
+              <Toggle
+                value={l.fitTo.axis === 'both'}
+                onChange={(b) => upd('Follow height', (x) => ({ ...x, fitTo: x.fitTo ? { ...x.fitTo, axis: b ? 'both' : 'x' } : null }))}
+                label="Height too"
+              />
             </Row>
           )}
         </>
@@ -649,7 +1020,8 @@ function MotionPresets({ store, l, compId }: Common & { l: Layer }) {
   const { inEnd, outStart } = c.markers;
   const inAt = Math.max(0, inEnd - 0.6);
   const outLen = Math.min(0.5, Math.max(0.2, c.duration - outStart));
-  const apply = (label: string, fn: (x: Layer) => Layer) => store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => fn(JSON.parse(JSON.stringify(x)) as Layer)));
+  const apply = (label: string, fn: (x: Layer) => Layer) =>
+    store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => fn(JSON.parse(JSON.stringify(x)) as Layer)));
   const IN: [string, (x: Layer) => Layer][] = [
     ['Fade', (x) => fade(x, { at: inAt, dur: 0.5 })],
     ['Slide from left', (x) => fade(slide(x, [-40, 0], { at: inAt, dur: 0.55 }), { at: inAt, dur: 0.4 })],
@@ -721,13 +1093,27 @@ function MaskSection({ store, l, compId, time }: Common & { l: Layer; time: numb
               ]}
               onChange={(mode) => upd('Mask mode', (x) => ({ ...x, masks: x.masks!.map((y, j) => (j === i ? { ...y, mode } : y)) }))}
             />
-            <Toggle value={!!m.inverted} onChange={(inverted) => upd('Invert mask', (x) => ({ ...x, masks: x.masks!.map((y, j) => (j === i ? { ...y, inverted } : y)) }))} label="Invert" />
-            <button className="tt-ico" aria-label="Remove mask" onClick={() => upd('Remove mask', (x) => ({ ...x, masks: x.masks!.filter((_, j) => j !== i) }))}>
+            <Toggle
+              value={!!m.inverted}
+              onChange={(inverted) => upd('Invert mask', (x) => ({ ...x, masks: x.masks!.map((y, j) => (j === i ? { ...y, inverted } : y)) }))}
+              label="Invert"
+            />
+            <button
+              className="tt-ico"
+              aria-label="Remove mask"
+              onClick={() => upd('Remove mask', (x) => ({ ...x, masks: x.masks!.filter((_, j) => j !== i) }))}
+            >
               <Trash2 size={13} />
             </button>
           </Row>
           <Row label="Feather">
-            <NumberField value={valueAt(m.feather as never, 0, 0 as never) as number} min={0} label="Mask feather" unit="px" onChange={(v) => upd('Mask feather', (x) => ({ ...x, masks: x.masks!.map((y, j) => (j === i ? { ...y, feather: { v } } : y)) }))} />
+            <NumberField
+              value={valueAt(m.feather as never, 0, 0 as never) as number}
+              min={0}
+              label="Mask feather"
+              unit="px"
+              onChange={(v) => upd('Mask feather', (x) => ({ ...x, masks: x.masks!.map((y, j) => (j === i ? { ...y, feather: { v } } : y)) }))}
+            />
           </Row>
         </div>
       ))}
@@ -743,7 +1129,14 @@ function MaskSection({ store, l, compId, time }: Common & { l: Layer; time: numb
   );
 }
 
-function EffectSection({ store, l, compId, tokens, vals, fieldKeys }: Common & { l: Layer; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; fieldKeys: string[] }) {
+function EffectSection({
+  store,
+  l,
+  compId,
+  tokens,
+  vals,
+  fieldKeys,
+}: Common & { l: Layer; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; fieldKeys: string[] }) {
   const upd = (label: string, fn: (x: Layer) => Layer) => store.edit(label, (p) => updateLayers(p, compId, [l.id], fn));
   const list = l.effects ?? [];
   const add = (type: Effect['type']) => {
@@ -758,42 +1151,84 @@ function EffectSection({ store, l, compId, tokens, vals, fieldKeys }: Common & {
             : { id, type, on: true, color: '$accent' };
     upd(`Add ${EFFECT_NAMES[type]!.toLowerCase()}`, (x) => ({ ...x, effects: [...(x.effects ?? []), e] }));
   };
-  const set = (i: number, patch: Partial<Effect>) => upd('Change effect', (x) => ({ ...x, effects: x.effects!.map((y, j) => (j === i ? ({ ...y, ...patch } as Effect) : y)) }));
+  const set = (i: number, patch: Partial<Effect>) =>
+    upd('Change effect', (x) => ({ ...x, effects: x.effects!.map((y, j) => (j === i ? ({ ...y, ...patch } as Effect) : y)) }));
   return (
     <Section title="Effects" open={list.length > 0}>
       {list.map((e, i) => (
         <div key={e.id} className="tt-subcard">
           <Row label={EFFECT_NAMES[e.type]!}>
             <Toggle value={e.on} onChange={(on) => set(i, { on })} label="On" />
-            <button className="tt-ico" aria-label="Remove effect" onClick={() => upd('Remove effect', (x) => ({ ...x, effects: x.effects!.filter((_, j) => j !== i) }))}>
+            <button
+              className="tt-ico"
+              aria-label="Remove effect"
+              onClick={() => upd('Remove effect', (x) => ({ ...x, effects: x.effects!.filter((_, j) => j !== i) }))}
+            >
               <Trash2 size={13} />
             </button>
           </Row>
           {'color' in e && (
             <Row label="Color">
-              <ColorField value={e.color} onChange={(color) => set(i, { color } as Partial<Effect>)} tokens={tokens} values={vals} label="Effect" fields={fieldKeys} />
+              <ColorField
+                value={e.color}
+                onChange={(color) => set(i, { color } as Partial<Effect>)}
+                tokens={tokens}
+                values={vals}
+                label="Effect"
+                fields={fieldKeys}
+              />
             </Row>
           )}
           {e.type === 'dropShadow' && (
             <Row label="Shadow">
               <NumberField value={e.angle} label="Shadow angle" unit="°" onChange={(angle) => set(i, { angle } as Partial<Effect>)} />
-              <NumberField value={valueAt(e.distance as never, 0, 0 as never) as number} label="Shadow distance" unit="px" onChange={(v) => set(i, { distance: { v } } as Partial<Effect>)} />
-              <NumberField value={valueAt(e.softness as never, 0, 0 as never) as number} min={0} label="Shadow softness" unit="px" onChange={(v) => set(i, { softness: { v } } as Partial<Effect>)} />
+              <NumberField
+                value={valueAt(e.distance as never, 0, 0 as never) as number}
+                label="Shadow distance"
+                unit="px"
+                onChange={(v) => set(i, { distance: { v } } as Partial<Effect>)}
+              />
+              <NumberField
+                value={valueAt(e.softness as never, 0, 0 as never) as number}
+                min={0}
+                label="Shadow softness"
+                unit="px"
+                onChange={(v) => set(i, { softness: { v } } as Partial<Effect>)}
+              />
             </Row>
           )}
           {e.type === 'glow' && (
             <Row label="Glow">
-              <NumberField value={valueAt(e.radius as never, 0, 0 as never) as number} min={0} label="Glow size" unit="px" onChange={(v) => set(i, { radius: { v } } as Partial<Effect>)} />
+              <NumberField
+                value={valueAt(e.radius as never, 0, 0 as never) as number}
+                min={0}
+                label="Glow size"
+                unit="px"
+                onChange={(v) => set(i, { radius: { v } } as Partial<Effect>)}
+              />
             </Row>
           )}
           {(e.type === 'dropShadow' || e.type === 'glow') && (
             <Row label="Opacity">
-              <NumberField value={valueAt(e.opacity as never, 0, 0 as never) as number} min={0} max={100} label="Effect opacity" unit="%" onChange={(v) => set(i, { opacity: { v } } as Partial<Effect>)} />
+              <NumberField
+                value={valueAt(e.opacity as never, 0, 0 as never) as number}
+                min={0}
+                max={100}
+                label="Effect opacity"
+                unit="%"
+                onChange={(v) => set(i, { opacity: { v } } as Partial<Effect>)}
+              />
             </Row>
           )}
           {e.type === 'blur' && (
             <Row label="Amount">
-              <NumberField value={valueAt(e.amount as never, 0, 0 as never) as number} min={0} label="Blur amount" unit="px" onChange={(v) => set(i, { amount: { v } } as Partial<Effect>)} />
+              <NumberField
+                value={valueAt(e.amount as never, 0, 0 as never) as number}
+                min={0}
+                label="Blur amount"
+                unit="px"
+                onChange={(v) => set(i, { amount: { v } } as Partial<Effect>)}
+              />
             </Row>
           )}
         </div>

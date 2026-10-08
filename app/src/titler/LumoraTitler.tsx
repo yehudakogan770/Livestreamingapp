@@ -35,7 +35,19 @@ export function titlerWindowTarget(): string | null {
 }
 
 /** The designer, set up for Lumora: its look, the event's look and fields, and where "Use" puts the title. */
-export function TitlerEditor({ client, show, target, onClose, onDone }: { client: EngineClient; show: Show; target: string | null; onClose?: () => void; onDone?: (msg: string) => void }) {
+export function TitlerEditor({
+  client,
+  show,
+  target,
+  onClose,
+  onDone,
+}: {
+  client: EngineClient;
+  show: Show;
+  target: string | null;
+  onClose?: () => void;
+  onDone?: (msg: string) => void;
+}) {
   const host = useMemo(() => (isInsideLumora() ? tauriHost('lumora') : webHost()), []);
   const src = target ? show.sources.find((s) => s.id === target && s.kind.type === 'titler') : undefined;
   const k = src?.kind.type === 'titler' ? src.kind : null;

@@ -4,7 +4,23 @@ import { keys, valueAt, vec } from '../core/easing';
 import { worldMatrix } from '../core/render';
 import { apply } from '../core/matrix';
 import type { Layer, TitleProject, Vec2 } from '../core/types';
-import { addLayers, align, compOf, distribute, duplicate, findLayer, group, moveBefore, nudge, precompose, removeLayers, restack, setParent, ungroup, type Box } from './ops';
+import {
+  addLayers,
+  align,
+  compOf,
+  distribute,
+  duplicate,
+  findLayer,
+  group,
+  moveBefore,
+  nudge,
+  precompose,
+  removeLayers,
+  restack,
+  setParent,
+  ungroup,
+  type Box,
+} from './ops';
 import { getProp, propsOf, withProp, layerKeyTimes } from './props';
 import { Store } from './store';
 import { moveKeys } from './Timeline';
@@ -38,7 +54,13 @@ describe('layer edits', () => {
     const t = newText(null, 'Hi');
     let q = addLayers(p, c, [t], b.id);
     expect(compOf(q, c).layers.map((l) => l.id)).toEqual([a.id, t.id, b.id, compOf(p, c).layers[2]!.id]);
-    q = { ...q, compositions: q.compositions.map((x) => ({ ...x, layers: x.layers.map((l) => (l.id === t.id ? { ...l, parent: a.id, matte: { layer: a.id, mode: 'alpha' as const } } : l)) })) };
+    q = {
+      ...q,
+      compositions: q.compositions.map((x) => ({
+        ...x,
+        layers: x.layers.map((l) => (l.id === t.id ? { ...l, parent: a.id, matte: { layer: a.id, mode: 'alpha' as const } } : l)),
+      })),
+    };
     q = removeLayers(q, c, [a.id]);
     const left = findLayer(compOf(q, c), t.id)!;
     expect(left.parent).toBeNull();
@@ -65,7 +87,11 @@ describe('layer edits', () => {
     expect(gl.type).toBe('group');
     expect(gl.type === 'group' && gl.children.map((x) => x.id)).toEqual([a.id, b.id]);
     const un = ungroup(g.project, c, g.id!);
-    expect(compOf(un, c).layers.map((l) => l.id).slice(0, 2)).toEqual([a.id, b.id]);
+    expect(
+      compOf(un, c)
+        .layers.map((l) => l.id)
+        .slice(0, 2),
+    ).toEqual([a.id, b.id]);
     const pre = precompose(p, c, [a.id, b.id], 'Inner');
     expect(pre.project.compositions.length).toBe(2);
     const inner = pre.project.compositions.find((x) => x.id === pre.comp)!;
@@ -76,12 +102,33 @@ describe('layer edits', () => {
   it('aligns to each other, to the frame when alone, and distributes', () => {
     const s = setup();
     let p = s.p;
-    p = align(p, s.c, [s.a.id, s.b.id], 'left', 0, boxOf(() => p, s.c));
+    p = align(
+      p,
+      s.c,
+      [s.a.id, s.b.id],
+      'left',
+      0,
+      boxOf(() => p, s.c),
+    );
     expect(vec(findLayer(compOf(p, s.c), s.b.id)!.transform.position, 0, [0, 0])[0]).toBe(100);
-    p = align(p, s.c, [s.d.id], 'hcenter', 0, boxOf(() => p, s.c));
+    p = align(
+      p,
+      s.c,
+      [s.d.id],
+      'hcenter',
+      0,
+      boxOf(() => p, s.c),
+    );
     expect(vec(findLayer(compOf(p, s.c), s.d.id)!.transform.position, 0, [0, 0])[0]).toBe(910);
     let q = s.p;
-    q = distribute(q, s.c, [s.a.id, s.b.id, s.d.id], 'x', 0, boxOf(() => q, s.c));
+    q = distribute(
+      q,
+      s.c,
+      [s.a.id, s.b.id, s.d.id],
+      'x',
+      0,
+      boxOf(() => q, s.c),
+    );
     const xs = [s.a, s.b, s.d].map((l) => vec(findLayer(compOf(q, s.c), l.id)!.transform.position, 0, [0, 0])[0] + 50);
     expect(xs[1]! - xs[0]!).toBeCloseTo(xs[2]! - xs[1]!);
   });

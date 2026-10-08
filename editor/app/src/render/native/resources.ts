@@ -125,7 +125,12 @@ export class NativeResources implements Resources {
   text(layer: Layer, w: number, h: number): string | null {
     const src = layer.source;
     if (src?.kind !== 'text' && src?.kind !== 'shape' && src?.kind !== 'titler') return null;
-    const look = src.kind === 'shape' ? shapeStamp(src.shape, src.local) : src.kind === 'titler' ? titlerStamp(src) : textStamp(src.text, src.local, src.length, layer.fps);
+    const look =
+      src.kind === 'shape'
+        ? shapeStamp(src.shape, src.local)
+        : src.kind === 'titler'
+          ? titlerStamp(src)
+          : textStamp(src.text, src.local, src.length, layer.fps);
     const id = `text:${layer.key}|${hash(`${w}x${h}|${look}`)}`;
     const ok = this.use(id, () => {
       const ctx = canvas(w, h);

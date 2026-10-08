@@ -27,9 +27,14 @@ export function TitlerView({ source, show, urlFor, thumb = false }: { source: So
   const painter = painterFor(urlFor, 'screen');
   const k = source.kind.type === 'titler' ? source.kind : null;
   const project = k ? projectOf(k) : null;
-  const moving = !!project && (ticks(project) || project.compositions.some((c) => c.layers.some(function scroll(l): boolean {
-    return (l.type === 'text' && !!l.scroll) || (l.type === 'group' && l.children.some(scroll));
-  })));
+  const moving =
+    !!project &&
+    (ticks(project) ||
+      project.compositions.some((c) =>
+        c.layers.some(function scroll(l): boolean {
+          return (l.type === 'text' && !!l.scroll) || (l.type === 'group' && l.children.some(scroll));
+        }),
+      ));
 
   useEffect(() => {
     const cv = canvas.current;

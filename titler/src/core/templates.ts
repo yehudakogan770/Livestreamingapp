@@ -46,7 +46,17 @@ function box(c: Composition, name: string, x: number, y: number, w: number, h: n
   return Object.assign(s, extra);
 }
 
-function words(c: Composition, name: string, x: number, y: number, w: number, h: number, text: string, style: Partial<TextStyle> = {}, extra: Partial<TextLayer> = {}): TextLayer {
+function words(
+  c: Composition,
+  name: string,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  text: string,
+  style: Partial<TextStyle> = {},
+  extra: Partial<TextLayer> = {},
+): TextLayer {
   const t = newText(c, text, [x, y], [w, h], style);
   t.name = name;
   return Object.assign(t, extra);
@@ -119,7 +129,17 @@ const SPECS: Spec[] = [
     vars: [v('name', 'Name', 'Morgan Ellis'), v('role', 'Role', 'Head of Product, Northwind')],
     build(c, O) {
       const nameText = words(c, 'Name', 196, 792, 1300, 72, '{{name}}', { size: 52, weight: 700, vAlign: 'bottom' }, { wrap: false });
-      const roleText = words(c, 'Role', 196, 864, 1300, 56, '{{role}}', { size: 32, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const roleText = words(
+        c,
+        'Role',
+        196,
+        864,
+        1300,
+        56,
+        '{{role}}',
+        { size: 32, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       const panel = box(c, 'Box', 160, 776, 800, 164, '$box', { fitTo: { layer: nameText.id, pad: [36, 0], min: [520, 0] } });
       const rule = box(c, 'Accent rule', 160, 940, 800, 6, '$accent', { fitTo: { layer: nameText.id, pad: [36, 0], min: [520, 0] } });
       wipe(rule, 'left', { at: 0, dur: 0.4 });
@@ -167,10 +187,30 @@ const SPECS: Spec[] = [
     description: 'A short label in an accent tab, the name in a box beside it.',
     vars: [v('label', 'Label', 'Speaker'), v('name', 'Name', 'Riley Chen'), v('role', 'Role', 'Founder, Brightline Labs')],
     build(c, O) {
-      const label = words(c, 'Label', 180, 824, 600, 48, '{{label}}', { size: 26, weight: 700, fill: { type: 'solid', color: '$accentText' } }, { wrap: false });
+      const label = words(
+        c,
+        'Label',
+        180,
+        824,
+        600,
+        48,
+        '{{label}}',
+        { size: 26, weight: 700, fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false },
+      );
       const tab = box(c, 'Tab', 160, 824, 200, 48, '$accent', { fitTo: { layer: label.id, pad: [20, 0], min: [120, 0] } });
       const nameText = words(c, 'Name', 196, 872, 1300, 76, '{{name}}', { size: 46, weight: 700 }, { wrap: false });
-      const roleText = words(c, 'Role', 196, 940, 1300, 40, '{{role}}', { size: 26, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const roleText = words(
+        c,
+        'Role',
+        196,
+        940,
+        1300,
+        40,
+        '{{role}}',
+        { size: 26, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       const panel = box(c, 'Box', 160, 872, 700, 116, '$box', { fitTo: { layer: nameText.id, pad: [36, 0], min: [420, 0] } });
       lowerThirdMotion(null, [tab, panel], [label, nameText, roleText], O);
       return [label, nameText, roleText, tab, panel];
@@ -183,7 +223,17 @@ const SPECS: Spec[] = [
     vars: [v('name', 'Name', 'Alex Morgan'), v('role', 'Role', 'Moderator')],
     build(c, O) {
       const nameText = words(c, 'Name', 360, 830, 1200, 70, '{{name}}', { size: 46, weight: 700, align: 'center' }, { wrap: false });
-      const roleText = words(c, 'Role', 360, 900, 1200, 44, '{{role}}', { size: 28, weight: 400, align: 'center', vAlign: 'top', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const roleText = words(
+        c,
+        'Role',
+        360,
+        900,
+        1200,
+        44,
+        '{{role}}',
+        { size: 28, weight: 400, align: 'center', vAlign: 'top', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       const panel = box(c, 'Box', 360, 818, 1200, 140, '$box', { fitTo: { layer: nameText.id, pad: [48, 0], min: [480, 0] } });
       const rule = box(c, 'Accent rule', 360, 958, 1200, 5, '$accent', { fitTo: { layer: nameText.id, pad: [48, 0], min: [480, 0] } });
       panel.transform.anchor = still<Vec2>([600, 70]);
@@ -209,7 +259,17 @@ const SPECS: Spec[] = [
     description: 'Where to follow: the network in an accent box, the handle beside it.',
     vars: [v('network', 'Network', 'Instagram'), v('handle', 'Handle', '@lumora.live')],
     build(c, O) {
-      const net = words(c, 'Network', 184, 868, 400, 64, '{{network}}', { size: 28, weight: 600, fill: { type: 'solid', color: '$accentText' } }, { wrap: false });
+      const net = words(
+        c,
+        'Network',
+        184,
+        868,
+        400,
+        64,
+        '{{network}}',
+        { size: 28, weight: 600, fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false },
+      );
       const netBox = box(c, 'Network box', 160, 868, 220, 64, '$accent', { fitTo: { layer: net.id, pad: [24, 0], min: [140, 0] } });
       const handle = words(c, 'Handle', 160, 868, 1000, 64, '{{handle}}', { size: 34, weight: 600 }, { wrap: false });
       // The handle sits after the network box: parented to a null placed at its right edge would need text width; a fixed gap keeps it simple.
@@ -240,7 +300,17 @@ const SPECS: Spec[] = [
     description: 'A numbered section title, large and low on the left.',
     vars: [v('number', 'Number', '02'), v('title', 'Title', 'Questions from the audience')],
     build(c, O) {
-      const num = words(c, 'Number', 160, 800, 140, 140, '{{number}}', { size: 72, weight: 700, align: 'center', fill: { type: 'solid', color: '$accentText' } }, { wrap: false, fit: 'shrink' });
+      const num = words(
+        c,
+        'Number',
+        160,
+        800,
+        140,
+        140,
+        '{{number}}',
+        { size: 72, weight: 700, align: 'center', fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false, fit: 'shrink' },
+      );
       const numBox = box(c, 'Number box', 160, 800, 140, 140, '$accent');
       const title = words(c, 'Title', 336, 800, 1300, 140, '{{title}}', { size: 56, weight: 700 }, { wrap: true, maxLines: 2 });
       const panel = box(c, 'Box', 300, 800, 900, 140, '$box', { fitTo: { layer: title.id, pad: [36, 0], min: [480, 0] } });
@@ -259,7 +329,17 @@ const SPECS: Spec[] = [
     out: 0.5,
     vars: [v('live', 'Live label', 'LIVE'), v('label', 'Label', 'Main stage')],
     build(c, O) {
-      const live = words(c, 'Live', 1460, 70, 120, 48, '{{live}}', { size: 26, weight: 800, align: 'center', fill: { type: 'solid', color: '$accentText' } }, { wrap: false });
+      const live = words(
+        c,
+        'Live',
+        1460,
+        70,
+        120,
+        48,
+        '{{live}}',
+        { size: 26, weight: 800, align: 'center', fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false },
+      );
       const liveBox = box(c, 'Live box', 1460, 70, 120, 48, '$accent');
       const label = words(c, 'Label', 1596, 70, 240, 48, '{{label}}', { size: 24, weight: 500, align: 'left' }, { wrap: false, fit: 'shrink', minSize: 14 });
       const labelBox = box(c, 'Label box', 1580, 70, 280, 48, '$box');
@@ -296,7 +376,17 @@ const SPECS: Spec[] = [
     out: 0.5,
     vars: [v('time', 'Time', '7:45 PM', { bind: 'clock:time' }), v('place', 'Place', 'Hall A')],
     build(c, O) {
-      const time = words(c, 'Time', 96, 70, 180, 52, '{{time}}', { size: 28, weight: 700, align: 'center', fill: { type: 'solid', color: '$accentText' } }, { wrap: false, fit: 'shrink' });
+      const time = words(
+        c,
+        'Time',
+        96,
+        70,
+        180,
+        52,
+        '{{time}}',
+        { size: 28, weight: 700, align: 'center', fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false, fit: 'shrink' },
+      );
       const timeBox = box(c, 'Time box', 96, 70, 180, 52, '$accent');
       const place = words(c, 'Place', 296, 70, 400, 52, '{{place}}', { size: 26, weight: 500 }, { wrap: false });
       const placeBox = box(c, 'Place box', 276, 70, 300, 52, '$box', { fitTo: { layer: place.id, pad: [20, 0], min: [140, 0] } });
@@ -317,7 +407,17 @@ const SPECS: Spec[] = [
     description: 'A full-width banner: a label in the accent color and the headline.',
     vars: [v('label', 'Label', 'Breaking'), v('headline', 'Headline', 'Main stage opens early: doors at 6:30 PM')],
     build(c, O) {
-      const label = words(c, 'Label', 96, 852, 300, 108, '{{label}}', { size: 40, weight: 800, align: 'center', fill: { type: 'solid', color: '$accentText' } }, { wrap: false, fit: 'shrink' });
+      const label = words(
+        c,
+        'Label',
+        96,
+        852,
+        300,
+        108,
+        '{{label}}',
+        { size: 40, weight: 800, align: 'center', fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false, fit: 'shrink' },
+      );
       const labelBox = box(c, 'Label box', 96, 852, 300, 108, '$accent');
       const headline = words(c, 'Headline', 436, 852, 1360, 108, '{{headline}}', { size: 48, weight: 700 }, { wrap: true, maxLines: 2, minSize: 28 });
       const bar = box(c, 'Banner', 396, 852, 1428, 108, '$box');
@@ -345,9 +445,29 @@ const SPECS: Spec[] = [
       }),
     ],
     build(c, O) {
-      const label = words(c, 'Label', 96, 960, 220, 64, '{{label}}', { size: 30, weight: 700, align: 'center', fill: { type: 'solid', color: '$accentText' } }, { wrap: false, fit: 'shrink' });
+      const label = words(
+        c,
+        'Label',
+        96,
+        960,
+        220,
+        64,
+        '{{label}}',
+        { size: 30, weight: 700, align: 'center', fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false, fit: 'shrink' },
+      );
       const labelBox = box(c, 'Label box', 96, 960, 220, 64, '$accent');
-      const crawl = words(c, 'Crawl', 316, 960, 1508, 64, '{{items}}', { size: 30, weight: 500 }, { wrap: false, fit: 'none', scroll: { mode: 'crawl', speed: 140, gap: 120 } });
+      const crawl = words(
+        c,
+        'Crawl',
+        316,
+        960,
+        1508,
+        64,
+        '{{items}}',
+        { size: 30, weight: 500 },
+        { wrap: false, fit: 'none', scroll: { mode: 'crawl', speed: 140, gap: 120 } },
+      );
       const strip = box(c, 'Strip', 316, 960, 1508, 64, '$box');
       strip.transform.opacity = still(94);
       wipe(labelBox, 'left', { at: 0, dur: 0.35 });
@@ -389,7 +509,17 @@ const SPECS: Spec[] = [
       const scoreA = words(c, 'Away score', x + 330, y, 60, h, '{{score_away}}', { size: 32, weight: 800, align: 'center' }, { wrap: false, fit: 'shrink' });
       const clockBox = box(c, 'Clock box', x + 400, y, 160, h, '$boxAlt');
       const clock = words(c, 'Clock', x + 400, y, 100, h, '{{clock}}', { size: 26, weight: 600, align: 'center' }, { wrap: false, fit: 'shrink' });
-      const period = words(c, 'Period', x + 496, y, 60, h, '{{period}}', { size: 20, weight: 500, align: 'center', fill: { type: 'solid', color: '$textSub' } }, { wrap: false, fit: 'shrink' });
+      const period = words(
+        c,
+        'Period',
+        x + 496,
+        y,
+        60,
+        h,
+        '{{period}}',
+        { size: 20, weight: 500, align: 'center', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false, fit: 'shrink' },
+      );
       wipe(backing, 'left', { at: 0, dur: 0.45 });
       wipe(clockBox, 'left', { at: 0.2, dur: 0.35 });
       grow(chipH, { at: 0.25, dur: 0.3 }, false, 'y');
@@ -426,13 +556,43 @@ const SPECS: Spec[] = [
       const backing = box(c, 'Backing', 560, y, 800, 72, '$box');
       const chipH = box(c, 'Home color', 560, y, 10, 72, '{{color_home}}');
       const chipA = box(c, 'Away color', 1350, y, 10, 72, '{{color_away}}');
-      const teamH = words(c, 'Home team', 590, y, 260, 72, '{{team_home}}', { size: 32, weight: 700, align: 'right' }, { wrap: false, fit: 'shrink', minSize: 18 });
+      const teamH = words(
+        c,
+        'Home team',
+        590,
+        y,
+        260,
+        72,
+        '{{team_home}}',
+        { size: 32, weight: 700, align: 'right' },
+        { wrap: false, fit: 'shrink', minSize: 18 },
+      );
       const scoreBox = box(c, 'Score box', 870, y, 180, 72, '$boxAlt');
       const scoreH = words(c, 'Home score', 870, y, 80, 72, '{{score_home}}', { size: 40, weight: 800, align: 'center' }, { wrap: false, fit: 'shrink' });
-      const dash = words(c, 'Dash', 945, y, 30, 72, '–', { size: 32, weight: 500, align: 'center', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const dash = words(
+        c,
+        'Dash',
+        945,
+        y,
+        30,
+        72,
+        '–',
+        { size: 32, weight: 500, align: 'center', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       const scoreA = words(c, 'Away score', 970, y, 80, 72, '{{score_away}}', { size: 40, weight: 800, align: 'center' }, { wrap: false, fit: 'shrink' });
       const teamA = words(c, 'Away team', 1070, y, 260, 72, '{{team_away}}', { size: 32, weight: 700 }, { wrap: false, fit: 'shrink', minSize: 18 });
-      const sub = words(c, 'Clock and period', 860, y + 72, 200, 40, '{{clock}}  {{period}}', { size: 22, weight: 600, align: 'center', fill: { type: 'solid', color: '$accentText' } }, { wrap: false, fit: 'shrink' });
+      const sub = words(
+        c,
+        'Clock and period',
+        860,
+        y + 72,
+        200,
+        40,
+        '{{clock}}  {{period}}',
+        { size: 22, weight: 600, align: 'center', fill: { type: 'solid', color: '$accentText' } },
+        { wrap: false, fit: 'shrink' },
+      );
       const subBox = box(c, 'Clock box', 860, y + 72, 200, 40, '$accent', { fitTo: { layer: sub.id, pad: [18, 0], min: [160, 0] } });
       backing.transform.anchor = still<Vec2>([400, 0]);
       backing.transform.position = still<Vec2>([960, y]);
@@ -453,13 +613,27 @@ const SPECS: Spec[] = [
     name: 'Countdown card',
     category: 'Full screen',
     description: 'Starting soon, with the time left from Lumora’s countdown.',
-    vars: [v('title', 'Title', 'We’ll be starting soon'), v('countdown', 'Time left', '04:59', { bind: 'countdown' }), v('subtitle', 'Line below', 'Annual Partner Summit')],
+    vars: [
+      v('title', 'Title', 'We’ll be starting soon'),
+      v('countdown', 'Time left', '04:59', { bind: 'countdown' }),
+      v('subtitle', 'Line below', 'Annual Partner Summit'),
+    ],
     build(c, O) {
       const bg = box(c, 'Background', 0, 0, 1920, 1080, '$box');
       const rule = box(c, 'Accent rule', 860, 560, 200, 6, '$accent');
       const title = words(c, 'Title', 260, 300, 1400, 120, '{{title}}', { size: 72, weight: 700, align: 'center' }, { wrap: true, maxLines: 2 });
       const time = words(c, 'Time left', 460, 400, 1000, 160, '{{countdown}}', { size: 140, weight: 700, align: 'center' }, { wrap: false });
-      const subtitle = words(c, 'Line below', 260, 600, 1400, 70, '{{subtitle}}', { size: 36, weight: 400, align: 'center', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const subtitle = words(
+        c,
+        'Line below',
+        260,
+        600,
+        1400,
+        70,
+        '{{subtitle}}',
+        { size: 36, weight: 400, align: 'center', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       fade(bg, { at: 0, dur: 0.5 });
       rule.transform.anchor = still<Vec2>([100, 3]);
       rule.transform.position = still<Vec2>([960, 563]);
@@ -483,7 +657,17 @@ const SPECS: Spec[] = [
       const bg = box(c, 'Background', 0, 0, 1920, 1080, '$box');
       const title = words(c, 'Title', 192, 380, 1536, 200, '{{title}}', { size: 120, weight: 700, vAlign: 'bottom' }, { wrap: true, maxLines: 2, minSize: 60 });
       const rule = box(c, 'Accent rule', 192, 604, 160, 8, '$accent');
-      const sub = words(c, 'Subtitle', 192, 636, 1536, 70, '{{subtitle}}', { size: 40, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const sub = words(
+        c,
+        'Subtitle',
+        192,
+        636,
+        1536,
+        70,
+        '{{subtitle}}',
+        { size: 40, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       fade(bg, { at: 0, dur: 0.45 });
       wipe(rule, 'left', { at: 0.25, dur: 0.4 });
       reveal(title, 'char', { at: 0.3, dur: 0.6 }, 24);
@@ -499,12 +683,35 @@ const SPECS: Spec[] = [
     name: 'Quote card',
     category: 'Full screen',
     description: 'A quote with who said it, set large on a plain background.',
-    vars: [v('quote', 'Quote', 'The best events feel effortless to the audience because someone planned every minute.'), v('author', 'Who said it', 'Taylor Brooks, Event Director')],
+    vars: [
+      v('quote', 'Quote', 'The best events feel effortless to the audience because someone planned every minute.'),
+      v('author', 'Who said it', 'Taylor Brooks, Event Director'),
+    ],
     build(c, O) {
       const bg = box(c, 'Background', 0, 0, 1920, 1080, '$box');
       const bar = box(c, 'Accent bar', 192, 300, 10, 360, '$accent');
-      const quote = words(c, 'Quote', 250, 300, 1400, 360, '{{quote}}', { size: 64, weight: 500, lineHeight: 1.25, vAlign: 'top' }, { wrap: true, fit: 'shrink', minSize: 36 });
-      const author = words(c, 'Who said it', 250, 700, 1400, 60, '{{author}}', { size: 34, weight: 600, fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const quote = words(
+        c,
+        'Quote',
+        250,
+        300,
+        1400,
+        360,
+        '{{quote}}',
+        { size: 64, weight: 500, lineHeight: 1.25, vAlign: 'top' },
+        { wrap: true, fit: 'shrink', minSize: 36 },
+      );
+      const author = words(
+        c,
+        'Who said it',
+        250,
+        700,
+        1400,
+        60,
+        '{{author}}',
+        { size: 34, weight: 600, fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       fade(bg, { at: 0, dur: 0.45 });
       grow(bar, { at: 0.2, dur: 0.45 }, false, 'y');
       reveal(quote, 'line', { at: 0.35, dur: 0.6 }, 18);
@@ -519,12 +726,30 @@ const SPECS: Spec[] = [
     name: 'Agenda',
     category: 'Full screen',
     description: 'A heading and a list of items, one a line, coming in one after another.',
-    vars: [v('heading', 'Heading', 'Today'), v('items', 'Items', '9:00  Welcome and opening remarks\n10:30  Product keynote\n12:00  Lunch on the terrace\n1:30  Breakout workshops\n4:00  Closing panel', { type: 'list' })],
+    vars: [
+      v('heading', 'Heading', 'Today'),
+      v(
+        'items',
+        'Items',
+        '9:00  Welcome and opening remarks\n10:30  Product keynote\n12:00  Lunch on the terrace\n1:30  Breakout workshops\n4:00  Closing panel',
+        { type: 'list' },
+      ),
+    ],
     build(c, O) {
       const bg = box(c, 'Background', 0, 0, 1920, 1080, '$box');
       const heading = words(c, 'Heading', 192, 160, 1536, 110, '{{heading}}', { size: 80, weight: 700 }, { wrap: false });
       const rule = box(c, 'Accent rule', 192, 282, 120, 8, '$accent');
-      const items = words(c, 'Items', 192, 330, 1536, 600, '{{items}}', { size: 46, weight: 500, lineHeight: 1.6, vAlign: 'top' }, { wrap: true, fit: 'shrink', minSize: 24 });
+      const items = words(
+        c,
+        'Items',
+        192,
+        330,
+        1536,
+        600,
+        '{{items}}',
+        { size: 46, weight: 500, lineHeight: 1.6, vAlign: 'top' },
+        { wrap: true, fit: 'shrink', minSize: 24 },
+      );
       fade(bg, { at: 0, dur: 0.45 });
       fade(heading, { at: 0.2, dur: 0.4 });
       slide(heading, [0, 14], { at: 0.2, dur: 0.5 });
@@ -546,7 +771,17 @@ const SPECS: Spec[] = [
       const title = words(c, 'Title', 192, 380, 1536, 140, '{{title}}', { size: 88, weight: 700, align: 'center' }, { wrap: true, maxLines: 2, minSize: 48 });
       const rule = box(c, 'Accent rule', 900, 548, 120, 6, '$accent');
       const site = words(c, 'Website', 192, 580, 1536, 64, '{{website}}', { size: 40, weight: 600, align: 'center' }, { wrap: false });
-      const handle = words(c, 'Handle', 192, 644, 1536, 56, '{{handle}}', { size: 32, weight: 400, align: 'center', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const handle = words(
+        c,
+        'Handle',
+        192,
+        644,
+        1536,
+        56,
+        '{{handle}}',
+        { size: 32, weight: 400, align: 'center', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       fade(bg, { at: 0, dur: 0.5 });
       reveal(title, 'word', { at: 0.25, dur: 0.6 }, 20);
       grow(rule, { at: 0.5, dur: 0.4 }, false, 'x');
@@ -572,7 +807,17 @@ const SPECS: Spec[] = [
       const panel = box(c, 'Box', 1384, 740, 440, 240, '$box');
       panel.transform.opacity = still(92);
       const rule = box(c, 'Accent rule', 1384, 740, 440, 6, '$accent');
-      const label = words(c, 'Label', 1414, 760, 380, 48, '{{label}}', { size: 26, weight: 500, align: 'center', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const label = words(
+        c,
+        'Label',
+        1414,
+        760,
+        380,
+        48,
+        '{{label}}',
+        { size: 26, weight: 500, align: 'center', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       const logo = newImage(c, '{{sponsor_logo}}', [320, 140], [1444, 816], 'Sponsor logo');
       wipe(rule, 'left', { at: 0, dur: 0.35 });
       wipe(panel, 'top', { at: 0.1, dur: 0.45 });
@@ -594,7 +839,17 @@ const SPECS: Spec[] = [
       const panel = box(c, 'Box', 1180, 300, 560, 400, '$box');
       const bar = box(c, 'Accent bar', 1180, 300, 8, 400, '$accent');
       const value = words(c, 'Number', 1228, 340, 480, 170, '{{value}}', { size: 130, weight: 800 }, { wrap: false, fit: 'shrink', minSize: 50 });
-      const label = words(c, 'What it is', 1228, 520, 480, 150, '{{label}}', { size: 38, weight: 500, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } }, { wrap: true, fit: 'shrink', minSize: 22 });
+      const label = words(
+        c,
+        'What it is',
+        1228,
+        520,
+        480,
+        150,
+        '{{label}}',
+        { size: 38, weight: 500, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: true, fit: 'shrink', minSize: 22 },
+      );
       grow(bar, { at: 0, dur: 0.35 }, false, 'y');
       wipe(panel, 'left', { at: 0.1, dur: 0.45 });
       fade(value, { at: 0.35, dur: 0.4 });
@@ -613,7 +868,17 @@ const SPECS: Spec[] = [
     vars: [v('place', 'Place', 'Pier 27, San Francisco'), v('date', 'Date', 'Thursday, October 8')],
     build(c, O) {
       const place = words(c, 'Place', 132, 80, 900, 52, '{{place}}', { size: 32, weight: 700 }, { wrap: false });
-      const date = words(c, 'Date', 132, 132, 900, 40, '{{date}}', { size: 24, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const date = words(
+        c,
+        'Date',
+        132,
+        132,
+        900,
+        40,
+        '{{date}}',
+        { size: 24, weight: 400, vAlign: 'top', fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       const panel = box(c, 'Box', 96, 64, 500, 124, '$box', { fitTo: { layer: place.id, pad: [36, 0], min: [320, 0] } });
       const bar = box(c, 'Accent bar', 96, 64, 6, 124, '$accent');
       lowerThirdMotion(bar, [panel], [place, date], O);
@@ -627,7 +892,17 @@ const SPECS: Spec[] = [
     vars: [v('message', 'Message', 'Ask the panel a question'), v('link', 'Link', 'lumora.live/ask')],
     build(c, O) {
       const msg = words(c, 'Message', 360, 836, 1200, 64, '{{message}}', { size: 40, weight: 600, align: 'center' }, { wrap: false });
-      const link = words(c, 'Link', 360, 900, 1200, 52, '{{link}}', { size: 32, weight: 700, align: 'center', fill: { type: 'solid', color: '$accent' } }, { wrap: false });
+      const link = words(
+        c,
+        'Link',
+        360,
+        900,
+        1200,
+        52,
+        '{{link}}',
+        { size: 32, weight: 700, align: 'center', fill: { type: 'solid', color: '$accent' } },
+        { wrap: false },
+      );
       const panel = box(c, 'Box', 360, 820, 1200, 148, '$box', { fitTo: { layer: msg.id, pad: [56, 0], min: [560, 0] } });
       panel.transform.anchor = still<Vec2>([600, 74]);
       panel.transform.position = still<Vec2>([960, 894]);
