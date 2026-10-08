@@ -214,6 +214,8 @@ struct Inner {
     settings: AtemSettings,
     client: Option<Client>,
     seen: Seen,
+    /// Why it can't connect (an address that can't be found).
+    problem: Option<String>,
 }
 
 /// The switcher connection, managed by the app.
@@ -249,6 +251,7 @@ impl Atem {
                 settings,
                 client: None,
                 seen: Seen::default(),
+                problem: None,
             }),
             notify,
         };
@@ -264,21 +267,39 @@ impl Atem {
 
     /// Connect or disconnect to match the settings.
     fn apply_connection(&self) {
-        let mut inner = lock(&self.inner);
-        let want = inner.settings.connect && !inner.settings.host.trim().is_empty();
-        if !want {
-            inner.client = None;
-            return;
-        }
-        let Ok(addr) = resolve(&inner.settings.host) else {
-            inner.client = None;
-            return;
+        // An old connection is closed after the lock is let go: its thread
+        // may be telling of a change (which takes the lock) as it ends.
+        let old = {
+            let mut inner = lock(&self.inner);
+            inner.problem = None;
+            let want = inner.settings.connect && !inner.settings.host.trim().is_empty();
+            let addr = if want {
+                match resolve(&inner.settings.host) {
+                    Ok(a) => Some(a),
+                    Err(e) => {
+                        inner.problem = Some(e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+            match addr {
+                None => inner.client.take(),
+                Some(a) if inner.client.as_ref().is_some_and(|c| c.address() == a) => None,
+                Some(a) => {
+                    let notify = Arc::clone(&self.notify);
+                    match Client::connect(a, Some(notify)) {
+                        Ok(c) => inner.client.replace(c),
+                        Err(e) => {
+                            inner.problem = Some(e);
+                            inner.client.take()
+                        }
+                    }
+                }
+            }
         };
-        if inner.client.as_ref().is_some_and(|c| c.address() == addr) {
-            return;
-        }
-        let notify = Arc::clone(&self.notify);
-        inner.client = Client::connect(addr, Some(notify)).ok();
+        drop(old);
     }
 
     fn update_mirror(&self) {
@@ -312,11 +333,7 @@ impl Atem {
                 Status::Retrying(why) => ("retrying", Some(why), None),
             },
         };
-        let detail = detail.or_else(|| {
-            (inner.settings.connect && resolve(&inner.settings.host).is_err())
-                .then(|| resolve(&inner.settings.host).err())
-                .flatten()
-        });
+        let detail = detail.or_else(|| inner.problem.clone());
         AtemStatus {
             settings: inner.settings.clone(),
             connection,
@@ -875,8 +892,15 @@ mod tests {
         assert_eq!(a.status().connection, "off");
         let mut s = settings();
         s.host = "  ".into();
-        let st = a.set(s);
+        let st = a.set(s.clone());
         assert_eq!(st.connection, "off");
+        // An address that can't be used says why.
+        s.host = "10.0.0.1:99999".into();
+        let st = a.set(s.clone());
+        assert_eq!(st.connection, "off");
+        assert!(st.detail.unwrap().contains("Can't find"));
+        s.host = "  ".into();
+        a.set(s);
         let again = Atem::new(Some(&dir), Arc::new(|| {}));
         assert_eq!(again.status().settings.mapping.len(), 2);
         assert!(a
