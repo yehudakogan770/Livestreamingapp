@@ -2080,7 +2080,11 @@ impl Compositor {
     ///
     /// # Errors
     /// The GPU failed.
-    pub fn read_texture(&mut self, tex: &wgpu::Texture, size: (u32, u32)) -> Result<Vec<u8>, String> {
+    pub fn read_texture(
+        &mut self,
+        tex: &wgpu::Texture,
+        size: (u32, u32),
+    ) -> Result<Vec<u8>, String> {
         let buffer = match self.reads.get(&(size.0 * 4, size.1)) {
             Some(b) => b.clone(),
             None => {

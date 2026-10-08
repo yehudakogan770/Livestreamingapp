@@ -917,7 +917,15 @@ mod tests {
         let count = quiet(&ffmpeg)
             .args(["-v", "error", "-i"])
             .arg(&path)
-            .args(["-vf", "scale=1:1", "-f", "rawvideo", "-pix_fmt", "gray", "-"])
+            .args([
+                "-vf",
+                "scale=1:1",
+                "-f",
+                "rawvideo",
+                "-pix_fmt",
+                "gray",
+                "-",
+            ])
             .output()
             .unwrap()
             .stdout

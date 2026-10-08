@@ -202,6 +202,30 @@ pub fn platform() -> Option<Opener> {
     }
 }
 
+/// Whether an Annex B piece of H.264 (or HEVC) carries its parameter sets
+/// (an SPS; HEVC: a VPS), which a player needs before the first picture.
+/// Some encoders give them only in their output format, not in the stream.
+pub fn has_parameter_sets(data: &[u8], hevc: bool) -> bool {
+    let mut i = 0;
+    while i + 3 < data.len() {
+        if data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1 {
+            let header = data[i + 3];
+            let is_set = if hevc {
+                (header >> 1) & 0x3f == 32
+            } else {
+                header & 0x1f == 7
+            };
+            if is_set {
+                return true;
+            }
+            i += 3;
+        } else {
+            i += 1;
+        }
+    }
+    false
+}
+
 static BROKEN: Mutex<Option<String>> = Mutex::new(None);
 
 /// Why zero-copy is not used any more (an encoder stopped in the middle of a
@@ -478,7 +502,11 @@ mod tests {
         assert_eq!(Vendor::from_mf("VEN_10DE"), Some(Vendor::Nvidia));
         assert_eq!(Vendor::from_mf("ven_8086"), Some(Vendor::Intel));
         assert_eq!(Vendor::from_mf("VEN_1002"), Some(Vendor::Amd));
-        assert_eq!(Vendor::from_mf("VEN_1414"), None, "Microsoft's software adapter");
+        assert_eq!(
+            Vendor::from_mf("VEN_1414"),
+            None,
+            "Microsoft's software adapter"
+        );
         assert_eq!(Vendor::from_mf("rubbish"), None);
     }
 
@@ -509,6 +537,21 @@ mod tests {
         assert_eq!(Settings::mf_quality(0), 100);
         assert_eq!(Settings::mf_quality(51), 0);
         assert_eq!(Settings::mf_quality(99), 0);
+    }
+
+    #[test]
+    fn parameter_sets_are_found_in_the_stream() {
+        // H.264: an SPS (type 7) after a 4-byte start code, then a PPS and a picture.
+        let with = [
+            0, 0, 0, 1, 0x67, 0x64, 0, 0, 1, 0x68, 0xee, 0, 0, 1, 0x65, 0x88,
+        ];
+        let without = [0, 0, 0, 1, 0x65, 0x88, 0x84, 0, 0, 1, 0x41, 0x9a];
+        assert!(has_parameter_sets(&with, false));
+        assert!(!has_parameter_sets(&without, false));
+        // HEVC: a VPS is type 32 (0x40 0x01).
+        assert!(has_parameter_sets(&[0, 0, 1, 0x40, 0x01, 0x0c], true));
+        assert!(!has_parameter_sets(&[0, 0, 1, 0x26, 0x01, 0xaf], true));
+        assert!(!has_parameter_sets(&[], false));
     }
 
     #[test]

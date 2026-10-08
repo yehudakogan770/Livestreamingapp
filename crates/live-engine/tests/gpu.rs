@@ -911,7 +911,15 @@ fn decode_mkv(bytes: &[u8], tag: &str) -> Vec<[u8; 3]> {
     let out = std::process::Command::new("ffmpeg")
         .args(["-v", "error", "-i"])
         .arg(&path)
-        .args(["-vf", "scale=1:1", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"])
+        .args([
+            "-vf",
+            "scale=1:1",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-",
+        ])
         .output()
         .unwrap();
     let _ = std::fs::remove_file(&path);
@@ -931,7 +939,16 @@ fn zero_copy_settings() -> live_engine::zerocopy::Settings {
 
 fn has_x264() -> bool {
     std::process::Command::new("ffmpeg")
-        .args(["-v", "error", "-f", "lavfi", "-i", "color=size=64x36", "-frames:v", "1"])
+        .args([
+            "-v",
+            "error",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=size=64x36",
+            "-frames:v",
+            "1",
+        ])
         .args(["-c:v", "libx264", "-f", "null", "-"])
         .output()
         .is_ok_and(|o| o.status.success())
@@ -992,7 +1009,11 @@ fn zero_copy_hands_the_picture_over_on_the_gpu_and_the_file_has_every_frame() {
     assert!(route.path.contains("stand-in"), "{route:?}");
     let stats = e.stop_feed(1).expect("running").finish();
     eprintln!("{stats:?} {route:?}");
-    assert_eq!(*shapes.lock().unwrap(), vec!["h264"], "FFmpeg was given the encoded picture");
+    assert_eq!(
+        *shapes.lock().unwrap(),
+        vec!["h264"],
+        "FFmpeg was given the encoded picture"
+    );
     assert!(copies.load(Ordering::SeqCst) >= 20, "copied on the GPU");
     let frames = decode_mkv(&out.lock().unwrap(), "zc");
     // 1.5 s at 30 fps, counted on the wall clock (frames owed included).
@@ -1057,7 +1078,11 @@ fn zero_copy_that_cannot_open_reads_back_and_says_why() {
     assert_eq!(*shapes.lock().unwrap(), vec!["nv12"]);
     let frames = decode_mkv(&out.lock().unwrap(), "rb");
     assert!(frames.len() >= 10, "{} ({stats:?})", frames.len());
-    assert!(frames[frames.len() - 1][0] > 200, "red: {:?}", frames.last());
+    assert!(
+        frames[frames.len() - 1][0] > 200,
+        "red: {:?}",
+        frames.last()
+    );
 }
 
 // ---------------------------------------------------------------------------
