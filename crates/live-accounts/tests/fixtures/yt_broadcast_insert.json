@@ -1,0 +1,42 @@
+{
+  "kind": "youtube#liveBroadcast",
+  "etag": "cc33",
+  "id": "New0Broadcast1",
+  "snippet": {
+    "publishedAt": "2026-10-08T18:29:58Z",
+    "channelId": "UCx1y2z3RiversideHall",
+    "title": "Spring concert",
+    "description": "Live from the hall",
+    "thumbnails": {
+      "default": {
+        "url": "https://i.ytimg.com/vi/New0Broadcast1/default_live.jpg",
+        "width": 120,
+        "height": 90
+      }
+    },
+    "scheduledStartTime": "2026-10-08T18:30:00Z",
+    "isDefaultBroadcast": false,
+    "liveChatId": "KicKGFVDeDF6"
+  },
+  "status": {
+    "lifeCycleStatus": "created",
+    "privacyStatus": "unlisted",
+    "recordingStatus": "notRecording",
+    "madeForKids": false,
+    "selfDeclaredMadeForKids": false
+  },
+  "contentDetails": {
+    "monitorStream": {
+      "enableMonitorStream": true,
+      "broadcastStreamDelayMs": 0,
+      "embedHtml": ""
+    },
+    "enableEmbed": true,
+    "enableDvr": true,
+    "recordFromStart": true,
+    "enableClosedCaptions": false,
+    "latencyPreference": "normal",
+    "enableAutoStart": false,
+    "enableAutoStop": false
+  }
+}

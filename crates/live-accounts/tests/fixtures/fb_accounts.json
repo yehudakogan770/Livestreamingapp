@@ -1,0 +1,39 @@
+{
+  "data": [
+    {
+      "access_token": "EAAPageTokenOne",
+      "category": "Community",
+      "category_list": [
+        {
+          "id": "2612",
+          "name": "Community"
+        }
+      ],
+      "name": "Riverside Community Hall",
+      "id": "112233445566778",
+      "tasks": [
+        "ADVERTISE",
+        "ANALYZE",
+        "CREATE_CONTENT",
+        "MESSAGING",
+        "MODERATE",
+        "MANAGE"
+      ]
+    },
+    {
+      "access_token": "EAAPageTokenTwo",
+      "category": "Musician/band",
+      "name": "Weekend Band",
+      "id": "998877665544332",
+      "tasks": [
+        "ANALYZE"
+      ]
+    }
+  ],
+  "paging": {
+    "cursors": {
+      "before": "QVFIUm",
+      "after": "QVFIUn"
+    }
+  }
+}

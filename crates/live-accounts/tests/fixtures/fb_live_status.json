@@ -1,0 +1,16 @@
+{
+  "status": "LIVE",
+  "permalink_url": "/112233445566778/videos/2468013579246801/",
+  "ingest_streams": {
+    "data": [
+      {
+        "stream_health": {
+          "video_bitrate": 5987000,
+          "video_framerate": 30
+        },
+        "is_master": true
+      }
+    ]
+  },
+  "id": "1357924680135792"
+}
