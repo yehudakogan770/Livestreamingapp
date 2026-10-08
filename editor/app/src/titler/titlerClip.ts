@@ -51,11 +51,40 @@ const idOf = (o: object) => {
   return id;
 };
 
+const holdCache = new WeakMap<object, boolean>();
+/** Does anything change during the HOLD (a keyframe inside it, a loop, a layer starting or ending)? */
+function holdMoves(p: TitleProject): boolean {
+  let v = holdCache.get(p);
+  if (v === undefined) {
+    const c = mainComp(p);
+    const { inEnd, outStart, loop } = c.markers;
+    const inside = (t: number) => t > inEnd + 1e-6 && t < outStart - 1e-6;
+    let found = !!loop;
+    const walk = (o: unknown) => {
+      if (found) return;
+      if (Array.isArray(o)) o.forEach(walk);
+      else if (o && typeof o === 'object') {
+        const r = o as { k?: { t: number }[]; start?: unknown; end?: unknown; comp?: unknown };
+        if (Array.isArray(r.k) && r.k.some((k) => inside(k.t))) found = true;
+        if (typeof r.start === 'number' && typeof r.end === 'number' && (inside(r.start) || inside(r.end))) found = true;
+        if (typeof r.comp === 'string') found = true;
+        for (const x of Object.values(o)) walk(x);
+      }
+    };
+    walk(c.layers);
+    v = found;
+    holdCache.set(p, v);
+  }
+  return v;
+}
+
 /** A key that changes only when the picture does (so a still title is not drawn again every frame). */
 export function titlerStamp(src: TitlerLayerSource): string {
   const { t, clock } = titlerTime(src);
   const c = mainComp(src.project);
-  const frame = Math.round(t * c.fps);
+  // While holding, a title with nothing moving in its HOLD looks the same every frame.
+  const holding = t > c.markers.inEnd && t < c.markers.outStart;
+  const frame = holding && !holdMoves(src.project) ? -1 : Math.round(t * c.fps);
   const moving = c.layers.some(function scroll(l): boolean {
     return (l.type === 'text' && !!l.scroll) || (l.type === 'group' && l.children.some(scroll)) || l.type === 'video';
   });
