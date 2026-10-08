@@ -14,6 +14,8 @@ describe('the manual', () => {
     expect(searchManual('nothing-like-this')).toHaveLength(0);
     expect(searchManual('failover')[0]!.id).toBe('backup');
     expect(searchManual('two operators')[0]!.id).toBe('operators');
+    expect(searchManual('decklink')[0]!.id).toBe('blackmagic-cards');
+    expect(searchManual('atem')[0]!.id).toBe('atem');
   });
 
   it('leaves out the Jewish event tools unless they are on', () => {

@@ -2,6 +2,7 @@ import {
   AppWindow,
   AudioLines,
   BookOpen,
+  Cable,
   Box,
   Camera,
   CalendarClock,
@@ -43,6 +44,7 @@ import {
 /** A line icon for each kind of input (Add input, menus). */
 export const KIND_ICON: Record<string, LucideIcon> = {
   camera: Camera,
+  decklink: Cable,
   video: Film,
   image: Image,
   color: PaintBucket,

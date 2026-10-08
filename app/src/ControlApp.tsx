@@ -41,6 +41,7 @@ import { openSystemCheck, SystemCheckHost } from './syscheck/SystemCheck';
 import { openTestEvent, TestEventHost } from './testevent/host';
 import { EngineSettingsHost, openEngineSettings } from './views/engineHost';
 import { SeatFeed } from './seats/SeatFeed';
+import { ProHardwareHost, openAtemSettings, openCardOutput } from './views/proHost';
 import { lazyPart } from './components/lazyPart';
 // Last: the base styles come after every other style (all windows share one
 // stylesheet; this keeps its order as it was when the app was one part).
@@ -287,6 +288,16 @@ function ControlApp() {
           ]
         : []),
       { label: 'MIDI controller…', onClick: () => sendCommand({ type: 'midi' }) },
+      {
+        label: 'ATEM switcher…',
+        hint: 'Connect a Blackmagic ATEM: switch it from Lumora, or follow its tally',
+        onClick: openAtemSettings,
+      },
+      {
+        label: 'Blackmagic program out…',
+        hint: 'The Live Screen on a DeckLink or UltraStudio card’s SDI or HDMI output (Unified engine)',
+        onClick: openCardOutput,
+      },
       { label: 'Arrange the screen…', hint: 'Move the parts of this screen around and change their size', onClick: () => sendCommand({ type: 'arrange' }) },
       {
         label: 'Engine…',
@@ -538,6 +549,7 @@ function ControlApp() {
                   <TestEventHost show={show} client={client} />
                   <EngineSettingsHost />
                   {client.live && <SeatFeed />}
+                  <ProHardwareHost sources={show.sources} />
                   {broadcastOpen && <BroadcastDialog client={client} onClose={() => setBroadcastOpen(false)} />}
                   {speakersOpen && <SpeakersDialog show={show} client={client} onClose={() => setSpeakersOpen(false)} />}
                   {captionsOpen && (

@@ -21,6 +21,9 @@ lumora-testevent = { path = "../crates/testevent" }
 lumora-live-engine = { path = "../crates/live-engine" }
 lumora-live-accounts = { path = "../crates/live-accounts" }
 lumora-seats = { path = "../crates/seats" }
+# Blackmagic capture cards and ATEM switchers.
+lumora-decklink = { path = "../crates/decklink" }
+lumora-atem = { path = "../crates/atem" }
 tauri = { version = "2", features = ["protocol-asset"] }
 serde.workspace = true
 serde_json.workspace = true

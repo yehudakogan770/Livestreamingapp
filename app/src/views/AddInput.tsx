@@ -12,6 +12,7 @@ import { newRoom } from '../engine/guest';
 import { defaultPoll } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
 import { CapturePicker } from './CapturePicker';
+import { DeckLinkPicker } from './DeckLinkPicker';
 import type { ScreenCapture } from '../engine/types/ScreenCapture';
 import { defaultFilters } from '../engine/audio';
 import { defaultScoreboard } from '../engine/score';
@@ -37,11 +38,12 @@ import type { Slideshow } from '../engine/types/Slideshow';
 import { defaultSplit } from '../engine/split';
 import type { Split } from '../engine/types/Split';
 
-/** What can be added; a sound file is stored as a video source that is never shown. */
-type Kind = SourceKind['type'] | 'sound';
+/** What can be added; a sound file is stored as a video source that is never shown, a capture card as a stream input. */
+type Kind = SourceKind['type'] | 'sound' | 'decklink';
 
 const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'camera', name: 'Camera', hint: 'Webcam, capture card or phone' },
+  { kind: 'decklink', name: 'Blackmagic capture card', hint: 'DeckLink, UltraStudio or Intensity: SDI or HDMI, with its sound' },
   { kind: 'video', name: 'Video file', hint: 'MP4, MOV, WebM…' },
   { kind: 'image', name: 'Picture', hint: 'PNG, JPG, logo…' },
   { kind: 'color', name: 'Color', hint: 'A solid color' },
@@ -77,7 +79,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
 
 /** What each input is for: the list is shown in these groups. */
 const GROUPS: { name: string; kinds: Kind[] }[] = [
-  { name: 'Cameras and people', kinds: ['camera', 'stream', 'guest', 'screen'] },
+  { name: 'Cameras and people', kinds: ['camera', 'decklink', 'stream', 'guest', 'screen'] },
   { name: 'Videos, pictures and slides', kinds: ['video', 'image', 'slideshow', 'browser', 'color', 'pattern'] },
   { name: 'Text and titles', kinds: ['text', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'pesukim', 'scripture', 'zmanim'] },
   { name: 'The audience’s phones', kinds: ['poll', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
@@ -153,6 +155,7 @@ export function AddInput({
   const [camErr, setCamErr] = useState<string | null>(null);
   const [cam, setCam] = useState<MediaDeviceInfo | null>(null);
   const [screenCap, setScreenCap] = useState<ScreenCapture | null>(null);
+  const [card, setCard] = useState<string | null>(null);
   const deviceKind = kind === 'microphone' ? 'audioinput' : 'videoinput';
   const what = kind === 'microphone' ? 'microphones' : 'cameras';
 
@@ -271,6 +274,9 @@ export function AddInput({
           : null;
       case 'scoreboard':
         return { name: n || 'Scoreboard', kind: { type: 'scoreboard', ...defaultScoreboard() } };
+      case 'decklink':
+        // No buffer: a capture card is right here.
+        return card ? { name: n || streamName(card), kind: { type: 'stream', url: card, bufferMs: 0 } } : null;
       case 'stream': {
         const url = cleanStreamUrl(words);
         return url ? { name: n || streamName(url), kind: { type: 'stream', url, bufferMs: 500 } } : null;
@@ -517,6 +523,7 @@ export function AddInput({
               </label>
             )}
             {kind === 'screen' && <CapturePicker client={client} value={screenCap} onChange={setScreenCap} />}
+            {kind === 'decklink' && <DeckLinkPicker onChange={setCard} />}
             {kind === 'stream' && (
               <label className="field">
                 <span className="field__label">Stream address</span>

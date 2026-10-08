@@ -2,10 +2,12 @@
 
 mod accounts;
 mod api;
+mod atem;
 mod browser;
 mod captions;
 mod capture;
 mod control;
+mod decklink;
 mod desktop;
 mod encode;
 mod events;
@@ -258,6 +260,9 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.api.show_changed(&snapshot.show);
     if let Some(seats) = app.try_state::<seats::Seats>() {
         seats.show_changed(snapshot.revision, &snapshot.show);
+    }
+    if let Some(atem) = atem::get() {
+        atem.show_changed(&snapshot.show);
     }
 }
 
@@ -1246,6 +1251,20 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
+            // An ATEM switcher next to Lumora (Settings → ATEM switcher…).
+            let told = app.handle().clone();
+            atem::install(
+                &dir,
+                std::sync::Arc::new(move || {
+                    if let Some(a) = atem::get() {
+                        let _ = told.emit("atem-changed", a.status());
+                    }
+                    if let Some(state) = told.try_state::<AppState>() {
+                        state.api.refresh_tally();
+                    }
+                }),
+            );
+            app.manage(decklink::Output::default());
             app.manage(accounts::LiveAccounts::new(&dir));
             app.manage(live::Live::new(
                 &dir,
@@ -1346,6 +1365,14 @@ pub fn run() {
             close_app,
             captions_model,
             ndi_sources,
+            decklink::decklink_devices,
+            decklink::decklink_signals,
+            decklink::decklink_output_start,
+            decklink::decklink_output_stop,
+            decklink::decklink_output_status,
+            atem::atem_status,
+            atem::atem_set,
+            atem::atem_send,
             captions_send,
             get_show,
             dispatch,

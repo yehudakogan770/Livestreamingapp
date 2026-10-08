@@ -498,7 +498,10 @@ impl Target for Inner {
 
 impl Inner {
     fn tally(&self, show: &Value) -> Value {
-        control::tally(show, &lock(&self.app_state))
+        let mut t = control::tally(show, &lock(&self.app_state));
+        // An ATEM switcher's tally, when one is connected (`atem.rs`).
+        crate::atem::mirror_tally(&mut t, show);
+        t
     }
 
     fn state(&self, show: &Value) -> Value {
@@ -670,6 +673,11 @@ impl Api {
             return;
         };
         *lock(&self.inner.show) = Some(v);
+        self.inner.push_tally();
+    }
+
+    /// Something outside the show changed the tally (an ATEM switcher): tell clients.
+    pub fn refresh_tally(&self) {
         self.inner.push_tally();
     }
 

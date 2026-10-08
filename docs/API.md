@@ -73,9 +73,23 @@ Inputs are named by their number as shown on the tiles (`input=3`) or by name
 | `stopmacros`                            |                                                                                                                  | Stop every macro that is running                       |
 | `timer`                                 | `input` or `name` (the main countdown if left out), `do` (`start`, `pause`, `toggle`, `reset`, `add`), `minutes` | Countdown                                              |
 | `ptz`                                   | `input` or `name`, `preset`, `move`, `zoom`, `speed`                                                             | PTZ camera                                             |
+| `atem`                                  | `do` (see below), `input`, `keyer`, `number` or `name`, `state`, `style`, `frames`                               | An ATEM switcher connected to Lumora                   |
 
 `GET /api/commands` lists them, `GET /api/macros` lists the macros with their
 numbers.
+
+### ATEM switchers
+
+When a Blackmagic ATEM is connected (Settings → ATEM switcher…), the `atem`
+command switches it: `do=cut`, `do=auto`, `do=program&input=2`,
+`do=preview&input=3` (the ATEM's own input numbers), `do=ftb` (with `state`),
+`do=style&style=mix|dip|wipe|dve|stinger`, `do=rate&frames=30`,
+`do=dsk&keyer=1` (`state=on|off|toggle|auto`), `do=usk&keyer=1`,
+`do=macro&number=3` or `do=macro&name=Intro`, `do=stopmacro`. OSC:
+`/lumora/atem cut`. With "Follow the ATEM's tally" on, the tally lights
+Lumora's inputs mapped to the ATEM's cameras from the ATEM's own tally, and
+the tally message gains an `atem` part (`connected`, `program`, `preview`
+and their names).
 
 Examples:
 
