@@ -339,6 +339,8 @@ pub async fn decklink_output_start(
         width,
         height,
         fps: fps.round().clamp(1.0, 120.0) as u32,
+        // Raw pictures for the card, never encoded.
+        zero_copy: None,
     };
     tauri::async_runtime::spawn_blocking(move || runner.start_feed(OUT_FEED, spec, make))
         .await
