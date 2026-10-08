@@ -287,6 +287,42 @@ export const MANUAL: Topic[] = [
     ],
   },
   {
+    id: 'blackmagic-cards',
+    title: 'Blackmagic capture cards: SDI and HDMI',
+    keywords:
+      'blackmagic decklink ultrastudio intensity sdi hdmi capture card desktop video embedded audio channels timecode interlaced 1080i program out playout projector recorder',
+    body: [
+      'Blackmagic DeckLink, UltraStudio and Intensity cards bring professional cameras into Lumora over SDI or HDMI, with the sound carried on the cable.',
+      '1. Install Blackmagic Desktop Video (free from blackmagicdesign.com/support, under Capture and Playback), restart the computer, and check the card shows in Blackmagic Desktop Video Setup. Lumora uses it directly; nothing else is needed.',
+      '2. Add input → Blackmagic capture card. Lumora lists the cards in this computer. A card with two or more inputs (a DeckLink Duo, for example) shows each as its own card.',
+      '3. Choose the input (SDI or HDMI) when the card has both, and the pair of audio channels to hear. SDI can carry 16 channels: a sound desk often sends its mix on channels 1 and 2.',
+      '4. Press Add input. The picture appears as soon as the camera is on. The card finds the format by itself: 1080i, 1080p, 720p or 4K, at any frame rate.',
+      '• The input’s settings (Edit on its tile) show the format the card sees, the audio channels, and the timecode when the camera sends one.',
+      '• If Lumora says Desktop Video isn’t installed, install it as in step 1. If it says the card is in use, close Blackmagic Media Express, OBS or any other program using it.',
+      '• No signal: check the cable, that the camera is on, and that the camera sends a format the card takes (an older card may need the camera set to 1080i59.94).',
+      '• Program out: with the Unified engine on (Settings → Engine), Settings → Blackmagic program out… plays the Live Screen on a card’s SDI or HDMI output, for a projector, a recorder or a switcher. Choose the card and the format, then Start program out.',
+      'Tip: Each card input is opened once, however many screens and previews show it, in both engines.',
+    ],
+  },
+  {
+    id: 'atem',
+    title: 'ATEM switchers',
+    keywords:
+      'atem blackmagic switcher mini constellation television studio vision mixer cut auto preview program fade to black ftb dsk usk keyer macro tally follow drive mapping ip address',
+    body: [
+      'Lumora can work with a Blackmagic ATEM switcher on the same network: switch it from Lumora, or follow it and light its cameras’ tally.',
+      '1. Find the switcher’s IP address: on the switcher (Settings → Network) or in ATEM Setup on a computer connected to it.',
+      '2. Settings → ATEM switcher…. Type the address and press Connect. Lumora shows the switcher’s name when it is connected, and connects again by itself if the switcher restarts or the network drops.',
+      '3. Under Lumora input and ATEM input, choose which ATEM input each Lumora input is. Match by name pairs inputs with the same name (Camera 1 with Camera 1).',
+      '• The switcher’s own buttons are in the dialog: Program, Preview, Cut, Auto, the transition (Mix, Dip, Wipe, DVE, Stinger) and its length, Fade to black, the keyers and the macros.',
+      '• Lumora drives the ATEM: TAKE, CUT and Next on Lumora’s Live Screen switch the ATEM too, for the inputs in the table. The ATEM uses its own transition at Lumora’s length (a fade becomes a mix, a dip a dip, a wipe a wipe), or always a cut if you choose that. Lumora’s fade to black can fade the ATEM too.',
+      '• Follow the ATEM’s tally: what the ATEM has on program and preview lights Lumora’s inputs of the same cameras, for tally lights, Companion and the control API.',
+      '• When the ATEM’s program output comes into Lumora on a capture card, choose that input under “The ATEM’s program comes into Lumora on”. The ATEM’s cameras then count as on air only while that input is on air in Lumora.',
+      '• Stream Deck and Companion: the control API’s atem command, for example /api/do/atem?do=cut, do=auto, do=program&input=2, do=ftb, do=dsk&keyer=1, do=macro&number=3 or do=macro&name=Intro.',
+      'Tip: An ATEM takes a limited number of connections at once. If Lumora says the switcher is full, close ATEM Software Control on another computer.',
+    ],
+  },
+  {
     id: 'macros',
     title: 'Macros: several steps with one button',
     keywords: 'macro sequence automation steps wait delay hotkey shortcut schedule time of day record stream companion',

@@ -304,6 +304,26 @@ tiles show no graphics, and the timecodes count seconds, not frames.
   and faded as one (`gpu::needs_group`), so its background no longer shows
   through its boxes mid-fade.
 
+### Blackmagic capture cards and program out
+
+- **Capture** (`crates/decklink`, `live-engine/src/decklink.rs`): a stream
+  input with a `decklink://<card>?input=sdi&audio=3-4` address is opened
+  through the DeckLink API of Blackmagic Desktop Video (COM, hand-written
+  interface definitions; FFmpeg's DeckLink support is "nonfree" and can't be
+  shipped). Format detection reopens the input in the signal's mode; 8-bit
+  YUV (UYVY) is made NV12 on the card's thread and made RGB on the GPU like a
+  camera's (v210 is unpacked first; RGB signals are passed on as BGRA). One
+  capture per card and connector is shared by the engine source, the
+  Standard engine's frame store (JPEG, 30 a second, `src-tauri/src/decklink.rs`)
+  and the mixer (the chosen pair of up to 16 embedded channels). Without
+  Desktop Video the input fails with how to install it.
+- **Program out**: an engine feed of the Live Screen whose FFmpeg writes
+  raw UYVY (no encoder), split into frames and shown with
+  `DisplayVideoFrameSync` on the card's output (Settings → Blackmagic
+  program out…). Picture only.
+- Compile-checked for Windows from Linux; needs a card to run (see the test
+  plan's hardware list).
+
 ### What Unified (beta) does not do yet
 
 Listed in the Engine dialog too:
