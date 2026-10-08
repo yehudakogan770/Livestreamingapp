@@ -180,7 +180,7 @@ function layoutAt(runs: Run[], style: TextStyle, family: string, size: number, b
       for (const ch of t.text) {
         const pw = measure(fontString(style, t.style, size, family), part + ch) + style.tracking * ([...part].length + 1);
         if (pw > limit && part) {
-          now.push({ ...t, text: part, w: width({ ...t, text: part }) });
+          lines[lines.length - 1]!.push({ ...t, text: part, w: width({ ...t, text: part }) });
           lines.push([]);
           part = '';
         }

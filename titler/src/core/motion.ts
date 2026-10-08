@@ -14,7 +14,9 @@ export interface Move {
   ease?: string;
 }
 
-const pos = (l: Layer): Vec2 => vec(l.transform.position, 0, [0, 0]);
+/** The resting value: where an IN move ends (the last key, or the still value), or the value as OUT starts. */
+const restAt = (m: Move, out: boolean) => (out ? m.at : Number.MAX_SAFE_INTEGER);
+const pos = (l: Layer, m: Move, out: boolean): Vec2 => vec(l.transform.position, restAt(m, out), [0, 0]);
 
 /** Join keyframes for one property from several moves (sorted, later wins on the same time). */
 function merge<T extends number | Vec2>(prev: Prop<T>, next: Prop<T>): Prop<T> {
@@ -27,7 +29,7 @@ function merge<T extends number | Vec2>(prev: Prop<T>, next: Prop<T>): Prop<T> {
 
 /** Fade in (or out when `out`). */
 export function fade(l: Layer, m: Move, out = false): Layer {
-  const full = num(l.transform.opacity, 0, 100);
+  const full = num(l.transform.opacity, restAt(m, out), 100);
   const k = out ? keys<number>([m.at, full, m.ease ?? 'easeIn'], [m.at + m.dur, 0]) : keys<number>([m.at, 0, m.ease ?? 'easeOut'], [m.at + m.dur, full]);
   l.transform.opacity = merge(l.transform.opacity, k);
   return l;
@@ -35,7 +37,7 @@ export function fade(l: Layer, m: Move, out = false): Layer {
 
 /** Slide by (dx, dy) px into place (or away from it when `out`). */
 export function slide(l: Layer, d: Vec2, m: Move, out = false): Layer {
-  const p = pos(l);
+  const p = pos(l, m, out);
   const away: Vec2 = [p[0] + d[0], p[1] + d[1]];
   const k = out ? keys<Vec2>([m.at, p, m.ease ?? 'easeIn'], [m.at + m.dur, away]) : keys<Vec2>([m.at, away, m.ease ?? 'smooth'], [m.at + m.dur, p]);
   l.transform.position = merge(l.transform.position, k);
@@ -58,7 +60,7 @@ export function wipe(l: Layer, from: Side, m: Move, out = false): Layer {
 
 /** Grow from nothing (scale), around the anchor. */
 export function grow(l: Layer, m: Move, out = false, axis: 'both' | 'x' | 'y' = 'both'): Layer {
-  const s = vec(l.transform.scale, 0, [100, 100]);
+  const s = vec(l.transform.scale, restAt(m, out), [100, 100]);
   const small: Vec2 = [axis === 'y' ? s[0] : 0, axis === 'x' ? s[1] : 0];
   const k = out ? keys<Vec2>([m.at, s, m.ease ?? 'easeIn'], [m.at + m.dur, small]) : keys<Vec2>([m.at, small, m.ease ?? 'smooth'], [m.at + m.dur, s]);
   l.transform.scale = merge(l.transform.scale, k);

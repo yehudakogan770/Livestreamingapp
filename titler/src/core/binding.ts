@@ -44,6 +44,12 @@ export function formatValue(v: Variable | undefined, raw: string): string {
     const body = raw.trim() === '' || !Number.isFinite(n) ? raw : v.decimals !== undefined ? n.toFixed(Math.max(0, Math.min(6, v.decimals))) : String(n);
     return `${v.prefix ?? ''}${body}${v.suffix ?? ''}`;
   }
+  if (v.type === 'list' && v.separator !== undefined)
+    return raw
+      .split(/\r?\n/)
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .join(v.separator);
   return raw;
 }
 

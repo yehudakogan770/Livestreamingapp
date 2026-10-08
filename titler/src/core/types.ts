@@ -307,6 +307,8 @@ export interface Variable {
   decimals?: number;
   prefix?: string;
   suffix?: string;
+  /** List: what goes between the items when shown on one line (a ticker); one item a line when left out. */
+  separator?: string;
   /** The control panel's section. */
   group?: string;
   /** Lumora fills it from here (data file column, scoreboard, countdown…). */
