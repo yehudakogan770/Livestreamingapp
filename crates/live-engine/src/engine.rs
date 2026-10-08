@@ -1121,21 +1121,26 @@ impl LiveEngine {
         }
     }
 
-    /// What doesn't work in the unified engine yet, for what is in the show now.
+    /// What doesn't work in the unified engine yet, for what is in the show
+    /// now (said to the operator in the Engine dialog).
     fn notes(&self) -> Vec<String> {
         let mut notes = Vec::new();
         let Some(show) = &self.show else { return notes };
-        let behind = show.sources.iter().any(|s| match &s.kind {
-            SourceKind::Slideshow(k) => k
-                .behind
-                .as_ref()
-                .and_then(|id| show.source(id))
-                .is_some_and(|b| scene::is_video_kind(&b.kind)),
+        // An input slide fades in as a picture, not with the slide's own fade.
+        let slide_input = show.sources.iter().any(|s| match &s.kind {
+            SourceKind::Slideshow(k) => {
+                k.fade
+                    && matches!(
+                        k.slides.get(k.current),
+                        Some(lumora_engine::slideshow::Slide::Input { source_id, .. })
+                            if show.source(source_id).is_some_and(|i| scene::is_video_kind(&i.kind))
+                    )
+            }
             _ => false,
         });
-        if behind {
+        if slide_input {
             notes.push(
-                "A camera or video behind slides is not shown yet in the unified engine (the slides are)."
+                "A camera or video used as a slide comes up without the slides' fade in the unified engine."
                     .into(),
             );
         }
