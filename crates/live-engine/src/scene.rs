@@ -52,6 +52,20 @@ pub struct Placement {
     pub rotate: f32,
     /// Green screen and light and color (None: the picture as it is).
     pub look: Option<crate::look::Look>,
+    /// The background behind the people, without a green screen (None: kept).
+    /// Applied once the vision worker has sent a person mask ([`crate::vision`]).
+    pub backdrop: Option<Backdrop>,
+}
+
+/// What happens to the background behind the people (the input's `background`).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Backdrop {
+    /// 1 blurred, 2 taken away, 3 a picture (or virtual set) behind ([`crate::vision::mode_code`]).
+    pub mode: f32,
+    /// How strong the blur is, 0 – 1.
+    pub blur: f32,
+    /// How soft the edge around people is, 0 – 1.
+    pub edge: f32,
 }
 
 impl Default for Placement {
@@ -65,6 +79,7 @@ impl Default for Placement {
             flip: [false; 2],
             rotate: 0.0,
             look: None,
+            backdrop: None,
         }
     }
 }
@@ -210,10 +225,24 @@ fn placement_of(src: &Source, frame: Rect) -> Placement {
         } else {
             1.0
         },
-        pan: [pan(a.pan_x), pan(a.pan_y)],
+        // The settings' "up" is positive; the shader's y goes down (`chroma.ts` passes -panY).
+        pan: [pan(a.pan_x), -pan(a.pan_y)],
         flip: [a.flip_h, a.flip_v],
         rotate: if a.rotate.is_finite() { a.rotate } else { 0.0 },
         look: crate::look::Look::of(&src.key, a),
+        backdrop: src.background.on().then(|| Backdrop {
+            mode: crate::vision::mode_code(src.background.mode),
+            blur: finite01(src.background.blur, 0.6),
+            edge: finite01(src.background.edge, 0.4),
+        }),
+    }
+}
+
+fn finite01(v: f32, d: f32) -> f32 {
+    if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        d
     }
 }
 

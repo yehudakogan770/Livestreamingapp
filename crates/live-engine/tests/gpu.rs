@@ -937,3 +937,139 @@ fn the_multiview_shows_the_screens_and_inputs_with_tally_and_words() {
     assert!(near(at(1, 1), [11, 11, 11, 255]));
     assert!(near(at(10, 10), [255, 255, 255, 255]));
 }
+
+// ---------------------------------------------------------------------------
+// Background removal, blur behind people and auto-framing (the vision worker's masks)
+
+/// A mask with a person in the left half.
+fn left_person() -> Vec<u8> {
+    (0..8 * 4).map(|i| if i % 8 < 4 { 255 } else { 0 }).collect()
+}
+
+fn backdrop(mode: f32) -> live_engine::scene::Backdrop {
+    live_engine::scene::Backdrop {
+        mode,
+        blur: 0.6,
+        edge: 0.0,
+    }
+}
+
+#[test]
+fn the_person_mask_takes_the_background_away_or_puts_a_picture_behind() {
+    let Some(mut g) = gpu() else { return };
+    setup(&mut g);
+    let red = SourceId::new("red");
+    let mut l = layer("red", 1.0);
+    l.pictures[0].placement.backdrop = Some(backdrop(2.0));
+    let sc = ScreenScene {
+        layers: vec![l.clone()],
+        ..ScreenScene::default()
+    };
+    // No mask yet: the picture as it is (the processor waits for one too).
+    let img = draw(&mut g, &sc);
+    assert!(near(px(&img, 50, 18), [255, 0, 0, 255]));
+    // The background taken away: black (the screen) shows where nobody is.
+    g.set_vision_mask(&red, Some((8, 4, &left_person())));
+    assert_eq!(g.vision_of(&red), (true, None, false));
+    let img = draw(&mut g, &sc);
+    assert!(near(px(&img, 8, 18), [255, 0, 0, 255]), "{:?}", px(&img, 8, 18));
+    assert!(near(px(&img, 56, 18), [0, 0, 0, 255]), "{:?}", px(&img, 56, 18));
+    // A picture behind them (green), once it is there.
+    l.pictures[0].placement.backdrop = Some(backdrop(3.0));
+    let sc = ScreenScene {
+        layers: vec![l],
+        ..ScreenScene::default()
+    };
+    let green: Vec<u8> = (0..4).flat_map(|_| [0, 255, 0, 255]).collect();
+    g.set_vision_picture(&red, false, Some((2, 2, &green)));
+    let img = draw(&mut g, &sc);
+    assert!(near(px(&img, 8, 18), [255, 0, 0, 255]), "{:?}", px(&img, 8, 18));
+    assert!(near(px(&img, 56, 18), [0, 255, 0, 255]), "{:?}", px(&img, 56, 18));
+    // The models paused (no mask): the picture shows as it is again.
+    g.set_vision_mask(&red, None);
+    g.set_vision_picture(&red, false, None);
+    assert_eq!(g.vision_of(&red), (false, None, false));
+    let img = draw(&mut g, &sc);
+    assert!(near(px(&img, 56, 18), [255, 0, 0, 255]));
+}
+
+#[test]
+fn blur_behind_people_softens_only_the_background() {
+    let Some(mut g) = gpu() else { return };
+    // Stripes, one pixel wide: blurred they turn gray.
+    let pool = FramePool::new(1);
+    let stripes = VideoFrame::build(&pool, W, H, PixelFormat::Rgba8, 1, |px| {
+        for (i, p) in px.as_chunks_mut::<4>().0.iter_mut().enumerate() {
+            *p = if i % 2 == 0 { [255; 4] } else { [0, 0, 0, 255] };
+        }
+    });
+    let id = SourceId::new("stripes");
+    g.upload(&id, &stripes);
+    let mut l = layer("stripes", 1.0);
+    l.pictures[0].placement.backdrop = Some(backdrop(1.0));
+    let sc = ScreenScene {
+        layers: vec![l],
+        ..ScreenScene::default()
+    };
+    g.set_vision_mask(&id, Some((8, 4, &left_person())));
+    let img = draw(&mut g, &sc);
+    // The person (left) stays sharp: stripes side by side.
+    let (a, b) = (px(&img, 8, 18)[0], px(&img, 9, 18)[0]);
+    assert!(a.abs_diff(b) > 200, "{a} {b}");
+    // The background (right) is soft.
+    let (a, b) = (px(&img, 56, 18)[0], px(&img, 57, 18)[0]);
+    assert!(a.abs_diff(b) < 100 && a > 30 && b > 30, "{a} {b}");
+}
+
+#[test]
+fn the_engine_sends_small_frames_only_of_inputs_that_use_the_models_and_frames_the_shot() {
+    let Some(mut e) = engine() else { return };
+    let mut a = cam("a");
+    a.auto_frame.enabled = true;
+    a.auto_frame.speed = 1.0;
+    let mut show = Show {
+        sources: vec![a, cam("b")],
+        ..Show::default()
+    };
+    show.screens.live.program = Some(SourceId::new("a"));
+    e.set_show(show.clone());
+    e.frame(1000);
+    let sent: Vec<&str> = e.vision_out.iter().map(|f| f.id.as_str()).collect();
+    assert_eq!(sent, ["a"], "b uses no effect: nothing of it goes to the models");
+    let f = &e.vision_out[0];
+    assert_eq!((f.w, f.h), (W, H), "small frames are at most 320 wide");
+    assert_eq!(&f.rgba[..4], &[255, 0, 0, 255]);
+    e.vision_out.clear();
+    // The same frame is not sent twice.
+    e.frame(1016);
+    e.frame(1033);
+    assert!(e.vision_out.is_empty());
+    // The worker aims at the left half (zoom 2): the shot moves there over a few frames.
+    let r = live_engine::vision::VisionResult {
+        id: SourceId::new("a"),
+        mask: None,
+        shot: Some(live_engine::vision::Shot {
+            cx: 0.25,
+            cy: 0.5,
+            zoom: 2.0,
+        }),
+        back: None,
+        front: None,
+    };
+    e.apply_vision(std::slice::from_ref(&r));
+    for i in 0..120 {
+        e.frame(1050 + i * 16);
+    }
+    // An input that turns its effects off forgets its mask and shot.
+    show.sources[0].auto_frame.enabled = false;
+    show.sources[0].background.mode = lumora_engine::vision::BackgroundMode::Remove;
+    e.set_show(show.clone());
+    e.apply_vision(&[live_engine::vision::VisionResult {
+        mask: Some((2, 2, vec![255; 4])),
+        ..r.clone()
+    }]);
+    assert!(e.gpu.vision_of(&SourceId::new("a")).0);
+    show.sources[0].background.mode = lumora_engine::vision::BackgroundMode::Keep;
+    e.set_show(show);
+    assert!(!e.gpu.vision_of(&SourceId::new("a")).0);
+}

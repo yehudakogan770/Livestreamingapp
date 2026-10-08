@@ -34,6 +34,7 @@ pub mod overlay;
 pub mod present;
 pub mod scene;
 pub mod source;
+pub mod vision;
 
 #[cfg(windows)]
 pub mod mf;
