@@ -172,3 +172,35 @@ Next), recording, streaming and reconnecting, and ready-made presets. See
 
 Without the module, Companion's **Generic HTTP** connection works with the
 `/api/do/...` addresses above.
+
+## Operator seats (other Lumora computers)
+
+Not part of the control API, but on the same network: Settings → Operators…
+lets other computers running Lumora join this show as **seats** (Director,
+Graphics, Audio, Replay, Cameras or Custom). The code is in `crates/seats`;
+the app side is `src-tauri/src/seats.rs` and `app/src/seats/`.
+
+- **Port 8097**: TCP for seats, and UDP on the same number for "is there a
+  show?" broadcasts. Shows are also announced over mDNS / Bonjour as
+  `_lumora._tcp.local` (TXT: `id`, `name`, `v`). The firewall must allow
+  Lumora on private networks.
+- **Pairing**: X25519 with a commitment, then a 6-digit code shown on the show
+  computer and typed at the seat (checked on the seat first, then by the show
+  computer); the show operator approves the seat and picks its role. Repeated
+  wrong codes lock the address out for a while.
+- **After pairing**: each connection makes fresh X25519 keys mixed with a
+  32-byte seat secret kept on both computers; every message is sealed with
+  ChaCha20-Poly1305 and numbered (no reading, changing, replaying or
+  reordering). No internet is needed.
+- **Messages**: length-prefixed JSON frames (`crates/seats/src/wire.rs`). The
+  seat gets the whole show (`{revision, show, app}`) on joining, then only what
+  changed (paths and new values) at most every 30 ms; actions are the engine's
+  own actions (the same JSON as `dispatch`), and the show computer checks each
+  against the seat's role (`crates/seats/src/role.rs`) before the engine sees
+  it. The show computer's own things (its screens, sound devices, files, data
+  file) are never accepted from a seat, whatever its role.
+- **Pictures and levels**: a seat asks for `program/<screen>`, `next/<screen>`,
+  `source/<id>` and `meters`; it gets small JPEGs about five times a second and
+  levels ten times a second, only while it asks.
+- A seat that drops, lags or misbehaves is let go; the show carries on. Seats
+  reconnect by themselves (and look for the show again if its address changed).
