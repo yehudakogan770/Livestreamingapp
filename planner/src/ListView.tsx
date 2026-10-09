@@ -138,7 +138,7 @@ export function ListView({
                 <td>
                   <input
                     type="date"
-                    className="cell mono"
+                    className={`cell mono${it.day ? '' : ' is-empty'}`}
                     value={it.day}
                     readOnly={!canEdit}
                     aria-label="Call day"
@@ -259,7 +259,7 @@ export function ListView({
                 <td>
                   <input
                     type="date"
-                    className="cell mono"
+                    className={`cell mono${it.day ? '' : ' is-empty'}`}
                     value={it.day}
                     readOnly={!canEdit}
                     aria-label="Due"

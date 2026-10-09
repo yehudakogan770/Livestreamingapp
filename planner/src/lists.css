@@ -36,12 +36,13 @@
   border-bottom: 1px solid var(--line-2);
   background: var(--surface-2);
   color: var(--dim);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   text-align: left;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   white-space: nowrap;
+}
+.lists__table input[type='date'].is-empty:not(:focus) {
+  color: var(--faint);
 }
 .lists__table td {
   padding: 0 2px;

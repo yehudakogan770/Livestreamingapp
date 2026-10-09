@@ -348,9 +348,10 @@
 }
 .stage__chrome {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
+  z-index: 1;
   display: flex;
   padding: 12px;
   opacity: 0;
@@ -382,6 +383,9 @@
   gap: 2vw;
   color: #a3a39e;
   font-size: clamp(16px, 3.2vh, 40px);
+}
+.stage__top .mono {
+  font-size: inherit;
 }
 .stage__top span:first-child {
   overflow: hidden;
