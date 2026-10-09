@@ -1,6 +1,6 @@
 {
   "name": "lumora-streamdeck",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Lumora's Stream Deck plugin: TAKE, CUT, inputs with tally, overlays, presets, replay, recording and going live.",
   "type": "module",

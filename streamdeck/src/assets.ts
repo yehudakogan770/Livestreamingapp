@@ -4,6 +4,7 @@
 // into com.lumora.streamdeck.sdPlugin/imgs by scripts/pack.mjs.
 
 import { KINDS, type Kind } from './actions';
+import { DIAL_KINDS } from './dials';
 import { iconSvg, type IconName } from './icons';
 import { COLORS, keyModel, renderSvg } from './keys';
 
@@ -56,6 +57,11 @@ export function assetFiles(): Record<string, string> {
     files[`imgs/actions/${kind}.svg`] = iconSvg(ICON_OF[kind], 20, '#FFFFFF', 1.6);
     const model = keyModel(kind, {}, { state: null, connection: 'online', deck: 'live', now: 0 });
     files[`imgs/keys/${kind}.svg`] = `${renderSvg(model)}\n`;
+  }
+  // Stream Deck + dials: their icon in the list, and on the dial.
+  for (const kind of DIAL_KINDS) {
+    files[`imgs/actions/${kind}.svg`] = iconSvg(kind, 20, '#FFFFFF', 1.6);
+    files[`imgs/keys/${kind}.svg`] = iconSvg(kind, 72, '#FFFFFF', 1.4);
   }
   return files;
 }

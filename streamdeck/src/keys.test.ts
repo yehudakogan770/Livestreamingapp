@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { KINDS, type KeySettings, type Kind } from './actions';
+import { DIAL_KINDS } from './dials';
 import { assetFiles } from './assets';
 import { COLORS, dataUrl, keyModel, renderSvg, wrap, type KeyContext } from './keys';
 import { deckState, NO_APP, type AppState } from './show';
@@ -137,7 +138,7 @@ describe('the plugin folder', () => {
     expect(manifest.UUID).toBe('com.lumora.streamdeck');
     expect(manifest.CodePath).toBe('bin/plugin.js');
     expect(manifest.Nodejs.Version).toBe('20');
-    expect(manifest.Actions.map((a) => a.UUID)).toEqual(KINDS.map((k) => `com.lumora.streamdeck.${k}`));
+    expect(manifest.Actions.map((a) => a.UUID)).toEqual([...KINDS, ...DIAL_KINDS].map((k) => `com.lumora.streamdeck.${k}`));
     for (const a of manifest.Actions) {
       expect(existsSync(`${dir}${a.Icon}.svg`), a.Icon).toBe(true);
       expect(existsSync(`${dir}${a.States[0]!.Image}.svg`)).toBe(true);

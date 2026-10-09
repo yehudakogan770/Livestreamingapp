@@ -3,6 +3,9 @@
 
 import streamDeck, {
   SingletonAction,
+  type DialDownEvent,
+  type DialRotateEvent,
+  type TouchTapEvent,
   type DidReceiveSettingsEvent,
   type KeyDownEvent,
   type KeyUpEvent,
@@ -13,8 +16,9 @@ import streamDeck, {
   type WillDisappearEvent,
 } from '@elgato/streamdeck';
 import type { JsonObject, JsonValue } from '@elgato/utils';
-import { KINDS, uuid, type GlobalSettings, type KeySettings, type Kind } from './actions';
+import { KINDS, PLUGIN as PLUGIN_ID, uuid, type GlobalSettings, type KeySettings, type Kind } from './actions';
 import { Deck } from './deck';
+import { DIAL_KINDS, type DialKind, type DialSettings } from './dials';
 import { LumoraClient } from './protocol';
 
 const client = new LumoraClient();
@@ -23,6 +27,10 @@ const deck = new Deck(client, {
   showAlert: (id) => void keyAction(id)?.showAlert(),
   showOk: (id) => void keyAction(id)?.showOk(),
   saveGlobal: (settings) => void streamDeck.settings.setGlobalSettings(settings as JsonObject),
+  setFeedback: (id, fb) => {
+    const a = streamDeck.actions.getActionById(id);
+    if (a?.isDial()) void a.setFeedback({ title: fb.title, value: fb.value, indicator: { value: fb.indicator } });
+  },
 });
 
 function keyAction(id: string) {
@@ -84,6 +92,57 @@ class LumoraAction extends SingletonAction {
 }
 
 for (const kind of KINDS) streamDeck.actions.registerAction(new LumoraAction(kind));
+
+/** Stream Deck + dials: the T-bar and sound faders. */
+class LumoraDial extends SingletonAction {
+  override readonly manifestId: string;
+
+  constructor(private readonly kind: DialKind) {
+    super();
+    this.manifestId = `${PLUGIN_ID}.${kind}`;
+  }
+
+  override onWillAppear(ev: WillAppearEvent): void {
+    deck.dialAppear(ev.action.id, this.kind, ev.payload.settings as DialSettings);
+  }
+
+  override onWillDisappear(ev: WillDisappearEvent): void {
+    deck.dialDisappear(ev.action.id);
+  }
+
+  override onDidReceiveSettings(ev: DidReceiveSettingsEvent): void {
+    deck.dialAppear(ev.action.id, this.kind, ev.payload.settings as DialSettings);
+  }
+
+  override onDialRotate(ev: DialRotateEvent): void {
+    void deck.dialRotate(ev.action.id, ev.payload.ticks);
+  }
+
+  override onDialDown(ev: DialDownEvent): void {
+    void deck.dialPush(ev.action.id);
+  }
+
+  override onTouchTap(ev: TouchTapEvent): void {
+    void deck.dialTouch(ev.action.id);
+  }
+
+  override onPropertyInspectorDidAppear(ev: PropertyInspectorDidAppearEvent): void {
+    inspector = ev.action.id;
+    sendLists();
+  }
+
+  override onPropertyInspectorDidDisappear(ev: PropertyInspectorDidDisappearEvent): void {
+    if (inspector === ev.action.id) inspector = null;
+  }
+
+  override onSendToPlugin(ev: SendToPluginEvent<JsonValue, JsonObject>): void {
+    const p = ev.payload as { event?: string } | null;
+    if (p?.event === 'connect') client.restart();
+    if (p?.event === 'connect' || p?.event === 'lists') sendLists();
+  }
+}
+
+for (const kind of DIAL_KINDS) streamDeck.actions.registerAction(new LumoraDial(kind));
 
 streamDeck.settings.onDidReceiveGlobalSettings<GlobalSettings & JsonObject>((ev) => deck.setGlobal(ev.settings));
 

@@ -133,6 +133,31 @@ const SLIDESHOW = {
   remember: 'slideshowName',
   options: () => pick(lists.slideshows || [], (s) => s.name, 'The one on air'),
 };
+const STEP = {
+  name: 'One click',
+  key: 'step',
+  options: [
+    ['', 'Usual'],
+    ['1', '1%'],
+    ['2', '2%'],
+    ['5', '5%'],
+  ],
+};
+FIELDS.tbar = [SCREEN, STEP];
+FIELDS.fader = [
+  {
+    name: 'Controls',
+    key: 'target',
+    remember: 'targetName',
+    options: () => [
+      ['', 'Stream mix (master)'],
+      ['a', 'Mix A (the hall)'],
+      ['b', 'Mix B (the recording)'],
+      ...lists.inputs.map((i) => [i.id, `${i.number}. ${i.name}`]),
+    ],
+  },
+  STEP,
+];
 FIELDS.slidenext = [SLIDESHOW];
 FIELDS.slideback = [SLIDESHOW];
 FIELDS.slidefirst = [SLIDESHOW];
@@ -157,6 +182,8 @@ const HINTS = {
   slidenext: 'The next slide. The key shows the slide showing (3 / 12). Red: the slideshow is on air. Green: in Next.',
   slideback: 'The slide before. The key shows the slide showing (3 / 12).',
   slidefirst: 'Back to the first slide. The key shows the slide showing (3 / 12).',
+  tbar: 'Stream Deck +: turn the dial to mix what is in Next onto the screen (all the way completes the take). Push for TAKE, touch the strip for CUT.',
+  fader: 'Stream Deck +: turn the dial to set the level; push it (or touch the strip) to mute and unmute. The strip shows the level.',
 };
 
 const STATUS = {
