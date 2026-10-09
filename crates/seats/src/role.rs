@@ -313,6 +313,9 @@ pub fn group_of(action: &Action) -> Option<Group> {
         | A::UpdateSeating { .. }
         | A::ShowComment { .. }
         | A::UpdateCommentCard { .. }
+        | A::DrawStroke { .. }
+        | A::DrawUndo { .. }
+        | A::DrawClear { .. }
         | A::PesukimNext { .. }
         | A::PesukimBack { .. }
         | A::PesukimGo { .. }

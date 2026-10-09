@@ -3,6 +3,7 @@
 // output windows (transitions, T-bar, blank, PANIC, failures shown as the
 // safe screen), but needs no window on any display.
 
+import { paintDrawing } from '../engine/drawing';
 import type { EngineClient } from '../engine/client';
 import type { Countdown } from '../engine/types/Countdown';
 import type { EventInfo } from '../engine/types/EventInfo';
@@ -1905,6 +1906,9 @@ export class ProgramCompositor {
         return;
       case 'comment':
         this.comment(k, now, w, h);
+        return;
+      case 'drawing':
+        paintDrawing(this.ctx, k, w, h);
         return;
       case 'raffle':
         this.raffle(k, now, w, h);

@@ -1,4 +1,5 @@
 import { AuctionView, FundraiserView, RaffleView, WallView } from './AudienceViews';
+import { DrawingView } from './DrawingView';
 import { eventLogo } from '../engine/brand';
 import { guestPage } from '../engine/guest';
 import { CommentView } from './CommentView';
@@ -222,6 +223,8 @@ function SourceBody({ source, client, thumb = false, reportDuration = false, aud
       );
     case 'comment':
       return <CommentView c={k} />;
+    case 'drawing':
+      return <DrawingView d={k} />;
     case 'poll':
       return <PollView p={k} thumb={thumb} />;
     case 'lyrics':

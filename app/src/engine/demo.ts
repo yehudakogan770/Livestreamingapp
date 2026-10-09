@@ -4,6 +4,7 @@ import { defaultFilters } from './audio';
 // rules as crates/engine for the actions the screens use. Inside Lumora the
 // real engine is always used; nothing here runs at an event.
 
+import { addStroke } from './drawing';
 import { defaultAdjust, defaultAutoFrame, defaultBackground, defaultKey } from './chroma';
 import { cueDue, nextCueIndex } from './cues';
 import { nextSlideIndex, slideDue } from './slideshow';
@@ -1224,6 +1225,22 @@ function apply(s: Show, a: Action, now: number) {
       if (p.wrapUpS !== undefined) m.wrapUpS = Math.min(3600, Math.max(0, Math.round(p.wrapUpS)));
       if (p.overtime !== undefined) m.overtime = p.overtime;
       if (p.progress !== undefined) m.progress = p.progress;
+      return;
+    }
+    case 'drawStroke':
+    case 'drawUndo':
+    case 'drawClear': {
+      const src = s.sources.find((x) => x.id === a.id);
+      if (!src) throw new Refused({ code: 'unknownSource', id: a.id });
+      if (src.kind.type !== 'drawing') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not for drawing' });
+      const d = src.kind;
+      if (a.type === 'drawStroke') addStroke(d, a.stroke, now);
+      else if (a.type === 'drawUndo') {
+        if (d.strokes.pop()) d.changedAt = now;
+      } else if (d.strokes.length) {
+        d.strokes = [];
+        d.changedAt = now;
+      }
       return;
     }
     case 'setQuickMessage':

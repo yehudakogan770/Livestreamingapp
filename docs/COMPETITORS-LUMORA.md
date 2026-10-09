@@ -18,45 +18,46 @@ Stagetimer.io · **H2R** H2R Graphics · **SM** Slido / Mentimeter.
 
 |                          | Count |
 | ------------------------ | ----- |
-| ✅ Lumora has it         | 100   |
-| ◐ Partly, or another way | 6     |
-| ❌ Not yet               | 7     |
+| ✅ Lumora has it         | 102   |
+| ◐ Partly, or another way | 5     |
+| ❌ Not yet               | 6     |
 
 Built in this round (now ✅): marks while recording that Lumora Studio picks
 up, triggers on sound level / lost picture / a video about to end / recording
 or stream starting / every few minutes, event templates in the first setup,
 Facebook live comments, speaker timing on the Monitor (amber, red, time over,
-progress bar), find any command by typing (Ctrl+K), Twitch, Kick, LinkedIn
-and X in the streaming list.
+progress bar) and on the speaker's phone, drawing on screen (telestrator),
+find any command by typing (Ctrl+K), Twitch, Kick, LinkedIn and X in the
+streaming list.
 
 ## The matrix
 
 ### Switching and scenes
 
-| Feature                                               | Who has it                                    | Lumora                                  |
-| ----------------------------------------------------- | --------------------------------------------- | --------------------------------------- |
-| Preview / program, TAKE, CUT, T-bar                   | vMix, OBS (studio mode), WC, TC, ATEM, LS, MM | ✅                                      |
-| Transitions (fades, wipes, pushes, zooms)             | all switchers                                 | ✅ 22 kinds                             |
-| Stinger transitions with a cut point                  | vMix, OBS, WC, TC                             | ✅                                      |
-| A transition per preset / scene                       | OBS (per-scene override), vMix                | ✅ presets carry their own transition   |
-| Animated moves between layouts                        | OBS Move plugin, vMix, MM                     | ✅ split-screen layouts animate         |
-| Layers inside an input (camera + logo + title as one) | vMix (10 layers), OBS scenes, MM              | ✅                                      |
-| Overlay channels over everything                      | vMix (4), TC (DSKs), ATEM (DSKs)              | ✅ 4+ per screen                        |
-| Several outputs with different pictures               | vMix, TC (M/E), PP                            | ✅ Live, Back and Monitor, built in     |
-| Multiview                                             | vMix, TC, ATEM, OBS                           | ✅                                      |
-| Fade to black, panic                                  | vMix, ATEM, TC                                | ✅ plus PANIC that never shows an error |
-| Instant replay, slow motion, highlights reel          | vMix, TC, WC                                  | ✅                                      |
-| Picture-in-picture, split screen, custom boxes        | all                                           | ✅                                      |
-| Green screen, garbage mattes                          | vMix, OBS, WC, EC, TC, MM                     | ✅                                      |
-| Virtual sets                                          | vMix, TC                                      | ✅                                      |
-| Background removal without a green screen             | OBS (NVIDIA), PR, EC, SY                      | ✅ offline                              |
-| Auto-framing a wide camera                            | EC (Center Stage), PR                         | ✅                                      |
-| Color correction, LUTs, crop, rotate                  | vMix, OBS, WC, TC                             | ✅                                      |
-| Video delay per input                                 | vMix, OBS (render delay)                      | ✅                                      |
-| Auto camera switching (by time)                       | vMix, MM                                      | ✅                                      |
-| Switching to who is talking                           | OBS (Advanced Scene Switcher audio), MM       | ✅ sound-level triggers (new)           |
-| Drawing on screen live (telestrator)                  | vMix 28, TC                                   | ❌                                      |
-| Vertical (9:16) version beside the wide one           | OBS Aitum Vertical, SY, RS, PR                | ✅                                      |
+| Feature                                               | Who has it                                    | Lumora                                     |
+| ----------------------------------------------------- | --------------------------------------------- | ------------------------------------------ |
+| Preview / program, TAKE, CUT, T-bar                   | vMix, OBS (studio mode), WC, TC, ATEM, LS, MM | ✅                                         |
+| Transitions (fades, wipes, pushes, zooms)             | all switchers                                 | ✅ 22 kinds                                |
+| Stinger transitions with a cut point                  | vMix, OBS, WC, TC                             | ✅                                         |
+| A transition per preset / scene                       | OBS (per-scene override), vMix                | ✅ presets carry their own transition      |
+| Animated moves between layouts                        | OBS Move plugin, vMix, MM                     | ✅ split-screen layouts animate            |
+| Layers inside an input (camera + logo + title as one) | vMix (10 layers), OBS scenes, MM              | ✅                                         |
+| Overlay channels over everything                      | vMix (4), TC (DSKs), ATEM (DSKs)              | ✅ 4+ per screen                           |
+| Several outputs with different pictures               | vMix, TC (M/E), PP                            | ✅ Live, Back and Monitor, built in        |
+| Multiview                                             | vMix, TC, ATEM, OBS                           | ✅                                         |
+| Fade to black, panic                                  | vMix, ATEM, TC                                | ✅ plus PANIC that never shows an error    |
+| Instant replay, slow motion, highlights reel          | vMix, TC, WC                                  | ✅                                         |
+| Picture-in-picture, split screen, custom boxes        | all                                           | ✅                                         |
+| Green screen, garbage mattes                          | vMix, OBS, WC, EC, TC, MM                     | ✅                                         |
+| Virtual sets                                          | vMix, TC                                      | ✅                                         |
+| Background removal without a green screen             | OBS (NVIDIA), PR, EC, SY                      | ✅ offline                                 |
+| Auto-framing a wide camera                            | EC (Center Stage), PR                         | ✅                                         |
+| Color correction, LUTs, crop, rotate                  | vMix, OBS, WC, TC                             | ✅                                         |
+| Video delay per input                                 | vMix, OBS (render delay)                      | ✅                                         |
+| Auto camera switching (by time)                       | vMix, MM                                      | ✅                                         |
+| Switching to who is talking                           | OBS (Advanced Scene Switcher audio), MM       | ✅ sound-level triggers (new)              |
+| Drawing on screen live (telestrator)                  | vMix 28, TC                                   | ✅ (new) lines and arrows over the picture |
+| Vertical (9:16) version beside the wide one           | OBS Aitum Vertical, SY, RS, PR                | ✅                                         |
 
 ### Inputs
 
@@ -98,16 +99,16 @@ and X in the streaming list.
 
 ### Stage and timing
 
-| Feature                                 | Who has it  | Lumora                                                                             |
-| --------------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
-| Stage display / confidence monitor      | PP, ST      | ✅ Monitor output                                                                  |
-| Messages to the speaker, flash          | ST, PP      | ✅                                                                                 |
-| Timer that turns amber, then red        | ST, PP      | ✅ (new)                                                                           |
-| Time over shown after zero (+1:05)      | ST          | ✅ (new)                                                                           |
-| Progress bar of the time gone           | ST          | ✅ (new)                                                                           |
-| Run of show with cues on the clock      | ST, PP, MM  | ✅                                                                                 |
-| Speaker's own clicker from a phone      | PP (remote) | ✅                                                                                 |
-| Timer and messages on a speaker's phone | ST          | ◐ the phone remote has a messages-only permission; no stand-alone speaker view yet |
+| Feature                                 | Who has it  | Lumora                                                                              |
+| --------------------------------------- | ----------- | ----------------------------------------------------------------------------------- |
+| Stage display / confidence monitor      | PP, ST      | ✅ Monitor output                                                                   |
+| Messages to the speaker, flash          | ST, PP      | ✅                                                                                  |
+| Timer that turns amber, then red        | ST, PP      | ✅ (new)                                                                            |
+| Time over shown after zero (+1:05)      | ST          | ✅ (new)                                                                            |
+| Progress bar of the time gone           | ST          | ✅ (new)                                                                            |
+| Run of show with cues on the clock      | ST, PP, MM  | ✅                                                                                  |
+| Speaker's own clicker from a phone      | PP (remote) | ✅                                                                                  |
+| Timer and messages on a speaker's phone | ST          | ✅ (new) the speaker's slides page shows the timer's colors and the Monitor message |
 
 ### Audio
 
@@ -272,9 +273,6 @@ the local network or the internet.
 
 ## What is left, and why
 
-- **Drawing on screen (telestrator).** Needs a new kind of input drawn by
-  every renderer (screens, recordings, the unified engine). Worth doing for
-  sports and teaching; next in line.
 - **This computer's sound / one app's sound.** Needs Windows WASAPI loopback
   capture in the native engine, which has to be built and tested on Windows
   hardware. Until then: a virtual audio cable shows up as a microphone input.

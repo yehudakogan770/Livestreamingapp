@@ -473,6 +473,20 @@ export const MANUAL: Topic[] = [
     ],
   },
   {
+    id: 'drawing',
+    title: 'Drawing on screen (telestrator)',
+    keywords: 'draw drawing telestrator pen arrow annotate point mark up sports play line circle',
+    body: [
+      'Draw lines and arrows over the picture, live: point out a play in a game, a part of a slide, a place on a map.',
+      '1. + Add input → Drawing on screen. It goes on an overlay, ready, so the cameras keep switching underneath.',
+      '2. Its card opens under the TAKE buttons with a pad showing the picture on air. Draw on the pad with the mouse, a pen or a finger.',
+      '3. Press “Put on screen” to show the drawing (or put the overlay on as usual). Each line goes on screen as soon as it is finished.',
+      '• Choose the color and thickness; Arrow ends each line with an arrowhead.',
+      '• Undo line takes the last line away; Clear all takes them all away. Take off hides the drawing and keeps it.',
+      '• The drawing is in the same place on every screen and in the recording.',
+    ],
+  },
+  {
     id: 'marks',
     title: 'Marking moments while recording',
     keywords: 'mark marker bookmark highlight moment clip edit later studio timeline',

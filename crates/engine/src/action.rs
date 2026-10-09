@@ -588,6 +588,19 @@ pub enum Action {
         #[ts(optional)]
         comment: Option<crate::chat::ChatComment>,
     },
+    /// Draw a line (or a dot, or an arrow) on a drawing input.
+    DrawStroke {
+        id: SourceId,
+        stroke: crate::drawing::Stroke,
+    },
+    /// Take the last line off a drawing input.
+    DrawUndo {
+        id: SourceId,
+    },
+    /// Take every line off a drawing input.
+    DrawClear {
+        id: SourceId,
+    },
     /// Change how a comment input looks.
     UpdateCommentCard {
         id: SourceId,

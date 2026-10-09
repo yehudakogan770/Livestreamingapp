@@ -1220,6 +1220,18 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             c.repair();
             Ok(())
         }
+        Action::DrawStroke { id, stroke } => {
+            drawing_mut(s, &id)?.add(stroke, now);
+            Ok(())
+        }
+        Action::DrawUndo { id } => {
+            drawing_mut(s, &id)?.undo(now);
+            Ok(())
+        }
+        Action::DrawClear { id } => {
+            drawing_mut(s, &id)?.clear(now);
+            Ok(())
+        }
         Action::UpdateCommentCard { id, place, accent } => {
             let c = comment_mut(s, &id)?;
             c.place = place;
@@ -2812,6 +2824,16 @@ fn apply_wall(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     Ok(())
 }
 
+fn drawing_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::drawing::Drawing> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Drawing(d) => Ok(d),
+        _ => Err(ActionError::invalid("id", "that input is not for drawing")),
+    }
+}
+
 fn comment_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::chat::CommentCard> {
     let src = s
         .source_mut(id)
@@ -3167,6 +3189,7 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
         }
         SourceKind::Screen(c) => c.repair(),
         SourceKind::Comment(c) => c.repair(),
+        SourceKind::Drawing(d) => d.repair(),
         SourceKind::Raffle(r) => {
             r.repair();
             r.open = false;

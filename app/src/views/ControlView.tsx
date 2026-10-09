@@ -1,4 +1,5 @@
 import { branded, hasBrand } from '../engine/brand';
+import { DrawingCard, drawingTarget } from './DrawingCard';
 import { OVERLAY_KINDS, overlayActions } from '../engine/overlays';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { EngineError, defaultCountdown, isSoundFile, type EngineClient } from '../engine/client';
@@ -310,7 +311,14 @@ export function ControlView({
   };
   const bar = screen === 'monitor' ? null : pesukimBar(show, screen);
   const cards = [
-    ...new Set([cardFor(sc.program), bar ? ('pesukim' as const) : null, sc.preview !== sc.program ? cardFor(sc.preview) : null].filter((c) => c !== null)),
+    ...new Set(
+      [
+        cardFor(sc.program),
+        bar ? ('pesukim' as const) : null,
+        sc.preview !== sc.program ? cardFor(sc.preview) : null,
+        drawingTarget(show, screen) ? ('drawing' as const) : null,
+      ].filter((c) => c !== null),
+    ),
   ];
   const cardView = (card: (typeof cards)[number] | 'none') =>
     card === 'pesukim' ? (
@@ -321,6 +329,8 @@ export function ControlView({
       <CreditsCard key={card} show={show} act={act} screen={screen} />
     ) : card === 'visuals' ? (
       <VisualsCard key={card} show={show} act={act} screen={screen} />
+    ) : card === 'drawing' ? (
+      <DrawingCard key={card} show={show} act={act} screen={screen} client={client} />
     ) : (
       <CountdownMini key="countdown" show={show} act={act} screen={screen} onPutInNext={putCountdownInNext} />
     );
