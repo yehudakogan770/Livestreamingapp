@@ -4,12 +4,15 @@
  * What one of the template's own data sources (a CSV file, a Google Sheet,
  * a JSON address) held when the control window last read it.
  */
-export type TitlerTable = { 
-/**
- * The data source's id in the template.
- */
-source: string, headers: Array<string>, rows: Array<Array<string>>, 
-/**
- * Why it could not be read (empty when it was).
- */
-error: string, };
+export type TitlerTable = {
+  /**
+   * The data source's id in the template.
+   */
+  source: string;
+  headers: Array<string>;
+  rows: Array<Array<string>>;
+  /**
+   * Why it could not be read (empty when it was).
+   */
+  error: string;
+};

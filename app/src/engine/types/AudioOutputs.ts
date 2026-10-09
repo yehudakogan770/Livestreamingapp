@@ -6,4 +6,4 @@
  * for Hall, Recording and Headphones `None` means not played anywhere, so a
  * mix is never doubled on the same speakers by accident.
  */
-export type AudioOutputs = { master: string | null, a: string | null, b: string | null, headphones: string | null, };
+export type AudioOutputs = { master: string | null; a: string | null; b: string | null; headphones: string | null };

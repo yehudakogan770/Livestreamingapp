@@ -3,4 +3,4 @@
 /**
  * An effect that can be switched on, with how strong it is (0 – 100).
  */
-export type Effect = { on: boolean, amount: number, };
+export type Effect = { on: boolean; amount: number };

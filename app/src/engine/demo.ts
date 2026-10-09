@@ -1391,6 +1391,7 @@ function apply(s: Show, a: Action, now: number) {
         const w = t.when;
         // Numbers kept in range (mirrors Trigger::repair).
         if (w.type === 'videoTimeLeft') w.seconds = Math.min(600, Math.max(1, Math.round(w.seconds)));
+        if (w.type === 'every') w.minutes = Math.min(1440, Math.max(1, Math.round(w.minutes)));
         if (w.type === 'sound') {
           w.db = Math.min(0, Math.max(-60, Math.round(w.db)));
           w.holdMs = Math.min(600_000, Math.max(0, Math.round(w.holdMs)));

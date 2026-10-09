@@ -4,12 +4,15 @@
  * A Wi-Fi network guests join by scanning a code (for halls where the
  * audience page is only on the local network).
  */
-export type GuestWifi = { name: string, password: string, 
-/**
- * The code phones scan to join (SVG), made by the app.
- */
-qr: string, 
-/**
- * Show it on screen before the audience page's code.
- */
-show: boolean, };
+export type GuestWifi = {
+  name: string;
+  password: string;
+  /**
+   * The code phones scan to join (SVG), made by the app.
+   */
+  qr: string;
+  /**
+   * Show it on screen before the audience page's code.
+   */
+  show: boolean;
+};

@@ -3,4 +3,4 @@
 /**
  * How the multiview screen is laid out.
  */
-export type MultiviewLayout = "classic" | "bothScreens" | "inputs";
+export type MultiviewLayout = 'classic' | 'bothScreens' | 'inputs';

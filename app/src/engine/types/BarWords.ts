@@ -3,4 +3,4 @@
 /**
  * What the bar shows.
  */
-export type BarWords = "one" | "line";
+export type BarWords = 'one' | 'line';

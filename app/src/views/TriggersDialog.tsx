@@ -20,6 +20,7 @@ export const KINDS: { type: When['type']; name: string }[] = [
   { type: 'countdownZero', name: 'A countdown reaches zero' },
   { type: 'broadcast', name: 'Recording or the stream starts or stops' },
   { type: 'atTime', name: 'At a clock time (every day)' },
+  { type: 'every', name: 'Every few minutes' },
 ];
 
 const PICTURE_KINDS = [
@@ -67,6 +68,8 @@ export function describeWhen(w: When, show: Show): string {
       return `When “${name(w.sourceId)}” is ${w.above ? 'louder' : 'quieter'} than ${w.db} dB for ${(w.holdMs / 1000).toFixed(w.holdMs % 1000 ? 1 : 0)} s`;
     case 'broadcast':
       return `When ${w.what === 'record' ? 'recording' : 'the stream'} ${w.on ? 'starts' : 'stops'}`;
+    case 'every':
+      return `Every ${w.minutes} minute${w.minutes === 1 ? '' : 's'}`;
   }
 }
 
@@ -116,6 +119,8 @@ export function freshWhen(type: When['type'], show: Show): When {
       };
     case 'broadcast':
       return { type, what: 'stream', on: true };
+    case 'every':
+      return { type, minutes: 10 };
   }
 }
 
@@ -185,7 +190,13 @@ export function TriggersDialog({ show, act, onClose }: { show: Show; act: Act; o
                 </label>
                 <label className="field">
                   <span className="field__label">When</span>
-                  <select value={w.type} onChange={(e) => change({ when: freshWhen(e.target.value as When['type'], show) })} aria-label="When">
+                  <select
+                    value={w.type}
+                    onChange={(e) =>
+                      change({ when: freshWhen(e.target.value as When['type'], show), ...(e.target.value === 'every' ? { lastFired: Date.now() } : {}) })
+                    }
+                    aria-label="When"
+                  >
                     {KINDS.map((k) => (
                       <option key={k.type} value={k.type}>
                         {k.name}
@@ -285,6 +296,23 @@ export function TriggersDialog({ show, act, onClose }: { show: Show; act: Act; o
                       is below −50 dB.
                     </span>
                   </>
+                )}
+                {w.type === 'every' && (
+                  <label className="field">
+                    <span className="field__label">Minutes apart</span>
+                    <input
+                      className="text"
+                      type="number"
+                      min={1}
+                      max={1440}
+                      value={w.minutes}
+                      onChange={(e) =>
+                        change({ when: { ...w, minutes: Math.round(Math.min(1440, Math.max(1, Number(e.target.value) || 1))) }, lastFired: Date.now() })
+                      }
+                      aria-label="Minutes apart"
+                    />
+                    <span className="field__note">Counted from now. For example, put the sponsor logo on as an overlay every 10 minutes.</span>
+                  </label>
                 )}
                 {w.type === 'broadcast' && (
                   <div className="field">

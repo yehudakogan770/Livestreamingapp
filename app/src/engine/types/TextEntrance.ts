@@ -3,4 +3,18 @@
 /**
  * How a title comes on (when it builds on).
  */
-export type TextEntrance = "build" | "fade" | "slide" | "rise" | "pop" | "drop" | "zoom" | "flip" | "blur" | "wipe" | "typewriter" | "bounce" | "spin" | "shine";
+export type TextEntrance =
+  | 'build'
+  | 'fade'
+  | 'slide'
+  | 'rise'
+  | 'pop'
+  | 'drop'
+  | 'zoom'
+  | 'flip'
+  | 'blur'
+  | 'wipe'
+  | 'typewriter'
+  | 'bounce'
+  | 'spin'
+  | 'shine';

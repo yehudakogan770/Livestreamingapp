@@ -3,4 +3,4 @@
 /**
  * Back and forth: what happens at each end.
  */
-export type SwingEnds = "ease" | "pause" | "bounce";
+export type SwingEnds = 'ease' | 'pause' | 'bounce';

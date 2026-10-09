@@ -19,7 +19,7 @@ describe('triggers dialog', () => {
     for (const k of KINDS) {
       const w = freshWhen(k.type, s);
       expect(w.type).toBe(k.type);
-      expect(describeWhen(w, s)).toMatch(/^(When|Every day)/);
+      expect(describeWhen(w, s)).toMatch(/^(When|Every)/);
     }
     expect(freshWhen('sound', s)).toMatchObject({ sourceId: 'mic', above: true, db: -30 });
     expect(freshWhen('inputLost', s)).toMatchObject({ sourceId: 'cam' });

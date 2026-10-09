@@ -3,4 +3,4 @@
 /**
  * A scene: music type and the scene in it (both 0-based).
  */
-export type SceneRef = { bank: number, scene: number, };
+export type SceneRef = { bank: number; scene: number };

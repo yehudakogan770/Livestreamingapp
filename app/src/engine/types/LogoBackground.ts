@@ -3,4 +3,4 @@
 /**
  * Behind the logo.
  */
-export type LogoBackground = "transparent" | "colour" | "loop";
+export type LogoBackground = 'transparent' | 'colour' | 'loop';

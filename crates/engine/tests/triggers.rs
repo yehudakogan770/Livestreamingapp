@@ -341,3 +341,42 @@ fn sound_and_broadcast_triggers_are_left_to_the_control_window() {
     .unwrap();
     assert_eq!(e.show().screens.live.program, Some(id("logo")));
 }
+
+#[test]
+fn over_and_over_minutes_apart() {
+    let mut e = setup();
+    let mut t = trigger(
+        "sponsor",
+        When::Every { minutes: 10 },
+        vec![Step::CutTo {
+            screen: ScreenId::Back,
+            source_id: id("logo"),
+        }],
+    );
+    // Counted from when it was made.
+    t.last_fired = 1_000;
+    e.apply(Action::SetTriggers { triggers: vec![t] }, 1_000)
+        .unwrap();
+    assert_eq!(e.tick(5 * 60_000), Outcome::Unchanged);
+    assert_eq!(e.tick(10 * 60_000 + 1_000), Outcome::Changed);
+    assert_eq!(e.show().screens.back.program, Some(id("logo")));
+    cut(&mut e, ScreenId::Back, "cam", 10 * 60_000 + 2_000);
+    assert_eq!(e.tick(15 * 60_000), Outcome::Unchanged);
+    assert_eq!(e.tick(20 * 60_000 + 1_000), Outcome::Changed);
+    assert_eq!(e.show().screens.back.program, Some(id("logo")));
+    // Never made with a start: waits (it is given one when made in Lumora).
+    let mut never = trigger("never", When::Every { minutes: 0 }, vec![]);
+    never.last_fired = 0;
+    e.apply(
+        Action::SetTriggers {
+            triggers: vec![never],
+        },
+        0,
+    )
+    .unwrap();
+    assert!(matches!(
+        e.show().triggers[0].when,
+        When::Every { minutes: 1 }
+    ));
+    assert_eq!(e.tick(99 * 60_000), Outcome::Unchanged);
+}

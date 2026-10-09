@@ -3,32 +3,34 @@
 /**
  * Where the event is and what to do before Shabbos and Yom Tov.
  */
-export type Place = { 
-/**
- * The city's name (shown on screen).
- */
-name: string, 
-/**
- * Latitude and longitude, in millionths of a degree.
- */
-latMicro: number, lonMicro: number, 
-/**
- * Candles are lit this many minutes before sunset (18; 40 in Jerusalem).
- */
-candleMinutes: number, 
-/**
- * One day of Yom Tov (in Israel) instead of two.
- */
-israel: boolean, 
-/**
- * End the live stream and recording before candle lighting.
- */
-stopBefore: boolean, 
-/**
- * ... this many minutes before it.
- */
-stopMinutes: number, 
-/**
- * Tell the stage monitor as candle lighting comes close.
- */
-warnMonitor: boolean, };
+export type Place = {
+  /**
+   * The city's name (shown on screen).
+   */
+  name: string;
+  /**
+   * Latitude and longitude, in millionths of a degree.
+   */
+  latMicro: number;
+  lonMicro: number;
+  /**
+   * Candles are lit this many minutes before sunset (18; 40 in Jerusalem).
+   */
+  candleMinutes: number;
+  /**
+   * One day of Yom Tov (in Israel) instead of two.
+   */
+  israel: boolean;
+  /**
+   * End the live stream and recording before candle lighting.
+   */
+  stopBefore: boolean;
+  /**
+   * ... this many minutes before it.
+   */
+  stopMinutes: number;
+  /**
+   * Tell the stage monitor as candle lighting comes close.
+   */
+  warnMonitor: boolean;
+};

@@ -3,4 +3,4 @@
 /**
  * What happens to the background behind the people (no green screen needed).
  */
-export type BackgroundMode = "keep" | "blur" | "remove" | "picture" | "set";
+export type BackgroundMode = 'keep' | 'blur' | 'remove' | 'picture' | 'set';

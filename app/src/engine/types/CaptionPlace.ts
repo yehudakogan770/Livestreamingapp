@@ -3,4 +3,4 @@
 /**
  * Where the captions sit.
  */
-export type CaptionPlace = "bottom" | "top";
+export type CaptionPlace = 'bottom' | 'top';

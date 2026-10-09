@@ -47,6 +47,7 @@ export function triggersDue(before: Show, after: Show, now: number): number[] {
       hit = !!src && src.kind.type === 'video' && left !== null && t.lastFired < Math.max(1, src.kind.playback.at) && left > 0.05 && left <= w.seconds;
     } else if (w.type === 'inputLost') hit = !lost(before, w.sourceId) && lost(after, w.sourceId);
     else if (w.type === 'inputBack') hit = lost(before, w.sourceId) && !lost(after, w.sourceId);
+    else if (w.type === 'every') hit = t.lastFired > 0 && now - t.lastFired >= Math.max(1, w.minutes) * 60_000;
     if (hit) out.push(i);
   });
   return out;

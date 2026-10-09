@@ -66,6 +66,9 @@ pub enum When {
     /// The recording or the stream starts (`on`) or stops (watched by the
     /// control window).
     Broadcast { what: BroadcastWhat, on: bool },
+    /// Over and over, this many minutes apart (a sponsor logo every 10
+    /// minutes). Counted from when it was made, or last went off.
+    Every { minutes: u32 },
 }
 
 /// What a [`When::Broadcast`] trigger watches.
@@ -177,6 +180,10 @@ pub fn due(before: &Show, after: &Show, now: Millis) -> Vec<usize> {
             }
             When::InputLost { source_id } => !lost(before, source_id) && lost(after, source_id),
             When::InputBack { source_id } => lost(before, source_id) && !lost(after, source_id),
+            When::Every { minutes } => {
+                t.last_fired > 0
+                    && now.saturating_sub(t.last_fired) >= u64::from(*minutes).max(1) * 60_000
+            }
             When::Sound { .. } | When::Broadcast { .. } => false,
         })
         .map(|(i, _)| i)
@@ -189,7 +196,10 @@ pub fn clock_due(show: &Show, now: Millis) -> bool {
         t.enabled
             && matches!(
                 t.when,
-                When::VideoEnds { .. } | When::AtTime { .. } | When::VideoTimeLeft { .. }
+                When::VideoEnds { .. }
+                    | When::AtTime { .. }
+                    | When::VideoTimeLeft { .. }
+                    | When::Every { .. }
             )
     }) && !due(show, show, now).is_empty()
 }
@@ -207,6 +217,7 @@ impl Trigger {
         }
         match &mut self.when {
             When::VideoTimeLeft { seconds, .. } => *seconds = (*seconds).clamp(1, 600),
+            When::Every { minutes } => *minutes = (*minutes).clamp(1, 24 * 60),
             When::Sound { db, hold_ms, .. } => {
                 *db = (*db).clamp(-60, 0);
                 *hold_ms = (*hold_ms).min(10 * 60_000);

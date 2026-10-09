@@ -3,4 +3,4 @@
 /**
  * Who auto-framing keeps in the shot.
  */
-export type FrameWho = "everyone" | "main";
+export type FrameWho = 'everyone' | 'main';

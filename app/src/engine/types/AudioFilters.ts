@@ -3,36 +3,39 @@
 /**
  * A channel's sound filters, in the order the sound goes through them.
  */
-export type AudioFilters = { 
-/**
- * Cut rumble and handling noise below 100 Hz.
- */
-lowCut: boolean, 
-/**
- * EQ in dB, −12 to 12: bass (120 Hz), middle (1 kHz), treble (8 kHz).
- */
-bassDb: number, midDb: number, trebleDb: number, 
-/**
- * Noise gate: silent below `gate_db`.
- */
-gate: boolean, 
-/**
- * −80 to 0.
- */
-gateDb: number, 
-/**
- * Evens out loud and quiet (voice).
- */
-compressor: boolean, 
-/**
- * Take out background hiss and hum (microphones).
- */
-noiseSuppression: boolean, 
-/**
- * Quieter while someone talks into a microphone (music beds, videos).
- */
-duck: boolean, 
-/**
- * How much quieter, dB (−40 to −3).
- */
-duckDb: number, };
+export type AudioFilters = {
+  /**
+   * Cut rumble and handling noise below 100 Hz.
+   */
+  lowCut: boolean;
+  /**
+   * EQ in dB, −12 to 12: bass (120 Hz), middle (1 kHz), treble (8 kHz).
+   */
+  bassDb: number;
+  midDb: number;
+  trebleDb: number;
+  /**
+   * Noise gate: silent below `gate_db`.
+   */
+  gate: boolean;
+  /**
+   * −80 to 0.
+   */
+  gateDb: number;
+  /**
+   * Evens out loud and quiet (voice).
+   */
+  compressor: boolean;
+  /**
+   * Take out background hiss and hum (microphones).
+   */
+  noiseSuppression: boolean;
+  /**
+   * Quieter while someone talks into a microphone (music beds, videos).
+   */
+  duck: boolean;
+  /**
+   * How much quieter, dB (−40 to −3).
+   */
+  duckDb: number;
+};

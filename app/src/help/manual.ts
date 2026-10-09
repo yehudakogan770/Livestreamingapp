@@ -450,6 +450,7 @@ export const MANUAL: Topic[] = [
       '• A countdown reaches zero.',
       '• Recording or the stream starts or stops (for example, when the stream starts, put the opening video on air).',
       '• A clock time, every day.',
+      '• Every few minutes, over and over (for example, the sponsor logo as an overlay every 10 minutes), counted from when you set it.',
       'Tip: Lumora already switches to the next camera in the backup lineup by itself when the one on air goes out. Use “An input loses its picture” for anything else you want to happen.',
       'Tip: To play a recorded show as if it were live, add two triggers: at the start time, put the video on air and go live; when the video ends, end the stream.',
     ],
