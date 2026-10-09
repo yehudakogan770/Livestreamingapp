@@ -5,7 +5,7 @@ import { useState, type ReactElement } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { tokensFor, valuesFor, variablesIn } from '../core/binding';
 import { uid } from '../core/build';
-import { isAnimated, setValue, toggleKeys, valueAt, vec } from '../core/easing';
+import { isAnimated, num, setValue, toggleKeys, valueAt, vec } from '../core/easing';
 import { fade, grow, reveal, slide, wipe } from '../core/motion';
 import { ellipsePath, rectPath } from '../core/paths';
 import type { Effect, ImageLayer, VideoLayer, Layer, Mask, Paint, ShapeLayer, Stroke, TextAnimator, TextLayer, Value, Vec2 } from '../core/types';
@@ -962,7 +962,34 @@ function ShapeSection({
         />
       </Row>
       {l.shape !== 'path' && prop('size', 'Size', [100, 100], 'px', { min: 0 })}
-      {l.shape === 'rect' && prop('roundness', 'Corners', 0, 'px', { min: 0 })}
+      {l.shape === 'rect' && !l.corners && prop('roundness', 'Corners', 0, 'px', { min: 0 })}
+      {l.shape === 'rect' && (
+        <Row label={l.corners ? 'Corners' : ''} hint="Each corner its own radius: top left, top right, bottom right, bottom left">
+          <Toggle
+            value={!!l.corners}
+            onChange={(on) =>
+              upd('Each corner', (x) => {
+                const r = num(x.roundness, store.get().time, 0);
+                return { ...x, corners: on ? [r, r, r, r] : null, roundness: on ? x.roundness : { v: x.corners?.[0] ?? r } };
+              })
+            }
+            label="Each corner"
+          />
+          {l.corners &&
+            (['Top left', 'Top right', 'Bottom right', 'Bottom left'] as const).map((name, i) => (
+              <NumberField
+                key={name}
+                value={l.corners![i]!}
+                min={0}
+                label={`${name} corner`}
+                unit="px"
+                onChange={(v) =>
+                  upd('Corner', (x) => ({ ...x, corners: x.corners ? (x.corners.map((c, j) => (j === i ? v : c)) as [number, number, number, number]) : null }))
+                }
+              />
+            ))}
+        </Row>
+      )}
       {l.shape === 'path' && (
         <div className="tt-dim tt-small">
           Drawn with the pen: {l.path?.v.length ?? 0} points, {l.path?.closed ? 'closed' : 'open'}.
@@ -1003,6 +1030,28 @@ function ShapeSection({
             vals={vals}
             fieldKeys={fieldKeys}
           />
+          <Row label="Place" hint="Where the line sits on the outline">
+            <Select
+              label="Stroke place"
+              value={l.stroke.align ?? 'center'}
+              options={[
+                ['center', 'Centered'],
+                ['inside', 'Inside'],
+                ['outside', 'Outside'],
+              ]}
+              onChange={(align) => upd('Stroke place', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, align: align === 'center' ? undefined : align } }))}
+            />
+            <Select
+              label="Corners of the line"
+              value={l.stroke.join ?? 'miter'}
+              options={[
+                ['miter', 'Sharp'],
+                ['round', 'Round'],
+                ['bevel', 'Bevel'],
+              ]}
+              onChange={(join) => upd('Line corners', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, join } }))}
+            />
+          </Row>
           <Row label="Ends">
             <Select
               label="Line ends"
@@ -1019,6 +1068,78 @@ function ShapeSection({
               onChange={(on) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: on ? [12, 8] : undefined } }))}
               label="Dashed"
             />
+          </Row>
+          {!!l.stroke.dash?.length && (
+            <Row label="Dashes">
+              <NumberField
+                value={l.stroke.dash[0] ?? 12}
+                min={0}
+                label="Dash length"
+                unit="px"
+                onChange={(d) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: [d, x.stroke?.dash?.[1] ?? 8] } }))}
+              />
+              <NumberField
+                value={l.stroke.dash[1] ?? 8}
+                min={0}
+                label="Gap length"
+                unit="px"
+                onChange={(g) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: [x.stroke?.dash?.[0] ?? 12, g] } }))}
+              />
+            </Row>
+          )}
+          {(l.extraStrokes ?? []).map((ex, i) => (
+            <div key={i} className="tt-subcard">
+              <Row label={`Outline ${i + 2}`}>
+                <NumberField
+                  value={ex.width}
+                  min={0}
+                  label={`Outline ${i + 2} width`}
+                  unit="px"
+                  onChange={(width) => upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, width } : y)) }))}
+                />
+                <Select
+                  label={`Outline ${i + 2} place`}
+                  value={ex.align ?? 'center'}
+                  options={[
+                    ['center', 'Centered'],
+                    ['inside', 'Inside'],
+                    ['outside', 'Outside'],
+                  ]}
+                  onChange={(align) =>
+                    upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, align } : y)) }))
+                  }
+                />
+                <button
+                  className="tt-ico"
+                  aria-label={`Remove outline ${i + 2}`}
+                  onClick={() => upd('Remove outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).filter((_, j) => j !== i) }))}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </Row>
+              <PaintField
+                paint={ex.paint}
+                label={`Outline ${i + 2} color`}
+                onChange={(paint) => upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, paint } : y)) }))}
+                tokens={tokens}
+                vals={vals}
+                fieldKeys={fieldKeys}
+              />
+            </div>
+          ))}
+          <Row label="">
+            <button
+              className="tt-link"
+              onClick={() =>
+                upd('Add outline', (x) => ({
+                  ...x,
+                  extraStrokes: [...(x.extraStrokes ?? []), { paint: { type: 'solid', color: '$text' }, width: 2, align: 'outside' }],
+                }))
+              }
+              title="Another outline over the first (a double outline)"
+            >
+              + Another outline
+            </button>
           </Row>
           <Row label="Trim">
             <Toggle
@@ -1221,7 +1342,25 @@ function EffectSection({
           ? { id, type, on: true, color: '$accent', opacity: { v: 40 }, radius: { v: 10 } }
           : type === 'blur'
             ? { id, type, on: true, amount: { v: 4 } }
-            : { id, type, on: true, color: '$accent' };
+            : type === 'stroke'
+              ? { id, type, on: true, color: '$box', width: { v: 3 }, opacity: { v: 100 } }
+              : type === 'gradient'
+                ? {
+                    id,
+                    type,
+                    on: true,
+                    angle: 90,
+                    stops: [
+                      { at: 0, color: '#ffffff' },
+                      { at: 1, color: '#000000' },
+                    ],
+                    opacity: { v: 25 },
+                  }
+                : type === 'noise'
+                  ? { id, type, on: true, amount: { v: 8 } }
+                  : type === 'color'
+                    ? { id, type, on: true, brightness: { v: 0 }, contrast: { v: 0 }, saturation: { v: 0 }, hue: { v: 0 } }
+                    : { id, type, on: true, color: '$accent' };
     upd(`Add ${EFFECT_NAMES[type]!.toLowerCase()}`, (x) => ({ ...x, effects: [...(x.effects ?? []), e] }));
   };
   const set = (i: number, patch: Partial<Effect>) =>
@@ -1293,6 +1432,100 @@ function EffectSection({
               />
             </Row>
           )}
+          {e.type === 'stroke' && (
+            <Row label="Outline">
+              <NumberField
+                value={valueAt(e.width as never, 0, 0 as never) as number}
+                min={0}
+                label="Outline width"
+                unit="px"
+                onChange={(v) => set(i, { width: { v } } as Partial<Effect>)}
+              />
+              <NumberField
+                value={valueAt(e.opacity as never, 0, 0 as never) as number}
+                min={0}
+                max={100}
+                label="Outline opacity"
+                unit="%"
+                onChange={(v) => set(i, { opacity: { v } } as Partial<Effect>)}
+              />
+            </Row>
+          )}
+          {e.type === 'gradient' && (
+            <>
+              <Row label="Gradient">
+                <NumberField value={e.angle} label="Gradient angle" unit="°" onChange={(angle) => set(i, { angle } as Partial<Effect>)} />
+                <NumberField
+                  value={valueAt(e.opacity as never, 0, 0 as never) as number}
+                  min={0}
+                  max={100}
+                  label="Gradient opacity"
+                  unit="%"
+                  onChange={(v) => set(i, { opacity: { v } } as Partial<Effect>)}
+                />
+              </Row>
+              {e.stops.map((st, k) => (
+                <Row key={k} label={k === 0 ? 'From' : 'To'}>
+                  <ColorField
+                    value={st.color}
+                    onChange={(color) => set(i, { stops: e.stops.map((x, j) => (j === k ? { ...x, color } : x)) } as Partial<Effect>)}
+                    tokens={tokens}
+                    values={vals}
+                    label={k === 0 ? 'Gradient from' : 'Gradient to'}
+                    fields={fieldKeys}
+                  />
+                </Row>
+              ))}
+            </>
+          )}
+          {e.type === 'noise' && (
+            <Row label="Grain">
+              <NumberField
+                value={valueAt(e.amount as never, 0, 0 as never) as number}
+                min={0}
+                max={100}
+                label="Grain amount"
+                unit="%"
+                onChange={(v) => set(i, { amount: { v } } as Partial<Effect>)}
+              />
+              <Toggle value={!!e.still} onChange={(still) => set(i, { still } as Partial<Effect>)} label="Still" />
+            </Row>
+          )}
+          {e.type === 'color' && (
+            <>
+              <Row label="Light">
+                <NumberField
+                  value={valueAt(e.brightness as never, 0, 0 as never) as number}
+                  min={-100}
+                  max={100}
+                  label="Brightness"
+                  onChange={(v) => set(i, { brightness: { v } } as Partial<Effect>)}
+                />
+                <NumberField
+                  value={valueAt(e.contrast as never, 0, 0 as never) as number}
+                  min={-100}
+                  max={100}
+                  label="Contrast"
+                  onChange={(v) => set(i, { contrast: { v } } as Partial<Effect>)}
+                />
+              </Row>
+              <Row label="Color">
+                <NumberField
+                  value={valueAt(e.saturation as never, 0, 0 as never) as number}
+                  min={-100}
+                  max={100}
+                  label="Saturation"
+                  onChange={(v) => set(i, { saturation: { v } } as Partial<Effect>)}
+                />
+                <NumberField
+                  value={valueAt(e.hue as never, 0, 0 as never) as number}
+                  label="Hue"
+                  unit="°"
+                  onChange={(v) => set(i, { hue: { v } } as Partial<Effect>)}
+                />
+              </Row>
+            </>
+          )}
           {e.type === 'blur' && (
             <Row label="Amount">
               <NumberField
@@ -1308,7 +1541,7 @@ function EffectSection({
       ))}
       <div className="tt-dim tt-small">Effects are optional. Plain, high-contrast graphics read best on air.</div>
       <div className="tt-chips">
-        {(['dropShadow', 'glow', 'blur', 'fill'] as const).map((t) => (
+        {(['dropShadow', 'glow', 'stroke', 'blur', 'fill', 'gradient', 'color', 'noise'] as const).map((t) => (
           <button key={t} className="tt-chip" onClick={() => add(t)}>
             <Plus size={11} /> {EFFECT_NAMES[t]}
           </button>

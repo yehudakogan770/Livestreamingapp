@@ -47,6 +47,8 @@ export type Paint = { type: 'solid'; color: ColorRef } | { type: 'linear'; angle
 export interface Stroke {
   paint: Paint;
   width: number;
+  /** Where the line sits on a closed outline: centered on it (default), inside or outside. */
+  align?: 'center' | 'inside' | 'outside';
   join?: 'miter' | 'round' | 'bevel';
   cap?: 'butt' | 'round' | 'square';
   dash?: number[];
@@ -101,7 +103,15 @@ export type Effect =
   | { id: string; type: 'dropShadow'; on: boolean; color: ColorRef; opacity: Prop; angle: number; distance: Prop; softness: Prop }
   | { id: string; type: 'glow'; on: boolean; color: ColorRef; opacity: Prop; radius: Prop }
   | { id: string; type: 'blur'; on: boolean; amount: Prop }
-  | { id: string; type: 'fill'; on: boolean; color: ColorRef };
+  | { id: string; type: 'fill'; on: boolean; color: ColorRef }
+  /** An outline around the layer's shape (text, logos, pictures with see-through parts). */
+  | { id: string; type: 'stroke'; on: boolean; color: ColorRef; width: Prop; opacity: Prop }
+  /** A gradient over the layer's own pixels (across its box, at an angle). */
+  | { id: string; type: 'gradient'; on: boolean; angle: number; stops: GradientStop[]; opacity: Prop }
+  /** Film grain over the layer (moving, or still). */
+  | { id: string; type: 'noise'; on: boolean; amount: Prop; still?: boolean }
+  /** Color correction: brightness, contrast and saturation (−100…100), hue turn (degrees). */
+  | { id: string; type: 'color'; on: boolean; brightness: Prop; contrast: Prop; saturation: Prop; hue: Prop };
 
 /** Crop/wipe reveal: percent taken off each side of the layer's box. */
 export interface Reveal {
@@ -211,6 +221,10 @@ export interface ShapeLayer extends LayerBase {
   size: Prop<Vec2>;
   /** Rectangle corner radius, px. */
   roundness: Prop;
+  /** Each corner its own radius (top left, top right, bottom right, bottom left), px; replaces `roundness`. */
+  corners?: [number, number, number, number] | null;
+  /** More outlines drawn over the first (a double outline), each with its own paint, width and place. */
+  extraStrokes?: Stroke[];
   path?: PathData;
   fill: Paint | null;
   stroke: Stroke | null;

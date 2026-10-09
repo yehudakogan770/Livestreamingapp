@@ -36,6 +36,32 @@ export function rectPath(w: number, h: number, r: number): PathData {
   };
 }
 
+/**
+ * A rectangle with its own radius at each corner (top left, top right,
+ * bottom right, bottom left); radii that would overlap are scaled down
+ * together, as in CSS.
+ */
+export function rectCornersPath(w: number, h: number, r: [number, number, number, number]): PathData {
+  let [tl, tr, br, bl] = r.map((x) => Math.max(0, Number.isFinite(x) ? x : 0)) as [number, number, number, number];
+  const f = Math.min(1, w / (tl + tr || 1), w / (bl + br || 1), h / (tl + bl || 1), h / (tr + br || 1));
+  if (f < 1) [tl, tr, br, bl] = [tl * f, tr * f, br * f, bl * f];
+  const v: PathData['v'] = [];
+  const corner = (rad: number, at: [number, number], a: [number, number], b: [number, number]) => {
+    // a: the point before the corner (on the incoming edge), b: after it; tangents toward the corner.
+    if (rad <= 0) return v.push({ p: at });
+    const c = rad * K;
+    const da: [number, number] = [Math.sign(at[0] - a[0]), Math.sign(at[1] - a[1])];
+    const db: [number, number] = [Math.sign(b[0] - at[0]), Math.sign(b[1] - at[1])];
+    v.push({ p: [at[0] - da[0] * rad, at[1] - da[1] * rad], o: [da[0] * c, da[1] * c] });
+    v.push({ p: [at[0] + db[0] * rad, at[1] + db[1] * rad], i: [-db[0] * c, -db[1] * c] });
+  };
+  corner(tl, [0, 0], [0, h], [w, 0]);
+  corner(tr, [w, 0], [0, 0], [w, h]);
+  corner(br, [w, h], [w, 0], [0, h]);
+  corner(bl, [0, h], [w, h], [0, 0]);
+  return { closed: true, v };
+}
+
 export function ellipsePath(w: number, h: number): PathData {
   const rx = w / 2;
   const ry = h / 2;
