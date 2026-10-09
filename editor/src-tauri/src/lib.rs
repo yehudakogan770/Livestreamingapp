@@ -432,7 +432,7 @@ fn revealable(path: &str) -> Option<PathBuf> {
 
 /// The Lumora website. When it moves to its own domain, change this one line
 /// (and `SITE_URL` in app/src/site.ts and the other app's lib.rs).
-pub(crate) const SITE_URL: &str = "https://yehudakogan770.github.io/Livestreamingapp/";
+pub(crate) const SITE_URL: &str = "https://lumoraproduction.com/";
 
 /// The pages of the website the app may open in the browser (only these).
 const SITE_PAGES: [&str; 3] = ["planner/", "terms.html", "privacy.html"];

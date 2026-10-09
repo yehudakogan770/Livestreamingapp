@@ -10,7 +10,7 @@
 --   (Already included in setup.sql for new projects.)
 --
 -- WHAT IT DOES
---   The web Planner (https://yehudakogan770.github.io/Livestreamingapp/planner/)
+--   The web Planner (https://lumoraproduction.com/planner/)
 --   and Lumora's Run of show → "Load from Planner…" use these tables. A plan is
 --   one event (name, date, venue, start time, notes) and its ordered cues; the
 --   team edits it together before the event and Lumora loads it as cues.

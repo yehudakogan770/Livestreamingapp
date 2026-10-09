@@ -74,9 +74,9 @@ where user_id = (select id from auth.users where email = 'their.email@example.or
 The link in a confirmation email leads here.
 
 - [ ] **Authentication → URL Configuration**:
-  - **Site URL**: `https://yehudakogan770.github.io/Livestreamingapp/planner/`
+  - **Site URL**: `https://lumoraproduction.com/planner/`
   - **Redirect URLs** → **Add URL**:
-    `https://yehudakogan770.github.io/Livestreamingapp/**`
+    `https://lumoraproduction.com/**`
     (only Lumora's own site; never `*` or someone else's address).
   - **Save**.
 

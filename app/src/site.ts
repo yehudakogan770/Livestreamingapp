@@ -5,7 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
  * line (and SITE_URL in src-tauri/src/lib.rs and editor/src-tauri/src/lib.rs,
  * which the apps use to open these pages in the browser).
  */
-export const SITE_URL = 'https://yehudakogan770.github.io/Livestreamingapp/';
+export const SITE_URL = 'https://lumoraproduction.com/';
 
 /** The pages of the website the apps open. */
 export type SitePage = 'planner/' | 'terms.html' | 'privacy.html';

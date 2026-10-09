@@ -1,7 +1,7 @@
 # Lumora's sign-in emails
 
 The emails Supabase sends (confirm sign-up, reset password and the rest), with Lumora's logo. The logo comes from the website:
-`https://yehudakogan770.github.io/Livestreamingapp/img/lumora-mark-96.png` (a PNG, since many email programs don't show SVG). It shows once the website with that file is published.
+`https://lumoraproduction.com/img/lumora-mark-96.png` (a PNG, since many email programs don't show SVG). It shows once the website with that file is published.
 
 ## Putting them in
 
