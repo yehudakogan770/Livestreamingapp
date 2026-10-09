@@ -256,6 +256,8 @@ export interface ShapeLayer extends LayerBase {
   /** The path changing form over time (path and subpaths at each key). */
   morph?: PathKey[] | null;
   fill: Paint | null;
+  /** More fills drawn over the first (a gradient sheen over a color, a texture), each its own paint. */
+  extraFills?: Paint[];
   stroke: Stroke | null;
   /** Trim paths: the part of the outline drawn, percent. */
   trim?: { start: Prop; end: Prop; offset: Prop } | null;
@@ -291,6 +293,12 @@ export interface GroupLayer extends LayerBase {
   type: 'group';
   /** Front first, like the layer list. */
   children: Layer[];
+  /**
+   * Combine the layers into one shape (boolean): the back layer is the base,
+   * each layer in front of it is added to it, cut out of it, kept where they
+   * overlap, or kept where they do not.
+   */
+  combine?: 'union' | 'subtract' | 'intersect' | 'exclude' | null;
 }
 
 /** An invisible layer other layers are parented to. */
@@ -304,6 +312,12 @@ export interface CompLayer extends LayerBase {
   comp: string;
   /** Comp seconds where the inner composition's 0 is. */
   offset: number;
+  /**
+   * This copy's own field values (a component used several times with
+   * different words, colors or pictures); may use this title's fields
+   * ("{{guest_2}}"). Fields not given come from the title.
+   */
+  values?: Values;
 }
 
 export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | GroupLayer | NullLayer | CompLayer;

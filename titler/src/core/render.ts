@@ -15,6 +15,7 @@ import type {
   BrandTokens,
   Composition,
   Effect,
+  GroupLayer,
   Layer,
   Paint,
   PathData,
@@ -547,8 +548,46 @@ export function contentSize(l: Layer, t: number, project?: TitleProject): Vec2 {
   }
 }
 
+const COMBINE: Record<NonNullable<GroupLayer['combine']>, GlobalCompositeOperation> = {
+  union: 'source-over',
+  subtract: 'destination-out',
+  intersect: 'destination-in',
+  exclude: 'xor',
+};
+
+/** A combined group (boolean shapes): back to front, each layer joined to what is there by the group's rule. */
+function drawCombined(ctx: Ctx, g: GroupLayer, s: Scene): boolean {
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
+  const surf = s.f.env.createCanvas(W, H);
+  const out = surf?.getContext('2d') as Ctx | null;
+  const tmp = s.f.env.createCanvas(W, H);
+  const tc = tmp?.getContext('2d') as Ctx | null;
+  if (!surf || !out || !tmp || !tc) return false;
+  let first = true;
+  for (let n = g.children.length - 1; n >= 0; n--) {
+    const c = g.children[n]!;
+    if (!active(c, s.t) || s.mattes.has(c.id) || s.f.skip?.(c)) continue;
+    tc.setTransform(1, 0, 0, 1, 0, 0);
+    tc.clearRect(0, 0, W, H);
+    drawLayer(tc, c, 1, s);
+    out.save();
+    out.setTransform(1, 0, 0, 1, 0, 0);
+    out.globalCompositeOperation = first ? 'source-over' : COMBINE[g.combine!];
+    out.drawImage(tmp as CanvasImageSource, 0, 0);
+    out.restore();
+    first = false;
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(surf as CanvasImageSource, 0, 0);
+  ctx.restore();
+  return true;
+}
+
 function drawContent(ctx: Ctx, l: Layer, world: Mat, alpha: number, s: Scene) {
   if (l.type === 'group') {
+    if (l.combine && l.children.length > 1 && drawCombined(ctx, l, s)) return;
     drawList(ctx, l.children, alpha, s);
     return;
   }
@@ -604,7 +643,10 @@ function drawContent(ctx: Ctx, l: Layer, world: Mat, alpha: number, s: Scene) {
     case 'comp': {
       const inner = s.f.project.compositions.find((c) => c.id === l.comp);
       if (!inner || s.f.depth >= MAX_DEPTH) break;
-      const f2: Frame = { ...s.f, depth: s.f.depth + 1 };
+      const own = l.values ? Object.entries(l.values).filter(([, v]) => typeof v === 'string' && v !== '') : [];
+      // This copy's own field values (a component): may use the title's fields.
+      const values = own.length ? { ...s.f.values, ...Object.fromEntries(own.map(([k, v]) => [k, fill(v, s.f.values)])) } : s.f.values;
+      const f2: Frame = { ...s.f, values, depth: s.f.depth + 1 };
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, inner.width, inner.height);
@@ -695,6 +737,13 @@ function drawShape(ctx: Ctx, l: ShapeLayer, size: Vec2, s: Scene) {
     ctx.fillStyle = paintStyle(ctx, l.fill, size[0], size[1], s);
     ctx.fill(l.fillRule ?? 'nonzero');
   }
+  if (!trimmed)
+    for (const extra of l.extraFills ?? []) {
+      ctx.beginPath();
+      trace(ctx);
+      ctx.fillStyle = paintStyle(ctx, extra, size[0], size[1], s);
+      ctx.fill(l.fillRule ?? 'nonzero');
+    }
   for (const st of [l.stroke, ...(l.extraStrokes ?? [])]) {
     if (!st || st.width <= 0) continue;
     // Inside or outside a closed outline: twice as wide, with the other half clipped away.

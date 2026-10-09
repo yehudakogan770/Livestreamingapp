@@ -263,6 +263,8 @@ function shapeContents(x: X, l: ShapeLayer): J[] {
   // Lottie draws the first style item on top: strokes (last one first), then the fill.
   const strokes = [l.stroke, ...(l.extraStrokes ?? [])].filter((s): s is Stroke => !!s && s.width > 0).reverse();
   for (const st of strokes) items.push(strokeItem(x, st, size));
+  // Fills drawn over the first come before it (Lottie draws the first style item on top).
+  for (const f of [...(l.extraFills ?? [])].reverse()) items.push(paintItems(x, f, 'fill', size, { r: l.fillRule === 'evenodd' ? 2 : 1 }));
   if (l.fill) items.push(paintItems(x, l.fill, 'fill', size, { r: l.fillRule === 'evenodd' ? 2 : 1 }));
   items.push({ ty: 'tr', p: { a: 0, k: [0, 0] }, a: { a: 0, k: [0, 0] }, s: { a: 0, k: [100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: 100 } });
   return [{ ty: 'gr', nm: l.name, it: items }];
@@ -453,6 +455,7 @@ function layerJson(x: X, l: Layer, ind: number, w: number, h: number): J | null 
       x.notes.add('Videos are left out (Lottie has none).');
       return null;
     case 'group': {
+      if (l.combine) x.notes.add('Combined shapes (union, subtract…) are drawn as separate shapes.');
       const id = `group_${l.id}`;
       x.assets.push({ id, nm: l.name, w, h, layers: layersJson(x, l.children, w, h) });
       return { ...base, ty: 0, refId: id, w, h, ks: transform(x, l) };
@@ -460,13 +463,18 @@ function layerJson(x: X, l: Layer, ind: number, w: number, h: number): J | null 
     case 'comp': {
       const inner = x.p.compositions.find((c) => c.id === l.comp);
       if (!inner) return null;
-      const id = `comp_${inner.id}`;
+      // A copy with its own field values gets its own precomp (Lottie has no fields).
+      const own = Object.entries(l.values ?? {}).filter(([, v]) => v);
+      const id = own.length ? `comp_${inner.id}_${l.id}` : `comp_${inner.id}`;
       if (!x.done.has(id)) {
         x.done.add(id);
         const outer = x.index;
+        const outerValues = x.values;
         x.index = layerIndex(inner);
+        if (own.length) x.values = { ...outerValues, ...Object.fromEntries(own.map(([k, v]) => [k, fill(v, outerValues)])) };
         x.assets.push({ id, nm: inner.name, w: inner.width, h: inner.height, fr: x.fr, layers: layersJson(x, inner.layers, inner.width, inner.height) });
         x.index = outer;
+        x.values = outerValues;
       }
       return { ...base, ty: 0, refId: id, w: inner.width, h: inner.height, st: r3(l.offset * x.fr), ks: transform(x, l) };
     }

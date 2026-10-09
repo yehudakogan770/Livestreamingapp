@@ -281,6 +281,7 @@ function pathKeys(it: J, c: Ctx, shift: number): PathKey[] | null {
 
 interface Styles {
   fill: Paint | null;
+  extraFills: Paint[];
   fillRule: 'nonzero' | 'evenodd';
   stroke: Stroke | null;
   trim: ShapeLayer['trim'];
@@ -335,8 +336,16 @@ function stylesIn(items: J[], parent: Styles, c: Ctx, shift: number): Styles {
     if (it.hd === true) continue;
     if ((it.ty === 'fl' || it.ty === 'gf') && !fill) {
       s.fill = paintOf(it, c, shift);
+      s.extraFills = [];
       s.fillRule = numOr(it.r, 1) === 2 ? 'evenodd' : 'nonzero';
       fill = true;
+    } else if (it.ty === 'fl' || it.ty === 'gf') {
+      // More fills: the earlier one is on top, so this one goes under it.
+      const under = paintOf(it, c, shift);
+      if (under && s.fill) {
+        s.extraFills = [s.fill, ...s.extraFills];
+        s.fill = under;
+      }
     } else if ((it.ty === 'st' || it.ty === 'gs') && !stroke) {
       s.stroke = strokeOf(it, c, shift);
       stroke = true;
@@ -366,7 +375,14 @@ function shapeItems(items: J[], parent: Styles, start: number, end: number, c: C
   const own = (): ShapeLayer | null => {
     if (!outlines.length || (!styles.fill && !styles.stroke)) return null;
     const one = outlines.length === 1 ? outlines[0]! : null;
-    const base = { ...baseOf(String(one?.nm ?? 'Shape'), start, end, { ...STILL }), type: 'shape' as const, fill: styles.fill, stroke: styles.stroke, trim: styles.trim ?? null };
+    const base = {
+      ...baseOf(String(one?.nm ?? 'Shape'), start, end, { ...STILL }),
+      type: 'shape' as const,
+      fill: styles.fill,
+      ...(styles.extraFills.length ? { extraFills: styles.extraFills } : {}),
+      stroke: styles.stroke,
+      trim: styles.trim ?? null,
+    };
     if (one && (one.ty === 'rc' || one.ty === 'el')) {
       // A rectangle or ellipse (size and place may move): kept as one, about its center.
       const size = prop<Vec2>(one.s, c, vec2, [100, 100], shift);
@@ -602,7 +618,7 @@ function layersOf(list: J[], c: Ctx, shift: number, compW: number, compH: number
         layer = { ...b, type: 'null' };
         break;
       case 4: {
-        const children = shapeItems(arr(l.shapes).filter(isObj), { fill: null, fillRule: 'nonzero', stroke: null, trim: null }, start, end, c, shift);
+        const children = shapeItems(arr(l.shapes).filter(isObj), { fill: null, extraFills: [], fillRule: 'nonzero', stroke: null, trim: null }, start, end, c, shift);
         layer = collapse({ ...b, type: 'group', children });
         break;
       }
