@@ -253,14 +253,21 @@ pub fn slides_view(show: &Show, rules: Rules) -> Value {
             "name": show.source(id).map(|s| s.name.clone()).unwrap_or_default(),
             "endsAt": c.ends_at,
             "remainingMs": c.remaining_ms,
+            "lengthMs": c.length_ms,
+            // At zero: the words chosen for the end, or the time over.
+            "endText": matches!(c.at_zero, lumora_engine::AtZero::ShowText).then(|| c.end_text.clone()),
         }))
     });
+    let m = &show.monitor;
     json!({
         "event": show.event.name,
         "locked": rules.locked,
         "allowBlack": rules.black,
         "slideshows": shows.into_iter().map(|(_, v)| v).collect::<Vec<_>>(),
         "countdown": countdown,
+        // The speaker sees the timing and the operator's message as the stage Monitor does.
+        "timing": { "wrapUpS": m.wrap_up_s, "overtime": m.overtime },
+        "message": (m.message_on && !m.message.trim().is_empty()).then(|| m.message.clone()),
     })
 }
 
@@ -459,6 +466,9 @@ mod tests {
         );
         assert_eq!(v["locked"], true);
         assert_eq!(v["allowBlack"], false);
+        assert_eq!(v["timing"]["wrapUpS"], 120);
+        assert_eq!(v["timing"]["overtime"], true);
+        assert!(v["message"].is_null());
         let first = &v["slideshows"][0];
         assert_eq!(first["id"], "talk");
         assert_eq!(first["onAir"], "live");

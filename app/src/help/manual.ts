@@ -293,6 +293,7 @@ export const MANUAL: Topic[] = [
       'The Monitor is for the people on stage. There are no controls on it: everything is sent from here (F3).',
       '• Send messages (“2 minutes left”, “Speak louder”), the time, the countdown and what is coming next.',
       '• Speaker timing: the time left turns amber when it is time to wrap up (choose when, under the Countdown check box), and red in the last minute. After zero it shows the time over in red (+1:05), so a speaker knows how far over they are. A bar under the time shows how much has gone. Each can be turned off.',
+      '• The speaker’s own phone or tablet (Slideshow → Let the speaker change slides…) shows the same countdown, in the same colors, and the message you send to the Monitor.',
       '• Teleprompter: paste the script, then start, pause and change the speed; mirror it for glass prompters.',
     ],
   },
