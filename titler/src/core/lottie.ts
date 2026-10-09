@@ -181,8 +181,14 @@ function position(p: unknown, c: Ctx, shift: number): Prop<Vec2> {
 function transform(ks: unknown, c: Ctx, shift: number): Transform {
   const k = isObj(ks) ? ks : {};
   if (k.sk && numOr((k.sk as J).k, 0)) c.notes.add('Skew is left out.');
-  if (k.rx || k.ry) c.notes.add('3D rotation (X and Y) is left out; Z rotation is kept.');
+  const deep: Partial<Transform> = {};
+  if (k.rx) deep.rotationX = prop(k.rx, c, scalar, 0, shift);
+  if (k.ry) deep.rotationY = prop(k.ry, c, scalar, 0, shift);
+  if (k.or && arr((k.or as J).k).some((v) => numOr(v, 0))) c.notes.add('3D orientation is left out (X and Y rotation are kept).');
+  const p3 = isObj(k.p) && !k.p.s && !(Array.isArray(k.p.k) && isObj(k.p.k[0])) ? arr(k.p.k).map((v) => numOr(v, 0)) : [];
+  if (p3.length > 2 && p3[2]) deep.z = { v: p3[2] };
   return {
+    ...deep,
     anchor: prop(k.a, c, vec2, [0, 0], shift),
     position: position(k.p, c, shift),
     scale: prop(k.s, c, vec2, [100, 100], shift),
@@ -589,7 +595,6 @@ function layersOf(list: J[], c: Ctx, shift: number, compW: number, compH: number
     }
     if (arr(l.ef).length) c.notes.add('After Effects effects are left out (add the Titler’s own in Effects).');
     if (l.tm) c.notes.add('Time remapping is left out.');
-    if (l.ddd === 1) c.notes.add('3D layers are drawn flat.');
     const masks = arr(l.masksProperties)
       .filter(isObj)
       .map((m) => maskOf(m, c, shift))

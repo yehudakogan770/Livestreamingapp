@@ -197,6 +197,25 @@ export function Inspector({ store }: { store: Store }) {
             Center anchor point
           </button>
         </div>
+        <Row label="3D" hint="Turn the layer in depth about its anchor point (center it for a card flip); the camera is in the Composition tab">
+          <Toggle
+            value={!!(l.transform.rotationX || l.transform.rotationY || l.transform.z)}
+            label="3D layer"
+            onChange={(on) =>
+              updOne(on ? 'Make 3D' : 'Make flat', (x) => {
+                const { rotationX: _x, rotationY: _y, z: _z, ...flat } = x.transform;
+                return { ...x, transform: on ? { ...flat, rotationX: { v: 0 }, rotationY: { v: 0 }, z: { v: 0 } } : flat };
+              })
+            }
+          />
+        </Row>
+        {(l.transform.rotationX || l.transform.rotationY || l.transform.z) && (
+          <>
+            {prop('transform.rotationX', 'X rotation', 0, '°')}
+            {prop('transform.rotationY', 'Y rotation', 0, '°')}
+            {prop('transform.z', 'Depth (Z)', 0, 'px')}
+          </>
+        )}
       </Section>
 
       {l.type === 'text' && <TextSection store={store} l={l} compId={c.id} fieldKeys={fieldKeys} tokens={tokens} vals={vals} time={time} />}

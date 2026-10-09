@@ -185,6 +185,17 @@ export function CompositionPanel({ store }: { store: Store }) {
             onChange={(v) => upd('Frame rate', (x) => ({ ...x, fps: Number(v) }))}
           />
         </Row>
+        <Row label="Camera" hint="For 3D layers: how far the camera is from the picture (nearer: stronger perspective)">
+          <NumberField
+            value={c.perspective ?? 2000}
+            step={50}
+            min={200}
+            max={20000}
+            label="Camera distance"
+            unit="px"
+            onChange={(perspective) => upd('Camera distance', (x) => ({ ...x, perspective: Math.round(perspective) }))}
+          />
+        </Row>
         <Row label="Length">
           <NumberField
             value={c.duration}

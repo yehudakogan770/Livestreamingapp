@@ -243,7 +243,125 @@ function effectsOn(l: Layer): Effect[] {
 }
 
 function needsOwnCanvas(l: Layer): boolean {
-  return !!(l.masks?.length || l.matte || effectsOn(l).length || (l.blend && l.blend !== 'normal' && l.type === 'group'));
+  return !!(l.masks?.length || l.matte || effectsOn(l).length || (l.blend && l.blend !== 'normal' && l.type === 'group') || is3d(l));
+}
+
+/** Does the layer turn in 3D (X or Y rotation, or depth)? */
+export function is3d(l: Layer): boolean {
+  const tr = l.transform;
+  const on = (p: Prop | undefined) => !!p && (isAnimated(p) || !!p.x || (p.v ?? 0) !== 0);
+  return on(tr.rotationX) || on(tr.rotationY) || on(tr.z);
+}
+
+/** The 3D turn of a layer at t: a point of the picture (px) to where the camera sees it, or null behind the camera. */
+export function projector(l: Layer, t: number, pivot: Vec2, distance: number, px = 1): (x: number, y: number) => Vec2 | null {
+  const rx = (num(l.transform.rotationX, t, 0) * Math.PI) / 180;
+  const ry = (num(l.transform.rotationY, t, 0) * Math.PI) / 180;
+  const z0 = num(l.transform.z, t, 0) * px;
+  const cx = Math.cos(rx);
+  const sx = Math.sin(rx);
+  const cy = Math.cos(ry);
+  const sy = Math.sin(ry);
+  return (x, y) => {
+    const px = x - pivot[0];
+    const py = y - pivot[1];
+    // Turn about Y (across), then X (up and down).
+    const x1 = px * cy;
+    const z1 = -px * sy;
+    const y2 = py * cx - z1 * sx;
+    const z2 = py * sx + z1 * cx + z0;
+    const k = distance + z2;
+    if (k <= distance * 0.05) return null;
+    const s = distance / k;
+    return [pivot[0] + x1 * s, pivot[1] + y2 * s];
+  };
+}
+
+/** Draw `src` (a canvas the size of the picture) as seen through `project`, in triangles fine enough to look smooth. */
+function drawProjected(ctx: Ctx, src: CanvasImageSource, area: { x: number; y: number; w: number; h: number }, project: (x: number, y: number) => Vec2 | null, steps: number) {
+  if (area.w <= 0 || area.h <= 0) return;
+  const n = Math.max(1, Math.min(24, steps));
+  const pts: (Vec2 | null)[][] = [];
+  for (let j = 0; j <= n; j++) {
+    const row: (Vec2 | null)[] = [];
+    for (let i = 0; i <= n; i++) row.push(project(area.x + (area.w * i) / n, area.y + (area.h * j) / n));
+    pts.push(row);
+  }
+  const at = (i: number, j: number): Vec2 => [area.x + (area.w * i) / n, area.y + (area.h * j) / n];
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++) {
+      const d00 = pts[j]![i]!;
+      const d10 = pts[j]![i + 1]!;
+      const d01 = pts[j + 1]![i]!;
+      const d11 = pts[j + 1]![i + 1]!;
+      if (!d00 || !d10 || !d01 || !d11) continue;
+      const cell = { x: at(i, j)[0], y: at(i, j)[1], w: area.w / n, h: area.h / n };
+      triangle(ctx, src, cell, [at(i, j), at(i + 1, j), at(i + 1, j + 1)], [d00, d10, d11]);
+      triangle(ctx, src, cell, [at(i, j), at(i + 1, j + 1), at(i, j + 1)], [d00, d11, d01]);
+    }
+}
+
+/** A triangle with each edge moved out by `by` px (neighbors overlap, so their soft edges hide inside each other). */
+function outset(t: [Vec2, Vec2, Vec2], by = 1): [Vec2, Vec2, Vec2] {
+  const area = (t[1][0] - t[0][0]) * (t[2][1] - t[0][1]) - (t[2][0] - t[0][0]) * (t[1][1] - t[0][1]);
+  const sign = area > 0 ? 1 : -1;
+  // Each edge as a line moved outward: point and direction.
+  const lines = [0, 1, 2].map((k) => {
+    const a = t[k]!;
+    const b = t[(k + 1) % 3]!;
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = (dy / len) * sign * by;
+    const ny = (-dx / len) * sign * by;
+    return { p: [a[0] + nx, a[1] + ny] as Vec2, d: [dx, dy] as Vec2 };
+  });
+  return [0, 1, 2].map((k) => {
+    // Vertex k: where the edges before and after it meet (kept near the corner on thin triangles).
+    const l1 = lines[(k + 2) % 3]!;
+    const l2 = lines[k]!;
+    const den = l1.d[0] * l2.d[1] - l1.d[1] * l2.d[0];
+    const v = t[k]!;
+    if (Math.abs(den) < 1e-9) return v;
+    const s = ((l2.p[0] - l1.p[0]) * l2.d[1] - (l2.p[1] - l1.p[1]) * l2.d[0]) / den;
+    const q: Vec2 = [l1.p[0] + l1.d[0] * s, l1.p[1] + l1.d[1] * s];
+    const far = Math.hypot(q[0] - v[0], q[1] - v[1]);
+    return far > by * 4 ? ([v[0] + ((q[0] - v[0]) / far) * by * 4, v[1] + ((q[1] - v[1]) / far) * by * 4] as Vec2) : q;
+  }) as [Vec2, Vec2, Vec2];
+}
+
+/** One triangle of a picture moved to another (affine), clipped a hair larger so neighbors meet without seams. */
+function triangle(ctx: Ctx, src: CanvasImageSource, cell: { x: number; y: number; w: number; h: number }, s: [Vec2, Vec2, Vec2], d: [Vec2, Vec2, Vec2]) {
+  const [[x0, y0], [x1, y1], [x2, y2]] = s;
+  const [[u0, v0], [u1, v1], [u2, v2]] = d;
+  const det = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+  if (Math.abs(det) < 1e-9) return;
+  const a = ((u1 - u0) * (y2 - y0) - (u2 - u0) * (y1 - y0)) / det;
+  const c = ((u2 - u0) * (x1 - x0) - (u1 - u0) * (x2 - x0)) / det;
+  const b = ((v1 - v0) * (y2 - y0) - (v2 - v0) * (y1 - y0)) / det;
+  const dd = ((v2 - v0) * (x1 - x0) - (v1 - v0) * (x2 - x0)) / det;
+  const e = u0 - a * x0 - c * y0;
+  const f = v0 - b * x0 - dd * y0;
+  const [p0, p1, p2] = outset([
+    [u0, v0],
+    [u1, v1],
+    [u2, v2],
+  ]);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.beginPath();
+  ctx.moveTo(p0[0], p0[1]);
+  ctx.lineTo(p1[0], p1[1]);
+  ctx.lineTo(p2[0], p2[1]);
+  ctx.closePath();
+  ctx.clip();
+  ctx.setTransform(a, b, c, dd, e, f);
+  const sx = Math.max(0, Math.floor(cell.x - 3));
+  const sy = Math.max(0, Math.floor(cell.y - 3));
+  const sw = Math.ceil(cell.w + 6);
+  const sh = Math.ceil(cell.h + 6);
+  ctx.drawImage(src, sx, sy, sw, sh, sx, sy, sw, sh);
+  ctx.restore();
 }
 
 const BLEND: Record<string, GlobalCompositeOperation> = {
@@ -320,7 +438,15 @@ function drawLayer(ctx: Ctx, l: Layer, alpha: number, s: Scene) {
     ctx.drawImage(tint as CanvasImageSource, Math.cos(ang) * dist, Math.sin(ang) * dist);
     ctx.restore();
   }
-  ctx.drawImage(surf as CanvasImageSource, 0, 0);
+  if (is3d(l)) {
+    // 3D: the layer's picture turned about its anchor point and seen through the camera.
+    const a = vec(l.transform.anchor, t, [0, 0]);
+    const pivot: Vec2 = [world[0] * a[0] + world[2] * a[1] + world[4], world[1] * a[0] + world[3] * a[1] + world[5]];
+    const project = projector(l, t, pivot, (s.comp.perspective ?? 2000) * s.f.px, s.f.px);
+    const bend = Math.max(Math.abs(Math.sin((num(l.transform.rotationX, t, 0) * Math.PI) / 180)), Math.abs(Math.sin((num(l.transform.rotationY, t, 0) * Math.PI) / 180)));
+    const area = l.type === 'group' || l.type === 'comp' ? { x: 0, y: 0, w: cw, h: ch } : canvasBox(own, l, world, s);
+    drawProjected(ctx, surf as CanvasImageSource, area, project, Math.ceil(2 + bend * 14));
+  } else ctx.drawImage(surf as CanvasImageSource, 0, 0);
   ctx.restore();
 }
 

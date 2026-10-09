@@ -131,7 +131,16 @@ function transform(x: X, l: Layer, anchorShift: Vec2 = [0, 0]): J {
         : { v: [(a.v as Vec2)[0] + anchorShift[0], (a.v as Vec2)[1] + anchorShift[1]], x: a.x }
       : a;
   const v3 = (v: Vec2) => [r3(v[0]), r3(v[1]), 0];
+  const deep: J = {};
+  if (tr.rotationX || tr.rotationY || tr.z) {
+    x.notes.add('3D layers turn in Lottie players that draw in 3D (the HTML renderer); others draw them flat.');
+    deep.rx = lprop(x, tr.rotationX, 0, (v) => [r3(v)]);
+    deep.ry = lprop(x, tr.rotationY, 0, (v) => [r3(v)]);
+    deep.rz = lprop(x, tr.rotation, 0, (v) => [r3(v)]);
+    deep.or = { a: 0, k: [0, 0, 0] };
+  }
   return {
+    ...deep,
     a: lprop(x, shifted, [0, 0], v3),
     p: lprop(x, tr.position, [0, 0], v3),
     s: lprop(x, tr.scale, [100, 100], (v) => [r3(v[0]), r3(v[1]), 100]),
@@ -424,6 +433,7 @@ function layerJson(x: X, l: Layer, ind: number, w: number, h: number): J | null 
     base.hasMask = true;
     base.masksProperties = masks;
   }
+  if (l.transform.rotationX || l.transform.rotationY || l.transform.z) base.ddd = 1;
   switch (l.type) {
     case 'null':
       return { ...base, ty: 3, ks: transform(x, l) };

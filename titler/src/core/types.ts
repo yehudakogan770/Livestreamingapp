@@ -88,6 +88,11 @@ export interface Transform {
   rotation: Prop;
   /** 0–100. */
   opacity: Prop;
+  /** 3D layers: turned about the anchor point across (X) and up and down (Y), degrees, seen through the composition's camera. */
+  rotationX?: Prop;
+  rotationY?: Prop;
+  /** 3D layers: toward (negative) or away from the camera, px. */
+  z?: Prop;
 }
 
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'add';
@@ -360,6 +365,8 @@ export interface Composition {
   /** Front first. */
   layers: Layer[];
   guides?: { x: number[]; y: number[] };
+  /** How far the camera is from the picture for 3D layers, px (nearer: stronger perspective); 2000 when left out. */
+  perspective?: number;
   /** A format of another composition (the main one) in another shape: picked on air by the picture's shape. */
   variantOf?: string;
   /** A format follows changes to the main composition (keeping its own changes); false: it stands on its own. */
