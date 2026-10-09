@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { browserEnv, requestFonts, type BrowserEnv } from '../core/browserEnv';
 import { cloneLayers, newProject, newText } from '../core/build';
-import { tokensFor } from '../core/binding';
+import { TOKEN_KEYS, tokensFor } from '../core/binding';
 import { fileName } from '../core/package';
 import type { BrandTokens, Layer, TitleProject, Values } from '../core/types';
 import { Inspector } from './Inspector';
@@ -48,6 +48,7 @@ import { FORMAT_NAMES, renderVideo, wholeJob } from './renderVideo';
 import { animatedProps, getProp, withProp } from './props';
 import { isAnimated, setKey, valueAt } from '../core/easing';
 import { Mark } from './Mark';
+import { SwatchContext, type Swatches } from './ColorPicker';
 import { HistoryPanel } from './HistoryPanel';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
@@ -230,6 +231,17 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     if (r.result.notes.length) store.set({ status: r.result.notes.join(' ') });
   };
 
+  // The color picker's swatches: the title's own, and the event look's colors.
+  const swatches = useMemo<Swatches>(() => {
+    const t = tokensFor(project, brand ?? undefined);
+    return {
+      list: project.swatches ?? [],
+      add: (c) => store.edit('Add swatch', (p) => ({ ...p, swatches: [...(p.swatches ?? []).filter((x) => x !== c), c].slice(-40) })),
+      remove: (c) => store.edit('Remove swatch', (p) => ({ ...p, swatches: (p.swatches ?? []).filter((x) => x !== c) })),
+      brand: TOKEN_KEYS.filter((k) => !k.startsWith('font')).map((k) => [k, t[k]] as [string, string]),
+    };
+  }, [project, brand, store]);
+
   const boxOf = (l: Layer) => layerBounds(lookOf(store.get()), l);
   const cmd = useCommands(store, boxOf);
 
@@ -396,305 +408,319 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     ['hand', 'Hand (move the view)', <Hand key="h" size={16} />, 'H'],
   ];
   return (
-    <div
-      className={`tt tt-look-${look}${layout.canvasOnly ? ' tt-canvas-only' : ''}`}
-      ref={rootRef}
-      data-testid="titler-designer"
-      style={{ '--tt-left': `${layout.left}px`, '--tt-right': `${layout.right}px`, '--tt-timeline': `${layout.timeline}px` } as React.CSSProperties}
-    >
-      <header className="tt-top">
-        <span className="tt-brand">
-          <Mark size={18} />
-          <span>Titler</span>
-        </span>
-        <div className="tt-menu">
-          <button onClick={() => open(newProject(), null)} title="New title">
-            <Plus size={15} /> New
-          </button>
-          <button onClick={() => void openFile()} title="Open a .lumtitle file (Ctrl+O)">
-            <FolderOpen size={15} /> Open
-          </button>
-          <button onClick={() => void saveToLibrary()} title={`Save to the library: ${host.libraryName} (Ctrl+S)`}>
-            <Save size={15} /> Save
-          </button>
-          <button onClick={() => void exportFile()} title="Save as a .lumtitle file with its pictures and fonts inside (Ctrl+Shift+S)">
-            <Download size={15} /> Export .lumtitle
-          </button>
-          <button onClick={() => setRenderOpen(true)} title="Render to a film or PNG sequence">
-            <Film size={15} /> Render
-          </button>
-        </div>
-        <div className="tt-sep" />
-        <div className="tt-tools" role="toolbar" aria-label="Tools">
-          {tools.map(([id, name, icon, key]) => (
-            <button
-              key={id}
-              className={tool === id ? 'on' : ''}
-              onClick={() => store.set({ tool: id })}
-              title={`${name} (${key})`}
-              aria-label={name}
-              aria-pressed={tool === id}
-            >
-              {icon}
+    <SwatchContext.Provider value={swatches}>
+      <div
+        className={`tt tt-look-${look}${layout.canvasOnly ? ' tt-canvas-only' : ''}`}
+        ref={rootRef}
+        data-testid="titler-designer"
+        style={{ '--tt-left': `${layout.left}px`, '--tt-right': `${layout.right}px`, '--tt-timeline': `${layout.timeline}px` } as React.CSSProperties}
+      >
+        <header className="tt-top">
+          <span className="tt-brand">
+            <Mark size={18} />
+            <span>Titler</span>
+          </span>
+          <div className="tt-menu">
+            <button onClick={() => open(newProject(), null)} title="New title">
+              <Plus size={15} /> New
             </button>
-          ))}
-        </div>
-        <div className="tt-sep" />
-        <div className="tt-tools" role="toolbar" aria-label="Align">
-          {(
-            [
-              ['left', <AlignStartVertical key="l" size={15} />, 'Align left edges'],
-              ['hcenter', <AlignCenterVertical key="hc" size={15} />, 'Align centers across'],
-              ['right', <AlignEndVertical key="r" size={15} />, 'Align right edges'],
-              ['top', <AlignStartHorizontal key="t" size={15} />, 'Align top edges'],
-              ['vcenter', <AlignCenterHorizontal key="vc" size={15} />, 'Align middles'],
-              ['bottom', <AlignEndHorizontal key="b" size={15} />, 'Align bottom edges'],
-            ] as const
-          ).map(([how, icon, name]) => (
-            <button
-              key={how}
-              disabled={!selection.length}
-              onClick={() => store.edit(name, (p) => align(p, store.get().compId, store.get().selection, how, store.get().time, boxOf))}
-              title={`${name} (one layer: to the frame)`}
-              aria-label={name}
-            >
-              {icon}
+            <button onClick={() => void openFile()} title="Open a .lumtitle file (Ctrl+O)">
+              <FolderOpen size={15} /> Open
             </button>
-          ))}
-          <button
-            disabled={selection.length < 3}
-            onClick={() => store.edit('Distribute across', (p) => distribute(p, store.get().compId, store.get().selection, 'x', store.get().time, boxOf))}
-            title="Spread evenly across"
-            aria-label="Distribute across"
-          >
-            ⇹
-          </button>
-          <button
-            disabled={selection.length < 3}
-            onClick={() => store.edit('Distribute down', (p) => distribute(p, store.get().compId, store.get().selection, 'y', store.get().time, boxOf))}
-            title="Spread evenly down"
-            aria-label="Distribute down"
-          >
-            ⇵
-          </button>
-        </div>
-        <div className="tt-sep" />
-        <div className="tt-tools">
-          <button onClick={() => store.undo()} disabled={!store.canUndo()} title={`Undo ${store.undoLabel().toLowerCase()} (Ctrl+Z)`} aria-label="Undo">
-            <Undo2 size={15} />
-          </button>
-          <button onClick={() => store.redo()} disabled={!store.canRedo()} title={`Redo ${store.redoLabel().toLowerCase()} (Ctrl+Shift+Z)`} aria-label="Redo">
-            <Redo2 size={15} />
-          </button>
-        </div>
-        <span className="tt-grow" />
-        <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
-          <span className="tt-dim">Workspace</span>
-          <select
-            className="tt-select"
-            aria-label="Workspace"
-            value={layout.workspace}
-            onChange={(e) => setLayout(workspace(e.target.value as WorkspaceName))}
-          >
-            {(Object.keys(WORKSPACE_NAMES) as WorkspaceName[]).map((w) => (
-              <option key={w} value={w}>
-                {WORKSPACE_NAMES[w]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <span className="tt-title" title={store.get().path ?? ''}>
-          {project.name}
-          {dirty ? ' •' : ''}
-        </span>
-        {onUse && (
-          <button className="tt-primary" onClick={() => onUse(store.get().project)}>
-            {useLabel ?? 'Use this title'}
-          </button>
-        )}
-        {onClose && (
-          <button className="tt-plain" onClick={onClose}>
-            Close
-          </button>
-        )}
-      </header>
-      {recovered && (
-        <div className="tt-banner" role="status">
-          A title that was not saved ({recovered.name}) was kept when the app last closed.
-          <button
-            onClick={() => {
-              store.load(recovered);
-              store.set({ dirty: true });
-              setRecovered(null);
-              setSide('project');
-            }}
-          >
-            Open it
-          </button>
-          <button
-            onClick={() => {
-              host.autosave(null);
-              setRecovered(null);
-            }}
-          >
-            Discard it
-          </button>
-        </div>
-      )}
-      <div className="tt-main">
-        <aside className="tt-left">
-          <div className="tt-tabs">
-            <button className={side === 'library' ? 'on' : ''} onClick={() => setSide('library')}>
-              Library
+            <button onClick={() => void saveToLibrary()} title={`Save to the library: ${host.libraryName} (Ctrl+S)`}>
+              <Save size={15} /> Save
             </button>
-            <button className={side === 'project' ? 'on' : ''} onClick={() => setSide('project')}>
-              Project
+            <button onClick={() => void exportFile()} title="Save as a .lumtitle file with its pictures and fonts inside (Ctrl+Shift+S)">
+              <Download size={15} /> Export .lumtitle
             </button>
-            <button className={side === 'history' ? 'on' : ''} onClick={() => setSide('history')}>
-              History
+            <button onClick={() => setRenderOpen(true)} title="Render to a film or PNG sequence">
+              <Film size={15} /> Render
             </button>
           </div>
-          {side === 'library' && (
-            <>
-              {recent.length > 0 && (
-                <div className="tt-recent" aria-label="Recent titles">
-                  <div className="tt-recent-head">Recent</div>
-                  {recent.slice(0, 5).map((r) => (
-                    <button key={r.id} className="tt-recent-item" title={r.id} onClick={() => void openRecent(r.id)}>
-                      {r.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <LibraryPanel store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
-            </>
-          )}
-          {side === 'project' && <ProjectPanel store={store} host={host} />}
-          {side === 'history' && <HistoryPanel store={store} />}
-          <Splitter axis="x" edge="right" value={layout.left} onChange={(left) => setLayout({ left: clampSize('left', left) })} label="Resize the left panel" />
-        </aside>
-        <section className="tt-center">
-          <div className="tt-viewbar">
-            <input
-              className="tt-projname"
-              value={project.name}
-              aria-label="Title name"
-              onChange={(e) => store.edit('Rename title', (p) => ({ ...p, name: e.target.value }))}
-            />
-            <select
-              className="tt-select"
-              aria-label="Category"
-              value={project.category}
-              onChange={(e) => store.edit('Category', (p) => ({ ...p, category: e.target.value }))}
-            >
-              {['Lower thirds', 'Bugs', 'Tickers and banners', 'Scoreboards', 'Full screen', 'Cards', 'Custom'].map((x) => (
-                <option key={x}>{x}</option>
-              ))}
-            </select>
-            <span className="tt-grow" />
-            {(
-              [
-                ['safe', 'Safe areas'],
-                ['guides', 'Guides'],
-                ['grid', 'Grid'],
-                ['rulers', 'Rulers'],
-                ['snap', 'Snapping'],
-                ['motionPaths', 'Motion paths'],
-              ] as const
-            ).map(([k, label]) => (
-              <label key={k} className="tt-check">
-                <input type="checkbox" checked={show[k]} onChange={(e) => store.set((x) => ({ show: { ...x.show, [k]: e.target.checked } }))} />
-                {label}
-              </label>
-            ))}
-            <button
-              className={`tt-plain tt-canvas-btn${layout.canvasOnly ? ' on' : ''}`}
-              onClick={() => setLayout((l) => ({ canvasOnly: !l.canvasOnly }))}
-              title="The canvas on its own (`)"
-              aria-pressed={layout.canvasOnly}
-              aria-label="Canvas only"
-            >
-              {layout.canvasOnly ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            </button>
-            <select className="tt-select" aria-label="Zoom" value={zoom} onChange={(e) => store.set({ zoom: Number(e.target.value), pan: [0, 0] })}>
-              <option value={0}>Fit</option>
-              {[0.25, 0.5, 0.75, 1, 1.5, 2].map((z) => (
-                <option key={z} value={z}>
-                  {Math.round(z * 100)}%
-                </option>
-              ))}
-              {zoom > 0 && ![0.25, 0.5, 0.75, 1, 1.5, 2].includes(zoom) && <option value={zoom}>{Math.round(zoom * 100)}%</option>}
-            </select>
-          </div>
-          <Viewport store={store} env={env} ram={ram} />
-          <div className="tt-transport">
-            <button onClick={() => store.set({ time: 0, cue: null, playing: false })} aria-label="Go to start" title="Start (Home)">
-              <SkipBack size={15} />
-            </button>
-            <button
-              onClick={() => store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }))}
-              aria-label={playing ? 'Pause' : 'Play'}
-              title="Play / pause (Space); J, K, L for reverse, stop, forward"
-            >
-              {playing ? <Pause size={15} /> : <Play size={15} />}
-            </button>
-            <span className="tt-sep" />
-            <span className="tt-dim">Preview as on air:</span>
-            <button
-              className={cue && cue.outAt === null ? 'on' : ''}
-              onClick={() => store.set({ cue: { inAt: performance.now(), outAt: null }, playing: false })}
-              title="Play the IN, then hold (and loop)"
-            >
-              Take IN
-            </button>
-            <button
-              disabled={!cue || cue.outAt !== null}
-              onClick={() => store.set((x) => ({ cue: x.cue ? { ...x.cue, outAt: performance.now() } : null }))}
-              title="Play the OUT"
-            >
-              Take OUT
-            </button>
-            <span className="tt-grow" />
-            <span className="tt-dim">
-              {c.width} × {c.height} · {c.fps} fps
-            </span>
-          </div>
-        </section>
-        <aside className="tt-right">
-          <Splitter axis="x" edge="left" value={layout.right} onChange={(r) => setLayout({ right: clampSize('right', r) })} label="Resize the right panel" />
-          <div className="tt-tabs">
-            {(
-              [
-                ['layer', 'Layer'],
-                ['comp', 'Composition'],
-                ['fields', 'Fields'],
-                ['look', 'Look'],
-                ['data', 'Data'],
-              ] as const
-            ).map(([id, name]) => (
-              <button key={id} className={right === id ? 'on' : ''} onClick={() => setRight(id)}>
-                {name}
+          <div className="tt-sep" />
+          <div className="tt-tools" role="toolbar" aria-label="Tools">
+            {tools.map(([id, name, icon, key]) => (
+              <button
+                key={id}
+                className={tool === id ? 'on' : ''}
+                onClick={() => store.set({ tool: id })}
+                title={`${name} (${key})`}
+                aria-label={name}
+                aria-pressed={tool === id}
+              >
+                {icon}
               </button>
             ))}
           </div>
-          <div className="tt-right-body">
-            {right === 'layer' && <Inspector store={store} />}
-            {right === 'comp' && <CompositionPanel store={store} />}
-            {right === 'fields' && <FieldsPanel store={store} host={host} />}
-            {right === 'look' && <LookPanel store={store} host={host} />}
-            {right === 'data' && <DataPanel store={store} />}
+          <div className="tt-sep" />
+          <div className="tt-tools" role="toolbar" aria-label="Align">
+            {(
+              [
+                ['left', <AlignStartVertical key="l" size={15} />, 'Align left edges'],
+                ['hcenter', <AlignCenterVertical key="hc" size={15} />, 'Align centers across'],
+                ['right', <AlignEndVertical key="r" size={15} />, 'Align right edges'],
+                ['top', <AlignStartHorizontal key="t" size={15} />, 'Align top edges'],
+                ['vcenter', <AlignCenterHorizontal key="vc" size={15} />, 'Align middles'],
+                ['bottom', <AlignEndHorizontal key="b" size={15} />, 'Align bottom edges'],
+              ] as const
+            ).map(([how, icon, name]) => (
+              <button
+                key={how}
+                disabled={!selection.length}
+                onClick={() => store.edit(name, (p) => align(p, store.get().compId, store.get().selection, how, store.get().time, boxOf))}
+                title={`${name} (one layer: to the frame)`}
+                aria-label={name}
+              >
+                {icon}
+              </button>
+            ))}
+            <button
+              disabled={selection.length < 3}
+              onClick={() => store.edit('Distribute across', (p) => distribute(p, store.get().compId, store.get().selection, 'x', store.get().time, boxOf))}
+              title="Spread evenly across"
+              aria-label="Distribute across"
+            >
+              ⇹
+            </button>
+            <button
+              disabled={selection.length < 3}
+              onClick={() => store.edit('Distribute down', (p) => distribute(p, store.get().compId, store.get().selection, 'y', store.get().time, boxOf))}
+              title="Spread evenly down"
+              aria-label="Distribute down"
+            >
+              ⇵
+            </button>
           </div>
-        </aside>
+          <div className="tt-sep" />
+          <div className="tt-tools">
+            <button onClick={() => store.undo()} disabled={!store.canUndo()} title={`Undo ${store.undoLabel().toLowerCase()} (Ctrl+Z)`} aria-label="Undo">
+              <Undo2 size={15} />
+            </button>
+            <button onClick={() => store.redo()} disabled={!store.canRedo()} title={`Redo ${store.redoLabel().toLowerCase()} (Ctrl+Shift+Z)`} aria-label="Redo">
+              <Redo2 size={15} />
+            </button>
+          </div>
+          <span className="tt-grow" />
+          <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
+            <span className="tt-dim">Workspace</span>
+            <select
+              className="tt-select"
+              aria-label="Workspace"
+              value={layout.workspace}
+              onChange={(e) => setLayout(workspace(e.target.value as WorkspaceName))}
+            >
+              {(Object.keys(WORKSPACE_NAMES) as WorkspaceName[]).map((w) => (
+                <option key={w} value={w}>
+                  {WORKSPACE_NAMES[w]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <span className="tt-title" title={store.get().path ?? ''}>
+            {project.name}
+            {dirty ? ' •' : ''}
+          </span>
+          {onUse && (
+            <button className="tt-primary" onClick={() => onUse(store.get().project)}>
+              {useLabel ?? 'Use this title'}
+            </button>
+          )}
+          {onClose && (
+            <button className="tt-plain" onClick={onClose}>
+              Close
+            </button>
+          )}
+        </header>
+        {recovered && (
+          <div className="tt-banner" role="status">
+            A title that was not saved ({recovered.name}) was kept when the app last closed.
+            <button
+              onClick={() => {
+                store.load(recovered);
+                store.set({ dirty: true });
+                setRecovered(null);
+                setSide('project');
+              }}
+            >
+              Open it
+            </button>
+            <button
+              onClick={() => {
+                host.autosave(null);
+                setRecovered(null);
+              }}
+            >
+              Discard it
+            </button>
+          </div>
+        )}
+        <div className="tt-main">
+          <aside className="tt-left">
+            <div className="tt-tabs">
+              <button className={side === 'library' ? 'on' : ''} onClick={() => setSide('library')}>
+                Library
+              </button>
+              <button className={side === 'project' ? 'on' : ''} onClick={() => setSide('project')}>
+                Project
+              </button>
+              <button className={side === 'history' ? 'on' : ''} onClick={() => setSide('history')}>
+                History
+              </button>
+            </div>
+            {side === 'library' && (
+              <>
+                {recent.length > 0 && (
+                  <div className="tt-recent" aria-label="Recent titles">
+                    <div className="tt-recent-head">Recent</div>
+                    {recent.slice(0, 5).map((r) => (
+                      <button key={r.id} className="tt-recent-item" title={r.id} onClick={() => void openRecent(r.id)}>
+                        {r.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <LibraryPanel store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
+              </>
+            )}
+            {side === 'project' && <ProjectPanel store={store} host={host} />}
+            {side === 'history' && <HistoryPanel store={store} />}
+            <Splitter
+              axis="x"
+              edge="right"
+              value={layout.left}
+              onChange={(left) => setLayout({ left: clampSize('left', left) })}
+              label="Resize the left panel"
+            />
+          </aside>
+          <section className="tt-center">
+            <div className="tt-viewbar">
+              <input
+                className="tt-projname"
+                value={project.name}
+                aria-label="Title name"
+                onChange={(e) => store.edit('Rename title', (p) => ({ ...p, name: e.target.value }))}
+              />
+              <select
+                className="tt-select"
+                aria-label="Category"
+                value={project.category}
+                onChange={(e) => store.edit('Category', (p) => ({ ...p, category: e.target.value }))}
+              >
+                {['Lower thirds', 'Bugs', 'Tickers and banners', 'Scoreboards', 'Full screen', 'Cards', 'Custom'].map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+              </select>
+              <span className="tt-grow" />
+              {(
+                [
+                  ['safe', 'Safe areas'],
+                  ['guides', 'Guides'],
+                  ['grid', 'Grid'],
+                  ['rulers', 'Rulers'],
+                  ['snap', 'Snapping'],
+                  ['motionPaths', 'Motion paths'],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="tt-check">
+                  <input type="checkbox" checked={show[k]} onChange={(e) => store.set((x) => ({ show: { ...x.show, [k]: e.target.checked } }))} />
+                  {label}
+                </label>
+              ))}
+              <button
+                className={`tt-plain tt-canvas-btn${layout.canvasOnly ? ' on' : ''}`}
+                onClick={() => setLayout((l) => ({ canvasOnly: !l.canvasOnly }))}
+                title="The canvas on its own (`)"
+                aria-pressed={layout.canvasOnly}
+                aria-label="Canvas only"
+              >
+                {layout.canvasOnly ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </button>
+              <select className="tt-select" aria-label="Zoom" value={zoom} onChange={(e) => store.set({ zoom: Number(e.target.value), pan: [0, 0] })}>
+                <option value={0}>Fit</option>
+                {[0.25, 0.5, 0.75, 1, 1.5, 2].map((z) => (
+                  <option key={z} value={z}>
+                    {Math.round(z * 100)}%
+                  </option>
+                ))}
+                {zoom > 0 && ![0.25, 0.5, 0.75, 1, 1.5, 2].includes(zoom) && <option value={zoom}>{Math.round(zoom * 100)}%</option>}
+              </select>
+            </div>
+            <Viewport store={store} env={env} ram={ram} />
+            <div className="tt-transport">
+              <button onClick={() => store.set({ time: 0, cue: null, playing: false })} aria-label="Go to start" title="Start (Home)">
+                <SkipBack size={15} />
+              </button>
+              <button
+                onClick={() => store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }))}
+                aria-label={playing ? 'Pause' : 'Play'}
+                title="Play / pause (Space); J, K, L for reverse, stop, forward"
+              >
+                {playing ? <Pause size={15} /> : <Play size={15} />}
+              </button>
+              <span className="tt-sep" />
+              <span className="tt-dim">Preview as on air:</span>
+              <button
+                className={cue && cue.outAt === null ? 'on' : ''}
+                onClick={() => store.set({ cue: { inAt: performance.now(), outAt: null }, playing: false })}
+                title="Play the IN, then hold (and loop)"
+              >
+                Take IN
+              </button>
+              <button
+                disabled={!cue || cue.outAt !== null}
+                onClick={() => store.set((x) => ({ cue: x.cue ? { ...x.cue, outAt: performance.now() } : null }))}
+                title="Play the OUT"
+              >
+                Take OUT
+              </button>
+              <span className="tt-grow" />
+              <span className="tt-dim">
+                {c.width} × {c.height} · {c.fps} fps
+              </span>
+            </div>
+          </section>
+          <aside className="tt-right">
+            <Splitter axis="x" edge="left" value={layout.right} onChange={(r) => setLayout({ right: clampSize('right', r) })} label="Resize the right panel" />
+            <div className="tt-tabs">
+              {(
+                [
+                  ['layer', 'Layer'],
+                  ['comp', 'Composition'],
+                  ['fields', 'Fields'],
+                  ['look', 'Look'],
+                  ['data', 'Data'],
+                ] as const
+              ).map(([id, name]) => (
+                <button key={id} className={right === id ? 'on' : ''} onClick={() => setRight(id)}>
+                  {name}
+                </button>
+              ))}
+            </div>
+            <div className="tt-right-body">
+              {right === 'layer' && <Inspector store={store} />}
+              {right === 'comp' && <CompositionPanel store={store} />}
+              {right === 'fields' && <FieldsPanel store={store} host={host} />}
+              {right === 'look' && <LookPanel store={store} host={host} />}
+              {right === 'data' && <DataPanel store={store} />}
+            </div>
+          </aside>
+        </div>
+        <div className="tt-timeline-wrap">
+          <Splitter
+            axis="y"
+            edge="top"
+            value={layout.timeline}
+            onChange={(t) => setLayout({ timeline: clampSize('timeline', t) })}
+            label="Resize the timeline"
+          />
+          <Timeline store={store} ram={ram} />
+        </div>
+        <footer className="tt-status" role="status">
+          {status || 'Ready.'}
+        </footer>
+        {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
       </div>
-      <div className="tt-timeline-wrap">
-        <Splitter axis="y" edge="top" value={layout.timeline} onChange={(t) => setLayout({ timeline: clampSize('timeline', t) })} label="Resize the timeline" />
-        <Timeline store={store} ram={ram} />
-      </div>
-      <footer className="tt-status" role="status">
-        {status || 'Ready.'}
-      </footer>
-      {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
-    </div>
+    </SwatchContext.Provider>
   );
 }
 

@@ -405,6 +405,8 @@ export interface TitleProject {
   data?: DataSource[];
   /** Shared text styles. */
   textStyles?: TextStyleDef[];
+  /** The title's own color swatches ("#rrggbb[aa]"). */
+  swatches?: string[];
   modified?: number;
 }
 

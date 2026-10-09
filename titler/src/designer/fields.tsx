@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { TOKEN_KEYS, TOKEN_LABELS, isHex, resolveColor } from '../core/binding';
 import type { BrandTokens, Values } from '../core/types';
 import { evalMath } from './math';
+import { ColorPicker } from './ColorPicker';
 
 const fmt = (v: number) => {
   if (!Number.isFinite(v)) return '0';
@@ -119,11 +120,37 @@ export function ColorField({
 }) {
   const shown = resolveColor(value, tokens, values, '#000000');
   const [text, setText] = useState(value);
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLSpanElement>(null);
   useEffect(() => setText(value), [value]);
-  const swatch = isHex(shown) && shown.length === 7 ? shown : shown.slice(0, 7);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('pointerdown', away);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('pointerdown', away);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [open]);
   return (
-    <span className="tt-color">
-      <input type="color" aria-label={`${label} color`} value={isHex(swatch) ? swatch : '#000000'} onChange={(e) => onChange(e.target.value)} />
+    <span className="tt-color" ref={wrap}>
+      <button
+        type="button"
+        className="tt-color-swatch"
+        aria-label={`${label} color`}
+        aria-expanded={open}
+        title="Open the color picker"
+        onClick={() => setOpen(!open)}
+      >
+        <i style={{ background: isHex(shown) ? shown : '#000000' }} />
+      </button>
+      {open && (
+        <span className="tt-color-pop">
+          <ColorPicker value={isHex(shown) ? shown : '#000000'} onChange={onChange} onPick={onChange} label={label} />
+        </span>
+      )}
       <select
         aria-label={`${label} brand color`}
         value={value.startsWith('$') || value.startsWith('{{') ? value : ''}
