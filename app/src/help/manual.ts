@@ -26,7 +26,7 @@ export const MANUAL: Topic[] = [
       '• In the middle: TAKE and CUT send Next to On air, with the fader and the transitions under them.',
       '• Under the monitors: your inputs (every camera, video, picture and title), the audio mixer, and the controls for whatever is in Next or on air.',
       '• The bottom bar: All good (the health check), Outputs, Back = Live, REC, GO LIVE, REPLAY, and on the right Blank and PANIC.',
-      'Tip: The first time, Event → Event setup… walks you through the event name, logo and screens.',
+      'Tip: The first time, Event → Event setup… walks you through the kind of event, its name, logo and screens.',
     ],
   },
   {
@@ -414,6 +414,19 @@ export const MANUAL: Topic[] = [
       '• Presets: one button that sets several things at once (the camera, titles, sound). Presets → Add a preset….',
       '• Cues → Run of show…: the order of the evening; N goes to the next cue.',
       '• Cues → Triggers: when something happens (a countdown ends, a camera goes out, someone starts talking, a time comes), do something by itself.',
+    ],
+  },
+  {
+    id: 'templates',
+    title: 'Starting from an event template',
+    keywords: 'template kind of event conference concert wedding sports panel webinar ready start new event setup wizard',
+    body: [
+      'A new event starts with Event setup. Its first question is what kind of event it is: Conference, Concert, Wedding, Sports, Panel or Webinar (or Start empty).',
+      '• A template adds the inputs that kind of event needs, such as a countdown, titles with placeholder names, a scoreboard with its game clock, stage visuals, messages from guests, a table finder, a remote guest or an audience poll.',
+      '• It also fills the stage monitor’s eight quick messages with ones that fit (“5 minutes left”, “Last song”, “Halftime in 2 minutes”…) and sets out a run of show to fill in (Cues → Run of show…).',
+      '• The Webinar template adds a trigger too: when the stream starts, the countdown goes on air and starts.',
+      '• Nothing is added until you press Done. Everything a template adds can be renamed, changed or removed like anything you made yourself.',
+      'Tip: Replace the words in [square brackets] with your own before the event.',
     ],
   },
   {
