@@ -9,8 +9,8 @@ use std::process::Stdio;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use super::{
-    audio_args, autosave_path, base64, encode_args, find_ffmpeg, free_path, is_title, library_dir, list, mime,
-    quiet, unbase64, write_atomic, Job, LibraryEntry, Renders, EXT, MAX_READ, WINDOW,
+    audio_args, autosave_path, base64, encode_args, find_ffmpeg, free_path, is_title, library_dir,
+    list, mime, quiet, unbase64, write_atomic, Job, LibraryEntry, Renders, EXT, MAX_READ, WINDOW,
 };
 
 #[tauri::command]
@@ -169,9 +169,11 @@ pub fn titler_render_start(
     let sound_args = audio_args(&format);
     let sound = match audio {
         Some(b64) if !sound_args.is_empty() => {
-            let bytes = unbase64(&b64).ok_or_else(|| "The film's sound could not be read.".to_owned())?;
+            let bytes =
+                unbase64(&b64).ok_or_else(|| "The film's sound could not be read.".to_owned())?;
             let wav = out.with_extension("cues.wav");
-            std::fs::write(&wav, bytes).map_err(|e| format!("The film's sound could not be written: {e}"))?;
+            std::fs::write(&wav, bytes)
+                .map_err(|e| format!("The film's sound could not be written: {e}"))?;
             Some(wav)
         }
         _ => None,
@@ -199,10 +201,10 @@ pub fn titler_render_start(
         cmd.arg("-i").arg(wav).args(&sound_args);
     }
     cmd.args(&args)
-    .arg(&out)
-    .stdin(Stdio::piped())
-    .stdout(Stdio::null())
-    .stderr(Stdio::piped());
+        .arg(&out)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped());
     let mut child = cmd
         .spawn()
         .map_err(|e| format!("FFmpeg could not start: {e}"))?;

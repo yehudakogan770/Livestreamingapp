@@ -132,7 +132,8 @@ impl TitlerGraphic {
         let next = if delta < 0 {
             now.saturating_sub(delta.unsigned_abs())
         } else {
-            now.saturating_add(delta.unsigned_abs()).min(self.last_row())
+            now.saturating_add(delta.unsigned_abs())
+                .min(self.last_row())
         };
         self.data_row = Some(next);
     }
@@ -201,7 +202,9 @@ mod tests {
         assert_eq!(g.data_row, Some(2), "stops at the last row");
         g.step_row(-9);
         assert_eq!(g.data_row, Some(0));
-        g.data[0].rows = (0..MAX_ROWS + 10).map(|_| vec!["x".repeat(MAX_CELL + 5)]).collect();
+        g.data[0].rows = (0..MAX_ROWS + 10)
+            .map(|_| vec!["x".repeat(MAX_CELL + 5)])
+            .collect();
         g.data_row = Some(5000);
         g.repair();
         assert_eq!(g.data[0].rows.len(), MAX_ROWS);

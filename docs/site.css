@@ -1911,6 +1911,9 @@ section {
 .titler .studio__cta .fine a {
   color: #fff;
 }
+.dl__more {
+  max-width: 1140px;
+}
 @media (max-width: 1020px) {
   .dlcards {
     grid-template-columns: repeat(2, minmax(0, 1fr));

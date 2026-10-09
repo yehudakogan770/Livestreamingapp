@@ -1056,20 +1056,23 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 .filter_map(|o| o.source_id.clone())
                 .collect();
             let with_rows = |src: &crate::model::Source| matches!(&src.kind, SourceKind::Titler(t) if t.has_rows());
-            let targets: Vec<SourceId> = match id {
-                Some(id) => vec![id],
-                None => {
-                    let live: Vec<SourceId> = s
-                        .sources
+            let targets: Vec<SourceId> = if let Some(id) = id {
+                vec![id]
+            } else {
+                let live: Vec<SourceId> = s
+                    .sources
+                    .iter()
+                    .filter(|x| with_rows(x) && on_air.contains(&x.id))
+                    .map(|x| x.id.clone())
+                    .collect();
+                if live.is_empty() {
+                    s.sources
                         .iter()
-                        .filter(|x| with_rows(x) && on_air.contains(&x.id))
+                        .filter(|x| with_rows(x))
                         .map(|x| x.id.clone())
-                        .collect();
-                    if live.is_empty() {
-                        s.sources.iter().filter(|x| with_rows(x)).map(|x| x.id.clone()).collect()
-                    } else {
-                        live
-                    }
+                        .collect()
+                } else {
+                    live
                 }
             };
             for id in targets {
