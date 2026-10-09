@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { current } from '../model/seq';
 import { emptyProject, type MediaItem } from '../model/types';
 import { groupsIn, micSources } from './autocam';
-import { buildMulticam, correlate, defaultSound, findOffset, SURE } from './syncsound';
+import { buildMulticam, correlate, defaultSound, findOffset, offsetsFrom, recordedAt, SURE, timecodeSeconds } from './syncsound';
 
 /** A room's sound: bursts (words, claps) at random moments, as 100-a-second waveform peaks. */
 function room(seconds: number, seed: number): Float32Array {
@@ -135,5 +135,31 @@ describe('the multicam group and its sequence', () => {
 
   it('needs a camera', () => {
     expect(() => buildMulticam(emptyProject('t'), { name: 'x', files: [{ media: rec, offset: 0 }], sound: ['rec'] })).toThrow(/camera/);
+  });
+});
+
+describe('lining files up by timecode and recording time', () => {
+  it('reads timecode, including drop-frame', () => {
+    expect(timecodeSeconds('01:00:10:12', 25)).toBeCloseTo(3610.48, 6);
+    // Non-drop 29.97: the numbers run at 30 a second, the clock a little slower.
+    expect(timecodeSeconds('00:01:00:00', 29.97)).toBeCloseTo((1800 * 1001) / 30000, 6);
+    // Drop-frame: the first frame of minute 1 is frame 1800; ten minutes of numbers are ten real minutes.
+    expect(timecodeSeconds('00:01:00;02', 29.97)).toBeCloseTo(60.06, 2);
+    expect(timecodeSeconds('00:10:00;00', 29.97)).toBeCloseTo(600, 1);
+    expect(timecodeSeconds('nonsense', 25)).toBeNull();
+    expect(timecodeSeconds('00:00:00:30', 25)).toBeNull();
+  });
+
+  it('gives offsets from the earliest, only when every file says', () => {
+    expect(recordedAt('2026-05-01T18:03:22.000000Z')).toBe(Date.UTC(2026, 4, 1, 18, 3, 22) / 1000);
+    expect(recordedAt('1970-01-01T00:00:00Z')).toBeNull();
+    const a = { ...media('a', 'video', 10, true, true), source: { timecode: '10:00:05:00' } } as MediaItem;
+    const b = { ...media('b', 'video', 10, true, true), source: { timecode: '10:00:00:00' } } as MediaItem;
+    const tc = (m: MediaItem) => (m.source?.timecode ? timecodeSeconds(m.source.timecode, 25) : null);
+    expect([...(offsetsFrom([a, b], tc) ?? new Map())]).toEqual([
+      ['a', 5],
+      ['b', 0],
+    ]);
+    expect(offsetsFrom([a, media('c', 'audio', 10, false, true)], tc)).toBeNull();
   });
 });

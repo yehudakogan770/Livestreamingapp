@@ -72,6 +72,18 @@ pub struct Probe {
     pub rotation: i32,
     /// Interlaced fields (camcorders, AVCHD, broadcast).
     pub interlaced: bool,
+    /// The timecode of the first frame ("01:00:00:00"; ';' before the frames for drop-frame).
+    pub timecode: Option<String>,
+    /// When the camera says it started recording (ISO 8601, as the file says it).
+    pub created: Option<String>,
+}
+
+/// The value of a metadata line ("timecode        : 01:00:00:00").
+fn tag<'a>(line: &'a str, key: &str) -> Option<&'a str> {
+    let rest = line.strip_prefix(key)?;
+    let rest = rest.trim_start();
+    let v = rest.strip_prefix(':')?.trim();
+    (!v.is_empty()).then_some(v)
 }
 
 /// Bits per color of a pixel format (8 unless it says otherwise).
@@ -132,6 +144,14 @@ pub fn parse_probe(said: &str) -> Probe {
                 .and_then(|b| b.trim().parse::<u32>().ok())
             {
                 p.bitrate_kbps = b;
+            }
+        } else if let Some(v) = tag(line, "timecode") {
+            if p.timecode.is_none() && v.chars().filter(|c| *c == ':' || *c == ';').count() == 3 {
+                p.timecode = Some(v.to_owned());
+            }
+        } else if let Some(v) = tag(line, "creation_time") {
+            if p.created.is_none() {
+                p.created = Some(v.to_owned());
             }
         } else if line.starts_with("DOVI configuration record") {
             p.dolby_vision = true;
@@ -941,6 +961,28 @@ pub fn strip(ffmpeg: &Path, file: &Path, seconds: f64, cache: &Path) -> Result<S
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn reads_the_timecode_and_when_it_was_recorded() {
+        let said = "Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'A001.mov':
+  Metadata:
+    creation_time   : 2026-05-01T18:03:22.000000Z
+    timecode        : 01:02:03;04
+  Duration: 00:10:00.00, start: 0.000000, bitrate: 50000 kb/s
+  Stream #0:0[0x1](und): Video: h264 (High), yuv420p, 1920x1080, 29.97 fps, 29.97 tbr
+    Metadata:
+      timecode        : 09:09:09:09
+  Stream #0:2[0x3](eng): Data: none (tmcd / 0x64636D74)
+";
+        let p = parse_probe(said);
+        assert_eq!(p.timecode.as_deref(), Some("01:02:03;04"));
+        assert_eq!(p.created.as_deref(), Some("2026-05-01T18:03:22.000000Z"));
+        assert!(
+            parse_probe("  Duration: 00:00:01.00, start: 0, bitrate: 1 kb/s")
+                .timecode
+                .is_none()
+        );
+    }
+
     use super::*;
 
     const SAID: &str = "Input #0, matroska,webm, from 'Wide.mkv':

@@ -9,7 +9,7 @@ import { Choice, Modal } from '../ui/controls';
 import type { Ui } from '../ui/state';
 import { check, peaksOf } from './analysis';
 import { Progress, useJob } from './job';
-import { buildMulticam, defaultSound, findOffset, SURE } from './syncsound';
+import { buildMulticam, defaultSound, findOffset, offsetsFrom, recordedAt, SURE, timecodeSeconds } from './syncsound';
 
 interface Found {
   id: string;
@@ -30,7 +30,7 @@ export function MakeMulticamDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onC
   const { project } = useDoc(doc);
   const usable = useMemo(() => project.media.filter((m) => !m.missing && (m.hasVideo || m.hasAudio) && m.kind !== 'image' && !m.range), [project.media]);
   const [chosen, setChosen] = useState<string[]>([]);
-  const [by, setBy] = useState<'sound' | 'starts'>('sound');
+  const [by, setBy] = useState<'sound' | 'timecode' | 'clock' | 'starts'>('sound');
   const [name, setName] = useState(`Multicam ${project.groups.length + 1}`);
   const [found, setFound] = useState<Found[] | null>(null);
   const [sound, setSound] = useState<string[] | null>(null);
@@ -45,9 +45,13 @@ export function MakeMulticamDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onC
     setFound(null);
   };
 
+  const byTimecode = offsetsFrom(files, (m) => (m.source?.timecode ? timecodeSeconds(m.source.timecode, m.fps || 30) : null));
+  const byClock = offsetsFrom(files, (m) => recordedAt(m.source?.created));
+
   const lineUp = async () => {
-    if (by === 'starts') {
-      setFound(files.map((m) => ({ id: m.id, offset: 0, confidence: null })));
+    if (by === 'starts' || by === 'timecode' || by === 'clock') {
+      const given = by === 'timecode' ? byTimecode : by === 'clock' ? byClock : null;
+      setFound(files.map((m) => ({ id: m.id, offset: given?.get(m.id) ?? 0, confidence: null })));
       return;
     }
     const out = await job.run(async (j) => {
@@ -163,6 +167,8 @@ export function MakeMulticamDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onC
               value={by}
               options={[
                 ['sound', 'Sound', 'Compare what the microphones heard (works when every file heard the room)'],
+                ['timecode', 'Timecode', 'The timecode each camera wrote in its file (cameras set to the same time of day)'],
+                ['clock', 'Recording time', 'When each camera says it started recording (to the second: check by eye after)'],
                 ['starts', 'Starts', 'Every file starts at the same moment'],
               ]}
               onChange={(v) => {
@@ -172,6 +178,11 @@ export function MakeMulticamDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onC
               label="Line up by"
             />
           </div>
+          {files.length > 1 && ((by === 'timecode' && !byTimecode) || (by === 'clock' && !byClock)) && (
+            <p className="form__problem">
+              {by === 'timecode' ? 'Not every chosen file has a timecode.' : 'Not every chosen file says when it was recorded.'} Line them up by sound instead.
+            </p>
+          )}
           <p className="insp__note">
             Choose two or more cameras, and any separate sound recorders. Studio compares their sound to find where each one starts; a clap or a count-in at the
             start helps but is not needed. Files with sound ticked go on the timeline; the other cameras&apos; sound still helps Auto multicam edit.
@@ -184,7 +195,12 @@ export function MakeMulticamDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onC
             <button type="button" className="btn" onClick={onClose}>
               Cancel
             </button>
-            <button type="button" className="btn" disabled={files.length < 2} onClick={() => void lineUp()}>
+            <button
+              type="button"
+              className="btn"
+              disabled={files.length < 2 || (by === 'timecode' && !byTimecode) || (by === 'clock' && !byClock)}
+              onClick={() => void lineUp()}
+            >
               {found && !stale ? 'Line up again' : 'Line up'}
             </button>
             <button type="button" className="btn btn--primary" disabled={!found || !!stale || cams.length === 0} onClick={make}>

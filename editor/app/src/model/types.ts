@@ -76,6 +76,10 @@ export interface SourceInfo {
   exportVia: 'original' | 'ffmpeg';
   /** What was done to it, for the person editing (e.g. HDR shown as SDR). */
   note?: string;
+  /** The first frame's timecode ("01:00:00:00"; ";" before the frames for drop-frame). */
+  timecode?: string;
+  /** When the camera says it started recording (ISO 8601). */
+  created?: string;
 }
 
 /** A word heard in a file: seconds into the file. */

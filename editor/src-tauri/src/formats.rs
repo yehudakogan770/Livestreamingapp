@@ -76,6 +76,11 @@ pub struct Plan {
     /// Made constant at this rate (variable frame rate files).
     #[serde(skip)]
     pub cfr: Option<f64>,
+    /// The first frame's timecode, and when it was recorded (for lining cameras up).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub timecode: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created: Option<String>,
 }
 
 /// The editor's own decoder shows this picture as it is.
@@ -176,6 +181,8 @@ pub fn plan(file: &Path, p: &Probe) -> Plan {
         tone_map: video && hdr,
         deinterlace: video && p.interlaced,
         cfr,
+        timecode: p.timecode.clone(),
+        created: p.created.clone(),
     }
 }
 

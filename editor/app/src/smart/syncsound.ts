@@ -150,6 +150,42 @@ export function findOffset(refPeaks: Uint8Array, otherPeaks: Uint8Array): Offset
   return { seconds: (bestLag + frac) / PEAKS_PER_SECOND, confidence };
 }
 
+/**
+ * A timecode as seconds ("01:00:10:12" at 25 fps is 3610.48). Drop-frame
+ * ("01:00:10;12", 29.97 and 59.94) counts the frame numbers that are skipped
+ * each minute except every tenth, as cameras do. Null when it isn't one.
+ */
+export function timecodeSeconds(tc: string, fps: number): number | null {
+  const m = /^(\d{1,2}):(\d{2}):(\d{2})([:;.])(\d{2,3})$/.exec(tc.trim());
+  if (!m || fps <= 0) return null;
+  const [h, mi, s, f] = [m[1], m[2], m[3], m[5]].map(Number) as [number, number, number, number];
+  const nominal = Math.round(fps);
+  if (f >= nominal || mi > 59 || s > 59) return null;
+  let frames = ((h * 60 + mi) * 60 + s) * nominal + f;
+  if (m[4] === ';' && (nominal === 30 || nominal === 60)) {
+    const drop = nominal === 30 ? 2 : 4;
+    const minutes = h * 60 + mi;
+    frames -= drop * (minutes - Math.floor(minutes / 10));
+  }
+  // Frames of the real rate (29.97 runs a little slower than its numbers).
+  return frames / (Math.abs(fps - nominal) > 0.001 ? (nominal * 1000) / 1001 : nominal);
+}
+
+/** When a file started recording (seconds since 1970), from the time its camera wrote in it. */
+export function recordedAt(created: string | undefined): number | null {
+  if (!created) return null;
+  const t = Date.parse(created);
+  return Number.isFinite(t) && t > Date.UTC(1990, 0, 1) ? t / 1000 : null;
+}
+
+/** Offsets (seconds after the earliest) from a time each file gives, or null when one doesn't give it. */
+export function offsetsFrom(files: MediaItem[], time: (m: MediaItem) => number | null): Map<string, number> | null {
+  const times = files.map((m) => [m.id, time(m)] as const);
+  if (times.some(([, t]) => t === null)) return null;
+  const first = Math.min(...times.map(([, t]) => t as number));
+  return new Map(times.map(([id, t]) => [id, (t as number) - first]));
+}
+
 // ---------------------------------------------------------------------------
 // Making the group and its sequence.
 
