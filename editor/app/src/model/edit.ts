@@ -296,6 +296,36 @@ export function trim(p: Project, id: string, edge: 'start' | 'end', delta: numbe
   });
 }
 
+/** The cut on a track nearest a frame: where it is, the clip ending there and the clip starting there (either may be missing). */
+export function cutNear(s: Sequence, frame: number, track: string): { at: number; left: Clip | null; right: Clip | null } | null {
+  const clips = s.clips.filter((c) => c.track === track);
+  let best: number | null = null;
+  for (const c of clips)
+    for (const e of [c.start, end(c)])
+      if (best === null || Math.abs(e - frame) < Math.abs(best - frame) || (Math.abs(e - frame) === Math.abs(best - frame) && e > best)) best = e;
+  if (best === null) return null;
+  const at = best;
+  return { at, left: clips.find((c) => end(c) === at) ?? null, right: clips.find((c) => c.start === at) ?? null };
+}
+
+/** Move the cut nearest a frame by some frames: rolling (the clips either side change) or rippling (the film after moves). */
+export function trimCut(p: Project, frame: number, track: string, delta: number, mode: 'roll' | 'ripple'): Project {
+  const cut = cutNear(current(p), frame, track);
+  if (!cut) return p;
+  if (cut.left) return trim(p, cut.left.id, 'end', delta, mode);
+  if (cut.right) return trim(p, cut.right.id, 'start', delta, mode === 'roll' ? 'normal' : mode);
+  return p;
+}
+
+/** Extend edit: the cut nearest the playhead rolls to it. */
+export function extendEdit(p: Project, frame: number, track: string): Project {
+  const cut = cutNear(current(p), frame, track);
+  if (!cut || cut.at === frame) return p;
+  if (cut.left) return trim(p, cut.left.id, 'end', frame - cut.at, 'roll');
+  if (cut.right) return trim(p, cut.right.id, 'start', frame - cut.at, 'normal');
+  return p;
+}
+
 /** Trim the edit nearest a frame to it, closing up (Q: the start side; W: the end side). */
 export function rippleTrimTo(p: Project, frame: number, side: 'start' | 'end', tracks: string[]): Project {
   const s = current(p);

@@ -6,6 +6,8 @@ import {
   addTrack,
   clipsAt,
   closeGap,
+  extendEdit,
+  trimCut,
   copyClips,
   editPoints,
   extractRange,
@@ -66,6 +68,13 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
       .tracks.filter((t) => !t.locked)
       .map((t) => t.id);
   const edit = (label: string, f: (p: Project) => Project, key?: string) => doc.edit(f, label, key);
+  const trimTrack = (): string | null => {
+    const s = seq();
+    const sel = selected()
+      .map((id) => s.clips.find((c) => c.id === id))
+      .find((c) => c && !s.tracks.find((t) => t.id === c.track)?.locked);
+    return sel?.track ?? targets().v;
+  };
   const selectWithLinks = (ids: string[]) => (ui.state.linked ? withLinked(seq(), ids) : ids);
 
   const a = {
@@ -190,6 +199,15 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
       const { inPoint, outPoint } = s;
       edit('Extract', (p) => editSeq(extractRange(p, inPoint, outPoint), (q) => ({ ...q, outPoint: null })));
       engine.seek(inPoint);
+    },
+    /** The track keyboard trims work on: the selected clip's, or the target picture track. */
+    extendEdit: () => {
+      const t = trimTrack();
+      if (t) edit('Extend edit', (p) => extendEdit(p, here(), t));
+    },
+    trimCut: (frames: number, mode: 'roll' | 'ripple') => {
+      const t = trimTrack();
+      if (t) edit(mode === 'roll' ? 'Roll the cut' : 'Ripple the cut', (p) => trimCut(p, here(), t, frames, mode), `trimcut-${mode}`);
     },
     nudge: (frames: number) => {
       const ids = selected();
