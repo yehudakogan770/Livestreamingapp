@@ -120,13 +120,22 @@ export function ColorField({
 }) {
   const shown = resolveColor(value, tokens, values, '#000000');
   const [text, setText] = useState(value);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<{ left: number; top: number } | null>(null);
   const wrap = useRef<HTMLSpanElement>(null);
+  /** Where the picker opens: under the swatch, kept inside the window. */
+  const place = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    const W = 254;
+    const H = 330;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    return { left: Math.max(8, Math.min(r.left, vw - W - 8)), top: r.bottom + 4 + H > vh ? Math.max(8, r.top - H - 4) : r.bottom + 4 };
+  };
   useEffect(() => setText(value), [value]);
   useEffect(() => {
     if (!open) return;
-    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setOpen(false);
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setOpen(null);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null);
     window.addEventListener('pointerdown', away);
     window.addEventListener('keydown', esc);
     return () => {
@@ -140,14 +149,14 @@ export function ColorField({
         type="button"
         className="tt-color-swatch"
         aria-label={`${label} color`}
-        aria-expanded={open}
+        aria-expanded={!!open}
         title="Open the color picker"
-        onClick={() => setOpen(!open)}
+        onClick={(e) => setOpen(open ? null : place(e.currentTarget))}
       >
         <i style={{ background: isHex(shown) ? shown : '#000000' }} />
       </button>
       {open && (
-        <span className="tt-color-pop">
+        <span className="tt-color-pop" style={{ left: open.left, top: open.top }}>
           <ColorPicker value={isHex(shown) ? shown : '#000000'} onChange={onChange} onPick={onChange} label={label} />
         </span>
       )}

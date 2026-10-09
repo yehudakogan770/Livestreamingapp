@@ -1269,10 +1269,8 @@
   border-radius: 2px;
 }
 .tt-color-pop {
-  position: absolute;
-  z-index: 40;
-  top: 26px;
-  left: 0;
+  position: fixed;
+  z-index: 60;
 }
 .tt-cpk {
   display: flex;
@@ -1525,9 +1523,8 @@
   position: absolute;
   z-index: 40;
   top: 28px;
-  left: 0;
   right: 0;
-  min-width: 240px;
+  width: max(100%, 240px);
   padding: 6px;
   background: var(--tt-raised);
   border: 1px solid var(--tt-line-2);

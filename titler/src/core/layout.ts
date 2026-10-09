@@ -120,7 +120,7 @@ export function fontString(style: TextStyle, run: RunStyle, size: number, family
   const italic = run.italic || style.italic ? 'italic ' : '';
   const px = (size * run.scale) / 100;
   const name = run.font ?? family;
-  return `${italic}${weight} ${round(px)}px "${name}", "Inter", "Segoe UI", system-ui, sans-serif`;
+  return `${italic}${weight} ${round(px)}px "${name}", "Inter", "Inter Variable", "Segoe UI", system-ui, sans-serif`;
 }
 
 const round = (v: number) => Math.round(v * 100) / 100;

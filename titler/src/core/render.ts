@@ -925,7 +925,7 @@ function drawText(ctx: Ctx, l: TextLayer, s: Scene) {
     const weight = run.bold ? Math.max(700, st.weight) : st.weight;
     const italic = run.italic || st.italic ? 'italic ' : '';
     const px = (lay.size * run.scale) / 100;
-    return `${italic}${weight} ${round(px)}px "${run.font ?? family}", "Inter", "Segoe UI", system-ui, sans-serif`;
+    return `${italic}${weight} ${round(px)}px "${run.font ?? family}", "Inter", "Inter Variable", "Segoe UI", system-ui, sans-serif`;
   }
 
   function strokeIt(text: string, x: number, y: number) {
