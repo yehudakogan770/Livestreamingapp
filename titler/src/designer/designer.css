@@ -30,8 +30,8 @@
   --tt-radius: 4px;
   position: relative;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, var(--tt-timeline, 36%)) auto;
-  grid-template-areas: 'top' 'banner' 'main' 'timeline' 'status';
+  grid-template-rows: auto auto auto minmax(0, 1fr) minmax(120px, var(--tt-timeline, 36%)) auto;
+  grid-template-areas: 'top' 'tabs' 'banner' 'main' 'timeline' 'status';
   height: 100%;
   min-height: 560px;
   background: var(--tt-bg);
@@ -1136,7 +1136,7 @@
 
 /* The canvas on its own (` or the button in the view bar). */
 .tt-canvas-only {
-  grid-template-rows: auto auto minmax(0, 1fr) 0 auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) 0 auto;
 }
 .tt-canvas-only .tt-main {
   grid-template-columns: 0 minmax(0, 1fr) 0;
@@ -1680,4 +1680,60 @@
   flex: 1;
   font-family: var(--tt-mono);
   font-size: 11px;
+}
+
+/* ---- open titles (tabs) ---- */
+.tt-doc-tabs {
+  grid-area: tabs;
+  display: flex;
+  gap: 1px;
+  background: var(--tt-bar);
+  border-bottom: 1px solid var(--tt-line);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.tt-doc-tab {
+  display: flex;
+  align-items: center;
+  max-width: 220px;
+  border-right: 1px solid var(--tt-line);
+  color: var(--tt-dim);
+}
+.tt-doc-tab.on {
+  background: var(--tt-panel);
+  color: var(--tt-text);
+}
+.tt-doc-tab-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 4px 5px 12px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.tt-doc-dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.tt-doc-tab-close {
+  background: none;
+  border: 0;
+  color: var(--tt-faint);
+  padding: 2px 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.tt-doc-tab-close:hover {
+  color: var(--tt-text);
 }

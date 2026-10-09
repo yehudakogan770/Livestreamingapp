@@ -107,7 +107,13 @@ let keyClipboard: KeyClip | null = null;
 
 export function Designer({ host, initial, look = 'ink', brand = null, values = {}, onUse, useLabel, onClose, env: givenEnv }: DesignerProps) {
   const env = useMemo(() => givenEnv ?? browserEnv(host.urlFor), [givenEnv, host]);
-  const store = useMemo(() => new Store(initial ?? newProject(), { brand, values }), []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Titles open in tabs: each its own store (undo, selection, playhead).
+  const [tabs, setTabs] = useState<Store[]>(() => [new Store(initial ?? newProject(), { brand, values })]);
+  const [active, setActive] = useState(0);
+  const store = tabs[Math.min(active, tabs.length - 1)]!;
+  const libIds = useRef(new WeakMap<Store, string | null>());
+  const libId = libIds.current.get(store) ?? null;
+  const setLibId = (id: string | null) => libIds.current.set(store, id);
   const [layout, setLayoutState] = useState<Layout>(() => {
     const l = loadLayout();
     return initial && l.leftTab === 'library' ? { ...l, leftTab: 'project' } : l;
@@ -129,7 +135,6 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const [libVersion, setLibVersion] = useState(0);
   const [keysOpen, setKeysOpen] = useState(false);
   const [recovered, setRecovered] = useState<TitleProject | null>(null);
-  const [libId, setLibId] = useState<string | null>(null);
   const tool = useStore(store, (s) => s.tool);
   const playing = useStore(store, (s) => s.playing);
   const project = useStore(store, (s) => s.project);
@@ -204,9 +209,24 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   }, [cue, store]);
 
   const open = (p: TitleProject, id?: string | null, path?: string | null) => {
-    if (store.get().dirty && !confirm('Open another title? Changes to this one that are not saved will be lost.')) return;
-    store.load(p, { path: path ?? null });
-    setLibId(id ?? null);
+    // The same title already open: go to its tab.
+    const already = tabs.findIndex((t) => (id && libIds.current.get(t) === id) || (path && t.get().path === path));
+    if (already >= 0) {
+      setActive(already);
+      setSide('project');
+      return;
+    }
+    // An untouched new title is replaced; otherwise the title opens in a tab of its own.
+    const s = store.get();
+    const blank = !s.dirty && !s.path && !libIds.current.get(store) && store.canUndo() === false && s.project.compositions.every((c) => !c.layers.length);
+    const target = blank ? store : new Store(p, { brand, values });
+    if (blank) store.load(p, { path: path ?? null });
+    else {
+      target.set({ path: path ?? null });
+      setTabs((list) => [...list, target]);
+      setActive(tabs.length);
+    }
+    libIds.current.set(target, id ?? null);
     setSide('project');
     host.autosave(null);
     const again = id ?? path;
@@ -250,6 +270,15 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     }
     open(r.result.project, null, r.path);
     if (r.result.notes.length) store.set({ status: r.result.notes.join(' ') });
+  };
+
+  const closeTab = (i: number) => {
+    const t = tabs[i];
+    if (!t) return;
+    if (t.get().dirty && !confirm(`Close “${t.get().project.name}”? Changes that are not saved will be lost.`)) return;
+    const next = tabs.filter((_, j) => j !== i);
+    setTabs(next.length ? next : [new Store(newProject(), { brand, values })]);
+    setActive((a) => Math.max(0, Math.min(next.length - 1, a > i ? a - 1 : a === i ? i - 1 : a)));
   };
 
   const importFile = async () => {
@@ -582,10 +611,12 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               ))}
             </select>
           </label>
-          <span className="tt-title" title={store.get().path ?? ''}>
-            {project.name}
-            {dirty ? ' •' : ''}
-          </span>
+          {tabs.length === 1 && (
+            <span className="tt-title" title={store.get().path ?? ''}>
+              {project.name}
+              {dirty ? ' •' : ''}
+            </span>
+          )}
           {onUse && (
             <button className="tt-primary" onClick={() => onUse(store.get().project)}>
               {useLabel ?? 'Use this title'}
@@ -620,7 +651,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             </button>
           </div>
         )}
-        <div className="tt-main">
+        {tabs.length > 1 && <TitleTabs tabs={tabs} active={Math.min(active, tabs.length - 1)} onPick={setActive} onClose={closeTab} />}
+        <div className="tt-main" key={tabKey(store)}>
           <aside className="tt-left">
             <div className="tt-tabs">
               <button className={side === 'library' ? 'on' : ''} onClick={() => setSide('library')}>
@@ -786,7 +818,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             onChange={(t) => setLayout({ timeline: clampSize('timeline', t) })}
             label="Resize the timeline"
           />
-          <Timeline store={store} ram={ram} />
+          <Timeline key={tabKey(store)} store={store} ram={ram} />
         </div>
         <footer className="tt-status" role="status">
           {status || 'Ready.'}
@@ -1013,6 +1045,41 @@ function RenderDialog({ store, host, env, onClose }: { store: Store; host: Host;
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+const tabIds = new WeakMap<Store, number>();
+let tabSeq = 0;
+function tabKey(s: Store): number {
+  let k = tabIds.get(s);
+  if (k === undefined) tabIds.set(s, (k = ++tabSeq));
+  return k;
+}
+
+/** The open titles, one tab each (shown when more than one is open). */
+function TitleTabs({ tabs, active, onPick, onClose }: { tabs: Store[]; active: number; onPick: (i: number) => void; onClose: (i: number) => void }) {
+  return (
+    <div className="tt-doc-tabs" role="tablist" aria-label="Open titles">
+      {tabs.map((t, i) => (
+        <TitleTab key={tabKey(t)} store={t} on={i === active} onPick={() => onPick(i)} onClose={() => onClose(i)} />
+      ))}
+    </div>
+  );
+}
+
+function TitleTab({ store, on, onPick, onClose }: { store: Store; on: boolean; onPick: () => void; onClose: () => void }) {
+  const name = useStore(store, (s) => s.project.name);
+  const dirty = useStore(store, (s) => s.dirty);
+  return (
+    <div className={`tt-doc-tab${on ? ' on' : ''}`} role="tab" aria-selected={on} title={store.get().path ?? name}>
+      <button className="tt-doc-tab-name" onClick={onPick} onAuxClick={(e) => e.button === 1 && onClose()}>
+        {name || 'Untitled'}
+        {dirty && <span className="tt-doc-dirty" aria-label="not saved" />}
+      </button>
+      <button className="tt-doc-tab-close" onClick={onClose} aria-label={`Close ${name}`}>
+        ×
+      </button>
     </div>
   );
 }
