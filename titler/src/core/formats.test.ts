@@ -13,6 +13,23 @@ import { canvas, env, pixels } from '../test/nodeCanvas';
 const pos = (l: { transform: { position: { v?: Vec2; k?: { v: Vec2 }[] } } }) => l.transform.position.v ?? l.transform.position.k![0]!.v;
 
 describe('formats', () => {
+  it('a full-width banner in 9:16: the bars narrow with the frame, the label stays left, the headline box narrows (its words shrink to fit)', () => {
+    const p = fromTemplate(starterTemplates().find((t) => t.name === 'Breaking banner')!);
+    const main = p.compositions.find((c) => c.id === p.main)!;
+    const v = makeFormat(p, '9:16 vertical', 1080, 1920);
+    const vert = v.project.compositions.find((c) => c.id === v.id)!;
+    const get = (c: typeof main, name: string) => c.layers.find((l) => l.name === name)!;
+    const banner = get(vert, 'Banner');
+    expect(pos(banner)[0]).toBe(pos(get(main, 'Banner'))[0]);
+    if (banner.type === 'shape' && get(main, 'Banner').type === 'shape') {
+      const before = (get(main, 'Banner') as typeof banner).size.v![0];
+      expect(banner.size.v![0]).toBe(before - 840);
+    }
+    const head = get(vert, 'Headline');
+    expect(head.type === 'text' && head.box[0]).toBe((get(main, 'Headline') as { box: Vec2 }).box[0] - 840);
+    expect(pos(get(vert, 'Label box'))[0]).toBe(pos(get(main, 'Label box'))[0]);
+  });
+
   it('a lower third stays at the bottom left in 9:16; everything doubles in 4K', () => {
     const p = fromTemplate(starterTemplates().find((t) => t.name === 'Name and role')!);
     const main = p.compositions.find((c) => c.id === p.main)!;
@@ -36,6 +53,8 @@ describe('formats', () => {
     const right = { ...newShape(c, 'rect', [1700, 100], [100, 50]) };
     right.transform.anchor = { v: [0, 0] };
     expect(constraintsOf(right, [1750, 125], 1920, 1080)).toEqual({ h: 'right', v: 'top' });
+    // More than half the frame wide (a banner): stretches.
+    expect(constraintsOf(right, [960, 1040], 1920, 1080, [1800, 80])).toEqual({ h: 'stretch', v: 'bottom' });
     const bar = { ...newShape(c, 'rect', [0, 1000], [1920, 80]), constraints: { h: 'stretch' as const, v: 'bottom' as const } };
     bar.transform.anchor = { v: [0, 0] };
     const square = adaptLayer(bar, 1920, 1080, 1080, 1080);

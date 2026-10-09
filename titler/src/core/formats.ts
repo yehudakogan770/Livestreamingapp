@@ -39,12 +39,16 @@ export function pickFormat(p: TitleProject, w: number, h: number): Composition |
   return best;
 }
 
-/** A layer's constraints: as set, else pinned to the edge (or middle) it is nearest. */
-export function constraintsOf(l: Layer, center: Vec2, w: number, h: number): Required<Constraints> {
-  const third = (v: number, size: number) => (v < size / 3 ? 0 : v > (size * 2) / 3 ? 2 : 1);
+/**
+ * A layer's constraints: as set, else automatic: a layer more than half the
+ * frame wide (a banner, a ticker) stretches with it, the others are pinned
+ * to the edge (or the middle) they are nearest; the same down.
+ */
+export function constraintsOf(l: Layer, center: Vec2, w: number, h: number, size: Vec2 = [0, 0]): Required<Constraints> {
+  const third = (v: number, s: number) => (v < s / 3 ? 0 : v > (s * 2) / 3 ? 2 : 1);
   return {
-    h: l.constraints?.h ?? (['left', 'center', 'right'] as const)[third(center[0], w)],
-    v: l.constraints?.v ?? (['top', 'center', 'bottom'] as const)[third(center[1], h)],
+    h: l.constraints?.h ?? (size[0] > w / 2 ? 'stretch' : (['left', 'center', 'right'] as const)[third(center[0], w)]),
+    v: l.constraints?.v ?? (size[1] > h / 2 ? 'stretch' : (['top', 'center', 'bottom'] as const)[third(center[1], h)]),
   };
 }
 
@@ -86,7 +90,7 @@ export function adaptLayer(l: Layer, fromW: number, fromH: number, toW: number, 
   const anchor = first(l.transform.anchor);
   const size = sizeOf(l);
   const center: Vec2 = [pos[0] - anchor[0] + size[0] / 2, pos[1] - anchor[1] + size[1] / 2];
-  const c = constraintsOf(l, center, fromW, fromH);
+  const c = constraintsOf(l, center, fromW, fromH, size);
   const sx = toW / (fromW * k);
   const sy = toH / (fromH * k);
   const moveX = (x: number) => (c.h === 'right' ? x + dw : c.h === 'center' ? x + dw / 2 : c.h === 'scale' ? x * sx : x);
