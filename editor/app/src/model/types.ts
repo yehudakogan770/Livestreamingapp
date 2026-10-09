@@ -530,6 +530,8 @@ export interface Project {
   open: string;
   /** Bins that fill themselves by rules (type, rating, tag…). */
   smartBins?: SmartBin[];
+  /** Who is heard on each sound file (by media id), as shown in the transcript. */
+  speakers?: Record<string, string>;
 }
 
 /** A bin that shows the media matching its rules (all of them, or any). */

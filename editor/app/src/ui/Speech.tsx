@@ -15,8 +15,11 @@ import {
   deleteWords,
   mergeCaptions,
   placeCaptions,
+  nameSpeaker,
   rulesFor,
   sequenceWords,
+  speakerName,
+  transcriptParagraphs,
   setCaptionStyle,
   setCaptionText,
   splitCaption,
@@ -25,6 +28,7 @@ import {
   type SeqWord,
 } from '../model/captions';
 import { updateClips } from '../model/edit';
+import { SOUND_FILLERS } from '../smart/silence';
 import { current, editSeq, end, rate } from '../model/seq';
 import { DEFAULT_CAPTION_STYLE, type CaptionAnim, type CaptionStyle, type Clip, type Project } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
@@ -200,16 +204,14 @@ export function TranscribeDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
   );
 }
 
-/** Paragraphs of the transcript: a new one after a pause of two seconds. */
-function paragraphs(words: SeqWord[], fps: number): number[][] {
-  const out: number[][] = [];
-  words.forEach((w, i) => {
-    const prev = words[i - 1];
-    if (!prev || w.from - prev.to > fps * 2) out.push([i]);
-    else out[out.length - 1]?.push(i);
-  });
-  return out;
-}
+/** Sounds that are fillers whenever they are heard (um, uh…): marked in the transcript, and deleted together. */
+const plainWord = (w: string): string =>
+  w
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}']+/gu, '')
+    .trim();
+const FILLER_SOUNDS = new Set(SOUND_FILLERS);
+export const isFillerSound = (w: string): boolean => FILLER_SOUNDS.has(plainWord(w));
 
 /** The words of the sequence: click one to go there; select some and delete to cut them out (and close up). */
 export function TranscriptPanel({ doc, engine, ui }: { doc: Doc; engine: Engine; ui: Ui }) {
@@ -218,7 +220,10 @@ export function TranscriptPanel({ doc, engine, ui }: { doc: Doc; engine: Engine;
   const fps = rate(s);
   const t = usePlayhead(engine);
   const words = useMemo(() => sequenceWords(project, s), [project, s]);
-  const paras = useMemo(() => paragraphs(words, fps), [words, fps]);
+  const paras = useMemo(() => transcriptParagraphs(words, fps * 2), [words, fps]);
+  const fillers = useMemo(() => words.flatMap((w, i) => (isFillerSound(w.w) ? [i] : [])), [words]);
+  const voices = useMemo(() => new Set(words.map((w) => w.media)).size, [words]);
+  const [naming, setNaming] = useState<string | null>(null);
   const [sel, setSel] = useState<{ a: number; b: number } | null>(null);
   const [find, setFind] = useState('');
   const dragging = useRef(false);
@@ -279,6 +284,18 @@ export function TranscriptPanel({ doc, engine, ui }: { doc: Doc; engine: Engine;
         <button
           type="button"
           className="btn btn--sm"
+          disabled={!fillers.length}
+          title="Cut out every um, uh and hmm (underlined in the transcript) and close up"
+          onClick={() => {
+            doc.edit((p) => deleteWords(p, words, fillers), `Delete ${fillers.length} filler sounds`);
+            setSel(null);
+          }}
+        >
+          Delete fillers{fillers.length ? ` (${fillers.length})` : ''}
+        </button>
+        <button
+          type="button"
+          className="btn btn--sm"
           title="Caption blocks from the words, on the captions track"
           onClick={() => doc.edit((p) => makeCaptions(p, null), 'Make captions')}
         >
@@ -305,41 +322,69 @@ export function TranscriptPanel({ doc, engine, ui }: { doc: Doc; engine: Engine;
         onPointerUp={() => (dragging.current = false)}
         onPointerLeave={() => (dragging.current = false)}
       >
-        {paras.map((para) => (
-          <p key={para[0]} className="tscript__para">
-            <button type="button" className="tscript__time" onClick={() => seek((words[para[0] as number] as SeqWord).from)}>
-              {timecode((words[para[0] as number] as SeqWord).from, fps)}
-            </button>
-            {para.map((i) => {
-              const w = words[i] as SeqWord;
-              const cls = `tscript__w${i === now ? ' is-now' : ''}${i >= lo && i <= hi ? ' is-sel' : ''}${q && w.w.toLowerCase().includes(q) ? ' is-found' : ''}`;
-              return (
-                <span
-                  key={i}
-                  data-i={i}
-                  role="option"
-                  aria-selected={i >= lo && i <= hi}
-                  className={cls}
-                  title={timecode(w.from, fps)}
-                  onPointerDown={(e) => {
-                    if (e.button !== 0) return;
-                    dragging.current = true;
-                    if (e.shiftKey && sel) setSel({ a: sel.a, b: i });
-                    else setSel({ a: i, b: i });
-                  }}
-                  onPointerEnter={(e) => {
-                    if (dragging.current && e.buttons & 1 && sel) setSel({ a: sel.a, b: i });
-                  }}
-                  onClick={(e) => {
-                    if (!e.shiftKey && lo === hi) seek(w.from);
-                  }}
-                >
-                  {w.w}{' '}
-                </span>
-              );
-            })}
-          </p>
-        ))}
+        {paras.map((para, pi) => {
+          const first = words[para[0] as number] as SeqWord;
+          const before = pi > 0 ? (words[(paras[pi - 1] as number[])[0] as number] as SeqWord) : null;
+          const who = voices > 1 && (!before || before.media !== first.media) ? first.media : null;
+          return (
+            <p key={para[0]} className="tscript__para">
+              {who &&
+                (naming === who ? (
+                  <input
+                    className="text text--sm tscript__name"
+                    autoFocus
+                    defaultValue={speakerName(project, who)}
+                    aria-label="Who is speaking"
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                      if (e.key === 'Escape') setNaming(null);
+                    }}
+                    onBlur={(e) => {
+                      const name = e.target.value;
+                      setNaming(null);
+                      if (name.trim() !== speakerName(project, who)) doc.edit((p) => nameSpeaker(p, who, name), 'Name a speaker');
+                    }}
+                  />
+                ) : (
+                  <button type="button" className="tscript__who" title="Who is speaking (click to name them)" onClick={() => setNaming(who)}>
+                    {speakerName(project, who)}
+                  </button>
+                ))}
+              <button type="button" className="tscript__time" onClick={() => seek(first.from)}>
+                {timecode(first.from, fps)}
+              </button>
+              {para.map((i) => {
+                const w = words[i] as SeqWord;
+                const cls = `tscript__w${i === now ? ' is-now' : ''}${i >= lo && i <= hi ? ' is-sel' : ''}${q && w.w.toLowerCase().includes(q) ? ' is-found' : ''}${isFillerSound(w.w) ? ' is-filler' : ''}`;
+                return (
+                  <span
+                    key={i}
+                    data-i={i}
+                    role="option"
+                    aria-selected={i >= lo && i <= hi}
+                    className={cls}
+                    title={timecode(w.from, fps)}
+                    onPointerDown={(e) => {
+                      if (e.button !== 0) return;
+                      dragging.current = true;
+                      if (e.shiftKey && sel) setSel({ a: sel.a, b: i });
+                      else setSel({ a: i, b: i });
+                    }}
+                    onPointerEnter={(e) => {
+                      if (dragging.current && e.buttons & 1 && sel) setSel({ a: sel.a, b: i });
+                    }}
+                    onClick={(e) => {
+                      if (!e.shiftKey && lo === hi) seek(w.from);
+                    }}
+                  >
+                    {w.w}{' '}
+                  </span>
+                );
+              })}
+            </p>
+          );
+        })}
       </div>
       <p className="tscript__foot">
         {words.length} words

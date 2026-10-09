@@ -100,6 +100,32 @@ export function sequenceWords(p: Project, s: Sequence): SeqWord[] {
   return kept;
 }
 
+/** Who is heard on a file: the name given in the transcript, otherwise the file's name. */
+export function speakerName(p: Project, media: string): string {
+  const named = p.speakers?.[media]?.trim();
+  if (named) return named;
+  return (p.media.find((m) => m.id === media)?.name ?? 'Speaker').replace(/\.[^.]+$/, '');
+}
+
+/** Give the person heard on a file a name (empty: back to the file's name). */
+export function nameSpeaker(p: Project, media: string, name: string): Project {
+  const speakers = { ...(p.speakers ?? {}) };
+  if (name.trim()) speakers[media] = name.trim();
+  else delete speakers[media];
+  return { ...p, speakers };
+}
+
+/** The transcript's paragraphs (indexes into the words): a new one after a pause of `pause` frames, or when someone else is heard. */
+export function transcriptParagraphs(words: SeqWord[], pause: number): number[][] {
+  const out: number[][] = [];
+  words.forEach((w, i) => {
+    const prev = words[i - 1];
+    if (!prev || w.from - prev.to > pause || prev.media !== w.media) out.push([i]);
+    else out[out.length - 1]?.push(i);
+  });
+  return out;
+}
+
 /** The sequence ranges ([from, to) frames) that a set of chosen words cover, one per run of neighboring words. */
 export function wordRanges(words: SeqWord[], chosen: number[]): [number, number][] {
   const idx = [...new Set(chosen)].filter((i) => i >= 0 && i < words.length).sort((a, b) => a - b);
