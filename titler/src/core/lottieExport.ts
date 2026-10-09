@@ -466,6 +466,7 @@ function layerJson(x: X, l: Layer, ind: number, w: number, h: number): J | null 
       return null;
     case 'group': {
       if (l.combine) x.notes.add('Combined shapes (union, subtract…) are drawn as separate shapes.');
+      if (l.repeat) x.notes.add('Groups repeated for each row are drawn once (the first row).');
       const id = `group_${l.id}`;
       x.assets.push({ id, nm: l.name, w, h, layers: layersJson(x, l.children, w, h) });
       return { ...base, ty: 0, refId: id, w, h, ks: transform(x, l) };

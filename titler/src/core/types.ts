@@ -304,6 +304,13 @@ export interface GroupLayer extends LayerBase {
    * overlap, or kept where they do not.
    */
   combine?: 'union' | 'subtract' | 'intersect' | 'exclude' | null;
+  /**
+   * Repeat the group once for each line of a list field (a row of a table:
+   * results, standings, a schedule), each copy moved by dx, dy and coming in
+   * `stagger` seconds after the one before. In copy n, every list field is
+   * its line n.
+   */
+  repeat?: { field: string; dx: number; dy: number; stagger?: number; max?: number } | null;
 }
 
 /** An invisible layer other layers are parented to. */

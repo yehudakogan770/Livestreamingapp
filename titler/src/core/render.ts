@@ -713,8 +713,28 @@ function drawCombined(ctx: Ctx, g: GroupLayer, s: Scene): boolean {
   return true;
 }
 
+/** A repeated group's copies: one for each line of its list field. */
+function drawRepeated(ctx: Ctx, g: GroupLayer, alpha: number, s: Scene) {
+  const r = g.repeat!;
+  const lists = s.f.project.variables.filter((v) => v.type === 'list');
+  const lines = (k: string) => (s.f.values[k] ?? '').split(/\r?\n/);
+  const count = Math.min(r.max ?? 100, 100, (s.f.values[r.field] ?? '').trim() ? lines(r.field).length : 0);
+  for (let n = 0; n < count; n++) {
+    const values = { ...s.f.values };
+    for (const v of lists) values[v.key] = lines(v.key)[n] ?? '';
+    values['row'] = String(n + 1);
+    const scene: Scene = { ...s, t: s.t - n * (r.stagger ?? 0), base: mul(s.base, [1, 0, 0, 1, n * r.dx, n * r.dy]), f: { ...s.f, values } };
+    if (g.combine && g.children.length > 1 && drawCombined(ctx, g, scene)) continue;
+    drawList(ctx, g.children, alpha, scene);
+  }
+}
+
 function drawContent(ctx: Ctx, l: Layer, world: Mat, alpha: number, s: Scene) {
   if (l.type === 'group') {
+    if (l.repeat?.field) {
+      drawRepeated(ctx, l, alpha, s);
+      return;
+    }
     if (l.combine && l.children.length > 1 && drawCombined(ctx, l, s)) return;
     drawList(ctx, l.children, alpha, s);
     return;

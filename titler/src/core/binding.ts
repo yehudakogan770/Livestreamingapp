@@ -156,6 +156,8 @@ export function usedVariables(p: TitleProject): string[] {
     else if (o && typeof o === 'object') for (const v of Object.values(o)) walk(v);
   };
   walk(p.compositions);
+  // {{row}}: the row number inside a group repeated for each row (not a field).
+  if (JSON.stringify(p.compositions).includes('"repeat":{')) return out.filter((k) => k !== 'row');
   return out;
 }
 

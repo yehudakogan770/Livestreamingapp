@@ -312,6 +312,73 @@ export function Inspector({ store }: { store: Store }) {
           </Row>
         </Section>
       )}
+      {l.type === 'group' && (
+        <Section title="Repeat for each row" open={!!l.repeat}>
+          <div className="tt-dim tt-small">
+            A table row made once: the group is drawn for each line of a list field, and in each copy every list field is its own line ({'{{row}}'} is the row
+            number). Fill the list fields from a spreadsheet in Data.
+          </div>
+          <Row label="For each line of">
+            <select
+              className="tt-select"
+              aria-label="Repeat for each line of"
+              value={l.repeat?.field ?? ''}
+              onChange={(e) =>
+                updOne('Repeat for each row', (x) =>
+                  x.type === 'group'
+                    ? { ...x, repeat: e.target.value ? { dx: 0, dy: 80, stagger: 0.08, ...(x.repeat ?? {}), field: e.target.value } : null }
+                    : x,
+                )
+              }
+            >
+              <option value="">Off (drawn once)</option>
+              {project.variables
+                .filter((v) => v.type === 'list')
+                .map((v) => (
+                  <option key={v.key} value={v.key}>
+                    {v.label}
+                  </option>
+                ))}
+            </select>
+          </Row>
+          {l.repeat && (
+            <>
+              <Row label="Each row moves">
+                <NumberField
+                  value={l.repeat.dx}
+                  label="Across"
+                  unit="px"
+                  onChange={(dx) => updOne('Row step', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, dx } } : x))}
+                />
+                <NumberField
+                  value={l.repeat.dy}
+                  label="Down"
+                  unit="px"
+                  onChange={(dy) => updOne('Row step', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, dy } } : x))}
+                />
+              </Row>
+              <Row label="Comes in after the last" hint="Each row's animation starts this long after the row before">
+                <NumberField
+                  value={l.repeat.stagger ?? 0}
+                  min={0}
+                  step={0.02}
+                  label="Delay between rows"
+                  unit="s"
+                  onChange={(stagger) => updOne('Row delay', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, stagger } } : x))}
+                />
+                <NumberField
+                  value={l.repeat.max ?? 20}
+                  min={1}
+                  max={100}
+                  label="Most rows"
+                  onChange={(max) => updOne('Most rows', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, max: Math.round(max) } } : x))}
+                />
+              </Row>
+            </>
+          )}
+          {!project.variables.some((v) => v.type === 'list') && <div className="tt-dim tt-small">Make a field of the List kind first (Fields tab).</div>}
+        </Section>
+      )}
       {l.type === 'comp' && (
         <Section title="Composition">
           <Row label="Shows">
