@@ -186,7 +186,7 @@ export function listOf(items: readonly Item[], kind: ItemKind, cueId?: string | 
     return list.sort((a, b) => {
       const ta = parseClock(a.callTime) ?? Infinity;
       const tb = parseClock(b.callTime) ?? Infinity;
-      return (a.day || '9999').localeCompare(b.day || '9999') || ta - tb || bySort(a, b);
+      return (a.day || '9999').localeCompare(b.day || '9999') || ta - tb || a.title.localeCompare(b.title) || bySort(a, b);
     });
   }
   if (kind === 'task') return list.sort((a, b) => Number(a.done) - Number(b.done) || (a.day || '9999').localeCompare(b.day || '9999') || bySort(a, b));

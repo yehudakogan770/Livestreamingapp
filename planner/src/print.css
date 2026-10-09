@@ -1,0 +1,113 @@
+/* The other paper layouts: call sheet, scripts and lists (portrait), and
+   the run of show's floated cues and colors. Black on white. */
+@media print {
+  @page tall {
+    size: letter portrait;
+    margin: 0.5in;
+  }
+  .print--callsheet,
+  .print--scripts,
+  .print--lists {
+    page: tall;
+  }
+  .print__kind {
+    font-weight: 400;
+    color: #444;
+  }
+  .print__keytimes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6pt 24pt;
+    margin-top: 10pt;
+    padding: 8pt 10pt;
+    border: 1pt solid #000;
+  }
+  .print__keytimes div {
+    display: flex;
+    flex-direction: column;
+  }
+  .print__keytimes span {
+    font-size: 8pt;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .print__keytimes b {
+    font-size: 13pt;
+  }
+  .print__cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18pt;
+    margin-top: 12pt;
+  }
+  .print__cols h2,
+  .print__glance h2 {
+    margin: 10pt 0 0;
+    font-size: 11.5pt;
+    padding-bottom: 3pt;
+    border-bottom: 1.5pt solid #000;
+  }
+  .print__cols section > h2:first-child {
+    margin-top: 0;
+  }
+  .print__plain td:nth-child(1),
+  .print__plain td:nth-child(2),
+  .print__plain td:nth-child(3) {
+    font-family: var(--font);
+    font-size: 9.5pt;
+  }
+  .print__plain {
+    margin-top: 4pt;
+  }
+  .print__sub {
+    color: #444;
+    font-size: 8.5pt;
+  }
+  .print__none {
+    color: #666;
+    margin: 6pt 0;
+  }
+  .print__glance {
+    margin-top: 14pt;
+    break-inside: auto;
+  }
+  .print__glance ol {
+    columns: 2;
+    column-gap: 18pt;
+    margin: 6pt 0 0;
+    padding-left: 16pt;
+  }
+  .print__glance li {
+    break-inside: avoid;
+    margin-bottom: 2pt;
+  }
+  .print__script {
+    margin-top: 10pt;
+  }
+  .print__scue {
+    display: grid;
+    grid-template-columns: 2.1in 1fr;
+    gap: 14pt;
+    padding: 8pt 0;
+    border-bottom: 0.5pt solid #999;
+    break-inside: avoid;
+  }
+  .print__sleft {
+    display: flex;
+    flex-direction: column;
+    gap: 2pt;
+    font-size: 9pt;
+  }
+  .print__sright {
+    font-size: 12.5pt;
+    line-height: 1.5;
+  }
+  .print__skip td {
+    color: #777;
+    text-decoration: line-through;
+  }
+  .print__color td:first-child {
+    box-shadow: inset 3pt 0 0 #000;
+  }
+}

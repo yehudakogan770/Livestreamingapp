@@ -51,6 +51,7 @@ const store: PlanStore = {
   reloadRole: vi.fn(),
   addCues: vi.fn(() => []),
   editCues: vi.fn(),
+  patchPlan: vi.fn(),
 };
 const chatStore: ChatStore = { messages: [], loaded: true, error: '', unread: 0, send: vi.fn(async () => {}), remove: vi.fn(), markRead: vi.fn() };
 const blockStore: BlockStore = {
@@ -69,6 +70,12 @@ vi.mock('./usePlan', () => ({ usePlan: () => store }));
 vi.mock('./useChat', () => ({ useChat: () => chatStore }));
 vi.mock('./useBlocks', () => ({ useBlocks: () => blockStore }));
 vi.mock('./session', () => ({ db: () => ({}) }));
+const stores = await import('./testStores');
+vi.mock('./useLive', async (orig) => ({ ...(await orig<typeof import('./useLive')>()), useLive: () => stores.liveStore }));
+vi.mock('./useItems', async (orig) => ({ ...(await orig<typeof import('./useItems')>()), useItems: () => stores.itemStore }));
+vi.mock('./Files', async (orig) => ({ ...(await orig<typeof import('./Files')>()), useFiles: () => stores.fileStore }));
+vi.mock('./usePeople', async (orig) => ({ ...(await orig<typeof import('./usePeople')>()), usePeople: () => [] }));
+vi.mock('./apiPro', async (orig) => ({ ...(await orig<typeof import('./apiPro')>()), loadLocks: async () => [], watchLocks: () => () => {} }));
 
 const { PlanView } = await import('./PlanView');
 const view = () => render(<PlanView planId="p" me={{ id: 'me', name: 'Me' }} onBack={() => {}} />);

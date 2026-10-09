@@ -31,6 +31,7 @@ const store: PlanStore = {
   reloadRole: vi.fn(),
   addCues: vi.fn(() => []),
   editCues: vi.fn(),
+  patchPlan: vi.fn(),
 };
 const chatStore: ChatStore = {
   messages: [{ id: 'm1', planId: 'p', author: 'dana', authorName: 'Dana', body: 'Is #2 still five minutes?', createdAt: Date.parse('2026-10-06T18:00:00') }],
@@ -46,6 +47,12 @@ vi.mock('./usePlan', () => ({ usePlan: () => store }));
 vi.mock('./useChat', () => ({ useChat: () => chatStore }));
 vi.mock('./useBlocks', () => ({ useBlocks: () => blockStore }));
 vi.mock('./session', () => ({ db: () => ({}) }));
+const stores = await import('./testStores');
+vi.mock('./useLive', async (orig) => ({ ...(await orig<typeof import('./useLive')>()), useLive: () => stores.liveStore }));
+vi.mock('./useItems', async (orig) => ({ ...(await orig<typeof import('./useItems')>()), useItems: () => stores.itemStore }));
+vi.mock('./Files', async (orig) => ({ ...(await orig<typeof import('./Files')>()), useFiles: () => stores.fileStore }));
+vi.mock('./usePeople', async (orig) => ({ ...(await orig<typeof import('./usePeople')>()), usePeople: () => [] }));
+vi.mock('./apiPro', async (orig) => ({ ...(await orig<typeof import('./apiPro')>()), loadLocks: async () => [], watchLocks: () => () => {} }));
 
 const { PlanView } = await import('./PlanView');
 

@@ -26,6 +26,8 @@ export interface PlanStore {
   /** Shown from the copy kept on this device (no internet): read-only. */
   fromCopy: boolean;
   editPlan: (change: api.PlanChange) => void;
+  /** Change the plan here only (what the server already changed, like the public link). */
+  patchPlan: (change: Partial<Plan>) => void;
   editCue: (id: string, change: Partial<PlanCue>) => void;
   addCue: (afterId: string | null) => string | null;
   duplicateCue: (id: string) => string | null;
@@ -232,6 +234,8 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
     [soon],
   );
 
+  const patchPlan = useCallback((change: Partial<Plan>) => setPlan((p) => (p ? { ...p, ...change } : p)), []);
+
   const editCue = useCallback(
     (id: string, change: Partial<PlanCue>) => {
       setCues((list) => list.map((c) => (c.id === id ? { ...c, ...change } : c)));
@@ -354,6 +358,7 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
     saving,
     fromCopy,
     editPlan,
+    patchPlan,
     editCue,
     addCue,
     duplicateCue,

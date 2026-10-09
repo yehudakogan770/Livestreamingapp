@@ -1,13 +1,32 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { cancelInvitation, invitations, invite, people, removePerson, setRole, type Invitation, type Person } from './api';
-import type { Plan, Role } from './model';
+import type { Plan, PlanCue, Role } from './model';
+import { PublicLink, SectionLocks } from './ShareExtras';
 import { db } from './session';
 import { initials } from './Inspector';
 import { usePlannerFeatures } from './features';
 
 /** Who is on the plan; the owner adds people by email as editors or viewers. */
-export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan; role: Role | null; me: string; onClose: () => void; onChanged: () => void }) {
+export function ShareDialog({
+  plan,
+  role,
+  me,
+  onClose,
+  onChanged,
+  cues = [],
+  onShareChanged,
+}: {
+  plan: Plan;
+  role: Role | null;
+  me: string;
+  onClose: () => void;
+  onChanged: () => void;
+  /** For section locks. */
+  cues?: PlanCue[];
+  /** The public link was turned on or off, or shows something else now. */
+  onShareChanged?: (token: string | null, scope: 'agenda' | 'crew') => void;
+}) {
   const [list, setList] = useState<Person[] | null>(null);
   const [waiting, setWaiting] = useState<Invitation[]>([]);
   const [note, setNote] = useState('');
@@ -166,6 +185,8 @@ export function ShareDialog({ plan, role, me, onClose, onChanged }: { plan: Plan
             Editors change the plan and its cues; viewers read, print and comment. Everyone with Lumora can load it into Lumora. Teammates need only an account
             (they can make one in the Planner); they see just the plans shared with them.
           </p>
+          {onShareChanged && <PublicLink plan={plan} isOwner={owner} onChanged={onShareChanged} />}
+          {list && <SectionLocks plan={plan} cues={cues} people={list} isOwner={owner} />}
         </div>
       </div>
     </div>
