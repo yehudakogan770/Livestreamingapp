@@ -44,6 +44,13 @@ export class RenderQueue {
   private listeners = new Set<() => void>();
   /** Told when an export finishes (or fails). */
   onFinished: (job: QueueJob) => void = () => {};
+  /** What to do when a particular export has finished well (e.g. publish it). */
+  private then = new Map<string, (job: QueueJob) => void>();
+
+  /** Run `f` once the export `id` has finished well. */
+  whenDone(id: string, f: (job: QueueJob) => void) {
+    this.then.set(id, f);
+  }
 
   subscribe = (f: () => void): (() => void) => {
     this.listeners.add(f);
@@ -59,6 +66,9 @@ export class RenderQueue {
       const j = this.state.jobs.find((x) => x.id === e.id);
       if (j) {
         this.onFinished(j);
+        const then = this.then.get(j.id);
+        this.then.delete(j.id);
+        if (then && j.status === 'done') then(j);
         notify(j.status === 'done' ? 'Export finished' : 'Export failed', `${j.name} · ${j.preset}${j.status === 'done' ? '' : `: ${j.message}`}`);
       }
     }

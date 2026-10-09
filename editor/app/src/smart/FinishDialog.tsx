@@ -21,6 +21,7 @@ import { FaceFinder } from './detect';
 import { finishEvent, FINISH_DEFAULTS, type FinishPlan, type FinishServices } from './finish';
 import { frameOnFaces } from './framejob';
 import { Progress, useJob } from './job';
+import { publish, startingDescription, youtube, type YoutubeInfo } from '../publish/youtube';
 import { ASPECTS } from './reframe';
 
 /** The speech model the person chose last in Transcribe (the small one is better, the base one quicker). */
@@ -76,6 +77,18 @@ export function FinishDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onClose: 
   const heard = sequenceWords(project, s).length > 0;
   const [plan, setPlan] = useState<FinishPlan>({ ...FINISH_DEFAULTS, cut: hasGroup ? 0.5 : null });
   const [queue, setQueue] = useState(inApp());
+  const [upload, setUpload] = useState(false);
+  const [yt, setYt] = useState<YoutubeInfo | null>(null);
+  useEffect(() => {
+    let live = true;
+    void youtube
+      .info()
+      .then((i) => live && setYt(i))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
   const job = useJob();
   const stops = useRef<(() => void)[]>([]);
   useEffect(() => () => stops.current.forEach((f) => f()), []);
@@ -123,7 +136,9 @@ export function FinishDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onClose: 
             encoders,
             app: inApp(),
           });
-          renderQueue.add(made, seq.name, choice.preset.name);
+          const id = renderQueue.add(made, seq.name, choice.preset.name);
+          // The event itself goes on to YouTube when it is exported (only you can see it until you change that).
+          if (upload && seq.id === res.film) renderQueue.whenDone(id, () => void publishFilm(id, ui));
         }
         lines.push(`${out.length} exports are in the render queue.`);
       } catch (e) {
@@ -229,6 +244,15 @@ export function FinishDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onClose: 
               event for YouTube with chapters and a captions file, the reel and the clips with captions in the picture)
             </label>
           </div>
+          {queue && yt?.connected && (
+            <div className="form__row">
+              <span>YouTube</span>
+              <label className="check">
+                <input type="checkbox" checked={upload} onChange={(e) => setUpload(e.target.checked)} /> Publish the event to {yt.channel || 'the channel'} when
+                it is exported (only you can see it until you change that)
+              </label>
+            </div>
+          )}
           {job.problem && <p className="form__problem">{job.problem}</p>}
           <div className="form__foot">
             <button type="button" className="btn" onClick={onClose}>
@@ -245,3 +269,27 @@ export function FinishDialog({ doc, ui, onClose }: { doc: Doc; ui: Ui; onClose: 
 }
 
 const withOpen = (p: Project, id: string): Project => ({ ...p, open: id });
+
+/** Publish a finished export of the event: its name, chapters, captions file and thumbnail, only for the channel's owner at first. */
+async function publishFilm(job: string, ui: Ui) {
+  const src = renderQueue.publishSource(job);
+  if (!src) return;
+  try {
+    const r = await publish(
+      job,
+      src.path,
+      {
+        title: src.title.slice(0, 100),
+        description: startingDescription(src.markers, src.fps, src.range),
+        tags: [],
+        category: '22',
+        visibility: 'private',
+        madeForKids: false,
+      },
+      { thumbnail: src.thumbnail, captions: src.srt ? { path: src.srt, language: 'en', name: 'English' } : null },
+    );
+    ui.note(`The event is on YouTube (only you can see it): ${r.url}`);
+  } catch (e) {
+    ui.note(`The event couldn’t be published: ${e instanceof Error ? e.message : String(e)} Publish it from the render queue.`);
+  }
+}
