@@ -874,7 +874,11 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
                 )}
                 {j.status === 'done' && inApp() && renderQueue.publishSource(j.id) && (
                   <button type="button" className="btn btn--sm" onClick={() => panels.show({ kind: 'publish', job: j.id })}>
-                    {uploads[j.id]?.stage === 'done' ? 'Published' : uploads[j.id] ? `YouTube ${uploadPct(uploads[j.id])}` : 'Publish to YouTube…'}
+                    {uploads[j.id]?.stage === 'done'
+                      ? 'Published'
+                      : uploads[j.id]
+                        ? `${uploads[j.id]?.dest === 'vimeo' ? 'Vimeo' : 'YouTube'} ${uploadPct(uploads[j.id])}`
+                        : 'Publish…'}
                   </button>
                 )}
                 {isFinished(j) && (

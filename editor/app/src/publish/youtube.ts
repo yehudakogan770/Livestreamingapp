@@ -27,10 +27,26 @@ export interface VideoDetails {
 }
 
 export interface Published {
-  id: string;
+  /** YouTube's video id (none for Vimeo). */
+  id?: string;
   url: string;
   notes: string[];
 }
+
+export interface VimeoInfo {
+  connected: boolean;
+  name: string;
+}
+
+/** Who can see a Vimeo video. */
+export type VimeoWho = 'anybody' | 'unlisted' | 'nobody';
+
+export const vimeo = {
+  info: (): Promise<VimeoInfo> => (inApp() ? invoke<VimeoInfo>('vimeo_info') : Promise.resolve({ connected: false, name: '' })),
+  connect: (token: string) => invoke<VimeoInfo>('vimeo_connect', { token }),
+  disconnect: () => invoke<VimeoInfo>('vimeo_disconnect'),
+  open: (url: string) => invoke<void>('vimeo_open', { url }),
+};
 
 /** YouTube's categories people pick most (its own numbers). */
 export const CATEGORIES: [string, string][] = [
@@ -90,6 +106,8 @@ export function startingDescription(markers: Marker[], fps: number, range: { fro
 export interface Upload {
   /** The render queue job it came from. */
   job: string;
+  /** Where it goes. */
+  dest: 'youtube' | 'vimeo';
   title: string;
   stage: 'starting' | 'uploading' | 'finishing' | 'done' | 'failed' | 'stopped';
   bytes: number;
@@ -128,7 +146,7 @@ export async function publish(
   extras: { thumbnail?: string | null; captions?: { path: string; language: string; name: string } | null } = {},
 ): Promise<Published> {
   listenOnce();
-  uploads = { ...uploads, [job]: { job, title: details.title, stage: 'starting', bytes: 0, total: 0 } };
+  uploads = { ...uploads, [job]: { job, dest: 'youtube', title: details.title, stage: 'starting', bytes: 0, total: 0 } };
   changed();
   try {
     const result = await invoke<Published>('youtube_upload', {
@@ -138,6 +156,27 @@ export async function publish(
       thumbnail: extras.thumbnail ?? null,
       captions: extras.captions ?? null,
     });
+    put(job, { stage: 'done', result, bytes: uploads[job]?.total ?? 0 });
+    return result;
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    put(job, { stage: /stopped/i.test(error) ? 'stopped' : 'failed', error });
+    throw new Error(error);
+  }
+}
+
+/** Send a finished film to Vimeo (the same way: it keeps going, and the queue shows how far it is). */
+export async function publishVimeo(
+  job: string,
+  path: string,
+  details: { title: string; description: string; who: VimeoWho },
+  captions: { path: string; language: string; name: string } | null = null,
+): Promise<Published> {
+  listenOnce();
+  uploads = { ...uploads, [job]: { job, dest: 'vimeo', title: details.title, stage: 'starting', bytes: 0, total: 0 } };
+  changed();
+  try {
+    const result = await invoke<Published>('vimeo_upload', { job, path, details, captions });
     put(job, { stage: 'done', result, bytes: uploads[job]?.total ?? 0 });
     return result;
   } catch (e) {

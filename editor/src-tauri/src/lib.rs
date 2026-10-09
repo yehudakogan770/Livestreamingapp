@@ -608,6 +608,7 @@ pub fn run() {
             vimeo::vimeo_connect,
             vimeo::vimeo_disconnect,
             vimeo::vimeo_upload,
+            vimeo::vimeo_open,
             delivery::encoders_available,
             delivery::encode_open,
             delivery::encode_frame,

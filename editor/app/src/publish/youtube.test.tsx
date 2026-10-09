@@ -13,6 +13,8 @@ vi.mock('@tauri-apps/api/core', () => ({
     calls.push([cmd, args]);
     if (cmd === 'youtube_info') return Promise.resolve({ setUp: true, connected: true, channel: 'Spring Hall' });
     if (cmd === 'youtube_upload') return Promise.resolve({ id: 'abc', url: 'https://youtu.be/abc', notes: [] });
+    if (cmd === 'vimeo_info') return Promise.resolve({ connected: true, name: 'Spring Hall Films' });
+    if (cmd === 'vimeo_upload') return Promise.resolve({ url: 'https://vimeo.com/42', notes: [] });
     return Promise.resolve(null);
   },
   convertFileSrc: (p: string) => p,
@@ -71,5 +73,28 @@ describe('publishing to YouTube', () => {
     expect(up.details).toMatchObject({ title: 'Gala', visibility: 'unlisted', madeForKids: false });
     expect(up.thumbnail).toBe('/films/Gala.jpg');
     expect(up.captions).toMatchObject({ path: '/films/Gala.srt', language: 'en' });
+  });
+
+  it('publishes to Vimeo too: who can see it as Vimeo says it, with the captions', async () => {
+    vi.spyOn(renderQueue, 'publishSource').mockReturnValue({
+      path: '/films/Gala.mp4',
+      title: 'Gala',
+      srt: '/films/Gala.srt',
+      thumbnail: null,
+      markers: [],
+      fps: 30,
+      range: { from: 0, to: 300 },
+    });
+    render(<PublishDialog job="q2" ui={new Ui()} onClose={() => {}} />);
+    fireEvent.click(screen.getByRole('radio', { name: 'Vimeo' }));
+    await waitFor(() => expect(screen.getByText('Spring Hall Films')).toBeTruthy());
+    // YouTube's own settings are not asked for.
+    expect(screen.queryByText('Made for kids')).toBeNull();
+    fireEvent.click(screen.getByRole('radio', { name: 'Unlisted' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Watch on Vimeo' })).toBeTruthy());
+    const up = calls.find(([c]) => c === 'vimeo_upload')?.[1] as { details: { who: string; title: string }; captions: { path: string } };
+    expect(up.details).toEqual({ title: 'Gala', description: '', who: 'unlisted' });
+    expect(up.captions.path).toBe('/films/Gala.srt');
   });
 });

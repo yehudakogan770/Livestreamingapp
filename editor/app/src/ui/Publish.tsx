@@ -1,7 +1,8 @@
-// Render queue > Publish to YouTube: the channel, the video's details
-// (title, description with chapters, tags, category, who can see it, made for
-// kids), its thumbnail and captions, and the upload with its progress. The
-// upload keeps going if this window is closed; the queue shows how far it is.
+// Render queue > Publish: to YouTube (the channel, the video's details:
+// title, description with chapters, tags, category, who can see it, made for
+// kids; its thumbnail and captions) or to Vimeo (an access token, title,
+// description, who can see it, captions), and the upload with its progress.
+// The upload keeps going if this window is closed; the queue shows how far it is.
 import { useEffect, useState } from 'react';
 import { renderQueue } from '../export/renderQueue';
 import { baseName } from '../native';
@@ -9,10 +10,13 @@ import {
   CATEGORIES,
   checkDetails,
   publish,
+  publishVimeo,
   startingDescription,
   useUploads,
+  vimeo,
   youtube,
   type VideoDetails,
+  type VimeoInfo,
   type Visibility,
   type YoutubeInfo,
 } from '../publish/youtube';
@@ -24,6 +28,9 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
   const uploads = useUploads();
   const up = uploads[job];
   const [info, setInfo] = useState<YoutubeInfo | null>(null);
+  const [dest, setDest] = useState<'youtube' | 'vimeo'>('youtube');
+  const [vInfo, setVInfo] = useState<VimeoInfo | null>(null);
+  const [token, setToken] = useState('');
   const [busy, setBusy] = useState<'connect' | null>(null);
   const [problem, setProblem] = useState('');
   const [d, setD] = useState<VideoDetails>(() => ({
@@ -45,6 +52,10 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
       .info()
       .then((i) => live && setInfo(i))
       .catch((e: unknown) => live && setProblem(e instanceof Error ? e.message : String(e)));
+    void vimeo
+      .info()
+      .then((i) => live && setVInfo(i))
+      .catch(() => undefined);
     return () => {
       live = false;
     };
@@ -52,7 +63,7 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
 
   if (!src)
     return (
-      <Modal title="Publish to YouTube" onClose={onClose}>
+      <Modal title="Publish" onClose={onClose}>
         <p className="insp__note">Only a finished video export can be published. Export the sequence first, then publish it from the render queue.</p>
       </Modal>
     );
@@ -79,8 +90,29 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
   const bad = checkDetails(details);
   const running = up && (up.stage === 'starting' || up.stage === 'uploading' || up.stage === 'finishing');
 
+  const connectVimeo = async () => {
+    setBusy('connect');
+    setProblem('');
+    try {
+      setVInfo(await vimeo.connect(token));
+      setToken('');
+    } catch (e) {
+      setProblem(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const captionsFile = caps && src.srt ? { path: src.srt, language, name: language === 'en' ? 'English' : language } : null;
   const start = () => {
     setProblem('');
+    if (dest === 'vimeo') {
+      const who = d.visibility === 'public' ? 'anybody' : d.visibility === 'unlisted' ? 'unlisted' : 'nobody';
+      void publishVimeo(job, src.path, { title: d.title, description: d.description, who }, captionsFile)
+        .then((r) => ui.note(`Published to Vimeo: ${r.url}${r.notes.length ? ` (${r.notes.join(' ')})` : ''}`))
+        .catch((e: unknown) => setProblem(e instanceof Error ? e.message : String(e)));
+      return;
+    }
     void publish(job, src.path, details, {
       thumbnail: thumb ? src.thumbnail : null,
       captions: caps && src.srt ? { path: src.srt, language, name: language === 'en' ? 'English' : language } : null,
@@ -91,36 +123,86 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
 
   const pct = up && up.total ? Math.round((up.bytes / up.total) * 100) : 0;
   return (
-    <Modal title="Publish to YouTube" onClose={onClose} wide>
+    <Modal title="Publish" onClose={onClose} wide>
       <div className="form">
         <div className="form__row">
-          <span>Channel</span>
-          {info === null ? (
-            <small className="insp__note">Checking…</small>
-          ) : !info.setUp ? (
-            <small className="insp__note">
-              Publishing to YouTube isn’t set up in this copy of Lumora Studio yet. Upload {baseName(src.path)} at studio.youtube.com.
-            </small>
-          ) : info.connected ? (
-            <span className="form__pair">
-              <b>{info.channel || 'Connected'}</b>
-              <button type="button" className="linkbtn" disabled={!!running} onClick={() => void youtube.disconnect().then(setInfo)}>
-                Disconnect
-              </button>
-            </span>
-          ) : busy === 'connect' ? (
-            <span className="form__pair">
-              <small className="insp__note">Finish signing in in the browser…</small>
-              <button type="button" className="btn btn--sm" onClick={() => void youtube.cancel()}>
-                Cancel
-              </button>
-            </span>
-          ) : (
-            <button type="button" className="btn" onClick={() => void connect()}>
-              Connect a YouTube channel
-            </button>
-          )}
+          <span>Where</span>
+          <Choice
+            value={dest}
+            options={[
+              ['youtube', 'YouTube'],
+              ['vimeo', 'Vimeo'],
+            ]}
+            onChange={(v) => {
+              setDest(v);
+              setProblem('');
+            }}
+            label="Where to publish"
+          />
         </div>
+        {dest === 'vimeo' ? (
+          <div className="form__row">
+            <span>Account</span>
+            {vInfo?.connected ? (
+              <span className="form__pair">
+                <b>{vInfo.name || 'Connected'}</b>
+                <button type="button" className="linkbtn" disabled={!!running} onClick={() => void vimeo.disconnect().then(setVInfo)}>
+                  Disconnect
+                </button>
+              </span>
+            ) : (
+              <span className="form__pair">
+                <input
+                  className="text"
+                  type="password"
+                  value={token}
+                  placeholder="Vimeo access token"
+                  aria-label="Vimeo access token"
+                  onChange={(e) => setToken(e.target.value)}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+                <button type="button" className="btn" disabled={!token.trim() || busy === 'connect'} onClick={() => void connectVimeo()}>
+                  Connect
+                </button>
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="form__row">
+            <span>Channel</span>
+            {info === null ? (
+              <small className="insp__note">Checking…</small>
+            ) : !info.setUp ? (
+              <small className="insp__note">
+                Publishing to YouTube isn’t set up in this copy of Lumora Studio yet. Upload {baseName(src.path)} at studio.youtube.com.
+              </small>
+            ) : info.connected ? (
+              <span className="form__pair">
+                <b>{info.channel || 'Connected'}</b>
+                <button type="button" className="linkbtn" disabled={!!running} onClick={() => void youtube.disconnect().then(setInfo)}>
+                  Disconnect
+                </button>
+              </span>
+            ) : busy === 'connect' ? (
+              <span className="form__pair">
+                <small className="insp__note">Finish signing in in the browser…</small>
+                <button type="button" className="btn btn--sm" onClick={() => void youtube.cancel()}>
+                  Cancel
+                </button>
+              </span>
+            ) : (
+              <button type="button" className="btn" onClick={() => void connect()}>
+                Connect a YouTube channel
+              </button>
+            )}
+          </div>
+        )}
+        {dest === 'vimeo' && !vInfo?.connected && (
+          <p className="insp__note">
+            Make a personal access token at developer.vimeo.com/apps (any app of yours, Generate an access token, with Upload, Edit and Private access), then
+            paste it here. It is kept in Windows Credential Manager.
+          </p>
+        )}
         <label className="form__row">
           <span>Title</span>
           <input
@@ -141,32 +223,36 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
             onKeyDown={(e) => e.stopPropagation()}
           />
         </label>
-        <label className="form__row">
-          <span>Tags</span>
-          <input
-            className="text"
-            value={tags}
-            placeholder="gala, awards, 2026"
-            onChange={(e) => setTags(e.target.value)}
-            onKeyDown={(e) => e.stopPropagation()}
-          />
-        </label>
-        <label className="form__row">
-          <span>Category</span>
-          <select className="text" value={d.category} onChange={(e) => setD({ ...d, category: e.target.value })}>
-            {CATEGORIES.map(([id, name]) => (
-              <option key={id} value={id}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
+        {dest === 'youtube' && (
+          <label className="form__row">
+            <span>Tags</span>
+            <input
+              className="text"
+              value={tags}
+              placeholder="gala, awards, 2026"
+              onChange={(e) => setTags(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+            />
+          </label>
+        )}
+        {dest === 'youtube' && (
+          <label className="form__row">
+            <span>Category</span>
+            <select className="text" value={d.category} onChange={(e) => setD({ ...d, category: e.target.value })}>
+              {CATEGORIES.map(([id, name]) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="form__row">
           <span>Who can see it</span>
           <Choice<Visibility>
             value={d.visibility}
             options={[
-              ['private', 'Only me', 'Private: only you, until you change it in YouTube Studio'],
+              ['private', 'Only me', 'Private: only you, until you change it'],
               ['unlisted', 'Anyone with the link', 'Unlisted'],
               ['public', 'Everyone', 'Public'],
             ]}
@@ -174,25 +260,29 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
             label="Who can see it"
           />
         </div>
-        <div className="form__row">
-          <span>Made for kids</span>
-          <Choice
-            value={d.madeForKids ? 'yes' : 'no'}
-            options={[
-              ['no', 'No'],
-              ['yes', 'Yes', 'YouTube turns off comments and some features on videos made for kids'],
-            ]}
-            onChange={(v) => setD({ ...d, madeForKids: v === 'yes' })}
-            label="Made for kids"
-          />
-        </div>
+        {dest === 'youtube' && (
+          <div className="form__row">
+            <span>Made for kids</span>
+            <Choice
+              value={d.madeForKids ? 'yes' : 'no'}
+              options={[
+                ['no', 'No'],
+                ['yes', 'Yes', 'YouTube turns off comments and some features on videos made for kids'],
+              ]}
+              onChange={(v) => setD({ ...d, madeForKids: v === 'yes' })}
+              label="Made for kids"
+            />
+          </div>
+        )}
         <div className="form__row">
           <span />
           <span className="smart__checks">
-            <label className="check">
-              <input type="checkbox" checked={thumb} disabled={!src.thumbnail} onChange={(e) => setThumb(e.target.checked)} />{' '}
-              {src.thumbnail ? `Thumbnail: ${baseName(src.thumbnail)}` : 'Thumbnail (choose one under Thumbnail when exporting)'}
-            </label>
+            {dest === 'youtube' && (
+              <label className="check">
+                <input type="checkbox" checked={thumb} disabled={!src.thumbnail} onChange={(e) => setThumb(e.target.checked)} />{' '}
+                {src.thumbnail ? `Thumbnail: ${baseName(src.thumbnail)}` : 'Thumbnail (choose one under Thumbnail when exporting)'}
+              </label>
+            )}
             <label className="check">
               <input type="checkbox" checked={caps} disabled={!src.srt} onChange={(e) => setCaps(e.target.checked)} />{' '}
               {src.srt ? 'Captions viewers can turn on' : 'Captions (export with a captions file to add them)'}
@@ -222,8 +312,12 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
               {up.stage === 'done' && up.result ? (
                 <>
                   Published.{' '}
-                  <button type="button" className="linkbtn" onClick={() => up.result && void youtube.watch(up.result.id)}>
-                    Watch on YouTube
+                  <button
+                    type="button"
+                    className="linkbtn"
+                    onClick={() => up.result && void (up.dest === 'vimeo' ? vimeo.open(up.result.url) : up.result.id && youtube.watch(up.result.id))}
+                  >
+                    {up.dest === 'vimeo' ? 'Watch on Vimeo' : 'Watch on YouTube'}
                   </button>{' '}
                   <button type="button" className="linkbtn" onClick={() => up.result && void navigator.clipboard?.writeText(up.result.url)}>
                     Copy the link
@@ -258,7 +352,12 @@ export function PublishDialog({ job, ui, onClose }: { job: string; ui: Ui; onClo
               Stop the upload
             </button>
           ) : (
-            <button type="button" className="btn btn--primary" disabled={!info?.connected || !!bad || up?.stage === 'done'} onClick={start}>
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={!(dest === 'vimeo' ? vInfo?.connected : info?.connected) || !!bad || up?.stage === 'done'}
+              onClick={start}
+            >
               Publish
             </button>
           )}

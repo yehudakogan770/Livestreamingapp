@@ -275,7 +275,7 @@ async fn blocking<T: Send + 'static>(
         .map_err(|e| e.to_string())?
 }
 
-fn open_browser(url: &str) -> Result<(), String> {
+pub(crate) fn open_browser(url: &str) -> Result<(), String> {
     #[cfg(windows)]
     let mut cmd = {
         let mut c = std::process::Command::new("rundll32");

@@ -228,3 +228,15 @@ fn publish(
         notes,
     })
 }
+
+/// Open a published video's page (only a vimeo.com address is taken).
+#[tauri::command]
+pub fn vimeo_open(url: String) -> Result<(), String> {
+    let ok = url.strip_prefix("https://vimeo.com/").is_some_and(|rest| {
+        !rest.is_empty() && rest.chars().all(|c| c.is_ascii_alphanumeric() || c == '/')
+    });
+    if !ok {
+        return Err("That isn’t a Vimeo video.".to_owned());
+    }
+    crate::youtube::open_browser(&url)
+}
