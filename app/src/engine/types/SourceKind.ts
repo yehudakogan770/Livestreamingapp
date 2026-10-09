@@ -4,6 +4,7 @@ import type { BrowserInput } from './BrowserInput';
 import type { CommentCard } from './CommentCard';
 import type { Countdown } from './Countdown';
 import type { Credits } from './Credits';
+import type { Drawing } from './Drawing';
 import type { Fundraiser } from './Fundraiser';
 import type { Graphic } from './Graphic';
 import type { Guest } from './Guest';
@@ -69,6 +70,7 @@ export type SourceKind =
   | ({ type: 'titler' } & TitlerGraphic)
   | ({ type: 'guest' } & Guest)
   | ({ type: 'comment' } & CommentCard)
+  | ({ type: 'drawing' } & Drawing)
   | ({ type: 'poll' } & Poll)
   | ({ type: 'lyrics' } & Lyrics)
   | ({ type: 'screen' } & ScreenCapture)

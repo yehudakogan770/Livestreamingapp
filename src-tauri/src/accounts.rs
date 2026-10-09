@@ -599,6 +599,30 @@ pub async fn accounts_finish(app: AppHandle) -> Result<Vec<Failed>, String> {
     .await
 }
 
+/// New comments on the Facebook live video on air through the account.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FacebookComments {
+    pub comments: Vec<facebook::Comment>,
+    /// Ask from here next time.
+    pub after: String,
+}
+
+/// The live chat reads Facebook comments: those after `after` (empty: from the start).
+#[tauri::command]
+pub async fn accounts_facebook_comments(
+    app: AppHandle,
+    after: String,
+) -> Result<FacebookComments, String> {
+    blocking(app, move |la| {
+        lock(&la.accounts)
+            .facebook_comments(&la.net, &after)
+            .map(|(comments, after)| FacebookComments { comments, after })
+            .map_err(|e| e.message)
+    })
+    .await
+}
+
 /// How each connected destination is doing.
 #[tauri::command]
 pub async fn accounts_sessions(app: AppHandle) -> Result<Vec<SessionView>, String> {

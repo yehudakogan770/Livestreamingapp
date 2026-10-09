@@ -27,4 +27,5 @@ export type Step =
   | { type: 'stream'; on: boolean }
   | { type: 'replay'; seconds: number; slow: boolean }
   | { type: 'macro'; macroId: string }
-  | { type: 'dataStep'; delta: number };
+  | { type: 'dataStep'; delta: number }
+  | { type: 'mark' };

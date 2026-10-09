@@ -93,6 +93,8 @@ pub enum AppCommand {
         #[serde(default)]
         slow: bool,
     },
+    /// Mark this moment in the recording (for editing later).
+    Mark,
 }
 
 impl AppCommand {

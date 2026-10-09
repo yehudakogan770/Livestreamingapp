@@ -16,6 +16,7 @@ import { RehearsalLog, type RehearsalReport } from './rehearsal';
 import { useSpeakerNames } from '../engine/speakers';
 import { due, loadSchedule, saveSchedule, timeText, type Schedule } from './schedule';
 import { Broadcaster } from './recorder';
+import { useTriggerWatch } from '../engine/triggerWatch';
 import { replayExt } from './replay';
 import { captionTargets, LiveCaptions, type CaptionState } from '../captions/live';
 import { lineWidth } from './captionLayer';
@@ -50,6 +51,14 @@ interface Broadcast {
   makeReplay(seconds: number, speed: number): Promise<string>;
   /** Keep the last `seconds` in the highlights reel (a video input that plays them all). Resolves how many it holds. */
   saveHighlight(seconds: number): Promise<number>;
+  /**
+   * Mark this moment in the recording (Lumora Studio shows the marks on its
+   * timeline). Returns how many there are now.
+   * @throws Error when nothing is recording.
+   */
+  mark(name?: string): number;
+  /** Moments marked in the recording so far. */
+  marks: number;
   /** Live captions: whether they're running, and the words right now. */
   captions: { state: CaptionState; lines(): string[] };
   /** Rehearsal: GO LIVE runs everything as if live, but nothing is sent. */
@@ -566,6 +575,19 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
     [broadcaster, client, replayItems],
   );
 
+  const [marks, setMarks] = useState(0);
+  const recordingSince = status.recording?.startedAt ?? null;
+  useEffect(() => setMarks(broadcaster?.marks() ?? 0), [broadcaster, recordingSince]);
+  const mark = useCallback(
+    (name?: string) => {
+      const n = broadcaster?.mark(name ?? '');
+      if (n === null || n === undefined) throw new Error('Start recording to mark moments.');
+      setMarks(n);
+      return n;
+    },
+    [broadcaster],
+  );
+
   const saveHighlight = useCallback(
     async (seconds: number) => {
       if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
@@ -588,6 +610,9 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
         });
       }
       await client.dispatch({ type: 'setPlaylist', id: HIGHLIGHTS, playlist: { items: all, current: 0, autoNext: true, loopAll: false } });
+      // The recording gets a mark where the highlight starts, for editing later.
+      const n = broadcaster.mark(`Highlight ${stamp}`, seconds * 1000);
+      if (n !== null) setMarks(n);
       return new Set(all.map((x) => x.name)).size;
     },
     [broadcaster, client, replayItems],
@@ -633,6 +658,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
 
   // Speakers' names come on by themselves when they talk.
   useSpeakerNames(show, client);
+  // Triggers on sound levels and on recording / streaming starting or stopping.
+  useTriggerWatch(show, client, { recording: !!status.recording, streaming: !!status.streaming });
 
   // ---- live captions (to the stream only) ----
   const live = useMemo(() => (sound && typeof Worker !== 'undefined' ? new LiveCaptions(client, sound) : null), [client, sound]);
@@ -774,6 +801,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       setReplay,
       makeReplay,
       saveHighlight,
+      mark,
+      marks,
       frameStats,
       captions,
       rehearsal,
@@ -795,6 +824,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
       setReplay,
       makeReplay,
       saveHighlight,
+      mark,
+      marks,
       frameStats,
       captions,
       rehearsal,
@@ -808,6 +839,8 @@ export function BroadcastProvider({ show, client, children }: { show: Show; clie
   // The Stream Deck (through the phone remote's server) records, goes live and replays too.
   useRemoteControl(value);
   // Macros, triggers and cues record, go live and replay through the same requests.
-  useAppRequests(show.appRequests ?? [], value, (message, r) => setStartError({ kind: r.step.command === 'record' ? 'record' : 'stream', message }));
+  useAppRequests(show.appRequests ?? [], value, (message, r) =>
+    setStartError({ kind: r.step.command === 'record' || r.step.command === 'mark' ? 'record' : 'stream', message }),
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -47,6 +47,7 @@ import type { Split } from './Split';
 import type { Step } from './Step';
 import type { Stinger } from './Stinger';
 import type { StreamInput } from './StreamInput';
+import type { Stroke } from './Stroke';
 import type { TextInput } from './TextInput';
 import type { TitlerGraphic } from './TitlerGraphic';
 import type { TitlerTable } from './TitlerTable';
@@ -154,6 +155,9 @@ export type Action =
   | { type: 'qnaRemove'; question?: number }
   | { type: 'reloadGuest'; id: SourceId }
   | { type: 'showComment'; id: SourceId; comment?: ChatComment }
+  | { type: 'drawStroke'; id: SourceId; stroke: Stroke }
+  | { type: 'drawUndo'; id: SourceId }
+  | { type: 'drawClear'; id: SourceId }
   | { type: 'updateCommentCard'; id: SourceId; place: CommentPlace; accent: string }
   | { type: 'setPtz'; id: SourceId; ptz?: Ptz }
   | { type: 'updatePoll'; id: SourceId; poll: Poll }

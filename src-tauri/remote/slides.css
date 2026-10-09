@@ -222,6 +222,26 @@ button.chip {
 .chip--cd b {
   color: var(--accent);
 }
+/* The countdown as the stage Monitor shows it. */
+.chip--cd[data-tone='wrapUp'] b {
+  color: #f2b33d;
+}
+.chip--cd[data-tone='urgent'] b,
+.chip--cd[data-tone='over'] b,
+.chip--cd[data-tone='over'] small {
+  color: #ff5a4f;
+}
+.chip--cd[data-tone='paused'] b {
+  color: var(--text-dim);
+}
+/* The operator's message to the stage. */
+.banner--msg {
+  background: #1d1f23;
+  color: #fff;
+  font-size: 1.4em;
+  padding: 12px 14px;
+  border-bottom: 1px solid #000;
+}
 
 .banner {
   padding: 8px 12px;

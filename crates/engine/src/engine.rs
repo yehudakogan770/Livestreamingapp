@@ -1220,6 +1220,18 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             c.repair();
             Ok(())
         }
+        Action::DrawStroke { id, stroke } => {
+            drawing_mut(s, &id)?.add(stroke, now);
+            Ok(())
+        }
+        Action::DrawUndo { id } => {
+            drawing_mut(s, &id)?.undo(now);
+            Ok(())
+        }
+        Action::DrawClear { id } => {
+            drawing_mut(s, &id)?.clear(now);
+            Ok(())
+        }
         Action::UpdateCommentCard { id, place, accent } => {
             let c = comment_mut(s, &id)?;
             c.place = place;
@@ -2153,6 +2165,9 @@ fn step_action(step: Step, main: Option<&SourceId>) -> Option<Action> {
             step: crate::macros::AppStep::Replay { seconds, slow },
         },
         Step::DataStep { delta } => Action::DataStep { delta },
+        Step::Mark => Action::RequestApp {
+            step: crate::macros::AppStep::Mark,
+        },
         // Macros start beside the steps (see `run_steps`).
         Step::Wait { .. } | Step::Macro { .. } => return None,
     })
@@ -2231,6 +2246,15 @@ fn update_monitor(s: &mut Show, p: MonitorPatch) {
     }
     if let Some(v) = p.clock_24h {
         m.clock_24h = v;
+    }
+    if let Some(v) = p.wrap_up_s {
+        m.wrap_up_s = v.min(crate::stage::MAX_WRAP_UP_S);
+    }
+    if let Some(v) = p.overtime {
+        m.overtime = v;
+    }
+    if let Some(v) = p.progress {
+        m.progress = v;
     }
 }
 
@@ -2800,6 +2824,16 @@ fn apply_wall(s: &mut Show, action: Action, now: Millis) -> Result<()> {
     Ok(())
 }
 
+fn drawing_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::drawing::Drawing> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Drawing(d) => Ok(d),
+        _ => Err(ActionError::invalid("id", "that input is not for drawing")),
+    }
+}
+
 fn comment_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::chat::CommentCard> {
     let src = s
         .source_mut(id)
@@ -3155,6 +3189,7 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
         }
         SourceKind::Screen(c) => c.repair(),
         SourceKind::Comment(c) => c.repair(),
+        SourceKind::Drawing(d) => d.repair(),
         SourceKind::Raffle(r) => {
             r.repair();
             r.open = false;

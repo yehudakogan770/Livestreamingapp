@@ -11,6 +11,10 @@ use crate::model::{Millis, SourceId};
 pub const MAX_MESSAGE_LEN: usize = 200;
 /// Longest quick message, countdown label or end text.
 pub const MAX_SHORT_TEXT_LEN: usize = 60;
+/// The time left turns amber two minutes before the end, unless changed.
+pub const DEFAULT_WRAP_UP_S: u32 = 120;
+/// Longest wrap-up warning: an hour.
+pub const MAX_WRAP_UP_S: u32 = 3600;
 /// Number of quick messages.
 pub const QUICK_MESSAGES: usize = 8;
 /// How long the countdown holds on 0 before its at-zero action and fade.
@@ -64,6 +68,13 @@ pub struct Monitor {
     pub text_size: TextSize,
     /// 24-hour clock (19:42) instead of 12-hour (7:42 PM).
     pub clock_24h: bool,
+    /// The time left turns amber this many seconds before the end (0: never),
+    /// and red in the last minute.
+    pub wrap_up_s: u32,
+    /// After zero, the time over is shown in red (+1:05) instead of 0:00.
+    pub overtime: bool,
+    /// A bar under the time left shows how much of it has gone.
+    pub progress: bool,
     /// Messages one click away. Always exactly [`QUICK_MESSAGES`] entries.
     pub quick: Vec<String>,
     /// The teleprompter.
@@ -81,6 +92,9 @@ impl Default for Monitor {
             show_lyrics: true,
             text_size: TextSize::L,
             clock_24h: false,
+            wrap_up_s: DEFAULT_WRAP_UP_S,
+            overtime: true,
+            progress: true,
             quick: default_quick(),
             prompter: crate::prompter::Prompter::default(),
         }

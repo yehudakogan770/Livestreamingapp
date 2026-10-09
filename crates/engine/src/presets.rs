@@ -116,6 +116,9 @@ pub enum Step {
     DataStep {
         delta: i32,
     },
+    /// Mark this moment in the recording, for editing later (done by the
+    /// control window).
+    Mark,
 }
 
 /// A named button: its steps run in order when pressed.

@@ -10,7 +10,8 @@ import type { ScreenId } from './engine/types/ScreenId';
 import { TitleBar, type MenuItem, type Tool } from './components/TitleBar';
 import { BrandMark } from './components/Logo';
 import { AboutHost, openAbout } from './components/About';
-import { CircleHelp, Layers, LibraryBig, ListChecks, Radio, SquarePlus, Spotlight, Type } from 'lucide-react';
+import { CircleHelp, Layers, LibraryBig, ListChecks, Radio, Search, SquarePlus, Spotlight, Type } from 'lucide-react';
+import { CommandPalette, menuEntries, showEntries } from './views/CommandPalette';
 import { Gate, useAccess, useFeature } from './auth/Gate';
 import { UpdateBar, checkForUpdates } from './components/UpdateBar';
 import { jewishToolsOn, loadJewishTools, saveJewishTools } from './engine/jewishTools';
@@ -131,11 +132,14 @@ function ControlApp() {
   const [reportsOn, toggleReports] = useErrorReports();
   useEffect(() => saveJewishTools(jewish), [jewish]);
   useEffect(() => applyTextSize(textSize), [textSize]);
+  // Find a command (Ctrl + K).
+  const [paletteOpen, setPaletteOpen] = useState(false);
   // Ctrl + / Ctrl − / Ctrl 0, like any app.
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
-      if (e.key === '=' || e.key === '+') setTextSize((t) => stepTextSize(t, 1));
+      if ((e.key === 'k' || e.key === 'K') && !e.shiftKey && !e.altKey) setPaletteOpen((o) => !o);
+      else if (e.key === '=' || e.key === '+') setTextSize((t) => stepTextSize(t, 1));
       else if (e.key === '-') setTextSize((t) => stepTextSize(t, -1));
       else if (e.key === '0') setTextSize('large');
       else return;
@@ -522,6 +526,7 @@ function ControlApp() {
       null,
       { icon: Radio, label: 'Recording and streaming settings', onClick: openBroadcast },
       { icon: CircleHelp, label: 'How to use Lumora', onClick: () => sendCommand({ type: 'help' }) },
+      { icon: Search, label: 'Find a command (Ctrl+K)', onClick: () => setPaletteOpen(true) },
     ],
     [openBroadcast],
   );
@@ -605,6 +610,12 @@ function ControlApp() {
         >
           <EventSetup show={show} client={client} onClose={closeSetup} onError={(e) => console.error('Lumora: event setup', e)} />
         </StageContext.Provider>
+      )}
+      {paletteOpen && show && (
+        <CommandPalette
+          entries={[...menuEntries(menus), ...showEntries(show, controlling, (a) => void client.dispatch(a).catch(fail))]}
+          onClose={() => setPaletteOpen(false)}
+        />
       )}
       {dataOpen && show && <DataDialog show={show} client={client} onClose={() => setDataOpen(false)} />}
       {zmanimOpen && show && <ZmanimDialog show={show} act={(a) => void client.dispatch(a).catch(fail)} onClose={() => setZmanimOpen(false)} />}

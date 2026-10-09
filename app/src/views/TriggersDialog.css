@@ -67,3 +67,7 @@
   gap: 8px;
   padding-top: 8px;
 }
+.trg__pair {
+  display: flex;
+  gap: 8px;
+}

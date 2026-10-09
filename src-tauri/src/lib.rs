@@ -1352,6 +1352,7 @@ pub fn run() {
             accounts::accounts_prepare,
             accounts::accounts_finish,
             accounts::accounts_sessions,
+            accounts::accounts_facebook_comments,
             syscheck::system_facts,
             selftest::selftest_config,
             selftest::selftest_finish,

@@ -64,6 +64,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   lyrics: 'Song',
   poll: 'Poll',
   comment: 'Chat comment',
+  drawing: 'Drawing',
   guest: 'Guest',
   raffle: 'Raffle',
   fundraiser: 'Fundraiser',

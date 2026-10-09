@@ -67,6 +67,8 @@ interface Live {
   chapters: { at: number; name: string }[] | null;
   /** Every change of what was on air (recordings, for the editing program). */
   cuts: { at: number; id: string | null; name: string }[];
+  /** Moments marked while recording (Mark, highlights), for the editing program. */
+  markers: { at: number; name: string }[];
   name: string;
   startedAt: number;
   /** It sends the vertical picture (not the wide one). */
@@ -103,10 +105,20 @@ export interface EventFile {
   files: { kind: 'camera' | 'microphone'; sourceId: string; name: string; path: string; startMs: number }[];
   /** What was on air when (ms after the start). */
   cuts: { at: number; id: string | null; name: string }[];
+  /** Moments marked while recording (ms after the start); Lumora Studio shows them on the timeline. */
+  markers: { at: number; name: string }[];
 }
 
+/** Longest name of a marked moment. */
+export const MARK_NAME_MAX = 60;
+/** Most marks in one recording. */
+export const MAX_MARKS = 500;
+
 /** The event file for a recording so far (or finished). */
-export function eventFile(live: Pick<Live, 'name' | 'startedAt' | 'running' | 'isos' | 'cuts'>, endedAt: number | null): EventFile {
+export function eventFile(
+  live: Pick<Live, 'name' | 'startedAt' | 'running' | 'isos' | 'cuts'> & { markers?: Live['markers'] },
+  endedAt: number | null,
+): EventFile {
   const path = live.running.path ?? null;
   return {
     app: 'Lumora',
@@ -117,6 +129,7 @@ export function eventFile(live: Pick<Live, 'name' | 'startedAt' | 'running' | 'i
     program: { path, mp4: path ? path.replace(/\.(mkv|webm)$/i, '.mp4') : null },
     files: live.isos.map((i) => ({ kind: i.kind, sourceId: i.sourceId, name: i.name, path: i.path, startMs: i.startMs })),
     cuts: live.cuts,
+    markers: [...(live.markers ?? [])].sort((a, b) => a.at - b.at),
   };
 }
 
@@ -278,6 +291,7 @@ export class Broadcaster {
       })),
       chapters: kind === 'record' && settings.chapters ? [] : null,
       cuts: [],
+      markers: [],
       name,
       startedAt: running.startedAt || Date.now(),
       vertical,
@@ -302,6 +316,27 @@ export class Broadcaster {
       const last = rec.chapters?.[rec.chapters.length - 1];
       if (rec.chapters && last?.name !== name) rec.chapters.push({ at, name });
     }
+  }
+
+  /**
+   * Mark a moment in the recording (now, or `backMs` earlier) for editing
+   * later. The event file is saved straight away, so a mark survives a crash.
+   * Returns how many marks the recording has, or null when nothing is recording.
+   */
+  mark(name: string, backMs = 0): number | null {
+    const rec = this.live.get('record');
+    if (!rec) return null;
+    if (rec.markers.length >= MAX_MARKS) return rec.markers.length;
+    const at = Math.max(0, Date.now() - rec.startedAt - Math.max(0, backMs));
+    const clean = name.replace(/\s+/g, ' ').trim().slice(0, MARK_NAME_MAX) || `Mark ${rec.markers.length + 1}`;
+    rec.markers.push({ at, name: clean });
+    void this.client.saveEventFile(rec.name, JSON.stringify(eventFile(rec, null), null, 2)).catch(() => {});
+    return rec.markers.length;
+  }
+
+  /** How many moments the recording has marked (0 when not recording). */
+  marks(): number {
+    return this.live.get('record')?.markers.length ?? 0;
   }
 
   running(kind: SessionKind): CaptureRunning | null {
@@ -427,6 +462,7 @@ export class Broadcaster {
       isos: [],
       chapters: kind === 'record' && settings.chapters ? [] : null,
       cuts: [],
+      markers: [],
       name,
       startedAt: Date.now(),
       vertical,

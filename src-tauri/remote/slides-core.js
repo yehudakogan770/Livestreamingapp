@@ -18,7 +18,9 @@
  * @typedef {{
  *   event: string, locked: boolean, allowBlack: boolean,
  *   slideshows: ViewSlideshow[],
- *   countdown: { name: string, endsAt: number | null, remainingMs: number } | null
+ *   countdown: { name: string, endsAt: number | null, remainingMs: number, lengthMs?: number, endText?: string | null } | null,
+ *   timing?: { wrapUpS: number, overtime: boolean },
+ *   message?: string | null
  * }} SlidesView
  */
 /** @typedef {'next' | 'previous' | 'black'} Move */
@@ -126,6 +128,27 @@ export function clockText(ms) {
   const m = Math.floor((total % 3600) / 60);
   const s = String(total % 60).padStart(2, '0');
   return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+/**
+ * The countdown as the stage Monitor shows it (mirrors app/src/engine/stageTimer.ts):
+ * amber to wrap up, red in the last minute, and after zero the time over.
+ * @param {{ endsAt: number | null, remainingMs: number, endText?: string | null }} c
+ * @param {{ wrapUpS: number, overtime: boolean } | undefined} timing
+ * @param {number} now
+ * @returns {{ tone: 'normal' | 'wrapUp' | 'urgent' | 'over' | 'paused', text: string }}
+ */
+export function stageTime(c, timing, now) {
+  const left = remaining(c, now);
+  if (c.endsAt === null) return { tone: 'paused', text: clockText(left) };
+  if (left > 0) {
+    const wrap = (timing?.wrapUpS ?? 120) * 1000;
+    return { tone: left <= 60_000 ? 'urgent' : wrap > 0 && left <= wrap ? 'wrapUp' : 'normal', text: clockText(left) };
+  }
+  if (c.endText) return { tone: 'urgent', text: c.endText };
+  const over = now - c.endsAt;
+  if ((timing?.overtime ?? true) && over >= 1000) return { tone: 'over', text: `+${elapsedText(over)}` };
+  return { tone: 'urgent', text: clockText(0) };
 }
 
 /** Time since (rounded down, unlike a countdown). @param {number} ms */
