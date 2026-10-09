@@ -452,3 +452,23 @@ again; without internet they open for up to 7 days after the last check. Two-ste
 34. ✅ **How to use Lumora** — a plain-language manual inside the app (Help menu), searchable, offline: every part of the app step by step.
 35. ✅ **500 built-in fonts** — all open-source (Google Fonts), 58 with Hebrew, kept inside the app so they work offline; a font picker with search and groups (Hebrew, sans, serif, display, handwriting, mono, on this computer, added), each font shown in itself; used by titles, songs, credits, the title designer and the 12 Pesukim, on screen and in the recording.
 36. ✅ **On-screen effects** — 14 ways for titles to come on (build, fade, slide, rise, drop, pop, zoom, flip, focus, wipe, typewriter, bounce, spin, shine), for every title or the whole event look; the 12 Pesukim bar has its own entrance and an effect for each new word; the same on the screens and in the recording.
+
+---
+
+## 29. Lumora Studio (the editor): against the other editors
+
+Compared with DaVinci Resolve, Premiere Pro, Final Cut Pro, Avid, CapCut,
+Descript, Riverside, Opus Clip / Vizard / Submagic, Camtasia, Filmora,
+Shotcut, Kdenlive and LumaFusion; the full table, the complaints and Studio's
+answers are in `COMPETITORS-STUDIO.md` (65 of 78 tools ✅, 6 ◐, 7 ❌).
+
+- ✅ **Finish the event** — one step: cameras cut by who is talking, speech written down, captions, chapters, a highlight reel, framed and captioned clips for social, everything queued and the event published to YouTube (private) when exported
+- ✅ **Multicam from separate files** — lined up by sound, timecode or recording time; recorders as the sound
+- ✅ **Clips for social** — ranked stand-alone moments on whole sentences, each its own vertical sequence framed on the speaker, with captions that light up word by word (seven tasteful looks)
+- ✅ **Rough cut from a script** — every line found in the transcripts, the best take in order, other takes on hidden tracks
+- ✅ **Transcript** — who is speaking at each change of voice (by microphone), filler sounds deleted at once
+- ✅ **Mixer** — EQ, dynamics and limiter on every track, buses, the whole mix's processing and level, recorded fader moves; match loudness across clips; record a voiceover
+- ✅ **Color** — stills and a reference wipe; drawn masks; rounded shape masks
+- ✅ **Library** — 37 video transitions, 42 picture effects (video noise reduction, skin smoothing, clarity, tint, duotone, cinematic bars, mirror, tilt-shift, lens distortion, camera shake…), 45 motion title templates plus the Titler's
+- ✅ **Publish to YouTube** — resumable upload with chapters, thumbnail and captions; the channel connection shared with Lumora
+- ⬜ Still to come: animated drawn masks, HDR and color management, a voice model for single-microphone speakers, publishing to other platforms, client review links
