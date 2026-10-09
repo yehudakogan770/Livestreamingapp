@@ -21,6 +21,7 @@ import {
 import { TitlerSection } from '../titler/StudioTitler';
 import { useState } from 'react';
 import { duration, GENERATORS } from '../model/build';
+import { openSmart } from '../smart/open';
 import { EFFECTS, TRANSITION_GROUPS, TRANSITIONS } from '../model/effects';
 import { SHAPE_KINDS } from '../model/shapes';
 import { newSequence, type Bin, type MediaItem, type Project } from '../model/types';
@@ -115,6 +116,7 @@ function MediaTab({ doc, ui, actions }: { doc: Doc; ui: Ui; actions: Actions }) 
             })),
           ],
         },
+        { label: 'New multicam clip from files…', disabled: m.kind === 'image', run: () => openSmart('makeMulticam') },
         ...(inApp() ? [{ label: 'Show in folder', run: () => void native.reveal(m.path) }] : []),
         ...(inApp() && m.kind === 'video' && !m.playbackProxy ? [{ label: 'Generate proxy', run: () => makeProxies(doc, [m], true) }] : []),
         ...mediaManageMenu(doc, ui, m),

@@ -175,3 +175,11 @@
 .smart__order button:disabled {
   opacity: 0.35;
 }
+.smart__warn {
+  color: var(--warning);
+}
+.smart__sound {
+  margin-left: 6px;
+  white-space: nowrap;
+  font-size: 12px;
+}
