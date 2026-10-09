@@ -405,6 +405,7 @@ export function Editor({
         { label: 'Cut every track at the playhead', keys: 'Ctrl+Shift+K', run: () => actions.addEdit(true) },
         { label: 'Trim start to playhead', keys: 'Q', run: () => actions.rippleTrim('start') },
         { label: 'Trim end to playhead', keys: 'W', run: () => actions.rippleTrim('end') },
+        { label: 'Extend edit (roll the nearest cut here)', keys: 'E', run: actions.extendEdit },
         'sep',
         { label: 'Lift', keys: ';', run: actions.liftMarked },
         { label: 'Extract', keys: "'", run: actions.extractMarked },
