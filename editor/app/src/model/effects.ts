@@ -1,3 +1,4 @@
+import { MORE_EFFECTS } from '../render/fxlib';
 import { uid, type Effect } from './types';
 
 export interface ParamDef {
@@ -374,6 +375,8 @@ export const EFFECTS: EffectDef[] = [
     previewNote:
       'Turns this clip down while a Speech track talks (mark tracks Speech or Music in the track header or the Mixer). Music tracks duck by themselves.',
   },
+  // More picture effects (render/fxlib.ts).
+  ...MORE_EFFECTS,
 ];
 
 /** The ducking settings a Music track uses when its clips have no Duck effect of their own. */

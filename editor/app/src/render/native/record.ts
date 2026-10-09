@@ -9,6 +9,7 @@ import { invert3, limitOf, placeCorner, squareToQuad } from '../compositor';
 import { shifted, type EffectNow, type Layer, type MotionNow, type Op } from '../frame';
 import { nodeUniforms, planGrade, wheelVectors } from '../grade';
 import { BLEND_MODES, TRANSITION_TYPES } from '../shaders';
+import { moreEffectUniforms } from '../fxlib';
 import type { NodeNow } from '../../model/grade';
 
 /** A texture a pass reads: `t3` (a target), `v0` (a video frame), `r:<id>` (a picture sent to the engine), `e` (nothing). */
@@ -376,8 +377,10 @@ export class Recorder {
         return run('wave', { uAmount: n('amount', 20) * k, uFreq: n('size', 30) / 10, uTime: time * (n('speed', 50) / 25) });
       case 'vhs':
         return run('vhs', { uAmount: n('amount', 50) / 100, uTime: time });
-      default:
-        return input;
+      default: {
+        const u = moreEffectUniforms(e.type, n, { k, time, d: e.d });
+        return u && u !== 'skip' ? run(e.type, u) : input;
+      }
     }
   }
 

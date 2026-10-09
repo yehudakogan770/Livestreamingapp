@@ -11,6 +11,7 @@ import { nodeUniforms, planGrade, wheelVectors } from './grade';
 import type { NodeNow } from '../model/grade';
 import { CUTOUT_FS, LIMIT_FS } from './maskfx';
 import { drawText, textStamp } from './text';
+import { moreEffectUniforms } from './fxlib';
 import {
   BLEND_MODES,
   COMPOSITE_FS,
@@ -724,8 +725,10 @@ export class Compositor {
         return run('wave', { uAmount: n('amount', 20) * (this.h / this.seqH), uFreq: n('size', 30) / 10, uTime: time * (n('speed', 50) / 25) });
       case 'vhs':
         return run('vhs', { uAmount: n('amount', 50) / 100, uTime: time });
-      default:
-        return input;
+      default: {
+        const u = moreEffectUniforms(e.type, n, { k: this.h / this.seqH, time, d: e.d });
+        return u && u !== 'skip' ? run(e.type, u) : input;
+      }
     }
   }
 

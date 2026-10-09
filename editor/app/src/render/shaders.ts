@@ -1,6 +1,7 @@
 // The GPU programs that draw the picture. Colors are kept "premultiplied"
 // (color already multiplied by how see-through it is), so layers stack cleanly.
 import { BLEND_NAMES } from '../model/blend';
+import { moreEffectSources } from './fxlib';
 
 export const FULL_VS = `#version 300 es
 in vec2 aPos;
@@ -509,6 +510,7 @@ void main() {
 
 /** One program for each effect; each reads the layer and writes it changed. */
 export const EFFECT_FS: Record<string, string> = {
+  ...moreEffectSources(HEAD),
   basic: `${HEAD}${COLOR_LIB}
 uniform float uExposure, uContrast, uHighlights, uShadows, uWhites, uBlacks, uTemp, uTint, uSat, uVib;
 void main() {

@@ -60,6 +60,15 @@ export const FONTS = [
   'Chakra Petch',
 ];
 
+/** Effects with color settings (kept with the effect's other settings that aren't numbers). */
+const EFFECT_COLORS: Record<string, [string, string, string][]> = {
+  tint: [['color', 'Color', '#e0973f']],
+  duotone: [
+    ['dark', 'Shadows', '#1b2a4a'],
+    ['light', 'Highlights', '#f2c48d'],
+  ],
+};
+
 const BLENDS = BLEND_LIST;
 
 const ANIMS: [TextAnim, string][] = [
@@ -638,6 +647,16 @@ function EffectSection({
           />
         </div>
       )}
+      {(EFFECT_COLORS[effect.type] ?? []).map(([key, label, fallback]) => (
+        <div key={key} className="insp__row">
+          <span className="field__label">{label}</span>
+          <ColorField
+            value={typeof effect.d?.[key] === 'string' ? (effect.d[key] as string) : fallback}
+            label={label}
+            onChange={(v) => set({ d: { ...effect.d, [key]: v } }, false)}
+          />
+        </div>
+      ))}
       {effect.type === 'lut' && (
         <div className="insp__row">
           <button
