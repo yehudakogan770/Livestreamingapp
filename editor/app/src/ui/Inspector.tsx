@@ -5,7 +5,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { GENERATORS, timecode } from '../model/build';
 import { valueAt } from '../model/anim';
 import { setAngle, setTransition, updateMarker, removeMarker, withLinked } from '../model/edit';
-import { effectDef, TRANSITIONS, type ParamDef } from '../model/effects';
+import { effectDef, TRANSITION_GROUPS, TRANSITIONS, type ParamDef } from '../model/effects';
 import { allNodes, gradeOf } from '../model/grade';
 import { current, end, mediaOf, rate } from '../model/seq';
 import { NO_MOTION, type BlendMode, type Clip, type Effect, type Motion, type Param, type TextAnim, type TextData } from '../model/types';
@@ -130,11 +130,21 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
         <label className="field">
           <span className="field__label">Kind</span>
           <select className="text" value={tr.type} onChange={(e) => set({ type: e.target.value })}>
-            {TRANSITIONS.filter((x) => x.kind === (isAudio ? 'audio' : 'video')).map((x) => (
-              <option key={x.type} value={x.type}>
-                {x.name}
-              </option>
-            ))}
+            {isAudio
+              ? TRANSITIONS.filter((x) => x.kind === 'audio').map((x) => (
+                  <option key={x.type} value={x.type}>
+                    {x.name}
+                  </option>
+                ))
+              : TRANSITION_GROUPS.map((g) => (
+                  <optgroup key={g} label={g}>
+                    {TRANSITIONS.filter((x) => x.kind === 'video' && x.group === g).map((x) => (
+                      <option key={x.type} value={x.type}>
+                        {x.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
           </select>
         </label>
         <div className="insp__row">

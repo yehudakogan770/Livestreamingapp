@@ -143,6 +143,28 @@ export const TRANSITION_TYPES = [
   'iris',
   'zoom',
   'blurdissolve',
+  'wipediag',
+  'clock',
+  'barnh',
+  'barnv',
+  'box',
+  'pushup',
+  'pushdown',
+  'slideup',
+  'slidedown',
+  'whipleft',
+  'whipright',
+  'zoomout',
+  'crosszoom',
+  'spin',
+  'lumafade',
+  'flash',
+  'cube',
+  'flip',
+  'split',
+  'blinds',
+  'softwipe',
+  'dither',
 ];
 
 export const TRANSITION_FS = `${HEAD}
@@ -154,6 +176,9 @@ uniform float uOpB;
 vec4 A(vec2 uv) { return (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) ? vec4(0.0) : texture(uTex, uv) * uOpA; }
 vec4 Bt(vec2 uv) { return (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) ? vec4(0.0) : texture(uB, uv) * uOpB; }
 vec4 soft(vec4 a, vec4 b, float e) { return mix(a, b, smoothstep(-0.004, 0.004, e)); }
+// How far the second picture has come in where a pattern has value v (0–1): none at p = 0, all at p = 1, a soft edge of width w.
+float edge(float v, float p, float w) { return smoothstep(-w, w, p * (1.0 + 2.0 * w) - w - v); }
+vec2 rot(vec2 v, float a) { float c = cos(a); float s = sin(a); return vec2(c * v.x - s * v.y, s * v.x + c * v.y); }
 vec4 blurred(vec2 uv, float r, bool useB) {
   vec4 s = vec4(0.0);
   vec2 px = r / uSize;
@@ -194,9 +219,108 @@ void main() {
     vec4 b = Bt(0.5 + (uv - 0.5) * (1.0 + (1.0 - p) * 0.5));
     outColor = mix(a, b, smoothstep(0.2, 0.8, p));
   }
-  else {
+  else if (uType == 14) {
     float r = sin(p * 3.14159) * 6.0 + 0.001;
     outColor = mix(blurred(uv, r, false), blurred(uv, r, true), p);
+  }
+  else if (uType == 15) outColor = mix(A(uv), Bt(uv), edge((uv.x + uv.y) * 0.5, p, 0.02));
+  else if (uType == 16) {
+    vec2 d = uv - 0.5;
+    float a = atan(d.x, d.y);
+    float v = (a < 0.0 ? a + 6.28318 : a) / 6.28318;
+    outColor = mix(A(uv), Bt(uv), edge(v, p, 0.004));
+  }
+  else if (uType == 17) outColor = mix(A(uv), Bt(uv), edge(abs(uv.x - 0.5) * 2.0, p, 0.01));
+  else if (uType == 18) outColor = mix(A(uv), Bt(uv), edge(abs(uv.y - 0.5) * 2.0, p, 0.01));
+  else if (uType == 19) outColor = mix(A(uv), Bt(uv), edge(max(abs(uv.x - 0.5), abs(uv.y - 0.5)) * 2.0, p, 0.01));
+  else if (uType == 20) { vec4 b = Bt(uv + vec2(0.0, 1.0 - p)); vec4 a = A(uv - vec2(0.0, p)); outColor = b + a * (1.0 - b.a); }
+  else if (uType == 21) { vec4 b = Bt(uv - vec2(0.0, 1.0 - p)); vec4 a = A(uv + vec2(0.0, p)); outColor = b + a * (1.0 - b.a); }
+  else if (uType == 22) { vec4 b = Bt(uv + vec2(0.0, 1.0 - p)); outColor = b + A(uv) * (1.0 - b.a); }
+  else if (uType == 23) { vec4 b = Bt(uv - vec2(0.0, 1.0 - p)); outColor = b + A(uv) * (1.0 - b.a); }
+  else if (uType == 24 || uType == 25) {
+    // A push with motion blur along the move, strongest in the middle.
+    float dir = uType == 24 ? 1.0 : -1.0;
+    float k = p * p * (3.0 - 2.0 * p);
+    float spread = sin(p * 3.14159) * 0.12;
+    vec4 s = vec4(0.0);
+    for (int i = -6; i <= 6; i++) {
+      vec2 o = vec2(float(i) / 6.0 * spread * dir, 0.0);
+      vec4 b = Bt(uv + o - vec2((1.0 - k) * dir, 0.0));
+      vec4 a = A(uv + o + vec2(k * dir, 0.0));
+      s += b + a * (1.0 - b.a);
+    }
+    outColor = s / 13.0;
+  }
+  else if (uType == 26) {
+    vec4 a = A(0.5 + (uv - 0.5) * (1.0 + p * 1.5));
+    vec4 b = Bt(0.5 + (uv - 0.5) / (1.0 + (1.0 - p) * 0.5));
+    outColor = mix(a, b, smoothstep(0.2, 0.8, p));
+  }
+  else if (uType == 27) {
+    // Rushes into the middle of the first picture and out of the second.
+    float strength = sin(p * 3.14159) * 0.25;
+    vec4 s = vec4(0.0);
+    for (int i = 0; i < 12; i++) {
+      float f = 1.0 - strength * float(i) / 11.0;
+      vec2 q = 0.5 + (uv - 0.5) * f;
+      s += mix(A(q), Bt(q), smoothstep(0.35, 0.65, p));
+    }
+    outColor = s / 12.0;
+  }
+  else if (uType == 28) {
+    float k = p * p * (3.0 - 2.0 * p);
+    vec2 asp = vec2(uSize.x / uSize.y, 1.0);
+    vec4 a = A(0.5 + rot((uv - 0.5) * asp, k * 1.5708) / asp / (1.0 - 0.5 * k));
+    vec4 b = Bt(0.5 + rot((uv - 0.5) * asp, (k - 1.0) * 1.5708) / asp / (0.5 + 0.5 * k));
+    outColor = mix(a, b, smoothstep(0.3, 0.7, p));
+  }
+  else if (uType == 29) {
+    vec4 a = A(uv);
+    outColor = mix(a, Bt(uv), edge(1.0 - luma(unpre(a)), p, 0.08));
+  }
+  else if (uType == 30) {
+    vec4 c = mix(A(uv), Bt(uv), smoothstep(0.42, 0.58, p));
+    float f = pow(1.0 - abs(p * 2.0 - 1.0), 3.0);
+    outColor = vec4(min(c.rgb + vec3(f) * max(c.a, f), vec3(1.0)), max(c.a, f));
+  }
+  else if (uType == 31) {
+    // A cube turning left: the first picture goes away on its left face, the second comes round from the right.
+    float k = p * p * (3.0 - 2.0 * p);
+    float cut = 1.0 - k;
+    if (uv.x < cut) {
+      float x = uv.x / max(cut, 0.0001);
+      float depth = 1.0 - 0.18 * sin(k * 1.5708) * (1.0 - x);
+      vec4 a = A(vec2(x, 0.5 + (uv.y - 0.5) / depth));
+      outColor = vec4(a.rgb * (1.0 - 0.45 * k), a.a);
+    } else {
+      float x = (uv.x - cut) / max(k, 0.0001);
+      float depth = 1.0 - 0.18 * sin((1.0 - k) * 1.5708) * x;
+      vec4 b = Bt(vec2(x, 0.5 + (uv.y - 0.5) / depth));
+      outColor = vec4(b.rgb * (1.0 - 0.45 * (1.0 - k)), b.a);
+    }
+  }
+  else if (uType == 32) {
+    // A card turned over around its middle: the first picture, then its back (the second).
+    float c = cos(p * 3.14159);
+    float w = max(abs(c), 0.0001);
+    float x = 0.5 + (uv.x - 0.5) / w;
+    float depth = 1.0 - 0.12 * sqrt(max(0.0, 1.0 - c * c)) * (c > 0.0 ? uv.x - 0.5 : 0.5 - uv.x) * 2.0;
+    vec2 q = vec2(x, 0.5 + (uv.y - 0.5) / depth);
+    vec4 f = c > 0.0 ? A(q) : Bt(q);
+    outColor = vec4(f.rgb * (0.6 + 0.4 * abs(c)), f.a);
+  }
+  else if (uType == 33) {
+    float k = p * p * (3.0 - 2.0 * p);
+    float h = 0.5 * k;
+    if (uv.x < 0.5 - h) outColor = A(uv + vec2(h, 0.0));
+    else if (uv.x > 0.5 + h) outColor = A(uv - vec2(h, 0.0));
+    else outColor = Bt(uv);
+  }
+  else if (uType == 34) outColor = mix(A(uv), Bt(uv), edge(fract(uv.y * 8.0), p, 0.02));
+  else if (uType == 35) outColor = mix(A(uv), Bt(uv), edge(1.0 - uv.x, p, 0.18));
+  else {
+    float n = fract(sin(dot(floor(uv * uSize / 2.0), vec2(12.9898, 78.233))) * 43758.5453);
+    outColor = mix(A(uv), Bt(uv), step(n, p * 1.0001));
   }
 }`;
 

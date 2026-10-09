@@ -21,7 +21,7 @@ import {
 import { TitlerSection } from '../titler/StudioTitler';
 import { useState } from 'react';
 import { duration, GENERATORS } from '../model/build';
-import { EFFECTS, TRANSITIONS } from '../model/effects';
+import { EFFECTS, TRANSITION_GROUPS, TRANSITIONS } from '../model/effects';
 import { SHAPE_KINDS } from '../model/shapes';
 import { newSequence, type Bin, type MediaItem, type Project } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
@@ -406,12 +406,12 @@ function EffectsTab({ doc, actions }: { doc: Doc; actions: Actions }) {
       <p className="fxlist__hint">
         Drag onto a clip, or click to add to the selected clips. Transitions: drag onto a cut, or click for the cut at the playhead.
       </p>
-      {(['video', 'audio'] as const).map((kind) => {
-        const list = TRANSITIONS.filter((t) => t.kind === kind && (!q || t.name.toLowerCase().includes(q)));
+      {[...TRANSITION_GROUPS.map((g) => ['video', g] as const), ['audio', 'Sound transitions'] as const].map(([kind, group]) => {
+        const list = TRANSITIONS.filter((t) => t.kind === kind && (kind === 'audio' || t.group === group) && (!q || t.name.toLowerCase().includes(q)));
         if (!list.length) return null;
         return (
-          <div key={kind} className="fxlist__group">
-            <h3>{kind === 'video' ? 'Video transitions' : 'Sound transitions'}</h3>
+          <div key={group} className="fxlist__group">
+            <h3>{kind === 'video' ? `Transitions: ${group.toLowerCase()}` : group}</h3>
             {list.map((t) => (
               <button
                 key={t.type}

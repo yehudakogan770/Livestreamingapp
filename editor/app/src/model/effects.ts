@@ -392,24 +392,51 @@ export interface TransitionDef {
   type: string;
   name: string;
   kind: 'video' | 'audio';
+  /** Where it is listed: Dissolves, Wipes, Slides and pushes, Shapes, Motion, 3D (sound transitions have none). */
+  group?: string;
 }
+const V = (type: string, name: string, group: string): TransitionDef => ({ type, name, kind: 'video', group });
 export const TRANSITIONS: TransitionDef[] = [
-  { type: 'dissolve', name: 'Cross dissolve', kind: 'video' },
-  { type: 'dipblack', name: 'Dip to black', kind: 'video' },
-  { type: 'dipwhite', name: 'Dip to white', kind: 'video' },
-  { type: 'filmdissolve', name: 'Film dissolve', kind: 'video' },
-  { type: 'wipeleft', name: 'Wipe left', kind: 'video' },
-  { type: 'wiperight', name: 'Wipe right', kind: 'video' },
-  { type: 'wipeup', name: 'Wipe up', kind: 'video' },
-  { type: 'wipedown', name: 'Wipe down', kind: 'video' },
-  { type: 'slideleft', name: 'Slide left', kind: 'video' },
-  { type: 'slideright', name: 'Slide right', kind: 'video' },
-  { type: 'pushleft', name: 'Push left', kind: 'video' },
-  { type: 'pushright', name: 'Push right', kind: 'video' },
-  { type: 'iris', name: 'Iris round', kind: 'video' },
-  { type: 'zoom', name: 'Zoom in', kind: 'video' },
-  { type: 'blurdissolve', name: 'Blur dissolve', kind: 'video' },
+  V('dissolve', 'Cross dissolve', 'Dissolves'),
+  V('filmdissolve', 'Film dissolve', 'Dissolves'),
+  V('dipblack', 'Dip to black', 'Dissolves'),
+  V('dipwhite', 'Dip to white', 'Dissolves'),
+  V('blurdissolve', 'Blur dissolve', 'Dissolves'),
+  V('lumafade', 'Luma fade (brights first)', 'Dissolves'),
+  V('dither', 'Dither dissolve', 'Dissolves'),
+  V('flash', 'Light flash', 'Dissolves'),
+  V('wipeleft', 'Wipe left', 'Wipes'),
+  V('wiperight', 'Wipe right', 'Wipes'),
+  V('wipeup', 'Wipe up', 'Wipes'),
+  V('wipedown', 'Wipe down', 'Wipes'),
+  V('softwipe', 'Soft wipe', 'Wipes'),
+  V('wipediag', 'Diagonal wipe', 'Wipes'),
+  V('clock', 'Clock wipe', 'Wipes'),
+  V('blinds', 'Blinds', 'Wipes'),
+  V('slideleft', 'Slide left', 'Slides and pushes'),
+  V('slideright', 'Slide right', 'Slides and pushes'),
+  V('slideup', 'Slide up', 'Slides and pushes'),
+  V('slidedown', 'Slide down', 'Slides and pushes'),
+  V('pushleft', 'Push left', 'Slides and pushes'),
+  V('pushright', 'Push right', 'Slides and pushes'),
+  V('pushup', 'Push up', 'Slides and pushes'),
+  V('pushdown', 'Push down', 'Slides and pushes'),
+  V('split', 'Split open', 'Slides and pushes'),
+  V('iris', 'Iris round', 'Shapes'),
+  V('box', 'Box', 'Shapes'),
+  V('barnh', 'Barn doors (across)', 'Shapes'),
+  V('barnv', 'Barn doors (up and down)', 'Shapes'),
+  V('zoom', 'Zoom in', 'Motion'),
+  V('zoomout', 'Zoom out', 'Motion'),
+  V('crosszoom', 'Cross zoom', 'Motion'),
+  V('whipleft', 'Whip pan left', 'Motion'),
+  V('whipright', 'Whip pan right', 'Motion'),
+  V('spin', 'Spin', 'Motion'),
+  V('cube', 'Cube turn', '3D'),
+  V('flip', 'Flip over', '3D'),
   { type: 'crossfade', name: 'Constant power', kind: 'audio' },
   { type: 'crossfadelinear', name: 'Constant gain', kind: 'audio' },
 ];
+/** The video transitions' groups, in the order they are listed. */
+export const TRANSITION_GROUPS = ['Dissolves', 'Wipes', 'Slides and pushes', 'Shapes', 'Motion', '3D'];
 export const transitionDef = (type: string): TransitionDef | undefined => TRANSITIONS.find((t) => t.type === type);
