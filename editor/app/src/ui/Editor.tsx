@@ -46,6 +46,7 @@ import { CacheDialog, cacheMenu } from '../cache/CacheDialog';
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
 import { openSmart, SmartDialogs, smartMenu } from '../smart/SmartTools';
+import { matchLoudness } from '../smart/loudmatch';
 import { ExtrasDialogs, extrasMenu } from '../extras/ExtrasTools';
 import { ProgramMonitor, SourceMonitor } from './Monitors';
 import { ProjectPanel } from './ProjectPanel';
@@ -387,6 +388,7 @@ export function Editor({
         'sep',
         { label: 'Video transition at the playhead', keys: 'Ctrl+D', run: () => actions.transition('video') },
         { label: 'Sound crossfade at the playhead', keys: 'Ctrl+Shift+D', run: () => actions.transition('audio') },
+        { label: 'Match loudness of the selected clips', run: () => void matchLoudness(doc).then((m) => ui.note(m)) },
         'sep',
         { label: 'Add text', keys: 'Ctrl+T', run: () => actions.addText(0) },
         { label: 'Add adjustment layer', run: () => actions.addGenerated('adjustment') },
