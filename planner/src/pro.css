@@ -297,3 +297,13 @@
   overflow: auto;
   padding: 2px;
 }
+
+.popover__note {
+  margin: 4px 10px 6px;
+}
+.popover__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}

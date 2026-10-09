@@ -583,3 +583,7 @@
   gap: 6px;
   margin-top: 32px;
 }
+.stage__btn.is-on {
+  background: #ececea;
+  color: #141413;
+}

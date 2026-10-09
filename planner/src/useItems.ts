@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as pro from './apiPro';
 import { blankItem, type Item, type ItemKind } from './items';
 import { db } from './session';
+import { rememberPlan, savedPlan, unreachable } from './offlineCache';
 
 const SAVE_AFTER_MS = 600;
 const RETRY_MS = 5000;
@@ -46,6 +47,7 @@ export function useItems(planId: string, enabled = true): ItemStore {
   const ref = useRef<Item[]>([]);
   ref.current = items;
   const dirty = useRef(new Map<string, number>());
+  const fromCopy = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busy = useRef(false);
 
@@ -66,7 +68,12 @@ export function useItems(planId: string, enabled = true): ItemStore {
       .catch((e: unknown) => {
         if (!live) return;
         const m = e instanceof Error ? e.message : String(e);
-        if (/update-10/.test(m)) setReady(false);
+        // No internet: the copy kept on this device.
+        const copy = unreachable(e) ? savedPlan(planId)?.items : undefined;
+        if (copy) {
+          setItems(copy);
+          fromCopy.current = true;
+        } else if (/update-10/.test(m)) setReady(false);
         else setError(m);
         setLoaded(true);
       });
@@ -82,6 +89,13 @@ export function useItems(planId: string, enabled = true): ItemStore {
       stop();
     };
   }, [planId, enabled]);
+
+  // A copy on this device, for when there is no internet.
+  useEffect(() => {
+    if (!loaded || fromCopy.current || !ready) return;
+    const t = setTimeout(() => rememberPlan(planId, { items }), 800);
+    return () => clearTimeout(t);
+  }, [planId, items, loaded, ready]);
 
   const flush = useCallback(async () => {
     timer.current = null;
