@@ -2190,12 +2190,16 @@ dependencies = [
 name = "lumora-edit"
 version = "0.1.0"
 dependencies = [
+ "keyring",
  "lumora-crash",
+ "lumora-live-accounts",
  "lumora-selftest",
  "lumora-studio-engine",
  "lumora-syscheck",
  "lumora-titler-host",
  "raw-window-handle",
+ "reqwest",
+ "rustls",
  "serde",
  "serde_json",
  "tauri",

@@ -24,9 +24,15 @@ titler-host = { package = "lumora-titler-host", path = "../../crates/titler-host
 lumora-selftest = { path = "../../crates/selftest" }
 lumora-syscheck = { path = "../../crates/syscheck" }
 studio-engine = { package = "lumora-studio-engine", path = "../../crates/studio-engine" }
+# Publishing to YouTube: the same accounts code and HTTPS client Lumora uses.
+lumora-live-accounts = { path = "../../crates/live-accounts" }
+reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
 
 [target.'cfg(windows)'.dependencies]
 raw-window-handle = "0.6"
+# The YouTube channel's token, in Windows Credential Manager (shared with Lumora).
+keyring = { version = "3", features = ["windows-native"] }
 
 [lints.rust]
 unsafe_code = "forbid"

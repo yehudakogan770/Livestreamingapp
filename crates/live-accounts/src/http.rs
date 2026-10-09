@@ -149,6 +149,9 @@ impl Request {
 pub struct Response {
     pub status: u16,
     pub body: Vec<u8>,
+    /// The answer's headers, when the transport keeps them (uploads need
+    /// `Location` and `Range`).
+    pub headers: Vec<(String, String)>,
 }
 
 impl fmt::Debug for Response {
@@ -166,7 +169,24 @@ impl Response {
         Response {
             status,
             body: body.into(),
+            headers: Vec::new(),
         }
+    }
+
+    /// The same answer with a header (for transports and tests).
+    #[must_use]
+    pub fn with_header(mut self, name: &str, value: &str) -> Self {
+        self.headers.push((name.to_owned(), value.to_owned()));
+        self
+    }
+
+    /// One of the answer's headers (any case).
+    #[must_use]
+    pub fn header(&self, name: &str) -> Option<&str> {
+        self.headers
+            .iter()
+            .find(|(n, _)| n.eq_ignore_ascii_case(name))
+            .map(|(_, v)| v.as_str())
     }
 
     #[must_use]

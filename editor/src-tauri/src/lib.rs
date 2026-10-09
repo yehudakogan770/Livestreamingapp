@@ -17,6 +17,7 @@ mod rendercache;
 mod selftest;
 mod speech;
 mod syscheck;
+mod youtube;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -531,6 +532,12 @@ pub fn run() {
                 encoders: Arc::default(),
             });
             app.manage(native_view::NativeView::default());
+            // Publishing to YouTube (the Google registration may be in the app's data folder).
+            let data = app
+                .path()
+                .app_data_dir()
+                .unwrap_or_else(|_| std::env::temp_dir());
+            app.manage(youtube::Publish::new(&data));
             // Lumora Titler: its window, the shared title library and films through FFmpeg.
             app.manage(titler_host::Renders::default());
             // The CI self-test: close (with a failed result) if it never finishes.
@@ -587,6 +594,12 @@ pub fn run() {
             find_by_name,
             send_to_lumora,
             reveal,
+            youtube::youtube_info,
+            youtube::youtube_connect,
+            youtube::youtube_cancel,
+            youtube::youtube_disconnect,
+            youtube::youtube_upload,
+            youtube::youtube_stop,
             delivery::encoders_available,
             delivery::encode_open,
             delivery::encode_frame,

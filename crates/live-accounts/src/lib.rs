@@ -28,6 +28,7 @@ pub mod oauth;
 pub mod pkce;
 pub mod service;
 pub mod time;
+pub mod upload;
 pub mod youtube;
 
 pub use http::{
