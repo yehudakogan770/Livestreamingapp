@@ -1384,7 +1384,16 @@ function apply(s: Show, a: Action, now: number) {
       return;
     case 'setTriggers':
       if (a.triggers.length > 100) throw new Refused({ code: 'invalidValue', field: 'triggers', reason: 'at most 100 triggers' });
-      s.triggers = structuredClone(a.triggers);
+      s.triggers = structuredClone(a.triggers).map((t) => {
+        const w = t.when;
+        // Numbers kept in range (mirrors Trigger::repair).
+        if (w.type === 'videoTimeLeft') w.seconds = Math.min(600, Math.max(1, Math.round(w.seconds)));
+        if (w.type === 'sound') {
+          w.db = Math.min(0, Math.max(-60, Math.round(w.db)));
+          w.holdMs = Math.min(600_000, Math.max(0, Math.round(w.holdMs)));
+        }
+        return { ...t, name: t.name.slice(0, 80) };
+      });
       return;
     case 'setMacros':
       if (a.macros.length > 100) throw new Refused({ code: 'invalidValue', field: 'macros', reason: 'at most 100 macros' });
@@ -1647,6 +1656,8 @@ function stepAction(st: Step, main: string | null): Action | null {
       return { type: 'requestApp', step: { command: 'replay', seconds: st.seconds, slow: st.slow } };
     case 'dataStep':
       return { type: 'dataStep', delta: st.delta };
+    case 'mark':
+      return { type: 'requestApp', step: { command: 'mark' } };
     case 'wait':
     case 'macro':
       return null;

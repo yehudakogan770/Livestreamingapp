@@ -2153,6 +2153,9 @@ fn step_action(step: Step, main: Option<&SourceId>) -> Option<Action> {
             step: crate::macros::AppStep::Replay { seconds, slow },
         },
         Step::DataStep { delta } => Action::DataStep { delta },
+        Step::Mark => Action::RequestApp {
+            step: crate::macros::AppStep::Mark,
+        },
         // Macros start beside the steps (see `run_steps`).
         Step::Wait { .. } | Step::Macro { .. } => return None,
     })

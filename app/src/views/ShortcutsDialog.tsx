@@ -32,6 +32,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     title: 'Cues, data and macros',
     keys: [
       ['N', 'Next cue in the run of show'],
+      ['M', 'Mark the moment in the recording (while recording)'],
       ['[  ·  ]', 'Previous / next row of the data file or sheet'],
       ['The macro’s key', 'Run that macro (set in Cues → Macros)'],
     ],

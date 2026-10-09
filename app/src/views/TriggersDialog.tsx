@@ -5,16 +5,40 @@ import type { Trigger } from '../engine/types/Trigger';
 import type { When } from '../engine/types/When';
 import type { ScreenId } from '../engine/types/ScreenId';
 import { StepsEditor } from './PresetEditor';
+import { soundSources } from '../engine/audio';
 import type { Act } from './act';
 import './TriggersDialog.css';
 
-const KINDS: { type: When['type']; name: string }[] = [
+export const KINDS: { type: When['type']; name: string }[] = [
   { type: 'videoEnds', name: 'A video ends' },
+  { type: 'videoTimeLeft', name: 'A video is about to end' },
   { type: 'onAir', name: 'An input goes on air' },
   { type: 'offAir', name: 'An input leaves the air' },
+  { type: 'inputLost', name: 'An input loses its picture' },
+  { type: 'inputBack', name: 'An input gets its picture back' },
+  { type: 'sound', name: 'Sound gets loud or goes quiet' },
   { type: 'countdownZero', name: 'A countdown reaches zero' },
+  { type: 'broadcast', name: 'Recording or the stream starts or stops' },
   { type: 'atTime', name: 'At a clock time (every day)' },
 ];
+
+const PICTURE_KINDS = [
+  'camera',
+  'video',
+  'image',
+  'color',
+  'pattern',
+  'countdown',
+  'text',
+  'pesukim',
+  'credits',
+  'split',
+  'slideshow',
+  'visuals',
+  'logo3d',
+  'browser',
+];
+const LIVE_KINDS = ['camera', 'stream', 'screen', 'guest', 'browser'];
 
 const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 
@@ -33,10 +57,38 @@ export function describeWhen(w: When, show: Show): string {
       return `When “${name(w.sourceId)}” reaches zero`;
     case 'atTime':
       return `Every day at ${hhmm(w.minute)}`;
+    case 'videoTimeLeft':
+      return `When “${name(w.sourceId)}” has ${w.seconds} s left`;
+    case 'inputLost':
+      return `When “${name(w.sourceId)}” loses its picture`;
+    case 'inputBack':
+      return `When “${name(w.sourceId)}” gets its picture back`;
+    case 'sound':
+      return `When “${name(w.sourceId)}” is ${w.above ? 'louder' : 'quieter'} than ${w.db} dB for ${(w.holdMs / 1000).toFixed(w.holdMs % 1000 ? 1 : 0)} s`;
+    case 'broadcast':
+      return `When ${w.what === 'record' ? 'recording' : 'the stream'} ${w.on ? 'starts' : 'stops'}`;
   }
 }
 
-function freshWhen(type: When['type'], show: Show): When {
+/** Which inputs a kind of trigger can watch. */
+function inputKinds(type: When['type']): string[] | 'sound' | null {
+  switch (type) {
+    case 'videoEnds':
+    case 'videoTimeLeft':
+      return ['video'];
+    case 'countdownZero':
+      return ['countdown'];
+    case 'inputLost':
+    case 'inputBack':
+      return LIVE_KINDS;
+    case 'sound':
+      return 'sound';
+    default:
+      return null;
+  }
+}
+
+export function freshWhen(type: When['type'], show: Show): When {
   const first = (kinds: string[]) => show.sources.find((s) => kinds.includes(s.kind.type))?.id ?? '';
   const offset = -new Date().getTimezoneOffset();
   switch (type) {
@@ -44,30 +96,26 @@ function freshWhen(type: When['type'], show: Show): When {
       return { type, sourceId: first(['video']) };
     case 'onAir':
     case 'offAir':
-      return {
-        type,
-        sourceId: first([
-          'camera',
-          'video',
-          'image',
-          'color',
-          'pattern',
-          'countdown',
-          'text',
-          'pesukim',
-          'credits',
-          'split',
-          'slideshow',
-          'visuals',
-          'logo3d',
-          'browser',
-        ]),
-        screen: null,
-      };
+      return { type, sourceId: first(PICTURE_KINDS), screen: null };
     case 'countdownZero':
       return { type, sourceId: first(['countdown']) };
     case 'atTime':
       return { type, minute: 19 * 60 + 30, utcOffsetMin: offset };
+    case 'videoTimeLeft':
+      return { type, sourceId: first(['video']), seconds: 5 };
+    case 'inputLost':
+    case 'inputBack':
+      return { type, sourceId: first(LIVE_KINDS) };
+    case 'sound':
+      return {
+        type,
+        sourceId: soundSources(show).find((s) => s.kind.type === 'microphone')?.id ?? soundSources(show)[0]?.id ?? '',
+        above: true,
+        db: -30,
+        holdMs: 500,
+      };
+    case 'broadcast':
+      return { type, what: 'stream', on: true };
   }
 }
 
@@ -89,8 +137,8 @@ export function TriggersDialog({ show, act, onClose }: { show: Show; act: Act; o
     setSel(id);
   };
   const w = t?.when;
-  const inputKinds = w?.type === 'videoEnds' ? ['video'] : w?.type === 'countdownZero' ? ['countdown'] : null;
-  const choices = show.sources.filter((s) => (inputKinds ? inputKinds.includes(s.kind.type) : s.kind.type !== 'microphone'));
+  const kinds = w ? inputKinds(w.type) : null;
+  const choices = kinds === 'sound' ? soundSources(show) : show.sources.filter((s) => (kinds ? kinds.includes(s.kind.type) : s.kind.type !== 'microphone'));
 
   return (
     <div className="modal" role="dialog" aria-modal="true" aria-label="Triggers" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -148,7 +196,13 @@ export function TriggersDialog({ show, act, onClose }: { show: Show; act: Act; o
                 {'sourceId' in w && (
                   <label className="field">
                     <span className="field__label">
-                      {w.type === 'videoEnds' ? 'Which video' : w.type === 'countdownZero' ? 'Which countdown' : 'Which input'}
+                      {w.type === 'videoEnds' || w.type === 'videoTimeLeft'
+                        ? 'Which video'
+                        : w.type === 'countdownZero'
+                          ? 'Which countdown'
+                          : w.type === 'sound'
+                            ? 'Which sound'
+                            : 'Which input'}
                     </span>
                     <select value={w.sourceId} onChange={(e) => change({ when: { ...w, sourceId: e.target.value } })} aria-label="Which input">
                       {!choices.some((s) => s.id === w.sourceId) && <option value={w.sourceId}>Choose…</option>}
@@ -173,6 +227,93 @@ export function TriggersDialog({ show, act, onClose }: { show: Show; act: Act; o
                       <option value="back">Back Screen</option>
                     </select>
                   </label>
+                )}
+                {w.type === 'videoTimeLeft' && (
+                  <label className="field">
+                    <span className="field__label">Seconds before the end</span>
+                    <input
+                      className="text"
+                      type="number"
+                      min={1}
+                      max={600}
+                      value={w.seconds}
+                      onChange={(e) => change({ when: { ...w, seconds: Math.round(Math.min(600, Math.max(1, Number(e.target.value) || 1))) } })}
+                      aria-label="Seconds before the end"
+                    />
+                  </label>
+                )}
+                {w.type === 'sound' && (
+                  <>
+                    <label className="field">
+                      <span className="field__label">When it is</span>
+                      <select
+                        value={w.above ? 'above' : 'below'}
+                        onChange={(e) => change({ when: { ...w, above: e.target.value === 'above' } })}
+                        aria-label="Louder or quieter"
+                      >
+                        <option value="above">louder than (someone starts talking)</option>
+                        <option value="below">quieter than (it goes quiet)</option>
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span className="field__label">Level: {w.db} dB</span>
+                      <input
+                        type="range"
+                        min={-60}
+                        max={0}
+                        step={1}
+                        value={w.db}
+                        onChange={(e) => change({ when: { ...w, db: Number(e.target.value) } })}
+                        aria-label="Level in dB"
+                      />
+                    </label>
+                    <label className="field">
+                      <span className="field__label">For at least (seconds)</span>
+                      <input
+                        className="text"
+                        type="number"
+                        min={0}
+                        max={600}
+                        step={0.5}
+                        value={w.holdMs / 1000}
+                        onChange={(e) => change({ when: { ...w, holdMs: Math.round(Math.min(600, Math.max(0, Number(e.target.value) || 0)) * 1000) } })}
+                        aria-label="For at least, seconds"
+                      />
+                    </label>
+                    <span className="field__note">
+                      It goes off once, and again only after the sound has been the other way for 2 seconds. Speech is around −30 dB on the meters; a quiet room
+                      is below −50 dB.
+                    </span>
+                  </>
+                )}
+                {w.type === 'broadcast' && (
+                  <div className="field">
+                    <span className="field__label">When</span>
+                    <span className="trg__pair">
+                      <select
+                        value={w.what}
+                        onChange={(e) => change({ when: { ...w, what: e.target.value === 'record' ? 'record' : 'stream' } })}
+                        aria-label="Recording or stream"
+                      >
+                        <option value="stream">the stream</option>
+                        <option value="record">recording</option>
+                      </select>
+                      <select
+                        value={w.on ? 'on' : 'off'}
+                        onChange={(e) => change({ when: { ...w, on: e.target.value === 'on' } })}
+                        aria-label="Starts or stops"
+                      >
+                        <option value="on">starts</option>
+                        <option value="off">stops</option>
+                      </select>
+                    </span>
+                  </div>
+                )}
+                {(w.type === 'inputLost' || w.type === 'inputBack') && (
+                  <span className="field__note">
+                    Lumora already switches to the next camera in the backup lineup by itself when one on air goes out (Settings → Backup lineup…). Use this for
+                    anything else: a message on the stage monitor, a different layout, a sound.
+                  </span>
                 )}
                 {w.type === 'atTime' && (
                   <label className="field">

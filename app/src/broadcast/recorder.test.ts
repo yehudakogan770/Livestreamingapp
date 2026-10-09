@@ -37,5 +37,7 @@ describe('event file', () => {
     expect(f.durationMs).toBe(60_000);
     expect(f.files[0]).toMatchObject({ kind: 'camera', name: 'Stage', startMs: 420 });
     expect(f.cuts).toHaveLength(1);
+    // Older callers without marks still write an empty list for Lumora Studio.
+    expect(f.markers).toEqual([]);
   });
 });
