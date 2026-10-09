@@ -143,6 +143,31 @@ export interface Track {
   role?: TrackRole;
   /** A captions track (a video track holding caption blocks), and how they look. */
   captions?: CaptionStyle;
+  /** Sound: the track's own processing (equalizer, compressor, limiter), before its fader. */
+  fx?: Effect[];
+  /** Sound: the bus it plays through (otherwise straight into the mix). */
+  bus?: string | null;
+}
+
+/** A submix: sound tracks sent to it are mixed, processed and leveled together (all the dialogue, all the music). */
+export interface Bus {
+  id: string;
+  name: string;
+  /** dB. */
+  volume: number;
+  /** -1 left … 1 right. */
+  pan: number;
+  /** Muted. */
+  off: boolean;
+  fx: Effect[];
+}
+
+/** The sequence's mix: its buses, and the whole mix's own processing and level (what the film gets). */
+export interface Mix {
+  buses: Bus[];
+  fx: Effect[];
+  /** dB. */
+  volume: number;
 }
 
 /** How a captions track looks (sizes are for a 1080-high frame). */
@@ -487,6 +512,8 @@ export interface Sequence {
   playhead: number;
   /** The color behind everything (where no clip covers the frame). */
   background: string;
+  /** Buses and the whole mix's processing (none: tracks go straight into the mix). */
+  mix?: Mix;
 }
 
 export interface Project {

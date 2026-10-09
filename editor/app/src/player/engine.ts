@@ -15,6 +15,8 @@ import { audioAt, dbToGain, heardTracks, type Heard } from './audio';
 import { playbackFile } from './files';
 import { FrameCache, aheadCount, frameKey, framesAhead } from './framecache';
 import { VoiceChain, type Measure } from './voice';
+import { applyStageFx, makeStage, routeStage, type Stage } from './stage';
+import { MASTER, mixOf } from '../model/mix';
 
 /** Sound and stills: the original, or its edit-friendly copy. */
 const fileOf = (m: MediaItem): string => mediaUrl(m.proxy ?? m.path);
@@ -61,12 +63,6 @@ interface SoundSlot {
   track: string;
 }
 
-interface TrackBus {
-  gain: GainNode;
-  pan: StereoPannerNode;
-  meter: AnalyserNode;
-}
-
 export interface Levels {
   /** dB, left and right, per audio track and for everything ("master"). */
   [track: string]: [number, number];
@@ -83,7 +79,9 @@ export class Engine {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private masterMeters: AnalyserNode[] = [];
-  private buses = new Map<string, TrackBus>();
+  /** Each sound track's and bus's stage (by its id), and the whole mix's. */
+  private buses = new Map<string, Stage>();
+  private mixStage: Stage | null = null;
   private compositor: Compositor | null = null;
   private frame = 0;
   private playing = false;
@@ -679,21 +677,36 @@ export class Engine {
     const s = this.seq;
     if (!ctx || !s || !this.master) return;
     const heard = heardTracks(s);
+    const mix = mixOf(s);
+    // The whole mix: its processing and level, then the listening level.
+    if (!this.mixStage) this.mixStage = makeStage(ctx);
+    const ms = this.mixStage;
+    applyStageFx(ms, mix.fx);
+    ms.gain.gain.value = dbToGain(mix.volume);
+    routeStage(ms, 'out', this.master);
+    const stage = (id: string): Stage => {
+      let st = this.buses.get(id);
+      if (!st) {
+        st = makeStage(ctx);
+        this.buses.set(id, st);
+      }
+      return st;
+    };
+    for (const b of mix.buses) {
+      const st = stage(b.id);
+      applyStageFx(st, b.fx);
+      st.gain.gain.value = b.off ? 0 : dbToGain(b.volume);
+      st.pan.pan.value = b.pan;
+      routeStage(st, MASTER, ms.input);
+    }
     for (const t of s.tracks) {
       if (t.kind !== 'audio') continue;
-      let bus = this.buses.get(t.id);
-      if (!bus) {
-        const gain = ctx.createGain();
-        const pan = ctx.createStereoPanner();
-        const meter = ctx.createAnalyser();
-        meter.fftSize = 1024;
-        gain.connect(pan).connect(this.master);
-        pan.connect(meter);
-        bus = { gain, pan, meter };
-        this.buses.set(t.id, bus);
-      }
-      bus.gain.gain.value = heard.has(t.id) ? dbToGain(t.volume) : 0;
-      bus.pan.pan.value = t.pan;
+      const st = stage(t.id);
+      applyStageFx(st, t.fx);
+      st.gain.gain.value = heard.has(t.id) ? dbToGain(t.volume) : 0;
+      st.pan.pan.value = t.pan;
+      const bus = t.bus && mix.buses.some((b) => b.id === t.bus) ? t.bus : null;
+      routeStage(st, bus ?? MASTER, bus ? stage(bus).input : ms.input);
     }
   }
 
@@ -752,7 +765,7 @@ export class Engine {
     if (!slot.pan) return;
     slot.pan.disconnect();
     const bus = this.buses.get(slot.track);
-    if (bus) slot.pan.connect(bus.gain);
+    if (bus) slot.pan.connect(bus.input);
   }
 
   private syncSound(s: Sequence, frame: number) {

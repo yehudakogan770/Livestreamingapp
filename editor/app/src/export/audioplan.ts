@@ -3,7 +3,8 @@
 // separately (frame by frame on the GPU) and joined with the sound at the end.
 import { isAnim, valueAt } from '../model/anim';
 import { end, rate } from '../model/seq';
-import type { Clip, Project, Sequence, Track } from '../model/types';
+import { activeFx, mixOf, staged } from '../model/mix';
+import type { Bus, Clip, Effect, Project, Sequence, Track } from '../model/types';
 import { dbToGain, duckOf, heardTracks, audioAt, type Duck } from '../player/audio';
 import { isAudioEffect, sourceAt } from '../render/frame';
 import { soundPieces } from '../model/remap';
@@ -34,7 +35,30 @@ export interface Part {
   duck: Duck | null;
   /** false: the pitch follows the speed (like tape); otherwise it is kept. */
   pitch?: boolean;
+  /** Already mixed from pieces of its track (their pans and volume lines are in it; the track's fader and processing are not). */
+  mixed?: boolean;
 }
+
+/**
+ * The mix's stages for a graph: each track's processing and fader, its bus,
+ * and the whole mix's processing and level. `partsOnly`: only the pieces are
+ * mixed (a premix of one track's pieces; its track's stages come later).
+ */
+export interface MixStages {
+  buses: Bus[];
+  fx: Effect[];
+  volume: number;
+  partsOnly?: boolean;
+}
+
+/** A strip's switched-on effects as a piece's (strips have no keyframes). */
+function stripEffects(fx: Effect[] | undefined): PartEffect[] {
+  return activeFx(fx).map((e) => ({ type: e.type, p: Object.fromEntries(Object.entries(e.p).map(([k, v]) => [k, valueAt(v, 0)])) }));
+}
+
+const AMIX = 'normalize=0:duration=longest:dropout_transition=0';
+const mixOfLabels = (labels: string[]): string =>
+  labels.length > 1 ? `${labels.map((x) => `[${x}]`).join('')}amix=inputs=${labels.length}:${AMIX}` : `[${labels[0]}]anull`;
 
 /** Every piece of sound in [from, to), joined up where clips simply follow on. */
 export function audioParts(p: Project, s: Sequence, from: number, to: number, depth = 0, inside: string[] = [s.id]): Part[] {
@@ -473,6 +497,7 @@ export function soundGraph(
   firstInput: number,
   loudness: boolean | string,
   speech: string | null = null,
+  stages: MixStages | null = null,
 ): SoundGraph {
   const inputs: string[] = [];
   const filters: string[] = [];
@@ -484,8 +509,11 @@ export function soundGraph(
     const srcDur = dur * x.speed + 0.2;
     inputs.push('-ss', num(x.srcFrom), '-t', num(srcDur), '-i', x.path);
     const k = firstInput + i;
-    const l = Math.min(1, 1 - x.pan) * Math.min(1, 1 - x.track.pan);
-    const r = Math.min(1, 1 + x.pan) * Math.min(1, 1 + x.track.pan);
+    // A premix already has its track's pan; with stages, the track's fader comes after its processing.
+    const tp = x.mixed ? 0 : x.track.pan;
+    const l = Math.min(1, 1 - x.pan) * Math.min(1, 1 - tp);
+    const r = Math.min(1, 1 + x.pan) * Math.min(1, 1 + tp);
+    const fader = stages ? 1 : dbToGain(x.track.volume);
     const chain = [
       'aresample=48000',
       'aformat=sample_fmts=fltp:channel_layouts=stereo',
@@ -494,7 +522,7 @@ export function soundGraph(
       `atrim=duration=${num(dur)}`,
       'asetpts=PTS-STARTPTS',
       ...effectChain(x.effects, i),
-      `volume='${envelopeExpr(x.envelope)}*${num(dbToGain(x.track.volume))}':eval=frame`,
+      `volume='${envelopeExpr(x.envelope)}*${num(fader)}':eval=frame`,
       ...(Math.abs(l - 1) > 1e-3 || Math.abs(r - 1) > 1e-3 ? [`pan=stereo|c0=${num(l)}*c0|c1=${num(r)}*c1`] : []),
       `adelay=${Math.round(((x.from - from) / fps) * 1000)}:all=1`,
     ];
@@ -519,6 +547,44 @@ export function soundGraph(
     `atrim=duration=${total}`,
     ...(loudness === true ? ['loudnorm=I=-16:TP=-1.5:LRA=11'] : loudness ? [loudness] : []),
   ];
+  if (labels.length && stages && !stages.partsOnly) {
+    // Pieces into their tracks (processing, then fader), tracks into their buses, buses and tracks into the mix.
+    const byTrack = new Map<string, { track: Track; labels: string[] }>();
+    parts.forEach((x, i) => {
+      const t = byTrack.get(x.track.id) ?? { track: x.track, labels: [] };
+      t.labels.push(labels[i] as string);
+      byTrack.set(x.track.id, t);
+    });
+    const byBus = new Map<string, string[]>();
+    const direct: string[] = [];
+    let j = 0;
+    for (const { track, labels: ls } of byTrack.values()) {
+      const out = `tr${j}`;
+      const chain = [...effectChain(stripEffects(track.fx), 1000 + j), `volume=${num(dbToGain(track.volume))}`];
+      filters.push(`${mixOfLabels(ls)},${chain.join(',')}[${out}]`);
+      j++;
+      const bus = track.bus ? stages.buses.find((b) => b.id === track.bus) : undefined;
+      if (bus) byBus.set(bus.id, [...(byBus.get(bus.id) ?? []), out]);
+      else direct.push(out);
+    }
+    stages.buses.forEach((b, k) => {
+      const ls = byBus.get(b.id);
+      if (!ls) return;
+      const out = `bu${k}`;
+      const l = Math.min(1, 1 - b.pan);
+      const r = Math.min(1, 1 + b.pan);
+      const chain = [
+        ...effectChain(stripEffects(b.fx), 2000 + k),
+        `volume=${num(b.off ? 0 : dbToGain(b.volume))}`,
+        ...(Math.abs(l - 1) > 1e-3 || Math.abs(r - 1) > 1e-3 ? [`pan=stereo|c0=${num(l)}*c0|c1=${num(r)}*c1`] : []),
+      ];
+      filters.push(`${mixOfLabels(ls)},${chain.join(',')}[${out}]`);
+      direct.push(out);
+    });
+    const master = [...effectChain(stripEffects(stages.fx), 3000), `volume=${num(dbToGain(stages.volume))}`];
+    filters.push(`${mixOfLabels(direct)},${master.join(',')},${tail.join(',')}[aout]`);
+    return { inputs, graph: filters.join(';') };
+  }
   if (labels.length === 0) filters.push(`anullsrc=r=48000:cl=stereo,${tail.join(',')}[aout]`);
   else if (labels.length === 1) filters.push(`[${labels[0]}]${tail.join(',')}[aout]`);
   else
@@ -583,17 +649,23 @@ export function finishJobs(
       ),
     );
   }
+  const stages: MixStages | null = staged(s) ? { ...mixOf(s) } : null;
   if (parts.length > GROUP) {
     const groups: Part[][] = [];
-    for (let i = 0; i < parts.length; i += GROUP) groups.push(parts.slice(i, i + GROUP));
+    if (stages) {
+      // With stages, each premix holds one track's pieces, so its processing still applies to the track as a whole.
+      const byTrack = new Map<string, Part[]>();
+      for (const x of parts) byTrack.set(x.track.id, [...(byTrack.get(x.track.id) ?? []), x]);
+      for (const list of byTrack.values()) for (let i = 0; i < list.length; i += GROUP) groups.push(list.slice(i, i + GROUP));
+    } else for (let i = 0; i < parts.length; i += GROUP) groups.push(parts.slice(i, i + GROUP));
     parts = groups.map((g, i) => {
       const file = `{tmp}/mix-${i}.wav`;
-      const graph = soundGraph(g, seconds, fps, range.from, 0, false, speech);
+      const graph = soundGraph(g, seconds, fps, range.from, 0, false, speech, stages ? { ...stages, partsOnly: true } : null);
       jobs.push({ args: [...graph.inputs, '-filter_complex', graph.graph, '-map', '[aout]', '-c:a', 'pcm_f32le', file], seconds: seconds * 0.3 });
-      return premixed(file, g[0]!.track, range);
+      return stages ? { ...premixed(file, g[0]!.track, range), track: g[0]!.track, mixed: true } : premixed(file, g[0]!.track, range);
     });
   }
-  const graph = soundGraph(parts, seconds, fps, range.from, video ? 1 : 0, loudness, speech);
+  const graph = soundGraph(parts, seconds, fps, range.from, video ? 1 : 0, loudness, speech, stages);
   const extra = opts.extra?.((video ? 1 : 0) + graph.inputs.filter((x) => x === '-i').length) ?? { inputs: [], args: [] };
   const audioCodec = opts.audio
     ? opts.audio
