@@ -68,6 +68,8 @@ import {
 } from './workspace';
 import { usePreviewCues } from './previewCues';
 import { RamPreview } from './ramPreview';
+import { setExprScope } from '../core/expr';
+import { exprScopeFor } from '../core/render';
 import './designer.css';
 
 export type Look = 'ink' | 'lumora' | 'studio';
@@ -130,6 +132,11 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     ram?.start();
     return () => ram?.stop();
   }, [ram]);
+
+  // Expressions' links find layers in this title (hit tests and handles too, not only drawing).
+  useEffect(() => {
+    setExprScope(exprScopeFor(project));
+  }, [project]);
 
   // Audio cues sound as the preview passes them.
   usePreviewCues(store, host.urlFor);

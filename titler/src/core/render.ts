@@ -4,11 +4,12 @@
 // the unified engine's overlay renderer), and Lumora Studio's title clips.
 
 import { fill, resolveColor, resolveFont, tokensFor, valuesFor } from './binding';
-import { num, vec } from './easing';
+import { isAnimated, num, valueAt, vec } from './easing';
+import { setExprScope, type ExprScope } from './expr';
 import { layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
 import { ellipsePath, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
-import type { Asset, BrandTokens, Composition, Effect, Layer, Paint, PathData, ShapeLayer, TextAnimator, TextLayer, TitleProject, Values, Vec2 } from './types';
+import type { Asset, BrandTokens, Composition, Effect, Layer, Paint, PathData, Prop, ShapeLayer, TextAnimator, TextLayer, TitleProject, Value, Values, Vec2 } from './types';
 
 /** A 2D canvas context (browser, OffscreenCanvas or a test canvas). */
 export type Ctx = CanvasRenderingContext2D;
@@ -80,8 +81,13 @@ export function renderFrame(ctx: Ctx, project: TitleProject, opts: RenderOptions
   ctx.save();
   const m0 = ctx.getTransform ? ctx.getTransform() : null;
   const outer: Mat = m0 ? [m0.a, m0.b, m0.c, m0.d, m0.e, m0.f] : IDENTITY;
-  drawComp(ctx, comp, opts.time, mul(outer, base), f);
-  ctx.restore();
+  const before = setExprScope(exprScopeFor(project));
+  try {
+    drawComp(ctx, comp, opts.time, mul(outer, base), f);
+  } finally {
+    setExprScope(before);
+    ctx.restore();
+  }
 }
 
 /** Every layer of a composition by id (inside groups too). */
@@ -139,6 +145,38 @@ function matteSources(comp: Composition): Set<string> {
 }
 
 const active = (l: Layer, t: number) => l.visible && t >= l.start && t < l.end;
+
+const scopes = new WeakMap<TitleProject, ExprScope>();
+
+/** Where expressions' links find other layers: by name, anywhere in the title (each layer's own composition first). */
+export function exprScopeFor(p: TitleProject): ExprScope {
+  let s = scopes.get(p);
+  if (!s) {
+    const byName = new Map<string, Layer>();
+    const walk = (ls: Layer[]) => {
+      for (const l of ls) {
+        if (!byName.has(l.name)) byName.set(l.name, l);
+        if (l.type === 'group') walk(l.children);
+      }
+    };
+    const main = p.compositions.find((c) => c.id === p.main);
+    if (main) walk(main.layers);
+    for (const c of p.compositions) walk(c.layers);
+    s = {
+      link(name, path, t) {
+        const l = byName.get(name);
+        let o: unknown = l;
+        for (const part of path.split('.')) o = o && typeof o === 'object' ? (o as Record<string, unknown>)[part] : undefined;
+        if (!o || typeof o !== 'object' || !('v' in o || 'k' in o)) return undefined;
+        const prop = o as Prop<Value>;
+        const first = isAnimated(prop) ? prop.k[0]?.v : prop.v;
+        return valueAt(prop, t, (first ?? 0) as Value);
+      },
+    };
+    scopes.set(p, s);
+  }
+  return s;
+}
 
 function drawComp(ctx: Ctx, comp: Composition, t: number, base: Mat, f: Frame) {
   if (comp.background) {

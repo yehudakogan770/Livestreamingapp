@@ -72,6 +72,8 @@ function holdMoves(p: TitleProject): boolean {
         if (Array.isArray(r.k) && r.k.some((k) => inside(k.t))) found = true;
         if (typeof r.start === 'number' && typeof r.end === 'number' && (inside(r.start) || inside(r.end))) found = true;
         if (typeof r.comp === 'string') found = true;
+        // An expression (wiggle, time…) moves it on its own.
+        if (typeof (r as { x?: unknown }).x === 'string') found = true;
         for (const x of Object.values(o)) walk(x);
       }
     };

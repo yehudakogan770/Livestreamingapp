@@ -129,9 +129,21 @@ export function showFromStage(
   } as unknown as Show;
 }
 
+const moves = new WeakMap<TitleProject, boolean>();
+/** Does anything in it move while it holds by itself (an expression such as wiggle, a video)? */
+export function movesByItself(p: TitleProject): boolean {
+  let m = moves.get(p);
+  if (m === undefined) {
+    const text = JSON.stringify(p.compositions);
+    m = /"x":"[^"]/.test(text) || p.assets.some((a) => a.kind === 'video' || a.kind === 'sequence');
+    moves.set(p, m);
+  }
+  return m;
+}
+
 /** Is any field of this graphic filled from something that changes by itself (a clock)? */
 export function ticks(p: TitleProject): boolean {
-  return p.variables.some((v) => v.bind === 'score:clock' || v.bind === 'countdown' || v.bind === 'clock:time');
+  return p.variables.some((v) => v.bind === 'score:clock' || v.bind === 'countdown' || v.bind === 'clock:time') || movesByItself(p);
 }
 
 /**

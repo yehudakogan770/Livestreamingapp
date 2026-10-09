@@ -30,8 +30,11 @@ export interface Keyframe<T extends Value = number> {
   si?: Vec2;
 }
 
-/** A property: a still value, or keyframes in time order. */
-export type Prop<T extends Value = number> = { v: T; k?: undefined } | { k: Keyframe<T>[]; v?: undefined };
+/**
+ * A property: a still value, or keyframes in time order; `x`: an expression
+ * worked out from it (see core/expr.ts), e.g. "wiggle(2, 8)".
+ */
+export type Prop<T extends Value = number> = { v: T; k?: undefined; x?: string } | { k: Keyframe<T>[]; v?: undefined; x?: string };
 
 /** A color: "#rrggbb", "#rrggbbaa", a brand token ("$accent") or a variable ("{{team_color}}"). */
 export type ColorRef = string;

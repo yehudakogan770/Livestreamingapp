@@ -1364,3 +1364,36 @@
 .tt-cpk-gap {
   width: 6px;
 }
+
+/* Expressions under a property. */
+.tt-expr-btn {
+  font: 600 12px var(--tt-mono);
+  color: var(--tt-faint);
+}
+.tt-expr-btn.on {
+  color: var(--tt-text);
+}
+.tt-expr {
+  margin: -2px 0 6px 100px;
+}
+.tt-expr-input {
+  width: 100%;
+  font-family: var(--tt-mono);
+}
+.tt-expr-input[aria-invalid='true'] {
+  border-color: #b4553a;
+}
+.tt-expr-problem {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #d8826a;
+}
+.tt-expr-code {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 11px var(--tt-mono);
+  color: var(--tt-dim);
+  text-align: left;
+}

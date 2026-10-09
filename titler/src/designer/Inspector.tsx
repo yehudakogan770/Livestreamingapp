@@ -1,14 +1,15 @@
 // The properties of the selected layer (or the composition when nothing is
 // selected): everything about it, in sections.
 
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
+import { exprProblem } from '../core/expr';
 import { Plus, Trash2 } from 'lucide-react';
 import { tokensFor, valuesFor, variablesIn } from '../core/binding';
 import { uid } from '../core/build';
 import { isAnimated, num, setValue, toggleKeys, valueAt, vec } from '../core/easing';
 import { fade, grow, reveal, slide, wipe } from '../core/motion';
 import { ellipsePath, rectPath } from '../core/paths';
-import type { Effect, ImageLayer, VideoLayer, Layer, Mask, Paint, ShapeLayer, Stroke, TextAnimator, TextLayer, Value, Vec2 } from '../core/types';
+import type { Effect, ImageLayer, VideoLayer, Layer, Mask, Paint, Prop, ShapeLayer, Stroke, TextAnimator, TextLayer, Value, Vec2 } from '../core/types';
 import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
 import { layerBox } from './geometry';
 import { lookOf } from './Viewport';
@@ -354,61 +355,159 @@ function PropField({
   const p = getProp(layer, path);
   const anim = isAnimated(p);
   const v = valueAt(p as never, time, fallback as never) as Value;
+  const expr = p?.x;
+  const [exprOpen, setExprOpen] = useState(false);
   const set = (nv: Value) =>
     store.edit(`Change ${label.toLowerCase()}`, (pr) =>
       updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, setValue(getProp(x, path) as never, time, nv as never))),
     );
+  const setExpr = (x: string | null) =>
+    store.edit(x === null ? `Remove expression from ${label.toLowerCase()}` : `Expression on ${label.toLowerCase()}`, (pr) =>
+      updateLayers(pr, compId, [layer.id], (l) => {
+        const cur = (getProp(l, path) ?? { v: fallback }) as Prop<Value>;
+        const { x: _old, ...rest } = cur;
+        return withProp(l, path, (x === null ? rest : { ...rest, x }) as never);
+      }),
+    );
   return (
-    <Row label={label}>
-      <button
-        className={`tt-ico stopwatch${anim ? ' on' : ''}`}
-        onClick={() =>
-          store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) =>
-            updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, toggleKeys(getProp(x, path) as never, time, fallback as never))),
-          )
-        }
-        title={anim ? 'Animated: click to stop animating' : 'Animate this (a keyframe at the playhead)'}
-        aria-label={`Animate ${label}`}
-        aria-pressed={anim}
-      >
-        ◆
-      </button>
-      {Array.isArray(v) ? (
-        <>
+    <>
+      <Row label={label}>
+        <button
+          className={`tt-ico stopwatch${anim ? ' on' : ''}`}
+          onClick={() =>
+            store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) =>
+              updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, toggleKeys(getProp(x, path) as never, time, fallback as never))),
+            )
+          }
+          title={anim ? 'Animated: click to stop animating' : 'Animate this (a keyframe at the playhead)'}
+          aria-label={`Animate ${label}`}
+          aria-pressed={anim}
+        >
+          ◆
+        </button>
+        {Array.isArray(v) ? (
+          <>
+            <NumberField
+              value={v[0]}
+              step={step}
+              label={`${label} x`}
+              unit={unit}
+              onChange={(n) => set([n, v[1]])}
+              onBegin={() => store.begin(label)}
+              onEnd={() => store.end()}
+            />
+            <NumberField
+              value={v[1]}
+              step={step}
+              label={`${label} y`}
+              unit={unit}
+              onChange={(n) => set([v[0], n])}
+              onBegin={() => store.begin(label)}
+              onEnd={() => store.end()}
+            />
+          </>
+        ) : (
           <NumberField
-            value={v[0]}
+            value={v}
             step={step}
-            label={`${label} x`}
+            min={min}
+            max={max}
+            label={label}
             unit={unit}
-            onChange={(n) => set([n, v[1]])}
+            onChange={(n) => set(n)}
             onBegin={() => store.begin(label)}
             onEnd={() => store.end()}
+            wide
           />
-          <NumberField
-            value={v[1]}
-            step={step}
-            label={`${label} y`}
-            unit={unit}
-            onChange={(n) => set([v[0], n])}
-            onBegin={() => store.begin(label)}
-            onEnd={() => store.end()}
-          />
-        </>
-      ) : (
-        <NumberField
-          value={v}
-          step={step}
-          min={min}
-          max={max}
-          label={label}
-          unit={unit}
-          onChange={(n) => set(n)}
-          onBegin={() => store.begin(label)}
-          onEnd={() => store.end()}
-          wide
-        />
-      )}
-    </Row>
+        )}
+        <button
+          className={`tt-ico tt-expr-btn${expr ? ' on' : ''}`}
+          onClick={() => setExprOpen(!exprOpen && !expr ? true : !exprOpen)}
+          title={expr ? `Expression: ${expr}` : 'Add an expression (wiggle, loop, time, a link to another layer)'}
+          aria-label={`Expression for ${label}`}
+          aria-pressed={!!expr}
+        >
+          =
+        </button>
+      </Row>
+      {(exprOpen || !!expr) && <ExprEditor label={label} value={expr ?? ''} open={exprOpen} onOpen={setExprOpen} onChange={setExpr} />}
+    </>
+  );
+}
+
+const EXPR_EXAMPLES: [string, string][] = [
+  ['wiggle(2, 8)', 'Shake: 2 times a second, 8 px'],
+  ['loopOut()', 'Repeat the keyframes'],
+  ['loopOut("pingpong")', 'Back and forth'],
+  ['time * 90', 'Keep turning (90° a second)'],
+  ['value + [0, sin(time * 3) * 10]', 'Float up and down'],
+];
+
+/** An expression under a property: type it, see if it works, pick an example. */
+function ExprEditor({
+  label,
+  value,
+  open,
+  onOpen,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  open: boolean;
+  onOpen: (o: boolean) => void;
+  onChange: (x: string | null) => void;
+}) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  const problem = text.trim() ? exprProblem(text) : null;
+  if (!open)
+    return (
+      <div className="tt-expr tt-expr-closed">
+        <button className="tt-expr-code" onClick={() => onOpen(true)} title="Change the expression">
+          = {value}
+        </button>
+      </div>
+    );
+  const commit = () => {
+    if (!text.trim()) onChange(null);
+    else if (!problem && text !== value) onChange(text.trim());
+  };
+  return (
+    <div className="tt-expr">
+      <input
+        className="tt-input tt-expr-input"
+        autoFocus
+        value={text}
+        placeholder="wiggle(2, 8)"
+        aria-label={`${label} expression`}
+        aria-invalid={!!problem}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            commit();
+            onOpen(false);
+          }
+          if (e.key === 'Escape') {
+            setText(value);
+            onOpen(false);
+          }
+        }}
+      />
+      {problem ? <div className="tt-expr-problem">{problem}</div> : null}
+      <div className="tt-chips">
+        {EXPR_EXAMPLES.map(([x, hint]) => (
+          <button key={x} className="tt-chip" title={hint} onMouseDown={(e) => e.preventDefault()} onClick={() => (setText(x), onChange(x))}>
+            {x}
+          </button>
+        ))}
+        {value && (
+          <button className="tt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => (onChange(null), onOpen(false))}>
+            Remove
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -757,7 +856,11 @@ function TextStyleRow({ store, l }: { store: Store; l: TextLayer }) {
       {def && differs && (
         <div className="tt-textstyle-differs" role="status">
           <span className="tt-dim">Changed from “{def.name}”</span>
-          <button className="tt-link" onClick={() => store.edit('Update text style', (p) => styleFromLayer(p, l))} title="Every text linked to this style takes this look">
+          <button
+            className="tt-link"
+            onClick={() => store.edit('Update text style', (p) => styleFromLayer(p, l))}
+            title="Every text linked to this style takes this look"
+          >
             Update style
           </button>
           <button className="tt-link" onClick={() => store.edit('Reset to text style', (p) => applyTextStyle(p, [l.id], def.id))}>
@@ -1105,9 +1208,7 @@ function ShapeSection({
                     ['inside', 'Inside'],
                     ['outside', 'Outside'],
                   ]}
-                  onChange={(align) =>
-                    upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, align } : y)) }))
-                  }
+                  onChange={(align) => upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, align } : y)) }))}
                 />
                 <button
                   className="tt-ico"

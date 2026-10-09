@@ -1,7 +1,11 @@
 // Keyframe interpolation: temporal bezier easing (like CSS cubic-bezier),
 // hold keys, and motion paths (spatial bezier, walked at even speed).
 
+import { applyExpr } from './expr';
 import type { Keyframe, Prop, Value, Vec2 } from './types';
+
+/** The expression a property carries, to keep on a changed property. */
+const keepX = (p: Prop<Value> | undefined) => (p?.x ? { x: p.x } : {});
 
 export const LINEAR_OUT: Vec2 = [0, 0];
 export const LINEAR_IN: Vec2 = [1, 1];
@@ -116,8 +120,15 @@ function mix(a: Keyframe<Value>, b: Keyframe<Value>, e: number): Value {
   return [lerp(av[0], bv[0], e), lerp(av[1], bv[1], e)];
 }
 
-/** A property's value at time t (seconds). */
+/** A property's value at time t (seconds), with its expression if it has one. */
 export function valueAt<T extends Value>(p: Prop<T> | undefined, t: number, fallback: T): T {
+  const v = keyedValueAt(p, t, fallback);
+  if (!p?.x) return v;
+  return applyExpr(p.x, p, t, v, (tt) => keyedValueAt(p, tt, fallback));
+}
+
+/** The keyframed (or still) value at time t, before any expression. */
+export function keyedValueAt<T extends Value>(p: Prop<T> | undefined, t: number, fallback: T): T {
   if (!p) return fallback;
   if (!isAnimated(p)) return (p.v ?? fallback) as T;
   const k = p.k;
@@ -170,24 +181,24 @@ export function setKey<T extends Value>(p: Prop<T> | undefined, t: number, v: T)
   const had = isAnimated(p) ? p.k.find((x) => Math.abs(x.t - t) <= 1e-6) : undefined;
   list.push(had ? { ...had, v } : { t, v });
   list.sort((a, b) => a.t - b.t);
-  return { k: list };
+  return { k: list, ...keepX(p) };
 }
 
 /** Change a value at time t: a key there when it is keyframed, the still value otherwise. */
 export function setValue<T extends Value>(p: Prop<T> | undefined, t: number, v: T): Prop<T> {
-  return isAnimated(p) ? setKey(p, t, v) : { v };
+  return isAnimated(p) ? setKey(p, t, v) : { v, ...keepX(p) };
 }
 
 /** Keyframes on (one key now with the current value) or off (the value now stays). */
 export function toggleKeys<T extends Value>(p: Prop<T> | undefined, t: number, fallback: T): Prop<T> {
-  if (isAnimated(p)) return { v: valueAt(p, t, fallback) };
-  return { k: [{ t, v: (p?.v ?? fallback) as T }] };
+  if (isAnimated(p)) return { v: keyedValueAt(p, t, fallback), ...keepX(p) };
+  return { k: [{ t, v: (p?.v ?? fallback) as T }], ...keepX(p) };
 }
 
 export function removeKey<T extends Value>(p: Prop<T>, t: number, fallback: T): Prop<T> {
   if (!isAnimated(p)) return p;
   const k = p.k.filter((x) => Math.abs(x.t - t) > 1e-6);
-  return k.length ? { k } : { v: valueAt(p, t, fallback) };
+  return k.length ? { k, ...keepX(p) } : { v: keyedValueAt(p, t, fallback), ...keepX(p) };
 }
 
 /** Give the segment leaving the key at t (and arriving at the next) a preset ease. */
@@ -203,7 +214,7 @@ export function setEase<T extends Value>(p: Prop<T>, t: number, easeId: string):
   else a.o = [...e.o];
   const b = k[idx + 1];
   if (b && easeId !== 'hold') b.i = [...e.i];
-  return { k };
+  return { k, ...keepX(p) };
 }
 
 export const keyTimes = (p: Prop<Value> | undefined): number[] => (isAnimated(p) ? p.k.map((x) => x.t) : []);
