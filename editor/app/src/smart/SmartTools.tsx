@@ -56,6 +56,7 @@ import './smart.css';
 import { openSmart, reframeAspect, useOpen } from './open';
 import { Progress, useJob } from './job';
 import { MakeMulticamDialog } from './MakeMulticam';
+import { ClipsDialog } from './ClipsDialog';
 
 export type { SmartTool } from './open';
 export { openSmart };
@@ -70,6 +71,7 @@ export function smartMenu(p: Project): MenuEntry[] {
     'sep',
     { label: 'Auto reframe (vertical, square)…', disabled: !hasClips, run: () => openSmart('reframe') },
     { label: 'Highlight reel…', disabled: !hasClips, run: () => openSmart('highlights') },
+    { label: 'Clips for social (vertical, captioned)…', disabled: !hasClips, run: () => openSmart('clips') },
   ];
 }
 
@@ -81,6 +83,7 @@ export function SmartDialogs({ doc, engine, ui }: { doc: Doc; engine: Engine; ui
   if (t === 'reframe') return <ReframeDialog doc={doc} ui={ui} onClose={close} />;
   if (t === 'highlights') return <HighlightDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
   if (t === 'makeMulticam') return <MakeMulticamDialog doc={doc} ui={ui} onClose={close} />;
+  if (t === 'clips') return <ClipsDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
   return null;
 }
 
