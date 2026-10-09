@@ -151,6 +151,15 @@ function cleanLayer(l: Json, comp: Composition, notes: string[], count: { n: num
   return out as unknown as Layer;
 }
 
+/** A cue marker: its mixes only the known ones, its loudness in range. */
+function cleanCue(q: Json): Json {
+  const out: Json = { ...q };
+  if (out.mixes !== undefined) out.mixes = Array.isArray(out.mixes) ? (out.mixes as unknown[]).filter((m: unknown) => m === 'stream' || m === 'hall' || m === 'recording') : undefined;
+  if (out.mixes === undefined) delete out.mixes;
+  if (out.gain !== undefined) out.gain = Math.max(-60, Math.min(12, finite(out.gain, 0)));
+  return out;
+}
+
 function cleanComp(c: Json, notes: string[], count: { n: number }): Composition {
   const duration = Math.min(3600, Math.max(0.1, finite(c.duration, 8)));
   const comp = {
@@ -162,7 +171,7 @@ function cleanComp(c: Json, notes: string[], count: { n: number }): Composition 
     duration,
     background: typeof c.background === 'string' ? c.background : null,
     markers: { inEnd: 1, outStart: duration - 1, loop: null },
-    cues: Array.isArray(c.cues) ? c.cues.filter(isObj) : [],
+    cues: Array.isArray(c.cues) ? c.cues.filter(isObj).map(cleanCue) : [],
     layers: [],
     guides: isObj(c.guides) ? c.guides : undefined,
   } as unknown as Composition;

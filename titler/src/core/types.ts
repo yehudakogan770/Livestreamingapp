@@ -264,12 +264,19 @@ export interface Markers {
   loop?: { start: number; end: number } | null;
 }
 
+/** Where an audio cue is heard in Lumora: the Stream mix, the Hall, the Recording mix. */
+export type CueMix = 'stream' | 'hall' | 'recording';
+
 export interface CueMarker {
   id: string;
   t: number;
   name: string;
   /** A sound asset played from here (audio cue), or none. */
   sound?: string | null;
+  /** The mixes it plays on (Lumora); the Stream mix when left out. */
+  mixes?: CueMix[];
+  /** Loudness, dB (0 when left out). */
+  gain?: number;
 }
 
 export interface Composition {
