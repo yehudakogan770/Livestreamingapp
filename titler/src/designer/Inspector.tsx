@@ -1874,7 +1874,7 @@ function CopyFields({ store, l, compId }: { store: Store; l: CompLayer; compId: 
 
 /** Character styles: the selected words take a shared text style's font, weight, color and size ([cs=Name]…[/cs]). */
 function CharStyleRow({ store, l, words, upd }: { store: Store; l: TextLayer; words: RefObject<HTMLTextAreaElement | null>; upd: (label: string, fn: (x: TextLayer) => TextLayer) => void }) {
-  const styles = useStore(store, (s) => s.project.textStyles ?? []);
+  const styles = useStore(store, (s) => s.project.textStyles) ?? [];
   if (!styles.length) return null;
   const apply = (name: string) => {
     const el = words.current;
