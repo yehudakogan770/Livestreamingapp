@@ -4,6 +4,7 @@
 // sequences are zipped; ProRes 4444 with alpha goes through FFmpeg (desktop).
 
 import { renderFrame, type RenderEnv } from '../core/render';
+import { bestFrames, exactVideoEnv, type OpenFrames } from '../core/exactVideo';
 import { zip } from '../core/zip';
 import type { BrandTokens, TitleProject, Values } from '../core/types';
 import { compOf } from './ops';
@@ -66,18 +67,41 @@ export interface Progress {
   (done: number, total: number): void;
 }
 
+/** Draw a job's frame with its videos frame-exact (decoding what the frame needs first). */
+async function drawExact(canvas: OffscreenCanvas | HTMLCanvasElement, job: RenderJob, t: number) {
+  drawJobFrame(canvas, job, t);
+  const env = job.env as RenderJob['env'] & { settle?: () => Promise<boolean> };
+  if (env.settle && (await env.settle())) drawJobFrame(canvas, job, t);
+}
+
+/** The job with its video layers decoded frame-exact (WebCodecs, or awaited seeks for files it can't read). */
+export function exactJob(job: RenderJob, urlFor: (s: string) => string, open?: OpenFrames): { job: RenderJob; close: () => void } {
+  if (!job.project.assets.some((a) => a.kind === 'video')) return { job, close: () => {} };
+  const env = exactVideoEnv(job.env, open ?? bestFrames(urlFor));
+  return { job: { ...job, env }, close: () => env.close() };
+}
+
 /**
  * Render a job. Returns a Blob for browser formats, or the file path the host
  * wrote (desktop FFmpeg). `signal` stops it.
  */
-export async function renderVideo(job: RenderJob, target: VideoTarget, host: Host, progress: Progress, signal?: AbortSignal): Promise<Blob | string> {
+export async function renderVideo(given: RenderJob, target: VideoTarget, host: Host, progress: Progress, signal?: AbortSignal): Promise<Blob | string> {
+  const { job, close } = exactJob(given, host.urlFor);
+  try {
+    return await renderFrames(job, target, host, progress, signal);
+  } finally {
+    close();
+  }
+}
+
+async function renderFrames(job: RenderJob, target: VideoTarget, host: Host, progress: Progress, signal?: AbortSignal): Promise<Blob | string> {
   const times = frameTimes(job);
   const canvas = surface(job.width, job.height);
   if (target.format === 'png-sequence') {
     const entries = [];
     for (let i = 0; i < times.length; i++) {
       if (signal?.aborted) throw new DOMException('Stopped', 'AbortError');
-      drawJobFrame(canvas, job, times[i]!);
+      await drawExact(canvas, job, times[i]!);
       const blob =
         'convertToBlob' in canvas
           ? await canvas.convertToBlob({ type: 'image/png' })
@@ -99,7 +123,7 @@ export async function renderVideo(job: RenderJob, target: VideoTarget, host: Hos
           await sink.cancel();
           throw new DOMException('Stopped', 'AbortError');
         }
-        drawJobFrame(canvas, job, times[i]!);
+        await drawExact(canvas, job, times[i]!);
         await sink.frame(ctx.getImageData(0, 0, job.width, job.height).data, job.width, job.height);
         progress(i + 1, times.length);
       }
@@ -135,7 +159,7 @@ export async function renderVideo(job: RenderJob, target: VideoTarget, host: Hos
       await output.cancel();
       throw new DOMException('Stopped', 'AbortError');
     }
-    drawJobFrame(canvas, job, times[i]!);
+    await drawExact(canvas, job, times[i]!);
     await source.add(i / job.fps, 1 / job.fps);
     progress(i + 1, times.length);
   }

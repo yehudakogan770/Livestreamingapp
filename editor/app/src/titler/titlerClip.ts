@@ -6,6 +6,7 @@
 import { browserEnv, type BrowserEnv } from '../../../../titler/src/core/browserEnv';
 import { renderFrame } from '../../../../titler/src/core/render';
 import { clipTime } from '../../../../titler/src/core/timeline';
+import { bestFrames, exactVideoEnv } from '../../../../titler/src/core/exactVideo';
 import type { BrandTokens, TitleProject, Values } from '../../../../titler/src/core/types';
 import { placeClips } from '../model/edit';
 import { current } from '../model/seq';
@@ -94,10 +95,36 @@ export function titlerStamp(src: TitlerLayerSource): string {
   return `${idOf(src.project)}|${idOf(src.values)}|${frame}${moving ? `|${Math.round(clock * c.fps)}` : ''}`;
 }
 
+type ExactEnv = ReturnType<typeof exactVideoEnv>;
+/** While exporting: video layers inside titles decoded frame-exact (see prepareTitler). */
+let exact: ExactEnv | null = null;
+
 /** Draw a titler clip's picture into a w × h canvas (cleared by the caller). */
 export function drawTitler(ctx: CanvasRenderingContext2D, src: TitlerLayerSource, w: number, h: number): void {
   const { t, clock } = titlerTime(src);
-  renderFrame(ctx, src.project, { time: t, clock, values: src.values, brand: src.brand, env: titlerEnv(), width: w, height: h });
+  renderFrame(ctx, src.project, { time: t, clock, values: src.values, brand: src.brand, env: exact ?? titlerEnv(), width: w, height: h });
+}
+
+const hasVideo = (p: TitleProject) => p.assets.some((a) => a.kind === 'video');
+
+/**
+ * Before an export draws a frame: the video frames its title clips need,
+ * decoded exactly (WebCodecs), so the drawing that follows uses them.
+ * `done` ends the export's exact mode.
+ */
+export async function prepareTitler(src: TitlerLayerSource, w: number, h: number): Promise<void> {
+  if (!hasVideo(src.project) || typeof OffscreenCanvas === 'undefined') return;
+  exact ??= exactVideoEnv(titlerEnv(), bestFrames(mediaUrl));
+  const c = new OffscreenCanvas(Math.max(1, Math.min(w, 64)), Math.max(1, Math.min(h, 64)));
+  // A small dry run finds the frames this one asks for; then they are decoded.
+  drawTitler(c.getContext('2d') as unknown as CanvasRenderingContext2D, src, c.width, c.height);
+  await exact.settle();
+}
+
+/** The export is over: title videos go back to the live player. */
+export function endExactTitlers(): void {
+  exact?.close();
+  exact = null;
 }
 
 /** A new titler clip at a frame, on the first free video track above V1, as long as the title (at least 3 s). */
