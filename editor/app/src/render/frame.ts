@@ -271,7 +271,10 @@ export function frameOps(p: Project, s: Sequence, frame: number, prefix = '', de
       if (c?.source.kind === 'caption' && c.source.text.trim())
         ops.push({
           kind: 'layer',
-          layer: { ...lay(c), source: { kind: 'text', text: captionText(c.source.text, t.captions), local: frame - c.start, length: c.length } },
+          layer: {
+            ...lay(c),
+            source: { kind: 'text', text: captionText(c.source.text, t.captions, c.source.words, c.length), local: frame - c.start, length: c.length },
+          },
         });
       continue;
     }

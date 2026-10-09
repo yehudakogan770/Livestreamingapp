@@ -178,6 +178,9 @@ export function trimLeft(c: Clip, d: number, fps: number): Clip {
     mapParams({ ...c, start: c.start + d, length: c.length - d }, (x) => shiftKeys(x, -d)),
     (t) => t - d,
   );
+  // A caption's words stay where they are said.
+  if (moved.source.kind === 'caption' && moved.source.words)
+    return { ...moved, source: { ...moved.source, words: moved.source.words.map(([a, b]) => [a - d, b - d] as [number, number]) } };
   // A remapped clip starts where its speed had carried it by then.
   if (c.remap) return withIn(moved, (remapPosition(c.remap, c.length, d) * c.speed) / fps);
   return c.reverse ? moved : withIn(moved, (d * c.speed) / fps);

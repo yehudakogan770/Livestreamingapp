@@ -6,7 +6,10 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { LANGUAGES } from '../../../../app/src/captions/whisper';
 import { timecode } from '../model/build';
 import {
+  CAPTION_LOOKS,
   captionBlocks,
+  DEFAULT_ACCENT,
+  lookOf,
   captionCues,
   captionTracks,
   deleteWords,
@@ -22,8 +25,8 @@ import {
   type SeqWord,
 } from '../model/captions';
 import { updateClips } from '../model/edit';
-import { current, end, rate } from '../model/seq';
-import { DEFAULT_CAPTION_STYLE, type CaptionStyle, type Clip, type Project } from '../model/types';
+import { current, editSeq, end, rate } from '../model/seq';
+import { DEFAULT_CAPTION_STYLE, type CaptionAnim, type CaptionStyle, type Clip, type Project } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
 import { inApp, native } from '../native';
 import type { Engine } from '../player/engine';
@@ -55,11 +58,17 @@ function prefs(): { model: SpeechModel; language: string } {
 }
 
 /** Captions made from what was heard in [from, to) (all of it when no range), on the first captions track. */
-export function makeCaptions(p: Project, range: { from: number; to: number } | null): Project {
+export function makeCaptions(p: Project, range: { from: number; to: number } | null, track?: string): Project {
   const s = current(p);
-  const style = captionTracks(s)[0]?.captions ?? DEFAULT_CAPTION_STYLE;
+  const style = (track ? s.tracks.find((t) => t.id === track)?.captions : captionTracks(s)[0]?.captions) ?? DEFAULT_CAPTION_STYLE;
   const words = sequenceWords(p, s).filter((w) => !range || (w.from >= range.from && w.from < range.to));
-  return placeCaptions(p, captionBlocks(words, rate(s), rulesFor(style))).project;
+  return placeCaptions(p, captionBlocks(words, rate(s), rulesFor(style)), track).project;
+}
+
+/** A captions track made again from the transcript, broken by its own letters and lines. */
+export function remakeCaptions(p: Project, track: string): Project {
+  const q = editSeq(p, (s) => ({ ...s, clips: s.clips.filter((c) => c.track !== track) }));
+  return makeCaptions(q, null, track);
 }
 
 export function TranscribeDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
@@ -435,14 +444,70 @@ export function CaptionSection({ doc, engine, ui, clip, selected }: { doc: Doc; 
       <CaptionStyleEditor
         style={style}
         onChange={(change, final) => doc.edit((p) => setCaptionStyle(p, track.id, change), 'Caption look', final ? undefined : `capstyle-${track.id}`)}
+        onRemake={project.media.some((m) => m.transcript?.words.length) ? () => doc.edit((p) => remakeCaptions(p, track.id), 'Make captions again') : undefined}
       />
     </>
   );
 }
 
-function CaptionStyleEditor({ style, onChange }: { style: CaptionStyle; onChange: (c: Partial<CaptionStyle>, final: boolean) => void }) {
+const SPOKEN: [CaptionAnim, string, string][] = [
+  ['none', 'Still', 'All the words the same'],
+  ['highlight', 'Highlight', 'The word being said in the accent color'],
+  ['karaoke', 'Karaoke', 'Every word said so far in the accent color'],
+  ['pop', 'Pop', 'The word being said grows a little'],
+  ['reveal', 'Reveal', 'Words appear as they are said'],
+  ['wordbox', 'Word box', 'A box of the accent color behind the word being said'],
+];
+
+function CaptionStyleEditor({
+  style,
+  onChange,
+  onRemake,
+}: {
+  style: CaptionStyle;
+  onChange: (c: Partial<CaptionStyle>, final: boolean) => void;
+  onRemake?: () => void;
+}) {
+  const look = lookOf(style);
+  const anim = style.anim ?? 'none';
   return (
     <Section title="Caption look (the whole track)">
+      <div className="insp__cams" role="radiogroup" aria-label="Ready-made looks">
+        {CAPTION_LOOKS.map((l) => (
+          <button
+            key={l.name}
+            type="button"
+            role="radio"
+            aria-checked={look === l.name}
+            className={`insp__cam${look === l.name ? ' is-on' : ''}`}
+            title={l.note}
+            onClick={() => onChange(l.style, true)}
+          >
+            {l.name}
+          </button>
+        ))}
+      </div>
+      <label className="field">
+        <span className="field__label">Words as they are said</span>
+        <select className="text text--sm" value={anim} onChange={(e) => onChange({ anim: e.target.value as CaptionAnim }, true)}>
+          {SPOKEN.map(([v, name, tip]) => (
+            <option key={v} value={v} title={tip}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </label>
+      {anim !== 'none' && anim !== 'reveal' && (
+        <div className="insp__row">
+          <span className="field__label">Accent</span>
+          <ColorField value={style.accent ?? DEFAULT_ACCENT} label="Accent color" onChange={(accent) => onChange({ accent }, false)} />
+        </div>
+      )}
+      <div className="insp__row">
+        <label className="check">
+          <input type="checkbox" checked={!!style.caps} onChange={(e) => onChange({ caps: e.target.checked }, true)} /> All capitals
+        </label>
+      </div>
       <div className="insp__row">
         <select
           className="text text--sm"
@@ -535,6 +600,16 @@ function CaptionStyleEditor({ style, onChange }: { style: CaptionStyle; onChange
         />
       </div>
       <p className="insp__note">Letters and lines decide where new captions break when they are made from the transcript.</p>
+      {onRemake && (
+        <button
+          type="button"
+          className="btn btn--sm"
+          title="Break this track's captions again with these letters and lines (changes typed into them are replaced)"
+          onClick={onRemake}
+        >
+          Make them again from the transcript
+        </button>
+      )}
     </Section>
   );
 }

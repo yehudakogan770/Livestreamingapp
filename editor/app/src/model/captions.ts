@@ -140,6 +140,8 @@ export interface Block {
   from: number;
   to: number;
   text: string;
+  /** When each word is said (sequence frames), when known. */
+  words?: [number, number][];
 }
 
 export interface BlockRules {
@@ -156,8 +158,8 @@ export const rulesFor = (style: CaptionStyle): BlockRules => ({ maxChars: style.
 
 /** Words grouped into caption blocks: a new one at a pause, after a sentence, or when it would be too long. */
 export function captionBlocks(words: { w: string; from: number; to: number }[], fps: number, rules: BlockRules): Block[] {
-  const blocks: { from: number; to: number; words: string[] }[] = [];
-  let cur: { from: number; to: number; words: string[] } | null = null;
+  const blocks: { from: number; to: number; words: string[]; times: [number, number][] }[] = [];
+  let cur: { from: number; to: number; words: string[]; times: [number, number][] } | null = null;
   for (const w of words) {
     const text = w.w.trim();
     if (!text) continue;
@@ -172,9 +174,14 @@ export function captionBlocks(words: { w: string; from: number; to: number }[], 
         cur = null;
       }
     }
-    if (!cur) cur = { from: w.from, to: w.to, words: [text] };
+    // A "word" with spaces in it (some transcripts) shares its time out among its parts.
+    const parts = text.split(/\s+/);
+    const span = Math.max(1, w.to - w.from);
+    const times = parts.map((_, i): [number, number] => [w.from + Math.floor((span * i) / parts.length), w.from + Math.floor((span * (i + 1)) / parts.length)]);
+    if (!cur) cur = { from: w.from, to: w.to, words: [text], times };
     else {
       cur.words.push(text);
+      cur.times.push(...times);
       cur.to = Math.max(cur.to, w.to);
     }
   }
@@ -184,7 +191,7 @@ export function captionBlocks(words: { w: string; from: number; to: number }[], 
   return blocks.map((b, i) => {
     const next = blocks[i + 1];
     const to = Math.max(b.to, Math.min(b.from + min, next ? next.from : Infinity));
-    return { from: b.from, to: Math.max(b.from + 1, to), text: b.words.join(' ') };
+    return { from: b.from, to: Math.max(b.from + 1, to), text: b.words.join(' '), words: b.times };
   });
 }
 
@@ -216,15 +223,46 @@ export function placeCaptions(p: Project, blocks: Block[], track?: string): { pr
     const from = Math.min(...blocks.map((b) => b.from));
     const to = Math.max(...blocks.map((b) => b.to));
     const kept = s.clips.filter((c) => c.track !== tid || end(c) <= from || c.start >= to);
-    const made = blocks.map((b) => newClip(tid, b.from, b.to - b.from, { kind: 'caption', text: b.text }, b.text));
+    const made = blocks.map((b) => {
+      const words = b.words?.length === wordsOf(b.text).length ? b.words.map(([x, y]): [number, number] => [x - b.from, y - b.from]) : undefined;
+      return newClip(tid, b.from, b.to - b.from, { kind: 'caption', text: b.text, ...(words ? { words } : {}) }, b.text);
+    });
     return { ...s, clips: [...kept, ...made] };
   });
   return { project: q, track: tid };
 }
 
-/** Change a caption's words (its name on the timeline follows). */
+/** The words of a caption, as its timings count them. */
+export const wordsOf = (text: string): string[] => text.split(/\s+/).filter(Boolean);
+
+/**
+ * Change a caption's words (its name on the timeline follows). Their timings
+ * are kept while the number of words stays the same (a spelling fixed);
+ * otherwise they are worked out again from the length of each word.
+ */
 export function setCaptionText(c: Clip, text: string): Clip {
-  return c.source.kind === 'caption' ? { ...c, name: text.replace(/\s+/g, ' ').trim() || 'Caption', source: { kind: 'caption', text } } : c;
+  if (c.source.kind !== 'caption') return c;
+  const old = c.source.words;
+  const words = old && old.length === wordsOf(text).length ? old : undefined;
+  return { ...c, name: text.replace(/\s+/g, ' ').trim() || 'Caption', source: { kind: 'caption', text, ...(words ? { words } : {}) } };
+}
+
+/**
+ * When each word of a caption is said ([from, to) frames from its start): its
+ * own timings when it has them, otherwise shared out over the caption by the
+ * length of each word (typed captions still light up word by word).
+ */
+export function wordTimes(text: string, words: [number, number][] | undefined, length: number): [number, number][] {
+  const list = wordsOf(text);
+  if (words && words.length === list.length) return words;
+  const weights = list.map((w) => w.length + 1);
+  const total = weights.reduce((a, b) => a + b, 0) || 1;
+  let at = 0;
+  return weights.map((w) => {
+    const from = Math.round((at / total) * length);
+    at += w;
+    return [from, Math.max(from + 1, Math.round((at / total) * length))];
+  });
 }
 
 /** Cut a caption block in two at a frame; its words are shared out by time. */
@@ -232,10 +270,23 @@ export function splitCaption(p: Project, id: string, frame: number): Project {
   return editSeq(p, (s) => {
     const c = s.clips.find((x) => x.id === id);
     if (!c || c.source.kind !== 'caption' || frame <= c.start || frame >= end(c)) return s;
-    const words = c.source.text.split(/\s+/).filter(Boolean);
-    const k = words.length < 2 ? words.length : Math.max(1, Math.min(words.length - 1, Math.round((words.length * (frame - c.start)) / c.length)));
-    const left = setCaptionText({ ...c, length: frame - c.start }, words.slice(0, k).join(' '));
-    const right = setCaptionText({ ...c, id: uid(), start: frame, length: end(c) - frame }, words.slice(k).join(' '));
+    const words = wordsOf(c.source.text);
+    const times = c.source.words?.length === words.length ? c.source.words : null;
+    const at = frame - c.start;
+    // With word timings, the cut falls between the words said before and after it.
+    const k =
+      words.length < 2
+        ? words.length
+        : Math.max(1, Math.min(words.length - 1, times ? times.filter(([a, b]) => (a + b) / 2 < at).length : Math.round((words.length * at) / c.length)));
+    const timed = (text: string, list: [number, number][] | undefined, shift: number): Clip['source'] => ({
+      kind: 'caption',
+      text,
+      ...(list ? { words: list.map(([a, b]): [number, number] => [a - shift, b - shift]) } : {}),
+    });
+    const leftText = words.slice(0, k).join(' ');
+    const rightText = words.slice(k).join(' ');
+    const left = { ...c, length: at, name: leftText || 'Caption', source: timed(leftText, times?.slice(0, k), 0) };
+    const right = { ...c, id: uid(), start: frame, length: end(c) - frame, name: rightText || 'Caption', source: timed(rightText, times?.slice(k), at) };
     return { ...s, clips: s.clips.flatMap((x) => (x.id === id ? [left, right] : [x])) };
   });
 }
@@ -247,7 +298,19 @@ export function mergeCaptions(p: Project, ids: string[]): Project {
     const first = list[0];
     if (!first || list.length < 2 || list.some((c) => c.track !== first.track)) return s;
     const text = list.map((c) => (c.source.kind === 'caption' ? c.source.text.trim() : '')).join(' ');
-    const merged = setCaptionText({ ...first, length: Math.max(...list.map(end)) - first.start }, text);
+    // Word timings carry over when every block has them.
+    const timed = list.every((c) => c.source.kind === 'caption' && c.source.words?.length === wordsOf(c.source.text).length);
+    const words = timed
+      ? list.flatMap((c) =>
+          c.source.kind === 'caption' ? (c.source.words ?? []).map(([a, b]): [number, number] => [a + c.start - first.start, b + c.start - first.start]) : [],
+        )
+      : undefined;
+    const merged: Clip = {
+      ...first,
+      length: Math.max(...list.map(end)) - first.start,
+      name: text.replace(/\s+/g, ' ').trim() || 'Caption',
+      source: { kind: 'caption', text, ...(words ? { words } : {}) },
+    };
     const gone = new Set(list.map((c) => c.id));
     // Anything else on the track in between is covered by the joined block.
     const clips = s.clips.filter((c) => !gone.has(c.id) && !(c.track === first.track && c.start < end(merged) && end(c) > merged.start));
@@ -268,8 +331,12 @@ export function captionLines(text: string, style: CaptionStyle): string[] {
     .filter(Boolean);
 }
 
-/** A caption drawn like a title: the track's look, its lines, and its place in the frame. */
-export function captionText(text: string, style: CaptionStyle): TextData {
+/**
+ * A caption drawn like a title: the track's look, its lines, and its place in
+ * the frame; with an animated look, when each word is said (`words`, over a
+ * caption `length` frames long).
+ */
+export function captionText(text: string, style: CaptionStyle, words?: [number, number][], length = 0): TextData {
   const lines = captionLines(text, style);
   const lineHeight = 1.2;
   const half = (style.size * lineHeight * Math.max(1, lines.length)) / 2 / 1080;
@@ -300,7 +367,93 @@ export function captionText(text: string, style: CaptionStyle): TextData {
     animOut: 'none',
     animLength: 0,
     even: true,
+    ...(style.caps ? { caps: true } : {}),
+    ...(style.anim && style.anim !== 'none' && length > 0
+      ? { spoken: { anim: style.anim, accent: style.accent ?? DEFAULT_ACCENT, times: wordTimes(text, words, length) } }
+      : {}),
   };
+}
+
+/** The lit words' color unless the look says otherwise: a warm yellow that reads on any picture. */
+export const DEFAULT_ACCENT = '#ffd23f';
+
+/** Ready-made caption looks: the plain broadcast box, and social looks whose words light up as they are said. */
+export const CAPTION_LOOKS: { name: string; note: string; style: Partial<CaptionStyle> }[] = [
+  {
+    name: 'Broadcast',
+    note: 'A box behind the words, for any video',
+    style: { ...DEFAULT_CAPTION_STYLE, anim: 'none', caps: false },
+  },
+  {
+    name: 'Clean',
+    note: 'No box, a soft shadow',
+    style: {
+      font: 'Inter Variable',
+      size: 54,
+      weight: 600,
+      color: '#ffffff',
+      stroke: 0,
+      shadow: 8,
+      box: false,
+      anim: 'none',
+      caps: false,
+      lineChars: 42,
+      lines: 2,
+    },
+  },
+  {
+    name: 'Highlight',
+    note: 'The word being said in yellow',
+    style: social({ anim: 'highlight', accent: DEFAULT_ACCENT }),
+  },
+  {
+    name: 'Karaoke',
+    note: 'Words fill in as they are said',
+    style: social({ anim: 'karaoke', accent: DEFAULT_ACCENT, caps: false, weight: 700 }),
+  },
+  {
+    name: 'Word box',
+    note: 'A box behind the word being said',
+    style: social({ anim: 'wordbox', accent: '#f2b33d', stroke: 0, shadow: 6 }),
+  },
+  {
+    name: 'Pop',
+    note: 'The word being said grows a little',
+    style: social({ anim: 'pop', accent: '#7fe3a2' }),
+  },
+  {
+    name: 'Reveal',
+    note: 'Words appear as they are said',
+    style: social({ anim: 'reveal', caps: false, weight: 700, stroke: 0, shadow: 10 }),
+  },
+];
+
+/** Big, heavy words in the middle of a vertical frame, a few at a time. */
+function social(change: Partial<CaptionStyle>): Partial<CaptionStyle> {
+  return {
+    font: 'Inter Variable',
+    size: 76,
+    weight: 800,
+    color: '#ffffff',
+    stroke: 3,
+    strokeColor: '#000000',
+    shadow: 4,
+    box: false,
+    position: 'bottom',
+    margin: 24,
+    lineChars: 18,
+    lines: 2,
+    caps: true,
+    ...change,
+  };
+}
+
+/** The look a captions track has now, if it is one of the ready-made ones. */
+export function lookOf(style: CaptionStyle): string | null {
+  // Settings a track has never had count as their defaults (no animation, no capitals).
+  const filled: Record<string, unknown> = { anim: 'none', caps: false, ...style };
+  const hit = CAPTION_LOOKS.find((l) => Object.entries(l.style).every(([k, v]) => filled[k] === v));
+  return hit?.name ?? null;
 }
 
 // ---------------------------------------------------------------------------

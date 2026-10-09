@@ -36,6 +36,12 @@ export function textStamp(t: TextData, local: number, length: number, fps = 30):
   }
   const { anim } = phase(t, local, length);
   if (anim !== 'none' || t.animators?.some((a) => a.on)) return `${base}|${local}`;
+  if (t.spoken) {
+    // Only which word is being said changes the picture (and, for a few frames, its pop or fade).
+    const i = spokenIndex(t.spoken.times, local);
+    const since = i >= 0 ? Math.min(6, local - (t.spoken.times[i] as [number, number])[0]) : 0;
+    return `${base}|w${i}|${since}`;
+  }
   return t.text.includes('{') ? `${base}|${wordsAt(t, local, length, fps)}` : base;
 }
 
@@ -129,6 +135,7 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
   // Text animators: each letter drawn on its own, with its own look.
   const looks = t.animators?.some((a) => a.on) ? charLooks(t.animators, textUnits(lines), local) : null;
   let first = 0;
+  let spokenWord = 0;
   let y = top;
   lines.forEach((line, i) => {
     const lh = heights[i] ?? lineH;
@@ -139,7 +146,7 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
     const shown = anim === 'type' ? line.slice(0, Math.round(line.length * reveal)) : line;
     const cy = y + lh / 2;
     const color = i === 0 ? t.color : (t.color2 ?? (t.even ? t.color : mixWhite(t.color)));
-    const paint = (words: string, px: number, py: number) => {
+    const paint = (words: string, px: number, py: number, fill = color) => {
       if (t.shadow > 0) {
         ctx.shadowColor = t.shadowColor;
         ctx.shadowBlur = t.shadow * s * 2;
@@ -152,12 +159,13 @@ export function drawText(ctx: CanvasRenderingContext2D, t: TextData, w: number, 
         ctx.strokeText(words, px, py);
         ctx.shadowColor = 'transparent';
       }
-      ctx.fillStyle = color;
+      ctx.fillStyle = fill;
       ctx.fillText(words, px, py);
       ctx.shadowColor = 'transparent';
     };
     const chars = [...line];
-    if (looks) drawAnimatedLine(ctx, chars, x, cy, looks.slice(first, first + chars.length), s, t.align, paint);
+    if (t.spoken && anim !== 'type') spokenWord = drawSpokenLine(ctx, line, x, cy, spokenWord, t.spoken, local, fs, color, paint);
+    else if (looks) drawAnimatedLine(ctx, chars, x, cy, looks.slice(first, first + chars.length), s, t.align, paint);
     else paint(shown, x, cy);
     first += chars.length;
     y += lh;
@@ -199,6 +207,90 @@ function drawAnimatedLine(
     ctx.filter = filter;
     ctx.restore();
   });
+}
+
+/** The word being said at a frame: the last one to have started (-1 before the first). */
+export function spokenIndex(times: [number, number][], local: number): number {
+  let i = -1;
+  for (let k = 0; k < times.length; k++) {
+    if ((times[k] as [number, number])[0] <= local) i = k;
+    else break;
+  }
+  return i;
+}
+
+/** Dark words on a light accent box, light words on a dark one. */
+function onAccent(accent: string): string {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})/i.exec(accent);
+  if (!m) return '#111111';
+  const [r, g, b] = [m[1], m[2], m[3]].map((h) => parseInt(h as string, 16) / 255) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.55 ? '#111111' : '#ffffff';
+}
+
+/**
+ * One caption line word by word, each lit by when it is said (see
+ * CaptionAnim). Returns the index of the first word on the next line.
+ */
+function drawSpokenLine(
+  ctx: CanvasRenderingContext2D,
+  line: string,
+  x: number,
+  cy: number,
+  first: number,
+  spoken: NonNullable<TextData['spoken']>,
+  local: number,
+  size: number,
+  color: string,
+  paint: (words: string, x: number, y: number, fill?: string) => void,
+): number {
+  const words = line.split(' ');
+  const active = spokenIndex(spoken.times, local);
+  const alpha = ctx.globalAlpha;
+  let before = '';
+  let index = first;
+  for (const word of words) {
+    const at = x + ctx.measureText(before).width;
+    before += `${word} `;
+    if (!word) continue;
+    const i = index;
+    index += 1;
+    const w = ctx.measureText(word).width;
+    const [from] = spoken.times[i] ?? [0, 0];
+    const since = local - from;
+    const on = i === active;
+    if (spoken.anim === 'reveal') {
+      if (i > active) continue;
+      ctx.globalAlpha = alpha * Math.min(1, (since + 1) / 4);
+      paint(word, at, cy);
+      ctx.globalAlpha = alpha;
+      continue;
+    }
+    if (spoken.anim === 'wordbox' && on) {
+      const padX = size * 0.16;
+      const padY = size * 0.1;
+      ctx.save();
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = spoken.accent;
+      fillBox(ctx, at - padX, cy - size * 0.5 - padY, w + padX * 2, size + padY * 2, size * 0.18);
+      ctx.restore();
+      paint(word, at, cy, onAccent(spoken.accent));
+      continue;
+    }
+    if (spoken.anim === 'pop' && on) {
+      // Up to a fifth bigger as it is said, settling a little.
+      const k = Math.min(1, Math.max(0, since) / 4);
+      const scale = 1.12 + 0.08 * (1 - k);
+      ctx.save();
+      ctx.translate(at + w / 2, cy);
+      ctx.scale(scale, scale);
+      paint(word, -w / 2, 0, spoken.accent);
+      ctx.restore();
+      continue;
+    }
+    const lit = spoken.anim === 'karaoke' ? i <= active : spoken.anim === 'wordbox' ? false : on;
+    paint(word, at, cy, lit ? spoken.accent : color);
+  }
+  return index;
 }
 
 /** The second line is the same color, a little softer. */

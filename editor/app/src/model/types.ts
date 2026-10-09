@@ -163,7 +163,21 @@ export interface CaptionStyle {
   /** About this many letters on a line, and at most this many lines. */
   lineChars: number;
   lines: number;
+  /** Words lit as they are spoken (social-style captions); none by default. */
+  anim?: CaptionAnim;
+  /** The color a lit word (or its box) takes. */
+  accent?: string;
+  /** All capitals. */
+  caps?: boolean;
 }
+
+/**
+ * How the words of a caption follow the speech: the word being said in the
+ * accent color (highlight), every word said so far in it (karaoke), the word
+ * being said a little bigger (pop), words appearing as they are said (reveal),
+ * or a box of the accent color behind the word being said (wordbox).
+ */
+export type CaptionAnim = 'none' | 'highlight' | 'karaoke' | 'pop' | 'reveal' | 'wordbox';
 
 export type BlendMode =
   | 'normal'
@@ -271,6 +285,8 @@ export interface TextData {
   boxGrow?: boolean;
   /** Letters, words or lines animated one after another (see model/textanim.ts). */
   animators?: TextAnimator[];
+  /** Caption words lit as they are spoken: when each word of `text` is said (frames from the start). */
+  spoken?: { anim: Exclude<CaptionAnim, 'none'>; accent: string; times: [number, number][] };
 }
 
 /** Which letters, words or lines an animator moves, and how much of its properties each gets. */
@@ -356,7 +372,8 @@ export type ClipSource =
   /** A picture made here: a gradient, noise, particles… */
   | { kind: 'generator'; gen: string; settings: Record<string, number | string> }
   /** A caption block on a captions track (the track says how it looks). */
-  | { kind: 'caption'; text: string }
+  /** `words`: when each word is said, [from, to) frames from the clip's start (one per word of `text`). */
+  | { kind: 'caption'; text: string; words?: [number, number][] }
   /** A drawn shape: rectangle, ellipse, polygon, star or line. */
   | { kind: 'shape'; shape: ShapeData }
   /** A Lumora Titler graphic (lower third, bug, ticker, card…): IN from the clip's start, OUT to its end. */

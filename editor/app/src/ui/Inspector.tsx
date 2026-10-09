@@ -51,6 +51,7 @@ export const FONTS = [
   'Times New Roman',
   'Trebuchet MS',
   'Verdana',
+  'Inter Variable',
   'Bebas Neue',
   'Heebo',
   'Frank Ruhl Libre',
