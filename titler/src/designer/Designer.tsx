@@ -59,6 +59,7 @@ import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
 import { ExportDialog, NoticeDialog } from './ExportDialog';
 import { pickImportFile, readImport } from './importing';
+import { fromSvg, spanning } from '../core/svgImport';
 import {
   clampSize,
   forgetTitle,
@@ -883,6 +884,18 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
         let layers = clipboard;
         try {
           const text = await navigator.clipboard?.readText();
+          // SVG (Figma's "Copy as SVG", Illustrator): pasted as shape layers.
+          if (text && /^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) {
+            const svg = fromSvg(text);
+            const c = store.comp();
+            const pasted = spanning(svg.layers, c.duration);
+            if (!pasted.length) return store.set({ status: 'There were no shapes in the SVG.' });
+            store.edit('Paste SVG', (p) => addLayers(p, c.id, pasted, sel()[0] ?? null), {
+              selection: pasted.map((l) => l.id),
+              status: `Pasted ${pasted.length} layer${pasted.length > 1 ? 's' : ''} from SVG${svg.notes.length ? ` (${svg.notes.join(' ')})` : ''}`,
+            });
+            return;
+          }
           const o = text ? (JSON.parse(text) as { type?: string; layers?: Layer[] }) : null;
           if (o?.type === CLIP_MIME && Array.isArray(o.layers)) layers = o.layers;
         } catch {
