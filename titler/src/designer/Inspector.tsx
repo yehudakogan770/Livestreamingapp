@@ -19,6 +19,7 @@ import type { Store } from './store';
 import { useStore } from './store';
 import { loadStyles, saveStyle, styleOf, applyStyle, removeStyle } from './styles';
 import { applyTextStyle, differsFromStyle, newTextStyle, styleFromLayer } from './textStyles';
+import { inStackOrder, loadAnimPresets, pasteKeys, removeAnimPreset, saveAnimPreset, stagger } from './keyframes';
 
 const FONTS = [
   '$font',
@@ -1337,9 +1338,57 @@ function MotionPresets({ store, l, compId }: Common & { l: Layer }) {
     ['Wipe to left', (x) => wipe(x, 'right', { at: outStart, dur: outLen }, true)],
     ['Shrink', (x) => grow(x, { at: outStart, dur: outLen }, true)],
   ];
+  const [saved, setSaved] = useState(loadAnimPresets);
+  const [step, setStep] = useState(3);
+  const [bars, setBars] = useState(false);
+  const selection = store.get().selection;
   return (
     <Section title="Animate" open={false}>
       <div className="tt-dim tt-small">Adds keyframes timed to the IN and OUT markers.</div>
+      {selection.length > 1 && (
+        <Row label="Stagger" hint="Each layer's animation a few frames after the one above it">
+          <NumberField value={step} min={0} step={1} label="Stagger frames" unit="fr" onChange={(v) => setStep(Math.round(v))} />
+          <Toggle value={bars} onChange={setBars} label="Bars too" />
+          <button
+            className="tt-btn"
+            onClick={() =>
+              store.edit(`Stagger ${selection.length} layers`, (p) => stagger(p, compId, inStackOrder(p, compId, selection), step / c.fps, bars))
+            }
+          >
+            Stagger
+          </button>
+        </Row>
+      )}
+      <div className="tt-presets">
+        <span>Saved</span>
+        {saved.map((a) => (
+          <span key={a.id} className="tt-chip tt-chip-split">
+            <button
+              onClick={() =>
+                store.edit(`Apply “${a.name}”`, (p) => pasteKeys(p, compId, selection.length ? selection : [l.id], a.clip, store.get().time))
+              }
+              title="Put this animation on the selected layers, from the playhead"
+            >
+              {a.name}
+            </button>
+            <button aria-label={`Remove ${a.name}`} title="Remove this saved animation" onClick={() => setSaved(removeAnimPreset(a.id))}>
+              ×
+            </button>
+          </span>
+        ))}
+        <button
+          className="tt-chip"
+          onClick={() => {
+            const name = prompt('Name for this animation', `${l.name} animation`);
+            if (name === null) return;
+            if (saveAnimPreset(l, name)) setSaved(loadAnimPresets());
+            else store.set({ status: 'This layer has no keyframes to save.' });
+          }}
+          title="Keep this layer's keyframes as an animation to give other layers"
+        >
+          <Plus size={11} /> Save this animation
+        </button>
+      </div>
       <div className="tt-presets">
         <span>IN</span>
         {IN.map(([n, f]) => (

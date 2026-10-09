@@ -68,6 +68,7 @@ import {
 } from './workspace';
 import { usePreviewCues } from './previewCues';
 import { RamPreview } from './ramPreview';
+import { copyKeys, pasteKeys, type KeyClip } from './keyframes';
 import { setExprScope } from '../core/expr';
 import { exprScopeFor } from '../core/render';
 import './designer.css';
@@ -94,6 +95,8 @@ export interface DesignerProps {
 
 const CLIP_MIME = 'application/x-lumora-titler-layers';
 let clipboard: Layer[] | null = null;
+/** Keyframes copied (pasted onto the selected layers at the playhead); the last copy wins. */
+let keyClipboard: KeyClip | null = null;
 
 export function Designer({ host, initial, look = 'ink', brand = null, values = {}, onUse, useLabel, onClose, env: givenEnv }: DesignerProps) {
   const env = useMemo(() => givenEnv ?? browserEnv(host.urlFor), [givenEnv, host]);
@@ -745,8 +748,20 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
     const compId = () => store.get().compId;
     return {
       copy() {
+        const s = store.get();
+        if (s.keys.length) {
+          // Keyframes selected: copy those (from the first key's layer).
+          const layer = findLayer(compOf(s.project, s.compId), s.keys[0]!.layer);
+          keyClipboard = layer ? copyKeys(layer, s.keys) : null;
+          if (keyClipboard) {
+            clipboard = null;
+            store.set({ status: `Copied ${s.keys.length} keyframe${s.keys.length > 1 ? 's' : ''}` });
+          }
+          return;
+        }
         const layers = store.selected();
         if (!layers.length) return;
+        keyClipboard = null;
         clipboard = cloneLayers(layers);
         try {
           void navigator.clipboard?.writeText(JSON.stringify({ type: CLIP_MIME, layers }));
@@ -760,6 +775,13 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
         this.remove();
       },
       async paste() {
+        if (keyClipboard) {
+          const s = store.get();
+          if (!s.selection.length) return store.set({ status: 'Select the layers to paste the keyframes on.' });
+          const clip = keyClipboard;
+          store.edit('Paste keyframes', (p) => pasteKeys(p, s.compId, s.selection, clip, s.time), { status: 'Pasted the keyframes at the playhead' });
+          return;
+        }
         let layers = clipboard;
         try {
           const text = await navigator.clipboard?.readText();

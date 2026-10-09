@@ -1397,3 +1397,16 @@
   color: var(--tt-dim);
   text-align: left;
 }
+
+/* A saved animation: apply, or remove. */
+.tt-chip-split {
+  display: inline-flex;
+  padding: 0;
+}
+.tt-chip-split button {
+  padding: 2px 7px;
+}
+.tt-chip-split button + button {
+  border-left: 1px solid var(--tt-line-2);
+  color: var(--tt-dim);
+}
