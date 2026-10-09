@@ -151,6 +151,8 @@ export interface Track {
   fx?: Effect[];
   /** Sound: the bus it plays through (otherwise straight into the mix). */
   bus?: string | null;
+  /** Sound: the fader's moves over the sequence, [frame, dB] in time order (recorded in the mixer); when set, it is the track's level. */
+  volumeLine?: [number, number][];
 }
 
 /** A submix: sound tracks sent to it are mixed, processed and leveled together (all the dialogue, all the music). */

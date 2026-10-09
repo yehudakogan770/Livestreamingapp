@@ -21,7 +21,11 @@ import {
   setMixVolume,
   staged,
   stripFx,
+  thinLine,
   toggleFx,
+  trimLine,
+  volumeAt,
+  writeLine,
 } from './mix';
 import { current } from './seq';
 import { emptyProject, type MediaItem, type Project } from './types';
@@ -145,4 +149,76 @@ describe.skipIf(!run)('real sound through the stages', () => {
     expect(max).toBeGreaterThan(-19.5);
     expect(max).toBeLessThan(-16.5);
   }, 60_000);
+});
+
+describe('recorded fader moves', () => {
+  const track = (line?: [number, number][]) => ({ ...current(project()).tracks.find((t) => t.kind === 'audio')!, volume: -3, volumeLine: line });
+
+  it('the level follows the line between its points, the fader without one', () => {
+    expect(volumeAt(track(), 50)).toBe(-3);
+    const t = track([
+      [100, 0],
+      [200, -20],
+    ]);
+    expect(volumeAt(t, 0)).toBe(0);
+    expect(volumeAt(t, 150)).toBe(-10);
+    expect(volumeAt(t, 999)).toBe(-20);
+  });
+
+  it('a new take replaces only its own stretch, with no jump at the edges', () => {
+    const old: [number, number][] = [
+      [0, 0],
+      [1000, 0],
+    ];
+    const take: [number, number][] = [];
+    for (let f = 400; f <= 600; f += 2) take.push([f, f < 500 ? -((f - 400) / 10) : -10]);
+    const line = writeLine(old, take, -3);
+    const t = track(line);
+    expect(volumeAt(t, 100)).toBe(0);
+    expect(volumeAt(t, 450)).toBeCloseTo(-5, 0);
+    expect(volumeAt(t, 550)).toBeCloseTo(-10, 1);
+    expect(volumeAt(t, 900)).toBe(0);
+    // Thinned: a straight ramp and a hold need only a few points.
+    expect(line.length).toBeLessThan(10);
+    expect(
+      thinLine(
+        [
+          [0, 0],
+          [1, 0.1],
+          [2, 0],
+        ],
+        0.25,
+      ),
+    ).toEqual([
+      [0, 0],
+      [2, 0],
+    ]);
+    expect(
+      trimLine(
+        [
+          [0, -10],
+          [10, 11],
+        ],
+        3,
+      ),
+    ).toEqual([
+      [0, -7],
+      [10, 12],
+    ]);
+  });
+
+  it('the film follows the moves (the track becomes a stage with a volume line)', () => {
+    let p = project();
+    const a = audioTrack(p);
+    p = updateTrack(p, a, {
+      volumeLine: [
+        [0, 0],
+        [150, -60],
+      ],
+    });
+    expect(staged(current(p))).toBe(true);
+    const jobs = finishJobs(p, current(p), { from: 0, to: 150 }, null, 'wav', false);
+    const graph = jobs.at(-1)!.args[jobs.at(-1)!.args.indexOf('-filter_complex') + 1]!;
+    expect(graph).toContain("[p0]anull,volume='if(lt(t,0),1,if(lt(t,5),1+-0.2*(t-0),0))':eval=frame");
+  });
 });

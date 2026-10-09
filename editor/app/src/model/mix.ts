@@ -29,8 +29,87 @@ const order = (t: string): number => (STRIP_FX as readonly string[]).indexOf(t);
 export function staged(s: Sequence): boolean {
   const m = s.mix;
   if (m && (m.buses.length > 0 || activeFx(m.fx).length > 0 || Math.abs(m.volume) > 1e-6)) return true;
-  return s.tracks.some((t) => t.kind === 'audio' && activeFx(t.fx).length > 0);
+  return s.tracks.some((t) => t.kind === 'audio' && (activeFx(t.fx).length > 0 || !!t.volumeLine?.length));
 }
+
+// ---------------------------------------------------------------------------
+// Fader moves over time (automation).
+
+/** A track's level (dB) at a frame: its recorded fader moves, or its fader. */
+export function volumeAt(t: Track, frame: number): number {
+  const line = t.volumeLine;
+  if (!line?.length) return t.volume;
+  const first = line[0] as [number, number];
+  if (frame <= first[0]) return first[1];
+  for (let i = 1; i < line.length; i++) {
+    const [f1, v1] = line[i] as [number, number];
+    if (frame <= f1) {
+      const [f0, v0] = line[i - 1] as [number, number];
+      return f1 === f0 ? v1 : v0 + ((v1 - v0) * (frame - f0)) / (f1 - f0);
+    }
+  }
+  return (line[line.length - 1] as [number, number])[1];
+}
+
+/** Fewer points, the line kept within `tolerance` dB (Ramer-Douglas-Peucker). */
+export function thinLine(points: [number, number][], tolerance = 0.25): [number, number][] {
+  if (points.length <= 2) return points;
+  const keep = new Uint8Array(points.length);
+  keep[0] = 1;
+  keep[points.length - 1] = 1;
+  const stack: [number, number][] = [[0, points.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop() as [number, number];
+    const [fa, va] = points[a] as [number, number];
+    const [fb, vb] = points[b] as [number, number];
+    let worst = -1;
+    let far = tolerance;
+    for (let i = a + 1; i < b; i++) {
+      const [f, v] = points[i] as [number, number];
+      const on = fb === fa ? va : va + ((vb - va) * (f - fa)) / (fb - fa);
+      if (Math.abs(v - on) > far) {
+        far = Math.abs(v - on);
+        worst = i;
+      }
+    }
+    if (worst > 0) {
+      keep[worst] = 1;
+      stack.push([a, worst], [worst, b]);
+    }
+  }
+  return points.filter((_, i) => keep[i]);
+}
+
+/**
+ * Fader moves recorded over part of the sequence put into a track's line:
+ * what was there between the first and last recorded frame is replaced; the
+ * line before and after is kept (as it was at the edges). At most 400 points.
+ */
+export function writeLine(old: [number, number][] | undefined, recorded: [number, number][], fader: number): [number, number][] {
+  // In time order, the last move at each frame.
+  const rec = [...recorded].sort((a, b) => a[0] - b[0]).filter((p, i, all) => i === all.length - 1 || (all[i + 1] as [number, number])[0] !== p[0]);
+  if (!rec.length) return old ?? [];
+  const from = (rec[0] as [number, number])[0];
+  const to = (rec[rec.length - 1] as [number, number])[0];
+  const base: Track = { volume: fader, volumeLine: old } as Track;
+  const before = (old ?? []).filter(([f]) => f < from);
+  const after = (old ?? []).filter(([f]) => f > to);
+  // Where the old line was at the edges, so it doesn't jump.
+  const edges: [number, number][] = [];
+  if (old?.length && from > (old[0] as [number, number])[0]) edges.push([from - 1, volumeAt(base, from - 1)]);
+  const tail: [number, number][] = old?.length && to < (old[old.length - 1] as [number, number])[0] ? [[to + 1, volumeAt(base, to + 1)]] : [];
+  let tolerance = 0.25;
+  let line = thinLine([...before, ...edges, ...rec, ...tail, ...after], tolerance);
+  while (line.length > 400) {
+    tolerance *= 2;
+    line = thinLine(line, tolerance);
+  }
+  return line.map(([f, v]) => [Math.round(f), Math.round(v * 100) / 100]);
+}
+
+/** The whole line moved up or down (moving the fader when not recording). */
+export const trimLine = (line: [number, number][], by: number): [number, number][] =>
+  line.map(([f, v]) => [f, Math.max(-60, Math.min(12, Math.round((v + by) * 100) / 100))]);
 
 /** The bus a track plays through (null: straight into the mix; a bus that is gone counts as none). */
 export function busOf(s: Sequence, t: Track): Bus | null {

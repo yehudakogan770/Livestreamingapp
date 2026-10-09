@@ -16,7 +16,7 @@ import { playbackFile } from './files';
 import { FrameCache, aheadCount, frameKey, framesAhead } from './framecache';
 import { VoiceChain, type Measure } from './voice';
 import { applyStageFx, makeStage, routeStage, type Stage } from './stage';
-import { MASTER, mixOf } from '../model/mix';
+import { MASTER, mixOf, volumeAt } from '../model/mix';
 
 /** Sound and stills: the original, or its edit-friendly copy. */
 const fileOf = (m: MediaItem): string => mediaUrl(m.proxy ?? m.path);
@@ -768,8 +768,30 @@ export class Engine {
     if (bus) slot.pan.connect(bus.input);
   }
 
+  /** Levels being set by hand right now (a fader held while its moves are recorded), by track. */
+  private touched = new Map<string, number>();
+
+  /** Hold a track at a level while its fader is being recorded (null: back to its line). */
+  touchVolume(track: string, db: number | null) {
+    if (db === null) this.touched.delete(track);
+    else this.touched.set(track, db);
+  }
+
+  /** Tracks with recorded fader moves (or held by hand) follow them as the film plays. */
+  private followFaders(s: Sequence, frame: number) {
+    let heard: Set<string> | null = null;
+    for (const t of s.tracks) {
+      if (t.kind !== 'audio' || (!t.volumeLine?.length && !this.touched.has(t.id))) continue;
+      const st = this.buses.get(t.id);
+      if (!st) continue;
+      heard ??= heardTracks(s);
+      st.gain.gain.value = heard.has(t.id) ? dbToGain(this.touched.get(t.id) ?? volumeAt(t, frame)) : 0;
+    }
+  }
+
   private syncSound(s: Sequence, frame: number) {
     if (!this.p) return;
+    this.followFaders(s, frame);
     const now = performance.now();
     const heard = this.playing && this.speed > 0 && this.speed <= 2 ? audioAt(this.p, s, frame) : [];
     // How loud the speech tracks are now (what ducked clips listen to).

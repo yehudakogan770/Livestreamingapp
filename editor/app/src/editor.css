@@ -3727,3 +3727,9 @@ button.tc:hover {
   border-radius: 50%;
   background: var(--program);
 }
+.estrip__fader.is-auto {
+  accent-color: var(--accent);
+}
+.estrip__write.is-on {
+  color: var(--program-bright);
+}

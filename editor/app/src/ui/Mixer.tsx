@@ -1,4 +1,4 @@
-import { AudioLines, Headphones, Plus, Sigma, Trash2, Volume2, VolumeX, Waypoints } from 'lucide-react';
+import { AudioLines, Headphones, PenLine, Plus, Sigma, Trash2, Volume2, VolumeX, Waypoints } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { updateTrack } from '../model/edit';
 import {
@@ -14,14 +14,18 @@ import {
   setMixVolume,
   stripFx,
   toggleFx,
+  trimLine,
   updateBus,
+  volumeAt,
+  writeLine,
   type StripFxType,
 } from '../model/mix';
 import { current } from '../model/seq';
-import type { Effect, Sequence, TrackRole } from '../model/types';
+import type { Effect, Sequence, Track, TrackRole } from '../model/types';
 import { useDoc, type Doc } from '../doc';
 import type { Engine } from '../player/engine';
 import { Scrub, Section } from './controls';
+import { usePlayhead, usePlaying } from './hooks';
 import { METER_ZONES } from './Timeline';
 
 const dbText = (v: number): string => (v > -60 ? `${v > 0 ? '+' : ''}${v.toFixed(1)} dB` : '−∞');
@@ -38,6 +42,7 @@ export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
   const mix = mixOf(s);
   const [master, setMaster] = useState(0);
   const [chosen, setChosen] = useState<string | null>(null);
+  const [writing, setWriting] = useState<Set<string>>(new Set());
   const strip = chosen === MASTER || mix.buses.some((b) => b.id === chosen) || tracks.some((t) => t.id === chosen) ? chosen : null;
 
   const fxButtons = (id: string) => {
@@ -108,21 +113,7 @@ export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
               onChange={(v, final) => doc.edit((p) => updateTrack(p, t.id, { pan: v / 100 }), 'Pan', final ? undefined : `pan-${t.id}`)}
             />
           </div>
-          <div className="estrip__body">
-            <Meter engine={engine} id={t.id} />
-            <input
-              className="estrip__fader"
-              type="range"
-              min={-60}
-              max={12}
-              step={0.5}
-              value={t.volume}
-              aria-label={`${t.name} volume`}
-              onChange={(e) => doc.edit((p) => updateTrack(p, t.id, { volume: Number(e.target.value) }), 'Track volume', `vol-${t.id}`)}
-              onDoubleClick={() => doc.edit((p) => updateTrack(p, t.id, { volume: 0 }), 'Track volume')}
-            />
-          </div>
-          <span className="estrip__db">{dbText(t.volume)}</span>
+          <TrackFader doc={doc} engine={engine} track={t} writing={writing.has(t.id)} />
           <select
             className="estrip__role"
             value={t.bus && mix.buses.some((b) => b.id === t.bus) ? t.bus : ''}
@@ -157,6 +148,21 @@ export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
               onClick={() => doc.edit((p) => updateTrack(p, t.id, { solo: !t.solo }), 'Solo')}
             >
               <Headphones />
+            </button>
+            <button
+              type="button"
+              className={`th__btn estrip__write${writing.has(t.id) ? ' is-on' : ''}`}
+              aria-pressed={writing.has(t.id)}
+              title="Record fader moves: while the film plays, moving this fader records it (the moves play back after)"
+              aria-label="Record fader moves"
+              onClick={() => {
+                const next = new Set(writing);
+                if (next.has(t.id)) next.delete(t.id);
+                else next.add(t.id);
+                setWriting(next);
+              }}
+            >
+              <PenLine />
             </button>
           </div>
         </div>
@@ -319,6 +325,19 @@ function StripPanel({ doc, s, id, onClose }: { doc: Doc; s: Sequence; id: string
           </button>
         </div>
       )}
+      {track?.volumeLine?.length ? (
+        <div className="insp__row">
+          <span className="field__label">Fader moves</span>
+          <small className="insp__note">{track.volumeLine.length} points recorded</small>
+          <button
+            type="button"
+            className="btn btn--sm"
+            onClick={() => doc.edit((p) => updateTrack(p, track.id, { volumeLine: undefined }), 'Clear fader moves')}
+          >
+            Clear
+          </button>
+        </div>
+      ) : null}
       {id === MASTER &&
         row('Mix level', mix.volume, (v, final) => doc.edit((p) => setMixVolume(p, v), 'Mix level', final ? undefined : 'mixvol'), -24, 12, 0.5, 'dB')}
       <Section title="EQ" actions={toggle('eq', 'EQ')}>
@@ -425,4 +444,62 @@ function Meter({ engine, id, stereo }: { engine: Engine; id: string; stereo?: bo
     return () => cancelAnimationFrame(raf);
   }, [engine, id, stereo]);
   return <canvas ref={ref} className="estrip__meter" width={stereo ? 14 : 6} />;
+}
+
+/**
+ * A track's fader. With recorded moves it follows them as the film plays;
+ * moving it then moves the whole line up or down. With Record on, moving it
+ * while the film plays records the moves (replacing what was there for that
+ * stretch) when it is let go.
+ */
+function TrackFader({ doc, engine, track: t, writing }: { doc: Doc; engine: Engine; track: Track; writing: boolean }) {
+  const frame = usePlayhead(engine);
+  const playing = usePlaying(engine);
+  const take = useRef<[number, number][] | null>(null);
+  const [held, setHeld] = useState<number | null>(null);
+  const line = t.volumeLine;
+  const shown = held ?? (line?.length ? volumeAt(t, frame) : t.volume);
+  const release = () => {
+    const recorded = take.current;
+    take.current = null;
+    setHeld(null);
+    engine.touchVolume(t.id, null);
+    if (recorded && recorded.length > 1)
+      doc.edit((p) => updateTrack(p, t.id, { volumeLine: writeLine(t.volumeLine, recorded, t.volume) }), 'Record fader moves');
+  };
+  return (
+    <>
+      <div className="estrip__body">
+        <Meter engine={engine} id={t.id} />
+        <input
+          className={`estrip__fader${line?.length ? ' is-auto' : ''}`}
+          type="range"
+          min={-60}
+          max={12}
+          step={0.5}
+          value={shown}
+          aria-label={`${t.name} volume`}
+          onPointerDown={() => {
+            if (writing && playing) take.current = [[Math.round(engine.time), shown]];
+          }}
+          onPointerUp={release}
+          onLostPointerCapture={release}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            if (take.current) {
+              take.current.push([Math.round(engine.time), v]);
+              setHeld(v);
+              engine.touchVolume(t.id, v);
+            } else if (line?.length) doc.edit((p) => updateTrack(p, t.id, { volumeLine: trimLine(line, v - shown) }), 'Move fader moves', `trim-${t.id}`);
+            else doc.edit((p) => updateTrack(p, t.id, { volume: v }), 'Track volume', `vol-${t.id}`);
+          }}
+          onDoubleClick={() => !line?.length && doc.edit((p) => updateTrack(p, t.id, { volume: 0 }), 'Track volume')}
+        />
+      </div>
+      <span className="estrip__db" title={line?.length ? 'Following its recorded fader moves' : undefined}>
+        {dbText(shown)}
+        {line?.length ? ' ·A' : ''}
+      </span>
+    </>
+  );
 }

@@ -3,7 +3,7 @@
 // separately (frame by frame on the GPU) and joined with the sound at the end.
 import { isAnim, valueAt } from '../model/anim';
 import { end, rate } from '../model/seq';
-import { activeFx, mixOf, staged } from '../model/mix';
+import { activeFx, mixOf, staged, volumeAt } from '../model/mix';
 import type { Bus, Clip, Effect, Project, Sequence, Track } from '../model/types';
 import { dbToGain, duckOf, heardTracks, audioAt, type Duck } from '../player/audio';
 import { isAudioEffect, sourceAt } from '../render/frame';
@@ -560,7 +560,14 @@ export function soundGraph(
     let j = 0;
     for (const { track, labels: ls } of byTrack.values()) {
       const out = `tr${j}`;
-      const chain = [...effectChain(stripEffects(track.fx), 1000 + j), `volume=${num(dbToGain(track.volume))}`];
+      // The fader: fixed, or its recorded moves (seconds from the start of what is made).
+      const fader = track.volumeLine?.length
+        ? `volume='${envelopeExpr([
+            [0, dbToGain(volumeAt(track, from))],
+            ...track.volumeLine.filter(([f]) => f > from).map(([f, db]): [number, number] => [(f - from) / fps, dbToGain(db)]),
+          ])}':eval=frame`
+        : `volume=${num(dbToGain(track.volume))}`;
+      const chain = [...effectChain(stripEffects(track.fx), 1000 + j), fader];
       filters.push(`${mixOfLabels(ls)},${chain.join(',')}[${out}]`);
       j++;
       const bus = track.bus ? stages.buses.find((b) => b.id === track.bus) : undefined;
