@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { lockDown } from '../../../app/src/engine/lockdown';
@@ -30,13 +30,23 @@ installRangeFill();
 const root = document.getElementById('root');
 if (!root) throw new Error('Lumora Studio: #root element missing from index.html');
 
+// The Titler window (`?titler=<clip or new>`, opened by "Titler…"): the designer on its own.
+const TitlerWindow = lazy(() => import('./titler/StudioTitler').then((m) => ({ default: m.StudioTitlerWindow })));
+const titlerWindow = new URLSearchParams(window.location.search).has('titler');
+
 createRoot(root, { onCaughtError: reactError, onUncaughtError: reactError }).render(
   <StrictMode>
-    <App />
+    {titlerWindow ? (
+      <Suspense fallback={null}>
+        <TitlerWindow />
+      </Suspense>
+    ) : (
+      <App />
+    )}
   </StrictMode>,
 );
 
 // The CI test build's self-test (LUMORA_SELFTEST). Never in the installers
 // people download: the bundler drops it when TEST_BUILD is false (checked by
 // app/src/selftest/shipped.test.ts).
-if (TEST_BUILD) void startSelfTest(studioScenario);
+if (TEST_BUILD && !titlerWindow) void startSelfTest(studioScenario);

@@ -385,7 +385,7 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
       if (id) doc.select({ kind: 'clips', ids: [id] });
     },
     /** A Lumora Titler graphic at the playhead (as long as the title). */
-    addTitler: (title: TitleProject) => {
+    addTitler: (title: TitleProject): string => {
       let id = '';
       edit(`Add ${title.name}`, (p) => {
         const r = addTitlerClip(p, here(), fps(), title);
@@ -393,6 +393,7 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
         return r.project;
       });
       if (id) doc.select({ kind: 'clips', ids: [id] });
+      return id;
     },
     /** A title clip takes a new design from the Titler (its fields' values stay). */
     useTitler: (title: TitleProject, clipId: string) =>

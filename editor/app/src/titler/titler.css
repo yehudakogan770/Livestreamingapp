@@ -41,3 +41,31 @@
   background: var(--text-dim);
   pointer-events: none;
 }
+
+/* Studio's Titler window: the designer fills it; a short note when a design goes back to the edit. */
+.studio-titler--window {
+  position: fixed;
+  inset: 0;
+}
+.studio-titler__note {
+  position: fixed;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3100;
+  padding: 8px 14px;
+  background: var(--raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  color: var(--text);
+  animation: studio-titler-note 4s forwards;
+}
+@keyframes studio-titler-note {
+  0%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
