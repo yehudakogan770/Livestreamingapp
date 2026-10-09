@@ -26,6 +26,7 @@ import {
   Save,
   Library,
   Download,
+  FileInput,
   Plus,
   Maximize2,
   Minimize2,
@@ -56,7 +57,8 @@ import { Shortcuts } from './Shortcuts';
 import { NotesPanel, NotesPopover } from './Notes';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
-import { ExportDialog } from './ExportDialog';
+import { ExportDialog, NoticeDialog } from './ExportDialog';
+import { pickImportFile, readImport } from './importing';
 import {
   clampSize,
   forgetTitle,
@@ -123,6 +125,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const [recent, setRecent] = useState(recentTitles);
   const [renderOpen, setRenderOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [notice, setNotice] = useState<{ title: string; lead: string; items: string[] } | null>(null);
+  const [libVersion, setLibVersion] = useState(0);
   const [keysOpen, setKeysOpen] = useState(false);
   const [recovered, setRecovered] = useState<TitleProject | null>(null);
   const [libId, setLibId] = useState<string | null>(null);
@@ -246,6 +250,41 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     }
     open(r.result.project, null, r.path);
     if (r.result.notes.length) store.set({ status: r.result.notes.join(' ') });
+  };
+
+  const importFile = async () => {
+    const f = await pickImportFile();
+    if (!f) return;
+    try {
+      const got = await readImport(f.name, new Uint8Array(await f.arrayBuffer()));
+      if (got.kind === 'project') {
+        open(got.project, null, null);
+        store.set({ dirty: true, status: `Imported ${f.name}` });
+        if (got.notes.length) setNotice({ title: 'Imported', lead: `${f.name} is open as a title. Some things are drawn differently:`, items: got.notes });
+        return;
+      }
+      const { pack } = got;
+      let added = 0;
+      for (const t of pack.titles) {
+        await host.saveLibrary({ ...t, id: `${t.id}-${Date.now().toString(36)}${added}` }, null);
+        added++;
+      }
+      setLibVersion((v) => v + 1);
+      setSide('library');
+      store.set({ status: `Added ${added} title${added === 1 ? '' : 's'} from ${pack.info.name} to the library` });
+      const about = [pack.info.author && `by ${pack.info.author}`, pack.info.version && `version ${pack.info.version}`, pack.info.license && `license ${pack.info.license}`]
+        .filter(Boolean)
+        .join(', ');
+      setNotice({
+        title: pack.info.name || 'Template pack',
+        lead: `Added ${added} title${added === 1 ? '' : 's'} to your library${about ? ` (${about})` : ''}.${pack.problems.length ? ' Some could not be read:' : ''}`,
+        items: pack.problems,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      store.set({ status: msg });
+      setNotice({ title: 'Import', lead: msg, items: [] });
+    }
   };
 
   // The color picker's swatches: the title's own, and the event look's colors.
@@ -451,6 +490,9 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             <button onClick={() => void saveToLibrary()} title={`Save to the library: ${host.libraryName} (Ctrl+S)`}>
               <Save size={15} /> Save
             </button>
+            <button onClick={() => void importFile()} title="Import a Lottie animation (After Effects, LottieFiles), a template pack or a .lumtitle file">
+              <FileInput size={15} /> Import
+            </button>
             <button onClick={() => setExportOpen(true)} title="Export: a .lumtitle file (Ctrl+Shift+S), an HTML template for other playout systems, or Lottie">
               <Download size={15} /> Export
             </button>
@@ -603,7 +645,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
                     ))}
                   </div>
                 )}
-                <LibraryPanel store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
+                <LibraryPanel key={libVersion} store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
               </>
             )}
             {side === 'project' && <ProjectPanel store={store} host={host} />}
@@ -749,6 +791,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         <footer className="tt-status" role="status">
           {status || 'Ready.'}
         </footer>
+        {notice && <NoticeDialog {...notice} onClose={() => setNotice(null)} />}
         {exportOpen && <ExportDialog store={store} host={host} onClose={() => setExportOpen(false)} onLumtitle={() => void exportFile()} />}
         {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
         {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}

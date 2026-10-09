@@ -132,10 +132,16 @@ describe('the designer', () => {
       fireEvent.click(screen.getByRole('button', { name: /Save/ }));
     });
     expect([...host.library.values()][0]!.name).toBe('Quote card');
+    fireEvent.click(screen.getByRole('button', { name: /^Export$/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Export' });
+    expect(within(dialog).getByText(/HTML template/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Lottie \(\.json\)/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByLabelText(/Lumora title/));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Export \.lumtitle/ }));
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
     });
     expect(host.saved[0]!.compositions[0]!.layers.length).toBeGreaterThan(0);
+    expect(screen.queryByRole('dialog', { name: 'Export' })).toBeNull();
   });
 
   it('"Use" hands the title back to the app that opened it', async () => {

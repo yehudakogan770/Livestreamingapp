@@ -1650,3 +1650,13 @@
   max-height: 220px;
   overflow: auto;
 }
+.tt-pack-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow: auto;
+  padding: 6px 8px;
+  border: 1px solid var(--tt-line);
+  border-radius: var(--tt-radius);
+}

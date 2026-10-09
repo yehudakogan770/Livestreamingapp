@@ -3,7 +3,7 @@
 // compositions and files, and the library of templates and saved titles.
 
 import { useEffect, useRef, useState } from 'react';
-import { Copy, Film, Image as ImageIcon, Layers as LayersIcon, Music, Plus, Star, Trash2, Upload } from 'lucide-react';
+import { Copy, Film, Image as ImageIcon, Layers as LayersIcon, Music, Plus, Star, Trash2, Upload, Package } from 'lucide-react';
 import { DEFAULT_TOKENS, TOKEN_KEYS, TOKEN_LABELS, keyFrom, tokensFor, usedVariables, valuesFor } from '../core/binding';
 import { newComposition, newImage, newVideo, uid } from '../core/build';
 import type { BrowserEnv } from '../core/browserEnv';
@@ -18,6 +18,7 @@ import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields'
 import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
+import { PackDialog } from './PackDialog';
 import type { Store } from './store';
 import { useStore } from './store';
 
@@ -923,6 +924,7 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
   const [mine, setMine] = useState<LibraryEntry[]>([]);
   const [cat, setCat] = useState<string>('All');
   const [error, setError] = useState('');
+  const [sharing, setSharing] = useState(false);
   const refresh = () =>
     host
       .listLibrary()
@@ -937,7 +939,15 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
   const shown = all.filter((t) => cat === 'All' || t.category === cat);
   return (
     <div className="tt-library" data-testid="titler-library">
-      <div className="tt-side-head">Your titles ({host.libraryName})</div>
+      <div className="tt-side-head">
+        Your titles ({host.libraryName})
+        {mine.length > 0 && (
+          <button className="tt-ico" onClick={() => setSharing(true)} title="Share titles as a template pack (one file)" aria-label="Share as a pack">
+            <Package size={13} />
+          </button>
+        )}
+      </div>
+      {sharing && <PackDialog host={host} env={env} onClose={() => setSharing(false)} onDone={(status) => store.set({ status })} />}
       {error && <div className="tt-error">{error}</div>}
       {mine.length === 0 && (
         <div className="tt-dim tt-small tt-pad">

@@ -23,7 +23,7 @@ export function ExportDialog({ store, host, onClose, onLumtitle }: { store: Stor
     setError('');
     try {
       const p = store.get().project;
-      const out = await EXPORTERS[kind].run(p, host);
+      const out = await EXPORTERS[kind].run(p, host, { values: store.get().values, brand: store.get().brand });
       download(`${slug(p.name)}${EXPORTERS[kind].ext}`, out.blob);
       store.set({ status: `Exported ${fileName(p).replace(/\.lumtitle$/, '')} (${EXPORTERS[kind].name})` });
       if (out.notes.length) setNotes(out.notes);
@@ -76,6 +76,30 @@ export function ExportDialog({ store, host, onClose, onLumtitle }: { store: Stor
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+/** A short report after an import or export: what came over differently. */
+export function NoticeDialog({ title, lead, items, onClose }: { title: string; lead: string; items: string[]; onClose: () => void }) {
+  return (
+    <div className="tt-modal" role="dialog" aria-label={title}>
+      <div className="tt-modal-box tt-export">
+        <h2>{title}</h2>
+        <p>{lead}</p>
+        {items.length > 0 && (
+          <ul className="tt-export-notes">
+            {items.map((n) => (
+              <li key={n}>{n}</li>
+            ))}
+          </ul>
+        )}
+        <div className="tt-modal-actions">
+          <button className="tt-primary" onClick={onClose} autoFocus>
+            OK
+          </button>
+        </div>
       </div>
     </div>
   );
