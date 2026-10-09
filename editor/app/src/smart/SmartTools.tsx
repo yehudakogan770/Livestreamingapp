@@ -11,7 +11,7 @@ import { useDoc, type Doc } from '../doc';
 import type { Engine } from '../player/engine';
 import { Choice, Modal, type MenuEntry } from '../ui/controls';
 import type { Ui } from '../ui/state';
-import { check, micEnvelopes, sequenceLevels, Stopped, wordsInSeconds, type Job } from './analysis';
+import { check, micEnvelopes, sequenceLevels, wordsInSeconds } from './analysis';
 import {
   applyShots,
   DETECT_DEFAULTS,
@@ -54,6 +54,8 @@ import {
 } from './silence';
 import './smart.css';
 import { openSmart, reframeAspect, useOpen } from './open';
+import { Progress, useJob } from './job';
+import { MakeMulticamDialog } from './MakeMulticam';
 
 export type { SmartTool } from './open';
 export { openSmart };
@@ -78,60 +80,8 @@ export function SmartDialogs({ doc, engine, ui }: { doc: Doc; engine: Engine; ui
   if (t === 'silence') return <SilenceDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
   if (t === 'reframe') return <ReframeDialog doc={doc} ui={ui} onClose={close} />;
   if (t === 'highlights') return <HighlightDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
+  if (t === 'makeMulticam') return <MakeMulticamDialog doc={doc} ui={ui} onClose={close} />;
   return null;
-}
-
-// ---------------------------------------------------------------------------
-// Shared: running a job with progress and Stop.
-
-interface Running {
-  done: number;
-  message: string;
-}
-
-function useJob() {
-  const [running, setRunning] = useState<Running | null>(null);
-  const [problem, setProblem] = useState<string | null>(null);
-  const ctl = useRef<AbortController | null>(null);
-  const onStop = useRef<(() => void) | null>(null);
-  useEffect(() => () => ctl.current?.abort(), []);
-  const run = async <T,>(f: (job: Job) => Promise<T>, stop?: () => void): Promise<T | null> => {
-    const c = new AbortController();
-    ctl.current = c;
-    onStop.current = stop ?? null;
-    setProblem(null);
-    setRunning({ done: 0, message: 'Starting…' });
-    try {
-      return await f({ signal: c.signal, progress: (done, message) => !c.signal.aborted && setRunning({ done, message }) });
-    } catch (e) {
-      if (!(e instanceof Stopped)) setProblem(e instanceof Error ? e.message : String(e));
-      return null;
-    } finally {
-      ctl.current = null;
-      setRunning(null);
-    }
-  };
-  const stop = () => {
-    ctl.current?.abort();
-    onStop.current?.();
-  };
-  return { running, problem, run, stop };
-}
-
-function Progress({ running, onStop }: { running: Running; onStop: () => void }) {
-  return (
-    <div className="expo">
-      <p className="expo__msg">{running.message}</p>
-      <div className="expo__bar">
-        <i style={{ width: `${Math.round(Math.min(1, Math.max(0, running.done)) * 100)}%` }} />
-      </div>
-      <div className="form__foot">
-        <button type="button" className="btn" onClick={onStop}>
-          Stop
-        </button>
-      </div>
-    </div>
-  );
 }
 
 const secs = (t: number): string => {

@@ -45,7 +45,7 @@ import { renderCache } from '../cache/manager';
 import { CacheDialog, cacheMenu } from '../cache/CacheDialog';
 import { Inspector } from './Inspector';
 import { makeCaptions, saveCaptionFile, TranscribeDialog, TranscriptPanel } from './Speech';
-import { SmartDialogs, smartMenu } from '../smart/SmartTools';
+import { openSmart, SmartDialogs, smartMenu } from '../smart/SmartTools';
 import { ExtrasDialogs, extrasMenu } from '../extras/ExtrasTools';
 import { ProgramMonitor, SourceMonitor } from './Monitors';
 import { ProjectPanel } from './ProjectPanel';
@@ -406,6 +406,8 @@ export function Editor({
         'sep',
         { label: 'Lift', keys: ';', run: actions.liftMarked },
         { label: 'Extract', keys: "'", run: actions.extractMarked },
+        'sep',
+        { label: 'New multicam clip from files…', run: () => openSmart('makeMulticam') },
         'sep',
         { label: 'Add video track', run: () => actions.addTrack('video') },
         { label: 'Add sound track', run: () => actions.addTrack('audio') },
