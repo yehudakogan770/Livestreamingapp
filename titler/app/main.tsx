@@ -5,6 +5,16 @@ import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/jetbrains-mono/wght.css';
+// The fonts the templates and the font picker offer (the same ones Lumora and Studio have).
+import '@fontsource/heebo/400.css';
+import '@fontsource/heebo/700.css';
+import '@fontsource/bebas-neue/400.css';
+import '@fontsource/chakra-petch/400.css';
+import '@fontsource/chakra-petch/700.css';
+import '@fontsource/frank-ruhl-libre/400.css';
+import '@fontsource/frank-ruhl-libre/700.css';
+import '@fontsource/david-libre/400.css';
+import '@fontsource/great-vibes/400.css';
 import { Designer } from '../src/designer/Designer';
 import { webHost, type Host } from '../src/designer/host';
 import type { TitleProject } from '../src/core/types';

@@ -19,25 +19,8 @@ import type { Store } from './store';
 import { useStore } from './store';
 import { loadStyles, saveStyle, styleOf, applyStyle, removeStyle } from './styles';
 import { applyTextStyle, differsFromStyle, newTextStyle, styleFromLayer } from './textStyles';
+import { FontPicker } from './FontPicker';
 import { inStackOrder, loadAnimPresets, pasteKeys, removeAnimPreset, saveAnimPreset, stagger } from './keyframes';
-
-const FONTS = [
-  '$font',
-  '$fontSub',
-  'Inter',
-  'Segoe UI',
-  'Arial',
-  'Georgia',
-  'Heebo',
-  'Frank Ruhl Libre',
-  'Bebas Neue',
-  'Chakra Petch',
-  'Times New Roman',
-  'Verdana',
-  'Tahoma',
-  'Calibri',
-  'Consolas',
-];
 
 export function Inspector({ store }: { store: Store }) {
   const project = useStore(store, (s) => s.project);
@@ -403,12 +386,14 @@ function PropField({
       <Row label={label}>
         <button
           className={`tt-ico stopwatch${anim ? ' on' : ''}`}
-          onClick={() =>
+          onClick={(e) => {
+            // Alt+click (as in After Effects): an expression instead.
+            if (e.altKey) return setExprOpen(true);
             store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) =>
               updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, toggleKeys(getProp(x, path) as never, time, fallback as never))),
-            )
-          }
-          title={anim ? 'Animated: click to stop animating' : 'Animate this (a keyframe at the playhead)'}
+            );
+          }}
+          title={`${anim ? 'Animated: click to stop animating' : 'Animate this (a keyframe at the playhead)'}. Alt+click: an expression (wiggle, loop, time, a link).`}
           aria-label={`Animate ${label}`}
           aria-pressed={anim}
         >
@@ -449,15 +434,6 @@ function PropField({
             wide
           />
         )}
-        <button
-          className={`tt-ico tt-expr-btn${expr ? ' on' : ''}`}
-          onClick={() => setExprOpen(!exprOpen && !expr ? true : !exprOpen)}
-          title={expr ? `Expression: ${expr}` : 'Add an expression (wiggle, loop, time, a link to another layer)'}
-          aria-label={`Expression for ${label}`}
-          aria-pressed={!!expr}
-        >
-          =
-        </button>
       </Row>
       {(exprOpen || !!expr) && <ExprEditor label={label} value={expr ?? ''} open={exprOpen} onOpen={setExprOpen} onChange={setExpr} />}
     </>
@@ -695,14 +671,15 @@ function TextSection({
         Styling inside the words: [b]bold[/b], [i]italic[/i], [c=$accent]color[/c], [s=80]size[/s], [v=30]baseline shift[/v].
       </div>
       <Row label="Font">
-        <input className="tt-input" list="tt-fonts" value={st.font} onChange={(e) => style('Font', { font: e.target.value })} aria-label="Font" />
-        <datalist id="tt-fonts">
-          {FONTS.map((f) => (
-            <option key={f} value={f}>
-              {f === '$font' ? `Event main font (${tokens.font})` : f === '$fontSub' ? `Event second font (${tokens.fontSub})` : f}
-            </option>
-          ))}
-        </datalist>
+        <FontPicker
+          value={st.font}
+          onChange={(font) => style('Font', { font })}
+          brand={{ font: tokens.font, fontSub: tokens.fontSub }}
+          own={store
+            .get()
+            .project.assets.filter((a) => a.kind === 'font' && a.family)
+            .map((a) => a.family!)}
+        />
       </Row>
       <Row label="Size">
         <NumberField value={st.size} min={1} label="Text size" unit="px" onChange={(size) => style('Text size', { size })} />

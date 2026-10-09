@@ -99,6 +99,19 @@ describe('the designer', () => {
     expect(screen.getByRole('button', { name: 'Pen (paths)' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('Alt+click on a stopwatch gives the property an expression; the shortcuts sheet opens with ?', async () => {
+    render(<Designer host={memoryHost()} env={env} />);
+    await openTemplate('Logo bug');
+    fireEvent.click(within(screen.getByTestId('titler-timeline')).getByText('Logo'));
+    fireEvent.click(within(screen.getByTestId('titler-inspector')).getByRole('button', { name: 'Animate Rotation' }), { altKey: true });
+    const input = screen.getByLabelText('Rotation expression');
+    fireEvent.change(input, { target: { value: 'wiggle(2, 5)' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(within(screen.getByTestId('titler-inspector')).getByText('= wiggle(2, 5)')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: '?' });
+    expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
+  });
+
   it('animates a property from the timeline (the stopwatch) and shows the keyframe', async () => {
     render(<Designer host={memoryHost()} env={env} />);
     await openTemplate('Logo bug');

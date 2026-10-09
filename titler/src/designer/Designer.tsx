@@ -30,6 +30,7 @@ import {
   Maximize2,
   Minimize2,
   MessageSquare,
+  Keyboard,
 } from 'lucide-react';
 import { browserEnv, requestFonts, type BrowserEnv } from '../core/browserEnv';
 import { cloneLayers, newProject, newText } from '../core/build';
@@ -51,6 +52,7 @@ import { isAnimated, setKey, valueAt } from '../core/easing';
 import { Mark } from './Mark';
 import { SwatchContext, type Swatches } from './ColorPicker';
 import { HistoryPanel } from './HistoryPanel';
+import { Shortcuts } from './Shortcuts';
 import { NotesPanel, NotesPopover } from './Notes';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
@@ -119,6 +121,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const setRight = (rightTab: RightTab) => setLayout({ rightTab });
   const [recent, setRecent] = useState(recentTitles);
   const [renderOpen, setRenderOpen] = useState(false);
+  const [keysOpen, setKeysOpen] = useState(false);
   const [recovered, setRecovered] = useState<TitleProject | null>(null);
   const [libId, setLibId] = useState<string | null>(null);
   const tool = useStore(store, (s) => s.tool);
@@ -270,6 +273,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       const frame = 1 / c.fps;
       const handled = () => e.preventDefault();
       if (!mod && e.key === '`') return (handled(), setLayout((l) => ({ canvasOnly: !l.canvasOnly })));
+      if (!mod && e.key === '?') return (handled(), setKeysOpen((o) => !o));
       if (mod && k === 'z') return (handled(), e.shiftKey ? store.redo() : store.undo());
       if (mod && k === 'y') return (handled(), store.redo());
       if (mod && k === 's') return (handled(), void (e.shiftKey ? exportFile() : saveToLibrary()));
@@ -516,7 +520,10 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             </button>
           </div>
           <span className="tt-grow" />
-          <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
+          <button className="tt-plain tt-keys-btn" onClick={() => setKeysOpen(true)} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+          <Keyboard size={15} />
+        </button>
+        <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
             <span className="tt-dim">Workspace</span>
             <select
               className="tt-select"
@@ -741,6 +748,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           {status || 'Ready.'}
         </footer>
         {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
+      {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}
       </div>
     </SwatchContext.Provider>
   );

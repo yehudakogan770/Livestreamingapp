@@ -1496,3 +1496,113 @@
 .tt-formats li.on > button:first-child {
   background: var(--tt-selected);
 }
+
+/* The font picker: each font in its own face. */
+.tt-font {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.tt-font-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 3px 6px;
+  font-size: 13px;
+  color: var(--tt-text);
+  background: var(--tt-field, #0f0f0e);
+  border: 1px solid var(--tt-line-2);
+  border-radius: 3px;
+}
+.tt-font-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-font-pop {
+  position: absolute;
+  z-index: 40;
+  top: 28px;
+  left: 0;
+  right: 0;
+  min-width: 240px;
+  padding: 6px;
+  background: var(--tt-raised);
+  border: 1px solid var(--tt-line-2);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.tt-font-pop .tt-input {
+  width: 100%;
+}
+.tt-font-list {
+  max-height: 300px;
+  overflow: auto;
+  margin-top: 4px;
+}
+.tt-font-group {
+  padding: 6px 6px 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--tt-dim);
+}
+.tt-font-item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 15px;
+  text-align: left;
+  border-radius: var(--tt-radius);
+}
+.tt-font-item:hover,
+.tt-font-item.on {
+  background: var(--tt-selected);
+}
+
+/* Keyboard shortcuts sheet. */
+.tt-keys-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  margin-right: 6px;
+}
+.tt-shortcuts {
+  width: min(860px, 92vw);
+}
+.tt-shortcuts header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tt-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 28px;
+  max-height: 70vh;
+  overflow: auto;
+}
+.tt-shortcuts h3 {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tt-dim);
+}
+.tt-shortcuts dl {
+  margin: 0;
+}
+.tt-shortcuts dl div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--tt-line);
+}
+.tt-shortcuts dd {
+  margin: 0;
+}
+.tt-shortcuts kbd {
+  font: 11px var(--tt-mono);
+  color: var(--tt-text);
+}
