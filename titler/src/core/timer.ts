@@ -93,7 +93,13 @@ export function timerText(v: Pick<Variable, 'timer' | 'value'>, raw: string, now
 export const timerRunning = (raw: string) => parseTimer(raw).since !== null;
 
 /** The operator's buttons: the timer's new value. */
-export function timerCommand(v: Pick<Variable, 'timer' | 'value'>, raw: string, cmd: 'start' | 'stop' | 'toggle' | 'reset' | 'add', nowMs: number, amount = 0): string {
+export function timerCommand(
+  v: Pick<Variable, 'timer' | 'value'>,
+  raw: string,
+  cmd: 'start' | 'stop' | 'toggle' | 'reset' | 'add',
+  nowMs: number,
+  amount = 0,
+): string {
   const s = parseTimer(raw);
   const shown = timerSeconds({ ...v, timer: v.timer ? { ...v.timer, auto: false } : v.timer }, raw, nowMs, null);
   const round = (n: number) => Math.round(n * 1000) / 1000;

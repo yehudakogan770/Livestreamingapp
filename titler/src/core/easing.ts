@@ -249,7 +249,11 @@ export function toVelocity(a: Keyframe<Value>, b: Keyframe<Value>): { outSpeed: 
 }
 
 /** The bezier handles for speeds and influences (see toVelocity); influences are kept in 0.1–100 %. */
-export function fromVelocity(a: Keyframe<Value>, b: Keyframe<Value>, v: { outSpeed: number; outInfluence: number; inSpeed: number; inInfluence: number }): { o: Vec2; i: Vec2 } {
+export function fromVelocity(
+  a: Keyframe<Value>,
+  b: Keyframe<Value>,
+  v: { outSpeed: number; outInfluence: number; inSpeed: number; inInfluence: number },
+): { o: Vec2; i: Vec2 } {
   const dt = Math.max(1e-6, b.t - a.t);
   const change = segmentChange(a, b);
   const k = Math.abs(change) < 1e-9 ? 0 : dt / change;
@@ -269,7 +273,13 @@ export function parseCubicBezier(text: string): { o: Vec2; i: Vec2 } | null {
     'ease-in-out': [0.42, 0, 0.58, 1],
   };
   const t = text.trim().toLowerCase();
-  const n = named[t] ?? (t.replace(/^cubic-bezier\(|\)$/g, '').split(/[\s,]+/).filter(Boolean).map(Number) as number[]);
+  const n =
+    named[t] ??
+    (t
+      .replace(/^cubic-bezier\(|\)$/g, '')
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number) as number[]);
   if (n.length !== 4 || n.some((x) => !Number.isFinite(x)) || n[0]! < 0 || n[0]! > 1 || n[2]! < 0 || n[2]! > 1) return null;
   return { o: [n[0]!, n[1]!], i: [n[2]!, n[3]!] };
 }

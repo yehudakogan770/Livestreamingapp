@@ -1631,6 +1631,7 @@
 }
 .tt-export-item input {
   margin-top: 2px;
+  accent-color: var(--tt-text);
 }
 .tt-export-item > span {
   display: flex;

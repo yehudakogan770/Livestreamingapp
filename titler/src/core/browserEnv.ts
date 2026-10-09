@@ -74,7 +74,9 @@ export function browserEnv(urlFor: UrlFor = (s) => s): BrowserEnv {
     },
     async prepare(p, extra = []) {
       const fonts = p.assets.filter((a) => a.kind === 'font' && a.family);
-      await Promise.all(fonts.map((f) => loadFont(f.family!, f.src.startsWith('data:') ? f.src : urlFor(f.src), { weight: f.weight, style: f.style, range: f.range })));
+      await Promise.all(
+        fonts.map((f) => loadFont(f.family!, f.src.startsWith('data:') ? f.src : urlFor(f.src), { weight: f.weight, style: f.style, range: f.range })),
+      );
       const srcs = [...p.assets.filter((a) => a.kind === 'image' || a.kind === 'svg').map((a) => a.src), ...extra];
       await Promise.all(
         srcs.map(

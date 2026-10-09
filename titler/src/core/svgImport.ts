@@ -39,7 +39,14 @@ const ARGS: Record<string, number> = { M: 2, L: 2, H: 1, V: 1, C: 6, S: 4, Q: 4,
 
 /** An SVG arc as cubic curves (from the SVG spec's endpoint-to-center conversion). */
 function arcToCubics(x1: number, y1: number, rx: number, ry: number, phi: number, large: number, sweep: number, x2: number, y2: number): [Vec2, Vec2, Vec2][] {
-  if (rx === 0 || ry === 0) return [[[x1, y1], [x2, y2], [x2, y2]]];
+  if (rx === 0 || ry === 0)
+    return [
+      [
+        [x1, y1],
+        [x2, y2],
+        [x2, y2],
+      ],
+    ];
   const sinP = Math.sin((phi * Math.PI) / 180);
   const cosP = Math.cos((phi * Math.PI) / 180);
   const dx = (x1 - x2) / 2;
@@ -82,11 +89,7 @@ function arcToCubics(x1: number, y1: number, rx: number, ry: number, phi: number
     const p3 = pt(b);
     const d0 = dv(a);
     const d3 = dv(b);
-    out.push([
-      [p0[0] + k * d0[0], p0[1] + k * d0[1]],
-      [p3[0] - k * d3[0], p3[1] - k * d3[1]],
-      p3,
-    ]);
+    out.push([[p0[0] + k * d0[0], p0[1] + k * d0[1]], [p3[0] - k * d3[0], p3[1] - k * d3[1]], p3]);
   }
   return out;
 }
@@ -256,7 +259,19 @@ function parseTransform(t: string | null): Mat {
   return m;
 }
 
-const NAMED: Record<string, string> = { black: '#000000', white: '#ffffff', red: '#ff0000', green: '#008000', blue: '#0000ff', yellow: '#ffff00', gray: '#808080', grey: '#808080', orange: '#ffa500', none: 'none', transparent: 'none' };
+const NAMED: Record<string, string> = {
+  black: '#000000',
+  white: '#ffffff',
+  red: '#ff0000',
+  green: '#008000',
+  blue: '#0000ff',
+  yellow: '#ffff00',
+  gray: '#808080',
+  grey: '#808080',
+  orange: '#ffa500',
+  none: 'none',
+  transparent: 'none',
+};
 
 function color(v: string | null | undefined, opacity = 1): string | null {
   if (!v) return null;
@@ -268,12 +283,25 @@ function color(v: string | null | undefined, opacity = 1): string | null {
     const p = rgb[1]!.split(/[\s,/]+/).filter(Boolean);
     const ch = (x: string) => (x.endsWith('%') ? (Number(x.slice(0, -1)) / 100) * 255 : Number(x));
     const a = p[3] !== undefined ? (p[3].endsWith('%') ? Number(p[3].slice(0, -1)) / 100 : Number(p[3])) : 1;
-    hex = '#' + [ch(p[0]!), ch(p[1]!), ch(p[2]!)].map((x) => Math.round(Math.max(0, Math.min(255, x))).toString(16).padStart(2, '0')).join('');
+    hex =
+      '#' +
+      [ch(p[0]!), ch(p[1]!), ch(p[2]!)]
+        .map((x) =>
+          Math.round(Math.max(0, Math.min(255, x)))
+            .toString(16)
+            .padStart(2, '0'),
+        )
+        .join('');
     opacity *= a;
   }
   if (/^#[0-9a-f]{3}$/.test(hex)) hex = '#' + [...hex.slice(1)].map((c) => c + c).join('');
   if (!/^#[0-9a-f]{6}$/.test(hex)) return '#000000';
-  return opacity < 0.999 ? hex + Math.round(Math.max(0, opacity) * 255).toString(16).padStart(2, '0') : hex;
+  return opacity < 0.999
+    ? hex +
+        Math.round(Math.max(0, opacity) * 255)
+          .toString(16)
+          .padStart(2, '0')
+    : hex;
 }
 
 interface Inherited {
@@ -356,7 +384,10 @@ export function fromSvg(text: string): SvgImport {
         const off = s.getAttribute('offset') ?? '0';
         const at = off.endsWith('%') ? Number(off.slice(0, -1)) / 100 : Number(off);
         const so = attr(s, 'stop-opacity');
-        return { at: Math.max(0, Math.min(1, at || 0)), color: color(attr(s, 'stop-color') ?? '#000000', (so !== null ? Number(so) : 1) * opacity) ?? '#00000000' };
+        return {
+          at: Math.max(0, Math.min(1, at || 0)),
+          color: color(attr(s, 'stop-color') ?? '#000000', (so !== null ? Number(so) : 1) * opacity) ?? '#00000000',
+        };
       });
       if (g.nodeName.toLowerCase() === 'radialgradient') return { type: 'radial', stops };
       const num = (n: string, d: number) => {
@@ -402,7 +433,10 @@ export function fromSvg(text: string): SvgImport {
     const fill = paintOf(st.fill ?? '#000000', st.fillOpacity, box);
     const strokePaint = st.stroke ? paintOf(st.stroke, st.strokeOpacity, box) : null;
     const scale = Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) || 1;
-    const stroke: Stroke | null = strokePaint && st.strokeWidth > 0 ? { paint: strokePaint, width: st.strokeWidth * scale, ...(st.join ? { join: st.join } : {}), ...(st.cap ? { cap: st.cap } : {}) } : null;
+    const stroke: Stroke | null =
+      strokePaint && st.strokeWidth > 0
+        ? { paint: strokePaint, width: st.strokeWidth * scale, ...(st.join ? { join: st.join } : {}), ...(st.cap ? { cap: st.cap } : {}) }
+        : null;
     if (!fill && !stroke) return null;
     return {
       id: uid(),

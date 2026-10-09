@@ -59,7 +59,11 @@ describe('template packs', () => {
   it('carries titles, thumbnails and what the pack is', async () => {
     const titles = starterTemplates().slice(0, 3);
     const thumb = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
-    const bytes = await writePack({ name: 'News look', author: 'Studio A', version: '1.2.0', license: 'CC-BY-4.0', tags: ['news'] }, titles, [thumb, null, null]);
+    const bytes = await writePack({ name: 'News look', author: 'Studio A', version: '1.2.0', license: 'CC-BY-4.0', tags: ['news'] }, titles, [
+      thumb,
+      null,
+      null,
+    ]);
     const files = await unzip(bytes);
     expect(files[0]!.name).toBe('pack.json');
     expect(files.some((f) => f.name.startsWith('thumbs/'))).toBe(true);

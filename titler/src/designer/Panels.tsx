@@ -403,7 +403,14 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
                 label="Field kind"
                 value={v.type}
                 options={VAR_TYPES}
-                onChange={(type) => set(i, type === 'timer' ? { type, timer: v.timer ?? { dir: 'down', format: 'm:ss' }, value: /^[\d:.]+$/.test(v.value) ? v.value : '10:00' } : { type })}
+                onChange={(type) =>
+                  set(
+                    i,
+                    type === 'timer'
+                      ? { type, timer: v.timer ?? { dir: 'down', format: 'm:ss' }, value: /^[\d:.]+$/.test(v.value) ? v.value : '10:00' }
+                      : { type },
+                  )
+                }
               />
             </Row>
             <Row label="Sample">

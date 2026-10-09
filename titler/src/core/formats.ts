@@ -204,8 +204,25 @@ export function followMain(before: TitleProject, after: TitleProject): TitleProj
     if (c.variantOf !== m1.id || c.follow === false) return c;
     const was = adaptComp(m0, c.width, c.height);
     const now = adaptComp(m1, c.width, c.height);
-    const merged = mergeKeys(c as unknown as Bag, was as unknown as Bag, now as unknown as Bag, ['layers', 'id', 'name', 'width', 'height', 'variantOf', 'follow', 'guides']);
-    const next = { ...merged, id: c.id, name: c.name, width: c.width, height: c.height, variantOf: c.variantOf, layers: mergeLayers(c.layers, was.layers, now.layers) } as Composition;
+    const merged = mergeKeys(c as unknown as Bag, was as unknown as Bag, now as unknown as Bag, [
+      'layers',
+      'id',
+      'name',
+      'width',
+      'height',
+      'variantOf',
+      'follow',
+      'guides',
+    ]);
+    const next = {
+      ...merged,
+      id: c.id,
+      name: c.name,
+      width: c.width,
+      height: c.height,
+      variantOf: c.variantOf,
+      layers: mergeLayers(c.layers, was.layers, now.layers),
+    } as Composition;
     if (c.follow !== undefined) next.follow = c.follow;
     if (c.guides) next.guides = c.guides;
     else delete next.guides;

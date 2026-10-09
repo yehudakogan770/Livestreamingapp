@@ -77,7 +77,18 @@ export async function withFonts(p: TitleProject): Promise<TitleProject> {
   for (const fam of familiesUsed(p)) {
     if (have.has(fam.toLowerCase())) continue;
     const faces = await pageFontFaces(fam);
-    faces.forEach((f, i) => extra.push({ id: `font-${fam.replace(/\W+/g, '-')}-${i}`, name: `${fam} ${f.weight}`, kind: 'font', src: f.src, family: fam, weight: f.weight, style: f.style, ...(f.range ? { range: f.range } : {}) }));
+    faces.forEach((f, i) =>
+      extra.push({
+        id: `font-${fam.replace(/\W+/g, '-')}-${i}`,
+        name: `${fam} ${f.weight}`,
+        kind: 'font',
+        src: f.src,
+        family: fam,
+        weight: f.weight,
+        style: f.style,
+        ...(f.range ? { range: f.range } : {}),
+      }),
+    );
   }
   return extra.length ? { ...p, assets: [...p.assets, ...extra] } : p;
 }

@@ -293,7 +293,15 @@ export class TitlePlayer {
         const dw = c.width * k;
         const dh = c.height * k;
         ctx.setTransform(1, 0, 0, 1, Math.round((pw - dw) / 2), Math.round((ph - dh) / 2));
-        renderFrame(ctx, this.project, { comp: c.id, time: r.t, clock: r.clock, values: { ...this.dataValues, ...this.values }, env: this.env, width: dw, height: dh });
+        renderFrame(ctx, this.project, {
+          comp: c.id,
+          time: r.t,
+          clock: r.clock,
+          values: { ...this.dataValues, ...this.values },
+          env: this.env,
+          width: dw,
+          height: dh,
+        });
         ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
       this.sounds();

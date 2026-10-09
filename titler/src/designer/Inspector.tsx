@@ -9,7 +9,22 @@ import { uid } from '../core/build';
 import { isAnimated, num, setValue, toggleKeys, valueAt, vec } from '../core/easing';
 import { fade, grow, reveal, slide, wipe } from '../core/motion';
 import { ellipsePath, rectPath } from '../core/paths';
-import type { CompLayer, Effect, ImageLayer, VideoLayer, Layer, Mask, Paint, Prop, ShapeLayer, Stroke, TextAnimator, TextLayer, Value, Vec2 } from '../core/types';
+import type {
+  CompLayer,
+  Effect,
+  ImageLayer,
+  VideoLayer,
+  Layer,
+  Mask,
+  Paint,
+  Prop,
+  ShapeLayer,
+  Stroke,
+  TextAnimator,
+  TextLayer,
+  Value,
+  Vec2,
+} from '../core/types';
 import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
 import { layerBox } from './geometry';
 import { lookOf } from './Viewport';
@@ -1229,7 +1244,11 @@ function ShapeSection({
         <div key={i} className="tt-subcard">
           <Row label={`Fill ${i + 2}`}>
             <span className="tt-dim tt-small tt-grow">Drawn over the fill{i ? 's' : ''} before it</span>
-            <button className="tt-ico" aria-label={`Remove fill ${i + 2}`} onClick={() => upd('Remove fill', (x) => ({ ...x, extraFills: (x.extraFills ?? []).filter((_, j) => j !== i) }))}>
+            <button
+              className="tt-ico"
+              aria-label={`Remove fill ${i + 2}`}
+              onClick={() => upd('Remove fill', (x) => ({ ...x, extraFills: (x.extraFills ?? []).filter((_, j) => j !== i) }))}
+            >
               <Trash2 size={13} />
             </button>
           </Row>
@@ -1940,7 +1959,17 @@ function CopyFields({ store, l, compId }: { store: Store; l: CompLayer; compId: 
 }
 
 /** Character styles: the selected words take a shared text style's font, weight, color and size ([cs=Name]…[/cs]). */
-function CharStyleRow({ store, l, words, upd }: { store: Store; l: TextLayer; words: RefObject<HTMLTextAreaElement | null>; upd: (label: string, fn: (x: TextLayer) => TextLayer) => void }) {
+function CharStyleRow({
+  store,
+  l,
+  words,
+  upd,
+}: {
+  store: Store;
+  l: TextLayer;
+  words: RefObject<HTMLTextAreaElement | null>;
+  upd: (label: string, fn: (x: TextLayer) => TextLayer) => void;
+}) {
   const styles = useStore(store, (s) => s.project.textStyles) ?? [];
   if (!styles.length) return null;
   const apply = (name: string) => {
@@ -1964,7 +1993,13 @@ function CharStyleRow({ store, l, words, upd }: { store: Store; l: TextLayer; wo
   };
   return (
     <Row label="Words style" hint="Select words below, then pick a shared style for them (character style)">
-      <select className="tt-select" aria-label="Character style for the selected words" value="" onChange={(e) => apply(e.target.value)} onMouseDown={(e) => e.stopPropagation()}>
+      <select
+        className="tt-select"
+        aria-label="Character style for the selected words"
+        value=""
+        onChange={(e) => apply(e.target.value)}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <option value="" disabled>
           Style the selected words…
         </option>

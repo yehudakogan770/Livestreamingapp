@@ -835,7 +835,17 @@ const SPECS: Spec[] = [
     build(c, O) {
       const bg = box(c, 'Background', 0, 0, 1920, 1080, '$box');
       const title = words(c, 'Title', 192, 120, 1536, 100, '{{title}}', { size: 72, weight: 700 }, { wrap: false });
-      const sub = words(c, 'Line below', 192, 222, 1536, 56, '{{subtitle}}', { size: 32, weight: 500, fill: { type: 'solid', color: '$textSub' } }, { wrap: false });
+      const sub = words(
+        c,
+        'Line below',
+        192,
+        222,
+        1536,
+        56,
+        '{{subtitle}}',
+        { size: 32, weight: 500, fill: { type: 'solid', color: '$textSub' } },
+        { wrap: false },
+      );
       const rule = box(c, 'Accent rule', 192, 300, 120, 8, '$accent');
       const rowH = 104;
       const top = 352;
@@ -843,7 +853,17 @@ const SPECS: Spec[] = [
       const stripes: ShapeLayer[] = [];
       for (let i = 0; i < rows; i += 2) stripes.push(box(c, `Row ${i + 1}`, 192, top + i * rowH, 1536, rowH, '$boxAlt'));
       const col = (name: string, key: string, x: number, w: number, extra: Partial<TextStyle>) =>
-        words(c, name, x, top, w, rowH * rows, `{{${key}}}`, { size: 44, weight: 500, lineHeight: rowH / 44, vAlign: 'top', ...extra }, { wrap: false, fit: 'none' });
+        words(
+          c,
+          name,
+          x,
+          top,
+          w,
+          rowH * rows,
+          `{{${key}}}`,
+          { size: 44, weight: 500, lineHeight: rowH / 44, vAlign: 'top', ...extra },
+          { wrap: false, fit: 'none' },
+        );
       const names = col('Names', 'names', 232, 640, { weight: 700 });
       const groups = col('Second column', 'groups', 892, 420, { fill: { type: 'solid', color: '$textSub' } });
       const counts = col('Numbers', 'counts', 1312, 220, { align: 'right', figures: 'tabular' });

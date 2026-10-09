@@ -30,7 +30,12 @@ describe('keyframe velocity', () => {
     expect(v.outInfluence).toBeCloseTo(50, 3);
     expect(v.inSpeed).toBeCloseTo(10, 3);
     expect(v.inInfluence).toBeCloseTo(20, 3);
-    const p = { k: [{ ...a, o: h.o }, { ...b, i: h.i }] } as { k: Keyframe<number>[] };
+    const p = {
+      k: [
+        { ...a, o: h.o },
+        { ...b, i: h.i },
+      ],
+    } as { k: Keyframe<number>[] };
     const dt = 0.001;
     expect((valueAt(p, dt, 0) - valueAt(p, 0, 0)) / dt).toBeCloseTo(120, -1);
   });

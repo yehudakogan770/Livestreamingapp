@@ -20,7 +20,9 @@ function draw(p: TitleProject, t: number, w = 480, h = 270, b: object | undefine
   return c;
 }
 
-const px = (c: ReturnType<typeof canvas>, x: number, y: number) => [...(c.getContext('2d') as unknown as CanvasRenderingContext2D).getImageData(x, y, 1, 1).data];
+const px = (c: ReturnType<typeof canvas>, x: number, y: number) => [
+  ...(c.getContext('2d') as unknown as CanvasRenderingContext2D).getImageData(x, y, 1, 1).data,
+];
 
 /** An animation as After Effects' Bodymovin writes it (trimmed to what is tested). */
 const AE = {
@@ -69,7 +71,12 @@ const AE = {
       nm: 'Name',
       parent: 4,
       ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [40, 60, 0] }, a: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] } },
-      t: { d: { k: [{ s: { s: 48, f: 'Montserrat-Bold', t: 'Ada Lovelace', j: 0, tr: 0, lh: 57.6, ls: 0, fc: [1, 1, 1] }, t: 0 }] }, p: {}, m: { g: 1, a: { a: 0, k: [0, 0] } }, a: [] },
+      t: {
+        d: { k: [{ s: { s: 48, f: 'Montserrat-Bold', t: 'Ada Lovelace', j: 0, tr: 0, lh: 57.6, ls: 0, fc: [1, 1, 1] }, t: 0 }] },
+        p: {},
+        m: { g: 1, a: { a: 0, k: [0, 0] } },
+        a: [],
+      },
       ip: 0,
       op: 100,
       st: 0,
@@ -158,7 +165,13 @@ const AE = {
       refId: 'comp_0',
       ks: {
         o: { a: 0, k: 100 },
-        r: { a: 1, k: [{ i: { x: [0.667], y: [1] }, o: { x: [0.333], y: [0] }, t: 0, s: [0], h: 1 }, { t: 50, s: [90] }] },
+        r: {
+          a: 1,
+          k: [
+            { i: { x: [0.667], y: [1] }, o: { x: [0.333], y: [0] }, t: 0, s: [0], h: 1 },
+            { t: 50, s: [90] },
+          ],
+        },
         p: { a: 0, k: [1100, 100, 0] },
         a: { a: 0, k: [50, 50, 0] },
         s: { a: 0, k: [100, 100, 100] },
@@ -169,10 +182,54 @@ const AE = {
       op: 100,
       st: 10,
       hasMask: true,
-      masksProperties: [{ inv: false, mode: 'a', pt: { a: 0, k: { i: [[0, 0], [0, 0], [0, 0], [0, 0]], o: [[0, 0], [0, 0], [0, 0], [0, 0]], v: [[0, 0], [100, 0], [100, 100], [0, 100]], c: true } }, o: { a: 0, k: 100 }, x: { a: 0, k: 0 }, nm: 'Mask 1' }],
+      masksProperties: [
+        {
+          inv: false,
+          mode: 'a',
+          pt: {
+            a: 0,
+            k: {
+              i: [
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+              ],
+              o: [
+                [0, 0],
+                [0, 0],
+                [0, 0],
+                [0, 0],
+              ],
+              v: [
+                [0, 0],
+                [100, 0],
+                [100, 100],
+                [0, 100],
+              ],
+              c: true,
+            },
+          },
+          o: { a: 0, k: 100 },
+          x: { a: 0, k: 0 },
+          nm: 'Mask 1',
+        },
+      ],
       ef: [{ ty: 25, nm: 'Drop Shadow' }],
     },
-    { ddd: 0, ind: 6, ty: 1, nm: 'Red Solid', ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [0, 0, 0] }, a: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] } }, sw: 1280, sh: 720, sc: '#200000', ip: 0, op: 100, st: 0 },
+    {
+      ddd: 0,
+      ind: 6,
+      ty: 1,
+      nm: 'Red Solid',
+      ks: { o: { a: 0, k: 100 }, r: { a: 0, k: 0 }, p: { a: 0, k: [0, 0, 0] }, a: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] } },
+      sw: 1280,
+      sh: 720,
+      sc: '#200000',
+      ip: 0,
+      op: 100,
+      st: 0,
+    },
   ],
   markers: [
     { tm: 0, cm: 'in', dr: 25 },
@@ -301,7 +358,27 @@ const TOLERANCE: Record<string, number> = {};
 
 describe('shape changes form', () => {
   it('reads path keys and draws between them', () => {
-    const sq = (s: number) => ({ i: [[0, 0], [0, 0], [0, 0], [0, 0]], o: [[0, 0], [0, 0], [0, 0], [0, 0]], v: [[0, 0], [s, 0], [s, s], [0, s]], c: true });
+    const sq = (s: number) => ({
+      i: [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+      ],
+      o: [
+        [0, 0],
+        [0, 0],
+        [0, 0],
+        [0, 0],
+      ],
+      v: [
+        [0, 0],
+        [s, 0],
+        [s, s],
+        [0, s],
+      ],
+      c: true,
+    });
     const json = {
       v: '5.7.4',
       fr: 10,
@@ -317,7 +394,16 @@ describe('shape changes form', () => {
           ip: 0,
           op: 20,
           shapes: [
-            { ty: 'sh', ks: { a: 1, k: [{ t: 0, s: [sq(50)], o: { x: [0], y: [0] }, i: { x: [1], y: [1] } }, { t: 10, s: [sq(150)] }] } },
+            {
+              ty: 'sh',
+              ks: {
+                a: 1,
+                k: [
+                  { t: 0, s: [sq(50)], o: { x: [0], y: [0] }, i: { x: [1], y: [1] } },
+                  { t: 10, s: [sq(150)] },
+                ],
+              },
+            },
             { ty: 'fl', c: { a: 0, k: [1, 1, 1, 1] }, o: { a: 0, k: 100 } },
           ],
         },

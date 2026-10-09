@@ -14,7 +14,10 @@ const setup = () => {
 };
 const main = (p: TitleProject) => p.compositions.find((c) => c.id === p.main)!;
 const comp = (p: TitleProject, id: string) => p.compositions.find((c) => c.id === id)!;
-const editMain = (p: TitleProject, f: (c: Composition) => Composition): TitleProject => ({ ...p, compositions: p.compositions.map((c) => (c.id === p.main ? f(c) : c)) });
+const editMain = (p: TitleProject, f: (c: Composition) => Composition): TitleProject => ({
+  ...p,
+  compositions: p.compositions.map((c) => (c.id === p.main ? f(c) : c)),
+});
 const editLayer = (c: Composition, name: string, f: (l: Layer) => Layer): Composition => ({ ...c, layers: c.layers.map((l) => (l.name === name ? f(l) : l)) });
 const textOf = (c: Composition) => c.layers.find((l) => l.type === 'text') as TextLayer;
 
@@ -48,10 +51,21 @@ describe('formats follow the main composition', () => {
     const edited: TitleProject = {
       ...p,
       compositions: p.compositions.map((c) =>
-        c.id === vid ? { ...editLayer(c, name, (l) => ({ ...l, transform: { ...l.transform, position: { v: moved } } })), layers: [extra, ...editLayer(c, name, (l) => ({ ...l, transform: { ...l.transform, position: { v: moved } } })).layers.filter((l) => l.id !== victim)] } : c,
+        c.id === vid
+          ? {
+              ...editLayer(c, name, (l) => ({ ...l, transform: { ...l.transform, position: { v: moved } } })),
+              layers: [
+                extra,
+                ...editLayer(c, name, (l) => ({ ...l, transform: { ...l.transform, position: { v: moved } } })).layers.filter((l) => l.id !== victim),
+              ],
+            }
+          : c,
       ),
     };
-    const after = followMain(edited, editMain(edited, (c) => editLayer(c, name, (l) => ({ ...(l as TextLayer), text: 'Changed in main', transform: { ...l.transform, opacity: { v: 50 } } }))));
+    const after = followMain(
+      edited,
+      editMain(edited, (c) => editLayer(c, name, (l) => ({ ...(l as TextLayer), text: 'Changed in main', transform: { ...l.transform, opacity: { v: 50 } } }))),
+    );
     const v = comp(after, vid);
     const t = v.layers.find((l) => l.name === name) as TextLayer;
     expect(t.text).toBe('Changed in main');
@@ -64,7 +78,10 @@ describe('formats follow the main composition', () => {
   it('leaves a format that stands on its own, and edits of the format itself', () => {
     const { p, vid } = setup();
     const own = { ...p, compositions: p.compositions.map((c) => (c.id === vid ? { ...c, follow: false } : c)) };
-    const after = followMain(own, editMain(own, (c) => ({ ...c, duration: 99 })));
+    const after = followMain(
+      own,
+      editMain(own, (c) => ({ ...c, duration: 99 })),
+    );
     expect(comp(after, vid).duration).not.toBe(99);
     const same = { ...p, compositions: p.compositions.map((c) => (c.id === vid ? { ...c, duration: 42 } : c)) };
     expect(followMain(p, same)).toBe(same);

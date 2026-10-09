@@ -145,9 +145,12 @@ describe('the exported template', () => {
     const code = new TextDecoder().decode(src.data).replace(/export default Graphic;\s*$/, 'return Graphic;');
     const Graphic = new Function(code)() as CustomElementConstructor;
     customElements.define('lumora-test-graphic', Graphic);
-    const el = document.createElement('lumora-test-graphic') as HTMLElement & Record<string, (a?: unknown) => Promise<{ statusCode: number; currentStep?: number }>>;
+    const el = document.createElement('lumora-test-graphic') as HTMLElement &
+      Record<string, (a?: unknown) => Promise<{ statusCode: number; currentStep?: number }>>;
     document.body.appendChild(el);
-    expect((await el.load!({ data: { name: 'Ada' }, renderType: 'realtime', renderCharacteristics: { resolution: { width: 640, height: 360 } } })).statusCode).toBe(200);
+    expect(
+      (await el.load!({ data: { name: 'Ada' }, renderType: 'realtime', renderCharacteristics: { resolution: { width: 640, height: 360 } } })).statusCode,
+    ).toBe(200);
     expect(el.querySelector('canvas')).not.toBeNull();
     const played = el.playAction!({ skipAnimation: true });
     expect((await played).currentStep).toBe(0);

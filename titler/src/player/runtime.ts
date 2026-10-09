@@ -109,7 +109,9 @@ export function ograf(project: TitleProject): CustomElementConstructor {
     }
 
     async customAction(params: { id?: string; payload?: unknown } = {}): Promise<Result> {
-      const cmd = { timerStart: 'start', timerStop: 'stop', timerToggle: 'toggle', timerReset: 'reset', timerAdd: 'add' }[params.id ?? ''] as 'start' | undefined;
+      const cmd = { timerStart: 'start', timerStop: 'stop', timerToggle: 'toggle', timerReset: 'reset', timerAdd: 'add' }[params.id ?? ''] as
+        | 'start'
+        | undefined;
       const d = (params.payload ?? {}) as { field?: string; seconds?: number };
       if (!cmd || !this.player?.timer(cmd, d.field, Number(d.seconds) || 0)) return { statusCode: 404, statusMessage: 'This graphic has no such action' };
       return { statusCode: 200 };
@@ -142,4 +144,3 @@ export function ograf(project: TitleProject): CustomElementConstructor {
 
 const api = { page, ograf };
 (globalThis as unknown as { LumoraTitleRuntime: typeof api }).LumoraTitleRuntime = api;
-

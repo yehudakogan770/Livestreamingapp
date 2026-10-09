@@ -157,7 +157,8 @@ function position(p: unknown, c: Ctx, shift: number): Prop<Vec2> {
       if (!('k' in q) || !q.k) return q.v as number;
       const ks = q.k;
       if (t <= ks[0]!.t) return ks[0]!.v;
-      for (let n = 0; n < ks.length - 1; n++) if (t <= ks[n + 1]!.t) return ks[n]!.v + ((ks[n + 1]!.v - ks[n]!.v) * (t - ks[n]!.t)) / (ks[n + 1]!.t - ks[n]!.t || 1);
+      for (let n = 0; n < ks.length - 1; n++)
+        if (t <= ks[n + 1]!.t) return ks[n]!.v + ((ks[n + 1]!.v - ks[n]!.v) * (t - ks[n]!.t)) / (ks[n + 1]!.t - ks[n]!.t || 1);
       return ks[ks.length - 1]!.v;
     };
     const keyAt = (q: Prop, t: number) => ('k' in q && q.k ? q.k.find((kk) => Math.abs(kk.t - t) < 1e-6) : undefined);
@@ -325,7 +326,12 @@ function strokeOf(it: J, c: Ctx, shift: number): Stroke | null {
   const paint = paintOf(it, c, shift);
   if (!paint) return null;
   const width = first(it.w, c, 'Stroke widths')[0] ?? 1;
-  const st: Stroke = { paint, width, cap: (['butt', 'butt', 'round', 'square'] as const)[numOr(it.lc, 1)] ?? 'butt', join: (['miter', 'miter', 'round', 'bevel'] as const)[numOr(it.lj, 1)] ?? 'miter' };
+  const st: Stroke = {
+    paint,
+    width,
+    cap: (['butt', 'butt', 'round', 'square'] as const)[numOr(it.lc, 1)] ?? 'butt',
+    join: (['miter', 'miter', 'round', 'bevel'] as const)[numOr(it.lj, 1)] ?? 'miter',
+  };
   const dash = arr(it.d)
     .filter((d) => isObj(d) && (d.n === 'd' || d.n === 'g'))
     .map((d) => first((d as J).v, c, 'Dashes')[0] ?? 0);
@@ -392,7 +398,10 @@ function shapeItems(items: J[], parent: Styles, start: number, end: number, c: C
     if (one && (one.ty === 'rc' || one.ty === 'el')) {
       // A rectangle or ellipse (size and place may move): kept as one, about its center.
       const size = prop<Vec2>(one.s, c, vec2, [100, 100], shift);
-      const half: Prop<Vec2> = 'k' in size && size.k ? { k: size.k.map((k) => ({ ...k, v: [k.v[0] / 2, k.v[1] / 2] as Vec2 })) } : { v: [(size.v as Vec2)[0] / 2, (size.v as Vec2)[1] / 2] };
+      const half: Prop<Vec2> =
+        'k' in size && size.k
+          ? { k: size.k.map((k) => ({ ...k, v: [k.v[0] / 2, k.v[1] / 2] as Vec2 })) }
+          : { v: [(size.v as Vec2)[0] / 2, (size.v as Vec2)[1] / 2] };
       return {
         ...base,
         name: one.ty === 'rc' ? String(one.nm ?? 'Rectangle') : String(one.nm ?? 'Ellipse'),
@@ -424,7 +433,9 @@ function shapeItems(items: J[], parent: Styles, start: number, end: number, c: C
     if (it.ty === 'gr') {
       const tr = arr(it.it).find((x) => isObj(x) && x.ty === 'tr') as J | undefined;
       const children = shapeItems(
-        arr(it.it).filter(isObj).filter((x) => x.ty !== 'tr'),
+        arr(it.it)
+          .filter(isObj)
+          .filter((x) => x.ty !== 'tr'),
         styles,
         start,
         end,
@@ -494,7 +505,13 @@ function textLayer(l: J, b: LayerBase, c: Ctx, shift: number): TextLayer {
     box,
     wrap: boxed,
     fit: 'none',
-    ...(arr(t.a).length ? { animators: arr(t.a).filter(isObj).map((a) => animatorOf(a, size, c, shift)) } : {}),
+    ...(arr(t.a).length
+      ? {
+          animators: arr(t.a)
+            .filter(isObj)
+            .map((a) => animatorOf(a, size, c, shift)),
+        }
+      : {}),
   };
 }
 
@@ -610,7 +627,15 @@ function layersOf(list: J[], c: Ctx, shift: number, compW: number, compH: number
       case 1: {
         const w = numOr(l.sw, compW);
         const h = numOr(l.sh, compH);
-        layer = { ...b, type: 'shape', shape: 'rect', size: { v: [w, h] }, roundness: { v: 0 }, fill: { type: 'solid', color: String(l.sc ?? '#000000').slice(0, 9) }, stroke: null };
+        layer = {
+          ...b,
+          type: 'shape',
+          shape: 'rect',
+          size: { v: [w, h] },
+          roundness: { v: 0 },
+          fill: { type: 'solid', color: String(l.sc ?? '#000000').slice(0, 9) },
+          stroke: null,
+        };
         break;
       }
       case 2: {
@@ -623,7 +648,14 @@ function layersOf(list: J[], c: Ctx, shift: number, compW: number, compH: number
         layer = { ...b, type: 'null' };
         break;
       case 4: {
-        const children = shapeItems(arr(l.shapes).filter(isObj), { fill: null, extraFills: [], fillRule: 'nonzero', stroke: null, trim: null }, start, end, c, shift);
+        const children = shapeItems(
+          arr(l.shapes).filter(isObj),
+          { fill: null, extraFills: [], fillRule: 'nonzero', stroke: null, trim: null },
+          start,
+          end,
+          c,
+          shift,
+        );
         layer = collapse({ ...b, type: 'group', children });
         break;
       }
@@ -655,16 +687,19 @@ function layersOf(list: J[], c: Ctx, shift: number, compW: number, compH: number
 }
 
 const isStill = <T extends Value>(p: Prop<T>, v: T) => !('k' in p && p.k) && !p.x && JSON.stringify(p.v) === JSON.stringify(v);
-const plain = (tr: Transform) => isStill(tr.anchor, [0, 0]) && isStill(tr.position, [0, 0]) && isStill(tr.scale, [100, 100]) && isStill(tr.rotation, 0) && isStill(tr.opacity, 100);
+const plain = (tr: Transform) =>
+  isStill(tr.anchor, [0, 0]) && isStill(tr.position, [0, 0]) && isStill(tr.scale, [100, 100]) && isStill(tr.rotation, 0) && isStill(tr.opacity, 100);
 
 /** A shape layer that is one shape (After Effects' usual layer > group > rectangle) as that shape. */
 function collapse(g: GroupLayer): Layer {
   let children = g.children;
-  while (children.length === 1 && children[0]!.type === 'group' && plain(children[0]!.transform) && !children[0]!.masks?.length) children = (children[0] as GroupLayer).children;
+  while (children.length === 1 && children[0]!.type === 'group' && plain(children[0]!.transform) && !children[0]!.masks?.length)
+    children = (children[0] as GroupLayer).children;
   const only = children.length === 1 ? children[0]! : null;
   if (only && only.type === 'shape' && !only.masks?.length) {
     const tr = only.transform;
-    const centered = !('k' in tr.anchor && tr.anchor.k) && !('k' in tr.position && tr.position.k) && JSON.stringify(tr.anchor.v) === JSON.stringify(tr.position.v);
+    const centered =
+      !('k' in tr.anchor && tr.anchor.k) && !('k' in tr.position && tr.position.k) && JSON.stringify(tr.anchor.v) === JSON.stringify(tr.position.v);
     if (centered && isStill(tr.scale, [100, 100]) && isStill(tr.rotation, 0) && isStill(tr.opacity, 100)) {
       const { children: _c, type: _t, ...rest } = g;
       return { ...only, ...rest, name: g.name, type: 'shape', transform: g.transform };
@@ -680,7 +715,14 @@ function imageAsset(a: J, c: Ctx): Asset | null {
   const p = String(a.p ?? '');
   const src = a.e === 1 || p.startsWith('data:') ? p : `${String(a.u ?? '')}${p}`;
   if (!src.startsWith('data:')) c.notes.add('Pictures linked outside the file are kept as links; add them in Project if they do not show.');
-  const asset: Asset = { id, name: String(a.nm ?? a.id ?? 'Picture'), kind: p.includes('svg') ? 'svg' : 'image', src, width: numOr(a.w, 100), height: numOr(a.h, 100) };
+  const asset: Asset = {
+    id,
+    name: String(a.nm ?? a.id ?? 'Picture'),
+    kind: p.includes('svg') ? 'svg' : 'image',
+    src,
+    width: numOr(a.w, 100),
+    height: numOr(a.h, 100),
+  };
   c.project.assets.push(asset);
   return asset;
 }

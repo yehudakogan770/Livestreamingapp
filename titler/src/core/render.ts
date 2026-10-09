@@ -280,7 +280,13 @@ export function projector(l: Layer, t: number, pivot: Vec2, distance: number, px
 }
 
 /** Draw `src` (a canvas the size of the picture) as seen through `project`, in triangles fine enough to look smooth. */
-function drawProjected(ctx: Ctx, src: CanvasImageSource, area: { x: number; y: number; w: number; h: number }, project: (x: number, y: number) => Vec2 | null, steps: number) {
+function drawProjected(
+  ctx: Ctx,
+  src: CanvasImageSource,
+  area: { x: number; y: number; w: number; h: number },
+  project: (x: number, y: number) => Vec2 | null,
+  steps: number,
+) {
   if (area.w <= 0 || area.h <= 0) return;
   const n = Math.max(1, Math.min(24, steps));
   const pts: (Vec2 | null)[][] = [];
@@ -445,7 +451,10 @@ function drawLayer(ctx: Ctx, l: Layer, alpha: number, s: Scene) {
     const a = vec(l.transform.anchor, t, [0, 0]);
     const pivot: Vec2 = [world[0] * a[0] + world[2] * a[1] + world[4], world[1] * a[0] + world[3] * a[1] + world[5]];
     const project = projector(l, t, pivot, (s.comp.perspective ?? 2000) * s.f.px, s.f.px);
-    const bend = Math.max(Math.abs(Math.sin((num(l.transform.rotationX, t, 0) * Math.PI) / 180)), Math.abs(Math.sin((num(l.transform.rotationY, t, 0) * Math.PI) / 180)));
+    const bend = Math.max(
+      Math.abs(Math.sin((num(l.transform.rotationX, t, 0) * Math.PI) / 180)),
+      Math.abs(Math.sin((num(l.transform.rotationY, t, 0) * Math.PI) / 180)),
+    );
     const area = l.type === 'group' || l.type === 'comp' ? { x: 0, y: 0, w: cw, h: ch } : canvasBox(own, l, world, s);
     drawProjected(ctx, surf as CanvasImageSource, area, project, Math.ceil(2 + bend * 14));
   } else ctx.drawImage(surf as CanvasImageSource, 0, 0);

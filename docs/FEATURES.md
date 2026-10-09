@@ -130,15 +130,18 @@ A feature only counts as finished when **all** of these are true:
   - Keyframes with bezier easing (graph editor), motion paths, wipes, blur, text animators by letter/word/line; IN / HOLD / OUT markers and a loop; cue markers
   - Typed fields (text, number, color, picture, list) filled live by the operator from a generated control panel, or by Lumora's scoreboard, countdown, clock and data file; data sources (CSV, Google Sheets, JSON) with refresh; brand tokens take the event look
   - One renderer (Canvas 2D, deterministic in time) draws them in the designer, Lumora's screens, recordings and the unified engine's overlay renderer, and Studio's title clips; renders to ProRes 4444 with alpha, WebM with alpha, MP4 and PNG sequences
-  - 24 starter templates in a plain broadcast style; the title library in Documents/Lumora/Titles is shared by the three apps
+  - 26 starter templates in a plain broadcast style (Game clock and Results table among them); the title library in Documents/Lumora/Titles is shared by the three apps; template packs (`.lumpack`: titles, thumbnails, author, version, license, tags) shared and imported in one file
   - Audio cues: a cue marker's sound plays on air through Lumora's sound engine on the mixes chosen (Stream, Hall, Recording), on its frame, with Blank and PANIC; mixed into Studio exports; heard in the preview and in the Titler's own films
   - A title's own data sources on air in Lumora (read by the control window, rows chosen on the card and the graphics seat, Shift+[ / ] steps; sample < the title's data < typed < Lumora bindings)
-  - Formats: the title in 9:16, 1:1, 4:5 and 4K made by layer constraints (pin, scale, stretch); on air the format closest to the picture's shape is drawn
+  - Formats: the title in 9:16, 1:1, 4:5 and 4K made by layer constraints (pin, scale, stretch); they follow the main composition's changes and keep their own (Follows / Reset); on air the format closest to the picture's shape is drawn
   - Designer: RAM preview (frames made ahead, memory cap, green cached bar), resizable panels and four workspaces, the canvas on its own, recent titles, undo history and versions, notes pinned on the canvas, keyboard shortcuts sheet
   - Typography: font picker, tabular figures, kerning on/off, small caps, justify, baseline shift, shared text styles; shapes with a radius per corner, strokes inside/centered/outside and more outlines; Outline, Gradient overlay, Color correction and Grain effects; pro color picker with eyedropper and swatches
   - Animation: expressions (wiggle, loops, time, links to other layers), keyframes copied across layers, saved animation presets, stagger; frame-exact video layers in renders and Studio exports (WebCodecs)
   - Studio opens the designer in its own window; the Titler installer has its own header and sidebar pictures
-  - **Proven by:** golden frames, format/migration, easing, layout, binding and packaging tests, designer component tests, a Titler overlay taken in and out in Lumora, a Studio title clip checked frame by frame; cue timing (frame-exact, loops, PANIC), cache invalidation, frame-exact decoding of a generated film (and in Chromium: e2e/titler-exact-video.mjs), data merge order, the Studio window round trip, expressions, formats, typography and effects on the pixels
+  - Interchange: export as an HTML template (CasparCG, SPX, OBS and vMix browser sources, H2R Graphics, LiveOS) that is also an EBU OGraf graphic, with fields, IN / OUT, formats, timers and its data sources working there; Lottie in (After Effects through Bodymovin, LottieFiles, Jitter) and out; SVG in as editable shapes (also pasted from Figma)
+  - Design: titles in tabs, combined shapes (union, subtract, intersect, exclude), compound paths, several fills, path and mask morphs, 3D layers (X / Y rotation and depth through the composition's camera), components (each copy of a composition with its own field values), character styles, keyframe velocity and CSS cubic-bezier typed in
+  - Data and control: timer fields (game clocks, countdowns, shot clocks; the same on every screen) with start / stop / reset in the control panel; list fields take a spreadsheet column, groups repeat for each row (tables designed once); the control API's `titler` command and Companion actions set fields, step data rows and run timers
+  - **Proven by:** golden frames, format/migration, easing, layout, binding and packaging tests, designer component tests, a Titler overlay taken in and out in Lumora, a Studio title clip checked frame by frame; cue timing (frame-exact, loops, PANIC), cache invalidation, frame-exact decoding of a generated film (and in Chromium: e2e/titler-exact-video.mjs), data merge order, the Studio window round trip, expressions, formats, typography and effects on the pixels; every template out to Lottie and back within 2 % of the pixels, an After Effects-style Lottie drawn as expected, the exported template run as CasparCG and OBS run it and as an OGraf Web Component (and in Chromium), packs, SVG, 3D seams, combined shapes, repeated rows, timers and formats following the main one
 
 ## 10. Stage Monitor
 
@@ -308,6 +311,7 @@ words, safe by default, tested). Items already covered elsewhere are listed
 with their section; everything new is below them.
 
 ### Already planned elsewhere
+
 Preview / program and TAKE / CUT / T-bar (§1, done) · transitions and stingers
 (§1) · overlay channels (§7) · PiP and split screens (§8) · titles and tickers
 (§9) · video lists and playlists (§2) · virtual sets and chroma key (§14) · NDI
@@ -316,6 +320,7 @@ recording and ISO recording (§20) · streaming to several sites (§21) · Strea
 Deck, MIDI, shortcuts (§22) · scoreboards (§9).
 
 ### Mixing
+
 - ◆ **Multiview output**: every input plus preview and program on one extra
   screen, with names, red/green tally borders and audio meters; choose the layout.
 - ◆ **Layers inside an input** (up to 10): e.g. camera + logo + lower third
@@ -329,6 +334,7 @@ Deck, MIDI, shortcuts (§22) · scoreboards (§9).
 - ◆ **Snapshot**: save a still picture of any screen.
 
 ### Inputs
+
 - ◆ **Screen capture**: this computer's screen or a single window, and other
   computers' screens over the network.
 - ◆ **Stream inputs**: SRT, RTMP, HLS and web video links as live inputs.
@@ -337,6 +343,7 @@ Deck, MIDI, shortcuts (§22) · scoreboards (§9).
 - ◆ **Audio-only inputs**: music files and music playlists.
 
 ### Audio
+
 - ◆ **Audio buses**: Master plus A–D, so the stream, the hall speakers and the
   recording can each get their own mix.
 - ◆ **Audio follows video**: an input's sound comes up automatically when it
@@ -344,16 +351,19 @@ Deck, MIDI, shortcuts (§22) · scoreboards (§9).
 - ◆ **Headphone monitoring and solo**: listen to any input or bus privately.
 
 ### Outputs
+
 - ◆ **NDI and SRT output** of each screen, to other computers and devices.
 - ◆ **Virtual camera**: Lumora's program appears as a webcam in Zoom, Teams, etc.
 - ◆ **Any resolution and frame rate per output** (up to 4K), with performance
   stats (CPU, GPU, render time, dropped frames).
 
 ### Replay
+
 - ◆ **Instant replay**: keeps the last minutes of chosen cameras; replay any
   moment at normal or slow speed; mark highlights and play them as a reel.
 
 ### Automation and control
+
 - ◆ **Triggers**: “when this happens, do that” — e.g. when a video ends, cut
   to Camera 1; when an input goes on air, show its lower third; at a clock time,
   start the countdown.
@@ -368,11 +378,11 @@ Deck, MIDI, shortcuts (§22) · scoreboards (§9).
 - ○ **Social media**: show chosen comments and questions from the stream on screen.
 
 ### Where Lumora already goes further than vMix
+
 Three-screen control built in (Live / Back / Monitor) · stage monitor with
 messages and countdown · hype countdown with actions at zero · 12 Pesukim ·
 beat-synced stage visuals with keyboard control · Back = Live · simple words
 everywhere · the audience never sees an error.
-
 
 ## 28. Everything the others have (market checklist)
 
@@ -382,6 +392,7 @@ Streamlabs, Ecamm Live, Resolume, Blackmagic ATEM software, Zoom Events.
 ✅ = in Lumora now · 🔶 = partly there · ⬜ = still to build (in this order).
 
 ### Done
+
 ✅ Program / preview, TAKE, CUT, T-bar, 22 transitions (wipes and pushes every way, doors, circle, diamond,
 zoom, blur, flash), 2 stingers with cut point, favorite transitions, Play now ·
 ✅ Fade to black · ✅ Overlays 1–4 with animations · ✅ Split screen / PiP / custom layers ·
@@ -398,6 +409,7 @@ inputs, overlays, cues and sound · ✅ Video playlists · ✅ Scoreboards with 
 ✅ 720p – 4K, 30 / 60 fps and vertical 9:16 output, bitrates to 40 Mbps · ✅ Library · ✅ Multiview · ✅ Keeps imported files · ✅ Crash-safe saving.
 
 ### What uses the internet
+
 Lumora works offline. Only these reach the internet, and only while they are in use:
 live chat (while connected), guests by link (while a guest input exists), web page
 inputs (the page itself), stream inputs from internet addresses, and streaming out.
@@ -413,6 +425,7 @@ again; without internet they open for up to 7 days after the last check. Two-ste
 (see docs/security-checklist.md).
 
 ### To build (most important first)
+
 1. ✅ **Sound from stream and web page inputs** into the mixer.
 2. ✅ **Screen capture** — this computer's screens or one window (OBS, vMix).
 3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM). HTTP + WebSocket with a token and OSC over UDP (docs/API.md); a Bitfocus Companion module (companion/) with tally feedbacks and presets; macros on the Stream Deck.

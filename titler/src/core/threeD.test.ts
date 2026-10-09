@@ -23,7 +23,8 @@ function draw(p: TitleProject) {
   renderFrame(cv.getContext('2d') as unknown as CanvasRenderingContext2D, p, { time: 1, env, brand: { font: TEST_FONT }, width: 400, height: 400 });
   return cv;
 }
-const alpha = (cv: ReturnType<typeof canvas>, x: number, y: number) => (cv.getContext('2d') as unknown as CanvasRenderingContext2D).getImageData(x, y, 1, 1).data[3]!;
+const alpha = (cv: ReturnType<typeof canvas>, x: number, y: number) =>
+  (cv.getContext('2d') as unknown as CanvasRenderingContext2D).getImageData(x, y, 1, 1).data[3]!;
 
 /** The drawn box's width along the middle row. */
 function width(cv: ReturnType<typeof canvas>, y = 200) {

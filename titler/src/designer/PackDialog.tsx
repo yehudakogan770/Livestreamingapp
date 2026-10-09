@@ -66,7 +66,12 @@ export function PackDialog({ host, env, onClose, onDone }: { host: Host; env: Br
       }
       const thumbs = [];
       for (const t of titles) thumbs.push(await thumbnail(t, env));
-      const info = { name: name.trim() || 'Titles', ...(author.trim() ? { author: author.trim() } : {}), ...(version.trim() ? { version: version.trim() } : {}), ...(license.trim() ? { license: license.trim() } : {}) };
+      const info = {
+        name: name.trim() || 'Titles',
+        ...(author.trim() ? { author: author.trim() } : {}),
+        ...(version.trim() ? { version: version.trim() } : {}),
+        ...(license.trim() ? { license: license.trim() } : {}),
+      };
       const bytes = await writePack(info, titles, thumbs);
       download(`${slug(info.name)}.${PACK_EXTENSION}`, new Blob([bytes as BlobPart], { type: 'application/zip' }));
       onDone(`Saved the pack ${info.name} (${titles.length} title${titles.length === 1 ? '' : 's'})`);

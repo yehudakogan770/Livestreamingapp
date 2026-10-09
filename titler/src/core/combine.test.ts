@@ -16,7 +16,9 @@ function draw(p: TitleProject, w = 200, h = 200) {
   renderFrame(c.getContext('2d') as unknown as CanvasRenderingContext2D, p, { time: 1, env, brand, width: w, height: h });
   return c;
 }
-const px = (c: ReturnType<typeof canvas>, x: number, y: number) => [...(c.getContext('2d') as unknown as CanvasRenderingContext2D).getImageData(x, y, 1, 1).data];
+const px = (c: ReturnType<typeof canvas>, x: number, y: number) => [
+  ...(c.getContext('2d') as unknown as CanvasRenderingContext2D).getImageData(x, y, 1, 1).data,
+];
 
 function scene(combine: GroupLayer['combine']) {
   const p = newProject('Combine', 200, 200);
@@ -83,7 +85,11 @@ describe('components', () => {
       { key: 'second', label: 'Second', type: 'color', value: '#00ff00' },
     ];
     const a = newCompLayer(main, tag);
-    const b = { ...newCompLayer(main, tag), values: { tone: '{{second}}' }, transform: { ...newCompLayer(main, tag).transform, position: { v: [200, 0] as [number, number] } } };
+    const b = {
+      ...newCompLayer(main, tag),
+      values: { tone: '{{second}}' },
+      transform: { ...newCompLayer(main, tag).transform, position: { v: [200, 0] as [number, number] } },
+    };
     main.layers = [a, b];
     const c = draw(p, 400, 200);
     expect(px(c, 100, 100).slice(0, 3)).toEqual([255, 0, 0]);

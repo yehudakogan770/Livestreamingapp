@@ -40,7 +40,7 @@ export function scriptJson(v: unknown): string {
 /** A field as a JSON-schema property (OGraf's `schema`, also readable by SPX and Loopic). */
 function fieldSchema(v: Variable): Record<string, unknown> {
   const base: Record<string, unknown> = { title: v.label || v.key, default: v.value };
-  if (v.type === 'number') return { ...base, type: 'string', 'gddType': 'single-line', format: 'number' };
+  if (v.type === 'number') return { ...base, type: 'string', gddType: 'single-line', format: 'number' };
   if (v.type === 'color') return { ...base, type: 'string', gddType: 'color-rrggbb', pattern: '^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$' };
   if (v.type === 'image') return { ...base, type: 'string', gddType: 'file-path/image-path' };
   if (v.type === 'list') return { ...base, type: 'string', gddType: 'multi-line' };

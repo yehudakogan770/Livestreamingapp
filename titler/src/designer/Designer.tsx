@@ -302,7 +302,11 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       setLibVersion((v) => v + 1);
       setSide('library');
       store.set({ status: `Added ${added} title${added === 1 ? '' : 's'} from ${pack.info.name} to the library` });
-      const about = [pack.info.author && `by ${pack.info.author}`, pack.info.version && `version ${pack.info.version}`, pack.info.license && `license ${pack.info.license}`]
+      const about = [
+        pack.info.author && `by ${pack.info.author}`,
+        pack.info.version && `version ${pack.info.version}`,
+        pack.info.license && `license ${pack.info.license}`,
+      ]
         .filter(Boolean)
         .join(', ');
       setNotice({

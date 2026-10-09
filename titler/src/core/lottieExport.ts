@@ -11,7 +11,24 @@ import { setExprScope } from './expr';
 import { plainText, type Measure } from './layout';
 import { rectCornersPath } from './paths';
 import { contentSize, exprScopeFor, layerIndex, textLayout } from './render';
-import type { BrandTokens, Composition, Keyframe, Layer, Paint, PathData, PathKey, Prop, ShapeLayer, Stroke, TextAnimator, TextLayer, TitleProject, Value, Values, Vec2 } from './types';
+import type {
+  BrandTokens,
+  Composition,
+  Keyframe,
+  Layer,
+  Paint,
+  PathData,
+  PathKey,
+  Prop,
+  ShapeLayer,
+  Stroke,
+  TextAnimator,
+  TextLayer,
+  TitleProject,
+  Value,
+  Values,
+  Vec2,
+} from './types';
 
 type J = Record<string, unknown>;
 
@@ -251,11 +268,24 @@ function shapeContents(x: X, l: ShapeLayer): J[] {
     // A box following its words: the size it has with the words now.
     x.notes.add('Boxes that follow their words keep the size they have with the words now.');
     if (l.shape === 'rect' && !l.corners)
-      items.push({ ty: 'rc', d: 1, s: { a: 0, k: [r3(fit.w), r3(fit.h)] }, p: { a: 0, k: [r3(fit.dx + fit.w / 2), r3(fit.h / 2)] }, r: lprop(x, l.roundness, 0, (v) => [r3(v)]) });
-    else if (l.shape === 'ellipse') items.push({ ty: 'el', d: 1, s: { a: 0, k: [r3(fit.w), r3(fit.h)] }, p: { a: 0, k: [r3(fit.dx + fit.w / 2), r3(fit.h / 2)] } });
+      items.push({
+        ty: 'rc',
+        d: 1,
+        s: { a: 0, k: [r3(fit.w), r3(fit.h)] },
+        p: { a: 0, k: [r3(fit.dx + fit.w / 2), r3(fit.h / 2)] },
+        r: lprop(x, l.roundness, 0, (v) => [r3(v)]),
+      });
+    else if (l.shape === 'ellipse')
+      items.push({ ty: 'el', d: 1, s: { a: 0, k: [r3(fit.w), r3(fit.h)] }, p: { a: 0, k: [r3(fit.dx + fit.w / 2), r3(fit.h / 2)] } });
     else items.push({ ty: 'sh', ks: { a: 0, k: lpath(rectCornersPath(fit.w, fit.h, l.corners ?? [0, 0, 0, 0])) } });
   } else if (l.shape === 'rect' && !l.corners) {
-    items.push({ ty: 'rc', d: 1, s: lprop(x, l.size, [100, 100], (v) => [r3(v[0]), r3(v[1])]), p: lprop(x, l.size, [100, 100], half), r: lprop(x, l.roundness, 0, (v) => [r3(v)]) });
+    items.push({
+      ty: 'rc',
+      d: 1,
+      s: lprop(x, l.size, [100, 100], (v) => [r3(v[0]), r3(v[1])]),
+      p: lprop(x, l.size, [100, 100], half),
+      r: lprop(x, l.roundness, 0, (v) => [r3(v)]),
+    });
   } else if (l.shape === 'ellipse') {
     items.push({ ty: 'el', d: 1, s: lprop(x, l.size, [100, 100], (v) => [r3(v[0]), r3(v[1])]), p: lprop(x, l.size, [100, 100], half) });
   } else if (l.shape === 'rect' && l.corners) {
@@ -564,7 +594,16 @@ export function toLottie(p: TitleProject, opts: LottieExportOptions = {}): Lotti
       ks: { a: { a: 0, k: [0, 0, 0] }, p: { a: 0, k: [0, 0, 0] }, s: { a: 0, k: [100, 100, 100] }, r: { a: 0, k: 0 }, o: { a: 0, k: r3(c[3] * 100) } },
       sw: comp.width,
       sh: comp.height,
-      sc: '#' + c.slice(0, 3).map((v) => Math.round(v * 255).toString(16).padStart(2, '0')).join(''),
+      sc:
+        '#' +
+        c
+          .slice(0, 3)
+          .map((v) =>
+            Math.round(v * 255)
+              .toString(16)
+              .padStart(2, '0'),
+          )
+          .join(''),
       ip: 0,
       op: r3(comp.duration * x.fr),
       st: 0,
