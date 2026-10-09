@@ -10,6 +10,7 @@ import { layerFor, type EffectNow, type Layer } from '../render/frame';
 import { decodedFile, FrameReader, lookSize } from './frames';
 import { finish, pack, unpack, type Matte, type MatteLook } from './matte';
 import { canvasOf, segmentObject, segmentPerson, type ObjectMethod } from './segment';
+import { drawnMatte, drawnShape } from '../render/drawnmask';
 
 /** What a matte is of: the people, or the object at a spot (0–1 of the picture). */
 export type MatteSpec = { kind: 'person' } | { kind: 'object'; u: number; v: number; tol: number };
@@ -366,6 +367,11 @@ export const lookOf = (e: EffectNow): MatteLook => ({ feather: e.p.feather ?? 0,
  * effect's settings (null: not done yet; `missing` is called then).
  */
 export function matteFor(layer: Layer, e: EffectNow, missing?: () => void): { w: number; h: number; data: Uint8Array; stamp: string } | null {
+  if (e.type === 'drawnmask') {
+    // Drawn on the frame: the same for every source.
+    const shape = drawnShape(e.d);
+    return shape ? drawnMatte(shape, typeof e.p.feather === 'number' ? e.p.feather : 12, (e.p.invert ?? 0) >= 0.5) : null;
+  }
   const src = layer.source;
   if (src?.kind !== 'video' && src?.kind !== 'image') return null;
   const spec = specFor(layer.clip, e, layer.local);

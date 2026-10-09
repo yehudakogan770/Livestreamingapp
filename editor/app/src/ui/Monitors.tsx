@@ -39,6 +39,7 @@ import { useUi, type Ui } from './state';
 import { TrackOverlay } from './Tracking';
 import { ExposureButton, ExposureOverlay, useExposure } from './ExposureOverlay';
 import { CompareOverlay, StillsButton, useCompare } from './Compare';
+import { DrawMaskOverlay, useDrawing } from './DrawMask';
 import { MarkIn, MarkOut } from './icons';
 
 /** The program monitor: the sequence as it plays, drawn by the compositor. */
@@ -47,6 +48,7 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
   const u = useUi(ui);
   const expo = useExposure();
   const cmp = useCompare();
+  const drawingMask = useDrawing();
   const s = current(project);
   const fps = rate(s);
   const [boxRef, box] = useSize<HTMLDivElement>();
@@ -80,7 +82,7 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
   const sel = selectedIds(selection);
   const moving = s.clips.find((c) => sel.includes(c.id) && s.tracks.find((tr) => tr.id === c.track)?.kind === 'video' && t >= c.start && t < end(c));
   // Guides and handles over the picture show only over WebGL's (the native window would cover them).
-  nativePlayback.blocked = u.safeMargins || expo.mode !== 'off' || !!cmp.showing || (!playing && !!moving) || !!problem;
+  nativePlayback.blocked = u.safeMargins || expo.mode !== 'off' || !!cmp.showing || !!drawingMask || (!playing && !!moving) || !!problem;
 
   return (
     <div className="vmon vmon--program">
@@ -133,6 +135,7 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
           <canvas ref={canvasRef} className="vmon__canvas" onDoubleClick={() => engine.toggle()} />
           <ExposureOverlay engine={engine} />
           <CompareOverlay />
+          <DrawMaskOverlay doc={doc} />
           {u.safeMargins && <div className="vmon__safe" />}
           {moving && !playing && <MoveHandles doc={doc} clip={moving} t={t} w={fitW} h={fitH} seqW={s.width} />}
           {!playing && <TrackOverlay doc={doc} engine={engine} clip={moving ?? null} t={t} w={fitW} h={fitH} />}

@@ -3733,3 +3733,26 @@ button.tc:hover {
 .estrip__write.is-on {
   color: var(--program-bright);
 }
+.dmask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+.dmask__shape {
+  fill: rgba(224, 151, 63, 0.12);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.dmask__shape.is-open {
+  fill: none;
+  stroke-dasharray: 4 3;
+}
+.dmask__pt {
+  fill: #ffffff;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  cursor: move;
+}

@@ -10,6 +10,7 @@ import { shifted, type EffectNow, type Layer, type MotionNow, type Op } from '..
 import { nodeUniforms, planGrade, wheelVectors } from '../grade';
 import { BLEND_MODES, TRANSITION_TYPES } from '../shaders';
 import { moreEffectUniforms } from '../fxlib';
+import { WHOLE_FRAME } from '../drawnmask';
 import type { NodeNow } from '../../model/grade';
 
 /** A texture a pass reads: `t3` (a target), `v0` (a video frame), `r:<id>` (a picture sent to the engine), `e` (nothing). */
@@ -547,12 +548,12 @@ export class Recorder {
     if (!matte || !matte.w || !matte.h) return null;
     const out = this.take();
     this.clear(out);
-    this.place(`r:${matte.id}`, matte.w, matte.h, layer.motion, out);
+    this.place(`r:${matte.id}`, matte.w, matte.h, mask.type === 'drawnmask' ? WHOLE_FRAME : layer.motion, out);
     return out;
   }
 
   private applyEffect(e: EffectNow, input: number, layer: Layer): number {
-    if (e.type === 'personmask' || e.type === 'objectmask') {
+    if (e.type === 'personmask' || e.type === 'objectmask' || e.type === 'drawnmask') {
       if ((e.p.use ?? 0) >= 0.5) return input;
       const m = this.maskTarget(layer, e);
       if (m === null) return input;

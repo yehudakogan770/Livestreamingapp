@@ -12,6 +12,7 @@ import type { NodeNow } from '../model/grade';
 import { CUTOUT_FS, LIMIT_FS } from './maskfx';
 import { drawText, textStamp } from './text';
 import { moreEffectUniforms } from './fxlib';
+import { WHOLE_FRAME } from './drawnmask';
 import {
   BLEND_MODES,
   COMPOSITE_FS,
@@ -1002,16 +1003,16 @@ export class Compositor {
       gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
       t.stamp = matte.stamp;
     }
-    // Placed exactly as the clip's picture is.
+    // Placed exactly as the clip's picture is (a drawn mask: over the whole frame, where it was drawn).
     const out = this.take();
     this.clear(out);
-    this.place(t.tex, matte.w, matte.h, layer.motion, out);
+    this.place(t.tex, matte.w, matte.h, mask.type === 'drawnmask' ? WHOLE_FRAME : layer.motion, out);
     return out;
   }
 
   /** An effect, kept inside (or outside) a mask when it is limited to one. AI masks cut the layer out. */
   private applyEffect(e: EffectNow, input: Target, pics: Pictures, layer: Layer): Target {
-    if (e.type === 'personmask' || e.type === 'objectmask') {
+    if (e.type === 'personmask' || e.type === 'objectmask' || e.type === 'drawnmask') {
       if ((e.p.use ?? 0) >= 0.5) return input;
       const m = this.maskTarget(layer, e, pics);
       if (!m) return input;

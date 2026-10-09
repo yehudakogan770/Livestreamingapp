@@ -1,6 +1,7 @@
 // Motion tracking and AI masks on the screen: the Tracking section of the
 // effect controls, the extra rows of mask effects ("follow a track", "limit
 // to"), and the tracker points and paths drawn over the program monitor.
+import { DrawnMaskRows } from './DrawMask';
 import { Crosshair, Scan, X } from 'lucide-react';
 import { useSyncExternalStore, type ReactNode } from 'react';
 import { useDoc, type Doc } from '../doc';
@@ -615,6 +616,7 @@ export function EffectExtras({ doc, engine, clip, effect, local }: { doc: Doc; e
   const setD = (d: Record<string, unknown>, label: string) =>
     editClip(doc, clip.id, label, (c) => ({ ...c, effects: c.effects.map((e) => (e.id === effect.id ? { ...e, d: { ...e.d, ...d } } : e)) }));
   if (effect.type === 'personmask' || effect.type === 'objectmask') return <AiMaskRows doc={doc} engine={engine} clip={clip} effect={effect} local={local} />;
+  if (effect.type === 'drawnmask') return <DrawnMaskRows doc={doc} clip={clip.id} effect={effect} />;
   if (effect.type === 'mask') {
     const paths = clip.paths ?? [];
     if (!paths.length) return null;

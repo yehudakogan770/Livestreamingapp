@@ -45,7 +45,7 @@ const P = (key: string, label: string, min: number, max: number, def: number, st
 const USE_AS = ['Cut out', 'Only limit effects'];
 
 /** Masks that other effects can be limited to. */
-export const MASK_TYPES = ['mask', 'personmask', 'objectmask'];
+export const MASK_TYPES = ['mask', 'drawnmask', 'personmask', 'objectmask'];
 
 export const EFFECTS: EffectDef[] = [
   // ---- Color ----
@@ -170,6 +170,18 @@ export const EFFECTS: EffectDef[] = [
       { ...P('invert', 'Invert', 0, 1, 0), toggle: true },
       { ...P('use', 'Use as', 0, 1, 0), options: USE_AS },
     ],
+  },
+  {
+    type: 'drawnmask',
+    name: 'Drawn mask',
+    kind: 'video',
+    group: 'Keying',
+    params: [
+      P('feather', 'Feather', 0, 200, 12, 1, 'px'),
+      { ...P('invert', 'Invert', 0, 1, 0), toggle: true },
+      { ...P('use', 'Use as', 0, 1, 0), options: USE_AS },
+    ],
+    data: { points: [], aspect: 16 / 9 },
   },
   // ---- AI masks ----
   {
