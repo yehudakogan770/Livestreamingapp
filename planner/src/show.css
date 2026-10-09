@@ -480,3 +480,102 @@
 .nownext__t.is-over {
   color: var(--live);
 }
+
+/* ---- The public page (read-only link) ---- */
+.public {
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+  min-height: 100%;
+}
+.public__head h1 {
+  margin: 10px 0 2px;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+}
+.public__head p {
+  margin: 0;
+}
+.public__brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.public__nav {
+  margin-top: 14px;
+}
+.public .nownext {
+  margin: 16px 0 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+}
+.public__notes {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.public__sec {
+  margin-top: 24px;
+}
+.public__sec h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.public__sec h3 {
+  margin: 12px 0 6px;
+  font-size: 13px;
+}
+.public__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+  overflow: hidden;
+}
+.public__list > li + li {
+  border-top: 1px solid var(--line);
+}
+.public__list > li.is-now {
+  background: var(--live-bg);
+}
+.public__section {
+  padding: 8px 12px 6px;
+  background: var(--surface-2);
+  font-weight: 600;
+  border-bottom: 1px solid var(--line);
+}
+.public__row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 12px;
+}
+.public__time {
+  flex: 0 0 76px;
+  color: var(--dim);
+}
+.public__what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.public__what b {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.public__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 32px;
+}

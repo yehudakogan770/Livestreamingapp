@@ -1,6 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { blankCue, blankPlan, cueFromRow, cueToRow, eventSeconds, planFromRow, schedule, zonedMoment, zoneOffset, type PlanCue, type PlanRow } from './model';
-import { OFF, actualSec, crewLine, lengthsFromRun, nextIndex, overUnderWords, prevIndex, runs, timerText, timerTone, whereNow, type Live, type LogEntry } from './live';
+import {
+  OFF,
+  actualSec,
+  crewLine,
+  lengthsFromRun,
+  nextIndex,
+  overUnderWords,
+  prevIndex,
+  runs,
+  timerText,
+  timerTone,
+  whereNow,
+  type Live,
+  type LogEntry,
+} from './live';
 import { blankItem, budgetTotals, callGroups, listOf, parseMoney, taskCount } from './items';
 import { cuesToRows, headerField, itemsToCsv, parseCsv, planToIcs, readXlsx, rowsToCues, segmentFrom, toCsv, toXlsx, unzip } from './csv';
 import { insertMention, matchPeople, mentionsIn, splitMentions, typingMention } from './mentions';
@@ -12,8 +26,24 @@ describe('cues and plans from the server (update 10)', () => {
   it('reads the new columns, and knows when the server does not have them', () => {
     const base: PlanRow = { id: 'p', owner: 'o', name: 'Gala', event_date: null, venue: '', start_time: '', notes: '', updated_at: '', updated_by_name: '' };
     expect(planFromRow(base).pro).toBe(false);
-    const p = planFromRow({ ...base, time_zone: 'America/Chicago', end_by: '21:00', columns: [{ id: 'a', name: 'Audio' }, { bad: 1 }], is_template: true, share_token: 't', share_scope: 'crew' });
-    expect(p).toMatchObject({ pro: true, timeZone: 'America/Chicago', endBy: '21:00', columns: [{ id: 'a', name: 'Audio' }], isTemplate: true, shareToken: 't', shareScope: 'crew' });
+    const p = planFromRow({
+      ...base,
+      time_zone: 'America/Chicago',
+      end_by: '21:00',
+      columns: [{ id: 'a', name: 'Audio' }, { bad: 1 }],
+      is_template: true,
+      share_token: 't',
+      share_scope: 'crew',
+    });
+    expect(p).toMatchObject({
+      pro: true,
+      timeZone: 'America/Chicago',
+      endBy: '21:00',
+      columns: [{ id: 'a', name: 'Audio' }],
+      isTemplate: true,
+      shareToken: 't',
+      shareScope: 'crew',
+    });
   });
 
   it('sends the new cue columns only to a server that has them', () => {
@@ -51,7 +81,11 @@ describe('time zones', () => {
 });
 
 describe('show day', () => {
-  const cues = [cue('a', 1, { title: 'Doors', durationSec: 300, who: 'Dana' }), cue('b', 2, { durationSec: 600, skip: true }), cue('c', 3, { title: 'Welcome', durationSec: 120 })];
+  const cues = [
+    cue('a', 1, { title: 'Doors', durationSec: 300, who: 'Dana' }),
+    cue('b', 2, { durationSec: 600, skip: true }),
+    cue('c', 3, { title: 'Welcome', durationSec: 120 }),
+  ];
   const t0 = Date.UTC(2026, 10, 14, 19);
   const live = (more: Partial<Live>): Live => ({ ...OFF, planId: 'p', runId: 'r', state: 'running', cueId: 'a', cueStartedAt: t0, showStartedAt: t0, ...more });
 
@@ -76,7 +110,9 @@ describe('show day', () => {
   });
 
   it('knows when a later cue started late or early', () => {
-    const log: LogEntry[] = [{ id: '1', runId: 'r', mode: 'show', cueId: 'a', cueTitle: 'Doors', plannedSec: 300, startedAt: t0, endedAt: t0 + 240_000, pausedSec: 0 }];
+    const log: LogEntry[] = [
+      { id: '1', runId: 'r', mode: 'show', cueId: 'a', cueTitle: 'Doors', plannedSec: 300, startedAt: t0, endedAt: t0 + 240_000, pausedSec: 0 },
+    ];
     const n = whereNow(live({ cueId: 'c', cueStartedAt: t0 + 240_000 }), cues, t0 + 250_000, log);
     expect(n.overUnder).toBe(-60);
     expect(overUnderWords(-60)).toBe('1:00 under');
@@ -119,7 +155,11 @@ describe('show day', () => {
 describe('lists', () => {
   const it1 = (more: Parameters<typeof blankItem>[4]) => blankItem('p', String(Math.random()), more?.kind ?? 'task', 0, more);
   it('orders the crew by call time and tasks open first', () => {
-    const crew = [it1({ kind: 'crew', title: 'B', callTime: '16:00' }), it1({ kind: 'crew', title: 'A', callTime: '15:00' }), it1({ kind: 'crew', title: 'C', callTime: '15:00' })];
+    const crew = [
+      it1({ kind: 'crew', title: 'B', callTime: '16:00' }),
+      it1({ kind: 'crew', title: 'A', callTime: '15:00' }),
+      it1({ kind: 'crew', title: 'C', callTime: '15:00' }),
+    ];
     expect(listOf(crew, 'crew').map((c) => c.title)).toEqual(['A', 'C', 'B']);
     expect(callGroups(crew).map((g) => [g.time, g.people.length])).toEqual([
       ['3:00 PM', 2],
@@ -165,11 +205,22 @@ describe('spreadsheets', () => {
   });
 
   it('round-trips the run of show', () => {
-    const cues = [cue('a', 1, { section: 'Opening', title: 'Welcome', durationSec: 300, who: 'Dana', segment: 'speaker', script: 'Hi, all', custom: { cam: 'Wide' } }), cue('b', 2, { title: 'Video', durationSec: 90, segment: 'video', startTime: '19:10' })];
+    const cues = [
+      cue('a', 1, { section: 'Opening', title: 'Welcome', durationSec: 300, who: 'Dana', segment: 'speaker', script: 'Hi, all', custom: { cam: 'Wide' } }),
+      cue('b', 2, { title: 'Video', durationSec: 90, segment: 'video', startTime: '19:10' }),
+    ];
     const rows = cuesToRows(cues, '19:00', [{ id: 'cam', name: 'Camera' }]);
     const back = rowsToCues(parseCsv(toCsv(rows)), [{ id: 'cam', name: 'Camera' }]);
     expect(back.cues).toHaveLength(2);
-    expect(back.cues[0]).toMatchObject({ section: 'Opening', title: 'Welcome', durationSec: 300, who: 'Dana', segment: 'speaker', script: 'Hi, all', custom: { cam: 'Wide' } });
+    expect(back.cues[0]).toMatchObject({
+      section: 'Opening',
+      title: 'Welcome',
+      durationSec: 300,
+      who: 'Dana',
+      segment: 'speaker',
+      script: 'Hi, all',
+      custom: { cam: 'Wide' },
+    });
     expect(back.cues[1]).toMatchObject({ title: 'Video', segment: 'video', startTime: '19:10', section: 'Opening' });
     expect(back.extra).toEqual(['Camera']);
   });
@@ -190,7 +241,16 @@ describe('spreadsheets', () => {
   });
 
   it('writes and reads back an Excel file', async () => {
-    const x = toXlsx([{ name: 'Run of show', rows: [['Cue', 'Length'], ['Welcome & intro', '5:00'], ['Count', '42']] }]);
+    const x = toXlsx([
+      {
+        name: 'Run of show',
+        rows: [
+          ['Cue', 'Length'],
+          ['Welcome & intro', '5:00'],
+          ['Count', '42'],
+        ],
+      },
+    ]);
     const files = await unzip(x);
     expect([...files.keys()]).toContain('xl/worksheets/sheet1.xml');
     const rows = await readXlsx(x);
@@ -208,9 +268,27 @@ describe('spreadsheets', () => {
 
   it('makes a calendar file', () => {
     const plan = blankPlan('p', { name: 'Gala, night', eventDate: '2026-11-14', startTime: '19:30', venue: 'Main hall', timeZone: 'America/New_York' });
-    const ics = planToIcs(plan, [cue('a', 1, { title: 'Welcome', durationSec: 3600 })], [
-      { id: 'b', planId: 'p', day: '2026-11-14', starts: '15:00', ends: '17:00', title: 'Load-in', location: 'Dock', who: 'Crew', notes: '', sort: 0, updatedAt: 0, updatedBy: '' },
-    ], new Date('2026-10-01T00:00:00Z'));
+    const ics = planToIcs(
+      plan,
+      [cue('a', 1, { title: 'Welcome', durationSec: 3600 })],
+      [
+        {
+          id: 'b',
+          planId: 'p',
+          day: '2026-11-14',
+          starts: '15:00',
+          ends: '17:00',
+          title: 'Load-in',
+          location: 'Dock',
+          who: 'Crew',
+          notes: '',
+          sort: 0,
+          updatedAt: 0,
+          updatedBy: '',
+        },
+      ],
+      new Date('2026-10-01T00:00:00Z'),
+    );
     expect(ics).toContain('SUMMARY:Gala\\, night');
     expect(ics).toContain('DTSTART;TZID=America/New_York:20261114T193000');
     expect(ics).toContain('DTEND;TZID=America/New_York:20261114T203000');

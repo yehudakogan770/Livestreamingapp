@@ -141,7 +141,10 @@ export function FilePanel({
   const list = cueId === undefined ? store.files : store.files.filter((f) => f.cueId === cueId);
   const sorted = sortCues(cues);
   const used = store.files.reduce((a, f) => a + f.size, 0);
-  if (!store.ready) return compact ? null : <p className="muted">Files need the Planner’s show-day update on the Lumora account server (supabase/update-10-planner-pro.sql).</p>;
+  if (!store.ready)
+    return compact ? null : (
+      <p className="muted">Files need the Planner’s show-day update on the Lumora account server (supabase/update-10-planner-pro.sql).</p>
+    );
   return (
     <div className="files">
       {compact && <h3 className="files__h">Files{list.length ? ` (${list.length})` : ''}</h3>}
@@ -174,7 +177,13 @@ export function FilePanel({
               <span />
             )}
             <span className="row">
-              <button type="button" className="btn btn--quiet btn--icon" onClick={() => void store.open(f, true)} aria-label={`Download ${f.name}`} title="Download">
+              <button
+                type="button"
+                className="btn btn--quiet btn--icon"
+                onClick={() => void store.open(f, true)}
+                aria-label={`Download ${f.name}`}
+                title="Download"
+              >
                 <Download size={14} strokeWidth={1.75} aria-hidden="true" />
               </button>
               {canEdit && (
@@ -221,7 +230,11 @@ export function FilePanel({
               choose files
             </button>
           </span>
-          {!compact && <span className="muted small">Up to 25 MB each; {pro.fileSize(pro.MAX_PLAN_FILES - used)} left on this plan. Only people on the plan can open them.</span>}
+          {!compact && (
+            <span className="muted small">
+              Up to 25 MB each; {pro.fileSize(pro.MAX_PLAN_FILES - used)} left on this plan. Only people on the plan can open them.
+            </span>
+          )}
           <input
             ref={pick}
             type="file"

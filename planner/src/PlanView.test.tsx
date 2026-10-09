@@ -109,7 +109,7 @@ describe('plan view', () => {
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Yes' } });
     fireEvent.keyDown(screen.getByLabelText('Message'), { key: 'Enter' });
-    expect(chatStore.send).toHaveBeenCalledWith('Yes');
+    expect(chatStore.send).toHaveBeenCalledWith('Yes', []);
   });
 
   it('marks an untitled cue as a placeholder and points at what is missing', () => {

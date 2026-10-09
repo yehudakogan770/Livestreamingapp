@@ -1,17 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, Expand, Pause, Play, ScrollText, Square, Timer, X } from 'lucide-react';
-import {
-  actualSec,
-  lengthsFromRun,
-  overUnderWords,
-  prevIndex,
-  runs,
-  timerText,
-  timerTone,
-  whereNow,
-  type Live,
-  type LogEntry,
-} from './live';
+import { actualSec, lengthsFromRun, overUnderWords, prevIndex, runs, timerText, timerTone, whereNow, type Live, type LogEntry } from './live';
 import { clock12, cueLabel, formatDuration, segmentName, sortCues, validZone, zoneAbbr, zoneParts, type Plan, type PlanCue } from './model';
 import { serverNow, useTick, type LiveStore } from './useLive';
 import './show.css';
@@ -127,7 +116,8 @@ export function ShowView({
   }, [caller]);
 
   const mode = live?.mode === 'rehearsal' ? 'Rehearsal' : 'Show';
-  const state = !live || live.state === 'off' ? 'Not started' : live.state === 'ended' ? `${mode} over` : live.state === 'paused' ? `${mode} · paused` : `${mode} · live`;
+  const state =
+    !live || live.state === 'off' ? 'Not started' : live.state === 'ended' ? `${mode} over` : live.state === 'paused' ? `${mode} · paused` : `${mode} · live`;
   const lastRun = useMemo(() => runs(log)[0], [log]);
 
   return (
@@ -213,7 +203,12 @@ export function ShowView({
               )}
             </>
           ) : live?.state === 'ended' ? (
-            <Summary cues={cues} log={lastRun?.runId === live.runId ? lastRun.entries : runLog} mode={live.mode} onUseLengths={caller ? onUseLengths : undefined} />
+            <Summary
+              cues={cues}
+              log={lastRun?.runId === live.runId ? lastRun.entries : runLog}
+              mode={live.mode}
+              onUseLengths={caller ? onUseLengths : undefined}
+            />
           ) : (
             <div className="show__idle">
               <div className="show__label">{plan.startTime ? `Planned start ${clock12Stored(plan.startTime)}` : 'Not started'}</div>
@@ -232,9 +227,7 @@ export function ShowView({
               {next ? (
                 <>
                   <b>{cueLabel(next)}</b>
-                  <span className="muted">
-                    {[next.who, next.durationSec !== null ? formatDuration(next.durationSec) : ''].filter(Boolean).join(' · ')}
-                  </span>
+                  <span className="muted">{[next.who, next.durationSec !== null ? formatDuration(next.durationSec) : ''].filter(Boolean).join(' · ')}</span>
                 </>
               ) : (
                 <span className="muted">End of the show</span>
@@ -257,7 +250,7 @@ export function ShowView({
               ended={live?.state === 'ended'}
               hasNext={!!next}
               canBack={n.index >= 0 && prevIndex(cues, n.index) >= 0}
-              startFrom={pick ? cues.find((c) => c.id === pick) ?? null : next}
+              startFrom={pick ? (cues.find((c) => c.id === pick) ?? null) : next}
               onNext={goNext}
               onBack={goBack}
               onRehearse={() => {
@@ -289,7 +282,9 @@ export function ShowView({
                   <span className="show__len mono">
                     {done != null ? formatDuration(done) : formatDuration(c.durationSec)}
                     {diff !== null && Math.abs(diff) >= 5 && (
-                      <span className={`show__diff ${diff > 0 ? 'is-over' : 'is-under'}`}>{diff > 0 ? `+${formatDuration(diff)}` : `−${formatDuration(-diff)}`}</span>
+                      <span className={`show__diff ${diff > 0 ? 'is-over' : 'is-under'}`}>
+                        {diff > 0 ? `+${formatDuration(diff)}` : `−${formatDuration(-diff)}`}
+                      </span>
                     )}
                   </span>
                   {store && !c.skip && !isNow && (
@@ -392,12 +387,7 @@ function Controls({
               </button>
             </span>
             <span className="bar__spacer" />
-            <button
-              type="button"
-              className="btn btn--quiet btn--danger"
-              disabled={busy}
-              onClick={() => confirm('End the show now?') && void store.act('end')}
-            >
+            <button type="button" className="btn btn--quiet btn--danger" disabled={busy} onClick={() => confirm('End the show now?') && void store.act('end')}>
               <Square size={14} strokeWidth={1.75} aria-hidden="true" />
               End
             </button>
@@ -560,7 +550,12 @@ export function NowNextStrip({ data, children }: { data: ShowData; children?: Re
   const on = live?.state === 'running' || live?.state === 'paused';
   useTick(500, on);
   if (!on) return null;
-  const n = whereNow(live, cues, serverNow(offset), log.filter((e) => e.runId === live.runId));
+  const n = whereNow(
+    live,
+    cues,
+    serverNow(offset),
+    log.filter((e) => e.runId === live.runId),
+  );
   const cur = n.index >= 0 ? cues[n.index]! : null;
   const next = n.next >= 0 ? cues[n.next]! : null;
   if (!cur) return null;
@@ -579,4 +574,3 @@ export function NowNextStrip({ data, children }: { data: ShowData; children?: Re
     </div>
   );
 }
-

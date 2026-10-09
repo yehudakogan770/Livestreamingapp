@@ -296,13 +296,11 @@ function Scripts({ plan, cues, sched }: { plan: Plan; cues: PlanCue[]; sched: Sc
                 {t.start !== null ? clock12(t.start) : ''} {c.durationSec !== null ? `· ${formatDuration(c.durationSec)}` : ''}
               </div>
               {c.who && <div>{c.who}</div>}
-              {[c.input && `Input: ${c.input}`, c.transition && `Transition: ${c.transition}`, c.overlay && `Title: ${c.overlay}`]
-                .filter(Boolean)
-                .map((h) => (
-                  <div key={h} className="print__sub">
-                    {h}
-                  </div>
-                ))}
+              {[c.input && `Input: ${c.input}`, c.transition && `Transition: ${c.transition}`, c.overlay && `Title: ${c.overlay}`].filter(Boolean).map((h) => (
+                <div key={h} className="print__sub">
+                  {h}
+                </div>
+              ))}
               {c.notes && <div className="print__sub pre">{c.notes}</div>}
             </div>
             <div className="print__sright pre">{c.script.trim() || <i className="print__untitled">No script</i>}</div>

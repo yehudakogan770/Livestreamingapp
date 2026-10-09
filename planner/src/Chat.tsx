@@ -9,6 +9,8 @@ import type { ChatStore } from './useChat';
 import type { Message } from './chatModel';
 import { Mark } from './Mark';
 import { usePlannerFeatures } from './features';
+import { MentionBox, WithMentions } from './MentionBox';
+import { mentionsIn, type Mentionable } from './mentions';
 
 export function Chat({
   chat,
@@ -17,7 +19,10 @@ export function Chat({
   cueCount,
   onCue,
   planName,
+  people = [],
 }: {
+  /** Everyone on the plan, for @mentions (none: no mentions). */
+  people?: Mentionable[];
   chat: ChatStore;
   me: string;
   isOwner: boolean;
@@ -36,6 +41,7 @@ export function Chat({
   const live = useRef({ onCue, remove: chat.remove });
   live.current = { onCue, remove: chat.remove };
   const act = useMemo<MessageActions>(() => ({ cue: (n) => live.current.onCue(n), remove: (id) => live.current.remove(id) }), []);
+  const named = useMemo(() => people, [people]);
 
   // Stay at the newest message unless scrolled up to read older ones.
   useLayoutEffect(() => {
@@ -53,7 +59,7 @@ export function Chat({
     setErr('');
     stick.current = true;
     chat
-      .send(body)
+      .send(body, named.length ? mentionsIn(body, named, me) : [])
       .then(() => setText(''))
       .catch((e: unknown) => setErr(e instanceof Error ? e.message : String(e)))
       .finally(() => setBusy(false));
@@ -90,6 +96,7 @@ export function Chat({
             canDelete={mayDelete(m, me, isOwner)}
             cueCount={cueCount}
             act={act}
+            people={named}
           />
         ))}
       </div>
@@ -107,27 +114,47 @@ export function Chat({
         >
           {err && <p className="warn small chat__err">{err}</p>}
           <div className="chat__row">
-            <textarea
-              className="input chat__input"
-              rows={1}
-              maxLength={MAX_MESSAGE}
-              value={text}
-              placeholder="Message everyone on this plan"
-              aria-label="Message"
-              enterKeyHint="send"
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-            />
+            {named.length ? (
+              <MentionBox
+                className="input chat__input"
+                rows={1}
+                maxLength={MAX_MESSAGE}
+                value={text}
+                people={named}
+                me={me}
+                placeholder="Message everyone on this plan"
+                label="Message"
+                onChange={setText}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+              />
+            ) : (
+              <textarea
+                className="input chat__input"
+                rows={1}
+                maxLength={MAX_MESSAGE}
+                value={text}
+                placeholder="Message everyone on this plan"
+                aria-label="Message"
+                enterKeyHint="send"
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+              />
+            )}
             <button type="submit" className="btn btn--primary btn--icon chat__send" disabled={busy || !text.trim()} aria-label="Send">
               <ArrowUp size={16} strokeWidth={2} aria-hidden="true" />
             </button>
           </div>
-          <p className="chat__tip muted">Enter sends · Shift+Enter for a new line · #4 links to cue 4</p>
+          <p className="chat__tip muted">Enter sends · Shift+Enter for a new line · #4 links to cue 4{named.length ? ' · @ names someone' : ''}</p>
         </form>
       )}
     </section>
@@ -148,7 +175,9 @@ const MessageItem = memo(function MessageItem({
   canDelete,
   cueCount,
   act,
+  people,
 }: {
+  people: Mentionable[];
   m: Message;
   day: boolean;
   head: boolean;
@@ -186,7 +215,9 @@ const MessageItem = memo(function MessageItem({
                   {p.text}
                 </button>
               ) : (
-                <span key={k}>{p.text}</span>
+                <span key={k}>
+                  <WithMentions text={p.text} people={people} />
+                </span>
               ),
             )}
           </p>

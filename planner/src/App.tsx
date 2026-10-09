@@ -28,6 +28,9 @@ import { lastWho, offlineWho, rememberPlans, rememberWho, savedPlans, unreachabl
 import { install, useInstall, useOnline } from './pwa';
 import { InstallCard, IosSteps, OfflineBar } from './PwaBars';
 import { useLayout, type Device } from './device';
+import { listTemplates, myFeed, feedUrl, type TemplateSummary } from './apiPro';
+import { NoticeBell, NoticeList, useNotices } from './Notices';
+import { AUTH_KEY, AUTH_URL } from '../../app/src/auth/config';
 
 // Loaded when first needed (the sign-in and the list come up sooner): a plan,
 // the calendar, and the two-step code form. The installed app has them all on the device.
@@ -35,6 +38,8 @@ const loadPlanView = () => import('./PlanView');
 const PlanView = lazy(() => loadPlanView().then((m) => ({ default: m.PlanView })));
 const loadCalendar = () => import('./Calendar');
 const Calendar = lazy(() => loadCalendar().then((m) => ({ default: m.Calendar })));
+const PublicView = lazy(() => import('./PublicView').then((m) => ({ default: m.PublicView })));
+const NewPlanDialog = lazy(() => import('./NewPlan').then((m) => ({ default: m.NewPlanDialog })));
 const CodeForm = lazy(() => import('../../app/src/auth/TwoStep').then((m) => ({ default: m.CodeForm })));
 const TwoStepSetup = lazy(() => import('../../app/src/auth/TwoStep').then((m) => ({ default: m.TwoStepSetup })));
 
@@ -71,12 +76,19 @@ function useTheme(): [Theme, () => void, (t: Theme) => void] {
   return [theme, next, setTheme];
 }
 
-export type Route = { page: 'plans' } | { page: 'calendar' } | { page: 'account' } | { page: 'plan'; id: string; tab: PlanTab };
+export type Route =
+  | { page: 'plans' }
+  | { page: 'calendar' }
+  | { page: 'account' }
+  | { page: 'plan'; id: string; tab: PlanTab }
+  | { page: 'view'; token: string; screen: '' | 'now' | 'timer' | 'prompter' };
 
-/** "#/", "#/calendar", "#/account", "#/plan/<id>", "#/plan/<id>/schedule", "#/plan/<id>/chat". */
+/** "#/", "#/calendar", "#/account", "#/plan/<id>", "#/plan/<id>/schedule", "#/plan/<id>/chat", "#/view/<token>" (a public link)… */
 export function readRoute(hash: string): Route {
-  const plan = /^#\/plan\/([0-9a-f-]{36})(?:\/(run|schedule|chat))?$/i.exec(hash);
-  if (plan) return { page: 'plan', id: plan[1]!, tab: (plan[2] as PlanTab | undefined) ?? 'run' };
+  const plan = /^#\/plan\/([0-9a-f-]{36})(?:\/(run|schedule|chat|show|timer|prompter|crew|contacts|tasks|gear|budget|files))?$/i.exec(hash);
+  if (plan) return { page: 'plan', id: plan[1]!, tab: (plan[2]?.toLowerCase() as PlanTab | undefined) ?? 'run' };
+  const view = /^#\/view\/([0-9a-f-]{36})(?:\/(now|timer|prompter))?$/i.exec(hash);
+  if (view) return { page: 'view', token: view[1]!.toLowerCase(), screen: (view[2]?.toLowerCase() as 'now' | 'timer' | 'prompter' | undefined) ?? '' };
   if (hash === '#/calendar') return { page: 'calendar' };
   if (hash === '#/account') return { page: 'account' };
   return { page: 'plans' };
@@ -84,6 +96,7 @@ export function readRoute(hash: string): Route {
 
 export function routeHash(r: Route): string {
   if (r.page === 'plan') return `#/plan/${r.id}${r.tab === 'run' ? '' : `/${r.tab}`}`;
+  if (r.page === 'view') return `#/view/${r.token}${r.screen ? `/${r.screen}` : ''}`;
   return r.page === 'plans' ? '#/' : `#/${r.page}`;
 }
 
@@ -132,15 +145,23 @@ function useRoute(): [Route, (r: Route) => void, () => void] {
  * Opening the app, the list kept on this device shows at once while the live
  * one loads (and again once the sign-in has been checked: `checked` changes).
  */
-function usePlans(on: boolean, checked: number): { plans: PlanSummary[] | null; error: string; refresh: () => Promise<void>; savedAt: number } {
+function usePlans(
+  on: boolean,
+  checked: number,
+): { plans: PlanSummary[] | null; templates: TemplateSummary[]; error: string; refresh: () => Promise<void>; savedAt: number } {
   const [plans, setPlans] = useState<PlanSummary[] | null>(() => (on ? (savedPlans()?.plans ?? null) : null));
+  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [error, setError] = useState('');
   /** When the list shown was saved on this device (no internet), or 0: live. */
   const [savedAt, setSavedAt] = useState(0);
   const refresh = useCallback(
     () =>
-      listPlans(db())
-        .then((list) => {
+      Promise.all([listPlans(db()), listTemplates(db())])
+        .then(([all, temps]) => {
+          // Templates are listed apart, not with the plans.
+          const ids = new Set(temps.map((t) => t.id));
+          const list = all.filter((p) => !ids.has(p.id));
+          setTemplates(temps);
           setPlans(list);
           setError('');
           setSavedAt(0);
@@ -159,7 +180,7 @@ function usePlans(on: boolean, checked: number): { plans: PlanSummary[] | null; 
   useEffect(() => {
     if (on) void refresh();
   }, [on, refresh, checked]);
-  return { plans, error, refresh, savedAt };
+  return { plans, templates, error, refresh, savedAt };
 }
 
 type Gate = { s: 'checking' } | { s: 'error'; message: string } | Who;
@@ -222,7 +243,17 @@ export function App() {
   const meId = access?.userId;
   const meName = access ? access.name || access.email : '';
   const me = useMemo(() => (meId ? { id: meId, name: meName } : null), [meId, meName]);
-  const { plans, error: plansError, refresh, savedAt } = usePlans(gate.s === 'in' && !fromCopy, checked);
+  const { plans, templates, error: plansError, refresh, savedAt } = usePlans(gate.s === 'in' && !fromCopy, checked);
+  const [newPlan, setNewPlan] = useState<{ name: string; date: string } | null>(null);
+  const notices = useNotices(gate.s === 'in' && !fromCopy ? (gate.access.userId ?? null) : null, (n) => {
+    // A new mention or task while the app is in the background: the browser says so (if allowed).
+    try {
+      if (document.hidden && 'Notification' in window && Notification.permission === 'granted')
+        new Notification(n.kind === 'task' ? `${n.from || 'Someone'} gave you a task` : `${n.from || 'Someone'} mentioned you`, { body: n.body, tag: n.id });
+    } catch {
+      // No notifications here: the bell still shows it.
+    }
+  });
   // From the copy: the saved list (usePlans does not ask the server).
   const copyPlans = useMemo(() => (fromCopy ? savedPlans() : null), [fromCopy]);
   // Back on the list or calendar: names and dates may have changed in a plan.
@@ -263,6 +294,12 @@ export function App() {
     </button>
   );
 
+  if (route.page === 'view' && authOn())
+    return (
+      <Suspense fallback={<Loading />}>
+        <PublicView token={route.token} screen={route.screen} go={(screen) => go({ page: 'view', token: route.token, screen })} />
+      </Suspense>
+    );
   if (!authOn()) return <Notice title="Lumora Planner" text="The Planner needs Lumora’s sign-in, which is not set up." />;
   if (gate.s === 'checking') return <Loading />;
   if (gate.s === 'error')
@@ -332,6 +369,7 @@ export function App() {
       go({ page: 'plan', id: p.id, tab: 'run' });
     });
   const open = (id: string) => go({ page: 'plan', id, tab: 'run' });
+  const planName = (id: string) => (plans ?? []).find((p) => p.id === id)?.name ?? '';
 
   let content: ReactNode;
   if (route.page === 'plan' && me)
@@ -350,7 +388,16 @@ export function App() {
     );
   else if (route.page === 'account')
     content = (
-      <AccountPage name={gate.access.name} email={gate.access.email} theme={theme} setTheme={setTheme} offer={installing.offer} device={layout.device} />
+      <AccountPage name={gate.access.name} email={gate.access.email} theme={theme} setTheme={setTheme} offer={installing.offer} device={layout.device}>
+        {notices.ready && (
+          <>
+            <h2 className="page__sub">Notifications</h2>
+            <div className="group notices__page" onClick={() => setTimeout(notices.readAll, 500)}>
+              <NoticeList store={notices} planName={planName} onOpen={(n) => go({ page: 'plan', id: n.planId, tab: n.kind === 'task' ? 'tasks' : 'run' })} />
+            </div>
+          </>
+        )}
+      </AccountPage>
     );
   else if (route.page === 'calendar')
     content = (
@@ -360,6 +407,7 @@ export function App() {
         <Suspense fallback={null}>
           <Calendar plans={shownPlans} canPlan={canPlan} onOpen={open} onCreate={make} phone={phone} />
         </Suspense>
+        {notices.ready && <CalendarFeed />}
       </main>
     );
   else
@@ -372,6 +420,8 @@ export function App() {
         canPlan={canPlan}
         onOpen={open}
         onCreate={make}
+        onNewFrom={(name) => setNewPlan({ name, date: '' })}
+        templates={templates}
         phone={phone}
         top={installing.card && <InstallCard kind={installing.card} onClose={installing.dismiss} />}
       />
@@ -394,13 +444,37 @@ export function App() {
             canInstall={installing.offer === 'prompt'}
             rail={rail}
             shortcuts={layout.device === 'computer'}
+            bell={
+              <NoticeBell
+                store={notices}
+                planName={planName}
+                onOpen={(n) => go({ page: 'plan', id: n.planId, tab: n.kind === 'task' ? 'tasks' : 'run' })}
+                label={!rail}
+              />
+            }
           />
+        )}
+        {newPlan && (
+          <Suspense fallback={null}>
+            <NewPlanDialog
+              userId={gate.access.userId}
+              initialName={newPlan.name}
+              initialDate={newPlan.date}
+              onBlank={(name, date) => make(name, date).then(() => setNewPlan(null))}
+              onMade={(id) => {
+                setNewPlan(null);
+                void refresh();
+                go({ page: 'plan', id, tab: 'run' });
+              }}
+              onClose={() => setNewPlan(null)}
+            />
+          </Suspense>
         )}
         <div className="shell__main">
           {offline && <OfflineBar fromCopy={fromCopy || savedAt > 0} at={copyPlans?.at ?? savedAt} />}
           {content}
         </div>
-        {phone && <TabBar route={route} go={go} back={back} unread={unread} />}
+        {phone && <TabBar route={route} go={go} back={back} unread={unread} notices={notices.unread} />}
       </div>
     </PlannerFeaturesCtx.Provider>
   );
@@ -422,7 +496,9 @@ function Sidebar({
   canInstall,
   rail,
   shortcuts,
+  bell,
 }: {
+  bell?: ReactNode;
   route: Route;
   plans: PlanSummary[] | null;
   planId: string | null;
@@ -484,6 +560,7 @@ function Sidebar({
           <CalendarDays size={16} strokeWidth={1.75} aria-hidden="true" />
           <span className="side__text">Calendar</span>
         </a>
+        {bell && <div className="side__bell">{bell}</div>}
       </div>
       <div className="side__group">
         <h2 className="side__label">Upcoming</h2>
@@ -539,7 +616,7 @@ export const SHORTCUTS: [string, string][] = [
 ];
 
 /** Phones: the tab bar at the bottom. Chat shows while a plan is open. */
-function TabBar({ route, go, back, unread }: { route: Route; go: (r: Route) => void; back: () => void; unread: number }) {
+function TabBar({ route, go, back, unread, notices = 0 }: { route: Route; go: (r: Route) => void; back: () => void; unread: number; notices?: number }) {
   const inPlan = route.page === 'plan' ? route : null;
   const tab = (on: boolean, label: string, icon: ReactNode, onClick: () => void, badge = 0) => (
     <button type="button" className={`tabbar__btn${on ? ' is-on' : ''}`} aria-current={on ? 'page' : undefined} onClick={onClick}>
@@ -562,7 +639,7 @@ function TabBar({ route, go, back, unread }: { route: Route; go: (r: Route) => v
       {tab(route.page === 'calendar', 'Calendar', <CalendarDays size={22} strokeWidth={1.6} aria-hidden="true" />, () => go({ page: 'calendar' }))}
       {inPlan &&
         tab(inPlan.tab === 'chat', 'Chat', <MessageSquare size={22} strokeWidth={1.6} aria-hidden="true" />, () => go({ ...inPlan, tab: 'chat' }), unread)}
-      {tab(route.page === 'account', 'Account', <CircleUserRound size={22} strokeWidth={1.6} aria-hidden="true" />, () => go({ page: 'account' }))}
+      {tab(route.page === 'account', 'Account', <CircleUserRound size={22} strokeWidth={1.6} aria-hidden="true" />, () => go({ page: 'account' }), notices)}
     </nav>
   );
 }
@@ -575,7 +652,9 @@ function AccountPage({
   setTheme,
   offer,
   device = 'phone',
+  children,
 }: {
+  children?: ReactNode;
   name: string;
   email: string;
   theme: Theme;
@@ -597,6 +676,7 @@ function AccountPage({
           </span>
         </div>
       </div>
+      {children}
       <h2 className="page__sub">Appearance</h2>
       <div className="seg seg--block" role="group" aria-label="Theme">
         {(['auto', 'light', 'dark'] as const).map((t) => (
@@ -633,6 +713,56 @@ function AccountPage({
         <Mark size={16} /> Lumora Planner · <a href="../">The Lumora website</a>
       </p>
     </main>
+  );
+}
+
+/** Your own calendar feed: every plan you are on, in Google Calendar, Outlook or Apple Calendar. */
+function CalendarFeed() {
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+  const get = (fresh: boolean) =>
+    myFeed(db(), fresh)
+      .then((t) => setUrl(feedUrl(AUTH_URL, AUTH_KEY, 'planner_ical_me', t)))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+  return (
+    <section className="feed" aria-label="Calendar feed">
+      <h2 className="page__sub">Subscribe in your calendar</h2>
+      {!url ? (
+        <p className="muted small">
+          Every plan you are on, with its schedule, in Google Calendar, Outlook or Apple Calendar, kept up to date.{' '}
+          <button type="button" className="link" onClick={() => void get(false)}>
+            Show my calendar link
+          </button>
+        </p>
+      ) : (
+        <>
+          <div className="row">
+            <input className="input grow mono small" value={url} readOnly onFocus={(e) => e.target.select()} aria-label="Calendar link" />
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                void navigator.clipboard?.writeText(url).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                })
+              }
+            >
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
+          <p className="muted small">
+            In your calendar app choose “Add calendar → From URL” (Google) or “Subscribe” (Apple, Outlook), and paste it. Keep it private: anyone with it sees
+            your plans’ names and times.{' '}
+            <button type="button" className="link" onClick={() => confirm('Make a new link? The old one stops working.') && void get(true)}>
+              Make a new link
+            </button>
+          </p>
+        </>
+      )}
+      {error && <p className="warn small">{error}</p>}
+    </section>
   );
 }
 

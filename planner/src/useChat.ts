@@ -13,7 +13,7 @@ export interface ChatStore {
   loaded: boolean;
   error: string;
   unread: number;
-  send: (body: string) => Promise<void>;
+  send: (body: string, mentions?: string[]) => Promise<void>;
   remove: (id: string) => void;
   /** The chat is on screen: everything in it counts as read. */
   markRead: () => void;
@@ -72,8 +72,8 @@ export function useChat(planId: string, me: { id: string }, open: boolean): Chat
   }, [open, markRead]);
 
   const send = useCallback(
-    async (body: string) => {
-      const m = await api.sendMessage(db(), planId, body, me.id);
+    async (body: string, mentions: string[] = []) => {
+      const m = await api.sendMessage(db(), planId, body, me.id, mentions);
       setMessages((list) => addMessage(list, m));
     },
     [planId, me.id],

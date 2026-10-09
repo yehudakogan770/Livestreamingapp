@@ -51,7 +51,15 @@ export function matchPeople(people: readonly Mentionable[], query: string, me = 
   const q = norm(query.trim());
   return people
     .filter((p) => p.userId !== me)
-    .filter((p) => !q || norm(label(p)).startsWith(q) || norm(label(p)).split(' ').some((w) => w.startsWith(q)) || norm(p.email).startsWith(q))
+    .filter(
+      (p) =>
+        !q ||
+        norm(label(p)).startsWith(q) ||
+        norm(label(p))
+          .split(' ')
+          .some((w) => w.startsWith(q)) ||
+        norm(p.email).startsWith(q),
+    )
     .slice(0, 6);
 }
 

@@ -37,7 +37,19 @@ export function Dialog({ title, onClose, children, wide = false }: { title: stri
 const when = (ms: number) => new Date(ms).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 /** Versions: saved by hand, and kept automatically before each round of edits (and before a restore). */
-export function VersionsDialog({ plan, cues, canEdit, isOwner, onClose }: { plan: Plan; cues: PlanCue[]; canEdit: boolean; isOwner: boolean; onClose: () => void }) {
+export function VersionsDialog({
+  plan,
+  cues,
+  canEdit,
+  isOwner,
+  onClose,
+}: {
+  plan: Plan;
+  cues: PlanCue[];
+  canEdit: boolean;
+  isOwner: boolean;
+  onClose: () => void;
+}) {
   const [list, setList] = useState<pro.Version[] | null>(null);
   const [error, setError] = useState('');
   const [name, setName] = useState('');
@@ -161,7 +173,11 @@ export function VersionsDialog({ plan, cues, canEdit, isOwner, onClose }: { plan
                     className="btn btn--primary"
                     disabled={busy}
                     onClick={() => {
-                      if (confirm(`Put the plan back as it was in “${v.name || 'this version'}”? Its cues and schedule replace the ones now (the plan as it is now is kept as a version first).`))
+                      if (
+                        confirm(
+                          `Put the plan back as it was in “${v.name || 'this version'}”? Its cues and schedule replace the ones now (the plan as it is now is kept as a version first).`,
+                        )
+                      )
                         run(pro.restoreVersion(db(), v.id), onClose);
                     }}
                   >
@@ -293,9 +309,7 @@ export function ImportDialog({
                   {result.mapping.map((m, i) => (
                     <tr key={i}>
                       <td>{m.header || <i className="muted">(no name)</i>}</td>
-                      <td className={m.field ? '' : 'muted'}>
-                        {m.field === 'extra' && !makeCols ? 'Left out' : m.field ? FIELD_WORDS[m.field] : 'Left out'}
-                      </td>
+                      <td className={m.field ? '' : 'muted'}>{m.field === 'extra' && !makeCols ? 'Left out' : m.field ? FIELD_WORDS[m.field] : 'Left out'}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -313,7 +327,9 @@ export function ImportDialog({
               {result.cues.slice(0, 8).map((c, i) => (
                 <li key={i}>
                   <b>{c.title || 'Untitled cue'}</b>
-                  <span className="muted small">{[c.section, c.who, c.durationSec != null ? `${Math.round(c.durationSec / 60)} min` : ''].filter(Boolean).join(' · ')}</span>
+                  <span className="muted small">
+                    {[c.section, c.who, c.durationSec != null ? `${Math.round(c.durationSec / 60)} min` : ''].filter(Boolean).join(' · ')}
+                  </span>
                 </li>
               ))}
               {result.cues.length > 8 && <li className="muted">and {result.cues.length - 8} more…</li>}
@@ -328,7 +344,8 @@ export function ImportDialog({
                 className="btn btn--primary"
                 onClick={() => {
                   let cols = plan.columns;
-                  if (makeCols && newCols.length && room > 0) cols = onAddColumns(newCols.slice(0, room).map((name) => ({ id: colId(name), name: name.slice(0, 40) })));
+                  if (makeCols && newCols.length && room > 0)
+                    cols = onAddColumns(newCols.slice(0, room).map((name) => ({ id: colId(name), name: name.slice(0, 40) })));
                   // Values for columns made just now.
                   const again = rows ? rowsToCues(rows, cols) : result;
                   onAdd(again.cues);
@@ -348,11 +365,13 @@ export function ImportDialog({
 
 /** A short id for an extra column. */
 export const colId = (name: string): string =>
-  `${name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 20) || 'col'}-${Math.random().toString(36).slice(2, 6)}`;
+  `${
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 20) || 'col'
+  }-${Math.random().toString(36).slice(2, 6)}`;
 
 /** The plan's settings: time zone, "end by", extra columns, template. */
 export function PlanSettings({
@@ -448,7 +467,11 @@ export function PlanSettings({
                 <button
                   type="button"
                   className="btn btn--quiet btn--icon"
-                  onClick={() => confirm(`Remove the “${c.name || 'untitled'}” column? What is written in it is kept, and comes back if a column with that name is added again.`) && saveCols(cols.filter((x) => x.id !== c.id))}
+                  onClick={() =>
+                    confirm(
+                      `Remove the “${c.name || 'untitled'}” column? What is written in it is kept, and comes back if a column with that name is added again.`,
+                    ) && saveCols(cols.filter((x) => x.id !== c.id))
+                  }
                   aria-label={`Remove ${c.name || 'column'}`}
                 >
                   <Trash2 size={14} strokeWidth={1.75} aria-hidden="true" />
@@ -533,4 +556,3 @@ export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
     </Dialog>
   );
 }
-

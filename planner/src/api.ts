@@ -112,7 +112,12 @@ export async function deletePlan(db: Db, id: string): Promise<void> {
 /** Save cues as they are now (new or changed); the server stamps when and who. */
 export async function saveCues(db: Db, cues: PlanCue[], pro = true): Promise<PlanCue[]> {
   if (!cues.length) return [];
-  const rows = await data<CueRow[] | null>(db.from('planner_cues').upsert(cues.map((c) => cueToRow(c, pro))).select('*'));
+  const rows = await data<CueRow[] | null>(
+    db
+      .from('planner_cues')
+      .upsert(cues.map((c) => cueToRow(c, pro)))
+      .select('*'),
+  );
   return (rows ?? []).map(cueFromRow);
 }
 
@@ -124,7 +129,13 @@ export async function addComment(db: Db, planId: string, cueId: string, text: st
   const row = await data<CommentRow>(
     db
       .from('planner_comments')
-      .insert({ plan_id: planId, cue_id: cueId, text: text.trim().slice(0, 2000), author: userId, ...(mentions.length ? { mentions: mentions.slice(0, 20) } : {}) })
+      .insert({
+        plan_id: planId,
+        cue_id: cueId,
+        text: text.trim().slice(0, 2000),
+        author: userId,
+        ...(mentions.length ? { mentions: mentions.slice(0, 20) } : {}),
+      })
       .select('*')
       .single(),
   );

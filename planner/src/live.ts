@@ -276,4 +276,3 @@ export function crewLine(cues: readonly PlanCue[], n: Now): string {
   const left = n.remaining === null ? '' : n.remaining < 0 ? ` · ${timerText(-n.remaining)} over` : ` · ${timerText(n.remaining)} left`;
   return `On now: ${c.title.trim() || 'Untitled cue'}${who}${left}`;
 }
-

@@ -97,12 +97,7 @@ export function MentionBox({
         <ul className="mention__list" role="listbox" aria-label="People on this plan">
           {found.map((p, n) => (
             <li key={p.userId} role="option" aria-selected={n === i}>
-              <button
-                type="button"
-                className={`mention__opt${n === i ? ' is-on' : ''}`}
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => pick(p)}
-              >
+              <button type="button" className={`mention__opt${n === i ? ' is-on' : ''}`} onMouseDown={(e) => e.preventDefault()} onClick={() => pick(p)}>
                 <span className="avatar avatar--sm" aria-hidden="true">
                   {initials(p.name || p.email)}
                 </span>

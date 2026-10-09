@@ -139,11 +139,21 @@ export function Prompter({ cues, live, onClose, title }: { cues: PlanCue[]; live
           {playing ? 'Stop' : 'Scroll'}
         </button>
         <span className="prompter__group" role="group" aria-label="Speed">
-          <button type="button" className="prompter__btn" onClick={() => setSet((s) => ({ ...s, speed: Math.max(0.5, +(s.speed - 0.5).toFixed(1)) }))} aria-label="Slower">
+          <button
+            type="button"
+            className="prompter__btn"
+            onClick={() => setSet((s) => ({ ...s, speed: Math.max(0.5, +(s.speed - 0.5).toFixed(1)) }))}
+            aria-label="Slower"
+          >
             <Minus size={14} strokeWidth={1.75} aria-hidden="true" />
           </button>
           <span className="prompter__val mono">Speed {set.speed}</span>
-          <button type="button" className="prompter__btn" onClick={() => setSet((s) => ({ ...s, speed: Math.min(20, +(s.speed + 0.5).toFixed(1)) }))} aria-label="Faster">
+          <button
+            type="button"
+            className="prompter__btn"
+            onClick={() => setSet((s) => ({ ...s, speed: Math.min(20, +(s.speed + 0.5).toFixed(1)) }))}
+            aria-label="Faster"
+          >
             <Plus size={14} strokeWidth={1.75} aria-hidden="true" />
           </button>
         </span>
@@ -155,7 +165,12 @@ export function Prompter({ cues, live, onClose, title }: { cues: PlanCue[]; live
             A+
           </button>
         </span>
-        <button type="button" className={`prompter__btn${set.mirror ? ' is-on' : ''}`} aria-pressed={set.mirror} onClick={() => setSet((s) => ({ ...s, mirror: !s.mirror }))}>
+        <button
+          type="button"
+          className={`prompter__btn${set.mirror ? ' is-on' : ''}`}
+          aria-pressed={set.mirror}
+          onClick={() => setSet((s) => ({ ...s, mirror: !s.mirror }))}
+        >
           <FlipHorizontal2 size={16} strokeWidth={1.75} aria-hidden="true" />
           Mirror
         </button>

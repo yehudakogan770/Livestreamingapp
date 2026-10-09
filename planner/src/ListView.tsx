@@ -87,7 +87,13 @@ export function ListView({
   const del = (it: Item) =>
     canEdit && (
       <td className="lists__del">
-        <button type="button" className="btn btn--quiet btn--icon" onClick={() => store.remove(it.id)} aria-label={`Delete ${it.title || words.one}`} title="Delete">
+        <button
+          type="button"
+          className="btn btn--quiet btn--icon"
+          onClick={() => store.remove(it.id)}
+          aria-label={`Delete ${it.title || words.one}`}
+          title="Delete"
+        >
           <Trash2 size={14} strokeWidth={1.75} aria-hidden="true" />
         </button>
       </td>
@@ -130,12 +136,26 @@ export function ListView({
               {text(it, 'role', words.role, 80)}
               {kind === 'crew' && (
                 <td>
-                  <input type="date" className="cell mono" value={it.day} readOnly={!canEdit} aria-label="Call day" onChange={(e) => set(it.id)({ day: e.target.value })} />
+                  <input
+                    type="date"
+                    className="cell mono"
+                    value={it.day}
+                    readOnly={!canEdit}
+                    aria-label="Call day"
+                    onChange={(e) => set(it.id)({ day: e.target.value })}
+                  />
                 </td>
               )}
               {kind === 'crew' && (
                 <td>
-                  <ClockInput className="cell mono" value={it.callTime} readOnly={!canEdit} label="Call time" placeholder="3:00 PM" onChange={(v) => set(it.id)({ callTime: v })} />
+                  <ClockInput
+                    className="cell mono"
+                    value={it.callTime}
+                    readOnly={!canEdit}
+                    label="Call time"
+                    placeholder="3:00 PM"
+                    onChange={(v) => set(it.id)({ callTime: v })}
+                  />
                 </td>
               )}
               <td className="lists__contact">
@@ -149,7 +169,12 @@ export function ListView({
                   onChange={(e) => set(it.id)({ phone: e.target.value })}
                 />
                 {it.phone && (
-                  <a className="lists__act" href={`tel:${it.phone.replace(/[^\d+]/g, '')}`} title={`Call ${it.title || it.phone}`} aria-label={`Call ${it.title || it.phone}`}>
+                  <a
+                    className="lists__act"
+                    href={`tel:${it.phone.replace(/[^\d+]/g, '')}`}
+                    title={`Call ${it.title || it.phone}`}
+                    aria-label={`Call ${it.title || it.phone}`}
+                  >
                     <Phone size={13} strokeWidth={1.75} aria-hidden="true" />
                   </a>
                 )}
@@ -232,7 +257,14 @@ export function ListView({
                   )}
                 </td>
                 <td>
-                  <input type="date" className="cell mono" value={it.day} readOnly={!canEdit} aria-label="Due" onChange={(e) => set(it.id)({ day: e.target.value })} />
+                  <input
+                    type="date"
+                    className="cell mono"
+                    value={it.day}
+                    readOnly={!canEdit}
+                    aria-label="Due"
+                    onChange={(e) => set(it.id)({ day: e.target.value })}
+                  />
                 </td>
                 <td>
                   {canEdit ? (
@@ -374,7 +406,9 @@ export function ListView({
     <div className="lists">
       <div className="lists__bar">
         <span className="muted small">
-          {tasks ? `${tasks.done} of ${tasks.all} done` : `${list.length} ${list.length === 1 ? words.one : words.one === 'person' ? 'people' : `${words.one}s`}`}
+          {tasks
+            ? `${tasks.done} of ${tasks.all} done`
+            : `${list.length} ${list.length === 1 ? words.one : words.one === 'person' ? 'people' : `${words.one}s`}`}
         </span>
         {kind === 'task' && (
           <label className="row small">
@@ -466,7 +500,14 @@ export function CueTasks({ cueId, store, canEdit, me }: { cueId: string; store: 
             setText('');
           }}
         >
-          <input className="input grow" value={text} maxLength={120} placeholder="Add a step, e.g. Check the mic" onChange={(e) => setText(e.target.value)} aria-label="New task for this cue" />
+          <input
+            className="input grow"
+            value={text}
+            maxLength={120}
+            placeholder="Add a step, e.g. Check the mic"
+            onChange={(e) => setText(e.target.value)}
+            aria-label="New task for this cue"
+          />
           <button type="submit" className="btn" disabled={!text.trim()} aria-label="Add">
             <Check size={14} strokeWidth={1.75} aria-hidden="true" />
           </button>

@@ -284,3 +284,16 @@
     max-height: 30vh;
   }
 }
+
+/* New plan */
+.newplan {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.choices--grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  max-height: 46vh;
+  overflow: auto;
+  padding: 2px;
+}

@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { ChevronRight, LoaderCircle, Plus } from 'lucide-react';
+import { ChevronRight, LayoutTemplate, LoaderCircle, Plus } from 'lucide-react';
+import type { TemplateSummary } from './apiPro';
 import { Mark } from './Mark';
 import { isoDate, shortDate, showClock, type PlanSummary } from './model';
 import { PULL_AT, usePullToRefresh } from './touch';
@@ -64,9 +65,15 @@ export function PlanList({
   canPlan,
   onOpen,
   onCreate,
+  onNewFrom,
+  templates = [],
   phone = false,
   top,
 }: {
+  /** Open the new-plan window (templates), with the name typed so far. */
+  onNewFrom?: (name: string) => void;
+  /** Your templates (listed apart from the plans). */
+  templates?: TemplateSummary[];
   plans: PlanSummary[] | null;
   error: string;
   onRefresh: () => unknown;
@@ -201,6 +208,12 @@ export function PlanList({
             <Plus size={15} strokeWidth={2} aria-hidden="true" />
             New plan
           </button>
+          {onNewFrom && (
+            <button type="button" className="btn" onClick={() => onNewFrom(name)} title="Start from a template: conference, show, concert, gala…">
+              <LayoutTemplate size={15} strokeWidth={1.75} aria-hidden="true" />
+              {phone ? 'Templates' : 'From a template…'}
+            </button>
+          )}
         </form>
       )}
       {(error || makeError) && (
@@ -241,6 +254,27 @@ export function PlanList({
         <>
           <h2 className="page__sub">Past events</h2>
           {table(past)}
+        </>
+      )}
+      {templates.length > 0 && (
+        <>
+          <h2 className="page__sub">Your templates</h2>
+          <ul className="templist">
+            {templates.map((t) => (
+              <li key={t.id}>
+                <a href={`#/plan/${t.id}`}>
+                  <LayoutTemplate size={15} strokeWidth={1.75} aria-hidden="true" />
+                  <b>{t.name}</b>
+                  {t.venue && <span className="muted"> · {t.venue}</span>}
+                </a>
+                {canPlan && onNewFrom && (
+                  <button type="button" className="link small" onClick={() => onNewFrom('')}>
+                    New plan from it…
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </main>

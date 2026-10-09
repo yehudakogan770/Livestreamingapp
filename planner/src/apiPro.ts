@@ -13,7 +13,10 @@ import { columnsFrom, cueFromRow, type CueRow, type CustomColumn, type Plan, typ
 /** Plain words when the server does not have update 10 yet. */
 export function proPlain(e: unknown): Error {
   const m = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String((e as { message: unknown }).message) : String(e);
-  if (/planner_(live|items|files|versions|notifications|sections|feeds|share|public|copy|clock|save_version)/i.test(m) && /could not find|does not exist|schema cache/i.test(m))
+  if (
+    /planner_(live|items|files|versions|notifications|sections|feeds|share|public|copy|clock|save_version)/i.test(m) &&
+    /could not find|does not exist|schema cache/i.test(m)
+  )
     return new Error('This needs the Planner’s show-day update on the Lumora account server. (Its owner runs supabase/update-10-planner-pro.sql once.)');
   return plain(e);
 }
@@ -177,7 +180,11 @@ const fileFromRow = (r: FileRow): PlanFile => ({
 
 /** A file's name made safe for storage (no slashes; at most 120 characters, keeping the extension). */
 export function safeName(name: string): string {
-  const clean = name.replace(/[\\/\u0000-\u001f]+/g, '-').replace(/\s+/g, ' ').trim() || 'file';
+  const clean =
+    name
+      .replace(/[\\/\u0000-\u001f]+/g, '-')
+      .replace(/\s+/g, ' ')
+      .trim() || 'file';
   if (clean.length <= 120) return clean;
   const dot = clean.lastIndexOf('.');
   const ext = dot > 0 && clean.length - dot <= 10 ? clean.slice(dot) : '';
@@ -260,7 +267,11 @@ export interface VersionContent {
 
 export async function listVersions(db: Db, planId: string): Promise<Version[]> {
   const rows = await data<{ id: string; name: string; auto: boolean; cue_count: number; created_at: string; created_by_name: string }[] | null>(
-    db.from('planner_versions').select('id, name, auto, cue_count, created_at, created_by_name').eq('plan_id', planId).order('created_at', { ascending: false }),
+    db
+      .from('planner_versions')
+      .select('id, name, auto, cue_count, created_at, created_by_name')
+      .eq('plan_id', planId)
+      .order('created_at', { ascending: false }),
   );
   return (rows ?? []).map((r) => ({
     id: r.id,
@@ -351,7 +362,17 @@ export interface PublicPlan {
 interface PublicRow {
   scope: string;
   server_now: string;
-  plan: { id: string; name: string; event_date: string | null; venue: string; start_time: string; time_zone: string; end_by: string; notes: string; columns: unknown };
+  plan: {
+    id: string;
+    name: string;
+    event_date: string | null;
+    venue: string;
+    start_time: string;
+    time_zone: string;
+    end_by: string;
+    notes: string;
+    columns: unknown;
+  };
   cues: Partial<CueRow>[];
   schedule: BlockRow[];
   crew: { id: string; title: string; role: string; call_time: string; day: string | null }[];

@@ -1,5 +1,19 @@
 import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Check, ChevronRight, CircleAlert, Ellipsis, LoaderCircle, MessageSquare, PanelRight, Plus, Printer, Radio, StickyNote, UserPlus, X } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Ellipsis,
+  LoaderCircle,
+  MessageSquare,
+  PanelRight,
+  Plus,
+  Printer,
+  Radio,
+  StickyNote,
+  UserPlus,
+  X,
+} from 'lucide-react';
 import { deletePlan, removePerson } from './api';
 import * as pro from './apiPro';
 import { cuesToRows, downloadBytes, downloadText, planToIcs, toCsv, toXlsx } from './csv';
@@ -113,6 +127,7 @@ export function PlanView({
   const items = useItems(planId);
   const files = useFiles(planId);
   const people = usePeople(planId);
+  const mentionable = useMemo(() => people.map((p) => ({ userId: p.userId, name: p.name, email: p.email })), [people]);
   const [locks, setLocks] = useState<pro.SectionLock[]>([]);
   useEffect(() => {
     let on = true;
@@ -301,7 +316,21 @@ export function PlanView({
         sheets.push({
           name: w.name,
           rows: [
-            [w.title, ...(w.role ? [w.role] : []), ...(w.person ? [w.person] : []), 'Phone', 'Email', 'Call time', 'Day', 'Qty', 'Amount', 'Actual', 'Status', 'Done', 'Notes'],
+            [
+              w.title,
+              ...(w.role ? [w.role] : []),
+              ...(w.person ? [w.person] : []),
+              'Phone',
+              'Email',
+              'Call time',
+              'Day',
+              'Qty',
+              'Amount',
+              'Actual',
+              'Status',
+              'Done',
+              'Notes',
+            ],
             ...l.map((it) => [
               it.title,
               ...(w.role ? [it.role] : []),
@@ -380,9 +409,7 @@ export function PlanView({
       {dialog === 'import' && <ImportDialog plan={plan} onAdd={(list) => store.addCues(list)} onAddColumns={addColumns} onClose={() => setDialog(null)} />}
       {dialog === 'settings' && <PlanSettings plan={plan} canEdit={canEdit} onChange={(c) => store.editPlan(c)} onClose={() => setDialog(null)} />}
       {dialog === 'keys' && <ShortcutsDialog onClose={() => setDialog(null)} />}
-      {dialog === 'print' && (
-        <PrintChooser onPick={printAs} onClose={() => setDialog(null)} canBudget={canEdit} />
-      )}
+      {dialog === 'print' && <PrintChooser onPick={printAs} onClose={() => setDialog(null)} canBudget={canEdit} />}
     </>
   );
 
@@ -845,7 +872,15 @@ export function PlanView({
             </div>
             <div className={`panel__body${panel === 'chat' ? ' panel__body--chat' : ''}`}>
               {panel === 'chat' ? (
-                <Chat chat={chat} me={me.id} isOwner={role === 'owner'} cueCount={cues.length} onCue={showCue} planName={plan.name} />
+                <Chat
+                  chat={chat}
+                  me={me.id}
+                  isOwner={role === 'owner'}
+                  cueCount={cues.length}
+                  onCue={showCue}
+                  planName={plan.name}
+                  people={isPro ? mentionable : undefined}
+                />
               ) : (
                 <div className="inspector">{detail}</div>
               )}
@@ -867,9 +902,7 @@ export function PlanView({
                 {plan.timeZone && validZone(plan.timeZone) && ` ${zoneAbbr(plan.timeZone)}`}
               </span>
             )}
-            {plan.endBy && sched.endSec !== null && parseClock(plan.endBy) !== null && (
-              <EndBy endSec={sched.endSec} endBy={parseClock(plan.endBy)!} />
-            )}
+            {plan.endBy && sched.endSec !== null && parseClock(plan.endBy) !== null && <EndBy endSec={sched.endSec} endBy={parseClock(plan.endBy)!} />}
             {!plan.startTime && cues.length > 0 && (
               <button type="button" className="status__link" onClick={() => focusField('#plan-start-wrap input')}>
                 Set a start time to see when each cue begins

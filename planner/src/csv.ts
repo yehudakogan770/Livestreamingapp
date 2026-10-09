@@ -28,7 +28,12 @@ import {
 export function parseCsv(text: string): string[][] {
   const src = text.replace(/^\uFEFF/, '');
   const firstLine = src.split(/\r?\n/, 1)[0] ?? '';
-  const sep = (firstLine.match(/\t/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? '\t' : (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? ';' : ',';
+  const sep =
+    (firstLine.match(/\t/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0)
+      ? '\t'
+      : (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0)
+        ? ';'
+        : ',';
   const rows: string[][] = [];
   let row: string[] = [];
   let cell = '';
@@ -74,7 +79,23 @@ export function toCsv(rows: readonly (readonly string[])[]): string {
 
 // ---- The run of show as a sheet ----
 
-export const CUE_HEADERS = ['#', 'Section', 'Start', 'Fixed start', 'Length', 'Type', 'Cue', 'Who', 'Input', 'Transition', 'Title or overlay', 'Notes', 'Script', 'Color', 'Floated'];
+export const CUE_HEADERS = [
+  '#',
+  'Section',
+  'Start',
+  'Fixed start',
+  'Length',
+  'Type',
+  'Cue',
+  'Who',
+  'Input',
+  'Transition',
+  'Title or overlay',
+  'Notes',
+  'Script',
+  'Color',
+  'Floated',
+];
 
 /** The run of show as rows (a header row first), with the plan's extra columns at the end. */
 export function cuesToRows(cues: readonly PlanCue[], showStart: string, columns: readonly CustomColumn[] = []): string[][] {
@@ -106,7 +127,23 @@ export function cuesToRows(cues: readonly PlanCue[], showStart: string, columns:
   ];
 }
 
-type Field = 'title' | 'section' | 'start' | 'fixed' | 'length' | 'end' | 'segment' | 'who' | 'input' | 'transition' | 'overlay' | 'notes' | 'script' | 'color' | 'skip' | 'skipnum';
+type Field =
+  | 'title'
+  | 'section'
+  | 'start'
+  | 'fixed'
+  | 'length'
+  | 'end'
+  | 'segment'
+  | 'who'
+  | 'input'
+  | 'transition'
+  | 'overlay'
+  | 'notes'
+  | 'script'
+  | 'color'
+  | 'skip'
+  | 'skipnum';
 
 /** Header words other tools and sheets use, matched loosely. */
 const HEADER_WORDS: [Field, RegExp][] = [
@@ -263,10 +300,19 @@ export function itemsToCsv(kind: ItemKind, items: readonly Item[], cues: readonl
   };
   const money = (n: number | null) => (n === null ? '' : n.toFixed(2));
   let rows: string[][];
-  if (kind === 'crew') rows = [['Name', 'Position', 'Call day', 'Call time', 'Phone', 'Email', 'Notes'], ...items.map((i) => [i.title, i.role, i.day, time(i.callTime), i.phone, i.email, i.notes])];
+  if (kind === 'crew')
+    rows = [
+      ['Name', 'Position', 'Call day', 'Call time', 'Phone', 'Email', 'Notes'],
+      ...items.map((i) => [i.title, i.role, i.day, time(i.callTime), i.phone, i.email, i.notes]),
+    ];
   else if (kind === 'contact') rows = [['Name', w.role, 'Phone', 'Email', 'Notes'], ...items.map((i) => [i.title, i.role, i.phone, i.email, i.notes])];
-  else if (kind === 'task') rows = [['Done', 'Task', 'For', 'Due', 'Cue', 'Notes'], ...items.map((i) => [i.done ? 'yes' : '', i.title, i.person, i.day, cueName(i.cueId), i.notes])];
-  else if (kind === 'gear') rows = [['Item', 'Qty', 'Department', 'Who brings it', 'Status', 'Notes'], ...items.map((i) => [i.title, i.qty === null ? '' : String(i.qty), i.role, i.person, i.status, i.notes])];
+  else if (kind === 'task')
+    rows = [['Done', 'Task', 'For', 'Due', 'Cue', 'Notes'], ...items.map((i) => [i.done ? 'yes' : '', i.title, i.person, i.day, cueName(i.cueId), i.notes])];
+  else if (kind === 'gear')
+    rows = [
+      ['Item', 'Qty', 'Department', 'Who brings it', 'Status', 'Notes'],
+      ...items.map((i) => [i.title, i.qty === null ? '' : String(i.qty), i.role, i.person, i.status, i.notes]),
+    ];
   else
     rows = [
       ['Line', 'Category', 'Vendor', 'Qty', 'Estimate', 'Actual', 'Status', 'Notes'],
@@ -357,7 +403,11 @@ export function zipStore(files: { name: string; data: Uint8Array }[]): Uint8Arra
 /** An Excel workbook with one sheet per table (header row bold and frozen). */
 export function toXlsx(sheets: { name: string; rows: readonly (readonly string[])[] }[]): Uint8Array {
   const enc = new TextEncoder();
-  const safeName = (n: string, i: number) => (n.replace(/[\\/?*[\]:]/g, ' ').slice(0, 31).trim() || `Sheet${i + 1}`);
+  const safeName = (n: string, i: number) =>
+    n
+      .replace(/[\\/?*[\]:]/g, ' ')
+      .slice(0, 31)
+      .trim() || `Sheet${i + 1}`;
   const sheetXml = (rows: readonly (readonly string[])[]) => {
     const widths = (rows[0] ?? []).map((_, c) => Math.min(60, Math.max(8, ...rows.slice(0, 200).map((r) => (r[c] ?? '').split('\n')[0]!.length + 2))));
     return (
@@ -393,7 +443,12 @@ export function toXlsx(sheets: { name: string; rows: readonly (readonly string[]
         '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
         '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
         '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
-        sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('') +
+        sheets
+          .map(
+            (_, i) =>
+              `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`,
+          )
+          .join('') +
         '</Types>',
     },
     {
@@ -411,7 +466,12 @@ export function toXlsx(sheets: { name: string; rows: readonly (readonly string[]
       name: 'xl/_rels/workbook.xml.rels',
       text:
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-        sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('') +
+        sheets
+          .map(
+            (_, i) =>
+              `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`,
+          )
+          .join('') +
         `<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>` +
         '</Relationships>',
     },
@@ -478,7 +538,13 @@ export async function readXlsx(buf: Uint8Array): Promise<string[][]> {
   };
   const shared: string[] = [];
   const ss = parse('xl/sharedStrings.xml');
-  if (ss) for (const si of Array.from(ss.getElementsByTagName('si'))) shared.push(Array.from(si.getElementsByTagName('t')).map((t) => t.textContent ?? '').join(''));
+  if (ss)
+    for (const si of Array.from(ss.getElementsByTagName('si')))
+      shared.push(
+        Array.from(si.getElementsByTagName('t'))
+          .map((t) => t.textContent ?? '')
+          .join(''),
+      );
   // The first sheet in the workbook's order.
   let sheetPath = 'xl/worksheets/sheet1.xml';
   const wb = parse('xl/workbook.xml');
@@ -505,7 +571,10 @@ export async function readXlsx(buf: Uint8Array): Promise<string[][]> {
       const v = c.getElementsByTagName('v')[0]?.textContent ?? '';
       let text = '';
       if (t === 's') text = shared[Number(v)] ?? '';
-      else if (t === 'inlineStr') text = Array.from(c.getElementsByTagName('t')).map((x) => x.textContent ?? '').join('');
+      else if (t === 'inlineStr')
+        text = Array.from(c.getElementsByTagName('t'))
+          .map((x) => x.textContent ?? '')
+          .join('');
       else if (t === 'b') text = v === '1' ? 'TRUE' : 'FALSE';
       else text = excelNumber(v, c.getAttribute('s'));
       while (row.length < col) row.push('');
@@ -546,7 +615,11 @@ function fold(line: string): string {
   return out.join('\r\n');
 }
 
-const stamp = (d: Date): string => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+const stamp = (d: Date): string =>
+  d
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}/, '');
 const ymd = (d: string): string => d.replace(/-/g, '');
 const hms = (secs: number): string => {
   const s = ((secs % 86_400) + 86_400) % 86_400;
@@ -566,7 +639,13 @@ export function planToIcs(plan: Plan, cues: readonly PlanCue[], blocks: readonly
     const d = extra ? addDays(date, extra) : date;
     return `${tz ? `;TZID=${tz}` : ''}:${ymd(d)}T${hms(secs)}`;
   };
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Lumora//Planner//EN', 'CALSCALE:GREGORIAN', `X-WR-CALNAME:${icsText(plan.name || 'Lumora Planner')}`];
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Lumora//Planner//EN',
+    'CALSCALE:GREGORIAN',
+    `X-WR-CALNAME:${icsText(plan.name || 'Lumora Planner')}`,
+  ];
   if (plan.eventDate) {
     const s = schedule(cues, plan.startTime);
     const start = parseClock(plan.startTime);

@@ -86,8 +86,22 @@ export const KIND_WORDS: Record<ItemKind, { name: string; one: string; title: st
     empty: 'Venue manager, caterer, rental house, the client: everyone the team may need to call.',
   },
   task: { name: 'Tasks', one: 'task', title: 'Task', role: '', person: 'Who', empty: 'What has to be done before the show, and by whom.' },
-  gear: { name: 'Gear', one: 'item', title: 'Item', role: 'Department', person: 'Who brings it', empty: 'Cameras, mics, cables, staging: what to bring and where it is.' },
-  budget: { name: 'Budget', one: 'line', title: 'Line', role: 'Category', person: 'Vendor', empty: 'Planned and actual costs. Only the owner and editors see the budget.' },
+  gear: {
+    name: 'Gear',
+    one: 'item',
+    title: 'Item',
+    role: 'Department',
+    person: 'Who brings it',
+    empty: 'Cameras, mics, cables, staging: what to bring and where it is.',
+  },
+  budget: {
+    name: 'Budget',
+    one: 'line',
+    title: 'Line',
+    role: 'Category',
+    person: 'Vendor',
+    empty: 'Planned and actual costs. Only the owner and editors see the budget.',
+  },
 };
 
 export const GEAR_STATUS = ['Needed', 'Packed', 'On site', 'Returned'];
@@ -125,7 +139,8 @@ export function itemFromRow(r: ItemRow): Item {
   };
 }
 
-const money = (n: number | null): number | null => (n === null || !Number.isFinite(n) ? null : Math.round(Math.max(-9_999_999_999, Math.min(9_999_999_999, n)) * 100) / 100);
+const money = (n: number | null): number | null =>
+  n === null || !Number.isFinite(n) ? null : Math.round(Math.max(-9_999_999_999, Math.min(9_999_999_999, n)) * 100) / 100;
 
 export function itemToRow(i: Item): ItemRow {
   return {

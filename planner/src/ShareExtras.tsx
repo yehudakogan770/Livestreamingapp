@@ -44,7 +44,15 @@ function CopyField({ label, value, hint }: { label: string; value: string; hint?
  * or the crew view (Now/Next, run of show with notes, call times, stage
  * timer and prompter), without signing in. Plus the plan's calendar feed.
  */
-export function PublicLink({ plan, isOwner, onChanged }: { plan: Plan; isOwner: boolean; onChanged: (token: string | null, scope: 'agenda' | 'crew') => void }) {
+export function PublicLink({
+  plan,
+  isOwner,
+  onChanged,
+}: {
+  plan: Plan;
+  isOwner: boolean;
+  onChanged: (token: string | null, scope: 'agenda' | 'crew') => void;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const { sharing } = usePlannerFeatures();
@@ -113,7 +121,12 @@ export function PublicLink({ plan, isOwner, onChanged }: { plan: Plan; isOwner: 
           />
           {isOwner && (
             <div className="row">
-              <button type="button" className="btn btn--quiet btn--danger" disabled={busy} onClick={() => confirm('Turn the public link off? Anyone with it can no longer open the plan.') && set(false, plan.shareScope)}>
+              <button
+                type="button"
+                className="btn btn--quiet btn--danger"
+                disabled={busy}
+                onClick={() => confirm('Turn the public link off? Anyone with it can no longer open the plan.') && set(false, plan.shareScope)}
+              >
                 Turn the link off
               </button>
               <span className="muted small">Turning it on again makes a new link.</span>
@@ -164,7 +177,12 @@ export function SectionLocks({ plan, cues, people, isOwner }: { plan: Plan; cues
                   {l && (
                     <div className="muted small">
                       {l.editors.length
-                        ? `You and ${editors.filter((p) => l.editors.includes(p.userId)).map((p) => p.name || p.email).join(', ') || 'nobody else'}`
+                        ? `You and ${
+                            editors
+                              .filter((p) => l.editors.includes(p.userId))
+                              .map((p) => p.name || p.email)
+                              .join(', ') || 'nobody else'
+                          }`
                         : 'Only you'}
                     </div>
                   )}
