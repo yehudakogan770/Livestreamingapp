@@ -1067,3 +1067,13 @@
     display: none;
   }
 }
+
+/* A cue's mixes (Stream, Hall, Recording) and loudness, under its sound. */
+.tt-cue-mixes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  width: 100%;
+  padding-top: 2px;
+}

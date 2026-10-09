@@ -13,7 +13,8 @@ import { CATEGORIES, fromTemplate, starterTemplates } from '../core/templates';
 import { cleanMarkers } from '../core/timeline';
 import type { Asset, BrandTokens, DataSource, TitleProject, Variable, VariableType } from '../core/types';
 import { ControlPanel } from './ControlPanel';
-import { ColorField, NumberField, Row, Section, Select } from './fields';
+import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
+import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
 import type { Store } from './store';
@@ -207,9 +208,38 @@ export function CompositionPanel({ store }: { store: Store }) {
                   </option>
                 ))}
             </select>
+            {q.sound && (
+              <span className="tt-cue-mixes" role="group" aria-label={`${q.name}: where it is heard`}>
+                {CUE_MIXES.map((m) => (
+                  <Toggle
+                    key={m}
+                    label={CUE_MIX_NAMES[m]}
+                    value={cueMixes(q).includes(m)}
+                    onChange={(on) =>
+                      upd('Cue mixes', (x) => ({
+                        ...x,
+                        cues: x.cues.map((y, j) => (j === i ? { ...y, mixes: CUE_MIXES.filter((k) => (k === m ? on : cueMixes(y).includes(k))) } : y)),
+                      }))
+                    }
+                  />
+                ))}
+                <NumberField
+                  value={q.gain ?? 0}
+                  min={-60}
+                  max={12}
+                  step={1}
+                  unit="dB"
+                  label="Cue loudness"
+                  onChange={(gain) => upd('Cue loudness', (x) => ({ ...x, cues: x.cues.map((y, j) => (j === i ? { ...y, gain } : y)) }))}
+                />
+              </span>
+            )}
           </Row>
         ))}
-        <div className="tt-dim tt-small">Add cues from the timeline. A cue with a sound plays it when the graphic reaches it on air.</div>
+        <div className="tt-dim tt-small">
+          Add cues from the timeline. A cue with a sound plays it when the graphic reaches it: on air in Lumora (on the mixes ticked), in Studio
+          exports, and in this preview and its films.
+        </div>
       </Section>
     </div>
   );

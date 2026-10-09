@@ -51,7 +51,8 @@ export interface Host {
   autosave(p: TitleProject | null): void;
   recover(): Promise<TitleProject | null>;
   /** Rendering to a film through FFmpeg (desktop): null when not available here. */
-  renderTo?(target: VideoTarget, w: number, h: number, fps: number): Promise<FrameSink | null>;
+  /** `audio`: the audio cues' sound as a base64 WAV, joined to the film. */
+  renderTo?(target: VideoTarget, w: number, h: number, fps: number, audio?: string | null): Promise<FrameSink | null>;
   /** Formats this host can render. */
   renderFormats: VideoTarget['format'][];
 }

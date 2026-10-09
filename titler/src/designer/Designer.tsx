@@ -47,6 +47,7 @@ import { FORMAT_NAMES, renderVideo, wholeJob } from './renderVideo';
 import { animatedProps, getProp, withProp } from './props';
 import { isAnimated, setKey, valueAt } from '../core/easing';
 import { Mark } from './Mark';
+import { usePreviewCues } from './previewCues';
 import './designer.css';
 
 export type Look = 'ink' | 'lumora' | 'studio';
@@ -89,6 +90,9 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const selection = useStore(store, (s) => s.selection);
   const show = useStore(store, (s) => s.show);
   const zoom = useStore(store, (s) => s.zoom);
+
+  // Audio cues sound as the preview passes them.
+  usePreviewCues(store, host.urlFor);
 
   // Fonts the project uses, and its files.
   useEffect(() => {

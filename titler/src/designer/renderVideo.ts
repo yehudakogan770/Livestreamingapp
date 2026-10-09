@@ -8,6 +8,7 @@ import { zip } from '../core/zip';
 import type { BrandTokens, TitleProject, Values } from '../core/types';
 import { compOf } from './ops';
 import type { FrameSink, Host, VideoTarget } from './host';
+import { channelsOf, CUE_RATE, mixCueSound, toBase64, wavBytes } from './cueAudio';
 
 export interface RenderJob {
   project: TitleProject;
@@ -87,7 +88,9 @@ export async function renderVideo(job: RenderJob, target: VideoTarget, host: Hos
     return new Blob([zip(entries) as BlobPart], { type: 'application/zip' });
   }
   if (target.format === 'prores4444' || (host.renderTo && host.kind === 'desktop' && target.format === 'mp4')) {
-    const sink: FrameSink | null = host.renderTo ? await host.renderTo(target, job.width, job.height, job.fps) : null;
+    const sound = await mixCueSound(job, host.urlFor).catch(() => null);
+    const wav = sound ? toBase64(wavBytes(channelsOf(sound), CUE_RATE)) : null;
+    const sink: FrameSink | null = host.renderTo ? await host.renderTo(target, job.width, job.height, job.fps, wav) : null;
     if (!sink) throw new Error('ProRes 4444 is made by the Lumora Titler desktop app (with FFmpeg). In the browser, choose WebM with alpha or a PNG sequence.');
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     try {
@@ -120,7 +123,13 @@ export async function renderVideo(job: RenderJob, target: VideoTarget, host: Hos
   });
   const source = new mb.CanvasSource(canvas, { codec, quality: mb.QUALITY_HIGH, ...(webm ? { alpha: 'keep' as const } : {}) });
   output.addVideoTrack(source, { frameRate: job.fps });
+  // The audio cues' sound (Opus in WebM, AAC in MP4), when the browser can make it.
+  const sound = await mixCueSound(job, host.urlFor).catch(() => null);
+  const audioCodec = webm ? 'opus' : 'aac';
+  const audio = sound && (await mb.canEncodeAudio(audioCodec).catch(() => false)) ? new mb.AudioBufferSource({ codec: audioCodec, bitrate: mb.QUALITY_HIGH }) : null;
+  if (audio) output.addAudioTrack(audio);
   await output.start();
+  if (audio && sound) await audio.add(sound);
   for (let i = 0; i < times.length; i++) {
     if (signal?.aborted) {
       await output.cancel();
