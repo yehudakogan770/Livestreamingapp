@@ -11,14 +11,19 @@ buttons with its tally.
    (`127.0.0.1` when Companion runs on the same computer), the port (8095
    unless you changed it) and paste the token.
 3. Drag buttons from **Presets**: inputs (red on air, green in Next), Take,
-   Cut, overlays, Record, Live, Replay, slides, countdown and PANIC.
+   Cut, overlays, Record, Live, Replay, slides, countdown, PANIC, the next
+   cue, the prompter, flashing the stage monitor and video play / pause.
 
 ## Actions
 
 Take, Cut, input into Next (preview), input on air (program), overlays,
-black out, fade to black, recording, streaming, instant replay, slides,
-presets, macros, the countdown, data rows, the next cue and PANIC. Inputs
-can be given by number or by name.
+black out, fade to black, recording, streaming, instant replay (and keeping
+the last minute), slides, presets, macros, the countdown, data rows, the
+next cue, PANIC, video play / pause / from the start, playlists, song
+lyrics, the prompter (scroll, stop, faster, slower, back to the top),
+flashing the stage monitor, scoreboards (points, reset, game clock), PTZ
+cameras (presets, moving, zooming) and an ATEM switcher connected to
+Lumora. Inputs can be given by number or by name.
 
 ## Feedbacks
 

@@ -1,6 +1,6 @@
 {
   "name": "companion-module-lumora",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Bitfocus Companion module for Lumora: switching, overlays, recording, streaming, replays, slides, macros and tally",
   "type": "module",
   "main": "src/main.js",
