@@ -468,7 +468,7 @@ again; without internet they open for up to 7 days after the last check. Two-ste
 Compared with DaVinci Resolve, Premiere Pro, Final Cut Pro, Avid, CapCut,
 Descript, Riverside, Opus Clip / Vizard / Submagic, Camtasia, Filmora,
 Shotcut, Kdenlive and LumaFusion; the full table, the complaints and Studio's
-answers are in `COMPETITORS-STUDIO.md` (66 of 78 tools ✅, 5 ◐, 7 ❌).
+answers are in `COMPETITORS-STUDIO.md` (66 of 78 tools ✅, 6 ◐, 6 ❌).
 
 - ✅ **Finish the event** — one step: cameras cut by who is talking, speech written down, captions, chapters, a highlight reel, framed and captioned clips for social, everything queued and the event published to YouTube (private) when exported
 - ✅ **Multicam from separate files** — lined up by sound, timecode or recording time; recorders as the sound
@@ -478,5 +478,5 @@ answers are in `COMPETITORS-STUDIO.md` (66 of 78 tools ✅, 5 ◐, 7 ❌).
 - ✅ **Mixer** — EQ, dynamics and limiter on every track, buses, the whole mix's processing and level, recorded fader moves; match loudness across clips; record a voiceover
 - ✅ **Color** — stills and a reference wipe; drawn masks that can be animated (rotoscoping); rounded shape masks
 - ✅ **Library** — 37 video transitions, 42 picture effects (video noise reduction, skin smoothing, clarity, tint, duotone, cinematic bars, mirror, tilt-shift, lens distortion, camera shake…), 45 motion title templates plus the Titler's
-- ✅ **Publish to YouTube** — resumable upload with chapters, thumbnail and captions; the channel connection shared with Lumora
-- ⬜ Still to come: HDR and color management, a voice model for single-microphone speakers, publishing to other platforms, client review links
+- ✅ **Publish to YouTube and Vimeo** — resumable uploads with chapters, thumbnail and captions; the YouTube connection shared with Lumora; Vimeo with a personal token
+- ⬜ Still to come: HDR and color management, a voice model for single-microphone speakers, publishing to TikTok and Facebook, client review links

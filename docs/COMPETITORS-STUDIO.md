@@ -144,7 +144,7 @@ Columns: **St** Lumora Studio · **Re** DaVinci Resolve · **Pr** Premiere Pro �
 | Render queue in the background while editing                             | ✅         | ✅  | ✅  | ✅  | ◐   | ❌  | ✅  | ✅  | ✅  | ❌  | ◐   | ✅  | ✅  | ❌  |
 | Chapters, thumbnail and captions with the export                         | ✅         | ✅  | ✅  | ✅  | ◐   | ◐   | ✅  | ✅  | ◐   | ◐   | ◐   | ◐   | ◐   | ❌  |
 | Publish to YouTube from the app (resumable, with thumbnail and captions) | ✅ **new** | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  |
-| Publish to TikTok, Facebook, Vimeo                                       | ❌         | ✅  | ◐   | ◐   | ❌  | ✅  | ◐   | ✅  | ✅  | ◐   | ✅  | ❌  | ❌  | ◐   |
+| Publish to Vimeo, TikTok, Facebook (Studio: Vimeo)                       | ◐ **new**  | ✅  | ◐   | ◐   | ❌  | ✅  | ◐   | ✅  | ✅  | ◐   | ✅  | ❌  | ❌  | ◐   |
 | Shared projects, locks, version history                                  | ✅         | ✅  | ✅  | ❌  | ✅  | ◐   | ✅  | ✅  | ✅  | ❌  | ◐   | ❌  | ❌  | ❌  |
 | Frame-accurate comments for the team                                     | ✅         | ✅  | ✅  | ❌  | ◐   | ❌  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  |
 | Review links for clients in a browser                                    | ❌         | ✅  | ✅  | ◐   | ❌  | ◐   | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  |
@@ -154,12 +154,12 @@ Columns: **St** Lumora Studio · **Re** DaVinci Resolve · **Pr** Premiere Pro �
 |     | Before this round | After this round |
 | --- | ----------------- | ---------------- |
 | ✅  | 51                | 66               |
-| ◐   | 4                 | 5                |
-| ❌  | 23                | 7                |
+| ◐   | 4                 | 6                |
+| ❌  | 23                | 6                |
 
 Still ❌: generative AI (extend, voices, dubbing, eye contact), automatic
-B-roll, VST plug-ins, HDR and color management, a node compositor, publishing
-to platforms other than YouTube, and client review links. Still ◐: a magnetic
+B-roll, VST plug-ins, HDR and color management, a node compositor, and client
+review links. Still ◐: publishing (YouTube and Vimeo; not TikTok or Facebook), a magnetic
 timeline (ripple tools instead), who is speaking (by microphone, not by voice
 on one microphone), voice isolation (filters, not a neural model), camera RAW
 (converted first) and the native GPU engine (offered, not the default). See "What is left" below.
@@ -203,17 +203,17 @@ on one microphone), voice isolation (filters, not a neural model), camera RAW
 
 ## What is left, and why
 
-| Tool                                                       | Why not yet                                                                                                                                      |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Generative AI (extend, voices, dubbing, eye contact)       | Needs cloud models and paid generation; Studio keeps every AI tool on the computer, free and private.                                            |
-| Automatic B-roll                                           | Needs a stock library, or a reliable index of what each of your own shots shows; media search is the start of it.                                |
-| Who is speaking on a single microphone                     | Needs a voice model to tell voices apart; today speakers are told apart by microphone or file.                                                   |
-| A neural voice isolation model                             | Voice isolation uses noise-following filters today; a bundled model (as Resolve and Premiere ship) would be cleaner on hard recordings.          |
-| Curved (bezier) mask edges, masks that follow a track      | Drawn masks use straight-sided points (many points make a curve) and are animated by hand; bezier handles and following a motion track are next. |
-| HDR grading and color management                           | HDR files are shown and exported as SDR today; a color-managed pipeline (Rec. 2020, PQ/HLG out) is a larger change to the compositor.            |
-| VST plug-ins, a node compositor                            | Large native projects (a plug-in host; a node graph and its viewer).                                                                             |
-| Publishing to TikTok, Facebook, Vimeo; client review links | Each platform needs its own app registration and review; client links need hosted video storage and a public review page.                        |
-| Native GPU engine as the default                           | It is offered on capable graphics cards and falls back to WebGL by itself; making it the default needs testing on real Windows machines.         |
+| Tool                                                   | Why not yet                                                                                                                                      |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Generative AI (extend, voices, dubbing, eye contact)   | Needs cloud models and paid generation; Studio keeps every AI tool on the computer, free and private.                                            |
+| Automatic B-roll                                       | Needs a stock library, or a reliable index of what each of your own shots shows; media search is the start of it.                                |
+| Who is speaking on a single microphone                 | Needs a voice model to tell voices apart; today speakers are told apart by microphone or file.                                                   |
+| A neural voice isolation model                         | Voice isolation uses noise-following filters today; a bundled model (as Resolve and Premiere ship) would be cleaner on hard recordings.          |
+| Curved (bezier) mask edges, masks that follow a track  | Drawn masks use straight-sided points (many points make a curve) and are animated by hand; bezier handles and following a motion track are next. |
+| HDR grading and color management                       | HDR files are shown and exported as SDR today; a color-managed pipeline (Rec. 2020, PQ/HLG out) is a larger change to the compositor.            |
+| VST plug-ins, a node compositor                        | Large native projects (a plug-in host; a node graph and its viewer).                                                                             |
+| Publishing to TikTok and Facebook; client review links | Each platform needs its own app registration and review; client links need hosted video storage and a public review page.                        |
+| Native GPU engine as the default                       | It is offered on capable graphics cards and falls back to WebGL by itself; making it the default needs testing on real Windows machines.         |
 
 ## Sources
 

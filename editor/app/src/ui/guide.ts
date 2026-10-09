@@ -170,11 +170,12 @@ export const GUIDE: GuideTopic[] = [
   },
   {
     id: 'publish',
-    title: 'Publishing to YouTube',
-    where: 'The render queue: Publish to YouTube on a finished export',
+    title: 'Publishing to YouTube and Vimeo',
+    where: 'The render queue: Publish on a finished export',
     paragraphs: [
       'Connect your channel once (your browser opens Google’s sign-in). A channel connected in Lumora is already connected here too. Then choose the title, description, tags, category, who can see it and whether it is made for kids. Chapter markers fill the start of the description in the form YouTube turns into chapters.',
       'If the export has a thumbnail and a captions file, they are added to the video too. The upload goes a piece at a time and carries on by itself if the connection drops; you can close the window and keep editing while it runs, and the queue shows how far it has got. Videos start as Only me unless you choose otherwise.',
+      'To publish to Vimeo, choose Vimeo and paste a personal access token: make one at developer.vimeo.com/apps (any app of yours, Generate an access token) with Upload, Edit and Private access. Studio checks it with Vimeo and keeps it in Windows Credential Manager. Choose the title, description and who can see it; the captions file goes up as captions viewers can turn on.',
     ],
   },
   {
