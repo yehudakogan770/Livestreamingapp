@@ -1660,3 +1660,24 @@
   border: 1px solid var(--tt-line);
   border-radius: var(--tt-radius);
 }
+.tt-velocity {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  align-items: center;
+  gap: 4px 6px;
+  margin-top: 6px;
+}
+.tt-velocity > span {
+  grid-column: 1;
+}
+.tt-css-ease {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.tt-css-ease .tt-input {
+  flex: 1;
+  font-family: var(--tt-mono);
+  font-size: 11px;
+}
