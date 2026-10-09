@@ -71,7 +71,7 @@ describe('the transcript', () => {
     const input = screen.getByLabelText('Who is speaking');
     fireEvent.change(input, { target: { value: 'Dr. Levin' } });
     fireEvent.blur(input);
-    expect(doc.project.speakers).toEqual({ Guest: 'Dr. Levin' });
+    expect(doc.project.media.find((m) => m.id === 'Guest')?.speaker).toBe('Dr. Levin');
     fireEvent.click(screen.getByRole('button', { name: 'Delete fillers (2)' }));
     const left = sequenceWords(doc.project, current(doc.project)).map((w) => w.w);
     expect(left).toEqual(['So', 'tell', 'us.', 'Well', 'sure.']);

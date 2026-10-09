@@ -102,17 +102,22 @@ export function sequenceWords(p: Project, s: Sequence): SeqWord[] {
 
 /** Who is heard on a file: the name given in the transcript, otherwise the file's name. */
 export function speakerName(p: Project, media: string): string {
-  const named = p.speakers?.[media]?.trim();
+  const m = p.media.find((x) => x.id === media);
+  const named = m?.speaker?.trim();
   if (named) return named;
-  return (p.media.find((m) => m.id === media)?.name ?? 'Speaker').replace(/\.[^.]+$/, '');
+  return (m?.name ?? 'Speaker').replace(/\.[^.]+$/, '');
 }
 
 /** Give the person heard on a file a name (empty: back to the file's name). */
 export function nameSpeaker(p: Project, media: string, name: string): Project {
-  const speakers = { ...(p.speakers ?? {}) };
-  if (name.trim()) speakers[media] = name.trim();
-  else delete speakers[media];
-  return { ...p, speakers };
+  return {
+    ...p,
+    media: p.media.map((m) => {
+      if (m.id !== media) return m;
+      const { speaker: _old, ...rest } = m;
+      return name.trim() ? { ...rest, speaker: name.trim() } : rest;
+    }),
+  };
 }
 
 /** The transcript's paragraphs (indexes into the words): a new one after a pause of `pause` frames, or when someone else is heard. */

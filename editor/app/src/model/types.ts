@@ -53,6 +53,8 @@ export interface MediaItem {
   tags?: string[];
   notes?: string;
   addedAt?: number;
+  /** Who is heard in it, as named in the transcript (shared with everyone on a shared project). */
+  speaker?: string;
   /** A subclip: only this part of the file (seconds), e.g. one shot found by scene detection. */
   range?: [number, number];
 }
@@ -536,8 +538,6 @@ export interface Project {
   open: string;
   /** Bins that fill themselves by rules (type, rating, tag…). */
   smartBins?: SmartBin[];
-  /** Who is heard on each sound file (by media id), as shown in the transcript. */
-  speakers?: Record<string, string>;
 }
 
 /** A bin that shows the media matching its rules (all of them, or any). */
