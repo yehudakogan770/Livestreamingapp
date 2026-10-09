@@ -178,6 +178,21 @@ export class Store {
     this.emit();
   }
 
+  /**
+   * The undo history, oldest first: every step's name, and how many of them
+   * are done (the rest were undone and can be redone).
+   */
+  history(): { labels: string[]; done: number } {
+    return { labels: [...this.past.map((x) => x.label), ...[...this.future].reverse().map((x) => x.label)], done: this.past.length };
+  }
+
+  /** Go back or forward in the history to just after step `done` (0: before the first). */
+  goTo(done: number) {
+    const target = Math.max(0, Math.min(done, this.past.length + this.future.length));
+    while (this.past.length > target) this.undo();
+    while (this.past.length < target && this.future.length) this.redo();
+  }
+
   /** Open another project (clears undo). */
   load(project: TitleProject, extra: Partial<EditorState> = {}) {
     this.past = [];

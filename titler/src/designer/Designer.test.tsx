@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { Designer } from './Designer';
 import type { Host } from './host';
@@ -6,6 +6,9 @@ import type { TitleProject } from '../core/types';
 import { ControlPanel } from './ControlPanel';
 import { starterTemplates } from '../core/templates';
 import type { BrowserEnv } from '../core/browserEnv';
+
+// Each test starts from the standard workspace (the layout is kept in this browser).
+beforeEach(() => localStorage.clear());
 
 function memoryHost(): Host & { saved: TitleProject[]; library: Map<string, TitleProject> } {
   const library = new Map<string, TitleProject>();

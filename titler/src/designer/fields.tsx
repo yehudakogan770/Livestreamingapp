@@ -4,14 +4,18 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { TOKEN_KEYS, TOKEN_LABELS, isHex, resolveColor } from '../core/binding';
 import type { BrandTokens, Values } from '../core/types';
+import { evalMath } from './math';
 
 const fmt = (v: number) => {
   if (!Number.isFinite(v)) return '0';
-  const r = Math.round(v * 100) / 100;
+  const r = Math.round(v * 1000) / 1000;
   return String(Object.is(r, -0) ? 0 : r);
 };
 
-/** A number: type it, or drag across it to change it (Shift: ten times faster). */
+/**
+ * A number: type it (sums work: "100+20", "*2" from the current value), or
+ * drag across it to change it (Shift: ten times faster, Alt: a tenth).
+ */
 export function NumberField({
   value,
   onChange,
@@ -47,8 +51,8 @@ export function NumberField({
         onFocus={(e) => e.target.select()}
         onBlur={() => {
           if (text !== null) {
-            const n = Number(text);
-            if (Number.isFinite(n)) onChange(clamp(n));
+            const n = evalMath(text, value);
+            if (n !== null) onChange(clamp(n));
           }
           setText(null);
         }}
@@ -78,7 +82,9 @@ export function NumberField({
             onBegin?.();
           }
           e.preventDefault();
-          onChange(clamp(Math.round((d.v + dx * step * (e.shiftKey ? 10 : 1)) / step) * step));
+          const k = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
+          const fine = e.altKey ? step / 10 : step;
+          onChange(clamp(Math.round((d.v + dx * step * k) / fine) * fine));
         }}
         onPointerUp={(e) => {
           const d = drag.current;
