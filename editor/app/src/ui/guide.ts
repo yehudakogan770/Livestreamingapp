@@ -92,6 +92,110 @@ export const GUIDE: GuideTopic[] = [
       'Title clips are drawn by the same renderer as Lumora uses on air, so a title looks the same live and in the edit, and in every export.',
     ],
   },
+  {
+    id: 'multicam-files',
+    title: 'Multicam from separate files',
+    where: 'Sequence > New multicam clip from files, or right-click a file in the media pool',
+    paragraphs: [
+      'Tick the cameras and any separate sound recorders that filmed the same thing. Studio lines them up and makes one multicam clip, with a new sequence that plays it. Then cut between the cameras in the camera wall (press 1, 2, 3…), or let Smart > Auto multicam edit cut by who is talking.',
+      'Line up by Sound compares what every microphone heard and is accurate to a hundredth of a second; a clap at the start helps but is not needed. Timecode uses the time code the cameras wrote (set them to the time of day). Recording time uses when each camera says it started, to the second. Starts puts every file at the same moment.',
+      'A file marked "Check this one" did not match clearly. Watch it in the camera wall and move it a frame at a time with the − and + buttons. Files with Sound ticked go on the timeline; the other cameras’ sound still helps Auto multicam edit.',
+    ],
+  },
+  {
+    id: 'caption-looks',
+    title: 'Caption looks and words that light up',
+    where: 'Select a caption, then the Inspector: Caption look (the whole track)',
+    paragraphs: [
+      'Choose a ready-made look: Broadcast and Clean for any video, or Highlight, Karaoke, Word box, Pop and Reveal for social clips, where each word lights up as it is said. Change the accent color, capitals, font, size, outline and place as you like; the look applies to the whole captions track.',
+      'Captions made from the transcript know when each word is said. Typed captions share their time out by the length of each word. Fixing a spelling keeps the timing; adding or removing words works it out again.',
+      'Shorter lines suit vertical video. After changing Letters a line or Lines, choose Make them again from the transcript to break the track’s captions again (changes typed into them are replaced).',
+    ],
+  },
+  {
+    id: 'social-clips',
+    title: 'Clips for social',
+    where: 'Smart > Clips for social',
+    paragraphs: [
+      'Studio finds the moments that stand on their own: whole sentences, a strong opening line, the room reacting, your key words and highlight markers. Each one gets a strength from 1 to 99 compared with the rest of the sequence. Click a time to watch it, and untick any you don’t want.',
+      'Each clip you keep becomes its own sequence in the shape you choose, with captions in the look you choose and, if asked, its first line as a title. Follow the people talking frames the picture on faces, the way Auto reframe does. Export each one when made puts them all in the render queue for YouTube Shorts, Instagram or TikTok.',
+      'Everything is worked out on this computer, so there is no limit on how many you make.',
+    ],
+  },
+  {
+    id: 'finish-event',
+    title: 'Finish the event in one step',
+    where: 'Smart > Finish the event',
+    paragraphs: [
+      'For a recorded event, Finish the event runs the Smart tools in order: it cuts between the cameras by who is talking, writes down what is said, adds captions and chapter markers, makes a highlight reel and clips for social, and can put everything in the render queue. The event goes to the queue for YouTube with chapters and a captions file; the reel and clips get their captions in the picture.',
+      'Choose what you want before pressing Finish. Steps that can’t run (for example, no multicam clip) are skipped and you are told why. Everything it makes is one change, so a single Undo takes it all back.',
+    ],
+  },
+  {
+    id: 'script-cut',
+    title: 'Rough cut from a script',
+    where: 'Smart > Rough cut from a script',
+    paragraphs: [
+      'Paste the script, or a list of what should be said in order, or open a text file. Studio looks for every line in what was said in all the transcribed recordings, takes the closest take of each, and lays them out in the script’s order on a new sequence.',
+      'Other good takes of a line go on the hidden Alt tracks above it, so you can swap one in by moving it down. A line that was never said gets a red marker where it would go. Transcribe the recordings first.',
+    ],
+  },
+  {
+    id: 'transcript',
+    title: 'Editing by the transcript',
+    where: 'The Transcript tab',
+    paragraphs: [
+      'Click a word to go there. Drag across words and press Delete to cut them out of every track and close the gap. Delete fillers takes out every um, uh and hmm at once (they are underlined in the transcript).',
+      'When more than one microphone or file is heard, the transcript starts a new paragraph for each change of voice and shows who is speaking. Click the name to give the person their real name.',
+    ],
+  },
+  {
+    id: 'mixer',
+    title: 'The mixer: EQ, dynamics, buses and fader moves',
+    where: 'View > Audio page',
+    paragraphs: [
+      'Each sound track has EQ (low and high shelves, two bells and a low cut), Dynamics (a compressor with make-up gain) and a Limiter. The EQ, Dyn and Lim buttons on a strip show what is switched on; choose the strip’s name to set them, with the curves drawn as you change them. Clips’ own effects come first, then the track’s, then its bus’s, then the whole mix’s.',
+      'A bus mixes the tracks sent to it (choose To a bus under the fader), so all the dialogue or all the music can be processed and leveled together. The Everything strip has the whole mix’s processing and level, which the film gets; its fader is only how loud you listen.',
+      'To record fader moves, switch on the pen button under a track and play the film: moving the fader records it until you let go, replacing what was there for that stretch. The fader then follows its moves while editing and in the film. Moving it when not recording moves the whole line up or down; Clear in the strip panel takes the moves away.',
+    ],
+  },
+  {
+    id: 'match-loudness',
+    title: 'Matching loudness and recording a voiceover',
+    where: 'Clip > Match loudness of the selected clips, and Sequence > Record a voiceover',
+    paragraphs: [
+      'Select two or more sound clips and choose Match loudness: each clip’s loudness is measured on the part it plays (quiet gaps don’t count) and its volume is moved to the middle one’s. Volume lines move as a whole.',
+      'To record a voiceover, put the playhead where it should start and choose Record a voiceover. Pick the microphone, check its level, and press Record: after a count of three the film plays while you speak (use headphones). Stop and keep puts the take on the Voiceover track where it started. Takes are kept in Documents/Lumora/Voiceovers.',
+    ],
+  },
+  {
+    id: 'publish',
+    title: 'Publishing to YouTube',
+    where: 'The render queue: Publish to YouTube on a finished export',
+    paragraphs: [
+      'Connect your channel once (your browser opens Google’s sign-in). A channel connected in Lumora is already connected here too. Then choose the title, description, tags, category, who can see it and whether it is made for kids. Chapter markers fill the start of the description in the form YouTube turns into chapters.',
+      'If the export has a thumbnail and a captions file, they are added to the video too. The upload goes a piece at a time and carries on by itself if the connection drops; you can close the window and keep editing while it runs, and the queue shows how far it has got. Videos start as Only me unless you choose otherwise.',
+    ],
+  },
+  {
+    id: 'stills',
+    title: 'Stills and the reference wipe',
+    where: 'The Stills button over the viewer on the Color page',
+    paragraphs: [
+      'Grab a still of a shot you like, then go to another shot and choose the still: it shows over the picture left of a line you can drag (or move with the arrow keys). Match the shots by eye, with the scopes, or start with AI > Auto color match.',
+      'Stills last while Studio is open. Grab as many as you need; the oldest go after 24.',
+    ],
+  },
+  {
+    id: 'library',
+    title: 'Transitions, effects and titles',
+    where: 'Effects and Text & more in the media panel',
+    paragraphs: [
+      'There are 37 video transitions in six groups: dissolves, wipes (including clock, diagonal and blinds), slides and pushes, shapes (iris, box, barn doors), motion (zooms, whip pans, spin) and 3D (cube and flip). Drag one onto a cut, or put the playhead on a cut and press Ctrl+D.',
+      'Picture effects include color tools, keys and masks (including a rounded rectangle for picture-in-picture), blurs, video noise reduction, skin smoothing, clarity, tint, duotone, cinematic bars, mirror, tilt-shift, lens distortion and camera shake. All of them are drawn on the graphics card, the same way in the viewer and in the film.',
+      'Text & more has over 45 motion title templates, including an Event group (welcome, program, sponsors, back soon, award winner, next speaker) and titles whose words come in one after another, plus the Lumora Titler designs.',
+    ],
+  },
 ];
 
 /** Topics whose title or text has every word in `query` (case doesn't matter). */

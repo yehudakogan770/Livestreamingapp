@@ -24,6 +24,19 @@ describe('help topics', () => {
       'render queue',
       'Blackmagic RAW',
       'image sequence',
+      'Line up by Sound',
+      'Karaoke',
+      'Clips for social',
+      'Finish the event',
+      'Alt tracks',
+      'Delete fillers',
+      'bus',
+      'record fader moves',
+      'Match loudness',
+      'voiceover',
+      'Publish',
+      'still',
+      'cube',
     ])
       expect(all.toLowerCase()).toContain(word.toLowerCase());
   });
