@@ -255,6 +255,33 @@ export function MonitorPanel({ show, act }: { show: Show; act: Act }) {
             Song words
           </label>
         </div>
+        {m.showTimer && (
+          <div className="mpanel__row" role="group" aria-label="Speaker timing">
+            <label className="check" title="The time left turns amber this long before the end (red in the last minute)">
+              Amber at{' '}
+              <select
+                value={m.wrapUpS ?? 120}
+                onChange={(e) => act({ type: 'updateMonitor', patch: { wrapUpS: Number(e.target.value) } })}
+                aria-label="Turn amber this long before the end"
+              >
+                <option value={0}>never</option>
+                {[1, 2, 3, 5, 10, 15].map((min) => (
+                  <option key={min} value={min * 60}>
+                    {min} min left
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="check" title="After zero, show how far over the time is (+1:05) in red">
+              <input type="checkbox" checked={m.overtime ?? true} onChange={(e) => act({ type: 'updateMonitor', patch: { overtime: e.target.checked } })} />{' '}
+              Time over
+            </label>
+            <label className="check" title="A bar under the time left shows how much of it has gone">
+              <input type="checkbox" checked={m.progress ?? true} onChange={(e) => act({ type: 'updateMonitor', patch: { progress: e.target.checked } })} />{' '}
+              Progress bar
+            </label>
+          </div>
+        )}
 
         <PrompterPanel show={show} act={act} />
         <CountdownCard show={show} act={act} />

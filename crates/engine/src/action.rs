@@ -145,6 +145,15 @@ pub struct MonitorPatch {
     #[serde(default)]
     #[ts(optional)]
     pub clock_24h: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub wrap_up_s: Option<u32>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub overtime: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub progress: Option<bool>,
 }
 
 /// Changes to how the countdown looks and ends. Fields left out stay as they are.
@@ -578,6 +587,19 @@ pub enum Action {
         id: SourceId,
         #[ts(optional)]
         comment: Option<crate::chat::ChatComment>,
+    },
+    /// Draw a line (or a dot, or an arrow) on a drawing input.
+    DrawStroke {
+        id: SourceId,
+        stroke: crate::drawing::Stroke,
+    },
+    /// Take the last line off a drawing input.
+    DrawUndo {
+        id: SourceId,
+    },
+    /// Take every line off a drawing input.
+    DrawClear {
+        id: SourceId,
     },
     /// Change how a comment input looks.
     UpdateCommentCard {

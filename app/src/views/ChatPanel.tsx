@@ -2,13 +2,15 @@ import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { audienceAddress } from './JoinSetup';
 import type { Show } from '../engine/types/Show';
-import { chat, useChat, type ChatMessage } from '../engine/chat';
+import { chat, thanksText, useChat, type ChatMessage } from '../engine/chat';
+import { setThanksOn, useThanksOn } from '../engine/chatThanks';
 import type { Act } from './act';
 import type { NewSource } from '../engine/types/NewSource';
 import type { EngineClient, RemoteStatus } from '../engine/client';
 import './ChatPanel.css';
 
 const KEY_STORE = 'lumora.youtubeKey';
+const PLATFORM_SHORT = { youtube: 'YT', twitch: 'TW', facebook: 'FB', other: '' } as const;
 const readKey = () => {
   try {
     return localStorage.getItem(KEY_STORE) ?? '';
@@ -19,7 +21,7 @@ const readKey = () => {
 
 /**
  * The live chat, beside the controls (it doesn't block them). Connect to
- * Twitch or YouTube, then "Show" puts a comment on screen through a chat
+ * Twitch, YouTube or Facebook, then "Show" puts a comment on screen through a chat
  * comments input — put that input on air or on an overlay.
  */
 export function ChatPanel({
@@ -64,8 +66,9 @@ export function ChatPanel({
   };
   const showIt = (m: ChatMessage) => {
     if (!card) return;
-    act({ type: 'showComment', id: card.id, comment: { author: m.author, text: m.text, platform: m.platform } });
+    act({ type: 'showComment', id: card.id, comment: { author: m.author, text: m.badge ? thanksText(m) : m.text, platform: m.platform } });
   };
+  const thanks = useThanksOn();
   const q = find.trim().toLowerCase();
   const messages = q ? st.messages.filter((m) => m.text.toLowerCase().includes(q) || m.author.toLowerCase().includes(q)) : st.messages;
   const dot = (s: string) => <span className={`chat__dot chat__dot--${s}`} />;
@@ -124,6 +127,20 @@ export function ChatPanel({
               )}
             </div>
             {st.youtube.problem && <p className="field__note field__note--warn">{st.youtube.problem}</p>}
+            <div className="chat__row">
+              {dot(st.facebook.status)}
+              <span className="chat__label">Facebook (the connected account’s live video)</span>
+              {st.facebook.status === 'off' || st.facebook.status === 'error' ? (
+                <button type="button" className="btn btn--small" onClick={() => chat.connectFacebook()}>
+                  Connect
+                </button>
+              ) : (
+                <button type="button" className="btn btn--small" onClick={() => chat.disconnectFacebook()}>
+                  Stop
+                </button>
+              )}
+            </div>
+            {st.facebook.problem && <p className="field__note field__note--warn">{st.facebook.problem}</p>}
             <details className="chat__key">
               <summary>YouTube API key{key ? ' ✓' : ''}</summary>
               <input className="text" type="password" value={key} onChange={(e) => saveKey(e.target.value)} aria-label="YouTube API key" spellCheck={false} />
@@ -156,6 +173,12 @@ export function ChatPanel({
               </button>
             )}
           </div>
+          <label
+            className="check chat__thanks"
+            title="Super Chats, new members and subscribers, bits and raids show on the card for 8 seconds, one after another"
+          >
+            <input type="checkbox" checked={thanks} onChange={(e) => setThanksOn(e.target.checked)} /> Thank supporters on screen by themselves
+          </label>
           <input className="text chat__find" placeholder="Find…" value={find} onChange={(e) => setFind(e.target.value)} aria-label="Find in the chat" />
           <ol
             ref={list}
@@ -166,14 +189,17 @@ export function ChatPanel({
             }}
           >
             {messages.length === 0 && (
-              <li className="chat__empty">{st.twitch.status === 'on' || st.youtube.status === 'on' ? 'Waiting for comments…' : 'Connect to a chat above.'}</li>
+              <li className="chat__empty">
+                {st.twitch.status === 'on' || st.youtube.status === 'on' || st.facebook.status === 'on' ? 'Waiting for comments…' : 'Connect to a chat above.'}
+              </li>
             )}
             {messages.map((m) => {
               const on = !!shown && shown.author === m.author && shown.text === m.text;
               return (
                 <li key={m.id} className={`chat__msg${on ? ' is-on' : ''}`}>
                   <div className="chat__who" style={{ color: m.color }} dir="auto">
-                    {m.author} <small>{m.platform === 'youtube' ? 'YT' : 'TW'}</small>
+                    {m.author} <small>{PLATFORM_SHORT[m.platform]}</small>
+                    {m.badge && <span className="chat__badge">{m.badge}</span>}
                   </div>
                   <div className="chat__text" dir="auto">
                     {m.text}

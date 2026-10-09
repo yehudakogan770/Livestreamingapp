@@ -104,6 +104,7 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ("stream", "state (on, off, toggle)"),
     ("replay", "seconds (1 – 60), slow (1 for half speed)"),
     ("replaybuffer", "state (on, off, toggle)"),
+    ("mark", ""),
     ("macro", "name, or number (1, 2…)"),
     ("stopmacros", ""),
     (
@@ -197,6 +198,7 @@ pub fn command_for(
             let slow = matches!(get(q, "slow"), Some("1" | "true" | "on" | "yes"));
             Some(AppCommand::Replay { seconds, slow })
         }
+        "mark" => Some(AppCommand::Mark),
         _ => None,
     };
     if let Some(a) = app_cmd {
@@ -1015,6 +1017,10 @@ mod tests {
             }))
         );
         assert!(app_cmd("replay", "seconds=90", &idle).is_err());
+        assert_eq!(
+            app_cmd("mark", "", &busy),
+            Ok(Command::App(AppCommand::Mark))
+        );
     }
 
     #[test]

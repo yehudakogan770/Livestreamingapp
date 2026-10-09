@@ -13,7 +13,8 @@ import type { AppRequest } from '../engine/types/AppRequest';
 /** What the server passes on (see `AppCommand` in src-tauri/src/remote.rs). */
 export type RemoteCommand =
   | { command: 'record' | 'stream' | 'rehearsal' | 'replayBuffer'; on: boolean }
-  | { command: 'replay'; seconds: number; slow?: boolean };
+  | { command: 'replay'; seconds: number; slow?: boolean }
+  | { command: 'mark' };
 
 /** The parts of recording and streaming a control surface can use. */
 export interface RemoteOps {
@@ -29,6 +30,8 @@ export interface RemoteOps {
   setRehearsal(on: boolean): void;
   setReplay(on: boolean): void;
   makeReplay(seconds: number, speed: number): Promise<string>;
+  /** Mark this moment in the recording (throws when nothing is recording). */
+  mark?(): number;
 }
 
 /** Do what a control surface asked. Already so: nothing happens. */
@@ -55,6 +58,10 @@ export async function runRemoteCommand(cmd: RemoteCommand, ops: RemoteOps): Prom
       return;
     case 'replay':
       await ops.makeReplay(cmd.seconds, cmd.slow ? 0.5 : 1);
+      return;
+    case 'mark':
+      if (!ops.mark) throw new Error('Marking moments is not available here.');
+      ops.mark();
       return;
   }
 }

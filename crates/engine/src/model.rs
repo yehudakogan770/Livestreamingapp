@@ -304,6 +304,8 @@ pub enum SourceKind {
     Guest(Box<crate::browser::Guest>),
     /// A live chat comment shown on screen.
     Comment(Box<crate::chat::CommentCard>),
+    /// Lines and arrows drawn over the picture (a telestrator).
+    Drawing(Box<crate::drawing::Drawing>),
     /// An audience poll, voted from phones.
     Poll(Box<crate::poll::Poll>),
     /// Song lyrics, one slide at a time.

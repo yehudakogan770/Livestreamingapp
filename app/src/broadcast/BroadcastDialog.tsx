@@ -20,6 +20,26 @@ export const SERVICES: { name: string; url: string; keyHelp: string; vertical?: 
     keyHelp: 'Facebook → Live video → Streaming software → Stream key',
   },
   {
+    name: 'Twitch',
+    url: 'rtmp://live.twitch.tv/app',
+    keyHelp: 'Twitch → Creator Dashboard → Settings → Stream → Primary Stream key',
+  },
+  {
+    name: 'Kick',
+    url: '',
+    keyHelp: 'Kick → Creator Dashboard → Settings → Stream URL & Key (copy both)',
+  },
+  {
+    name: 'LinkedIn',
+    url: '',
+    keyHelp: 'LinkedIn → Go live → Streaming software (RTMP) → Stream URL and Stream key',
+  },
+  {
+    name: 'X',
+    url: '',
+    keyHelp: 'X Media Studio → Producer → Sources → RTMP URL and Stream key',
+  },
+  {
     name: 'Vimeo',
     url: 'rtmps://rtmp-global.cloud.vimeo.com:443/live',
     keyHelp: 'Vimeo → Live event → Connect with RTMP → Stream key',

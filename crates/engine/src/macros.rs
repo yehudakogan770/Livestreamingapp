@@ -81,6 +81,8 @@ pub enum AppStep {
     Stream { on: bool },
     /// Replay the last `seconds` into Next (slow: half speed).
     Replay { seconds: u32, slow: bool },
+    /// Mark this moment in the recording (Lumora Studio shows it on the timeline).
+    Mark,
 }
 
 impl AppStep {

@@ -25,6 +25,10 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     ],
   },
   {
+    title: 'Anything',
+    keys: [['Ctrl + K', 'Find a command: type what you want to do, ↑ ↓ to choose, Enter to run']],
+  },
+  {
     title: 'Overlays',
     keys: [['Shift + 1 – 4', 'Overlay 1 – 4 on / off']],
   },
@@ -32,6 +36,7 @@ const GROUPS: { title: string; keys: [string, string][] }[] = [
     title: 'Cues, data and macros',
     keys: [
       ['N', 'Next cue in the run of show'],
+      ['M', 'Mark the moment in the recording (while recording)'],
       ['[  ·  ]', 'Previous / next row of the data file or sheet'],
       ['The macro’s key', 'Run that macro (set in Cues → Macros)'],
     ],

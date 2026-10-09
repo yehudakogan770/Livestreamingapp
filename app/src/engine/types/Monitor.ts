@@ -29,6 +29,19 @@ export type Monitor = {
    */
   clock24h: boolean;
   /**
+   * The time left turns amber this many seconds before the end (0: never),
+   * and red in the last minute.
+   */
+  wrapUpS: number;
+  /**
+   * After zero, the time over is shown in red (+1:05) instead of 0:00.
+   */
+  overtime: boolean;
+  /**
+   * A bar under the time left shows how much of it has gone.
+   */
+  progress: boolean;
+  /**
    * Messages one click away. Always exactly [`QUICK_MESSAGES`] entries.
    */
   quick: Array<string>;

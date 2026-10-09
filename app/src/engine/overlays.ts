@@ -163,7 +163,7 @@ export function overlaysOn(overlays: Overlay[], screen: ScreenId, now: number): 
 }
 
 /** Inputs that go over the picture (names, scoreboards…), never instead of it. */
-export const OVERLAY_KINDS: ReadonlySet<string> = new Set(['text', 'scoreboard', 'graphic', 'titler', 'comment', 'lyrics']);
+export const OVERLAY_KINDS: ReadonlySet<string> = new Set(['text', 'scoreboard', 'graphic', 'titler', 'comment', 'lyrics', 'drawing']);
 
 /** The overlay channel for an input: the one it is in, else an empty one, else one not on air (else the last). */
 export function overlayChannel(show: Show, id: string): number {

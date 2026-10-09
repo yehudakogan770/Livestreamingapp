@@ -3,4 +3,8 @@
 /**
  * Something only the control window can do.
  */
-export type AppStep = { command: 'record'; on: boolean } | { command: 'stream'; on: boolean } | { command: 'replay'; seconds: number; slow: boolean };
+export type AppStep =
+  | { command: 'record'; on: boolean }
+  | { command: 'stream'; on: boolean }
+  | { command: 'replay'; seconds: number; slow: boolean }
+  | { command: 'mark' };

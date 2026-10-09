@@ -41,11 +41,38 @@
   font-size: 0.35em;
   color: #a9abb0;
 }
-.mscreen__timer.is-urgent .mscreen__num {
+.mscreen__timer.is-urgent .mscreen__num,
+.mscreen__timer.is-over .mscreen__num,
+.mscreen__timer.is-over .mscreen__tag {
   color: #ff5a4f;
+}
+.mscreen__timer.is-wrapUp .mscreen__num {
+  color: #f2b33d;
 }
 .mscreen__timer.is-paused .mscreen__num {
   color: #a9abb0;
+}
+/* How much of the time has gone. */
+.mscreen__bar {
+  display: block;
+  align-self: stretch;
+  height: 0.8cqh;
+  min-height: 4px;
+  margin-top: 1cqh;
+  background: #2a2d33;
+  overflow: hidden;
+}
+.mscreen__bar i {
+  display: block;
+  height: 100%;
+  background: #d9d9d6;
+}
+.mscreen__timer.is-wrapUp .mscreen__bar i {
+  background: #f2b33d;
+}
+.mscreen__timer.is-urgent .mscreen__bar i,
+.mscreen__timer.is-over .mscreen__bar i {
+  background: #ff5a4f;
 }
 
 .mscreen__msgbox {

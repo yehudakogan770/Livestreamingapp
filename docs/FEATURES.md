@@ -431,7 +431,7 @@ again; without internet they open for up to 7 days after the last check. Two-ste
 3. ✅ **Stream Deck / Companion control and an open API**, hardware tally (vMix, OBS, ATEM). HTTP + WebSocket with a token and OSC over UDP (docs/API.md); a Bitfocus Companion module (companion/) with tally feedbacks and presets; macros on the Stream Deck.
 4. ✅ **Guests by link** (through VDO.Ninja, free, no account; ⬜ several guests in one room, mix-minus) — up to 8 people join from a browser, with their own
    mix-minus (StreamYard, Restream, vMix Call, Ecamm).
-5. 🔶 **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs). YouTube and Twitch done; ⬜ Facebook.
+5. ✅ **Live chat and comments on screen** from YouTube / Facebook / Twitch (StreamYard, Restream, Streamlabs). Facebook reads the comments of the live video made through the connected account; viewers' support (Super Chats, members, subscribers, bits, raids) is marked and can be thanked on screen by itself.
 6. 🔶 **Audio filters** — noise suppression, noise gate, compressor, limiter,
    EQ per input, VST plugins (OBS, vMix). Done: low cut, EQ, gate, compressor, noise removal, limiter, per-input delay, LUFS loudness meter with −14 / −16 / −23 targets. ⬜ VST plugins.
 7. ✅ **Instant replay** with slow motion (vMix, Wirecast), and a **highlights reel**: "Keep as a highlight" adds the last seconds to one video input that plays them all.
@@ -465,3 +465,11 @@ again; without internet they open for up to 7 days after the last check. Two-ste
 34. ✅ **How to use Lumora** — a plain-language manual inside the app (Help menu), searchable, offline: every part of the app step by step.
 35. ✅ **500 built-in fonts** — all open-source (Google Fonts), 58 with Hebrew, kept inside the app so they work offline; a font picker with search and groups (Hebrew, sans, serif, display, handwriting, mono, on this computer, added), each font shown in itself; used by titles, songs, credits, the title designer and the 12 Pesukim, on screen and in the recording.
 36. ✅ **On-screen effects** — 14 ways for titles to come on (build, fade, slide, rise, drop, pop, zoom, flip, focus, wipe, typewriter, bounce, spin, shine), for every title or the whole event look; the 12 Pesukim bar has its own entrance and an effect for each new word; the same on the screens and in the recording.
+37. ✅ **Marks while recording** — Mark (next to REC, or M, a macro step, the Stream Deck or /api/do/mark) marks the moment in the event file straight away; “Keep as a highlight” marks too; Lumora Studio shows every mark on its timeline (ATEM markers, Riverside clips).
+38. ✅ **More triggers** — a video about to end (vMix OnPlaybackTime), an input losing its picture or getting it back, sound louder or quieter than a level for a while (Advanced Scene Switcher), recording or the stream starting or stopping, every few minutes.
+39. ✅ **Event templates** — the first event setup asks what kind of event it is (Conference, Concert, Wedding, Sports, Panel, Webinar, or empty) and adds its inputs, Monitor messages and a run of show.
+40. ✅ **Speaker timing** (Stagetimer) — on the Monitor the time left turns amber to wrap up and red in the last minute, shows the time over after zero (+1:05) and a bar of the time gone; the speaker's phone shows the same, with the Monitor message.
+41. ✅ **Find any command by typing** (Ctrl+K) — every menu command and the show's inputs, presets, macros and overlays, run from the keyboard alone (Lumora only).
+42. ✅ **Drawing on screen** (vMix telestrator, TriCaster) — lines, dots and arrows over the picture on an overlay, drawn on a pad over the live picture, the same on every screen and in the recording.
+43. ✅ **Twitch, Kick, LinkedIn and X** in the list of streaming services.
+44. ⬜ This computer's sound or one app's sound (WASAPI loopback), VST plugins, a virtual camera of Lumora's own (until then NDI out with NDI Webcam), per-output size. See docs/COMPETITORS-LUMORA.md.

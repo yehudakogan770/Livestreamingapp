@@ -2,7 +2,8 @@ import { useLayoutEffect, useRef, type RefObject } from 'react';
 import { sections } from '../engine/lyrics';
 import type { Show } from '../engine/types/Show';
 import type { TextSize } from '../engine/types/TextSize';
-import { FLASH_MS, countdownFinished, countdownRemaining, fadeAmount, formatCountdown } from '../engine/timing';
+import { FLASH_MS, fadeAmount } from '../engine/timing';
+import { stageTimer } from '../engine/stageTimer';
 import { useNow } from '../engine/useNow';
 import { mainCountdown } from '../engine/countdowns';
 import { clockTime, hasPlace, zmanimOn } from '../engine/zmanim';
@@ -65,10 +66,7 @@ export function MonitorScreen({ show }: { show: Show }) {
     .trim();
   const period = parts.find((x) => x.type === 'dayPeriod')?.value;
 
-  const left = c ? countdownRemaining(c, now) : 0;
-  const done = c ? countdownFinished(c, now) : false;
-  const urgent = !!c && c.endsAt !== null && left < 60_000;
-  const timerText = !c ? '' : done && c.atZero.type === 'showText' ? c.endText : formatCountdown(left, c.format === 'auto' ? 'minSec' : c.format);
+  const st = c ? stageTimer(c, m, now) : null;
 
   // A song on air on the Live Screen: the singers see these words and what comes next.
   const songSrc = show.sources.find((x) => x.id === show.screens.live.program)?.kind;
@@ -91,10 +89,15 @@ export function MonitorScreen({ show }: { show: Show }) {
       </span>
     </div>
   );
-  const timer = m.showTimer && c && (
-    <div className={`mscreen__cell mscreen__timer${urgent ? ' is-urgent' : ''}${c.endsAt === null ? ' is-paused' : ''}`}>
-      <span className="mscreen__tag">{c.endsAt === null ? 'COUNTDOWN · WAITING' : 'TIME LEFT'}</span>
-      <span className="mscreen__num">{timerText}</span>
+  const timer = m.showTimer && c && st && (
+    <div className={`mscreen__cell mscreen__timer is-${st.tone}`} data-tone={st.tone}>
+      <span className="mscreen__tag">{st.tone === 'paused' ? 'COUNTDOWN · WAITING' : st.tone === 'over' ? 'OVERTIME' : 'TIME LEFT'}</span>
+      <span className="mscreen__num">{st.text}</span>
+      {st.gone !== null && (
+        <span className="mscreen__bar" aria-hidden="true">
+          <i style={{ width: `${(st.gone * 100).toFixed(1)}%` }} />
+        </span>
+      )}
     </div>
   );
   const msg = (

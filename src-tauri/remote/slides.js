@@ -7,15 +7,14 @@
 import {
   actionFor,
   clickerKey,
-  clockText,
   describe,
   elapsedText,
   nextIndex,
   pickSlideshow,
   pinFromHash,
   predict,
-  remaining,
   slideLabel,
+  stageTime,
   swipe,
   timeOfDay,
 } from './slides-core.js';
@@ -295,9 +294,14 @@ function tick() {
   const cd = view?.countdown;
   $('cd').hidden = !cd;
   if (cd) {
-    $('cd-name').textContent = cd.name || 'Countdown';
-    $('cd-time').textContent = clockText(remaining(cd, now()));
+    const t = stageTime(cd, view?.timing, now());
+    $('cd-name').textContent = t.tone === 'over' ? 'Over time' : cd.name || 'Countdown';
+    $('cd-time').textContent = t.text;
+    $('cd').dataset.tone = t.tone;
   }
+  const msg = view?.message ?? '';
+  $('stage-msg').hidden = !msg;
+  if ($('stage-msg').textContent !== msg) $('stage-msg').textContent = msg;
 }
 
 /** @type {ReturnType<typeof setTimeout> | undefined} */

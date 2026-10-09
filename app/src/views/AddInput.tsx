@@ -68,7 +68,8 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'auction', name: 'Live auction', hint: 'Items, bids from phones or the room, the highest bid on screen' },
   { kind: 'wall', name: 'Messages wall', hint: 'Messages, dedications and photos from phones, on screen' },
   { kind: 'guest', name: 'Guest by link', hint: 'Someone joins from their phone or computer, anywhere' },
-  { kind: 'comment', name: 'Chat comments', hint: 'Comments from the YouTube or Twitch live chat, on screen' },
+  { kind: 'comment', name: 'Chat comments', hint: 'Comments from the YouTube, Twitch or Facebook live chat, on screen' },
+  { kind: 'drawing', name: 'Drawing on screen', hint: 'Draw lines and arrows over the picture, live (a telestrator)' },
   { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
   { kind: 'lyrics', name: 'Song lyrics', hint: 'The words of a song, a verse at a time' },
   { kind: 'screen', name: 'Screen capture', hint: 'A display or one window of this computer' },
@@ -86,7 +87,7 @@ const GROUPS: { name: string; kinds: Kind[] }[] = [
   { name: 'Videos, pictures and slides', kinds: ['video', 'image', 'slideshow', 'browser', 'color', 'pattern'] },
   {
     name: 'Text and titles',
-    kinds: ['text', 'titler', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'pesukim', 'scripture', 'zmanim'],
+    kinds: ['text', 'titler', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'drawing', 'pesukim', 'scripture', 'zmanim'],
   },
   { name: 'The audience’s phones', kinds: ['poll', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
   { name: 'Layouts and visuals', kinds: ['split', 'visuals', 'logo3d'] },
@@ -260,6 +261,8 @@ export function AddInput({
         return { name: n || 'Messages', kind: { type: 'wall', ...defaultWall(), title: n || 'Messages', prompt: words.trim() || defaultWall().prompt } };
       case 'guest':
         return { name: n || 'Guest', kind: { type: 'guest', room: newRoom(), reload: 0 } };
+      case 'drawing':
+        return { name: n || 'Drawing', kind: { type: 'drawing', strokes: [], changedAt: 0 } };
       case 'comment':
         return { name: n || 'Chat comments', kind: { type: 'comment', comment: null, changedAt: 0, place: 'low', accent: '#2f80ed' } };
       case 'poll': {

@@ -89,9 +89,11 @@ pub fn load_json(text: &str) -> Result<Show, LoadError> {
 }
 
 /// Fix anything that breaks the show's rules.
-/// The inputs the audience takes part in (raffles, games, walls…).
+/// The inputs the audience takes part in (raffles, games, walls…), and
+/// the operator's own drawings and designs.
 fn repair_audience(kind: &mut SourceKind) {
     match kind {
+        SourceKind::Drawing(d) => d.repair(),
         SourceKind::Raffle(r) => r.repair(),
         SourceKind::Fundraiser(f) => f.repair(),
         SourceKind::Wall(w) => w.repair(),
