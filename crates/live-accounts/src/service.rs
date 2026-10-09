@@ -961,6 +961,33 @@ impl Accounts {
         }
     }
 
+    /// The newest comments on the Facebook live video now on air through the
+    /// account (after `after`, the cursor of the last answer), and the cursor
+    /// for next time.
+    ///
+    /// # Errors
+    /// Nothing is live on Facebook through the account, or Facebook refused.
+    pub fn facebook_comments(
+        &self,
+        http: &dyn Http,
+        after: &str,
+    ) -> Result<(Vec<facebook::Comment>, String), AccountError> {
+        let s = self
+            .sessions
+            .iter()
+            .find(|s| !s.ended && s.view.provider == Provider::Facebook && !s.fb_token.is_empty())
+            .ok_or_else(|| {
+                AccountError::new(
+                    "Facebook comments come in once you go live on Facebook through a connected \
+                     account (Settings → Recording and streaming).",
+                )
+            })?;
+        let resp = http
+            .send(&facebook::comments(&s.id, after).bearer(&s.fb_token))
+            .map_err(|e| AccountError::offline("Facebook", &e))?;
+        facebook::parse_comments(&resp, after)
+    }
+
     /// How each connected destination is doing (the last stream's, after it stopped).
     #[must_use]
     pub fn sessions(&self) -> Vec<SessionView> {

@@ -172,6 +172,8 @@ Under the use cases (**Customize → Permissions**), add:
 
 - `pages_show_list` — list the Pages the person manages
 - `pages_read_engagement` — read the Page's details
+- `pages_read_user_content` — read the comments on the live video (Lumora's
+  live chat)
 - `pages_manage_posts` — post to the Page
 - `publish_video` — go live (the Live Video API)
 
@@ -198,6 +200,10 @@ Meta asks how it is used and for a screen recording. Notes to give Meta:
   Page (`POST /{page-id}/live_videos`), streams to its `secure_stream_url`,
   shows its status and link, and ends it (`end_live_video`) when they stop.
   Lumora posts nothing else."
+- _pages_read_user_content_: "While the live video is on, the operator can
+  open Lumora's live chat and read its comments (`GET /{live-video-id}/comments`)
+  to choose one to show on screen. Comments are read only, never stored or
+  posted."
 - _Screen recording_: Lumora → Settings → Recording and streaming → "+
   Facebook with your account" → Connect Facebook account → the Facebook
   consent → choosing the Page → GO LIVE → the live video on the Page → stop.

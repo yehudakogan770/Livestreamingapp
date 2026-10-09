@@ -9,6 +9,7 @@ import type { EngineClient, RemoteStatus } from '../engine/client';
 import './ChatPanel.css';
 
 const KEY_STORE = 'lumora.youtubeKey';
+const PLATFORM_SHORT = { youtube: 'YT', twitch: 'TW', facebook: 'FB', other: '' } as const;
 const readKey = () => {
   try {
     return localStorage.getItem(KEY_STORE) ?? '';
@@ -19,7 +20,7 @@ const readKey = () => {
 
 /**
  * The live chat, beside the controls (it doesn't block them). Connect to
- * Twitch or YouTube, then "Show" puts a comment on screen through a chat
+ * Twitch, YouTube or Facebook, then "Show" puts a comment on screen through a chat
  * comments input — put that input on air or on an overlay.
  */
 export function ChatPanel({
@@ -124,6 +125,20 @@ export function ChatPanel({
               )}
             </div>
             {st.youtube.problem && <p className="field__note field__note--warn">{st.youtube.problem}</p>}
+            <div className="chat__row">
+              {dot(st.facebook.status)}
+              <span className="chat__label">Facebook (the connected account’s live video)</span>
+              {st.facebook.status === 'off' || st.facebook.status === 'error' ? (
+                <button type="button" className="btn btn--small" onClick={() => chat.connectFacebook()}>
+                  Connect
+                </button>
+              ) : (
+                <button type="button" className="btn btn--small" onClick={() => chat.disconnectFacebook()}>
+                  Stop
+                </button>
+              )}
+            </div>
+            {st.facebook.problem && <p className="field__note field__note--warn">{st.facebook.problem}</p>}
             <details className="chat__key">
               <summary>YouTube API key{key ? ' ✓' : ''}</summary>
               <input className="text" type="password" value={key} onChange={(e) => saveKey(e.target.value)} aria-label="YouTube API key" spellCheck={false} />
@@ -166,14 +181,16 @@ export function ChatPanel({
             }}
           >
             {messages.length === 0 && (
-              <li className="chat__empty">{st.twitch.status === 'on' || st.youtube.status === 'on' ? 'Waiting for comments…' : 'Connect to a chat above.'}</li>
+              <li className="chat__empty">
+                {st.twitch.status === 'on' || st.youtube.status === 'on' || st.facebook.status === 'on' ? 'Waiting for comments…' : 'Connect to a chat above.'}
+              </li>
             )}
             {messages.map((m) => {
               const on = !!shown && shown.author === m.author && shown.text === m.text;
               return (
                 <li key={m.id} className={`chat__msg${on ? ' is-on' : ''}`}>
                   <div className="chat__who" style={{ color: m.color }} dir="auto">
-                    {m.author} <small>{m.platform === 'youtube' ? 'YT' : 'TW'}</small>
+                    {m.author} <small>{PLATFORM_SHORT[m.platform]}</small>
                   </div>
                   <div className="chat__text" dir="auto">
                     {m.text}

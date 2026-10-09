@@ -1551,7 +1551,7 @@ export class ProgramCompositor {
     ctx.fillStyle = '#dfe3e8';
     ctx.font = font(2.8 * u, 700);
     ctx.fillText(m.author, left + 5.6 * u, headY);
-    const via = { youtube: 'YouTube', twitch: 'Twitch', other: '' }[m.platform];
+    const via = { youtube: 'YouTube', twitch: 'Twitch', facebook: 'Facebook', other: '' }[m.platform];
     if (via) {
       const nw = ctx.measureText(m.author).width;
       ctx.fillStyle = '#9aa0a8';

@@ -453,6 +453,22 @@ export const MANUAL: Topic[] = [
     ],
   },
   {
+    id: 'chat',
+    title: 'Live chat comments on screen',
+    keywords: 'chat comments youtube twitch facebook viewers social questions show comment on screen',
+    body: [
+      'The Live chat panel shows what viewers write on YouTube, Twitch and Facebook, all in one list. Pick a comment and press Show: it appears on screen with the viewer’s name.',
+      '1. Open the Live chat panel and connect: type the Twitch channel, paste the YouTube live video’s address, or press Connect next to Facebook.',
+      '2. If there is no chat comments input yet, press “+ Make a chat comments input”. Put that input on air or on an overlay.',
+      '3. Press Show on a comment. Take off removes it. Find… narrows the list.',
+      '• Twitch needs no account.',
+      '• YouTube needs a free API key, entered once (the panel says how to get one).',
+      '• Facebook reads the comments of the live video Lumora makes through the connected Facebook account (Settings → Recording and streaming). Until you go live there, it waits and says so.',
+      '• The Questions tab holds questions sent from phones in the room; Show puts one on the same card.',
+      'Tip: Nothing goes on screen by itself. You choose every comment, so nothing unwanted is ever shown.',
+    ],
+  },
+  {
     id: 'marks',
     title: 'Marking moments while recording',
     keywords: 'mark marker bookmark highlight moment clip edit later studio timeline',

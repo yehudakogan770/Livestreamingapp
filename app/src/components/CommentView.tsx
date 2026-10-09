@@ -3,7 +3,7 @@ import type { CommentCard } from '../engine/types/CommentCard';
 import { isRtl } from '../engine/text';
 import './CommentView.css';
 
-export const PLATFORM_NAME = { youtube: 'YouTube', twitch: 'Twitch', other: '' } as const;
+export const PLATFORM_NAME = { youtube: 'YouTube', twitch: 'Twitch', facebook: 'Facebook', other: '' } as const;
 
 /** A chat comment on screen: the viewer's name and words on a card. Mirrored in compositor.ts comment(). */
 export function CommentView({ c }: { c: CommentCard }) {
