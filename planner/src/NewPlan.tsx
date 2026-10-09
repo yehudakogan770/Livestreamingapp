@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { copyPlan, listTemplates, type TemplateSummary } from './apiPro';
 import { Dialog } from './Dialogs';
 import { TEMPLATES } from './templates';
-import { planFromTemplate } from './newPlan';
+import { planFromTemplate } from './fromTemplate';
 import { db } from './session';
 import './pro.css';
 

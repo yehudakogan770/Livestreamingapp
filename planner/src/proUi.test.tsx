@@ -15,7 +15,7 @@ vi.mock('./apiPro', async (orig) => ({
   copyPlan: vi.fn(async () => 'new-plan'),
 }));
 const fromTemplate = vi.fn(async () => 'from-template');
-vi.mock('./newPlan', () => ({ planFromTemplate: (...a: unknown[]) => fromTemplate(...(a as [])) }));
+vi.mock('./fromTemplate', () => ({ planFromTemplate: (...a: unknown[]) => fromTemplate(...(a as [])) }));
 
 const { ShowView, StageTimer } = await import('./ShowView');
 const { ListView, CueTasks } = await import('./ListView');
