@@ -56,6 +56,7 @@ import { Shortcuts } from './Shortcuts';
 import { NotesPanel, NotesPopover } from './Notes';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
+import { ExportDialog } from './ExportDialog';
 import {
   clampSize,
   forgetTitle,
@@ -121,6 +122,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const setRight = (rightTab: RightTab) => setLayout({ rightTab });
   const [recent, setRecent] = useState(recentTitles);
   const [renderOpen, setRenderOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [keysOpen, setKeysOpen] = useState(false);
   const [recovered, setRecovered] = useState<TitleProject | null>(null);
   const [libId, setLibId] = useState<string | null>(null);
@@ -449,8 +451,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             <button onClick={() => void saveToLibrary()} title={`Save to the library: ${host.libraryName} (Ctrl+S)`}>
               <Save size={15} /> Save
             </button>
-            <button onClick={() => void exportFile()} title="Save as a .lumtitle file with its pictures and fonts inside (Ctrl+Shift+S)">
-              <Download size={15} /> Export .lumtitle
+            <button onClick={() => setExportOpen(true)} title="Export: a .lumtitle file (Ctrl+Shift+S), an HTML template for other playout systems, or Lottie">
+              <Download size={15} /> Export
             </button>
             <button onClick={() => setRenderOpen(true)} title="Render to a film or PNG sequence">
               <Film size={15} /> Render
@@ -747,6 +749,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         <footer className="tt-status" role="status">
           {status || 'Ready.'}
         </footer>
+        {exportOpen && <ExportDialog store={store} host={host} onClose={() => setExportOpen(false)} onLumtitle={() => void exportFile()} />}
         {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
         {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}
       </div>

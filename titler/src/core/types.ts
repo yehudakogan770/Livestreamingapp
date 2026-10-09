@@ -378,8 +378,12 @@ export interface Asset {
   /** Image sequence: frame files and rate. */
   frames?: string[];
   fps?: number;
-  /** Font: the family it adds. */
+  /** Font: the family it adds, and which of its faces this file is (CSS weight "400" or "100 900", style "normal" / "italic"). */
   family?: string;
+  weight?: string;
+  style?: string;
+  /** The characters this file covers (CSS unicode-range), all when left out. */
+  range?: string;
 }
 
 export interface DataSource {

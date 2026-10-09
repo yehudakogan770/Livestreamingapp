@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { titlerPlayer } from './playerPlugin';
 
 const PUBLIC = resolve(__dirname, 'app/public');
 
@@ -58,7 +59,7 @@ export default defineConfig(({ mode }) => {
   return {
     root: 'titler/app',
     base: './',
-    plugins: [react(), ...(desktop ? [] : [serviceWorker()])],
+    plugins: [react(), titlerPlayer(), ...(desktop ? [] : [serviceWorker()])],
     clearScreen: false,
     server: { port: desktop ? 1433 : 1432, strictPort: true },
     define: { 'import.meta.env.VITE_TITLER_DESKTOP': JSON.stringify(desktop ? '1' : '') },
