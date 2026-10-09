@@ -298,6 +298,9 @@ pub fn group_of(action: &Action) -> Option<Group> {
         | A::UpdateGraphic { .. }
         | A::UpdateTitler { .. }
         | A::SetTitlerValues { .. }
+        | A::SetTitlerData { .. }
+        | A::TitlerDataRow { .. }
+        | A::TitlerDataStep { .. }
         | A::UpdateCredits { .. }
         | A::CreditsPlay { .. }
         | A::CreditsRestart { .. }

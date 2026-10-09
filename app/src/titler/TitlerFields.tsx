@@ -7,6 +7,7 @@ import type { Action } from '../engine/types/Action';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
 import { projectOf, valuesOf } from './titlerSource';
+import { dataPanelProps, TitlerRows } from './TitlerRows';
 
 export function TitlerFields({ source, show, act }: { source: Source; show: Show; act: (a: Action) => void }) {
   const [now, setNow] = useState(() => Date.now());
@@ -18,14 +19,16 @@ export function TitlerFields({ source, show, act }: { source: Source; show: Show
   const k = source.kind;
   const p = projectOf(k);
   if (!p) return null;
-  const { values, bound } = valuesOf(p, k, show, now);
+  const { values, bound, fromData } = valuesOf(p, k, show, now);
   return (
     <div className="seat-item seat-item--titler" aria-label={source.name}>
       <span className="seat-item__name">{source.name}</span>
+      <TitlerRows source={source} project={p} act={act} />
       <ControlPanel
         project={p}
         values={values}
         bound={bound}
+        {...dataPanelProps(source, fromData, act)}
         onChange={(key, value) => act({ type: 'setTitlerValues', id: source.id, values: [{ key, value }] })}
       />
     </div>

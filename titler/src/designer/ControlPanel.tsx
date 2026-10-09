@@ -12,6 +12,12 @@ export interface ControlPanelProps {
   onChange: (key: string, value: string) => void;
   /** Fields filled from elsewhere (Lumora's scoreboard, data file…): shown, not edited. */
   bound?: Record<string, string>;
+  /** Fields the title's own data fills (shown with a mark; typing over one wins). */
+  fromData?: Record<string, string>;
+  /** Fields the operator typed over (with `fromData`: offered back to the data). */
+  typed?: string[];
+  /** Give a typed-over field back to the data. */
+  onUseData?: (key: string) => void;
   /** Choose a picture for an image field (the host's file picker). */
   pickImage?: (key: string) => void;
   className?: string;
@@ -26,7 +32,7 @@ const groupsOf = (vars: Variable[]) => {
   return [...out.entries()];
 };
 
-export function ControlPanel({ project, values, onChange, bound = {}, pickImage, className }: ControlPanelProps) {
+export function ControlPanel({ project, values, onChange, bound = {}, fromData = {}, typed = [], onUseData, pickImage, className }: ControlPanelProps) {
   if (!project.variables.length) return <div className={`tt-cp ${className ?? ''}`}>This graphic has no fields to fill in.</div>;
   return (
     <div className={`tt-cp ${className ?? ''}`} data-testid="titler-control-panel">
@@ -34,7 +40,16 @@ export function ControlPanel({ project, values, onChange, bound = {}, pickImage,
         <fieldset key={g || '-'} className="tt-cp-group">
           {g && <legend>{g}</legend>}
           {vars.map((v) => (
-            <Field key={v.key} v={v} value={values[v.key] ?? v.value} onChange={(x) => onChange(v.key, x)} bound={bound[v.key]} pickImage={pickImage} />
+            <Field
+              key={v.key}
+              v={v}
+              value={values[v.key] ?? v.value}
+              onChange={(x) => onChange(v.key, x)}
+              bound={bound[v.key]}
+              pickImage={pickImage}
+              data={fromData[v.key] === undefined ? undefined : typed.includes(v.key) ? 'typed' : 'data'}
+              onUseData={onUseData ? () => onUseData(v.key) : undefined}
+            />
           ))}
         </fieldset>
       ))}
@@ -48,12 +63,17 @@ function Field({
   onChange,
   bound,
   pickImage,
+  data,
+  onUseData,
 }: {
   v: Variable;
   value: string;
   onChange: (x: string) => void;
   bound?: string;
   pickImage?: (key: string) => void;
+  /** Filled by the title's data ('data'), or typed over by the operator ('typed'). */
+  data?: 'data' | 'typed';
+  onUseData?: () => void;
 }) {
   const id = `tt-cp-${v.key}`;
   if (bound !== undefined)
@@ -113,7 +133,19 @@ function Field({
   } else input = <input id={id} value={value} onChange={(e) => onChange(e.target.value)} />;
   return (
     <div className="tt-cp-field">
-      <label htmlFor={id}>{v.label}</label>
+      <label htmlFor={id}>
+        {v.label}
+        {data === 'data' && (
+          <span className="tt-cp-data" title="Filled from this title's data (the row chosen). Type to put your own words in.">
+            Data
+          </span>
+        )}
+        {data === 'typed' && onUseData && (
+          <button type="button" className="tt-cp-usedata" onClick={onUseData} title="Show the data's value again">
+            Use data
+          </button>
+        )}
+      </label>
       {input}
     </div>
   );

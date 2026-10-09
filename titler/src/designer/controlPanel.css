@@ -87,3 +87,41 @@
   border-radius: 3px;
   padding: 2px 8px;
 }
+
+/* A field filled by the title's own data, and the way back to it after typing over it. */
+.tt-cp-data,
+.tt-cp-usedata {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 10px;
+  line-height: 14px;
+  padding: 0 4px;
+  border-radius: 3px;
+  border: 1px solid var(--tt-line-2, var(--border-strong, #3a3a3a));
+  color: var(--tt-dim, var(--text-dim, #a3a3a0));
+  background: transparent;
+  vertical-align: 1px;
+}
+.tt-cp-usedata {
+  cursor: pointer;
+}
+.tt-cp-usedata:hover {
+  color: var(--tt-text, var(--text, #e8e8e6));
+}
+
+/* Rows of the title's own data (Lumora: the card and the graphics seat). */
+.tt-cp-rows {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tt-cp-rows select {
+  flex: 1;
+  min-width: 0;
+}
+.tt-cp-rows .tt-cp-problem {
+  width: 100%;
+  font-size: 11px;
+  color: var(--tt-dim, var(--text-dim, #a3a3a0));
+}

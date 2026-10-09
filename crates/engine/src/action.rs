@@ -342,6 +342,24 @@ pub enum Action {
         id: SourceId,
         titler: crate::titler::TitlerGraphic,
     },
+    /// What a Titler graphic's own data sources hold now (sent by the control window as it reads them).
+    SetTitlerData {
+        id: SourceId,
+        data: Vec<crate::titler::TitlerTable>,
+    },
+    /// The row of its own data a Titler graphic shows (None: each source's own row).
+    TitlerDataRow {
+        id: SourceId,
+        row: Option<u32>,
+    },
+    /// The next (1) or previous (-1) row of a Titler graphic's own data; with
+    /// no id, of every Titler graphic with data that is on air (else of all).
+    TitlerDataStep {
+        #[serde(default)]
+        #[ts(optional)]
+        id: Option<SourceId>,
+        delta: i32,
+    },
     /// Change some fields of a Lumora Titler graphic (the others stay), e.g. while it is on air.
     SetTitlerValues {
         id: SourceId,

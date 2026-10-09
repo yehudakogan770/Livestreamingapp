@@ -1020,6 +1020,67 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             **t = next;
             Ok(())
         }
+        Action::SetTitlerData { id, data } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            let SourceKind::Titler(t) = &mut src.kind else {
+                return Err(ActionError::invalid(
+                    "id",
+                    "that input is not a Titler graphic",
+                ));
+            };
+            t.data = data;
+            t.repair();
+            Ok(())
+        }
+        Action::TitlerDataRow { id, row } => {
+            let src = s
+                .source_mut(&id)
+                .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+            let SourceKind::Titler(t) = &mut src.kind else {
+                return Err(ActionError::invalid(
+                    "id",
+                    "that input is not a Titler graphic",
+                ));
+            };
+            t.data_row = row;
+            t.repair();
+            Ok(())
+        }
+        Action::TitlerDataStep { id, delta } => {
+            let on_air: Vec<SourceId> = s
+                .overlays
+                .iter()
+                .filter(|o| o.on)
+                .filter_map(|o| o.source_id.clone())
+                .collect();
+            let with_rows = |src: &crate::model::Source| matches!(&src.kind, SourceKind::Titler(t) if t.has_rows());
+            let targets: Vec<SourceId> = match id {
+                Some(id) => vec![id],
+                None => {
+                    let live: Vec<SourceId> = s
+                        .sources
+                        .iter()
+                        .filter(|x| with_rows(x) && on_air.contains(&x.id))
+                        .map(|x| x.id.clone())
+                        .collect();
+                    if live.is_empty() {
+                        s.sources.iter().filter(|x| with_rows(x)).map(|x| x.id.clone()).collect()
+                    } else {
+                        live
+                    }
+                }
+            };
+            for id in targets {
+                if let Some(src) = s.source_mut(&id) {
+                    if let SourceKind::Titler(t) = &mut src.kind {
+                        t.step_row(delta);
+                    }
+                }
+            }
+            Ok(())
+        }
         Action::SetTitlerValues { id, values } => {
             let src = s
                 .source_mut(&id)

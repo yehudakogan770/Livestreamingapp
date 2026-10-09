@@ -44,6 +44,7 @@ import { SeatFeed } from './seats/SeatFeed';
 import { ProHardwareHost, openAtemSettings, openCardOutput } from './views/proHost';
 import { lazyPart } from './components/lazyPart';
 import { openTitler, TitlerHost } from './titler/LumoraTitler';
+import { TitlerDataWatcher } from './titler/titlerData';
 // Last: the base styles come after every other style (all windows share one
 // stylesheet; this keeps its order as it was when the app was one part).
 import './styles.css';
@@ -553,6 +554,7 @@ function ControlApp() {
                   <ShabbosGuard show={show} />
                   <TitlerHost client={client} show={show} />
                   <DataWatcher show={show} client={client} />
+                  <TitlerDataWatcher show={show} client={client} />
                   <TestEventHost show={show} client={client} />
                   <EngineSettingsHost />
                   {client.live && <SeatFeed />}

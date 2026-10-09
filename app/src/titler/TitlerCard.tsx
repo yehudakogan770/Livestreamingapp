@@ -14,6 +14,7 @@ import type { Source } from '../engine/types/Source';
 import type { Act } from '../views/act';
 import { openTitler } from './LumoraTitler';
 import { TitlerView } from './TitlerView';
+import { dataPanelProps, TitlerRows } from './TitlerRows';
 import { projectOf, titlerKind, valuesOf } from './titlerSource';
 import './titler.css';
 
@@ -45,7 +46,7 @@ export function TitlerCard({
     };
   }, [onClose]);
   if (!k) return null;
-  const { values, bound } = project ? valuesOf(project, k, show, now) : { values: {}, bound: {} };
+  const { values, bound, fromData } = project ? valuesOf(project, k, show, now) : { values: {}, bound: {}, fromData: {} };
   const channel = show.overlays.findIndex((o) => o.sourceId === source.id);
   const onAir = channel >= 0 && show.overlays[channel]!.on;
   const scoreboards = show.sources.filter((s) => s.kind.type === 'scoreboard');
@@ -81,11 +82,13 @@ export function TitlerCard({
           <div className="titler-card__preview" aria-label="Preview">
             <TitlerView source={source} show={show} urlFor={(p) => client.mediaUrl(p)} thumb />
           </div>
+          {project && <TitlerRows source={source} project={project} act={act} />}
           {project ? (
             <ControlPanel
               project={project}
               values={values}
               bound={bound}
+              {...dataPanelProps(source, fromData, act)}
               onChange={(key, value) => act({ type: 'setTitlerValues', id: source.id, values: [{ key, value }] })}
             />
           ) : (
@@ -94,7 +97,7 @@ export function TitlerCard({
               <button
                 type="button"
                 className="btn btn--small"
-                onClick={() => act({ type: 'updateTitler', id: source.id, titler: { ...titlerKind(fromTemplate(starterTemplates()[0]!)), scoreboard: null } })}
+                onClick={() => act({ type: 'updateTitler', id: source.id, titler: titlerKind(fromTemplate(starterTemplates()[0]!)) })}
               >
                 Start again from a template
               </button>
