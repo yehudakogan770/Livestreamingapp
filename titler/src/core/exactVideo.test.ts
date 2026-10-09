@@ -61,7 +61,7 @@ afterAll(() => {
 function framesOf(ts: number[], opened: number[]): OpenFrames {
   return async (_asset, start) => {
     opened.push(start);
-    let i = Math.max(0, ts.findLastIndex((t) => t <= start + 1e-9));
+    let i = Math.max(0, ts.filter((t) => t <= start + 1e-9).length - 1);
     const s: FrameStream = {
       next: async (): Promise<DecodedFrame | null> => {
         if (i >= ts.length) return null;
