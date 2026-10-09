@@ -410,6 +410,7 @@ export function Editor({
         { label: 'Extract', keys: "'", run: actions.extractMarked },
         'sep',
         { label: 'New multicam clip from files…', run: () => openSmart('makeMulticam') },
+        { label: 'Record a voiceover…', disabled: !inApp(), run: () => panels.show({ kind: 'voiceover' }) },
         'sep',
         { label: 'Add video track', run: () => actions.addTrack('video') },
         { label: 'Add sound track', run: () => actions.addTrack('audio') },

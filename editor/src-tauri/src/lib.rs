@@ -17,6 +17,7 @@ mod rendercache;
 mod selftest;
 mod speech;
 mod syscheck;
+mod voiceover;
 mod youtube;
 
 use std::path::{Path, PathBuf};
@@ -601,6 +602,7 @@ pub fn run() {
             youtube::youtube_upload,
             youtube::youtube_stop,
             youtube::youtube_watch,
+            voiceover::voiceover_save,
             delivery::encoders_available,
             delivery::encode_open,
             delivery::encode_frame,

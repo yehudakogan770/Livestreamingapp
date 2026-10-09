@@ -14,7 +14,8 @@ export type Panel =
   | { kind: 'smartBin'; id: string | null }
   | { kind: 'timelineExport' }
   | { kind: 'timelineImport' }
-  | { kind: 'publish'; job: string };
+  | { kind: 'publish'; job: string }
+  | { kind: 'voiceover' };
 
 class Panels {
   open: Panel | null = null;

@@ -2,6 +2,7 @@
 // and crash recovery, clip info (stars, tags, notes), where a clip is used,
 // smart bins and workspaces.
 import { PublishDialog } from './Publish';
+import { VoiceoverDialog } from './Voiceover';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -63,6 +64,8 @@ export function ManagePanels({ doc, ui, engine, autosaver }: { doc: Doc; ui: Ui;
       return <ImportTimelineDialog doc={doc} ui={ui} onClose={close} />;
     case 'publish':
       return <PublishDialog job={p.job} ui={ui} onClose={close} />;
+    case 'voiceover':
+      return <VoiceoverDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
   }
 }
 

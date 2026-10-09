@@ -3691,3 +3691,39 @@ button.tc:hover {
   text-decoration: underline dotted;
   text-underline-offset: 3px;
 }
+.vo__meter {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--well);
+  overflow: hidden;
+}
+.vo__meter i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--preview-bright);
+}
+.vo__meter i.is-hot {
+  background: var(--program-bright);
+}
+.vo__big {
+  margin: 8px 0;
+  font-size: 40px;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.vo__rec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-variant-numeric: tabular-nums;
+}
+.vo__rec i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--program);
+}
