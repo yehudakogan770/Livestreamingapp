@@ -15,7 +15,9 @@ import { pickFormat } from '../core/formats';
 import { renderFrame } from '../core/render';
 import { cueTime, type Phase } from '../core/timeline';
 import { readProject } from '../core/validate';
-import type { Composition, TitleProject, Values } from '../core/types';
+import { timerCommand } from '../core/timer';
+import { readSource, valuesFromRow } from '../core/data';
+import type { Composition, DataSource, TitleProject, Values } from '../core/types';
 
 export type PlayerState = 'off' | Phase;
 
@@ -29,6 +31,8 @@ export interface PlayerOptions {
   now?: () => number;
   /** Draw each frame with requestAnimationFrame (default on; tests draw by hand). */
   animate?: boolean;
+  /** Read the title's own data sources (CSV, Google Sheets, JSON) (default on). */
+  data?: boolean;
 }
 
 /** Field values from what a playout system sends: an object, JSON text or CasparCG's templateData XML. */
@@ -97,6 +101,9 @@ export class TitlePlayer {
   readonly canvas: HTMLCanvasElement;
   readonly env: BrowserEnv;
   private values: Values = {};
+  /** What the title's own data sources hold now (under the values sent by the playout system). */
+  private dataValues: Values = {};
+  private dataTimers: ReturnType<typeof setInterval>[] = [];
   private inAt: number | null = null;
   private outAt: number | null = null;
   private raf = 0;
@@ -138,11 +145,28 @@ export class TitlePlayer {
     return [w, h];
   }
 
-  /** Fonts and pictures loaded, first values set. */
+  /** Fonts and pictures loaded, first values set, the title's data sources read (and read again as they say). */
   async load(values?: Values): Promise<void> {
     if (values) this.values = { ...this.values, ...values };
     await this.ready;
+    if (this.opts.data !== false) await this.readData();
     this.draw();
+  }
+
+  private async readData() {
+    const keys = this.project.variables.map((v) => v.key);
+    const one = async (src: DataSource) => {
+      try {
+        const t = await readSource(src);
+        this.dataValues = { ...this.dataValues, ...valuesFromRow(src, t, keys, this.project.variables) };
+        this.draw();
+      } catch {
+        /* keep what it had (offline, or the address is down) */
+      }
+    };
+    const list = (this.project.data ?? []).filter((d) => d.url.trim());
+    await Promise.all(list.map(one));
+    for (const src of list) if (src.refresh > 0) this.dataTimers.push(setInterval(() => void one(src), Math.max(2, src.refresh) * 1000));
   }
 
   state(): PlayerState {
@@ -178,6 +202,15 @@ export class TitlePlayer {
     this.draw();
   }
 
+  /** A timer field's buttons (the first timer when no key is given): start, stop, toggle, reset, add seconds. */
+  timer(cmd: 'start' | 'stop' | 'toggle' | 'reset' | 'add', key?: string, amount = 0): boolean {
+    const v = this.project.variables.find((x) => x.type === 'timer' && (!key || x.key === key));
+    if (!v) return false;
+    const now = Date.now();
+    this.update({ [v.key]: timerCommand(v, this.values[v.key] ?? v.value, cmd, now, amount) });
+    return true;
+  }
+
   getValues(): Values {
     return { ...this.values };
   }
@@ -194,6 +227,7 @@ export class TitlePlayer {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
     for (const a of this.audio.values()) a.pause();
+    for (const t of this.dataTimers) clearInterval(t);
     this.canvas.remove();
   }
 
@@ -259,7 +293,7 @@ export class TitlePlayer {
         const dw = c.width * k;
         const dh = c.height * k;
         ctx.setTransform(1, 0, 0, 1, Math.round((pw - dw) / 2), Math.round((ph - dh) / 2));
-        renderFrame(ctx, this.project, { comp: c.id, time: r.t, clock: r.clock, values: this.values, env: this.env, width: dw, height: dh });
+        renderFrame(ctx, this.project, { comp: c.id, time: r.t, clock: r.clock, values: { ...this.dataValues, ...this.values }, env: this.env, width: dw, height: dh });
         ctx.setTransform(1, 0, 0, 1, 0, 0);
       }
       this.sounds();

@@ -32,6 +32,8 @@ export function page(project: TitleProject): TitlePlayer {
   w.remove = () => player.clear();
   // SPX: the field values are already set on the page by update(); it then calls this.
   w.runTemplateUpdate = () => player.draw();
+  // Timer fields: timer('start' | 'stop' | 'toggle' | 'reset' | 'add', field?, seconds?)
+  w.timer = (cmd: 'start' | 'stop' | 'toggle' | 'reset' | 'add', key?: string, amount?: number) => player.timer(cmd, key, Number(amount) || 0);
   w.lumoraTitle = player;
   window.addEventListener('message', (e: MessageEvent) => {
     const m = e.data as { lumoraTitle?: string; data?: unknown } | null;
@@ -40,6 +42,10 @@ export function page(project: TitleProject): TitlePlayer {
     else if (m.lumoraTitle === 'stop') void player.stop();
     else if (m.lumoraTitle === 'update') update(m.data);
     else if (m.lumoraTitle === 'clear') player.clear();
+    else if (m.lumoraTitle === 'timer') {
+      const d = (m.data ?? {}) as { cmd?: string; field?: string; seconds?: number };
+      player.timer((d.cmd ?? 'toggle') as 'toggle', d.field, Number(d.seconds) || 0);
+    }
   });
   addEventListener('resize', () => player.draw());
   return player;
@@ -102,8 +108,11 @@ export function ograf(project: TitleProject): CustomElementConstructor {
       return { statusCode: 200 };
     }
 
-    async customAction(): Promise<Result> {
-      return { statusCode: 404, statusMessage: 'This graphic has no custom actions' };
+    async customAction(params: { id?: string; payload?: unknown } = {}): Promise<Result> {
+      const cmd = { timerStart: 'start', timerStop: 'stop', timerToggle: 'toggle', timerReset: 'reset', timerAdd: 'add' }[params.id ?? ''] as 'start' | undefined;
+      const d = (params.payload ?? {}) as { field?: string; seconds?: number };
+      if (!cmd || !this.player?.timer(cmd, d.field, Number(d.seconds) || 0)) return { statusCode: 404, statusMessage: 'This graphic has no such action' };
+      return { statusCode: 200 };
     }
 
     async setActionsSchedule(params: { schedule?: { timestamp: number; action: { type: string; params: Record<string, unknown> } }[] }): Promise<Result> {

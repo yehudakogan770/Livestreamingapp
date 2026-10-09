@@ -125,3 +125,15 @@
   font-size: 11px;
   color: var(--tt-dim, var(--text-dim, #a3a3a0));
 }
+.tt-cp-timer {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.tt-cp-timer .tt-cp-timer-time {
+  width: 84px;
+  font-variant-numeric: tabular-nums;
+}
+.tt-cp-timer button.on {
+  font-weight: 600;
+}

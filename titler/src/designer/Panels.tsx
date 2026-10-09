@@ -19,6 +19,7 @@ import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
 import { PackDialog } from './PackDialog';
+import { parseClock } from '../core/timer';
 import type { Store } from './store';
 import { useStore } from './store';
 
@@ -353,6 +354,7 @@ const VAR_TYPES: [VariableType, string][] = [
   ['color', 'Color'],
   ['image', 'Picture'],
   ['list', 'List'],
+  ['timer', 'Timer (clock, countdown)'],
 ];
 
 /** Where Lumora can fill a field from (Lumora sets these on air). */
@@ -397,7 +399,12 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
             </Row>
             <Row label="Name">
               <code className="tt-code">{`{{${v.key}}}`}</code>
-              <Select label="Field kind" value={v.type} options={VAR_TYPES} onChange={(type) => set(i, { type })} />
+              <Select
+                label="Field kind"
+                value={v.type}
+                options={VAR_TYPES}
+                onChange={(type) => set(i, type === 'timer' ? { type, timer: v.timer ?? { dir: 'down', format: 'm:ss' }, value: /^[\d:.]+$/.test(v.value) ? v.value : '10:00' } : { type })}
+              />
             </Row>
             <Row label="Sample">
               {v.type === 'list' ? (
@@ -450,6 +457,47 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
                   onChange={(e) => set(i, { suffix: e.target.value })}
                 />
               </Row>
+            )}
+            {v.type === 'timer' && (
+              <>
+                <Row label="Runs" hint="The sample is where it starts (10:00, 45:00, 0:00)">
+                  <Select
+                    label="Timer direction"
+                    value={v.timer?.dir ?? 'down'}
+                    options={[
+                      ['down', 'Down (countdown)'],
+                      ['up', 'Up (stopwatch, game clock)'],
+                    ]}
+                    onChange={(dir) => set(i, { timer: { ...(v.timer ?? { dir }), dir } })}
+                  />
+                  <Select
+                    label="Timer shows"
+                    value={v.timer?.format ?? 'm:ss'}
+                    options={[
+                      ['m:ss', '9:05'],
+                      ['mm:ss', '09:05'],
+                      ['h:mm:ss', '1:09:05'],
+                      ['ss', '545'],
+                      ['m:ss.t', '9:05.3'],
+                      ['ss.t', '24.3 (shot clock)'],
+                    ]}
+                    onChange={(format) => set(i, { timer: { ...(v.timer ?? { dir: 'down' }), format } })}
+                  />
+                </Row>
+                <Row label="Stops at" hint="Empty: a countdown stops at 0, a clock counting up runs on">
+                  <input
+                    className="tt-input short"
+                    aria-label="Timer stops at"
+                    placeholder={v.timer?.dir === 'up' ? '(runs on)' : '0:00'}
+                    defaultValue={v.timer?.stop !== undefined ? String(v.timer.stop) : ''}
+                    onBlur={(e) => {
+                      const n = parseClock(e.target.value);
+                      set(i, { timer: { ...(v.timer ?? { dir: 'down' }), stop: Number.isFinite(n) ? n : undefined } });
+                    }}
+                  />
+                  <Toggle value={!!v.timer?.auto} onChange={(auto) => set(i, { timer: { ...(v.timer ?? { dir: 'down' }), auto } })} label="Starts when taken" />
+                </Row>
+              </>
             )}
             {v.type === 'list' && (
               <Row label="On one line" hint="For a ticker: what goes between the items">
@@ -655,7 +703,7 @@ export function DataPanel({ store }: { store: Store }) {
     try {
       const t = await readSource(src);
       setTables((x) => ({ ...x, [src.id]: t }));
-      store.set((s) => ({ values: { ...s.values, ...valuesFromRow(src, t, keys) } }));
+      store.set((s) => ({ values: { ...s.values, ...valuesFromRow(src, t, keys, store.get().project.variables) } }));
     } catch (e) {
       setTables((x) => ({ ...x, [src.id]: e instanceof Error ? e.message : 'It could not be read.' }));
     }

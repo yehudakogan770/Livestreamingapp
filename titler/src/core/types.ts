@@ -373,7 +373,7 @@ export interface Composition {
   follow?: boolean;
 }
 
-export type VariableType = 'text' | 'number' | 'color' | 'image' | 'list';
+export type VariableType = 'text' | 'number' | 'color' | 'image' | 'list' | 'timer';
 
 /** A template field the operator fills in: {{key}} in text, colors and images. */
 export interface Variable {
@@ -390,6 +390,8 @@ export interface Variable {
   suffix?: string;
   /** List: what goes between the items when shown on one line (a ticker); one item a line when left out. */
   separator?: string;
+  /** Timer (game clock, countdown, stopwatch; see core/timer.ts): which way it runs, where it stops, how it shows, and whether it starts when the graphic is taken. */
+  timer?: { dir: 'down' | 'up'; stop?: number; format?: 'm:ss' | 'mm:ss' | 'h:mm:ss' | 'ss' | 'm:ss.t' | 'ss.t'; auto?: boolean };
   /** The control panel's section. */
   group?: string;
   /** Lumora fills it from here (data file column, scoreboard, countdown…). */

@@ -44,6 +44,7 @@ function fieldSchema(v: Variable): Record<string, unknown> {
   if (v.type === 'color') return { ...base, type: 'string', gddType: 'color-rrggbb', pattern: '^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$' };
   if (v.type === 'image') return { ...base, type: 'string', gddType: 'file-path/image-path' };
   if (v.type === 'list') return { ...base, type: 'string', gddType: 'multi-line' };
+  if (v.type === 'timer') return { ...base, type: 'string', description: 'A time (10:00); running: seconds@start time in ms' };
   if (v.options?.length) return { ...base, type: 'string', enum: v.options };
   return { ...base, type: 'string' };
 }
@@ -53,6 +54,18 @@ export function dataSchema(p: TitleProject): Record<string, unknown> {
   for (const v of p.variables) properties[v.key] = fieldSchema(v);
   return { type: 'object', properties };
 }
+
+const TIMER_PAYLOAD = {
+  type: 'object',
+  properties: { field: { type: 'string', title: 'Timer field (the first when left out)' }, seconds: { type: 'number', title: 'Seconds (for Add)' } },
+};
+const TIMER_ACTIONS = [
+  { id: 'timerStart', name: 'Start timer', schema: TIMER_PAYLOAD },
+  { id: 'timerStop', name: 'Stop timer', schema: TIMER_PAYLOAD },
+  { id: 'timerToggle', name: 'Start or stop timer', schema: TIMER_PAYLOAD },
+  { id: 'timerReset', name: 'Reset timer', schema: TIMER_PAYLOAD },
+  { id: 'timerAdd', name: 'Add time', schema: TIMER_PAYLOAD },
+];
 
 export function ografManifest(p: TitleProject): Record<string, unknown> {
   const main = p.compositions.find((c) => c.id === p.main) ?? p.compositions[0];
@@ -70,6 +83,7 @@ export function ografManifest(p: TitleProject): Record<string, unknown> {
     supportsNonRealTime: true,
     stepCount: 1,
     schema: dataSchema(p),
+    ...(p.variables.some((v) => v.type === 'timer') ? { customActions: TIMER_ACTIONS } : {}),
     actionDurations: [
       { type: 'playAction', duration: inMs },
       { type: 'stopAction', duration: outMs },
@@ -157,6 +171,11 @@ OGraf (EBU): Loopic, SPX, CasparCG and other OGraf renderers
 
 H2R Graphics, LiveOS
   Add it as an HTML / OGraf graphic from this folder.
+
+Timers
+  timer('start'), timer('stop'), timer('reset'), timer('add', 'clock', 60)
+  on the page (CasparCG: CG 1-20 INVOKE 1 "timer('start')"); OGraf custom
+  actions timerStart, timerStop, timerToggle, timerReset, timerAdd.
 
 Your own page
   Put index.html in an iframe and send it messages:

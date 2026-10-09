@@ -3,7 +3,7 @@
 // the same pixels. Used by the designer, Lumora's screens and recordings (and
 // the unified engine's overlay renderer), and Lumora Studio's title clips.
 
-import { fill, resolveColor, resolveFont, tokensFor, valuesFor } from './binding';
+import { fill, resolveColor, resolveFont, setRenderClock, tokensFor, valuesFor } from './binding';
 import { isAnimated, num, valueAt, vec } from './easing';
 import { setExprScope, type ExprScope } from './expr';
 import { pickFormat } from './formats';
@@ -104,10 +104,12 @@ export function renderFrame(ctx: Ctx, project: TitleProject, opts: RenderOptions
   const m0 = ctx.getTransform ? ctx.getTransform() : null;
   const outer: Mat = m0 ? [m0.a, m0.b, m0.c, m0.d, m0.e, m0.f] : IDENTITY;
   const before = setExprScope(exprScopeFor(project));
+  const clockBefore = setRenderClock(f.clock);
   try {
     drawComp(ctx, comp, opts.time, mul(outer, base), f);
   } finally {
     setExprScope(before);
+    setRenderClock(clockBefore);
     ctx.restore();
   }
 }
