@@ -2,7 +2,7 @@
 // markers and the loop, cue markers, and the playhead. A second tab shows the
 // graph editor for the property chosen.
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { RamPreview } from './ramPreview';
 import { RAM_CHOICES, ramSetting, setRamSetting } from './frameCache';
 import { ChevronDown, ChevronRight, Eye, EyeOff, Lock, Unlock, Diamond, Clock } from 'lucide-react';
@@ -64,7 +64,8 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
   const c = compOf(project, compId);
   const scroller = useRef<HTMLDivElement>(null);
   const width = Math.max(400, c.duration * zoom + 40);
-  const x = (t: number) => t * zoom;
+  // Stable while only the playhead moves, so the rows (memoized) aren't drawn again 60 times a second.
+  const x = useCallback((t: number) => t * zoom, [zoom]);
   const tAt = (clientX: number) => {
     const el = scroller.current;
     if (!el) return 0;
@@ -87,8 +88,11 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
   };
 
   /** Drag something in time: `fn` gets the time moved (seconds, snapped to frames). */
-  const dragTime = (e: React.PointerEvent, label: string, fn: (dt: number, ev: PointerEvent) => void) => {
+  const latest = useRef({ tAt, frame });
+  latest.current = { tAt, frame };
+  const dragTime = useCallback((e: React.PointerEvent, label: string, fn: (dt: number, ev: PointerEvent) => void) => {
     e.stopPropagation();
+    const { tAt, frame } = latest.current;
     const t0 = tAt(e.clientX);
     store.begin(label);
     const move = (ev: PointerEvent) => fn(frame(tAt(ev.clientX)) - frame(t0), ev);
@@ -99,7 +103,7 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
-  };
+  }, [store]);
 
   const setMarkers = (fn: (m: Composition['markers']) => Composition['markers']) =>
     store.edit('Move marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, markers: cleanMarkers(fn(cc.markers), cc.duration) })));
@@ -339,7 +343,16 @@ interface RowProps {
 
 const LABELS = ['#8f8f8a', '#c45d5d', '#c9a04a', '#5f9e6e', '#5b8fbf', '#8d77c4'];
 
-function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps & { selected: boolean; open: 'all' | 'animated' | undefined }) {
+const LayerRow = memo(function LayerRow({
+  store,
+  c,
+  l,
+  depth,
+  x,
+  selected,
+  open,
+  dragTime,
+}: RowProps & { selected: boolean; open: 'all' | 'animated' | undefined }) {
   const [renaming, setRenaming] = useState(false);
   const select = (e: React.MouseEvent) => {
     const s = store.get();
@@ -456,7 +469,7 @@ function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps 
       </div>
     </div>
   );
-}
+});
 
 /** Open a layer's properties (all, or only the animated ones), or close them. */
 export function toggleOpen(open: Record<string, 'all' | 'animated'>, id: string, mode: 'all' | 'animated'): Record<string, 'all' | 'animated'> {
