@@ -1,6 +1,7 @@
 import {
   AppWindow,
   AudioLines,
+  PenLine,
   BookOpen,
   Cable,
   Box,
@@ -69,6 +70,7 @@ export const KIND_ICON: Record<string, LucideIcon> = {
   wall: MessagesSquare,
   guest: UserRound,
   comment: MessageSquareText,
+  drawing: PenLine,
   poll: ChartColumn,
   lyrics: ListMusic,
   screen: ScreenShare,

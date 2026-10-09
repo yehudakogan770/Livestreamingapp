@@ -313,6 +313,9 @@ pub fn group_of(action: &Action) -> Option<Group> {
         | A::UpdateSeating { .. }
         | A::ShowComment { .. }
         | A::UpdateCommentCard { .. }
+        | A::DrawStroke { .. }
+        | A::DrawUndo { .. }
+        | A::DrawClear { .. }
         | A::PesukimNext { .. }
         | A::PesukimBack { .. }
         | A::PesukimGo { .. }
@@ -413,7 +416,10 @@ pub fn group_of(action: &Action) -> Option<Group> {
 
         // Recording / going live / replay left for the control window.
         A::RequestApp { step } => match step {
-            lumora_engine::macros::AppStep::Replay { .. } => G::Replay,
+            // Marking a moment is the replay seat's job too (highlights).
+            lumora_engine::macros::AppStep::Replay { .. } | lumora_engine::macros::AppStep::Mark => {
+                G::Replay
+            }
             _ => G::Recording,
         },
 

@@ -1,0 +1,43 @@
+/* Drawing on screen: a pad over the picture, the pens, undo and clear. */
+.drc__pad {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: #000;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+}
+.drc__picture {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.85;
+}
+.drc__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+.drc__color {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+}
+.drc__color[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.drc__gap {
+  flex: 1 1 auto;
+}
+.drc__tools .btn svg,
+.drc .pk__row .btn svg {
+  width: 13px;
+  height: 13px;
+}

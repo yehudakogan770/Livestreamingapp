@@ -1,4 +1,4 @@
-import { ChevronDown, History, Radio, X } from 'lucide-react';
+import { BookmarkPlus, ChevronDown, History, Radio, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { CaptureKind } from '../engine/client';
 import { clock } from '../engine/timing';
@@ -73,6 +73,7 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         <i className="bc-dot" />
         {rec ? `REC ${recTime}` : b.status.finishing ? 'Saving…' : 'REC'}
       </button>
+      {rec && <MarkButton />}
       <button
         type="button"
         className={`btn bc-btn bc-btn--small${b.rehearsal ? ' bc-btn--rehearse' : ''}`}
@@ -191,6 +192,59 @@ export function BroadcastButtons({ onSettings }: { onSettings: () => void }) {
         </div>
       )}
     </>
+  );
+}
+
+/** Typing in a field, or a dialog is open: keys belong there. */
+function keyIsBusy(e: KeyboardEvent): boolean {
+  const t = e.target as HTMLElement | null;
+  if (t && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName))) return true;
+  return !!document.querySelector('[role="dialog"][aria-modal="true"]');
+}
+
+/**
+ * While recording: mark this moment (button or M). Lumora Studio shows the
+ * marks on its timeline when the event file is opened.
+ */
+export function MarkButton() {
+  const b = useBroadcast();
+  const [flash, setFlash] = useState<string | null>(null);
+  const markRef = useRef(b?.mark);
+  markRef.current = b?.mark;
+  useEffect(() => {
+    if (!flash) return;
+    const id = setTimeout(() => setFlash(null), 1600);
+    return () => clearTimeout(id);
+  }, [flash]);
+  const doMark = () => {
+    try {
+      const n = markRef.current?.();
+      if (n) setFlash(`Marked (${n})`);
+    } catch (e) {
+      setFlash(e instanceof Error ? e.message : String(e));
+    }
+  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || (e.key !== 'm' && e.key !== 'M') || keyIsBusy(e)) return;
+      e.preventDefault();
+      doMark();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  if (!b) return null;
+  return (
+    <button
+      type="button"
+      className="btn bc-btn bc-btn--small"
+      title="Mark this moment for editing later (M). Lumora Studio shows the marks on its timeline."
+      aria-live="polite"
+      onClick={doMark}
+    >
+      <BookmarkPlus aria-hidden="true" className="bc-mark" />
+      {flash ?? (b.marks ? `Mark · ${b.marks}` : 'Mark')}
+    </button>
   );
 }
 

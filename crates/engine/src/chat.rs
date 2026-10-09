@@ -15,6 +15,7 @@ pub enum ChatPlatform {
     #[default]
     Youtube,
     Twitch,
+    Facebook,
     Other,
 }
 

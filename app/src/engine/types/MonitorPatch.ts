@@ -14,4 +14,7 @@ export type MonitorPatch = {
   showLyrics?: boolean;
   textSize?: TextSize;
   clock24h?: boolean;
+  wrapUpS?: number;
+  overtime?: boolean;
+  progress?: boolean;
 };

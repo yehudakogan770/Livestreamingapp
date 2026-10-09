@@ -112,3 +112,38 @@
   font-weight: 700;
   font-size: 18px;
 }
+.evs__tpls {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+.evs__tpl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--bar);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.evs__tpl svg {
+  width: 18px;
+  height: 18px;
+  color: var(--text-dim);
+}
+.evs__tpl span {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.evs__tpl[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.evs__tpl:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

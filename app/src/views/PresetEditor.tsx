@@ -35,6 +35,7 @@ export const STEP_KINDS: { type: Step['type']; name: string }[] = [
   { type: 'record', name: 'Start or stop recording' },
   { type: 'stream', name: 'Go live or end the stream' },
   { type: 'replay', name: 'Instant replay into Next' },
+  { type: 'mark', name: 'Mark this moment in the recording' },
   { type: 'dataStep', name: 'Next or previous data row' },
   { type: 'macro', name: 'Run a macro' },
 ];
@@ -80,6 +81,7 @@ export function newStep(type: Step['type'], show: Show, screen: ScreenId): Step 
     case 'macro':
       return { type, macroId: show.macros[0]?.id ?? '' };
     case 'clearMonitorMessage':
+    case 'mark':
     case 'startCountdown':
     case 'pauseCountdown':
     case 'resetCountdown':
@@ -124,6 +126,8 @@ export function describeStep(st: Step, show: Show): string {
       return `Replay the last ${st.seconds} s${st.slow ? ' (slow)' : ''}`;
     case 'dataStep':
       return st.delta < 0 ? 'Previous data row' : 'Next data row';
+    case 'mark':
+      return 'Mark the moment';
     case 'macro':
       return `Macro: ${show.macros.find((m) => m.id === st.macroId)?.name ?? '(removed)'}`;
     default:

@@ -1,0 +1,73 @@
+/* Find a command (Ctrl + K): a search box over a list, near the top. */
+.cmdp {
+  align-items: flex-start;
+  padding-top: 12vh;
+}
+.modal__box.cmdp__box {
+  width: min(620px, calc(100vw - 32px));
+  max-height: min(520px, calc(100vh - 16vh));
+}
+.cmdp__find {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.cmdp__find svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--text-dim);
+}
+.cmdp__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+}
+.cmdp__find kbd {
+  font: inherit;
+  font-size: 11px;
+  color: var(--text-faint);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.cmdp__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+}
+.cmdp__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.cmdp__item.is-sel {
+  background: var(--selected);
+}
+.cmdp__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cmdp__group {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+.cmdp__none {
+  padding: 14px 10px;
+  color: var(--text-dim);
+}

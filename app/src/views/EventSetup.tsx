@@ -1,4 +1,4 @@
-import { CalendarCog } from 'lucide-react';
+import { CalendarCog, Heart, Mic2, Music, Presentation, Square, Trophy, Video, type LucideIcon } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { appLogo } from '../engine/brand';
 import { defaultCountdown, type EngineClient } from '../engine/client';
@@ -6,7 +6,19 @@ import type { AtZero } from '../engine/types/AtZero';
 import type { SafeScreen } from '../engine/types/SafeScreen';
 import type { Show } from '../engine/types/Show';
 import { backupOf, lineupOf, logoInput } from '../engine/backup';
+import { TEMPLATES, templateActions, type TemplateId } from '../engine/eventTemplates';
 import './EventSetup.css';
+
+const TEMPLATE_ICONS: Record<TemplateId, LucideIcon> = {
+  conference: Presentation,
+  concert: Music,
+  wedding: Heart,
+  sports: Trophy,
+  panel: Mic2,
+  webinar: Video,
+};
+
+const countdownsOf = (show: Show) => show.sources.flatMap((s) => (s.kind.type === 'countdown' ? [{ id: s.id, timer: s.kind.timer }] : []));
 
 type Ending = 'takeNext' | 'logo' | 'showText' | 'blank' | 'hold';
 
@@ -18,6 +30,9 @@ type Ending = 'takeNext' | 'logo' | 'showText' | 'blank' | 'hold';
 export function EventSetup({ show, client, onClose, onError }: { show: Show; client: EngineClient; onClose: () => void; onError: (e: unknown) => void }) {
   const ev = show.event;
   const [step, setStep] = useState(0);
+  // A new, empty event can start from a template (once; never over inputs already made).
+  const [offerTemplates] = useState(() => !ev.setUp && show.sources.length === 0);
+  const [template, setTemplate] = useState<TemplateId | null>(null);
   const [name, setName] = useState(ev.name);
   const [logo, setLogo] = useState<string | null>(ev.logo);
   const [onFailure, setOnFailure] = useState<SafeScreen>(ev.onFailure);
@@ -28,7 +43,7 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
   const lineup = lineupIds.map((id) => show.sources.find((s) => s.id === id)?.name ?? id);
   const endsOnLogo = lineupIds.at(-1) === logoInput(show)?.id;
   // The countdown ending applies to every countdown input (and new ones copy it).
-  const cds = show.sources.flatMap((s) => (s.kind.type === 'countdown' ? [{ id: s.id, timer: s.kind.timer }] : []));
+  const cds = countdownsOf(show);
   const firstTimer = cds[0]?.timer ?? defaultCountdown();
   const z = firstTimer.atZero.type;
   const [ending, setEnding] = useState<Ending>(z === 'hide' ? 'logo' : z === 'cutTo' ? 'logo' : z);
@@ -50,10 +65,13 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
       if (skip) {
         await client.dispatch({ type: 'updateEvent', patch: { setUp: true } });
       } else {
+        if (offerTemplates && template) for (const a of templateActions(template, show)) await client.dispatch(a);
         await client.dispatch({ type: 'updateEvent', patch: { name, logo: logo ?? '', onFailure, panicShows, setUp: true } });
         if (backupOn !== backup.on) await client.dispatch({ type: 'setBackupOn', value: backupOn });
         const atZero: AtZero = ending === 'logo' ? { type: 'hide' } : { type: ending };
-        for (const cd of cds) {
+        // A template's countdowns end the same way.
+        const all = offerTemplates && template ? countdownsOf((await client.getShow()).show) : cds;
+        for (const cd of all) {
           if (JSON.stringify(atZero) !== JSON.stringify(cd.timer.atZero)) await client.dispatch({ type: 'updateCountdown', id: cd.id, patch: { atZero } });
         }
       }
@@ -78,12 +96,49 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
     </span>
   );
 
+  const chosen = TEMPLATES.find((t) => t.id === template) ?? null;
+  const templateStep = (
+    <div className="evs__step" key="kind">
+      <h3>What kind of event?</h3>
+      <div className="evs__tpls" role="group" aria-label="Kind of event">
+        {TEMPLATES.map((t) => {
+          const Icon = TEMPLATE_ICONS[t.id];
+          return (
+            <button key={t.id} type="button" className="evs__tpl" aria-pressed={template === t.id} onClick={() => setTemplate(t.id)}>
+              <Icon aria-hidden="true" />
+              <strong>{t.name}</strong>
+              <span>{t.blurb}</span>
+            </button>
+          );
+        })}
+        <button type="button" className="evs__tpl" aria-pressed={template === null} onClick={() => setTemplate(null)}>
+          <Square aria-hidden="true" />
+          <strong>Start empty</strong>
+          <span>Add your own inputs</span>
+        </button>
+      </div>
+      <p className="field__note">
+        {chosen
+          ? `Adds: ${chosen.adds.join(', ')}, and a run of show to fill in. Change or remove any of it later.`
+          : 'Nothing is added. You can add inputs with + Add input at any time.'}
+      </p>
+    </div>
+  );
+
   const steps = [
+    ...(offerTemplates ? [templateStep] : []),
     <div className="evs__step" key="about">
       <h3>Your event</h3>
       <label className="field">
         <span className="field__label">Name of the event</span>
-        <input className="text" autoFocus value={name} maxLength={80} placeholder="e.g. Spring Gala 2026" onChange={(e) => setName(e.target.value)} />
+        <input
+          className="text"
+          autoFocus={!offerTemplates}
+          value={name}
+          maxLength={80}
+          placeholder="e.g. Spring Gala 2026"
+          onChange={(e) => setName(e.target.value)}
+        />
       </label>
       <div className="field">
         <span className="field__label">Event logo</span>
@@ -172,7 +227,7 @@ export function EventSetup({ show, client, onClose, onError }: { show: Show; cli
             <CalendarCog className="modal__icon" aria-hidden="true" />
             Set up the event
           </h2>
-          <span className="evs__dots" aria-label={`Step ${step + 1} of 3`}>
+          <span className="evs__dots" aria-label={`Step ${step + 1} of ${steps.length}`}>
             {steps.map((_, i) => (
               <i key={i} className={i === step ? 'is-on' : i < step ? 'is-done' : ''} />
             ))}
