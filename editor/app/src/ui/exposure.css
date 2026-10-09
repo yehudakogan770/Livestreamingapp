@@ -77,3 +77,93 @@
 .expo__clip {
   color: var(--text);
 }
+.cmp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.cmp__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  user-select: none;
+}
+.cmp__line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 13px;
+  margin-left: -6px;
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+.cmp__line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 1px;
+  background: var(--accent);
+}
+.cmp__line:focus-visible::after {
+  width: 2px;
+}
+.cmp__label {
+  position: absolute;
+  top: 6px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #e4e4e4;
+  font-size: 11px;
+}
+.cmp__label--l {
+  left: 6px;
+}
+.cmp__label--r {
+  right: 6px;
+}
+.cmp__menu {
+  min-width: 240px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.cmp__row {
+  display: flex;
+  align-items: center;
+}
+.cmp__row > button:first-child {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.cmp__row > button:first-child:hover {
+  background: var(--button-hover);
+}
+.cmp__row > button.is-on {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.cmp__thumb {
+  width: 48px;
+  height: 27px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+}
+.cmp__hint {
+  margin: 4px 8px;
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
