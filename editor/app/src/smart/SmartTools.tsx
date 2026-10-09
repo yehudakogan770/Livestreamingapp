@@ -57,6 +57,7 @@ import { openSmart, reframeAspect, useOpen } from './open';
 import { Progress, useJob } from './job';
 import { MakeMulticamDialog } from './MakeMulticam';
 import { ClipsDialog } from './ClipsDialog';
+import { FinishDialog } from './FinishDialog';
 
 export type { SmartTool } from './open';
 export { openSmart };
@@ -66,6 +67,8 @@ export function smartMenu(p: Project): MenuEntry[] {
   const s = current(p);
   const hasClips = s.clips.length > 0;
   return [
+    { label: 'Finish the event (cameras, captions, chapters, reel, clips)…', disabled: !hasClips, run: () => openSmart('finish') },
+    'sep',
     { label: 'Auto multicam edit…', disabled: groupsIn(p, s).length === 0, run: () => openSmart('multicam') },
     { label: 'Remove silences and filler words…', disabled: !hasClips, run: () => openSmart('silence') },
     'sep',
@@ -84,6 +87,7 @@ export function SmartDialogs({ doc, engine, ui }: { doc: Doc; engine: Engine; ui
   if (t === 'highlights') return <HighlightDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
   if (t === 'makeMulticam') return <MakeMulticamDialog doc={doc} ui={ui} onClose={close} />;
   if (t === 'clips') return <ClipsDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
+  if (t === 'finish') return <FinishDialog doc={doc} ui={ui} onClose={close} />;
   return null;
 }
 

@@ -17,11 +17,12 @@ import { Choice, Modal } from '../ui/controls';
 import { encodersHere } from '../ui/Deliver';
 import type { Ui } from '../ui/state';
 import { check, sequenceLevels, wordsInSeconds } from './analysis';
-import { clipSize, findClips, makeClipSequence, withMotions, type SocialClip } from './clips';
+import { findClips, makeClipSequence, type SocialClip } from './clips';
+import { frameOnFaces } from './framejob';
 import { FaceFinder } from './detect';
 import { DEFAULT_KEYWORDS, scoreMoments } from './highlights';
 import { Progress, useJob } from './job';
-import { ASPECTS, framedClips, REFRAME_DEFAULTS, reframeMotion, sampleTimes, type Aspect } from './reframe';
+import { ASPECTS, type Aspect } from './reframe';
 
 const HOP = 0.25;
 
@@ -126,22 +127,8 @@ export function ClipsDialog({ doc, engine, ui, onClose }: { doc: Doc; engine: En
           q = out.project;
           ids.push(out.sequence);
           if (!f || aspect === 'same') continue;
-          // Framed on the people in it: faces looked for every few frames, the picture following them smoothly.
-          const cs = q.sequences.find((x) => x.id === out.sequence) as Sequence;
-          const size = clipSize(source, aspect);
-          const motions = new Map<string, Clip['motion']>();
-          const framed = framedClips(q, cs);
-          for (const [k, { clip, media }] of framed.entries()) {
-            check(j);
-            const { t, seconds } = sampleTimes(q, clip, cs, REFRAME_DEFAULTS.every);
-            const looked = await f.look(media.proxy ?? media.path, seconds, (d) =>
-              j.progress((i + (k + d) / Math.max(1, framed.length)) / list.length, `Framing clip ${i + 1} of ${list.length}…`),
-            );
-            const samples = t.map((frame, n) => ({ t: frame, found: looked[n] ?? [] }));
-            if (samples.some((x) => x.found.length))
-              motions.set(clip.id, reframeMotion(clip, media, { w: size.width, h: size.height }, samples, { ...REFRAME_DEFAULTS, aspect }));
-          }
-          q = withMotions(q, out.sequence, motions);
+          // Framed on the people in it.
+          q = await frameOnFaces(q, out.sequence, aspect, f, j, (d) => j.progress((i + d) / list.length, `Framing clip ${i + 1} of ${list.length}…`));
         }
         return { project: { ...q, open: ids[0] ?? q.open }, ids };
       },
