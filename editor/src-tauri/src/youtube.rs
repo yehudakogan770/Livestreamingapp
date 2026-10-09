@@ -34,7 +34,7 @@ fn now() -> u64 {
         .map_or(0, |d| d.as_secs())
 }
 
-fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
+pub(crate) fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
@@ -75,7 +75,7 @@ fn client(dir: &Path) -> Option<GoogleClient> {
 
 /// Windows Credential Manager, the entry Lumora uses too.
 #[cfg(windows)]
-struct Vault;
+pub(crate) struct Vault;
 
 #[cfg(windows)]
 impl Vault {
@@ -105,7 +105,7 @@ impl Secrets for Vault {
 /// Elsewhere (development builds): kept until Studio closes.
 #[cfg(not(windows))]
 #[derive(Default)]
-struct Vault(Mutex<HashMap<String, String>>);
+pub(crate) struct Vault(Mutex<HashMap<String, String>>);
 
 #[cfg(not(windows))]
 impl Secrets for Vault {
@@ -124,7 +124,7 @@ impl Secrets for Vault {
 // ---- the network ----
 
 /// HTTPS, keeping the answer's headers (an upload needs `Location` and `Range`).
-struct Net {
+pub(crate) struct Net {
     client: reqwest::Client,
 }
 
@@ -162,7 +162,7 @@ impl Http for Net {
             let headers: Vec<(String, String)> = resp
                 .headers()
                 .iter()
-                .filter(|(k, _)| matches!(k.as_str(), "location" | "range"))
+                .filter(|(k, _)| matches!(k.as_str(), "location" | "range" | "upload-offset"))
                 .map(|(k, v)| {
                     (
                         k.as_str().to_owned(),
@@ -185,12 +185,12 @@ impl Http for Net {
 
 pub struct Publish {
     dir: PathBuf,
-    vault: Vault,
-    net: Net,
+    pub(crate) vault: Vault,
+    pub(crate) net: Net,
     connecting: AtomicBool,
     cancel: AtomicBool,
     /// Uploads that are running, by job: set to stop one.
-    stops: Mutex<HashMap<String, Arc<AtomicBool>>>,
+    pub(crate) stops: Mutex<HashMap<String, Arc<AtomicBool>>>,
 }
 
 impl Publish {

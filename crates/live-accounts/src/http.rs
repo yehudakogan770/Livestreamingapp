@@ -10,6 +10,8 @@ pub enum Method {
     Get,
     Post,
     Put,
+    Patch,
+    Head,
     Delete,
 }
 
@@ -20,6 +22,8 @@ impl Method {
             Method::Get => "GET",
             Method::Post => "POST",
             Method::Put => "PUT",
+            Method::Patch => "PATCH",
+            Method::Head => "HEAD",
             Method::Delete => "DELETE",
         }
     }

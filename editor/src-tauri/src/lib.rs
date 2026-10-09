@@ -17,6 +17,7 @@ mod rendercache;
 mod selftest;
 mod speech;
 mod syscheck;
+mod vimeo;
 mod voiceover;
 mod youtube;
 
@@ -603,6 +604,10 @@ pub fn run() {
             youtube::youtube_stop,
             youtube::youtube_watch,
             voiceover::voiceover_save,
+            vimeo::vimeo_info,
+            vimeo::vimeo_connect,
+            vimeo::vimeo_disconnect,
+            vimeo::vimeo_upload,
             delivery::encoders_available,
             delivery::encode_open,
             delivery::encode_frame,
