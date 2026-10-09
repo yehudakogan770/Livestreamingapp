@@ -18,3 +18,10 @@ wording stay).
 - **Wording rules**: American spelling; no religious or school wording in
   examples; the no-access message "Your account isn't set up for Lumora Studio.
   Contact the Lumora team for help." (same pattern for Lumora).
+
+## Standing rule from the owner
+
+Every Lumora app (Lumora, Lumora Studio, Lumora Titler, Lumora Planner, the
+Stream Deck plugin and the website) must be the best on the market in its
+category. Polished, reliable and fast beats more features: anything not ready
+is hidden, never shipped half-working.
