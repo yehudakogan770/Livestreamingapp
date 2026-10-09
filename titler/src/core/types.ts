@@ -68,6 +68,16 @@ export interface PathData {
   v: PathVertex[];
 }
 
+/** A path keyframe (a shape that changes form): vertices matched one to one with the next key's. */
+export interface PathKey {
+  t: number;
+  /** The main outline, then any further outlines (holes, more pieces), as in `path` and `subpaths`. */
+  v: PathData[];
+  o?: Vec2;
+  i?: Vec2;
+  hold?: boolean;
+}
+
 export interface Transform {
   /** The point (layer space) that position, scale and rotation are about. */
   anchor: Prop<Vec2>;
@@ -87,6 +97,8 @@ export interface Mask {
   name: string;
   /** Layer space. */
   path: PathData;
+  /** The mask changing form over time (a wipe drawn as a moving mask); replaces `path`. */
+  morph?: PathKey[] | null;
   mode: 'add' | 'subtract' | 'intersect';
   inverted?: boolean;
   /** Soft edge, px. */
@@ -237,6 +249,12 @@ export interface ShapeLayer extends LayerBase {
   /** More outlines drawn over the first (a double outline), each with its own paint, width and place. */
   extraStrokes?: Stroke[];
   path?: PathData;
+  /** More outlines of the same shape (a compound path: letters with holes, several pieces under one fill). */
+  subpaths?: PathData[];
+  /** How overlapping outlines fill: nonzero (default) or evenodd (every other one is a hole). */
+  fillRule?: 'nonzero' | 'evenodd';
+  /** The path changing form over time (path and subpaths at each key). */
+  morph?: PathKey[] | null;
   fill: Paint | null;
   stroke: Stroke | null;
   /** Trim paths: the part of the outline drawn, percent. */

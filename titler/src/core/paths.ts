@@ -1,7 +1,8 @@
 // Shapes as bezier paths: rectangles, rounded rectangles, ellipses and drawn
 // paths; trimming a path (draw only part of its outline).
 
-import type { PathData, PathVertex, Vec2 } from './types';
+import { segmentProgress } from './easing';
+import type { PathData, PathKey, PathVertex, Vec2 } from './types';
 
 /** The part of a 2D canvas context paths are drawn with. */
 export interface PathSink {
@@ -198,4 +199,41 @@ export function svgPathD(path: PathData): string {
   let d = `M${f(v[0]!.p[0])} ${f(v[0]!.p[1])}`;
   for (const [, c1, c2, p] of segments(path)) d += ` C${f(c1[0])} ${f(c1[1])} ${f(c2[0])} ${f(c2[1])} ${f(p[0])} ${f(p[1])}`;
   return path.closed ? `${d} Z` : d;
+}
+
+const mixV = (a: Vec2 | undefined, b: Vec2 | undefined, e: number): Vec2 | undefined =>
+  a || b ? [(a?.[0] ?? 0) + ((b?.[0] ?? 0) - (a?.[0] ?? 0)) * e, (a?.[1] ?? 0) + ((b?.[1] ?? 0) - (a?.[1] ?? 0)) * e] : undefined;
+
+/** Two paths part way between (vertex by vertex; a path with other vertices than the next key's jumps). */
+export function mixPath(a: PathData, b: PathData, e: number): PathData {
+  if (a.v.length !== b.v.length) return e < 1 ? a : b;
+  return {
+    closed: a.closed,
+    v: a.v.map((va, k) => {
+      const vb = b.v[k]!;
+      const out: PathVertex = { p: mixV(va.p, vb.p, e)! };
+      const i = mixV(va.i, vb.i, e);
+      const o = mixV(va.o, vb.o, e);
+      if (i) out.i = i;
+      if (o) out.o = o;
+      return out;
+    }),
+  };
+}
+
+/** A changing shape's outlines at time t (seconds), eased like any keyframes. */
+export function morphAt(keys: PathKey[], t: number): PathData[] {
+  if (!keys.length) return [];
+  if (t <= keys[0]!.t) return keys[0]!.v;
+  const last = keys[keys.length - 1]!;
+  if (t >= last.t) return last.v;
+  let n = 0;
+  while (n < keys.length - 2 && keys[n + 1]!.t <= t) n++;
+  const a = keys[n]!;
+  const b = keys[n + 1]!;
+  const span = b.t - a.t;
+  const f = span > 0 ? (t - a.t) / span : 1;
+  const e = segmentProgress({ t: a.t, v: 0, o: a.o, hold: a.hold }, { t: b.t, v: 1, i: b.i }, f);
+  if (a.hold) return a.v;
+  return a.v.map((pa, k) => (b.v[k] ? mixPath(pa, b.v[k]!, e) : pa));
 }

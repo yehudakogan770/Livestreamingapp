@@ -9,7 +9,7 @@ import { setExprScope, type ExprScope } from './expr';
 import { pickFormat } from './formats';
 import { layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
-import { ellipsePath, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
+import { ellipsePath, morphAt, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
 import type {
   Asset,
   BrandTokens,
@@ -479,7 +479,7 @@ function applyMasks(c: Ctx, l: Layer, world: Mat, s: Scene) {
       m.rect(-W, -H, W * 3, H * 3);
     }
     setMatrix(m, world);
-    tracePath(m, mask.path);
+    tracePath(m, mask.morph?.length ? (morphAt(mask.morph, s.t)[0] ?? mask.path) : mask.path);
     m.fill(mask.inverted ? 'evenodd' : 'nonzero');
     m.restore();
   }
@@ -527,10 +527,11 @@ export function contentSize(l: Layer, t: number, project?: TitleProject): Vec2 {
       if (l.shape === 'path' && l.path) {
         let x1 = 0;
         let y1 = 0;
-        for (const v of l.path.v) {
-          x1 = Math.max(x1, v.p[0]);
-          y1 = Math.max(y1, v.p[1]);
-        }
+        for (const pd of [shapePath(l, t), ...shapeSubpaths(l, t)])
+          for (const v of pd.v) {
+            x1 = Math.max(x1, v.p[0]);
+            y1 = Math.max(y1, v.p[1]);
+          }
         return [x1, y1];
       }
       return vec(l.size, t, [100, 100]);
@@ -662,15 +663,27 @@ function paintStyle(ctx: Ctx, p: Paint, w: number, h: number, s: Scene): string 
 }
 
 export function shapePath(l: ShapeLayer, t: number, size?: Vec2): PathData {
-  if (l.shape === 'path') return l.path ?? { closed: false, v: [] };
+  if (l.shape === 'path') return l.morph?.length ? (morphAt(l.morph, t)[0] ?? { closed: false, v: [] }) : (l.path ?? { closed: false, v: [] });
   const [w, h] = size ?? vec(l.size, t, [100, 100]);
   if (l.shape === 'ellipse') return ellipsePath(w, h);
   return l.corners ? rectCornersPath(w, h, l.corners) : rectPath(w, h, num(l.roundness, t, 0));
 }
 
+/** A path shape's further outlines at time t. */
+export function shapeSubpaths(l: ShapeLayer, t: number): PathData[] {
+  if (l.shape !== 'path') return [];
+  if (l.morph?.length) return morphAt(l.morph, t).slice(1);
+  return l.subpaths ?? [];
+}
+
 function drawShape(ctx: Ctx, l: ShapeLayer, size: Vec2, s: Scene) {
   const t = s.t;
   const path = shapePath(l, t, l.fitTo ? size : undefined);
+  const more = shapeSubpaths(l, t);
+  const trace = (c: Ctx) => {
+    tracePath(c, path);
+    for (const sp of more) tracePath(c, sp);
+  };
   const trim = l.trim;
   const ts = trim ? num(trim.start, t, 0) : 0;
   const te = trim ? num(trim.end, t, 100) : 100;
@@ -678,9 +691,9 @@ function drawShape(ctx: Ctx, l: ShapeLayer, size: Vec2, s: Scene) {
   const trimmed = !!trim && (Math.abs(te - ts) < 100 || to !== 0);
   if (l.fill && !trimmed) {
     ctx.beginPath();
-    tracePath(ctx, path);
+    trace(ctx);
     ctx.fillStyle = paintStyle(ctx, l.fill, size[0], size[1], s);
-    ctx.fill();
+    ctx.fill(l.fillRule ?? 'nonzero');
   }
   for (const st of [l.stroke, ...(l.extraStrokes ?? [])]) {
     if (!st || st.width <= 0) continue;
@@ -690,12 +703,14 @@ function drawShape(ctx: Ctx, l: ShapeLayer, size: Vec2, s: Scene) {
     if (side) {
       ctx.beginPath();
       if (side === 'outside') ctx.rect(-1e6, -1e6, 2e6, 2e6);
-      tracePath(ctx, path);
-      ctx.clip(side === 'outside' ? 'evenodd' : 'nonzero');
+      trace(ctx);
+      ctx.clip(side === 'outside' ? 'evenodd' : (l.fillRule ?? 'nonzero'));
     }
     ctx.beginPath();
-    if (trimmed) traceTrimmed(ctx, path, ts, te, to);
-    else tracePath(ctx, path);
+    if (trimmed) {
+      traceTrimmed(ctx, path, ts, te, to);
+      for (const sp of more) traceTrimmed(ctx, sp, ts, te, to);
+    } else trace(ctx);
     ctx.strokeStyle = paintStyle(ctx, st.paint, size[0], size[1], s);
     ctx.lineWidth = side ? st.width * 2 : st.width;
     ctx.lineJoin = st.join ?? 'miter';
