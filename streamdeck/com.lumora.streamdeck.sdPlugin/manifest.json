@@ -329,6 +329,22 @@
       ]
     },
     {
+      "UUID": "com.lumora.streamdeck.mute",
+      "Name": "Mute",
+      "Tooltip": "Mute or unmute the Stream mix, mix A or B, or one input",
+      "Icon": "imgs/actions/mute",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/mute",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
       "UUID": "com.lumora.streamdeck.tbar",
       "Name": "T-bar (dial)",
       "Tooltip": "Stream Deck +: turn to mix Next onto the screen, push for TAKE, touch for CUT",

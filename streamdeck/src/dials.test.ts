@@ -2,6 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { dialFeedback, dialPush, dialRotate, dialTouch, faderTarget, stepOf } from './dials';
 import { deckState } from './show';
 import { Deck } from './deck';
+import { request } from './actions';
+import { keyModel } from './keys';
 import type { LumoraClient } from './protocol';
 
 const show = {
@@ -56,6 +58,17 @@ describe('Stream Deck + dials', () => {
     expect(dialPush('tbar', {}, state, 'back')).toEqual({ to: 'action', body: { type: 'take', screen: 'back' } });
     expect(dialTouch('tbar', {}, state, 'live')).toEqual({ to: 'action', body: { type: 'take', screen: 'live', transition: 'cut' } });
     expect(stepOf({}, 'tbar')).toBe(0.04);
+  });
+
+  it('a Mute key mutes what it controls, and turns red while muted', () => {
+    expect(request('mute', { target: 'cam' }, state, 'live')).toEqual({ to: 'action', body: { type: 'updateSource', id: 'cam', patch: { muted: false } } });
+    expect(request('mute', {}, state, 'live')).toEqual({ to: 'action', body: { type: 'setMasterMuted', value: true } });
+    expect(keyModel('mute', { target: 'cam' }, { state, connection: 'online', deck: 'live', now: 0 })).toMatchObject({
+      label: 'Camera 1',
+      sub: 'Muted',
+      tone: 'program',
+    });
+    expect(keyModel('mute', { target: 'mic' }, { state, connection: 'online', deck: 'live', now: 0 })).toMatchObject({ sub: '50%', tone: 'idle' });
   });
 
   it('the strip shows the level, Muted, or why not', () => {

@@ -93,6 +93,12 @@ export function dialRotate(
   return { request: setVolume(t, value), value };
 }
 
+/** A Mute key: mute or unmute what it controls. */
+export function muteRequest(state: DeckState, s: DialSettings): Request {
+  const t = faderTarget(state, s);
+  return t ? setMuted(t, !t.level.muted) : { to: 'none', why: 'choose what to mute' };
+}
+
 /** Pushing the dial: T-bar: TAKE. Fader: mute or unmute. */
 export function dialPush(kind: DialKind, s: DialSettings, state: DeckState | null, deck: ScreenId): Request {
   if (!state) return { to: 'none', why: 'offline' };

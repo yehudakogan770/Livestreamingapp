@@ -2,6 +2,7 @@
 // held before it does anything (PANIC, going live, stopping a recording).
 
 import type { DeckState, ScreenId } from './show';
+import { muteRequest } from './dials';
 
 export const PLUGIN = 'com.lumora.streamdeck';
 
@@ -25,6 +26,7 @@ export const KINDS = [
   'slidenext',
   'slideback',
   'slidefirst',
+  'mute',
 ] as const;
 export type Kind = (typeof KINDS)[number];
 
@@ -69,6 +71,9 @@ export interface KeySettings {
   /** Slide keys: the slideshow's id and name (left out: the one on air). */
   slideshow?: string;
   slideshowName?: string;
+  /** Mute: "master" (the default), "a", "b", or an input's id, and the input's name. */
+  target?: string;
+  targetName?: string;
 }
 
 /** The plugin-wide settings, shared by every key. */
@@ -219,6 +224,8 @@ export function request(kind: Kind, s: KeySettings, state: DeckState | null, dec
       const m = findMacro(state, s);
       return m ? { to: 'action', body: { type: 'runMacro', id: m.id } } : { to: 'none', why: 'choose a macro' };
     }
+    case 'mute':
+      return muteRequest(state, s);
     case 'slidenext':
     case 'slideback':
     case 'slidefirst': {

@@ -28,6 +28,7 @@ export const ICON_OF: Record<Kind, IconName> = {
   slideback: 'slideBack',
   slidefirst: 'slideFirst',
   macro: 'macro',
+  mute: 'mute',
 };
 
 /** Lumora's mark in its own colors (docs/img/lumora-mark.svg), on a 48 × 48 grid. */
