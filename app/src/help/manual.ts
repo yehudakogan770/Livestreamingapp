@@ -17,7 +17,7 @@ export const MANUAL: Topic[] = [
   {
     id: 'start',
     title: 'Start here: the main screen',
-    keywords: 'overview begin first time layout next on air',
+    keywords: 'overview begin first time layout next on air keyboard ctrl k command find search',
     body: [
       '• Settings → Arrange the screen…: drag a part (Next, On air, the TAKE buttons, the inputs, the mixer) onto another to swap them, drag the dividers to resize, and put Presets left, right or away. Lumora remembers it.',
       'Lumora runs up to three screens at once: the Live Screen (the stream and recording), the Back Screen (the projector behind the stage) and the Monitor (text for the people on stage). The tabs at the top choose which one you are controlling (or press F1, F2, F3).',
@@ -27,6 +27,7 @@ export const MANUAL: Topic[] = [
       '• Under the monitors: your inputs (every camera, video, picture and title), the audio mixer, and the controls for whatever is in Next or on air.',
       '• The bottom bar: All good (the health check), Outputs, Back = Live, REC, GO LIVE, REPLAY, and on the right Blank and PANIC.',
       'Tip: The first time, Event → Event setup… walks you through the kind of event, its name, logo and screens.',
+      'Tip: Press Ctrl + K to find any command by typing what you want to do (“lower third”, “stage camera”, “go live”), then Enter. Everything in Lumora can be run from the keyboard this way.',
     ],
   },
   {

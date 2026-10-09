@@ -267,6 +267,10 @@ describe('Event setup', () => {
   it('asks about the event, the logo and emergencies at the start, and applies on Done', async () => {
     await start({ keepSetup: true });
     const dialog = screen.getByRole('dialog', { name: 'Event setup' });
+    // A new, empty event first offers the templates (Start empty is chosen).
+    expect(within(dialog).getByText('What kind of event?')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: /Start empty/ })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Next' }));
     fireEvent.change(within(dialog).getByPlaceholderText(/Spring Gala/), {
       target: { value: 'Chanukah Rally' },
     });
