@@ -146,6 +146,14 @@ export interface LayerBase {
   effects?: Effect[];
   /** A label color in the designer's layer list. */
   label?: string;
+  /** How it is re-placed in another format of the title (16:9 → 9:16…); nearest edge when left out. */
+  constraints?: Constraints;
+}
+
+/** Pinned to an edge or the middle, scaled with the frame, or stretched with it. */
+export interface Constraints {
+  h?: 'left' | 'right' | 'center' | 'scale' | 'stretch';
+  v?: 'top' | 'bottom' | 'center' | 'scale' | 'stretch';
 }
 
 /** What text in a range gets: letters, words or lines, one after another. */
@@ -320,6 +328,8 @@ export interface Composition {
   /** Front first. */
   layers: Layer[];
   guides?: { x: number[]; y: number[] };
+  /** A format of another composition (the main one) in another shape: picked on air by the picture's shape. */
+  variantOf?: string;
 }
 
 export type VariableType = 'text' | 'number' | 'color' | 'image' | 'list';

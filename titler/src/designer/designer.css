@@ -1470,3 +1470,29 @@
   min-width: 16px;
   color: #e8b931;
 }
+
+/* Formats of the title. */
+.tt-formats {
+  list-style: none;
+  margin: 4px 0 6px;
+  padding: 0;
+}
+.tt-formats li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.tt-formats li > button:first-child {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 3px 6px;
+  border-radius: var(--tt-radius);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-formats li.on > button:first-child {
+  background: var(--tt-selected);
+}

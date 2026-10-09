@@ -141,6 +141,34 @@ export function Inspector({ store }: { store: Store }) {
             />
           )}
         </Row>
+        <Row label="Constraints" hint="How the layer is placed in the title's other formats (9:16, 1:1, 4K): pinned, scaled or stretched">
+          <Select
+            label="Constraint across"
+            value={l.constraints?.h ?? 'auto'}
+            options={[
+              ['auto', 'Auto'],
+              ['left', 'Left'],
+              ['center', 'Center'],
+              ['right', 'Right'],
+              ['scale', 'Scale'],
+              ['stretch', 'Left and right'],
+            ]}
+            onChange={(h) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, h: h === 'auto' ? undefined : h } }))}
+          />
+          <Select
+            label="Constraint down"
+            value={l.constraints?.v ?? 'auto'}
+            options={[
+              ['auto', 'Auto'],
+              ['top', 'Top'],
+              ['center', 'Center'],
+              ['bottom', 'Bottom'],
+              ['scale', 'Scale'],
+              ['stretch', 'Top and bottom'],
+            ]}
+            onChange={(v) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, v: v === 'auto' ? undefined : v } }))}
+          />
+        </Row>
         <Row label="Blend">
           <Select
             label="Blend mode"

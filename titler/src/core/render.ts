@@ -6,6 +6,7 @@
 import { fill, resolveColor, resolveFont, tokensFor, valuesFor } from './binding';
 import { isAnimated, num, valueAt, vec } from './easing';
 import { setExprScope, type ExprScope } from './expr';
+import { pickFormat } from './formats';
 import { layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
 import { ellipsePath, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
@@ -63,7 +64,11 @@ const MAX_DEPTH = 6;
 
 /** Draw a composition. The context's transform is left as it was. */
 export function renderFrame(ctx: Ctx, project: TitleProject, opts: RenderOptions): void {
-  const comp = project.compositions.find((c) => c.id === (opts.comp ?? project.main)) ?? project.compositions[0];
+  // No composition asked for: the format whose shape is closest to the picture (16:9, 9:16…).
+  const comp =
+    (opts.comp ? project.compositions.find((c) => c.id === opts.comp) : opts.width && opts.height ? pickFormat(project, opts.width, opts.height) : undefined) ??
+    project.compositions.find((c) => c.id === project.main) ??
+    project.compositions[0];
   if (!comp) return;
   const w = opts.width ?? comp.width;
   const h = opts.height ?? comp.height;

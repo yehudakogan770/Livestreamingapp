@@ -65,14 +65,16 @@ function cleanProp(p: unknown, fallback: Value, notes: string[], where: string):
     typeof fallback === 'number'
       ? typeof v === 'number' && Number.isFinite(v)
       : Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === 'number' && Number.isFinite(x));
+  // An expression is kept (it is only ever worked out by core/expr.ts, never run).
+  const x = isObj(p) && typeof p.x === 'string' && p.x.trim() ? { x: p.x.slice(0, 2000) } : {};
   if (isObj(p) && Array.isArray(p.k)) {
     const k = p.k.filter((x): x is Json => isObj(x) && typeof x.t === 'number' && Number.isFinite(x.t) && okValue(x.v));
     if (k.length !== p.k.length) notes.push(`${where}: removed keyframes that could not be read.`);
     k.sort((a, b) => (a.t as number) - (b.t as number));
-    if (!k.length) return { v: fallback };
-    return { k: k as never };
+    if (!k.length) return { v: fallback, ...x };
+    return { k: k as never, ...x };
   }
-  if (isObj(p) && okValue(p.v)) return { v: p.v as Value };
+  if (isObj(p) && okValue(p.v)) return { v: p.v as Value, ...x };
   if (p !== undefined) notes.push(`${where}: a value could not be read and was reset.`);
   return { v: fallback };
 }
@@ -174,6 +176,7 @@ function cleanComp(c: Json, notes: string[], count: { n: number }): Composition 
     cues: Array.isArray(c.cues) ? c.cues.filter(isObj).map(cleanCue) : [],
     layers: [],
     guides: isObj(c.guides) ? c.guides : undefined,
+    ...(typeof c.variantOf === 'string' && c.variantOf ? { variantOf: c.variantOf } : {}),
   } as unknown as Composition;
   const m = isObj(c.markers) ? c.markers : {};
   comp.markers = cleanMarkers(
