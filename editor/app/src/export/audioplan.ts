@@ -7,6 +7,7 @@ import type { Clip, Project, Sequence, Track } from '../model/types';
 import { dbToGain, duckOf, heardTracks, audioAt, type Duck } from '../player/audio';
 import { isAudioEffect, sourceAt } from '../render/frame';
 import { soundPieces } from '../model/remap';
+import { titlerCueParts } from '../titler/titlerClip';
 
 /** A sound effect on a piece: its settings at the start, and (when keyframed) how they change, by seconds from the piece's start. */
 export interface PartEffect {
@@ -539,6 +540,8 @@ export type SoundFormat = 'aac' | 'mp3' | 'wav';
 export interface FinishOptions {
   /** The sound encoder's arguments (otherwise those of `sound`). */
   audio?: string[];
+  /** Where a piece's file really is (the audio cues' sounds written into the work folder). */
+  paths?: (path: string) => string;
   /** More inputs and what to do with them; `first` is the number the first of them gets. */
   extra?: (first: number) => { inputs: string[]; args: string[] };
 }
@@ -560,7 +563,9 @@ export function finishJobs(
 ): Job[] {
   const fps = rate(s);
   const seconds = (range.to - range.from) / fps;
-  let parts = audioParts(p, s, range.from, range.to);
+  // The film's sound, and the title clips' audio cues at their frames.
+  let parts = [...audioParts(p, s, range.from, range.to), ...titlerCueParts(s, range.from, range.to, fps)];
+  if (opts.paths) parts = parts.map((x) => ({ ...x, path: opts.paths!(x.path) }));
   const jobs: Job[] = [];
   const GROUP = 80;
   let speech: string | null = null;

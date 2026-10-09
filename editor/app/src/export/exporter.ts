@@ -4,7 +4,7 @@
 import type { VideoSample, VideoSampleSink } from 'mediabunny';
 import { current, rate } from '../model/seq';
 import type { Clip, MediaItem, Project, Sequence } from '../model/types';
-import { inApp, mediaUrl, native, onExportProgress } from '../native';
+import { inApp, joinPath, mediaUrl, native, onExportProgress } from '../native';
 import { parseCube, type Cube } from '../render/color';
 import { builtinCube } from '../render/luts';
 import { Compositor, type Pictures } from '../render/compositor';
@@ -13,6 +13,7 @@ import { rateAt } from '../model/remap';
 import { isAiMask, matteFor, mattes } from '../vision/mattes';
 import { exportSources } from '../player/files';
 import { finishJobs, type FinishOptions, type SoundFormat } from './audioplan';
+import { cueSoundFiles, dataUrlBytes, titlerCueParts } from '../titler/titlerClip';
 import { manageNative } from '../manage/native';
 import { renderCache } from '../cache/manager';
 
@@ -436,7 +437,11 @@ export class Exporter {
         return;
       }
       this.report({ stage: 'sound', done: video ? 0.86 : 0, message: video ? 'Adding the sound…' : 'Making the sound…', left: null, path: null });
-      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, this.o.finish);
+      // Sounds inside title clips (audio cues) go into the work folder first.
+      const cueFiles = cueSoundFiles(titlerCueParts(s, this.o.range.from, this.o.range.to, fps));
+      for (const [url, name] of cueFiles) await native.writeChunk(joinPath(tmp, name), 0, dataUrlBytes(url));
+      const finish = { ...this.o.finish, paths: (path: string) => (cueFiles.has(path) ? joinPath(tmp, cueFiles.get(path)!) : path) };
+      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, finish);
       const base = video ? 0.86 : 0;
       await new Promise<void>((resolve, reject) => {
         const stop = onExportProgress((pr) => {

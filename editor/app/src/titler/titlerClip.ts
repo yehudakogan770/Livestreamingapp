@@ -11,6 +11,9 @@ import { placeClips } from '../model/edit';
 import { current } from '../model/seq';
 import { newClip, type Project } from '../model/types';
 import { mediaUrl } from '../native';
+import { clipCueEvents, cueGain, cueMixes } from '../../../../titler/src/core/cues';
+import type { Part } from '../export/audioplan';
+import type { Sequence } from '../model/types';
 
 /** What a titler clip draws at a frame (see render/frame.ts). */
 export interface TitlerLayerSource {
@@ -116,4 +119,72 @@ export function titlerMarks(project: TitleProject, length: number, fps: number):
   const c = mainComp(project);
   const out = Math.round((c.duration - c.markers.outStart) * fps);
   return { inEnd: Math.min(length, Math.round(c.markers.inEnd * fps)), outStart: Math.max(0, length - out) };
+}
+
+/** A cue's sound runs on past its marker at most this long (seconds) in an export. */
+const CUE_TAIL = 8;
+
+/**
+ * The audio cues of the title clips in [from, to): each sound as a piece of
+ * the film's sound at its cue's frame (the IN's from the clip's start, the
+ * OUT's from where the OUT starts). Cues set to the Hall only are left out
+ * (they are for the room, not the film). A sound inside the title is a data
+ * URL; the exporter writes it to a file first.
+ */
+export function titlerCueParts(s: Sequence, from: number, to: number, fps: number): Part[] {
+  const out: Part[] = [];
+  for (const t of s.tracks) {
+    if (t.kind !== 'video' || t.off || t.captions) continue;
+    for (const c of s.clips) {
+      if (c.track !== t.id || !c.enabled || c.source.kind !== 'titler') continue;
+      const project = c.source.project;
+      const comp = mainComp(project);
+      for (const e of clipCueEvents(project, comp, c.length / fps)) {
+        const mixes = cueMixes(e.cue);
+        if (!mixes.includes('stream') && !mixes.includes('recording')) continue;
+        const at = c.start + Math.round(e.at * fps);
+        const stop = Math.min(to, at + Math.round(CUE_TAIL * fps));
+        const start = Math.max(from, at);
+        if (stop <= start) continue;
+        out.push({
+          path: e.sound.src,
+          track: { ...t, kind: 'audio', volume: 0, pan: 0, role: undefined, off: false, solo: false },
+          from: start,
+          to: stop,
+          srcFrom: (start - at) / fps,
+          speed: 1,
+          reverse: false,
+          envelope: [[0, cueGain(e.cue)]],
+          pan: 0,
+          effects: [],
+          duck: null,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/** Sounds inside titles (data URLs) that an export must write to files first, with the file name for each. */
+export function cueSoundFiles(parts: Part[]): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const x of parts) {
+    if (!x.path.startsWith('data:') || out.has(x.path)) continue;
+    const ext = /^data:audio\/(mpeg|mp3)/.test(x.path) ? 'mp3' : /^data:audio\/(ogg|opus)/.test(x.path) ? 'ogg' : /^data:audio\/(mp4|aac|x-m4a)/.test(x.path) ? 'm4a' : 'wav';
+    out.set(x.path, `cue-${out.size + 1}.${ext}`);
+  }
+  return out;
+}
+
+/** The bytes of a data URL. */
+export function dataUrlBytes(url: string): Uint8Array {
+  const comma = url.indexOf(',');
+  const body = url.slice(comma + 1);
+  if (/;base64$/i.test(url.slice(0, comma))) {
+    const bin = atob(body);
+    const b = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+    return b;
+  }
+  return new TextEncoder().encode(decodeURIComponent(body));
 }
