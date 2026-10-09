@@ -82,7 +82,14 @@ export async function listVersions(titleId: string, store = versionStore()): Pro
 /** Keep a version of the title as it is now. */
 export async function saveVersion(p: TitleProject, name: string, store = versionStore(), now = Date.now()): Promise<Version> {
   const project = JSON.stringify(p);
-  const v: Kept = { id: `${p.id}-${now}-${Math.random().toString(36).slice(2, 7)}`, title: p.id, name: name.trim() || 'Version', at: now, size: project.length, project };
+  const v: Kept = {
+    id: `${p.id}-${now}-${Math.random().toString(36).slice(2, 7)}`,
+    title: p.id,
+    name: name.trim() || 'Version',
+    at: now,
+    size: project.length,
+    project,
+  };
   await store.put(v);
   const mine = (await store.all()).filter((x) => x.title === p.id).sort((a, b) => b.at - a.at);
   for (const old of mine.slice(MAX_VERSIONS)) await store.remove(old.id);

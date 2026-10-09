@@ -43,9 +43,8 @@ export function updateTextStyle(p: TitleProject, styleId: string, style: TextSty
   const def = p.textStyles?.find((d) => d.id === styleId);
   if (!def) return p;
   const before = def.style;
-  return everyLayer(
-    { ...p, textStyles: p.textStyles!.map((d) => (d.id === styleId ? { ...d, style: structuredClone(style) } : d)) },
-    (l) => (l.type === 'text' && l.styleRef === styleId && same(l.style, before) ? { ...l, style: structuredClone(style) } : l),
+  return everyLayer({ ...p, textStyles: p.textStyles!.map((d) => (d.id === styleId ? { ...d, style: structuredClone(style) } : d)) }, (l) =>
+    l.type === 'text' && l.styleRef === styleId && same(l.style, before) ? { ...l, style: structuredClone(style) } : l,
   );
 }
 

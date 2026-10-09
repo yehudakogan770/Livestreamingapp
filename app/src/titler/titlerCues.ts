@@ -58,13 +58,7 @@ export function cueBusLevel(show: Show, mix: Mix, now: number): number {
   const live = show.screens.live;
   const down = 1 - Math.max(fadeAmount(live.blank, live.blankChangedAt, now, live.blankFadeMs), fadeAmount(show.panic, show.panicChangedAt, now));
   const level =
-    mix === 'master'
-      ? show.audio.masterMuted
-        ? 0
-        : faderToGain(show.masterVolume)
-      : show.audio[mix].muted
-        ? 0
-        : faderToGain(show.audio[mix].volume);
+    mix === 'master' ? (show.audio.masterMuted ? 0 : faderToGain(show.masterVolume)) : show.audio[mix].muted ? 0 : faderToGain(show.audio[mix].volume);
   return Math.max(0, level * down);
 }
 

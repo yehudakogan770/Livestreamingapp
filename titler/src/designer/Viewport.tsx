@@ -371,7 +371,9 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     }
     if (s.show.notes && tool === 'select') {
       // A click on a note's tag opens it.
-      const hit = (s.project.notes ?? []).find((n) => n.comp === c.id && dist([n.x + 11 / view.current.scale, n.y - 11 / view.current.scale], p) * view.current.scale < 11);
+      const hit = (s.project.notes ?? []).find(
+        (n) => n.comp === c.id && dist([n.x + 11 / view.current.scale, n.y - 11 / view.current.scale], p) * view.current.scale < 11,
+      );
       if (hit) {
         store.set({ editingNote: hit.id });
         return;

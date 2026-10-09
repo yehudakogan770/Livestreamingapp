@@ -10,7 +10,23 @@ import { pickFormat } from './formats';
 import { layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
 import { ellipsePath, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
-import type { Asset, BrandTokens, Composition, Effect, Layer, Paint, PathData, Prop, ShapeLayer, TextAnimator, TextLayer, TitleProject, Value, Values, Vec2 } from './types';
+import type {
+  Asset,
+  BrandTokens,
+  Composition,
+  Effect,
+  Layer,
+  Paint,
+  PathData,
+  Prop,
+  ShapeLayer,
+  TextAnimator,
+  TextLayer,
+  TitleProject,
+  Value,
+  Values,
+  Vec2,
+} from './types';
 
 /** A 2D canvas context (browser, OffscreenCanvas or a test canvas). */
 export type Ctx = CanvasRenderingContext2D;
@@ -402,10 +418,11 @@ function strokeCanvas(c: Ctx, e: Extract<Effect, { type: 'stroke' }>, s: Scene) 
   tintCanvas(tc, resolveColor(e.color, s.f.tokens, s.f.values, '#000000'));
   // The shape moved round a circle of the outline's width, in steps fine enough for a smooth edge.
   const steps = Math.min(48, Math.max(12, Math.ceil(w * 3)));
-  for (let r = w; r > 0; r -= Math.max(1, w / 2)) for (let i = 0; i < steps; i++) {
-    const a = (i / steps) * Math.PI * 2;
-    rc.drawImage(tint as CanvasImageSource, Math.cos(a) * r, Math.sin(a) * r);
-  }
+  for (let r = w; r > 0; r -= Math.max(1, w / 2))
+    for (let i = 0; i < steps; i++) {
+      const a = (i / steps) * Math.PI * 2;
+      rc.drawImage(tint as CanvasImageSource, Math.cos(a) * r, Math.sin(a) * r);
+    }
   c.save();
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.globalCompositeOperation = 'destination-over';

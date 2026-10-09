@@ -57,7 +57,7 @@ describe('formats', () => {
     const px = pixels(c);
     let top = 0;
     let bottom = 0;
-    for (let y = 0; y < 192; y++) for (let x = 0; x < 108; x++) if (px[(y * 108 + x) * 4 + 3]! > 8) (y < 96 ? top++ : bottom++);
+    for (let y = 0; y < 192; y++) for (let x = 0; x < 108; x++) if (px[(y * 108 + x) * 4 + 3]! > 8) y < 96 ? top++ : bottom++;
     expect(bottom).toBeGreaterThan(20);
     expect(top).toBe(0);
     const again = readProject(JSON.parse(JSON.stringify(project))).project!;

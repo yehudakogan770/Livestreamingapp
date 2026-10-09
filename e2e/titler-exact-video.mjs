@@ -26,11 +26,31 @@ const dir = mkdtempSync(join(tmpdir(), 'titler-exact-'));
 try {
   const film = join(dir, 'count.webm');
   const made = spawnSync('ffmpeg', [
-    '-y', '-loglevel', 'error',
-    '-f', 'lavfi', '-i', 'color=c=black:size=64x64:rate=24',
-    '-vf', "geq=lum='min(255,N*8)':cb=128:cr=128",
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'color=c=black:size=64x64:rate=24',
+    '-vf',
+    "geq=lum='min(255,N*8)':cb=128:cr=128",
     // VP9 (Chromium without proprietary codecs decodes it), with alt-ref frames reordering decoding.
-    '-t', '2', '-c:v', 'libvpx-vp9', '-lossless', '1', '-g', '12', '-auto-alt-ref', '1', '-lag-in-frames', '8', '-pix_fmt', 'yuv420p', film,
+    '-t',
+    '2',
+    '-c:v',
+    'libvpx-vp9',
+    '-lossless',
+    '1',
+    '-g',
+    '12',
+    '-auto-alt-ref',
+    '1',
+    '-lag-in-frames',
+    '8',
+    '-pix_fmt',
+    'yuv420p',
+    film,
   ]);
   if (made.status !== 0) throw new Error(`FFmpeg: ${made.stderr}`);
 

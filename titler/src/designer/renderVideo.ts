@@ -150,7 +150,8 @@ async function renderFrames(job: RenderJob, target: VideoTarget, host: Host, pro
   // The audio cues' sound (Opus in WebM, AAC in MP4), when the browser can make it.
   const sound = await mixCueSound(job, host.urlFor).catch(() => null);
   const audioCodec = webm ? 'opus' : 'aac';
-  const audio = sound && (await mb.canEncodeAudio(audioCodec).catch(() => false)) ? new mb.AudioBufferSource({ codec: audioCodec, bitrate: mb.QUALITY_HIGH }) : null;
+  const audio =
+    sound && (await mb.canEncodeAudio(audioCodec).catch(() => false)) ? new mb.AudioBufferSource({ codec: audioCodec, bitrate: mb.QUALITY_HIGH }) : null;
   if (audio) output.addAudioTrack(audio);
   await output.start();
   if (audio && sound) await audio.add(sound);

@@ -26,7 +26,10 @@ export function useMacroKeys(show: Show, act: Act): void {
         return;
       }
       if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('.modal')) return;
-      if ((e.key === '}' || e.key === '{' || (e.shiftKey && (e.key === ']' || e.key === '['))) && show.sources.some((s) => s.kind.type === 'titler' && s.kind.data.some((t) => t.rows.length))) {
+      if (
+        (e.key === '}' || e.key === '{' || (e.shiftKey && (e.key === ']' || e.key === '['))) &&
+        show.sources.some((s) => s.kind.type === 'titler' && s.kind.data.some((t) => t.rows.length))
+      ) {
         e.preventDefault();
         act({ type: 'titlerDataStep', delta: e.key === '}' || e.key === ']' ? 1 : -1 });
         return;

@@ -46,7 +46,13 @@ describe('audio cue timing', () => {
   });
 
   it('a cue inside the loop plays every time round, frame-exact', () => {
-    const { p, c } = titled([{ t: 2.5, sound: 'whoosh' }, { t: 1.5, sound: 'whoosh' }], { start: 2, end: 4 });
+    const { p, c } = titled(
+      [
+        { t: 2.5, sound: 'whoosh' },
+        { t: 1.5, sound: 'whoosh' },
+      ],
+      { start: 2, end: 4 },
+    );
     const es = at(cueEvents(p, c, 0, 9, 0, 100));
     // 1.5 before the loop: once; 2.5 in the loop: 2.5, 4.5, 6.5, 8.5 (until taken off at 9).
     expect(es).toEqual([1.5, 2.5, 4.5, 6.5, 8.5]);

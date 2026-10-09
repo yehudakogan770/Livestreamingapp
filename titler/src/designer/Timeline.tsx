@@ -90,20 +90,23 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
   /** Drag something in time: `fn` gets the time moved (seconds, snapped to frames). */
   const latest = useRef({ tAt, frame });
   latest.current = { tAt, frame };
-  const dragTime = useCallback((e: React.PointerEvent, label: string, fn: (dt: number, ev: PointerEvent) => void) => {
-    e.stopPropagation();
-    const { tAt, frame } = latest.current;
-    const t0 = tAt(e.clientX);
-    store.begin(label);
-    const move = (ev: PointerEvent) => fn(frame(tAt(ev.clientX)) - frame(t0), ev);
-    const up = () => {
-      store.end();
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  }, [store]);
+  const dragTime = useCallback(
+    (e: React.PointerEvent, label: string, fn: (dt: number, ev: PointerEvent) => void) => {
+      e.stopPropagation();
+      const { tAt, frame } = latest.current;
+      const t0 = tAt(e.clientX);
+      store.begin(label);
+      const move = (ev: PointerEvent) => fn(frame(tAt(ev.clientX)) - frame(t0), ev);
+      const up = () => {
+        store.end();
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    },
+    [store],
+  );
 
   const setMarkers = (fn: (m: Composition['markers']) => Composition['markers']) =>
     store.edit('Move marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, markers: cleanMarkers(fn(cc.markers), cc.duration) })));

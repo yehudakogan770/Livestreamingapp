@@ -50,7 +50,10 @@ export function hsvToRgb({ h, s, v }: Pick<Hsv, 'h' | 's' | 'v'>): [number, numb
   return [Math.round(f(5) * 255), Math.round(f(3) * 255), Math.round(f(1) * 255)];
 }
 
-const two = (n: number) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, '0');
+const two = (n: number) =>
+  Math.max(0, Math.min(255, Math.round(n)))
+    .toString(16)
+    .padStart(2, '0');
 
 export function hsvToHex(c: Hsv): string {
   const [r, g, b] = hsvToRgb(c);
@@ -62,7 +65,17 @@ const rgbToHex = (r: number, g: number, b: number, a = 1) => `#${two(r)}${two(g)
 type EyeDropperCtor = new () => { open(): Promise<{ sRGBHex: string }> };
 
 /** A picker over a color; `onChange` gets "#rrggbb" or "#rrggbbaa". */
-export function ColorPicker({ value, onChange, onPick, label }: { value: string; onChange: (hex: string) => void; onPick?: (ref: string) => void; label: string }) {
+export function ColorPicker({
+  value,
+  onChange,
+  onPick,
+  label,
+}: {
+  value: string;
+  onChange: (hex: string) => void;
+  onPick?: (ref: string) => void;
+  label: string;
+}) {
   const [c, setC] = useState<Hsv>(() => hexToHsv(value));
   const last = useRef(value);
   useEffect(() => {
@@ -185,7 +198,12 @@ export function ColorPicker({ value, onChange, onPick, label }: { value: string;
               }}
             />
           ))}
-          <button className="tt-ico" aria-label="Add this color to the swatches" title="Add this color to the title's swatches" onClick={() => sw.add(hsvToHex(c))}>
+          <button
+            className="tt-ico"
+            aria-label="Add this color to the swatches"
+            title="Add this color to the title's swatches"
+            onClick={() => sw.add(hsvToHex(c))}
+          >
             <Plus size={12} />
           </button>
         </div>

@@ -33,10 +33,20 @@ export function NotesPopover({ store }: { store: Store }) {
       <header>
         <span>Note {number}</span>
         <span className="tt-grow" />
-        <button className="tt-ico" title={note.done ? 'Open it again' : 'Mark as done'} aria-label="Done" onClick={() => store.edit('Note done', (p) => updNote(p, note.id, { done: !note.done }))}>
+        <button
+          className="tt-ico"
+          title={note.done ? 'Open it again' : 'Mark as done'}
+          aria-label="Done"
+          onClick={() => store.edit('Note done', (p) => updNote(p, note.id, { done: !note.done }))}
+        >
           <Check size={13} />
         </button>
-        <button className="tt-ico" title="Remove the note" aria-label="Remove note" onClick={() => store.edit('Remove note', (p) => dropNote(p, note.id), { editingNote: null })}>
+        <button
+          className="tt-ico"
+          title="Remove the note"
+          aria-label="Remove note"
+          onClick={() => store.edit('Remove note', (p) => dropNote(p, note.id), { editingNote: null })}
+        >
           <Trash2 size={13} />
         </button>
         <button className="tt-ico" title="Close" aria-label="Close note" onClick={close}>

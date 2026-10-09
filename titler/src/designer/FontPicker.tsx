@@ -68,7 +68,14 @@ export function FontPicker({
   const any = q.trim() && !groups.some(([, l]) => l.some((f) => f.toLowerCase() === q.trim().toLowerCase()));
   return (
     <div className="tt-font" ref={wrap}>
-      <button type="button" className="tt-font-btn" aria-label={label} aria-expanded={open} onClick={() => setOpen(!open)} style={{ fontFamily: `"${shown(value)}", "Inter Variable", system-ui, sans-serif` }}>
+      <button
+        type="button"
+        className="tt-font-btn"
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        style={{ fontFamily: `"${shown(value)}", "Inter Variable", system-ui, sans-serif` }}
+      >
         <span>{name(value)}</span>
         <ChevronDown size={12} />
       </button>

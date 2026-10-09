@@ -145,7 +145,16 @@ export class RamPreview {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, w, h);
       try {
-        renderFrame(ctx, s.project, { comp: c.id, time: f / c.fps, clock: f / c.fps, values: s.values, brand: s.brand ?? undefined, env: this.env, width: w, height: h });
+        renderFrame(ctx, s.project, {
+          comp: c.id,
+          time: f / c.fps,
+          clock: f / c.fps,
+          values: s.values,
+          brand: s.brand ?? undefined,
+          env: this.env,
+          width: w,
+          height: h,
+        });
       } catch {
         continue;
       }

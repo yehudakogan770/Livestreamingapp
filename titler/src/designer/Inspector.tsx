@@ -1356,9 +1356,7 @@ function MotionPresets({ store, l, compId }: Common & { l: Layer }) {
           <Toggle value={bars} onChange={setBars} label="Bars too" />
           <button
             className="tt-btn"
-            onClick={() =>
-              store.edit(`Stagger ${selection.length} layers`, (p) => stagger(p, compId, inStackOrder(p, compId, selection), step / c.fps, bars))
-            }
+            onClick={() => store.edit(`Stagger ${selection.length} layers`, (p) => stagger(p, compId, inStackOrder(p, compId, selection), step / c.fps, bars))}
           >
             Stagger
           </button>
@@ -1369,9 +1367,7 @@ function MotionPresets({ store, l, compId }: Common & { l: Layer }) {
         {saved.map((a) => (
           <span key={a.id} className="tt-chip tt-chip-split">
             <button
-              onClick={() =>
-                store.edit(`Apply “${a.name}”`, (p) => pasteKeys(p, compId, selection.length ? selection : [l.id], a.clip, store.get().time))
-              }
+              onClick={() => store.edit(`Apply “${a.name}”`, (p) => pasteKeys(p, compId, selection.length ? selection : [l.id], a.clip, store.get().time))}
               title="Put this animation on the selected layers, from the playhead"
             >
               {a.name}

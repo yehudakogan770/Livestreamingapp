@@ -74,9 +74,7 @@ export function openStudioTitler(clipId?: string | null): void {
   const overlay = () => void window.dispatchEvent(new CustomEvent(OPEN, { detail: clipId ?? null }));
   const query = clipId ?? 'new';
   if (inApp()) {
-    void import('@tauri-apps/api/core')
-      .then(({ invoke }) => invoke('titler_open_window', { query }))
-      .catch(overlay);
+    void import('@tauri-apps/api/core').then(({ invoke }) => invoke('titler_open_window', { query })).catch(overlay);
     return;
   }
   if (import.meta.env.MODE === 'test') return overlay();
@@ -191,8 +189,7 @@ export function StudioTitlerWindow({ channel }: { channel?: Channel }) {
     };
   }, [channel]);
   if (!state) return <div className="studio-titler__loading">Opening Lumora Titler…</div>;
-  const close = () =>
-    inApp() ? void import('@tauri-apps/api/window').then(({ getCurrentWindow }) => getCurrentWindow().close()) : window.close();
+  const close = () => (inApp() ? void import('@tauri-apps/api/window').then(({ getCurrentWindow }) => getCurrentWindow().close()) : window.close());
   return (
     <div className="studio-titler studio-titler--window">
       <Suspense fallback={<div className="studio-titler__loading">Opening Lumora Titler…</div>}>

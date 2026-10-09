@@ -73,8 +73,9 @@ function parse(src: string): Node {
     }
     if (x === '[') {
       const items: Node[] = [];
-      if (peek() !== ']') do items.push(expr());
-      while (peek() === ',' && take());
+      if (peek() !== ']')
+        do items.push(expr());
+        while (peek() === ',' && take());
       take(']');
       return { k: 'arr', items };
     }
@@ -82,8 +83,9 @@ function parse(src: string): Node {
       if (peek() === '(') {
         take('(');
         const args: Node[] = [];
-        if (peek() !== ')') do args.push(expr());
-        while (peek() === ',' && take());
+        if (peek() !== ')')
+          do args.push(expr());
+          while (peek() === ',' && take());
         take(')');
         return { k: 'call', name: x, args };
       }

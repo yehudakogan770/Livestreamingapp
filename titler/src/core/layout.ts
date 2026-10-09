@@ -332,7 +332,8 @@ function layoutAt(runs: Run[], style: TextStyle, family: string, size: number, b
   // Ascent: about 0.8 of the size above the baseline for most fonts, centered in the line.
   const top = box.h > 0 ? (style.vAlign === 'middle' ? (box.h - height) / 2 : style.vAlign === 'bottom' ? box.h - height : 0) : 0;
   out.forEach((l, i) => {
-    l.x = style.align === 'center' ? (boxW - l.width) / 2 : style.align === 'right' ? boxW - l.width : style.align === 'justify' && style.rtl ? boxW - l.width : 0;
+    l.x =
+      style.align === 'center' ? (boxW - l.width) / 2 : style.align === 'right' ? boxW - l.width : style.align === 'justify' && style.rtl ? boxW - l.width : 0;
     l.y = top + i * lh + lh / 2 + size * 0.35;
   });
   if (box.w > 0 && maxW > box.w + 0.5) overflow = true;

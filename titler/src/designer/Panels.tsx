@@ -88,7 +88,9 @@ function FormatsSection({ store }: { store: Store }) {
         </select>
       </Row>
       {current && current.id !== main.id && (
-        <div className="tt-dim tt-small">This format was made from the main composition; change it here as you like. Its layers keep their names, fields and timing.</div>
+        <div className="tt-dim tt-small">
+          This format was made from the main composition; change it here as you like. Its layers keep their names, fields and timing.
+        </div>
       )}
     </Section>
   );
@@ -303,8 +305,8 @@ export function CompositionPanel({ store }: { store: Store }) {
           </Row>
         ))}
         <div className="tt-dim tt-small">
-          Add cues from the timeline. A cue with a sound plays it when the graphic reaches it: on air in Lumora (on the mixes ticked), in Studio
-          exports, and in this preview and its films.
+          Add cues from the timeline. A cue with a sound plays it when the graphic reaches it: on air in Lumora (on the mixes ticked), in Studio exports, and in
+          this preview and its films.
         </div>
       </Section>
       <FormatsSection store={store} />

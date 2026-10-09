@@ -199,7 +199,13 @@ export function cueSoundFiles(parts: Part[]): Map<string, string> {
   const out = new Map<string, string>();
   for (const x of parts) {
     if (!x.path.startsWith('data:') || out.has(x.path)) continue;
-    const ext = /^data:audio\/(mpeg|mp3)/.test(x.path) ? 'mp3' : /^data:audio\/(ogg|opus)/.test(x.path) ? 'ogg' : /^data:audio\/(mp4|aac|x-m4a)/.test(x.path) ? 'm4a' : 'wav';
+    const ext = /^data:audio\/(mpeg|mp3)/.test(x.path)
+      ? 'mp3'
+      : /^data:audio\/(ogg|opus)/.test(x.path)
+        ? 'ogg'
+        : /^data:audio\/(mp4|aac|x-m4a)/.test(x.path)
+          ? 'm4a'
+          : 'wav';
     out.set(x.path, `cue-${out.size + 1}.${ext}`);
   }
   return out;

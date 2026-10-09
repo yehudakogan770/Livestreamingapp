@@ -52,7 +52,12 @@ const mapVec = (p: Prop<Vec2>, f: (v: Vec2) => Vec2, tangent?: (v: Vec2) => Vec2
   if (p.k)
     return {
       ...p,
-      k: p.k.map((k: Keyframe<Vec2>) => ({ ...k, v: f(k.v), ...(tangent && k.so ? { so: tangent(k.so) } : {}), ...(tangent && k.si ? { si: tangent(k.si) } : {}) })),
+      k: p.k.map((k: Keyframe<Vec2>) => ({
+        ...k,
+        v: f(k.v),
+        ...(tangent && k.so ? { so: tangent(k.so) } : {}),
+        ...(tangent && k.si ? { si: tangent(k.si) } : {}),
+      })),
     };
   return { ...p, v: f(p.v as Vec2) };
 };
@@ -90,7 +95,11 @@ export function adaptLayer(l: Layer, fromW: number, fromH: number, toW: number, 
     ...l,
     transform: {
       ...l.transform,
-      position: mapVec(l.transform.position, (v) => [moveX(v[0] * k), moveY(v[1] * k)], (t) => [t[0] * k, t[1] * k]),
+      position: mapVec(
+        l.transform.position,
+        (v) => [moveX(v[0] * k), moveY(v[1] * k)],
+        (t) => [t[0] * k, t[1] * k],
+      ),
       scale: k === 1 ? l.transform.scale : mapVec(l.transform.scale, (v) => [v[0] * k, v[1] * k]),
     },
   };
@@ -98,7 +107,8 @@ export function adaptLayer(l: Layer, fromW: number, fromH: number, toW: number, 
   const grow: Vec2 = [c.h === 'stretch' ? dw / k : 0, c.v === 'stretch' ? dh / k : 0];
   if (grow[0] || grow[1]) {
     if (out.type === 'shape') out = { ...out, size: mapVec(out.size, (v) => [Math.max(0, v[0] + grow[0]), Math.max(0, v[1] + grow[1])]) };
-    else if (out.type === 'text') out = { ...out, box: [out.box[0] ? Math.max(0, out.box[0] + grow[0]) : 0, out.box[1] ? Math.max(0, out.box[1] + grow[1]) : 0] };
+    else if (out.type === 'text')
+      out = { ...out, box: [out.box[0] ? Math.max(0, out.box[0] + grow[0]) : 0, out.box[1] ? Math.max(0, out.box[1] + grow[1]) : 0] };
     else if (out.type === 'image' || out.type === 'video') out = { ...out, size: [Math.max(0, out.size[0] + grow[0]), Math.max(0, out.size[1] + grow[1])] };
   }
   return out;

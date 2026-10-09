@@ -521,9 +521,9 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           </div>
           <span className="tt-grow" />
           <button className="tt-plain tt-keys-btn" onClick={() => setKeysOpen(true)} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
-          <Keyboard size={15} />
-        </button>
-        <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
+            <Keyboard size={15} />
+          </button>
+          <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
             <span className="tt-dim">Workspace</span>
             <select
               className="tt-select"
@@ -606,11 +606,11 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             )}
             {side === 'project' && <ProjectPanel store={store} host={host} />}
             {side === 'history' && (
-            <>
-              <NotesPanel store={store} />
-              <HistoryPanel store={store} />
-            </>
-          )}
+              <>
+                <NotesPanel store={store} />
+                <HistoryPanel store={store} />
+              </>
+            )}
             <Splitter
               axis="x"
               edge="right"
@@ -620,7 +620,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             />
           </aside>
           <section className="tt-center">
-          <NotesPopover store={store} />
+            <NotesPopover store={store} />
             <div className="tt-viewbar">
               <input
                 className="tt-projname"
@@ -748,7 +748,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           {status || 'Ready.'}
         </footer>
         {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
-      {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}
+        {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}
       </div>
     </SwatchContext.Provider>
   );

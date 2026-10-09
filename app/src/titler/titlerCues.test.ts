@@ -35,9 +35,12 @@ class FakeAudio implements CueAudio {
   started: { when: number; offset: number; stopped: boolean; to: string[]; gain: number }[] = [];
   createGain(): GainNode {
     const g = {
-      gain: { value: 1, setTargetAtTime(v: number) {
-        g.gain.value = v;
-      } },
+      gain: {
+        value: 1,
+        setTargetAtTime(v: number) {
+          g.gain.value = v;
+        },
+      },
       name: '',
       connect: (n: { name?: string }) => (g.to.push(n.name ?? ''), n),
       disconnect: () => {},

@@ -17,9 +17,14 @@ function scene(): { p: TitleProject; a: string; b: string; box: string } {
   return { p, a: a.id, b: b.id, box: box.id };
 }
 
-const frame = (w = 10, h = 10) => ({ width: w, height: h, closed: false, close() {
-  this.closed = true;
-} });
+const frame = (w = 10, h = 10) => ({
+  width: w,
+  height: h,
+  closed: false,
+  close() {
+    this.closed = true;
+  },
+});
 
 describe('RAM preview cache', () => {
   it('an edit to one layer changes only its time span', () => {
@@ -35,9 +40,27 @@ describe('RAM preview cache', () => {
   it('markers, cues and guides change no frames; size, colors and layer order change all', () => {
     const { p } = scene();
     const id = p.main;
-    expect(affectedSpans(p, updateComp(p, id, (c) => ({ ...c, cues: [{ id: 'q', t: 1, name: 'Cue' }] })), id)).toBeNull();
-    expect(affectedSpans(p, updateComp(p, id, (c) => ({ ...c, markers: { ...c.markers, inEnd: 0.5 } })), id)).toBeNull();
-    expect(affectedSpans(p, updateComp(p, id, (c) => ({ ...c, width: 1280 })), id)).toBe('all');
+    expect(
+      affectedSpans(
+        p,
+        updateComp(p, id, (c) => ({ ...c, cues: [{ id: 'q', t: 1, name: 'Cue' }] })),
+        id,
+      ),
+    ).toBeNull();
+    expect(
+      affectedSpans(
+        p,
+        updateComp(p, id, (c) => ({ ...c, markers: { ...c.markers, inEnd: 0.5 } })),
+        id,
+      ),
+    ).toBeNull();
+    expect(
+      affectedSpans(
+        p,
+        updateComp(p, id, (c) => ({ ...c, width: 1280 })),
+        id,
+      ),
+    ).toBe('all');
     expect(affectedSpans(p, { ...p, tokens: { ...p.tokens, accent: '#00ff00' } }, id)).toBe('all');
     const c = p.compositions[0]!;
     expect(affectedSpans(p, restack(p, id, [c.layers[2]!.id], 'front'), id)).toBe('all');
