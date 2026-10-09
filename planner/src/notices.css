@@ -1,0 +1,141 @@
+/* Notifications: the bell and its list. */
+.notices__btn {
+  position: relative;
+}
+.notices__n {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--live);
+  color: #fff;
+  font: 600 10px/16px var(--font);
+  text-align: center;
+}
+.notices__menu {
+  left: 0;
+  right: auto;
+  top: auto;
+  bottom: calc(100% + 6px);
+  width: 340px;
+  max-height: 60vh;
+  overflow: auto;
+}
+.notices__head {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.notices__none {
+  margin: 0;
+  padding: 12px 10px;
+}
+.notices__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: var(--r);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.notices__item svg {
+  margin-top: 2px;
+  color: var(--dim);
+}
+.notices__item .grow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.notices__item:hover {
+  background: var(--hover);
+}
+.notices__item.is-new {
+  background: var(--sel);
+}
+.notices__body {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+:root[data-device='phone'] .notices__menu {
+  position: fixed;
+  left: 8px;
+  right: 8px;
+  top: 56px;
+  bottom: auto;
+  width: auto;
+}
+.side__bell .notices__btn {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+  color: var(--dim);
+  font-weight: 400;
+}
+.side__bell .notices__n {
+  position: static;
+  margin-left: auto;
+}
+[class*='side--rail'] .side__bell .notices__btn {
+  justify-content: center;
+  padding: 0;
+}
+[class*='side--rail'] .side__bell .notices__n {
+  position: absolute;
+}
+.notices__page {
+  padding: 4px;
+}
+
+/* Your templates, under the plans. */
+.templist {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--surface);
+}
+.templist li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.templist li + li {
+  border-top: 1px solid var(--line);
+}
+.templist a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  color: var(--text);
+  text-decoration: none;
+}
+.templist a:hover b {
+  text-decoration: underline;
+}
+
+/* The calendar feed (under the calendar). */
+.feed {
+  margin-top: 20px;
+  max-width: 720px;
+}
+.feed p {
+  margin: 6px 0 0;
+}

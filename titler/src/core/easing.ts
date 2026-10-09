@@ -218,3 +218,68 @@ export function setEase<T extends Value>(p: Prop<T>, t: number, easeId: string):
 }
 
 export const keyTimes = (p: Prop<Value> | undefined): number[] => (isAnimated(p) ? p.k.map((x) => x.t) : []);
+
+/** How far a segment goes (a number's change, or a point's distance). */
+export function segmentChange(a: Keyframe<Value>, b: Keyframe<Value>): number {
+  if (typeof a.v === 'number') return (b.v as number) - a.v;
+  const bv = b.v as Vec2;
+  return Math.hypot(bv[0] - a.v[0], bv[1] - a.v[1]);
+}
+
+/**
+ * A segment's easing as speeds and influences (After Effects' Keyframe
+ * Velocity): leaving and arriving speed in units per second, influence in
+ * percent of the segment's time.
+ */
+export function toVelocity(a: Keyframe<Value>, b: Keyframe<Value>): { outSpeed: number; outInfluence: number; inSpeed: number; inInfluence: number } {
+  const dt = Math.max(1e-6, b.t - a.t);
+  const rate = segmentChange(a, b) / dt;
+  const o = a.o ?? LINEAR_OUT;
+  const i = b.i ?? LINEAR_IN;
+  const ox = Math.max(1e-6, o[0]);
+  const ix = Math.max(1e-6, 1 - i[0]);
+  const lin = o[0] === 0 && o[1] === 0;
+  const linIn = i[0] === 1 && i[1] === 1;
+  return {
+    outSpeed: lin ? rate : (o[1] / ox) * rate,
+    outInfluence: lin ? 0 : o[0] * 100,
+    inSpeed: linIn ? rate : ((1 - i[1]) / ix) * rate,
+    inInfluence: linIn ? 0 : (1 - i[0]) * 100,
+  };
+}
+
+/** The bezier handles for speeds and influences (see toVelocity); influences are kept in 0.1–100 %. */
+export function fromVelocity(
+  a: Keyframe<Value>,
+  b: Keyframe<Value>,
+  v: { outSpeed: number; outInfluence: number; inSpeed: number; inInfluence: number },
+): { o: Vec2; i: Vec2 } {
+  const dt = Math.max(1e-6, b.t - a.t);
+  const change = segmentChange(a, b);
+  const k = Math.abs(change) < 1e-9 ? 0 : dt / change;
+  const ox = Math.min(1, Math.max(0.001, v.outInfluence / 100));
+  const ix = Math.min(1, Math.max(0.001, v.inInfluence / 100));
+  const r = (n: number) => Math.round(n * 10000) / 10000;
+  return { o: [r(ox), r(v.outSpeed * ox * k)], i: [r(1 - ix), r(1 - v.inSpeed * ix * k)] };
+}
+
+/** Handles from CSS ("cubic-bezier(0.4, 0, 0.2, 1)", "ease-in-out", or four numbers), or null. */
+export function parseCubicBezier(text: string): { o: Vec2; i: Vec2 } | null {
+  const named: Record<string, [number, number, number, number]> = {
+    linear: [0, 0, 1, 1],
+    ease: [0.25, 0.1, 0.25, 1],
+    'ease-in': [0.42, 0, 1, 1],
+    'ease-out': [0, 0, 0.58, 1],
+    'ease-in-out': [0.42, 0, 0.58, 1],
+  };
+  const t = text.trim().toLowerCase();
+  const n =
+    named[t] ??
+    (t
+      .replace(/^cubic-bezier\(|\)$/g, '')
+      .split(/[\s,]+/)
+      .filter(Boolean)
+      .map(Number) as number[]);
+  if (n.length !== 4 || n.some((x) => !Number.isFinite(x)) || n[0]! < 0 || n[0]! > 1 || n[2]! < 0 || n[2]! > 1) return null;
+  return { o: [n[0]!, n[1]!], i: [n[2]!, n[3]!] };
+}

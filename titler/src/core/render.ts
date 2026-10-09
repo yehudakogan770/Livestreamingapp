@@ -3,18 +3,19 @@
 // the same pixels. Used by the designer, Lumora's screens and recordings (and
 // the unified engine's overlay renderer), and Lumora Studio's title clips.
 
-import { fill, resolveColor, resolveFont, tokensFor, valuesFor } from './binding';
+import { fill, resolveColor, resolveFont, setRenderClock, tokensFor, valuesFor } from './binding';
 import { isAnimated, num, valueAt, vec } from './easing';
 import { setExprScope, type ExprScope } from './expr';
 import { pickFormat } from './formats';
-import { layoutText, type Glyph, type Measure, type TextLayout } from './layout';
+import { expandCharStyles, layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
-import { ellipsePath, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
+import { ellipsePath, morphAt, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
 import type {
   Asset,
   BrandTokens,
   Composition,
   Effect,
+  GroupLayer,
   Layer,
   Paint,
   PathData,
@@ -103,10 +104,12 @@ export function renderFrame(ctx: Ctx, project: TitleProject, opts: RenderOptions
   const m0 = ctx.getTransform ? ctx.getTransform() : null;
   const outer: Mat = m0 ? [m0.a, m0.b, m0.c, m0.d, m0.e, m0.f] : IDENTITY;
   const before = setExprScope(exprScopeFor(project));
+  const clockBefore = setRenderClock(f.clock);
   try {
     drawComp(ctx, comp, opts.time, mul(outer, base), f);
   } finally {
     setExprScope(before);
+    setRenderClock(clockBefore);
     ctx.restore();
   }
 }
@@ -242,7 +245,131 @@ function effectsOn(l: Layer): Effect[] {
 }
 
 function needsOwnCanvas(l: Layer): boolean {
-  return !!(l.masks?.length || l.matte || effectsOn(l).length || (l.blend && l.blend !== 'normal' && l.type === 'group'));
+  return !!(l.masks?.length || l.matte || effectsOn(l).length || (l.blend && l.blend !== 'normal' && l.type === 'group') || is3d(l));
+}
+
+/** Does the layer turn in 3D (X or Y rotation, or depth)? */
+export function is3d(l: Layer): boolean {
+  const tr = l.transform;
+  const on = (p: Prop | undefined) => !!p && (isAnimated(p) || !!p.x || (p.v ?? 0) !== 0);
+  return on(tr.rotationX) || on(tr.rotationY) || on(tr.z);
+}
+
+/** The 3D turn of a layer at t: a point of the picture (px) to where the camera sees it, or null behind the camera. */
+export function projector(l: Layer, t: number, pivot: Vec2, distance: number, px = 1): (x: number, y: number) => Vec2 | null {
+  const rx = (num(l.transform.rotationX, t, 0) * Math.PI) / 180;
+  const ry = (num(l.transform.rotationY, t, 0) * Math.PI) / 180;
+  const z0 = num(l.transform.z, t, 0) * px;
+  const cx = Math.cos(rx);
+  const sx = Math.sin(rx);
+  const cy = Math.cos(ry);
+  const sy = Math.sin(ry);
+  return (x, y) => {
+    const px = x - pivot[0];
+    const py = y - pivot[1];
+    // Turn about Y (across), then X (up and down).
+    const x1 = px * cy;
+    const z1 = -px * sy;
+    const y2 = py * cx - z1 * sx;
+    const z2 = py * sx + z1 * cx + z0;
+    const k = distance + z2;
+    if (k <= distance * 0.05) return null;
+    const s = distance / k;
+    return [pivot[0] + x1 * s, pivot[1] + y2 * s];
+  };
+}
+
+/** Draw `src` (a canvas the size of the picture) as seen through `project`, in triangles fine enough to look smooth. */
+function drawProjected(
+  ctx: Ctx,
+  src: CanvasImageSource,
+  area: { x: number; y: number; w: number; h: number },
+  project: (x: number, y: number) => Vec2 | null,
+  steps: number,
+) {
+  if (area.w <= 0 || area.h <= 0) return;
+  const n = Math.max(1, Math.min(24, steps));
+  const pts: (Vec2 | null)[][] = [];
+  for (let j = 0; j <= n; j++) {
+    const row: (Vec2 | null)[] = [];
+    for (let i = 0; i <= n; i++) row.push(project(area.x + (area.w * i) / n, area.y + (area.h * j) / n));
+    pts.push(row);
+  }
+  const at = (i: number, j: number): Vec2 => [area.x + (area.w * i) / n, area.y + (area.h * j) / n];
+  for (let j = 0; j < n; j++)
+    for (let i = 0; i < n; i++) {
+      const d00 = pts[j]![i]!;
+      const d10 = pts[j]![i + 1]!;
+      const d01 = pts[j + 1]![i]!;
+      const d11 = pts[j + 1]![i + 1]!;
+      if (!d00 || !d10 || !d01 || !d11) continue;
+      const cell = { x: at(i, j)[0], y: at(i, j)[1], w: area.w / n, h: area.h / n };
+      triangle(ctx, src, cell, [at(i, j), at(i + 1, j), at(i + 1, j + 1)], [d00, d10, d11]);
+      triangle(ctx, src, cell, [at(i, j), at(i + 1, j + 1), at(i, j + 1)], [d00, d11, d01]);
+    }
+}
+
+/** A triangle with each edge moved out by `by` px (neighbors overlap, so their soft edges hide inside each other). */
+function outset(t: [Vec2, Vec2, Vec2], by = 1): [Vec2, Vec2, Vec2] {
+  const area = (t[1][0] - t[0][0]) * (t[2][1] - t[0][1]) - (t[2][0] - t[0][0]) * (t[1][1] - t[0][1]);
+  const sign = area > 0 ? 1 : -1;
+  // Each edge as a line moved outward: point and direction.
+  const lines = [0, 1, 2].map((k) => {
+    const a = t[k]!;
+    const b = t[(k + 1) % 3]!;
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = (dy / len) * sign * by;
+    const ny = (-dx / len) * sign * by;
+    return { p: [a[0] + nx, a[1] + ny] as Vec2, d: [dx, dy] as Vec2 };
+  });
+  return [0, 1, 2].map((k) => {
+    // Vertex k: where the edges before and after it meet (kept near the corner on thin triangles).
+    const l1 = lines[(k + 2) % 3]!;
+    const l2 = lines[k]!;
+    const den = l1.d[0] * l2.d[1] - l1.d[1] * l2.d[0];
+    const v = t[k]!;
+    if (Math.abs(den) < 1e-9) return v;
+    const s = ((l2.p[0] - l1.p[0]) * l2.d[1] - (l2.p[1] - l1.p[1]) * l2.d[0]) / den;
+    const q: Vec2 = [l1.p[0] + l1.d[0] * s, l1.p[1] + l1.d[1] * s];
+    const far = Math.hypot(q[0] - v[0], q[1] - v[1]);
+    return far > by * 4 ? ([v[0] + ((q[0] - v[0]) / far) * by * 4, v[1] + ((q[1] - v[1]) / far) * by * 4] as Vec2) : q;
+  }) as [Vec2, Vec2, Vec2];
+}
+
+/** One triangle of a picture moved to another (affine), clipped a hair larger so neighbors meet without seams. */
+function triangle(ctx: Ctx, src: CanvasImageSource, cell: { x: number; y: number; w: number; h: number }, s: [Vec2, Vec2, Vec2], d: [Vec2, Vec2, Vec2]) {
+  const [[x0, y0], [x1, y1], [x2, y2]] = s;
+  const [[u0, v0], [u1, v1], [u2, v2]] = d;
+  const det = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+  if (Math.abs(det) < 1e-9) return;
+  const a = ((u1 - u0) * (y2 - y0) - (u2 - u0) * (y1 - y0)) / det;
+  const c = ((u2 - u0) * (x1 - x0) - (u1 - u0) * (x2 - x0)) / det;
+  const b = ((v1 - v0) * (y2 - y0) - (v2 - v0) * (y1 - y0)) / det;
+  const dd = ((v2 - v0) * (x1 - x0) - (v1 - v0) * (x2 - x0)) / det;
+  const e = u0 - a * x0 - c * y0;
+  const f = v0 - b * x0 - dd * y0;
+  const [p0, p1, p2] = outset([
+    [u0, v0],
+    [u1, v1],
+    [u2, v2],
+  ]);
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.beginPath();
+  ctx.moveTo(p0[0], p0[1]);
+  ctx.lineTo(p1[0], p1[1]);
+  ctx.lineTo(p2[0], p2[1]);
+  ctx.closePath();
+  ctx.clip();
+  ctx.setTransform(a, b, c, dd, e, f);
+  const sx = Math.max(0, Math.floor(cell.x - 3));
+  const sy = Math.max(0, Math.floor(cell.y - 3));
+  const sw = Math.ceil(cell.w + 6);
+  const sh = Math.ceil(cell.h + 6);
+  ctx.drawImage(src, sx, sy, sw, sh, sx, sy, sw, sh);
+  ctx.restore();
 }
 
 const BLEND: Record<string, GlobalCompositeOperation> = {
@@ -319,7 +446,18 @@ function drawLayer(ctx: Ctx, l: Layer, alpha: number, s: Scene) {
     ctx.drawImage(tint as CanvasImageSource, Math.cos(ang) * dist, Math.sin(ang) * dist);
     ctx.restore();
   }
-  ctx.drawImage(surf as CanvasImageSource, 0, 0);
+  if (is3d(l)) {
+    // 3D: the layer's picture turned about its anchor point and seen through the camera.
+    const a = vec(l.transform.anchor, t, [0, 0]);
+    const pivot: Vec2 = [world[0] * a[0] + world[2] * a[1] + world[4], world[1] * a[0] + world[3] * a[1] + world[5]];
+    const project = projector(l, t, pivot, (s.comp.perspective ?? 2000) * s.f.px, s.f.px);
+    const bend = Math.max(
+      Math.abs(Math.sin((num(l.transform.rotationX, t, 0) * Math.PI) / 180)),
+      Math.abs(Math.sin((num(l.transform.rotationY, t, 0) * Math.PI) / 180)),
+    );
+    const area = l.type === 'group' || l.type === 'comp' ? { x: 0, y: 0, w: cw, h: ch } : canvasBox(own, l, world, s);
+    drawProjected(ctx, surf as CanvasImageSource, area, project, Math.ceil(2 + bend * 14));
+  } else ctx.drawImage(surf as CanvasImageSource, 0, 0);
   ctx.restore();
 }
 
@@ -479,7 +617,7 @@ function applyMasks(c: Ctx, l: Layer, world: Mat, s: Scene) {
       m.rect(-W, -H, W * 3, H * 3);
     }
     setMatrix(m, world);
-    tracePath(m, mask.path);
+    tracePath(m, mask.morph?.length ? (morphAt(mask.morph, s.t)[0] ?? mask.path) : mask.path);
     m.fill(mask.inverted ? 'evenodd' : 'nonzero');
     m.restore();
   }
@@ -527,10 +665,11 @@ export function contentSize(l: Layer, t: number, project?: TitleProject): Vec2 {
       if (l.shape === 'path' && l.path) {
         let x1 = 0;
         let y1 = 0;
-        for (const v of l.path.v) {
-          x1 = Math.max(x1, v.p[0]);
-          y1 = Math.max(y1, v.p[1]);
-        }
+        for (const pd of [shapePath(l, t), ...shapeSubpaths(l, t)])
+          for (const v of pd.v) {
+            x1 = Math.max(x1, v.p[0]);
+            y1 = Math.max(y1, v.p[1]);
+          }
         return [x1, y1];
       }
       return vec(l.size, t, [100, 100]);
@@ -546,8 +685,66 @@ export function contentSize(l: Layer, t: number, project?: TitleProject): Vec2 {
   }
 }
 
+const COMBINE: Record<NonNullable<GroupLayer['combine']>, GlobalCompositeOperation> = {
+  union: 'source-over',
+  subtract: 'destination-out',
+  intersect: 'destination-in',
+  exclude: 'xor',
+};
+
+/** A combined group (boolean shapes): back to front, each layer joined to what is there by the group's rule. */
+function drawCombined(ctx: Ctx, g: GroupLayer, s: Scene): boolean {
+  const W = ctx.canvas.width;
+  const H = ctx.canvas.height;
+  const surf = s.f.env.createCanvas(W, H);
+  const out = surf?.getContext('2d') as Ctx | null;
+  const tmp = s.f.env.createCanvas(W, H);
+  const tc = tmp?.getContext('2d') as Ctx | null;
+  if (!surf || !out || !tmp || !tc) return false;
+  let first = true;
+  for (let n = g.children.length - 1; n >= 0; n--) {
+    const c = g.children[n]!;
+    if (!active(c, s.t) || s.mattes.has(c.id) || s.f.skip?.(c)) continue;
+    tc.setTransform(1, 0, 0, 1, 0, 0);
+    tc.clearRect(0, 0, W, H);
+    drawLayer(tc, c, 1, s);
+    out.save();
+    out.setTransform(1, 0, 0, 1, 0, 0);
+    out.globalCompositeOperation = first ? 'source-over' : COMBINE[g.combine!];
+    out.drawImage(tmp as CanvasImageSource, 0, 0);
+    out.restore();
+    first = false;
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(surf as CanvasImageSource, 0, 0);
+  ctx.restore();
+  return true;
+}
+
+/** A repeated group's copies: one for each line of its list field. */
+function drawRepeated(ctx: Ctx, g: GroupLayer, alpha: number, s: Scene) {
+  const r = g.repeat!;
+  const lists = s.f.project.variables.filter((v) => v.type === 'list');
+  const lines = (k: string) => (s.f.values[k] ?? '').split(/\r?\n/);
+  const count = Math.min(r.max ?? 100, 100, (s.f.values[r.field] ?? '').trim() ? lines(r.field).length : 0);
+  for (let n = 0; n < count; n++) {
+    const values = { ...s.f.values };
+    for (const v of lists) values[v.key] = lines(v.key)[n] ?? '';
+    values['row'] = String(n + 1);
+    const scene: Scene = { ...s, t: s.t - n * (r.stagger ?? 0), base: mul(s.base, [1, 0, 0, 1, n * r.dx, n * r.dy]), f: { ...s.f, values } };
+    if (g.combine && g.children.length > 1 && drawCombined(ctx, g, scene)) continue;
+    drawList(ctx, g.children, alpha, scene);
+  }
+}
+
 function drawContent(ctx: Ctx, l: Layer, world: Mat, alpha: number, s: Scene) {
   if (l.type === 'group') {
+    if (l.repeat?.field) {
+      drawRepeated(ctx, l, alpha, s);
+      return;
+    }
+    if (l.combine && l.children.length > 1 && drawCombined(ctx, l, s)) return;
     drawList(ctx, l.children, alpha, s);
     return;
   }
@@ -603,7 +800,10 @@ function drawContent(ctx: Ctx, l: Layer, world: Mat, alpha: number, s: Scene) {
     case 'comp': {
       const inner = s.f.project.compositions.find((c) => c.id === l.comp);
       if (!inner || s.f.depth >= MAX_DEPTH) break;
-      const f2: Frame = { ...s.f, depth: s.f.depth + 1 };
+      const own = l.values ? Object.entries(l.values).filter(([, v]) => typeof v === 'string' && v !== '') : [];
+      // This copy's own field values (a component): may use the title's fields.
+      const values = own.length ? { ...s.f.values, ...Object.fromEntries(own.map(([k, v]) => [k, fill(v, s.f.values)])) } : s.f.values;
+      const f2: Frame = { ...s.f, values, depth: s.f.depth + 1 };
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, inner.width, inner.height);
@@ -662,15 +862,27 @@ function paintStyle(ctx: Ctx, p: Paint, w: number, h: number, s: Scene): string 
 }
 
 export function shapePath(l: ShapeLayer, t: number, size?: Vec2): PathData {
-  if (l.shape === 'path') return l.path ?? { closed: false, v: [] };
+  if (l.shape === 'path') return l.morph?.length ? (morphAt(l.morph, t)[0] ?? { closed: false, v: [] }) : (l.path ?? { closed: false, v: [] });
   const [w, h] = size ?? vec(l.size, t, [100, 100]);
   if (l.shape === 'ellipse') return ellipsePath(w, h);
   return l.corners ? rectCornersPath(w, h, l.corners) : rectPath(w, h, num(l.roundness, t, 0));
 }
 
+/** A path shape's further outlines at time t. */
+export function shapeSubpaths(l: ShapeLayer, t: number): PathData[] {
+  if (l.shape !== 'path') return [];
+  if (l.morph?.length) return morphAt(l.morph, t).slice(1);
+  return l.subpaths ?? [];
+}
+
 function drawShape(ctx: Ctx, l: ShapeLayer, size: Vec2, s: Scene) {
   const t = s.t;
   const path = shapePath(l, t, l.fitTo ? size : undefined);
+  const more = shapeSubpaths(l, t);
+  const trace = (c: Ctx) => {
+    tracePath(c, path);
+    for (const sp of more) tracePath(c, sp);
+  };
   const trim = l.trim;
   const ts = trim ? num(trim.start, t, 0) : 0;
   const te = trim ? num(trim.end, t, 100) : 100;
@@ -678,10 +890,17 @@ function drawShape(ctx: Ctx, l: ShapeLayer, size: Vec2, s: Scene) {
   const trimmed = !!trim && (Math.abs(te - ts) < 100 || to !== 0);
   if (l.fill && !trimmed) {
     ctx.beginPath();
-    tracePath(ctx, path);
+    trace(ctx);
     ctx.fillStyle = paintStyle(ctx, l.fill, size[0], size[1], s);
-    ctx.fill();
+    ctx.fill(l.fillRule ?? 'nonzero');
   }
+  if (!trimmed)
+    for (const extra of l.extraFills ?? []) {
+      ctx.beginPath();
+      trace(ctx);
+      ctx.fillStyle = paintStyle(ctx, extra, size[0], size[1], s);
+      ctx.fill(l.fillRule ?? 'nonzero');
+    }
   for (const st of [l.stroke, ...(l.extraStrokes ?? [])]) {
     if (!st || st.width <= 0) continue;
     // Inside or outside a closed outline: twice as wide, with the other half clipped away.
@@ -690,12 +909,14 @@ function drawShape(ctx: Ctx, l: ShapeLayer, size: Vec2, s: Scene) {
     if (side) {
       ctx.beginPath();
       if (side === 'outside') ctx.rect(-1e6, -1e6, 2e6, 2e6);
-      tracePath(ctx, path);
-      ctx.clip(side === 'outside' ? 'evenodd' : 'nonzero');
+      trace(ctx);
+      ctx.clip(side === 'outside' ? 'evenodd' : (l.fillRule ?? 'nonzero'));
     }
     ctx.beginPath();
-    if (trimmed) traceTrimmed(ctx, path, ts, te, to);
-    else tracePath(ctx, path);
+    if (trimmed) {
+      traceTrimmed(ctx, path, ts, te, to);
+      for (const sp of more) traceTrimmed(ctx, sp, ts, te, to);
+    } else trace(ctx);
     ctx.strokeStyle = paintStyle(ctx, st.paint, size[0], size[1], s);
     ctx.lineWidth = side ? st.width * 2 : st.width;
     ctx.lineJoin = st.join ?? 'miter';
@@ -715,7 +936,7 @@ export function fittedBox(
   const fit = l.fitTo;
   const text = fit ? s.index.get(fit.layer) : undefined;
   if (!fit || !text || text.type !== 'text') return null;
-  const lay = textLayout(text, s.f.values, s.f.tokens, canvasMeasure(ctx), s.f.project.variables);
+  const lay = textLayout(text, s.f.values, s.f.tokens, canvasMeasure(ctx), s.f.project.variables, s.f.project.textStyles);
   const base = vec(l.size, s.t, [100, 100]);
   const min = fit.min ?? [0, 0];
   const empty = !lay.lines.some((x) => x.glyphs.length);
@@ -731,8 +952,15 @@ export function fittedBox(
 const layoutCache = new Map<string, TextLayout>();
 
 /** The layout of a text layer's words (cached; the same inputs give the same layout). */
-export function textLayout(l: TextLayer, values: Values, tokens: BrandTokens, measure: Measure, vars?: TitleProject['variables']): TextLayout {
-  const text = fill(l.text, values, vars);
+export function textLayout(
+  l: TextLayer,
+  values: Values,
+  tokens: BrandTokens,
+  measure: Measure,
+  vars?: TitleProject['variables'],
+  styles?: TitleProject['textStyles'],
+): TextLayout {
+  const text = expandCharStyles(fill(l.text, values, vars), styles, l.style.size);
   const family = resolveFont(l.style.font, tokens);
   const key = JSON.stringify([text, l.style, family, l.box, l.wrap, l.fit, l.minSize, l.maxLines]);
   const hit = layoutCache.get(key);
@@ -821,7 +1049,7 @@ function glyphLook(g: Glyph, l: TextLayer, lay: TextLayout, t: number, indexInLi
 function drawText(ctx: Ctx, l: TextLayer, s: Scene) {
   const t = s.t;
   const f = s.f;
-  const lay = textLayout(l, f.values, f.tokens, canvasMeasure(ctx), f.project.variables);
+  const lay = textLayout(l, f.values, f.tokens, canvasMeasure(ctx), f.project.variables, f.project.textStyles);
   const st = l.style;
   const family = resolveFont(st.font, f.tokens);
   const bw = l.box[0] || lay.width;

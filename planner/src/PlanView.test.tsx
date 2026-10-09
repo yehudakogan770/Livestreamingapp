@@ -1,21 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { blankCue, type Plan, type PlanCue } from './model';
+import { blankCue, blankPlan, type Plan, type PlanCue } from './model';
 import type { PlanStore } from './usePlan';
 import type { ChatStore } from './useChat';
 import type { BlockStore } from './useBlocks';
 
-const plan: Plan = {
-  id: 'p',
-  owner: 'me',
-  name: 'Fall Dinner',
-  eventDate: '2026-10-20',
-  venue: 'Main hall',
-  startTime: '19:00',
-  notes: '',
-  updatedAt: 0,
-  updatedBy: '',
-};
+const plan: Plan = blankPlan('p', { owner: 'me', name: 'Fall Dinner', eventDate: '2026-10-20', venue: 'Main hall', startTime: '19:00' });
 const cues: PlanCue[] = [
   { ...blankCue('p', 'a', 1), title: 'Doors', segment: 'countdown', durationSec: 600, section: 'Opening' },
   { ...blankCue('p', 'b', 2), title: 'Welcome', segment: 'speaker', who: 'Dana', durationSec: 300, input: 'Camera 1', transition: 'Fade' },
@@ -23,7 +13,7 @@ const cues: PlanCue[] = [
 const store: PlanStore = {
   plan,
   cues,
-  comments: [{ id: 'k', planId: 'p', cueId: 'b', author: 'me', authorName: 'Me', text: 'Mic check first', createdAt: 0 }],
+  comments: [{ id: 'k', planId: 'p', cueId: 'b', author: 'me', authorName: 'Me', text: 'Mic check first', createdAt: 0, mentions: [] }],
   role: 'owner',
   here: ['Eli Cohen'],
   error: '',
@@ -39,6 +29,9 @@ const store: PlanStore = {
   comment: vi.fn(async () => {}),
   uncomment: vi.fn(),
   reloadRole: vi.fn(),
+  addCues: vi.fn(() => []),
+  editCues: vi.fn(),
+  patchPlan: vi.fn(),
 };
 const chatStore: ChatStore = {
   messages: [{ id: 'm1', planId: 'p', author: 'dana', authorName: 'Dana', body: 'Is #2 still five minutes?', createdAt: Date.parse('2026-10-06T18:00:00') }],
@@ -54,6 +47,12 @@ vi.mock('./usePlan', () => ({ usePlan: () => store }));
 vi.mock('./useChat', () => ({ useChat: () => chatStore }));
 vi.mock('./useBlocks', () => ({ useBlocks: () => blockStore }));
 vi.mock('./session', () => ({ db: () => ({}) }));
+const stores = await import('./testStores');
+vi.mock('./useLive', async (orig) => ({ ...(await orig<typeof import('./useLive')>()), useLive: () => stores.liveStore }));
+vi.mock('./useItems', async (orig) => ({ ...(await orig<typeof import('./useItems')>()), useItems: () => stores.itemStore }));
+vi.mock('./Files', async (orig) => ({ ...(await orig<typeof import('./Files')>()), useFiles: () => stores.fileStore }));
+vi.mock('./usePeople', async (orig) => ({ ...(await orig<typeof import('./usePeople')>()), usePeople: () => [] }));
+vi.mock('./apiPro', async (orig) => ({ ...(await orig<typeof import('./apiPro')>()), loadLocks: async () => [], watchLocks: () => () => {} }));
 
 const { PlanView } = await import('./PlanView');
 
@@ -110,7 +109,7 @@ describe('plan view', () => {
     expect(screen.getByLabelText('Message')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Yes' } });
     fireEvent.keyDown(screen.getByLabelText('Message'), { key: 'Enter' });
-    expect(chatStore.send).toHaveBeenCalledWith('Yes');
+    expect(chatStore.send).toHaveBeenCalledWith('Yes', []);
   });
 
   it('marks an untitled cue as a placeholder and points at what is missing', () => {

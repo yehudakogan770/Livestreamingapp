@@ -3,6 +3,8 @@
 // where the designer listed them. Used in the designer's preview, in
 // Lumora's Titler card while live, and in Studio's title clip.
 
+import { useEffect, useState } from 'react';
+import { parseClock, timerCommand, timerRunning, timerText } from '../core/timer';
 import type { TitleProject, Values, Variable } from '../core/types';
 import './controlPanel.css';
 
@@ -117,6 +119,8 @@ function Field({
         ))}
       </span>
     );
+  } else if (v.type === 'timer') {
+    input = <TimerControl id={id} v={v} value={value} onChange={onChange} />;
   } else if (v.type === 'list') {
     input = <textarea id={id} rows={4} value={value} onChange={(e) => onChange(e.target.value)} placeholder="One item a line" />;
   } else if (v.type === 'image') {
@@ -148,5 +152,52 @@ function Field({
       </label>
       {input}
     </div>
+  );
+}
+
+/** A timer's buttons: start / stop, reset, a minute (or a second) more or less, and the time typed in. */
+function TimerControl({ id, v, value, onChange }: { id: string; v: Variable; value: string; onChange: (x: string) => void }) {
+  const running = timerRunning(value);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => tick((n) => n + 1), 200);
+    return () => clearInterval(t);
+  }, [running]);
+  const now = Date.now();
+  const shown = timerText({ ...v, timer: v.timer ? { ...v.timer, auto: false } : v.timer }, value, now, null);
+  const step = (v.timer?.format ?? '').includes('.t') || v.timer?.format === 'ss' ? 1 : 60;
+  const cmd = (c: 'toggle' | 'reset' | 'add', amount = 0) => onChange(timerCommand(v, value, c, Date.now(), amount));
+  return (
+    <span className="tt-cp-timer">
+      {running ? (
+        <input id={id} className="tt-cp-timer-time" value={shown} readOnly aria-label={`${v.label} time`} />
+      ) : (
+        <input
+          id={id}
+          key={value}
+          className="tt-cp-timer-time"
+          defaultValue={shown}
+          aria-label={`${v.label} time`}
+          onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          onBlur={(e) => {
+            const n = parseClock(e.target.value);
+            if (Number.isFinite(n) && e.target.value !== shown) onChange(String(n));
+          }}
+        />
+      )}
+      <button type="button" className={running ? 'on' : ''} onClick={() => cmd('toggle')} aria-label={running ? `Stop ${v.label}` : `Start ${v.label}`}>
+        {running ? 'Stop' : 'Start'}
+      </button>
+      <button type="button" onClick={() => cmd('add', -step)} aria-label={`${v.label} ${step === 60 ? 'a minute' : 'a second'} less`}>
+        −
+      </button>
+      <button type="button" onClick={() => cmd('add', step)} aria-label={`${v.label} ${step === 60 ? 'a minute' : 'a second'} more`}>
+        +
+      </button>
+      <button type="button" onClick={() => cmd('reset')} aria-label={`Reset ${v.label}`}>
+        Reset
+      </button>
+    </span>
   );
 }

@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { titlerPlayer } from '../titler/playerPlugin';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -42,7 +43,7 @@ function visionFiles(): Plugin {
 // Lumora Studio's screens live in ./editor/app; the program serves them from ./dist-edit.
 export default defineConfig({
   root: 'editor/app',
-  plugins: [react(), visionFiles()],
+  plugins: [react(), visionFiles(), titlerPlayer()],
   clearScreen: false,
   server: { port: 1421, strictPort: true },
   build: {

@@ -4,6 +4,7 @@
 // itself (Supabase keeps that) and never anything to send later.
 
 import type { Block } from './blocks';
+import type { Item } from './items';
 import type { Message } from './chatModel';
 import type { Plan, PlanComment, PlanCue, PlanSummary, Role } from './model';
 import type { Who } from './session';
@@ -21,6 +22,8 @@ export interface PlanCopy {
   comments?: PlanComment[];
   role?: Role | null;
   blocks?: Block[];
+  /** The lists (crew, contacts, tasks, gear, budget). */
+  items?: Item[];
   messages?: Message[];
   /** When this copy was last written (ms). */
   at: number;

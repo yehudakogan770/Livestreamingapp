@@ -1,5 +1,6 @@
 // Variables ({{name}}), brand tokens ($accent) and colors.
 
+import { timerText } from './timer';
 import type { BrandTokens, TitleProject, Values, Variable } from './types';
 
 /** A neutral broadcast look: near-black boxes, white words, one restrained accent. */
@@ -36,9 +37,18 @@ export function variablesIn(s: string): string[] {
   return out;
 }
 
-/** A variable's value as shown (numbers formatted, lists one item a line). */
+/** The clock of the frame being drawn (seconds since the graphic was taken), for timers that start when taken. */
+let renderClock: number | null = null;
+export function setRenderClock(clock: number | null): number | null {
+  const before = renderClock;
+  renderClock = clock;
+  return before;
+}
+
+/** A variable's value as shown (numbers formatted, lists one item a line, timers running). */
 export function formatValue(v: Variable | undefined, raw: string): string {
   if (!v) return raw;
+  if (v.type === 'timer') return timerText(v, raw, Date.now(), renderClock);
   if (v.type === 'number') {
     const n = Number(raw);
     const body = raw.trim() === '' || !Number.isFinite(n) ? raw : v.decimals !== undefined ? n.toFixed(Math.max(0, Math.min(6, v.decimals))) : String(n);
@@ -146,6 +156,8 @@ export function usedVariables(p: TitleProject): string[] {
     else if (o && typeof o === 'object') for (const v of Object.values(o)) walk(v);
   };
   walk(p.compositions);
+  // {{row}}: the row number inside a group repeated for each row (not a field).
+  if (JSON.stringify(p.compositions).includes('"repeat":{')) return out.filter((k) => k !== 'row');
   return out;
 }
 

@@ -364,3 +364,35 @@ export function layoutText(text: string, style: TextStyle, family: string, box: 
   }
   return best;
 }
+
+/**
+ * Character styles: [cs=Name]words[/cs] takes the font, weight, slant, color
+ * and size of the shared text style called Name, as inline tags (the size
+ * relative to the text's own). Unknown names stay as written.
+ */
+export function expandCharStyles(text: string, styles: { name: string; style: TextStyle }[] | undefined, size: number): string {
+  if (!styles?.length || !text.includes('[cs=')) return text;
+  const stack: string[] = [];
+  return text.replace(/\[cs=([^\]]{1,60})\]|\[\/cs\]/g, (whole, name: string | undefined) => {
+    if (name === undefined) return stack.pop() ?? '';
+    const def = styles.find((s) => s.name.trim().toLowerCase() === name.trim().toLowerCase());
+    if (!def) {
+      stack.push('[/cs]');
+      return whole;
+    }
+    const st = def.style;
+    let open = '';
+    let close = '';
+    const add = (o: string, c: string) => {
+      open += o;
+      close = c + close;
+    };
+    add(`[f=${st.font}]`, '[/f]');
+    if (st.weight >= 600) add('[b]', '[/b]');
+    if (st.italic) add('[i]', '[/i]');
+    if (st.fill.type === 'solid') add(`[c=${st.fill.color}]`, '[/c]');
+    if (size > 0 && Math.abs(st.size - size) > 0.5) add(`[s=${Math.round((st.size / size) * 100)}]`, '[/s]');
+    stack.push(close);
+    return open;
+  });
+}

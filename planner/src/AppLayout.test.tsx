@@ -17,6 +17,13 @@ vi.mock('./session', () => ({
   signOut: vi.fn(),
 }));
 vi.mock('./api', () => ({ listPlans: () => Promise.resolve([]), createPlan: vi.fn() }));
+vi.mock('./apiPro', () => ({
+  listTemplates: () => Promise.resolve([]),
+  loadNotices: () => Promise.reject(new Error('none')),
+  watchNotices: () => () => {},
+  myFeed: vi.fn(),
+  feedUrl: () => '',
+}));
 
 const { App } = await import('./App');
 

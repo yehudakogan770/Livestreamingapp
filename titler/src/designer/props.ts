@@ -35,6 +35,12 @@ const REVEAL: PropInfo[] = [
 /** Every property of a layer that can have keyframes, in display order. */
 export function propsOf(l: Layer): PropInfo[] {
   const out = [...T];
+  if (l.transform.rotationX || l.transform.rotationY || l.transform.z)
+    out.push(
+      { path: 'transform.rotationX', label: 'X rotation', dims: 1, fallback: 0, unit: '°' },
+      { path: 'transform.rotationY', label: 'Y rotation', dims: 1, fallback: 0, unit: '°' },
+      { path: 'transform.z', label: 'Depth (Z)', dims: 1, fallback: 0, unit: 'px' },
+    );
   if (l.type === 'shape') {
     if (l.shape !== 'path') out.push({ path: 'size', label: 'Size', dims: 2, fallback: [100, 100], unit: 'px', min: 0 });
     if (l.shape === 'rect') out.push({ path: 'roundness', label: 'Corner radius', dims: 1, fallback: 0, unit: 'px', min: 0 });

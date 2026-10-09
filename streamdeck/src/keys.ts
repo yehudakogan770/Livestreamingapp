@@ -16,6 +16,7 @@ import {
 } from './actions';
 import { ICONS, type IconName } from './icons';
 import { clock, remaining, tally, type DeckState, type ScreenId } from './show';
+import { faderTarget } from './dials';
 import type { Connection } from './protocol';
 
 /** idle: nothing special; program: on air (red); preview: in Next (green); on: switched on; warn: needs attention. */
@@ -182,6 +183,11 @@ function baseModel(kind: Kind, s: KeySettings, { state, deck, now }: KeyContext)
     case 'blank': {
       const blank = !!state?.screens[screen].blank;
       return { icon: 'blank', label: s.mode === 'ftb' ? 'FTB' : 'BLANK', sub: blank ? 'Black now' : onScreen, tone: blank ? 'warn' : 'idle' };
+    }
+    case 'mute': {
+      const t = state ? faderTarget(state, s) : null;
+      if (!t) return { icon: 'mute', label: s.targetName || 'MUTE', sub: state ? 'Choose' : null, tone: 'idle' };
+      return { icon: 'mute', label: t.name, sub: t.level.muted ? 'Muted' : `${Math.round(t.level.volume * 100)}%`, tone: t.level.muted ? 'program' : 'idle' };
     }
     case 'panic': {
       const on = !!state?.panic;

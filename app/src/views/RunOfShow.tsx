@@ -12,6 +12,9 @@ import type { EngineClient } from '../engine/client';
 import { SaveToLibrary } from './LibraryDialog';
 import { cuesItem } from '../engine/library';
 import { PlannerDialog, openPlanner } from '../planner/PlannerDialog';
+import { usePlannerLink } from '../planner/plannerLink';
+import { supabase } from '../auth/auth';
+import { authOn } from '../auth/config';
 import './RunOfShow.css';
 import './TextEditor.css';
 import './PesukimCard.css';
@@ -48,10 +51,14 @@ export function nextCueText(show: Show, now: number): string {
   return `next: ${name} in ${clock(Math.max(0, at - now) / 1000)}`;
 }
 
+const linkDb = () => (authOn() ? supabase() : null);
+
 /** The strip on the bottom bar: the cue running, the next one, and NEXT CUE. */
 export function CueBar({ show, act, onOpen }: { show: Show; act: Act; onOpen: () => void }) {
   const now = useNow(false, 500);
   const r = show.run;
+  // Cues loaded from Lumora Planner: the plan follows the show (see plannerLink.ts).
+  usePlannerLink(r.running, r.current !== null ? (r.cues[r.current]?.id ?? null) : null, linkDb);
   if (r.cues.length === 0) return null;
   const cur = r.current !== null ? r.cues[r.current] : null;
   return (
@@ -348,6 +355,9 @@ export function RunOfShowDialog({ show, act, client, onClose }: { show: Show; ac
             setCues(next);
           }}
           onClose={() => setPlanning(false)}
+          onScript={(script) =>
+            act({ type: 'updatePrompter', on: show.monitor.prompter.on, script, size: show.monitor.prompter.size, mirror: show.monitor.prompter.mirror })
+          }
         />
       )}
       {keeping && (

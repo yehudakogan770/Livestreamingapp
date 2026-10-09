@@ -26,11 +26,25 @@ describe('Companion module', () => {
     expect(commandFor('macro', { name: '2' })).toEqual({ cmd: 'macro', number: '2' });
     expect(commandFor('timer', { do: 'start' })).toEqual({ cmd: 'timer', do: 'start' });
     expect(commandFor('timer', { do: 'add', minutes: 5 })).toEqual({ cmd: 'timer', do: 'add', minutes: '5' });
+    expect(commandFor('titlerfield', { input: 'Lower third', field: 'name', value: 'Ada' })).toEqual({
+      cmd: 'titler',
+      name: 'Lower third',
+      field: 'name',
+      value: 'Ada',
+    });
+    expect(commandFor('titlerdo', { input: '4', do: 'toggle' })).toEqual({ cmd: 'titler', input: '4', do: 'toggle' });
+    expect(commandFor('titlerdo', { input: '4', do: 'start', field: 'clock' })).toEqual({ cmd: 'titler', input: '4', do: 'start', field: 'clock' });
     expect(commandFor('atem', {})).toEqual({ cmd: 'atem', do: 'cut' });
     expect(commandFor('atem', { do: 'program', atemInput: 3 })).toEqual({ cmd: 'atem', do: 'program', input: '3' });
     expect(commandFor('atem', { do: 'dsk', keyer: 2, state: 'on' })).toEqual({ cmd: 'atem', do: 'dsk', keyer: '2', state: 'on' });
     expect(commandFor('atem', { do: 'macro', number: 4 })).toEqual({ cmd: 'atem', do: 'macro', number: '4' });
     expect(commandFor('nope', {})).toBeNull();
+    expect(commandFor('prompter', { do: 'faster' })).toEqual({ cmd: 'prompter', do: 'faster' });
+    expect(commandFor('playlist', { input: '2', item: 'next' })).toEqual({ cmd: 'playlist', input: '2', item: 'next' });
+    expect(commandFor('score', { input: 'Scoreboard', team: 'away', add: 3 })).toEqual({ cmd: 'score', name: 'Scoreboard', team: 'away', add: '3' });
+    expect(commandFor('ptzpreset', { input: '4', preset: 2 })).toEqual({ cmd: 'ptz', input: '4', preset: '2', speed: '50' });
+    expect(commandFor('ptzmove', { input: '4', move: 'stop' })).toEqual({ cmd: 'ptz', input: '4', move: 'stop', speed: '50' });
+    expect(commandFor('flash', {})).toEqual({ cmd: 'flash' });
   });
 
   it('every action sends a command Lumora knows', () => {
@@ -55,9 +69,23 @@ describe('Companion module', () => {
       'stopmacros',
       'timer',
       'datarow',
+      'titler',
       'nextcue',
       'panic',
       'atem',
+      'play',
+      'pause',
+      'playpause',
+      'restart',
+      'playlist',
+      'lyrics',
+      'prompter',
+      'flash',
+      'score',
+      'scorereset',
+      'clock',
+      'replaybuffer',
+      'ptz',
     ]);
     for (const a of Object.values(ACTIONS)) expect(known.has(a.cmd)).toBe(true);
   });

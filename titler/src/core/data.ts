@@ -1,7 +1,7 @@
 // Data sources: a CSV file, a Google Sheet or a JSON address whose rows fill
 // a template's fields, read again every few seconds.
 
-import type { DataSource, Values } from './types';
+import type { DataSource, Values, Variable } from './types';
 
 export interface Table {
   headers: string[];
@@ -75,16 +75,31 @@ export function sheetCsvUrl(url: string): string {
   return `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv${gid ? `&gid=${gid}` : ''}`;
 }
 
-/** The fields one row fills (a field named like a column takes it unless mapped otherwise). */
-export function valuesFromRow(src: DataSource, t: Table, keys: string[]): Values {
-  const row = t.rows[Math.min(Math.max(0, src.row), Math.max(0, t.rows.length - 1))];
+/** The most rows a list field takes from a column (a results table, standings, a schedule). */
+export const MAX_LIST_ROWS = 200;
+
+/**
+ * The fields one row fills (a field named like a column takes it unless
+ * mapped otherwise). A list field takes its whole column, one row a line,
+ * from the chosen row on (tables: results, standings, schedules).
+ */
+export function valuesFromRow(src: DataSource, t: Table, keys: string[], vars: Variable[] = []): Values {
+  const at = Math.min(Math.max(0, src.row), Math.max(0, t.rows.length - 1));
+  const row = t.rows[at];
   if (!row) return {};
   const out: Values = {};
   const col = (name: string) => t.headers.findIndex((h) => h.trim().toLowerCase() === name.trim().toLowerCase());
+  const lists = new Set(vars.filter((v) => v.type === 'list').map((v) => v.key));
   for (const k of keys) {
     const name = src.map[k] ?? k;
     const i = col(name);
-    if (i >= 0) out[k] = row[i] ?? '';
+    if (i < 0) continue;
+    out[k] = lists.has(k)
+      ? t.rows
+          .slice(at, at + MAX_LIST_ROWS)
+          .map((r) => (r[i] ?? '').replace(/\s*\n\s*/g, ' '))
+          .join('\n')
+      : (row[i] ?? '');
   }
   return out;
 }

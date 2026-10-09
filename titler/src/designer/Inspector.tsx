@@ -1,7 +1,7 @@
 // The properties of the selected layer (or the composition when nothing is
 // selected): everything about it, in sections.
 
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { exprProblem } from '../core/expr';
 import { Plus, Trash2 } from 'lucide-react';
 import { tokensFor, valuesFor, variablesIn } from '../core/binding';
@@ -9,7 +9,22 @@ import { uid } from '../core/build';
 import { isAnimated, num, setValue, toggleKeys, valueAt, vec } from '../core/easing';
 import { fade, grow, reveal, slide, wipe } from '../core/motion';
 import { ellipsePath, rectPath } from '../core/paths';
-import type { Effect, ImageLayer, VideoLayer, Layer, Mask, Paint, Prop, ShapeLayer, Stroke, TextAnimator, TextLayer, Value, Vec2 } from '../core/types';
+import type {
+  CompLayer,
+  Effect,
+  ImageLayer,
+  VideoLayer,
+  Layer,
+  Mask,
+  Paint,
+  Prop,
+  ShapeLayer,
+  Stroke,
+  TextAnimator,
+  TextLayer,
+  Value,
+  Vec2,
+} from '../core/types';
 import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
 import { layerBox } from './geometry';
 import { lookOf } from './Viewport';
@@ -197,6 +212,25 @@ export function Inspector({ store }: { store: Store }) {
             Center anchor point
           </button>
         </div>
+        <Row label="3D" hint="Turn the layer in depth about its anchor point (center it for a card flip); the camera is in the Composition tab">
+          <Toggle
+            value={!!(l.transform.rotationX || l.transform.rotationY || l.transform.z)}
+            label="3D layer"
+            onChange={(on) =>
+              updOne(on ? 'Make 3D' : 'Make flat', (x) => {
+                const { rotationX: _x, rotationY: _y, z: _z, ...flat } = x.transform;
+                return { ...x, transform: on ? { ...flat, rotationX: { v: 0 }, rotationY: { v: 0 }, z: { v: 0 } } : flat };
+              })
+            }
+          />
+        </Row>
+        {(l.transform.rotationX || l.transform.rotationY || l.transform.z) && (
+          <>
+            {prop('transform.rotationX', 'X rotation', 0, '°')}
+            {prop('transform.rotationY', 'Y rotation', 0, '°')}
+            {prop('transform.z', 'Depth (Z)', 0, 'px')}
+          </>
+        )}
       </Section>
 
       {l.type === 'text' && <TextSection store={store} l={l} compId={c.id} fieldKeys={fieldKeys} tokens={tokens} vals={vals} time={time} />}
@@ -275,6 +309,91 @@ export function Inspector({ store }: { store: Store }) {
           )}
         </Section>
       )}
+      {l.type === 'group' && (
+        <Section title="Combine shapes" open={!!l.combine}>
+          <Row label="Combine" hint="The layers as one shape: the back layer is the base, the ones in front of it are joined to it">
+            <Select
+              label="Combine the group's layers"
+              value={l.combine ?? 'none'}
+              options={[
+                ['none', 'Off (separate layers)'],
+                ['union', 'Union (add)'],
+                ['subtract', 'Subtract (cut out)'],
+                ['intersect', 'Intersect (where they overlap)'],
+                ['exclude', 'Exclude (where they do not)'],
+              ]}
+              onChange={(v) => updOne('Combine shapes', (x) => (x.type === 'group' ? { ...x, combine: v === 'none' ? null : v } : x))}
+            />
+          </Row>
+        </Section>
+      )}
+      {l.type === 'group' && (
+        <Section title="Repeat for each row" open={!!l.repeat}>
+          <div className="tt-dim tt-small">
+            A table row made once: the group is drawn for each line of a list field, and in each copy every list field is its own line ({'{{row}}'} is the row
+            number). Fill the list fields from a spreadsheet in Data.
+          </div>
+          <Row label="For each line of">
+            <select
+              className="tt-select"
+              aria-label="Repeat for each line of"
+              value={l.repeat?.field ?? ''}
+              onChange={(e) =>
+                updOne('Repeat for each row', (x) =>
+                  x.type === 'group'
+                    ? { ...x, repeat: e.target.value ? { dx: 0, dy: 80, stagger: 0.08, ...(x.repeat ?? {}), field: e.target.value } : null }
+                    : x,
+                )
+              }
+            >
+              <option value="">Off (drawn once)</option>
+              {project.variables
+                .filter((v) => v.type === 'list')
+                .map((v) => (
+                  <option key={v.key} value={v.key}>
+                    {v.label}
+                  </option>
+                ))}
+            </select>
+          </Row>
+          {l.repeat && (
+            <>
+              <Row label="Each row moves">
+                <NumberField
+                  value={l.repeat.dx}
+                  label="Across"
+                  unit="px"
+                  onChange={(dx) => updOne('Row step', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, dx } } : x))}
+                />
+                <NumberField
+                  value={l.repeat.dy}
+                  label="Down"
+                  unit="px"
+                  onChange={(dy) => updOne('Row step', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, dy } } : x))}
+                />
+              </Row>
+              <Row label="Comes in after the last" hint="Each row's animation starts this long after the row before">
+                <NumberField
+                  value={l.repeat.stagger ?? 0}
+                  min={0}
+                  step={0.02}
+                  label="Delay between rows"
+                  unit="s"
+                  onChange={(stagger) => updOne('Row delay', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, stagger } } : x))}
+                />
+                <NumberField
+                  value={l.repeat.max ?? 20}
+                  min={1}
+                  max={100}
+                  label="Most rows"
+                  onChange={(max) => updOne('Most rows', (x) => (x.type === 'group' && x.repeat ? { ...x, repeat: { ...x.repeat, max: Math.round(max) } } : x))}
+                />
+              </Row>
+            </>
+          )}
+          {!project.variables.some((v) => v.type === 'list') && <div className="tt-dim tt-small">Make a field of the List kind first (Fields tab).</div>}
+        </Section>
+      )}
       {l.type === 'comp' && (
         <Section title="Composition">
           <Row label="Shows">
@@ -302,6 +421,7 @@ export function Inspector({ store }: { store: Store }) {
               onChange={(offset) => updOne('Time offset', (x) => ({ ...x, offset }))}
             />
           </Row>
+          <CopyFields store={store} l={l} compId={c.id} />
           <button className="tt-link" onClick={() => store.set({ compId: l.comp, selection: [] })}>
             Open this composition
           </button>
@@ -624,11 +744,14 @@ function TextSection({
   const st = l.style;
   const style = (label: string, patch: Partial<TextLayer['style']>) => upd(label, (x) => ({ ...x, style: { ...x.style, ...patch } }));
   const missing = variablesIn(l.text).filter((k) => !fieldKeys.includes(k));
+  const wordsRef = useRef<HTMLTextAreaElement>(null);
   void time;
   return (
     <Section title="Text">
       <TextStyleRow store={store} l={l} />
+      <CharStyleRow store={store} l={l} words={wordsRef} upd={upd} />
       <textarea
+        ref={wordsRef}
         className="tt-textarea"
         aria-label="Words"
         autoFocus={editing}
@@ -1117,6 +1240,52 @@ function ShapeSection({
           fieldKeys={fieldKeys}
         />
       )}
+      {(l.extraFills ?? []).map((f, i) => (
+        <div key={i} className="tt-subcard">
+          <Row label={`Fill ${i + 2}`}>
+            <span className="tt-dim tt-small tt-grow">Drawn over the fill{i ? 's' : ''} before it</span>
+            <button
+              className="tt-ico"
+              aria-label={`Remove fill ${i + 2}`}
+              onClick={() => upd('Remove fill', (x) => ({ ...x, extraFills: (x.extraFills ?? []).filter((_, j) => j !== i) }))}
+            >
+              <Trash2 size={13} />
+            </button>
+          </Row>
+          <PaintField
+            paint={f}
+            label={`Fill ${i + 2} color`}
+            onChange={(paint) => upd('Fill', (x) => ({ ...x, extraFills: (x.extraFills ?? []).map((y, j) => (j === i ? paint : y)) }))}
+            tokens={tokens}
+            vals={vals}
+            fieldKeys={fieldKeys}
+          />
+        </div>
+      ))}
+      <Row label="">
+        <button
+          className="tt-link"
+          title="Another fill over the first (a gradient sheen over a color)"
+          onClick={() =>
+            upd('Add fill', (x) => ({
+              ...x,
+              extraFills: [
+                ...(x.extraFills ?? []),
+                {
+                  type: 'linear',
+                  angle: 180,
+                  stops: [
+                    { at: 0, color: '#ffffff33' },
+                    { at: 1, color: '#ffffff00' },
+                  ],
+                },
+              ],
+            }))
+          }
+        >
+          + Another fill
+        </button>
+      </Row>
       <Row label="Stroke">
         <Toggle value={!!l.stroke} onChange={(on) => upd('Stroke', (x) => ({ ...x, stroke: on ? stroke : null }))} label="On" />
         {l.stroke && (
@@ -1742,3 +1911,105 @@ function StyleSection({ store, l, compId }: Common & { l: Layer }) {
 }
 
 export { flatLayers };
+
+/** A component's own field values (this copy of a composition with its own words, colors, pictures). */
+function CopyFields({ store, l, compId }: { store: Store; l: CompLayer; compId: string }) {
+  const project = useStore(store, (s) => s.project);
+  const inner = project.compositions.find((x) => x.id === l.comp);
+  if (!inner) return null;
+  const used = new Set<string>();
+  const walk = (ls: Layer[]) => {
+    for (const x of ls) {
+      if (x.type === 'group') walk(x.children);
+      if (x.type === 'text') variablesIn(x.text).forEach((k) => used.add(k));
+      if (x.type === 'image') variablesIn(x.asset).forEach((k) => used.add(k));
+      if (x.type === 'shape' && x.fill?.type === 'solid') variablesIn(x.fill.color).forEach((k) => used.add(k));
+    }
+  };
+  walk(inner.layers);
+  const keys = [...used];
+  if (!keys.length) return <div className="tt-dim tt-small">Fields used inside it ({'{{name}}'}) can be set for each copy here.</div>;
+  const label = (k: string) => project.variables.find((v) => v.key === k)?.label ?? k;
+  return (
+    <div className="tt-subcard" aria-label="This copy's fields">
+      <div className="tt-dim tt-small">This copy&rsquo;s fields (empty: the title&rsquo;s own; may use other fields, like {'{{guest_2}}'})</div>
+      {keys.map((k) => (
+        <Row key={k} label={label(k)}>
+          <input
+            className="tt-input"
+            aria-label={`${label(k)} in this copy`}
+            placeholder={project.variables.find((v) => v.key === k)?.value ?? ''}
+            value={l.values?.[k] ?? ''}
+            onChange={(e) =>
+              store.edit('Copy field', (p) =>
+                updateLayers(p, compId, [l.id], (x) => {
+                  if (x.type !== 'comp') return x;
+                  const values = { ...(x.values ?? {}) };
+                  if (e.target.value) values[k] = e.target.value;
+                  else delete values[k];
+                  return { ...x, values };
+                }),
+              )
+            }
+          />
+        </Row>
+      ))}
+    </div>
+  );
+}
+
+/** Character styles: the selected words take a shared text style's font, weight, color and size ([cs=Name]…[/cs]). */
+function CharStyleRow({
+  store,
+  l,
+  words,
+  upd,
+}: {
+  store: Store;
+  l: TextLayer;
+  words: RefObject<HTMLTextAreaElement | null>;
+  upd: (label: string, fn: (x: TextLayer) => TextLayer) => void;
+}) {
+  const styles = useStore(store, (s) => s.project.textStyles) ?? [];
+  if (!styles.length) return null;
+  const apply = (name: string) => {
+    const el = words.current;
+    const a = el?.selectionStart ?? 0;
+    const b = el?.selectionEnd ?? 0;
+    if (!name) {
+      // Plain again: the character style tags around the selection (or everywhere when nothing is selected) come off.
+      upd('Remove character style', (x) => {
+        if (a === b) return { ...x, text: x.text.replace(/\[cs=[^\]]{1,60}\]|\[\/cs\]/g, '') };
+        const mid = x.text.slice(a, b).replace(/\[cs=[^\]]{1,60}\]|\[\/cs\]/g, '');
+        return { ...x, text: x.text.slice(0, a) + mid + x.text.slice(b) };
+      });
+      return;
+    }
+    if (a === b) {
+      store.set({ status: 'Select some words in the box below first.' });
+      return;
+    }
+    upd('Character style', (x) => ({ ...x, text: `${x.text.slice(0, a)}[cs=${name}]${x.text.slice(a, b)}[/cs]${x.text.slice(b)}` }));
+  };
+  return (
+    <Row label="Words style" hint="Select words below, then pick a shared style for them (character style)">
+      <select
+        className="tt-select"
+        aria-label="Character style for the selected words"
+        value=""
+        onChange={(e) => apply(e.target.value)}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <option value="" disabled>
+          Style the selected words…
+        </option>
+        {styles.map((s) => (
+          <option key={s.id} value={s.name}>
+            {s.name}
+          </option>
+        ))}
+        <option value="">Plain (remove)</option>
+      </select>
+    </Row>
+  );
+}

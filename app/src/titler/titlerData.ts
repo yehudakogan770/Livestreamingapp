@@ -40,7 +40,7 @@ export function dataValuesOf(p: TitleProject, k: Pick<TitlerGraphic, 'data' | 'd
   for (const src of p.data ?? []) {
     const t = k.data.find((x) => x.source === src.id);
     if (!t || !t.rows.length) continue;
-    Object.assign(out, valuesFromRow({ ...src, row: rowOf(src, k) }, t, keys));
+    Object.assign(out, valuesFromRow({ ...src, row: rowOf(src, k) }, t, keys, p.variables));
   }
   return out;
 }

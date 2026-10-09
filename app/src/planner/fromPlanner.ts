@@ -194,6 +194,18 @@ export function planToCues(plan: Pick<Plan, 'startTime'>, planned: readonly Plan
   return { cues, report };
 }
 
+/**
+ * The plan's scripts as one prompter script, in cue order: each cue's name in
+ * capitals, then what is said. Floated cues and cues with no script are left out.
+ */
+export function planScript(planned: readonly PlanCue[]): string {
+  return sortCues(planned)
+    .filter((c) => !c.skip && c.script.trim())
+    .map((c) => `${(c.title.trim() || segmentName(c.segment)).toUpperCase()}\n\n${c.script.trim()}`)
+    .join('\n\n\n')
+    .slice(0, 100_000);
+}
+
 /** Put the converted cues in: instead of the current ones, or after them (at most MAX_CUES in all). */
 export function combine(current: readonly Cue[], incoming: readonly Cue[], mode: 'replace' | 'append'): Cue[] {
   if (mode === 'replace') return incoming.slice(0, MAX_CUES);

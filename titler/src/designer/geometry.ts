@@ -39,6 +39,7 @@ export function layerBox(look: Look, l: Layer): { x: number; y: number; w: numbe
       tokensFor(look.project, look.brand ?? undefined),
       canvasMeasure(ctx),
       look.project.variables,
+      look.project.textStyles,
     );
     return { x: 0, y: 0, w: l.box[0] || lay.width, h: l.box[1] || lay.height };
   }

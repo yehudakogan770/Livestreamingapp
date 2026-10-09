@@ -45,6 +45,13 @@ export const ICONS = {
   slideBack: '<rect x="8.5" y="5" width="13" height="10" rx="1"/><path d="M6 10H2"/><path d="m4 8-2 2 2 2"/><path d="M12 19h6"/>',
   // Back to the first slide: an arrow to a bar.
   slideFirst: '<rect x="8.5" y="5" width="13" height="10" rx="1"/><path d="M2.5 6v8"/><path d="M7 10H4"/><path d="m5.5 8-2 2 2 2"/><path d="M12 19h6"/>',
+  // A speaker with a slash: mute.
+  mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5"/><path d="m21 9.5-5 5"/>',
+  // A T-bar: a fader track with its handle (a dial on Stream Deck +).
+  tbar: '<path d="M12 2.5v19"/><rect x="6.5" y="9" width="11" height="5" rx="1.2"/><path d="M8.5 11.5h7"/>',
+  // Three sound faders.
+  fader:
+    '<path d="M6 3.5v17"/><path d="M12 3.5v17"/><path d="M18 3.5v17"/><rect x="4" y="13" width="4" height="3.2" rx="0.8"/><rect x="10" y="6.5" width="4" height="3.2" rx="0.8"/><rect x="16" y="10" width="4" height="3.2" rx="0.8"/>',
   // A warning triangle (Lumora can't be reached).
   warning: '<path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.3v.1"/>',
   // Lumora's mark (docs/img/lumora-mark.svg) solid in one color: three blades and the on-air light.

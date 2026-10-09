@@ -9,7 +9,8 @@ import { isInsideLumora } from '../engine/client';
 import type { Cue } from '../engine/types/Cue';
 import type { Show } from '../engine/types/Show';
 import { PLANNER_URL } from '../site';
-import { combine, DEFAULT_OPTIONS, MAX_CUES, planToCues, type ConvertOptions } from './fromPlanner';
+import { combine, DEFAULT_OPTIONS, MAX_CUES, planScript, planToCues, type ConvertOptions } from './fromPlanner';
+import { readLink, writeLink } from './plannerLink';
 import './PlannerDialog.css';
 
 /** Where the web Planner is (the same address Lumora opens in the browser). */
@@ -28,12 +29,27 @@ type State = { s: 'loading' } | { s: 'error'; message: string } | { s: 'list'; p
  * Planner, see what Lumora will make of it, then replace the cues or add them
  * after the ones there are (into the run of show being edited: Save cues keeps them).
  */
-export function PlannerDialog({ show, current, onLoad, onClose }: { show: Show; current: Cue[]; onLoad: (cues: Cue[]) => void; onClose: () => void }) {
+export function PlannerDialog({
+  show,
+  current,
+  onLoad,
+  onClose,
+  onScript,
+}: {
+  show: Show;
+  current: Cue[];
+  onLoad: (cues: Cue[]) => void;
+  onClose: () => void;
+  /** Put the plan's scripts on Lumora's prompter. */
+  onScript?: (script: string) => void;
+}) {
   const [state, setState] = useState<State>({ s: 'loading' });
   const [picked, setPicked] = useState<string | null>(null);
   const [plan, setPlan] = useState<Loaded | null>(null);
   const [planError, setPlanError] = useState('');
   const [opts, setOpts] = useState<ConvertOptions>(DEFAULT_OPTIONS);
+  const [toPrompter, setToPrompter] = useState(true);
+  const [follow, setFollow] = useState(true);
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
@@ -80,9 +96,15 @@ export function PlannerDialog({ show, current, onLoad, onClose }: { show: Show; 
   const unmatched = converted ? converted.report.reduce((n, r) => n + r.unmapped.length, 0) : 0;
   const tooMany = converted ? current.length + converted.cues.length > MAX_CUES : false;
 
+  const script = useMemo(() => (plan ? planScript(plan.cues) : ''), [plan]);
+  // The plan has the Planner's show-day tools (scripts, the show followed live).
+  const pro = plan?.plan.pro === true;
   const load = (mode: 'replace' | 'append') => {
-    if (!converted) return;
+    if (!converted || !plan) return;
     onLoad(combine(current, converted.cues, mode));
+    if (pro && script && toPrompter && onScript) onScript(script);
+    if (pro && follow) writeLink({ planId: plan.plan.id, planName: plan.plan.name });
+    else if (readLink()?.planId === plan.plan.id) writeLink(null);
     onClose();
   };
 
@@ -150,6 +172,18 @@ export function PlannerDialog({ show, current, onLoad, onClose }: { show: Show; 
                     <input type="checkbox" checked={opts.notesToMonitor} onChange={(e) => setOpts({ ...opts, notesToMonitor: e.target.checked })} /> Show each
                     cue’s notes on the Monitor when it runs
                   </label>
+                  {pro && script && onScript && (
+                    <label className="check">
+                      <input type="checkbox" checked={toPrompter} onChange={(e) => setToPrompter(e.target.checked)} /> Put the cues’ scripts on the prompter
+                      (they replace its script)
+                    </label>
+                  )}
+                  {pro && (
+                    <label className="check">
+                      <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Show the cue on now in the Planner as these cues
+                      run (the crew’s phones, stage timer and prompter follow)
+                    </label>
+                  )}
                 </div>
                 <div className="pld__sum">
                   {plan.cues.length} cue{plan.cues.length === 1 ? '' : 's'}

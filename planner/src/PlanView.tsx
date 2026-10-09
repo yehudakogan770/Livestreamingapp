@@ -1,11 +1,55 @@
 import { memo, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Check, ChevronRight, CircleAlert, Ellipsis, LoaderCircle, MessageSquare, PanelRight, Plus, Printer, StickyNote, UserPlus, X } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Ellipsis,
+  LoaderCircle,
+  MessageSquare,
+  PanelRight,
+  Plus,
+  Printer,
+  Radio,
+  StickyNote,
+  UserPlus,
+  X,
+  Columns3,
+} from 'lucide-react';
 import { deletePlan, removePerson } from './api';
+import * as pro from './apiPro';
+import { cuesToRows, downloadBytes, downloadText, planToIcs, toCsv, toXlsx } from './csv';
+import { ImportDialog, PlanSettings, ShortcutsDialog, VersionsDialog } from './Dialogs';
+import { FilePanel, useFiles } from './Files';
+import { KIND_WORDS, listOf, type ItemKind } from './items';
+import { ListView } from './ListView';
+import { Prompter } from './Prompter';
+import { NowNextStrip, ShowView, StageTimer } from './ShowView';
+import { PRINT_LAYOUTS, type PrintLayout } from './PrintSheet';
+import { useItems } from './useItems';
+import { useLive } from './useLive';
+import { usePeople } from './usePeople';
+import './pro.css';
 import { Chat } from './Chat';
 import { ClockInput, DurationInput } from './fields';
 import { Inspector, hintText, initials } from './Inspector';
 import { Mark } from './Mark';
-import { SEGMENTS, cueAt, cueLabel, eventSeconds, formatDuration, clock12, longDate, schedule, type PlanCue, type Schedule, type Segment } from './model';
+import {
+  SEGMENTS,
+  cueAt,
+  cueLabel,
+  eventSeconds,
+  formatDuration,
+  clock12,
+  longDate,
+  parseClock,
+  schedule,
+  zoneAbbr,
+  validZone,
+  type CustomColumn,
+  type PlanCue,
+  type Schedule,
+  type Segment,
+} from './model';
 import { PhonePlan } from './PhonePlan';
 import { PrintSheet } from './PrintSheet';
 import { BlockEditor, ScheduleView } from './Schedule';
@@ -19,7 +63,17 @@ import { usePlan, type PlanStore } from './usePlan';
 
 export { hintText };
 
-export type PlanTab = 'run' | 'schedule' | 'chat';
+export type PlanTab = 'run' | 'schedule' | 'chat' | 'show' | 'timer' | 'prompter' | 'crew' | 'contacts' | 'tasks' | 'gear' | 'budget' | 'files';
+
+/** The plan's list tabs, and the list each one shows. */
+export const LIST_TABS: { tab: PlanTab; kind: ItemKind }[] = [
+  { tab: 'crew', kind: 'crew' },
+  { tab: 'tasks', kind: 'task' },
+  { tab: 'gear', kind: 'gear' },
+  { tab: 'budget', kind: 'budget' },
+  { tab: 'contacts', kind: 'contact' },
+];
+const listKind = (t: PlanTab): ItemKind | null => LIST_TABS.find((x) => x.tab === t)?.kind ?? null;
 
 const ROLE_WORDS = { owner: 'You own this plan', editor: 'You can edit', viewer: 'View only' } as const;
 
@@ -68,6 +122,25 @@ export function PlanView({
   const [sharing, setSharing] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [more, setMore] = useState(false);
+  const [dialog, setDialog] = useState<null | 'versions' | 'import' | 'settings' | 'keys' | 'print'>(null);
+  const [printLayout, setPrintLayout] = useState<PrintLayout>('run');
+  const [hidden, setHidden] = useHidden(planId);
+  const live = useLive(planId);
+  const items = useItems(planId);
+  const files = useFiles(planId);
+  const people = usePeople(planId);
+  const mentionable = useMemo(() => people.map((p) => ({ userId: p.userId, name: p.name, email: p.email })), [people]);
+  const [locks, setLocks] = useState<pro.SectionLock[]>([]);
+  useEffect(() => {
+    let on = true;
+    const load = () => void pro.loadLocks(db(), planId).then((l) => on && setLocks(l));
+    load();
+    const stop = pro.watchLocks(db(), planId, load);
+    return () => {
+      on = false;
+      stop();
+    };
+  }, [planId]);
   const now = useNow();
   const canEdit = role === 'owner' || role === 'editor';
   const chatOpen = phone ? tab === 'chat' : panel === 'chat' && (!overlay || panelOpen);
@@ -92,7 +165,7 @@ export function PlanView({
     panelOpen,
     overlay,
     canEdit: store.role === 'owner' || store.role === 'editor',
-    on: layout.device === 'computer' && tab === 'run' && !sharing && !!store.plan,
+    on: layout.device === 'computer' && tab === 'run' && !sharing && !dialog && !!store.plan,
   };
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -113,6 +186,23 @@ export function PlanView({
         return;
       }
       if (typing) return;
+      if (e.key === '?') {
+        e.preventDefault();
+        setDialog('keys');
+        return;
+      }
+      const selCue = i >= 0 ? k.cues[i]! : null;
+      if ((e.key === 'd' || e.key === 'D') && k.canEdit && selCue) {
+        e.preventDefault();
+        const id = store.duplicateCue(selCue.id);
+        if (id) setSel(id);
+        return;
+      }
+      if ((e.key === 'f' || e.key === 'F') && k.canEdit && selCue && store.plan?.pro) {
+        e.preventDefault();
+        store.editCue(selCue.id, { skip: !selCue.skip });
+        return;
+      }
       if ((e.key === 'n' || e.key === 'N') && k.canEdit) {
         e.preventDefault();
         const id = store.addCue(k.sel);
@@ -149,7 +239,7 @@ export function PlanView({
   }, [phone, tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sched = useMemo(() => schedule(cues, plan?.startTime ?? ''), [cues, plan?.startTime]);
-  const nowSec = plan ? eventSeconds(plan.eventDate, now) : null;
+  const nowSec = plan ? eventSeconds(plan.eventDate, now, plan.timeZone) : null;
   const onNow = nowSec === null ? null : cueAt(sched, nowSec);
   const commentCount = useMemo(() => {
     const m = new Map<string, number>();
@@ -188,10 +278,94 @@ export function PlanView({
       </main>
     );
 
+  const isPro = plan.pro;
+  const showData = { plan, cues, live: live.live, log: live.log, offset: live.offset };
+  const toRun = () => onTab('run');
+  if (isPro && tab === 'show')
+    return (
+      <>
+        <ShowView
+          data={showData}
+          store={canEdit ? live : undefined}
+          onBack={toRun}
+          onTimer={() => onTab('timer')}
+          onPrompter={() => onTab('prompter')}
+          onUseLengths={(m) => store.editCues(new Map([...m].map(([id, s]) => [id, { durationSec: s }])))}
+          compact={phone}
+        />
+      </>
+    );
+  if (isPro && tab === 'timer') return <StageTimer data={showData} onClose={() => onTab('show')} />;
+  if (isPro && tab === 'prompter') return <Prompter cues={cues} live={live.live} title={plan.name || 'Untitled plan'} onClose={() => onTab('show')} />;
+
+  const editable = (c: PlanCue) => canEdit && pro.canEditSection(role, me.id, c.section, locks);
+  const addColumns = (cols: CustomColumn[]): CustomColumn[] => {
+    const next = [...plan.columns, ...cols].slice(0, 12);
+    store.editPlan({ columns: next });
+    return next;
+  };
+  const exportSheet = (kind: 'csv' | 'xlsx') => {
+    const rows = cuesToRows(cues, plan.startTime, plan.columns);
+    const base = plan.name || 'Run of show';
+    if (kind === 'csv') downloadText(`${base}.csv`, toCsv(rows), 'text/csv');
+    else {
+      const sheets = [{ name: 'Run of show', rows }];
+      const kinds: ItemKind[] = ['crew', 'task', 'gear', 'contact', ...(canEdit ? (['budget'] as ItemKind[]) : [])];
+      for (const k of kinds) {
+        const l = listOf(items.items, k);
+        if (!l.length) continue;
+        const w = KIND_WORDS[k];
+        sheets.push({
+          name: w.name,
+          rows: [
+            [
+              w.title,
+              ...(w.role ? [w.role] : []),
+              ...(w.person ? [w.person] : []),
+              'Phone',
+              'Email',
+              'Call time',
+              'Day',
+              'Qty',
+              'Amount',
+              'Actual',
+              'Status',
+              'Done',
+              'Notes',
+            ],
+            ...l.map((it) => [
+              it.title,
+              ...(w.role ? [it.role] : []),
+              ...(w.person ? [it.person] : []),
+              it.phone,
+              it.email,
+              it.callTime ? clock12(parseClock(it.callTime) ?? 0) : '',
+              it.day,
+              it.qty === null ? '' : String(it.qty),
+              it.amount === null ? '' : it.amount.toFixed(2),
+              it.actual === null ? '' : it.actual.toFixed(2),
+              it.status,
+              it.done ? 'yes' : '',
+              it.notes,
+            ]),
+          ],
+        });
+      }
+      downloadBytes(`${base}.xlsx`, toXlsx(sheets), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+  };
+  const printAs = (l: PrintLayout) => {
+    setPrintLayout(l);
+    setDialog(null);
+    setTimeout(() => window.print(), 50);
+  };
+
   const leaveOrDelete = () => {
     if (role === 'owner') {
       if (!confirm(`Delete “${plan.name}” for everyone? Its cues, schedule, chat and comments are deleted too. This can’t be undone.`)) return;
-      deletePlan(db(), plan.id)
+      // Its stored files first (the plan's rows go with the plan; stored files do not).
+      Promise.all(files.files.map((f) => pro.deleteFile(db(), f).catch(() => {})))
+        .then(() => deletePlan(db(), plan.id))
         .then(onBack)
         .catch((e: unknown) => alert(e instanceof Error ? e.message : String(e)));
     } else {
@@ -221,8 +395,23 @@ export function PlanView({
 
   const shared = (
     <>
-      <PrintSheet plan={plan} cues={cues} sched={sched} blocks={blocks.blocks} />
-      {sharing && <ShareDialog plan={plan} role={role} me={me.id} onClose={() => setSharing(false)} onChanged={store.reloadRole} />}
+      <PrintSheet plan={plan} cues={cues} sched={sched} blocks={blocks.blocks} items={items.items} layout={printLayout} />
+      {sharing && (
+        <ShareDialog
+          plan={plan}
+          role={role}
+          me={me.id}
+          onClose={() => setSharing(false)}
+          onChanged={store.reloadRole}
+          cues={cues}
+          onShareChanged={(token, scope) => store.patchPlan({ shareToken: token, shareScope: scope })}
+        />
+      )}
+      {dialog === 'versions' && <VersionsDialog plan={plan} cues={cues} canEdit={canEdit} isOwner={role === 'owner'} onClose={() => setDialog(null)} />}
+      {dialog === 'import' && <ImportDialog plan={plan} onAdd={(list) => store.addCues(list)} onAddColumns={addColumns} onClose={() => setDialog(null)} />}
+      {dialog === 'settings' && <PlanSettings plan={plan} canEdit={canEdit} onChange={(c) => store.editPlan(c)} onClose={() => setDialog(null)} />}
+      {dialog === 'keys' && <ShortcutsDialog onClose={() => setDialog(null)} />}
+      {dialog === 'print' && <PrintChooser onPick={printAs} onClose={() => setDialog(null)} canBudget={canEdit} />}
     </>
   );
 
@@ -250,6 +439,52 @@ export function PlanView({
           onBlockSel={setBlockSel}
           onCue={showCue}
           onFirstUntimed={firstUntimed}
+          extra={
+            isPro
+              ? {
+                  onShow: () => onTab('show'),
+                  onAir: live.live?.state === 'running' || live.live?.state === 'paused',
+                  strip: <NowNextStrip data={showData} />,
+                  bodyName: listKind(tab) ? KIND_WORDS[listKind(tab)!].name : tab === 'files' ? 'Files' : '',
+                  body: listKind(tab) ? (
+                    <ListView
+                      kind={listKind(tab)!}
+                      store={items}
+                      canEdit={canEdit}
+                      me={me.id}
+                      cues={cues}
+                      people={people}
+                      planName={plan.name}
+                      onCue={(id) => {
+                        setSel(id);
+                        onTab('run');
+                      }}
+                    />
+                  ) : tab === 'files' ? (
+                    <FilePanel store={files} cues={cues} canEdit={canEdit} />
+                  ) : null,
+                  menu: [
+                    { label: canEdit ? 'Run the show' : 'Follow the show', run: () => onTab('show') },
+                    { label: 'Stage timer', run: () => onTab('timer') },
+                    { label: 'Prompter', run: () => onTab('prompter') },
+                    ...LIST_TABS.filter((t) => t.kind !== 'budget' || canEdit).map((t) => ({ label: KIND_WORDS[t.kind].name, run: () => onTab(t.tab) })),
+                    { label: 'Files', run: () => onTab('files') },
+                    { label: 'Print or save as PDF…', run: () => setDialog('print') },
+                    { label: 'Versions…', run: () => setDialog('versions') },
+                    { label: 'Plan settings…', run: () => setDialog('settings') },
+                    ...(canEdit ? [{ label: 'Import cues from a sheet…', run: () => setDialog('import') }] : []),
+                    { label: 'Download for Excel', run: () => exportSheet('xlsx') },
+                    {
+                      label: 'Add to a calendar',
+                      run: () => downloadText(`${plan.name || 'Plan'}.ics`, planToIcs(plan, cues, blocks.blocks), 'text/calendar'),
+                    },
+                  ],
+                  inspector: { pro: true, columns: plan.columns, items, files, people },
+                  people: mentionable,
+                  editable,
+                }
+              : undefined
+          }
         />
         {shared}
       </>
@@ -286,12 +521,18 @@ export function PlanView({
         index={cues.indexOf(selected)}
         count={cues.length}
         store={store}
-        canEdit={canEdit}
+        canEdit={editable(selected)}
         comments={comments.filter((c) => c.cueId === selected.id)}
         me={me.id}
         isOwner={role === 'owner'}
         timed={sched.rows[cues.indexOf(selected)]}
         onSel={setSel}
+        pro={isPro}
+        columns={plan.columns}
+        locked={canEdit && !editable(selected)}
+        items={items}
+        files={files}
+        people={people}
       />
     ) : (
       <div className="inspector__empty">
@@ -345,11 +586,28 @@ export function PlanView({
             )}
             {saving === 'saved' ? 'All changes saved' : saving === 'saving' ? 'Saving…' : 'Not saved — retrying'}
           </span>
+          {isPro && (
+            <button
+              type="button"
+              className={`btn${live.live?.state === 'running' || live.live?.state === 'paused' ? ' btn--onair' : ''}`}
+              onClick={() => onTab('show')}
+              title={canEdit ? 'Call the show: GO for each cue, with timers for everyone' : 'Follow the show: what is on now and next'}
+            >
+              <Radio size={15} strokeWidth={1.75} aria-hidden="true" />
+              {live.live?.state === 'running' || live.live?.state === 'paused' ? 'Live now' : canEdit ? 'Run the show' : 'Follow the show'}
+            </button>
+          )}
           <button type="button" className="btn" onClick={() => setSharing(true)}>
             <UserPlus size={15} strokeWidth={1.75} aria-hidden="true" />
             Share…
           </button>
-          <button type="button" className="btn btn--icon" onClick={() => window.print()} title="Print, or save as PDF" aria-label="Print / PDF">
+          <button
+            type="button"
+            className="btn btn--icon"
+            onClick={() => (isPro ? setDialog('print') : window.print())}
+            title="Print, or save as PDF"
+            aria-label="Print / PDF"
+          >
             <Printer size={15} strokeWidth={1.75} aria-hidden="true" />
           </button>
           <div className="account">
@@ -364,18 +622,66 @@ export function PlanView({
               <Ellipsis size={16} strokeWidth={1.75} aria-hidden="true" />
             </button>
             {more && (
-              <div className="popover" role="menu" aria-label="More" onMouseLeave={() => setMore(false)}>
+              <div className="popover popover--menu" role="menu" aria-label="More" onMouseLeave={() => setMore(false)}>
                 <button
                   type="button"
                   role="menuitem"
                   className="popover__item"
                   onClick={() => {
                     setMore(false);
-                    window.print();
+                    if (isPro) setDialog('print');
+                    else window.print();
                   }}
                 >
-                  Print or save as PDF
+                  Print or save as PDF…
                 </button>
+                {isPro && (
+                  <>
+                    <MenuItem onClick={() => (setMore(false), setDialog('settings'))}>Plan settings (time zone, columns)…</MenuItem>
+                    <MenuItem onClick={() => (setMore(false), setDialog('versions'))}>Versions…</MenuItem>
+                    {canEdit && <MenuItem onClick={() => (setMore(false), setDialog('import'))}>Import cues from a sheet…</MenuItem>}
+                    <div className="popover__sep" role="separator" />
+                    <MenuItem onClick={() => (setMore(false), exportSheet('xlsx'))}>Download for Excel (.xlsx)</MenuItem>
+                    <MenuItem onClick={() => (setMore(false), exportSheet('csv'))}>Download as CSV</MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setMore(false);
+                        downloadText(`${plan.name || 'Plan'}.ics`, planToIcs(plan, cues, blocks.blocks), 'text/calendar');
+                      }}
+                    >
+                      Add to a calendar (.ics)
+                    </MenuItem>
+                    <div className="popover__sep" role="separator" />
+                    <MenuItem
+                      onClick={() => {
+                        setMore(false);
+                        const name = prompt('Name of the copy:', `${plan.name || 'Untitled plan'} (copy)`);
+                        if (name === null) return;
+                        pro
+                          .copyPlan(db(), plan.id, name, false)
+                          .then((id) => (location.hash = `#/plan/${id}`))
+                          .catch((e: unknown) => alert(e instanceof Error ? e.message : String(e)));
+                      }}
+                    >
+                      Duplicate plan…
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => {
+                        setMore(false);
+                        const name = prompt('Name of the template:', `${plan.name || 'Untitled plan'} template`);
+                        if (name === null) return;
+                        pro
+                          .copyPlan(db(), plan.id, name, true)
+                          .then(() => alert('Saved. New plans can start from it (New plan → From a template).'))
+                          .catch((e: unknown) => alert(e instanceof Error ? e.message : String(e)));
+                      }}
+                    >
+                      Save as a template…
+                    </MenuItem>
+                    {layout.device === 'computer' && <MenuItem onClick={() => (setMore(false), setDialog('keys'))}>Keyboard shortcuts</MenuItem>}
+                    <div className="popover__sep" role="separator" />
+                  </>
+                )}
                 <button
                   type="button"
                   role="menuitem"
@@ -413,6 +719,11 @@ export function PlanView({
                 onChange={(v) => store.editPlan({ startTime: v })}
                 className="input input--time"
               />
+              {plan.timeZone && validZone(plan.timeZone) && (
+                <button type="button" className="mini__zone" title={`Times are ${plan.timeZone.replace(/_/g, ' ')}`} onClick={() => setDialog('settings')}>
+                  {zoneAbbr(plan.timeZone)}
+                </button>
+              )}
             </span>
           </label>
           <label className="mini mini--wide">
@@ -448,7 +759,7 @@ export function PlanView({
 
         <div className="plan__tabs">
           <div className="tabs" role="tablist" aria-label="Plan">
-            <button type="button" role="tab" className="tabs__tab" aria-selected={tab !== 'schedule'} onClick={() => onTab('run')}>
+            <button type="button" role="tab" className="tabs__tab" aria-selected={tab === 'run' || tab === 'chat'} onClick={() => onTab('run')}>
               Run of show
               <span className="tabs__n">{cues.length}</span>
             </button>
@@ -456,6 +767,23 @@ export function PlanView({
               Schedule
               {blocks.blocks.length > 0 && <span className="tabs__n">{blocks.blocks.length}</span>}
             </button>
+            {isPro &&
+              LIST_TABS.filter((t) => t.kind !== 'budget' || canEdit).map((t) => {
+                const n = listOf(items.items, t.kind);
+                const open = t.kind === 'task' ? n.filter((x) => !x.done).length : n.length;
+                return (
+                  <button key={t.tab} type="button" role="tab" className="tabs__tab" aria-selected={tab === t.tab} onClick={() => onTab(t.tab)}>
+                    {KIND_WORDS[t.kind].name}
+                    {open > 0 && <span className="tabs__n">{open}</span>}
+                  </button>
+                );
+              })}
+            {isPro && (
+              <button type="button" role="tab" className="tabs__tab" aria-selected={tab === 'files'} onClick={() => onTab('files')}>
+                Files
+                {files.files.length > 0 && <span className="tabs__n">{files.files.length}</span>}
+              </button>
+            )}
           </div>
           <span className="bar__spacer" />
           {overlay && (
@@ -485,7 +813,8 @@ export function PlanView({
               </button>
             </>
           )}
-          {tab !== 'schedule' && canEdit && (
+          {(tab === 'run' || tab === 'chat') && <ColumnsMenu hidden={hidden} onChange={setHidden} columns={plan.columns} />}
+          {(tab === 'run' || tab === 'chat') && canEdit && (
             <button
               type="button"
               className="btn btn--primary"
@@ -504,9 +833,28 @@ export function PlanView({
           )}
         </div>
         {error && <p className="warn plan__error">{error}</p>}
+        {isPro && <NowNextStrip data={showData} />}
 
         <div className="plan__body">
-          {tab === 'schedule' ? (
+          {listKind(tab) ? (
+            <ListView
+              kind={listKind(tab)!}
+              store={items}
+              canEdit={canEdit}
+              me={me.id}
+              cues={cues}
+              people={people}
+              planName={plan.name}
+              onCue={(id) => {
+                setSel(id);
+                onTab('run');
+              }}
+            />
+          ) : tab === 'files' ? (
+            <div className="files-page">
+              <FilePanel store={files} cues={cues} canEdit={canEdit} />
+            </div>
+          ) : tab === 'schedule' ? (
             <ScheduleView
               store={blocks}
               plan={plan}
@@ -525,6 +873,9 @@ export function PlanView({
                 if (id && panel === 'chat' && sel === id) setPanel('detail');
               }}
               canEdit={canEdit}
+              editable={editable}
+              columns={plan.columns}
+              hidden={hidden}
               onNow={onNow}
               commentCount={commentCount}
               hasStart={!!plan.startTime}
@@ -571,7 +922,15 @@ export function PlanView({
             </div>
             <div className={`panel__body${panel === 'chat' ? ' panel__body--chat' : ''}`}>
               {panel === 'chat' ? (
-                <Chat chat={chat} me={me.id} isOwner={role === 'owner'} cueCount={cues.length} onCue={showCue} planName={plan.name} />
+                <Chat
+                  chat={chat}
+                  me={me.id}
+                  isOwner={role === 'owner'}
+                  cueCount={cues.length}
+                  onCue={showCue}
+                  planName={plan.name}
+                  people={isPro ? mentionable : undefined}
+                />
               ) : (
                 <div className="inspector">{detail}</div>
               )}
@@ -579,7 +938,7 @@ export function PlanView({
           </aside>
         </div>
 
-        {tab !== 'schedule' && (
+        {(tab === 'run' || tab === 'chat') && (
           <footer className="status">
             <span>
               {cues.length} cue{cues.length === 1 ? '' : 's'}
@@ -590,8 +949,10 @@ export function PlanView({
             {plan.startTime && sched.endSec !== null && (
               <span>
                 Ends <b>{clock12(sched.endSec)}</b>
+                {plan.timeZone && validZone(plan.timeZone) && ` ${zoneAbbr(plan.timeZone)}`}
               </span>
             )}
+            {plan.endBy && sched.endSec !== null && parseClock(plan.endBy) !== null && <EndBy endSec={sched.endSec} endBy={parseClock(plan.endBy)!} />}
             {!plan.startTime && cues.length > 0 && (
               <button type="button" className="status__link" onClick={() => focusField('#plan-start-wrap input')}>
                 Set a start time to see when each cue begins
@@ -617,6 +978,54 @@ export function PlanView({
       </main>
       {shared}
     </>
+  );
+}
+
+function MenuItem({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+  return (
+    <button type="button" role="menuitem" className="popover__item" onClick={onClick}>
+      {children}
+    </button>
+  );
+}
+
+/** How the planned end compares with the time the show must end by. */
+function EndBy({ endSec, endBy }: { endSec: number; endBy: number }) {
+  // The end-by time is on the event day, or just after midnight.
+  const target = endBy < endSec - 12 * 3600 ? endBy + 86_400 : endBy;
+  const d = endSec - target;
+  if (Math.abs(d) < 30) return <span>On time for {clock12(endBy)}</span>;
+  return (
+    <span className={d > 0 ? 'warn-text' : 'muted'} title={`The show must end by ${clock12(endBy)}`}>
+      <b>{formatDuration(Math.abs(d))}</b> {d > 0 ? 'over' : 'under'} the {clock12(endBy)} end
+    </span>
+  );
+}
+
+/** Choose what to print. */
+function PrintChooser({ onPick, onClose, canBudget }: { onPick: (l: PrintLayout) => void; onClose: () => void; canBudget: boolean }) {
+  return (
+    <div className="dialog" role="dialog" aria-modal="true" aria-label="Print" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="dialog__box">
+        <header className="dialog__head">
+          <h2>Print or save as PDF</h2>
+          <button type="button" className="btn btn--quiet btn--icon" onClick={onClose} aria-label="Close" title="Close">
+            <X size={16} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        </header>
+        <div className="dialog__body">
+          <div className="choices">
+            {PRINT_LAYOUTS.map((l) => (
+              <button key={l.id} type="button" className="choice" onClick={() => onPick(l.id)}>
+                <b>{l.name}</b>
+                <span className="muted small">{l.id === 'lists' && !canBudget ? l.what.replace(/ \(and the budget.*\)/, '') : l.what}</span>
+              </button>
+            ))}
+          </div>
+          <p className="muted small">To save a PDF, choose “Save as PDF” as the printer.</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -673,16 +1082,25 @@ function CueSheet({
   sel,
   onSel,
   canEdit,
+  editable = () => canEdit,
+  columns: allColumns = [],
+  hidden = '',
   onNow,
   commentCount,
   hasStart,
   onOpen,
 }: {
+  /** Columns this person hid ("type,who,hint,notes" and extra columns' ids). */
+  hidden?: string;
   store: PlanStore;
   sched: Schedule;
   sel: string | null;
   onSel: (id: string | null) => void;
   canEdit: boolean;
+  /** May this cue be changed here (its section may be locked)? */
+  editable?: (c: PlanCue) => boolean;
+  /** The plan's extra columns. */
+  columns?: CustomColumn[];
   onNow: number | null;
   commentCount: Map<string, number>;
   hasStart: boolean;
@@ -690,6 +1108,10 @@ function CueSheet({
   onOpen?: (id: string) => void;
 }) {
   const { cues } = store;
+  const hiddenList = hidden.split(',');
+  const off = (k: string) => hiddenList.includes(k);
+  const columns = useMemo(() => allColumns.filter((c) => !hiddenList.includes(c.id)), [allColumns, hidden]); // eslint-disable-line react-hooks/exhaustive-deps
+  const baseOff = BASE_COLUMNS.filter(off).length;
   // Rows drag only by their handle (so text in the cells can still be selected), by mouse, pen or touch.
   const { listRef, handle, rowClass } = useReorder<HTMLTableSectionElement>(cues.length, store.move, canEdit);
   const box = useRef<HTMLDivElement>(null);
@@ -732,11 +1154,14 @@ function CueSheet({
           <col className="c-n" />
           <col className="c-time" />
           <col className="c-len" />
-          <col className="c-seg" />
+          {!off('type') && <col className="c-seg" />}
           <col className="c-title" />
-          <col className="c-who" />
-          <col className="c-hint" />
-          <col className="c-notes" />
+          {!off('who') && <col className="c-who" />}
+          {!off('hint') && <col className="c-hint" />}
+          {!off('notes') && <col className="c-notes" />}
+          {columns.map((c) => (
+            <col key={c.id} className="c-extra" />
+          ))}
           <col className="c-com" />
         </colgroup>
         <thead>
@@ -757,11 +1182,16 @@ function CueSheet({
               )}
             </th>
             <th>Length</th>
-            <th className="th-type">Type</th>
+            {!off('type') && <th className="th-type">Type</th>}
             <th>Cue</th>
-            <th>Who</th>
-            <th className="th-hint">Lumora</th>
-            <th className="th-notes">Notes</th>
+            {!off('who') && <th>Who</th>}
+            {!off('hint') && <th className="th-hint">Lumora</th>}
+            {!off('notes') && <th className="th-notes">Notes</th>}
+            {columns.map((c) => (
+              <th key={c.id} className="th-extra">
+                {c.name}
+              </th>
+            ))}
             <th aria-label="Comments" />
           </tr>
         </thead>
@@ -780,7 +1210,9 @@ function CueSheet({
                 isSel={sel === c.id}
                 isNow={onNow === i}
                 extra={rowClass(i)}
-                canEdit={canEdit}
+                canEdit={editable(c)}
+                columns={columns}
+                hidden={hidden}
                 comments={commentCount.get(c.id) ?? 0}
                 canOpen={!!onOpen}
                 act={act}
@@ -794,12 +1226,63 @@ function CueSheet({
             <td className="mono">
               <b>{formatDuration(sched.totalSec) || '0:00'}</b>
             </td>
-            <td colSpan={6} className="muted">
+            <td colSpan={6 + columns.length - baseOff} className="muted">
               {cues.length === 0 ? (canEdit ? 'No cues yet: Add cue starts the list.' : 'No cues yet.') : 'Total planned length'}
             </td>
           </tr>
         </tfoot>
       </table>
+    </div>
+  );
+}
+
+/** The cue sheet's columns a person can hide (besides the extra ones). */
+export const BASE_COLUMNS = ['type', 'who', 'hint', 'notes'] as const;
+const BASE_NAMES: Record<(typeof BASE_COLUMNS)[number], string> = { type: 'Type', who: 'Who', hint: 'Lumora', notes: 'Notes' };
+
+/** The columns this person hid on this plan (kept on this device). */
+function useHidden(planId: string): [string, (v: string) => void] {
+  const key = `lumora.planner.hide.${planId}`;
+  const [v, setV] = useState(() => {
+    try {
+      return localStorage.getItem(key) ?? '';
+    } catch {
+      return '';
+    }
+  });
+  const set = (next: string) => {
+    setV(next);
+    try {
+      localStorage.setItem(key, next);
+    } catch {
+      // Not remembered: fine.
+    }
+  };
+  return [v, set];
+}
+
+/** Which columns show on the cue sheet (for this person, on this device). */
+function ColumnsMenu({ hidden, onChange, columns }: { hidden: string; onChange: (v: string) => void; columns: CustomColumn[] }) {
+  const [open, setOpen] = useState(false);
+  const list = hidden.split(',').filter(Boolean);
+  const toggle = (k: string) => onChange((list.includes(k) ? list.filter((x) => x !== k) : [...list, k]).join(','));
+  return (
+    <div className="account">
+      <button type="button" className={`btn btn--quiet${list.length ? ' is-on' : ''}`} aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Columns3 size={15} strokeWidth={1.75} aria-hidden="true" />
+        Columns{list.length ? ` (${list.length} hidden)` : ''}
+      </button>
+      {open && (
+        <div className="popover popover--menu" role="menu" aria-label="Columns" onMouseLeave={() => setOpen(false)}>
+          <p className="muted small popover__note">What you see on this device; others keep their own.</p>
+          {[...BASE_COLUMNS.map((k) => [k, BASE_NAMES[k]] as const), ...columns.map((c) => [c.id, c.name || 'Untitled column'] as const)].map(([k, name]) => (
+            <label key={k} className="popover__item popover__check">
+              <input type="checkbox" checked={!list.includes(k)} onChange={() => toggle(k)} />
+              {name}
+            </label>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -827,7 +1310,11 @@ const CueRow = memo(function CueRow({
   comments,
   canOpen,
   act,
+  columns,
+  hidden,
 }: {
+  columns: CustomColumn[];
+  hidden: string;
   c: PlanCue;
   i: number;
   section: string | null;
@@ -846,13 +1333,13 @@ const CueRow = memo(function CueRow({
     <>
       {section ? (
         <tr className="cues__section">
-          <td colSpan={10}>{section}</td>
+          <td colSpan={10 + columns.length - BASE_COLUMNS.filter((k) => hidden.split(',').includes(k)).length}>{section}</td>
         </tr>
       ) : null}
       <tr
         id={`cue-${c.id}`}
         data-reorder
-        className={`cues__row${isSel ? ' is-sel' : ''}${isNow ? ' is-now' : ''}${c.segment === 'break' ? ' is-break' : ''}${extra}`}
+        className={`cues__row${isSel ? ' is-sel' : ''}${isNow ? ' is-now' : ''}${c.segment === 'break' ? ' is-break' : ''}${c.skip ? ' is-skip' : ''}${c.color ? ` cue--${c.color}` : ''}${extra}`}
         onClick={() => act.sel(c.id)}
         onFocus={() => !isSel && act.sel(c.id)}
         onKeyDown={(e) => act.keys(e, i)}
@@ -879,8 +1366,9 @@ const CueRow = memo(function CueRow({
               onChange={(v) => act.edit(c.id, { startTime: v })}
             />
           ) : (
-            <span className="cell-text">{start !== null ? clock12(start) : ''}</span>
+            <span className="cell-text">{start !== null && !c.skip ? clock12(start) : ''}</span>
           )}
+          {c.skip && <span className="drift drift--float">floated</span>}
           {drift !== null && drift !== 0 && (
             <span className={`drift ${drift < 0 ? 'drift--over' : ''}`} title={drift < 0 ? 'The cue before runs past this time' : 'A gap before this cue'}>
               {drift < 0 ? `−${formatDuration(-drift)}` : `+${formatDuration(drift)}`}
@@ -897,21 +1385,23 @@ const CueRow = memo(function CueRow({
             onChange={(v) => act.edit(c.id, { durationSec: v })}
           />
         </td>
-        <td className="type">
-          <select
-            className="cell cell--seg"
-            value={c.segment}
-            disabled={!canEdit}
-            aria-label={`Type of cue ${i + 1}`}
-            onChange={(e) => act.edit(c.id, { segment: e.target.value as Segment })}
-          >
-            {SEGMENTS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </td>
+        {!hidden.split(',').includes('type') && (
+          <td className="type">
+            <select
+              className="cell cell--seg"
+              value={c.segment}
+              disabled={!canEdit}
+              aria-label={`Type of cue ${i + 1}`}
+              onChange={(e) => act.edit(c.id, { segment: e.target.value as Segment })}
+            >
+              {SEGMENTS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </td>
+        )}
         <td>
           <input
             className="cell cell--title"
@@ -923,18 +1413,32 @@ const CueRow = memo(function CueRow({
             onChange={(e) => act.edit(c.id, { title: e.target.value })}
           />
         </td>
-        <td>
-          <input
-            className="cell"
-            value={c.who}
-            maxLength={80}
-            readOnly={!canEdit}
-            aria-label={`Who for cue ${i + 1}`}
-            onChange={(e) => act.edit(c.id, { who: e.target.value })}
-          />
-        </td>
-        <td className="cell-text hint">{hintText(c)}</td>
-        <td className="cell-text notes">{c.notes.split('\n')[0]}</td>
+        {!hidden.split(',').includes('who') && (
+          <td>
+            <input
+              className="cell"
+              value={c.who}
+              maxLength={80}
+              readOnly={!canEdit}
+              aria-label={`Who for cue ${i + 1}`}
+              onChange={(e) => act.edit(c.id, { who: e.target.value })}
+            />
+          </td>
+        )}
+        {!hidden.split(',').includes('hint') && <td className="cell-text hint">{hintText(c)}</td>}
+        {!hidden.split(',').includes('notes') && <td className="cell-text notes">{c.notes.split('\n')[0]}</td>}
+        {columns.map((col) => (
+          <td key={col.id} className="extra">
+            <input
+              className="cell"
+              value={c.custom[col.id] ?? ''}
+              maxLength={200}
+              readOnly={!canEdit}
+              aria-label={`${col.name} for cue ${i + 1}`}
+              onChange={(e) => act.edit(c.id, { custom: { ...c.custom, [col.id]: e.target.value } })}
+            />
+          </td>
+        ))}
         <td className="num com">
           {canOpen ? (
             <button

@@ -2,9 +2,9 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "com.lumora.streamdeck",
   "Name": "Lumora",
-  "Version": "1.0.0.0",
+  "Version": "1.1.0.0",
   "Author": "Lumora",
-  "Description": "Run Lumora live productions from a Stream Deck: TAKE and CUT, inputs with red and green tally, overlays, presets, instant replay, recording and going live.",
+  "Description": "Run Lumora live productions from a Stream Deck: TAKE and CUT, inputs with red and green tally, overlays, presets, instant replay, recording and going live, with the T-bar and sound faders on Stream Deck + dials.",
   "URL": "https://github.com/yehudakogan770/Livestreamingapp",
   "Icon": "imgs/plugin/icon",
   "Category": "Lumora",
@@ -324,6 +324,72 @@
       "States": [
         {
           "Image": "imgs/keys/slidefirst",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.mute",
+      "Name": "Mute",
+      "Tooltip": "Mute or unmute the Stream mix, mix A or B, or one input",
+      "Icon": "imgs/actions/mute",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/mute",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.tbar",
+      "Name": "T-bar (dial)",
+      "Tooltip": "Stream Deck +: turn to mix Next onto the screen, push for TAKE, touch for CUT",
+      "Icon": "imgs/actions/tbar",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Encoder"],
+      "Encoder": {
+        "layout": "$B1",
+        "Icon": "imgs/actions/tbar",
+        "TriggerDescription": {
+          "Rotate": "Mix",
+          "Push": "TAKE",
+          "Touch": "CUT"
+        }
+      },
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/keys/tbar",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.fader",
+      "Name": "Sound fader (dial)",
+      "Tooltip": "Stream Deck +: turn to set the level of the Stream mix, mix A or B, or one input; push or touch to mute",
+      "Icon": "imgs/actions/fader",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Encoder"],
+      "Encoder": {
+        "layout": "$B1",
+        "Icon": "imgs/actions/fader",
+        "TriggerDescription": {
+          "Rotate": "Level",
+          "Push": "Mute",
+          "Touch": "Mute"
+        }
+      },
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": false,
+      "States": [
+        {
+          "Image": "imgs/keys/fader",
           "ShowTitle": false
         }
       ]

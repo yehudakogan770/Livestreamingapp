@@ -2,6 +2,7 @@
 // rulers, the selection with its handles, motion paths, snapping, and the
 // tools (select, text, rectangle, ellipse, pen, hand).
 
+import { timerRunning } from '../core/timer';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { newShape, newText } from '../core/build';
 import type { BrowserEnv } from '../core/browserEnv';
@@ -309,6 +310,14 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     }
     if (s.show.rulers) drawRulers(ctx, W, H, scale, ox, oy, col);
   }, [store, env, size, ram]);
+
+  // A timer field running (the control panel's Start): the canvas follows it.
+  const ticking = useStore(store, (s) => s.project.variables.some((v) => v.type === 'timer' && timerRunning(s.values[v.key] ?? v.value)));
+  useEffect(() => {
+    if (!ticking) return;
+    const id = setInterval(() => requestAnimationFrame(draw), 100);
+    return () => clearInterval(id);
+  }, [ticking, draw]);
 
   // Draw on every change, and every frame while playing or previewing a take.
   useEffect(() => {

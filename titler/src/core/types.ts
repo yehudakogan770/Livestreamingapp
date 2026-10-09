@@ -68,6 +68,16 @@ export interface PathData {
   v: PathVertex[];
 }
 
+/** A path keyframe (a shape that changes form): vertices matched one to one with the next key's. */
+export interface PathKey {
+  t: number;
+  /** The main outline, then any further outlines (holes, more pieces), as in `path` and `subpaths`. */
+  v: PathData[];
+  o?: Vec2;
+  i?: Vec2;
+  hold?: boolean;
+}
+
 export interface Transform {
   /** The point (layer space) that position, scale and rotation are about. */
   anchor: Prop<Vec2>;
@@ -78,6 +88,11 @@ export interface Transform {
   rotation: Prop;
   /** 0–100. */
   opacity: Prop;
+  /** 3D layers: turned about the anchor point across (X) and up and down (Y), degrees, seen through the composition's camera. */
+  rotationX?: Prop;
+  rotationY?: Prop;
+  /** 3D layers: toward (negative) or away from the camera, px. */
+  z?: Prop;
 }
 
 export type BlendMode = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'add';
@@ -87,6 +102,8 @@ export interface Mask {
   name: string;
   /** Layer space. */
   path: PathData;
+  /** The mask changing form over time (a wipe drawn as a moving mask); replaces `path`. */
+  morph?: PathKey[] | null;
   mode: 'add' | 'subtract' | 'intersect';
   inverted?: boolean;
   /** Soft edge, px. */
@@ -237,7 +254,15 @@ export interface ShapeLayer extends LayerBase {
   /** More outlines drawn over the first (a double outline), each with its own paint, width and place. */
   extraStrokes?: Stroke[];
   path?: PathData;
+  /** More outlines of the same shape (a compound path: letters with holes, several pieces under one fill). */
+  subpaths?: PathData[];
+  /** How overlapping outlines fill: nonzero (default) or evenodd (every other one is a hole). */
+  fillRule?: 'nonzero' | 'evenodd';
+  /** The path changing form over time (path and subpaths at each key). */
+  morph?: PathKey[] | null;
   fill: Paint | null;
+  /** More fills drawn over the first (a gradient sheen over a color, a texture), each its own paint. */
+  extraFills?: Paint[];
   stroke: Stroke | null;
   /** Trim paths: the part of the outline drawn, percent. */
   trim?: { start: Prop; end: Prop; offset: Prop } | null;
@@ -273,6 +298,19 @@ export interface GroupLayer extends LayerBase {
   type: 'group';
   /** Front first, like the layer list. */
   children: Layer[];
+  /**
+   * Combine the layers into one shape (boolean): the back layer is the base,
+   * each layer in front of it is added to it, cut out of it, kept where they
+   * overlap, or kept where they do not.
+   */
+  combine?: 'union' | 'subtract' | 'intersect' | 'exclude' | null;
+  /**
+   * Repeat the group once for each line of a list field (a row of a table:
+   * results, standings, a schedule), each copy moved by dx, dy and coming in
+   * `stagger` seconds after the one before. In copy n, every list field is
+   * its line n.
+   */
+  repeat?: { field: string; dx: number; dy: number; stagger?: number; max?: number } | null;
 }
 
 /** An invisible layer other layers are parented to. */
@@ -286,6 +324,12 @@ export interface CompLayer extends LayerBase {
   comp: string;
   /** Comp seconds where the inner composition's 0 is. */
   offset: number;
+  /**
+   * This copy's own field values (a component used several times with
+   * different words, colors or pictures); may use this title's fields
+   * ("{{guest_2}}"). Fields not given come from the title.
+   */
+  values?: Values;
 }
 
 export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | GroupLayer | NullLayer | CompLayer;
@@ -328,11 +372,15 @@ export interface Composition {
   /** Front first. */
   layers: Layer[];
   guides?: { x: number[]; y: number[] };
+  /** How far the camera is from the picture for 3D layers, px (nearer: stronger perspective); 2000 when left out. */
+  perspective?: number;
   /** A format of another composition (the main one) in another shape: picked on air by the picture's shape. */
   variantOf?: string;
+  /** A format follows changes to the main composition (keeping its own changes); false: it stands on its own. */
+  follow?: boolean;
 }
 
-export type VariableType = 'text' | 'number' | 'color' | 'image' | 'list';
+export type VariableType = 'text' | 'number' | 'color' | 'image' | 'list' | 'timer';
 
 /** A template field the operator fills in: {{key}} in text, colors and images. */
 export interface Variable {
@@ -349,6 +397,8 @@ export interface Variable {
   suffix?: string;
   /** List: what goes between the items when shown on one line (a ticker); one item a line when left out. */
   separator?: string;
+  /** Timer (game clock, countdown, stopwatch; see core/timer.ts): which way it runs, where it stops, how it shows, and whether it starts when the graphic is taken. */
+  timer?: { dir: 'down' | 'up'; stop?: number; format?: 'm:ss' | 'mm:ss' | 'h:mm:ss' | 'ss' | 'm:ss.t' | 'ss.t'; auto?: boolean };
   /** The control panel's section. */
   group?: string;
   /** Lumora fills it from here (data file column, scoreboard, countdown…). */
@@ -378,8 +428,12 @@ export interface Asset {
   /** Image sequence: frame files and rate. */
   frames?: string[];
   fps?: number;
-  /** Font: the family it adds. */
+  /** Font: the family it adds, and which of its faces this file is (CSS weight "400" or "100 900", style "normal" / "italic"). */
   family?: string;
+  weight?: string;
+  style?: string;
+  /** The characters this file covers (CSS unicode-range), all when left out. */
+  range?: string;
 }
 
 export interface DataSource {

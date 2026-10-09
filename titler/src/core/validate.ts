@@ -15,7 +15,7 @@ export interface ReadResult {
 }
 
 const LAYER_TYPES = new Set(['text', 'shape', 'image', 'video', 'group', 'null', 'comp']);
-const VAR_TYPES = new Set(['text', 'number', 'color', 'image', 'list']);
+const VAR_TYPES = new Set(['text', 'number', 'color', 'image', 'list', 'timer']);
 const MAX_LAYERS = 2000;
 const MAX_COMPS = 200;
 
