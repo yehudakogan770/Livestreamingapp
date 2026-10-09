@@ -1155,6 +1155,7 @@ function shapeMask(n: (k: string, d?: number) => number): Record<string, number>
     uAngle: (n('angle') * Math.PI) / 180,
     uFeather: n('feather', 10) / 200,
     uInvert: n('invert'),
+    uRound: n('corner', 20) / 100,
   };
 }
 

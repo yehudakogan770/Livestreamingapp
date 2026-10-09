@@ -616,7 +616,7 @@ void main() {
   outColor = src * a;
 }`,
   mask: `${HEAD}
-uniform float uShape, uCx, uCy, uW, uH, uAngle, uFeather, uInvert;
+uniform float uShape, uCx, uCy, uW, uH, uAngle, uFeather, uInvert, uRound;
 void main() {
   vec4 src = texture(uTex, vUv);
   // Frame heights from the mask's middle, turned with the mask.
@@ -625,7 +625,14 @@ void main() {
   vec2 half_ = max(vec2(0.001), vec2(uW, uH) * 0.5);
   float d;
   if (uShape < 0.5) d = length(p / half_) - 1.0;
-  else { vec2 q = abs(p) / half_ - 1.0; d = max(q.x, q.y); }
+  else if (uShape < 1.5) { vec2 q = abs(p) / half_ - 1.0; d = max(q.x, q.y); }
+  else {
+    // A rectangle with rounded corners (the radius a share of the shorter side's half).
+    float m = min(half_.x, half_.y);
+    float r = clamp(uRound, 0.0, 1.0) * m;
+    vec2 q = abs(p) - half_ + r;
+    d = (length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r) / m;
+  }
   float a = 1.0 - smoothstep(-uFeather, 0.0001, d);
   if (uInvert > 0.5) a = 1.0 - a;
   outColor = src * a;
