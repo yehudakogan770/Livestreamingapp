@@ -72,11 +72,27 @@ export function propsOf(l: Layer): PropInfo[] {
       out.push({ path: `effects.${i}.opacity`, label: `${name}: opacity`, dims: 1, fallback: 50, unit: '%' });
       out.push({ path: `effects.${i}.radius`, label: `${name}: radius`, dims: 1, fallback: 12, unit: 'px' });
     } else if (e.type === 'blur') out.push({ path: `effects.${i}.amount`, label: `${name}: amount`, dims: 1, fallback: 4, unit: 'px' });
+    else if (e.type === 'stroke') {
+      out.push({ path: `effects.${i}.width`, label: `${name}: width`, dims: 1, fallback: 3, unit: 'px' });
+      out.push({ path: `effects.${i}.opacity`, label: `${name}: opacity`, dims: 1, fallback: 100, unit: '%' });
+    } else if (e.type === 'gradient') out.push({ path: `effects.${i}.opacity`, label: `${name}: opacity`, dims: 1, fallback: 100, unit: '%' });
+    else if (e.type === 'noise') out.push({ path: `effects.${i}.amount`, label: `${name}: amount`, dims: 1, fallback: 10, unit: '%' });
+    else if (e.type === 'color')
+      for (const k of ['brightness', 'contrast', 'saturation'] as const) out.push({ path: `effects.${i}.${k}`, label: `${name}: ${k}`, dims: 1, fallback: 0 });
   });
   return out;
 }
 
-export const EFFECT_NAMES: Record<string, string> = { dropShadow: 'Drop shadow', glow: 'Glow', blur: 'Blur', fill: 'Color fill' };
+export const EFFECT_NAMES: Record<string, string> = {
+  dropShadow: 'Drop shadow',
+  glow: 'Glow',
+  blur: 'Blur',
+  fill: 'Color fill',
+  stroke: 'Outline',
+  gradient: 'Gradient overlay',
+  noise: 'Grain',
+  color: 'Color correction',
+};
 
 /** A property by path (undefined when the layer has none there yet). */
 export function getProp(l: Layer, path: string): Prop<Value> | undefined {

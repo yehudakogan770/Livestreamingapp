@@ -9,8 +9,8 @@ use std::process::Stdio;
 use tauri::{AppHandle, Manager, State, WebviewUrl, WebviewWindowBuilder};
 
 use super::{
-    autosave_path, base64, encode_args, find_ffmpeg, free_path, is_title, library_dir, list, mime,
-    quiet, write_atomic, Job, LibraryEntry, Renders, EXT, MAX_READ, WINDOW,
+    audio_args, autosave_path, base64, encode_args, find_ffmpeg, free_path, is_title, library_dir,
+    list, mime, quiet, unbase64, write_atomic, Job, LibraryEntry, Renders, EXT, MAX_READ, WINDOW,
 };
 
 #[tauri::command]
@@ -146,8 +146,10 @@ pub fn titler_open_window(app: AppHandle, query: String) -> Result<(), String> {
     .map_err(|e| format!("The Titler window could not open: {e}"))
 }
 
-/// Start a film: FFmpeg waits for `width` × `height` RGBA frames.
+/// Start a film: FFmpeg waits for `width` × `height` RGBA frames. `audio`:
+/// the audio cues' sound as a base64 WAV (joined to the film), if any.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn titler_render_start(
     renders: State<'_, Renders>,
     path: String,
@@ -155,6 +157,7 @@ pub fn titler_render_start(
     height: u32,
     fps: f64,
     format: String,
+    audio: Option<String>,
 ) -> Result<u32, String> {
     if width == 0 || height == 0 || width > 8192 || height > 8192 || !(1.0..=240.0).contains(&fps) {
         return Err("That size or frame rate can't be rendered.".to_owned());
@@ -163,6 +166,18 @@ pub fn titler_render_start(
         "FFmpeg was not found. Reinstall Lumora Titler to put it back.".to_owned()
     })?;
     let (args, out) = encode_args(&format, Path::new(&path))?;
+    let sound_args = audio_args(&format);
+    let sound = match audio {
+        Some(b64) if !sound_args.is_empty() => {
+            let bytes =
+                unbase64(&b64).ok_or_else(|| "The film's sound could not be read.".to_owned())?;
+            let wav = out.with_extension("cues.wav");
+            std::fs::write(&wav, bytes)
+                .map_err(|e| format!("The film's sound could not be written: {e}"))?;
+            Some(wav)
+        }
+        _ => None,
+    };
     let mut cmd = quiet(&ffmpeg);
     cmd.args([
         "-y",
@@ -181,12 +196,15 @@ pub fn titler_render_start(
         &format!("{fps}"),
         "-i",
         "-",
-    ])
-    .args(&args)
-    .arg(&out)
-    .stdin(Stdio::piped())
-    .stdout(Stdio::null())
-    .stderr(Stdio::piped());
+    ]);
+    if let Some(wav) = &sound {
+        cmd.arg("-i").arg(wav).args(&sound_args);
+    }
+    cmd.args(&args)
+        .arg(&out)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped());
     let mut child = cmd
         .spawn()
         .map_err(|e| format!("FFmpeg could not start: {e}"))?;
@@ -201,6 +219,7 @@ pub fn titler_render_start(
             stdin,
             out,
             frame_bytes: width as usize * height as usize * 4,
+            sound,
         },
     );
     Ok(id)
@@ -248,7 +267,11 @@ pub fn titler_render_finish(renders: State<'_, Renders>, id: u32) -> Result<Stri
     let out = job
         .child
         .wait_with_output()
-        .map_err(|e| format!("FFmpeg stopped: {e}"))?;
+        .map_err(|e| format!("FFmpeg stopped: {e}"));
+    if let Some(wav) = &job.sound {
+        let _ = std::fs::remove_file(wav);
+    }
+    let out = out?;
     if !out.status.success() {
         let msg = String::from_utf8_lossy(&out.stderr);
         return Err(format!(
@@ -266,6 +289,9 @@ pub fn titler_render_cancel(renders: State<'_, Renders>, id: u32) -> Result<(), 
         drop(job.stdin.take());
         let _ = job.child.kill();
         let _ = job.child.wait();
+        if let Some(wav) = &job.sound {
+            let _ = std::fs::remove_file(wav);
+        }
         if !job.out.to_string_lossy().contains('%') {
             let _ = std::fs::remove_file(&job.out);
         }

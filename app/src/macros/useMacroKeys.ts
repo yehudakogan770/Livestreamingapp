@@ -6,8 +6,10 @@ import { keyName, macroForKey } from './macros';
 const typing = (t: EventTarget | null) => t instanceof HTMLElement && (t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName));
 
 /**
- * Keys in the control window: each macro's own key, and [ / ] for the
- * previous / next row of the data file (speaker lists, scores). Nothing
+ * Keys in the control window: each macro's own key, [ / ] for the previous
+ * / next row of the data file (speaker lists, scores), and Shift+[ / ] for
+ * the previous / next row of the Titler graphics' own data (those on air,
+ * else all of them). Nothing
  * happens while typing in a box or while a dialog is open.
  */
 export function useMacroKeys(show: Show, act: Act): void {
@@ -24,7 +26,15 @@ export function useMacroKeys(show: Show, act: Act): void {
         return;
       }
       if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('.modal')) return;
-      if ((e.key === ']' || e.key === '[') && show.data.rows.length > 0) {
+      if (
+        (e.key === '}' || e.key === '{' || (e.shiftKey && (e.key === ']' || e.key === '['))) &&
+        show.sources.some((s) => s.kind.type === 'titler' && s.kind.data.some((t) => t.rows.length))
+      ) {
+        e.preventDefault();
+        act({ type: 'titlerDataStep', delta: e.key === '}' || e.key === ']' ? 1 : -1 });
+        return;
+      }
+      if ((e.key === ']' || e.key === '[') && !e.shiftKey && show.data.rows.length > 0) {
         e.preventDefault();
         act({ type: 'dataStep', delta: e.key === ']' ? 1 : -1 });
       }

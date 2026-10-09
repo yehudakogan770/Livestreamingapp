@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { Designer } from './Designer';
 import type { Host } from './host';
@@ -6,6 +6,9 @@ import type { TitleProject } from '../core/types';
 import { ControlPanel } from './ControlPanel';
 import { starterTemplates } from '../core/templates';
 import type { BrowserEnv } from '../core/browserEnv';
+
+// Each test starts from the standard workspace (the layout is kept in this browser).
+beforeEach(() => localStorage.clear());
 
 function memoryHost(): Host & { saved: TitleProject[]; library: Map<string, TitleProject> } {
   const library = new Map<string, TitleProject>();
@@ -94,6 +97,19 @@ describe('the designer', () => {
     expect(within(screen.getByTestId('titler-inspector')).getByLabelText('Words')).toHaveValue('Text');
     fireEvent.keyDown(window, { key: 'g' });
     expect(screen.getByRole('button', { name: 'Pen (paths)' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('Alt+click on a stopwatch gives the property an expression; the shortcuts sheet opens with ?', async () => {
+    render(<Designer host={memoryHost()} env={env} />);
+    await openTemplate('Logo bug');
+    fireEvent.click(within(screen.getByTestId('titler-timeline')).getByText('Logo'));
+    fireEvent.click(within(screen.getByTestId('titler-inspector')).getByRole('button', { name: 'Animate Rotation' }), { altKey: true });
+    const input = screen.getByLabelText('Rotation expression');
+    fireEvent.change(input, { target: { value: 'wiggle(2, 5)' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(within(screen.getByTestId('titler-inspector')).getByText('= wiggle(2, 5)')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: '?' });
+    expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
   });
 
   it('animates a property from the timeline (the stopwatch) and shows the keyframe', async () => {

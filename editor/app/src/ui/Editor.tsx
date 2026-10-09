@@ -817,7 +817,7 @@ function EditPage({
         <Splitter ui={ui} which="left" />
         <Timeline doc={doc} engine={engine} ui={ui} actions={actions} collab={collab} />
       </div>
-      <StudioTitlerHost clipOf={actions.clipById} onUse={(t, id) => (id ? actions.useTitler(t, id) : actions.addTitler(t))} />
+      <StudioTitlerHost clipOf={actions.clipById} onUse={actions.useTitler} onAdd={actions.addTitler} />
     </div>
   );
 }

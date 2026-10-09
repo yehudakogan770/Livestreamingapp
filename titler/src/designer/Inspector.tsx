@@ -1,14 +1,15 @@
 // The properties of the selected layer (or the composition when nothing is
 // selected): everything about it, in sections.
 
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
+import { exprProblem } from '../core/expr';
 import { Plus, Trash2 } from 'lucide-react';
 import { tokensFor, valuesFor, variablesIn } from '../core/binding';
 import { uid } from '../core/build';
-import { isAnimated, setValue, toggleKeys, valueAt, vec } from '../core/easing';
+import { isAnimated, num, setValue, toggleKeys, valueAt, vec } from '../core/easing';
 import { fade, grow, reveal, slide, wipe } from '../core/motion';
 import { ellipsePath, rectPath } from '../core/paths';
-import type { Effect, ImageLayer, VideoLayer, Layer, Mask, Paint, ShapeLayer, Stroke, TextAnimator, TextLayer, Value, Vec2 } from '../core/types';
+import type { Effect, ImageLayer, VideoLayer, Layer, Mask, Paint, Prop, ShapeLayer, Stroke, TextAnimator, TextLayer, Value, Vec2 } from '../core/types';
 import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
 import { layerBox } from './geometry';
 import { lookOf } from './Viewport';
@@ -17,24 +18,9 @@ import { EFFECT_NAMES, getProp, withProp } from './props';
 import type { Store } from './store';
 import { useStore } from './store';
 import { loadStyles, saveStyle, styleOf, applyStyle, removeStyle } from './styles';
-
-const FONTS = [
-  '$font',
-  '$fontSub',
-  'Inter',
-  'Segoe UI',
-  'Arial',
-  'Georgia',
-  'Heebo',
-  'Frank Ruhl Libre',
-  'Bebas Neue',
-  'Chakra Petch',
-  'Times New Roman',
-  'Verdana',
-  'Tahoma',
-  'Calibri',
-  'Consolas',
-];
+import { applyTextStyle, differsFromStyle, newTextStyle, styleFromLayer } from './textStyles';
+import { FontPicker } from './FontPicker';
+import { inStackOrder, loadAnimPresets, pasteKeys, removeAnimPreset, saveAnimPreset, stagger } from './keyframes';
 
 export function Inspector({ store }: { store: Store }) {
   const project = useStore(store, (s) => s.project);
@@ -137,6 +123,34 @@ export function Inspector({ store }: { store: Store }) {
               onChange={(mode) => updOne('Track matte', (x) => ({ ...x, matte: x.matte ? { ...x.matte, mode } : null }))}
             />
           )}
+        </Row>
+        <Row label="Constraints" hint="How the layer is placed in the title's other formats (9:16, 1:1, 4K): pinned, scaled or stretched">
+          <Select
+            label="Constraint across"
+            value={l.constraints?.h ?? 'auto'}
+            options={[
+              ['auto', 'Auto'],
+              ['left', 'Left'],
+              ['center', 'Center'],
+              ['right', 'Right'],
+              ['scale', 'Scale'],
+              ['stretch', 'Left and right'],
+            ]}
+            onChange={(h) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, h: h === 'auto' ? undefined : h } }))}
+          />
+          <Select
+            label="Constraint down"
+            value={l.constraints?.v ?? 'auto'}
+            options={[
+              ['auto', 'Auto'],
+              ['top', 'Top'],
+              ['center', 'Center'],
+              ['bottom', 'Bottom'],
+              ['scale', 'Scale'],
+              ['stretch', 'Top and bottom'],
+            ]}
+            onChange={(v) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, v: v === 'auto' ? undefined : v } }))}
+          />
         </Row>
         <Row label="Blend">
           <Select
@@ -353,61 +367,152 @@ function PropField({
   const p = getProp(layer, path);
   const anim = isAnimated(p);
   const v = valueAt(p as never, time, fallback as never) as Value;
+  const expr = p?.x;
+  const [exprOpen, setExprOpen] = useState(false);
   const set = (nv: Value) =>
     store.edit(`Change ${label.toLowerCase()}`, (pr) =>
       updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, setValue(getProp(x, path) as never, time, nv as never))),
     );
+  const setExpr = (x: string | null) =>
+    store.edit(x === null ? `Remove expression from ${label.toLowerCase()}` : `Expression on ${label.toLowerCase()}`, (pr) =>
+      updateLayers(pr, compId, [layer.id], (l) => {
+        const cur = (getProp(l, path) ?? { v: fallback }) as Prop<Value>;
+        const { x: _old, ...rest } = cur;
+        return withProp(l, path, (x === null ? rest : { ...rest, x }) as never);
+      }),
+    );
   return (
-    <Row label={label}>
-      <button
-        className={`tt-ico stopwatch${anim ? ' on' : ''}`}
-        onClick={() =>
-          store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) =>
-            updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, toggleKeys(getProp(x, path) as never, time, fallback as never))),
-          )
-        }
-        title={anim ? 'Animated: click to stop animating' : 'Animate this (a keyframe at the playhead)'}
-        aria-label={`Animate ${label}`}
-        aria-pressed={anim}
-      >
-        ◆
-      </button>
-      {Array.isArray(v) ? (
-        <>
+    <>
+      <Row label={label}>
+        <button
+          className={`tt-ico stopwatch${anim ? ' on' : ''}`}
+          onClick={(e) => {
+            // Alt+click (as in After Effects): an expression instead.
+            if (e.altKey) return setExprOpen(true);
+            store.edit(anim ? 'Remove keyframes' : 'Add keyframes', (pr) =>
+              updateLayers(pr, compId, [layer.id], (x) => withProp(x, path, toggleKeys(getProp(x, path) as never, time, fallback as never))),
+            );
+          }}
+          title={`${anim ? 'Animated: click to stop animating' : 'Animate this (a keyframe at the playhead)'}. Alt+click: an expression (wiggle, loop, time, a link).`}
+          aria-label={`Animate ${label}`}
+          aria-pressed={anim}
+        >
+          ◆
+        </button>
+        {Array.isArray(v) ? (
+          <>
+            <NumberField
+              value={v[0]}
+              step={step}
+              label={`${label} x`}
+              unit={unit}
+              onChange={(n) => set([n, v[1]])}
+              onBegin={() => store.begin(label)}
+              onEnd={() => store.end()}
+            />
+            <NumberField
+              value={v[1]}
+              step={step}
+              label={`${label} y`}
+              unit={unit}
+              onChange={(n) => set([v[0], n])}
+              onBegin={() => store.begin(label)}
+              onEnd={() => store.end()}
+            />
+          </>
+        ) : (
           <NumberField
-            value={v[0]}
+            value={v}
             step={step}
-            label={`${label} x`}
+            min={min}
+            max={max}
+            label={label}
             unit={unit}
-            onChange={(n) => set([n, v[1]])}
+            onChange={(n) => set(n)}
             onBegin={() => store.begin(label)}
             onEnd={() => store.end()}
+            wide
           />
-          <NumberField
-            value={v[1]}
-            step={step}
-            label={`${label} y`}
-            unit={unit}
-            onChange={(n) => set([v[0], n])}
-            onBegin={() => store.begin(label)}
-            onEnd={() => store.end()}
-          />
-        </>
-      ) : (
-        <NumberField
-          value={v}
-          step={step}
-          min={min}
-          max={max}
-          label={label}
-          unit={unit}
-          onChange={(n) => set(n)}
-          onBegin={() => store.begin(label)}
-          onEnd={() => store.end()}
-          wide
-        />
-      )}
-    </Row>
+        )}
+      </Row>
+      {(exprOpen || !!expr) && <ExprEditor label={label} value={expr ?? ''} open={exprOpen} onOpen={setExprOpen} onChange={setExpr} />}
+    </>
+  );
+}
+
+const EXPR_EXAMPLES: [string, string][] = [
+  ['wiggle(2, 8)', 'Shake: 2 times a second, 8 px'],
+  ['loopOut()', 'Repeat the keyframes'],
+  ['loopOut("pingpong")', 'Back and forth'],
+  ['time * 90', 'Keep turning (90° a second)'],
+  ['value + [0, sin(time * 3) * 10]', 'Float up and down'],
+];
+
+/** An expression under a property: type it, see if it works, pick an example. */
+function ExprEditor({
+  label,
+  value,
+  open,
+  onOpen,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  open: boolean;
+  onOpen: (o: boolean) => void;
+  onChange: (x: string | null) => void;
+}) {
+  const [text, setText] = useState(value);
+  useEffect(() => setText(value), [value]);
+  const problem = text.trim() ? exprProblem(text) : null;
+  if (!open)
+    return (
+      <div className="tt-expr tt-expr-closed">
+        <button className="tt-expr-code" onClick={() => onOpen(true)} title="Change the expression">
+          = {value}
+        </button>
+      </div>
+    );
+  const commit = () => {
+    if (!text.trim()) onChange(null);
+    else if (!problem && text !== value) onChange(text.trim());
+  };
+  return (
+    <div className="tt-expr">
+      <input
+        className="tt-input tt-expr-input"
+        autoFocus
+        value={text}
+        placeholder="wiggle(2, 8)"
+        aria-label={`${label} expression`}
+        aria-invalid={!!problem}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            commit();
+            onOpen(false);
+          }
+          if (e.key === 'Escape') {
+            setText(value);
+            onOpen(false);
+          }
+        }}
+      />
+      {problem ? <div className="tt-expr-problem">{problem}</div> : null}
+      <div className="tt-chips">
+        {EXPR_EXAMPLES.map(([x, hint]) => (
+          <button key={x} className="tt-chip" title={hint} onMouseDown={(e) => e.preventDefault()} onClick={() => (setText(x), onChange(x))}>
+            {x}
+          </button>
+        ))}
+        {value && (
+          <button className="tt-chip" onMouseDown={(e) => e.preventDefault()} onClick={() => (onChange(null), onOpen(false))}>
+            Remove
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -522,6 +627,7 @@ function TextSection({
   void time;
   return (
     <Section title="Text">
+      <TextStyleRow store={store} l={l} />
       <textarea
         className="tt-textarea"
         aria-label="Words"
@@ -561,16 +667,19 @@ function TextSection({
           </button>
         )}
       </div>
-      <div className="tt-dim tt-small">Styling inside the words: [b]bold[/b], [i]italic[/i], [c=$accent]color[/c], [s=80]size[/s].</div>
+      <div className="tt-dim tt-small">
+        Styling inside the words: [b]bold[/b], [i]italic[/i], [c=$accent]color[/c], [s=80]size[/s], [v=30]baseline shift[/v].
+      </div>
       <Row label="Font">
-        <input className="tt-input" list="tt-fonts" value={st.font} onChange={(e) => style('Font', { font: e.target.value })} aria-label="Font" />
-        <datalist id="tt-fonts">
-          {FONTS.map((f) => (
-            <option key={f} value={f}>
-              {f === '$font' ? `Event main font (${tokens.font})` : f === '$fontSub' ? `Event second font (${tokens.fontSub})` : f}
-            </option>
-          ))}
-        </datalist>
+        <FontPicker
+          value={st.font}
+          onChange={(font) => style('Font', { font })}
+          brand={{ font: tokens.font, fontSub: tokens.fontSub }}
+          own={store
+            .get()
+            .project.assets.filter((a) => a.kind === 'font' && a.family)
+            .map((a) => a.family!)}
+        />
       </Row>
       <Row label="Size">
         <NumberField value={st.size} min={1} label="Text size" unit="px" onChange={(size) => style('Text size', { size })} />
@@ -591,6 +700,7 @@ function TextSection({
       <Row label="Style">
         <Toggle value={st.italic} onChange={(italic) => style('Italic', { italic })} label="Italic" />
         <Toggle value={!!st.caps} onChange={(caps) => style('Capitals', { caps })} label="Capitals" />
+        <Toggle value={!!st.smallCaps} onChange={(smallCaps) => style('Small capitals', { smallCaps })} label="Small caps" />
         <Toggle value={!!st.rtl} onChange={(rtl) => style('Right to left', { rtl, align: rtl ? 'right' : st.align })} label="Right to left" />
       </Row>
       <PaintField paint={st.fill} label="Fill" onChange={(fill) => style('Text color', { fill })} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
@@ -630,6 +740,7 @@ function TextSection({
             ['left', 'Left'],
             ['center', 'Center'],
             ['right', 'Right'],
+            ['justify', 'Justify'],
           ]}
           onChange={(align) => style('Align', { align })}
         />
@@ -647,6 +758,26 @@ function TextSection({
       <Row label="Spacing">
         <NumberField value={st.tracking} step={0.5} label="Letter spacing" unit="px" onChange={(tracking) => style('Letter spacing', { tracking })} />
         <NumberField value={st.lineHeight} step={0.05} min={0.5} label="Line height" unit="×" onChange={(lineHeight) => style('Line height', { lineHeight })} />
+      </Row>
+      <Row label="Figures" hint="Tabular figures keep every digit the same width, so scores and clocks don't shift as they change.">
+        <Select
+          label="Figures"
+          value={st.figures ?? 'proportional'}
+          options={[
+            ['proportional', 'Proportional'],
+            ['tabular', 'Tabular (scores, clocks)'],
+          ]}
+          onChange={(figures) => style('Figures', { figures: figures === 'proportional' ? undefined : figures })}
+        />
+        <Select
+          label="Kerning"
+          value={st.kerning ?? 'auto'}
+          options={[
+            ['auto', 'Kerning: font'],
+            ['none', 'Kerning: none'],
+          ]}
+          onChange={(kerning) => style('Kerning', { kerning: kerning === 'auto' ? undefined : kerning })}
+        />
       </Row>
       <Row label="Box">
         <NumberField value={l.box[0]} min={0} label="Box width" unit="px" onChange={(w) => upd('Text box', (x) => ({ ...x, box: [w, x.box[1]] }))} />
@@ -693,6 +824,57 @@ function TextSection({
         )}
       </Row>
     </Section>
+  );
+}
+
+/** The shared text style a layer is linked to: choose, make, update, reset, detach. */
+function TextStyleRow({ store, l }: { store: Store; l: TextLayer }) {
+  const project = useStore(store, (s) => s.project);
+  const styles = project.textStyles ?? [];
+  const differs = differsFromStyle(project, l);
+  const def = styles.find((d) => d.id === l.styleRef);
+  return (
+    <div className="tt-textstyle">
+      <Row label="Text style" hint="Shared text styles: change a style and every text linked to it follows, in every composition.">
+        <select
+          className="tt-select"
+          aria-label="Text style"
+          value={def?.id ?? ''}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === '+') {
+              const name = prompt('Name of the new text style', l.name);
+              if (name !== null) store.edit('New text style', (p) => newTextStyle(p, l.id, name).project);
+              return;
+            }
+            store.edit(v ? 'Apply text style' : 'Detach text style', (p) => applyTextStyle(p, [l.id], v || null));
+          }}
+        >
+          <option value="">None</option>
+          {styles.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+          <option value="+">New style from this text…</option>
+        </select>
+      </Row>
+      {def && differs && (
+        <div className="tt-textstyle-differs" role="status">
+          <span className="tt-dim">Changed from “{def.name}”</span>
+          <button
+            className="tt-link"
+            onClick={() => store.edit('Update text style', (p) => styleFromLayer(p, l))}
+            title="Every text linked to this style takes this look"
+          >
+            Update style
+          </button>
+          <button className="tt-link" onClick={() => store.edit('Reset to text style', (p) => applyTextStyle(p, [l.id], def.id))}>
+            Reset
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -889,7 +1071,34 @@ function ShapeSection({
         />
       </Row>
       {l.shape !== 'path' && prop('size', 'Size', [100, 100], 'px', { min: 0 })}
-      {l.shape === 'rect' && prop('roundness', 'Corners', 0, 'px', { min: 0 })}
+      {l.shape === 'rect' && !l.corners && prop('roundness', 'Corners', 0, 'px', { min: 0 })}
+      {l.shape === 'rect' && (
+        <Row label={l.corners ? 'Corners' : ''} hint="Each corner its own radius: top left, top right, bottom right, bottom left">
+          <Toggle
+            value={!!l.corners}
+            onChange={(on) =>
+              upd('Each corner', (x) => {
+                const r = num(x.roundness, store.get().time, 0);
+                return { ...x, corners: on ? [r, r, r, r] : null, roundness: on ? x.roundness : { v: x.corners?.[0] ?? r } };
+              })
+            }
+            label="Each corner"
+          />
+          {l.corners &&
+            (['Top left', 'Top right', 'Bottom right', 'Bottom left'] as const).map((name, i) => (
+              <NumberField
+                key={name}
+                value={l.corners![i]!}
+                min={0}
+                label={`${name} corner`}
+                unit="px"
+                onChange={(v) =>
+                  upd('Corner', (x) => ({ ...x, corners: x.corners ? (x.corners.map((c, j) => (j === i ? v : c)) as [number, number, number, number]) : null }))
+                }
+              />
+            ))}
+        </Row>
+      )}
       {l.shape === 'path' && (
         <div className="tt-dim tt-small">
           Drawn with the pen: {l.path?.v.length ?? 0} points, {l.path?.closed ? 'closed' : 'open'}.
@@ -930,6 +1139,28 @@ function ShapeSection({
             vals={vals}
             fieldKeys={fieldKeys}
           />
+          <Row label="Place" hint="Where the line sits on the outline">
+            <Select
+              label="Stroke place"
+              value={l.stroke.align ?? 'center'}
+              options={[
+                ['center', 'Centered'],
+                ['inside', 'Inside'],
+                ['outside', 'Outside'],
+              ]}
+              onChange={(align) => upd('Stroke place', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, align: align === 'center' ? undefined : align } }))}
+            />
+            <Select
+              label="Corners of the line"
+              value={l.stroke.join ?? 'miter'}
+              options={[
+                ['miter', 'Sharp'],
+                ['round', 'Round'],
+                ['bevel', 'Bevel'],
+              ]}
+              onChange={(join) => upd('Line corners', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, join } }))}
+            />
+          </Row>
           <Row label="Ends">
             <Select
               label="Line ends"
@@ -946,6 +1177,76 @@ function ShapeSection({
               onChange={(on) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: on ? [12, 8] : undefined } }))}
               label="Dashed"
             />
+          </Row>
+          {!!l.stroke.dash?.length && (
+            <Row label="Dashes">
+              <NumberField
+                value={l.stroke.dash[0] ?? 12}
+                min={0}
+                label="Dash length"
+                unit="px"
+                onChange={(d) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: [d, x.stroke?.dash?.[1] ?? 8] } }))}
+              />
+              <NumberField
+                value={l.stroke.dash[1] ?? 8}
+                min={0}
+                label="Gap length"
+                unit="px"
+                onChange={(g) => upd('Dashes', (x) => ({ ...x, stroke: { ...stroke, ...x.stroke, dash: [x.stroke?.dash?.[0] ?? 12, g] } }))}
+              />
+            </Row>
+          )}
+          {(l.extraStrokes ?? []).map((ex, i) => (
+            <div key={i} className="tt-subcard">
+              <Row label={`Outline ${i + 2}`}>
+                <NumberField
+                  value={ex.width}
+                  min={0}
+                  label={`Outline ${i + 2} width`}
+                  unit="px"
+                  onChange={(width) => upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, width } : y)) }))}
+                />
+                <Select
+                  label={`Outline ${i + 2} place`}
+                  value={ex.align ?? 'center'}
+                  options={[
+                    ['center', 'Centered'],
+                    ['inside', 'Inside'],
+                    ['outside', 'Outside'],
+                  ]}
+                  onChange={(align) => upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, align } : y)) }))}
+                />
+                <button
+                  className="tt-ico"
+                  aria-label={`Remove outline ${i + 2}`}
+                  onClick={() => upd('Remove outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).filter((_, j) => j !== i) }))}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </Row>
+              <PaintField
+                paint={ex.paint}
+                label={`Outline ${i + 2} color`}
+                onChange={(paint) => upd('Outline', (x) => ({ ...x, extraStrokes: (x.extraStrokes ?? []).map((y, j) => (j === i ? { ...y, paint } : y)) }))}
+                tokens={tokens}
+                vals={vals}
+                fieldKeys={fieldKeys}
+              />
+            </div>
+          ))}
+          <Row label="">
+            <button
+              className="tt-link"
+              onClick={() =>
+                upd('Add outline', (x) => ({
+                  ...x,
+                  extraStrokes: [...(x.extraStrokes ?? []), { paint: { type: 'solid', color: '$text' }, width: 2, align: 'outside' }],
+                }))
+              }
+              title="Another outline over the first (a double outline)"
+            >
+              + Another outline
+            </button>
           </Row>
           <Row label="Trim">
             <Toggle
@@ -1042,9 +1343,53 @@ function MotionPresets({ store, l, compId }: Common & { l: Layer }) {
     ['Wipe to left', (x) => wipe(x, 'right', { at: outStart, dur: outLen }, true)],
     ['Shrink', (x) => grow(x, { at: outStart, dur: outLen }, true)],
   ];
+  const [saved, setSaved] = useState(loadAnimPresets);
+  const [step, setStep] = useState(3);
+  const [bars, setBars] = useState(false);
+  const selection = store.get().selection;
   return (
     <Section title="Animate" open={false}>
       <div className="tt-dim tt-small">Adds keyframes timed to the IN and OUT markers.</div>
+      {selection.length > 1 && (
+        <Row label="Stagger" hint="Each layer's animation a few frames after the one above it">
+          <NumberField value={step} min={0} step={1} label="Stagger frames" unit="fr" onChange={(v) => setStep(Math.round(v))} />
+          <Toggle value={bars} onChange={setBars} label="Bars too" />
+          <button
+            className="tt-btn"
+            onClick={() => store.edit(`Stagger ${selection.length} layers`, (p) => stagger(p, compId, inStackOrder(p, compId, selection), step / c.fps, bars))}
+          >
+            Stagger
+          </button>
+        </Row>
+      )}
+      <div className="tt-presets">
+        <span>Saved</span>
+        {saved.map((a) => (
+          <span key={a.id} className="tt-chip tt-chip-split">
+            <button
+              onClick={() => store.edit(`Apply “${a.name}”`, (p) => pasteKeys(p, compId, selection.length ? selection : [l.id], a.clip, store.get().time))}
+              title="Put this animation on the selected layers, from the playhead"
+            >
+              {a.name}
+            </button>
+            <button aria-label={`Remove ${a.name}`} title="Remove this saved animation" onClick={() => setSaved(removeAnimPreset(a.id))}>
+              ×
+            </button>
+          </span>
+        ))}
+        <button
+          className="tt-chip"
+          onClick={() => {
+            const name = prompt('Name for this animation', `${l.name} animation`);
+            if (name === null) return;
+            if (saveAnimPreset(l, name)) setSaved(loadAnimPresets());
+            else store.set({ status: 'This layer has no keyframes to save.' });
+          }}
+          title="Keep this layer's keyframes as an animation to give other layers"
+        >
+          <Plus size={11} /> Save this animation
+        </button>
+      </div>
       <div className="tt-presets">
         <span>IN</span>
         {IN.map(([n, f]) => (
@@ -1148,7 +1493,25 @@ function EffectSection({
           ? { id, type, on: true, color: '$accent', opacity: { v: 40 }, radius: { v: 10 } }
           : type === 'blur'
             ? { id, type, on: true, amount: { v: 4 } }
-            : { id, type, on: true, color: '$accent' };
+            : type === 'stroke'
+              ? { id, type, on: true, color: '$box', width: { v: 3 }, opacity: { v: 100 } }
+              : type === 'gradient'
+                ? {
+                    id,
+                    type,
+                    on: true,
+                    angle: 90,
+                    stops: [
+                      { at: 0, color: '#ffffff' },
+                      { at: 1, color: '#000000' },
+                    ],
+                    opacity: { v: 25 },
+                  }
+                : type === 'noise'
+                  ? { id, type, on: true, amount: { v: 8 } }
+                  : type === 'color'
+                    ? { id, type, on: true, brightness: { v: 0 }, contrast: { v: 0 }, saturation: { v: 0 }, hue: { v: 0 } }
+                    : { id, type, on: true, color: '$accent' };
     upd(`Add ${EFFECT_NAMES[type]!.toLowerCase()}`, (x) => ({ ...x, effects: [...(x.effects ?? []), e] }));
   };
   const set = (i: number, patch: Partial<Effect>) =>
@@ -1220,6 +1583,100 @@ function EffectSection({
               />
             </Row>
           )}
+          {e.type === 'stroke' && (
+            <Row label="Outline">
+              <NumberField
+                value={valueAt(e.width as never, 0, 0 as never) as number}
+                min={0}
+                label="Outline width"
+                unit="px"
+                onChange={(v) => set(i, { width: { v } } as Partial<Effect>)}
+              />
+              <NumberField
+                value={valueAt(e.opacity as never, 0, 0 as never) as number}
+                min={0}
+                max={100}
+                label="Outline opacity"
+                unit="%"
+                onChange={(v) => set(i, { opacity: { v } } as Partial<Effect>)}
+              />
+            </Row>
+          )}
+          {e.type === 'gradient' && (
+            <>
+              <Row label="Gradient">
+                <NumberField value={e.angle} label="Gradient angle" unit="°" onChange={(angle) => set(i, { angle } as Partial<Effect>)} />
+                <NumberField
+                  value={valueAt(e.opacity as never, 0, 0 as never) as number}
+                  min={0}
+                  max={100}
+                  label="Gradient opacity"
+                  unit="%"
+                  onChange={(v) => set(i, { opacity: { v } } as Partial<Effect>)}
+                />
+              </Row>
+              {e.stops.map((st, k) => (
+                <Row key={k} label={k === 0 ? 'From' : 'To'}>
+                  <ColorField
+                    value={st.color}
+                    onChange={(color) => set(i, { stops: e.stops.map((x, j) => (j === k ? { ...x, color } : x)) } as Partial<Effect>)}
+                    tokens={tokens}
+                    values={vals}
+                    label={k === 0 ? 'Gradient from' : 'Gradient to'}
+                    fields={fieldKeys}
+                  />
+                </Row>
+              ))}
+            </>
+          )}
+          {e.type === 'noise' && (
+            <Row label="Grain">
+              <NumberField
+                value={valueAt(e.amount as never, 0, 0 as never) as number}
+                min={0}
+                max={100}
+                label="Grain amount"
+                unit="%"
+                onChange={(v) => set(i, { amount: { v } } as Partial<Effect>)}
+              />
+              <Toggle value={!!e.still} onChange={(still) => set(i, { still } as Partial<Effect>)} label="Still" />
+            </Row>
+          )}
+          {e.type === 'color' && (
+            <>
+              <Row label="Light">
+                <NumberField
+                  value={valueAt(e.brightness as never, 0, 0 as never) as number}
+                  min={-100}
+                  max={100}
+                  label="Brightness"
+                  onChange={(v) => set(i, { brightness: { v } } as Partial<Effect>)}
+                />
+                <NumberField
+                  value={valueAt(e.contrast as never, 0, 0 as never) as number}
+                  min={-100}
+                  max={100}
+                  label="Contrast"
+                  onChange={(v) => set(i, { contrast: { v } } as Partial<Effect>)}
+                />
+              </Row>
+              <Row label="Color">
+                <NumberField
+                  value={valueAt(e.saturation as never, 0, 0 as never) as number}
+                  min={-100}
+                  max={100}
+                  label="Saturation"
+                  onChange={(v) => set(i, { saturation: { v } } as Partial<Effect>)}
+                />
+                <NumberField
+                  value={valueAt(e.hue as never, 0, 0 as never) as number}
+                  label="Hue"
+                  unit="°"
+                  onChange={(v) => set(i, { hue: { v } } as Partial<Effect>)}
+                />
+              </Row>
+            </>
+          )}
           {e.type === 'blur' && (
             <Row label="Amount">
               <NumberField
@@ -1235,7 +1692,7 @@ function EffectSection({
       ))}
       <div className="tt-dim tt-small">Effects are optional. Plain, high-contrast graphics read best on air.</div>
       <div className="tt-chips">
-        {(['dropShadow', 'glow', 'blur', 'fill'] as const).map((t) => (
+        {(['dropShadow', 'glow', 'stroke', 'blur', 'fill', 'gradient', 'color', 'noise'] as const).map((t) => (
           <button key={t} className="tt-chip" onClick={() => add(t)}>
             <Plus size={11} /> {EFFECT_NAMES[t]}
           </button>

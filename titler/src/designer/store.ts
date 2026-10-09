@@ -7,7 +7,7 @@ import { useSyncExternalStore } from 'react';
 import type { BrandTokens, Layer, TitleProject, Values } from '../core/types';
 import { compOf } from './ops';
 
-export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'pen' | 'hand';
+export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'pen' | 'hand' | 'note';
 
 export interface KeyRef {
   layer: string;
@@ -33,7 +33,9 @@ export interface EditorState {
   /** Pixels per composition pixel; 0 = fit. */
   zoom: number;
   pan: [number, number];
-  show: { safe: boolean; guides: boolean; grid: boolean; rulers: boolean; snap: boolean; motionPaths: boolean };
+  show: { safe: boolean; guides: boolean; grid: boolean; rulers: boolean; snap: boolean; motionPaths: boolean; notes: boolean };
+  /** The note being written (its id). */
+  editingNote?: string | null;
   /** Layers whose properties are open in the timeline (U: only animated ones). */
   open: Record<string, 'all' | 'animated'>;
   /** Sample values for previewing fields. */
@@ -77,7 +79,7 @@ export class Store {
       tool: 'select',
       zoom: 0,
       pan: [0, 0],
-      show: { safe: true, guides: true, grid: false, rulers: true, snap: true, motionPaths: true },
+      show: { safe: true, guides: true, grid: false, rulers: true, snap: true, motionPaths: true, notes: true },
       open: {},
       values: {},
       brand: null,
@@ -176,6 +178,21 @@ export class Store {
       compId: fixComp(step.project, this.state.compId),
     };
     this.emit();
+  }
+
+  /**
+   * The undo history, oldest first: every step's name, and how many of them
+   * are done (the rest were undone and can be redone).
+   */
+  history(): { labels: string[]; done: number } {
+    return { labels: [...this.past.map((x) => x.label), ...[...this.future].reverse().map((x) => x.label)], done: this.past.length };
+  }
+
+  /** Go back or forward in the history to just after step `done` (0: before the first). */
+  goTo(done: number) {
+    const target = Math.max(0, Math.min(done, this.past.length + this.future.length));
+    while (this.past.length > target) this.undo();
+    while (this.past.length < target && this.future.length) this.redo();
   }
 
   /** Open another project (clears undo). */

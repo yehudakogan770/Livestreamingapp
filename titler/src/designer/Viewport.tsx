@@ -9,12 +9,13 @@ import { isAnimated, num, vec } from '../core/easing';
 import { apply, invert } from '../core/matrix';
 import { groupOf, layerIndex, renderFrame, type Ctx } from '../core/render';
 import { cueTime } from '../core/timeline';
-import type { Layer, PathVertex, Vec2 } from '../core/types';
+import type { CanvasNote, Layer, PathVertex, Vec2 } from '../core/types';
 import { hitLayer, layerBounds, layerBox, layerCorners, setAt, toParent, type Look } from './geometry';
 import { addLayers, boundsOf, compOf, findLayer, flatLayers, updateComp, updateLayers, type Box } from './ops';
 import type { EditorState, Store } from './store';
 import { useStore } from './store';
 import { worldMatrix } from '../core/render';
+import type { RamPreview } from './ramPreview';
 
 /** The composition time and the take clock shown now (a "take" preview runs on its own clock). */
 export function shownTime(s: EditorState, now: number): { t: number; clock: number } {
@@ -50,7 +51,7 @@ interface View {
   dpr: number;
 }
 
-export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
+export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; ram?: RamPreview | null }) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const view = useRef<View>({ scale: 0.5, ox: 0, oy: 0, dpr: 1 });
@@ -118,8 +119,12 @@ export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
     ctx.beginPath();
     ctx.rect(0, 0, c.width, c.height);
     ctx.clip();
+    if (ram) ram.scale = Math.min(1, scale * dpr);
+    // Playing: frames the RAM preview already made are shown as they are (full speed on heavy titles).
+    const kept = s.playing && ram ? ram.frameAt(t) : null;
     try {
-      renderFrame(ctx, s.project, { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env });
+      if (kept) ctx.drawImage(kept, 0, 0, c.width, c.height);
+      else renderFrame(ctx, s.project, { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env });
     } catch {
       /* a frame that cannot be drawn leaves the checkerboard */
     }
@@ -278,8 +283,32 @@ export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
         ctx.strokeRect(p[0] - 3, p[1] - 3, 6, 6);
       }
     }
+    if (s.show.notes) {
+      // Notes pinned on the canvas: numbered tags (open ones solid, done ones outlined).
+      (s.project.notes ?? [])
+        .filter((n) => n.comp === c.id)
+        .forEach((n, i) => {
+          const [x, y] = P([n.x, n.y]);
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.arc(x + 11, y - 11, 10, Math.PI * 0.6, Math.PI * 2.4);
+          ctx.closePath();
+          ctx.fillStyle = n.done ? 'rgba(40,40,38,0.9)' : n.id === s.editingNote ? '#f2c94c' : '#e8b931';
+          ctx.strokeStyle = '#111';
+          ctx.lineWidth = 1;
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = n.done ? '#bbb' : '#111';
+          ctx.font = '600 10px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(String(i + 1), x + 11, y - 11);
+          ctx.restore();
+        });
+    }
     if (s.show.rulers) drawRulers(ctx, W, H, scale, ox, oy, col);
-  }, [store, env, size]);
+  }, [store, env, size, ram]);
 
   // Draw on every change, and every frame while playing or previewing a take.
   useEffect(() => {
@@ -334,6 +363,21 @@ export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
     if (tool === 'hand' || e.button === 1 || spaceDown.current) {
       drag.current = { kind: 'pan', start: [e.clientX, e.clientY], pan: s.pan };
       return;
+    }
+    if (tool === 'note') {
+      const note: CanvasNote = { id: `n${Date.now().toString(36)}`, comp: c.id, x: Math.round(p[0]), y: Math.round(p[1]), text: '', at: Date.now() };
+      store.edit('Add note', (pr) => ({ ...pr, notes: [...(pr.notes ?? []), note] }), { tool: 'select', editingNote: note.id });
+      return;
+    }
+    if (s.show.notes && tool === 'select') {
+      // A click on a note's tag opens it.
+      const hit = (s.project.notes ?? []).find(
+        (n) => n.comp === c.id && dist([n.x + 11 / view.current.scale, n.y - 11 / view.current.scale], p) * view.current.scale < 11,
+      );
+      if (hit) {
+        store.set({ editingNote: hit.id });
+        return;
+      }
     }
     if (tool === 'text') {
       const l = newText(c, 'Text', [Math.round(p[0]), Math.round(p[1])], [800, 90]);

@@ -11,9 +11,11 @@ import { readSource, valuesFromRow, type Table } from '../core/data';
 import { renderFrame, type Ctx } from '../core/render';
 import { CATEGORIES, fromTemplate, starterTemplates } from '../core/templates';
 import { cleanMarkers } from '../core/timeline';
+import { FORMAT_PRESETS, formatsOf, makeFormat } from '../core/formats';
 import type { Asset, BrandTokens, DataSource, TitleProject, Variable, VariableType } from '../core/types';
 import { ControlPanel } from './ControlPanel';
-import { ColorField, NumberField, Row, Section, Select } from './fields';
+import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
+import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
 import type { Store } from './store';
@@ -26,6 +28,73 @@ const SIZES: [string, number, number][] = [
   ['Vertical 1080 × 1920', 1080, 1920],
   ['Square 1080 × 1080', 1080, 1080],
 ];
+
+/** The title in other shapes (9:16 for vertical streams, 1:1, 4K): made from the main composition by the layers' constraints. */
+function FormatsSection({ store }: { store: Store }) {
+  const project = useStore(store, (s) => s.project);
+  const compId = useStore(store, (s) => s.compId);
+  const list = formatsOf(project);
+  const main = list[0];
+  if (!main) return null;
+  const current = list.find((c) => c.id === compId);
+  const has = (w: number, h: number) => list.some((c) => c.width === w && c.height === h);
+  return (
+    <Section title="Formats" open={list.length > 1}>
+      <div className="tt-dim tt-small">
+        The title in other shapes. On air, Lumora and Studio use the one closest to the picture&rsquo;s shape (a vertical stream gets the 9:16 one).
+      </div>
+      <ul className="tt-formats">
+        {list.map((c) => (
+          <li key={c.id} className={c.id === compId ? 'on' : ''}>
+            <button onClick={() => store.set({ compId: c.id, selection: [] })} title="Open this format">
+              {c.id === main.id ? `${c.name} (main)` : c.name}
+            </button>
+            <span className="tt-dim">
+              {c.width} × {c.height}
+            </span>
+            {c.id !== main.id && (
+              <button
+                className="tt-link"
+                title="Make it again from the main composition (changes made in this format are lost)"
+                onClick={() => {
+                  if (!confirm(`Make “${c.name}” again from the main composition? Changes made in it are lost.`)) return;
+                  store.edit('Remake format', (p) => makeFormat(p, '', c.width, c.height, c.id).project);
+                }}
+              >
+                Remake
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <Row label="Add">
+        <select
+          className="tt-select"
+          aria-label="Add a format"
+          value=""
+          onChange={(e) => {
+            const f = FORMAT_PRESETS.find((x) => x.name === e.target.value);
+            if (!f) return;
+            const r = makeFormat(store.get().project, f.name, f.w, f.h);
+            store.edit(`Add ${f.name} format`, () => r.project, { compId: r.id, selection: [] });
+          }}
+        >
+          <option value="">Make a format…</option>
+          {FORMAT_PRESETS.filter((f) => !has(f.w, f.h)).map((f) => (
+            <option key={f.name} value={f.name}>
+              {f.name} ({f.w} × {f.h})
+            </option>
+          ))}
+        </select>
+      </Row>
+      {current && current.id !== main.id && (
+        <div className="tt-dim tt-small">
+          This format was made from the main composition; change it here as you like. Its layers keep their names, fields and timing.
+        </div>
+      )}
+    </Section>
+  );
+}
 
 export function CompositionPanel({ store }: { store: Store }) {
   const project = useStore(store, (s) => s.project);
@@ -207,10 +276,40 @@ export function CompositionPanel({ store }: { store: Store }) {
                   </option>
                 ))}
             </select>
+            {q.sound && (
+              <span className="tt-cue-mixes" role="group" aria-label={`${q.name}: where it is heard`}>
+                {CUE_MIXES.map((m) => (
+                  <Toggle
+                    key={m}
+                    label={CUE_MIX_NAMES[m]}
+                    value={cueMixes(q).includes(m)}
+                    onChange={(on) =>
+                      upd('Cue mixes', (x) => ({
+                        ...x,
+                        cues: x.cues.map((y, j) => (j === i ? { ...y, mixes: CUE_MIXES.filter((k) => (k === m ? on : cueMixes(y).includes(k))) } : y)),
+                      }))
+                    }
+                  />
+                ))}
+                <NumberField
+                  value={q.gain ?? 0}
+                  min={-60}
+                  max={12}
+                  step={1}
+                  unit="dB"
+                  label="Cue loudness"
+                  onChange={(gain) => upd('Cue loudness', (x) => ({ ...x, cues: x.cues.map((y, j) => (j === i ? { ...y, gain } : y)) }))}
+                />
+              </span>
+            )}
           </Row>
         ))}
-        <div className="tt-dim tt-small">Add cues from the timeline. A cue with a sound plays it when the graphic reaches it on air.</div>
+        <div className="tt-dim tt-small">
+          Add cues from the timeline. A cue with a sound plays it when the graphic reaches it: on air in Lumora (on the mixes ticked), in Studio exports, and in
+          this preview and its films.
+        </div>
       </Section>
+      <FormatsSection store={store} />
     </div>
   );
 }

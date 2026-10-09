@@ -27,6 +27,7 @@ import type { Overlay } from './types/Overlay';
 import { cleanBackup, defaultBackup } from './backup';
 import { repairAutoSwitch, repairControls, schedule, switchAction, switchDue } from './autoswitch';
 import { backWord, goTo, nextWord, repairPesukim, wordDue, type PesukimData } from './pesukim';
+import { titlerLastRow, titlerStepRow } from '../titler/titlerData';
 import type { Action } from './types/Action';
 import type { ActionError } from './types/ActionError';
 import type { ScreenId } from './types/ScreenId';
@@ -557,6 +558,23 @@ function apply(s: Show, a: Action, now: number) {
       const src = find(s, a.id);
       if (src.kind.type !== 'titler') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a Titler graphic' });
       Object.assign(src.kind, structuredClone(a.titler));
+      return;
+    }
+    case 'setTitlerData':
+    case 'titlerDataRow': {
+      const src = find(s, a.id);
+      if (src.kind.type !== 'titler') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a Titler graphic' });
+      if (a.type === 'setTitlerData') src.kind.data = structuredClone(a.data).slice(0, 8);
+      else src.kind.dataRow = a.row;
+      if (src.kind.dataRow !== null) src.kind.dataRow = Math.min(src.kind.dataRow, titlerLastRow(src.kind));
+      return;
+    }
+    case 'titlerDataStep': {
+      const withRows = s.sources.filter((x) => x.kind.type === 'titler' && x.kind.data.some((t) => t.rows.length));
+      const onAir = new Set(s.overlays.filter((o) => o.on && o.sourceId).map((o) => o.sourceId));
+      const live = withRows.filter((x) => onAir.has(x.id));
+      const targets = a.id ? s.sources.filter((x) => x.id === a.id) : live.length ? live : withRows;
+      for (const x of targets) if (x.kind.type === 'titler') x.kind.dataRow = titlerStepRow(x.kind, a.delta);
       return;
     }
     case 'setTitlerValues': {

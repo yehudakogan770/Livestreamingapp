@@ -18,6 +18,7 @@ import { syncMedia } from '../engine/mediaSync';
 import { PcmStream } from './pcmStream';
 import { servedUrl } from '../engine/browser';
 import { LoudnessMeter, measureLoudness } from './loudness';
+import { TitlerCuePlayer } from '../titler/titlerCues';
 
 type OutputName = Mix | 'phones';
 
@@ -147,6 +148,12 @@ export class SoundEngine {
     this.phonesFromStream = this.ctx.createGain();
     this.outputs.master.gain.connect(this.phonesFromStream);
     this.phonesFromStream.connect(this.outputs.phones.input);
+    // Lumora Titler graphics' audio cues, into the mixes they were set to.
+    this.cues = new TitlerCuePlayer(this.ctx, { master: this.outputs.master.input, a: this.outputs.a.input, b: this.outputs.b.input }, (src) =>
+      fetch(src.startsWith('data:') || src.startsWith('blob:') || /^https?:/.test(src) ? src : this.client.mediaUrl(src)).then((r) =>
+        r.ok ? r.arrayBuffer() : Promise.reject(new Error(String(r.status))),
+      ),
+    );
     this.timer = setInterval(() => this.tick(), 33);
     void measureLoudness(this.ctx, this.outputs.master.gain, this.loudness).then(
       (stop) => (this.stopLoudness = stop),
@@ -163,6 +170,7 @@ export class SoundEngine {
   }
 
   private readonly unwake: () => void;
+  private readonly cues: TitlerCuePlayer;
 
   /** Browsers hold sound back until the operator first clicks or types. */
   get waitingForClick(): boolean {
@@ -246,6 +254,7 @@ export class SoundEngine {
 
   dispose(): void {
     clearInterval(this.timer);
+    this.cues.stopAll();
     this.unwake();
     this.stopLoudness?.();
     for (const id of [...this.channels.keys()]) this.drop(id);
@@ -541,6 +550,7 @@ export class SoundEngine {
       glide(ch.solo.gain, solo === src.id ? 1 : 0, t, smooth);
       this.levels.set(src.id, ch.failed ? 0 : peak(ch.meter, this.buf));
     }
+    this.cues.tick(show, now);
     for (const name of ['master', 'a', 'b', 'phones'] as const) {
       this.levels.set(`mix:${name}`, peak(this.outputs[name].meter, this.buf));
     }

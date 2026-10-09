@@ -13,7 +13,7 @@ import type { TitleProject } from '../../../titler/src/core/types';
 import { webHost } from '../../../titler/src/designer/host';
 import { tauriHost } from '../../../titler/src/desktop/tauriHost';
 import './titler.css';
-import { brandTokens, projectOf, titlerKind, valuesOf } from './titlerSource';
+import { brandTokens, projectOf, redesigned, titlerKind, valuesOf } from './titlerSource';
 
 const Designer = lazy(() => import('../../../titler/src/designer/Designer').then((m) => ({ default: m.Designer })));
 
@@ -55,7 +55,7 @@ export function TitlerEditor({
   const values = useMemo(() => (k && initial ? valuesOf(initial, k, show, Date.now()).values : {}), [initial]); // eslint-disable-line react-hooks/exhaustive-deps
   const use = (p: TitleProject) => {
     if (src && k) {
-      void client.dispatch({ type: 'updateTitler', id: src.id, titler: { ...titlerKind(p, k.values), scoreboard: k.scoreboard } });
+      void client.dispatch({ type: 'updateTitler', id: src.id, titler: redesigned(p, k) });
       onDone?.(`“${src.name}” now uses this design.`);
     } else {
       void client.dispatch({ type: 'addSource', source: { name: p.name, kind: titlerKind(p) } });

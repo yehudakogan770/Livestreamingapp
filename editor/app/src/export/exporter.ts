@@ -4,7 +4,7 @@
 import type { VideoSample, VideoSampleSink } from 'mediabunny';
 import { current, rate } from '../model/seq';
 import type { Clip, MediaItem, Project, Sequence } from '../model/types';
-import { inApp, mediaUrl, native, onExportProgress } from '../native';
+import { inApp, joinPath, mediaUrl, native, onExportProgress } from '../native';
 import { parseCube, type Cube } from '../render/color';
 import { builtinCube } from '../render/luts';
 import { Compositor, type Pictures } from '../render/compositor';
@@ -13,6 +13,7 @@ import { rateAt } from '../model/remap';
 import { isAiMask, matteFor, mattes } from '../vision/mattes';
 import { exportSources } from '../player/files';
 import { finishJobs, type FinishOptions, type SoundFormat } from './audioplan';
+import { cueSoundFiles, dataUrlBytes, endExactTitlers, prepareTitler, titlerCueParts } from '../titler/titlerClip';
 import { manageNative } from '../manage/native';
 import { renderCache } from '../cache/manager';
 
@@ -286,6 +287,8 @@ export class Sources {
     }
     for (const l of layers) {
       const src = l.source;
+      // Title clips with video layers: their frames decoded exactly before drawing.
+      if (src?.kind === 'titler') await prepareTitler(src, this.size.width, this.size.height);
       if (src?.kind === 'image' && !this.images.has(src.media.id)) {
         const blob = await fetch(mediaUrl(src.media.proxy ?? src.media.path)).then((r) => r.blob());
         this.images.set(src.media.id, await createImageBitmap(blob, { premultiplyAlpha: 'none' }).catch(() => null));
@@ -422,6 +425,7 @@ export class Exporter {
       let video: { file: string; copy: boolean; crf: number } | null = null;
       if (!this.o.sound) {
         video = this.o.pipe && inApp() ? await this.pipePicture(this.o.pipe, s, fps, from, to, tmp, t0) : await this.picture(s, fps, from, to, tmp, t0);
+        endExactTitlers();
         if (this.stopped) throw new Error('Stopped.');
       }
       if (this.o.pictureOnly && inApp()) {
@@ -436,7 +440,11 @@ export class Exporter {
         return;
       }
       this.report({ stage: 'sound', done: video ? 0.86 : 0, message: video ? 'Adding the sound…' : 'Making the sound…', left: null, path: null });
-      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, this.o.finish);
+      // Sounds inside title clips (audio cues) go into the work folder first.
+      const cueFiles = cueSoundFiles(titlerCueParts(s, this.o.range.from, this.o.range.to, fps));
+      for (const [url, name] of cueFiles) await native.writeChunk(joinPath(tmp, name), 0, dataUrlBytes(url));
+      const finish = { ...this.o.finish, paths: (path: string) => (cueFiles.has(path) ? joinPath(tmp, cueFiles.get(path)!) : path) };
+      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, finish);
       const base = video ? 0.86 : 0;
       await new Promise<void>((resolve, reject) => {
         const stop = onExportProgress((pr) => {
@@ -463,6 +471,7 @@ export class Exporter {
       this.report({ stage: 'done', done: 1, message: this.note || 'The film is ready.', left: 0, path: this.o.out });
       void seconds;
     } catch (e) {
+      endExactTitlers();
       if (tmp) void native.exportAbandon(tmp);
       const msg = e instanceof Error ? e.message : String(e);
       this.report({ stage: this.stopped ? 'stopped' : 'error', done: 0, message: this.stopped ? 'Stopped.' : msg, left: null, path: null });

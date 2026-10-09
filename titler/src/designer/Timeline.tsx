@@ -2,7 +2,9 @@
 // markers and the loop, cue markers, and the playhead. A second tab shows the
 // graph editor for the property chosen.
 
-import { useRef, useState, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import type { RamPreview } from './ramPreview';
+import { RAM_CHOICES, ramSetting, setRamSetting } from './frameCache';
 import { ChevronDown, ChevronRight, Eye, EyeOff, Lock, Unlock, Diamond, Clock } from 'lucide-react';
 import { isAnimated, removeKey, setKey, toggleKeys, valueAt } from '../core/easing';
 import { cleanMarkers } from '../core/timeline';
@@ -25,7 +27,31 @@ export function timecode(t: number, fps: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}:${String(fr).padStart(2, '0')}`;
 }
 
-export function Timeline({ store }: { store: Store }) {
+/** The RAM preview's frames as a green bar along the ruler (like After Effects). */
+function CachedBar({ ram, fps, zoom }: { ram: RamPreview; fps: number; zoom: number }) {
+  const [runs, setRuns] = useState(() => ram.cache.runs());
+  useEffect(() => {
+    let raf = 0;
+    const un = ram.cache.subscribe(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setRuns(ram.cache.runs()));
+    });
+    return () => {
+      un();
+      cancelAnimationFrame(raf);
+    };
+  }, [ram]);
+  return (
+    <div className="tt-cached" data-testid="titler-cached" aria-hidden="true">
+      {runs.map(([a, b]) => (
+        <i key={a} style={{ left: (a / fps) * zoom, width: Math.max(1, ((b + 1 - a) / fps) * zoom) }} />
+      ))}
+    </div>
+  );
+}
+
+export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null }) {
+  const [ramMb, setRamMb] = useState(ramSetting);
   const project = useStore(store, (s) => s.project);
   const compId = useStore(store, (s) => s.compId);
   const time = useStore(store, (s) => s.time);
@@ -38,7 +64,8 @@ export function Timeline({ store }: { store: Store }) {
   const c = compOf(project, compId);
   const scroller = useRef<HTMLDivElement>(null);
   const width = Math.max(400, c.duration * zoom + 40);
-  const x = (t: number) => t * zoom;
+  // Stable while only the playhead moves, so the rows (memoized) aren't drawn again 60 times a second.
+  const x = useCallback((t: number) => t * zoom, [zoom]);
   const tAt = (clientX: number) => {
     const el = scroller.current;
     if (!el) return 0;
@@ -61,19 +88,25 @@ export function Timeline({ store }: { store: Store }) {
   };
 
   /** Drag something in time: `fn` gets the time moved (seconds, snapped to frames). */
-  const dragTime = (e: React.PointerEvent, label: string, fn: (dt: number, ev: PointerEvent) => void) => {
-    e.stopPropagation();
-    const t0 = tAt(e.clientX);
-    store.begin(label);
-    const move = (ev: PointerEvent) => fn(frame(tAt(ev.clientX)) - frame(t0), ev);
-    const up = () => {
-      store.end();
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', up);
-    };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up);
-  };
+  const latest = useRef({ tAt, frame });
+  latest.current = { tAt, frame };
+  const dragTime = useCallback(
+    (e: React.PointerEvent, label: string, fn: (dt: number, ev: PointerEvent) => void) => {
+      e.stopPropagation();
+      const { tAt, frame } = latest.current;
+      const t0 = tAt(e.clientX);
+      store.begin(label);
+      const move = (ev: PointerEvent) => fn(frame(tAt(ev.clientX)) - frame(t0), ev);
+      const up = () => {
+        store.end();
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    },
+    [store],
+  );
 
   const setMarkers = (fn: (m: Composition['markers']) => Composition['markers']) =>
     store.edit('Move marker', (p) => updateComp(p, c.id, (cc) => ({ ...cc, markers: cleanMarkers(fn(cc.markers), cc.duration) })));
@@ -137,6 +170,28 @@ export function Timeline({ store }: { store: Store }) {
           {c.fps} fps · {c.duration.toFixed(2)} s
         </span>
         <span className="tt-grow" />
+        {ram && (
+          <label className="tt-dim tt-zoomlabel" title="Memory for the RAM preview: frames made ahead so playback holds full speed (the green bar)">
+            Preview memory
+            <select
+              className="tt-select"
+              aria-label="Preview memory"
+              value={ramMb}
+              onChange={(e) => {
+                const mb = Number(e.target.value);
+                setRamMb(mb);
+                setRamSetting(mb);
+                ram.setCapMb(mb);
+              }}
+            >
+              {RAM_CHOICES.map((mb) => (
+                <option key={mb} value={mb}>
+                  {mb >= 1024 ? `${mb / 1024} GB` : `${mb} MB`}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="tt-dim tt-zoomlabel">
           Zoom
           <input
@@ -183,6 +238,7 @@ export function Timeline({ store }: { store: Store }) {
               </div>
               <div className="tt-tl-ruler" style={{ width }} onPointerDown={scrub}>
                 <Ruler duration={c.duration} zoom={zoom} fps={c.fps} />
+                {ram && <CachedBar ram={ram} fps={c.fps} zoom={zoom} />}
                 <div className="tt-seg in" style={{ left: 0, width: x(inEnd) }} />
                 <div className="tt-seg hold" style={{ left: x(inEnd), width: x(outStart - inEnd) }} />
                 <div className="tt-seg out" style={{ left: x(outStart), width: x(c.duration - outStart) }} />
@@ -290,7 +346,16 @@ interface RowProps {
 
 const LABELS = ['#8f8f8a', '#c45d5d', '#c9a04a', '#5f9e6e', '#5b8fbf', '#8d77c4'];
 
-function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps & { selected: boolean; open: 'all' | 'animated' | undefined }) {
+const LayerRow = memo(function LayerRow({
+  store,
+  c,
+  l,
+  depth,
+  x,
+  selected,
+  open,
+  dragTime,
+}: RowProps & { selected: boolean; open: 'all' | 'animated' | undefined }) {
   const [renaming, setRenaming] = useState(false);
   const select = (e: React.MouseEvent) => {
     const s = store.get();
@@ -407,7 +472,7 @@ function LayerRow({ store, c, l, depth, x, selected, open, dragTime }: RowProps 
       </div>
     </div>
   );
-}
+});
 
 /** Open a layer's properties (all, or only the animated ones), or close them. */
 export function toggleOpen(open: Record<string, 'all' | 'animated'>, id: string, mode: 'all' | 'animated'): Record<string, 'all' | 'animated'> {

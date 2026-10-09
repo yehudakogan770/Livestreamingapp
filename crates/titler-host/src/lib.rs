@@ -190,6 +190,47 @@ pub fn base64(data: &[u8]) -> String {
     out
 }
 
+/// Standard base64 back to bytes (padding and line breaks allowed); None if it isn't base64.
+pub fn unbase64(text: &str) -> Option<Vec<u8>> {
+    let mut out = Vec::with_capacity(text.len() / 4 * 3);
+    let mut acc: u32 = 0;
+    let mut bits = 0;
+    for c in text.bytes() {
+        let v = match c {
+            b'A'..=b'Z' => c - b'A',
+            b'a'..=b'z' => c - b'a' + 26,
+            b'0'..=b'9' => c - b'0' + 52,
+            b'+' | b'-' => 62,
+            b'/' | b'_' => 63,
+            b'=' | b'\r' | b'\n' | b' ' => continue,
+            _ => return None,
+        };
+        acc = (acc << 6) | u32::from(v);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push((acc >> bits) as u8);
+            acc &= (1 << bits) - 1;
+        }
+    }
+    Some(out)
+}
+
+/// FFmpeg's arguments for a film's sound (the audio cues, a WAV as input 1):
+/// none for a picture sequence.
+pub fn audio_args(format: &str) -> Vec<String> {
+    let s = |v: &[&str]| v.iter().map(|x| (*x).to_owned()).collect::<Vec<_>>();
+    let codec: &[&str] = match format {
+        "prores4444" => &["-c:a", "pcm_s16le"],
+        "webm-alpha" => &["-c:a", "libopus", "-b:a", "160k"],
+        "mp4" => &["-c:a", "aac", "-b:a", "256k"],
+        _ => return Vec::new(),
+    };
+    let mut out = s(&["-map", "0:v", "-map", "1:a"]);
+    out.extend(s(codec));
+    out
+}
+
 fn autosave_path(app: &AppHandle, key: &str) -> Result<PathBuf, String> {
     let dir = app
         .path()
@@ -211,6 +252,8 @@ struct Job {
     stdin: Option<ChildStdin>,
     out: PathBuf,
     frame_bytes: usize,
+    /// The audio cues' sound, removed when the film is done.
+    sound: Option<PathBuf>,
 }
 
 /// Films being made (each app manages one of these).
@@ -326,6 +369,20 @@ pub fn encode_args(format: &str, out: &Path) -> Result<(Vec<String>, PathBuf), S
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn base64_goes_both_ways_and_films_get_their_sound() {
+        let data: Vec<u8> = (0..=255u8).chain([1, 2]).collect();
+        assert_eq!(unbase64(&base64(&data)).as_deref(), Some(&data[..]));
+        assert_eq!(unbase64("aGk=").as_deref(), Some(&b"hi"[..]));
+        assert!(unbase64("not base64!").is_none());
+        assert!(audio_args("png-sequence").is_empty());
+        for f in ["prores4444", "webm-alpha", "mp4"] {
+            let a = audio_args(f);
+            assert_eq!(&a[..4], ["-map", "0:v", "-map", "1:a"]);
+            assert!(a.contains(&"-c:a".to_owned()));
+        }
+    }
 
     #[test]
     fn base64_matches_the_standard() {

@@ -65,14 +65,16 @@ function cleanProp(p: unknown, fallback: Value, notes: string[], where: string):
     typeof fallback === 'number'
       ? typeof v === 'number' && Number.isFinite(v)
       : Array.isArray(v) && v.length === 2 && v.every((x) => typeof x === 'number' && Number.isFinite(x));
+  // An expression is kept (it is only ever worked out by core/expr.ts, never run).
+  const x = isObj(p) && typeof p.x === 'string' && p.x.trim() ? { x: p.x.slice(0, 2000) } : {};
   if (isObj(p) && Array.isArray(p.k)) {
     const k = p.k.filter((x): x is Json => isObj(x) && typeof x.t === 'number' && Number.isFinite(x.t) && okValue(x.v));
     if (k.length !== p.k.length) notes.push(`${where}: removed keyframes that could not be read.`);
     k.sort((a, b) => (a.t as number) - (b.t as number));
-    if (!k.length) return { v: fallback };
-    return { k: k as never };
+    if (!k.length) return { v: fallback, ...x };
+    return { k: k as never, ...x };
   }
-  if (isObj(p) && okValue(p.v)) return { v: p.v as Value };
+  if (isObj(p) && okValue(p.v)) return { v: p.v as Value, ...x };
   if (p !== undefined) notes.push(`${where}: a value could not be read and was reset.`);
   return { v: fallback };
 }
@@ -151,6 +153,16 @@ function cleanLayer(l: Json, comp: Composition, notes: string[], count: { n: num
   return out as unknown as Layer;
 }
 
+/** A cue marker: its mixes only the known ones, its loudness in range. */
+function cleanCue(q: Json): Json {
+  const out: Json = { ...q };
+  if (out.mixes !== undefined)
+    out.mixes = Array.isArray(out.mixes) ? (out.mixes as unknown[]).filter((m: unknown) => m === 'stream' || m === 'hall' || m === 'recording') : undefined;
+  if (out.mixes === undefined) delete out.mixes;
+  if (out.gain !== undefined) out.gain = Math.max(-60, Math.min(12, finite(out.gain, 0)));
+  return out;
+}
+
 function cleanComp(c: Json, notes: string[], count: { n: number }): Composition {
   const duration = Math.min(3600, Math.max(0.1, finite(c.duration, 8)));
   const comp = {
@@ -162,9 +174,10 @@ function cleanComp(c: Json, notes: string[], count: { n: number }): Composition 
     duration,
     background: typeof c.background === 'string' ? c.background : null,
     markers: { inEnd: 1, outStart: duration - 1, loop: null },
-    cues: Array.isArray(c.cues) ? c.cues.filter(isObj) : [],
+    cues: Array.isArray(c.cues) ? c.cues.filter(isObj).map(cleanCue) : [],
     layers: [],
     guides: isObj(c.guides) ? c.guides : undefined,
+    ...(typeof c.variantOf === 'string' && c.variantOf ? { variantOf: c.variantOf } : {}),
   } as unknown as Composition;
   const m = isObj(c.markers) ? c.markers : {};
   comp.markers = cleanMarkers(

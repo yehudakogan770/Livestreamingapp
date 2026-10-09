@@ -4,14 +4,19 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { TOKEN_KEYS, TOKEN_LABELS, isHex, resolveColor } from '../core/binding';
 import type { BrandTokens, Values } from '../core/types';
+import { evalMath } from './math';
+import { ColorPicker } from './ColorPicker';
 
 const fmt = (v: number) => {
   if (!Number.isFinite(v)) return '0';
-  const r = Math.round(v * 100) / 100;
+  const r = Math.round(v * 1000) / 1000;
   return String(Object.is(r, -0) ? 0 : r);
 };
 
-/** A number: type it, or drag across it to change it (Shift: ten times faster). */
+/**
+ * A number: type it (sums work: "100+20", "*2" from the current value), or
+ * drag across it to change it (Shift: ten times faster, Alt: a tenth).
+ */
 export function NumberField({
   value,
   onChange,
@@ -47,8 +52,8 @@ export function NumberField({
         onFocus={(e) => e.target.select()}
         onBlur={() => {
           if (text !== null) {
-            const n = Number(text);
-            if (Number.isFinite(n)) onChange(clamp(n));
+            const n = evalMath(text, value);
+            if (n !== null) onChange(clamp(n));
           }
           setText(null);
         }}
@@ -78,7 +83,9 @@ export function NumberField({
             onBegin?.();
           }
           e.preventDefault();
-          onChange(clamp(Math.round((d.v + dx * step * (e.shiftKey ? 10 : 1)) / step) * step));
+          const k = e.shiftKey ? 10 : e.altKey ? 0.1 : 1;
+          const fine = e.altKey ? step / 10 : step;
+          onChange(clamp(Math.round((d.v + dx * step * k) / fine) * fine));
         }}
         onPointerUp={(e) => {
           const d = drag.current;
@@ -113,11 +120,46 @@ export function ColorField({
 }) {
   const shown = resolveColor(value, tokens, values, '#000000');
   const [text, setText] = useState(value);
+  const [open, setOpen] = useState<{ left: number; top: number } | null>(null);
+  const wrap = useRef<HTMLSpanElement>(null);
+  /** Where the picker opens: under the swatch, kept inside the window. */
+  const place = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    const W = 254;
+    const H = 330;
+    const vw = typeof window !== 'undefined' ? window.innerWidth : 1280;
+    const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
+    return { left: Math.max(8, Math.min(r.left, vw - W - 8)), top: r.bottom + 4 + H > vh ? Math.max(8, r.top - H - 4) : r.bottom + 4 };
+  };
   useEffect(() => setText(value), [value]);
-  const swatch = isHex(shown) && shown.length === 7 ? shown : shown.slice(0, 7);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setOpen(null);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null);
+    window.addEventListener('pointerdown', away);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('pointerdown', away);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [open]);
   return (
-    <span className="tt-color">
-      <input type="color" aria-label={`${label} color`} value={isHex(swatch) ? swatch : '#000000'} onChange={(e) => onChange(e.target.value)} />
+    <span className="tt-color" ref={wrap}>
+      <button
+        type="button"
+        className="tt-color-swatch"
+        aria-label={`${label} color`}
+        aria-expanded={!!open}
+        title="Open the color picker"
+        onClick={(e) => setOpen(open ? null : place(e.currentTarget))}
+      >
+        <i style={{ background: isHex(shown) ? shown : '#000000' }} />
+      </button>
+      {open && (
+        <span className="tt-color-pop" style={{ left: open.left, top: open.top }}>
+          <ColorPicker value={isHex(shown) ? shown : '#000000'} onChange={onChange} onPick={onChange} label={label} />
+        </span>
+      )}
       <select
         aria-label={`${label} brand color`}
         value={value.startsWith('$') || value.startsWith('{{') ? value : ''}

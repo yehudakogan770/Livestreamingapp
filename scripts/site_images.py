@@ -22,7 +22,7 @@ import sys
 from PIL import Image, features
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'docs')
-SCREENSHOTS = ['main', 'look', 'edit', 'studio-color']
+SCREENSHOTS = ['main', 'look', 'edit', 'studio-color', 'titler']
 BACKGROUNDS = ['hall']
 FRAMES = ['speaker', 'wide', 'audience', 'slides']
 WIDTHS = (640, 1280, 1920)

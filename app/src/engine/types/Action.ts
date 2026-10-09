@@ -49,6 +49,7 @@ import type { Stinger } from './Stinger';
 import type { StreamInput } from './StreamInput';
 import type { TextInput } from './TextInput';
 import type { TitlerGraphic } from './TitlerGraphic';
+import type { TitlerTable } from './TitlerTable';
 import type { TitlerValue } from './TitlerValue';
 import type { Transition } from './Transition';
 import type { TransitionKind } from './TransitionKind';
@@ -100,6 +101,9 @@ export type Action =
   | { type: 'pledgeApprove'; id: SourceId; pledge: number; value: boolean }
   | { type: 'pledgeRemove'; id: SourceId; pledge: number }
   | { type: 'updateTitler'; id: SourceId; titler: TitlerGraphic }
+  | { type: 'setTitlerData'; id: SourceId; data: Array<TitlerTable> }
+  | { type: 'titlerDataRow'; id: SourceId; row: number | null }
+  | { type: 'titlerDataStep'; id?: SourceId; delta: number }
   | { type: 'setTitlerValues'; id: SourceId; values: Array<TitlerValue> }
   | { type: 'updateGraphic'; id: SourceId; graphic: Graphic }
   | { type: 'setDataFile'; path: string; everyMs: number }

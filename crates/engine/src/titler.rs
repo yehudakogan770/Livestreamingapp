@@ -23,6 +23,45 @@ pub struct TitlerValue {
     pub value: String,
 }
 
+/// The most tables a graphic keeps (one per data source of its template).
+pub const MAX_TABLES: usize = 8;
+/// The most rows, columns and characters a cell of a table keeps.
+pub const MAX_ROWS: usize = 1000;
+pub const MAX_COLUMNS: usize = 40;
+pub const MAX_CELL: usize = 2000;
+
+/// What one of the template's own data sources (a CSV file, a Google Sheet,
+/// a JSON address) held when the control window last read it.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", default)]
+#[ts(export)]
+pub struct TitlerTable {
+    /// The data source's id in the template.
+    pub source: String,
+    pub headers: Vec<String>,
+    pub rows: Vec<Vec<String>>,
+    /// Why it could not be read (empty when it was).
+    pub error: String,
+}
+
+impl TitlerTable {
+    fn repair(&mut self) {
+        clip(&mut self.source, 80);
+        self.headers.truncate(MAX_COLUMNS);
+        self.rows.truncate(MAX_ROWS);
+        for h in &mut self.headers {
+            clip(h, 200);
+        }
+        for r in &mut self.rows {
+            r.truncate(MAX_COLUMNS);
+            for c in r {
+                clip(c, MAX_CELL);
+            }
+        }
+        clip(&mut self.error, 300);
+    }
+}
+
 /// A Titler graphic input.
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", default)]
@@ -35,6 +74,10 @@ pub struct TitlerGraphic {
     /// The scoreboard input whose teams, scores and clock fill score fields
     /// (None: the first scoreboard of the event).
     pub scoreboard: Option<SourceId>,
+    /// The template's own data sources as last read (by the control window).
+    pub data: Vec<TitlerTable>,
+    /// The row the operator chose for them (from 0; None: each source's own row).
+    pub data_row: Option<u32>,
 }
 
 fn clip(s: &mut String, max: usize) {
@@ -60,6 +103,39 @@ impl TitlerGraphic {
         for v in &mut self.values {
             clip(&mut v.value, MAX_VALUE);
         }
+        self.data.truncate(MAX_TABLES);
+        for t in &mut self.data {
+            t.repair();
+        }
+        if let Some(r) = self.data_row {
+            self.data_row = Some(r.min(self.last_row()));
+        }
+    }
+
+    /// The last row of the longest table (0 with none).
+    pub fn last_row(&self) -> u32 {
+        let most = self.data.iter().map(|t| t.rows.len()).max().unwrap_or(0);
+        u32::try_from(most.saturating_sub(1)).unwrap_or(u32::MAX)
+    }
+
+    /// Does it have rows to step through?
+    pub fn has_rows(&self) -> bool {
+        self.data.iter().any(|t| !t.rows.is_empty())
+    }
+
+    /// The next (positive) or previous row, from the chosen one (or the first).
+    pub fn step_row(&mut self, delta: i32) {
+        if !self.has_rows() {
+            return;
+        }
+        let now = self.data_row.unwrap_or(0);
+        let next = if delta < 0 {
+            now.saturating_sub(delta.unsigned_abs())
+        } else {
+            now.saturating_add(delta.unsigned_abs())
+                .min(self.last_row())
+        };
+        self.data_row = Some(next);
     }
 
     /// Change some fields (others stay as they are).
@@ -97,6 +173,7 @@ mod tests {
                 },
             ],
             scoreboard: None,
+            ..Default::default()
         };
         g.repair();
         assert_eq!(g.values.len(), 1, "duplicates and empty keys go");
@@ -112,6 +189,27 @@ mod tests {
         ]);
         assert_eq!(g.values[0].value, "Jordan");
         assert_eq!(g.values[1].key, "role");
+        // Its own data: rows stepped through within the table, kept within limits.
+        g.data = vec![TitlerTable {
+            source: "d1".into(),
+            headers: vec!["name".into()],
+            rows: (0..3).map(|i| vec![format!("Speaker {i}")]).collect(),
+            error: String::new(),
+        }];
+        g.step_row(1);
+        assert_eq!(g.data_row, Some(1));
+        g.step_row(5);
+        assert_eq!(g.data_row, Some(2), "stops at the last row");
+        g.step_row(-9);
+        assert_eq!(g.data_row, Some(0));
+        g.data[0].rows = (0..MAX_ROWS + 10)
+            .map(|_| vec!["x".repeat(MAX_CELL + 5)])
+            .collect();
+        g.data_row = Some(5000);
+        g.repair();
+        assert_eq!(g.data[0].rows.len(), MAX_ROWS);
+        assert_eq!(g.data[0].rows[0][0].len(), MAX_CELL);
+        assert_eq!(g.data_row, Some(MAX_ROWS as u32 - 1));
         g.template = "x".repeat(MAX_TEMPLATE + 1);
         g.repair();
         assert!(g.template.is_empty());

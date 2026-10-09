@@ -11,6 +11,8 @@ export interface RunStyle {
   /** Percent of the size. */
   scale: number;
   font: string | null;
+  /** Baseline shift, percent of the size (up is positive). */
+  shift: number;
 }
 
 export interface Run {
@@ -18,17 +20,18 @@ export interface Run {
   style: RunStyle;
 }
 
-const PLAIN: RunStyle = { bold: false, italic: false, color: null, scale: 100, font: null };
+const PLAIN: RunStyle = { bold: false, italic: false, color: null, scale: 100, font: null, shift: 0 };
 
 /**
  * Split inline styling into runs: [b]bold[/b], [i]italic[/i],
- * [c=#ff0000]color[/c] (or [c=$accent]), [s=80]smaller[/s], [f=Font]font[/f].
+ * [c=#ff0000]color[/c] (or [c=$accent]), [s=80]smaller[/s], [f=Font]font[/f],
+ * [v=30]raised[/v] (baseline shift, percent of the size; negative lowers).
  * Tags not understood stay as text.
  */
 export function parseRich(text: string): Run[] {
   const runs: Run[] = [];
   const stack: RunStyle[] = [PLAIN];
-  const tag = /\[(\/?)(b|i|c|s|f)(?:=([^\]]{1,60}))?\]/g;
+  const tag = /\[(\/?)(b|i|c|s|f|v)(?:=([^\]]{1,60}))?\]/g;
   let last = 0;
   const push = (s: string) => {
     if (!s) return;
@@ -62,6 +65,9 @@ export function parseRich(text: string): Run[] {
       case 'f':
         stack.push({ ...top, font: arg ?? null });
         break;
+      case 'v':
+        stack.push({ ...top, shift: Math.min(200, Math.max(-200, Number(arg) || 0)) });
+        break;
     }
   }
   push(text.slice(last));
@@ -83,6 +89,8 @@ export interface Glyph {
   char: number;
   word: number;
   line: number;
+  /** Drawn this far right of x (a tabular digit centered in its cell). */
+  ox?: number;
 }
 
 export interface Line {
@@ -112,7 +120,7 @@ export function fontString(style: TextStyle, run: RunStyle, size: number, family
   const italic = run.italic || style.italic ? 'italic ' : '';
   const px = (size * run.scale) / 100;
   const name = run.font ?? family;
-  return `${italic}${weight} ${round(px)}px "${name}", "Inter", "Segoe UI", system-ui, sans-serif`;
+  return `${italic}${weight} ${round(px)}px "${name}", "Inter", "Inter Variable", "Segoe UI", system-ui, sans-serif`;
 }
 
 const round = (v: number) => Math.round(v * 100) / 100;
@@ -145,12 +153,74 @@ export interface LayoutBox {
   maxLines?: number;
 }
 
+/** Small capitals: lowercase letters become capitals at 78 % (one derived style per run). */
+export function smallCapsRuns(runs: Run[]): Run[] {
+  const out: Run[] = [];
+  const small = new Map<RunStyle, RunStyle>();
+  for (const r of runs) {
+    for (const part of r.text.split(/([\p{Ll}]+)/u)) {
+      if (!part) continue;
+      if (/^\p{Ll}+$/u.test(part)) {
+        let st = small.get(r.style);
+        if (!st) small.set(r.style, (st = { ...r.style, scale: r.style.scale * 0.78 }));
+        out.push({ text: part.toUpperCase(), style: st });
+      } else out.push({ text: part, style: r.style });
+    }
+  }
+  return out;
+}
+
+const DIGIT = /^\p{Nd}$/u;
+
+/**
+ * Advances in a font with the text's options: the font's kerning, or each
+ * letter alone; tabular figures (every digit as wide as the widest).
+ */
+export function advancer(style: Pick<TextStyle, 'figures' | 'kerning'>, measure: Measure) {
+  const tabular = style.figures === 'tabular';
+  const apart = style.kerning === 'none';
+  const widest = new Map<string, number>();
+  const digit = (font: string) => {
+    let w = widest.get(font);
+    if (w === undefined) {
+      w = 0;
+      for (const d of '0123456789') w = Math.max(w, measure(font, d));
+      widest.set(font, w);
+    }
+    return w;
+  };
+  /** One letter's advance and where it is drawn in it. */
+  const one = (font: string, ch: string): { w: number; ox: number } => {
+    if (tabular && DIGIT.test(ch)) {
+      const own = measure(font, ch);
+      const w = digit(font);
+      return { w, ox: (w - own) / 2 };
+    }
+    return { w: measure(font, ch), ox: 0 };
+  };
+  const width = (font: string, text: string): number => {
+    if (!tabular && !apart) return measure(font, text);
+    if (apart) {
+      let w = 0;
+      for (const ch of text) w += one(font, ch).w;
+      return w;
+    }
+    let w = measure(font, text);
+    for (const ch of text) if (DIGIT.test(ch)) w += digit(font) - measure(font, ch);
+    return w;
+  };
+  return { width, one, perGlyph: tabular || apart };
+}
+
 /** Lay out the text at one size. */
 function layoutAt(runs: Run[], style: TextStyle, family: string, size: number, box: LayoutBox, measure: Measure): TextLayout {
-  const toks = tokens(runs, !!style.caps);
-  const width = (t: Token) => measure(fontString(style, t.style, size, family), t.text) + style.tracking * [...t.text].length;
+  const toks = tokens(style.smallCaps ? smallCapsRuns(runs) : runs, !!style.caps);
+  const adv = advancer(style, measure);
+  const width = (t: Token) => adv.width(fontString(style, t.style, size, family), t.text) + style.tracking * [...t.text].length;
   type Raw = Token & { w: number };
   const lines: Raw[][] = [[]];
+  /** Lines that end because they wrapped (not at a line break or the end): justified. */
+  const wrapped = new Set<Raw[]>();
   let lineW = 0;
   const limit = box.wrap && box.w > 0 ? box.w : Infinity;
   for (const t of toks) {
@@ -170,6 +240,7 @@ function layoutAt(runs: Run[], style: TextStyle, family: string, size: number, b
     if (lineW + w > limit && cur.some((x) => !x.space)) {
       // Wrap: drop trailing spaces, start a new line.
       while (cur.length && cur[cur.length - 1]!.space) cur.pop();
+      wrapped.add(cur);
       lines.push([]);
       lineW = 0;
     }
@@ -178,7 +249,7 @@ function layoutAt(runs: Run[], style: TextStyle, family: string, size: number, b
       // A word longer than the box: broken between letters.
       let part = '';
       for (const ch of t.text) {
-        const pw = measure(fontString(style, t.style, size, family), part + ch) + style.tracking * ([...part].length + 1);
+        const pw = adv.width(fontString(style, t.style, size, family), part + ch) + style.tracking * ([...part].length + 1);
         if (pw > limit && part) {
           lines[lines.length - 1]!.push({ ...t, text: part, w: width({ ...t, text: part }) });
           lines.push([]);
@@ -220,10 +291,15 @@ function layoutAt(runs: Run[], style: TextStyle, family: string, size: number, b
       const chars = [...t.text];
       let prefix = '';
       chars.forEach((ch, ci) => {
-        const before = measure(font, prefix) + style.tracking * ci;
+        const before = adv.width(font, prefix) + style.tracking * ci;
         prefix += ch;
-        const after = measure(font, prefix) + style.tracking * (ci + 1);
-        glyphs.push({ ch, x: x + before, w: after - before, style: t.style, char: t.space ? -1 : char++, word: t.space ? -1 : word, line: li });
+        const after = adv.width(font, prefix) + style.tracking * (ci + 1);
+        const g: Glyph = { ch, x: x + before, w: after - before, style: t.style, char: t.space ? -1 : char++, word: t.space ? -1 : word, line: li };
+        if (adv.perGlyph) {
+          const ox = adv.one(font, ch).ox;
+          if (ox) g.ox = ox;
+        }
+        glyphs.push(g);
       });
       x += t.w;
       // A word ends at a space or the end of the line (styled parts of one word stay one word).
@@ -235,10 +311,29 @@ function layoutAt(runs: Run[], style: TextStyle, family: string, size: number, b
   });
   const height = out.length * lh;
   const boxW = box.w > 0 ? box.w : maxW;
+  if (style.align === 'justify' && box.w > 0)
+    kept.forEach((raw, i) => {
+      // Wrapped lines fill the width: the space is shared between the gaps between words.
+      const l = out[i]!;
+      if (!wrapped.has(raw) || l.width >= boxW) return;
+      const gaps = l.glyphs.filter((g) => g.ch === ' ').length;
+      if (!gaps) return;
+      const each = (boxW - l.width) / gaps;
+      let seen = 0;
+      for (const g of l.glyphs) {
+        g.x += seen * each;
+        if (g.ch === ' ') {
+          g.w += each;
+          seen++;
+        }
+      }
+      l.width = boxW;
+    });
   // Ascent: about 0.8 of the size above the baseline for most fonts, centered in the line.
   const top = box.h > 0 ? (style.vAlign === 'middle' ? (box.h - height) / 2 : style.vAlign === 'bottom' ? box.h - height : 0) : 0;
   out.forEach((l, i) => {
-    l.x = style.align === 'center' ? (boxW - l.width) / 2 : style.align === 'right' ? boxW - l.width : 0;
+    l.x =
+      style.align === 'center' ? (boxW - l.width) / 2 : style.align === 'right' ? boxW - l.width : style.align === 'justify' && style.rtl ? boxW - l.width : 0;
     l.y = top + i * lh + lh / 2 + size * 0.35;
   });
   if (box.w > 0 && maxW > box.w + 0.5) overflow = true;

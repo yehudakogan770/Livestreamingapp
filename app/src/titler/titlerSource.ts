@@ -8,6 +8,7 @@ import { cueTime, outMs } from '../../../titler/src/core/timeline';
 import { readProject } from '../../../titler/src/core/validate';
 import type { BrandTokens, TitleProject, Values } from '../../../titler/src/core/types';
 import { dataValues } from '../engine/data';
+import { dataValuesOf } from './titlerData';
 import { mainCountdown, timerOf } from '../engine/countdowns';
 import { clockShown, formatGameClock } from '../engine/score';
 import { countdownRemaining, formatCountdown } from '../engine/timing';
@@ -35,7 +36,20 @@ export function projectOf(t: Pick<TitlerGraphic, 'template'>): TitleProject | nu
 
 /** A new Titler input's kind from a project (its sample values are the starting values). */
 export function titlerKind(p: TitleProject, keepValues: TitlerGraphic['values'] = []): { type: 'titler' } & TitlerGraphic {
-  return { type: 'titler', template: JSON.stringify(p), values: keepValues.filter((v) => p.variables.some((x) => x.key === v.key)), scoreboard: null };
+  return {
+    type: 'titler',
+    template: JSON.stringify(p),
+    values: keepValues.filter((v) => p.variables.some((x) => x.key === v.key)),
+    scoreboard: null,
+    data: [],
+    dataRow: null,
+  };
+}
+
+/** A graphic given a new design: its fields, scoreboard, and the data of sources the design still has. */
+export function redesigned(p: TitleProject, k: TitlerGraphic): { type: 'titler' } & TitlerGraphic {
+  const ids = new Set((p.data ?? []).map((d) => d.id));
+  return { ...titlerKind(p, k.values), scoreboard: k.scoreboard, data: k.data.filter((t) => ids.has(t.source)), dataRow: k.dataRow };
 }
 
 /** The event look as Titler brand tokens. */
@@ -115,23 +129,39 @@ export function showFromStage(
   } as unknown as Show;
 }
 
+const moves = new WeakMap<TitleProject, boolean>();
+/** Does anything in it move while it holds by itself (an expression such as wiggle, a video)? */
+export function movesByItself(p: TitleProject): boolean {
+  let m = moves.get(p);
+  if (m === undefined) {
+    const text = JSON.stringify(p.compositions);
+    m = /"x":"[^"]/.test(text) || p.assets.some((a) => a.kind === 'video' || a.kind === 'sequence');
+    moves.set(p, m);
+  }
+  return m;
+}
+
 /** Is any field of this graphic filled from something that changes by itself (a clock)? */
 export function ticks(p: TitleProject): boolean {
-  return p.variables.some((v) => v.bind === 'score:clock' || v.bind === 'countdown' || v.bind === 'clock:time');
+  return p.variables.some((v) => v.bind === 'score:clock' || v.bind === 'countdown' || v.bind === 'clock:time') || movesByItself(p);
 }
 
 /**
- * The values to draw with: the sample values, then the operator's, then
- * Lumora's own (scoreboard, countdown, clock, data file) for bound fields.
+ * The values to draw with: the sample values, then the title's own data (the
+ * row chosen), then the operator's, then Lumora's own (scoreboard,
+ * countdown, clock, the event's data file) for bound fields. `fromData`: the
+ * fields the title's data fills (shown as such; typing over one wins).
  */
 export function valuesOf(
   p: TitleProject,
-  t: Pick<TitlerGraphic, 'values' | 'scoreboard'>,
+  t: Pick<TitlerGraphic, 'values' | 'scoreboard'> & Partial<Pick<TitlerGraphic, 'data' | 'dataRow'>>,
   show: Show | null,
   now: number,
-): { values: Values; bound: Record<string, string> } {
+): { values: Values; bound: Record<string, string>; fromData: Values } {
   const values: Values = {};
   for (const v of p.variables) values[v.key] = v.value;
+  const fromData = t.data?.length ? dataValuesOf(p, { data: t.data, dataRow: t.dataRow ?? null }) : {};
+  Object.assign(values, fromData);
   for (const v of t.values) values[v.key] = v.value;
   const all = boundValues(show, t, now);
   const bound: Record<string, string> = {};
@@ -143,7 +173,7 @@ export function valuesOf(
       bound[v.key] = got;
     }
   }
-  return { values, bound };
+  return { values, bound, fromData };
 }
 
 /** How long the graphic's OUT takes (an overlay stays on that long after it is taken off). */

@@ -30,7 +30,7 @@
   --tt-radius: 4px;
   position: relative;
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) minmax(170px, 36%) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) minmax(120px, var(--tt-timeline, 36%)) auto;
   grid-template-areas: 'top' 'banner' 'main' 'timeline' 'status';
   height: 100%;
   min-height: 560px;
@@ -215,11 +215,12 @@
 .tt-main {
   grid-area: main;
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr) 320px;
+  grid-template-columns: var(--tt-left, 236px) minmax(0, 1fr) var(--tt-right, 320px);
   min-height: 0;
 }
 .tt-left,
 .tt-right {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -645,8 +646,15 @@
 }
 
 /* ---- timeline ---- */
-.tt-timeline {
+.tt-timeline-wrap {
   grid-area: timeline;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.tt-timeline {
+  flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -1066,4 +1074,532 @@
   .tt-check {
     display: none;
   }
+}
+
+/* A cue's mixes (Stream, Hall, Recording) and loudness, under its sound. */
+.tt-cue-mixes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  width: 100%;
+  padding-top: 2px;
+}
+
+/* The RAM preview: frames kept, a green line along the bottom of the ruler. */
+.tt-cached {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  pointer-events: none;
+}
+.tt-cached i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #3fa34d;
+}
+
+/* Panels resized by dragging their edges. */
+.tt-splitter {
+  position: absolute;
+  z-index: 5;
+  background: transparent;
+}
+.tt-splitter-right,
+.tt-splitter-left {
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+}
+.tt-splitter-right {
+  right: -3px;
+}
+.tt-splitter-left {
+  left: -3px;
+}
+.tt-splitter-top {
+  left: 0;
+  right: 0;
+  top: -3px;
+  height: 6px;
+  cursor: row-resize;
+}
+.tt-splitter:hover,
+.tt-splitter:focus-visible {
+  background: var(--tt-line-2);
+  outline: none;
+}
+
+/* The canvas on its own (` or the button in the view bar). */
+.tt-canvas-only {
+  grid-template-rows: auto auto minmax(0, 1fr) 0 auto;
+}
+.tt-canvas-only .tt-main {
+  grid-template-columns: 0 minmax(0, 1fr) 0;
+}
+.tt-canvas-only .tt-left,
+.tt-canvas-only .tt-right,
+.tt-canvas-only .tt-timeline-wrap {
+  visibility: hidden;
+  overflow: hidden;
+}
+.tt-canvas-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+}
+.tt-canvas-btn.on {
+  background: var(--tt-selected);
+}
+.tt-workspace {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 10px;
+}
+
+/* Recently opened titles, above the library. */
+.tt-recent {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 6px 8px;
+  border-bottom: 1px solid var(--tt-line);
+}
+.tt-recent-head {
+  padding: 2px 4px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tt-dim);
+}
+.tt-recent-item {
+  text-align: left;
+  padding: 3px 6px;
+  border-radius: var(--tt-radius);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-recent-item:hover {
+  background: var(--tt-hover);
+}
+
+/* History: undo steps and versions. */
+.tt-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 340px;
+  overflow: auto;
+}
+.tt-steps button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 3px 8px;
+  border-radius: var(--tt-radius);
+}
+.tt-steps button:hover {
+  background: var(--tt-hover);
+}
+.tt-steps button.on {
+  background: var(--tt-selected);
+  color: var(--tt-text);
+}
+.tt-steps li.undone button {
+  color: var(--tt-faint, var(--tt-dim));
+  font-style: italic;
+}
+.tt-version-new {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.tt-version-new .tt-input {
+  flex: 1;
+  min-width: 0;
+}
+.tt-versions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tt-versions li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 2px;
+  border-bottom: 1px solid var(--tt-line);
+}
+.tt-version-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A text layer's shared style, and what to do when it was changed by hand. */
+.tt-textstyle-differs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: -2px 0 6px 100px;
+  font-size: 11.5px;
+}
+
+/* The color picker (a swatch button opens it). */
+.tt-color {
+  position: relative;
+}
+.tt-color-swatch {
+  width: 26px;
+  height: 22px;
+  padding: 2px;
+  border: 1px solid var(--tt-line-2);
+  border-radius: 3px;
+  background: repeating-conic-gradient(#3a3a37 0 25%, #262624 0 50%) 0 0 / 8px 8px;
+}
+.tt-color-swatch i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+}
+.tt-color-pop {
+  position: fixed;
+  z-index: 60;
+}
+.tt-cpk {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 232px;
+  padding: 10px;
+  background: var(--tt-raised);
+  border: 1px solid var(--tt-line-2);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.tt-cpk-sv {
+  position: relative;
+  height: 140px;
+  border-radius: 3px;
+  cursor: crosshair;
+  touch-action: none;
+}
+.tt-cpk-hue,
+.tt-cpk-alpha {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.tt-cpk-hue {
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+.tt-cpk-alpha {
+  background-color: #2a2a28;
+}
+.tt-cpk-sv i,
+.tt-cpk-hue i,
+.tt-cpk-alpha i {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+.tt-cpk-hue i,
+.tt-cpk-alpha i {
+  top: 6px;
+}
+.tt-cpk-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.tt-cpk-num {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+  font-size: 10.5px;
+  color: var(--tt-dim);
+}
+.tt-cpk-num input {
+  width: 100%;
+  min-width: 0;
+  padding: 2px 4px;
+  font: 11px var(--tt-mono);
+  color: var(--tt-text);
+  background: var(--tt-field, #0f0f0e);
+  border: 1px solid var(--tt-line-2);
+  border-radius: 3px;
+}
+.tt-cpk-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.tt-cpk-sw {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--tt-line-2);
+  border-radius: 3px;
+}
+.tt-cpk-sw.brand {
+  border-radius: 50%;
+}
+.tt-cpk-gap {
+  width: 6px;
+}
+
+/* Expressions under a property. */
+.tt-expr-btn {
+  font: 600 12px var(--tt-mono);
+  color: var(--tt-faint);
+}
+.tt-expr-btn.on {
+  color: var(--tt-text);
+}
+.tt-expr {
+  margin: -2px 0 6px 100px;
+}
+.tt-expr-input {
+  width: 100%;
+  font-family: var(--tt-mono);
+}
+.tt-expr-input[aria-invalid='true'] {
+  border-color: #b4553a;
+}
+.tt-expr-problem {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #d8826a;
+}
+.tt-expr-code {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 11px var(--tt-mono);
+  color: var(--tt-dim);
+  text-align: left;
+}
+
+/* A saved animation: apply, or remove. */
+.tt-chip-split {
+  display: inline-flex;
+  padding: 0;
+}
+.tt-chip-split button {
+  padding: 2px 7px;
+}
+.tt-chip-split button + button {
+  border-left: 1px solid var(--tt-line-2);
+  color: var(--tt-dim);
+}
+
+/* Notes pinned on the canvas. */
+.tt-center {
+  position: relative;
+}
+.tt-note-card {
+  position: absolute;
+  z-index: 20;
+  top: 44px;
+  right: 12px;
+  width: 260px;
+  padding: 8px;
+  background: var(--tt-raised);
+  border: 1px solid var(--tt-line-2);
+  border-top: 2px solid #e8b931;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.tt-note-card header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.tt-note-card textarea {
+  width: 100%;
+}
+.tt-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tt-notes li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tt-notes li.done .tt-note-open {
+  color: var(--tt-faint);
+  text-decoration: line-through;
+}
+.tt-note-open {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 3px 6px;
+  border-radius: var(--tt-radius);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-note-open:hover {
+  background: var(--tt-hover);
+}
+.tt-note-open b {
+  display: inline-block;
+  min-width: 16px;
+  color: #e8b931;
+}
+
+/* Formats of the title. */
+.tt-formats {
+  list-style: none;
+  margin: 4px 0 6px;
+  padding: 0;
+}
+.tt-formats li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+.tt-formats li > button:first-child {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 3px 6px;
+  border-radius: var(--tt-radius);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-formats li.on > button:first-child {
+  background: var(--tt-selected);
+}
+
+/* The font picker: each font in its own face. */
+.tt-font {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.tt-font-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 3px 6px;
+  font-size: 13px;
+  color: var(--tt-text);
+  background: var(--tt-field, #0f0f0e);
+  border: 1px solid var(--tt-line-2);
+  border-radius: 3px;
+}
+.tt-font-btn span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-font-pop {
+  position: absolute;
+  z-index: 40;
+  top: 28px;
+  right: 0;
+  width: max(100%, 240px);
+  padding: 6px;
+  background: var(--tt-raised);
+  border: 1px solid var(--tt-line-2);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.tt-font-pop .tt-input {
+  width: 100%;
+}
+.tt-font-list {
+  max-height: 300px;
+  overflow: auto;
+  margin-top: 4px;
+}
+.tt-font-group {
+  padding: 6px 6px 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--tt-dim);
+}
+.tt-font-item {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 15px;
+  text-align: left;
+  border-radius: var(--tt-radius);
+}
+.tt-font-item:hover,
+.tt-font-item.on {
+  background: var(--tt-selected);
+}
+
+/* Keyboard shortcuts sheet. */
+.tt-keys-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 6px;
+  margin-right: 6px;
+}
+.tt-shortcuts {
+  width: min(860px, 92vw);
+}
+.tt-shortcuts header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tt-shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 28px;
+  max-height: 70vh;
+  overflow: auto;
+}
+.tt-shortcuts h3 {
+  margin: 10px 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tt-dim);
+}
+.tt-shortcuts dl {
+  margin: 0;
+}
+.tt-shortcuts dl div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 8px;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--tt-line);
+}
+.tt-shortcuts dd {
+  margin: 0;
+}
+.tt-shortcuts kbd {
+  font: 11px var(--tt-mono);
+  color: var(--tt-text);
 }

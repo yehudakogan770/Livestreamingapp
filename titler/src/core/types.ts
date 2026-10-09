@@ -30,8 +30,11 @@ export interface Keyframe<T extends Value = number> {
   si?: Vec2;
 }
 
-/** A property: a still value, or keyframes in time order. */
-export type Prop<T extends Value = number> = { v: T; k?: undefined } | { k: Keyframe<T>[]; v?: undefined };
+/**
+ * A property: a still value, or keyframes in time order; `x`: an expression
+ * worked out from it (see core/expr.ts), e.g. "wiggle(2, 8)".
+ */
+export type Prop<T extends Value = number> = { v: T; k?: undefined; x?: string } | { k: Keyframe<T>[]; v?: undefined; x?: string };
 
 /** A color: "#rrggbb", "#rrggbbaa", a brand token ("$accent") or a variable ("{{team_color}}"). */
 export type ColorRef = string;
@@ -47,6 +50,8 @@ export type Paint = { type: 'solid'; color: ColorRef } | { type: 'linear'; angle
 export interface Stroke {
   paint: Paint;
   width: number;
+  /** Where the line sits on a closed outline: centered on it (default), inside or outside. */
+  align?: 'center' | 'inside' | 'outside';
   join?: 'miter' | 'round' | 'bevel';
   cap?: 'butt' | 'round' | 'square';
   dash?: number[];
@@ -101,7 +106,15 @@ export type Effect =
   | { id: string; type: 'dropShadow'; on: boolean; color: ColorRef; opacity: Prop; angle: number; distance: Prop; softness: Prop }
   | { id: string; type: 'glow'; on: boolean; color: ColorRef; opacity: Prop; radius: Prop }
   | { id: string; type: 'blur'; on: boolean; amount: Prop }
-  | { id: string; type: 'fill'; on: boolean; color: ColorRef };
+  | { id: string; type: 'fill'; on: boolean; color: ColorRef }
+  /** An outline around the layer's shape (text, logos, pictures with see-through parts). */
+  | { id: string; type: 'stroke'; on: boolean; color: ColorRef; width: Prop; opacity: Prop }
+  /** A gradient over the layer's own pixels (across its box, at an angle). */
+  | { id: string; type: 'gradient'; on: boolean; angle: number; stops: GradientStop[]; opacity: Prop }
+  /** Film grain over the layer (moving, or still). */
+  | { id: string; type: 'noise'; on: boolean; amount: Prop; still?: boolean }
+  /** Color correction: brightness, contrast and saturation (−100…100), hue turn (degrees). */
+  | { id: string; type: 'color'; on: boolean; brightness: Prop; contrast: Prop; saturation: Prop; hue: Prop };
 
 /** Crop/wipe reveal: percent taken off each side of the layer's box. */
 export interface Reveal {
@@ -133,6 +146,14 @@ export interface LayerBase {
   effects?: Effect[];
   /** A label color in the designer's layer list. */
   label?: string;
+  /** How it is re-placed in another format of the title (16:9 → 9:16…); nearest edge when left out. */
+  constraints?: Constraints;
+}
+
+/** Pinned to an edge or the middle, scaled with the frame, or stretched with it. */
+export interface Constraints {
+  h?: 'left' | 'right' | 'center' | 'scale' | 'stretch';
+  v?: 'top' | 'bottom' | 'center' | 'scale' | 'stretch';
 }
 
 /** What text in a range gets: letters, words or lines, one after another. */
@@ -169,9 +190,16 @@ export interface TextStyle {
   tracking: number;
   /** Line height, multiple of the size. */
   lineHeight: number;
-  align: 'left' | 'center' | 'right';
+  /** Justify: wrapped lines fill the box's width (the last line of a paragraph stays left). */
+  align: 'left' | 'center' | 'right' | 'justify';
   vAlign: 'top' | 'middle' | 'bottom';
   caps?: boolean;
+  /** Small capitals: lowercase letters as smaller capitals. */
+  smallCaps?: boolean;
+  /** Tabular figures: every digit the same width (scores and clocks don't jiggle). */
+  figures?: 'proportional' | 'tabular';
+  /** The font's own kerning (default), or none (each letter its own width). */
+  kerning?: 'auto' | 'none';
   /** Right-to-left text (Hebrew, Arabic). */
   rtl?: boolean;
 }
@@ -191,6 +219,8 @@ export interface TextLayer extends LayerBase {
   /** At most this many lines (0: any). */
   maxLines?: number;
   animators?: TextAnimator[];
+  /** The shared text style it is linked to (TitleProject.textStyles). */
+  styleRef?: string | null;
   /** A ticker: the line moves left (crawl) or the lines move up (roll), px per second. */
   scroll?: { mode: 'crawl' | 'roll'; speed: number; gap: number } | null;
 }
@@ -202,6 +232,10 @@ export interface ShapeLayer extends LayerBase {
   size: Prop<Vec2>;
   /** Rectangle corner radius, px. */
   roundness: Prop;
+  /** Each corner its own radius (top left, top right, bottom right, bottom left), px; replaces `roundness`. */
+  corners?: [number, number, number, number] | null;
+  /** More outlines drawn over the first (a double outline), each with its own paint, width and place. */
+  extraStrokes?: Stroke[];
   path?: PathData;
   fill: Paint | null;
   stroke: Stroke | null;
@@ -264,12 +298,19 @@ export interface Markers {
   loop?: { start: number; end: number } | null;
 }
 
+/** Where an audio cue is heard in Lumora: the Stream mix, the Hall, the Recording mix. */
+export type CueMix = 'stream' | 'hall' | 'recording';
+
 export interface CueMarker {
   id: string;
   t: number;
   name: string;
   /** A sound asset played from here (audio cue), or none. */
   sound?: string | null;
+  /** The mixes it plays on (Lumora); the Stream mix when left out. */
+  mixes?: CueMix[];
+  /** Loudness, dB (0 when left out). */
+  gain?: number;
 }
 
 export interface Composition {
@@ -287,6 +328,8 @@ export interface Composition {
   /** Front first. */
   layers: Layer[];
   guides?: { x: number[]; y: number[] };
+  /** A format of another composition (the main one) in another shape: picked on air by the picture's shape. */
+  variantOf?: string;
 }
 
 export type VariableType = 'text' | 'number' | 'color' | 'image' | 'list';
@@ -352,6 +395,27 @@ export interface DataSource {
   map: Record<string, string>;
 }
 
+/** A note pinned to a place on a composition's canvas. */
+export interface CanvasNote {
+  id: string;
+  comp: string;
+  /** Composition pixels. */
+  x: number;
+  y: number;
+  text: string;
+  /** Who wrote it (optional) and when. */
+  by?: string;
+  at: number;
+  done?: boolean;
+}
+
+/** A text style shared across the title (layers linked to it follow it). */
+export interface TextStyleDef {
+  id: string;
+  name: string;
+  style: TextStyle;
+}
+
 export interface TitleProject {
   format: typeof FORMAT;
   version: typeof VERSION;
@@ -366,6 +430,12 @@ export interface TitleProject {
   tokens: BrandTokens;
   assets: Asset[];
   data?: DataSource[];
+  /** Shared text styles. */
+  textStyles?: TextStyleDef[];
+  /** The title's own color swatches ("#rrggbb[aa]"). */
+  swatches?: string[];
+  /** Notes pinned on the canvas (for the people working on the title; never drawn on air). */
+  notes?: CanvasNote[];
   modified?: number;
 }
 
