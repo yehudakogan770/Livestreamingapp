@@ -72,6 +72,38 @@ export const ACTIONS = {
     ],
   },
   datarow: { name: 'Data row: next / previous', cmd: 'datarow', options: [TO('next, previous or a row number')] },
+  // Lumora Titler graphics (take them in and out with Overlay or Input on air).
+  titlerfield: {
+    name: 'Titler: set a field',
+    cmd: 'titler',
+    options: [
+      { ...INPUT, label: 'Titler graphic (input number or name)' },
+      { type: 'textinput', id: 'field', label: 'Field (its {{name}})', default: 'name' },
+      { type: 'textinput', id: 'value', label: 'Value', default: '', useVariables: true },
+    ],
+  },
+  titlerdo: {
+    name: 'Titler: data row or timer',
+    cmd: 'titler',
+    options: [
+      { ...INPUT, label: 'Titler graphic (input number or name)' },
+      {
+        type: 'dropdown',
+        id: 'do',
+        label: 'Do',
+        default: 'next',
+        choices: [
+          { id: 'next', label: 'Next data row' },
+          { id: 'previous', label: 'Previous data row' },
+          { id: 'toggle', label: 'Timer start / stop' },
+          { id: 'start', label: 'Timer start' },
+          { id: 'stop', label: 'Timer stop' },
+          { id: 'reset', label: 'Timer reset' },
+        ],
+      },
+      { type: 'textinput', id: 'field', label: 'Timer field (empty: the first timer)', default: '' },
+    ],
+  },
   nextcue: { name: 'Next cue (run of show)', cmd: 'nextcue', options: [] },
   panic: { name: 'PANIC', cmd: 'panic', options: [STATE] },
   // An ATEM switcher connected to Lumora (Settings → ATEM switcher…).
@@ -134,6 +166,7 @@ export function commandFor(actionId, options = {}) {
     else if (o.type === 'checkbox') {
       if (v) msg[o.id] = '1';
     } else if (o.id === 'minutes' && !['add', 'reset'].includes(String(options.do ?? 'toggle'))) continue;
+    else if (o.id === 'field' && actionId === 'titlerdo' && !String(v).trim()) continue;
     else msg[o.id] = String(v);
   }
   return msg;

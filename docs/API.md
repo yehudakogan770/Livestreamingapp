@@ -72,6 +72,7 @@ Inputs are named by their number as shown on the tiles (`input=3`) or by name
 | `macro`                                 | `name`, or `number` (1, 2...)                                                                                    | Run a macro                                            |
 | `stopmacros`                            |                                                                                                                  | Stop every macro that is running                       |
 | `timer`                                 | `input` or `name` (the main countdown if left out), `do` (`start`, `pause`, `toggle`, `reset`, `add`), `minutes` | Countdown                                              |
+| `titler`                                | `input` or `name`, then `field` and `value` (or `set.<field>=…`, several at once), or `do` (`next`, `previous`, `start`, `stop`, `toggle`, `reset`) with `field` | A Lumora Titler graphic: its fields, its data rows, its timers |
 | `ptz`                                   | `input` or `name`, `preset`, `move`, `zoom`, `speed`                                                             | PTZ camera                                             |
 | `atem`                                  | `do` (see below), `input`, `keyer`, `number` or `name`, `state`, `style`, `frames`                               | An ATEM switcher connected to Lumora                   |
 
@@ -99,6 +100,8 @@ curl "http://127.0.0.1:8095/api/do/preview?input=3&token=$TOKEN"
 curl "http://127.0.0.1:8095/api/do/cutto?name=Pulpit&token=$TOKEN"
 curl "http://127.0.0.1:8095/api/do/overlay?channel=1&state=on&token=$TOKEN"
 curl "http://127.0.0.1:8095/api/do/macro?name=Start%20show&token=$TOKEN"
+curl "http://127.0.0.1:8095/api/do/titler?name=Lower%20third&set.name=Ada%20Lovelace&set.role=Host&token=$TOKEN"
+curl "http://127.0.0.1:8095/api/do/titler?name=Scoreboard&do=toggle&field=clock&token=$TOKEN"
 curl -X POST -d '{"to":"next","input":4}' "http://127.0.0.1:8095/api/do/slide?token=$TOKEN"
 ```
 

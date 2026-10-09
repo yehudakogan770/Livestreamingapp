@@ -26,6 +26,9 @@ describe('Companion module', () => {
     expect(commandFor('macro', { name: '2' })).toEqual({ cmd: 'macro', number: '2' });
     expect(commandFor('timer', { do: 'start' })).toEqual({ cmd: 'timer', do: 'start' });
     expect(commandFor('timer', { do: 'add', minutes: 5 })).toEqual({ cmd: 'timer', do: 'add', minutes: '5' });
+    expect(commandFor('titlerfield', { input: 'Lower third', field: 'name', value: 'Ada' })).toEqual({ cmd: 'titler', name: 'Lower third', field: 'name', value: 'Ada' });
+    expect(commandFor('titlerdo', { input: '4', do: 'toggle' })).toEqual({ cmd: 'titler', input: '4', do: 'toggle' });
+    expect(commandFor('titlerdo', { input: '4', do: 'start', field: 'clock' })).toEqual({ cmd: 'titler', input: '4', do: 'start', field: 'clock' });
     expect(commandFor('atem', {})).toEqual({ cmd: 'atem', do: 'cut' });
     expect(commandFor('atem', { do: 'program', atemInput: 3 })).toEqual({ cmd: 'atem', do: 'program', input: '3' });
     expect(commandFor('atem', { do: 'dsk', keyer: 2, state: 'on' })).toEqual({ cmd: 'atem', do: 'dsk', keyer: '2', state: 'on' });
@@ -55,6 +58,7 @@ describe('Companion module', () => {
       'stopmacros',
       'timer',
       'datarow',
+      'titler',
       'nextcue',
       'panic',
       'atem',
