@@ -3,6 +3,7 @@
 // useSyncExternalStore; every change to the project goes through `edit`, which
 // keeps the step for undo (a drag is one step: begin … edit … end).
 
+import { followMain } from '../core/formats';
 import { useSyncExternalStore } from 'react';
 import type { BrandTokens, Layer, TitleProject, Values } from '../core/types';
 import { compOf } from './ops';
@@ -113,7 +114,8 @@ export class Store {
   /** Change the project (one undo step, or part of the current gesture). */
   edit(label: string, fn: (p: TitleProject) => TitleProject, extra: Partial<EditorState> = {}) {
     const before = this.state.project;
-    const next = fn(before);
+    // Formats follow the main composition's changes (core/formats.ts).
+    const next = followMain(before, fn(before));
     if (next === before && !Object.keys(extra).length) return;
     if (next !== before) {
       if (!this.gesture) {

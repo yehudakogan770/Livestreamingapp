@@ -53,6 +53,24 @@ async function openTemplate(name: string) {
   });
 }
 
+describe('open titles in tabs', () => {
+  it('opens another title in its own tab, switches between them and closes one', async () => {
+    render(<Designer host={memoryHost()} env={env} />);
+    await openTemplate('Name and role');
+    expect(screen.queryByRole('tablist', { name: 'Open titles' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Library' }));
+    await openTemplate('Quote card');
+    const tabs = screen.getByRole('tablist', { name: 'Open titles' });
+    expect(within(tabs).getAllByRole('tab')).toHaveLength(2);
+    expect(screen.getByLabelText('Title name')).toHaveValue('Quote card');
+    fireEvent.click(within(tabs).getByText('Name and role'));
+    expect(screen.getByLabelText('Title name')).toHaveValue('Name and role');
+    fireEvent.click(within(tabs).getByRole('button', { name: 'Close Quote card' }));
+    expect(screen.queryByRole('tablist', { name: 'Open titles' })).toBeNull();
+    expect(screen.getByLabelText('Title name')).toHaveValue('Name and role');
+  });
+});
+
 describe('the designer', () => {
   it('opens a template from the library with its layers and fields', async () => {
     render(<Designer host={memoryHost()} env={env} />);
@@ -132,10 +150,16 @@ describe('the designer', () => {
       fireEvent.click(screen.getByRole('button', { name: /Save/ }));
     });
     expect([...host.library.values()][0]!.name).toBe('Quote card');
+    fireEvent.click(screen.getByRole('button', { name: /^Export$/ }));
+    const dialog = screen.getByRole('dialog', { name: 'Export' });
+    expect(within(dialog).getByText(/HTML template/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Lottie \(\.json\)/)).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByLabelText(/Lumora title/));
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Export \.lumtitle/ }));
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Export' }));
     });
     expect(host.saved[0]!.compositions[0]!.layers.length).toBeGreaterThan(0);
+    expect(screen.queryByRole('dialog', { name: 'Export' })).toBeNull();
   });
 
   it('"Use" hands the title back to the app that opened it', async () => {

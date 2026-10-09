@@ -26,6 +26,7 @@ import {
   Save,
   Library,
   Download,
+  FileInput,
   Plus,
   Maximize2,
   Minimize2,
@@ -56,6 +57,9 @@ import { Shortcuts } from './Shortcuts';
 import { NotesPanel, NotesPopover } from './Notes';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
+import { ExportDialog, NoticeDialog } from './ExportDialog';
+import { pickImportFile, readImport } from './importing';
+import { fromSvg, spanning } from '../core/svgImport';
 import {
   clampSize,
   forgetTitle,
@@ -104,7 +108,13 @@ let keyClipboard: KeyClip | null = null;
 
 export function Designer({ host, initial, look = 'ink', brand = null, values = {}, onUse, useLabel, onClose, env: givenEnv }: DesignerProps) {
   const env = useMemo(() => givenEnv ?? browserEnv(host.urlFor), [givenEnv, host]);
-  const store = useMemo(() => new Store(initial ?? newProject(), { brand, values }), []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Titles open in tabs: each its own store (undo, selection, playhead).
+  const [tabs, setTabs] = useState<Store[]>(() => [new Store(initial ?? newProject(), { brand, values })]);
+  const [active, setActive] = useState(0);
+  const store = tabs[Math.min(active, tabs.length - 1)]!;
+  const libIds = useRef(new WeakMap<Store, string | null>());
+  const libId = libIds.current.get(store) ?? null;
+  const setLibId = (id: string | null) => libIds.current.set(store, id);
   const [layout, setLayoutState] = useState<Layout>(() => {
     const l = loadLayout();
     return initial && l.leftTab === 'library' ? { ...l, leftTab: 'project' } : l;
@@ -121,9 +131,11 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const setRight = (rightTab: RightTab) => setLayout({ rightTab });
   const [recent, setRecent] = useState(recentTitles);
   const [renderOpen, setRenderOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [notice, setNotice] = useState<{ title: string; lead: string; items: string[] } | null>(null);
+  const [libVersion, setLibVersion] = useState(0);
   const [keysOpen, setKeysOpen] = useState(false);
   const [recovered, setRecovered] = useState<TitleProject | null>(null);
-  const [libId, setLibId] = useState<string | null>(null);
   const tool = useStore(store, (s) => s.tool);
   const playing = useStore(store, (s) => s.playing);
   const project = useStore(store, (s) => s.project);
@@ -198,9 +210,24 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   }, [cue, store]);
 
   const open = (p: TitleProject, id?: string | null, path?: string | null) => {
-    if (store.get().dirty && !confirm('Open another title? Changes to this one that are not saved will be lost.')) return;
-    store.load(p, { path: path ?? null });
-    setLibId(id ?? null);
+    // The same title already open: go to its tab.
+    const already = tabs.findIndex((t) => (id && libIds.current.get(t) === id) || (path && t.get().path === path));
+    if (already >= 0) {
+      setActive(already);
+      setSide('project');
+      return;
+    }
+    // An untouched new title is replaced; otherwise the title opens in a tab of its own.
+    const s = store.get();
+    const blank = !s.dirty && !s.path && !libIds.current.get(store) && store.canUndo() === false && s.project.compositions.every((c) => !c.layers.length);
+    const target = blank ? store : new Store(p, { brand, values });
+    if (blank) store.load(p, { path: path ?? null });
+    else {
+      target.set({ path: path ?? null });
+      setTabs((list) => [...list, target]);
+      setActive(tabs.length);
+    }
+    libIds.current.set(target, id ?? null);
     setSide('project');
     host.autosave(null);
     const again = id ?? path;
@@ -244,6 +271,54 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     }
     open(r.result.project, null, r.path);
     if (r.result.notes.length) store.set({ status: r.result.notes.join(' ') });
+  };
+
+  const closeTab = (i: number) => {
+    const t = tabs[i];
+    if (!t) return;
+    if (t.get().dirty && !confirm(`Close “${t.get().project.name}”? Changes that are not saved will be lost.`)) return;
+    const next = tabs.filter((_, j) => j !== i);
+    setTabs(next.length ? next : [new Store(newProject(), { brand, values })]);
+    setActive((a) => Math.max(0, Math.min(next.length - 1, a > i ? a - 1 : a === i ? i - 1 : a)));
+  };
+
+  const importFile = async () => {
+    const f = await pickImportFile();
+    if (!f) return;
+    try {
+      const got = await readImport(f.name, new Uint8Array(await f.arrayBuffer()));
+      if (got.kind === 'project') {
+        open(got.project, null, null);
+        store.set({ dirty: true, status: `Imported ${f.name}` });
+        if (got.notes.length) setNotice({ title: 'Imported', lead: `${f.name} is open as a title. Some things are drawn differently:`, items: got.notes });
+        return;
+      }
+      const { pack } = got;
+      let added = 0;
+      for (const t of pack.titles) {
+        await host.saveLibrary({ ...t, id: `${t.id}-${Date.now().toString(36)}${added}` }, null);
+        added++;
+      }
+      setLibVersion((v) => v + 1);
+      setSide('library');
+      store.set({ status: `Added ${added} title${added === 1 ? '' : 's'} from ${pack.info.name} to the library` });
+      const about = [
+        pack.info.author && `by ${pack.info.author}`,
+        pack.info.version && `version ${pack.info.version}`,
+        pack.info.license && `license ${pack.info.license}`,
+      ]
+        .filter(Boolean)
+        .join(', ');
+      setNotice({
+        title: pack.info.name || 'Template pack',
+        lead: `Added ${added} title${added === 1 ? '' : 's'} to your library${about ? ` (${about})` : ''}.${pack.problems.length ? ' Some could not be read:' : ''}`,
+        items: pack.problems,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      store.set({ status: msg });
+      setNotice({ title: 'Import', lead: msg, items: [] });
+    }
   };
 
   // The color picker's swatches: the title's own, and the event look's colors.
@@ -449,8 +524,11 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             <button onClick={() => void saveToLibrary()} title={`Save to the library: ${host.libraryName} (Ctrl+S)`}>
               <Save size={15} /> Save
             </button>
-            <button onClick={() => void exportFile()} title="Save as a .lumtitle file with its pictures and fonts inside (Ctrl+Shift+S)">
-              <Download size={15} /> Export .lumtitle
+            <button onClick={() => void importFile()} title="Import a Lottie animation (After Effects, LottieFiles), a template pack or a .lumtitle file">
+              <FileInput size={15} /> Import
+            </button>
+            <button onClick={() => setExportOpen(true)} title="Export: a .lumtitle file (Ctrl+Shift+S), an HTML template for other playout systems, or Lottie">
+              <Download size={15} /> Export
             </button>
             <button onClick={() => setRenderOpen(true)} title="Render to a film or PNG sequence">
               <Film size={15} /> Render
@@ -538,10 +616,12 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               ))}
             </select>
           </label>
-          <span className="tt-title" title={store.get().path ?? ''}>
-            {project.name}
-            {dirty ? ' •' : ''}
-          </span>
+          {tabs.length === 1 && (
+            <span className="tt-title" title={store.get().path ?? ''}>
+              {project.name}
+              {dirty ? ' •' : ''}
+            </span>
+          )}
           {onUse && (
             <button className="tt-primary" onClick={() => onUse(store.get().project)}>
               {useLabel ?? 'Use this title'}
@@ -576,7 +656,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             </button>
           </div>
         )}
-        <div className="tt-main">
+        {tabs.length > 1 && <TitleTabs tabs={tabs} active={Math.min(active, tabs.length - 1)} onPick={setActive} onClose={closeTab} />}
+        <div className="tt-main" key={tabKey(store)}>
           <aside className="tt-left">
             <div className="tt-tabs">
               <button className={side === 'library' ? 'on' : ''} onClick={() => setSide('library')}>
@@ -601,7 +682,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
                     ))}
                   </div>
                 )}
-                <LibraryPanel store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
+                <LibraryPanel key={libVersion} store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
               </>
             )}
             {side === 'project' && <ProjectPanel store={store} host={host} />}
@@ -742,11 +823,13 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             onChange={(t) => setLayout({ timeline: clampSize('timeline', t) })}
             label="Resize the timeline"
           />
-          <Timeline store={store} ram={ram} />
+          <Timeline key={tabKey(store)} store={store} ram={ram} />
         </div>
         <footer className="tt-status" role="status">
           {status || 'Ready.'}
         </footer>
+        {notice && <NoticeDialog {...notice} onClose={() => setNotice(null)} />}
+        {exportOpen && <ExportDialog store={store} host={host} onClose={() => setExportOpen(false)} onLumtitle={() => void exportFile()} />}
         {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
         {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}
       </div>
@@ -805,6 +888,18 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
         let layers = clipboard;
         try {
           const text = await navigator.clipboard?.readText();
+          // SVG (Figma's "Copy as SVG", Illustrator): pasted as shape layers.
+          if (text && /^\s*(<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text)) {
+            const svg = fromSvg(text);
+            const c = store.comp();
+            const pasted = spanning(svg.layers, c.duration);
+            if (!pasted.length) return store.set({ status: 'There were no shapes in the SVG.' });
+            store.edit('Paste SVG', (p) => addLayers(p, c.id, pasted, sel()[0] ?? null), {
+              selection: pasted.map((l) => l.id),
+              status: `Pasted ${pasted.length} layer${pasted.length > 1 ? 's' : ''} from SVG${svg.notes.length ? ` (${svg.notes.join(' ')})` : ''}`,
+            });
+            return;
+          }
           const o = text ? (JSON.parse(text) as { type?: string; layers?: Layer[] }) : null;
           if (o?.type === CLIP_MIME && Array.isArray(o.layers)) layers = o.layers;
         } catch {
@@ -967,6 +1062,41 @@ function RenderDialog({ store, host, env, onClose }: { store: Store; host: Host;
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+const tabIds = new WeakMap<Store, number>();
+let tabSeq = 0;
+function tabKey(s: Store): number {
+  let k = tabIds.get(s);
+  if (k === undefined) tabIds.set(s, (k = ++tabSeq));
+  return k;
+}
+
+/** The open titles, one tab each (shown when more than one is open). */
+function TitleTabs({ tabs, active, onPick, onClose }: { tabs: Store[]; active: number; onPick: (i: number) => void; onClose: (i: number) => void }) {
+  return (
+    <div className="tt-doc-tabs" role="tablist" aria-label="Open titles">
+      {tabs.map((t, i) => (
+        <TitleTab key={tabKey(t)} store={t} on={i === active} onPick={() => onPick(i)} onClose={() => onClose(i)} />
+      ))}
+    </div>
+  );
+}
+
+function TitleTab({ store, on, onPick, onClose }: { store: Store; on: boolean; onPick: () => void; onClose: () => void }) {
+  const name = useStore(store, (s) => s.project.name);
+  const dirty = useStore(store, (s) => s.dirty);
+  return (
+    <div className={`tt-doc-tab${on ? ' on' : ''}`} role="tab" aria-selected={on} title={store.get().path ?? name}>
+      <button className="tt-doc-tab-name" onClick={onPick} onAuxClick={(e) => e.button === 1 && onClose()}>
+        {name || 'Untitled'}
+        {dirty && <span className="tt-doc-dirty" aria-label="not saved" />}
+      </button>
+      <button className="tt-doc-tab-close" onClick={onClose} aria-label={`Close ${name}`}>
+        ×
+      </button>
     </div>
   );
 }

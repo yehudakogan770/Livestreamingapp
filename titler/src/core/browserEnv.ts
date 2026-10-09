@@ -74,7 +74,9 @@ export function browserEnv(urlFor: UrlFor = (s) => s): BrowserEnv {
     },
     async prepare(p, extra = []) {
       const fonts = p.assets.filter((a) => a.kind === 'font' && a.family);
-      await Promise.all(fonts.map((f) => loadFont(f.family!, f.src.startsWith('data:') ? f.src : urlFor(f.src))));
+      await Promise.all(
+        fonts.map((f) => loadFont(f.family!, f.src.startsWith('data:') ? f.src : urlFor(f.src), { weight: f.weight, style: f.style, range: f.range })),
+      );
       const srcs = [...p.assets.filter((a) => a.kind === 'image' || a.kind === 'svg').map((a) => a.src), ...extra];
       await Promise.all(
         srcs.map(
@@ -95,14 +97,18 @@ export function browserEnv(urlFor: UrlFor = (s) => s): BrowserEnv {
 }
 
 /** Load a font file under a family name (once). */
-export function loadFont(family: string, url: string): Promise<void> {
+export function loadFont(family: string, url: string, face: { weight?: string; style?: string; range?: string } = {}): Promise<void> {
   const key = `${family}|${url.slice(0, 200)}|${url.length}`;
+  const desc: FontFaceDescriptors = {};
+  if (face.weight) desc.weight = face.weight;
+  if (face.style) desc.style = face.style;
+  if (face.range) desc.unicodeRange = face.range;
   let p = fontFaces.get(key);
   if (!p) {
     p =
       typeof FontFace === 'undefined' || typeof document === 'undefined'
         ? Promise.resolve()
-        : new FontFace(family, `url(${JSON.stringify(url)})`)
+        : new FontFace(family, `url(${JSON.stringify(url)})`, desc)
             .load()
             .then((face) => {
               document.fonts.add(face);

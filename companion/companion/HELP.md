@@ -25,6 +25,11 @@ flashing the stage monitor, scoreboards (points, reset, game clock), PTZ
 cameras (presets, moving, zooming) and an ATEM switcher connected to
 Lumora. Inputs can be given by number or by name.
 
+Lumora Titler graphics: set any field (a name, a score, a headline, from a
+Companion variable too), step through the title's own data rows, and start,
+stop or reset its timers (game clocks, countdowns). Take a graphic in and out
+with Overlay or Input on air.
+
 ## Feedbacks
 
 Tally for any input (on air or in Next), overlay on, recording, live,

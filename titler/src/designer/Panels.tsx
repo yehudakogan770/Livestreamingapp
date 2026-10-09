@@ -3,7 +3,7 @@
 // compositions and files, and the library of templates and saved titles.
 
 import { useEffect, useRef, useState } from 'react';
-import { Copy, Film, Image as ImageIcon, Layers as LayersIcon, Music, Plus, Star, Trash2, Upload } from 'lucide-react';
+import { Copy, Film, Image as ImageIcon, Layers as LayersIcon, Music, Plus, Star, Trash2, Upload, Package } from 'lucide-react';
 import { DEFAULT_TOKENS, TOKEN_KEYS, TOKEN_LABELS, keyFrom, tokensFor, usedVariables, valuesFor } from '../core/binding';
 import { newComposition, newImage, newVideo, uid } from '../core/build';
 import type { BrowserEnv } from '../core/browserEnv';
@@ -18,6 +18,8 @@ import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields'
 import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
+import { PackDialog } from './PackDialog';
+import { parseClock } from '../core/timer';
 import type { Store } from './store';
 import { useStore } from './store';
 
@@ -53,16 +55,35 @@ function FormatsSection({ store }: { store: Store }) {
               {c.width} × {c.height}
             </span>
             {c.id !== main.id && (
-              <button
-                className="tt-link"
-                title="Make it again from the main composition (changes made in this format are lost)"
-                onClick={() => {
-                  if (!confirm(`Make “${c.name}” again from the main composition? Changes made in it are lost.`)) return;
-                  store.edit('Remake format', (p) => makeFormat(p, '', c.width, c.height, c.id).project);
-                }}
-              >
-                Remake
-              </button>
+              <>
+                <label className="tt-check" title="Changes to the main composition come here too (what you change in this format stays)">
+                  <input
+                    type="checkbox"
+                    checked={c.follow !== false}
+                    aria-label={`${c.name} follows the main composition`}
+                    onChange={(e) =>
+                      store.edit(e.target.checked ? 'Format follows the main one' : 'Format on its own', (p) => ({
+                        ...p,
+                        compositions: p.compositions.map((x) => (x.id === c.id ? { ...x, follow: e.target.checked } : x)),
+                      }))
+                    }
+                  />
+                  Follows
+                </label>
+                <button
+                  className="tt-link"
+                  title="Make it again from the main composition (changes made in this format are lost)"
+                  onClick={() => {
+                    if (!confirm(`Make “${c.name}” again from the main composition? Changes made in it are lost.`)) return;
+                    store.edit('Reset format', (p) => {
+                      const r = makeFormat(p, '', c.width, c.height, c.id).project;
+                      return { ...r, compositions: r.compositions.map((x) => (x.id === c.id ? { ...x, follow: c.follow } : x)) };
+                    });
+                  }}
+                >
+                  Reset
+                </button>
+              </>
             )}
           </li>
         ))}
@@ -89,7 +110,9 @@ function FormatsSection({ store }: { store: Store }) {
       </Row>
       {current && current.id !== main.id && (
         <div className="tt-dim tt-small">
-          This format was made from the main composition; change it here as you like. Its layers keep their names, fields and timing.
+          {current.follow === false
+            ? 'This format stands on its own: changes to the main composition do not come here.'
+            : 'Changes to the main composition come here too, placed by each layer’s constraints. What you change in this format stays as you set it.'}
         </div>
       )}
     </Section>
@@ -161,6 +184,17 @@ export function CompositionPanel({ store }: { store: Store }) {
               ['60', '60'],
             ]}
             onChange={(v) => upd('Frame rate', (x) => ({ ...x, fps: Number(v) }))}
+          />
+        </Row>
+        <Row label="Camera" hint="For 3D layers: how far the camera is from the picture (nearer: stronger perspective)">
+          <NumberField
+            value={c.perspective ?? 2000}
+            step={50}
+            min={200}
+            max={20000}
+            label="Camera distance"
+            unit="px"
+            onChange={(perspective) => upd('Camera distance', (x) => ({ ...x, perspective: Math.round(perspective) }))}
           />
         </Row>
         <Row label="Length">
@@ -320,6 +354,7 @@ const VAR_TYPES: [VariableType, string][] = [
   ['color', 'Color'],
   ['image', 'Picture'],
   ['list', 'List'],
+  ['timer', 'Timer (clock, countdown)'],
 ];
 
 /** Where Lumora can fill a field from (Lumora sets these on air). */
@@ -364,7 +399,19 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
             </Row>
             <Row label="Name">
               <code className="tt-code">{`{{${v.key}}}`}</code>
-              <Select label="Field kind" value={v.type} options={VAR_TYPES} onChange={(type) => set(i, { type })} />
+              <Select
+                label="Field kind"
+                value={v.type}
+                options={VAR_TYPES}
+                onChange={(type) =>
+                  set(
+                    i,
+                    type === 'timer'
+                      ? { type, timer: v.timer ?? { dir: 'down', format: 'm:ss' }, value: /^[\d:.]+$/.test(v.value) ? v.value : '10:00' }
+                      : { type },
+                  )
+                }
+              />
             </Row>
             <Row label="Sample">
               {v.type === 'list' ? (
@@ -417,6 +464,47 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
                   onChange={(e) => set(i, { suffix: e.target.value })}
                 />
               </Row>
+            )}
+            {v.type === 'timer' && (
+              <>
+                <Row label="Runs" hint="The sample is where it starts (10:00, 45:00, 0:00)">
+                  <Select
+                    label="Timer direction"
+                    value={v.timer?.dir ?? 'down'}
+                    options={[
+                      ['down', 'Down (countdown)'],
+                      ['up', 'Up (stopwatch, game clock)'],
+                    ]}
+                    onChange={(dir) => set(i, { timer: { ...(v.timer ?? { dir }), dir } })}
+                  />
+                  <Select
+                    label="Timer shows"
+                    value={v.timer?.format ?? 'm:ss'}
+                    options={[
+                      ['m:ss', '9:05'],
+                      ['mm:ss', '09:05'],
+                      ['h:mm:ss', '1:09:05'],
+                      ['ss', '545'],
+                      ['m:ss.t', '9:05.3'],
+                      ['ss.t', '24.3 (shot clock)'],
+                    ]}
+                    onChange={(format) => set(i, { timer: { ...(v.timer ?? { dir: 'down' }), format } })}
+                  />
+                </Row>
+                <Row label="Stops at" hint="Empty: a countdown stops at 0, a clock counting up runs on">
+                  <input
+                    className="tt-input short"
+                    aria-label="Timer stops at"
+                    placeholder={v.timer?.dir === 'up' ? '(runs on)' : '0:00'}
+                    defaultValue={v.timer?.stop !== undefined ? String(v.timer.stop) : ''}
+                    onBlur={(e) => {
+                      const n = parseClock(e.target.value);
+                      set(i, { timer: { ...(v.timer ?? { dir: 'down' }), stop: Number.isFinite(n) ? n : undefined } });
+                    }}
+                  />
+                  <Toggle value={!!v.timer?.auto} onChange={(auto) => set(i, { timer: { ...(v.timer ?? { dir: 'down' }), auto } })} label="Starts when taken" />
+                </Row>
+              </>
             )}
             {v.type === 'list' && (
               <Row label="On one line" hint="For a ticker: what goes between the items">
@@ -622,7 +710,7 @@ export function DataPanel({ store }: { store: Store }) {
     try {
       const t = await readSource(src);
       setTables((x) => ({ ...x, [src.id]: t }));
-      store.set((s) => ({ values: { ...s.values, ...valuesFromRow(src, t, keys) } }));
+      store.set((s) => ({ values: { ...s.values, ...valuesFromRow(src, t, keys, store.get().project.variables) } }));
     } catch (e) {
       setTables((x) => ({ ...x, [src.id]: e instanceof Error ? e.message : 'It could not be read.' }));
     }
@@ -923,6 +1011,7 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
   const [mine, setMine] = useState<LibraryEntry[]>([]);
   const [cat, setCat] = useState<string>('All');
   const [error, setError] = useState('');
+  const [sharing, setSharing] = useState(false);
   const refresh = () =>
     host
       .listLibrary()
@@ -937,7 +1026,15 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
   const shown = all.filter((t) => cat === 'All' || t.category === cat);
   return (
     <div className="tt-library" data-testid="titler-library">
-      <div className="tt-side-head">Your titles ({host.libraryName})</div>
+      <div className="tt-side-head">
+        Your titles ({host.libraryName})
+        {mine.length > 0 && (
+          <button className="tt-ico" onClick={() => setSharing(true)} title="Share titles as a template pack (one file)" aria-label="Share as a pack">
+            <Package size={13} />
+          </button>
+        )}
+      </div>
+      {sharing && <PackDialog host={host} env={env} onClose={() => setSharing(false)} onDone={(status) => store.set({ status })} />}
       {error && <div className="tt-error">{error}</div>}
       {mine.length === 0 && (
         <div className="tt-dim tt-small tt-pad">

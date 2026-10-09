@@ -143,7 +143,7 @@ export function movesByItself(p: TitleProject): boolean {
 
 /** Is any field of this graphic filled from something that changes by itself (a clock)? */
 export function ticks(p: TitleProject): boolean {
-  return p.variables.some((v) => v.bind === 'score:clock' || v.bind === 'countdown' || v.bind === 'clock:time') || movesByItself(p);
+  return p.variables.some((v) => v.bind === 'score:clock' || v.bind === 'countdown' || v.bind === 'clock:time' || v.type === 'timer') || movesByItself(p);
 }
 
 /**

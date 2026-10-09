@@ -272,6 +272,8 @@ pub fn allowed(action: &Action) -> bool {
             | Action::WallPin { .. }
             | Action::ScriptureStep { .. }
             | Action::DataStep { .. }
+            | Action::SetTitlerValues { .. }
+            | Action::TitlerDataStep { .. }
             | Action::PrompterRun { .. }
             | Action::PrompterJump { .. }
             | Action::PrompterSpeed { .. }

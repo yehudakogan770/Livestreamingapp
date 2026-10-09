@@ -2,7 +2,8 @@
 // curve of the segment after the chosen keyframe with its two bezier handles.
 
 import { useRef } from 'react';
-import { EASES, isAnimated, valueAt } from '../core/easing';
+import { EASES, fromVelocity, isAnimated, parseCubicBezier, toVelocity, valueAt } from '../core/easing';
+import { NumberField } from './fields';
 import type { Keyframe, Value, Vec2 } from '../core/types';
 import { compOf, findLayer, updateLayers } from './ops';
 import { getProp, propsOf, withProp } from './props';
@@ -176,11 +177,42 @@ export function GraphEditor({ store }: { store: Store }) {
               Hold
             </button>
           </div>
-          <div className="tt-dim tt-small">
-            cubic-bezier({o[0]}, {o[1]}, {iH[0]}, {iH[1]})
-          </div>
+          {!a.hold && <Velocity a={a} b={b} unit={pi.unit} onChange={(h) => setHandles(h.o, h.i)} />}
+          <label className="tt-css-ease">
+            <span className="tt-dim tt-small">CSS</span>
+            <input
+              key={`${o.join()}|${iH.join()}`}
+              className="tt-input"
+              aria-label="Easing as CSS cubic-bezier"
+              defaultValue={`cubic-bezier(${o[0]}, ${o[1]}, ${iH[0]}, ${iH[1]})`}
+              onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+              onBlur={(e) => {
+                const h = parseCubicBezier(e.target.value);
+                if (h) setHandles(h.o, h.i);
+                else e.target.value = `cubic-bezier(${o[0]}, ${o[1]}, ${iH[0]}, ${iH[1]})`;
+              }}
+            />
+          </label>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Speeds and influences of the segment (After Effects' Keyframe Velocity), typed in. */
+function Velocity({ a, b, unit, onChange }: { a: Keyframe<Value>; b: Keyframe<Value>; unit?: string; onChange: (h: { o: Vec2; i: Vec2 }) => void }) {
+  const v = toVelocity(a, b);
+  const r = (n: number) => Math.round(n * 100) / 100;
+  const set = (patch: Partial<typeof v>) => onChange(fromVelocity(a, b, { ...v, ...patch }));
+  const speed = `${unit ?? 'units'}/s`;
+  return (
+    <div className="tt-velocity" aria-label="Keyframe velocity">
+      <span className="tt-dim tt-small">Leaving</span>
+      <NumberField label="Leaving speed" value={r(v.outSpeed)} unit={speed} onChange={(n) => set({ outSpeed: n, outInfluence: v.outInfluence || 33.33 })} />
+      <NumberField label="Leaving influence" value={r(v.outInfluence)} unit="%" min={0.1} max={100} onChange={(n) => set({ outInfluence: n })} />
+      <span className="tt-dim tt-small">Arriving</span>
+      <NumberField label="Arriving speed" value={r(v.inSpeed)} unit={speed} onChange={(n) => set({ inSpeed: n, inInfluence: v.inInfluence || 33.33 })} />
+      <NumberField label="Arriving influence" value={r(v.inInfluence)} unit="%" min={0.1} max={100} onChange={(n) => set({ inInfluence: n })} />
     </div>
   );
 }
