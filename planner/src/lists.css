@@ -274,3 +274,17 @@
   height: 100%;
   background: var(--text);
 }
+
+/* Phones: the lists scroll sideways rather than squeezing their columns. */
+:root[data-device='phone'] .lists__table {
+  min-width: 760px;
+}
+:root[data-device='phone'] .lists__bar {
+  padding: 8px 0;
+  background: none;
+  border: 0;
+}
+:root[data-device='phone'] .phone__extra .lists__scroll {
+  margin: 0 -16px;
+  padding: 0 16px;
+}
