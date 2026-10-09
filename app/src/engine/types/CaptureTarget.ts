@@ -3,4 +3,4 @@
 /**
  * What is captured.
  */
-export type CaptureTarget = { type: 'display'; index: number; name: string } | { type: 'window'; title: string };
+export type CaptureTarget = { "type": "display", index: number, name: string, } | { "type": "window", title: string, };

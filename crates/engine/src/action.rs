@@ -145,6 +145,15 @@ pub struct MonitorPatch {
     #[serde(default)]
     #[ts(optional)]
     pub clock_24h: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub wrap_up_s: Option<u32>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub overtime: Option<bool>,
+    #[serde(default)]
+    #[ts(optional)]
+    pub progress: Option<bool>,
 }
 
 /// Changes to how the countdown looks and ends. Fields left out stay as they are.

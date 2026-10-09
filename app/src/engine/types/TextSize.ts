@@ -3,4 +3,4 @@
 /**
  * Size of the monitor message.
  */
-export type TextSize = 's' | 'm' | 'l' | 'xl';
+export type TextSize = "s" | "m" | "l" | "xl";

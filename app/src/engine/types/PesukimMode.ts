@@ -3,4 +3,4 @@
 /**
  * What the screen shows.
  */
-export type PesukimMode = 'bar' | 'word' | 'strip' | 'pasuk';
+export type PesukimMode = "bar" | "word" | "strip" | "pasuk";

@@ -3,22 +3,20 @@
 /**
  * One pasuk and the child who says it.
  */
-export type Pasuk = {
-  child: string;
-  /**
-   * The words, separated by spaces. A hyphen (-) joins two words shown together.
-   */
-  text: string;
-  /**
-   * How each word sounds, word for word (the same spaces and hyphens).
-   */
-  translit: string;
-  /**
-   * What each word means, word for word; "_" for a word with none.
-   */
-  english: string;
-  /**
-   * What the whole pasuk means (shown with the whole pasuk).
-   */
-  translation: string;
-};
+export type Pasuk = { child: string, 
+/**
+ * The words, separated by spaces. A hyphen (-) joins two words shown together.
+ */
+text: string, 
+/**
+ * How each word sounds, word for word (the same spaces and hyphens).
+ */
+translit: string, 
+/**
+ * What each word means, word for word; "_" for a word with none.
+ */
+english: string, 
+/**
+ * What the whole pasuk means (shown with the whole pasuk).
+ */
+translation: string, };

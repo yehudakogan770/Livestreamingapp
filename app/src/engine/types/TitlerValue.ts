@@ -3,4 +3,4 @@
 /**
  * One field's value: `{{key}}` in the template becomes `value`.
  */
-export type TitlerValue = { key: string; value: string };
+export type TitlerValue = { key: string, value: string, };

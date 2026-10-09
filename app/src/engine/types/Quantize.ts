@@ -3,4 +3,4 @@
 /**
  * When a new scene starts.
  */
-export type Quantize = 'now' | 'beat' | 'bar';
+export type Quantize = "now" | "beat" | "bar";

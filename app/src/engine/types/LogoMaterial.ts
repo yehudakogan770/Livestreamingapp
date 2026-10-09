@@ -3,4 +3,4 @@
 /**
  * What the logo is made of.
  */
-export type LogoMaterial = 'metal' | 'glass' | 'gloss' | 'matte';
+export type LogoMaterial = "metal" | "glass" | "gloss" | "matte";

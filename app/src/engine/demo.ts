@@ -1221,6 +1221,9 @@ function apply(s: Show, a: Action, now: number) {
       if (p.showLyrics !== undefined) m.showLyrics = p.showLyrics;
       if (p.textSize !== undefined) m.textSize = p.textSize;
       if (p.clock24h !== undefined) m.clock24h = p.clock24h;
+      if (p.wrapUpS !== undefined) m.wrapUpS = Math.min(3600, Math.max(0, Math.round(p.wrapUpS)));
+      if (p.overtime !== undefined) m.overtime = p.overtime;
+      if (p.progress !== undefined) m.progress = p.progress;
       return;
     }
     case 'setQuickMessage':

@@ -3,18 +3,16 @@
 /**
  * The game clock.
  */
-export type GameClock = {
-  /**
-   * Counts down from `length_ms` (else up from 0).
-   */
-  countDown: boolean;
-  lengthMs: number;
-  /**
-   * Time already run before `since`.
-   */
-  runMs: number;
-  /**
-   * Running since then (None: stopped).
-   */
-  since: number | null;
-};
+export type GameClock = { 
+/**
+ * Counts down from `length_ms` (else up from 0).
+ */
+countDown: boolean, lengthMs: number, 
+/**
+ * Time already run before `since`.
+ */
+runMs: number, 
+/**
+ * Running since then (None: stopped).
+ */
+since: number | null, };

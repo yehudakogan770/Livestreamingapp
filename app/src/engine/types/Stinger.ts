@@ -4,17 +4,16 @@
  * A stinger: a short video (usually with see-through parts) that covers the
  * switch. The pictures change under it at the cut point.
  */
-export type Stinger = {
-  /**
-   * The video file ("" when not set up).
-   */
-  path: string;
-  /**
-   * Its length, ms.
-   */
-  durationMs: number;
-  /**
-   * When the pictures change underneath, ms from the start.
-   */
-  cutMs: number;
-};
+export type Stinger = { 
+/**
+ * The video file ("" when not set up).
+ */
+path: string, 
+/**
+ * Its length, ms.
+ */
+durationMs: number, 
+/**
+ * When the pictures change underneath, ms from the start.
+ */
+cutMs: number, };

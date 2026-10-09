@@ -287,10 +287,11 @@ export const MANUAL: Topic[] = [
   {
     id: 'monitor',
     title: 'Stage monitor and teleprompter',
-    keywords: 'monitor stage confidence teleprompter prompter message speaker notes',
+    keywords: 'monitor stage confidence teleprompter prompter message speaker notes timer wrap up amber red overtime over time progress',
     body: [
       'The Monitor is for the people on stage. There are no controls on it: everything is sent from here (F3).',
       '• Send messages (“2 minutes left”, “Speak louder”), the time, the countdown and what is coming next.',
+      '• Speaker timing: the time left turns amber when it is time to wrap up (choose when, under the Countdown check box), and red in the last minute. After zero it shows the time over in red (+1:05), so a speaker knows how far over they are. A bar under the time shows how much has gone. Each can be turned off.',
       '• Teleprompter: paste the script, then start, pause and change the speed; mirror it for glass prompters.',
     ],
   },

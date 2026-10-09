@@ -3,4 +3,4 @@
 /**
  * What a [`When::Broadcast`] trigger watches.
  */
-export type BroadcastWhat = 'record' | 'stream';
+export type BroadcastWhat = "record" | "stream";

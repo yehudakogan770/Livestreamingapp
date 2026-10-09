@@ -3,4 +3,4 @@
 /**
  * How a picture fits into the output frame.
  */
-export type Fit = 'contain' | 'cover';
+export type Fit = "contain" | "cover";

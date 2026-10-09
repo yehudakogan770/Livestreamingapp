@@ -3,4 +3,4 @@
 /**
  * How a cue starts.
  */
-export type CueTrigger = { type: 'manual' } | { type: 'clock'; time: string } | { type: 'afterPrevious' };
+export type CueTrigger = { "type": "manual" } | { "type": "clock", time: string, } | { "type": "afterPrevious" };

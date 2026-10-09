@@ -3,26 +3,24 @@
 /**
  * Where the operator is.
  */
-export type PesukimPlace = {
-  /**
-   * 0 – 11.
-   */
-  pasuk: number;
-  word: number;
-  /**
-   * Showing the whole pasuk (until the next word).
-   */
-  whole: boolean;
-  /**
-   * Words hidden; the background stays.
-   */
-  blank: boolean;
-  /**
-   * The child's name, before the first word of their pasuk.
-   */
-  intro: boolean;
-  /**
-   * When the word last changed (for the word animation and auto-advance).
-   */
-  changedAt: number;
-};
+export type PesukimPlace = { 
+/**
+ * 0 – 11.
+ */
+pasuk: number, word: number, 
+/**
+ * Showing the whole pasuk (until the next word).
+ */
+whole: boolean, 
+/**
+ * Words hidden; the background stays.
+ */
+blank: boolean, 
+/**
+ * The child's name, before the first word of their pasuk.
+ */
+intro: boolean, 
+/**
+ * When the word last changed (for the word animation and auto-advance).
+ */
+changedAt: number, };

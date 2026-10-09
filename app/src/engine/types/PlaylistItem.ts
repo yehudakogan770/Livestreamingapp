@@ -3,11 +3,8 @@
 /**
  * One video in a playlist.
  */
-export type PlaylistItem = {
-  path: string;
-  name: string;
-  /**
-   * Its length once known (0 until then).
-   */
-  durationS: number;
-};
+export type PlaylistItem = { path: string, name: string, 
+/**
+ * Its length once known (0 until then).
+ */
+durationS: number, };

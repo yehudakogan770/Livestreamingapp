@@ -3,4 +3,4 @@
 /**
  * Which columns a scoreboard follows (empty: not linked).
  */
-export type ScoreLink = { homeName: string; homeScore: string; awayName: string; awayScore: string; period: string };
+export type ScoreLink = { homeName: string, homeScore: string, awayName: string, awayScore: string, period: string, };

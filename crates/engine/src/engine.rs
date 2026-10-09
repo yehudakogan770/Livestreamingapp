@@ -2235,6 +2235,15 @@ fn update_monitor(s: &mut Show, p: MonitorPatch) {
     if let Some(v) = p.clock_24h {
         m.clock_24h = v;
     }
+    if let Some(v) = p.wrap_up_s {
+        m.wrap_up_s = v.min(crate::stage::MAX_WRAP_UP_S);
+    }
+    if let Some(v) = p.overtime {
+        m.overtime = v;
+    }
+    if let Some(v) = p.progress {
+        m.progress = v;
+    }
 }
 
 fn update_countdown(s: &mut Show, id: &SourceId, p: CountdownPatch) -> Result<()> {

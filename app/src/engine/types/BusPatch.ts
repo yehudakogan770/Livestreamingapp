@@ -3,4 +3,4 @@
 /**
  * Changes to a mix. Fields left out stay as they are.
  */
-export type BusPatch = { name?: string; volume?: number; muted?: boolean };
+export type BusPatch = { name?: string, volume?: number, muted?: boolean, };

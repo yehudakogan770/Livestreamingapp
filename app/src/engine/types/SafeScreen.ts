@@ -3,4 +3,4 @@
 /**
  * What a screen shows when it has to show "nothing".
  */
-export type SafeScreen = 'black' | 'logo';
+export type SafeScreen = "black" | "logo";

@@ -3,11 +3,8 @@
 /**
  * An extra mix (A: hall speakers, B: recording).
  */
-export type Bus = {
-  name: string;
-  /**
-   * 0.0 – 1.0
-   */
-  volume: number;
-  muted: boolean;
-};
+export type Bus = { name: string, 
+/**
+ * 0.0 – 1.0
+ */
+volume: number, muted: boolean, };

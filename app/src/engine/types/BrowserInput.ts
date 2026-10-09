@@ -3,31 +3,28 @@
 /**
  * A web page input.
  */
-export type BrowserInput = {
-  url: string;
-  /**
-   * The page's size in pixels (what is captured).
-   */
-  width: number;
-  height: number;
-  /**
-   * Page zoom, 25 – 400 %.
-   */
-  zoom: number;
-  /**
-   * Let the page's own transparent parts show what is behind.
-   */
-  transparent: boolean;
-  /**
-   * Reload by itself every this many minutes (0: never).
-   */
-  refreshMin: number;
-  /**
-   * Clicks on the page window are blocked (nobody can change it by accident).
-   */
-  viewOnly: boolean;
-  /**
-   * Bumped to reload the page now.
-   */
-  reload: number;
-};
+export type BrowserInput = { url: string, 
+/**
+ * The page's size in pixels (what is captured).
+ */
+width: number, height: number, 
+/**
+ * Page zoom, 25 – 400 %.
+ */
+zoom: number, 
+/**
+ * Let the page's own transparent parts show what is behind.
+ */
+transparent: boolean, 
+/**
+ * Reload by itself every this many minutes (0: never).
+ */
+refreshMin: number, 
+/**
+ * Clicks on the page window are blocked (nobody can change it by accident).
+ */
+viewOnly: boolean, 
+/**
+ * Bumped to reload the page now.
+ */
+reload: number, };

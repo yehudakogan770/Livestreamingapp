@@ -3,4 +3,4 @@
 /**
  * How the countdown's time is written.
  */
-export type TimerFormat = 'auto' | 'minSec' | 'hourMinSec';
+export type TimerFormat = "auto" | "minSec" | "hourMinSec";

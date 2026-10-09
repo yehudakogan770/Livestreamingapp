@@ -4,4 +4,4 @@
  * One camera setting ("zoom", "focusDistance", "exposureMode"…) and its value.
  * Modes are numbers too: 0 manual, 1 automatic.
  */
-export type CameraValue = { name: string; value: number };
+export type CameraValue = { name: string, value: number, };

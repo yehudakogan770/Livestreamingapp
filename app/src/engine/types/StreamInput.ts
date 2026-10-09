@@ -3,10 +3,8 @@
 /**
  * A stream input.
  */
-export type StreamInput = {
-  url: string;
-  /**
-   * Extra waiting (ms) to ride out a shaky connection (0 – 10 000).
-   */
-  bufferMs: number;
-};
+export type StreamInput = { url: string, 
+/**
+ * Extra waiting (ms) to ride out a shaky connection (0 – 10 000).
+ */
+bufferMs: number, };

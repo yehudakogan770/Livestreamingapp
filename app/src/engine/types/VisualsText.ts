@@ -3,21 +3,16 @@
 /**
  * Words on the visuals.
  */
-export type VisualsText = {
-  on: boolean;
-  words: string;
-  /**
-   * clean, bold, elegant or classic.
-   */
-  font: string;
-  color: string;
-  size: number;
-  /**
-   * Up / down, -0.4 – 0.4.
-   */
-  y: number;
-  /**
-   * Pulses with the beat.
-   */
-  pulse: number;
-};
+export type VisualsText = { on: boolean, words: string, 
+/**
+ * clean, bold, elegant or classic.
+ */
+font: string, color: string, size: number, 
+/**
+ * Up / down, -0.4 – 0.4.
+ */
+y: number, 
+/**
+ * Pulses with the beat.
+ */
+pulse: number, };

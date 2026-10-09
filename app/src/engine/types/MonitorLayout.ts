@@ -3,4 +3,4 @@
 /**
  * How the monitor arranges the message, clock and countdown.
  */
-export type MonitorLayout = 'full' | 'stack' | 'split';
+export type MonitorLayout = "full" | "stack" | "split";

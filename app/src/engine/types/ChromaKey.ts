@@ -3,22 +3,20 @@
 /**
  * Green screen: a color taken out of the picture so what is behind shows.
  */
-export type ChromaKey = {
-  enabled: boolean;
-  /**
-   * The color taken out (usually the green of the screen).
-   */
-  color: string;
-  /**
-   * How close to the color is taken out, 0 – 1.
-   */
-  similarity: number;
-  /**
-   * How soft the edge is, 0 – 1.
-   */
-  smoothness: number;
-  /**
-   * How much green reflected on people is taken away, 0 – 1.
-   */
-  spill: number;
-};
+export type ChromaKey = { enabled: boolean, 
+/**
+ * The color taken out (usually the green of the screen).
+ */
+color: string, 
+/**
+ * How close to the color is taken out, 0 – 1.
+ */
+similarity: number, 
+/**
+ * How soft the edge is, 0 – 1.
+ */
+smoothness: number, 
+/**
+ * How much green reflected on people is taken away, 0 – 1.
+ */
+spill: number, };

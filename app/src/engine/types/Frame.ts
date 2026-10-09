@@ -3,4 +3,4 @@
 /**
  * Where the overlay sits, in % of the frame (0 – 100).
  */
-export type Frame = { x: number; y: number; w: number; h: number };
+export type Frame = { x: number, y: number, w: number, h: number, };

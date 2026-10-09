@@ -3,4 +3,4 @@
 /**
  * Where each mix is played.
  */
-export type AudioOutputId = 'master' | 'a' | 'b' | 'headphones';
+export type AudioOutputId = "master" | "a" | "b" | "headphones";

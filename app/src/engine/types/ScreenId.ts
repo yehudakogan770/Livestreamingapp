@@ -3,4 +3,4 @@
 /**
  * The three outputs Lumora drives.
  */
-export type ScreenId = 'live' | 'back' | 'monitor';
+export type ScreenId = "live" | "back" | "monitor";
