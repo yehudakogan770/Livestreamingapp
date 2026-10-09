@@ -178,6 +178,11 @@ export function fromSequence(p: Project, s: Sequence): XTimeline {
   const tracks: XTrack[] = [];
   const ordered = [...s.tracks.filter((t) => t.kind === 'video' && !t.captions), ...s.tracks.filter((t) => t.kind === 'audio')];
   if (s.tracks.some((t) => t.captions)) note('captions track (save captions as .srt from the Captions menu)');
+  // The mix's stages stay in Studio: the clips' own volume lines travel, the tracks' processing doesn't.
+  for (const t of s.tracks)
+    if (t.kind === 'audio' && (t.fx?.some((e) => e.on) || t.volumeLine?.length))
+      note('sound track with EQ, dynamics or recorded fader moves (they stay in Lumora Studio)');
+  if (s.mix?.buses.length) note('bus (tracks go straight into the mix)');
   for (const t of ordered) {
     const clips: XClip[] = [];
     for (const c of s.clips.filter((x) => x.track === t.id).sort((a, b) => a.start - b.start)) {
