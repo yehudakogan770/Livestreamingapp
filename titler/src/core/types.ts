@@ -348,6 +348,8 @@ export interface Composition {
   guides?: { x: number[]; y: number[] };
   /** A format of another composition (the main one) in another shape: picked on air by the picture's shape. */
   variantOf?: string;
+  /** A format follows changes to the main composition (keeping its own changes); false: it stands on its own. */
+  follow?: boolean;
 }
 
 export type VariableType = 'text' | 'number' | 'color' | 'image' | 'list';
