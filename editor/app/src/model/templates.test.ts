@@ -74,4 +74,16 @@ describe('title templates', () => {
     expect(parseSaved('not json')).toEqual([]);
     expect(templateFromClip({ ...c, source: { kind: 'color', color: '#000' } }, 'x', 25)).toBeNull();
   });
+
+  it('has a large library with one id each, every group shown', () => {
+    const ids = TITLE_TEMPLATES.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(TITLE_TEMPLATES.length).toBeGreaterThanOrEqual(45);
+    expect(new Set(TITLE_TEMPLATES.map((t) => t.group))).toEqual(
+      new Set(['Lower thirds', 'Titles', 'Event', 'End cards', 'Social', 'Quotes', 'Chapters', 'Countdowns', 'Buttons']),
+    );
+    // Word-by-word titles bring their animators with them.
+    const look = templateLook(TITLE_TEMPLATES.find((t) => t.id === 'ti-kinetic')!, 150, 30);
+    expect(look.text.animators?.[0]?.by).toBe('word');
+  });
 });
