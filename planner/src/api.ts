@@ -89,7 +89,7 @@ export async function createPlan(db: Db, name: string, userId: string, eventDate
   return planFromRow(row);
 }
 
-export type PlanChange = Partial<Pick<Plan, 'name' | 'eventDate' | 'venue' | 'startTime' | 'notes'>>;
+export type PlanChange = Partial<Pick<Plan, 'name' | 'eventDate' | 'venue' | 'startTime' | 'notes' | 'timeZone' | 'endBy' | 'columns' | 'isTemplate'>>;
 
 export async function updatePlan(db: Db, id: string, change: PlanChange): Promise<void> {
   const row: Record<string, unknown> = {};
@@ -98,6 +98,10 @@ export async function updatePlan(db: Db, id: string, change: PlanChange): Promis
   if (change.venue !== undefined) row.venue = change.venue.slice(0, 120);
   if (change.startTime !== undefined) row.start_time = change.startTime;
   if (change.notes !== undefined) row.notes = change.notes.slice(0, 8000);
+  if (change.timeZone !== undefined) row.time_zone = change.timeZone.slice(0, 64);
+  if (change.endBy !== undefined) row.end_by = change.endBy;
+  if (change.columns !== undefined) row.columns = change.columns.slice(0, 12).map((c) => ({ id: c.id.slice(0, 40), name: c.name.slice(0, 40) }));
+  if (change.isTemplate !== undefined) row.is_template = change.isTemplate;
   await data(db.from('planner_plans').update(row).eq('id', id));
 }
 
@@ -106,9 +110,9 @@ export async function deletePlan(db: Db, id: string): Promise<void> {
 }
 
 /** Save cues as they are now (new or changed); the server stamps when and who. */
-export async function saveCues(db: Db, cues: PlanCue[]): Promise<PlanCue[]> {
+export async function saveCues(db: Db, cues: PlanCue[], pro = true): Promise<PlanCue[]> {
   if (!cues.length) return [];
-  const rows = await data<CueRow[] | null>(db.from('planner_cues').upsert(cues.map(cueToRow)).select('*'));
+  const rows = await data<CueRow[] | null>(db.from('planner_cues').upsert(cues.map((c) => cueToRow(c, pro))).select('*'));
   return (rows ?? []).map(cueFromRow);
 }
 
@@ -116,11 +120,11 @@ export async function deleteCue(db: Db, id: string): Promise<void> {
   await data(db.from('planner_cues').delete().eq('id', id));
 }
 
-export async function addComment(db: Db, planId: string, cueId: string, text: string, userId: string): Promise<PlanComment> {
+export async function addComment(db: Db, planId: string, cueId: string, text: string, userId: string, mentions: string[] = []): Promise<PlanComment> {
   const row = await data<CommentRow>(
     db
       .from('planner_comments')
-      .insert({ plan_id: planId, cue_id: cueId, text: text.trim().slice(0, 2000), author: userId })
+      .insert({ plan_id: planId, cue_id: cueId, text: text.trim().slice(0, 2000), author: userId, ...(mentions.length ? { mentions: mentions.slice(0, 20) } : {}) })
       .select('*')
       .single(),
   );
@@ -237,11 +241,11 @@ export async function loadMessages(db: Db, planId: string, limit = 500): Promise
   return (rows ?? []).map(messageFromRow).reverse();
 }
 
-export async function sendMessage(db: Db, planId: string, body: string, userId: string): Promise<Message> {
+export async function sendMessage(db: Db, planId: string, body: string, userId: string, mentions: string[] = []): Promise<Message> {
   const row = await data<MessageRow>(
     db
       .from('planner_messages')
-      .insert({ plan_id: planId, body: body.trim().slice(0, MAX_MESSAGE), author: userId })
+      .insert({ plan_id: planId, body: body.trim().slice(0, MAX_MESSAGE), author: userId, ...(mentions.length ? { mentions: mentions.slice(0, 20) } : {}) })
       .select('*')
       .single(),
   );

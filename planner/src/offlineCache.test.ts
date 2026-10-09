@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Access } from '../../app/src/auth/access';
 import { KEEP_PLANS, clearCache, offlineWho, rememberPlan, rememberPlans, rememberWho, savedPlan, savedPlans, setCacheUser } from './offlineCache';
-import type { Plan, PlanSummary } from './model';
+import { blankPlan, type Plan, type PlanSummary } from './model';
 
 const access = (id: string): Access => ({ userId: id, email: `${id}@x.org`, name: id, state: 'approved', admin: false, lumora: true, studio: false });
 const signIn = (id: string) => localStorage.setItem('lumora.planner', JSON.stringify({ access_token: 't', user: { id } }));
@@ -17,7 +17,7 @@ const summary = (id: string): PlanSummary => ({
   updatedAt: 0,
   updatedBy: '',
 });
-const plan = (id: string): Plan => ({ id, owner: 'a', name: `Plan ${id}`, eventDate: '', venue: '', startTime: '', notes: '', updatedAt: 0, updatedBy: '' });
+const plan = (id: string): Plan => blankPlan(id, { owner: 'a', name: `Plan ${id}` });
 
 describe('the copy of the plans kept on this device', () => {
   beforeEach(() => {

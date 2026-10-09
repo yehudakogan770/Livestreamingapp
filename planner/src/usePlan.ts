@@ -31,7 +31,11 @@ export interface PlanStore {
   duplicateCue: (id: string) => string | null;
   deleteCue: (id: string) => void;
   move: (from: number, to: number) => void;
-  comment: (cueId: string, text: string) => Promise<void>;
+  comment: (cueId: string, text: string, mentions?: string[]) => Promise<void>;
+  /** Put many cues in at once (import, a version's cues): after `afterId`, or at the end. */
+  addCues: (list: Partial<PlanCue>[], afterId?: string | null) => string[];
+  /** Change many cues at once (lengths from a rehearsal). */
+  editCues: (changes: Map<string, Partial<PlanCue>>) => void;
   uncomment: (id: string) => void;
   reloadRole: () => void;
 }
@@ -56,6 +60,8 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
 
   const cuesRef = useRef<PlanCue[]>([]);
   cuesRef.current = cues;
+  const proRef = useRef(true);
+  proRef.current = plan?.pro ?? true;
   /** Cues changed here and not saved yet: id → edit count. */
   const dirty = useRef(new Map<string, number>());
   const planDirty = useRef<api.PlanChange>({});
@@ -171,7 +177,7 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
       }
       const toSave = cuesRef.current.filter((c) => snapshot.has(c.id));
       for (const id of snapshot.keys()) if (!toSave.some((c) => c.id === id)) dirty.current.delete(id);
-      const saved = await api.saveCues(db(), toSave);
+      const saved = await api.saveCues(db(), toSave, proRef.current);
       setCues((list) => {
         let next = list;
         for (const s of saved) {
@@ -292,13 +298,44 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
   );
 
   const comment = useCallback(
-    async (cueId: string, text: string) => {
+    async (cueId: string, text: string, mentions: string[] = []) => {
       // The cue must be on the server first.
       if (dirty.current.has(cueId)) await flush();
-      const c = await api.addComment(db(), planId, cueId, text, me.id);
+      const c = await api.addComment(db(), planId, cueId, text, me.id, mentions);
       setComments((list) => (list.some((x) => x.id === c.id) ? list : [...list, c]));
     },
     [planId, me.id, flush],
+  );
+
+  const addCues = useCallback(
+    (list: Partial<PlanCue>[], afterId: string | null = null): string[] => {
+      const cur = cuesRef.current;
+      const sorted = sortCues(cur);
+      const i = afterId ? sorted.findIndex((c) => c.id === afterId) : sorted.length - 1;
+      const before = i >= 0 ? sorted[i]!.position : 0;
+      const after = i >= 0 ? (sorted[i + 1]?.position ?? before + (list.length + 1) * 1024) : (sorted[0]?.position ?? (list.length + 1) * 1024);
+      const step = (after - before) / (list.length + 1);
+      const made = list.map((init, k) => ({ ...blankCue(planId, newId(), before + step * (k + 1)), ...init, planId, updatedAt: 0 }));
+      for (const c of made) {
+        c.id = c.id || newId();
+        touch(c.id);
+      }
+      const next = sortCues([...cur, ...made]);
+      cuesRef.current = next;
+      setCues(next);
+      soon();
+      return made.map((c) => c.id);
+    },
+    [planId, soon],
+  );
+
+  const editCues = useCallback(
+    (changes: Map<string, Partial<PlanCue>>) => {
+      setCues((list) => list.map((c) => (changes.has(c.id) ? { ...c, ...changes.get(c.id) } : c)));
+      for (const id of changes.keys()) touch(id);
+      soon();
+    },
+    [soon],
   );
 
   const uncomment = useCallback((id: string) => {
@@ -325,5 +362,7 @@ export function usePlan(planId: string, me: { id: string; name: string }): PlanS
     comment,
     uncomment,
     reloadRole,
+    addCues,
+    editCues,
   };
 }

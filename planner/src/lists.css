@@ -1,0 +1,276 @@
+/* The plan's lists (crew, contacts, tasks, gear, budget) and files: dense
+   sheets like the run of show. */
+
+.lists {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+}
+.lists__bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+}
+.lists > .warn {
+  margin: 8px 16px 0;
+}
+.lists__scroll {
+  flex: 1;
+  overflow: auto;
+}
+.lists__table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+.lists__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line-2);
+  background: var(--surface-2);
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.lists__table td {
+  padding: 0 2px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.lists__table td .cell,
+.lists__table td .cell-text {
+  width: 100%;
+  min-width: 0;
+}
+.lists__table tr.is-done td input.cell {
+  color: var(--faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--line-3);
+}
+.lists__table tfoot td {
+  padding: 8px;
+  border-bottom: 0;
+  background: var(--surface-2);
+}
+.lists__check {
+  width: 36px;
+  text-align: center;
+}
+.lists__check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+.lists__qty {
+  width: 64px;
+}
+.lists__money {
+  width: 120px;
+  text-align: right !important;
+}
+.lists__day {
+  width: 140px;
+}
+.lists__time {
+  width: 100px;
+}
+.lists__del {
+  width: 36px;
+}
+.lists__contact {
+  position: relative;
+}
+.lists__contact .cell {
+  padding-right: 26px;
+}
+.lists__act {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  color: var(--dim);
+}
+.lists__act:hover {
+  color: var(--text);
+}
+.lists__empty {
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--dim);
+}
+.lists__empty p {
+  margin: 0 auto 6px;
+  max-width: 52ch;
+}
+
+/* Lists tab switcher (under the plan's tabs). */
+.lists-nav {
+  display: flex;
+  gap: 2px;
+}
+
+/* A cue's checklist, in its details. */
+.cue-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cue-tasks h3 {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.cue-tasks__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+}
+.cue-tasks__row input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+.cue-tasks__row.is-done span.grow {
+  color: var(--faint);
+  text-decoration: line-through;
+}
+
+/* @mentions */
+.mention {
+  position: relative;
+}
+.mention textarea {
+  width: 100%;
+}
+.mention__list {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 4px);
+  z-index: 5;
+  min-width: 240px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.mention__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mention__opt.is-on,
+.mention__opt:hover {
+  background: var(--hover);
+}
+.mention__name {
+  font-weight: 600;
+}
+.avatar--sm {
+  width: 22px;
+  height: 22px;
+  font-size: 10px;
+}
+
+/* Files */
+.files {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.files__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px;
+  border: 1px dashed var(--line-3);
+  border-radius: var(--r);
+  color: var(--dim);
+  text-align: center;
+}
+.files__drop.is-over {
+  border-color: var(--text);
+  background: var(--hover);
+}
+.files__row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.files__row:last-child {
+  border-bottom: 0;
+}
+.files__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.files__name button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.files__thumb {
+  width: 100%;
+  max-height: 160px;
+  object-fit: contain;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+}
+.files-page {
+  padding: 16px;
+  overflow: auto;
+  flex: 1;
+}
+.files-page .files {
+  max-width: 900px;
+}
+.files__quota {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.files__meter {
+  flex: 0 0 120px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.files__meter i {
+  display: block;
+  height: 100%;
+  background: var(--text);
+}

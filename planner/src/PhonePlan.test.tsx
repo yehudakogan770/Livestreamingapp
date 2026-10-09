@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { blankCue, type Plan, type PlanCue } from './model';
+import { blankCue, blankPlan, type Plan, type PlanCue } from './model';
 import type { PlanStore } from './usePlan';
 import type { ChatStore } from './useChat';
 import type { BlockStore } from './useBlocks';
@@ -24,17 +24,7 @@ afterAll(() => {
   delete (window as { matchMedia?: unknown }).matchMedia;
 });
 
-const plan: Plan = {
-  id: 'p',
-  owner: 'me',
-  name: 'Fall Dinner',
-  eventDate: '2026-10-20',
-  venue: 'Main hall',
-  startTime: '19:00',
-  notes: '',
-  updatedAt: 0,
-  updatedBy: '',
-};
+const plan: Plan = blankPlan('p', { owner: 'me', name: 'Fall Dinner', eventDate: '2026-10-20', venue: 'Main hall', startTime: '19:00' });
 const cues: PlanCue[] = [
   { ...blankCue('p', 'a', 1), title: 'Doors', segment: 'countdown', durationSec: 600, section: 'Opening' },
   { ...blankCue('p', 'b', 2), title: 'Welcome', segment: 'speaker', who: 'Dana', durationSec: 300, input: 'Camera 1', transition: 'Fade' },
@@ -43,7 +33,7 @@ const cues: PlanCue[] = [
 const store: PlanStore = {
   plan,
   cues,
-  comments: [{ id: 'k', planId: 'p', cueId: 'b', author: 'me', authorName: 'Me', text: 'Mic check first', createdAt: 0 }],
+  comments: [{ id: 'k', planId: 'p', cueId: 'b', author: 'me', authorName: 'Me', text: 'Mic check first', createdAt: 0, mentions: [] }],
   role: 'owner',
   here: [],
   error: '',
@@ -59,6 +49,8 @@ const store: PlanStore = {
   comment: vi.fn(async () => {}),
   uncomment: vi.fn(),
   reloadRole: vi.fn(),
+  addCues: vi.fn(() => []),
+  editCues: vi.fn(),
 };
 const chatStore: ChatStore = { messages: [], loaded: true, error: '', unread: 0, send: vi.fn(async () => {}), remove: vi.fn(), markRead: vi.fn() };
 const blockStore: BlockStore = {

@@ -1,0 +1,116 @@
+/* The prompter: white text on black (it is read on stage or through glass). */
+.prompter {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #f4f4f2;
+}
+.prompter__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2d2d2b;
+  background: #141413;
+  font-size: 13px;
+}
+.prompter__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 30vw;
+}
+.prompter__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #3a3a37;
+  border-radius: 6px;
+  background: #1c1c1b;
+  color: #ececea;
+  font: inherit;
+  cursor: pointer;
+}
+.prompter__btn:hover {
+  background: #252524;
+}
+.prompter__btn.is-on {
+  background: #ececea;
+  color: #141413;
+}
+.prompter__btn--main {
+  background: #ececea;
+  border-color: #ececea;
+  color: #141413;
+  font-weight: 600;
+}
+.prompter__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.prompter__val {
+  min-width: 70px;
+  text-align: center;
+  color: #a3a39e;
+}
+.prompter__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #a3a39e;
+}
+.prompter__text {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8vw;
+  line-height: 1.35;
+  font-weight: 500;
+  scrollbar-width: none;
+}
+.prompter__text::-webkit-scrollbar {
+  display: none;
+}
+.prompter__pad {
+  height: 30vh;
+}
+.prompter__pad--end {
+  height: 70vh;
+  color: #55554f;
+  font-size: 0.5em;
+  text-align: center;
+}
+.prompter__cue h2 {
+  margin: 1.2em 0 0.4em;
+  color: #75756f;
+  font-size: 0.42em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.prompter__cue.is-now h2 {
+  color: #ff4a3d;
+}
+.prompter__cue p {
+  margin: 0 0 0.6em;
+  white-space: pre-wrap;
+}
+.prompter__empty {
+  color: #a3a39e;
+  font-size: 0.5em;
+}
+.prompter__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(30vh + 48px);
+  height: 0;
+  border-top: 2px solid rgba(255, 74, 61, 0.55);
+  pointer-events: none;
+}
