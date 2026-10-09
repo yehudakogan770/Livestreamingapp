@@ -20,7 +20,7 @@ describe('title clips: audio cues in exports', () => {
     ];
     const fps = 30;
     const at = 60;
-    const { project } = addTitlerClip(emptyProject(), at, fps, t);
+    const { project } = addTitlerClip(emptyProject('Edit'), at, fps, t);
     const s = current(project);
     const clip = s.clips.find((x) => x.source.kind === 'titler')!;
     const parts = titlerCueParts(s, 0, 10_000, fps);

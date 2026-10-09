@@ -15,6 +15,7 @@ import { addLayers, boundsOf, compOf, findLayer, flatLayers, updateComp, updateL
 import type { EditorState, Store } from './store';
 import { useStore } from './store';
 import { worldMatrix } from '../core/render';
+import type { RamPreview } from './ramPreview';
 
 /** The composition time and the take clock shown now (a "take" preview runs on its own clock). */
 export function shownTime(s: EditorState, now: number): { t: number; clock: number } {
@@ -50,7 +51,7 @@ interface View {
   dpr: number;
 }
 
-export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
+export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; ram?: RamPreview | null }) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const view = useRef<View>({ scale: 0.5, ox: 0, oy: 0, dpr: 1 });
@@ -118,8 +119,12 @@ export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
     ctx.beginPath();
     ctx.rect(0, 0, c.width, c.height);
     ctx.clip();
+    if (ram) ram.scale = Math.min(1, scale * dpr);
+    // Playing: frames the RAM preview already made are shown as they are (full speed on heavy titles).
+    const kept = s.playing && ram ? ram.frameAt(t) : null;
     try {
-      renderFrame(ctx, s.project, { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env });
+      if (kept) ctx.drawImage(kept, 0, 0, c.width, c.height);
+      else renderFrame(ctx, s.project, { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env });
     } catch {
       /* a frame that cannot be drawn leaves the checkerboard */
     }
@@ -279,7 +284,7 @@ export function Viewport({ store, env }: { store: Store; env: BrowserEnv }) {
       }
     }
     if (s.show.rulers) drawRulers(ctx, W, H, scale, ox, oy, col);
-  }, [store, env, size]);
+  }, [store, env, size, ram]);
 
   // Draw on every change, and every frame while playing or previewing a take.
   useEffect(() => {

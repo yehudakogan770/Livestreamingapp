@@ -48,6 +48,7 @@ import { animatedProps, getProp, withProp } from './props';
 import { isAnimated, setKey, valueAt } from '../core/easing';
 import { Mark } from './Mark';
 import { usePreviewCues } from './previewCues';
+import { RamPreview } from './ramPreview';
 import './designer.css';
 
 export type Look = 'ink' | 'lumora' | 'studio';
@@ -90,6 +91,13 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const selection = useStore(store, (s) => s.selection);
   const show = useStore(store, (s) => s.show);
   const zoom = useStore(store, (s) => s.zoom);
+
+  // RAM preview: frames rendered ahead and kept, for full-speed playback.
+  const ram = useMemo(() => (RamPreview.supported ? new RamPreview(store, env) : null), [store, env]);
+  useEffect(() => {
+    ram?.start();
+    return () => ram?.stop();
+  }, [ram]);
 
   // Audio cues sound as the preview passes them.
   usePreviewCues(store, host.urlFor);
@@ -528,7 +536,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               {zoom > 0 && ![0.25, 0.5, 0.75, 1, 1.5, 2].includes(zoom) && <option value={zoom}>{Math.round(zoom * 100)}%</option>}
             </select>
           </div>
-          <Viewport store={store} env={env} />
+          <Viewport store={store} env={env} ram={ram} />
           <div className="tt-transport">
             <button onClick={() => store.set({ time: 0, cue: null, playing: false })} aria-label="Go to start" title="Start (Home)">
               <SkipBack size={15} />
@@ -587,7 +595,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           </div>
         </aside>
       </div>
-      <Timeline store={store} />
+      <Timeline store={store} ram={ram} />
       <footer className="tt-status" role="status">
         {status || 'Ready.'}
       </footer>

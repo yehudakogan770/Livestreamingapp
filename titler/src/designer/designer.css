@@ -1077,3 +1077,19 @@
   width: 100%;
   padding-top: 2px;
 }
+
+/* The RAM preview: frames kept, a green line along the bottom of the ruler. */
+.tt-cached {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  pointer-events: none;
+}
+.tt-cached i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: #3fa34d;
+}
