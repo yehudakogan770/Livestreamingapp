@@ -355,3 +355,10 @@
   font-size: 12px;
   line-height: 1.45;
 }
+.pub__desc {
+  min-height: 110px;
+  resize: vertical;
+}
+.pub__lang {
+  margin-left: 8px;
+}

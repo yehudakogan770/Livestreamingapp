@@ -13,7 +13,8 @@ export type Panel =
   | { kind: 'uses'; media: string }
   | { kind: 'smartBin'; id: string | null }
   | { kind: 'timelineExport' }
-  | { kind: 'timelineImport' };
+  | { kind: 'timelineImport' }
+  | { kind: 'publish'; job: string };
 
 class Panels {
   open: Panel | null = null;

@@ -600,6 +600,7 @@ pub fn run() {
             youtube::youtube_disconnect,
             youtube::youtube_upload,
             youtube::youtube_stop,
+            youtube::youtube_watch,
             delivery::encoders_available,
             delivery::encode_open,
             delivery::encode_frame,

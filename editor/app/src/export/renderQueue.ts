@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from 'react';
 import { toSrt, toVtt } from '../model/captions';
 import { baseName, inApp, native } from '../native';
+import type { Marker } from '../model/types';
 import type { DeliveryPlan } from './deliver';
 import { Exporter } from './exporter';
 import { loudnessReport } from './loudness';
@@ -198,10 +199,40 @@ export class RenderQueue {
     for (const id of keep) if (!this.state.jobs.some((j) => j.id === id)) this.work.delete(id);
   }
 
+  /** What a finished export needs to be published: its file, captions file and thumbnail, and its sequence's name and markers. */
+  publishSource(id: string): PublishSource | null {
+    const j = this.state.jobs.find((x) => x.id === id);
+    const w = this.work.get(id);
+    if (!j || j.status !== 'done' || !j.path || !w || /%0\dd/.test(j.path)) return null;
+    const s = w.plan.project.sequences.find((x) => x.id === w.plan.project.open);
+    if (!s || w.plan.settings.sound || w.plan.settings.pictureOnly) return null;
+    return {
+      path: j.path,
+      title: s.name,
+      srt: w.plan.sidecar.length ? `${j.path.replace(/\.[^.\\/]+$/, '')}.srt` : null,
+      thumbnail: w.plan.thumbnail?.out ?? null,
+      markers: s.markers,
+      fps: s.fps,
+      range: w.plan.settings.range,
+    };
+  }
+
   hold(on: boolean) {
     this.send({ type: on ? 'hold' : 'release' });
     if (!on) this.pump();
   }
+}
+
+/** A finished export, ready to publish. */
+export interface PublishSource {
+  path: string;
+  title: string;
+  /** The captions file written next to it. */
+  srt: string | null;
+  thumbnail: string | null;
+  markers: Marker[];
+  fps: number;
+  range: { from: number; to: number };
 }
 
 /** The one queue (it carries on while sequences and dialogs change). */

@@ -58,6 +58,7 @@ const GROUP_ICONS: Record<PresetGroup, LucideIcon> = {
 };
 import { isActive, isFinished, overall, type QueueJob } from '../export/queue';
 import { renderQueue, useQueue } from '../export/renderQueue';
+import { useUploads, type Upload as YtUpload } from '../publish/youtube';
 import { manageNative } from '../manage/native';
 import { folderOf, inApp, joinPath, native } from '../native';
 import { Choice, Modal } from './controls';
@@ -787,8 +788,13 @@ const STATUS: Record<QueueJob['status'], string> = {
 };
 
 /** The render queue: every export, with progress, pause, cancel and “show in folder”. */
+/** How far an upload has got, for the queue row. */
+const uploadPct = (u: YtUpload | undefined): string =>
+  !u ? '' : u.stage === 'failed' || u.stage === 'stopped' ? 'stopped' : u.total ? `${Math.round((u.bytes / u.total) * 100)}%` : '…';
+
 export function QueuePanel({ onClose }: { onClose: () => void }) {
   const q = useQueue();
+  const uploads = useUploads();
   const all = overall(q);
   return (
     <Modal title="Render queue" onClose={onClose} wide>
@@ -864,6 +870,11 @@ export function QueuePanel({ onClose }: { onClose: () => void }) {
                     onClick={() => j.path && void native.reveal(j.path.replace(/_%0\dd(\.[a-z0-9]+)$/i, '_00000$1'))}
                   >
                     Open folder
+                  </button>
+                )}
+                {j.status === 'done' && inApp() && renderQueue.publishSource(j.id) && (
+                  <button type="button" className="btn btn--sm" onClick={() => panels.show({ kind: 'publish', job: j.id })}>
+                    {uploads[j.id]?.stage === 'done' ? 'Published' : uploads[j.id] ? `YouTube ${uploadPct(uploads[j.id])}` : 'Publish to YouTube…'}
                   </button>
                 )}
                 {isFinished(j) && (

@@ -1,6 +1,7 @@
 // Media management windows: undo history, collect files (archive), backups
 // and crash recovery, clip info (stars, tags, notes), where a clip is used,
 // smart bins and workspaces.
+import { PublishDialog } from './Publish';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -60,6 +61,8 @@ export function ManagePanels({ doc, ui, engine, autosaver }: { doc: Doc; ui: Ui;
       return <ExportTimelineDialog doc={doc} ui={ui} onClose={close} />;
     case 'timelineImport':
       return <ImportTimelineDialog doc={doc} ui={ui} onClose={close} />;
+    case 'publish':
+      return <PublishDialog job={p.job} ui={ui} onClose={close} />;
   }
 }
 

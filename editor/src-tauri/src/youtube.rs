@@ -555,3 +555,17 @@ pub fn youtube_stop(app: AppHandle, job: String) {
         s.store(true, Ordering::SeqCst);
     }
 }
+
+/// Open a published video in the browser (only a YouTube video id is taken).
+#[tauri::command]
+pub fn youtube_watch(id: String) -> Result<(), String> {
+    if id.is_empty()
+        || id.len() > 20
+        || !id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err("That isn’t a YouTube video.".to_owned());
+    }
+    open_browser(&upload::watch_url(&id))
+}
