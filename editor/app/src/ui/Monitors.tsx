@@ -135,7 +135,7 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
           <canvas ref={canvasRef} className="vmon__canvas" onDoubleClick={() => engine.toggle()} />
           <ExposureOverlay engine={engine} />
           <CompareOverlay />
-          <DrawMaskOverlay doc={doc} />
+          <DrawMaskOverlay doc={doc} engine={engine} />
           {u.safeMargins && <div className="vmon__safe" />}
           {moving && !playing && <MoveHandles doc={doc} clip={moving} t={t} w={fitW} h={fitH} seqW={s.width} />}
           {!playing && <TrackOverlay doc={doc} engine={engine} clip={moving ?? null} t={t} w={fitW} h={fitH} />}

@@ -369,7 +369,7 @@ export const lookOf = (e: EffectNow): MatteLook => ({ feather: e.p.feather ?? 0,
 export function matteFor(layer: Layer, e: EffectNow, missing?: () => void): { w: number; h: number; data: Uint8Array; stamp: string } | null {
   if (e.type === 'drawnmask') {
     // Drawn on the frame: the same for every source.
-    const shape = drawnShape(e.d);
+    const shape = drawnShape(e.d, layer.local);
     return shape ? drawnMatte(shape, typeof e.p.feather === 'number' ? e.p.feather : 12, (e.p.invert ?? 0) >= 0.5) : null;
   }
   const src = layer.source;

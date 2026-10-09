@@ -4,7 +4,8 @@ import { Doc } from '../doc';
 import { MASK_TYPES, newEffect } from '../model/effects';
 import { current } from '../model/seq';
 import { emptyProject, newClip } from '../model/types';
-import { drawnShape, inside, WHOLE_FRAME } from '../render/drawnmask';
+import { drawnShape, inside, pointsAt, withKey, WHOLE_FRAME } from '../render/drawnmask';
+import type { Engine } from '../player/engine';
 import { drawMask, DrawMaskOverlay } from './DrawMask';
 
 describe('drawn masks', () => {
@@ -39,7 +40,7 @@ describe('drawn masks', () => {
     const v = s0.tracks.find((t) => t.kind === 'video')!;
     const clip = { ...newClip(v.id, 0, 100, { kind: 'color', color: '#336699' }, 'Color'), effects: [fx] };
     const doc = new Doc({ ...p0, sequences: [{ ...s0, clips: [clip] }] });
-    render(<DrawMaskOverlay doc={doc} />);
+    render(<DrawMaskOverlay doc={doc} engine={{ subscribe: () => () => {}, time: 0 } as unknown as Engine} />);
     act(() => drawMask.start({ clip: clip.id, effect: fx.id }));
     const svg = screen.getByRole('application');
     svg.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 100, right: 200, bottom: 100, x: 0, y: 0, toJSON: () => ({}) });
@@ -57,5 +58,25 @@ describe('drawn masks', () => {
     expect(pts()).toHaveLength(2);
     act(() => drawMask.start(null));
     expect(screen.queryByRole('application')).toBeNull();
+  });
+
+  it('animated: the shape moves smoothly between the frames it was shaped at', () => {
+    const a: [number, number][] = [
+      [0.1, 0.1],
+      [0.3, 0.1],
+      [0.2, 0.3],
+    ];
+    const b: [number, number][] = a.map(([x, y]) => [x + 0.5, y + 0.2]);
+    let d: Record<string, unknown> = { keys: withKey(undefined, 0, a) };
+    d = { ...d, keys: withKey(d, 50, b) };
+    expect(pointsAt(d, 0)).toEqual(a);
+    expect(pointsAt(d, 50)).toEqual(b);
+    const mid = pointsAt(d, 25)[0]!;
+    expect(mid[0]).toBeCloseTo(0.35);
+    expect(mid[1]).toBeCloseTo(0.2);
+    expect(pointsAt(d, 99)).toEqual(b);
+    // Reshaping a frame again replaces its shape.
+    expect(withKey(d, 50, a).map((k) => k.t)).toEqual([0, 50]);
+    expect(drawnShape(d, 25)?.points[0]?.[0]).toBeCloseTo(0.35);
   });
 });
