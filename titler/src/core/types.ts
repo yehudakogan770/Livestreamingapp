@@ -169,9 +169,16 @@ export interface TextStyle {
   tracking: number;
   /** Line height, multiple of the size. */
   lineHeight: number;
-  align: 'left' | 'center' | 'right';
+  /** Justify: wrapped lines fill the box's width (the last line of a paragraph stays left). */
+  align: 'left' | 'center' | 'right' | 'justify';
   vAlign: 'top' | 'middle' | 'bottom';
   caps?: boolean;
+  /** Small capitals: lowercase letters as smaller capitals. */
+  smallCaps?: boolean;
+  /** Tabular figures: every digit the same width (scores and clocks don't jiggle). */
+  figures?: 'proportional' | 'tabular';
+  /** The font's own kerning (default), or none (each letter its own width). */
+  kerning?: 'auto' | 'none';
   /** Right-to-left text (Hebrew, Arabic). */
   rtl?: boolean;
 }
@@ -191,6 +198,8 @@ export interface TextLayer extends LayerBase {
   /** At most this many lines (0: any). */
   maxLines?: number;
   animators?: TextAnimator[];
+  /** The shared text style it is linked to (TitleProject.textStyles). */
+  styleRef?: string | null;
   /** A ticker: the line moves left (crawl) or the lines move up (roll), px per second. */
   scroll?: { mode: 'crawl' | 'roll'; speed: number; gap: number } | null;
 }
@@ -359,6 +368,13 @@ export interface DataSource {
   map: Record<string, string>;
 }
 
+/** A text style shared across the title (layers linked to it follow it). */
+export interface TextStyleDef {
+  id: string;
+  name: string;
+  style: TextStyle;
+}
+
 export interface TitleProject {
   format: typeof FORMAT;
   version: typeof VERSION;
@@ -373,6 +389,8 @@ export interface TitleProject {
   tokens: BrandTokens;
   assets: Asset[];
   data?: DataSource[];
+  /** Shared text styles. */
+  textStyles?: TextStyleDef[];
   modified?: number;
 }
 

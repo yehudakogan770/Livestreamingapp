@@ -17,6 +17,7 @@ import { EFFECT_NAMES, getProp, withProp } from './props';
 import type { Store } from './store';
 import { useStore } from './store';
 import { loadStyles, saveStyle, styleOf, applyStyle, removeStyle } from './styles';
+import { applyTextStyle, differsFromStyle, newTextStyle, styleFromLayer } from './textStyles';
 
 const FONTS = [
   '$font',
@@ -522,6 +523,7 @@ function TextSection({
   void time;
   return (
     <Section title="Text">
+      <TextStyleRow store={store} l={l} />
       <textarea
         className="tt-textarea"
         aria-label="Words"
@@ -561,7 +563,9 @@ function TextSection({
           </button>
         )}
       </div>
-      <div className="tt-dim tt-small">Styling inside the words: [b]bold[/b], [i]italic[/i], [c=$accent]color[/c], [s=80]size[/s].</div>
+      <div className="tt-dim tt-small">
+        Styling inside the words: [b]bold[/b], [i]italic[/i], [c=$accent]color[/c], [s=80]size[/s], [v=30]baseline shift[/v].
+      </div>
       <Row label="Font">
         <input className="tt-input" list="tt-fonts" value={st.font} onChange={(e) => style('Font', { font: e.target.value })} aria-label="Font" />
         <datalist id="tt-fonts">
@@ -591,6 +595,7 @@ function TextSection({
       <Row label="Style">
         <Toggle value={st.italic} onChange={(italic) => style('Italic', { italic })} label="Italic" />
         <Toggle value={!!st.caps} onChange={(caps) => style('Capitals', { caps })} label="Capitals" />
+        <Toggle value={!!st.smallCaps} onChange={(smallCaps) => style('Small capitals', { smallCaps })} label="Small caps" />
         <Toggle value={!!st.rtl} onChange={(rtl) => style('Right to left', { rtl, align: rtl ? 'right' : st.align })} label="Right to left" />
       </Row>
       <PaintField paint={st.fill} label="Fill" onChange={(fill) => style('Text color', { fill })} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
@@ -630,6 +635,7 @@ function TextSection({
             ['left', 'Left'],
             ['center', 'Center'],
             ['right', 'Right'],
+            ['justify', 'Justify'],
           ]}
           onChange={(align) => style('Align', { align })}
         />
@@ -647,6 +653,26 @@ function TextSection({
       <Row label="Spacing">
         <NumberField value={st.tracking} step={0.5} label="Letter spacing" unit="px" onChange={(tracking) => style('Letter spacing', { tracking })} />
         <NumberField value={st.lineHeight} step={0.05} min={0.5} label="Line height" unit="×" onChange={(lineHeight) => style('Line height', { lineHeight })} />
+      </Row>
+      <Row label="Figures" hint="Tabular figures keep every digit the same width, so scores and clocks don't shift as they change.">
+        <Select
+          label="Figures"
+          value={st.figures ?? 'proportional'}
+          options={[
+            ['proportional', 'Proportional'],
+            ['tabular', 'Tabular (scores, clocks)'],
+          ]}
+          onChange={(figures) => style('Figures', { figures: figures === 'proportional' ? undefined : figures })}
+        />
+        <Select
+          label="Kerning"
+          value={st.kerning ?? 'auto'}
+          options={[
+            ['auto', 'Kerning: font'],
+            ['none', 'Kerning: none'],
+          ]}
+          onChange={(kerning) => style('Kerning', { kerning: kerning === 'auto' ? undefined : kerning })}
+        />
       </Row>
       <Row label="Box">
         <NumberField value={l.box[0]} min={0} label="Box width" unit="px" onChange={(w) => upd('Text box', (x) => ({ ...x, box: [w, x.box[1]] }))} />
@@ -693,6 +719,53 @@ function TextSection({
         )}
       </Row>
     </Section>
+  );
+}
+
+/** The shared text style a layer is linked to: choose, make, update, reset, detach. */
+function TextStyleRow({ store, l }: { store: Store; l: TextLayer }) {
+  const project = useStore(store, (s) => s.project);
+  const styles = project.textStyles ?? [];
+  const differs = differsFromStyle(project, l);
+  const def = styles.find((d) => d.id === l.styleRef);
+  return (
+    <div className="tt-textstyle">
+      <Row label="Text style" hint="Shared text styles: change a style and every text linked to it follows, in every composition.">
+        <select
+          className="tt-select"
+          aria-label="Text style"
+          value={def?.id ?? ''}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === '+') {
+              const name = prompt('Name of the new text style', l.name);
+              if (name !== null) store.edit('New text style', (p) => newTextStyle(p, l.id, name).project);
+              return;
+            }
+            store.edit(v ? 'Apply text style' : 'Detach text style', (p) => applyTextStyle(p, [l.id], v || null));
+          }}
+        >
+          <option value="">None</option>
+          {styles.map((d) => (
+            <option key={d.id} value={d.id}>
+              {d.name}
+            </option>
+          ))}
+          <option value="+">New style from this text…</option>
+        </select>
+      </Row>
+      {def && differs && (
+        <div className="tt-textstyle-differs" role="status">
+          <span className="tt-dim">Changed from “{def.name}”</span>
+          <button className="tt-link" onClick={() => store.edit('Update text style', (p) => styleFromLayer(p, l))} title="Every text linked to this style takes this look">
+            Update style
+          </button>
+          <button className="tt-link" onClick={() => store.edit('Reset to text style', (p) => applyTextStyle(p, [l.id], def.id))}>
+            Reset
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

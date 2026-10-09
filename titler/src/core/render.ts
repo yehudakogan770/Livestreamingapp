@@ -649,6 +649,9 @@ function drawText(ctx: Ctx, l: TextLayer, s: Scene) {
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
   const animated = !!l.animators?.length;
+  // Tabular figures, no kerning and justified lines are placed letter by letter.
+  const perGlyph = st.figures === 'tabular' || st.kerning === 'none' || st.align === 'justify';
+  const up = (g: Glyph) => (g.style.shift ? (g.style.shift / 100) * lay.size : 0);
 
   const scroll = l.scroll;
   if (scroll && scroll.speed > 0) {
@@ -677,7 +680,7 @@ function drawText(ctx: Ctx, l: TextLayer, s: Scene) {
 
   function drawLines(ox: number, oy: number) {
     for (const line of lay.lines) {
-      if (!animated && !st.rtl && st.tracking === 0) {
+      if (!animated && !st.rtl && st.tracking === 0 && !perGlyph) {
         // Whole runs at once (fast; keeps the font's kerning and shaping).
         let k = 0;
         while (k < line.glyphs.length) {
@@ -687,7 +690,7 @@ function drawText(ctx: Ctx, l: TextLayer, s: Scene) {
           while (j < line.glyphs.length && line.glyphs[j]!.style === g0.style) text += line.glyphs[j++]!.ch;
           ctx.font = fontFor(g0);
           const x = ox + line.x + g0.x;
-          const y = oy + line.y;
+          const y = oy + line.y - up(g0);
           if (stroke && strokeStyle) strokeIt(text, x, y);
           ctx.fillStyle = g0.style.color ? fillFor(g0.style.color) : baseFill;
           ctx.fillText(text, x, y);
@@ -725,8 +728,8 @@ function drawText(ctx: Ctx, l: TextLayer, s: Scene) {
         i++;
         if (look && look.alpha <= 0.002) continue;
         ctx.font = fontFor(g);
-        const x = ox + line.x + g.x + (look ? look.dx + look.track : 0);
-        const y = oy + line.y + (look ? look.dy : 0);
+        const x = ox + line.x + g.x + (g.ox ?? 0) + (look ? look.dx + look.track : 0);
+        const y = oy + line.y - up(g) + (look ? look.dy : 0);
         const color = look?.color ?? g.style.color;
         const fs = color ? fillFor(color) : baseFill;
         if (look && (look.alpha < 1 || look.scale !== 1 || look.rot || look.blur > 0.05)) {
