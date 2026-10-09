@@ -29,6 +29,7 @@ import {
   Plus,
   Maximize2,
   Minimize2,
+  MessageSquare,
 } from 'lucide-react';
 import { browserEnv, requestFonts, type BrowserEnv } from '../core/browserEnv';
 import { cloneLayers, newProject, newText } from '../core/build';
@@ -50,6 +51,7 @@ import { isAnimated, setKey, valueAt } from '../core/easing';
 import { Mark } from './Mark';
 import { SwatchContext, type Swatches } from './ColorPicker';
 import { HistoryPanel } from './HistoryPanel';
+import { NotesPanel, NotesPopover } from './Notes';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
 import {
@@ -359,6 +361,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           return store.set({ tool: 'pen' });
         case 'h':
           return store.set({ tool: 'hand' });
+        case 'm':
+          return store.set({ tool: 'note' });
         case 'j':
           return store.set((x) => ({ playing: true, rate: x.playing && x.rate < 0 ? Math.max(-8, x.rate * 2) : -1, cue: null }));
         case 'k':
@@ -416,6 +420,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     ['ellipse', 'Ellipse', <Circle key="e" size={16} />, 'E'],
     ['pen', 'Pen (paths)', <PenTool key="p" size={16} />, 'G'],
     ['hand', 'Hand (move the view)', <Hand key="h" size={16} />, 'H'],
+    ['note', 'Note (pin a note on the canvas)', <MessageSquare key="n" size={16} />, 'M'],
   ];
   return (
     <SwatchContext.Provider value={swatches}>
@@ -593,7 +598,12 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               </>
             )}
             {side === 'project' && <ProjectPanel store={store} host={host} />}
-            {side === 'history' && <HistoryPanel store={store} />}
+            {side === 'history' && (
+            <>
+              <NotesPanel store={store} />
+              <HistoryPanel store={store} />
+            </>
+          )}
             <Splitter
               axis="x"
               edge="right"
@@ -603,6 +613,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             />
           </aside>
           <section className="tt-center">
+          <NotesPopover store={store} />
             <div className="tt-viewbar">
               <input
                 className="tt-projname"
@@ -629,6 +640,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
                   ['rulers', 'Rulers'],
                   ['snap', 'Snapping'],
                   ['motionPaths', 'Motion paths'],
+                  ['notes', 'Notes'],
                 ] as const
               ).map(([k, label]) => (
                 <label key={k} className="tt-check">

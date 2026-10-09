@@ -385,6 +385,20 @@ export interface DataSource {
   map: Record<string, string>;
 }
 
+/** A note pinned to a place on a composition's canvas. */
+export interface CanvasNote {
+  id: string;
+  comp: string;
+  /** Composition pixels. */
+  x: number;
+  y: number;
+  text: string;
+  /** Who wrote it (optional) and when. */
+  by?: string;
+  at: number;
+  done?: boolean;
+}
+
 /** A text style shared across the title (layers linked to it follow it). */
 export interface TextStyleDef {
   id: string;
@@ -410,6 +424,8 @@ export interface TitleProject {
   textStyles?: TextStyleDef[];
   /** The title's own color swatches ("#rrggbb[aa]"). */
   swatches?: string[];
+  /** Notes pinned on the canvas (for the people working on the title; never drawn on air). */
+  notes?: CanvasNote[];
   modified?: number;
 }
 

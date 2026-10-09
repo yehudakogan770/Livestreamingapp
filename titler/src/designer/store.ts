@@ -7,7 +7,7 @@ import { useSyncExternalStore } from 'react';
 import type { BrandTokens, Layer, TitleProject, Values } from '../core/types';
 import { compOf } from './ops';
 
-export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'pen' | 'hand';
+export type Tool = 'select' | 'text' | 'rect' | 'ellipse' | 'pen' | 'hand' | 'note';
 
 export interface KeyRef {
   layer: string;
@@ -33,7 +33,9 @@ export interface EditorState {
   /** Pixels per composition pixel; 0 = fit. */
   zoom: number;
   pan: [number, number];
-  show: { safe: boolean; guides: boolean; grid: boolean; rulers: boolean; snap: boolean; motionPaths: boolean };
+  show: { safe: boolean; guides: boolean; grid: boolean; rulers: boolean; snap: boolean; motionPaths: boolean; notes: boolean };
+  /** The note being written (its id). */
+  editingNote?: string | null;
   /** Layers whose properties are open in the timeline (U: only animated ones). */
   open: Record<string, 'all' | 'animated'>;
   /** Sample values for previewing fields. */
@@ -77,7 +79,7 @@ export class Store {
       tool: 'select',
       zoom: 0,
       pan: [0, 0],
-      show: { safe: true, guides: true, grid: false, rulers: true, snap: true, motionPaths: true },
+      show: { safe: true, guides: true, grid: false, rulers: true, snap: true, motionPaths: true, notes: true },
       open: {},
       values: {},
       brand: null,

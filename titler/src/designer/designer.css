@@ -1410,3 +1410,63 @@
   border-left: 1px solid var(--tt-line-2);
   color: var(--tt-dim);
 }
+
+/* Notes pinned on the canvas. */
+.tt-center {
+  position: relative;
+}
+.tt-note-card {
+  position: absolute;
+  z-index: 20;
+  top: 44px;
+  right: 12px;
+  width: 260px;
+  padding: 8px;
+  background: var(--tt-raised);
+  border: 1px solid var(--tt-line-2);
+  border-top: 2px solid #e8b931;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.tt-note-card header {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.tt-note-card textarea {
+  width: 100%;
+}
+.tt-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tt-notes li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tt-notes li.done .tt-note-open {
+  color: var(--tt-faint);
+  text-decoration: line-through;
+}
+.tt-note-open {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  padding: 3px 6px;
+  border-radius: var(--tt-radius);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-note-open:hover {
+  background: var(--tt-hover);
+}
+.tt-note-open b {
+  display: inline-block;
+  min-width: 16px;
+  color: #e8b931;
+}
