@@ -231,7 +231,7 @@ function fitted(x: X, l: ShapeLayer): { dx: number; w: number; h: number } | nul
   const f = l.fitTo;
   const text = f ? x.index.get(f.layer) : undefined;
   if (!f || !text || text.type !== 'text') return null;
-  const lay = textLayout(text, x.values, x.tokens, x.measure, x.p.variables);
+  const lay = textLayout(text, x.values, x.tokens, x.measure, x.p.variables, x.p.textStyles);
   const base = contentSize(l, 0, x.p);
   const min = f.min ?? [0, 0];
   const empty = !lay.lines.some((q) => q.glyphs.length);
@@ -293,7 +293,7 @@ function textData(x: X, l: TextLayer): J {
   if (l.scroll) x.notes.add('Crawls and rolls are left still.');
   if (st.fill.type !== 'solid') x.notes.add('Gradient text is drawn in its first color.');
   if (/\[(b|i|c|s|f|v)[=\]]/.test(l.text)) x.notes.add('Inline styling in text (bold, color…) is drawn plain.');
-  const lay = textLayout(l, x.values, x.tokens, x.measure, x.p.variables);
+  const lay = textLayout(l, x.values, x.tokens, x.measure, x.p.variables, x.p.textStyles);
   const words = lay.lines.map((ln) => ln.glyphs.map((g) => g.ch).join('')).join('\r') || plainText(fill(l.text, x.values, x.p.variables));
   const family = resolveFont(st.font, x.tokens);
   const fc = color(x, st.fill.type === 'solid' ? st.fill.color : (st.fill.stops[0]?.color ?? '#ffffff'));

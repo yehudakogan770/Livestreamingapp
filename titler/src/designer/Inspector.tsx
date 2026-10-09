@@ -1,7 +1,7 @@
 // The properties of the selected layer (or the composition when nothing is
 // selected): everything about it, in sections.
 
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { exprProblem } from '../core/expr';
 import { Plus, Trash2 } from 'lucide-react';
 import { tokensFor, valuesFor, variablesIn } from '../core/binding';
@@ -662,11 +662,14 @@ function TextSection({
   const st = l.style;
   const style = (label: string, patch: Partial<TextLayer['style']>) => upd(label, (x) => ({ ...x, style: { ...x.style, ...patch } }));
   const missing = variablesIn(l.text).filter((k) => !fieldKeys.includes(k));
+  const wordsRef = useRef<HTMLTextAreaElement>(null);
   void time;
   return (
     <Section title="Text">
       <TextStyleRow store={store} l={l} />
+      <CharStyleRow store={store} l={l} words={wordsRef} upd={upd} />
       <textarea
+        ref={wordsRef}
         className="tt-textarea"
         aria-label="Words"
         autoFocus={editing}
@@ -1866,5 +1869,45 @@ function CopyFields({ store, l, compId }: { store: Store; l: CompLayer; compId: 
         </Row>
       ))}
     </div>
+  );
+}
+
+/** Character styles: the selected words take a shared text style's font, weight, color and size ([cs=Name]…[/cs]). */
+function CharStyleRow({ store, l, words, upd }: { store: Store; l: TextLayer; words: RefObject<HTMLTextAreaElement | null>; upd: (label: string, fn: (x: TextLayer) => TextLayer) => void }) {
+  const styles = useStore(store, (s) => s.project.textStyles ?? []);
+  if (!styles.length) return null;
+  const apply = (name: string) => {
+    const el = words.current;
+    const a = el?.selectionStart ?? 0;
+    const b = el?.selectionEnd ?? 0;
+    if (!name) {
+      // Plain again: the character style tags around the selection (or everywhere when nothing is selected) come off.
+      upd('Remove character style', (x) => {
+        if (a === b) return { ...x, text: x.text.replace(/\[cs=[^\]]{1,60}\]|\[\/cs\]/g, '') };
+        const mid = x.text.slice(a, b).replace(/\[cs=[^\]]{1,60}\]|\[\/cs\]/g, '');
+        return { ...x, text: x.text.slice(0, a) + mid + x.text.slice(b) };
+      });
+      return;
+    }
+    if (a === b) {
+      store.set({ status: 'Select some words in the box below first.' });
+      return;
+    }
+    upd('Character style', (x) => ({ ...x, text: `${x.text.slice(0, a)}[cs=${name}]${x.text.slice(a, b)}[/cs]${x.text.slice(b)}` }));
+  };
+  return (
+    <Row label="Words style" hint="Select words below, then pick a shared style for them (character style)">
+      <select className="tt-select" aria-label="Character style for the selected words" value="" onChange={(e) => apply(e.target.value)} onMouseDown={(e) => e.stopPropagation()}>
+        <option value="" disabled>
+          Style the selected words…
+        </option>
+        {styles.map((s) => (
+          <option key={s.id} value={s.name}>
+            {s.name}
+          </option>
+        ))}
+        <option value="">Plain (remove)</option>
+      </select>
+    </Row>
   );
 }

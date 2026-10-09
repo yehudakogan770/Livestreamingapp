@@ -7,7 +7,7 @@ import { fill, resolveColor, resolveFont, setRenderClock, tokensFor, valuesFor }
 import { isAnimated, num, valueAt, vec } from './easing';
 import { setExprScope, type ExprScope } from './expr';
 import { pickFormat } from './formats';
-import { layoutText, type Glyph, type Measure, type TextLayout } from './layout';
+import { expandCharStyles, layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
 import { ellipsePath, morphAt, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
 import type {
@@ -907,7 +907,7 @@ export function fittedBox(
   const fit = l.fitTo;
   const text = fit ? s.index.get(fit.layer) : undefined;
   if (!fit || !text || text.type !== 'text') return null;
-  const lay = textLayout(text, s.f.values, s.f.tokens, canvasMeasure(ctx), s.f.project.variables);
+  const lay = textLayout(text, s.f.values, s.f.tokens, canvasMeasure(ctx), s.f.project.variables, s.f.project.textStyles);
   const base = vec(l.size, s.t, [100, 100]);
   const min = fit.min ?? [0, 0];
   const empty = !lay.lines.some((x) => x.glyphs.length);
@@ -923,8 +923,15 @@ export function fittedBox(
 const layoutCache = new Map<string, TextLayout>();
 
 /** The layout of a text layer's words (cached; the same inputs give the same layout). */
-export function textLayout(l: TextLayer, values: Values, tokens: BrandTokens, measure: Measure, vars?: TitleProject['variables']): TextLayout {
-  const text = fill(l.text, values, vars);
+export function textLayout(
+  l: TextLayer,
+  values: Values,
+  tokens: BrandTokens,
+  measure: Measure,
+  vars?: TitleProject['variables'],
+  styles?: TitleProject['textStyles'],
+): TextLayout {
+  const text = expandCharStyles(fill(l.text, values, vars), styles, l.style.size);
   const family = resolveFont(l.style.font, tokens);
   const key = JSON.stringify([text, l.style, family, l.box, l.wrap, l.fit, l.minSize, l.maxLines]);
   const hit = layoutCache.get(key);
@@ -1013,7 +1020,7 @@ function glyphLook(g: Glyph, l: TextLayer, lay: TextLayout, t: number, indexInLi
 function drawText(ctx: Ctx, l: TextLayer, s: Scene) {
   const t = s.t;
   const f = s.f;
-  const lay = textLayout(l, f.values, f.tokens, canvasMeasure(ctx), f.project.variables);
+  const lay = textLayout(l, f.values, f.tokens, canvasMeasure(ctx), f.project.variables, f.project.textStyles);
   const st = l.style;
   const family = resolveFont(st.font, f.tokens);
   const bw = l.box[0] || lay.width;
