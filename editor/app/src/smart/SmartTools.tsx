@@ -58,6 +58,7 @@ import { Progress, useJob } from './job';
 import { MakeMulticamDialog } from './MakeMulticam';
 import { ClipsDialog } from './ClipsDialog';
 import { FinishDialog } from './FinishDialog';
+import { ScriptDialog } from './ScriptDialog';
 
 export type { SmartTool } from './open';
 export { openSmart };
@@ -75,6 +76,8 @@ export function smartMenu(p: Project): MenuEntry[] {
     { label: 'Auto reframe (vertical, square)…', disabled: !hasClips, run: () => openSmart('reframe') },
     { label: 'Highlight reel…', disabled: !hasClips, run: () => openSmart('highlights') },
     { label: 'Clips for social (vertical, captioned)…', disabled: !hasClips, run: () => openSmart('clips') },
+    'sep',
+    { label: 'Rough cut from a script…', disabled: !p.media.some((m) => m.transcript?.words.length), run: () => openSmart('script') },
   ];
 }
 
@@ -88,6 +91,7 @@ export function SmartDialogs({ doc, engine, ui }: { doc: Doc; engine: Engine; ui
   if (t === 'makeMulticam') return <MakeMulticamDialog doc={doc} ui={ui} onClose={close} />;
   if (t === 'clips') return <ClipsDialog doc={doc} engine={engine} ui={ui} onClose={close} />;
   if (t === 'finish') return <FinishDialog doc={doc} ui={ui} onClose={close} />;
+  if (t === 'script') return <ScriptDialog doc={doc} ui={ui} onClose={close} />;
   return null;
 }
 

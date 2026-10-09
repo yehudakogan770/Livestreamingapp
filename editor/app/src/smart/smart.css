@@ -196,3 +196,7 @@
   flex-direction: column;
   gap: 4px;
 }
+.smart__script {
+  min-height: 140px;
+  resize: vertical;
+}

@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react';
 import type { Aspect } from './reframe';
 
-export type SmartTool = 'multicam' | 'silence' | 'reframe' | 'highlights' | 'makeMulticam' | 'clips' | 'finish';
+export type SmartTool = 'multicam' | 'silence' | 'reframe' | 'highlights' | 'makeMulticam' | 'clips' | 'finish' | 'script';
 
 let open: SmartTool | null = null;
 /** The shape Auto reframe starts on (Export asks for the shape of its preset). */
