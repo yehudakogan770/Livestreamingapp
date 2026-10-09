@@ -1780,12 +1780,12 @@ section {
   background-color: var(--amber-ink);
 }
 
-/* Download: two equal products */
+/* Download: the products side by side */
 .dlcards {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
-  max-width: 860px;
+  max-width: 1140px;
   margin: 0 auto;
 }
 .dlcard {
@@ -1801,6 +1801,9 @@ section {
 }
 .dlcard--studio {
   border-top-color: var(--amber);
+}
+.dlcard--titler {
+  border-top-color: var(--violet);
 }
 .dlcard img {
   margin: 0 0 16px;
@@ -1879,5 +1882,42 @@ section {
 @media (prefers-reduced-motion: reduce) {
   .fam {
     animation: none;
+  }
+}
+
+/* Lumora Titler: its own violet (from its mark), used as sparingly as Studio's amber. */
+:root {
+  --violet: #6f5fd0;
+  --violet-2: #9a8cf0;
+}
+.btn--violet {
+  background: var(--violet);
+  color: #fff;
+  box-shadow: 0 8px 24px -8px rgba(111, 95, 208, 0.7);
+}
+.btn--violet:hover {
+  background: #7e6fe0;
+  box-shadow: 0 10px 30px -8px rgba(111, 95, 208, 0.9);
+}
+.titler {
+  background: radial-gradient(1000px 520px at 50% 0%, rgba(111, 95, 208, 0.12), transparent 70%), var(--ink);
+}
+.titler__verbs span:nth-child(3) {
+  color: var(--violet-2);
+}
+.pages--titler li:first-child {
+  border-top-color: var(--violet);
+}
+.titler .studio__cta .fine a {
+  color: #fff;
+}
+@media (max-width: 1020px) {
+  .dlcards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 720px) {
+  .dlcards {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
