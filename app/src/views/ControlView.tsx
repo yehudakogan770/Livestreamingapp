@@ -1,4 +1,5 @@
 import { branded, hasBrand } from '../engine/brand';
+import { useChatThanks } from '../engine/chatThanks';
 import { DrawingCard, drawingTarget } from './DrawingCard';
 import { OVERLAY_KINDS, overlayActions } from '../engine/overlays';
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -159,6 +160,8 @@ export function ControlView({
     [client, fail],
   );
   useMacroKeys(show, act);
+  // Thank-yous for viewers' support, on the chat comments card (when turned on).
+  useChatThanks(show, act);
   useMidiControl(show, screen, act);
 
   useEffect(() => client.watchOutputs(setOpen), [client]);

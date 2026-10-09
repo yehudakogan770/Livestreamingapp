@@ -19,16 +19,17 @@ Stagetimer.io · **H2R** H2R Graphics · **SM** Slido / Mentimeter.
 |                          | Count |
 | ------------------------ | ----- |
 | ✅ Lumora has it         | 102   |
-| ◐ Partly, or another way | 5     |
-| ❌ Not yet               | 6     |
+| ◐ Partly, or another way | 6     |
+| ❌ Not yet               | 5     |
 
 Built in this round (now ✅): marks while recording that Lumora Studio picks
 up, triggers on sound level / lost picture / a video about to end / recording
 or stream starting / every few minutes, event templates in the first setup,
 Facebook live comments, speaker timing on the Monitor (amber, red, time over,
 progress bar) and on the speaker's phone, drawing on screen (telestrator),
-find any command by typing (Ctrl+K), Twitch, Kick, LinkedIn and X in the
-streaming list.
+find any command by typing (Ctrl+K), thank-yous on screen for viewers'
+support (Super Chats, members, subscribers, bits, raids), Twitch, Kick,
+LinkedIn and X in the streaming list.
 
 ## The matrix
 
@@ -80,22 +81,22 @@ streaming list.
 
 ### Graphics and titles
 
-| Feature                                       | Who has it                    | Lumora                             |
-| --------------------------------------------- | ----------------------------- | ---------------------------------- |
-| Lower thirds, titles, tickers                 | all                           | ✅                                 |
-| Animated title designer                       | vMix GT, WC, TC LiveText, H2R | ✅ Lumora Titler                   |
-| Data-driven titles (CSV, Google Sheets, JSON) | vMix, H2R, TC DataLink        | ✅                                 |
-| Scoreboards with game clock                   | vMix, H2R, WC                 | ✅                                 |
-| Brand kit applied to every title              | SY, RS, EC                    | ✅ event look                      |
-| Credits                                       | vMix, PP                      | ✅                                 |
-| Countdown timers                              | vMix, H2R, ST, PP             | ✅ with actions at zero            |
-| 3D logo animation                             | (none)                        | ✅ Lumora only                     |
-| Song lyrics with next lines                   | PP                            | ✅                                 |
-| Live chat comments on screen                  | SY, RS, SL, EC, vMix Social   | ✅ YouTube, Twitch, Facebook (new) |
-| Alerts (follows, subscriptions, tips)         | SL, PR                        | ❌ (aimed at gaming streams)       |
-| Beat-synced stage visuals                     | RE                            | ✅ 261 scenes, MIDI, tap tempo     |
-| Captions (speech to text)                     | OBS (plugin), SY, RS          | ✅ offline                         |
-| Teleprompter                                  | SY, EC, PP                    | ✅ on the Monitor, mirrored        |
+| Feature                                       | Who has it                    | Lumora                                                                                                       |
+| --------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Lower thirds, titles, tickers                 | all                           | ✅                                                                                                           |
+| Animated title designer                       | vMix GT, WC, TC LiveText, H2R | ✅ Lumora Titler                                                                                             |
+| Data-driven titles (CSV, Google Sheets, JSON) | vMix, H2R, TC DataLink        | ✅                                                                                                           |
+| Scoreboards with game clock                   | vMix, H2R, WC                 | ✅                                                                                                           |
+| Brand kit applied to every title              | SY, RS, EC                    | ✅ event look                                                                                                |
+| Credits                                       | vMix, PP                      | ✅                                                                                                           |
+| Countdown timers                              | vMix, H2R, ST, PP             | ✅ with actions at zero                                                                                      |
+| 3D logo animation                             | (none)                        | ✅ Lumora only                                                                                               |
+| Song lyrics with next lines                   | PP                            | ✅                                                                                                           |
+| Live chat comments on screen                  | SY, RS, SL, EC, vMix Social   | ✅ YouTube, Twitch, Facebook (new)                                                                           |
+| Alerts (follows, subscriptions, tips)         | SL, PR                        | ◐ (new) Super Chats, members, subscribers, bits and raids thanked on screen by themselves; not new followers |
+| Beat-synced stage visuals                     | RE                            | ✅ 261 scenes, MIDI, tap tempo                                                                               |
+| Captions (speech to text)                     | OBS (plugin), SY, RS          | ✅ offline                                                                                                   |
+| Teleprompter                                  | SY, EC, PP                    | ✅ on the Monitor, mirrored                                                                                  |
 
 ### Stage and timing
 
@@ -284,9 +285,10 @@ the local network or the internet.
 - **Virtual camera.** A Windows virtual camera is a signed system component;
   it cannot be built or tested here. NDI out with the free NDI Webcam already
   feeds Zoom and Teams.
-- **Cloud recording copy, AI clips, alerts, Zoom input, word clouds.** Either
+- **Cloud recording copy, AI clips, follower alerts, Zoom input, word clouds.** Either
   need an online service Lumora deliberately does without (it works offline),
-  or fit gaming streams more than events. Word clouds belong with the audience
-  pages and are on that list.
+  or fit gaming streams more than events (new followers on Twitch need a
+  Twitch sign-in; every other kind of support is thanked on screen). Word
+  clouds belong with the audience pages and are on that list.
 - **Per-output size, Mac version.** Larger engine work, tracked in
   FEATURES.md.

@@ -459,7 +459,7 @@ export const MANUAL: Topic[] = [
   {
     id: 'chat',
     title: 'Live chat comments on screen',
-    keywords: 'chat comments youtube twitch facebook viewers social questions show comment on screen',
+    keywords: 'chat comments youtube twitch facebook viewers social questions show comment on screen super chat member subscriber bits raid alert thank',
     body: [
       'The Live chat panel shows what viewers write on YouTube, Twitch and Facebook, all in one list. Pick a comment and press Show: it appears on screen with the viewer’s name.',
       '1. Open the Live chat panel and connect: type the Twitch channel, paste the YouTube live video’s address, or press Connect next to Facebook.',
@@ -469,7 +469,9 @@ export const MANUAL: Topic[] = [
       '• YouTube needs a free API key, entered once (the panel says how to get one).',
       '• Facebook reads the comments of the live video Lumora makes through the connected Facebook account (Settings → Recording and streaming). Until you go live there, it waits and says so.',
       '• The Questions tab holds questions sent from phones in the room; Show puts one on the same card.',
-      'Tip: Nothing goes on screen by itself. You choose every comment, so nothing unwanted is ever shown.',
+      '• Support from viewers is marked in the list: Super Chats and Super Stickers, new members (YouTube), new subscribers, gift subscriptions, bits and raids (Twitch). Show puts the name with what they sent on the card.',
+      '• “Thank supporters on screen by themselves”: each new one shows on the first chat comments card for 8 seconds, one after another, then goes off.',
+      'Tip: Plain comments never go on screen by themselves. You choose every one, so nothing unwanted is ever shown.',
     ],
   },
   {

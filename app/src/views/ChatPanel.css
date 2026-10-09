@@ -139,3 +139,15 @@
   font-size: 12px;
   color: var(--text-dim);
 }
+.chat__badge {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: var(--radius-sm);
+  background: #4a3a0c;
+  color: #ffe08a;
+  font-size: 10px;
+  font-weight: 600;
+}
+.chat__thanks {
+  font-size: 12px;
+}
