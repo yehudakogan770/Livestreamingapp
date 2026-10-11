@@ -11,6 +11,8 @@ export class LiveData {
   /** Each source's last read: its table, or why it could not be read. */
   results = new Map<string, Table | string>();
   private last = new Map<string, number>();
+  /** Sources being read now (a slow address is not asked again until it answers). */
+  private busy = new Set<string>();
   private listeners = new Set<() => void>();
   private version = 0;
 
@@ -22,8 +24,9 @@ export class LiveData {
   };
   snapshot = () => this.version;
 
-  async read(src: DataSource, read: typeof readSource = readSource): Promise<void> {
-    this.last.set(src.id, Date.now());
+  async read(src: DataSource, read: typeof readSource = readSource, now = Date.now()): Promise<void> {
+    this.last.set(src.id, now);
+    this.busy.add(src.id);
     try {
       const t = await read(src);
       this.results.set(src.id, t);
@@ -32,6 +35,8 @@ export class LiveData {
       this.store.set((s) => ({ values: { ...s.values, ...valuesFromRow(src, t, keys, p.variables) } }));
     } catch (e) {
       this.results.set(src.id, e instanceof Error ? e.message : 'It could not be read.');
+    } finally {
+      this.busy.delete(src.id);
     }
     this.version++;
     this.listeners.forEach((f) => f());
@@ -40,9 +45,9 @@ export class LiveData {
   /** Read the sources that are due (each source's own interval, seconds). */
   tick(now = Date.now(), read?: typeof readSource): void {
     for (const s of this.store.get().project.data ?? []) {
-      if (!(s.refresh > 0) || !s.url) continue;
+      if (!(s.refresh > 0) || !s.url || this.busy.has(s.id)) continue;
       if (now - (this.last.get(s.id) ?? 0) < s.refresh * 1000) continue;
-      void this.read(s, read);
+      void this.read(s, read, now);
     }
   }
 }

@@ -1072,7 +1072,8 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
       {mine.map((m) => (
         <div key={m.id} className="tt-side-item">
           <button
-            className="tt-link tt-grow"
+            className="tt-lib-item tt-grow"
+            title={`Open ${m.name}`}
             onClick={async () => {
               const r = await host.readLibrary(m.id);
               if (r.project) onOpen(r.project, m.id);

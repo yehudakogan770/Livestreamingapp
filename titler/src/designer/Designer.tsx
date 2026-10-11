@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
   AlignEndHorizontal,
   AlignEndVertical,
   AlignStartHorizontal,
@@ -707,7 +709,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               title="Spread evenly across"
               aria-label="Distribute across"
             >
-              ⇹
+              <AlignHorizontalDistributeCenter size={15} />
             </button>
             <button
               disabled={selection.length < 3}
@@ -715,7 +717,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               title="Spread evenly down"
               aria-label="Distribute down"
             >
-              ⇵
+              <AlignVerticalDistributeCenter size={15} />
             </button>
           </div>
           <div className="tt-sep" />

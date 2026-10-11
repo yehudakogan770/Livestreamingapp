@@ -5,7 +5,7 @@
 import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { RamPreview } from './ramPreview';
 import { RAM_CHOICES, ramSetting, setRamSetting } from './frameCache';
-import { ChevronDown, ChevronRight, Eye, EyeOff, Lock, Unlock, Diamond, Clock } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Eye, EyeOff, Lock, Unlock, Diamond, Clock } from 'lucide-react';
 import { isAnimated, removeKey, setKey, toggleKeys, valueAt } from '../core/easing';
 import { cleanMarkers } from '../core/timeline';
 import type { Composition, Keyframe, Layer, Value } from '../core/types';
@@ -249,14 +249,14 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
                 <span className="tt-phase hold">HOLD</span>
                 <span className="tt-phase out">OUT</span>
                 <button
-                  className="tt-link"
+                  className="tt-mini"
                   title="Repeat part of HOLD while the graphic is on air"
                   onClick={() => setMarkers((m) => ({ ...m, loop: m.loop ? null : { start: m.inEnd, end: Math.min(m.outStart, m.inEnd + 2) } }))}
                 >
                   {loop ? 'Remove loop' : 'Add loop'}
                 </button>
                 <button
-                  className="tt-link"
+                  className="tt-mini"
                   title="A cue marker (an audio cue or a note) at the playhead"
                   onClick={() =>
                     store.edit('Add cue marker', (p) =>
@@ -640,8 +640,8 @@ function PropRow({
         </span>
         {anim && (
           <span className="tt-keynav">
-            <button className="tt-ico" onClick={(e) => (e.stopPropagation(), jump(-1))} aria-label="Previous keyframe">
-              ‹
+            <button className="tt-ico" onClick={(e) => (e.stopPropagation(), jump(-1))} aria-label="Previous keyframe" title="Previous keyframe">
+              <ChevronLeft size={12} />
             </button>
             <button
               className={`tt-ico${keyHere ? ' on' : ''}`}
@@ -650,8 +650,8 @@ function PropRow({
             >
               <Diamond size={10} />
             </button>
-            <button className="tt-ico" onClick={(e) => (e.stopPropagation(), jump(1))} aria-label="Next keyframe">
-              ›
+            <button className="tt-ico" onClick={(e) => (e.stopPropagation(), jump(1))} aria-label="Next keyframe" title="Next keyframe">
+              <ChevronRight size={12} />
             </button>
           </span>
         )}

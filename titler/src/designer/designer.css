@@ -598,13 +598,37 @@
 }
 .tt-link {
   color: var(--tt-dim) !important;
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 2px;
   text-align: left;
   padding: 0 !important;
 }
 .tt-link:hover {
   color: var(--tt-text) !important;
+  text-decoration: underline;
+}
+/* A small bordered button (the timeline's Add loop, Add cue). */
+.tt-mini {
+  padding: 1px 7px !important;
+  font-size: 11px;
+  color: var(--tt-dim) !important;
+  border: 1px solid var(--tt-line-2) !important;
+  border-radius: var(--tt-radius);
+  white-space: nowrap;
+}
+.tt-mini:hover {
+  color: var(--tt-text) !important;
+  background: var(--tt-hover) !important;
+}
+.tt-lib-item {
+  min-width: 0;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-side-item:hover .tt-lib-item {
+  color: var(--tt-text);
 }
 .tt-chips {
   display: flex;
