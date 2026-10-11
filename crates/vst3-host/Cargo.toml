@@ -1,0 +1,18 @@
+[package]
+name = "lumora-vst3-host"
+description = "Lumora Studio's VST3 host: finds the VST3 plug-ins installed on the computer, opens one, lists and sets its parameters, saves and restores its state, and runs sound through it offline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+libloading = "0.8"
+
+[lints.rust]
+# Only the COM layer (com.rs, objects.rs, module.rs, plugin.rs) uses unsafe, each with a SAFETY note.
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

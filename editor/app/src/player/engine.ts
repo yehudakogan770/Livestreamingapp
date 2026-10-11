@@ -16,6 +16,8 @@ import { playbackFile } from './files';
 import { FrameCache, aheadCount, frameKey, framesAhead } from './framecache';
 import { VoiceChain, type Measure } from './voice';
 import { cleanedSound } from './cleanvoice';
+import { onPluginSound, pluginSound } from './plugins';
+import { isPlugin } from '../model/plugins';
 import { mediaTransfer, onSignalCopy, signalCopy } from './hdrcopy';
 import { isHdr, spaceOf } from '../render/hdr';
 import { voiceIsoAmount } from '../export/audioplan';
@@ -136,6 +138,7 @@ export class Engine {
   constructor() {
     this.cache.onReady = () => (this.dirty = true);
     onSignalCopy(() => (this.dirty = true));
+    onPluginSound(() => (this.dirty = true));
   }
 
   /** An HDR sequence plays HDR files from their signal copies once made (null: the usual file). */
@@ -826,11 +829,17 @@ export class Engine {
     if (heard.some((h) => h.duck)) for (const t of s.tracks) if (t.role === 'dialogue') this.speechDb = Math.max(this.speechDb, this.busLevel(t.id));
     for (const heardNow of heard) {
       // Voice isolation: the neural model's cleaned copy plays once it is made (filters stand in until then).
-      const iso = heardNow.effects.find((e) => e.type === 'voiceiso');
+      // VST3 effects: the clip's sound through its plug-ins once made (until then, without them).
+      const plugged = heardNow.effects.some((e) => isPlugin(e)) ? pluginSound(heardNow.clip, heardNow.media, rate(s)) : null;
+      const iso = plugged ? undefined : heardNow.effects.find((e) => e.type === 'voiceiso');
       const clean = iso ? cleanedSound(heardNow.media, voiceIsoAmount(iso.p)) : null;
-      const h = clean ? { ...heardNow, effects: heardNow.effects.filter((e) => e !== iso) } : heardNow;
+      const h = plugged
+        ? { ...heardNow, time: heardNow.time - plugged.from, effects: heardNow.effects.filter((e) => !isPlugin(e)) }
+        : clean
+          ? { ...heardNow, effects: heardNow.effects.filter((e) => e !== iso) }
+          : heardNow;
       let slot = this.sounds.get(h.key);
-      const src = clean ? mediaUrl(clean) : fileOf(h.media);
+      const src = plugged ? mediaUrl(plugged.path) : clean ? mediaUrl(clean) : fileOf(h.media);
       if (!slot) {
         slot = this.spareSounds.find((x) => x.src === src) ?? this.spareSounds[0] ?? this.newSound();
         this.spareSounds = this.spareSounds.filter((x) => x !== slot);

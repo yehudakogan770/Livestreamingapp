@@ -20,6 +20,15 @@ mod syscheck;
 mod vimeo;
 mod voice;
 mod voiceover;
+mod vst;
+
+pub use vst::HELPER_ARG as VST_HELPER_ARG;
+
+/// The VST3 helper process (see `vst`).
+#[must_use]
+pub fn vst_helper() -> i32 {
+    vst::helper_main()
+}
 mod youtube;
 
 use std::path::{Path, PathBuf};
@@ -312,6 +321,63 @@ async fn voice_clean(
             &cache,
             &move |done| {
                 let _ = app.emit("voice-progress", (p.clone(), done));
+            },
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map(|p| p.to_string_lossy().into_owned())
+}
+
+/// The VST3 effects on this computer (each plug-in file described once, in a helper).
+#[tauri::command]
+async fn vst_scan(state: State<'_, AppState>, again: Option<bool>) -> Result<vst::Scan, String> {
+    let cache = state.cache.join("vst3");
+    tauri::async_runtime::spawn_blocking(move || {
+        vst::scan(&cache, again.unwrap_or(false), &vst::describe)
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+/// A VST3 effect's parameters (its saved state restored, values set) and its state after.
+#[tauri::command]
+async fn vst_settings(
+    path: String,
+    cid: String,
+    state: Option<String>,
+    set: Option<Vec<(u32, f64)>>,
+) -> Result<vst::Settings, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        vst::settings(&path, &cid, state, set.unwrap_or_default())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// A stretch of a file's sound through a clip's VST3 effects, as a WAV file (made once; progress as `vst-progress`).
+#[tauri::command]
+async fn vst_render(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    path: String,
+    from: f64,
+    seconds: f64,
+    chain: Vec<vst3::Link>,
+) -> Result<String, String> {
+    let ffmpeg = state.ffmpeg()?;
+    let cache = state.cache.join("vst3").join("rendered");
+    tauri::async_runtime::spawn_blocking(move || {
+        let p = path.clone();
+        vst::render(
+            &ffmpeg,
+            Path::new(&path),
+            from,
+            seconds,
+            &chain,
+            &cache,
+            &move |done| {
+                let _ = app.emit("vst-progress", (p.clone(), done));
             },
         )
     })
@@ -659,6 +725,9 @@ pub fn run() {
             speech_audio,
             voice_model,
             voice_clean,
+            vst_scan,
+            vst_settings,
+            vst_render,
             export_folder,
             write_chunk,
             matte_read,

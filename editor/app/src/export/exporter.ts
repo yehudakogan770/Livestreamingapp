@@ -10,6 +10,8 @@ import { builtinCube } from '../render/luts';
 import { Compositor, type DeepPicture, type Pictures } from '../render/compositor';
 import { isHdr, spaceOf, type Transfer } from '../render/hdr';
 import { mediaTransfer } from '../player/hdrcopy';
+import { withPluginsRendered } from './plugins';
+import { renderPlugins } from '../player/plugins';
 import { allLayers, frameOps, type Layer, type Op } from '../render/frame';
 import { rateAt } from '../model/remap';
 import { isAiMask, matteFor, mattes } from '../vision/mattes';
@@ -472,10 +474,17 @@ export class Exporter {
       const cueFiles = cueSoundFiles(titlerCueParts(s, this.o.range.from, this.o.range.to, fps));
       for (const [url, name] of cueFiles) await native.writeChunk(joinPath(tmp, name), 0, dataUrlBytes(url));
       const finish = { ...this.o.finish, paths: (path: string) => (cueFiles.has(path) ? joinPath(tmp, cueFiles.get(path)!) : path) };
+      const base0 = video ? 0.86 : 0;
       // Voice isolation uses the neural model that ships with the app (filters stand in if it can't be read).
       const usesVoice = this.p.sequences.some((q) => q.clips.some((c) => c.effects.some((e) => e.on && e.type === 'voiceiso')));
       setVoiceModel(usesVoice ? await native.voiceModel().catch(() => null) : null);
-      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, finish);
+      // VST3 effects: each clip's sound made through its plug-ins first.
+      const withPlugins = await withPluginsRendered(
+        this.p,
+        (path, from, seconds, chain) => renderPlugins(path, from, seconds, chain),
+        (done, total) => this.report({ stage: 'sound', done: base0, message: `Running the plug-ins (${done + 1} of ${total})…`, left: null, path: null }),
+      );
+      const jobs = finishJobs(withPlugins, current(withPlugins), this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, finish);
       const base = video ? 0.86 : 0;
       await new Promise<void>((resolve, reject) => {
         const stop = onExportProgress((pr) => {

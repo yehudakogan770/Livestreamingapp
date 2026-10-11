@@ -130,6 +130,8 @@ export const EFFECTS: EffectDef[] = [
     group: 'Color',
     params: [P('amount', 'Amount', -100, 100, -40), P('size', 'Size', 0, 100, 60), P('feather', 'Feather', 0, 100, 50)],
   },
+  // A VST3 plug-in on a sound clip (which one and its settings in `d`, see model/plugins.ts).
+  { type: 'vst3', name: 'VST3 plug-in', kind: 'audio', group: 'Plug-ins', params: [], hidden: true },
   // The Composite page's node graph (its shape in `d.graph`, its numbers in `p`, see model/nodes.ts).
   { type: 'nodes', name: 'Node composite', kind: 'video', group: 'Composite', params: [], hidden: true },
   // The Color page's node grade (its settings are in `d`, see model/grade.ts).
