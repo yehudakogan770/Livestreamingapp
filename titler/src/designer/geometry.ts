@@ -93,6 +93,27 @@ export function layerCorners(look: Look, l: Layer): Vec2[] {
   return seen ? pts.map(seen) : pts;
 }
 
+/**
+ * Where a layer's own pixels are (a text's words rather than its whole box),
+ * on the composition; for framing thumbnails. `ctx` measures the words (the
+ * page's own canvas when left out).
+ */
+export function inkBounds(look: Look, l: Layer, ctx: Ctx | null = measurer()): Box | null {
+  if (l.type === 'group') {
+    const boxes = l.children.filter((k) => k.visible).map((k) => inkBounds(look, k, ctx)).filter((b): b is Box => !!b);
+    return boxes.length ? boundsOf(boxes.flatMap((b) => [[b.x, b.y] as Vec2, [b.x + b.w, b.y + b.h] as Vec2])) : null;
+  }
+  if (l.type !== 'text' || !ctx || !(l.box[0] > 0)) return layerBounds(look, l);
+  const lay = textLayout(l, valuesFor(look.project, look.values), tokensFor(look.project, look.brand ?? undefined), canvasMeasure(ctx), look.project.variables, look.project.textStyles);
+  const [bw, bh] = l.box;
+  const w = Math.min(bw, lay.width);
+  const h = Math.min(bh || lay.height, lay.height);
+  const x = l.style.align === 'center' ? (bw - w) / 2 : l.style.align === 'right' ? bw - w : 0;
+  const y = l.style.vAlign === 'middle' ? (bh - h) / 2 : l.style.vAlign === 'bottom' ? bh - h : 0;
+  const m = worldMatrix(look.comp, l, look.t, layerIndex(look.comp), groupOf(look.comp));
+  return boundsOf([apply(m, [x, y]), apply(m, [x + w, y]), apply(m, [x + w, y + h]), apply(m, [x, y + h])]);
+}
+
 export const layerBounds = (look: Look, l: Layer): Box | null => {
   const pts = layerCorners(look, l);
   return pts.length ? boundsOf(pts) : null;

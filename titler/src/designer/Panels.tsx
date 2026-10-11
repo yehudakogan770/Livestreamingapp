@@ -17,7 +17,7 @@ import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields'
 import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
-import { layerBounds } from './geometry';
+import { inkBounds } from './geometry';
 import { PackDialog } from './PackDialog';
 import { askConfirm } from './Modal';
 import { liveData, useLiveResults } from './liveData';
@@ -807,11 +807,14 @@ export function DataPanel({ store }: { store: Store }) {
  * The part of the frame a thumbnail shows: the whole frame, or (for a small
  * graphic) the part around it, the frame's shape, at least 40 % of its width.
  */
-export function thumbCrop(project: TitleProject, t: number): { x: number; y: number; w: number; h: number } {
+export function thumbCrop(project: TitleProject, t: number, ctx?: Ctx | null): { x: number; y: number; w: number; h: number } {
   const c = compOf(project, project.main);
   const whole = { x: 0, y: 0, w: c.width, h: c.height };
   const look = { project, comp: c, t, values: {}, brand: null };
-  const boxes = c.layers.filter((l) => l.visible && t >= l.start && t < l.end).map((l) => layerBounds(look, l)).filter((b): b is NonNullable<typeof b> => !!b);
+  const boxes = c.layers
+    .filter((l) => l.visible && t >= l.start && t < l.end)
+    .map((l) => inkBounds(look, l, ctx === undefined ? undefined : ctx))
+    .filter((b): b is NonNullable<typeof b> => !!b);
   if (!boxes.length) return whole;
   const x0 = Math.max(0, Math.min(...boxes.map((b) => b.x)));
   const y0 = Math.max(0, Math.min(...boxes.map((b) => b.y)));
