@@ -113,6 +113,12 @@ pub const COMMANDS: &[(&str, &str)] = &[
     ),
     ("ptz", "input or name, preset, move, zoom, speed"),
     (
+        "voting",
+        "input or name (a poll, word cloud or rating), state (on, off, toggle)",
+    ),
+    ("questions", "state (on, off, toggle)"),
+    ("reactions", "input or name, state (on, off, toggle)"),
+    (
         "titler",
         "input or name, field and value (or set.<field>=…), or do (next, previous, start, stop, toggle, reset) with field",
     ),
@@ -131,7 +137,7 @@ pub fn main_key(cmd: &str) -> &'static str {
         "preset" => "number",
         "macro" => "name",
         "replay" => "seconds",
-        "blank" | "panic" | "record" | "stream" | "replaybuffer" | "clock" => "state",
+        "blank" | "panic" | "record" | "stream" | "replaybuffer" | "clock" | "questions" => "state",
         "datarow" | "slide" | "verse" | "lyrics" => "to",
         "prompter" | "timer" | "atem" => "do",
         "take" | "cut" | "ftb" => "screen",
@@ -569,6 +575,33 @@ pub fn command(show: &Value, cmd: &str, q: &[(String, String)]) -> Result<Action
             json!({"type": "score", "id": id, "side": side, "delta": delta})
         }
         "scorereset" => json!({"type": "scoreReset", "id": input(show, q)?}),
+        "voting" | "reactions" => {
+            let id = input(show, q)?;
+            let kind = if cmd.eq_ignore_ascii_case("voting") {
+                "poll"
+            } else {
+                "reactions"
+            };
+            let src = sources(show)
+                .iter()
+                .find(|s| s["id"] == json!(id))
+                .filter(|s| s["kind"]["type"] == kind)
+                .ok_or(if kind == "poll" {
+                    "that input is not a poll, word cloud or rating"
+                } else {
+                    "that input is not reactions"
+                })?;
+            let open = state(q, src["kind"]["open"].as_bool().unwrap_or(false))?;
+            if kind == "poll" {
+                json!({"type": "pollOpen", "id": id, "value": open})
+            } else {
+                json!({"type": "reactionsOpen", "id": id, "value": open})
+            }
+        }
+        "questions" => {
+            let open = show["qna"]["open"].as_bool().unwrap_or(false);
+            json!({"type": "qnaOpen", "value": state(q, open)?})
+        }
         "titler" => titler(show, q, now_ms())?,
         "clock" => {
             let id = input(show, q)?;
@@ -869,6 +902,49 @@ mod tests {
 
     fn cmd(c: &str, q: &str) -> Result<Value, String> {
         command(&show(), c, &parse_query(q)).map(|a| serde_json::to_value(a).unwrap())
+    }
+
+    #[test]
+    fn audience_features_open_and_close() {
+        let mut s = show();
+        s["sources"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"id": "p", "name": "Feedback", "kind": {"type": "poll", "open": true}}));
+        s["sources"].as_array_mut().unwrap().push(
+            json!({"id": "r", "name": "Reactions", "kind": {"type": "reactions", "open": false}}),
+        );
+        s["qna"] = json!({"open": false});
+        let c = |cmd: &str, q: &str| {
+            command(&s, cmd, &parse_query(q)).map(|a| serde_json::to_value(a).unwrap())
+        };
+        assert_eq!(
+            c("voting", "name=feedback").unwrap(),
+            json!({"type": "pollOpen", "id": "p", "value": false})
+        );
+        assert_eq!(
+            c("voting", "input=3&state=on").unwrap()["value"],
+            json!(true)
+        );
+        assert!(c("voting", "input=1").unwrap_err().contains("not a poll"));
+        assert_eq!(
+            c("reactions", "input=4").unwrap(),
+            json!({"type": "reactionsOpen", "id": "r", "value": true})
+        );
+        assert_eq!(
+            c("questions", "").unwrap(),
+            json!({"type": "qnaOpen", "value": true})
+        );
+        assert_eq!(main_key("questions"), "state");
+        for a in ["voting", "reactions"] {
+            let action: Action = command(&s, a, &parse_query("input=4&state=off"))
+                .or_else(|_| command(&s, a, &parse_query("input=3&state=off")))
+                .unwrap();
+            assert!(
+                crate::remote::allowed(&action),
+                "{a} is allowed from outside"
+            );
+        }
     }
 
     #[test]

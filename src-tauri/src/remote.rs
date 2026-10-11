@@ -313,6 +313,9 @@ pub fn allowed(action: &Action) -> bool {
             | Action::PlaylistGo { .. }
             | Action::SetSpeed { .. }
             | Action::QnaShow { .. }
+            | Action::QnaOpen { .. }
+            | Action::PollOpen { .. }
+            | Action::ReactionsOpen { .. }
             | Action::RaffleDraw { .. }
             | Action::WallPin { .. }
             | Action::ScriptureStep { .. }

@@ -22,8 +22,9 @@ the last minute), slides, presets, macros, the countdown, data rows, the
 next cue, PANIC, video play / pause / from the start, playlists, song
 lyrics, the prompter (scroll, stop, faster, slower, back to the top),
 flashing the stage monitor, scoreboards (points, reset, game clock), PTZ
-cameras (presets, moving, zooming) and an ATEM switcher connected to
-Lumora. Inputs can be given by number or by name.
+cameras (presets, moving, zooming), the audience's phones (open and close a
+poll, word cloud or rating, take questions, take reactions) and an ATEM
+switcher connected to Lumora. Inputs can be given by number or by name.
 
 Lumora Titler graphics: set any field (a name, a score, a headline, from a
 Companion variable too), step through the title's own data rows, and start,
