@@ -41,16 +41,16 @@ features sold as add-ons or in higher editions.
 | Compound paths (letters with holes)                             |    ◐     |  ✅   |   ✅   |   ◐    | ❌  |    ◐    |    ✅     | ✅  |   ✅   |  ✅  |   ✅   |  ✅   |   ✅ new   |
 | Several fills and strokes on one shape                          |    ❌    |  ✅   |   ◐    |   ❌   | ❌  |    ◐    |    ✅     | ✅  |   ◐    |  ✅  |   ✅   |  ✅   |   ✅ new   |
 | Gradients, shadows, glows, blur, color, grain, outlines         |    ✅    |  ✅   |   ✅   |   ◐    |  ◐  |   ✅    |    ✅     | ✅  |   ✅   |  ◐   |   ◐    |  ✅   |     ✅     |
-| 3D layers with a camera                                         |    ❌    |  ✅   |   ✅   |   ❌   | ❌  |   ✅    |    ✅     | ✅  |   ✅   |  ❌  |   ◐    |  ❌   |   ◐ new    |
+| 3D layers with a camera                                         |    ❌    |  ✅   |   ✅   |   ❌   | ❌  |   ✅    |    ✅     | ✅  |   ✅   |  ❌  |   ◐    |  ❌   |   ✅ new   |
 | Precomps (compositions inside compositions)                     |    ✅    |  ✅   |   ✅   |   ◐    | ❌  |    ◐    |    ✅     | ✅  |   ✅   |  ✅  |   ✅   |  ✅   |     ✅     |
-| Components with per-copy overrides                              |    ✅    |  ✅   |   ◐    |   ❌   | ❌  |   ❌    |     ◐     |  ◐  |   ❌   |  ✅  |   ❌   |  ✅   |   ◐ new    |
+| Components with per-copy overrides                              |    ✅    |  ✅   |   ◐    |   ❌   | ❌  |   ❌    |     ◐     |  ◐  |   ❌   |  ✅  |   ❌   |  ✅   |   ✅ new   |
 | Shared text styles and character styles                         |    ◐     |  ✅   |   ✅   |   ❌   |  ◐  |   ✅    |    ✅     |  ◐  |   ◐    |  ◐   |   ❌   |  ✅   |   ✅ new   |
 | OpenType: tabular figures, small caps, kerning                  |    ◐     |  ✅   |   ✅   |   ◐    | ❌  |    ◐    |    ✅     | ✅  |   ✅   |  ◐   |   ❌   |  ✅   |     ◐      |
 | Right-to-left text (Hebrew, Arabic)                             |    ◐     |  ✅   |   ✅   |   ◐    |  ◐  |    ◐    |    ✅     | ✅  |   ✅   |  ◐   |   ◐    |  ✅   |     ✅     |
 | Text that shrinks to fit; boxes that follow their words         |    ✅    |  ✅   |   ✅   |   ◐    |  ◐  |   ✅    |    ✅     |  ◐  |   ◐    |  ◐   |   ❌   |  ✅   |     ✅     |
 | One graphic in several shapes (9:16, 1:1, 4K) that follow it    |    ✅    |   ◐   |   ◐    |   ❌   | ❌  |    ◐    |    ❌     | ❌  |   ❌   |  ✅  |   ❌   |  ✅   |   ✅ new   |
 | Several titles open in tabs                                     |    ❌    |  ✅   |   ✅   |   ❌   | ❌  |   ❌    |    ✅     | ✅  |   ✅   |  ✅  |   ◐    |  ✅   |   ✅ new   |
-| Dockable panels                                                 |    ❌    |  ✅   |   ✅   |   ❌   | ❌  |   ❌    |    ✅     | ✅  |   ◐    |  ◐   |   ❌   |   ◐   |     ◐      |
+| Dockable panels                                                 |    ❌    |  ✅   |   ✅   |   ❌   | ❌  |   ❌    |    ✅     | ✅  |   ◐    |  ◐   |   ❌   |   ◐   |   ✅ new   |
 | Undo history, versions, notes on the canvas                     |    ◐     |   ◐   |   ◐    |   ◐    | ❌  |    ◐    |     ◐     |  ◐  |   ◐    |  ✅  |   ◐    |  ✅   |     ✅     |
 | RAM preview (frames made ahead)                                 |    ❌    |  ✅   |   ✅   |   ❌   | ❌  |    ◐    |    ✅     | ✅  |   ✅   |  ❌  |   ❌   |  ❌   |     ✅     |
 | **Templates and sharing**                                       |          |       |        |        |     |         |           |     |        |      |        |       |            |
@@ -74,11 +74,11 @@ features sold as add-ons or in higher editions.
 | Lottie in (After Effects through Bodymovin)                     |    ◐     |  ❌   |   ❌   |   ✅   | ❌  |   ❌    |    ❌     | ❌  |   ❌   |  ◐   |   ✅   |   ◐   |   ✅ new   |
 | Lottie out                                                      |    ❌    |  ❌   |   ❌   |   ❌   | ❌  |   ❌    |    ❌     | ✅  |   ❌   |  ◐   |   ✅   |   ◐   |   ✅ new   |
 | SVG in as editable shapes (Figma's Copy as SVG)                 |    ✅    |  ✅   |   ✅   |   ✅   |  ◐  |   ✅    |    ✅     | ✅  |   ✅   |  ✅  |   ✅   |  ✅   |   ✅ new   |
-| After Effects projects and MOGRT, Photoshop files               |    ◐     |   ◐   |   ✅   |   ❌   | ❌  |   ✅    |     ◐     | ✅  |   ◐    |  ❌  |   ❌   |   ◐   |     ❌     |
+| After Effects projects and MOGRT, Photoshop files               |    ◐     |   ◐   |   ✅   |   ❌   | ❌  |   ✅    |     ◐     | ✅  |   ◐    |  ❌  |   ❌   |   ◐   |   ◐ new    |
 | Works offline, desktop and in the browser                       |    ❌    |   ◐   |   ◐    |   ✅   | ✅  |    ◐    |     ◐     |  ◐  |   ◐    |  ◐   |   ◐    |   ◐   |     ✅     |
 
-**Lumora Titler now: 35 ✅, 5 ◐, 3 ❌** (of 43 rows). Before this round it
-had 18 ✅, 3 ◐ and 22 ❌.
+**Lumora Titler now: 38 ✅, 3 ◐, 2 ❌** (of 43 rows). Before this round it
+had 35 ✅, 5 ◐ and 3 ❌ (and 18 ✅, 3 ◐, 22 ❌ the round before that).
 
 ## What people complain about, and the Titler's answer
 
@@ -90,11 +90,50 @@ had 18 ✅, 3 ◐ and 22 ❌.
 | Coding needed for live data and timers in HTML templates (CasparCG template kits)                                | Data sources (CSV, Google Sheets, JSON) and timer fields are set in the designer and keep working inside the exported template.                                                           |
 | A vertical stream means a second copy of every graphic, and changes made twice (social teams)                    | Formats (9:16, 1:1, 4:5, 4K) follow the main composition: change the main one and every format follows, keeping what was changed in the format itself.                                    |
 | Cloud tools stop when the internet does (Singular, Flowics)                                                      | Everything runs on the computer; the exported template carries its fonts and pictures inside.                                                                                             |
-| Broadcast tools are hard to learn and expensive to staff (Viz, XPression, Chyron)                                | A designer that works like Figma and After Effects together: workspaces, tabs, a graph editor, keyboard shortcuts, components, styles; 26 ready templates in neutral broadcast looks.     |
+| Broadcast tools are hard to learn and expensive to staff (Viz, XPression, Chyron)                                | A designer that works like Figma and After Effects together: dockable panels and workspaces, tabs, typing on the canvas, a graph editor, keyboard shortcuts, components, styles; 26 ready templates in neutral broadcast looks.     |
 | Stream Deck control means scripting (many tools)                                                                 | Companion actions for Titler fields, data rows and timers, next to Lumora's own take and overlay buttons.                                                                                 |
 | Exports that do not match the preview (Lottie players, HTML kits)                                                | One renderer everywhere (designer, Lumora, Studio, exported templates), checked by golden frames; Lottie round trips of every template are tested to stay within 2 % of the pixels.       |
 
 ## Built in this round
+
+A bug hunt with the designer driven in a browser (every main workflow), then
+the gaps.
+
+- **Fixed**: text placed with the text tool could not be typed into (the
+  keys went to the shortcuts: switching tools, playing, making layers);
+  the same with notes; Escape did not close dialogs, and Delete or tool
+  keys acted on the title behind an open dialog; Alt+R and Alt+T switched
+  tools instead of adding keys; holding Space to move the view also
+  played; opening a saved title dropped 3D rotation and depth, the camera
+  distance and a format set to stand on its own; data sources were read
+  every 5 s whatever their interval and only while the Data tab showed;
+  the view bar wrapped onto two lines, the right panel's tabs wrapped, the
+  timeline did not fill its width; the browser's own confirm and prompt
+  boxes (and an alert) are now the designer's own.
+- **Dockable panels**: every panel is a tab that is dragged into another
+  group, above or below one (up to three stacked a side), or onto the
+  other side; the line between groups shares the height; each workspace
+  has its own docking and is reset from the Workspace menu.
+  Alt+Shift+arrow moves a panel from the keyboard. (Panels do not float
+  in windows of their own.)
+- **3D with a camera**: a camera layer looks at a point, orbits it, rolls
+  and moves in or out, animated like any layer; 3D layers are seen in true
+  perspective and drawn far ones first; selection and clicks follow them.
+- **Extrusion**: text, shapes and pictures get sides as deep as asked, in
+  their own colors made darker or one color, shaded toward the back.
+- **Components with any change per copy**: words, color, picture, shown,
+  moved, scaled, turned and faded, on top of the layer's own animation;
+  in Lottie as the copy's own precomposition.
+- **Photoshop files in**: pixel layers as pictures in place with their
+  opacity, blend mode and visibility, groups as groups (8 and 16 bits,
+  RGB and grayscale); what does not come over is listed.
+- **Typing on the canvas** in the layer's own font, size, spacing and
+  color, turned with it; one undo step.
+- **Layer and View menus**, a timeline that fits its width, a graph editor
+  with a grid where keyframes are dragged, library thumbnails that show
+  small graphics closer.
+
+## Built in the round before
 
 - **HTML / OGraf template export**: one zip with `index.html` (CasparCG
   `play/stop/next/update`, CasparCG XML or JSON data, SPX's template
@@ -139,21 +178,19 @@ had 18 ✅, 3 ◐ and 22 ❌.
   NDI from any of them, so a second native output path would add weight
   without new reach. Revisit if users run the Titler without Lumora on a
   playout machine.
-- **Full 3D (extruded text, lights, materials)**: needs a WebGL renderer
-  next to the Canvas one, and every effect, mask and golden frame twice.
-  2.5D layers with a camera cover card flips and depth moves, which is most
-  of what live graphics use.
-- **Dockable panels**: the four workspaces and resizable panels cover the
-  common layouts; drag-to-dock tabs are a large UI change better done with
-  user testing so it stays polished.
-- **Overrides of any property in components**: copies differ by fields
-  (words, colors, pictures), the overrides operators need; per-property
-  overrides (Figma's) would need an override layer model across the
-  renderer and every editor panel.
+- **Lights and materials, 3D models**: 3D layers, the camera and extruded
+  sides cover card flips, depth moves and 3D type; lit materials and
+  imported models need a WebGL renderer next to the Canvas one, and every
+  effect, mask and golden frame twice.
+- **Panels in windows of their own**: panels dock anywhere in the window;
+  floating windows need the desktop app to manage several windows, and the
+  web version cannot.
 - **Online template store**: packs are marketplace-ready, but a store needs
   accounts, payments and moderation on the server side.
-- **After Effects projects, MOGRT and Photoshop files**: closed formats;
-  Lottie is the open path from After Effects and works today.
+- **After Effects projects and MOGRT**: closed formats; Lottie is the open
+  path from After Effects and works today. Photoshop files are read (their
+  pixel layers); layer masks, layer styles, adjustment layers and live
+  text do not come over, and the import says so.
 - **Scoreboard hardware feeds**: each vendor has its own protocol; Lumora's
   scoreboard, data sources and the control API cover manual and
   spreadsheet-driven scoring.
