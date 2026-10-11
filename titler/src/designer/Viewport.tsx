@@ -435,6 +435,12 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     if (tool === 'text') {
       // The words are typed into the box that opens (the canvas must not take the focus back).
       e.preventDefault();
+      // On a text layer: type into it.
+      const on = hitLayer(look, p);
+      if (on?.type === 'text') {
+        store.set({ selection: [on.id], editingText: on.id, tool: 'select' });
+        return;
+      }
       const l = newText(c, 'Text', [Math.round(p[0]), Math.round(p[1])], [800, 90]);
       l.end = c.duration;
       store.edit('Add text', (pr) => addLayers(pr, c.id, [l], s.selection[0] ?? null), { selection: [l.id], tool: 'select', editingText: l.id });

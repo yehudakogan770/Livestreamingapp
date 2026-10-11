@@ -127,8 +127,15 @@ the gaps.
 - **Photoshop files in**: pixel layers as pictures in place with their
   opacity, blend mode and visibility, groups as groups (8 and 16 bits,
   RGB and grayscale); what does not come over is listed.
+- **Masks and paths edited on the canvas**: a mask's outline and points
+  shown on the selected layer, points and handles dragged (Alt-drag a
+  point to round it), the whole mask moved, its box typed in;
+  double-click a path shape to do the same. The stopwatch makes a mask or
+  path change form over time, with its keys in the timeline. Before, masks
+  were added at one fixed size and shape morphs came only from Lottie.
 - **Typing on the canvas** in the layer's own font, size, spacing and
-  color, turned with it; one undo step.
+  color, turned with it; one undo step. The text tool on a text layer
+  types into it.
 - **Layer and View menus**, a timeline that fits its width, a graph editor
   with a grid where keyframes are dragged, library thumbnails that show
   small graphics closer.
