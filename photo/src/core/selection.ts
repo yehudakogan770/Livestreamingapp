@@ -779,6 +779,52 @@ export function maskOutline(m: Mask, step = 1): number[][] {
   return polys;
 }
 
+/**
+ * Select ▸ Grow / Similar: pixels whose color is within `tolerance` (0..255)
+ * of a color already selected; Grow only reaches neighbors of the selection,
+ * Similar anywhere.
+ */
+export function growByColor(src: ColorSource, m: Mask, tolerance: number, contiguous: boolean): Mask {
+  const { w, h, data } = src;
+  const cell = Math.max(1, tolerance) / 255;
+  const N = Math.ceil(1 / cell) + 1;
+  const grid = new Uint8Array(N * N * N);
+  const q = (v: number) => Math.min(N - 1, Math.floor(Math.min(1, Math.max(0, v)) / cell));
+  for (let i = 0; i < w * h; i++) {
+    if (m.data[i]! < 128) continue;
+    grid[q(data[i * 4]!) * N * N + q(data[i * 4 + 1]!) * N + q(data[i * 4 + 2]!)] = 1;
+  }
+  const near = (i: number) => {
+    const cr = q(data[i * 4]!),
+      cg = q(data[i * 4 + 1]!),
+      cb = q(data[i * 4 + 2]!);
+    for (let a = Math.max(0, cr - 1); a <= Math.min(N - 1, cr + 1); a++)
+      for (let c = Math.max(0, cg - 1); c <= Math.min(N - 1, cg + 1); c++)
+        for (let d = Math.max(0, cb - 1); d <= Math.min(N - 1, cb + 1); d++) if (grid[a * N * N + c * N + d]) return true;
+    return false;
+  };
+  const out = { w, h, data: m.data.slice() };
+  if (!contiguous) {
+    for (let i = 0; i < w * h; i++) if (out.data[i]! < 255 && near(i)) out.data[i] = 255;
+    return antialiasEdge(out);
+  }
+  const stack: number[] = [];
+  for (let i = 0; i < w * h; i++) if (m.data[i]! >= 128) stack.push(i);
+  while (stack.length) {
+    const i = stack.pop()!;
+    const x = i % w,
+      y = (i / w) | 0;
+    const nb = [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1];
+    for (const j of nb) {
+      if (j < 0 || out.data[j]! >= 128) continue;
+      if (!near(j)) continue;
+      out.data[j] = 255;
+      stack.push(j);
+    }
+  }
+  return antialiasEdge(out);
+}
+
 /** Simplify a polyline (Ramer–Douglas–Peucker). */
 export function simplify(pts: number[], tol: number): number[] {
   const n = pts.length / 2;

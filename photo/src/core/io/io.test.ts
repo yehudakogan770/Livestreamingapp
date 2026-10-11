@@ -83,7 +83,7 @@ describe('.lumphoto', () => {
     const doc: Doc = blankDoc({ name: 'Poster', width: 300, height: 200, depth: 16, resolution: 300, profile: ADOBE_RGB, background: 'white' });
     const paint = Raster.filled(16, 4, { x: 20, y: 30, w: 100, h: 50 }, [0.2, 0.4, 0.6, 0.5]);
     const layer: PixelLayer = { ...pixelLayer('Paint', paint), blend: 'multiply', opacity: 0.8, styles: { dropShadow: defaultStyle('dropShadow') } };
-    layer.mask = { raster: Raster.filled(16, 1, { x: 0, y: 0, w: 60, h: 200 }, [1]), background: 0, enabled: true, linked: true, density: 1, feather: 0 };
+    layer.mask = { raster: Raster.filled(8, 1, { x: 0, y: 0, w: 60, h: 200 }, [1]), background: 0, enabled: true, linked: true, density: 1, feather: 0 };
     const adj: AdjustmentLayer = { id: uid(), name: 'Curves 1', kind: 'adjust', adjust: 'curves', params: defaultParams('curves'), visible: true, opacity: 1, fill: 1, blend: 'normal', clip: false, locks: {} };
     doc.layers.push(groupLayer('Group 1', [layer, adj]));
     doc.guides.push({ id: 'g', axis: 'x', at: 150 });

@@ -207,7 +207,7 @@ export interface Slice {
 }
 
 export interface Selection {
-  /** 1 channel, document size, 8-bit coverage. */
+  /** 1 channel, document size, 8-bit coverage (masks, selections and channels are always 8-bit). */
   mask: Raster;
   /** Cached bounds of the non-zero part. */
   bounds: Rect | null;
