@@ -7,6 +7,7 @@ import { fill, resolveColor, resolveFont, setRenderClock, tokensFor, valuesFor }
 import { isAnimated, num, valueAt, vec } from './easing';
 import { setExprScope, type ExprScope } from './expr';
 import { pickFormat } from './formats';
+import { withOverrides } from './components';
 import { expandCharStyles, layoutText, type Glyph, type Measure, type TextLayout } from './layout';
 import { IDENTITY, localMatrix, mul, scale as scaleM, type Mat } from './matrix';
 import { ellipsePath, morphAt, rectCornersPath, rectPath, traceTrimmed, tracePath } from './paths';
@@ -1027,7 +1028,8 @@ function drawContent(ctx: Ctx, l: Layer, world: Mat, alpha: number, s: Scene) {
       ctx.beginPath();
       ctx.rect(0, 0, inner.width, inner.height);
       ctx.clip();
-      drawComp(ctx, inner, t - l.offset, world, f2);
+      // This copy's changes to the layers inside (a component's overrides).
+      drawComp(ctx, withOverrides(inner, l.overrides), t - l.offset, world, f2);
       ctx.restore();
       break;
     }

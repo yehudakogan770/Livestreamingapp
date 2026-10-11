@@ -338,6 +338,28 @@ export interface CompLayer extends LayerBase {
    * ("{{guest_2}}"). Fields not given come from the title.
    */
   values?: Values;
+  /** This copy's changes to the layers inside it, by layer id (see core/components.ts). */
+  overrides?: Record<string, LayerOverride>;
+}
+
+/** One copy's changes to a layer of the composition it shows. */
+export interface LayerOverride {
+  /** Shown or hidden in this copy. */
+  visible?: boolean;
+  /** Other words (a text layer). */
+  text?: string;
+  /** Another color (a text's or a shape's fill). */
+  fill?: ColorRef;
+  /** Another picture (an image or video layer): an asset id or {{field}}. */
+  picture?: string;
+  /** Moved by, px (added to its animation). */
+  move?: Vec2;
+  /** Scaled by, percent of its own scale. */
+  scale?: number;
+  /** Turned by, degrees. */
+  rotate?: number;
+  /** Faded to, percent of its own opacity. */
+  opacity?: number;
 }
 
 export type Layer = TextLayer | ShapeLayer | ImageLayer | VideoLayer | GroupLayer | NullLayer | CompLayer;
