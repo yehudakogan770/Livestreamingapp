@@ -612,6 +612,8 @@ export const SHORTCUTS: [string, string][] = [
   ['↑ ↓', 'Move the selection'],
   ['Enter', 'Edit the selected cue'],
   ['Esc', 'Close the panel'],
+  ['M W D A', 'Calendar: month, week, day, agenda'],
+  ['T', 'Calendar: today'],
   [/Mac|iPhone|iPad/.test(typeof navigator === 'undefined' ? '' : navigator.platform) ? '⌘P' : 'Ctrl+P', 'Print or save as PDF'],
 ];
 

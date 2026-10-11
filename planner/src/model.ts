@@ -127,6 +127,10 @@ export interface PlanSummary {
   cueCount: number;
   updatedAt: number;
   updatedBy: string;
+  /** The event's time zone ("America/Chicago"), when the server sends it; '' is this device's. */
+  timeZone?: string;
+  /** When the show should be over ("22:00"), when the server sends it. */
+  endBy?: string;
 }
 
 // ---- Rows (snake_case, as stored) ----
@@ -193,6 +197,8 @@ export interface SummaryRow {
   cue_count: number;
   updated_at: string;
   updated_by_name: string;
+  time_zone?: string | null;
+  end_by?: string | null;
 }
 
 const time = (s: string | undefined | null): number => (s ? Date.parse(s) || 0 : 0);
@@ -314,6 +320,8 @@ export function summaryFromRow(r: SummaryRow): PlanSummary {
     cueCount: r.cue_count ?? 0,
     updatedAt: time(r.updated_at),
     updatedBy: r.updated_by_name ?? '',
+    ...(r.time_zone ? { timeZone: r.time_zone } : {}),
+    ...(r.end_by ? { endBy: r.end_by } : {}),
   };
 }
 

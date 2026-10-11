@@ -1,9 +1,11 @@
-// The calendar of plans: month, week and agenda. Dates are local, as
-// "2026-10-06" strings (like a plan's event date). No network and no React here.
+// The calendar of plans: month, week, day and agenda. Dates are local, as
+// "2026-10-06" strings (like a plan's event date). A plan's times are its
+// event's own (in its time zone, when it has one). No network and no React here.
 
-import { isoDate, parseClock, type PlanSummary } from './model';
+import { clock12, isoDate, otherZone, parseClock, zoneAbbr, zonedMoment, type PlanSummary } from './model';
 
-export type CalView = 'month' | 'week' | 'agenda';
+export type CalView = 'month' | 'week' | 'day' | 'agenda';
+export const CAL_VIEWS: readonly CalView[] = ['month', 'week', 'day', 'agenda'];
 
 export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -96,4 +98,135 @@ export function upcoming(plans: readonly PlanSummary[], today: string, n = 8): P
   return agenda(plans, today)
     .flatMap((d) => d.plans)
     .slice(0, n);
+}
+
+/** Move the calendar on by n of its views (months, weeks or days). */
+export function stepView(view: CalView, d: string, n: number): string {
+  if (view === 'month') return addMonths(d, n);
+  if (view === 'week') return addDays(d, 7 * n);
+  return addDays(d, n);
+}
+
+/**
+ * The day a key moves to in the month grid: arrows by a day or a week, Home
+ * and End to the week's ends, Page Up and Page Down by a month (Shift: a year).
+ * Null for other keys.
+ */
+export function dayForKey(d: string, key: string, shift = false): string | null {
+  switch (key) {
+    case 'ArrowLeft':
+      return addDays(d, -1);
+    case 'ArrowRight':
+      return addDays(d, 1);
+    case 'ArrowUp':
+      return addDays(d, -7);
+    case 'ArrowDown':
+      return addDays(d, 7);
+    case 'Home':
+      return weekStart(d);
+    case 'End':
+      return addDays(weekStart(d), 6);
+    case 'PageUp':
+      return addMonths(d, shift ? -12 : -1);
+    case 'PageDown':
+      return addMonths(d, shift ? 12 : 1);
+    default:
+      return null;
+  }
+}
+
+/** "Sunday, October 11, 2026": the day view's title. */
+export function longDay(d: string): string {
+  return parseDay(d)!.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+/** Without an end, a plan fills this long in the week and day views. */
+export const DEFAULT_MINUTES = 60;
+/** The shortest a plan is drawn in the week and day views (so its name fits). */
+const MIN_MINUTES = 30;
+
+/** A plan placed on the time grid: minutes after midnight, and its column among the plans it overlaps. */
+export interface Placed {
+  plan: PlanSummary;
+  start: number;
+  end: number;
+  /** 0-based column, and how many columns its group of overlapping plans needs. */
+  col: number;
+  cols: number;
+}
+
+/** A plan's start and end, in minutes after midnight on its day (null: no start time). */
+export function planSpan(p: PlanSummary): { start: number; end: number } | null {
+  const s = parseClock(p.startTime);
+  if (s === null) return null;
+  const start = Math.floor(s / 60);
+  const e = p.endBy ? parseClock(p.endBy) : null;
+  let end = e === null ? start + DEFAULT_MINUTES : Math.floor(e / 60);
+  if (end <= start) end = e === null ? start + DEFAULT_MINUTES : 24 * 60; // Over past midnight: to the end of the day.
+  return { start, end: Math.min(24 * 60, Math.max(end, start + MIN_MINUTES)) };
+}
+
+/**
+ * The day's timed plans laid out side by side where they overlap (like any
+ * calendar): each group of overlapping plans shares the width in columns.
+ */
+export function placeDay(plans: readonly PlanSummary[]): Placed[] {
+  const timed = plans
+    .map((plan) => ({ plan, span: planSpan(plan) }))
+    .filter((x): x is { plan: PlanSummary; span: { start: number; end: number } } => x.span !== null)
+    .sort((a, b) => a.span.start - b.span.start || b.span.end - a.span.end);
+  const out: Placed[] = [];
+  let group: Placed[] = [];
+  let colEnds: number[] = [];
+  let groupEnd = -1;
+  const close = () => {
+    for (const p of group) p.cols = colEnds.length;
+    group = [];
+    colEnds = [];
+  };
+  for (const { plan, span } of timed) {
+    if (span.start >= groupEnd) close();
+    let col = colEnds.findIndex((end) => end <= span.start);
+    if (col < 0) col = colEnds.push(0) - 1;
+    colEnds[col] = span.end;
+    const p: Placed = { plan, start: span.start, end: span.end, col, cols: 1 };
+    group.push(p);
+    out.push(p);
+    groupEnd = Math.max(groupEnd, span.end);
+  }
+  close();
+  return out;
+}
+
+/** "6 PM", "6:30 PM": short times for the calendar. */
+export function shortClock(minutes: number): string {
+  return clock12(minutes * 60).replace(':00 ', ' ');
+}
+
+/** "9 AM", "12 PM" for the time grid's hours. */
+export const hourLabel = (h: number): string => shortClock(h * 60);
+
+/**
+ * A plan's start for the calendar: "6 PM", and, when its event is in another
+ * time zone than this device's, that zone ("6 PM CDT") and the time here.
+ */
+export function planTime(p: PlanSummary): { short: string; zone: string; here: string } {
+  const span = planSpan(p);
+  if (!span) return { short: '', zone: '', here: '' };
+  const short = shortClock(span.start);
+  const tz = p.timeZone ? otherZone(p.timeZone, parseDay(p.eventDate) ?? new Date()) : '';
+  if (!tz || !p.eventDate) return { short, zone: '', here: '' };
+  const at = zonedMoment(p.eventDate, span.start * 60, tz);
+  const here = at ? at.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit', weekday: 'short' }).replace(':00 ', ' ') : '';
+  return { short, zone: zoneAbbr(tz, at ?? new Date()), here };
+}
+
+/** The first hour the week or day view shows at the top: an hour before the earliest plan, or 8 AM. */
+export function firstHour(plans: readonly PlanSummary[]): number {
+  const starts = plans
+    .map(planSpan)
+    .filter((s): s is { start: number; end: number } => s !== null)
+    .map((s) => s.start);
+  if (!starts.length) return 8;
+  return Math.max(0, Math.min(8, Math.floor(Math.min(...starts) / 60) - 1));
 }
