@@ -68,7 +68,7 @@ export const METER_ZONES: [number, number, string][] = [
   [-18, -6, '#d6a93a'],
   [-6, 6, '#e0453a'],
 ];
-const HEAD = 190;
+const HEAD = 214;
 const EDGE = 7;
 /**
  * The view moves on in steps this wide (pixels): the clips on screen and the

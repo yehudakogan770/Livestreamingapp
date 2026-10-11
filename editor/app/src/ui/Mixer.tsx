@@ -121,10 +121,10 @@ export function Mixer({ doc, engine }: { doc: Doc; engine: Engine }) {
             title="Where this track goes: straight into the mix, or through a bus"
             onChange={(e) => doc.edit((p) => routeTrack(p, t.id, e.target.value || null), 'Track output')}
           >
-            <option value="">To the mix</option>
+            <option value="">Main mix</option>
             {mix.buses.map((b) => (
               <option key={b.id} value={b.id}>
-                To {b.name}
+                {b.name}
               </option>
             ))}
           </select>

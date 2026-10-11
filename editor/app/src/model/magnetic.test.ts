@@ -66,6 +66,13 @@ describe('magnetic timeline', () => {
     expect(current(q).clips.find((c) => c.id === 'title')?.start).toBe(10);
   });
 
+  it('markers on a V1 clip move with it when the story closes up', () => {
+    const p = editSeq(project(), (s) => ({ ...s, markers: [{ id: 'k', at: 90, length: 0, name: 'Speech', color: '#fff' }] }));
+    const doc = new Doc(p);
+    doc.edit((x) => lift(x, [story(x)[0]?.id as string]), 'Clear');
+    expect(current(doc.project).markers[0]?.at).toBe(30);
+  });
+
   it('dragging a V1 clip along reorders the story instead of covering', () => {
     const p = project();
     const [a, b, c] = story(p);

@@ -93,7 +93,17 @@ export function packPrimary(s: Sequence, owned?: Map<string, string>): Sequence 
     moved.add(c.id);
     return { ...c, start: Math.max(0, c.start + d) };
   });
-  return unstack({ ...s, clips }, moved, prim.id);
+  // Markers move with the V1 clip they are on (as clips over it do).
+  const markers = s.markers.map((m) => {
+    let owner: Clip | undefined;
+    for (const v of v1) {
+      if (v.start <= m.at) owner = v;
+      else break;
+    }
+    const d = owner ? (delta.get(owner.id) ?? 0) : 0;
+    return d ? { ...m, at: Math.max(0, m.at + d) } : m;
+  });
+  return unstack({ ...s, clips, markers }, moved, prim.id);
 }
 
 /** After any edit: magnetic sequences whose clips changed are packed again. */
