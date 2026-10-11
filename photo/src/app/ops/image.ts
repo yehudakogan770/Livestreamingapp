@@ -22,7 +22,7 @@ function mapRasters(l: Layer, f: (r: Raster, isMask: boolean) => Raster): Layer 
 }
 
 /** An affine transform of every layer: pixels resampled, vector content redrawn. */
-async function transformDoc(d: Doc, mat: number[], w: number, h: number, method: Resample, label: string): Promise<void> {
+export async function transformDoc(d: Doc, mat: number[], w: number, h: number, method: Resample, label: string): Promise<void> {
   const s = current();
   if (!s) return;
   const resampleRaster = (r: Raster, isMask: boolean): Raster => transformRaster(r, mat, method, isMask ? 1 : 4);

@@ -111,6 +111,18 @@ export function maskCoverage(doc: Doc, l: LayerBase, r: Rect): Float32Array | nu
   return cov;
 }
 
+/** A gradient fill's start and end points (document pixels). */
+export function gradientEnds(content: Extract<FillContent, { type: 'gradient' }>, doc: { width: number; height: number }): [number, number, number, number] {
+  if (content.p0 && content.p1) return [content.p0[0], content.p0[1], content.p1[0], content.p1[1]];
+  const cx = doc.width / 2 + content.ox,
+    cy = doc.height / 2 + content.oy;
+  const a = (content.angle * Math.PI) / 180;
+  const half = (Math.abs(Math.cos(a)) * doc.width + Math.abs(Math.sin(a)) * doc.height) / 2;
+  const len = half * content.scale;
+  const centered = content.style !== 'linear';
+  return [centered ? cx : cx - Math.cos(a) * len, centered ? cy : cy + Math.sin(a) * len, cx + Math.cos(a) * len, cy - Math.sin(a) * len];
+}
+
 export function fillPixel(content: FillContent, x: number, y: number, doc: { width: number; height: number }, out: number[]): void {
   if (content.type === 'solid') {
     out[0] = content.color[0];
@@ -123,18 +135,8 @@ export function fillPixel(content: FillContent, x: number, y: number, doc: { wid
     patternAt(getPattern(content.pattern), x - content.ox, y - content.oy, content.scale, out);
     return;
   }
-  // Gradient across the canvas at the angle, centered (plus offset).
-  const cx = doc.width / 2 + content.ox,
-    cy = doc.height / 2 + content.oy;
-  const a = (content.angle * Math.PI) / 180;
-  const half = (Math.abs(Math.cos(a)) * doc.width + Math.abs(Math.sin(a)) * doc.height) / 2;
-  const len = half * content.scale;
-  const radialStyle = content.style !== 'linear' && content.style !== 'reflected';
-  const x0 = radialStyle ? cx : cx - Math.cos(a) * len,
-    y0 = radialStyle ? cy : cy + Math.sin(a) * len;
-  const x1 = cx + Math.cos(a) * len,
-    y1 = cy - Math.sin(a) * len;
-  let t = gradientT(content.style, x + 0.5, y + 0.5, content.style === 'reflected' ? cx : x0, content.style === 'reflected' ? cy : y0, x1, y1);
+  const [x0, y0, x1, y1] = gradientEnds(content, doc);
+  let t = gradientT(content.style, x + 0.5, y + 0.5, x0, y0, x1, y1);
   if (content.reverse) t = 1 - t;
   const c = sampleGradient(content.gradient, t);
   out[0] = c[0];

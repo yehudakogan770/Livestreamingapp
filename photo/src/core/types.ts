@@ -95,7 +95,8 @@ export interface AdjustmentLayer extends LayerBase {
 
 export type FillContent =
   | { type: 'solid'; color: RGBA }
-  | { type: 'gradient'; gradient: Gradient; angle: number; scale: number; style: GradientStyle; reverse: boolean; ox: number; oy: number }
+  /** A gradient: by angle and scale about the canvas center (plus offset), or between two points (`p0` → `p1`, the Gradient tool's handles). */
+  | { type: 'gradient'; gradient: Gradient; angle: number; scale: number; style: GradientStyle; reverse: boolean; ox: number; oy: number; p0?: [number, number]; p1?: [number, number]; dither?: boolean }
   | { type: 'pattern'; pattern: string; scale: number; ox: number; oy: number };
 
 export type GradientStyle = 'linear' | 'radial' | 'angle' | 'reflected' | 'diamond';

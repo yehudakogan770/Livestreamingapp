@@ -15,6 +15,7 @@ import { Raster, TILE, keyX, keyY, intersect, union, expand } from '../core/rast
 import { blendIndex } from '../core/blend';
 import { compile, isIdentity, type Compiled } from '../core/adjust';
 import { gradientRamp } from '../core/gradient';
+import { gradientEnds } from '../core/composite';
 import { getPattern } from '../core/patterns';
 import { pathMask } from '../core/selection';
 import { styleReach, hasStyles, type LayerStyles } from '../core/styles';
@@ -565,15 +566,8 @@ export class Compositor {
       const key = JSON.stringify([f.gradient, f.reverse]);
       p.i('uSrcKind', 2).tex('uRamp', this.rampTex(key, gradientRamp(f.gradient, 256, f.reverse)));
       const style = ['linear', 'radial', 'angle', 'reflected', 'diamond'].indexOf(f.style);
-      const cx = doc.width / 2 + f.ox,
-        cy = doc.height / 2 + f.oy;
-      const a = (f.angle * Math.PI) / 180;
-      const half = (Math.abs(Math.cos(a)) * doc.width + Math.abs(Math.sin(a)) * doc.height) / 2;
-      const len = half * f.scale;
-      const centered = f.style !== 'linear';
-      const x0 = centered ? cx : cx - Math.cos(a) * len,
-        y0 = centered ? cy : cy + Math.sin(a) * len;
-      p.i('uGradStyle', style).v2('uG0', x0, y0).v2('uG1', cx + Math.cos(a) * len, cy - Math.sin(a) * len).i('uDither', this.depth === 8 ? 1 : 0);
+      const [x0, y0, x1, y1] = gradientEnds(f, doc);
+      p.i('uGradStyle', style).v2('uG0', x0, y0).v2('uG1', x1, y1).i('uDither', this.depth === 8 && f.dither !== false ? 1 : 0);
     }
   }
 
