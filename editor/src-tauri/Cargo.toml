@@ -24,6 +24,8 @@ titler-host = { package = "lumora-titler-host", path = "../../crates/titler-host
 lumora-selftest = { path = "../../crates/selftest" }
 lumora-syscheck = { path = "../../crates/syscheck" }
 studio-engine = { package = "lumora-studio-engine", path = "../../crates/studio-engine" }
+# VST3 effects, opened in a helper process.
+vst3 = { package = "lumora-vst3-host", path = "../../crates/vst3-host" }
 # Publishing to YouTube: the same accounts code and HTTPS client Lumora uses.
 lumora-live-accounts = { path = "../../crates/live-accounts" }
 reqwest = { version = "0.13", default-features = false, features = ["rustls-no-provider"] }

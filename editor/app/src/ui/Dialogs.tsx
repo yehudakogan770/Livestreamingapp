@@ -7,6 +7,8 @@ import { selectedIds, useDoc, type Doc } from '../doc';
 import type { Actions } from './actions';
 import { Modal } from './controls';
 import type { Ui } from './state';
+import { SPACE_NAMES, type ColorSpace } from '../render/hdr';
+import { Choice } from './controls';
 
 const SIZES: [string, number, number][] = [
   ['HD 1920×1080', 1920, 1080],
@@ -24,6 +26,8 @@ export function SequenceDialog({ doc, ui, fresh }: { doc: Doc; ui: Ui; fresh: bo
   const [h, setH] = useState(fresh ? 1080 : s.height);
   const [fps, setFps] = useState<number>(fresh ? 30 : s.fps);
   const [bg, setBg] = useState(fresh ? '#000000' : s.background);
+  const [color, setColor] = useState<ColorSpace>(fresh ? 'rec709' : (s.color ?? 'rec709'));
+  const hdrFiles = doc.project.media.filter((m) => m.source?.hdr).length;
   const close = () => ui.set({ dialog: null });
   return (
     <Modal title={fresh ? 'New sequence' : 'Sequence settings'} onClose={close}>
@@ -82,6 +86,20 @@ export function SequenceDialog({ doc, ui, fresh }: { doc: Doc; ui: Ui; fresh: bo
           <span>Background</span>
           <input type="color" value={bg} onChange={(e) => setBg(e.target.value)} aria-label="Background color" />
         </label>
+        <div className="form__row">
+          <span>Color</span>
+          <Choice
+            value={color}
+            options={(['rec709', 'pq', 'hlg'] as const).map((c) => [c, SPACE_NAMES[c]] as [ColorSpace, string])}
+            onChange={setColor}
+            label="Color space"
+          />
+        </div>
+        <p className="insp__note form__note">
+          {color === 'rec709'
+            ? `Standard dynamic range.${hdrFiles ? ` HDR files are shown tone-mapped (${hdrFiles} in this project).` : ''}`
+            : `HDR: the film is made in Rec. 2020 with ${color === 'pq' ? 'PQ (HDR10)' : 'HLG'}. HDR files keep their highlights; SDR pictures and titles sit at 203 nits. The viewer shows it tone-mapped for this screen; the scopes measure the HDR signal in nits. Make it with an HDR preset.`}
+        </p>
         <div className="form__foot">
           <button type="button" className="btn" onClick={close}>
             Cancel
@@ -91,8 +109,9 @@ export function SequenceDialog({ doc, ui, fresh }: { doc: Doc; ui: Ui; fresh: bo
             className="btn btn--primary"
             onClick={() => {
               const even = (n: number) => Math.max(64, Math.round(n / 2) * 2);
-              if (fresh) doc.edit((p) => updateSequence(addSequence(p, name || 'Sequence', even(w), even(h), fps), { background: bg }), 'New sequence');
-              else doc.edit((p) => updateSequence(p, { name: name || s.name, width: even(w), height: even(h), fps, background: bg }), 'Sequence settings');
+              if (fresh) doc.edit((p) => updateSequence(addSequence(p, name || 'Sequence', even(w), even(h), fps), { background: bg, color }), 'New sequence');
+              else
+                doc.edit((p) => updateSequence(p, { name: name || s.name, width: even(w), height: even(h), fps, background: bg, color }), 'Sequence settings');
               close();
             }}
           >

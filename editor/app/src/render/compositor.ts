@@ -9,7 +9,8 @@ import { ACCUM_FS, FLOW_WARP_FS, FRAME_MIX_FS } from './motionfx';
 import { drawShape, shapeStamp } from './shape';
 import { nodeUniforms, planGrade, wheelVectors } from './grade';
 import type { NodeNow } from '../model/grade';
-import { CUTOUT_FS, LIMIT_FS } from './maskfx';
+import { CUTOUT_FS, LIMIT_FS, MATTE_FS } from './maskfx';
+import { BLENDS, evaluationOrder, graphOf, nodeNumbers, nodeParams, outputNode, type CompNode } from '../model/nodes';
 import { drawText, textStamp } from './text';
 import { moreEffectUniforms } from './fxlib';
 import { WHOLE_FRAME } from './drawnmask';
@@ -29,8 +30,18 @@ import {
   TRANSITION_TYPES,
 } from './shaders';
 import { OUT_FS } from './shaders';
+import { READ_FS, SCREEN_FS, sdrToSpace, TO_SPACE_FS, TRANSFER_CODE, transferOf, type ColorSpace, type Transfer } from './hdr';
 
-type Source = TexImageSource;
+/** A picture with more than 8 bits a channel (HDR read through FFmpeg): RGBA, top row first, 0–1. */
+export interface DeepPicture {
+  deep: Float32Array;
+  width: number;
+  height: number;
+  /** Changes when the pixels do. */
+  stamp: string;
+}
+type Source = TexImageSource | DeepPicture;
+const isDeep = (s: unknown): s is DeepPicture => typeof s === 'object' && s !== null && 'deep' in s;
 
 /** Gives the picture for a layer (a playing video, a decoded frame, a still), or nothing yet. */
 export interface Pictures {
@@ -39,6 +50,8 @@ export interface Pictures {
   next?(layer: Layer): Source | null;
   /** A LUT file's contents, once read (null until then). */
   cube?(path: string): Cube | null;
+  /** How a layer's picture codes brightness (SDR unless said; HDR files read as they are say PQ or HLG). */
+  transfer?(layer: Layer): Transfer;
   /** An AI mask's matte at this frame (the picture's shape, 0–255; `stamp` changes when it does), or null while it isn't ready. */
   matte?(layer: Layer, effect: EffectNow): { w: number; h: number; data: Uint8Array; stamp: string } | null;
 }
@@ -55,6 +68,7 @@ interface Program {
 }
 
 const sizeOf = (s: Source): [number, number] => {
+  if (isDeep(s)) return [s.width, s.height];
   if (typeof HTMLVideoElement !== 'undefined' && s instanceof HTMLVideoElement) return [s.videoWidth, s.videoHeight];
   if (typeof VideoFrame !== 'undefined' && s instanceof VideoFrame) return [s.displayWidth, s.displayHeight];
   if (typeof HTMLImageElement !== 'undefined' && s instanceof HTMLImageElement) return [s.naturalWidth, s.naturalHeight];
@@ -73,6 +87,7 @@ let nextPictureId = 1;
  * uploaded every time.
  */
 export function pictureStamp(pic: Source): string {
+  if (isDeep(pic)) return `d|${pic.stamp}`;
   if (typeof HTMLVideoElement !== 'undefined' && pic instanceof HTMLVideoElement) {
     return pic.paused && !pic.seeking && pic.readyState >= 2 ? `v|${pic.currentSrc}|${pic.currentTime}|${pic.videoWidth}x${pic.videoHeight}` : '';
   }
@@ -122,6 +137,15 @@ export class Compositor {
   matte: { clip: string; node: string } | null = null;
   /** The layer being drawn is showing a matte (its later effects are skipped). */
   private matteShown = false;
+  /** The sequence's color space: HDR sequences are made in PQ or HLG (see render/hdr.ts). */
+  space: ColorSpace = 'rec709';
+  /** Keep a small copy of each frame's HDR signal for the scopes (its size), or null. */
+  signalSize: { w: number; h: number } | null = null;
+  private signal: { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number } | null = null;
+  /** Show one node of a clip's composite instead of its output (the Composite page's eye). */
+  nodeView: { clip: string; node: string } | null = null;
+  /** What is under the layer being drawn (for a node composite's Background node). */
+  private under: Target | null = null;
 
   constructor(readonly canvas: HTMLCanvasElement | OffscreenCanvas) {
     const gl = canvas.getContext('webgl2', {
@@ -184,7 +208,7 @@ export class Compositor {
       }
       if (loc === null) continue;
       if (typeof v === 'number') {
-        if (k === 'uMode' || k === 'uType' || k === 'uGen') gl.uniform1i(loc, v);
+        if (k === 'uMode' || k === 'uType' || k === 'uGen' || k === 'uFrom' || k === 'uTo' || k === 'uTf') gl.uniform1i(loc, v);
         else gl.uniform1f(loc, v);
       } else if (typeof v[0] !== 'number') {
         const [tex, unit, kind] = v as [WebGLTexture, number, '3d'?];
@@ -309,11 +333,31 @@ export class Compositor {
     }
     this.lastUsed.set(key, this.drawn);
     gl.bindTexture(gl.TEXTURE_2D, t.tex);
+    if (isDeep(src)) {
+      if (t.stamp !== stamp || stamp === '') {
+        // HDR pixels as they are (half floats on the GPU), without the premultiplying meant for pictures.
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        try {
+          gl.texImage2D(gl.TEXTURE_2D, 0, this.float ? gl.RGBA16F : gl.RGBA32F, w, h, 0, gl.RGBA, gl.FLOAT, src.deep);
+        } catch {
+          t.w = 0;
+          return null;
+        } finally {
+          gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        }
+        t.w = w;
+        t.h = h;
+        t.stamp = stamp;
+      }
+      return { tex: t.tex, w, h };
+    }
     if (t.stamp !== stamp || stamp === '') {
       try {
         // The same size as last time: new pixels into the storage already there (no new GPU memory each frame).
-        if (t.w === w && t.h === h) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
-        else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+        const pic = src as TexImageSource;
+        // A deep picture was here before: its storage is made again as 8-bit.
+        if (t.w === w && t.h === h && !t.stamp.startsWith('d|')) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, pic);
+        else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, pic);
       } catch {
         t.w = 0;
         return null;
@@ -618,6 +662,8 @@ export class Compositor {
       }
       case 'grade':
         return this.grade(e, input, layer);
+      case 'nodes':
+        return this.nodeComposite(e, input, pics, layer);
       case 'curves': {
         const tex = this.curveTexture(e.id, e.d as unknown as CurveSet);
         if (!tex) return input;
@@ -733,6 +779,175 @@ export class Compositor {
     }
   }
 
+  /**
+   * A node composite (model/nodes.ts): each node the output needs, worked out
+   * after what feeds it. Gives back the output's picture (the input is given
+   * back if it was replaced).
+   */
+  private nodeComposite(e: EffectNow, input: Target, pics: Pictures, layer: Layer): Target {
+    const g = graphOf(e);
+    const out = outputNode(g);
+    if (!out) return input;
+    const under = this.under;
+    const made = new Map<string, Target>();
+    const ours = new Set<Target>();
+    const k = this.h / this.seqH;
+    const of = (id: string | null | undefined): Target | null => (id ? (made.get(id) ?? null) : null);
+    const fresh = (): Target => {
+      const t = this.take();
+      ours.add(t);
+      return t;
+    };
+    const keep = (t: Target): Target => {
+      ours.add(t);
+      return t;
+    };
+    /** A generated (SDR) picture brought into an HDR sequence's coding. */
+    const inSpace = (t: Target): Target => {
+      if (this.space === 'rec709') return t;
+      return keep(this.pass('tospace', TO_SPACE_FS, t, { uFrom: 0, uTo: TRANSFER_CODE[transferOf(this.space)] }));
+    };
+    // The node shown in the viewer is worked out even when nothing joins it to the output.
+    const order = evaluationOrder(g);
+    const shown = this.nodeView && this.nodeView.clip === layer.clip.id ? g.nodes.find((n) => n.id === this.nodeView?.node) : undefined;
+    if (shown && !order.includes(shown))
+      order.splice(
+        order.length - 1,
+        0,
+        ...evaluationOrder({ nodes: g.nodes.map((n) => (n.kind === 'out' ? { ...n, inputs: [shown.id] } : n)) }).filter(
+          (n) => !order.includes(n) && n.kind !== 'out',
+        ),
+      );
+    for (const n of order) {
+      const num = nodeNumbers(n, e.p);
+      const a = of(n.inputs[0]);
+      let r: Target | null = null;
+      if (n.kind === 'in') r = input;
+      else if (n.kind === 'under') r = under;
+      else if (n.kind === 'out') r = a;
+      else if (n.off) r = a;
+      else r = this.nodeStep(n, num, a, of, fresh, keep, inSpace, pics, layer, e.id, k);
+      if (r) made.set(n.id, r);
+    }
+    const view = this.nodeView && this.nodeView.clip === layer.clip.id ? made.get(this.nodeView.node) : undefined;
+    let result = view ?? made.get(out.id) ?? null;
+    // The output is a picture of our own (never the caller's input or what is under the clip).
+    if (result === under && result) result = this.pass('copy', COPY_FS, result, { uOpacity: 1 });
+    if (!result) {
+      result = this.take();
+      this.clear(result);
+    }
+    for (const t of ours) if (t !== result) this.give(t);
+    if (result !== input) this.give(input);
+    return result;
+  }
+
+  /** One node of a composite (not the clip, background or output). */
+  private nodeStep(
+    n: CompNode,
+    num: (k: string, d?: number) => number,
+    a: Target | null,
+    of: (id: string | null | undefined) => Target | null,
+    fresh: () => Target,
+    keep: (t: Target) => Target,
+    inSpace: (t: Target) => Target,
+    pics: Pictures,
+    layer: Layer,
+    effectId: string,
+    k: number,
+  ): Target | null {
+    switch (n.kind) {
+      case 'solid': {
+        const t = fresh();
+        const op = Math.max(0, Math.min(1, num('opacity', 100) / 100));
+        const [r, g, b] = hexToRgb(n.d?.color ?? '#1e2a38');
+        this.clear(t, [r * op, g * op, b * op, op]);
+        return inSpace(t);
+      }
+      case 'gradient': {
+        const t = fresh();
+        this.generate(
+          {
+            kind: 'generator',
+            gen: 'gradient',
+            settings: {
+              color1: n.d?.color1 ?? '#1e3a5f',
+              color2: n.d?.color2 ?? '#d08a48',
+              a: (num('angle', 90) / 360) * 100,
+              b: num('center', 50),
+              c: num('softness', 50),
+              kind: num('round') >= 0.5 ? 1 : 0,
+            },
+            local: layer.local,
+            length: layer.clip.length,
+            fps: layer.fps,
+          },
+          t,
+        );
+        return inSpace(t);
+      }
+      case 'transform': {
+        if (!a) return null;
+        const t = fresh();
+        this.clear(t);
+        this.place(
+          a.tex,
+          this.w,
+          this.h,
+          {
+            x: num('x'),
+            y: num('y'),
+            scale: num('scale', 100),
+            scaleX: 100,
+            rotation: num('rotation'),
+            rotX: 0,
+            rotY: 0,
+            z: 0,
+            cropL: num('cropL'),
+            cropR: num('cropR'),
+            cropT: num('cropT'),
+            cropB: num('cropB'),
+            opacity: 100,
+            blend: 'normal',
+            fill: false,
+          },
+          t,
+        );
+        return t;
+      }
+      case 'mask': {
+        if (!a && !this.white) {
+          this.white = this.makeTexture();
+          this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, 1, 1, 0, this.gl.RGBA, this.gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+        }
+        return keep(this.pass('mask', EFFECT_FS.mask as string, a ?? (this.white as WebGLTexture), shapeMask(num)));
+      }
+      case 'merge': {
+        const bg = a;
+        const fg = of(n.inputs[1]);
+        const mask = of(n.inputs[2]);
+        if (!fg) return bg;
+        const opacity = Math.max(0, Math.min(1, num('opacity', 100) / 100));
+        const top = mask ? keep(this.pass('matte', MATTE_FS, fg, { uMask: [mask.tex, 1], uInvert: num('invert') })) : fg;
+        if (!bg) return opacity >= 1 ? top : keep(this.pass('copy', COPY_FS, top, { uOpacity: opacity }));
+        const mode = BLENDS[Math.round(num('blend'))] ?? 'normal';
+        return keep(this.pass('composite', COMPOSITE_FS, top, { uBase: [bg.tex, 1], uOpacity: opacity, uMode: Math.max(0, BLEND_MODES.indexOf(mode)) }));
+      }
+      case 'fx': {
+        if (!a || !n.fx) return a;
+        const p: Record<string, number> = {};
+        for (const pd of nodeParams(n)) p[pd.key] = num(pd.key, pd.def);
+        // The effect may give its input back: it gets a copy (other nodes may read this one too).
+        const copy = this.pass('copy', COPY_FS, a, { uOpacity: 1 });
+        const done = this.effect({ id: `${effectId}/${n.id}`, type: n.fx, p, d: { ...(n.d ?? {}) } }, copy, pics, layer);
+        void k;
+        return keep(done);
+      }
+      default:
+        return a;
+    }
+  }
+
   /** One grade node drawn from `input`, mixed over `base`. */
   private gradeNode(fx: string, node: NodeNow, input: Target, base: Target, matte = false): Target {
     const curve = this.curveTexture(`${fx}/${node.id}`, node.curves);
@@ -794,6 +1009,16 @@ export class Compositor {
       this.give(t);
       return null;
     }
+    // HDR sequences: the picture brought into the sequence's coding (nested sequences already are).
+    if (this.space !== 'rec709' && layer.source?.kind !== 'nested') {
+      const from = layer.source?.kind === 'video' || layer.source?.kind === 'image' ? (pics.transfer?.(layer) ?? 'sdr') : 'sdr';
+      const to = transferOf(this.space);
+      if (from !== to) {
+        const out = this.pass('tospace', TO_SPACE_FS, t, { uFrom: TRANSFER_CODE[from], uTo: TRANSFER_CODE[to] });
+        this.give(t);
+        t = out;
+      }
+    }
     this.matteShown = false;
     for (const e of layer.effects) {
       t = this.applyEffect(e, t, pics, layer);
@@ -816,7 +1041,11 @@ export class Compositor {
     let empty = true;
     for (const op of ops) {
       if (op.kind === 'layer') {
+        // A node composite can use what is under it.
+        const was = this.under;
+        this.under = acc;
         const t = this.renderLayer(op.layer, pics);
+        this.under = was;
         if (!t) continue;
         if (empty && op.layer.motion.opacity >= 100) {
           this.give(acc);
@@ -872,11 +1101,65 @@ export class Compositor {
     gl.disable(gl.BLEND);
     const acc = this.compose(ops, pics);
     this.sweep();
+    if (this.space !== 'rec709') {
+      if (this.signalSize) this.keepSignal(acc, background);
+      this.bindTarget(null);
+      // HDR: shown tone-mapped for this (SDR) screen.
+      const p = this.program('screen', FULL_VS, SCREEN_FS);
+      this.use(p, { uTex: [acc.tex, 0], uBack: this.back(background), uFlip: flip ? 1 : 0, uTf: TRANSFER_CODE[transferOf(this.space)] });
+      this.drawFull();
+      this.give(acc);
+      return;
+    }
     this.bindTarget(null);
     const p = this.program('final', FULL_VS, FINAL_FS);
     this.use(p, { uTex: [acc.tex, 0], uSize: [this.w, this.h], uBack: hexToRgb(background), uFlip: flip ? 1 : 0 });
     this.drawFull();
     this.give(acc);
+  }
+
+  /** The background color in the sequence's space. */
+  private back(background: string): [number, number, number] {
+    return sdrToSpace(hexToRgb(background) as [number, number, number], this.space);
+  }
+
+  /** A small copy of the frame's HDR signal (over the background), for the scopes. */
+  private keepSignal(acc: Target, background: string) {
+    const gl = this.gl;
+    const size = this.signalSize;
+    if (!size) return;
+    let s = this.signal;
+    if (!s || s.w !== size.w || s.h !== size.h) {
+      if (s) {
+        gl.deleteFramebuffer(s.fb);
+        gl.deleteTexture(s.tex);
+      }
+      const tex = this.makeTexture();
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, size.w, size.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      const fb = gl.createFramebuffer() as WebGLFramebuffer;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      s = { fb, tex, w: size.w, h: size.h };
+      this.signal = s;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, s.fb);
+    gl.viewport(0, 0, s.w, s.h);
+    this.use(this.program('read', FULL_VS, READ_FS), { uTex: [acc.tex, 0], uBack: this.back(background), uAlpha: 0, uTf: -1 });
+    this.drawFull();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  /** The last frame's HDR signal, small (rows from the top), when the scopes asked for it; else what the screen shows. */
+  readSignal(w: number, h: number): Uint8Array {
+    const s = this.signal;
+    if (this.space === 'rec709' || !s || s.w !== w || s.h !== h) return this.readSmall(w, h);
+    const gl = this.gl;
+    const out = new Uint8Array(w * h * 4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, s.fb);
+    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, out);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    // READ_FS already turned it the right way up.
+    return out;
   }
 
   private outTarget: { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number } | null = null;
@@ -885,12 +1168,13 @@ export class Compositor {
    * A whole frame as RGBA bytes, top row first, for exports FFmpeg encodes:
    * over the background, or (with \`alpha\`) see-through where nothing covers it.
    */
-  readFrame(ops: Op[], pics: Pictures, background: string, alpha: boolean): Uint8Array {
+  readFrame(ops: Op[], pics: Pictures, background: string, alpha: boolean, deep = false): Uint8Array {
     const gl = this.gl;
     for (const t of this.targets) t.busy = false;
     gl.disable(gl.BLEND);
     const acc = this.compose(ops, pics);
     this.sweep();
+    if (this.space !== 'rec709') return this.readHdr(acc, background, alpha, deep);
     let o = this.outTarget;
     if (!o || o.w !== this.w || o.h !== this.h) {
       if (o) {
@@ -914,6 +1198,63 @@ export class Compositor {
     gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.UNSIGNED_BYTE, px);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     return px;
+  }
+
+  private deepOut: { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number; float: boolean } | null = null;
+
+  /**
+   * An HDR sequence's frame read back: with \`deep\`, its signal as 16-bit
+   * RGBA (little-endian, for FFmpeg's rgba64le) for HDR films; otherwise
+   * tone-mapped to SDR as 8-bit RGBA.
+   */
+  private readHdr(acc: Target, background: string, alpha: boolean, deep: boolean): Uint8Array {
+    const gl = this.gl;
+    const float = deep && this.float;
+    let o = this.deepOut;
+    if (!o || o.w !== this.w || o.h !== this.h || o.float !== float) {
+      if (o) {
+        gl.deleteFramebuffer(o.fb);
+        gl.deleteTexture(o.tex);
+      }
+      const tex = this.makeTexture();
+      if (float) gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA32F, this.w, this.h, 0, gl.RGBA, gl.FLOAT, null);
+      else gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.w, this.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      const fb = gl.createFramebuffer() as WebGLFramebuffer;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+      o = { fb, tex, w: this.w, h: this.h, float };
+      this.deepOut = o;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, o.fb);
+    gl.viewport(0, 0, this.w, this.h);
+    this.use(this.program('read', FULL_VS, READ_FS), {
+      uTex: [acc.tex, 0],
+      uBack: this.back(background),
+      uAlpha: alpha ? 1 : 0,
+      uTf: deep ? -1 : TRANSFER_CODE[transferOf(this.space)],
+    });
+    this.drawFull();
+    this.give(acc);
+    const n = this.w * this.h * 4;
+    if (!deep) {
+      const px = new Uint8Array(n);
+      gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return px;
+    }
+    const words = new Uint16Array(n);
+    if (float) {
+      const f = new Float32Array(n);
+      gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.FLOAT, f);
+      for (let i = 0; i < n; i++) words[i] = Math.round(Math.max(0, Math.min(1, f[i] as number)) * 65535);
+    } else {
+      // No float targets on this computer: 8 bits stretched to 16.
+      const px = new Uint8Array(n);
+      gl.readPixels(0, 0, this.w, this.h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      for (let i = 0; i < n; i++) words[i] = (px[i] as number) * 257;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return new Uint8Array(words.buffer);
   }
 
   /** A made picture (gradient, noise, particles, light leak) drawn into a target. */

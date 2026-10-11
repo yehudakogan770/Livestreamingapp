@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 export type Tool = 'select' | 'ripple' | 'roll' | 'razor' | 'slip' | 'slide' | 'hand' | 'text';
-export type Page = 'edit' | 'color' | 'audio';
+export type Page = 'edit' | 'composite' | 'color' | 'audio';
 
 export interface Source {
   media: string;
@@ -38,6 +38,8 @@ export interface UiState {
   /** The grade node chosen on the Color page, and whether the viewer shows its matte. */
   gradeNode: string | null;
   showMatte: boolean;
+  /** The node chosen on the Composite page. */
+  compNode: string | null;
   dialog: null | 'export' | 'sequence' | 'newSequence' | 'help' | 'guide' | 'speed' | 'marker' | 'project' | 'share' | 'history' | 'transcribe';
   /** A short message at the bottom (what just happened). */
   note: string;
@@ -80,6 +82,7 @@ export class Ui {
       safeMargins: false,
       gradeNode: null,
       showMatte: false,
+      compNode: null,
       dialog: null,
       note: '',
     };

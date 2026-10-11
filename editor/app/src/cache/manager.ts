@@ -13,6 +13,7 @@ import { Sources } from '../export/exporter';
 import { segmentFrames } from './key';
 import { cacheNative } from './native';
 import { cachedOps } from './ops';
+import { isHdr } from '../render/hdr';
 import { coverage, planSegments, renderOrder, segmentAt, type Segment } from './plan';
 import { DEFAULT_SETTINGS, formatFor, loadSettings, saveSettings, widthFor, type CacheSettings } from './settings';
 
@@ -139,6 +140,8 @@ export class RenderCache {
 
   /** The open sequence's segments (worked out again only when something changed). */
   plan(p: Project, s: Sequence = current(p), proxies = this.focus().proxies): Segment[] {
+    // HDR sequences aren't cached (the cache holds SDR pictures).
+    if (isHdr(s)) return [];
     const m = this.memo;
     if (m && m.p === p && m.s === s && m.v === this.version && m.proxies === proxies) return m.segs;
     const segs = planSegments(p, s, {

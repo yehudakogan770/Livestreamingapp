@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { Project } from './model/types';
+import { magnetize } from './model/magnetic';
 
 export type Selection = { kind: 'clips'; ids: string[] } | { kind: 'marker'; id: string } | { kind: 'transition'; clip: string; side: 'in' | 'out' } | null;
 
@@ -53,7 +54,8 @@ export class Doc {
 
   edit(f: (p: Project) => Project, label = 'Edit', key?: string) {
     const before = this.state.project;
-    const after = f(before);
+    // A magnetic sequence closes up after every change to its clips.
+    const after = magnetize(before, f(before));
     if (after === before || !this.allowed(before, after)) return;
     const now = Date.now();
     const same = key !== undefined && key === this.lastKey && now - this.lastAt < 1500;

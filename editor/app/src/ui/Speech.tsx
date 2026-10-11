@@ -35,6 +35,7 @@ import { selectedIds, useDoc, type Doc } from '../doc';
 import { inApp, native } from '../native';
 import type { Engine } from '../player/engine';
 import { captionRange, spansToTranscribe, Transcriber, withTranscripts, type SpeechModel, type SpeechProgress } from '../speech/transcribe';
+import { findSpeakers, withVoices } from '../speech/voices';
 import { ColorField, Choice, Modal, Scrub, Section } from './controls';
 import { usePlayhead } from './hooks';
 import { FONTS } from './Inspector';
@@ -84,6 +85,7 @@ export function TranscribeDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
   const [language, setLanguage] = useState(start.language);
   const [what, setWhat] = useState<'selected' | 'all'>(ids.length ? 'selected' : 'all');
   const [captions, setCaptions] = useState(true);
+  const [voices, setVoices] = useState(false);
   const [state, setState] = useState<SpeechProgress | { stage: 'error'; message: string } | null>(null);
   const job = useRef<Transcriber | null>(null);
   const busy = state !== null && state.stage !== 'done' && state.stage !== 'error';
@@ -108,9 +110,18 @@ export function TranscribeDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
       const media = doc.project.media.filter((m) => spans.has(m.id));
       const found = await t.run(media, spans);
       const range = chosen ? captionRange(current(doc.project), chosen) : null;
+      // Speakers sharing a microphone, told apart by their voices.
+      let heard = new Map<string, number[] | null>();
+      if (voices) {
+        const withWords = withTranscripts(doc.project, found).media.filter((m) => found.has(m.id));
+        heard = await findSpeakers(withWords, native.speechAudio, (done, name) =>
+          setState({ stage: 'listening', done, message: `Telling the voices apart in ${name}…` }),
+        );
+      }
       doc.edit(
         (p) => {
-          const q = withTranscripts(p, found);
+          let q = withTranscripts(p, found);
+          for (const [id, v] of heard) q = withVoices(q, id, v);
           return captions ? makeCaptions(q, range) : q;
         },
         captions ? 'Transcribe and make captions' : 'Transcribe',
@@ -165,6 +176,13 @@ export function TranscribeDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
           </div>
           <label className="check form__check">
             <input type="checkbox" checked={captions} onChange={(e) => setCaptions(e.target.checked)} /> Make captions on the timeline
+          </label>
+          <label
+            className="check form__check"
+            title="For an interview or panel recorded on one microphone: each person is told apart by the sound of their voice"
+          >
+            <input type="checkbox" checked={voices} onChange={(e) => setVoices(e.target.checked)} /> Tell speakers apart by their voices (several people on one
+            microphone)
           </label>
           <p className="insp__note">
             Everything happens on this computer: no sound leaves it. The speech model is downloaded once. About {Math.max(1, Math.round(seconds / 60))} minute
@@ -222,7 +240,30 @@ export function TranscriptPanel({ doc, engine, ui }: { doc: Doc; engine: Engine;
   const words = useMemo(() => sequenceWords(project, s), [project, s]);
   const paras = useMemo(() => transcriptParagraphs(words, fps * 2), [words, fps]);
   const fillers = useMemo(() => words.flatMap((w, i) => (isFillerSound(w.w) ? [i] : [])), [words]);
-  const voices = useMemo(() => new Set(words.map((w) => w.media)).size, [words]);
+  const voices = useMemo(() => new Set(words.map((w) => w.who)).size, [words]);
+  const [finding, setFinding] = useState<string | null>(null);
+  /** Tell apart the voices in every transcribed file heard in the sequence (people sharing a microphone). */
+  const findVoices = async () => {
+    const ids = new Set(words.map((w) => w.media));
+    const media = doc.project.media.filter((m) => ids.has(m.id));
+    setFinding('Telling the voices apart…');
+    try {
+      const heard = await findSpeakers(media, native.speechAudio, (done, name) =>
+        setFinding(`Telling the voices apart in ${name}… ${Math.round(done * 100)}%`),
+      );
+      doc.edit((p) => [...heard].reduce((q, [id, v]) => withVoices(q, id, v), p), 'Find speakers');
+      const found = [...heard.values()].reduce((a, v) => a + (v ? Math.max(...v) + 1 : 0), 0);
+      ui.note(
+        found
+          ? `${found} speakers told apart by their voices: click a name in the transcript to change it`
+          : 'One voice in each recording: nothing to tell apart',
+      );
+    } catch (e) {
+      ui.note(`Could not tell the voices apart: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setFinding(null);
+    }
+  };
   const [naming, setNaming] = useState<string | null>(null);
   const [sel, setSel] = useState<{ a: number; b: number } | null>(null);
   const [find, setFind] = useState('');
@@ -304,6 +345,15 @@ export function TranscriptPanel({ doc, engine, ui }: { doc: Doc; engine: Engine;
         <button type="button" className="btn btn--sm" onClick={() => ui.set({ dialog: 'transcribe' })}>
           Transcribe…
         </button>
+        <button
+          type="button"
+          className="btn btn--sm"
+          disabled={!inApp() || finding !== null}
+          title="Several people on one microphone: tell them apart by the sound of their voices (on this computer)"
+          onClick={() => void findVoices()}
+        >
+          {finding ?? 'Find speakers'}
+        </button>
       </div>
       <div
         ref={box}
@@ -325,7 +375,7 @@ export function TranscriptPanel({ doc, engine, ui }: { doc: Doc; engine: Engine;
         {paras.map((para, pi) => {
           const first = words[para[0] as number] as SeqWord;
           const before = pi > 0 ? (words[(paras[pi - 1] as number[])[0] as number] as SeqWord) : null;
-          const who = voices > 1 && (!before || before.media !== first.media) ? first.media : null;
+          const who = voices > 1 && (!before || before.who !== first.who) ? first.who : null;
           return (
             <p key={para[0]} className="tscript__para">
               {who &&

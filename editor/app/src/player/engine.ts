@@ -15,6 +15,12 @@ import { audioAt, dbToGain, heardTracks, type Heard } from './audio';
 import { playbackFile } from './files';
 import { FrameCache, aheadCount, frameKey, framesAhead } from './framecache';
 import { VoiceChain, type Measure } from './voice';
+import { cleanedSound } from './cleanvoice';
+import { onPluginSound, pluginSound } from './plugins';
+import { isPlugin } from '../model/plugins';
+import { mediaTransfer, onSignalCopy, signalCopy } from './hdrcopy';
+import { isHdr, spaceOf } from '../render/hdr';
+import { voiceIsoAmount } from '../export/audioplan';
 import { applyStageFx, makeStage, routeStage, type Stage } from './stage';
 import { MASTER, mixOf, volumeAt } from '../model/mix';
 
@@ -131,6 +137,13 @@ export class Engine {
 
   constructor() {
     this.cache.onReady = () => (this.dirty = true);
+    onSignalCopy(() => (this.dirty = true));
+    onPluginSound(() => (this.dirty = true));
+  }
+
+  /** An HDR sequence plays HDR files from their signal copies once made (null: the usual file). */
+  private hdrFile(m: MediaItem): string | null {
+    return isHdr(this.seq) && m.source?.hdr ? signalCopy(m) : null;
   }
 
   /** Play heavy files from their lighter proxies (when made). The film is always made from the originals. */
@@ -144,7 +157,7 @@ export class Engine {
   }
 
   private videoFile(m: MediaItem): string {
-    return mediaUrl(playbackFile(m, this.proxies));
+    return mediaUrl(this.hdrFile(m) ?? playbackFile(m, this.proxies));
   }
 
   /** Start counting dropped frames again. */
@@ -344,6 +357,14 @@ export class Engine {
   }
 
   /** Show a grade node's matte in the viewer (null: the picture). */
+  private nodeView: { clip: string; node: string } | null = null;
+  /** Show one node of a clip's composite in the viewer (the Composite page), or its output again (null). */
+  setNodeView(v: { clip: string; node: string } | null) {
+    if (v?.clip === this.nodeView?.clip && v?.node === this.nodeView?.node) return;
+    this.nodeView = v;
+    this.redraw();
+  }
+
   setMatte(m: { clip: string; node: string } | null) {
     if (m?.clip === this.matte?.clip && m?.node === this.matte?.node) return;
     this.matte = m;
@@ -426,7 +447,8 @@ export class Engine {
   /** The native engine draws the frame (true), or the WebGL path below does. */
   private driveNative(ops: Op[], s: Sequence, frame: number): boolean {
     const n = this.native;
-    if (!n || !this.p) return false;
+    // HDR sequences are drawn by the WebGL path (it carries the HDR signal).
+    if (!n || !this.p || isHdr(s)) return false;
     const c = this.compositor;
     const t = { p: this.p, s, at: this.frame, ops, playing: this.playing, speed: this.speed, dirty: this.dirty, matte: this.matte };
     const extra = { pictures: this.pictures, proxies: this.proxies, quality: this.quality, shown: this.shown, stats: this.stats };
@@ -490,6 +512,8 @@ export class Engine {
     this.cache.height = fitH;
     c.resize(w, h, s.height);
     c.matte = this.matte;
+    c.nodeView = this.nodeView;
+    c.space = spaceOf(s);
     try {
       c.render(ops, this.pictures, s.background);
     } catch (e) {
@@ -533,6 +557,12 @@ export class Engine {
       const ready = exact ?? this.cache.near(url, src.time, mfps);
       if (!exact) this.stats.late++;
       return ready ?? el;
+    },
+    // HDR files in an HDR sequence: their own coding once their signal copy plays (the tone-mapped copy is SDR).
+    transfer: (layer: Layer) => {
+      const src = layer.source;
+      if (src?.kind !== 'video' || !this.hdrFile(src.media)) return 'sdr';
+      return mediaTransfer(src.media);
     },
     // Time remapping between two frames of a file: the second, once decoded (until then the first is shown alone).
     next: (layer: Layer) => {
@@ -797,9 +827,19 @@ export class Engine {
     // How loud the speech tracks are now (what ducked clips listen to).
     this.speechDb = -120;
     if (heard.some((h) => h.duck)) for (const t of s.tracks) if (t.role === 'dialogue') this.speechDb = Math.max(this.speechDb, this.busLevel(t.id));
-    for (const h of heard) {
+    for (const heardNow of heard) {
+      // Voice isolation: the neural model's cleaned copy plays once it is made (filters stand in until then).
+      // VST3 effects: the clip's sound through its plug-ins once made (until then, without them).
+      const plugged = heardNow.effects.some((e) => isPlugin(e)) ? pluginSound(heardNow.clip, heardNow.media, rate(s)) : null;
+      const iso = plugged ? undefined : heardNow.effects.find((e) => e.type === 'voiceiso');
+      const clean = iso ? cleanedSound(heardNow.media, voiceIsoAmount(iso.p)) : null;
+      const h = plugged
+        ? { ...heardNow, time: heardNow.time - plugged.from, effects: heardNow.effects.filter((e) => !isPlugin(e)) }
+        : clean
+          ? { ...heardNow, effects: heardNow.effects.filter((e) => e !== iso) }
+          : heardNow;
       let slot = this.sounds.get(h.key);
-      const src = fileOf(h.media);
+      const src = plugged ? mediaUrl(plugged.path) : clean ? mediaUrl(clean) : fileOf(h.media);
       if (!slot) {
         slot = this.spareSounds.find((x) => x.src === src) ?? this.spareSounds[0] ?? this.newSound();
         this.spareSounds = this.spareSounds.filter((x) => x !== slot);

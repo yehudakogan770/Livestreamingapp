@@ -38,6 +38,7 @@ import type { Clip, Param } from '../model/types';
 import { selectedIds, useDoc, type Doc } from '../doc';
 import type { Engine } from '../player/engine';
 import { curveTable, type CurvePoints, type CurveSet } from '../render/color';
+import { lumaWeights, scopeGuides, spaceOf, type ColorSpace } from '../render/hdr';
 import type { Actions } from './actions';
 import { Choice, ParamRow, Scrub, Section } from './controls';
 import { LutExportDialog } from './LutExport';
@@ -829,6 +830,7 @@ function CurvesEditor({ set, onChange }: { set: CurveSet; onChange: (s: CurveSet
 export function Scopes({ engine, ui }: { engine: Engine; ui: Ui }) {
   const u = useUi(ui);
   const ref = useRef<HTMLCanvasElement>(null);
+  const [space, setSpace] = useState<ColorSpace>('rec709');
   useEffect(() => {
     let last = 0;
     let pending = false;
@@ -850,18 +852,23 @@ export function Scopes({ engine, ui }: { engine: Engine; ui: Ui }) {
       last = now;
       const w = 192;
       const h = 108;
+      const space = engine.project ? spaceOf(current(engine.project)) : 'rec709';
       let px: Uint8Array;
       try {
-        px = gl.readSmall(w, h);
+        // HDR: the signal itself is measured (in nits), not the tone-mapped picture on the screen.
+        px = space === 'rec709' ? gl.readSmall(w, h) : gl.readSignal(w, h);
       } catch {
         return;
       }
-      drawScope(cv, px, w, h, ui.state.scope);
+      drawScope(cv, px, w, h, ui.state.scope, space);
+      setSpace((was) => (was === space ? was : space));
     };
+    if (engine.gl) engine.gl.signalSize = { w: 192, h: 108 };
     engine.onFrame = draw;
     engine.redraw();
     return () => {
       if (engine.onFrame === draw) engine.onFrame = null;
+      if (engine.gl) engine.gl.signalSize = null;
     };
   }, [engine, ui, u.scope]);
   return (
@@ -869,6 +876,11 @@ export function Scopes({ engine, ui }: { engine: Engine; ui: Ui }) {
       <div className="scopes__head">
         <Activity />
         <span className="scopes__title">Scopes</span>
+        {space !== 'rec709' && (
+          <span className="scopes__space" title="The HDR signal is measured: brightness in nits, colors against Rec. 2020">
+            {space === 'pq' ? 'PQ · nits' : 'HLG · nits'}
+          </span>
+        )}
         <Choice
           value={u.scope}
           options={[
@@ -886,7 +898,8 @@ export function Scopes({ engine, ui }: { engine: Engine; ui: Ui }) {
   );
 }
 
-function drawScope(cv: HTMLCanvasElement, px: Uint8Array, w: number, h: number, kind: string) {
+function drawScope(cv: HTMLCanvasElement, px: Uint8Array, w: number, h: number, kind: string, space: ColorSpace = 'rec709') {
+  const [kr, kg, kb] = lumaWeights(space);
   const ctx = cv.getContext('2d');
   if (!ctx) return;
   const W = cv.width;
@@ -910,7 +923,7 @@ function drawScope(cv: HTMLCanvasElement, px: Uint8Array, w: number, h: number, 
         const g = px[i + 1] ?? 0;
         const b = px[i + 2] ?? 0;
         if (kind === 'waveform') {
-          const l = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          const l = kr * r + kg * g + kb * b;
           add((x / w) * W, H - 4 - (l / 255) * (H - 8), 40, 60, 40);
         } else {
           const third = W / 3;
@@ -927,8 +940,10 @@ function drawScope(cv: HTMLCanvasElement, px: Uint8Array, w: number, h: number, 
       const r = (px[i * 4] ?? 0) / 255;
       const g = (px[i * 4 + 1] ?? 0) / 255;
       const b = (px[i * 4 + 2] ?? 0) / 255;
-      const cb = -0.1146 * r - 0.3854 * g + 0.5 * b;
-      const cr = 0.5 * r - 0.4542 * g - 0.0458 * b;
+      // Color difference with the space's own luma (Rec. 709 or Rec. 2020).
+      const y = kr * r + kg * g + kb * b;
+      const cb = (b - y) / (2 * (1 - kb));
+      const cr = (r - y) / (2 * (1 - kr));
       add(cx + cb * rad * 1.8, cy - cr * rad * 1.8, 30, 60, 30);
     }
   } else {
@@ -964,13 +979,14 @@ function drawScope(cv: HTMLCanvasElement, px: Uint8Array, w: number, h: number, 
     ctx.lineTo(W / 2 + Math.cos(a) * (H / 2 - 6), H / 2 + Math.sin(a) * (H / 2 - 6));
     ctx.stroke();
   } else if (kind !== 'histogram') {
-    for (const v of [0, 25, 50, 75, 100]) {
-      const y = H - 4 - (v / 100) * (H - 8);
+    // Percent for SDR; nits for HDR (the signal's own scale).
+    for (const [v, label] of scopeGuides(space)) {
+      const y = H - 4 - v * (H - 8);
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(W, y);
       ctx.stroke();
-      ctx.fillText(String(v), 2, y - 2);
+      ctx.fillText(label, 2, Math.max(10, y - 2));
     }
   }
 }

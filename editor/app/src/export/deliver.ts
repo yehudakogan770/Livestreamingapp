@@ -12,6 +12,7 @@ import { audioArgs, loudnormFilter, needsFfmpegPicture, outputSize, pictureArgs,
 import { aspectSize, type Aspect } from '../smart/reframe';
 import { stemPath, stemProject, stemsIn, STEM_NAMES, type StemKind } from './loudness';
 import { BUILT_IN, numbered, type DeliveryPreset } from './presets';
+import { isHdr, spaceOf } from '../render/hdr';
 
 export type RangeKind = 'all' | 'marked' | 'selected';
 
@@ -98,6 +99,7 @@ export function planDelivery(p: Project, req: DeliveryRequest): DeliveryPlan {
   if (hasCaptions && !req.captions.burn) project = withoutCaptions(project);
   const cues = hasCaptions && (req.captions.sidecar || req.captions.embed) ? captionCues(s, undefined, req.range) : [];
   const v = preset.video;
+  if (v?.hdr && !isHdr(s)) throw new Error('This preset makes an HDR film: set the sequence to HDR first (Sequence settings → Color).');
   const mov = preset.container === 'mp4' || preset.container === 'mov' || preset.container === 'm4a';
   const files: [string, string][] = [];
   const extraInputs: string[][] = [];
@@ -185,11 +187,12 @@ export function planDelivery(p: Project, req: DeliveryRequest): DeliveryPlan {
       loudness,
       out: target,
       pipe: {
-        args: pictureArgs(preset, enc.name, s.fps, render, out),
+        args: pictureArgs(preset, enc.name, s.fps, render, out, spaceOf(s)),
         render,
         alpha: v.alpha,
         file: pictureFile(preset),
-        ...(fb ? { fallback: pictureArgs(preset, fb.name, s.fps, render, out) } : {}),
+        ...(fb ? { fallback: pictureArgs(preset, fb.name, s.fps, render, out, spaceOf(s)) } : {}),
+        ...(v.hdr && isHdr(s) ? { deep: true } : {}),
       },
       finish,
       files,

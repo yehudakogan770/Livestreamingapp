@@ -2,6 +2,7 @@ import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import type { Prepared } from './model/build';
 import type { Job } from './export/audioplan';
+import type { ChainLink, FoundPlugin, PluginParam } from './model/plugins';
 
 /** Running as the installed program (not in a plain browser). */
 export const inApp = (): boolean => typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -36,11 +37,30 @@ export const native = {
   framesOpen: (path: string, from: number, rate: number, width: number, height: number) => invoke<number>('frames_open', { path, from, rate, width, height }),
   framesNext: async (id: number): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>('frames_next', { id })),
   framesClose: (id: number) => invoke<void>('frames_close', { id }),
+  /** Read an original's frames deep (16 bits a channel, HDR as it is), for HDR films. */
+  framesOpenDeep: (path: string, from: number, rate: number, width: number, height: number) =>
+    invoke<number>('frames_open', { path, from, rate, width, height, deep: true }),
+  /** An HDR file's signal copy for watching it in an HDR sequence (made once). */
+  hdrCopy: (path: string, seconds: number) => invoke<string>('hdr_copy', { path, seconds }),
   strip: (path: string, seconds: number) => invoke<Strip>('strip', { path, seconds }),
   peaks: async (path: string): Promise<Uint8Array> => new Uint8Array(await invoke<ArrayBuffer>('peaks', { path })),
   /** The folder of a speech model (downloaded the first time). */
   speechModel: (name: string) => invoke<string>('speech_model', { name }),
   /** `seconds` of a file's sound from `from`, at 16 kHz, one channel. */
+  /** The VST3 effects on this computer (each plug-in file looked at once, in a helper process). */
+  vstScan: (again = false) => invoke<{ effects: FoundPlugin[]; broken: { path: string; problem: string }[]; folders: string[] }>('vst_scan', { again }),
+  /** A VST3 effect's parameters, its saved settings restored and values set; and its settings after. */
+  vstSettings: (path: string, cid: string, state: string | null, set: [number, number][] = []) =>
+    invoke<{ params: PluginParam[]; state: string }>('vst_settings', { path, cid, state, set }),
+  /** A VST3 effect's own window (Windows), open until it is closed; then its parameters and settings. */
+  vstEdit: (path: string, cid: string, state: string | null, title: string) =>
+    invoke<{ params: PluginParam[]; state: string }>('vst_edit', { path, cid, state, title }),
+  /** A stretch of a file's sound through VST3 effects, as a WAV file (made once). */
+  vstRender: (path: string, from: number, seconds: number, chain: ChainLink[]) => invoke<string>('vst_render', { path, from, seconds, chain }),
+  /** The voice isolation model's path on disk (for FFmpeg's arnndn). */
+  voiceModel: () => invoke<string>('voice_model'),
+  /** A file's sound cleaned by the voice isolation model at a strength (0–1), for playing while editing (made once). */
+  voiceClean: (path: string, seconds: number, mix: number) => invoke<string>('voice_clean', { path, seconds, mix }),
   speechAudio: async (path: string, from: number, seconds: number): Promise<Float32Array> =>
     new Float32Array(await invoke<ArrayBuffer>('speech_audio', { path, from, seconds })),
   exportFolder: (out: string) => invoke<string>('export_folder', { out }),

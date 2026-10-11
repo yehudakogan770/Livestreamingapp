@@ -360,6 +360,18 @@ interface Filters {
   cmds?: (p: Record<string, number>) => string[];
 }
 
+/** The voice isolation model on this computer (set before a film's sound is made; null: filters stand in for it). */
+let voiceModel: string | null = null;
+export function setVoiceModel(path: string | null): void {
+  voiceModel = path;
+}
+
+/** A file path as a value in an FFmpeg filter graph given as one argument: escaped for the option, then quoted for the graph. */
+export function filterPath(path: string): string {
+  const opt = path.replace(/\\/g, '/').replace(/[\\':]/g, (c) => `\\${c}`);
+  return `'${opt.replace(/'/g, "'\\''")}'`;
+}
+
 /** The hum and its harmonics (50 or 60 Hz, up to 8 of them). */
 export function humFrequencies(p: Record<string, number>): number[] {
   const base = (p.mains ?? 1) >= 0.5 ? 60 : 50;
@@ -404,8 +416,10 @@ export function effectFilters(e: PartEffect, name: string): Filters {
       };
     }
     case 'voiceiso': {
-      // No speech model is bundled for FFmpeg's arnndn: noise reduction that follows the noise, the voice's band, presence and a compressor.
       const k = voiceIsoAmount(p);
+      // The neural model (RNNoise, shipped with Lumora Studio) when it is on this computer.
+      if (voiceModel) return { filters: ['highpass=f=70', 'aresample=48000', `arnndn=m=${filterPath(voiceModel)}:mix=${num(Math.round(k * 20) / 20)}`] };
+      // Without it: noise reduction that follows the noise, the voice's band, presence and a compressor.
       return {
         filters: [
           'highpass=f=100',

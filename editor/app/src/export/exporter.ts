@@ -7,12 +7,16 @@ import type { Clip, MediaItem, Project, Sequence } from '../model/types';
 import { inApp, joinPath, mediaUrl, native, onExportProgress } from '../native';
 import { parseCube, type Cube } from '../render/color';
 import { builtinCube } from '../render/luts';
-import { Compositor, type Pictures } from '../render/compositor';
+import { Compositor, type DeepPicture, type Pictures } from '../render/compositor';
+import { isHdr, spaceOf, type Transfer } from '../render/hdr';
+import { mediaTransfer } from '../player/hdrcopy';
+import { withPluginsRendered } from './plugins';
+import { renderPlugins } from '../player/plugins';
 import { allLayers, frameOps, type Layer, type Op } from '../render/frame';
 import { rateAt } from '../model/remap';
 import { isAiMask, matteFor, mattes } from '../vision/mattes';
 import { exportSources } from '../player/files';
-import { finishJobs, type FinishOptions, type SoundFormat } from './audioplan';
+import { finishJobs, setVoiceModel, type FinishOptions, type SoundFormat } from './audioplan';
 import { cueSoundFiles, dataUrlBytes, endExactTitlers, prepareTitler, titlerCueParts } from '../titler/titlerClip';
 import { manageNative } from '../manage/native';
 import { renderCache } from '../cache/manager';
@@ -52,6 +56,8 @@ export interface PipePlan {
   fallback?: string[];
   /** Where the picture is (for joining with the sound). */
   file: string;
+  /** HDR: frames go to FFmpeg as 16-bit RGBA (rgba64le) in the sequence's PQ or HLG coding. */
+  deep?: boolean;
 }
 
 export interface ExportState {
@@ -137,7 +143,8 @@ export class FfmpegReader {
   private id: number | null = null;
   /** The file time of the next frame FFmpeg will hand over. */
   private expect = -Infinity;
-  private cur: ImageData | null = null;
+  private cur: ImageData | DeepPicture | null = null;
+  private count = 0;
   used = 0;
   constructor(
     private path: string,
@@ -145,6 +152,8 @@ export class FfmpegReader {
     private height: number,
     /** File seconds per frame of the film. */
     private step: number,
+    /** HDR films: the signal as it is, 16 bits a channel. */
+    private deep = false,
   ) {}
 
   /** Read in order (one frame on from the last), or start again from here. */
@@ -159,7 +168,7 @@ export class FfmpegReader {
     return n >= 1 && n <= MAX_SKIP && FfmpegReader.continues(expect + n * step, t, step) ? n : -1;
   }
 
-  async at(t: number): Promise<ImageData | null> {
+  async at(t: number): Promise<ImageData | DeepPicture | null> {
     if (this.cur && Math.abs(t - (this.expect - this.step)) < 1e-6) return this.cur;
     let id = this.id;
     const skip = id === null ? -1 : FfmpegReader.skip(this.expect, t, this.step);
@@ -174,18 +183,21 @@ export class FfmpegReader {
       this.expect += skip * this.step;
     } else if (id === null || this.step <= 0 || !FfmpegReader.continues(this.expect, t, this.step)) {
       await this.close();
-      id = await native.framesOpen(this.path, Math.max(0, t), 1 / Math.abs(this.step || 1 / 30), this.width, this.height);
+      const open = this.deep ? native.framesOpenDeep : native.framesOpen;
+      id = await open(this.path, Math.max(0, t), 1 / Math.abs(this.step || 1 / 30), this.width, this.height);
       this.id = id;
     }
     const bytes = await native.framesNext(id);
     this.expect = t + this.step;
-    if (bytes.length !== this.width * this.height * 4) {
+    if (bytes.length !== this.width * this.height * (this.deep ? 8 : 4)) {
       // The end of the file (often sooner than its stated length): FFmpeg has closed this reader, so the next
       // frame starts it again rather than asking a closed one; the last picture is held.
       this.id = null;
       return this.cur;
     }
-    this.cur = new ImageData(new Uint8ClampedArray(bytes.buffer as ArrayBuffer, bytes.byteOffset, bytes.length), this.width, this.height);
+    this.cur = this.deep
+      ? deepPicture(bytes, this.width, this.height, `${this.path}|${++this.count}`)
+      : new ImageData(new Uint8ClampedArray(bytes.buffer as ArrayBuffer, bytes.byteOffset, bytes.length), this.width, this.height);
     return this.cur;
   }
 
@@ -193,6 +205,15 @@ export class FfmpegReader {
     if (this.id !== null) await native.framesClose(this.id).catch(() => undefined);
     this.id = null;
   }
+}
+
+/** 16-bit RGBA (little-endian) as a deep picture (0–1, fully opaque). */
+export function deepPicture(bytes: Uint8Array, width: number, height: number, stamp: string): DeepPicture {
+  const n = width * height * 4;
+  const deep = new Float32Array(n);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  for (let i = 0; i < n; i++) deep[i] = (i & 3) === 3 ? 1 : view.getUint16(i * 2, true) / 65535;
+  return { deep, width, height, stamp };
 }
 
 /** Frames a reader passes over rather than starting FFmpeg again. */
@@ -219,12 +240,16 @@ export class Sources {
   private cubes = new Map<string, Cube | null>();
   private turned = new Map<string, OffscreenCanvas | HTMLCanvasElement>();
   /** Decoded frames for the frame being drawn, by clip. */
-  frames = new Map<string, TexImageSource>();
+  frames = new Map<string, TexImageSource | DeepPicture>();
+  /** How each frame codes brightness (HDR files read deep keep theirs). */
+  private transfers = new Map<string, Transfer>();
 
   constructor(
     /** The film's size (frames read through FFmpeg are made no bigger). */
     private size: { width: number; height: number },
     private fps: number,
+    /** An HDR film: files read through FFmpeg keep their signal (16 bits a channel). */
+    private deep = false,
   ) {}
 
   /** How a file's pictures are read: the original first (the app's decoder, else FFmpeg), its edit-friendly copy last. */
@@ -270,6 +295,7 @@ export class Sources {
   async prepare(ops: Op[], frame: number, readText: (p: string) => Promise<string>) {
     for (const f of this.frames.values()) if (typeof VideoFrame !== 'undefined' && f instanceof VideoFrame) f.close();
     this.frames.clear();
+    this.transfers.clear();
     // Every layer, including the ones inside nested sequences.
     const layers: Layer[] = allLayers(ops);
     for (const l of layers) {
@@ -324,12 +350,15 @@ export class Sources {
         const m = l.source.media;
         const h = Math.max(2, Math.round(Math.min(m.height || this.size.height, this.size.height) / 2) * 2);
         const w = Math.max(2, Math.round((h * (m.width || 16)) / (m.height || 9) / 2) * 2);
-        f = new FfmpegReader(route.path, w, h, readerStep(l.clip, l.local, m, this.fps));
+        f = new FfmpegReader(route.path, w, h, readerStep(l.clip, l.local, m, this.fps), this.deep);
         this.ffReaders.set(key, f);
       }
       f.used = frame;
       const img = await f.at(time);
-      if (img) this.frames.set(key, img);
+      if (img) {
+        this.frames.set(key, img);
+        if (this.deep) this.transfers.set(key, mediaTransfer(l.source.media));
+      }
       return;
     }
     let r = this.readers.get(key);
@@ -349,6 +378,7 @@ export class Sources {
       return this.frames.get(layer.key) ?? null;
     },
     next: (layer: Layer) => this.frames.get(`${layer.key}#next`) ?? null,
+    transfer: (layer: Layer) => this.transfers.get(layer.key) ?? 'sdr',
     cube: (path: string) => this.cubes.get(path) ?? null,
     matte: (layer: Layer, effect) => matteFor(layer, effect),
   };
@@ -444,7 +474,17 @@ export class Exporter {
       const cueFiles = cueSoundFiles(titlerCueParts(s, this.o.range.from, this.o.range.to, fps));
       for (const [url, name] of cueFiles) await native.writeChunk(joinPath(tmp, name), 0, dataUrlBytes(url));
       const finish = { ...this.o.finish, paths: (path: string) => (cueFiles.has(path) ? joinPath(tmp, cueFiles.get(path)!) : path) };
-      const jobs = finishJobs(this.p, s, this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, finish);
+      const base0 = video ? 0.86 : 0;
+      // Voice isolation uses the neural model that ships with the app (filters stand in if it can't be read).
+      const usesVoice = this.p.sequences.some((q) => q.clips.some((c) => c.effects.some((e) => e.on && e.type === 'voiceiso')));
+      setVoiceModel(usesVoice ? await native.voiceModel().catch(() => null) : null);
+      // VST3 effects: each clip's sound made through its plug-ins first.
+      const withPlugins = await withPluginsRendered(
+        this.p,
+        (path, from, seconds, chain) => renderPlugins(path, from, seconds, chain),
+        (done, total) => this.report({ stage: 'sound', done: base0, message: `Running the plug-ins (${done + 1} of ${total})…`, left: null, path: null }),
+      );
+      const jobs = finishJobs(withPlugins, current(withPlugins), this.o.range, video, this.o.sound ?? 'aac', this.o.loudness, finish);
       const base = video ? 0.86 : 0;
       await new Promise<void>((resolve, reject) => {
         const stop = onExportProgress((pr) => {
@@ -487,6 +527,8 @@ export class Exporter {
     const canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : document.createElement('canvas');
     const gl = new Compositor(canvas);
     gl.resize(width, height, s.height);
+    // An HDR sequence made as an SDR film: tone-mapped to Rec. 709.
+    gl.space = spaceOf(s);
     const file = codec === 'avc' ? 'video.mp4' : 'video.webm';
     const path = tmp ? `${tmp}${tmp.includes('\\') ? '\\' : '/'}${file}` : file;
     let writing = Promise.resolve();
@@ -566,11 +608,14 @@ export class Exporter {
     const canvas = typeof OffscreenCanvas !== 'undefined' ? new OffscreenCanvas(width, height) : document.createElement('canvas');
     const gl = new Compositor(canvas);
     gl.resize(width, height, s.height);
+    gl.space = spaceOf(s);
+    // HDR films get the signal itself, 16 bits a channel; SDR films of an HDR sequence get it tone-mapped.
+    const deep = !!pipe.deep && isHdr(s);
     const readText = (p: string) => native.readText(p);
     const share = this.o.pictureOnly ? 1 : 0.86;
     const encode = async (args: string[]): Promise<{ sent: number; error: Error | null }> => {
-      const id = await manageNative.encodeOpen(args, tmp, this.o.out, width * height * 4);
-      const sources = new Sources({ width, height }, fps);
+      const id = await manageNative.encodeOpen(args, tmp, this.o.out, width * height * (deep ? 8 : 4));
+      const sources = new Sources({ width, height }, fps, deep);
       let sent = 0;
       try {
         for (let f = from; f < to; f++) {
@@ -579,7 +624,7 @@ export class Exporter {
           const ops = renderCache.exportOps(this.p, s, f, height) ?? frameOps(this.p, s, f);
           await sources.prepare(ops, f, readText);
           await sources.mattes(ops);
-          await manageNative.encodeFrame(id, gl.readFrame(ops, sources.pictures, s.background, pipe.alpha));
+          await manageNative.encodeFrame(id, gl.readFrame(ops, sources.pictures, s.background, pipe.alpha, deep));
           sent += 1;
           if ((f - from) % 5 === 0) {
             const done = (f - from + 1) / (to - from);
