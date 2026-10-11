@@ -76,9 +76,16 @@ Inputs are named by their number as shown on the tiles (`input=3`) or by name
 | `titler`                                | `input` or `name`, then `field` and `value` (or `set.<field>=…`, several at once), or `do` (`next`, `previous`, `start`, `stop`, `toggle`, `reset`) with `field` | A Lumora Titler graphic: its fields, its data rows, its timers |
 | `ptz`                                   | `input` or `name`, `preset`, `move`, `zoom`, `speed`                                                                                                             | PTZ camera                                                     |
 | `atem`                                  | `do` (see below), `input`, `keyer`, `number` or `name`, `state`, `style`, `frames`                                                                               | An ATEM switcher connected to Lumora                           |
+| `voting`                                | `input` or `name` (a poll, word cloud or rating), `state`                                                                                                        | Open or close it for the audience's phones                     |
+| `questions`                             | `state`                                                                                                                                                          | Take audience questions                                        |
+| `reactions`                             | `input` or `name`, `state`                                                                                                                                       | Take audience reactions                                        |
 
 `GET /api/commands` lists them, `GET /api/macros` lists the macros with their
 numbers.
+
+The phone remote's server also answers `GET /api/picture?id=<input id>` (with
+its PIN): a small JPEG of what the input shows, as the Stream Deck's input keys
+draw it (204 until Lumora has drawn one).
 
 ### ATEM switchers
 

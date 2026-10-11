@@ -578,6 +578,20 @@ pub enum Action {
         #[ts(optional)]
         question: Option<u32>,
     },
+    /// Hold new questions until the operator approves them (or stop holding them).
+    QnaModerate {
+        value: bool,
+    },
+    /// Let everyone see a held question (or hide it from the phones again).
+    QnaApprove {
+        question: u32,
+        value: bool,
+    },
+    /// A phone voted a question up, or took its vote back (sent by the app's server).
+    QnaVote {
+        question: u32,
+        up: bool,
+    },
     /// Reload a guest's picture (if it froze or they rejoined).
     ReloadGuest {
         id: SourceId,
@@ -639,6 +653,43 @@ pub enum Action {
         option: usize,
         #[ts(optional)]
         previous: Option<usize>,
+    },
+    /// Change how reactions look (where they rise, the totals, the code to scan).
+    UpdateReactions {
+        id: SourceId,
+        reactions: crate::reactions::Reactions,
+    },
+    /// Start or stop taking reactions from phones.
+    ReactionsOpen {
+        id: SourceId,
+        value: bool,
+    },
+    /// Start the reaction totals again.
+    ReactionsReset {
+        id: SourceId,
+    },
+    /// Reactions tapped on phones, gathered by the app's server (`taps[k]` of kind `k`).
+    React {
+        id: SourceId,
+        taps: Vec<u32>,
+    },
+    /// A word for a word cloud from a phone (sent by the app's server).
+    PollWord {
+        id: SourceId,
+        round: u32,
+        text: String,
+    },
+    /// Take a word out of a word cloud.
+    PollWordRemove {
+        id: SourceId,
+        word: String,
+    },
+    /// A comment sent with a rating from a phone (sent by the app's server).
+    PollComment {
+        id: SourceId,
+        round: u32,
+        stars: u8,
+        text: String,
     },
     /// Set the event's look and put it on every title, song and scoreboard.
     ApplyBrand {

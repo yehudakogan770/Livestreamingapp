@@ -124,6 +124,13 @@ export const ACTIONS = {
   scorereset: { name: 'Scoreboard: back to 0 : 0', cmd: 'scorereset', options: [INPUT] },
   clock: { name: 'Scoreboard: game clock', cmd: 'clock', options: [INPUT, STATE] },
   replaybuffer: { name: 'Instant replay: keep the last minute', cmd: 'replaybuffer', options: [STATE] },
+  voting: {
+    name: 'Audience: poll, word cloud or rating open / closed',
+    cmd: 'voting',
+    options: [{ ...INPUT, label: 'Poll, word cloud or rating (input number or name)' }, STATE],
+  },
+  questions: { name: 'Audience: take questions', cmd: 'questions', options: [STATE] },
+  reactions: { name: 'Audience: take reactions', cmd: 'reactions', options: [{ ...INPUT, label: 'Reactions (input number or name)' }, STATE] },
   ptzpreset: {
     name: 'PTZ camera: go to a preset',
     cmd: 'ptz',

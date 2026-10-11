@@ -27,6 +27,7 @@ export const KINDS = [
   'slideback',
   'slidefirst',
   'mute',
+  'ptz',
 ] as const;
 export type Kind = (typeof KINDS)[number];
 
@@ -52,6 +53,14 @@ export interface KeySettings {
   inputName?: string;
   /** Input: "next" (press lines it up, press twice to cut) or "air" (press cuts). */
   press?: string;
+  /** Input: show the input's picture on the key (on unless switched off). */
+  picture?: boolean;
+  /** PTZ: what the key does — "preset" (the default), "up", "down", "left", "right", "zoomin", "zoomout" or "home". */
+  move?: string;
+  /** PTZ: the camera's saved shot, "1" – "16". */
+  shot?: string;
+  /** PTZ: how fast it moves while held, "25", "50" (the default) or "100". */
+  speed?: string;
   /** Overlay channel, "1" – "4". */
   channel?: string;
   /** Preset: its id, or "next" / "previous". */
@@ -136,6 +145,49 @@ export const channelOf = (s: KeySettings): number => {
   return n >= 1 && n <= 4 ? n : 1;
 };
 
+/** PTZ keys' moves that last while the key is held. */
+export const PTZ_HELD = ['up', 'down', 'left', 'right', 'zoomin', 'zoomout'] as const;
+
+/** What a PTZ key does. */
+export function ptzMove(s: KeySettings): 'preset' | 'home' | (typeof PTZ_HELD)[number] {
+  const m = s.move ?? '';
+  return m === 'home' || (PTZ_HELD as readonly string[]).includes(m) ? (m as 'home') : 'preset';
+}
+
+/** A PTZ key that moves the camera while held (and stops it when let go). */
+export const heldMove = (kind: Kind, s: KeySettings): boolean => kind === 'ptz' && (PTZ_HELD as readonly string[]).includes(ptzMove(s));
+
+export const shotOf = (s: KeySettings): number => {
+  const n = Number.parseInt(s.shot ?? '1', 10);
+  return n >= 1 && n <= 16 ? n : 1;
+};
+
+/** The camera a PTZ key moves (it must be set up as a PTZ camera in Lumora). */
+function ptzCamera(state: DeckState, s: KeySettings): { input: DeckState['inputs'][number] } | { why: string } {
+  const input = findInput(state, s);
+  if (!input) return { why: 'choose a camera' };
+  if (!input.ptz) return { why: 'not a PTZ camera' };
+  return { input };
+}
+
+/**
+ * A PTZ key's request: press (a saved shot or home), or — for moves held
+ * down — the start (`'start'`) and the stop when the key is let go (`'stop'`).
+ */
+export function ptzRequest(s: KeySettings, state: DeckState | null, phase: 'press' | 'start' | 'stop'): Request {
+  if (!state) return { to: 'none', why: 'offline' };
+  const cam = ptzCamera(state, s);
+  if ('why' in cam) return { to: 'none', why: cam.why };
+  const input = String(cam.input.number);
+  const move = ptzMove(s);
+  if (move === 'preset') return { to: 'do', command: 'ptz', query: { input, preset: String(shotOf(s)) } };
+  if (move === 'home') return { to: 'do', command: 'ptz', query: { input, move: 'home' } };
+  const speed = s.speed === '25' || s.speed === '100' ? s.speed : '50';
+  const zoom = move === 'zoomin' || move === 'zoomout';
+  if (phase === 'stop') return { to: 'do', command: 'ptz', query: zoom ? { input, zoom: 'stop' } : { input, move: 'stop' } };
+  return { to: 'do', command: 'ptz', query: zoom ? { input, zoom: move === 'zoomin' ? 'in' : 'out', speed } : { input, move, speed } };
+}
+
 export const secondsOf = (s: KeySettings): number => {
   const n = Number.parseInt(s.seconds ?? '10', 10);
   return n >= 1 && n <= 60 ? n : 10;
@@ -154,6 +206,8 @@ export type Request =
   | { to: 'app'; body: Record<string, unknown> }
   /** The Screen key: changes which screen the other keys work on (nothing is sent). */
   | { to: 'screen'; screen: ScreenId }
+  /** A control API command (`/api/do/<command>?…`): PTZ. */
+  | { to: 'do'; command: string; query: Record<string, string> }
   /** Nothing to do (with why, shown briefly on the key). */
   | { to: 'none'; why: string };
 
@@ -226,6 +280,8 @@ export function request(kind: Kind, s: KeySettings, state: DeckState | null, dec
     }
     case 'mute':
       return muteRequest(state, s);
+    case 'ptz':
+      return ptzRequest(s, state, 'press');
     case 'slidenext':
     case 'slideback':
     case 'slidefirst': {

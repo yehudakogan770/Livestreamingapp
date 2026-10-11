@@ -9,7 +9,15 @@ export type Question = {
   text: string;
   at: number;
   /**
-   * Already put on screen.
+   * Already put on screen (answered).
    */
   shown: boolean;
+  /**
+   * Phones that voted it up.
+   */
+  votes: number;
+  /**
+   * Others see it on their phones (questions wait for this while held for approval).
+   */
+  approved: boolean;
 };

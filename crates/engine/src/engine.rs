@@ -1203,6 +1203,30 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             }
             Ok(())
         }
+        Action::QnaModerate { value } => {
+            s.qna.moderate = value;
+            Ok(())
+        }
+        Action::QnaApprove { question, value } => {
+            let q = s
+                .qna
+                .questions
+                .iter_mut()
+                .find(|q| q.id == question)
+                .ok_or_else(|| ActionError::invalid("question", "there is no such question"))?;
+            q.approved = value;
+            Ok(())
+        }
+        Action::QnaVote { question, up } => {
+            if s.qna.vote(question, up) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid(
+                    "question",
+                    "that question is not taking votes",
+                ))
+            }
+        }
         Action::ReloadGuest { id } => {
             let src = s
                 .source_mut(&id)
@@ -1259,8 +1283,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             let p = poll_mut(s, &id)?;
             let mut next = poll;
             next.repair();
-            let same = next.options == p.options;
+            let same = next.options == p.options && next.kind == p.kind;
             next.votes.clone_from(&p.votes);
+            next.words.clone_from(&p.words);
+            next.comments.clone_from(&p.comments);
             next.round = p.round;
             next.open = p.open;
             if !same {
@@ -1293,6 +1319,61 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 Err(ActionError::invalid(
                     "poll",
                     "this poll is not taking votes",
+                ))
+            }
+        }
+        Action::PollWord { id, round, text } => {
+            if poll_mut(s, &id)?.word(round, &text) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid(
+                    "poll",
+                    "this word cloud is not taking words",
+                ))
+            }
+        }
+        Action::UpdateReactions { id, reactions } => {
+            let r = reactions_mut(s, &id)?;
+            let mut next = reactions;
+            next.repair();
+            next.counts.clone_from(&r.counts);
+            next.floating.clone_from(&r.floating);
+            next.next_seed = r.next_seed;
+            next.open = r.open;
+            *r = next;
+            Ok(())
+        }
+        Action::ReactionsOpen { id, value } => {
+            reactions_mut(s, &id)?.open = value;
+            Ok(())
+        }
+        Action::ReactionsReset { id } => {
+            reactions_mut(s, &id)?.reset();
+            Ok(())
+        }
+        Action::React { id, taps } => {
+            if reactions_mut(s, &id)?.react(&taps, now) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid("reactions", "reactions are closed"))
+            }
+        }
+        Action::PollWordRemove { id, word } => {
+            poll_mut(s, &id)?.remove_word(&word);
+            Ok(())
+        }
+        Action::PollComment {
+            id,
+            round,
+            stars,
+            text,
+        } => {
+            if poll_mut(s, &id)?.comment(round, stars, &text, now) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid(
+                    "poll",
+                    "this rating is not taking comments",
                 ))
             }
         }
@@ -2847,6 +2928,19 @@ fn comment_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::chat
     }
 }
 
+fn reactions_mut<'a>(
+    s: &'a mut Show,
+    id: &SourceId,
+) -> Result<&'a mut crate::reactions::Reactions> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Reactions(r) => Ok(r),
+        _ => Err(ActionError::invalid("id", "that input is not reactions")),
+    }
+}
+
 fn poll_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::poll::Poll> {
     let src = s
         .source_mut(id)
@@ -3221,6 +3315,11 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             p.repair();
             p.open = false;
             p.reset();
+        }
+        SourceKind::Reactions(r) => {
+            r.repair();
+            r.open = false;
+            r.reset();
         }
         SourceKind::Scoreboard(sb) => {
             sb.repair();

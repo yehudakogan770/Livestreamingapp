@@ -6,6 +6,7 @@ mod atem;
 mod browser;
 mod captions;
 mod capture;
+mod computer_sound;
 mod control;
 mod decklink;
 mod desktop;
@@ -63,6 +64,7 @@ struct AppState {
     browsers: browser::Browsers,
     streams: streams::Streams,
     desktop: desktop::Desktop,
+    computer_sound: computer_sound::ComputerSound,
     isos: iso::Isos,
     perf: perf::Perf,
     ffmpeg: Option<std::path::PathBuf>,
@@ -248,6 +250,7 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.browsers.sync(&snapshot.show);
     state.streams.sync(&snapshot.show);
     state.desktop.sync(&snapshot.show);
+    state.computer_sound.sync(&snapshot.show);
     if let Some(live) = app.try_state::<live::Live>() {
         live.sync(&snapshot.show);
         live.place_multiview(app, &snapshot.show);
@@ -1064,6 +1067,78 @@ impl remote::Backend for RemoteBackend {
             .emit_to("control", "remote-command", command)
             .map_err(|e| e.to_string())
     }
+
+    fn engine_picture(&self, id: &str) -> Option<Vec<u8>> {
+        self.0.try_state::<live::Live>()?.source_picture(id)
+    }
+}
+
+/// What "This computer's sound" can take here: whether this computer can
+/// (Windows), and the programs playing sound now.
+#[tauri::command]
+async fn computer_sound_choices() -> computer_sound::ComputerSoundChoices {
+    tauri::async_runtime::spawn_blocking(computer_sound::choices)
+        .await
+        .unwrap_or(computer_sound::ComputerSoundChoices {
+            available: false,
+            programs: Vec::new(),
+        })
+}
+
+/// How each "This computer's sound" input is doing.
+#[tauri::command]
+fn computer_sound_status(state: State<'_, AppState>) -> Vec<computer_sound::SoundStatus> {
+    state.computer_sound.status()
+}
+
+/// Save results (polls, questions, trivia) as a CSV file where the operator
+/// chose in the save dialog. Only `.csv` files, and nothing huge.
+#[tauri::command]
+async fn save_csv(path: String, text: String) -> Result<String, String> {
+    save_csv_file(std::path::Path::new(&path), &text)
+}
+
+fn save_csv_file(path: &std::path::Path, text: &str) -> Result<String, String> {
+    let is_csv = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("csv"));
+    if !is_csv {
+        return Err("Results are saved as .csv files.".to_owned());
+    }
+    if text.len() > 50_000_000 {
+        return Err("That is too much to save in one file.".to_owned());
+    }
+    store::write_file_atomic(path, text)
+        .map_err(|e| format!("The file could not be saved: {e}"))?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// The inputs whose small pictures control surfaces want from the control
+/// window (the Standard engine; the unified engine draws its own).
+#[tauri::command]
+fn remote_pictures_wanted(state: State<'_, AppState>) -> Vec<String> {
+    state.remote.pictures_wanted()
+}
+
+/// An input's small picture (JPEG, the request's body; its input in the
+/// `x-input` header), drawn by the control window for control surfaces.
+#[tauri::command]
+fn remote_put_picture(
+    request: tauri::ipc::Request<'_>,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+        return Err("expected bytes".to_owned());
+    };
+    let id = request
+        .headers()
+        .get("x-input")
+        .and_then(|v| v.to_str().ok())
+        .map(browser::percent_decode)
+        .ok_or("which input?")?;
+    state.remote.put_picture(&id, bytes.clone());
+    Ok(())
 }
 
 /// The control window says what is running (recording, stream, rehearsal,
@@ -1251,6 +1326,10 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
+            // "This computer's sound" inputs: taken by Windows, mixed like a stream's sound.
+            let computer_sound =
+                computer_sound::ComputerSound::new(std::sync::Arc::clone(&browsers.sounds));
+            computer_sound.sync(&show);
             // Lumora Titler: its window, the shared title library and films through FFmpeg.
             app.manage(titler_host::Renders::default());
             // An ATEM switcher next to Lumora (Settings → ATEM switcher…).
@@ -1289,6 +1368,7 @@ pub fn run() {
                 browsers,
                 streams,
                 desktop,
+                computer_sound,
                 isos: iso::Isos::default(),
                 perf: perf::Perf::default(),
                 ffmpeg,
@@ -1450,6 +1530,11 @@ pub fn run() {
             export_library,
             import_library,
             remote_app_state,
+            remote_pictures_wanted,
+            save_csv,
+            computer_sound_choices,
+            computer_sound_status,
+            remote_put_picture,
             streamdeck_status,
             streamdeck_install,
             streamdeck_dismiss,
@@ -1551,7 +1636,22 @@ fn smoke_test(app: tauri::AppHandle) {
 
 #[cfg(test)]
 mod tests {
-    use super::{data_url_problem, snapshot_name};
+    use super::{data_url_problem, save_csv_file, snapshot_name};
+
+    #[test]
+    fn results_are_saved_only_as_csv_files() {
+        let dir = std::env::temp_dir().join(format!("lumora-csv-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("Rating.CSV");
+        assert!(save_csv_file(&file, "Stars,Ratings\r\n5,2\r\n").is_ok());
+        assert_eq!(
+            std::fs::read_to_string(&file).unwrap(),
+            "Stars,Ratings\r\n5,2\r\n"
+        );
+        assert!(save_csv_file(&dir.join("notes.exe"), "x").is_err());
+        assert!(save_csv_file(&dir.join("no-extension"), "x").is_err());
+        let _ = std::fs::remove_dir_all(dir);
+    }
 
     #[test]
     fn a_sheet_that_is_not_shared_is_explained() {

@@ -52,6 +52,8 @@ export const ICONS = {
   // Three sound faders.
   fader:
     '<path d="M6 3.5v17"/><path d="M12 3.5v17"/><path d="M18 3.5v17"/><rect x="4" y="13" width="4" height="3.2" rx="0.8"/><rect x="10" y="6.5" width="4" height="3.2" rx="0.8"/><rect x="16" y="10" width="4" height="3.2" rx="0.8"/>',
+  // A camera on a pan-and-tilt head, with a turning arrow.
+  ptz: '<rect x="4" y="5" width="11" height="8" rx="1.5"/><path d="m15 8 4-2.2v6.4L15 10"/><path d="M9.5 13v3.5"/><path d="M5.5 19.5h8"/><path d="M3 9a9 9 0 0 0 1.6 7.2"/><path d="m2.6 14.6 2 1.8 1.6-2.2"/>',
   // A warning triangle (Lumora can't be reached).
   warning: '<path d="M12 3.5 21.5 20h-19z"/><path d="M12 10v4.5"/><path d="M12 17.3v.1"/>',
   // Lumora's mark (docs/img/lumora-mark.svg) solid in one color: three blades and the on-air light.

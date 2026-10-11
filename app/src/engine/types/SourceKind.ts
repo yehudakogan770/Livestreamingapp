@@ -14,6 +14,7 @@ import type { Pesukim } from './Pesukim';
 import type { Playback } from './Playback';
 import type { Poll } from './Poll';
 import type { Raffle } from './Raffle';
+import type { Reactions } from './Reactions';
 import type { Scoreboard } from './Scoreboard';
 import type { ScreenCapture } from './ScreenCapture';
 import type { Scripture } from './Scripture';
@@ -72,6 +73,7 @@ export type SourceKind =
   | ({ type: 'comment' } & CommentCard)
   | ({ type: 'drawing' } & Drawing)
   | ({ type: 'poll' } & Poll)
+  | ({ type: 'reactions' } & Reactions)
   | ({ type: 'lyrics' } & Lyrics)
   | ({ type: 'screen' } & ScreenCapture)
   | ({ type: 'scoreboard' } & Scoreboard)

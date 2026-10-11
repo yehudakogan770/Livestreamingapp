@@ -98,3 +98,93 @@
   height: 100%;
   display: block;
 }
+/* Word clouds (compositor.ts cloud()): words placed by engine/wordCloud.ts, in cqh. */
+.poll__cloud {
+  position: relative;
+  max-width: 100%;
+}
+.poll__word {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.poll__wait {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-size: 3.6cqh;
+  color: #b8bec8;
+}
+/* Ratings (compositor.ts rating()). */
+.poll__rating {
+  display: flex;
+  align-items: flex-start;
+  gap: 8cqh;
+}
+.poll__score {
+  flex: 0 0 auto;
+  width: 38cqh;
+}
+.poll__avg {
+  display: block;
+  font-size: 16cqh;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.poll__stars {
+  display: flex;
+  gap: 1cqh;
+  margin: 1cqh 0 2cqh;
+}
+.poll__rating--ask .poll__stars {
+  gap: 2cqh;
+}
+.poll__star {
+  display: block;
+}
+.poll__dist {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2.6cqh;
+  margin: 1cqh 0 0;
+  padding: 0;
+  list-style: none;
+}
+.poll__dist li {
+  display: flex;
+  align-items: center;
+  gap: 2cqh;
+  font-size: 3.4cqh;
+  font-weight: 700;
+}
+.poll__dist-n {
+  width: 3cqh;
+}
+.poll__dist-track {
+  flex: 1 1 auto;
+  height: 4cqh;
+  border-radius: 1cqh;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.poll__dist-bar {
+  display: block;
+  height: 100%;
+  border-radius: 1cqh;
+  background: #ffc94d;
+  transition: width 600ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+.poll__dist-c {
+  width: 8cqh;
+  text-align: right;
+  font-size: 3cqh;
+  font-weight: 500;
+  color: #b8bec8;
+  font-variant-numeric: tabular-nums;
+}

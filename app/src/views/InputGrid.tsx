@@ -11,6 +11,7 @@ import { TitlerCard } from '../titler/TitlerCard';
 import { GuestCard } from './GuestCard';
 import { PtzCard } from './PtzCard';
 import { PollCard } from './PollCard';
+import { ReactionsCard } from './ReactionsCard';
 import { LyricsCard } from './LyricsCard';
 import { ScreenCard } from './ScreenCard';
 import { ScoreCard } from './ScoreCard';
@@ -63,6 +64,7 @@ const KIND_NAME: Record<Source['kind']['type'], string> = {
   screen: 'Screen capture',
   lyrics: 'Song',
   poll: 'Poll',
+  reactions: 'Reactions',
   comment: 'Chat comment',
   drawing: 'Drawing',
   guest: 'Guest',
@@ -111,6 +113,7 @@ export function InputGrid({
   const editingScreen = show.sources.find((x) => x.id === editing && x.kind.type === 'screen');
   const editingSong = show.sources.find((x) => x.id === editing && x.kind.type === 'lyrics');
   const editingPoll = show.sources.find((x) => x.id === editing && x.kind.type === 'poll');
+  const editingReactions = show.sources.find((x) => x.id === editing && x.kind.type === 'reactions');
   const editingGuest = show.sources.find((x) => x.id === editing && x.kind.type === 'guest');
   const editingRaffle = show.sources.find((x) => x.id === editing && x.kind.type === 'raffle');
   const editingFund = show.sources.find((x) => x.id === editing && x.kind.type === 'fundraiser');
@@ -295,6 +298,7 @@ export function InputGrid({
       {editingGuest && <GuestCard source={editingGuest} act={act} client={client} onClose={() => setEditing(null)} />}
       {ptzSource && <PtzCard source={ptzSource} act={act} client={client} onClose={() => setSteering(null)} />}
       {editingPoll && <PollCard source={editingPoll} act={act} client={client} onClose={() => setEditing(null)} />}
+      {editingReactions && <ReactionsCard source={editingReactions} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingSong && <LyricsCard source={editingSong} act={act} onClose={() => setEditing(null)} />}
       {editingScreen && <ScreenCard source={editingScreen} act={act} client={client} onClose={() => setEditing(null)} />}
       {editingScore && <ScoreCard source={editingScore} act={act} onClose={() => setEditing(null)} />}
@@ -519,6 +523,7 @@ function TileMenu({
             k === 'screen' ||
             k === 'lyrics' ||
             k === 'poll' ||
+            k === 'reactions' ||
             k === 'guest' ||
             k === 'raffle' ||
             k === 'fundraiser' ||
@@ -553,30 +558,36 @@ function TileMenu({
                           : k === 'lyrics'
                             ? 'Run the song…'
                             : k === 'poll'
-                              ? 'Run the poll…'
-                              : k === 'guest'
-                                ? 'Guest link…'
-                                : k === 'raffle'
-                                  ? 'Run the raffle…'
-                                  : k === 'fundraiser'
-                                    ? 'Run the fundraiser…'
-                                    : k === 'wall'
-                                      ? 'Run the messages wall…'
-                                      : k === 'auction'
-                                        ? 'Run the auction…'
-                                        : k === 'zmanim'
-                                          ? 'Look, city and Shabbos…'
-                                          : k === 'scripture'
-                                            ? 'Choose the passage…'
-                                            : k === 'trivia'
-                                              ? 'Run the game…'
-                                              : k === 'seating'
-                                                ? 'Guest list and tables…'
-                                                : k === 'graphic'
-                                                  ? 'Design…'
-                                                  : k === 'titler'
-                                                    ? 'Fields, take in and out…'
-                                                    : 'Edit slides…'}
+                              ? source.kind.type === 'poll' && source.kind.kind === 'words'
+                                ? 'Run the word cloud…'
+                                : source.kind.type === 'poll' && source.kind.kind === 'rating'
+                                  ? 'Run the rating…'
+                                  : 'Run the poll…'
+                              : k === 'reactions'
+                                ? 'Run the reactions…'
+                                : k === 'guest'
+                                  ? 'Guest link…'
+                                  : k === 'raffle'
+                                    ? 'Run the raffle…'
+                                    : k === 'fundraiser'
+                                      ? 'Run the fundraiser…'
+                                      : k === 'wall'
+                                        ? 'Run the messages wall…'
+                                        : k === 'auction'
+                                          ? 'Run the auction…'
+                                          : k === 'zmanim'
+                                            ? 'Look, city and Shabbos…'
+                                            : k === 'scripture'
+                                              ? 'Choose the passage…'
+                                              : k === 'trivia'
+                                                ? 'Run the game…'
+                                                : k === 'seating'
+                                                  ? 'Guest list and tables…'
+                                                  : k === 'graphic'
+                                                    ? 'Design…'
+                                                    : k === 'titler'
+                                                      ? 'Fields, take in and out…'
+                                                      : 'Edit slides…'}
             </button>
           )}
           <button

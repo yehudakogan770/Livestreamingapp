@@ -34,6 +34,7 @@ import { TEXT_TEMPLATES } from './engine/text';
 import { ProblemStore, ProblemsProvider, useReportProblem } from './problems/problems';
 import { visionPaused } from './engine/vision';
 import { usePtzFollow } from './engine/ptzFollow';
+import { useDeckPictures } from './engine/deckPictures';
 import { SafeBoundary } from './components/SafeBoundary';
 import { SoundProvider } from './audio/SoundContext';
 import { StageContext } from './engine/CountdownContext';
@@ -89,6 +90,8 @@ function ControlApp() {
   const show = snapshot?.show ?? null;
   // PTZ cameras with auto-framing on are steered from here.
   usePtzFollow(show, client);
+  // The Stream Deck's input keys show each input's picture (drawn here with the Standard engine).
+  useDeckPictures(show, client);
   // Once the event has loaded, the loading window gives way to this one.
   // (Or if it could not load: the window shows what went wrong.)
   const loaded = show !== null || !!error;

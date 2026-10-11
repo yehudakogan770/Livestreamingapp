@@ -16,6 +16,7 @@ import type { Source } from '../engine/types/Source';
 import { channelLevel, defaultFilters, DUCK_HOLD_MS, duckGain, duckStep, mixSend, soundSources, type Mix } from '../engine/audio';
 import { syncMedia } from '../engine/mediaSync';
 import { PcmStream } from './pcmStream';
+import { isComputerSound, isMicrophone } from '../engine/computerSound';
 import { servedUrl } from '../engine/browser';
 import { LoudnessMeter, measureLoudness } from './loudness';
 import { TitlerCuePlayer } from '../titler/titlerCues';
@@ -70,8 +71,10 @@ const channelKey = (s: Source) =>
       : s.kind.type === 'video'
         ? `file:${s.kind.path}`
         : s.kind.type === 'microphone'
-          ? // Noise removal is set when the microphone opens.
-            `mic:${s.kind.deviceId}:${s.audio.filters?.noiseSuppression ? 'ns' : ''}`
+          ? isComputerSound(s.kind.deviceId)
+            ? `computer:${s.kind.deviceId}`
+            : // Noise removal is set when the microphone opens.
+              `mic:${s.kind.deviceId}:${s.audio.filters?.noiseSuppression ? 'ns' : ''}`
           : '';
 
 function peak(a: AnalyserNode, buf: Float32Array<ArrayBuffer>): number {
@@ -361,8 +364,14 @@ export class SoundEngine {
         ch.failed = true;
         this.problems.add(src.id);
       }
-    } else if (src.kind.type === 'stream' || src.kind.type === 'browser' || src.kind.type === 'guest') {
-      // The app serves the sound of streams, web pages and guests next to their pictures.
+    } else if (
+      src.kind.type === 'stream' ||
+      src.kind.type === 'browser' ||
+      src.kind.type === 'guest' ||
+      (src.kind.type === 'microphone' && isComputerSound(src.kind.deviceId))
+    ) {
+      // The app serves the sound of streams, web pages and guests next to their
+      // pictures, and this computer's own sound (taken by Windows).
       const id = src.id;
       const url = () => this.client.browserInfo().then((i) => servedUrl(i, `audio/${encodeURIComponent(id)}`));
       ch.pcm = new PcmStream(ctx, url, delay);
@@ -493,7 +502,8 @@ export class SoundEngine {
   private updateTalking(show: Show, now: number) {
     let loud = false;
     for (const src of soundSources(show)) {
-      if (src.kind.type !== 'microphone') continue;
+      // Only people talking (not the computer's own sound) make music quieter.
+      if (!isMicrophone(src)) continue;
       const lv = this.levels.get(src.id) ?? 0;
       if (lv > 0.03) loud = true; // about −30 dB
     }
@@ -513,7 +523,7 @@ export class SoundEngine {
     if (now - this.micsTriedAt < MIC_RETRY_MS) return;
     this.micsTriedAt = now;
     for (const src of soundSources(show)) {
-      if (src.kind.type !== 'microphone' || !this.channels.get(src.id)?.failed) continue;
+      if (!isMicrophone(src) || !this.channels.get(src.id)?.failed) continue;
       this.drop(src.id);
       this.add(src);
       // Still a problem until it really opens.

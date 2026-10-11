@@ -35,7 +35,7 @@ import { PresetsPanel } from './PresetsPanel';
 import { PresetButtons } from './PresetButtons';
 import { ProblemLight, ProblemToasts } from '../problems/ProblemsUI';
 import { BroadcastButtons } from '../broadcast/BroadcastButtons';
-import { OutputWatcher, SoundWatcher } from '../problems/watchers';
+import { ComputerSoundWatcher, OutputWatcher, RecordingCopyWatcher, SoundWatcher } from '../problems/watchers';
 import { SwitchPanel } from './SwitchPanel';
 import { Transport } from './Transport';
 import { InputGrid } from './InputGrid';
@@ -549,6 +549,8 @@ export function ControlView({
       </footer>
 
       <SoundWatcher show={show} />
+      <ComputerSoundWatcher show={show} client={client} />
+      <RecordingCopyWatcher />
       <BackupWatcher show={show} client={client} />
       <OutputWatcher show={show} client={client} open={open} onOpenOutputs={openOutputs} />
       <ProblemToasts />

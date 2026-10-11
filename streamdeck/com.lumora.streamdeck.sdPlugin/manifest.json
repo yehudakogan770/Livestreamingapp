@@ -2,9 +2,9 @@
   "$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
   "UUID": "com.lumora.streamdeck",
   "Name": "Lumora",
-  "Version": "1.1.0.0",
+  "Version": "1.2.0.0",
   "Author": "Lumora",
-  "Description": "Run Lumora live productions from a Stream Deck: TAKE and CUT, inputs with red and green tally, overlays, presets, instant replay, recording and going live, with the T-bar and sound faders on Stream Deck + dials.",
+  "Description": "Run Lumora live productions from a Stream Deck: TAKE and CUT, inputs with their live picture and red and green tally, PTZ cameras, overlays, presets, instant replay, recording and going live, with the T-bar and sound faders on Stream Deck + dials.",
   "URL": "https://github.com/yehudakogan770/Livestreamingapp",
   "Icon": "imgs/plugin/icon",
   "Category": "Lumora",
@@ -91,7 +91,7 @@
     {
       "UUID": "com.lumora.streamdeck.input",
       "Name": "Input",
-      "Tooltip": "Put an input in Next (press twice: cut to air); shows its tally",
+      "Tooltip": "Put an input in Next (press twice: cut to air); shows its picture and tally",
       "Icon": "imgs/actions/input",
       "PropertyInspectorPath": "ui/inspector.html",
       "Controllers": ["Keypad"],
@@ -340,6 +340,22 @@
       "States": [
         {
           "Image": "imgs/keys/mute",
+          "ShowTitle": false
+        }
+      ]
+    },
+    {
+      "UUID": "com.lumora.streamdeck.ptz",
+      "Name": "PTZ camera",
+      "Tooltip": "Recall a PTZ camera's saved shot, or move and zoom it while the key is held",
+      "Icon": "imgs/actions/ptz",
+      "PropertyInspectorPath": "ui/inspector.html",
+      "Controllers": ["Keypad"],
+      "UserTitleEnabled": false,
+      "SupportedInMultiActions": true,
+      "States": [
+        {
+          "Image": "imgs/keys/ptz",
           "ShowTitle": false
         }
       ]

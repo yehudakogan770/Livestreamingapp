@@ -180,6 +180,11 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
       },
       (e: unknown) => setProblem(e instanceof Error ? e.message : String(e)),
     );
+  const chooseCopy = () =>
+    void client.pickFolder().then(
+      (f) => f && set({ copyFolder: f }),
+      (e: unknown) => setProblem(e instanceof Error ? e.message : String(e)),
+    );
   // A connected destination's address and key are Lumora's (filled in at GO LIVE): the latest are kept.
   const latest = (d: Destination): Destination => {
     const now = d.account ? b.settings.destinations.find((x) => x.id === d.id) : undefined;
@@ -284,9 +289,41 @@ export function BroadcastDialog({ client, onClose }: { client: EngineClient; onC
               <input type="checkbox" checked={draft.chapters ?? true} onChange={(e) => set({ chapters: e.target.checked })} /> Save a chapter list with each
               recording (what was on air when — paste it into the YouTube description)
             </label>
+            <label className="field">
+              <span className="field__label">Also keep a copy in</span>
+              <span className="bcd__row">
+                <input className="text bcd__grow" value={draft.copyFolder ?? ''} placeholder="No copy" readOnly aria-label="Copy folder" />
+                <button type="button" className="btn" onClick={chooseCopy}>
+                  Choose…
+                </button>
+                {draft.copyFolder && (
+                  <button type="button" className="btn" onClick={() => set({ copyFolder: null })}>
+                    No copy
+                  </button>
+                )}
+              </span>
+              <span className="field__note">
+                Each recording is copied there when it ends (the recording itself stays where it is). Choose a OneDrive, Dropbox or Google Drive folder and the
+                copy goes to the cloud by itself; a USB drive works too.
+              </span>
+            </label>
             {b.status.lastRecording && !b.status.lastRecording.startsWith('blob:') && (
               <p className="field__note">
                 Last recording: <span className="bcd__path">{b.status.lastRecording}</span>
+                {b.status.copy?.from === b.status.lastRecording && (
+                  <>
+                    <br />
+                    {b.status.copy.state === 'copying' ? (
+                      'Copying…'
+                    ) : b.status.copy.state === 'done' ? (
+                      <>
+                        Copied to <span className="bcd__path">{b.status.copy.detail}</span>
+                      </>
+                    ) : (
+                      <span className="field__note--warn">Not copied: {b.status.copy.detail}</span>
+                    )}
+                  </>
+                )}
               </p>
             )}
           </section>

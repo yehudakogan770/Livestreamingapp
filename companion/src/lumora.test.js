@@ -45,6 +45,9 @@ describe('Companion module', () => {
     expect(commandFor('ptzpreset', { input: '4', preset: 2 })).toEqual({ cmd: 'ptz', input: '4', preset: '2', speed: '50' });
     expect(commandFor('ptzmove', { input: '4', move: 'stop' })).toEqual({ cmd: 'ptz', input: '4', move: 'stop', speed: '50' });
     expect(commandFor('flash', {})).toEqual({ cmd: 'flash' });
+    expect(commandFor('voting', { input: 'Feedback', state: 'on' })).toEqual({ cmd: 'voting', name: 'Feedback', state: 'on' });
+    expect(commandFor('questions', { state: 'toggle' })).toEqual({ cmd: 'questions', state: 'toggle' });
+    expect(commandFor('reactions', { input: '7', state: 'off' })).toEqual({ cmd: 'reactions', input: '7', state: 'off' });
   });
 
   it('every action sends a command Lumora knows', () => {
@@ -86,6 +89,9 @@ describe('Companion module', () => {
       'clock',
       'replaybuffer',
       'ptz',
+      'voting',
+      'questions',
+      'reactions',
     ]);
     for (const a of Object.values(ACTIONS)) expect(known.has(a.cmd)).toBe(true);
   });
