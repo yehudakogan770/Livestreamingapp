@@ -116,8 +116,16 @@ export function renderFrame(ctx: Ctx, project: TitleProject, opts: RenderOptions
 }
 
 /** Every layer of a composition by id (inside groups too). */
+// Compositions are never changed in place (a change makes a new object), so
+// their indexes are kept by the object.
+const indexes = new WeakMap<Composition, Map<string, Layer>>();
+const groupMaps = new WeakMap<Composition, Map<string, string>>();
+
 export function layerIndex(comp: Composition): Map<string, Layer> {
+  const hit = indexes.get(comp);
+  if (hit) return hit;
   const out = new Map<string, Layer>();
+  indexes.set(comp, out);
   const walk = (list: Layer[]) => {
     for (const l of list) {
       out.set(l.id, l);
@@ -130,7 +138,10 @@ export function layerIndex(comp: Composition): Map<string, Layer> {
 
 /** The group each layer is in (none for top-level layers). */
 export function groupOf(comp: Composition): Map<string, string> {
+  const hit = groupMaps.get(comp);
+  if (hit) return hit;
   const out = new Map<string, string>();
+  groupMaps.set(comp, out);
   const walk = (list: Layer[], g: string | null) => {
     for (const l of list) {
       if (g) out.set(l.id, g);
@@ -287,7 +298,7 @@ export const extrusion = (l: Layer): number => (l.extrude && l.extrude.depth > 0
 
 /** Is the layer drawn in depth: turned, moved in depth, extruded, or a 3D layer seen through a camera that moves. */
 function inDepth(l: Layer, cam: Camera): boolean {
-  if (l.type === 'null') return false;
+  if (l.type === 'null' || !isLayer3d(l)) return false;
   return is3d(l) || extrusion(l) > 0 || (cam.moved && isLayer3d(l));
 }
 
@@ -420,6 +431,8 @@ function layerDepth(l: Layer, s: Scene): number {
  * camera; others as they are): for the designer's selection and hit tests.
  */
 export function viewOfLayer(comp: Composition, l: Layer, t: number): ((p: Vec2) => Vec2) | null {
+  // Flat layers (nearly all): nothing to work out.
+  if (l.type === 'null' || !isLayer3d(l)) return null;
   const cam = sceneCamera(comp, t);
   if (!inDepth(l, cam)) return null;
   const world = worldMatrix(comp, l, t);

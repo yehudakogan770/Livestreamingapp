@@ -136,13 +136,24 @@ export function DockSide({
                   role="tab"
                   data-tab={id}
                   aria-selected={grp.active === id}
+                  tabIndex={grp.active === id ? 0 : -1}
                   className={grp.active === id ? 'on' : ''}
                   title={`${PANEL_NAMES[id]}: drag the tab to dock it elsewhere`}
                   onPointerDown={(e) => begin(e, id)}
                   onClick={() => onDocks(showPanel(docks, id))}
                   onKeyDown={(e) => {
+                    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+                    // An arrow: the tab next to it (shown).
+                    if (!e.altKey && !e.shiftKey) {
+                      e.preventDefault();
+                      const i = grp.tabs.indexOf(id) + (e.key === 'ArrowRight' ? 1 : -1);
+                      const next = grp.tabs[(i + grp.tabs.length) % grp.tabs.length]!;
+                      onDocks(showPanel(docks, next));
+                      requestAnimationFrame(() => box.current?.querySelector<HTMLElement>(`[data-tab="${next}"]`)?.focus());
+                      return;
+                    }
                     // Alt+Shift+arrow: the panel to the other side.
-                    if (!(e.altKey && e.shiftKey) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+                    if (!(e.altKey && e.shiftKey)) return;
                     e.preventDefault();
                     const to: Side = e.key === 'ArrowLeft' ? 'left' : 'right';
                     if (findPanel(docks, id)?.side === to) return;
