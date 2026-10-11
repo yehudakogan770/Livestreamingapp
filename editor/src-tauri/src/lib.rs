@@ -18,6 +18,7 @@ mod selftest;
 mod speech;
 mod syscheck;
 mod vimeo;
+mod voice;
 mod voiceover;
 mod youtube;
 
@@ -174,7 +175,8 @@ async fn make_proxy(
     .map_err(|e| e.to_string())?
 }
 
-/// Start reading an original's frames through FFmpeg (RGBA, `width`×`height`, `rate` a second from `from` seconds).
+/// Start reading an original's frames through FFmpeg (RGBA, `width`×`height`, `rate` a second from `from` seconds;
+/// `deep`: the signal as it is, 16 bits a channel, for HDR films).
 #[tauri::command]
 async fn frames_open(
     state: State<'_, AppState>,
@@ -183,11 +185,39 @@ async fn frames_open(
     rate: f64,
     width: u32,
     height: u32,
+    deep: Option<bool>,
 ) -> Result<u32, String> {
     let ffmpeg = state.ffmpeg()?;
-    state
-        .frames
-        .open(&ffmpeg, Path::new(&path), from, rate, width, height)
+    state.frames.open(
+        &ffmpeg,
+        Path::new(&path),
+        from,
+        rate,
+        width,
+        height,
+        deep.unwrap_or(false),
+    )
+}
+
+/// An HDR file's signal copy for watching it in an HDR sequence (made once; progress as `hdr-progress`).
+#[tauri::command]
+async fn hdr_copy(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    path: String,
+    seconds: f64,
+) -> Result<String, String> {
+    let ffmpeg = state.ffmpeg()?;
+    let cache = state.cache.join("hdr");
+    tauri::async_runtime::spawn_blocking(move || {
+        let p = path.clone();
+        media::signal_copy(&ffmpeg, Path::new(&path), seconds, &cache, &move |done| {
+            let _ = app.emit("hdr-progress", (p.clone(), done));
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map(|p| p.to_string_lossy().into_owned())
 }
 
 /// The next frame of a reader (empty at the end).
@@ -248,6 +278,46 @@ async fn speech_audio(
     .await
     .map_err(|e| e.to_string())??;
     Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// The voice isolation model's path (written next to the cache the first time).
+#[tauri::command]
+async fn voice_model(state: State<'_, AppState>) -> Result<String, String> {
+    let cache = state.cache.clone();
+    tauri::async_runtime::spawn_blocking(move || voice::model_path(&cache))
+        .await
+        .map_err(|e| e.to_string())?
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
+/// A file's sound cleaned by the voice isolation model at a strength (0–1), for
+/// playing while editing; made once (progress as `voice-progress`: [path, 0–1]).
+#[tauri::command]
+async fn voice_clean(
+    app: tauri::AppHandle,
+    state: State<'_, AppState>,
+    path: String,
+    seconds: f64,
+    mix: f64,
+) -> Result<String, String> {
+    let ffmpeg = state.ffmpeg()?;
+    let cache = state.cache.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let p = path.clone();
+        voice::clean(
+            &ffmpeg,
+            Path::new(&path),
+            seconds,
+            mix,
+            &cache,
+            &move |done| {
+                let _ = app.emit("voice-progress", (p.clone(), done));
+            },
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+    .map(|p| p.to_string_lossy().into_owned())
 }
 
 /// AI mask results kept for a media file (empty when there are none yet).
@@ -582,10 +652,13 @@ pub fn run() {
             frames_open,
             frames_next,
             frames_close,
+            hdr_copy,
             strip,
             peaks,
             speech_model,
             speech_audio,
+            voice_model,
+            voice_clean,
             export_folder,
             write_chunk,
             matte_read,

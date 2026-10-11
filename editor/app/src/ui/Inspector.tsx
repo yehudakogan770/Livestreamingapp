@@ -19,6 +19,7 @@ import { BLEND_LIST } from '../model/blend';
 import { ProMotionSections } from './ProMotion';
 import type { Actions } from './actions';
 import { Choice, ColorField, ParamRow, Scrub, Section } from './controls';
+import { graphOf } from '../model/nodes';
 import { usePlayhead } from './hooks';
 import type { Ui } from './state';
 import { CaptionSection } from './Speech';
@@ -700,6 +701,14 @@ function EffectSection({
           <span className="insp__note">{allNodes(gradeOf(effect)).length} node(s)</span>
           <button type="button" className="btn btn--sm" onClick={() => ui.set({ page: 'color' })}>
             Edit the nodes on the Color page
+          </button>
+        </div>
+      )}
+      {effect.type === 'nodes' && (
+        <div className="insp__row">
+          <span className="insp__note">{graphOf(effect).nodes.length} nodes</span>
+          <button type="button" className="btn btn--sm" onClick={() => ui.set({ page: 'composite' })}>
+            Edit the nodes on the Composite page
           </button>
         </div>
       )}

@@ -66,7 +66,7 @@ describe('originals read through FFmpeg', () => {
         const l = layerFor(p, clip, f, 30);
         const time = l.source?.kind === 'video' ? l.source.time : 0;
         const img = await reader.at(time);
-        expect(img?.data[0]).toBe(Math.round(time * FILE_FPS));
+        expect((img as ImageData | null)?.data[0]).toBe(Math.round(time * FILE_FPS));
       }
       // Read on in order (FFmpeg started once), not started again for every frame.
       expect(opened).toBe(1);
@@ -78,7 +78,7 @@ describe('originals read through FFmpeg', () => {
     const reader = new FfmpegReader(media.path, 2, 2, 1 / 30);
     for (let f = 0; f < 12; f++) {
       const img = await reader.at(Math.min(f * 2, 14) / FILE_FPS);
-      expect(img?.data[0]).toBe(Math.min(f * 2, 10));
+      expect((img as ImageData | null)?.data[0]).toBe(Math.min(f * 2, 10));
     }
     lastFrame = Infinity;
   });

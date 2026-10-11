@@ -440,6 +440,12 @@ export function makeActions(doc: Doc, engine: Engine, ui: Ui) {
       ui.set({ snapping: !ui.state.snapping });
       ui.note(ui.state.snapping ? 'Snapping on' : 'Snapping off');
     },
+    /** The magnetic timeline on or off for the open sequence (turning it on closes the gaps on V1, one step to undo). */
+    magnetic: () => {
+      const on = !seq().magnetic;
+      edit(on ? 'Magnetic timeline on' : 'Magnetic timeline off', (p) => editSeq(p, (q) => ({ ...q, magnetic: on })));
+      ui.note(on ? 'Magnetic timeline on: V1 closes up, and what is on a V1 clip moves with it' : 'Magnetic timeline off');
+    },
     linkedSelection: () => {
       ui.set({ linked: !ui.state.linked });
       ui.note(ui.state.linked ? 'Linked selection on' : 'Linked selection off');

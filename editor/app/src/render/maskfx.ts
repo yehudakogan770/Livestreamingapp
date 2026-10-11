@@ -15,6 +15,15 @@ export const CUTOUT_FS = `${HEAD}
 uniform sampler2D uMask;
 void main() { outColor = texture(uTex, vUv) * texture(uMask, vUv).a; }`;
 
+/** The layer kept where a mask is (or where it isn't, with \`uInvert\`): a Merge node's mask. */
+export const MATTE_FS = `${HEAD}
+uniform sampler2D uMask;
+uniform float uInvert;
+void main() {
+  float m = texture(uMask, vUv).a;
+  outColor = texture(uTex, vUv) * (uInvert > 0.5 ? 1.0 - m : m);
+}`;
+
 /** The effect's result inside the mask (or outside it), the layer as it was elsewhere. */
 export const LIMIT_FS = `${HEAD}
 uniform sampler2D uOrig;

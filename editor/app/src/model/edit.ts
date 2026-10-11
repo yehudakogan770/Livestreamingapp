@@ -1,6 +1,7 @@
 // The edits: each takes the project and gives back a changed copy (undo keeps the old one).
 import { changeSpeed, current, cutClip, editSeq, end, handles, onTrack, rate, seqLength, trackOf, trimLeft, trimRight } from './seq';
 import { carryFollows, retimeTracks } from '../track/paths';
+import { magneticMove, primaryTrack } from './magnetic';
 import { uid, newClip, newTrack, type Clip, type Effect, type Marker, type Project, type Sequence, type Track, type TrackKind, type Transition } from './types';
 
 const unlocked = (s: Sequence, track: string): boolean => !trackOf(s, track)?.locked;
@@ -162,8 +163,17 @@ export function extractRange(p: Project, from: number, to: number): Project {
 export function placeClips(p: Project, given: Clip[], mode: 'insert' | 'overwrite'): Project {
   // Captions go only on captions tracks, and nothing else does.
   const s0 = current(p);
-  const clips = given.filter((c) => (c.source.kind === 'caption') === !!trackOf(s0, c.track)?.captions);
+  let clips = given.filter((c) => (c.source.kind === 'caption') === !!trackOf(s0, c.track)?.captions);
   if (clips.length === 0) return p;
+  // Magnetic: a clip put on V1 goes in at the nearest cut, and the story makes room (nothing is covered).
+  const prim = s0.magnetic ? primaryTrack(s0) : undefined;
+  if (prim && !prim.locked && clips.some((c) => c.track === prim.id)) {
+    const at = Math.min(...clips.map((c) => c.start));
+    const cuts = [0, ...s0.clips.filter((c) => c.track === prim.id).flatMap((c) => [c.start, end(c)])];
+    const to = cuts.reduce((best, x) => (Math.abs(x - at) < Math.abs(best - at) ? x : best), 0);
+    clips = clips.map((c) => ({ ...c, start: c.start + to - at }));
+    mode = 'insert';
+  }
   return editSeq(p, (s) => {
     const fps = rate(s);
     const at = Math.min(...clips.map((c) => c.start));
@@ -191,6 +201,9 @@ export interface Move {
 /** Move clips (linked ones go along); they cover what they land on. A copy leaves the originals. */
 export function moveClips(p: Project, ids: string[], m: Move, copy = false): Project {
   return editSeq(p, (s) => {
+    // Magnetic: clips put on V1 go into the story at a cut (the others make room).
+    const story = s.magnetic ? magneticMove(s, ids, m, copy) : null;
+    if (story) return story;
     const fps = rate(s);
     const moving = s.clips.filter((c) => ids.includes(c.id) && unlocked(s, c.track));
     if (moving.length === 0) return s;
@@ -236,11 +249,13 @@ export type TrimMode = 'normal' | 'ripple' | 'roll';
  * Ripple: the film after it moves along. Roll: the cut between it and the
  * clip touching it moves (nothing else moves).
  */
-export function trim(p: Project, id: string, edge: 'start' | 'end', delta: number, mode: TrimMode, linked = true): Project {
+export function trim(p: Project, id: string, edge: 'start' | 'end', delta: number, asked: TrimMode, linked = true): Project {
   return editSeq(p, (s) => {
     const fps = rate(s);
     const self = s.clips.find((c) => c.id === id);
     if (!self || !unlocked(s, self.track) || delta === 0) return s;
+    // Magnetic: trimming a V1 clip always ripples (the story never gets a gap).
+    const mode: TrimMode = asked === 'normal' && s.magnetic && primaryTrack(s)?.id === self.track ? 'ripple' : asked;
     const at = edge === 'start' ? self.start : end(self);
     const group = (linked ? withLinked(s, [id]) : [id])
       .map((x) => s.clips.find((c) => c.id === x) as Clip)

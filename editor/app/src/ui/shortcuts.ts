@@ -82,6 +82,7 @@ export const COMMANDS: Command[] = [
   { id: 'toggleEnabled', label: 'Enable / disable clip', group: 'Timeline', run: (a) => a.toggleEnabled() },
   { id: 'speed', label: 'Speed / duration…', group: 'Timeline', run: (_a, ui) => ui.set({ dialog: 'speed' }) },
   { id: 'snapping', label: 'Snapping on / off', group: 'Timeline', run: (a) => a.snapping() },
+  { id: 'magnetic', label: 'Magnetic timeline on / off', group: 'Timeline', run: (a) => a.magnetic() },
   { id: 'zoomIn', label: 'Zoom in', group: 'Timeline', run: (a) => a.zoom(1.5) },
   { id: 'zoomOut', label: 'Zoom out', group: 'Timeline', run: (a) => a.zoom(1 / 1.5) },
   {
@@ -104,6 +105,7 @@ export const COMMANDS: Command[] = [
   { id: 'shortcuts', label: 'Keyboard shortcuts…', group: 'Project', run: () => panels.show({ kind: 'shortcuts' }) },
   { id: 'pageEdit', label: 'Edit page', group: 'View', run: (_a, ui) => ui.set({ page: 'edit' }) },
   { id: 'pageColor', label: 'Color page', group: 'View', run: (_a, ui) => ui.set({ page: 'color' }) },
+  { id: 'pageComposite', label: 'Composite page', group: 'View', run: (_a, ui) => ui.set({ page: 'composite' }) },
   { id: 'pageAudio', label: 'Audio page', group: 'View', run: (_a, ui) => ui.set({ page: 'audio' }) },
   { id: 'help', label: 'Keyboard help', group: 'View', run: (_a, ui) => ui.set({ dialog: 'help' }) },
 ];
@@ -186,6 +188,7 @@ const LUMORA: Bindings = {
   pageEdit: ['Shift+1'],
   pageColor: ['Shift+2'],
   pageAudio: ['Shift+3'],
+  pageComposite: ['Shift+4'],
   help: ['F1'],
 };
 

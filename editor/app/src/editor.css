@@ -527,7 +527,11 @@
 .page--audio .page__top {
   grid-template-columns: minmax(0, 1fr) minmax(320px, 40%);
 }
+.page--composite .page__top {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 30%);
+}
 .page--color .page__bottom,
+.page--composite .page__bottom,
 .page--audio .page__bottom {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -1613,6 +1617,13 @@ svg.media__folder {
   color: var(--text-dim);
   font-family: var(--mono);
   font-size: 11px;
+}
+.vmon__hdr {
+  cursor: pointer;
+  color: var(--text);
+}
+.vmon__hdr:hover {
+  border-color: var(--text-dim);
 }
 .vmon__fill {
   flex: 1;
@@ -2832,6 +2843,12 @@ button.tc:hover {
   margin-right: auto;
   font-size: 12px;
   font-weight: 600;
+}
+.scopes__space {
+  margin-right: 8px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 10px;
 }
 .scopes__canvas {
   flex: 1;

@@ -9,6 +9,7 @@ import {
   Film,
   MessageSquare,
   Palette,
+  Workflow,
   Redo2,
   Save,
   SlidersHorizontal,
@@ -68,6 +69,9 @@ import { NativeOffer } from './NativeOffer';
 // The Color and Audio pages load when first opened (fetched in the background soon after the editor opens).
 const colorPage = () => import('./ColorPage');
 const mixerPage = () => import('./Mixer');
+const compositePage = () => import('./CompositePage');
+const CompositeGraph = lazy(() => compositePage().then((m) => ({ default: m.CompositeGraph })));
+const NodeInspector = lazy(() => compositePage().then((m) => ({ default: m.NodeInspector })));
 const ColorPanel = lazy(() => colorPage().then((m) => ({ default: m.ColorPanel })));
 const Scopes = lazy(() => colorPage().then((m) => ({ default: m.Scopes })));
 const Mixer = lazy(() => mixerPage().then((m) => ({ default: m.Mixer })));
@@ -144,7 +148,7 @@ export function Editor({
 
   // The other pages, fetched once the editor is up (so switching to them is instant).
   useEffect(() => {
-    const t = window.setTimeout(() => void Promise.all([colorPage(), mixerPage()]).catch(() => undefined), 4000);
+    const t = window.setTimeout(() => void Promise.all([colorPage(), mixerPage(), compositePage()]).catch(() => undefined), 4000);
     return () => clearTimeout(t);
   }, []);
 
@@ -418,6 +422,7 @@ export function Editor({
         'sep',
         { label: 'Snapping', keys: 'S', checked: u.snapping, run: actions.snapping },
         { label: 'Linked selection', checked: u.linked, run: actions.linkedSelection },
+        { label: 'Magnetic timeline', checked: !!s.magnetic, run: actions.magnetic },
       ],
     ],
     [
@@ -440,6 +445,7 @@ export function Editor({
       'View',
       () => [
         { label: 'Edit page', keys: 'Shift+1', checked: u.page === 'edit', run: () => ui.set({ page: 'edit' }) },
+        { label: 'Composite page', keys: 'Shift+4', checked: u.page === 'composite', run: () => ui.set({ page: 'composite' }) },
         { label: 'Color page', keys: 'Shift+2', checked: u.page === 'color', run: () => ui.set({ page: 'color' }) },
         { label: 'Audio page', keys: 'Shift+3', checked: u.page === 'audio', run: () => ui.set({ page: 'audio' }) },
         'sep',
@@ -629,6 +635,22 @@ export function Editor({
       <NativeOffer />
 
       {u.page === 'edit' && <EditPage doc={doc} engine={engine} ui={ui} actions={actions} collab={collab} comments={sharingOn} />}
+      {u.page === 'composite' && (
+        <div className="page page--composite">
+          <div className="page__top">
+            <ProgramMonitor doc={doc} engine={engine} ui={ui} actions={actions} />
+            <Suspense fallback={null}>
+              <NodeInspector doc={doc} engine={engine} actions={actions} ui={ui} />
+            </Suspense>
+          </div>
+          <Splitter ui={ui} which="bottom" />
+          <div className="page__bottom">
+            <Suspense fallback={null}>
+              <CompositeGraph doc={doc} engine={engine} actions={actions} ui={ui} />
+            </Suspense>
+          </div>
+        </div>
+      )}
       {u.page === 'color' && (
         <div className="page page--color">
           <div className="page__top">
@@ -666,6 +688,7 @@ export function Editor({
           {(
             [
               ['edit', 'Edit', Film, 'Cut and arrange', 'pageEdit'],
+              ['composite', 'Composite', Workflow, 'Build a clip’s picture from nodes: merges, masks, keys, transforms and effects', 'pageComposite'],
               ['color', 'Color', Palette, 'Grade the picture: wheels, curves, nodes and scopes', 'pageColor'],
               ['audio', 'Audio', AudioLines, 'Mix the sound: faders, meters and tracks', 'pageAudio'],
             ] as const
@@ -886,6 +909,7 @@ function keymap(e: KeyboardEvent, a: Actions, ui: Ui): (() => void) | null {
   if (shift && e.code === 'Digit1') return () => ui.set({ page: 'edit' });
   if (shift && e.code === 'Digit2') return () => ui.set({ page: 'color' });
   if (shift && e.code === 'Digit3') return () => ui.set({ page: 'audio' });
+  if (shift && e.code === 'Digit4') return () => ui.set({ page: 'composite' });
   if (/^[1-9]$/.test(e.key) && !shift && !alt) return () => a.switchAngleNumber(Number(e.key));
   switch (k) {
     case ' ':

@@ -64,6 +64,7 @@ import { folderOf, inApp, joinPath, native } from '../native';
 import { Choice, Modal } from './controls';
 import { panels } from './panels';
 import type { Ui } from './state';
+import { isHdr } from '../render/hdr';
 import './delivery.css';
 
 let encoderList: Promise<string[]> | null = null;
@@ -229,7 +230,8 @@ export function DeliverDialog({ doc, ui }: { doc: Doc; ui: Ui }) {
                 {GROUP_NAMES[g]}
               </span>
               {presets
-                .filter((x) => x.group === g)
+                // HDR presets only for HDR sequences.
+                .filter((x) => x.group === g && (!x.video?.hdr || isHdr(s)))
                 .map((x) => (
                   <button
                     key={x.id}

@@ -92,6 +92,16 @@ export function ProgramMonitor({ doc, engine, ui, actions }: { doc: Doc; engine:
           Program <small>{s.name}</small>
         </span>
         {clock && <span className="vmon__clock">{clock}</span>}
+        {(s.color === 'pq' || s.color === 'hlg') && (
+          <button
+            type="button"
+            className="vmon__clock vmon__hdr"
+            title="An HDR sequence: shown tone-mapped for this screen; the film keeps the HDR signal. Click to change it (Sequence settings)."
+            onClick={() => ui.set({ dialog: 'sequence' })}
+          >
+            HDR {s.color === 'pq' ? 'PQ' : 'HLG'}
+          </button>
+        )}
         <span className="vmon__fill" />
         <select
           className="vmon__q"

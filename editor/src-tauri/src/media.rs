@@ -66,6 +66,8 @@ pub struct Probe {
     pub tbr: f64,
     /// HDR: PQ (smpte2084) or HLG (arib-std-b67) transfer.
     pub hdr: bool,
+    /// HLG (arib-std-b67) rather than PQ.
+    pub hlg: bool,
     /// Dolby Vision (iPhone HDR).
     pub dolby_vision: bool,
     /// Turned in the file (degrees clockwise: 0, 90, 180, 270).
@@ -195,6 +197,7 @@ pub fn parse_probe(said: &str) -> Probe {
                     p.tbr = number_before(rest, " tbr").unwrap_or(0.0);
                     p.pix_fmt = pixel_format(rest).unwrap_or_default();
                     p.hdr = rest.contains("smpte2084") || rest.contains("arib-std-b67");
+                    p.hlg = rest.contains("arib-std-b67");
                     p.interlaced = rest.contains("top first")
                         || rest.contains("bottom first")
                         || rest.contains("top coded first")
@@ -533,7 +536,7 @@ pub fn cache_name(file: &Path, ext: &str) -> String {
 }
 
 /// Run FFmpeg, saying how far along it is (0–1).
-fn run_with_progress(
+pub(crate) fn run_with_progress(
     ffmpeg: &Path,
     args: &[std::ffi::OsString],
     seconds: f64,
@@ -600,6 +603,43 @@ fn run_ffmpeg(
             said,
         ))
     }
+}
+
+/// An HDR file's signal copy (see `formats::signal_copy_args`), made once in `cache`.
+///
+/// # Errors
+/// The file can't be read or the copy can't be made.
+pub fn signal_copy(
+    ffmpeg: &Path,
+    file: &Path,
+    seconds: f64,
+    cache: &Path,
+    progress: &dyn Fn(f64),
+) -> Result<PathBuf, String> {
+    let meta = fs::metadata(file).map_err(|e| format!("{} was not found: {e}", file.display()))?;
+    let stamp = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map_or(0, |d| d.as_secs());
+    let key = {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        (file.to_string_lossy(), meta.len(), stamp, "signal-1").hash(&mut h);
+        format!("{:016x}.mp4", h.finish())
+    };
+    let out = cache.join(&key);
+    if out.is_file() {
+        return Ok(out);
+    }
+    fs::create_dir_all(cache).map_err(|e| e.to_string())?;
+    let info = probe(ffmpeg, file)?;
+    let plan = crate::formats::plan(file, &info);
+    let temp = cache.join(format!("{key}.making.mp4"));
+    let args = crate::formats::signal_copy_args(file, &plan, &temp);
+    run_with_progress(ffmpeg, &args, seconds, progress)?;
+    fs::rename(&temp, &out).map_err(|e| e.to_string())?;
+    Ok(out)
 }
 
 /// Get any file ready to edit. The original is never changed: when it can't
@@ -1188,6 +1228,62 @@ mod tests {
             playback_proxy(&ffmpeg, &prores, &cache, &|_| {}).unwrap(),
             px
         );
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    /// With FFmpeg on this computer: a PQ file keeps its signal in the copy
+    /// for HDR sequences, and is read 16 bits deep for the film.
+    #[test]
+    fn hdr_signal_kept_for_hdr_sequences() {
+        let Some(ffmpeg) = find_ffmpeg() else { return };
+        let dir = std::env::temp_dir().join(format!("lumora-hdr-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let src = dir.join("pq.mp4");
+        let made = quiet(&ffmpeg)
+            .args([
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=s=320x180:r=25:d=1",
+            ])
+            .args([
+                "-pix_fmt",
+                "yuv420p10le",
+                "-c:v",
+                "libx265",
+                "-x265-params",
+                "log-level=error",
+            ])
+            .args([
+                "-color_primaries",
+                "bt2020",
+                "-color_trc",
+                "smpte2084",
+                "-colorspace",
+                "bt2020nc",
+            ])
+            .arg(&src)
+            .status();
+        if !made.is_ok_and(|s| s.success()) {
+            return; // no H.265 encoder here
+        }
+        let info = probe(&ffmpeg, &src).unwrap();
+        assert!(info.hdr && !info.hlg);
+        assert_eq!(crate::formats::plan(&src, &info).transfer, "pq");
+        let copy = signal_copy(&ffmpeg, &src, 1.0, &dir.join("hdr"), &|_| {}).unwrap();
+        let back = probe(&ffmpeg, &copy).unwrap();
+        assert_eq!(back.video.as_deref(), Some("h264"));
+        assert!(
+            !back.hdr,
+            "the copy is labeled Rec. 709 so the player passes the code values through"
+        );
+        let r = crate::frames::Readers::default();
+        let id = r.open(&ffmpeg, &src, 0.0, 25.0, 160, 90, true).unwrap();
+        assert_eq!(r.next(id).unwrap().len(), 160 * 90 * 8);
+        r.close(id);
         let _ = fs::remove_dir_all(dir);
     }
 }

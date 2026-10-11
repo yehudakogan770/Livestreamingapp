@@ -55,6 +55,8 @@ export interface MediaItem {
   addedAt?: number;
   /** Who is heard in it, as named in the transcript (shared with everyone on a shared project). */
   speaker?: string;
+  /** The names of the voices told apart in it (by `Word.v`; unnamed ones are "Speaker 1", "Speaker 2"…). */
+  voices?: string[];
   /** A subclip: only this part of the file (seconds), e.g. one shot found by scene detection. */
   range?: [number, number];
 }
@@ -67,6 +69,8 @@ export interface SourceInfo {
   bitDepth: number;
   /** HDR (PQ or HLG), or Dolby Vision. */
   hdr: boolean;
+  /** How brightness is coded in it: SDR, PQ (HDR10, Dolby Vision) or HLG (older files: from `hdr`). */
+  transfer?: 'sdr' | 'pq' | 'hlg';
   /** Turned in the file (degrees, clockwise). */
   rotation: number;
   /** The frame rate changes through the file (phones). */
@@ -89,6 +93,8 @@ export interface Word {
   w: string;
   s: number;
   e: number;
+  /** Which voice says it, when one file holds several (0, 1…: told apart by the sound of their voices). */
+  v?: number;
 }
 
 /** What was said in a file, word by word. */
@@ -522,6 +528,10 @@ export interface Sequence {
   background: string;
   /** Buses and the whole mix's processing (none: tracks go straight into the mix). */
   mix?: Mix;
+  /** The color space the film is made in: Rec. 709 (SDR, the default) or HDR, Rec. 2100 PQ or HLG (render/hdr.ts). */
+  color?: 'rec709' | 'pq' | 'hlg';
+  /** Magnetic timeline: V1 never has gaps, and what sits on a V1 clip moves with it (model/magnetic.ts). */
+  magnetic?: boolean;
 }
 
 export interface Project {

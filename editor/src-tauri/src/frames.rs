@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdout, Stdio};
 use std::sync::Mutex;
 
-use crate::formats::{plan, reader_args_with};
+use crate::formats::{plan, reader_args_deep, reader_args_with};
 use crate::media::{probe, quiet};
 
 struct Reader {
@@ -53,10 +53,13 @@ pub fn frame_bytes(width: u32, height: u32) -> usize {
 }
 
 impl Readers {
-    /// Start reading a file at `from` seconds, `rate` frames a second, at `width`×`height`.
+    /// Start reading a file at `from` seconds, `rate` frames a second, at
+    /// `width`×`height`: RGBA, or with `deep` the signal kept as it is
+    /// (HDR not tone-mapped) at 16 bits a channel.
     ///
     /// # Errors
     /// FFmpeg can't start, or the size is unreasonable.
+    #[allow(clippy::too_many_arguments)]
     pub fn open(
         &self,
         ffmpeg: &Path,
@@ -65,6 +68,7 @@ impl Readers {
         rate: f64,
         width: u32,
         height: u32,
+        deep: bool,
     ) -> Result<u32, String> {
         if width == 0
             || height == 0
@@ -77,6 +81,9 @@ impl Readers {
         let info = probe(ffmpeg, file)?;
         let plan = plan(file, &info);
         let args = |decode: &[OsString]| {
+            if deep {
+                return reader_args_deep(file, &plan, from.max(0.0), rate, (width, height), decode);
+            }
             reader_args_with(
                 file,
                 &plan,
@@ -105,7 +112,7 @@ impl Readers {
         let reader = Reader {
             child,
             out,
-            frame: frame_bytes(width, height),
+            frame: frame_bytes(width, height) * if deep { 2 } else { 1 },
             again,
         };
         let id = {
@@ -196,10 +203,26 @@ mod tests {
     fn refuses_silly_sizes() {
         let r = Readers::default();
         assert!(r
-            .open(Path::new("ffmpeg"), Path::new("x.mov"), 0.0, 30.0, 0, 10)
+            .open(
+                Path::new("ffmpeg"),
+                Path::new("x.mov"),
+                0.0,
+                30.0,
+                0,
+                10,
+                false
+            )
             .is_err());
         assert!(r
-            .open(Path::new("ffmpeg"), Path::new("x.mov"), 0.0, 0.0, 10, 10)
+            .open(
+                Path::new("ffmpeg"),
+                Path::new("x.mov"),
+                0.0,
+                0.0,
+                10,
+                10,
+                false
+            )
             .is_err());
         assert!(r.next(99).is_err());
     }
@@ -235,7 +258,7 @@ mod tests {
             .unwrap();
         assert!(ok.success());
         let r = Readers::default();
-        let id = r.open(&ffmpeg, &src, 1.0, 25.0, 160, 120).unwrap();
+        let id = r.open(&ffmpeg, &src, 1.0, 25.0, 160, 120, false).unwrap();
         let mut frames = 0;
         loop {
             let f = r.next(id).unwrap();
@@ -246,6 +269,10 @@ mod tests {
             frames += 1;
         }
         assert!((24..=26).contains(&frames), "{frames}");
+        r.close(id);
+        // Deep: 16 bits a channel.
+        let id = r.open(&ffmpeg, &src, 0.0, 25.0, 160, 120, true).unwrap();
+        assert_eq!(r.next(id).unwrap().len(), 160 * 120 * 8);
         r.close(id);
         let _ = std::fs::remove_dir_all(dir);
     }

@@ -9,7 +9,10 @@ import { updateClips, updateTrack } from '../model/edit';
 import { newEffect } from '../model/effects';
 import { current } from '../model/seq';
 import { emptyProject, type MediaItem, type Project } from '../model/types';
-import { audioParts, duckFilter, effectChain, effectFilters, finishJobs, humFrequencies } from './audioplan';
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { audioParts, duckFilter, effectChain, effectFilters, filterPath, finishJobs, humFrequencies, setVoiceModel } from './audioplan';
 
 const media = (id: string, path: string): MediaItem => ({
   id,
@@ -55,12 +58,35 @@ describe('voice cleanup on export', () => {
     expect(f.filters).toEqual(['equalizer@hh0=f=50:t=q:w=20:g=-30', 'equalizer@hh1=f=100:t=q:w=20:g=-30']);
   });
 
-  it('voice isolation is a chain (no speech model is bundled)', () => {
+  it('voice isolation uses the neural model when it is there, filters when it is not', () => {
+    setVoiceModel(null);
     const f = effectFilters({ type: 'voiceiso', p: { amount: 100 } }, 'v').filters.join(',');
     expect(f).toContain('highpass=f=100');
     expect(f).toContain('afftdn=nr=30:nf=-40:tn=1');
     expect(f).toContain('acompressor=');
     expect(f).not.toContain('arnndn');
+    setVoiceModel('C:\\Users\\Dana\\AppData\\voice.rnnn');
+    const n = effectFilters({ type: 'voiceiso', p: { amount: 72 } }, 'v').filters.join(',');
+    expect(n).toBe("highpass=f=70,aresample=48000,arnndn=m='C\\:/Users/Dana/AppData/voice.rnnn':mix=0.7");
+    setVoiceModel(null);
+  });
+
+  it('a path in a filter keeps colons and quotes', () => {
+    expect(filterPath("/tmp/it's:here/v.rnnn")).toBe("'/tmp/it\\'\\''s\\:here/v.rnnn'");
+  });
+
+  it('the neural model really runs in FFmpeg (when FFmpeg is on this computer)', () => {
+    const model = 'editor/src-tauri/models/voice.rnnn';
+    const ok = spawnSync('ffmpeg', ['-version']).status === 0 && existsSync(model);
+    if (!ok) return;
+    setVoiceModel(resolve(model));
+    const graph = effectFilters({ type: 'voiceiso', p: { amount: 100 } }, 'v').filters.join(',');
+    setVoiceModel(null);
+    const r = spawnSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-f', 'lavfi', '-i', 'anoisesrc=d=0.5:a=0.1', '-af', graph, '-f', 'null', '-'], {
+      encoding: 'utf8',
+    });
+    expect(r.stderr).toBe('');
+    expect(r.status).toBe(0);
   });
 
   it('loudness normalize is EBU R128 loudnorm, back at 48 kHz', () => {

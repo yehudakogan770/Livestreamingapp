@@ -5,6 +5,7 @@ import {
   Eye,
   EyeOff,
   Film,
+  FoldHorizontal,
   Hand,
   Headphones,
   Link2,
@@ -642,6 +643,16 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
         >
           <Link2 />
           Linked
+        </button>
+        <button
+          type="button"
+          className={`tl__toggle${s.magnetic ? ' is-on' : ''}`}
+          title="Magnetic timeline: V1 never has gaps, clips dragged along it reorder, and titles, cutaways and sound on a V1 clip move with it"
+          aria-pressed={!!s.magnetic}
+          onClick={actions.magnetic}
+        >
+          <FoldHorizontal />
+          Magnetic
         </button>
         <button type="button" className="tl__toggle" title="Add a marker (M)" onClick={actions.marker}>
           <Bookmark />
