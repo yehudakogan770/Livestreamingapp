@@ -177,6 +177,8 @@ export interface CaptureSettings {
   isoKbps?: number;
   /** Save a chapter list with each recording. */
   chapters: boolean;
+  /** Also keep a copy of each finished recording here (a cloud folder); null: no copy. */
+  copyFolder?: string | null;
   /** Offer the Live Screen on the network as an NDI source. */
   ndi?: boolean;
   /** The NDI source's name. */
@@ -235,6 +237,16 @@ export interface CaptureStatus {
   hwChecked?: boolean;
   /** Hardware encoders that failed since Lumora started (not used again). */
   hwFailed?: EncoderFamily[];
+  /** The copy of the last recording into the copy folder. */
+  copy?: RecordingCopy | null;
+}
+
+/** Copying a finished recording into the copy folder (a cloud folder). */
+export interface RecordingCopy {
+  from: string;
+  state: 'copying' | 'done' | 'failed';
+  /** Where the copy is (done), or why it failed. */
+  detail: string | null;
 }
 
 /** Why a recording or stream stopped by itself. */

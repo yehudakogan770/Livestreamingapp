@@ -57,6 +57,18 @@ describe('Recording and streaming settings', () => {
     expect(saved[1]).toMatchObject({ url: '', key: '', account: { provider: 'youtube', broadcastId: '' } });
   });
 
+  it('keeps a copy of each recording in a second (cloud) folder', async () => {
+    saveSettings.mockClear();
+    const picking = { ...client, pickFolder: async () => 'C:\\Users\\Dana\\OneDrive\\Shows' } as unknown as EngineClient;
+    render(<BroadcastDialog client={picking} onClose={() => {}} />);
+    expect(await screen.findByRole('textbox', { name: 'Copy folder' })).toHaveValue('');
+    const choose = screen.getAllByRole('button', { name: 'Choose…' });
+    fireEvent.click(choose[1]!);
+    expect(await screen.findByDisplayValue('C:\\Users\\Dana\\OneDrive\\Shows')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(saveSettings.mock.calls[0]![0].copyFolder).toBe('C:\\Users\\Dana\\OneDrive\\Shows');
+  });
+
   it('warns about an address Lumora cannot stream to', async () => {
     render(<BroadcastDialog client={client} onClose={() => {}} />);
     const backup = await screen.findByRole('textbox', { name: 'Backup server for YouTube' });

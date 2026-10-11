@@ -9,6 +9,7 @@ import { useSound } from '../audio/SoundContext';
 import { SCREENS } from '../components/ScreenSelector';
 import { useProblemStore } from './problems';
 import { isComputerSound } from '../engine/computerSound';
+import { useBroadcast } from '../broadcast/BroadcastContext';
 
 /** Output windows Lumora itself was asked to close (so their closing is not a problem). */
 export const expectedCloses = new Set<ScreenId>();
@@ -171,5 +172,27 @@ export function ComputerSoundWatcher({ show, client }: { show: Show; client: Eng
       store.clearAll(me, 'computer-sound:');
     };
   }, [store, client, me, any]);
+  return null;
+}
+
+/** A finished recording that could not be copied into the copy folder. */
+export function RecordingCopyWatcher() {
+  const store = useProblemStore();
+  const b = useBroadcast();
+  const me = useRef(Symbol('recording-copy')).current;
+  const copy = b?.status.copy ?? null;
+  useEffect(() => {
+    if (!store) return;
+    if (copy?.state === 'failed')
+      store.report(me, {
+        key: 'recording-copy',
+        level: 'warning',
+        title: 'The recording was not copied',
+        detail: `The copy folder: ${copy.detail ?? 'it could not be written'}.`,
+        fix: 'The recording itself is safe in the recordings folder. Check the copy folder (Recording and streaming), or copy the file by hand.',
+      });
+    else store.clear(me, 'recording-copy');
+  }, [store, me, copy?.state, copy?.detail]);
+  useEffect(() => () => store?.clearAll(me, 'recording-copy'), [store, me]);
   return null;
 }

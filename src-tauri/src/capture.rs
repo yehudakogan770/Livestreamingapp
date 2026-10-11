@@ -282,6 +282,9 @@ pub struct CaptureSettings {
     pub record_encode: bool,
     /// The format of recordings FFmpeg encodes.
     pub record_codec: Codec,
+    /// Also keep a copy of each finished recording here (a OneDrive, Dropbox
+    /// or Google Drive folder puts it in the cloud). `None`: no copy.
+    pub copy_folder: Option<String>,
 }
 
 impl Default for CaptureSettings {
@@ -306,6 +309,7 @@ impl Default for CaptureSettings {
             stream_kbps: None,
             record_encode: false,
             record_codec: Codec::H264,
+            copy_folder: None,
         }
     }
 }
@@ -325,6 +329,15 @@ impl CaptureSettings {
                 && q.size().1 <= picture.size().1
         });
         self.folder = self.folder.filter(|f| !f.trim().is_empty());
+        // A copy into the recordings' own folder would be no copy at all.
+        let same = |c: &String| {
+            self.folder
+                .as_deref()
+                .is_some_and(|f| Path::new(f) == Path::new(c))
+        };
+        self.copy_folder = self
+            .copy_folder
+            .filter(|c| !c.trim().is_empty() && !same(c));
         self.ndi_name = self.ndi_name.trim().chars().take(60).collect();
         if self.ndi_name.is_empty() {
             "Lumora".clone_into(&mut self.ndi_name);
@@ -451,6 +464,57 @@ pub struct CaptureStatus {
     pub hw_checked: bool,
     /// Hardware encoders that failed since Lumora started (not used again).
     pub hw_failed: Vec<Family>,
+    /// The copy of the last recording into the copy folder.
+    pub copy: Option<CopyStatus>,
+}
+
+/// Copying a finished recording into the copy folder.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CopyStatus {
+    /// The recording being copied (where it was saved).
+    pub from: String,
+    /// "copying", "done" or "failed".
+    pub state: &'static str,
+    /// Where the copy is (done), or why it failed.
+    pub detail: Option<String>,
+}
+
+/// Copy `file` into `folder` (made if needed) under its own name, or with
+/// " (2)", " (3)"… when that name is taken. Written to a `.part` file first,
+/// so the cloud folder never takes a half-copied file.
+///
+/// # Errors
+/// Why it could not be copied, in plain words.
+pub fn copy_into(file: &Path, folder: &Path) -> Result<PathBuf, String> {
+    let name = file
+        .file_name()
+        .ok_or("the recording has no file name")?
+        .to_string_lossy()
+        .into_owned();
+    fs::create_dir_all(folder).map_err(|e| format!("the folder could not be made ({e})"))?;
+    let (stem, ext) = match name.rsplit_once('.') {
+        Some((s, e)) if !s.is_empty() => (s.to_owned(), format!(".{e}")),
+        _ => (name.clone(), String::new()),
+    };
+    let mut to = folder.join(&name);
+    let mut n = 2;
+    while to.exists() {
+        to = folder.join(format!("{stem} ({n}){ext}"));
+        n += 1;
+    }
+    let mut part = to.as_os_str().to_owned();
+    part.push(".part");
+    let part = PathBuf::from(part);
+    fs::copy(file, &part).map_err(|e| {
+        let _ = fs::remove_file(&part);
+        format!("it could not be copied ({e})")
+    })?;
+    fs::rename(&part, &to).map_err(|e| {
+        let _ = fs::remove_file(&part);
+        format!("it could not be copied ({e})")
+    })?;
+    Ok(to)
 }
 
 // ---------------------------------------------------------------------------
@@ -470,6 +534,8 @@ type Notify = Box<dyn Fn(&CaptureStatus) + Send + Sync>;
 struct Shared {
     status: Mutex<CaptureStatus>,
     notify: Notify,
+    /// Where finished recordings are copied (`CaptureSettings::copy_folder`).
+    copy_to: Mutex<Option<PathBuf>>,
 }
 
 impl Shared {
@@ -594,6 +660,7 @@ impl Capture {
             .and_then(|t| serde_json::from_str::<CaptureSettings>(&t).ok())
             .unwrap_or_default()
             .cleaned();
+        let copy_to = settings.copy_folder.as_ref().map(PathBuf::from);
         Capture {
             dir: dir.map(Path::to_path_buf),
             default_folder,
@@ -605,6 +672,7 @@ impl Capture {
                     ..CaptureStatus::default()
                 }),
                 notify: Box::new(notify),
+                copy_to: Mutex::new(copy_to),
             }),
             next: AtomicU64::new(1),
             ffmpeg,
@@ -670,6 +738,7 @@ impl Capture {
     pub fn set_settings(&self, settings: CaptureSettings) -> CaptureSettings {
         let settings = settings.cleaned();
         *lock(&self.settings) = settings.clone();
+        *lock(&self.shared.copy_to) = settings.copy_folder.as_ref().map(PathBuf::from);
         if let Some(dir) = &self.dir {
             if let Ok(text) = serde_json::to_string_pretty(&settings) {
                 let _ = write_file_atomic(&dir.join(FILE), &text);
@@ -1421,9 +1490,10 @@ impl Finish {
     }
 }
 
-/// Turn a finished recording into an .mp4 (when it can be) and say it is ready.
+/// Turn a finished recording into an .mp4 (when it can be), say it is
+/// ready, and copy it into the copy folder (if one is chosen).
 fn finish_recording(shared: &Shared, ffmpeg: Option<&Path>, path: PathBuf, hevc: bool) {
-    match ffmpeg {
+    let done = match ffmpeg {
         Some(ffmpeg) => {
             shared.update(|s| s.finishing = true);
             let done = to_mp4(ffmpeg, &path, hevc).unwrap_or(path);
@@ -1431,11 +1501,45 @@ fn finish_recording(shared: &Shared, ffmpeg: Option<&Path>, path: PathBuf, hevc:
                 s.finishing = false;
                 s.last_recording = Some(done.to_string_lossy().into_owned());
             });
+            done
         }
-        None => shared.update(|s| {
-            s.last_recording = Some(path.to_string_lossy().into_owned());
-        }),
-    }
+        None => {
+            shared.update(|s| {
+                s.last_recording = Some(path.to_string_lossy().into_owned());
+            });
+            path
+        }
+    };
+    copy_finished(shared, &done);
+}
+
+/// Copy a finished recording into the copy folder, saying how it went.
+fn copy_finished(shared: &Shared, file: &Path) {
+    let Some(folder) = lock(&shared.copy_to).clone() else {
+        return;
+    };
+    let from = file.to_string_lossy().into_owned();
+    shared.update(|s| {
+        s.copy = Some(CopyStatus {
+            from: from.clone(),
+            state: "copying",
+            detail: None,
+        });
+    });
+    let (state, detail) = match copy_into(file, &folder) {
+        Ok(to) => ("done", to.to_string_lossy().into_owned()),
+        Err(e) => {
+            eprintln!("lumora: the recording was not copied: {e}");
+            ("failed", e)
+        }
+    };
+    shared.update(|s| {
+        s.copy = Some(CopyStatus {
+            from,
+            state,
+            detail: Some(detail),
+        });
+    });
 }
 
 /// Stdin is closed: give FFmpeg a moment to finish, then make sure it's gone.
@@ -2648,6 +2752,53 @@ mod tests {
             || c.status().last_recording.as_deref() == Some(path.to_str().unwrap())
         ));
         assert!(c.chunk(r.session, b"late".to_vec()).is_err());
+    }
+
+    #[test]
+    fn a_finished_recording_is_copied_to_the_copy_folder() {
+        let d = temp_dir("copy");
+        let cloud = d.join("OneDrive").join("Recordings");
+        let (c, _) = capture(&d, None);
+        let mut s = c.settings();
+        s.copy_folder = Some(cloud.to_string_lossy().into_owned());
+        c.set_settings(s);
+        // A file of that name already there is kept.
+        fs::create_dir_all(&cloud).unwrap();
+        fs::write(cloud.join("Talk.webm"), b"older").unwrap();
+        let r = c
+            .start(Kind::Record, "video/webm;codecs=vp8,opus", "Talk")
+            .unwrap();
+        c.chunk(r.session, b"the talk".to_vec()).unwrap();
+        c.stop(r.session);
+        assert!(wait_for(|| c
+            .status()
+            .copy
+            .is_some_and(|x| x.state == "done")));
+        let copy = cloud.join("Talk (2).webm");
+        assert_eq!(c.status().copy.unwrap().detail.as_deref(), copy.to_str());
+        assert_eq!(fs::read(&copy).unwrap(), b"the talk");
+        assert_eq!(fs::read(cloud.join("Talk.webm")).unwrap(), b"older");
+        assert!(!cloud.join("Talk (2).webm.part").exists());
+    }
+
+    #[test]
+    fn the_copy_folder_is_never_the_recordings_own() {
+        let s = CaptureSettings {
+            folder: Some("D:\\Shows".into()),
+            copy_folder: Some("D:\\Shows".into()),
+            ..CaptureSettings::default()
+        }
+        .cleaned();
+        assert_eq!(s.copy_folder, None);
+        let blank = CaptureSettings {
+            copy_folder: Some("  ".into()),
+            ..CaptureSettings::default()
+        }
+        .cleaned();
+        assert_eq!(blank.copy_folder, None);
+        let d = temp_dir("copy-missing");
+        assert!(copy_into(&d.join("gone.mp4"), &d.join("out")).is_err());
+        assert!(!d.join("out").join("gone.mp4.part").exists());
     }
 
     #[test]
