@@ -356,6 +356,25 @@ impl Plugin {
         }
     }
 
+    /// The controller (for the plug-in's own window).
+    #[must_use]
+    pub fn controller(&self) -> Option<&ComPtr> {
+        self.controller.as_ref()
+    }
+
+    /// The values the plug-in's own window changed, given to the processor (each parameter's last).
+    pub fn take_edits(&mut self) {
+        let edits: Vec<(u32, f64)> = self
+            .edits
+            .lock()
+            .map(|mut e| std::mem::take(&mut *e))
+            .unwrap_or_default();
+        for (id, v) in edits {
+            self.pending.retain(|(x, _)| *x != id);
+            self.pending.push((id, v.clamp(0.0, 1.0)));
+        }
+    }
+
     /// Set a parameter (0–1): the controller now, the processor with the next block.
     pub fn set(&mut self, id: u32, value: f64) {
         let v = value.clamp(0.0, 1.0);

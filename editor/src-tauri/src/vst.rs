@@ -234,6 +234,27 @@ pub fn settings(
     })
 }
 
+/// The plug-in's own window (in a helper, until it is closed); then its parameters and state.
+///
+/// # Errors
+/// It has no window, or it couldn't be opened.
+pub fn edit(path: &str, cid: &str, state: Option<String>, title: &str) -> Result<Settings, String> {
+    // Open as long as the person works in it.
+    let r = ask(
+        &Request::Edit {
+            path: PathBuf::from(path),
+            cid: cid.to_owned(),
+            state,
+            title: title.to_owned(),
+        },
+        Duration::from_secs(12 * 3600),
+    )?;
+    Ok(Settings {
+        params: r.params,
+        state: r.state.unwrap_or_default(),
+    })
+}
+
 /// A stretch of a file's sound through a chain of plug-ins, as a WAV file
 /// (made once for each file, stretch and set of settings, kept in `cache`).
 ///

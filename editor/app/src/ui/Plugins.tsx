@@ -12,6 +12,9 @@ import { Modal } from './controls';
 import './plugins.css';
 
 type Scan = Awaited<ReturnType<typeof native.vstScan>>;
+
+/** Plug-in windows open on Windows (elsewhere the parameters are here). */
+const onWindows = (): boolean => inApp() && typeof navigator !== 'undefined' && /Windows/i.test(navigator.userAgent);
 let scanned: Promise<Scan> | null = null;
 
 /** The plug-ins on the computer (looked for once a session, or again when asked). */
@@ -132,6 +135,7 @@ export function PluginControls({
   const d = pluginOf(effect);
   const [problem, setProblem] = useState('');
   const [dragging, setDragging] = useState<{ id: number; value: number } | null>(null);
+  const [windowOpen, setWindowOpen] = useState(false);
   const [, redraw] = useState(0);
   useEffect(() => onPluginSound(() => redraw((n) => n + 1)), []);
   // The first time: read its parameters (and its own default settings).
@@ -152,6 +156,15 @@ export function PluginControls({
       .catch((e: unknown) => setProblem(e instanceof Error ? e.message : String(e)))
       .finally(() => setDragging(null));
   };
+  const openWindow = () => {
+    setProblem('');
+    setWindowOpen(true);
+    native
+      .vstEdit(d.path, d.cid, d.state || null, `${d.name} — ${clip.name}`)
+      .then((r) => onChange({ ...d, params: r.params, state: r.state }, `${d.name} settings`))
+      .catch((e: unknown) => setProblem(e instanceof Error ? e.message : String(e)))
+      .finally(() => setWindowOpen(false));
+  };
   const m = project.media.find((x) => clip.source.kind === 'media' && x.id === clip.source.media);
   const fps = rate(current(project));
   const failed = m ? pluginProblem(clip, m, fps) : null;
@@ -163,6 +176,11 @@ export function PluginControls({
         {!effect.on ? 'Off' : failed ? 'Could not run' : ready ? 'Ready: playing through the plug-in' : 'Working in the background…'}
       </p>
       {(problem || failed) && <p className="form__problem">{problem || failed}</p>}
+      {onWindows() && (
+        <button type="button" className="btn btn--sm" disabled={windowOpen} title="The plug-in's own controls, in a window of their own" onClick={openWindow}>
+          {windowOpen ? 'The plug-in window is open: close it to come back' : 'Open the plug-in window'}
+        </button>
+      )}
       {d.params.length === 0 && !problem && <p className="insp__note">Reading its settings…</p>}
       {d.params.map((p) => {
         const value = dragging?.id === p.id ? dragging.value : p.value;

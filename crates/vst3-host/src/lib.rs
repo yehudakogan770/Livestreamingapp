@@ -13,6 +13,7 @@
 //! - [`plugin`]: one effect: parameters, state, and sound through it.
 
 pub mod com;
+pub mod editor;
 pub mod module;
 pub mod objects;
 pub mod plugin;
@@ -40,6 +41,14 @@ pub enum Request {
         state: Option<String>,
         #[serde(default)]
         set: Vec<(u32, f64)>,
+    },
+    /// The plug-in's own window, until it is closed; then its parameters and state.
+    Edit {
+        path: PathBuf,
+        cid: String,
+        #[serde(default)]
+        state: Option<String>,
+        title: String,
     },
     /// Sound through a chain of effects: raw 32-bit float samples (channels interleaved) in and out.
     Render {
@@ -148,6 +157,22 @@ fn run(req: Request) -> Result<Reply, String> {
                 vendor: None,
             })
         }
+        Request::Edit {
+            path,
+            cid,
+            state,
+            title,
+        } => {
+            let mut p = open(&path, &cid, state.as_deref())?;
+            editor::edit(&mut p, &title)?;
+            Ok(Reply {
+                error: None,
+                classes: Vec::new(),
+                params: p.params(),
+                state: Some(base64_encode(&p.state())),
+                vendor: None,
+            })
+        }
         Request::Render {
             chain,
             input,
@@ -199,7 +224,13 @@ pub fn serve() -> i32 {
 pub fn deinterleave(raw: &[u8], channels: usize) -> Vec<Vec<f32>> {
     let frames = raw.len() / 4 / channels.max(1);
     let mut out = vec![Vec::with_capacity(frames); channels.max(1)];
-    for (i, chunk) in raw.as_chunks::<4>().0.iter().take(frames * channels).enumerate() {
+    for (i, chunk) in raw
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .take(frames * channels)
+        .enumerate()
+    {
         out[i % channels].push(f32::from_le_bytes(*chunk));
     }
     out

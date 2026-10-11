@@ -67,6 +67,8 @@ pub const IPARAM_VALUE_QUEUE: Tuid = uid(0x0126_3A18, 0xED07_4F6F, 0x98C9_D356, 
 pub const ICONNECTION_POINT: Tuid = uid(0x70A4_156F, 0x6E6E_4026, 0x9891_48BF, 0xAA60_D8D1);
 pub const IMESSAGE: Tuid = uid(0x936F_033B, 0xC6C0_47DB, 0xBB08_82F8, 0x13C1_E613);
 pub const IATTRIBUTE_LIST: Tuid = uid(0x1E5F_0AEB, 0xCC7F_4533, 0xA254_4011, 0x38AD_5EE4);
+pub const IPLUG_VIEW: Tuid = uid(0x5BC3_2507, 0xD060_49EA, 0xA615_1B52, 0x2B75_5B29);
+pub const IPLUG_FRAME: Tuid = uid(0x367F_AF01, 0xAFA9_4693, 0x8D4D_A2A0, 0xED08_82A3);
 
 // ---- constants ----
 pub const MEDIA_AUDIO: i32 = 0;
@@ -336,6 +338,39 @@ pub struct IAttributeListVtbl {
         unsafe extern "system" fn(*mut c_void, *const u8, *const c_void, u32) -> TResult,
     pub get_binary:
         unsafe extern "system" fn(*mut c_void, *const u8, *mut *const c_void, *mut u32) -> TResult,
+}
+
+/// A plug-in window's size and place (pixels).
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ViewRect {
+    pub left: i32,
+    pub top: i32,
+    pub right: i32,
+    pub bottom: i32,
+}
+
+#[repr(C)]
+pub struct IPlugViewVtbl {
+    pub base: FUnknownVtbl,
+    pub is_platform_type_supported: unsafe extern "system" fn(*mut c_void, *const u8) -> TResult,
+    pub attached: unsafe extern "system" fn(*mut c_void, *mut c_void, *const u8) -> TResult,
+    pub removed: unsafe extern "system" fn(*mut c_void) -> TResult,
+    pub on_wheel: unsafe extern "system" fn(*mut c_void, f32) -> TResult,
+    pub on_key_down: unsafe extern "system" fn(*mut c_void, u16, i16, i16) -> TResult,
+    pub on_key_up: unsafe extern "system" fn(*mut c_void, u16, i16, i16) -> TResult,
+    pub get_size: unsafe extern "system" fn(*mut c_void, *mut ViewRect) -> TResult,
+    pub on_size: unsafe extern "system" fn(*mut c_void, *mut ViewRect) -> TResult,
+    pub on_focus: unsafe extern "system" fn(*mut c_void, u8) -> TResult,
+    pub set_frame: unsafe extern "system" fn(*mut c_void, *mut c_void) -> TResult,
+    pub can_resize: unsafe extern "system" fn(*mut c_void) -> TResult,
+    pub check_size_constraint: unsafe extern "system" fn(*mut c_void, *mut ViewRect) -> TResult,
+}
+
+#[repr(C)]
+pub struct IPlugFrameVtbl {
+    pub base: FUnknownVtbl,
+    pub resize_view: unsafe extern "system" fn(*mut c_void, *mut c_void, *mut ViewRect) -> TResult,
 }
 
 /// The first field of every interface object: its table of functions.

@@ -855,6 +855,22 @@ mod tests {
     }
 
     #[test]
+    fn changes_made_in_the_plug_in_window_reach_the_saved_state() {
+        let mut p = Plugin::open(module(), &PROCESSOR_CID).unwrap();
+        // As the window would: the plug-in tells the host through the handler.
+        p.edits.lock().unwrap().clear();
+        p.edits.lock().unwrap().extend([(GAIN, 0.2), (GAIN, 0.7)]);
+        p.take_edits();
+        p.apply(48_000.0).unwrap();
+        let state = p.state();
+        let mut q = Plugin::open(module(), &PROCESSOR_CID).unwrap();
+        q.restore(&state).unwrap();
+        assert!((q.params()[0].value - 0.7).abs() < 1e-9);
+        // The fake has no window: refused with a message (and on Linux the window is Windows-only).
+        assert!(crate::editor::edit(&mut q, "Test").is_err());
+    }
+
+    #[test]
     fn many_opens_and_closes_keep_counts_balanced() {
         let m = module();
         for _ in 0..50 {

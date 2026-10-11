@@ -355,6 +355,19 @@ async fn vst_settings(
     .map_err(|e| e.to_string())?
 }
 
+/// A VST3 effect's own window (Windows), open until it is closed; then its parameters and state.
+#[tauri::command]
+async fn vst_edit(
+    path: String,
+    cid: String,
+    state: Option<String>,
+    title: String,
+) -> Result<vst::Settings, String> {
+    tauri::async_runtime::spawn_blocking(move || vst::edit(&path, &cid, state, &title))
+        .await
+        .map_err(|e| e.to_string())?
+}
+
 /// A stretch of a file's sound through a clip's VST3 effects, as a WAV file (made once; progress as `vst-progress`).
 #[tauri::command]
 async fn vst_render(
@@ -727,6 +740,7 @@ pub fn run() {
             voice_clean,
             vst_scan,
             vst_settings,
+            vst_edit,
             vst_render,
             export_folder,
             write_chunk,

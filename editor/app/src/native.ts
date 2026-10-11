@@ -52,6 +52,9 @@ export const native = {
   /** A VST3 effect's parameters, its saved settings restored and values set; and its settings after. */
   vstSettings: (path: string, cid: string, state: string | null, set: [number, number][] = []) =>
     invoke<{ params: PluginParam[]; state: string }>('vst_settings', { path, cid, state, set }),
+  /** A VST3 effect's own window (Windows), open until it is closed; then its parameters and settings. */
+  vstEdit: (path: string, cid: string, state: string | null, title: string) =>
+    invoke<{ params: PluginParam[]; state: string }>('vst_edit', { path, cid, state, title }),
   /** A stretch of a file's sound through VST3 effects, as a WAV file (made once). */
   vstRender: (path: string, from: number, seconds: number, chain: ChainLink[]) => invoke<string>('vst_render', { path, from, seconds, chain }),
   /** The voice isolation model's path on disk (for FFmpeg's arnndn). */

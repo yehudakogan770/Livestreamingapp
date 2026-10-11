@@ -16,9 +16,10 @@ use std::sync::{Arc, Mutex};
 
 use crate::com::{
     results, to_wide128, FUnknownVtbl, IAttributeListVtbl, IBStreamVtbl, IComponentHandlerVtbl,
-    IHostApplicationVtbl, IMessageVtbl, IParamValueQueueVtbl, IParameterChangesVtbl, TResult, Tuid,
-    FUNKNOWN, IATTRIBUTE_LIST, IBSTREAM, ICOMPONENT_HANDLER, IHOST_APPLICATION, IMESSAGE,
-    IPARAMETER_CHANGES, IPARAM_VALUE_QUEUE, STREAM_SEEK_CUR, STREAM_SEEK_END, STREAM_SEEK_SET,
+    IHostApplicationVtbl, IMessageVtbl, IParamValueQueueVtbl, IParameterChangesVtbl,
+    IPlugFrameVtbl, IPlugViewVtbl, TResult, Tuid, ViewRect, FUNKNOWN, IATTRIBUTE_LIST, IBSTREAM,
+    ICOMPONENT_HANDLER, IHOST_APPLICATION, IMESSAGE, IPARAMETER_CHANGES, IPARAM_VALUE_QUEUE,
+    IPLUG_FRAME, STREAM_SEEK_CUR, STREAM_SEEK_END, STREAM_SEEK_SET,
 };
 
 /// A host object: its table of functions, its reference count and its data.
@@ -203,6 +204,43 @@ static HANDLER_VTBL: IComponentHandlerVtbl = IComponentHandlerVtbl {
 #[must_use]
 pub fn new_handler(edits: Edits) -> *mut c_void {
     Handler::make(&HANDLER_VTBL, &ICOMPONENT_HANDLER, edits)
+}
+
+// ---------------------------------------------------------------------------
+// The frame around a plug-in's own window: it asks to be resized through it.
+
+/// Makes the window around a plug-in view a new size (client width and height).
+pub type Resize = Box<dyn Fn(i32, i32)>;
+type Frame = Obj<IPlugFrameVtbl, Resize>;
+
+unsafe extern "system" fn frame_resize(
+    this: *mut c_void,
+    view: *mut c_void,
+    rect: *mut ViewRect,
+) -> TResult {
+    if view.is_null() || rect.is_null() {
+        return results::INVALID_ARGUMENT;
+    }
+    // SAFETY: a live frame of ours; the plug-in gives its view and a rectangle.
+    let (me, r) = unsafe { (Frame::get(this), *rect) };
+    (me.data)(r.right - r.left, r.bottom - r.top);
+    // SAFETY: the view's onSize, as the SDK asks hosts to call after resizing.
+    unsafe {
+        let mut done = r;
+        ((**(view as *const *const IPlugViewVtbl)).on_size)(view, &mut done);
+    }
+    results::OK
+}
+
+static FRAME_VTBL: IPlugFrameVtbl = IPlugFrameVtbl {
+    base: Frame::UNKNOWN,
+    resize_view: frame_resize,
+};
+
+/// A frame for a plug-in view (`resize` makes the window around it bigger or smaller).
+#[must_use]
+pub fn new_frame(resize: Resize) -> *mut c_void {
+    Frame::make(&FRAME_VTBL, &IPLUG_FRAME, resize)
 }
 
 // ---------------------------------------------------------------------------
