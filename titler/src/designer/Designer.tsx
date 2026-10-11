@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlignCenterHorizontal,
   AlignCenterVertical,
+  AlignHorizontalDistributeCenter,
+  AlignVerticalDistributeCenter,
   AlignEndHorizontal,
   AlignEndVertical,
   AlignStartHorizontal,
@@ -34,14 +36,14 @@ import {
   Keyboard,
 } from 'lucide-react';
 import { browserEnv, requestFonts, type BrowserEnv } from '../core/browserEnv';
-import { cloneLayers, newProject, newText } from '../core/build';
+import { cloneLayers, newCamera, newNull, newProject, newShape, newText } from '../core/build';
 import { TOKEN_KEYS, tokensFor } from '../core/binding';
 import { fileName } from '../core/package';
 import type { BrandTokens, Layer, TitleProject, Values } from '../core/types';
 import { Inspector } from './Inspector';
 import { CompositionPanel, DataPanel, FieldsPanel, LibraryPanel, LookPanel, ProjectPanel } from './Panels';
 import { Timeline, toggleOpen } from './Timeline';
-import { Viewport, lookOf } from './Viewport';
+import { Viewport, lookOf, spaceHold } from './Viewport';
 import { layerBounds } from './geometry';
 import { addLayers, align, compOf, distribute, duplicate, findLayer, group, precompose, removeLayers, restack, ungroup, updateLayers, nudge } from './ops';
 import { Store, useStore, type Tool } from './store';
@@ -57,6 +59,7 @@ import { Shortcuts } from './Shortcuts';
 import { NotesPanel, NotesPopover } from './Notes';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
+import { AskHost, Modal, askConfirm, modalOpen } from './Modal';
 import { ExportDialog, NoticeDialog } from './ExportDialog';
 import { pickImportFile, readImport } from './importing';
 import { fromSvg, spanning } from '../core/svgImport';
@@ -69,12 +72,17 @@ import {
   saveLayout,
   workspace,
   WORKSPACE_NAMES,
+  type Docks,
   type Layout,
-  type LeftTab,
-  type RightTab,
+  type PanelId,
   type WorkspaceName,
+  findPanel,
+  showPanel,
 } from './workspace';
+import { DockOverlay, DockSide, useDockDrag } from './Dock';
+import { MenuButton, MenuCheck, MenuItem, MenuSep } from './MenuButton';
 import { usePreviewCues } from './previewCues';
+import { useLiveData } from './liveData';
 import { RamPreview } from './ramPreview';
 import { copyKeys, pasteKeys, type KeyClip } from './keyframes';
 import { setExprScope } from '../core/expr';
@@ -117,7 +125,10 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const setLibId = (id: string | null) => libIds.current.set(store, id);
   const [layout, setLayoutState] = useState<Layout>(() => {
     const l = loadLayout();
-    return initial && l.leftTab === 'library' ? { ...l, leftTab: 'project' } : l;
+    // Opened with a title: its Project panel rather than the library.
+    return initial && findPanel(l.docks, 'library') && l.docks[findPanel(l.docks, 'library')!.side].some((g) => g.active === 'library')
+      ? { ...l, docks: showPanel(l.docks, 'project') }
+      : l;
   });
   const setLayout = (patch: Partial<Layout> | ((l: Layout) => Partial<Layout>)) =>
     setLayoutState((l) => {
@@ -125,10 +136,10 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       saveLayout(next);
       return next;
     });
-  const side = layout.leftTab;
-  const setSide = (leftTab: LeftTab) => setLayout({ leftTab, canvasOnly: false });
-  const right = layout.rightTab;
-  const setRight = (rightTab: RightTab) => setLayout({ rightTab });
+  /** Bring a panel to the front (wherever it is docked). */
+  const setSide = (id: PanelId) => setLayout((l) => ({ docks: showPanel(l.docks, id), canvasOnly: false }));
+  const setDocks = (docks: Docks) => setLayout({ docks });
+  const dock = useDockDrag(layout.docks, setDocks);
   const [recent, setRecent] = useState(recentTitles);
   const [renderOpen, setRenderOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -160,6 +171,9 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
 
   // Audio cues sound as the preview passes them.
   usePreviewCues(store, host.urlFor);
+
+  // Data sources are read again on their intervals.
+  useLiveData(store);
 
   // Fonts the project uses, and its files.
   useEffect(() => {
@@ -266,17 +280,18 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     if (!r) return;
     if (!r.result.project) {
       store.set({ status: r.result.error ?? 'It could not be opened.' });
-      alert(r.result.error ?? 'It could not be opened.');
+      setNotice({ title: 'Open', lead: r.result.error ?? 'It could not be opened.', items: [] });
       return;
     }
     open(r.result.project, null, r.path);
     if (r.result.notes.length) store.set({ status: r.result.notes.join(' ') });
   };
 
-  const closeTab = (i: number) => {
+  const closeTab = async (i: number) => {
     const t = tabs[i];
     if (!t) return;
-    if (t.get().dirty && !confirm(`Close “${t.get().project.name}”? Changes that are not saved will be lost.`)) return;
+    if (t.get().dirty && !(await askConfirm('Close title', `Close “${t.get().project.name}”? Changes that are not saved will be lost.`, 'Close without saving', true)))
+      return;
     const next = tabs.filter((_, j) => j !== i);
     setTabs(next.length ? next : [new Store(newProject(), { brand, values })]);
     setActive((a) => Math.max(0, Math.min(next.length - 1, a > i ? a - 1 : a === i ? i - 1 : a)));
@@ -341,6 +356,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       const el = e.target as HTMLElement | null;
       if (el?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (!rootRef.current?.isConnected) return;
+      // A dialog is open: it has the keyboard.
+      if (modalOpen()) return;
       const mod = e.ctrlKey || e.metaKey;
       const k = e.key.toLowerCase();
       const s = store.get();
@@ -368,8 +385,12 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       if (mod) return;
       switch (e.key) {
         case ' ':
+          // Played when Space comes up (held and dragged, it moves the view instead).
           handled();
-          store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }));
+          if (!e.repeat) {
+            spaceHold.down = true;
+            spaceHold.used = false;
+          }
           return;
         case 'Delete':
         case 'Backspace':
@@ -410,7 +431,9 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           return;
         }
         case 'Escape':
-          store.set({ selection: [], keys: [], tool: 'select' });
+          // Editing a path's points: Escape ends that first.
+          if (s.editingPath) return store.set({ editingPath: null, outlinePoint: null, status: '' });
+          store.set({ selection: [], keys: [], tool: 'select', outlinePoint: null });
           return;
         case '[':
         case ']': {
@@ -425,6 +448,18 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           );
           return;
         }
+      }
+      // Alt+P, S, R, T, A: a keyframe of position, scale, rotation, opacity or anchor point at the playhead.
+      // (By the key's place, so Option+P on a Mac, which types π, works too.)
+      const letter = e.code?.startsWith('Key') ? e.code.slice(3).toLowerCase() : k;
+      if (e.altKey && KEY_PATHS[letter]) {
+        handled();
+        if (!s.selection.length) return;
+        const path = KEY_PATHS[letter]!;
+        store.edit('Add keyframe', (p) => updateLayers(p, c.id, s.selection, (l) => withProp(l, path, keyHere(getProp(l, path), s.time))), {
+          status: `A keyframe of ${KEY_NAMES[letter]} at ${s.time.toFixed(2)} s`,
+        });
+        return;
       }
       switch (k) {
         case 'v':
@@ -462,22 +497,28 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           for (const id of ids) next = toggleOpen(next, id, 'animated');
           return store.set({ open: next });
         }
-        case 'p':
-        case 's':
-        case 'a': {
-          const path = k === 'p' ? 'transform.position' : k === 's' ? 'transform.scale' : 'transform.anchor';
-          if (e.altKey) {
-            // Alt+P/S: a keyframe of that property at the playhead.
-            store.edit('Add keyframe', (p) => updateLayers(p, c.id, s.selection, (l) => withProp(l, path, keyHere(getProp(l, path), s.time))));
-          }
-          return;
-        }
         case 'n':
           return cmd.addText();
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key !== ' ' || !spaceHold.down) return;
+      spaceHold.down = false;
+      const el = e.target as HTMLElement | null;
+      if (spaceHold.used || el?.closest?.('input, textarea, select, [contenteditable="true"]') || modalOpen()) return;
+      store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }));
+    };
+    const onBlur = () => {
+      spaceHold.down = false;
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, cmd]);
 
@@ -492,6 +533,46 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
 
   const rootRef = useRef<HTMLDivElement>(null);
   const c = compOf(project, store.get().compId);
+  /** What each docked panel shows. */
+  const renderPanel = (id: PanelId) => {
+    switch (id) {
+      case 'library':
+        return (
+          <>
+            {recent.length > 0 && (
+              <div className="tt-recent" aria-label="Recent titles">
+                <div className="tt-recent-head">Recent</div>
+                {recent.slice(0, 5).map((r) => (
+                  <button key={r.id} className="tt-recent-item" title={r.id} onClick={() => void openRecent(r.id)}>
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <LibraryPanel key={libVersion} store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
+          </>
+        );
+      case 'project':
+        return <ProjectPanel store={store} host={host} />;
+      case 'history':
+        return (
+          <>
+            <NotesPanel store={store} />
+            <HistoryPanel store={store} />
+          </>
+        );
+      case 'layer':
+        return <Inspector store={store} />;
+      case 'comp':
+        return <CompositionPanel store={store} />;
+      case 'fields':
+        return <FieldsPanel store={store} host={host} />;
+      case 'look':
+        return <LookPanel store={store} host={host} />;
+      case 'data':
+        return <DataPanel store={store} />;
+    }
+  };
   const tools: [Tool, string, React.ReactNode, string][] = [
     ['select', 'Select', <MousePointer2 key="s" size={16} />, 'V'],
     ['text', 'Text', <Type key="t" size={16} />, 'T'],
@@ -507,7 +588,13 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         className={`tt tt-look-${look}${layout.canvasOnly ? ' tt-canvas-only' : ''}`}
         ref={rootRef}
         data-testid="titler-designer"
-        style={{ '--tt-left': `${layout.left}px`, '--tt-right': `${layout.right}px`, '--tt-timeline': `${layout.timeline}px` } as React.CSSProperties}
+        style={
+          {
+            '--tt-left': `${layout.docks.left.length ? layout.left : 0}px`,
+            '--tt-right': `${layout.docks.right.length ? layout.right : 0}px`,
+            '--tt-timeline': `${layout.timeline}px`,
+          } as React.CSSProperties
+        }
       >
         <header className="tt-top">
           <span className="tt-brand">
@@ -516,22 +603,69 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           </span>
           <div className="tt-menu">
             <button onClick={() => open(newProject(), null)} title="New title">
-              <Plus size={15} /> New
+              <Plus size={15} /> <span className="tt-menu-text">New</span>
             </button>
             <button onClick={() => void openFile()} title="Open a .lumtitle file (Ctrl+O)">
-              <FolderOpen size={15} /> Open
+              <FolderOpen size={15} /> <span className="tt-menu-text">Open</span>
             </button>
             <button onClick={() => void saveToLibrary()} title={`Save to the library: ${host.libraryName} (Ctrl+S)`}>
-              <Save size={15} /> Save
+              <Save size={15} /> <span className="tt-menu-text">Save</span>
             </button>
-            <button onClick={() => void importFile()} title="Import a Lottie animation (After Effects, LottieFiles), a template pack or a .lumtitle file">
-              <FileInput size={15} /> Import
+            <button onClick={() => void importFile()} title="Import a Lottie animation (After Effects, LottieFiles), a Photoshop file, an SVG drawing, a template pack or a .lumtitle file">
+              <FileInput size={15} /> <span className="tt-menu-text">Import</span>
             </button>
             <button onClick={() => setExportOpen(true)} title="Export: a .lumtitle file (Ctrl+Shift+S), an HTML template for other playout systems, or Lottie">
-              <Download size={15} /> Export
+              <Download size={15} /> <span className="tt-menu-text">Export</span>
             </button>
+            <MenuButton label={<span className="tt-menu-text-keep">Layer</span>} title="Add layers, and arrange the selected ones">
+              {(close) => {
+                const go = (f: () => void) => () => (f(), close());
+                const camera = c.layers.find((l) => l.type === 'null' && l.camera);
+                return (
+                  <>
+                    <MenuItem onClick={go(() => cmd.addText())} hint="N">
+                      Text
+                    </MenuItem>
+                    <MenuItem onClick={go(() => cmd.addShape('rect'))} hint="R">
+                      Rectangle
+                    </MenuItem>
+                    <MenuItem onClick={go(() => cmd.addShape('ellipse'))} hint="E">
+                      Ellipse
+                    </MenuItem>
+                    <MenuItem onClick={go(() => cmd.addNull())}>Null (to parent layers to)</MenuItem>
+                    <MenuItem onClick={go(() => (camera ? store.set({ selection: [camera.id] }) : cmd.addCamera()))}>
+                      {camera ? 'Select the camera' : 'Camera (for 3D layers)'}
+                    </MenuItem>
+                    <MenuSep />
+                    <MenuItem disabled={!selection.length} onClick={go(() => cmd.duplicate())} hint="Ctrl+D">
+                      Duplicate
+                    </MenuItem>
+                    <MenuItem disabled={!selection.length} onClick={go(() => cmd.group())} hint="Ctrl+G">
+                      Group
+                    </MenuItem>
+                    <MenuItem disabled={store.selected()[0]?.type !== 'group'} onClick={go(() => cmd.ungroup())} hint="Ctrl+Shift+G">
+                      Ungroup
+                    </MenuItem>
+                    <MenuItem disabled={!selection.length} onClick={go(() => cmd.precompose())} hint="Ctrl+Shift+C">
+                      Precompose
+                    </MenuItem>
+                    <MenuSep />
+                    <MenuItem disabled={!selection.length} onClick={go(() => cmd.restack('front'))} hint="Ctrl+Shift+]">
+                      Bring to front
+                    </MenuItem>
+                    <MenuItem disabled={!selection.length} onClick={go(() => cmd.restack('back'))} hint="Ctrl+Shift+[">
+                      Send to back
+                    </MenuItem>
+                    <MenuSep />
+                    <MenuItem disabled={!selection.length && !store.get().keys.length} onClick={go(() => cmd.remove())} hint="Delete">
+                      Delete
+                    </MenuItem>
+                  </>
+                );
+              }}
+            </MenuButton>
             <button onClick={() => setRenderOpen(true)} title="Render to a film or PNG sequence">
-              <Film size={15} /> Render
+              <Film size={15} /> <span className="tt-menu-text">Render</span>
             </button>
           </div>
           <div className="tt-sep" />
@@ -577,7 +711,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               title="Spread evenly across"
               aria-label="Distribute across"
             >
-              ⇹
+              <AlignHorizontalDistributeCenter size={15} />
             </button>
             <button
               disabled={selection.length < 3}
@@ -585,7 +719,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               title="Spread evenly down"
               aria-label="Distribute down"
             >
-              ⇵
+              <AlignVerticalDistributeCenter size={15} />
             </button>
           </div>
           <div className="tt-sep" />
@@ -601,21 +735,29 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           <button className="tt-plain tt-keys-btn" onClick={() => setKeysOpen(true)} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
             <Keyboard size={15} />
           </button>
-          <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
-            <span className="tt-dim">Workspace</span>
-            <select
-              className="tt-select"
-              aria-label="Workspace"
-              value={layout.workspace}
-              onChange={(e) => setLayout(workspace(e.target.value as WorkspaceName))}
-            >
-              {(Object.keys(WORKSPACE_NAMES) as WorkspaceName[]).map((w) => (
-                <option key={w} value={w}>
-                  {WORKSPACE_NAMES[w]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <MenuButton
+            className="tt-workspace"
+            align="right"
+            title="Workspace: the panels and their sizes for the job at hand"
+            label={
+              <>
+                <span className="tt-dim">Workspace</span> {WORKSPACE_NAMES[layout.workspace]}
+              </>
+            }
+          >
+            {(close) => (
+              <>
+                {(Object.keys(WORKSPACE_NAMES) as WorkspaceName[]).map((w) => (
+                  <MenuItem key={w} chosen={layout.workspace === w} onClick={() => (setLayout(workspace(w)), close())}>
+                    {WORKSPACE_NAMES[w]}
+                  </MenuItem>
+                ))}
+                <MenuSep />
+                <MenuItem onClick={() => (setLayout(workspace(layout.workspace)), close())}>Reset {WORKSPACE_NAMES[layout.workspace]}</MenuItem>
+                <div className="tt-menu-note">Drag a panel by its tab to dock it in another group, above or below one, or on the other side.</div>
+              </>
+            )}
+          </MenuButton>
           {tabs.length === 1 && (
             <span className="tt-title" title={store.get().path ?? ''}>
               {project.name}
@@ -658,48 +800,17 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         )}
         {tabs.length > 1 && <TitleTabs tabs={tabs} active={Math.min(active, tabs.length - 1)} onPick={setActive} onClose={closeTab} />}
         <div className="tt-main" key={tabKey(store)}>
-          <aside className="tt-left">
-            <div className="tt-tabs">
-              <button className={side === 'library' ? 'on' : ''} onClick={() => setSide('library')}>
-                Library
-              </button>
-              <button className={side === 'project' ? 'on' : ''} onClick={() => setSide('project')}>
-                Project
-              </button>
-              <button className={side === 'history' ? 'on' : ''} onClick={() => setSide('history')}>
-                History
-              </button>
-            </div>
-            {side === 'library' && (
-              <>
-                {recent.length > 0 && (
-                  <div className="tt-recent" aria-label="Recent titles">
-                    <div className="tt-recent-head">Recent</div>
-                    {recent.slice(0, 5).map((r) => (
-                      <button key={r.id} className="tt-recent-item" title={r.id} onClick={() => void openRecent(r.id)}>
-                        {r.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <LibraryPanel key={libVersion} store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
-              </>
+          <DockSide side="left" docks={layout.docks} onDocks={setDocks} render={renderPanel} dragging={!!dock.drag} begin={dock.begin}>
+            {layout.docks.left.length > 0 && (
+              <Splitter
+                axis="x"
+                edge="right"
+                value={layout.left}
+                onChange={(left) => setLayout({ left: clampSize('left', left) })}
+                label="Resize the left panel"
+              />
             )}
-            {side === 'project' && <ProjectPanel store={store} host={host} />}
-            {side === 'history' && (
-              <>
-                <NotesPanel store={store} />
-                <HistoryPanel store={store} />
-              </>
-            )}
-            <Splitter
-              axis="x"
-              edge="right"
-              value={layout.left}
-              onChange={(left) => setLayout({ left: clampSize('left', left) })}
-              label="Resize the left panel"
-            />
-          </aside>
+          </DockSide>
           <section className="tt-center">
             <NotesPopover store={store} />
             <div className="tt-viewbar">
@@ -720,22 +831,27 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
                 ))}
               </select>
               <span className="tt-grow" />
-              {(
-                [
-                  ['safe', 'Safe areas'],
-                  ['guides', 'Guides'],
-                  ['grid', 'Grid'],
-                  ['rulers', 'Rulers'],
-                  ['snap', 'Snapping'],
-                  ['motionPaths', 'Motion paths'],
-                  ['notes', 'Notes'],
-                ] as const
-              ).map(([k, label]) => (
-                <label key={k} className="tt-check">
-                  <input type="checkbox" checked={show[k]} onChange={(e) => store.set((x) => ({ show: { ...x.show, [k]: e.target.checked } }))} />
-                  {label}
-                </label>
-              ))}
+              <MenuButton label="View" title="Guides and helpers on the canvas" align="right">
+                {() => (
+                  <>
+                    {(
+                      [
+                        ['safe', 'Safe areas', ''],
+                        ['guides', 'Guides', ''],
+                        ['grid', 'Grid', ''],
+                        ['rulers', 'Rulers', ''],
+                        ['snap', 'Snapping', ''],
+                        ['motionPaths', 'Motion paths', ''],
+                        ['notes', 'Notes', ''],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <MenuCheck key={k} checked={show[k]} onChange={(v) => store.set((x) => ({ show: { ...x.show, [k]: v } }))}>
+                        {label}
+                      </MenuCheck>
+                    ))}
+                  </>
+                )}
+              </MenuButton>
               <button
                 className={`tt-plain tt-canvas-btn${layout.canvasOnly ? ' on' : ''}`}
                 onClick={() => setLayout((l) => ({ canvasOnly: !l.canvasOnly }))}
@@ -789,31 +905,12 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               </span>
             </div>
           </section>
-          <aside className="tt-right">
-            <Splitter axis="x" edge="left" value={layout.right} onChange={(r) => setLayout({ right: clampSize('right', r) })} label="Resize the right panel" />
-            <div className="tt-tabs">
-              {(
-                [
-                  ['layer', 'Layer'],
-                  ['comp', 'Composition'],
-                  ['fields', 'Fields'],
-                  ['look', 'Look'],
-                  ['data', 'Data'],
-                ] as const
-              ).map(([id, name]) => (
-                <button key={id} className={right === id ? 'on' : ''} onClick={() => setRight(id)}>
-                  {name}
-                </button>
-              ))}
-            </div>
-            <div className="tt-right-body">
-              {right === 'layer' && <Inspector store={store} />}
-              {right === 'comp' && <CompositionPanel store={store} />}
-              {right === 'fields' && <FieldsPanel store={store} host={host} />}
-              {right === 'look' && <LookPanel store={store} host={host} />}
-              {right === 'data' && <DataPanel store={store} />}
-            </div>
-          </aside>
+          <DockSide side="right" docks={layout.docks} onDocks={setDocks} render={renderPanel} dragging={!!dock.drag} begin={dock.begin}>
+            {layout.docks.right.length > 0 && (
+              <Splitter axis="x" edge="left" value={layout.right} onChange={(r) => setLayout({ right: clampSize('right', r) })} label="Resize the right panel" />
+            )}
+          </DockSide>
+          <DockOverlay drag={dock.drag} docks={layout.docks} />
         </div>
         <div className="tt-timeline-wrap">
           <Splitter
@@ -832,10 +929,20 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         {exportOpen && <ExportDialog store={store} host={host} onClose={() => setExportOpen(false)} onLumtitle={() => void exportFile()} />}
         {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
         {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}
+        <AskHost />
       </div>
     </SwatchContext.Provider>
   );
 }
+
+const KEY_PATHS: Record<string, string> = {
+  p: 'transform.position',
+  s: 'transform.scale',
+  r: 'transform.rotation',
+  t: 'transform.opacity',
+  a: 'transform.anchor',
+};
+const KEY_NAMES: Record<string, string> = { p: 'position', s: 'scale', r: 'rotation', t: 'opacity', a: 'anchor point' };
 
 /** A keyframe at t with the value there (the property starts animating if it was still). */
 function keyHere(p: ReturnType<typeof getProp>, t: number) {
@@ -969,6 +1076,26 @@ function useCommands(store: Store, boxOf: (l: Layer) => ReturnType<typeof layerB
         const l = newText(c, 'Text', [Math.round(c.width * 0.1), Math.round(c.height * 0.75)]);
         store.edit('Add text', (p) => addLayers(p, c.id, [l], sel()[0] ?? null), { selection: [l.id], editingText: l.id });
       },
+      addShape(kind: 'rect' | 'ellipse') {
+        const c = store.comp();
+        const size: [number, number] = kind === 'ellipse' ? [240, 240] : [480, 160];
+        const l = newShape(c, kind, [Math.round((c.width - size[0]) / 2), Math.round((c.height - size[1]) / 2)], size, '$accent');
+        store.edit(kind === 'ellipse' ? 'Add ellipse' : 'Add rectangle', (p) => addLayers(p, c.id, [l], sel()[0] ?? null), { selection: [l.id] });
+      },
+      addNull() {
+        const c = store.comp();
+        const l = newNull(c, [Math.round(c.width / 2), Math.round(c.height / 2)]);
+        store.edit('Add null', (p) => addLayers(p, c.id, [l], sel()[0] ?? null), { selection: [l.id] });
+      },
+      addCamera() {
+        const c = store.comp();
+        const l = newCamera(c);
+        // On top of the list, where it is easy to find.
+        store.edit('Add camera', (p) => addLayers(p, c.id, [l], c.layers[0]?.id ?? null), {
+          selection: [l.id],
+          status: 'A camera: 3D layers are seen through it. Orbit and move it in the Camera section, and animate it like any layer.',
+        });
+      },
       boxOf,
     };
   }, [store, boxOf]);
@@ -1002,8 +1129,7 @@ function RenderDialog({ store, host, env, onClose }: { store: Store; host: Host;
   };
   const formats: VideoTarget['format'][] = ['prores4444', 'webm-alpha', 'mp4', 'png-sequence'];
   return (
-    <div className="tt-modal" role="dialog" aria-label="Render">
-      <div className="tt-modal-box">
+    <Modal label="Render" onClose={() => (progress ? abort.current?.abort() : onClose())} outsideCloses={!progress}>
         <h2>Render</h2>
         <p className="tt-dim">Every frame is drawn exactly, with see-through where there is no graphic (except MP4).</p>
         <label className="tt-field">
@@ -1061,8 +1187,7 @@ function RenderDialog({ store, host, env, onClose }: { store: Store; host: Host;
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

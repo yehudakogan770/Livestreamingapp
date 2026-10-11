@@ -3,13 +3,15 @@
 
 import { useEffect, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { exprProblem } from '../core/expr';
-import { Plus, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Diamond, Plus, Trash2 } from 'lucide-react';
 import { tokensFor, valuesFor, variablesIn } from '../core/binding';
 import { uid } from '../core/build';
 import { isAnimated, num, setValue, toggleKeys, valueAt, vec } from '../core/easing';
 import { fade, grow, reveal, slide, wipe } from '../core/motion';
 import { ellipsePath, rectPath } from '../core/paths';
+import { overrides } from '../core/components';
 import type {
+  LayerOverride,
   CompLayer,
   Effect,
   ImageLayer,
@@ -26,9 +28,11 @@ import type {
   Vec2,
 } from '../core/types';
 import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
+import { askText } from './Modal';
+import { animateOutline, isMorphing, outlineKeyTimes, outlinesAt, outlinesBox, fitOutlines, removeOutlineKey, setOutlinesAt, type OutlineRef } from './outlines';
 import { layerBox } from './geometry';
 import { lookOf } from './Viewport';
-import { compOf, findLayer, flatLayers, setParent, updateLayers } from './ops';
+import { compOf, findLayer, flatLayers, setParent, updateComp, updateLayers } from './ops';
 import { EFFECT_NAMES, getProp, withProp } from './props';
 import type { Store } from './store';
 import { useStore } from './store';
@@ -111,127 +115,201 @@ export function Inspector({ store }: { store: Store }) {
             ))}
           </select>
         </Row>
-        <Row label="Track matte" hint="Seen only through another layer">
-          <select
-            className="tt-select"
-            aria-label="Track matte layer"
-            value={l.matte?.layer ?? ''}
-            onChange={(e) => updOne('Track matte', (x) => ({ ...x, matte: e.target.value ? { layer: e.target.value, mode: x.matte?.mode ?? 'alpha' } : null }))}
-          >
-            <option value="">None</option>
-            {others.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-              </option>
-            ))}
-          </select>
-          {l.matte && (
-            <Select
-              label="Matte mode"
-              value={l.matte.mode}
-              options={[
-                ['alpha', 'Alpha'],
-                ['alphaInverted', 'Alpha inverted'],
-                ['luma', 'Luma'],
-                ['lumaInverted', 'Luma inverted'],
-              ]}
-              onChange={(mode) => updOne('Track matte', (x) => ({ ...x, matte: x.matte ? { ...x.matte, mode } : null }))}
-            />
-          )}
-        </Row>
-        <Row label="Constraints" hint="How the layer is placed in the title's other formats (9:16, 1:1, 4K): pinned, scaled or stretched">
-          <Select
-            label="Constraint across"
-            value={l.constraints?.h ?? 'auto'}
-            options={[
-              ['auto', 'Auto'],
-              ['left', 'Left'],
-              ['center', 'Center'],
-              ['right', 'Right'],
-              ['scale', 'Scale'],
-              ['stretch', 'Left and right'],
-            ]}
-            onChange={(h) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, h: h === 'auto' ? undefined : h } }))}
-          />
-          <Select
-            label="Constraint down"
-            value={l.constraints?.v ?? 'auto'}
-            options={[
-              ['auto', 'Auto'],
-              ['top', 'Top'],
-              ['center', 'Center'],
-              ['bottom', 'Bottom'],
-              ['scale', 'Scale'],
-              ['stretch', 'Top and bottom'],
-            ]}
-            onChange={(v) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, v: v === 'auto' ? undefined : v } }))}
-          />
-        </Row>
-        <Row label="Blend">
-          <Select
-            label="Blend mode"
-            value={l.blend ?? 'normal'}
-            options={[
-              ['normal', 'Normal'],
-              ['multiply', 'Multiply'],
-              ['screen', 'Screen'],
-              ['overlay', 'Overlay'],
-              ['darken', 'Darken'],
-              ['lighten', 'Lighten'],
-              ['add', 'Add'],
-            ]}
-            onChange={(blend) => upd('Blend mode', (x) => ({ ...x, blend }))}
-          />
-        </Row>
-      </Section>
-
-      <Section title="Transform">
-        {prop('transform.position', 'Position', [0, 0], 'px')}
-        {prop('transform.scale', 'Scale', [100, 100], '%')}
-        {prop('transform.rotation', 'Rotation', 0, '°')}
-        {prop('transform.opacity', 'Opacity', 100, '%', { min: 0, max: 100 })}
-        {prop('transform.anchor', 'Anchor point', [0, 0], 'px')}
-        <div className="tt-btnrow">
-          <button
-            onClick={() => {
-              const b = layerBox(lookOf(store.get()), l);
-              const a = vec(l.transform.anchor, time, [0, 0]);
-              const pos = vec(l.transform.position, time, [0, 0]);
-              const na: Vec2 = [b.x + b.w / 2, b.y + b.h / 2];
-              // Keep it where it is: the position moves by the same amount (unscaled, unturned).
-              updOne('Center anchor point', (x) => ({
-                ...x,
-                transform: {
-                  ...x.transform,
-                  anchor: { v: na },
-                  position: isAnimated(x.transform.position) ? x.transform.position : { v: [pos[0] + na[0] - a[0], pos[1] + na[1] - a[1]] },
-                },
-              }));
-            }}
-          >
-            Center anchor point
-          </button>
-        </div>
-        <Row label="3D" hint="Turn the layer in depth about its anchor point (center it for a card flip); the camera is in the Composition tab">
-          <Toggle
-            value={!!(l.transform.rotationX || l.transform.rotationY || l.transform.z)}
-            label="3D layer"
-            onChange={(on) =>
-              updOne(on ? 'Make 3D' : 'Make flat', (x) => {
-                const { rotationX: _x, rotationY: _y, z: _z, ...flat } = x.transform;
-                return { ...x, transform: on ? { ...flat, rotationX: { v: 0 }, rotationY: { v: 0 }, z: { v: 0 } } : flat };
-              })
-            }
-          />
-        </Row>
-        {(l.transform.rotationX || l.transform.rotationY || l.transform.z) && (
+        {l.type !== 'null' && (
           <>
-            {prop('transform.rotationX', 'X rotation', 0, '°')}
-            {prop('transform.rotationY', 'Y rotation', 0, '°')}
-            {prop('transform.z', 'Depth (Z)', 0, 'px')}
+          <Row label="Track matte" hint="Seen only through another layer">
+            <select
+              className="tt-select"
+              aria-label="Track matte layer"
+              value={l.matte?.layer ?? ''}
+              onChange={(e) => updOne('Track matte', (x) => ({ ...x, matte: e.target.value ? { layer: e.target.value, mode: x.matte?.mode ?? 'alpha' } : null }))}
+            >
+              <option value="">None</option>
+              {others.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+            {l.matte && (
+              <Select
+                label="Matte mode"
+                value={l.matte.mode}
+                options={[
+                  ['alpha', 'Alpha'],
+                  ['alphaInverted', 'Alpha inverted'],
+                  ['luma', 'Luma'],
+                  ['lumaInverted', 'Luma inverted'],
+                ]}
+                onChange={(mode) => updOne('Track matte', (x) => ({ ...x, matte: x.matte ? { ...x.matte, mode } : null }))}
+              />
+            )}
+          </Row>
+          <Row label="Constraints" hint="How the layer is placed in the title's other formats (9:16, 1:1, 4K): pinned, scaled or stretched">
+            <Select
+              label="Constraint across"
+              value={l.constraints?.h ?? 'auto'}
+              options={[
+                ['auto', 'Auto'],
+                ['left', 'Left'],
+                ['center', 'Center'],
+                ['right', 'Right'],
+                ['scale', 'Scale'],
+                ['stretch', 'Left and right'],
+              ]}
+              onChange={(h) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, h: h === 'auto' ? undefined : h } }))}
+            />
+            <Select
+              label="Constraint down"
+              value={l.constraints?.v ?? 'auto'}
+              options={[
+                ['auto', 'Auto'],
+                ['top', 'Top'],
+                ['center', 'Center'],
+                ['bottom', 'Bottom'],
+                ['scale', 'Scale'],
+                ['stretch', 'Top and bottom'],
+              ]}
+              onChange={(v) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, v: v === 'auto' ? undefined : v } }))}
+            />
+          </Row>
+          <Row label="Blend">
+            <Select
+              label="Blend mode"
+              value={l.blend ?? 'normal'}
+              options={[
+                ['normal', 'Normal'],
+                ['multiply', 'Multiply'],
+                ['screen', 'Screen'],
+                ['overlay', 'Overlay'],
+                ['darken', 'Darken'],
+                ['lighten', 'Lighten'],
+                ['add', 'Add'],
+              ]}
+              onChange={(blend) => upd('Blend mode', (x) => ({ ...x, blend }))}
+            />
+          </Row>
           </>
         )}
       </Section>
+
+      {l.type === 'null' && l.camera ? (
+        <Section title="Camera">
+          <div className="tt-dim tt-small">
+            3D layers are seen through this camera: it looks at a point, orbits around it and moves in or out. Animate it like any layer.
+          </div>
+          {prop('transform.position', 'Looks at', [c.width / 2, c.height / 2], 'px')}
+          {prop('transform.rotationY', 'Orbit across', 0, '°')}
+          {prop('transform.rotationX', 'Orbit vertical', 0, '°')}
+          {prop('transform.rotation', 'Roll', 0, '°')}
+          {prop('transform.z', 'Move away', 0, 'px')}
+          <Row label="Lens" hint="How far the camera is from the point it looks at (nearer: stronger perspective); the same for every camera of this composition">
+            <NumberField
+              value={c.perspective ?? 2000}
+              step={50}
+              min={200}
+              max={20000}
+              label="Camera distance"
+              unit="px"
+              onChange={(perspective) => store.edit('Camera distance', (p) => updateComp(p, c.id, (x) => ({ ...x, perspective: Math.round(perspective) })))}
+            />
+          </Row>
+        </Section>
+      ) : (
+        <Section title="Transform">
+          {prop('transform.position', 'Position', [0, 0], 'px')}
+          {prop('transform.scale', 'Scale', [100, 100], '%')}
+          {prop('transform.rotation', 'Rotation', 0, '°')}
+          {prop('transform.opacity', 'Opacity', 100, '%', { min: 0, max: 100 })}
+          {prop('transform.anchor', 'Anchor point', [0, 0], 'px')}
+          <div className="tt-btnrow">
+            <button
+              onClick={() => {
+                const b = layerBox(lookOf(store.get()), l);
+                const a = vec(l.transform.anchor, time, [0, 0]);
+                const pos = vec(l.transform.position, time, [0, 0]);
+                const na: Vec2 = [b.x + b.w / 2, b.y + b.h / 2];
+                // Keep it where it is: the position moves by the same amount (unscaled, unturned).
+                updOne('Center anchor point', (x) => ({
+                  ...x,
+                  transform: {
+                    ...x.transform,
+                    anchor: { v: na },
+                    position: isAnimated(x.transform.position) ? x.transform.position : { v: [pos[0] + na[0] - a[0], pos[1] + na[1] - a[1]] },
+                  },
+                }));
+              }}
+            >
+              Center anchor point
+            </button>
+          </div>
+          {l.type !== 'null' && (
+            <Row label="3D" hint="Turn the layer in depth about its anchor point (center it for a card flip) and see it through the composition's camera">
+              <Toggle
+                value={!!(l.transform.rotationX || l.transform.rotationY || l.transform.z)}
+                label="3D layer"
+                onChange={(on) =>
+                  updOne(on ? 'Make 3D' : 'Make flat', (x) => {
+                    const { rotationX: _x, rotationY: _y, z: _z, ...flat } = x.transform;
+                    return on
+                      ? { ...x, transform: { ...flat, rotationX: { v: 0 }, rotationY: { v: 0 }, z: { v: 0 } } }
+                      : { ...x, transform: flat, extrude: undefined };
+                  })
+                }
+              />
+            </Row>
+          )}
+          {(l.transform.rotationX || l.transform.rotationY || l.transform.z) && (
+            <>
+              {prop('transform.rotationX', 'X rotation', 0, '°')}
+              {prop('transform.rotationY', 'Y rotation', 0, '°')}
+              {prop('transform.z', 'Depth (Z)', 0, 'px')}
+              {(l.type === 'text' || l.type === 'shape' || l.type === 'image') && (
+                <>
+                  <Row label="Extrude" hint="Give the layer sides, this deep (0: flat); turn it to see them">
+                    <NumberField
+                      value={l.extrude?.depth ?? 0}
+                      min={0}
+                      max={400}
+                      step={1}
+                      label="Extrude depth"
+                      unit="px"
+                      onChange={(depth) =>
+                        updOne('Extrude', (x) => ({ ...x, extrude: depth > 0 ? { ...(x.extrude ?? {}), depth: Math.round(depth) } : undefined }))
+                      }
+                    />
+                  </Row>
+                  {(l.extrude?.depth ?? 0) > 0 && (
+                    <Row label="Sides" hint="The sides' color: the layer's own colors made darker, or one color">
+                      <Select
+                        label="Side color kind"
+                        value={l.extrude?.color ? 'color' : 'own'}
+                        options={[
+                          ['own', 'Own colors, darker'],
+                          ['color', 'One color'],
+                        ]}
+                        onChange={(v) =>
+                          updOne('Extrude color', (x) => (x.extrude ? { ...x, extrude: v === 'own' ? { depth: x.extrude.depth } : { ...x.extrude, color: '$boxAlt' } } : x))
+                        }
+                      />
+                      {l.extrude?.color && (
+                        <ColorField
+                          value={l.extrude.color}
+                          label="Side color"
+                          tokens={tokens}
+                          values={vals}
+                          fields={fieldKeys}
+                          onChange={(color) => updOne('Extrude color', (x) => (x.extrude ? { ...x, extrude: { ...x.extrude, color: color || '$boxAlt' } } : x))}
+                        />
+                      )}
+                    </Row>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </Section>
+      )}
 
       {l.type === 'text' && <TextSection store={store} l={l} compId={c.id} fieldKeys={fieldKeys} tokens={tokens} vals={vals} time={time} />}
       {l.type === 'text' && <AnimatorSection store={store} l={l} compId={c.id} />}
@@ -427,33 +505,38 @@ export function Inspector({ store }: { store: Store }) {
           </button>
         </Section>
       )}
+      {l.type === 'comp' && <CopyOverrides store={store} l={l} compId={c.id} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />}
 
-      <Section title="Wipe and blur" open={!!l.reveal || !!l.blur}>
-        {l.reveal ? (
-          <>
-            {prop('reveal.left', 'From left', 0, '%', { min: 0, max: 100 })}
-            {prop('reveal.right', 'From right', 0, '%', { min: 0, max: 100 })}
-            {prop('reveal.top', 'From top', 0, '%', { min: 0, max: 100 })}
-            {prop('reveal.bottom', 'From bottom', 0, '%', { min: 0, max: 100 })}
-            <button className="tt-link" onClick={() => updOne('Remove wipe', (x) => ({ ...x, reveal: undefined }))}>
-              Remove wipe
+      {l.type !== 'null' && (
+        <>
+        <Section title="Wipe and blur" open={!!l.reveal || !!l.blur}>
+          {l.reveal ? (
+            <>
+              {prop('reveal.left', 'From left', 0, '%', { min: 0, max: 100 })}
+              {prop('reveal.right', 'From right', 0, '%', { min: 0, max: 100 })}
+              {prop('reveal.top', 'From top', 0, '%', { min: 0, max: 100 })}
+              {prop('reveal.bottom', 'From bottom', 0, '%', { min: 0, max: 100 })}
+              <button className="tt-link" onClick={() => updOne('Remove wipe', (x) => ({ ...x, reveal: undefined }))}>
+                Remove wipe
+              </button>
+            </>
+          ) : (
+            <button
+              className="tt-link"
+              onClick={() => updOne('Add wipe', (x) => ({ ...x, reveal: { left: { v: 0 }, right: { v: 0 }, top: { v: 0 }, bottom: { v: 0 } } }))}
+            >
+              Add a wipe (crop each side)
             </button>
-          </>
-        ) : (
-          <button
-            className="tt-link"
-            onClick={() => updOne('Add wipe', (x) => ({ ...x, reveal: { left: { v: 0 }, right: { v: 0 }, top: { v: 0 }, bottom: { v: 0 } } }))}
-          >
-            Add a wipe (crop each side)
-          </button>
-        )}
-        {prop('blur', 'Blur', 0, 'px', { min: 0 })}
-      </Section>
+          )}
+          {prop('blur', 'Blur', 0, 'px', { min: 0 })}
+        </Section>
 
-      <MotionPresets store={store} l={l} compId={c.id} />
-      <MaskSection store={store} l={l} compId={c.id} time={time} />
-      <EffectSection store={store} l={l} compId={c.id} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
-      <StyleSection store={store} l={l} compId={c.id} />
+        <MotionPresets store={store} l={l} compId={c.id} />
+        <MaskSection store={store} l={l} compId={c.id} time={time} />
+        <EffectSection store={store} l={l} compId={c.id} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
+        <StyleSection store={store} l={l} compId={c.id} />
+        </>
+      )}
     </div>
   );
 }
@@ -738,7 +821,6 @@ function TextSection({
   vals,
   time,
 }: Common & { l: TextLayer; fieldKeys: string[]; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; time: number }) {
-  const editing = useStore(store, (s) => s.editingText === l.id);
   const upd = (label: string, fn: (x: TextLayer) => TextLayer) =>
     store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'text' ? fn(x) : x)));
   const st = l.style;
@@ -754,7 +836,6 @@ function TextSection({
         ref={wordsRef}
         className="tt-textarea"
         aria-label="Words"
-        autoFocus={editing}
         value={l.text}
         rows={3}
         onChange={(e) =>
@@ -764,7 +845,6 @@ function TextSection({
             name: x.name === 'Text' || x.name === x.text.slice(0, 30) ? e.target.value.replace(/\{\{|\}\}|\[[^\]]*\]/g, '').slice(0, 30) || 'Text' : x.name,
           }))
         }
-        onBlur={() => store.set({ editingText: null })}
       />
       <div className="tt-chips">
         {fieldKeys.map((k) => (
@@ -966,8 +1046,9 @@ function TextStyleRow({ store, l }: { store: Store; l: TextLayer }) {
           onChange={(e) => {
             const v = e.target.value;
             if (v === '+') {
-              const name = prompt('Name of the new text style', l.name);
-              if (name !== null) store.edit('New text style', (p) => newTextStyle(p, l.id, name).project);
+              void askText('New text style', 'Name of the new text style', l.name, 'Create').then((name) => {
+                if (name !== null) store.edit('New text style', (p) => newTextStyle(p, l.id, name).project);
+              });
               return;
             }
             store.edit(v ? 'Apply text style' : 'Detach text style', (p) => applyTextStyle(p, [l.id], v || null));
@@ -1223,9 +1304,12 @@ function ShapeSection({
         </Row>
       )}
       {l.shape === 'path' && (
-        <div className="tt-dim tt-small">
-          Drawn with the pen: {l.path?.v.length ?? 0} points, {l.path?.closed ? 'closed' : 'open'}.
-        </div>
+        <>
+          <div className="tt-dim tt-small">
+            {l.path?.v.length ?? 0} points, {l.path?.closed ? 'closed' : 'open'}. Double-click it on the canvas to move its points and their handles.
+          </div>
+          <OutlineControls store={store} l={l} compId={compId} outline={{ kind: 'path' }} label="Outline" />
+        </>
       )}
       <Row label="Fill">
         <Toggle value={!!l.fill} onChange={(on) => upd('Fill', (x) => ({ ...x, fill: on ? { type: 'solid', color: '$box' } : null }))} label="On" />
@@ -1548,8 +1632,8 @@ function MotionPresets({ store, l, compId }: Common & { l: Layer }) {
         ))}
         <button
           className="tt-chip"
-          onClick={() => {
-            const name = prompt('Name for this animation', `${l.name} animation`);
+          onClick={async () => {
+            const name = await askText('Save animation', 'Name for this animation', `${l.name} animation`, 'Save');
             if (name === null) return;
             if (saveAnimPreset(l, name)) setSaved(loadAnimPresets());
             else store.set({ status: 'This layer has no keyframes to save.' });
@@ -1620,6 +1704,7 @@ function MaskSection({ store, l, compId, time }: Common & { l: Layer; time: numb
               <Trash2 size={13} />
             </button>
           </Row>
+          <OutlineControls store={store} l={l} compId={compId} outline={{ kind: 'mask', index: i }} label="Shape" />
           <Row label="Feather">
             <NumberField
               value={valueAt(m.feather as never, 0, 0 as never) as number}
@@ -1640,6 +1725,82 @@ function MaskSection({ store, l, compId, time }: Common & { l: Layer; time: numb
         </button>
       </div>
     </Section>
+  );
+}
+
+/**
+ * An outline's place and size typed in, its change of form over time (the
+ * stopwatch: a key at the playhead; then each edit at the playhead sets the
+ * key there), stepping between its keys, and editing its points on the canvas.
+ */
+function OutlineControls({ store, l, compId, outline, label }: { store: Store; l: Layer; compId: string; outline: OutlineRef; label: string }) {
+  const time = useStore(store, (s) => s.time);
+  const editing = useStore(store, (s) => s.editingPath === l.id);
+  const upd = (name: string, fn: (x: Layer) => Layer) => store.edit(name, (p) => updateLayers(p, compId, [l.id], fn));
+  const list = outlinesAt(l, outline, time);
+  if (!list.length) return null;
+  const b = outlinesBox(list);
+  const morphing = isMorphing(l, outline);
+  const keys = outlineKeyTimes(l, outline);
+  const keyHere = keys.some((k) => Math.abs(k - time) < 1e-4);
+  const what = outline.kind === 'mask' ? 'mask' : 'outline';
+  const setBox = (patch: Partial<typeof b>) => upd(`Change ${what}`, (x) => setOutlinesAt(x, outline, time, fitOutlines(outlinesAt(x, outline, time), { ...b, ...patch })));
+  const jump = (dir: -1 | 1) => {
+    const next = dir > 0 ? keys.find((k) => k > time + 1e-4) : [...keys].reverse().find((k) => k < time - 1e-4);
+    if (next !== undefined) store.set({ time: next, cue: null });
+  };
+  return (
+    <>
+      <Row label={label} hint={morphing ? 'Changes form over time: an edit at the playhead sets the key there' : 'Click the stopwatch to change its form over time'}>
+        <button
+          className={`tt-ico${morphing ? ' on' : ''}`}
+          aria-pressed={morphing}
+          aria-label={`Animate the ${what}`}
+          title={morphing ? `Stop animating the ${what} (keeps its form here)` : `Animate the ${what} (a key here)`}
+          onClick={() => upd(morphing ? `Stop animating the ${what}` : `Animate the ${what}`, (x) => animateOutline(x, outline, time, !morphing))}
+        >
+          <Clock size={12} />
+        </button>
+        {morphing && (
+          <span className="tt-keynav">
+            <button className="tt-ico" aria-label={`Previous ${what} key`} title="Previous key" onClick={() => jump(-1)}>
+              <ChevronLeft size={12} />
+            </button>
+            <button
+              className={`tt-ico${keyHere ? ' on' : ''}`}
+              aria-label={keyHere ? `Remove the ${what} key here` : `Add a ${what} key here`}
+              title={keyHere ? 'Remove the key here' : 'A key here'}
+              onClick={() =>
+                upd(keyHere ? `Remove ${what} key` : `Add ${what} key`, (x) => (keyHere ? removeOutlineKey(x, outline, time) : setOutlinesAt(x, outline, time, outlinesAt(x, outline, time))))
+              }
+            >
+              <Diamond size={10} />
+            </button>
+            <button className="tt-ico" aria-label={`Next ${what} key`} title="Next key" onClick={() => jump(1)}>
+              <ChevronRight size={12} />
+            </button>
+            <span className="tt-dim tt-small">
+              {keys.length} key{keys.length === 1 ? '' : 's'}
+            </span>
+          </span>
+        )}
+        {outline.kind === 'path' && (
+          <button
+            className={`tt-btn${editing ? ' on' : ''}`}
+            onClick={() => store.set(editing ? { editingPath: null, outlinePoint: null } : { editingPath: l.id, outlinePoint: null, tool: 'select' })}
+            aria-pressed={editing}
+          >
+            {editing ? 'Done' : 'Edit points'}
+          </button>
+        )}
+      </Row>
+      <Row label="Box" hint={`The ${what}'s place and size (in the layer), px`}>
+        <NumberField value={Math.round(b.x * 10) / 10} label={`${label} x`} onChange={(x) => setBox({ x })} onBegin={() => store.begin(`Change ${what}`)} onEnd={() => store.end()} />
+        <NumberField value={Math.round(b.y * 10) / 10} label={`${label} y`} onChange={(y) => setBox({ y })} onBegin={() => store.begin(`Change ${what}`)} onEnd={() => store.end()} />
+        <NumberField value={Math.round(b.w * 10) / 10} min={1} label={`${label} width`} onChange={(w) => setBox({ w: Math.max(1, w) })} onBegin={() => store.begin(`Change ${what}`)} onEnd={() => store.end()} />
+        <NumberField value={Math.round(b.h * 10) / 10} min={1} label={`${label} height`} onChange={(h) => setBox({ h: Math.max(1, h) })} onBegin={() => store.begin(`Change ${what}`)} onEnd={() => store.end()} />
+      </Row>
+    </>
   );
 }
 
@@ -1955,6 +2116,136 @@ function CopyFields({ store, l, compId }: { store: Store; l: CompLayer; compId: 
         </Row>
       ))}
     </div>
+  );
+}
+
+/**
+ * This copy's own changes to the layers inside the composition it shows (a
+ * component's overrides): pick a layer, then change its words, color,
+ * picture, visibility, place, size, turn or opacity for this copy only.
+ */
+function CopyOverrides({
+  store,
+  l,
+  compId,
+  tokens,
+  vals,
+  fieldKeys,
+}: {
+  store: Store;
+  l: CompLayer;
+  compId: string;
+  tokens: ReturnType<typeof tokensFor>;
+  vals: Record<string, string>;
+  fieldKeys: string[];
+}) {
+  const project = useStore(store, (s) => s.project);
+  const inner = project.compositions.find((x) => x.id === l.comp);
+  const list = inner ? flatLayers(inner.layers).filter((x) => x.type !== 'null' && x.type !== 'group') : [];
+  const changed = list.filter((x) => overrides(l.overrides?.[x.id]));
+  const [pick, setPick] = useState<string>('');
+  const target = list.find((x) => x.id === pick) ?? changed[0] ?? list[0];
+  if (!inner || !target) return null;
+  const o: LayerOverride = l.overrides?.[target.id] ?? {};
+  const set = (label: string, patch: Partial<LayerOverride> | null) =>
+    store.edit(label, (p) =>
+      updateLayers(p, compId, [l.id], (x) => {
+        if (x.type !== 'comp') return x;
+        const all = { ...(x.overrides ?? {}) };
+        const next: LayerOverride = patch ? { ...(all[target.id] ?? {}), ...patch } : {};
+        for (const k of Object.keys(next) as (keyof LayerOverride)[]) if (next[k] === undefined) delete next[k];
+        if (overrides(next)) all[target.id] = next;
+        else delete all[target.id];
+        return { ...x, overrides: Object.keys(all).length ? all : undefined };
+      }),
+    );
+  const fillOf = (x: Layer) => (x.type === 'text' && x.style.fill.type === 'solid' ? x.style.fill.color : x.type === 'shape' && x.fill?.type === 'solid' ? x.fill.color : null);
+  const baseFill = fillOf(target);
+  return (
+    <Section title="This copy's changes" open={changed.length > 0}>
+      <div className="tt-dim tt-small">Change a layer inside for this copy only; the composition and its other copies stay as they are.</div>
+      <Row label="Layer">
+        <select className="tt-select" aria-label="Layer to change in this copy" value={target.id} onChange={(e) => setPick(e.target.value)}>
+          {list.map((x) => (
+            <option key={x.id} value={x.id}>
+              {overrides(l.overrides?.[x.id]) ? '• ' : ''}
+              {x.name}
+            </option>
+          ))}
+        </select>
+      </Row>
+      <Row label="Shown">
+        <Toggle value={o.visible ?? target.visible} label="Shown in this copy" onChange={(v) => set('Show in this copy', { visible: v === target.visible ? undefined : v })} />
+      </Row>
+      {target.type === 'text' && (
+        <Row label="Words">
+          <textarea
+            className="tt-textarea"
+            rows={2}
+            aria-label="Words in this copy"
+            placeholder={target.text}
+            value={o.text ?? ''}
+            onChange={(e) => set('Words in this copy', { text: e.target.value === '' ? undefined : e.target.value })}
+          />
+        </Row>
+      )}
+      {baseFill !== null && (
+        <Row label="Color">
+          <ColorField
+            value={o.fill ?? baseFill}
+            label="Color in this copy"
+            tokens={tokens}
+            values={vals}
+            fields={fieldKeys}
+            onChange={(v) => set('Color in this copy', { fill: v === baseFill ? undefined : v })}
+          />
+        </Row>
+      )}
+      {target.type === 'image' && (
+        <Row label="Picture">
+          <select
+            className="tt-select"
+            aria-label="Picture in this copy"
+            value={o.picture ?? target.asset}
+            onChange={(e) => set('Picture in this copy', { picture: e.target.value === target.asset ? undefined : e.target.value })}
+          >
+            {project.assets
+              .filter((a) => a.kind === 'image' || a.kind === 'svg')
+              .map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            {!project.assets.some((a) => a.id === target.asset) && <option value={target.asset}>{target.asset.startsWith('{{') ? target.asset : 'Its own'}</option>}
+          </select>
+        </Row>
+      )}
+      <Row label="Move by">
+        <NumberField value={o.move?.[0] ?? 0} label="Move across in this copy" unit="px" onChange={(v) => set('Move in this copy', { move: [v, o.move?.[1] ?? 0] })} />
+        <NumberField value={o.move?.[1] ?? 0} label="Move down in this copy" unit="px" onChange={(v) => set('Move in this copy', { move: [o.move?.[0] ?? 0, v] })} />
+      </Row>
+      <Row label="Scale">
+        <NumberField value={o.scale ?? 100} min={0} label="Scale in this copy" unit="%" onChange={(v) => set('Scale in this copy', { scale: v === 100 ? undefined : v })} />
+      </Row>
+      <Row label="Rotation">
+        <NumberField value={o.rotate ?? 0} label="Rotation in this copy" unit="°" onChange={(v) => set('Turn in this copy', { rotate: v || undefined })} />
+      </Row>
+      <Row label="Opacity">
+        <NumberField
+          value={o.opacity ?? 100}
+          min={0}
+          max={100}
+          label="Opacity in this copy"
+          unit="%"
+          onChange={(v) => set('Opacity in this copy', { opacity: v === 100 ? undefined : v })}
+        />
+      </Row>
+      {overrides(o) && (
+        <button className="tt-link" onClick={() => set(`Reset ${target.name} in this copy`, null)}>
+          Reset {target.name} in this copy
+        </button>
+      )}
+    </Section>
   );
 }
 

@@ -11,6 +11,7 @@ import { setExprScope } from './expr';
 import { plainText, type Measure } from './layout';
 import { rectCornersPath } from './paths';
 import { contentSize, exprScopeFor, layerIndex, textLayout } from './render';
+import { withOverrides } from './components';
 import type {
   BrandTokens,
   Composition,
@@ -464,6 +465,8 @@ function layerJson(x: X, l: Layer, ind: number, w: number, h: number): J | null 
     base.masksProperties = masks;
   }
   if (l.transform.rotationX || l.transform.rotationY || l.transform.z) base.ddd = 1;
+  if (l.extrude && l.extrude.depth > 0) x.notes.add('Extruded layers are drawn flat (Lottie has no extrusion).');
+  if (l.type === 'null' && l.camera) x.notes.add('The camera is left out: 3D layers are seen straight on.');
   switch (l.type) {
     case 'null':
       return { ...base, ty: 3, ks: transform(x, l) };
@@ -504,16 +507,17 @@ function layerJson(x: X, l: Layer, ind: number, w: number, h: number): J | null 
     case 'comp': {
       const inner = x.p.compositions.find((c) => c.id === l.comp);
       if (!inner) return null;
-      // A copy with its own field values gets its own precomp (Lottie has no fields).
+      // A copy with its own field values or changes gets its own precomp (Lottie has no fields).
       const own = Object.entries(l.values ?? {}).filter(([, v]) => v);
-      const id = own.length ? `comp_${inner.id}_${l.id}` : `comp_${inner.id}`;
+      const shown = withOverrides(inner, l.overrides);
+      const id = own.length || shown !== inner ? `comp_${inner.id}_${l.id}` : `comp_${inner.id}`;
       if (!x.done.has(id)) {
         x.done.add(id);
         const outer = x.index;
         const outerValues = x.values;
         x.index = layerIndex(inner);
         if (own.length) x.values = { ...outerValues, ...Object.fromEntries(own.map(([k, v]) => [k, fill(v, outerValues)])) };
-        x.assets.push({ id, nm: inner.name, w: inner.width, h: inner.height, fr: x.fr, layers: layersJson(x, inner.layers, inner.width, inner.height) });
+        x.assets.push({ id, nm: inner.name, w: inner.width, h: inner.height, fr: x.fr, layers: layersJson(x, shown.layers, inner.width, inner.height) });
         x.index = outer;
         x.values = outerValues;
       }

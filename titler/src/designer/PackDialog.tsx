@@ -9,6 +9,7 @@ import { slug } from '../core/htmlTemplate';
 import type { TitleProject } from '../core/types';
 import { download, type Host, type LibraryEntry } from './host';
 import { selfContained } from './exporting';
+import { Modal } from './Modal';
 
 /** A small picture of a title at its hold, as PNG bytes. */
 async function thumbnail(p: TitleProject, env: BrowserEnv): Promise<Uint8Array | null> {
@@ -83,8 +84,7 @@ export function PackDialog({ host, env, onClose, onDone }: { host: Host; env: Br
     }
   };
   return (
-    <div className="tt-modal" role="dialog" aria-label="Share as a pack">
-      <div className="tt-modal-box tt-export">
+    <Modal label="Share as a pack" onClose={() => !busy && onClose()} outsideCloses={!busy} className="tt-export">
         <h2>Share as a pack</h2>
         <p className="tt-dim">One file with the titles, their pictures and fonts, to hand to another team or computer. It opens with Import.</p>
         {list.length === 0 ? (
@@ -124,7 +124,6 @@ export function PackDialog({ host, env, onClose, onDone }: { host: Host; env: Br
             {busy ? 'Saving…' : 'Save pack'}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
