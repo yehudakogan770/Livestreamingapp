@@ -29,6 +29,7 @@ export default defineConfig({
       'planner/src/**/*.test.{ts,tsx}',
       'streamdeck/src/**/*.test.ts',
       'titler/src/**/*.test.{ts,tsx}',
+      'photo/src/**/*.test.{ts,tsx}',
       'companion/src/**/*.test.js',
     ],
     setupFiles: ['app/src/test-setup.ts'],

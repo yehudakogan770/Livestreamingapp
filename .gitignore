@@ -18,3 +18,6 @@ editor/src-tauri/gen/
 dist-titler/
 titler/src-tauri/gen/
 titler/src-tauri/binaries/
+dist-photo/
+photo/src-tauri/gen/
+photo/src-tauri/binaries/

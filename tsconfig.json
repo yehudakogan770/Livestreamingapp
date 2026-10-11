@@ -27,7 +27,10 @@
     "streamdeck/src",
     "titler/src",
     "titler/app",
-    "titler/vite.config.ts"
+    "titler/vite.config.ts",
+    "photo/src",
+    "photo/app",
+    "photo/vite.config.ts"
   ],
   "exclude": ["streamdeck/src/plugin.ts"]
 }
