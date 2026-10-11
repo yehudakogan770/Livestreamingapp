@@ -312,4 +312,52 @@ export class LumoraClient {
   command(command: Record<string, unknown>): Promise<SendResult> {
     return this.post('/api/app', command);
   }
+
+  /** A control API command: `run('ptz', { input: '2', preset: '1' })` (`/api/do/ptz?input=2&preset=1`). */
+  async run(command: string, query: Record<string, string>): Promise<SendResult> {
+    if (!this.pin) return { ok: false, error: 'Type the PIN from Lumora (Settings → Phone remote).' };
+    const q = new URLSearchParams(query).toString();
+    const path = `/api/do/${encodeURIComponent(command)}${q ? `?${q}` : ''}`;
+    try {
+      const res = await this.fetch(`${this.base}${path}`, { method: 'POST', headers: this.headers(false) });
+      if (res.status === 401) this.setConnection('wrongPin');
+      if (res.ok) return { ok: true, status: res.status };
+      let error = `Lumora said no (${res.status}).`;
+      try {
+        const j = (await res.json()) as { error?: unknown };
+        if (typeof j.error === 'string') error = j.error;
+      } catch {
+        // No details.
+      }
+      return { ok: false, status: res.status, error };
+    } catch {
+      return { ok: false, error: 'Lumora can’t be reached.' };
+    }
+  }
+
+  /**
+   * An input's small picture as a `data:` URL (JPEG), or null while there is
+   * none (Lumora draws it once asked, so the first ask comes back empty).
+   */
+  async picture(id: string): Promise<string | null> {
+    if (!this.pin || this.connection !== 'online') return null;
+    try {
+      const res = await this.fetch(`${this.base}/api/picture?id=${encodeURIComponent(id)}`, { headers: this.headers(false) });
+      if (res.status !== 200) return null;
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.length < 3 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+      return `data:image/jpeg;base64,${base64(bytes)}`;
+    } catch {
+      return null;
+    }
+  }
+}
+
+/** Bytes as base64 (Node's Buffer when there is one, else btoa). */
+export function base64(bytes: Uint8Array): string {
+  const B = (globalThis as { Buffer?: { from(b: Uint8Array): { toString(enc: string): string } } }).Buffer;
+  if (B) return B.from(bytes).toString('base64');
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(s);
 }

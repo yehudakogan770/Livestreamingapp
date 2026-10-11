@@ -1,4 +1,4 @@
-import { CircleHelp, X } from 'lucide-react';
+import { CircleHelp, Download, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -6,6 +6,7 @@ import type { TriviaQuestion } from '../engine/types/TriviaQuestion';
 import { TriviaView } from '../components/TriviaView';
 import { ANSWER_LOOK, ranked } from '../engine/trivia';
 import { JoinSetup, useAudienceLink } from './JoinSetup';
+import { csvName, toCsv, triviaRows } from '../engine/audienceExport';
 import type { Act } from './act';
 import './LyricsCard.css';
 import './AudienceCards.css';
@@ -28,6 +29,7 @@ export function TriviaCard({ source, act, client, onClose }: { source: Source; a
   const [editing, setEditing] = useState<number | null>(null);
   const [draft, setDraft] = useState<TriviaQuestion>(blank);
   const [title, setTitle] = useState(t?.title ?? '');
+  const [saved, setSaved] = useState<string | null>(null);
   const { remote } = useAudienceLink(client, t, (joinUrl, joinQr) => t && act({ type: 'updateTrivia', id, trivia: { ...t, joinUrl, joinQr } }));
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -133,7 +135,25 @@ export function TriviaCard({ source, act, client, onClose }: { source: Source; a
                 >
                   New game (no players)
                 </button>
+                <button
+                  type="button"
+                  className="btn btn--small"
+                  onClick={() =>
+                    void client
+                      .saveCsv(csvName(`${source.name} scores`), toCsv(triviaRows(t)))
+                      .then((where) => where && setSaved(`Saved to ${where}`))
+                      .catch((e: unknown) => setSaved(`Not saved: ${e instanceof Error ? e.message : String(e)}`))
+                  }
+                >
+                  <Download aria-hidden="true" />
+                  Export scores
+                </button>
               </div>
+            )}
+            {saved && (
+              <p className="field__note" role="status">
+                {saved}
+              </p>
             )}
           </section>
           <section className="lyc__edit">

@@ -15,6 +15,8 @@ export interface DeckInput {
   /** Its sound level, 0 – 1, and whether it is muted. */
   volume: number;
   muted: boolean;
+  /** A camera Lumora can move (PTZ). */
+  ptz: boolean;
 }
 
 /** A sound level and its mute (the Stream mix, mix A, mix B). */
@@ -143,6 +145,7 @@ export function deckState(show: unknown, app: AppState = NO_APP): DeckState {
     kind: str(obj(x.kind).type) ?? '',
     volume: clamp01(num(x.volume) ?? 1),
     muted: x.muted === true,
+    ptz: !!x.ptz && typeof x.ptz === 'object',
   }));
   const screens = obj(s.screens);
   const overlays = arr(s.overlays)

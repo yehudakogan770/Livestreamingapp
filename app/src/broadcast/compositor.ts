@@ -269,6 +269,49 @@ export class ProgramCompositor {
     ctx.globalAlpha = 1;
   }
 
+  /**
+   * Draw each input in `ids` on its own, filling the canvas (control
+   * surfaces' small pictures: the Stream Deck's input keys), calling `took`
+   * after each one is drawn.
+   */
+  drawInputs(ids: string[], now: number, took: (id: string) => void): void {
+    const show = this.show;
+    if (!show) return;
+    const { ctx, canvas } = this;
+    const w = canvas.width;
+    const h = canvas.height;
+    // What the inputs show inside them is opened too.
+    const wanted: (string | null)[] = [...ids];
+    for (const id of ids) {
+      const k = show.sources.find((s) => s.id === id)?.kind;
+      if (k?.type === 'split') wanted.push(...k.boxes.map((b) => b.sourceId));
+      if (k?.type === 'slideshow') {
+        wanted.push(k.behind);
+        const slide = k.slides[k.current];
+        if (slide?.type === 'input') wanted.push(slide.sourceId);
+      }
+    }
+    this.safely('media', () => {
+      this.keep(show, wanted);
+      for (const [id, m] of this.media) {
+        const src = show.sources.find((s) => s.id === id);
+        if (src && m.el instanceof HTMLVideoElement && src.kind.type === 'video') syncMedia(m.el, src, now);
+      }
+    });
+    for (const id of ids) {
+      const src = show.sources.find((s) => s.id === id);
+      if (!src) continue;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.filter = 'none';
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, w, h);
+      this.safely(src.id, () => this.drawSource(src, show.event, now, w, h));
+      took(id);
+    }
+  }
+
   // ---- the unified engine's overlay renderer ----
 
   /**

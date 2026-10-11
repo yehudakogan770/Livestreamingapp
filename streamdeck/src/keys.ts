@@ -9,6 +9,8 @@ import {
   findPreset,
   findSlideshow,
   needsHold,
+  ptzMove,
+  shotOf,
   screenFor,
   secondsOf,
   type KeySettings,
@@ -33,6 +35,8 @@ export interface KeyModel {
   offline?: boolean;
   /** Being held: how far along (0 – 1). */
   hold?: number | null;
+  /** The input's picture (a `data:` URL), drawn across the top of the key. */
+  picture?: string | null;
 }
 
 export const COLORS = {
@@ -91,8 +95,35 @@ function fontSize(lines: string[]): number {
 
 const FONT = "'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
 
+/** An input key with its picture: the picture across the top, framed in the tally color, the name under it. */
+function renderPicture(m: KeyModel, picture: string): string {
+  const t = TONES[m.tone];
+  const label = m.label.trim();
+  const [line = ''] = wrap(label, 12, 1);
+  const size = [24, 21, 18].find((s) => textWidth(line, s) <= 132) ?? 16;
+  const parts: string[] = [];
+  parts.push(`<rect width="144" height="144" fill="${t.bg}"/>`);
+  // A 16:9 picture, no clipping (the Stream Deck app's SVG renderer is SVG Tiny), xlink:href for the same reason.
+  parts.push(`<rect x="5" y="7" width="134" height="77" fill="#000"/>`);
+  parts.push(`<image xlink:href="${escape(picture)}" href="${escape(picture)}" x="6" y="8" width="132" height="75" preserveAspectRatio="none"/>`);
+  parts.push(
+    `<text x="72" y="${m.sub ? 108 : 117}" text-anchor="middle" font-family="${FONT}" font-size="${size}" font-weight="600" fill="${t.fg}">${escape(line)}</text>`,
+  );
+  if (m.sub) {
+    const s = wrap(m.sub, 15, 1)[0] ?? '';
+    parts.push(`<text x="72" y="131" text-anchor="middle" font-family="${FONT}" font-size="16" font-weight="500" fill="${t.sub}">${escape(s)}</text>`);
+  }
+  if (m.hold != null) {
+    const w = Math.round(136 * Math.min(1, Math.max(0, m.hold)));
+    parts.push(`<rect x="4" y="4" width="136" height="8" rx="4" fill="${COLORS.background}" opacity="0.55"/>`);
+    parts.push(`<rect x="4" y="4" width="${w}" height="8" rx="4" fill="${COLORS.warn}"/>`);
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="144" height="144" viewBox="0 0 144 144">${parts.join('')}</svg>`;
+}
+
 /** The key's picture as SVG. */
 export function renderSvg(m: KeyModel): string {
+  if (m.picture && !m.offline) return renderPicture(m, m.picture);
   const t = TONES[m.offline ? 'idle' : m.tone];
   const fg = m.offline ? COLORS.dim : t.fg;
   const sub = m.offline ? COLORS.muted : t.sub;
@@ -145,6 +176,8 @@ export interface KeyContext {
   now: number;
   /** Being held: how far along (0 – 1). */
   hold?: number | null;
+  /** The input's picture, for input keys that show it. */
+  picture?: string | null;
 }
 
 const SCREEN_NAME: Record<ScreenId, string> = { live: 'LIVE', back: 'BACK' };
@@ -171,7 +204,17 @@ export function keyModel(kind: Kind, s: KeySettings, ctx: KeyContext): KeyModel 
   return m;
 }
 
-function baseModel(kind: Kind, s: KeySettings, { state, deck, now }: KeyContext): KeyModel {
+const PTZ_WORDS: Record<string, string> = {
+  up: 'Up',
+  down: 'Down',
+  left: 'Left',
+  right: 'Right',
+  zoomin: 'Zoom in',
+  zoomout: 'Zoom out',
+  home: 'Home',
+};
+
+function baseModel(kind: Kind, s: KeySettings, { state, deck, now, picture }: KeyContext): KeyModel {
   const screen = screenFor(s, deck);
   // Say which screen when it isn't the Live one (the usual).
   const onScreen = screen === 'back' ? 'Back screen' : null;
@@ -202,7 +245,17 @@ function baseModel(kind: Kind, s: KeySettings, { state, deck, now }: KeyContext)
         label: input.name,
         sub: t === 'program' ? 'On air' : t === 'preview' ? 'In Next' : `Input ${input.number}`,
         tone: t === 'none' ? 'idle' : t,
+        picture: s.picture === false ? null : (picture ?? null),
       };
+    }
+    case 'ptz': {
+      const input = state ? findInput(state, s) : undefined;
+      const move = ptzMove(s);
+      const does = move === 'preset' ? `Shot ${shotOf(s)}` : PTZ_WORDS[move]!;
+      if (!input) return { icon: 'ptz', label: s.inputName || 'PTZ', sub: state ? 'Choose camera' : does, tone: 'idle' };
+      if (!input.ptz) return { icon: 'ptz', label: input.name, sub: 'Not PTZ', tone: 'warn' };
+      const t = state ? tally(state, input.id, screen) : 'none';
+      return { icon: 'ptz', label: input.name, sub: does, tone: t === 'none' ? 'idle' : t };
     }
     case 'overlay': {
       const ch = channelOf(s);
