@@ -431,7 +431,9 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           return;
         }
         case 'Escape':
-          store.set({ selection: [], keys: [], tool: 'select' });
+          // Editing a path's points: Escape ends that first.
+          if (s.editingPath) return store.set({ editingPath: null, outlinePoint: null, status: '' });
+          store.set({ selection: [], keys: [], tool: 'select', outlinePoint: null });
           return;
         case '[':
         case ']': {

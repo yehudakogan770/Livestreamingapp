@@ -135,12 +135,18 @@ export function ColorField({
   useEffect(() => {
     if (!open) return;
     const away = (e: PointerEvent) => !wrap.current?.contains(e.target as Node) && setOpen(null);
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null);
+    // Escape closes the picker only (not a dialog under it, nor the selection).
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      setOpen(null);
+    };
     window.addEventListener('pointerdown', away);
-    window.addEventListener('keydown', esc);
+    window.addEventListener('keydown', esc, true);
     return () => {
       window.removeEventListener('pointerdown', away);
-      window.removeEventListener('keydown', esc);
+      window.removeEventListener('keydown', esc, true);
     };
   }, [open]);
   return (

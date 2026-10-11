@@ -10,7 +10,9 @@ import { isAnimated, num, vec } from '../core/easing';
 import { apply, invert } from '../core/matrix';
 import { groupOf, layerIndex, renderFrame, type Ctx } from '../core/render';
 import { cueTime } from '../core/timeline';
-import type { CanvasNote, Layer, PathVertex, Vec2 } from '../core/types';
+import type { CanvasNote, Layer, PathData, PathVertex, Vec2 } from '../core/types';
+import { moveOutline, moveTangent, moveVertex, outlineRefs, outlinesAt, sameRef, setOutlinesAt, type OutlineRef } from './outlines';
+import { viewOfLayer } from '../core/render';
 import { hitLayer, layerBounds, layerBox, layerCorners, setAt, toParent, type Look } from './geometry';
 import { addLayers, boundsOf, compOf, findLayer, flatLayers, updateComp, updateLayers, type Box } from './ops';
 import type { EditorState, Store } from './store';
@@ -44,7 +46,9 @@ type Drag =
   | { kind: 'pan'; start: Vec2; pan: Vec2 }
   | { kind: 'pen'; at: Vec2 }
   | { kind: 'guide'; axis: 'x' | 'y'; index: number }
-  | { kind: 'anchor'; layer: Layer; start: Vec2 };
+  | { kind: 'anchor'; layer: Layer; start: Vec2 }
+  /** An outline's point, one of its handles, or the whole outline (a mask) dragged. */
+  | { kind: 'outline'; layer: Layer; ref: OutlineRef; outlines: PathData[]; outline: number; vertex: number; part: 'p' | 'i' | 'o' | 'all'; start: Vec2; free: boolean };
 
 interface View {
   scale: number;
@@ -197,7 +201,41 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     if (main && sel.length === 1 && main.type !== 'group' && !main.locked) {
       const pts = layerCorners(look, main).map(P);
       ctx.fillStyle = col('--tt-panel', '#1c1c1b');
-      for (const h of handlePoints(pts)) {
+      // Its masks' outlines (and its own path's while its points are edited), with their points.
+      for (const o of screenOutlines(s, main, t, P)) {
+        ctx.save();
+        ctx.strokeStyle = o.ref.kind === 'mask' ? MASK_COLOR : col('--tt-select', '#e9e9e6');
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        o.segs.forEach((g, i) => {
+          if (!i) ctx.moveTo(g.a[0], g.a[1]);
+          ctx.bezierCurveTo(g.c1[0], g.c1[1], g.c2[0], g.c2[1], g.b[0], g.b[1]);
+        });
+        ctx.stroke();
+        const chosen = s.outlinePoint && sameRef(s.outlinePoint.ref, o.ref) && s.outlinePoint.outline === o.outline ? s.outlinePoint.vertex : -1;
+        o.points.forEach((q, i) => {
+          if (i === chosen) {
+            // Its handles.
+            for (const h of [q.i, q.o]) {
+              if (!h) continue;
+              ctx.beginPath();
+              ctx.moveTo(q.p[0], q.p[1]);
+              ctx.lineTo(h[0], h[1]);
+              ctx.stroke();
+              ctx.beginPath();
+              ctx.arc(h[0], h[1], 3.5, 0, Math.PI * 2);
+              ctx.fillStyle = ctx.strokeStyle as string;
+              ctx.fill();
+            }
+          }
+          ctx.fillStyle = i === chosen ? (ctx.strokeStyle as string) : col('--tt-panel', '#1c1c1b');
+          ctx.fillRect(q.p[0] - 3.5, q.p[1] - 3.5, 7, 7);
+          ctx.strokeRect(q.p[0] - 3.5 + 0.5, q.p[1] - 3.5 + 0.5, 6, 6);
+        });
+        ctx.restore();
+      }
+      ctx.fillStyle = col('--tt-panel', '#1c1c1b');
+      for (const h of s.editingPath === main.id ? [] : handlePoints(pts)) {
         ctx.fillRect(h[0] - HANDLE / 2, h[1] - HANDLE / 2, HANDLE, HANDLE);
         ctx.strokeRect(h[0] - HANDLE / 2 + 0.5, h[1] - HANDLE / 2 + 0.5, HANDLE - 1, HANDLE - 1);
       }
@@ -430,7 +468,39 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     }
     const sel = store.selected();
     const main = sel[0];
-    if (main && sel.length === 1 && main.type !== 'group' && !main.locked) {
+    // An outline's point or handle (a mask's, or a path's while its points are edited), or a mask's line.
+    if (main && sel.length === 1 && !main.locked) {
+      const v = view.current;
+      const Pv = (q: Vec2): Vec2 => [v.ox + q[0] * v.scale, v.oy + q[1] * v.scale];
+      const at = Pv(p);
+      const list = screenOutlines(s, main, s.time, Pv);
+      const near = (q: Vec2 | undefined, r: number) => !!q && dist(q, at) <= r;
+      const begin = (o: (typeof list)[number], vertex: number, part: 'p' | 'i' | 'o' | 'all', free = e.altKey) => {
+        e.preventDefault();
+        store.begin('Edit outline');
+        store.set({ outlinePoint: part === 'all' ? s.outlinePoint : { ref: o.ref, outline: o.outline, vertex } });
+        drag.current = { kind: 'outline', layer: main, ref: o.ref, outlines: outlinesAt(main, o.ref, s.time), outline: o.outline, vertex, part, start: p, free };
+      };
+      const cur = s.outlinePoint;
+      for (const o of list) {
+        if (cur && sameRef(cur.ref, o.ref) && cur.outline === o.outline) {
+          const q = o.points[cur.vertex];
+          if (q && near(q.o, 6)) return begin(o, cur.vertex, 'o');
+          if (q && near(q.i, 6)) return begin(o, cur.vertex, 'i');
+        }
+      }
+      for (const o of list) {
+        const i = o.points.findIndex((q) => near(q.p, 6));
+        // Alt-drag on a point pulls out its handles (a corner made round).
+        if (i >= 0) return begin(o, i, e.altKey ? 'o' : 'p', false);
+      }
+      for (const o of list) if (o.ref.kind === 'mask' && o.segs.some((g) => nearSeg(g, at, 5))) return begin(o, -1, 'all');
+      if (s.editingPath === main.id) {
+        // Editing a path's points: a click away ends it.
+        store.set({ editingPath: null, outlinePoint: null });
+      }
+    }
+    if (main && sel.length === 1 && main.type !== 'group' && !main.locked && s.editingPath !== main.id) {
       const pts = layerCorners(look, main);
       const scr = pts.map((q): Vec2 => [q[0] * view.current.scale, q[1] * view.current.scale]);
       const at: Vec2 = [p[0] * view.current.scale, p[1] * view.current.scale];
@@ -472,7 +542,7 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
       drag.current = { kind: 'move', start: p, orig, box: layerBounds(look, hit), axis: null };
       return;
     }
-    if (!(e.shiftKey || e.ctrlKey || e.metaKey)) store.set({ selection: [], editingText: null });
+    if (!(e.shiftKey || e.ctrlKey || e.metaKey)) store.set({ selection: [], editingText: null, editingPath: null, outlinePoint: null });
     drag.current = { kind: 'marquee', start: p, now: p, add: e.shiftKey };
   };
 
@@ -484,6 +554,28 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     const c = compOf(s.project, s.compId);
     const t = s.time;
     switch (d.kind) {
+      case 'outline': {
+        const l = d.layer;
+        const m = worldMatrix(c, l, t, layerIndex(c), groupOf(c));
+        const inv = invert(m);
+        if (!inv) return;
+        const q = apply(inv, p);
+        const q0 = apply(inv, d.start);
+        const o = d.outlines[d.outline];
+        if (!o) return;
+        let next: PathData = o;
+        if (d.part === 'all') next = moveOutline(o, [q[0] - q0[0], q[1] - q0[1]]);
+        else if (d.part === 'p') {
+          const v0 = o.v[d.vertex]!.p;
+          next = moveVertex(o, d.vertex, [v0[0] + q[0] - q0[0], v0[1] + q[1] - q0[1]]);
+        } else {
+          const v0 = o.v[d.vertex]!.p;
+          next = moveTangent(o, d.vertex, d.part, [q[0] - v0[0], q[1] - v0[1]], d.free);
+        }
+        const outlines = d.outlines.map((x, i) => (i === d.outline ? next : x));
+        store.edit('Edit outline', (pr) => updateLayers(pr, c.id, [l.id], (x) => setOutlinesAt(x, d.ref, t, outlines)));
+        return;
+      }
       case 'pan':
         store.set({ pan: [d.pan[0] + e.clientX - d.start[0], d.pan[1] + e.clientY - d.start[1]] });
         return;
@@ -724,8 +816,11 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
           // A text layer: type into it right there.
           const s = store.get();
           const hit = hitLayer(lookOf(s), toComp(e));
-          const l = hit?.type === 'text' ? hit : store.selected()[0];
+          const l = hit?.type === 'text' || (hit?.type === 'shape' && hit.shape === 'path') ? hit : store.selected()[0];
           if (l?.type === 'text' && !l.locked) store.set({ selection: [l.id], editingText: l.id, tool: 'select' });
+          // A path shape: its points (and their handles) are edited on the canvas.
+          else if (l?.type === 'shape' && l.shape === 'path' && !l.locked)
+            store.set({ selection: [l.id], editingPath: l.id, outlinePoint: null, tool: 'select', status: 'Drag the points and their handles; Alt-drag a point to round it. Esc or a click away when done.' });
         }}
         onWheel={onWheel}
         tabIndex={0}
@@ -734,6 +829,59 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
       <EditOverlay store={store} size={size} />
     </div>
   );
+}
+
+const MASK_COLOR = '#d9b34c';
+
+interface ScreenOutline {
+  ref: OutlineRef;
+  outline: number;
+  segs: { a: Vec2; c1: Vec2; c2: Vec2; b: Vec2 }[];
+  points: { p: Vec2; i?: Vec2; o?: Vec2 }[];
+}
+
+/** A layer's editable outlines on the screen: its masks, and its own path while its points are edited. */
+function screenOutlines(s: EditorState, l: Layer, t: number, P: (p: Vec2) => Vec2): ScreenOutline[] {
+  const refs = outlineRefs(l).filter((r) => r.kind === 'mask' || s.editingPath === l.id);
+  if (!refs.length) return [];
+  const c = compOf(s.project, s.compId);
+  const m = worldMatrix(c, l, t, layerIndex(c), groupOf(c));
+  const seen = viewOfLayer(c, l, t);
+  const S = (q: Vec2): Vec2 => {
+    const w = apply(m, q);
+    return P(seen ? seen(w) : w);
+  };
+  const out: ScreenOutline[] = [];
+  for (const ref of refs)
+    outlinesAt(l, ref, t).forEach((o, outline) => {
+      const add = (a: Vec2, b: Vec2): Vec2 => [a[0] + b[0], a[1] + b[1]];
+      const n = o.v.length;
+      const segs: ScreenOutline['segs'] = [];
+      for (let i = 0; i < (o.closed ? n : n - 1); i++) {
+        const a = o.v[i]!;
+        const b = o.v[(i + 1) % n]!;
+        segs.push({ a: S(a.p), c1: S(add(a.p, a.o ?? [0, 0])), c2: S(add(b.p, b.i ?? [0, 0])), b: S(b.p) });
+      }
+      const points = o.v.map((v) => ({
+        p: S(v.p),
+        ...(v.i && (v.i[0] || v.i[1]) ? { i: S(add(v.p, v.i)) } : {}),
+        ...(v.o && (v.o[0] || v.o[1]) ? { o: S(add(v.p, v.o)) } : {}),
+      }));
+      out.push({ ref, outline, segs, points });
+    });
+  return out;
+}
+
+/** Is a point within `r` px of a curve (checked along it)? */
+function nearSeg(g: ScreenOutline['segs'][number], p: Vec2, r: number): boolean {
+  for (let k = 0; k <= 16; k++) {
+    const u = k / 16;
+    const w = 1 - u;
+    const x = w * w * w * g.a[0] + 3 * w * w * u * g.c1[0] + 3 * w * u * u * g.c2[0] + u * u * u * g.b[0];
+    const y = w * w * w * g.a[1] + 3 * w * w * u * g.c1[1] + 3 * w * u * u * g.c2[1] + u * u * u * g.b[1];
+    if (Math.hypot(x - p[0], y - p[1]) <= r) return true;
+  }
+  return false;
 }
 
 /**

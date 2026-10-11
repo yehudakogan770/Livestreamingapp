@@ -16,6 +16,7 @@ import type { KeyRef, Store } from './store';
 import { useStore } from './store';
 import { GraphEditor } from './GraphEditor';
 import { NumberField } from './fields';
+import { isMorphing, moveOutlineKey, outlineKeyTimes, outlineRefs, type OutlineRef } from './outlines';
 
 const LEFT = 300;
 const ZOOM_MIN = 20;
@@ -160,6 +161,10 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
               graph={graph}
             />,
           );
+        // Masks and paths changing form: their keys.
+        for (const ref of outlineRefs(l))
+          if (isMorphing(l, ref))
+            rows.push(<OutlineRow key={`${l.id}:outline:${ref.kind === 'mask' ? ref.index : 'path'}`} store={store} c={c} l={l} outline={ref} depth={depth} x={x} keys={keys} dragTime={dragTime} />);
       }
       if (l.type === 'group') walk(l.children, depth + 1);
     }
@@ -668,6 +673,38 @@ function PropRow({
               onDoubleClick={() => store.set({ time: k.t, cue: null })}
             />
           ))}
+      </div>
+    </div>
+  );
+}
+
+/** The keys of a mask or path changing form: dragged in time, clicked to go there. */
+function OutlineRow({ store, c, l, outline, depth, x, dragTime }: RowProps & { outline: OutlineRef }) {
+  const label = outline.kind === 'mask' ? `${l.masks?.[outline.index]?.name ?? 'Mask'}: shape` : 'Outline';
+  return (
+    <div className="tt-row prop" style={{ height: ROW }}>
+      <div className="tt-tl-left" style={{ paddingLeft: 22 + depth * 14 }}>
+        <span className="tt-ico on" aria-hidden="true">
+          <Clock size={12} />
+        </span>
+        <span className="tt-propname">{label}</span>
+      </div>
+      <div className="tt-tl-track">
+        {outlineKeyTimes(l, outline).map((t) => (
+          <span
+            key={t}
+            className="tt-key"
+            style={{ left: x(t) }}
+            title={`${label} at ${t.toFixed(2)} s (drag to move; double-click to go there)`}
+            onDoubleClick={() => store.set({ time: t, cue: null })}
+            onPointerDown={(e) => {
+              const start = store.get().project;
+              dragTime(e, 'Move key', (dt) =>
+                store.edit('Move key', () => updateLayers(start, c.id, [l.id], (y) => moveOutlineKey(y, outline, t, Math.min(c.duration, Math.max(0, t + dt))))),
+              );
+            }}
+          />
+        ))}
       </div>
     </div>
   );
