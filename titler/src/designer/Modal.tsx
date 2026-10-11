@@ -113,7 +113,7 @@ export function askConfirm(title: string, message: string, ok = 'OK', danger = f
   });
 }
 
-/** Ask for a name (null: cancelled). */
+/** Ask for a name (null: canceled). */
 export function askText(title: string, message: string, value = '', ok = 'OK'): Promise<string | null> {
   if (!hosts) return Promise.resolve(typeof prompt === 'function' ? prompt(message, value) : value);
   return new Promise((resolve) => {
