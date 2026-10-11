@@ -19,6 +19,11 @@
   --accent: #1a1a19;
   --accent-hover: #383837;
   --accent-ink: #ffffff;
+  /* Chat bubbles: yours in ink, everyone else's in light gray. */
+  --bub-mine: #1a1a19;
+  --bub-mine-ink: #ffffff;
+  --bub-theirs: #efefed;
+  --bub-theirs-ink: #1a1a19;
   --sel: #efefed;
   --side: #f0f0ee;
   --side-hover: #e7e7e4;
@@ -55,6 +60,10 @@
     --accent: #ececea;
     --accent-hover: #ffffff;
     --accent-ink: #141413;
+    --bub-mine: #464643;
+    --bub-mine-ink: #f4f4f2;
+    --bub-theirs: #282827;
+    --bub-theirs-ink: #ececea;
     --sel: #2b2b29;
     --side: #181817;
     --side-hover: #222221;
@@ -86,6 +95,10 @@
   --accent: #ececea;
   --accent-hover: #ffffff;
   --accent-ink: #141413;
+  --bub-mine: #464643;
+  --bub-mine-ink: #f4f4f2;
+  --bub-theirs: #282827;
+  --bub-theirs-ink: #ececea;
   --sel: #2b2b29;
   --side: #181817;
   --side-hover: #222221;
@@ -1999,8 +2012,16 @@ html {
 :where([data-device='phone']) .page__title h1 {
   font-size: 26px;
 }
+:where([data-device='phone']) .page__new {
+  flex-wrap: wrap;
+  max-width: none;
+}
 :where([data-device='phone']) .page__new .input {
+  flex: 1 1 100%;
   width: auto;
+}
+:where([data-device='phone']) .page__new .btn {
+  flex: 1 1 0;
 }
 :where([data-device='phone']) .page__sub {
   margin: 24px 0 10px;
@@ -2673,11 +2694,12 @@ html {
   margin: -4px 0 20px;
   max-width: 520px;
 }
-.page__foot {
+.page__foot,
+.page > .page__foot {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 28px;
+  margin: 28px 0 0;
 }
 .empty--center {
   display: flex;
@@ -2691,6 +2713,11 @@ html {
 .empty--center .mark {
   margin-bottom: 12px;
   opacity: 0.9;
+}
+.empty--center .mark + p:not(.muted) {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
 }
 .empty--center p {
   max-width: 460px;
@@ -2876,147 +2903,342 @@ html {
   background: var(--sel);
 }
 
-/* ---- Chat ---- */
+/* ---- Chat: a messaging thread ---- */
 .chat {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--surface);
+  --bub-r: 18px;
+  --bub-r-tight: 5px;
 }
-.chat__list {
+.chat__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat__scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px 0 12px;
+  overscroll-behavior: contain;
+}
+/* Few messages sit at the bottom, next to the message box, as in any messaging app. */
+.chat__thread {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px 14px 10px;
 }
 .chat__note {
-  margin: 12px 16px;
+  margin: 12px 0;
+  text-align: center;
 }
 .chat__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 48px 24px;
+  margin: auto 0;
+  padding: 40px 16px;
   text-align: center;
 }
 .chat__empty .mark {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .chat__empty p {
   margin: 0;
+  max-width: 300px;
 }
 .chat__empty p:first-of-type {
   font-weight: 600;
 }
 .chat__day {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 14px 16px 6px;
-  color: var(--faint);
-  font-size: 12px;
+  justify-content: center;
+  margin: 16px 0 8px;
 }
-.chat__day::before,
-.chat__day::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--line);
+.chat__day:first-child {
+  margin-top: 4px;
 }
-.msg {
-  position: relative;
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 0 10px;
-  padding: 1px 12px 1px 14px;
+.chat__day span {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 11.5px;
+  font-weight: 500;
 }
-.msg--head {
-  margin-top: 10px;
-}
-.msg:hover {
-  background: var(--hover);
-}
-.msg__avatar {
-  width: 28px;
-  height: 28px;
-  margin-top: 2px;
-}
-.msg__gutter {
-  align-self: center;
-  font-size: 10px;
-  color: var(--faint);
-  text-align: right;
-  opacity: 0;
-}
-.msg:hover .msg__gutter {
-  opacity: 1;
-}
-.msg__head {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
-.msg__body {
-  margin: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  line-height: 1.5;
-}
-.msg__cue {
-  padding: 0 2px;
-  border: 0;
-  border-radius: 3px;
-  background: var(--surface-3);
-  color: var(--text);
-  font: 500 12px var(--mono);
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--line-3);
-  text-underline-offset: 2px;
-}
-.msg__cue:hover {
-  background: var(--sel);
-}
-.msg__del {
-  width: 26px;
-  height: 26px;
-  align-self: start;
-  opacity: 0;
-}
-.msg:hover .msg__del,
-.msg__del:focus-visible {
-  opacity: 1;
-}
-.chat__compose {
-  flex: 0 0 auto;
-  padding: 10px 12px 10px;
-  border-top: 1px solid var(--line);
-}
-.chat__row {
+
+/* A message: someone else's on the left (initials, then the bubble), yours on the right. */
+.bub {
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  margin-top: 2px;
+}
+.bub--first,
+.bub--single {
+  margin-top: 10px;
+}
+.chat__day + .bub {
+  margin-top: 0;
+}
+.bub--mine {
+  justify-content: flex-end;
+}
+.bub__avatar {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  align-self: flex-start;
+}
+.bub__avatar.avatar {
+  margin-top: 21px;
+  font-size: 10.5px;
+}
+.bub__col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: min(78%, 520px);
+}
+.bub--theirs .bub__col {
+  align-items: flex-start;
+}
+.bub--mine .bub__col {
+  align-items: flex-end;
+}
+.bub__name {
+  margin: 0 0 3px 12px;
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
+}
+.bub__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.bub--mine .bub__line {
+  flex-direction: row-reverse;
+}
+.bub__bubble {
+  min-width: 0;
+  padding: 7px 12px 8px;
+  border-radius: var(--bub-r);
+  background: var(--bub-theirs);
+  color: var(--bub-theirs-ink);
+  cursor: default;
+}
+.bub--mine .bub__bubble {
+  background: var(--bub-mine);
+  color: var(--bub-mine-ink);
+}
+/* One run of messages reads as one block: the corners on the sender's side close up. */
+.bub--theirs.bub--first .bub__bubble {
+  border-bottom-left-radius: var(--bub-r-tight);
+}
+.bub--theirs.bub--middle .bub__bubble {
+  border-top-left-radius: var(--bub-r-tight);
+  border-bottom-left-radius: var(--bub-r-tight);
+}
+.bub--theirs.bub--last .bub__bubble {
+  border-top-left-radius: var(--bub-r-tight);
+}
+.bub--mine.bub--first .bub__bubble {
+  border-bottom-right-radius: var(--bub-r-tight);
+}
+.bub--mine.bub--middle .bub__bubble {
+  border-top-right-radius: var(--bub-r-tight);
+  border-bottom-right-radius: var(--bub-r-tight);
+}
+.bub--mine.bub--last .bub__bubble {
+  border-top-right-radius: var(--bub-r-tight);
+}
+.bub__body {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.42;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bub__body .mention__name {
+  font-weight: 600;
+}
+.bub__cue {
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: inherit;
+  font: 500 12.5px var(--mono);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 2px;
+}
+.bub__cue:hover {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+.bub__time {
+  margin: 3px 12px 0;
+  color: var(--faint);
+  font-size: 11px;
+}
+.bub__del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--faint);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    background-color 0.12s;
+}
+.bub__del:hover {
+  color: var(--live);
+  background: var(--hover);
+}
+.bub:hover .bub__del,
+.bub.is-picked .bub__del,
+.bub__del:focus-visible {
+  opacity: 1;
+}
+
+/* Back to the newest message, when scrolled up. */
+.chat__jump {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  transform: translateX(-50%);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.chat__jump svg {
+  color: var(--dim);
+}
+.chat__jump.is-new {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.chat__jump.is-new svg {
+  color: inherit;
+}
+
+/* The message box, pinned under the thread. */
+.chat__compose {
+  flex: 0 0 auto;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.chat__off {
+  margin: 0;
+  text-align: center;
+}
+.chat__field {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 3px 3px 3px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  background: var(--surface);
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+.chat__field:hover {
+  border-color: var(--line-3);
+}
+.chat__field:focus-within {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.chat__field .mention {
+  flex: 1;
+  min-width: 0;
 }
 textarea.chat__input {
+  display: block;
   flex: 1;
-  min-height: 34px;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
   max-height: 160px;
+  margin: 0;
+  padding: 6px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  line-height: 20px;
   resize: none;
   field-sizing: content;
 }
-.chat__send {
-  flex: 0 0 auto;
-  height: 34px;
-  width: 34px;
+textarea.chat__input:focus-visible {
+  outline: none;
 }
-.chat__tip {
-  margin: 6px 0 0;
-  font-size: 11.5px;
+.chat__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  transition:
+    background-color 0.12s,
+    opacity 0.12s;
+}
+.chat__send:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.chat__send:disabled {
+  background: var(--line-2);
+  color: var(--surface);
+  cursor: default;
 }
 .chat__err {
-  margin: 0 0 6px;
+  max-width: 760px;
+  margin: 0 auto 6px;
 }
 
 /* ---- Schedule ---- */
@@ -3285,281 +3507,6 @@ textarea.chat__input {
   gap: 4px;
 }
 
-/* ---- Calendar ---- */
-.cal {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.cal__bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-}
-.cal__title {
-  min-width: 190px;
-  font-size: 18px;
-  letter-spacing: -0.015em;
-}
-.cal__nav {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-.cal__note {
-  margin: 0;
-}
-.month {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
-  overflow: hidden;
-}
-.month__head,
-.month__week {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-}
-.month__head span {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--line);
-  color: var(--dim);
-  font-size: 12px;
-  font-weight: 500;
-}
-.month__week + .month__week {
-  border-top: 1px solid var(--line);
-}
-.month__day {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-  min-height: 112px;
-  padding: 6px 6px 8px;
-}
-.month__day + .month__day {
-  border-left: 1px solid var(--line);
-}
-.month__day.is-new {
-  cursor: pointer;
-}
-.month__day.is-new:hover {
-  background: var(--surface-2);
-}
-.month__day.is-out {
-  background: var(--surface-2);
-}
-.month__day.is-out .month__n {
-  color: var(--faint);
-}
-.month__n {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: flex-start;
-  min-width: 24px;
-  height: 24px;
-  padding: 0 4px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-.month__day.is-today .month__n {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-.month__plans {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-.calchip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0 6px;
-  width: 100%;
-  min-width: 0;
-  padding: 3px 6px;
-  border: 1px solid var(--line-2);
-  border-left: 3px solid var(--text);
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 12px;
-  text-align: left;
-  cursor: pointer;
-}
-.calchip:hover {
-  background: var(--hover);
-}
-.calchip__time {
-  font-size: 11px;
-  color: var(--dim);
-  line-height: 18px;
-}
-.calchip__name {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  overflow-wrap: anywhere;
-  font-weight: 600;
-  line-height: 18px;
-}
-.calchip__venue {
-  grid-column: 1 / -1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--dim);
-  font-size: 11.5px;
-}
-.month__more {
-  align-self: flex-start;
-  padding: 0 6px;
-  border: 0;
-  background: none;
-  color: var(--dim);
-  font-size: 12px;
-  cursor: pointer;
-}
-.month__more:hover {
-  color: var(--text);
-}
-.week {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
-  overflow: hidden;
-  min-height: 420px;
-}
-.week__day {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-.week__day + .week__day {
-  border-left: 1px solid var(--line);
-}
-.week__day.is-new {
-  cursor: pointer;
-}
-.week__day.is-new:hover {
-  background: var(--surface-2);
-}
-.week__head {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 10px 10px 8px;
-  border-bottom: 1px solid var(--line);
-}
-.week__n {
-  font-size: 18px;
-  font-weight: 600;
-}
-.week__day.is-today .week__n {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 5px;
-}
-.week__plans {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-}
-.weekcard {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: 8px 9px;
-  border: 1px solid var(--line-2);
-  border-left: 3px solid var(--text);
-  border-radius: var(--r-sm);
-  background: var(--surface);
-  color: var(--text);
-  text-align: left;
-  cursor: pointer;
-}
-.weekcard:hover {
-  background: var(--hover);
-}
-.weekcard__time {
-  font-size: 11.5px;
-  color: var(--dim);
-}
-.weekcard__name {
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.weekcard__venue,
-.weekcard__meta {
-  font-size: 12px;
-}
-.agenda {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 760px;
-}
-.agenda__title {
-  margin: 0 2px 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--dim);
-}
-.agenda__title.is-today {
-  color: var(--text);
-}
-.agenda__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface);
-  overflow: hidden;
-}
-.agenda__list li + li {
-  border-top: 1px solid var(--line);
-}
-.agenda__item {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr);
-  gap: 12px;
-  padding: 12px 16px;
-  color: var(--text);
-  text-decoration: none;
-}
-.agenda__item:hover {
-  background: var(--hover);
-}
-.agenda__time {
-  padding-top: 1px;
-  color: var(--dim);
-}
-.agenda__main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.agenda__name {
-  font-weight: 600;
-}
-.agenda__sub {
-  font-size: 12px;
-}
 .dialog__box--small {
   width: min(420px, 100%);
 }
@@ -3704,21 +3651,37 @@ textarea.chat__input {
   display: flex;
   flex-direction: column;
 }
+/* Phones: a bigger message box and send button for thumbs; a message shows its time and Delete when tapped. */
 :where([data-device='phone']) .phone__chat .chat__compose {
-  padding: 8px 12px;
+  padding: 8px 10px;
 }
-:where([data-device='phone']) .phone__chat .chat__tip {
-  display: none;
+:where([data-device='phone']) .chat__thread {
+  padding: 10px 10px 8px;
 }
-:where([data-device='phone']) .chat__input {
-  min-height: 44px;
+:where([data-device='phone']) textarea.chat__input {
+  min-height: 36px;
+  padding: 8px 0;
+  font-size: 16px;
+}
+:where([data-device='phone']) .chat__field {
+  border-radius: 22px;
 }
 :where([data-device='phone']) .chat__send {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
 }
-:where([data-device='phone']) .msg__del {
-  opacity: 0.4;
+:where([data-device='phone']) .bub__body {
+  font-size: 15px;
+  line-height: 1.38;
+}
+:where([data-device='phone']) .bub__col {
+  max-width: 80%;
+}
+:where([data-device='phone']) .bub:hover .bub__del {
+  opacity: 0;
+}
+:where([data-device='phone']) .bub.is-picked .bub__del {
+  opacity: 1;
   width: 36px;
   height: 36px;
 }
@@ -3782,24 +3745,6 @@ textarea.chat__input {
 }
 :where([data-device='phone']) .plancard__go {
   color: var(--faint);
-}
-:where([data-device='phone']) .cal__title {
-  min-width: 0;
-  font-size: 20px;
-}
-:where([data-device='phone']) .cal__bar .btn--primary {
-  margin-left: auto;
-}
-:where([data-device='phone']) .agenda__item {
-  grid-template-columns: 84px minmax(0, 1fr);
-  min-height: 60px;
-  padding: 12px 14px;
-}
-:where([data-device='phone']) .agenda__name {
-  font-size: 16px;
-}
-:where([data-device='phone']) .agenda__sub {
-  font-size: 13px;
 }
 :where([data-device='phone']) .grid3 {
   grid-template-columns: 1fr 1fr;
@@ -4121,12 +4066,12 @@ kbd {
 :where([data-device='tablet']) .com__open {
   min-height: 44px;
 }
-/* Nothing only on hover: a message's time and delete button show all the time. */
-:where([data-device='tablet']) .msg__gutter,
-:where([data-device='tablet']) .msg__del {
-  opacity: 1;
+/* Fingers, not a mouse: a tap on a message shows its time and Delete. */
+:where([data-device='tablet']) .bub:hover .bub__del {
+  opacity: 0;
 }
-:where([data-device='tablet']) .msg__del {
+:where([data-device='tablet']) .bub.is-picked .bub__del {
+  opacity: 1;
   width: 40px;
   height: 40px;
 }
@@ -4260,27 +4205,6 @@ kbd {
 :where([data-device='tablet'][data-orient='landscape']) .cues {
   min-width: 0;
 }
-/* The calendar: bigger days to tap */
-:where([data-device='tablet']) .month__day {
-  min-height: 132px;
-  padding: 8px;
-}
-:where([data-device='tablet']) .month__n {
-  min-width: 30px;
-  height: 30px;
-  font-size: 14px;
-}
-:where([data-device='tablet']) .calchip {
-  min-height: 44px;
-  padding: 5px 8px;
-  font-size: 13px;
-}
-/* Narrow days: the time above the name, not beside it. */
-:where([data-device='tablet']) .calchip,
-:where([data-compact]) .calchip {
-  grid-template-columns: minmax(0, 1fr);
-}
-
 /* Paper: only the print sheet, black on white. */
 .print-only {
   display: none;
