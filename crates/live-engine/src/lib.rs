@@ -31,6 +31,7 @@ pub mod frame;
 pub mod gpu;
 pub mod hdr;
 pub mod look;
+pub mod loopback;
 pub mod mix;
 pub mod multiview;
 pub mod overlay;
@@ -41,6 +42,8 @@ pub mod source;
 pub mod vision;
 pub mod zerocopy;
 
+#[cfg(windows)]
+mod loopback_win;
 #[cfg(windows)]
 pub mod mf;
 #[cfg(windows)]

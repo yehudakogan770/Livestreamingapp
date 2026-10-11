@@ -1,4 +1,5 @@
 import { AudioLines, Headphones, Settings2, Speaker, VolumeX } from 'lucide-react';
+import { isMicrophone } from '../engine/computerSound';
 import { useState } from 'react';
 import type { Show } from '../engine/types/Show';
 import type { Source } from '../engine/types/Source';
@@ -191,7 +192,7 @@ function StripMenu({ src, onDone, onCancel }: { src: Source; onDone: (p: SourceA
       <label className="menu__row menu__row--check">
         <input type="checkbox" checked={follow} onChange={(e) => setFollow(e.target.checked)} /> Only heard when on air (audio follows video)
       </label>
-      {src.kind.type !== 'microphone' && (
+      {!isMicrophone(src) && (
         <>
           <label className="menu__row menu__row--check">
             <input type="checkbox" checked={f.duck} onChange={(e) => ff({ duck: e.target.checked })} /> Quieter while someone talks (music under speeches)
@@ -206,7 +207,7 @@ function StripMenu({ src, onDone, onCancel }: { src: Source; onDone: (p: SourceA
         </>
       )}
       <span className="menu__hint strip__section">Filters</span>
-      {src.kind.type === 'microphone' && (
+      {isMicrophone(src) && (
         <label className="menu__row menu__row--check">
           <input type="checkbox" checked={f.noiseSuppression} onChange={(e) => ff({ noiseSuppression: e.target.checked })} /> Remove background noise (hiss,
           hum, fans)

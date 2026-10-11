@@ -8,6 +8,7 @@ import type { Show } from '../engine/types/Show';
 import { useSound } from '../audio/SoundContext';
 import { SCREENS } from '../components/ScreenSelector';
 import { useProblemStore } from './problems';
+import { isComputerSound } from '../engine/computerSound';
 
 /** Output windows Lumora itself was asked to close (so their closing is not a problem). */
 export const expectedCloses = new Set<ScreenId>();
@@ -120,5 +121,55 @@ export function OutputWatcher({ show, client, open, onOpenOutputs }: { show: Sho
   }, [store, me, client, displays, onOpenOutputs]);
 
   useEffect(() => () => store?.clearAll(me, ''), [store, me]);
+  return null;
+}
+
+/** "This computer's sound" inputs Windows could not take, or whose program isn't running. */
+export function ComputerSoundWatcher({ show, client }: { show: Show; client: EngineClient }) {
+  const store = useProblemStore();
+  const me = useRef(Symbol('computer-sound')).current;
+  const latest = useRef(show);
+  latest.current = show;
+  const any = show.sources.some((s) => s.kind.type === 'microphone' && isComputerSound(s.kind.deviceId));
+  useEffect(() => {
+    if (!store || !any) return;
+    let alive = true;
+    const check = async () => {
+      const list = await client.computerSoundStatus();
+      if (!alive) return;
+      const s = latest.current;
+      for (const src of s.sources) {
+        if (src.kind.type !== 'microphone' || !isComputerSound(src.kind.deviceId)) continue;
+        const key = `computer-sound:${src.id}`;
+        const st = list.find((x) => x.id === src.id);
+        if (st?.state === 'failed')
+          store.report(me, {
+            key,
+            level: 'error',
+            title: `${src.name}: no sound`,
+            detail: st.detail ?? 'Windows stopped giving this computer’s sound.',
+            fix: 'Lumora tries again every few seconds. Check the computer’s speakers or headphones are chosen in Windows’ sound settings.',
+            sourceId: src.id,
+          });
+        else if (st?.state === 'waiting' && st.detail)
+          store.report(me, {
+            key,
+            level: 'warning',
+            title: `${src.name}: waiting for the program`,
+            detail: st.detail,
+            fix: 'Start the program.',
+            sourceId: src.id,
+          });
+        else store.clear(me, key);
+      }
+    };
+    void check();
+    const id = setInterval(() => void check(), 3000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      store.clearAll(me, 'computer-sound:');
+    };
+  }, [store, client, me, any]);
   return null;
 }

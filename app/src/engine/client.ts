@@ -1,3 +1,4 @@
+import type { ComputerSoundChoices, ComputerSoundStatus } from './computerSound';
 import type { Ptz } from './types/Ptz';
 import { defaultPlace } from './zmanim';
 import { defaultBrand } from './brand';
@@ -348,6 +349,10 @@ export interface EngineClient {
   picturesWanted(): Promise<string[]>;
   /** Hand in an input's small picture (JPEG) for control surfaces. */
   putPicture(id: string, jpeg: Blob): Promise<void>;
+  /** What "This computer's sound" can take here (nothing outside Windows). */
+  computerSoundChoices(): Promise<ComputerSoundChoices>;
+  /** How each "This computer's sound" input is doing. */
+  computerSoundStatus(): Promise<ComputerSoundStatus[]>;
   /** How hard the computer is working (null where it can't be measured). */
   perfStats(): Promise<PerfStats | null>;
   /** Keep a replay piece with the app's files; resolves its path. */
@@ -844,6 +849,14 @@ class TauriClient implements EngineClient {
     await invoke('remote_put_picture', bytes, { headers: { 'x-input': encodeURIComponent(id) } });
   }
 
+  computerSoundChoices(): Promise<ComputerSoundChoices> {
+    return invoke<ComputerSoundChoices>('computer_sound_choices').catch(() => ({ available: false, programs: [] }));
+  }
+
+  computerSoundStatus(): Promise<ComputerSoundStatus[]> {
+    return invoke<ComputerSoundStatus[]>('computer_sound_status').catch(() => []);
+  }
+
   perfStats(): Promise<PerfStats | null> {
     return invoke<PerfStats>('perf_stats').catch(() => null);
   }
@@ -1323,6 +1336,14 @@ export class DemoClient implements EngineClient {
 
   putPicture(): Promise<void> {
     return Promise.resolve();
+  }
+
+  computerSoundChoices(): Promise<ComputerSoundChoices> {
+    return Promise.resolve({ available: false, programs: [] });
+  }
+
+  computerSoundStatus(): Promise<ComputerSoundStatus[]> {
+    return Promise.resolve([]);
   }
 
   perfStats(): Promise<PerfStats | null> {

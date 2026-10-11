@@ -6,6 +6,7 @@ mod atem;
 mod browser;
 mod captions;
 mod capture;
+mod computer_sound;
 mod control;
 mod decklink;
 mod desktop;
@@ -63,6 +64,7 @@ struct AppState {
     browsers: browser::Browsers,
     streams: streams::Streams,
     desktop: desktop::Desktop,
+    computer_sound: computer_sound::ComputerSound,
     isos: iso::Isos,
     perf: perf::Perf,
     ffmpeg: Option<std::path::PathBuf>,
@@ -248,6 +250,7 @@ fn announce(app: &tauri::AppHandle, state: &AppState, snapshot: &Snapshot) {
     state.browsers.sync(&snapshot.show);
     state.streams.sync(&snapshot.show);
     state.desktop.sync(&snapshot.show);
+    state.computer_sound.sync(&snapshot.show);
     if let Some(live) = app.try_state::<live::Live>() {
         live.sync(&snapshot.show);
         live.place_multiview(app, &snapshot.show);
@@ -1070,6 +1073,24 @@ impl remote::Backend for RemoteBackend {
     }
 }
 
+/// What "This computer's sound" can take here: whether this computer can
+/// (Windows), and the programs playing sound now.
+#[tauri::command]
+async fn computer_sound_choices() -> computer_sound::ComputerSoundChoices {
+    tauri::async_runtime::spawn_blocking(computer_sound::choices)
+        .await
+        .unwrap_or(computer_sound::ComputerSoundChoices {
+            available: false,
+            programs: Vec::new(),
+        })
+}
+
+/// How each "This computer's sound" input is doing.
+#[tauri::command]
+fn computer_sound_status(state: State<'_, AppState>) -> Vec<computer_sound::SoundStatus> {
+    state.computer_sound.status()
+}
+
 /// Save results (polls, questions, trivia) as a CSV file where the operator
 /// chose in the save dialog. Only `.csv` files, and nothing huge.
 #[tauri::command]
@@ -1305,6 +1326,10 @@ pub fn run() {
             streams.sync(&show);
             let desktop = desktop::Desktop::new(std::sync::Arc::clone(&browsers.frames));
             desktop.sync(&show);
+            // "This computer's sound" inputs: taken by Windows, mixed like a stream's sound.
+            let computer_sound =
+                computer_sound::ComputerSound::new(std::sync::Arc::clone(&browsers.sounds));
+            computer_sound.sync(&show);
             // Lumora Titler: its window, the shared title library and films through FFmpeg.
             app.manage(titler_host::Renders::default());
             // An ATEM switcher next to Lumora (Settings → ATEM switcher…).
@@ -1343,6 +1368,7 @@ pub fn run() {
                 browsers,
                 streams,
                 desktop,
+                computer_sound,
                 isos: iso::Isos::default(),
                 perf: perf::Perf::default(),
                 ffmpeg,
@@ -1506,6 +1532,8 @@ pub fn run() {
             remote_app_state,
             remote_pictures_wanted,
             save_csv,
+            computer_sound_choices,
+            computer_sound_status,
             remote_put_picture,
             streamdeck_status,
             streamdeck_install,

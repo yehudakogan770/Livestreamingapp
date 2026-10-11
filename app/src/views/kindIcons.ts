@@ -24,6 +24,7 @@ import {
   MessageSquareText,
   MessagesSquare,
   Mic,
+  MonitorSpeaker,
   Music,
   PaintBucket,
   PenTool,
@@ -83,6 +84,7 @@ export const KIND_ICON: Record<string, LucideIcon> = {
   logo3d: Box,
   visuals: Spotlight,
   microphone: Mic,
+  computersound: MonitorSpeaker,
   sound: Music,
 };
 

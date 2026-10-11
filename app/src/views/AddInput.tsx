@@ -1,4 +1,5 @@
 import { SquarePlus, Star } from 'lucide-react';
+import { EVERYTHING, programName, useComputerSoundAvailable, type ProgramChoice } from '../engine/computerSound';
 import { GROUP_ICON, kindIcon } from './kindIcons';
 import { X } from 'lucide-react';
 import { defaultFundraiser, defaultRaffle } from '../engine/audience';
@@ -21,7 +22,7 @@ import { defaultScoreboard } from '../engine/score';
 import { cleanStreamUrl, streamName } from '../engine/stream';
 import { cleanUrl, defaultBrowser } from '../engine/browser';
 import { sendCommand } from './commands';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { defaultCountdown, type EngineClient } from '../engine/client';
 import { defaultAdjust, defaultAutoFrame, defaultBackground, defaultKey } from '../engine/chroma';
 import type { NewSource } from '../engine/types/NewSource';
@@ -41,7 +42,7 @@ import { defaultSplit } from '../engine/split';
 import type { Split } from '../engine/types/Split';
 
 /** What can be added; a sound file is stored as a video source that is never shown, a capture card as a stream input. */
-type Kind = SourceKind['type'] | 'sound' | 'decklink' | 'wordcloud' | 'rating';
+type Kind = SourceKind['type'] | 'sound' | 'decklink' | 'wordcloud' | 'rating' | 'computersound';
 
 const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'camera', name: 'Camera', hint: 'Webcam, capture card or phone' },
@@ -80,6 +81,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'logo3d', name: '3D logo', hint: 'Your logo in 3D, turning (the logo maker)' },
   { kind: 'visuals', name: 'Stage visuals', hint: 'Music visuals on the beat, for the Back Screen' },
   { kind: 'microphone', name: 'Microphone', hint: 'Mic, sound desk or line in' },
+  { kind: 'computersound', name: 'This computer’s sound', hint: 'Everything this computer plays, or one program: a music player, a browser, a call' },
   { kind: 'sound', name: 'Sound / music file', hint: 'MP3, WAV… music and effects' },
 ];
 
@@ -93,7 +95,7 @@ const GROUPS: { name: string; kinds: Kind[] }[] = [
   },
   { name: 'The audience’s phones', kinds: ['poll', 'wordcloud', 'rating', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
   { name: 'Layouts and visuals', kinds: ['split', 'visuals', 'logo3d'] },
-  { name: 'Sound', kinds: ['microphone', 'sound'] },
+  { name: 'Sound', kinds: ['microphone', 'computersound', 'sound'] },
 ];
 
 /** For each screen: the best inputs for it (shown first), then the groups in the order that suits it. */
@@ -139,7 +141,11 @@ export function AddInput({
   const forScreen = FOR_SCREEN[screen];
   const [kind, setKind] = useState<Kind>(() => (KINDS.some((k) => k.kind === initialKind) ? (initialKind as Kind) : forScreen.best[0]!));
   // The Jewish event tools only when switched on (Settings) or already used.
-  const kinds = jewishToolsOn({ sources }) ? KINDS : KINDS.filter((k) => !JEWISH_KINDS.includes(k.kind) || k.kind === initialKind);
+  // This computer's sound only where the computer can take it (Windows).
+  const computerSound = useComputerSoundAvailable(useCallback(() => client.computerSoundChoices(), [client]));
+  const kinds = (jewishToolsOn({ sources }) ? KINDS : KINDS.filter((k) => !JEWISH_KINDS.includes(k.kind) || k.kind === initialKind)).filter(
+    (k) => k.kind !== 'computersound' || computerSound,
+  );
   // The best for this screen first, then each group (without repeating those).
   const pick = (list: Kind[]) => list.map((id) => kinds.find((k) => k.kind === id)).filter((k) => k !== undefined);
   const kindGroups = [
@@ -166,6 +172,8 @@ export function AddInput({
   const [cam, setCam] = useState<MediaDeviceInfo | null>(null);
   const [screenCap, setScreenCap] = useState<ScreenCapture | null>(null);
   const [card, setCard] = useState<string | null>(null);
+  const [pcSound, setPcSound] = useState<string>(EVERYTHING);
+  const [programs, setPrograms] = useState<ProgramChoice[] | null>(null);
   const deviceKind = kind === 'microphone' ? 'audioinput' : 'videoinput';
   const what = kind === 'microphone' ? 'microphones' : 'cameras';
 
@@ -196,6 +204,16 @@ export function AddInput({
       );
   }, [kind, cams, deviceKind, what]);
 
+  // The programs playing sound now, for "This computer's sound".
+  useEffect(() => {
+    if (kind !== 'computersound' || programs !== null) return;
+    let alive = true;
+    void client.computerSoundChoices().then((c) => alive && setPrograms(c.programs));
+    return () => {
+      alive = false;
+    };
+  }, [kind, programs, client]);
+
   const choose = async (k: 'video' | 'image' | 'audio') => {
     const f = await client.pickFile(k);
     if (f) {
@@ -217,6 +235,15 @@ export function AddInput({
         return { name: n || 'Color', kind: { type: 'color', color } };
       case 'microphone':
         return cam ? { name: n || cam.label || 'Microphone', kind: { type: 'microphone', deviceId: cam.deviceId, label: cam.label } } : null;
+      case 'computersound': {
+        const label = pcSound === EVERYTHING ? 'This computer’s sound' : programName(pcSound);
+        return {
+          name: n || (pcSound === EVERYTHING ? 'Computer sound' : label),
+          kind: { type: 'microphone', deviceId: pcSound, label },
+          // Heard whenever it plays, like music (not only "on air").
+          audio: { follow: false, toMaster: true, toA: true, toB: true, delayMs: 0, filters: defaultFilters() },
+        };
+      }
       case 'sound':
         return path
           ? {
@@ -415,6 +442,38 @@ export function AddInput({
                   ))}
                 </div>
                 <button type="button" className="linkbtn" onClick={() => setCams(null)}>
+                  Look again
+                </button>
+              </div>
+            )}
+
+            {kind === 'computersound' && (
+              <div className="field" role="radiogroup" aria-label="Whose sound">
+                <span className="field__label">Whose sound</span>
+                <div className="addinput__list">
+                  <button type="button" className="seg" role="radio" aria-checked={pcSound === EVERYTHING} onClick={() => setPcSound(EVERYTHING)}>
+                    Everything this computer plays
+                  </button>
+                  {programs?.map((p) => (
+                    <button
+                      key={p.deviceId}
+                      type="button"
+                      className="seg"
+                      role="radio"
+                      aria-checked={pcSound === p.deviceId}
+                      onClick={() => setPcSound(p.deviceId)}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+                <span className="field__note">
+                  {pcSound === EVERYTHING
+                    ? 'Lumora’s own sound is left out, so it never comes back round into the mix.'
+                    : `Only ${programName(pcSound)} (and what it opens). If it closes, its sound comes back by itself when it starts again.`}{' '}
+                  {programs?.length === 0 ? 'No program is playing sound now: start the music or video first to choose just that one.' : ''}
+                </span>
+                <button type="button" className="linkbtn" onClick={() => setPrograms(null)}>
                   Look again
                 </button>
               </div>
