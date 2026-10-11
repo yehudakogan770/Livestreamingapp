@@ -144,7 +144,7 @@ export function ChatPanel({
             </div>
             {st.facebook.problem && <p className="field__note field__note--warn">{st.facebook.problem}</p>}
             <details className="chat__key">
-              <summary>YouTube API key{key ? ' ✓' : ''}</summary>
+              <summary>YouTube API key{key ? ' (saved)' : ''}</summary>
               <input className="text" type="password" value={key} onChange={(e) => saveKey(e.target.value)} aria-label="YouTube API key" spellCheck={false} />
               <p className="field__note">
                 Free, once: console.cloud.google.com → new project → turn on “YouTube Data API v3” → Credentials → Create API key. Kept on this computer only.

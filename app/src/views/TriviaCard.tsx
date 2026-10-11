@@ -1,4 +1,4 @@
-import { CircleHelp, Download, X } from 'lucide-react';
+import { CircleHelp, Download, Play, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { EngineClient } from '../engine/client';
 import type { Source } from '../engine/types/Source';
@@ -89,7 +89,8 @@ export function TriviaCard({ source, act, client, onClose }: { source: Source; a
                 </button>
               ) : next < t.questions.length ? (
                 <button type="button" className="btn btn--primary btn--big" onClick={() => act({ type: 'triviaAsk', id, index: next })}>
-                  ▶ Ask question {next + 1}
+                  <Play aria-hidden="true" />
+                  Ask question {next + 1}
                 </button>
               ) : (
                 <span className="field__note">{t.questions.length ? 'That was the last question.' : 'Add questions on the right.'}</span>

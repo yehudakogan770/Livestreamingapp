@@ -18,18 +18,25 @@ Stagetimer.io · **H2R** H2R Graphics · **SM** Slido / Mentimeter.
 
 |                          | Count |
 | ------------------------ | ----- |
-| ✅ Lumora has it         | 102   |
-| ◐ Partly, or another way | 6     |
-| ❌ Not yet               | 5     |
+| ✅ Lumora has it         | 109   |
+| ◐ Partly, or another way | 7     |
+| ❌ Not yet               | 1     |
 
-Built in this round (now ✅): marks while recording that Lumora Studio picks
-up, triggers on sound level / lost picture / a video about to end / recording
-or stream starting / every few minutes, event templates in the first setup,
-Facebook live comments, speaker timing on the Monitor (amber, red, time over,
-progress bar) and on the speaker's phone, drawing on screen (telestrator),
-find any command by typing (Ctrl+K), thank-yous on screen for viewers'
-support (Super Chats, members, subscribers, bits, raids), Twitch, Kick,
-LinkedIn and X in the streaming list.
+Built in this round (now ✅): this computer's sound as an input (everything
+it plays except Lumora's own, or one program), a copy of each recording in a
+cloud folder, word clouds and star ratings, questions that phones vote up and
+the operator approves first, reactions rising over the picture, results
+exported as spreadsheets, and the Stream Deck's input keys showing each
+input's live picture (with PTZ camera keys). The Zoom row moved from ❌ to ◐
+(Zoom's own NDI output, or its window with its sound).
+
+Earlier rounds: marks while recording that Lumora Studio picks up, triggers
+on sound level / lost picture / a video about to end / recording or stream
+starting / every few minutes, event templates in the first setup, Facebook
+live comments, speaker timing on the Monitor and the speaker's phone, drawing
+on screen (telestrator), find any command by typing (Ctrl+K), thank-yous on
+screen for viewers' support, Twitch, Kick, LinkedIn and X in the streaming
+list.
 
 ## The matrix
 
@@ -72,7 +79,7 @@ LinkedIn and X in the streaming list.
 | Remote guests by link                        | vMix Call, SY, RS, RV, EC, WC Rendezvous | ✅ up to 8                                                            |
 | Green room for guests (wait before going on) | SY, RS, RV                               | ◐ a guest waits in the inputs until taken; no separate backstage chat |
 | Screen and window capture                    | all desktop apps                         | ✅                                                                    |
-| This computer's sound / one app's sound      | vMix 28, OBS                             | ❌                                                                    |
+| This computer's sound / one app's sound      | vMix 28, OBS                             | ✅ (new) everything it plays (never Lumora's own) or one program      |
 | Web page input with control                  | vMix, OBS, PP                            | ✅ back, reload, scroll, click                                        |
 | Video playlists, show loops                  | vMix, PP, OBS (VLC source)               | ✅                                                                    |
 | PowerPoint / PDF slides                      | vMix, PP, EC, WC                         | ✅                                                                    |
@@ -139,44 +146,48 @@ LinkedIn and X in the streaming list.
 | Chapter markers                                       | ATEM (in DaVinci), vMix                  | ✅                                                               |
 | Mark moments while recording, picked up by the editor | ATEM (markers in DaVinci), RV (clips)    | ✅ (new) to Lumora Studio                                        |
 | AI highlight clips                                    | SY, RS, RV, OBS (plugin)                 | ◐ instant-replay highlights reel and marks; no automatic picking |
-| Cloud recording copy                                  | SY, RS, RV                               | ❌ Lumora records locally (works with no internet)               |
+| Cloud recording copy                                  | SY, RS, RV                               | ✅ (new) copied to a OneDrive, Dropbox or Google Drive folder    |
 | Simulated live (play a recording as live)             | SY, RS                                   | ✅ scheduled go-live and triggers                                |
 | Scheduled go-live                                     | SY, RS, ST                               | ✅                                                               |
 | Stream health and performance                         | vMix 28 (encoder stats), OBS (stats), SY | ✅ always-in-view chip                                           |
 | Per-output size and frame rate                        | vMix, OBS (canvases)                     | ◐ wide and vertical; not every output sized separately           |
 | Virtual camera (into Zoom or Teams)                   | OBS, vMix, EC, WC, PR                    | ◐ through NDI out with the free NDI Webcam                       |
-| Zoom meeting as an input                              | vMix, EC, WC (coming)                    | ❌                                                               |
+| Zoom meeting as an input                              | vMix, EC, WC (coming)                    | ◐ Zoom's NDI output, or its window with its sound (new)          |
 
 ### Automation and control
 
-| Feature                                        | Who has it                              | Lumora                         |
-| ---------------------------------------------- | --------------------------------------- | ------------------------------ |
-| Macros (steps with waits)                      | vMix, TC, ATEM, MM                      | ✅                             |
-| Triggers: video ends, on air, countdown, clock | vMix, OBS (ASS), MM                     | ✅                             |
-| Triggers: a few seconds before a video ends    | vMix 28 (OnPlaybackTime)                | ✅ (new)                       |
-| Triggers: sound above / below a level          | OBS (ASS)                               | ✅ (new)                       |
-| Triggers: input lost / back                    | OBS (ASS), vMix                         | ✅ (new)                       |
-| Triggers: recording / stream starts or stops   | OBS (ASS)                               | ✅ (new)                       |
-| Triggers: every few minutes                    | OBS (ASS)                               | ✅ (new)                       |
-| Hotkeys for everything                         | vMix, OBS                               | ✅                             |
-| Find any command by typing                     | (none)                                  | ✅ Ctrl+K, Lumora only (new)   |
-| Stream Deck, Companion, MIDI, OSC, HTTP API    | vMix, OBS (websocket), ATEM, TC, PP, RE | ✅                             |
-| Tally lights                                   | vMix, ATEM, TC                          | ✅ phone cameras and Companion |
-| Web control from a phone                       | vMix web controller, ATEM, PP           | ✅ with per-device permissions |
-| Several operators on several computers         | TC (LivePanel), vMix (remote)           | ✅ operator seats              |
-| Rehearsal mode with a report                   | (none)                                  | ✅ Lumora only                 |
-| Pre-show check of the computer                 | (none)                                  | ✅ Lumora only                 |
+| Feature                                          | Who has it                              | Lumora                         |
+| ------------------------------------------------ | --------------------------------------- | ------------------------------ |
+| Macros (steps with waits)                        | vMix, TC, ATEM, MM                      | ✅                             |
+| Triggers: video ends, on air, countdown, clock   | vMix, OBS (ASS), MM                     | ✅                             |
+| Triggers: a few seconds before a video ends      | vMix 28 (OnPlaybackTime)                | ✅ (new)                       |
+| Triggers: sound above / below a level            | OBS (ASS)                               | ✅ (new)                       |
+| Triggers: input lost / back                      | OBS (ASS), vMix                         | ✅ (new)                       |
+| Triggers: recording / stream starts or stops     | OBS (ASS)                               | ✅ (new)                       |
+| Triggers: every few minutes                      | OBS (ASS)                               | ✅ (new)                       |
+| Hotkeys for everything                           | vMix, OBS                               | ✅                             |
+| Find any command by typing                       | (none)                                  | ✅ Ctrl+K, Lumora only (new)   |
+| Stream Deck, Companion, MIDI, OSC, HTTP API      | vMix, OBS (websocket), ATEM, TC, PP, RE | ✅                             |
+| Each input's live picture on its Stream Deck key | Companion (partly)                      | ✅ (new) with tally frame      |
+| Tally lights                                     | vMix, ATEM, TC                          | ✅ phone cameras and Companion |
+| Web control from a phone                         | vMix web controller, ATEM, PP           | ✅ with per-device permissions |
+| Several operators on several computers           | TC (LivePanel), vMix (remote)           | ✅ operator seats              |
+| Rehearsal mode with a report                     | (none)                                  | ✅ Lumora only                 |
+| Pre-show check of the computer                   | (none)                                  | ✅ Lumora only                 |
 
 ### Audience
 
-| Feature                                         | Who has it              | Lumora         |
-| ----------------------------------------------- | ----------------------- | -------------- |
-| Polls from phones, results on screen            | SM, SY, RS              | ✅             |
-| Q&A from phones                                 | SM                      | ✅             |
-| Quiz with a leaderboard                         | SM (Menti quiz), Kahoot | ✅ trivia      |
-| Messages wall                                   | SM, social walls        | ✅             |
-| Word cloud, rating scales                       | SM                      | ❌             |
-| Raffles, fundraiser, live auction, table finder | (none)                  | ✅ Lumora only |
+| Feature                                                | Who has it              | Lumora         |
+| ------------------------------------------------------ | ----------------------- | -------------- |
+| Polls from phones, results on screen                   | SM, SY, RS              | ✅             |
+| Q&A from phones                                        | SM                      | ✅             |
+| Quiz with a leaderboard                                | SM (Menti quiz), Kahoot | ✅ trivia      |
+| Messages wall                                          | SM, social walls        | ✅             |
+| Word cloud, rating scales                              | SM                      | ✅ (new)       |
+| Q&A: phones vote questions up, operator approves first | SM, Pigeonhole          | ✅ (new)       |
+| Reactions rising over the picture                      | SM (Menti), SY          | ✅ (new)       |
+| Results export (spreadsheet)                           | SM                      | ✅ (new) CSV   |
+| Raffles, fundraiser, live auction, table finder        | (none)                  | ✅ Lumora only |
 
 ### Ease and safety
 
@@ -269,26 +280,30 @@ network with no internet.
 _Lumora:_ graphics, data and switching in one.
 
 **Slido / Mentimeter.** Priced per event or per year; another tab to run.
-_Lumora:_ polls, Q&A, trivia and messages from phones in the same app, on
-the local network or the internet.
+_Lumora:_ polls, word clouds, ratings, reactions, Q&A with votes and
+approval, trivia and messages from phones in the same app, drawn as part of
+the show, on the local network or the internet, with no caps on people.
 
 ## What is left, and why
 
-- **This computer's sound / one app's sound.** Needs Windows WASAPI loopback
-  capture in the native engine, which has to be built and tested on Windows
-  hardware. Until then: a virtual audio cable shows up as a microphone input.
-- **VST plugins.** Lumora's sound filters run in the app's sound engine; VST3
-  hosting needs a native audio path with each plugin isolated so a crashing
-  plugin can't stop the show, and testing on Windows with real plugins. The
-  built-in filters (EQ, gate, compressor, noise removal, limiter, ducking)
-  cover what event shows use.
+- **VST plugins.** Lumora's sound runs in the app's own sound engine (the
+  mixer, EQ, gate, compressor, noise removal, limiter and ducking). Hosting
+  VST3 plugins needs a native audio path with each plugin in its own process,
+  so a plugin that crashes can't stop the show, and testing with real
+  plugins on Windows. Not started; it stays out rather than half working.
+- **This computer's sound** is new: it uses Windows' own process loopback
+  (Windows 10 version 2004 and later), builds and passes its checks for
+  Windows, and should be tried once on the show computer before the first
+  event (Add input → This computer's sound).
+- **Zoom.** Zoom's own NDI output (on Zoom's business plans) already comes in
+  as an NDI input; otherwise the Zoom window (screen capture) with Zoom's
+  sound (This computer's sound → Zoom) does it. A Zoom sign-in inside Lumora
+  needs Zoom's Meeting SDK and a Zoom app review.
 - **Virtual camera.** A Windows virtual camera is a signed system component;
   it cannot be built or tested here. NDI out with the free NDI Webcam already
   feeds Zoom and Teams.
-- **Cloud recording copy, AI clips, follower alerts, Zoom input, word clouds.** Either
-  need an online service Lumora deliberately does without (it works offline),
-  or fit gaming streams more than events (new followers on Twitch need a
-  Twitch sign-in; every other kind of support is thanked on screen). Word
-  clouds belong with the audience pages and are on that list.
-- **Per-output size, Mac version.** Larger engine work, tracked in
-  FEATURES.md.
+- **AI clips, follower alerts.** Clips are picked by hand (instant-replay
+  highlights and marks); new followers on Twitch need a Twitch sign-in;
+  every other kind of support is thanked on screen.
+- **Per-output size, Mac version, a backstage chat for guests.** Larger
+  engine and guest-page work, tracked in FEATURES.md.
