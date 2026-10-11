@@ -57,6 +57,7 @@ import { Shortcuts } from './Shortcuts';
 import { NotesPanel, NotesPopover } from './Notes';
 import { saveVersion } from './versions';
 import { Splitter } from './Splitter';
+import { AskHost, Modal, askConfirm, modalOpen } from './Modal';
 import { ExportDialog, NoticeDialog } from './ExportDialog';
 import { pickImportFile, readImport } from './importing';
 import { fromSvg, spanning } from '../core/svgImport';
@@ -69,12 +70,17 @@ import {
   saveLayout,
   workspace,
   WORKSPACE_NAMES,
+  type Docks,
   type Layout,
-  type LeftTab,
-  type RightTab,
+  type PanelId,
   type WorkspaceName,
+  findPanel,
+  showPanel,
 } from './workspace';
+import { DockOverlay, DockSide, useDockDrag } from './Dock';
+import { MenuButton, MenuCheck, MenuItem, MenuSep } from './MenuButton';
 import { usePreviewCues } from './previewCues';
+import { useLiveData } from './liveData';
 import { RamPreview } from './ramPreview';
 import { copyKeys, pasteKeys, type KeyClip } from './keyframes';
 import { setExprScope } from '../core/expr';
@@ -117,7 +123,10 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
   const setLibId = (id: string | null) => libIds.current.set(store, id);
   const [layout, setLayoutState] = useState<Layout>(() => {
     const l = loadLayout();
-    return initial && l.leftTab === 'library' ? { ...l, leftTab: 'project' } : l;
+    // Opened with a title: its Project panel rather than the library.
+    return initial && findPanel(l.docks, 'library') && l.docks[findPanel(l.docks, 'library')!.side].some((g) => g.active === 'library')
+      ? { ...l, docks: showPanel(l.docks, 'project') }
+      : l;
   });
   const setLayout = (patch: Partial<Layout> | ((l: Layout) => Partial<Layout>)) =>
     setLayoutState((l) => {
@@ -125,10 +134,10 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       saveLayout(next);
       return next;
     });
-  const side = layout.leftTab;
-  const setSide = (leftTab: LeftTab) => setLayout({ leftTab, canvasOnly: false });
-  const right = layout.rightTab;
-  const setRight = (rightTab: RightTab) => setLayout({ rightTab });
+  /** Bring a panel to the front (wherever it is docked). */
+  const setSide = (id: PanelId) => setLayout((l) => ({ docks: showPanel(l.docks, id), canvasOnly: false }));
+  const setDocks = (docks: Docks) => setLayout({ docks });
+  const dock = useDockDrag(layout.docks, setDocks);
   const [recent, setRecent] = useState(recentTitles);
   const [renderOpen, setRenderOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -160,6 +169,9 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
 
   // Audio cues sound as the preview passes them.
   usePreviewCues(store, host.urlFor);
+
+  // Data sources are read again on their intervals.
+  useLiveData(store);
 
   // Fonts the project uses, and its files.
   useEffect(() => {
@@ -266,17 +278,18 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
     if (!r) return;
     if (!r.result.project) {
       store.set({ status: r.result.error ?? 'It could not be opened.' });
-      alert(r.result.error ?? 'It could not be opened.');
+      setNotice({ title: 'Open', lead: r.result.error ?? 'It could not be opened.', items: [] });
       return;
     }
     open(r.result.project, null, r.path);
     if (r.result.notes.length) store.set({ status: r.result.notes.join(' ') });
   };
 
-  const closeTab = (i: number) => {
+  const closeTab = async (i: number) => {
     const t = tabs[i];
     if (!t) return;
-    if (t.get().dirty && !confirm(`Close “${t.get().project.name}”? Changes that are not saved will be lost.`)) return;
+    if (t.get().dirty && !(await askConfirm('Close title', `Close “${t.get().project.name}”? Changes that are not saved will be lost.`, 'Close without saving', true)))
+      return;
     const next = tabs.filter((_, j) => j !== i);
     setTabs(next.length ? next : [new Store(newProject(), { brand, values })]);
     setActive((a) => Math.max(0, Math.min(next.length - 1, a > i ? a - 1 : a === i ? i - 1 : a)));
@@ -341,6 +354,8 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       const el = e.target as HTMLElement | null;
       if (el?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
       if (!rootRef.current?.isConnected) return;
+      // A dialog is open: it has the keyboard.
+      if (modalOpen()) return;
       const mod = e.ctrlKey || e.metaKey;
       const k = e.key.toLowerCase();
       const s = store.get();
@@ -426,6 +441,18 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           return;
         }
       }
+      // Alt+P, S, R, T, A: a keyframe of position, scale, rotation, opacity or anchor point at the playhead.
+      // (By the key's place, so Option+P on a Mac, which types π, works too.)
+      const letter = e.code?.startsWith('Key') ? e.code.slice(3).toLowerCase() : k;
+      if (e.altKey && KEY_PATHS[letter]) {
+        handled();
+        if (!s.selection.length) return;
+        const path = KEY_PATHS[letter]!;
+        store.edit('Add keyframe', (p) => updateLayers(p, c.id, s.selection, (l) => withProp(l, path, keyHere(getProp(l, path), s.time))), {
+          status: `A keyframe of ${KEY_NAMES[letter]} at ${s.time.toFixed(2)} s`,
+        });
+        return;
+      }
       switch (k) {
         case 'v':
           return store.set({ tool: 'select' });
@@ -462,16 +489,6 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           for (const id of ids) next = toggleOpen(next, id, 'animated');
           return store.set({ open: next });
         }
-        case 'p':
-        case 's':
-        case 'a': {
-          const path = k === 'p' ? 'transform.position' : k === 's' ? 'transform.scale' : 'transform.anchor';
-          if (e.altKey) {
-            // Alt+P/S: a keyframe of that property at the playhead.
-            store.edit('Add keyframe', (p) => updateLayers(p, c.id, s.selection, (l) => withProp(l, path, keyHere(getProp(l, path), s.time))));
-          }
-          return;
-        }
         case 'n':
           return cmd.addText();
       }
@@ -492,6 +509,46 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
 
   const rootRef = useRef<HTMLDivElement>(null);
   const c = compOf(project, store.get().compId);
+  /** What each docked panel shows. */
+  const renderPanel = (id: PanelId) => {
+    switch (id) {
+      case 'library':
+        return (
+          <>
+            {recent.length > 0 && (
+              <div className="tt-recent" aria-label="Recent titles">
+                <div className="tt-recent-head">Recent</div>
+                {recent.slice(0, 5).map((r) => (
+                  <button key={r.id} className="tt-recent-item" title={r.id} onClick={() => void openRecent(r.id)}>
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <LibraryPanel key={libVersion} store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
+          </>
+        );
+      case 'project':
+        return <ProjectPanel store={store} host={host} />;
+      case 'history':
+        return (
+          <>
+            <NotesPanel store={store} />
+            <HistoryPanel store={store} />
+          </>
+        );
+      case 'layer':
+        return <Inspector store={store} />;
+      case 'comp':
+        return <CompositionPanel store={store} />;
+      case 'fields':
+        return <FieldsPanel store={store} host={host} />;
+      case 'look':
+        return <LookPanel store={store} host={host} />;
+      case 'data':
+        return <DataPanel store={store} />;
+    }
+  };
   const tools: [Tool, string, React.ReactNode, string][] = [
     ['select', 'Select', <MousePointer2 key="s" size={16} />, 'V'],
     ['text', 'Text', <Type key="t" size={16} />, 'T'],
@@ -507,7 +564,13 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         className={`tt tt-look-${look}${layout.canvasOnly ? ' tt-canvas-only' : ''}`}
         ref={rootRef}
         data-testid="titler-designer"
-        style={{ '--tt-left': `${layout.left}px`, '--tt-right': `${layout.right}px`, '--tt-timeline': `${layout.timeline}px` } as React.CSSProperties}
+        style={
+          {
+            '--tt-left': `${layout.docks.left.length ? layout.left : 0}px`,
+            '--tt-right': `${layout.docks.right.length ? layout.right : 0}px`,
+            '--tt-timeline': `${layout.timeline}px`,
+          } as React.CSSProperties
+        }
       >
         <header className="tt-top">
           <span className="tt-brand">
@@ -601,21 +664,29 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           <button className="tt-plain tt-keys-btn" onClick={() => setKeysOpen(true)} title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
             <Keyboard size={15} />
           </button>
-          <label className="tt-workspace" title="Workspace: panel sizes and tabs for the job at hand">
-            <span className="tt-dim">Workspace</span>
-            <select
-              className="tt-select"
-              aria-label="Workspace"
-              value={layout.workspace}
-              onChange={(e) => setLayout(workspace(e.target.value as WorkspaceName))}
-            >
-              {(Object.keys(WORKSPACE_NAMES) as WorkspaceName[]).map((w) => (
-                <option key={w} value={w}>
-                  {WORKSPACE_NAMES[w]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <MenuButton
+            className="tt-workspace"
+            align="right"
+            title="Workspace: the panels and their sizes for the job at hand"
+            label={
+              <>
+                <span className="tt-dim">Workspace</span> {WORKSPACE_NAMES[layout.workspace]}
+              </>
+            }
+          >
+            {(close) => (
+              <>
+                {(Object.keys(WORKSPACE_NAMES) as WorkspaceName[]).map((w) => (
+                  <MenuItem key={w} chosen={layout.workspace === w} onClick={() => (setLayout(workspace(w)), close())}>
+                    {WORKSPACE_NAMES[w]}
+                  </MenuItem>
+                ))}
+                <MenuSep />
+                <MenuItem onClick={() => (setLayout(workspace(layout.workspace)), close())}>Reset {WORKSPACE_NAMES[layout.workspace]}</MenuItem>
+                <div className="tt-menu-note">Drag a panel by its tab to dock it in another group, above or below one, or on the other side.</div>
+              </>
+            )}
+          </MenuButton>
           {tabs.length === 1 && (
             <span className="tt-title" title={store.get().path ?? ''}>
               {project.name}
@@ -658,48 +729,17 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         )}
         {tabs.length > 1 && <TitleTabs tabs={tabs} active={Math.min(active, tabs.length - 1)} onPick={setActive} onClose={closeTab} />}
         <div className="tt-main" key={tabKey(store)}>
-          <aside className="tt-left">
-            <div className="tt-tabs">
-              <button className={side === 'library' ? 'on' : ''} onClick={() => setSide('library')}>
-                Library
-              </button>
-              <button className={side === 'project' ? 'on' : ''} onClick={() => setSide('project')}>
-                Project
-              </button>
-              <button className={side === 'history' ? 'on' : ''} onClick={() => setSide('history')}>
-                History
-              </button>
-            </div>
-            {side === 'library' && (
-              <>
-                {recent.length > 0 && (
-                  <div className="tt-recent" aria-label="Recent titles">
-                    <div className="tt-recent-head">Recent</div>
-                    {recent.slice(0, 5).map((r) => (
-                      <button key={r.id} className="tt-recent-item" title={r.id} onClick={() => void openRecent(r.id)}>
-                        {r.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <LibraryPanel key={libVersion} store={store} host={host} env={env} onOpen={(p, id) => open(p, id)} />
-              </>
+          <DockSide side="left" docks={layout.docks} onDocks={setDocks} render={renderPanel} dragging={!!dock.drag} begin={dock.begin}>
+            {layout.docks.left.length > 0 && (
+              <Splitter
+                axis="x"
+                edge="right"
+                value={layout.left}
+                onChange={(left) => setLayout({ left: clampSize('left', left) })}
+                label="Resize the left panel"
+              />
             )}
-            {side === 'project' && <ProjectPanel store={store} host={host} />}
-            {side === 'history' && (
-              <>
-                <NotesPanel store={store} />
-                <HistoryPanel store={store} />
-              </>
-            )}
-            <Splitter
-              axis="x"
-              edge="right"
-              value={layout.left}
-              onChange={(left) => setLayout({ left: clampSize('left', left) })}
-              label="Resize the left panel"
-            />
-          </aside>
+          </DockSide>
           <section className="tt-center">
             <NotesPopover store={store} />
             <div className="tt-viewbar">
@@ -720,22 +760,27 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
                 ))}
               </select>
               <span className="tt-grow" />
-              {(
-                [
-                  ['safe', 'Safe areas'],
-                  ['guides', 'Guides'],
-                  ['grid', 'Grid'],
-                  ['rulers', 'Rulers'],
-                  ['snap', 'Snapping'],
-                  ['motionPaths', 'Motion paths'],
-                  ['notes', 'Notes'],
-                ] as const
-              ).map(([k, label]) => (
-                <label key={k} className="tt-check">
-                  <input type="checkbox" checked={show[k]} onChange={(e) => store.set((x) => ({ show: { ...x.show, [k]: e.target.checked } }))} />
-                  {label}
-                </label>
-              ))}
+              <MenuButton label="View" title="Guides and helpers on the canvas" align="right">
+                {() => (
+                  <>
+                    {(
+                      [
+                        ['safe', 'Safe areas', ''],
+                        ['guides', 'Guides', ''],
+                        ['grid', 'Grid', ''],
+                        ['rulers', 'Rulers', ''],
+                        ['snap', 'Snapping', ''],
+                        ['motionPaths', 'Motion paths', ''],
+                        ['notes', 'Notes', ''],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <MenuCheck key={k} checked={show[k]} onChange={(v) => store.set((x) => ({ show: { ...x.show, [k]: v } }))}>
+                        {label}
+                      </MenuCheck>
+                    ))}
+                  </>
+                )}
+              </MenuButton>
               <button
                 className={`tt-plain tt-canvas-btn${layout.canvasOnly ? ' on' : ''}`}
                 onClick={() => setLayout((l) => ({ canvasOnly: !l.canvasOnly }))}
@@ -789,31 +834,12 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
               </span>
             </div>
           </section>
-          <aside className="tt-right">
-            <Splitter axis="x" edge="left" value={layout.right} onChange={(r) => setLayout({ right: clampSize('right', r) })} label="Resize the right panel" />
-            <div className="tt-tabs">
-              {(
-                [
-                  ['layer', 'Layer'],
-                  ['comp', 'Composition'],
-                  ['fields', 'Fields'],
-                  ['look', 'Look'],
-                  ['data', 'Data'],
-                ] as const
-              ).map(([id, name]) => (
-                <button key={id} className={right === id ? 'on' : ''} onClick={() => setRight(id)}>
-                  {name}
-                </button>
-              ))}
-            </div>
-            <div className="tt-right-body">
-              {right === 'layer' && <Inspector store={store} />}
-              {right === 'comp' && <CompositionPanel store={store} />}
-              {right === 'fields' && <FieldsPanel store={store} host={host} />}
-              {right === 'look' && <LookPanel store={store} host={host} />}
-              {right === 'data' && <DataPanel store={store} />}
-            </div>
-          </aside>
+          <DockSide side="right" docks={layout.docks} onDocks={setDocks} render={renderPanel} dragging={!!dock.drag} begin={dock.begin}>
+            {layout.docks.right.length > 0 && (
+              <Splitter axis="x" edge="left" value={layout.right} onChange={(r) => setLayout({ right: clampSize('right', r) })} label="Resize the right panel" />
+            )}
+          </DockSide>
+          <DockOverlay drag={dock.drag} docks={layout.docks} />
         </div>
         <div className="tt-timeline-wrap">
           <Splitter
@@ -832,10 +858,20 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
         {exportOpen && <ExportDialog store={store} host={host} onClose={() => setExportOpen(false)} onLumtitle={() => void exportFile()} />}
         {renderOpen && <RenderDialog store={store} host={host} env={env} onClose={() => setRenderOpen(false)} />}
         {keysOpen && <Shortcuts onClose={() => setKeysOpen(false)} />}
+        <AskHost />
       </div>
     </SwatchContext.Provider>
   );
 }
+
+const KEY_PATHS: Record<string, string> = {
+  p: 'transform.position',
+  s: 'transform.scale',
+  r: 'transform.rotation',
+  t: 'transform.opacity',
+  a: 'transform.anchor',
+};
+const KEY_NAMES: Record<string, string> = { p: 'position', s: 'scale', r: 'rotation', t: 'opacity', a: 'anchor point' };
 
 /** A keyframe at t with the value there (the property starts animating if it was still). */
 function keyHere(p: ReturnType<typeof getProp>, t: number) {
@@ -1002,8 +1038,7 @@ function RenderDialog({ store, host, env, onClose }: { store: Store; host: Host;
   };
   const formats: VideoTarget['format'][] = ['prores4444', 'webm-alpha', 'mp4', 'png-sequence'];
   return (
-    <div className="tt-modal" role="dialog" aria-label="Render">
-      <div className="tt-modal-box">
+    <Modal label="Render" onClose={() => (progress ? abort.current?.abort() : onClose())} outsideCloses={!progress}>
         <h2>Render</h2>
         <p className="tt-dim">Every frame is drawn exactly, with see-through where there is no graphic (except MP4).</p>
         <label className="tt-field">
@@ -1061,8 +1096,7 @@ function RenderDialog({ store, host, env, onClose }: { store: Store; host: Host;
             </>
           )}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

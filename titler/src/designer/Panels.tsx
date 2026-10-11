@@ -7,7 +7,6 @@ import { Copy, Film, Image as ImageIcon, Layers as LayersIcon, Music, Plus, Star
 import { DEFAULT_TOKENS, TOKEN_KEYS, TOKEN_LABELS, keyFrom, tokensFor, usedVariables, valuesFor } from '../core/binding';
 import { newComposition, newImage, newVideo, uid } from '../core/build';
 import type { BrowserEnv } from '../core/browserEnv';
-import { readSource, valuesFromRow, type Table } from '../core/data';
 import { renderFrame, type Ctx } from '../core/render';
 import { CATEGORIES, fromTemplate, starterTemplates } from '../core/templates';
 import { cleanMarkers } from '../core/timeline';
@@ -19,6 +18,8 @@ import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
 import { PackDialog } from './PackDialog';
+import { askConfirm } from './Modal';
+import { liveData, useLiveResults } from './liveData';
 import { parseClock } from '../core/timer';
 import type { Store } from './store';
 import { useStore } from './store';
@@ -73,8 +74,8 @@ function FormatsSection({ store }: { store: Store }) {
                 <button
                   className="tt-link"
                   title="Make it again from the main composition (changes made in this format are lost)"
-                  onClick={() => {
-                    if (!confirm(`Make “${c.name}” again from the main composition? Changes made in it are lost.`)) return;
+                  onClick={async () => {
+                    if (!(await askConfirm('Reset format', `Make “${c.name}” again from the main composition? Changes made in it are lost.`, 'Reset', true))) return;
                     store.edit('Reset format', (p) => {
                       const r = makeFormat(p, '', c.width, c.height, c.id).project;
                       return { ...r, compositions: r.compositions.map((x) => (x.id === c.id ? { ...x, follow: c.follow } : x)) };
@@ -397,8 +398,10 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
                 <Trash2 size={13} />
               </button>
             </Row>
-            <Row label="Name">
+            <Row label="Written as" hint="Put this in a text, a color or a picture to use the field there">
               <code className="tt-code">{`{{${v.key}}}`}</code>
+            </Row>
+            <Row label="Kind">
               <Select
                 label="Field kind"
                 value={v.type}
@@ -589,21 +592,29 @@ function uniqueKey(k: string, vs: Variable[]) {
 function NewField({ onAdd }: { onAdd: (label: string, type: VariableType) => void }) {
   const [label, setLabel] = useState('');
   const [type, setType] = useState<VariableType>('text');
+  const add = () => {
+    if (!label.trim()) return;
+    onAdd(label.trim(), type);
+    setLabel('');
+  };
   return (
-    <Row label="New field">
-      <input className="tt-input" placeholder="Label, e.g. Guest name" value={label} onChange={(e) => setLabel(e.target.value)} aria-label="New field label" />
-      <Select label="New field kind" value={type} options={VAR_TYPES} onChange={setType} />
-      <button
-        className="tt-btn"
-        disabled={!label.trim()}
-        onClick={() => {
-          onAdd(label.trim(), type);
-          setLabel('');
-        }}
-      >
-        Add
-      </button>
-    </Row>
+    <div className="tt-newfield">
+      <div className="tt-newfield-head">New field</div>
+      <input
+        className="tt-input"
+        placeholder="Label, e.g. Guest name"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && add()}
+        aria-label="New field label"
+      />
+      <div className="tt-newfield-row">
+        <Select label="New field kind" value={type} options={VAR_TYPES} onChange={setType} />
+        <button className="tt-btn" disabled={!label.trim()} onClick={add}>
+          <Plus size={13} /> Add field
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -702,29 +713,11 @@ export function LookPanel({ store, host }: { store: Store; host: Host }) {
 
 export function DataPanel({ store }: { store: Store }) {
   const project = useStore(store, (s) => s.project);
-  const [tables, setTables] = useState<Record<string, Table | string>>({});
   const list = project.data ?? [];
   const upd = (label: string, fn: (d: DataSource[]) => DataSource[]) => store.edit(label, (p) => ({ ...p, data: fn(p.data ?? []) }));
-  const keys = project.variables.map((v) => v.key);
-  const read = async (src: DataSource) => {
-    try {
-      const t = await readSource(src);
-      setTables((x) => ({ ...x, [src.id]: t }));
-      store.set((s) => ({ values: { ...s.values, ...valuesFromRow(src, t, keys, store.get().project.variables) } }));
-    } catch (e) {
-      setTables((x) => ({ ...x, [src.id]: e instanceof Error ? e.message : 'It could not be read.' }));
-    }
-  };
-  // Read again every few seconds while open.
-  const listRef = useRef(list);
-  listRef.current = list;
-  useEffect(() => {
-    const id = setInterval(() => {
-      for (const s of listRef.current) if (s.refresh > 0 && s.url) void read(s);
-    }, 5000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const live = liveData(store);
+  const tables = useLiveResults(store);
+  const read = (src: DataSource) => live.read(src);
   return (
     <div className="tt-inspector">
       <Section title="Data sources">
@@ -732,7 +725,7 @@ export function DataPanel({ store }: { store: Store }) {
           A CSV file, a Google Sheet (shared with anyone with the link) or a JSON address. Columns named like a field fill it.
         </div>
         {list.map((src, i) => {
-          const t = tables[src.id];
+          const t = tables.get(src.id);
           return (
             <div key={src.id} className="tt-subcard">
               <Row label="Name">
@@ -767,19 +760,21 @@ export function DataPanel({ store }: { store: Store }) {
                   onChange={(e) => upd('Source address', (d) => d.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
                 />
               </Row>
-              <Row label="Row">
+              <Row label="Row" hint="The row whose columns fill the fields (1: the first row under the headings)">
                 <NumberField
                   value={src.row + 1}
                   min={1}
                   label="Row"
                   onChange={(r) => upd('Source row', (d) => d.map((x, j) => (j === i ? { ...x, row: Math.max(0, Math.round(r) - 1) } : x)))}
                 />
+              </Row>
+              <Row label="Read every" hint="Seconds between reads (0: only when Read now is clicked)">
                 <NumberField
                   value={src.refresh}
                   min={0}
                   label="Read every (seconds, 0: once)"
                   unit="s"
-                  onChange={(refresh) => upd('Source refresh', (d) => d.map((x, j) => (j === i ? { ...x, refresh } : x)))}
+                  onChange={(refresh) => upd('Source refresh', (d) => d.map((x, j) => (j === i ? { ...x, refresh: Math.max(0, refresh) } : x)))}
                 />
                 <button className="tt-btn" onClick={() => void read(src)} disabled={!src.url}>
                   Read now
@@ -1058,7 +1053,7 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
             className="tt-ico"
             aria-label={`Delete ${m.name} from the library`}
             onClick={async () => {
-              if (!confirm(`Delete “${m.name}” from the library?`)) return;
+              if (!(await askConfirm('Delete title', `Delete “${m.name}” from the library? This cannot be undone.`, 'Delete', true))) return;
               await host.removeLibrary(m.id);
               void refresh();
             }}

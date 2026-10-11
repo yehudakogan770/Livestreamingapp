@@ -18,6 +18,8 @@ import { GraphEditor } from './GraphEditor';
 import { NumberField } from './fields';
 
 const LEFT = 300;
+const ZOOM_MIN = 20;
+const ZOOM_MAX = 1200;
 const ROW = 24;
 
 export function timecode(t: number, fps: number): string {
@@ -54,16 +56,28 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
   const [ramMb, setRamMb] = useState(ramSetting);
   const project = useStore(store, (s) => s.project);
   const compId = useStore(store, (s) => s.compId);
-  const time = useStore(store, (s) => s.time);
   const selection = useStore(store, (s) => s.selection);
   const keys = useStore(store, (s) => s.keys);
   const open = useStore(store, (s) => s.open);
-  const zoom = useStore(store, (s) => s.timelineZoom);
+  const chosenZoom = useStore(store, (s) => s.timelineZoom);
   const graph = useStore(store, (s) => s.graphProp);
   const [tab, setTab] = useState<'layers' | 'graph'>('layers');
   const c = compOf(project, compId);
   const scroller = useRef<HTMLDivElement>(null);
-  const width = Math.max(400, c.duration * zoom + 40);
+  // The timeline's width: unless zoomed, the whole composition fits it.
+  const root = useRef<HTMLDivElement>(null);
+  const [avail, setAvail] = useState(0);
+  useEffect(() => {
+    const el = root.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setAvail(el.clientWidth));
+    ro.observe(el);
+    setAvail(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+  const fitZoom = avail > LEFT + 120 ? Math.max(ZOOM_MIN, (avail - LEFT - 28) / Math.max(0.1, c.duration)) : 120;
+  const zoom = chosenZoom > 0 ? chosenZoom : fitZoom;
+  const width = Math.max(chosenZoom > 0 ? 400 : 0, c.duration * zoom + 20);
   // Stable while only the playhead moves, so the rows (memoized) aren't drawn again 60 times a second.
   const x = useCallback((t: number) => t * zoom, [zoom]);
   const tAt = (clientX: number) => {
@@ -141,7 +155,6 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
               pi={pi}
               depth={depth}
               x={x}
-              time={time}
               keys={keys}
               dragTime={dragTime}
               graph={graph}
@@ -155,7 +168,7 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
 
   const { inEnd, outStart, loop } = c.markers;
   return (
-    <div className="tt-timeline" data-testid="titler-timeline">
+    <div className="tt-timeline" data-testid="titler-timeline" ref={root}>
       <div className="tt-tl-tabs">
         <button className={tab === 'layers' ? 'on' : ''} onClick={() => setTab('layers')}>
           Timeline
@@ -163,9 +176,7 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
         <button className={tab === 'graph' ? 'on' : ''} onClick={() => setTab('graph')} title="Easing and values of the chosen property">
           Graph editor
         </button>
-        <span className="tt-tc" title="Playhead (minutes:seconds:frames)">
-          {timecode(time, c.fps)}
-        </span>
+        <Timecode store={store} fps={c.fps} />
         <span className="tt-dim">
           {c.fps} fps · {c.duration.toFixed(2)} s
         </span>
@@ -196,18 +207,41 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
           Zoom
           <input
             type="range"
-            min={20}
-            max={600}
-            value={zoom}
+            min={ZOOM_MIN}
+            max={ZOOM_MAX}
+            value={Math.round(zoom)}
             onChange={(e) => store.set({ timelineZoom: Number(e.target.value) })}
             aria-label="Timeline zoom"
           />
         </label>
+        <button
+          className={`tt-plain tt-fit${chosenZoom > 0 ? '' : ' on'}`}
+          onClick={() => store.set({ timelineZoom: 0 })}
+          title="The whole composition across the timeline"
+          aria-pressed={chosenZoom <= 0}
+        >
+          Fit
+        </button>
       </div>
       {tab === 'graph' ? (
         <GraphEditor store={store} />
       ) : (
-        <div className="tt-tl-body" ref={scroller}>
+        <div
+          className="tt-tl-body"
+          ref={scroller}
+          onWheel={(e) => {
+            // Ctrl or Alt + wheel: zoom in time about the pointer.
+            if (!(e.ctrlKey || e.metaKey || e.altKey)) return;
+            const el = scroller.current;
+            if (!el) return;
+            const r = el.getBoundingClientRect();
+            const px = e.clientX - r.left - LEFT;
+            const at = (px + el.scrollLeft) / zoom;
+            const next = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom * (e.deltaY < 0 ? 1.2 : 1 / 1.2)));
+            store.set({ timelineZoom: next });
+            requestAnimationFrame(() => (el.scrollLeft = Math.max(0, at * next - px)));
+          }}
+        >
           <div className="tt-tl-inner" style={{ width: LEFT + width }}>
             <div className="tt-tl-head">
               <div className="tt-tl-left tt-tl-phases">
@@ -228,7 +262,7 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
                     store.edit('Add cue marker', (p) =>
                       updateComp(p, c.id, (cc) => ({
                         ...cc,
-                        cues: [...cc.cues, { id: uid('m'), t: time, name: `Cue ${cc.cues.length + 1}` }].sort((a, b) => a.t - b.t),
+                        cues: [...cc.cues, { id: uid('m'), t: store.get().time, name: `Cue ${cc.cues.length + 1}` }].sort((a, b) => a.t - b.t),
                       })),
                     )
                   }
@@ -302,19 +336,34 @@ export function Timeline({ store, ram }: { store: Store; ram?: RamPreview | null
                     {q.name}
                   </div>
                 ))}
-                <div className="tt-playhead" style={{ left: x(time) }} />
+                <Playhead store={store} x={x} />
               </div>
             </div>
             <div className="tt-tl-rows">
               {rows}
               {!rows.length && <div className="tt-empty">No layers yet. Add text or a shape from the toolbar, or start from a template.</div>}
-              <div className="tt-playhead tall" style={{ left: LEFT + x(time) }} />
+              <Playhead store={store} x={x} offset={LEFT} />
             </div>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+/** The playhead's place in minutes:seconds:frames (its own small part: the rest stays still while playing). */
+function Timecode({ store, fps }: { store: Store; fps: number }) {
+  const time = useStore(store, (s) => s.time);
+  return (
+    <span className="tt-tc" title="Playhead (minutes:seconds:frames)">
+      {timecode(time, fps)}
+    </span>
+  );
+}
+
+function Playhead({ store, x, offset = 0 }: { store: Store; x: (t: number) => number; offset?: number }) {
+  const time = useStore(store, (s) => s.time);
+  return <div className={`tt-playhead${offset ? ' tall' : ''}`} style={{ left: offset + x(time) }} />;
 }
 
 function Ruler({ duration, zoom, fps }: { duration: number; zoom: number; fps: number }) {
@@ -498,11 +547,11 @@ function PropRow({
   pi,
   depth,
   x,
-  time,
   keys,
   dragTime,
   graph,
-}: RowProps & { pi: PropInfo; time: number; graph: { layer: string; path: string } | null }) {
+}: RowProps & { pi: PropInfo; graph: { layer: string; path: string } | null }) {
+  const time = useStore(store, (s) => s.time);
   const p = getProp(l, pi.path);
   const anim = isAnimated(p);
   const value = valueAt(p as never, time, pi.fallback as never) as Value;

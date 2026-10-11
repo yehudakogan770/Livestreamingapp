@@ -1,6 +1,7 @@
 // The keyboard shortcuts, on one sheet (?).
 
 import { X } from 'lucide-react';
+import { Modal } from './Modal';
 
 const GROUPS: [string, [string, string][]][] = [
   [
@@ -54,8 +55,7 @@ const GROUPS: [string, [string, string][]][] = [
 
 export function Shortcuts({ onClose }: { onClose: () => void }) {
   return (
-    <div className="tt-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tt-modal-box tt-shortcuts">
+    <Modal label="Keyboard shortcuts" onClose={onClose} className="tt-shortcuts">
         <header>
           <h2>Keyboard shortcuts</h2>
           <button className="tt-ico" aria-label="Close" onClick={onClose}>
@@ -79,7 +79,6 @@ export function Shortcuts({ onClose }: { onClose: () => void }) {
             </section>
           ))}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

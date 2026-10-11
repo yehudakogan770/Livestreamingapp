@@ -17,6 +17,7 @@ import type { EditorState, Store } from './store';
 import { useStore } from './store';
 import { worldMatrix } from '../core/render';
 import type { RamPreview } from './ramPreview';
+import { TextEditOverlay, withoutEdited } from './TextEditOverlay';
 
 /** The composition time and the take clock shown now (a "take" preview runs on its own clock). */
 export function shownTime(s: EditorState, now: number): { t: number; clock: number } {
@@ -87,11 +88,7 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
       cv.width = Math.round(W * dpr);
       cv.height = Math.round(H * dpr);
     }
-    const left = s.show.rulers ? RULER : 0;
-    const fit = Math.min((W - left - 48) / c.width, (H - left - 48) / c.height);
-    const scale = s.zoom > 0 ? s.zoom : Math.max(0.02, fit);
-    const ox = left + (W - left - c.width * scale) / 2 + s.pan[0];
-    const oy = left + (H - left - c.height * scale) / 2 + s.pan[1];
+    const { scale, ox, oy } = viewOf(s, size);
     view.current = { scale, ox, oy, dpr };
     const css = getComputedStyle(cv);
     const col = (n: string, d: string) => css.getPropertyValue(n).trim() || d;
@@ -125,7 +122,7 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     const kept = s.playing && ram ? ram.frameAt(t) : null;
     try {
       if (kept) ctx.drawImage(kept, 0, 0, c.width, c.height);
-      else renderFrame(ctx, s.project, { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env });
+      else renderFrame(ctx, withoutEdited(s), { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env });
     } catch {
       /* a frame that cannot be drawn leaves the checkerboard */
     }
@@ -389,6 +386,8 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
       }
     }
     if (tool === 'text') {
+      // The words are typed into the box that opens (the canvas must not take the focus back).
+      e.preventDefault();
       const l = newText(c, 'Text', [Math.round(p[0]), Math.round(p[1])], [800, 90]);
       l.end = c.duration;
       store.edit('Add text', (pr) => addLayers(pr, c.id, [l], s.selection[0] ?? null), { selection: [l.id], tool: 'select', editingText: l.id });
@@ -712,12 +711,13 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
-        onDoubleClick={() => {
+        onDoubleClick={(e) => {
+          if (tool === 'pen' && pen.current.length > 1) return finishPen(false);
+          // A text layer: type into it right there.
           const s = store.get();
-          const l = store.selected()[0];
-          if (l?.type === 'text') store.set({ editingText: l.id });
-          if (tool === 'pen' && pen.current.length > 1) finishPen(false);
-          void s;
+          const hit = hitLayer(lookOf(s), toComp(e));
+          const l = hit?.type === 'text' ? hit : store.selected()[0];
+          if (l?.type === 'text' && !l.locked) store.set({ selection: [l.id], editingText: l.id, tool: 'select' });
         }}
         onWheel={onWheel}
         onKeyDown={(e) => {
@@ -729,8 +729,32 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
         tabIndex={0}
         aria-label="Composition canvas"
       />
+      <EditOverlay store={store} size={size} />
     </div>
   );
+}
+
+/** Where the composition sits in the view: its scale and top-left corner, px. */
+export function viewOf(s: EditorState, size: [number, number]): { scale: number; ox: number; oy: number } {
+  const c = compOf(s.project, s.compId);
+  const [W, H] = size;
+  const left = s.show.rulers ? RULER : 0;
+  const fit = Math.min((W - left - 48) / c.width, (H - left - 48) / c.height);
+  const scale = s.zoom > 0 ? s.zoom : Math.max(0.02, fit);
+  return { scale, ox: left + (W - left - c.width * scale) / 2 + s.pan[0], oy: left + (H - left - c.height * scale) / 2 + s.pan[1] };
+}
+
+/** The text box over a text layer being typed into (only while one is). */
+function EditOverlay({ store, size }: { store: Store; size: [number, number] }) {
+  const editing = useStore(store, (s) => s.editingText);
+  const zoom = useStore(store, (s) => s.zoom);
+  const pan = useStore(store, (s) => s.pan);
+  const rulers = useStore(store, (s) => s.show.rulers);
+  void zoom;
+  void pan;
+  void rulers;
+  if (!editing) return null;
+  return <TextEditOverlay store={store} view={viewOf(store.get(), size)} />;
 }
 
 /** The 8 handles (corners and edge middles) around four corners. */

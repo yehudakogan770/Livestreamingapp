@@ -58,7 +58,7 @@ describe('open titles in tabs', () => {
     render(<Designer host={memoryHost()} env={env} />);
     await openTemplate('Name and role');
     expect(screen.queryByRole('tablist', { name: 'Open titles' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Library' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Library' }));
     await openTemplate('Quote card');
     const tabs = screen.getByRole('tablist', { name: 'Open titles' });
     expect(within(tabs).getAllByRole('tab')).toHaveLength(2);
@@ -81,7 +81,7 @@ describe('the designer', () => {
     expect(within(tl).getByText('Accent bar')).toBeInTheDocument();
     expect(within(tl).getByText('IN')).toBeInTheDocument();
     expect(within(tl).getByText('OUT')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Fields' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Fields' }));
     const cp = screen.getByTestId('titler-control-panel');
     expect(within(cp).getByLabelText('Name')).toHaveValue('Jordan Avery');
   });

@@ -26,6 +26,7 @@ import type {
   Vec2,
 } from '../core/types';
 import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields';
+import { askText } from './Modal';
 import { layerBox } from './geometry';
 import { lookOf } from './Viewport';
 import { compOf, findLayer, flatLayers, setParent, updateLayers } from './ops';
@@ -738,7 +739,6 @@ function TextSection({
   vals,
   time,
 }: Common & { l: TextLayer; fieldKeys: string[]; tokens: ReturnType<typeof tokensFor>; vals: Record<string, string>; time: number }) {
-  const editing = useStore(store, (s) => s.editingText === l.id);
   const upd = (label: string, fn: (x: TextLayer) => TextLayer) =>
     store.edit(label, (p) => updateLayers(p, compId, [l.id], (x) => (x.type === 'text' ? fn(x) : x)));
   const st = l.style;
@@ -754,7 +754,6 @@ function TextSection({
         ref={wordsRef}
         className="tt-textarea"
         aria-label="Words"
-        autoFocus={editing}
         value={l.text}
         rows={3}
         onChange={(e) =>
@@ -764,7 +763,6 @@ function TextSection({
             name: x.name === 'Text' || x.name === x.text.slice(0, 30) ? e.target.value.replace(/\{\{|\}\}|\[[^\]]*\]/g, '').slice(0, 30) || 'Text' : x.name,
           }))
         }
-        onBlur={() => store.set({ editingText: null })}
       />
       <div className="tt-chips">
         {fieldKeys.map((k) => (
@@ -966,8 +964,9 @@ function TextStyleRow({ store, l }: { store: Store; l: TextLayer }) {
           onChange={(e) => {
             const v = e.target.value;
             if (v === '+') {
-              const name = prompt('Name of the new text style', l.name);
-              if (name !== null) store.edit('New text style', (p) => newTextStyle(p, l.id, name).project);
+              void askText('New text style', 'Name of the new text style', l.name, 'Create').then((name) => {
+                if (name !== null) store.edit('New text style', (p) => newTextStyle(p, l.id, name).project);
+              });
               return;
             }
             store.edit(v ? 'Apply text style' : 'Detach text style', (p) => applyTextStyle(p, [l.id], v || null));
@@ -1548,8 +1547,8 @@ function MotionPresets({ store, l, compId }: Common & { l: Layer }) {
         ))}
         <button
           className="tt-chip"
-          onClick={() => {
-            const name = prompt('Name for this animation', `${l.name} animation`);
+          onClick={async () => {
+            const name = await askText('Save animation', 'Name for this animation', `${l.name} animation`, 'Save');
             if (name === null) return;
             if (saveAnimPreset(l, name)) setSaved(loadAnimPresets());
             else store.set({ status: 'This layer has no keyframes to save.' });

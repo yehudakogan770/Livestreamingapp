@@ -213,6 +213,7 @@
 
 /* ---- the three columns ---- */
 .tt-main {
+  position: relative;
   grid-area: main;
   display: grid;
   grid-template-columns: var(--tt-left, 236px) minmax(0, 1fr) var(--tt-right, 320px);
@@ -241,19 +242,29 @@
 }
 .tt-tabs {
   display: flex;
+  flex: none;
   gap: 2px;
   padding: 4px;
   border-bottom: 1px solid var(--tt-line);
   background: var(--tt-bar);
-  flex-wrap: wrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tt-tabs::-webkit-scrollbar {
+  display: none;
 }
 .tt-tabs button {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 5px;
-  padding: 4px 9px;
+  padding: 4px 8px;
   border-radius: var(--tt-radius);
   color: var(--tt-dim);
+  white-space: nowrap;
+}
+.tt-tabs button:hover:not(.on) {
+  color: var(--tt-text);
 }
 .tt-tabs button.on {
   background: var(--tt-selected);
@@ -1156,10 +1167,7 @@
   background: var(--tt-selected);
 }
 .tt-workspace {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-right: 10px;
+  margin-right: 8px;
 }
 
 /* Recently opened titles, above the library. */
@@ -1737,4 +1745,239 @@
 }
 .tt-doc-tab-close:hover {
   color: var(--tt-text);
+}
+
+/* Typing on the canvas: the words in a box over the layer. */
+.tt-text-edit {
+  position: absolute;
+  z-index: 6;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 1px dashed var(--tt-select);
+  outline-offset: 2px;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  transform-origin: 0 0;
+  caret-color: var(--tt-select);
+  user-select: text;
+}
+.tt-text-edit:focus-visible {
+  outline: 1px dashed var(--tt-select);
+}
+
+/* Questions (confirm, a name). */
+.tt-ask {
+  width: min(420px, 92%);
+}
+.tt-ask-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tt-primary.tt-danger {
+  background: var(--tt-out) !important;
+  color: #fff !important;
+}
+
+/* A new field: its label, then its kind and the button. */
+.tt-newfield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px dashed var(--tt-line-2);
+  border-radius: var(--tt-radius);
+}
+.tt-newfield-head {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--tt-dim);
+}
+.tt-newfield-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.tt-newfield-row .tt-select {
+  flex: 1;
+}
+
+/* The timeline's Fit (the whole composition across). */
+.tt-tl-tabs .tt-fit {
+  height: 22px;
+  padding: 0 8px !important;
+  color: var(--tt-dim);
+}
+.tt-tl-tabs .tt-fit.on {
+  color: var(--tt-text);
+  background: var(--tt-selected);
+}
+
+/* ---- docked panels ---- */
+.tt-dock {
+  overflow: hidden;
+}
+.tt-dock-group {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 1;
+  min-height: 90px;
+  overflow: hidden;
+}
+.tt-dock-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.tt-dock-body > * {
+  flex-shrink: 0;
+}
+.tt-dock-body > .tt-side-list,
+.tt-dock-body > .tt-library {
+  flex-shrink: 1;
+}
+.tt-dock-split {
+  flex: none;
+  height: 5px;
+  background: var(--tt-line);
+  cursor: row-resize;
+}
+.tt-dock-split:hover,
+.tt-dock-split.on,
+.tt-dock-split:focus-visible {
+  background: var(--tt-line-2);
+  outline: none;
+}
+.tt-dock.tt-dragging .tt-tabs button {
+  cursor: grabbing;
+}
+.tt-dock-mark {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  border: 1px solid color-mix(in srgb, var(--tt-select) 70%, transparent);
+  background: color-mix(in srgb, var(--tt-select) 12%, transparent);
+  border-radius: 3px;
+}
+.tt-dock-mark.line {
+  border: 0;
+  background: var(--tt-select);
+}
+.tt-dock-ghost {
+  position: fixed;
+  z-index: 51;
+  pointer-events: none;
+  padding: 3px 9px;
+  font-size: 12px;
+  color: var(--tt-text);
+  background: var(--tt-raised);
+  border: 1px solid var(--tt-line-2);
+  border-radius: var(--tt-radius);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+.tt-dock-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 30;
+  width: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--tt-dim);
+  font-size: 11px;
+  background: var(--tt-panel);
+  border: 1px dashed var(--tt-line-2);
+}
+.tt-dock-edge.left {
+  left: 0;
+}
+.tt-dock-edge.right {
+  right: 0;
+}
+.tt-dock-edge span {
+  writing-mode: vertical-rl;
+  pointer-events: none;
+}
+
+/* ---- menus under a button (View, Workspace) ---- */
+.tt-menuwrap {
+  position: relative;
+  display: inline-flex;
+}
+.tt-menubtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: var(--tt-radius);
+  white-space: nowrap;
+}
+.tt-menubtn:hover,
+.tt-menubtn.on {
+  background: var(--tt-hover);
+}
+.tt-menu-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  z-index: 45;
+  min-width: 190px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  background: var(--tt-raised);
+  border: 1px solid var(--tt-line-2);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.tt-menu-pop.left {
+  left: 0;
+}
+.tt-menu-pop.right {
+  right: 0;
+}
+.tt-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px 5px 4px;
+  border-radius: var(--tt-radius);
+  text-align: left;
+  white-space: nowrap;
+}
+.tt-menu-item:hover,
+.tt-menu-item:focus-visible {
+  background: var(--tt-selected);
+  outline: none;
+}
+.tt-menu-tick {
+  width: 16px;
+  text-align: center;
+  color: var(--tt-text);
+}
+.tt-menu-label {
+  flex: 1;
+}
+.tt-menu-hint {
+  font: 10.5px var(--tt-mono);
+  color: var(--tt-faint);
+}
+.tt-menu-sep {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--tt-line);
+}
+.tt-menu-note {
+  max-width: 230px;
+  padding: 4px 8px 6px 26px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--tt-faint);
+  white-space: normal;
 }

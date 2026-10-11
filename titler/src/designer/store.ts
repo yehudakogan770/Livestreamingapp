@@ -49,7 +49,7 @@ export interface EditorState {
   path: string | null;
   /** A short message at the bottom ("Saved", "Copied 2 layers"). */
   status: string;
-  /** Pixels per second in the timeline. */
+  /** Pixels per second in the timeline; 0: the whole composition fits. */
   timelineZoom: number;
   /** The text layer being typed into on the canvas. */
   editingText: string | null;
@@ -87,7 +87,7 @@ export class Store {
       dirty: false,
       path: null,
       status: '',
-      timelineZoom: 120,
+      timelineZoom: 0,
       editingText: null,
       ...extra,
     };
