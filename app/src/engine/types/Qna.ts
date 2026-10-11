@@ -8,4 +8,8 @@ export type Qna = {
   open: boolean;
   questions: Array<Question>;
   nextId: number;
+  /**
+   * New questions wait for the operator before anyone else sees them.
+   */
+  moderate: boolean;
 };

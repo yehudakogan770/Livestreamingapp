@@ -51,7 +51,9 @@ import { civilDate, zmanimRows } from '../components/ZmanimView';
 import { amount, BID_FLASH_MS, clock, current, minimum, raisedAt, secondsLeft, SOLD_MS, top as top_ } from '../engine/auction';
 import { cardSize, tickerShift, wallCard, wallGrid, wallTicker } from '../engine/wall';
 import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audience';
-import { shares } from '../engine/poll';
+import { averageText, countText, ratingAverage, shares } from '../engine/poll';
+import { CLOUD_COLORS, CloudCache, cloudFont, starFill, starPoints } from '../engine/wordCloud';
+import { JOIN_LABEL } from '../components/PollView';
 import { joinShown } from '../engine/join';
 import { FrameDelay } from '../engine/frameDelay';
 import { dataValues, fill as fillData, withData } from '../engine/data';
@@ -98,6 +100,8 @@ export class ProgramCompositor {
   /** Where drawing goes (swapped for a spare canvas while a luma wipe draws the new source). */
   private ctx: CanvasRenderingContext2D;
   private readonly media = new Map<string, Media>();
+  /** Word clouds' layouts (worked out once for each set of words). */
+  private readonly clouds = new CloudCache();
   private readonly pictures = new Map<string, Media>();
   /** One green-screen keyer per keyed input. */
   private readonly keyers = new Map<string, ChromaKeyer>();
@@ -433,22 +437,21 @@ export class ProgramCompositor {
     this.sting = null;
   }
 
-  /** A poll (mirrors PollView and its CSS; sizes are % of the frame height). */
+  /** A poll, word cloud or rating (mirrors PollView and its CSS; sizes are % of the frame height). */
   private poll(p: Poll, w: number, h: number) {
     const ctx = this.ctx;
     const u = h / 100;
+    const kind = p.kind ?? 'choice';
     const g = ctx.createRadialGradient(w * 0.3, h * 0.2, 0, w * 0.3, h * 0.2, Math.hypot(w, h) * 0.8);
     g.addColorStop(0, '#1c2433');
     g.addColorStop(1, '#07080b');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, w, h);
-    const shown = joinShown(p.joinUrl, p.joinQr, 'Scan to vote', this.show?.event.wifi, Date.now());
+    const shown = joinShown(p.joinUrl, p.joinQr, JOIN_LABEL[kind], this.show?.event.wifi, Date.now());
     const join = p.showJoin && p.open && p.joinQr ? this.qr(shown.qr) : null;
     const left = 7 * u;
     const qrW = join ? 34 * u : 0;
     const right = w - 7 * u - (join ? qrW + 6 * u : 0);
-    const share = shares(p);
-    const total = p.votes.reduce((a, b) => a + b, 0);
     const font = (px: number, weight: number) => `${weight} ${px * u}px "Segoe UI", system-ui, sans-serif`;
     ctx.save();
     ctx.textBaseline = 'middle';
@@ -456,6 +459,35 @@ export class ProgramCompositor {
     ctx.font = font(6.4, 800);
     const qLines = this.wrap(p.question, right - left);
     const qH = qLines.length * 6.4 * 1.15 * u;
+    if (kind === 'words') {
+      const top = 9 * u;
+      qLines.forEach((line, i) => ctx.fillText(line, left, top + (i + 0.5) * 6.4 * 1.15 * u));
+      const boxTop = top + qH + 4 * u;
+      this.cloud(p, left, boxTop, right - left, h - 9 * u - boxTop - 2 * u, u);
+    } else if (kind === 'rating') this.rating(p, qLines, qH, left, right, u, h, font);
+    else this.choices(p, qLines, qH, left, right, u, h, font);
+    if (join) {
+      const qx = w - 7 * u - qrW;
+      const qy = (h - qrW - 8 * u) / 2;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.roundRect(qx, qy, qrW, qrW, 1.5 * u);
+      ctx.fill();
+      if (join.complete && join.naturalWidth) ctx.drawImage(join, qx + 1.5 * u, qy + 1.5 * u, qrW - 3 * u, qrW - 3 * u);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = font(3.4, 700);
+      ctx.fillText(shown.label, qx + qrW / 2, qy + qrW + 3 * u, qrW + 8 * u);
+      ctx.fillStyle = '#b8bec8';
+      ctx.font = font(2.2, 500);
+      ctx.fillText(shown.sub, qx + qrW / 2, qy + qrW + 6.5 * u, qrW + 8 * u);
+    }
+    ctx.restore();
+  }
+
+  private choices(p: Poll, qLines: string[], qH: number, left: number, right: number, u: number, h: number, font: (px: number, weight: number) => string) {
+    const ctx = this.ctx;
+    const share = shares(p);
     const optsH = p.options.length * 9 * u + Math.max(0, p.options.length - 1) * 2 * u;
     const blockH = qH + 4 * u + optsH + (p.showResults ? 5.5 * u : 0);
     let y = Math.max(9 * u, (h - blockH) / 2);
@@ -491,24 +523,107 @@ export class ProgramCompositor {
       ctx.fillStyle = '#b8bec8';
       ctx.font = font(3, 400);
       ctx.textAlign = 'left';
-      ctx.fillText(`${total} ${total === 1 ? 'vote' : 'votes'}`, left, y + 2 * u);
+      ctx.fillText(countText(p), left, y + 2 * u);
     }
-    if (join) {
-      const qx = w - 7 * u - qrW;
-      const qy = (h - qrW - 8 * u) / 2;
-      ctx.fillStyle = '#fff';
-      ctx.beginPath();
-      ctx.roundRect(qx, qy, qrW, qrW, 1.5 * u);
-      ctx.fill();
-      if (join.complete && join.naturalWidth) ctx.drawImage(join, qx + 1.5 * u, qy + 1.5 * u, qrW - 3 * u, qrW - 3 * u);
-      ctx.textAlign = 'center';
-      ctx.font = font(3.4, 700);
-      ctx.fillText(shown.label, qx + qrW / 2, qy + qrW + 3 * u, qrW + 8 * u);
+  }
+
+  /** A word cloud in the box (mirrors PollView's Cloud). */
+  private cloud(p: Poll, x: number, y: number, bw: number, bh: number, u: number) {
+    const ctx = this.ctx;
+    const words = p.showResults ? (p.words ?? []) : [];
+    const measure = (text: string, size: number) => {
+      ctx.font = cloudFont(size);
+      return ctx.measureText(text).width;
+    };
+    const placed = this.clouds.get(words, bw, bh, measure);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (!placed.length) {
       ctx.fillStyle = '#b8bec8';
-      ctx.font = font(2.2, 500);
-      ctx.fillText(shown.sub, qx + qrW / 2, qy + qrW + 6.5 * u, qrW + 8 * u);
+      ctx.font = `400 ${3.6 * u}px "Segoe UI", system-ui, sans-serif`;
+      ctx.fillText(p.showResults ? 'The words will appear here.' : 'Send a word or two from your phone.', x + bw / 2, y + bh / 2, bw);
+      return;
     }
+    for (const word of placed) {
+      ctx.font = cloudFont(word.size);
+      ctx.fillStyle = CLOUD_COLORS[word.color] ?? '#fff';
+      ctx.fillText(word.text, x + word.x, y + word.y);
+    }
+  }
+
+  /** A five-pointed star, `fill` of it in gold from the left. */
+  private star(cx: number, cy: number, r: number, fill: number) {
+    const ctx = this.ctx;
+    const path = () => {
+      ctx.beginPath();
+      starPoints(cx, cy, r).forEach(([px, py], i) => (i ? ctx.lineTo(px, py) : ctx.moveTo(px, py)));
+      ctx.closePath();
+    };
+    path();
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    ctx.fill();
+    if (fill <= 0) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(cx - r, cy - r, 2 * r * fill, 2 * r);
+    ctx.clip();
+    path();
+    ctx.fillStyle = '#ffc94d';
+    ctx.fill();
     ctx.restore();
+  }
+
+  /** A rating: the average, its stars and how the stars were given (mirrors PollView's Rating). */
+  private rating(p: Poll, qLines: string[], qH: number, left: number, right: number, u: number, h: number, font: (px: number, weight: number) => string) {
+    const ctx = this.ctx;
+    const blockH = qH + 4 * u + 34 * u;
+    let y = Math.max(9 * u, (h - blockH) / 2);
+    qLines.forEach((line, i) => ctx.fillText(line, left, y + (i + 0.5) * 6.4 * 1.15 * u));
+    y += qH + 4 * u;
+    ctx.textAlign = 'left';
+    if (!p.showResults) {
+      for (let i = 0; i < 5; i++) this.star(left + 4.5 * u + i * 11 * u, y + 6 * u, 4.5 * u, 0);
+      ctx.fillStyle = '#b8bec8';
+      ctx.font = font(3, 400);
+      ctx.fillText('Rate from 1 to 5 stars on your phone.', left, y + 15 * u);
+      return;
+    }
+    const avg = ratingAverage(p);
+    ctx.fillStyle = '#fff';
+    ctx.font = font(16, 800);
+    ctx.fillText(averageText(avg), left, y + 9 * u);
+    starFill(avg).forEach((f, i) => this.star(left + 3 * u + i * 7 * u, y + 22 * u, 3 * u, f));
+    ctx.fillStyle = '#b8bec8';
+    ctx.font = font(3, 400);
+    ctx.fillText(countText(p), left, y + 30 * u);
+    // How many gave each number of stars (5 at the top).
+    const total = p.votes.reduce((a, b) => a + b, 0);
+    const most = Math.max(1, ...p.votes);
+    const dx = left + 46 * u;
+    const trackW = Math.max(10 * u, right - dx - 16 * u);
+    for (let row = 0; row < 5; row++) {
+      const i = 4 - row;
+      const ry = y + row * 6.6 * u + 3 * u;
+      ctx.fillStyle = '#fff';
+      ctx.font = font(3.4, 700);
+      ctx.textAlign = 'left';
+      ctx.fillText(String(i + 1), dx, ry);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.roundRect(dx + 5 * u, ry - 2 * u, trackW, 4 * u, u);
+      ctx.fill();
+      const bar = trackW * ((p.votes[i] ?? 0) / most);
+      if (bar > 0) {
+        ctx.fillStyle = '#ffc94d';
+        ctx.beginPath();
+        ctx.roundRect(dx + 5 * u, ry - 2 * u, bar, 4 * u, u);
+        ctx.fill();
+      }
+      ctx.fillStyle = '#b8bec8';
+      ctx.font = font(3, 500);
+      ctx.textAlign = 'right';
+      ctx.fillText(`${total ? Math.round(((p.votes[i] ?? 0) / total) * 100) : 0}%`, dx + 5 * u + trackW + 10 * u, ry);
+    }
   }
 
   /** The dark background, title (and subtitle) that raffles and fundraisers share (mirrors AudienceViews.css). */

@@ -17,7 +17,7 @@ import { stingerSlot } from './timing';
 import { repairScoreboard, runClock, setClock } from './score';
 import { lyricsGo, sections } from './lyrics';
 import { applyBrand } from './brand';
-import { repairPoll, resetPoll } from './poll';
+import { pollComment, pollWord, removeWord, repairPoll, resetPoll } from './poll';
 import { pledgeTo, raffleDraw, raffleEnter, withCelebration } from './audience';
 import { wallPost, wallRemove } from './wall';
 import { dataValues } from './data';
@@ -167,7 +167,7 @@ function fundIn(s: Show, id: string) {
 
 /** The audience questions (an older saved show has none yet). */
 function qnaOf(s: Show) {
-  s.qna ??= { open: false, questions: [], nextId: 0 };
+  s.qna ??= { open: false, questions: [], nextId: 0, moderate: false };
   return s.qna;
 }
 
@@ -832,7 +832,15 @@ function apply(s: Show, a: Action, now: number) {
       const text = [...a.text.trim()].slice(0, 300).join('');
       if (!qnaOf(s).open || !text) throw new Refused({ code: 'invalidValue', field: 'question', reason: 'questions are closed' });
       s.qna.nextId += 1;
-      s.qna.questions.push({ id: s.qna.nextId, author: [...a.author.trim()].slice(0, 40).join(''), text, at: now, shown: false });
+      s.qna.questions.push({
+        id: s.qna.nextId,
+        author: [...a.author.trim()].slice(0, 40).join(''),
+        text,
+        at: now,
+        shown: false,
+        votes: 0,
+        approved: !s.qna.moderate,
+      });
       if (s.qna.questions.length > 300) s.qna.questions.splice(0, s.qna.questions.length - 300);
       return;
     }
@@ -848,6 +856,21 @@ function apply(s: Show, a: Action, now: number) {
     case 'qnaRemove':
       s.qna.questions = a.question === undefined ? [] : s.qna.questions.filter((x) => x.id !== a.question);
       return;
+    case 'qnaModerate':
+      qnaOf(s).moderate = a.value;
+      return;
+    case 'qnaApprove': {
+      const q = qnaOf(s).questions.find((x) => x.id === a.question);
+      if (!q) throw new Refused({ code: 'invalidValue', field: 'question', reason: 'there is no such question' });
+      q.approved = a.value;
+      return;
+    }
+    case 'qnaVote': {
+      const q = qnaOf(s).questions.find((x) => x.id === a.question && x.approved);
+      if (!q) throw new Refused({ code: 'invalidValue', field: 'question', reason: 'that question is not taking votes' });
+      q.votes = Math.max(0, q.votes + (a.up ? 1 : -1));
+      return;
+    }
     case 'reloadGuest': {
       const src = find(s, a.id);
       if (src.kind.type !== 'guest') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not a guest' });
@@ -876,8 +899,8 @@ function apply(s: Show, a: Action, now: number) {
       const p = pollIn(s, a.id);
       const next = structuredClone(a.poll);
       repairPoll(next);
-      const same = JSON.stringify(next.options) === JSON.stringify(p.options);
-      Object.assign(p, { ...next, votes: p.votes, round: p.round, open: p.open });
+      const same = JSON.stringify(next.options) === JSON.stringify(p.options) && next.kind === p.kind;
+      Object.assign(p, { ...next, votes: p.votes, words: p.words, comments: p.comments, round: p.round, open: p.open });
       if (!same) resetPoll(p);
       return;
     }
@@ -898,6 +921,17 @@ function apply(s: Show, a: Action, now: number) {
       p.votes[a.option]! += 1;
       return;
     }
+    case 'pollWord':
+      if (!pollWord(pollIn(s, a.id), a.round, a.text))
+        throw new Refused({ code: 'invalidValue', field: 'poll', reason: 'this word cloud is not taking words' });
+      return;
+    case 'pollWordRemove':
+      removeWord(pollIn(s, a.id), a.word);
+      return;
+    case 'pollComment':
+      if (!pollComment(pollIn(s, a.id), a.round, a.stars, a.text, now))
+        throw new Refused({ code: 'invalidValue', field: 'poll', reason: 'this rating is not taking comments' });
+      return;
     case 'applyBrand':
       applyBrand(s, a.brand);
       return;

@@ -100,8 +100,6 @@
         margin: 0 0 20px;
         color: var(--dim);
         font-size: 14px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
       }
       .file {
         display: none;
@@ -190,6 +188,102 @@
         height: 20px;
         flex: none;
       }
+      h2 {
+        margin: 26px 0 6px;
+        font-size: 18px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .row input {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .row button {
+        width: auto;
+        flex: none;
+        text-align: center;
+      }
+      .stars {
+        display: flex;
+        gap: 6px;
+        margin: 0 0 12px;
+      }
+      .star {
+        flex: 1 1 0;
+        display: flex;
+        justify-content: center;
+        margin: 0;
+        padding: 12px 0;
+      }
+      .star svg {
+        width: 34px;
+        height: 34px;
+      }
+      .star polygon {
+        fill: #3b3b3b;
+      }
+      .star.is-on polygon {
+        fill: #ffc94d;
+      }
+      .star.is-on {
+        border-color: #5a4a1f;
+      }
+      .q {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        padding: 14px 0;
+        border-top: 1px solid var(--line);
+      }
+      .q__body {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .q__text {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      .q__who {
+        margin: 4px 0 0;
+        color: var(--dim);
+        font-size: 14px;
+      }
+      .q.is-answered .q__text {
+        color: var(--dim);
+      }
+      .up {
+        flex: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        width: auto;
+        min-width: 58px;
+        margin: 0;
+        padding: 8px 10px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .up svg {
+        width: 18px;
+        height: 18px;
+      }
+      .up.is-on {
+        border-color: var(--accent);
+        background: #242424;
+      }
+      .tag {
+        display: inline-block;
+        margin-left: 6px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        background: #2a2a2a;
+        color: var(--dim);
+        font-size: 12px;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
@@ -255,7 +349,12 @@
           JSON.stringify(joined) +
           wallNote +
           (photo ? photo.size : '') +
-          sending;
+          sending +
+          JSON.stringify(wordsSent) +
+          wordNote +
+          commentNote +
+          JSON.stringify(commented) +
+          JSON.stringify(ups);
         if (key === last) return;
         // Never redraw under someone typing.
         if (document.activeElement && ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
@@ -276,8 +375,16 @@
           return;
         }
         for (const poll of a.polls) {
-          const box = el('section', { className: 'poll' }, el('h1', { textContent: poll.question }));
+          const box = el('section', { className: 'poll' }, el('h1', { textContent: poll.question, dir: 'auto' }));
           const chosen = mine[poll.id + ':' + poll.round];
+          if (poll.kind === 'words') {
+            app.append(wordsBox(poll, box));
+            continue;
+          }
+          if (poll.kind === 'rating') {
+            app.append(ratingBox(poll, box, chosen));
+            continue;
+          }
           poll.options.forEach((text, i) => {
             const b = el('button', { textContent: text, className: chosen === i ? 'is-mine' : '' });
             b.onclick = () => vote(poll, i);
@@ -374,7 +481,7 @@
             box.append(
               el('h1', {
                 textContent:
-                  g.answered === null || g.answered === undefined ? 'The answer: ' + mark(g.correct) : right ? '✓ Right! +' + g.points : '✗ Not this time',
+                  g.answered === null || g.answered === undefined ? 'The answer: ' + mark(g.correct) : right ? 'Right! +' + g.points : 'Not this time',
                 dir: 'auto',
               }),
               el('p', {
@@ -384,7 +491,7 @@
             );
           } else {
             box.append(
-              el('h1', { textContent: g.place ? '🏆 You are #' + g.place : '🏆 Leaderboard on the screen' }),
+              el('h1', { textContent: g.place ? 'You are #' + g.place : 'The leaderboard is on the screen' }),
               el('p', { className: 'note', textContent: standing }),
             );
           }
@@ -404,7 +511,7 @@
           if (it.sold) {
             box.append(
               el('p', { className: 'big', textContent: 'Sold for ' + money(it.top) }),
-              el('p', { textContent: (mineTop ? 'You won! Mazel tov! 🎉' : 'to ' + (it.topName || 'Anonymous')) + ' — the next item is coming.' }),
+              el('p', { textContent: (mineTop ? 'You won! Congratulations.' : 'to ' + (it.topName || 'Anonymous')) + ' — the next item is coming.' }),
             );
           } else {
             box.append(
@@ -413,7 +520,7 @@
             );
             if (it.top !== null)
               box.append(
-                el('p', { className: mineTop ? 'winning' : '', textContent: mineTop ? "You're the highest bidder! 🎉" : 'by ' + (it.topName || 'Anonymous') }),
+                el('p', { className: mineTop ? 'winning' : '', textContent: mineTop ? "You're the highest bidder." : 'by ' + (it.topName || 'Anonymous') }),
               );
             if (it.endsAt) {
               const t = el('p', { className: 'timer' });
@@ -461,7 +568,7 @@
                 last = '';
                 load();
               };
-              box.append(el('label', { className: 'pick', htmlFor: 'photo-' + w.id, textContent: '📷 Add a photo' }), pick);
+              box.append(el('label', { className: 'pick', htmlFor: 'photo-' + w.id, textContent: 'Add a photo' }), pick);
             }
           }
           const send = el('button', { className: 'send', textContent: sending ? 'Sending…' : 'Send', disabled: sending });
@@ -474,18 +581,183 @@
           q.oninput = () => (typed.question = q.value);
           const send = el('button', { className: 'send', textContent: 'Send the question' });
           send.onclick = () => askIt();
-          app.append(
-            el(
-              'section',
-              { className: 'poll' },
-              el('h1', { textContent: 'Ask a question' }),
-              nameBox(),
-              q,
-              send,
-              el('p', { className: 'note', textContent: sentNote || 'The hosts choose which questions go on screen.' }),
-            ),
+          const qna = a.qna || { list: [], moderate: false };
+          const box = el(
+            'section',
+            { className: 'poll' },
+            el('h1', { textContent: 'Ask a question' }),
+            nameBox(),
+            q,
+            send,
+            el('p', {
+              className: 'note',
+              textContent:
+                sentNote ||
+                (qna.moderate
+                  ? 'The hosts read each question before it is listed here.'
+                  : 'Vote up the questions you most want answered. The hosts choose which go on screen.'),
+            }),
           );
+          if (qna.list.length) {
+            box.append(el('h2', { textContent: 'Questions' }));
+            for (const item of qna.list) {
+              const on = ups[item.id] !== undefined ? ups[item.id] : item.mine;
+              const up = el('button', {
+                className: 'up' + (on ? ' is-on' : ''),
+                disabled: item.answered,
+                ariaLabel: on ? 'Take back your vote' : 'Vote this question up',
+              });
+              up.innerHTML = UP_ICON;
+              up.append(el('span', { textContent: String(item.votes) }));
+              up.onclick = () => upvote(item, !on);
+              const who = el('p', { className: 'q__who', textContent: item.author || 'No name' });
+              if (item.answered) who.append(el('span', { className: 'tag', textContent: 'Answered' }));
+              box.append(
+                el(
+                  'div',
+                  { className: 'q' + (item.answered ? ' is-answered' : '') },
+                  up,
+                  el('div', { className: 'q__body' }, el('p', { className: 'q__text', textContent: item.text, dir: 'auto' }), who),
+                ),
+              );
+            }
+          }
+          app.append(box);
         }
+      }
+
+      const UP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5l7 8h-4.5v6h-5v-6H5z" fill="currentColor"/></svg>';
+      const STAR =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12,0.5 14.9,8 22.9,8.4 16.7,13.4 18.8,21.2 12,16.8 5.2,21.2 7.3,13.4 1.1,8.4 9.1,8"/></svg>';
+
+      // Word clouds: up to three words from each phone.
+      const wordsSent = {};
+      let wordNote = '';
+      typed.word = '';
+      function wordsBox(poll, box) {
+        const k = poll.id + ':' + poll.round;
+        const sent = wordsSent[k] || 0;
+        if (sent >= 3) {
+          box.append(el('p', { className: 'big-note', textContent: 'Thank you! Watch for your words on the screen.' }));
+          return box;
+        }
+        const input = el('input', { placeholder: 'A word or two', value: typed.word, maxLength: 32, dir: 'auto', enterKeyHint: 'send' });
+        input.oninput = () => (typed.word = input.value);
+        input.onkeydown = (e) => e.key === 'Enter' && sendWord(poll);
+        const go = el('button', { className: 'send', textContent: 'Send' });
+        go.onclick = () => sendWord(poll);
+        box.append(
+          el('div', { className: 'row' }, input, go),
+          el('p', {
+            className: 'note',
+            textContent: wordNote || (sent ? 'You can send ' + (3 - sent) + ' more.' : 'You can send up to three words or short phrases.'),
+          }),
+        );
+        return box;
+      }
+
+      async function sendWord(poll) {
+        const text = typed.word.trim();
+        if (!text) return;
+        const k = poll.id + ':' + poll.round;
+        try {
+          const r = await fetch('/api/word', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: poll.id, round: poll.round, text, voter }),
+          });
+          if (r.status === 429) wordNote = (wordsSent[k] || 0) >= 3 ? '' : 'Please wait a moment before sending the next one.';
+          else if (!r.ok) throw new Error();
+          else {
+            wordsSent[k] = (wordsSent[k] || 0) + 1;
+            typed.word = '';
+            wordNote = '';
+          }
+        } catch {
+          wordNote = 'It did not send — try again.';
+        }
+        if (document.activeElement) document.activeElement.blur();
+        last = '';
+        load();
+      }
+
+      // Ratings: tap the stars; a comment may follow (once).
+      const commented = {};
+      typed.comment = '';
+      let commentNote = '';
+      function ratingBox(poll, box, chosen) {
+        const k = poll.id + ':' + poll.round;
+        const row = el('div', { className: 'stars', role: 'radiogroup', ariaLabel: 'Stars' });
+        for (let i = 0; i < 5; i++) {
+          const b = el('button', {
+            className: 'star' + (chosen !== undefined && i <= chosen ? ' is-on' : ''),
+            role: 'radio',
+            ariaChecked: String(chosen === i),
+            ariaLabel: i + 1 + (i ? ' stars' : ' star'),
+          });
+          b.innerHTML = STAR;
+          b.onclick = () => vote(poll, i);
+          row.append(b);
+        }
+        box.append(row);
+        if (chosen === undefined) {
+          box.append(el('p', { className: 'note', textContent: 'Tap the stars to rate.' }));
+          return box;
+        }
+        if (commented[k]) {
+          box.append(el('p', { className: 'note', textContent: 'Thank you for your rating and your comment.' }));
+          return box;
+        }
+        const text = el('textarea', { placeholder: 'A comment for the hosts (optional)', value: typed.comment, maxLength: 280, dir: 'auto' });
+        text.oninput = () => (typed.comment = text.value);
+        const go = el('button', { textContent: 'Send the comment' });
+        go.onclick = () => sendComment(poll, chosen);
+        box.append(text, go, el('p', { className: 'note', textContent: commentNote || 'Thank you! You can change your stars while rating is open.' }));
+        return box;
+      }
+
+      async function sendComment(poll, option) {
+        const comment = typed.comment.trim();
+        if (!comment) return;
+        const k = poll.id + ':' + poll.round;
+        try {
+          const r = await fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: poll.id, round: poll.round, option, voter, comment }),
+          });
+          if (r.ok || r.status === 429) {
+            commented[k] = true;
+            typed.comment = '';
+            commentNote = '';
+          } else throw new Error();
+        } catch {
+          commentNote = 'It did not send — try again.';
+        }
+        if (document.activeElement) document.activeElement.blur();
+        last = '';
+        load();
+      }
+
+      // Question votes this phone made, until the page hears them back.
+      const ups = {};
+      async function upvote(item, up) {
+        ups[item.id] = up;
+        last = '';
+        load();
+        try {
+          const r = await fetch('/api/ask/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: item.id, up, voter }),
+          });
+          if (!r.ok) throw new Error();
+        } catch {
+          // The list shows what counted.
+        }
+        delete ups[item.id];
+        last = '';
+        load();
       }
 
       const joined = {};
@@ -546,7 +818,7 @@
         const now = Date.now() + clockOffset;
         for (const [t, end] of timers) {
           const s = Math.max(0, Math.ceil((end - now) / 1000));
-          t.textContent = s > 0 ? '⏱ ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' left' : 'Time is up';
+          t.textContent = s > 0 ? Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0') + ' left' : 'Time is up';
           t.classList.toggle('late', s <= 10);
         }
       }

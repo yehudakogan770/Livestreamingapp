@@ -71,6 +71,51 @@ pub trait Backend: Send + Sync + 'static {
         let _ = command;
         Err("not available".to_owned())
     }
+    /// A small JPEG of input `id` as the unified engine draws it (None when
+    /// the Standard engine runs: the control window then hands pictures in).
+    fn engine_picture(&self, id: &str) -> Option<Vec<u8>> {
+        let _ = id;
+        None
+    }
+}
+
+/// How long after a control surface last asked for an input's picture the
+/// control window keeps drawing it.
+const PICTURE_WANTED: Duration = Duration::from_secs(5);
+/// A picture older than this is not shown (the input stopped, or the control window).
+const PICTURE_FRESH: Duration = Duration::from_secs(5);
+/// Largest picture taken from the control window.
+pub const MAX_PICTURE: usize = 256 * 1024;
+
+/// Small pictures of the inputs for control surfaces (the Stream Deck's
+/// input keys). The unified engine draws them itself; with the Standard
+/// engine the control window draws the ones asked for lately and hands them
+/// in (`Remote::put_picture`).
+#[derive(Default)]
+struct Pictures {
+    /// Each input's newest picture (JPEG) and when it came.
+    latest: HashMap<String, (Arc<Vec<u8>>, std::time::Instant)>,
+    /// When each input's picture was last asked for.
+    asked: HashMap<String, std::time::Instant>,
+}
+
+impl Pictures {
+    fn wanted(&mut self, now: std::time::Instant) -> Vec<String> {
+        self.asked
+            .retain(|_, t| now.duration_since(*t) < PICTURE_WANTED);
+        self.latest
+            .retain(|_, (_, t)| now.duration_since(*t) < PICTURE_FRESH * 4);
+        let mut ids: Vec<String> = self.asked.keys().cloned().collect();
+        ids.sort();
+        ids
+    }
+
+    fn fresh(&self, id: &str, now: std::time::Instant) -> Option<Arc<Vec<u8>>> {
+        self.latest
+            .get(id)
+            .filter(|(_, t)| now.duration_since(*t) < PICTURE_FRESH)
+            .map(|(p, _)| Arc::clone(p))
+    }
 }
 
 /// What a control surface may ask of the control window: recording,
@@ -337,6 +382,9 @@ impl Phone {
     }
 }
 
+/// For one word cloud round: how many words each phone sent, and when the last came.
+type WordsSent = HashMap<String, (u8, u64)>;
+
 struct Shared {
     backend: Box<dyn Backend>,
     pin: Mutex<String>,
@@ -353,6 +401,14 @@ struct Shared {
     votes: Mutex<HashMap<(String, u32), HashMap<String, usize>>>,
     /// When each phone last asked a question.
     asked: Mutex<HashMap<String, u64>>,
+    /// The questions each phone voted up (so a phone votes once for each).
+    question_votes: Mutex<HashMap<String, HashSet<u32>>>,
+    /// Words each phone sent to each word cloud round, and when the last came.
+    words: Mutex<HashMap<(String, u32), WordsSent>>,
+    /// The rating rounds each phone already sent a comment to.
+    commented: Mutex<HashSet<(String, u32, String)>>,
+    /// Inputs' small pictures for control surfaces (see `picture`).
+    pictures: Mutex<Pictures>,
     /// Where photos sent to a messages wall are kept.
     photos: Option<PathBuf>,
     /// Wrong PINs, to stop anyone on the network guessing it.
@@ -514,6 +570,10 @@ impl Remote {
                 next_phone: Mutex::new(0),
                 votes: Mutex::new(HashMap::new()),
                 asked: Mutex::new(HashMap::new()),
+                question_votes: Mutex::new(HashMap::new()),
+                words: Mutex::new(HashMap::new()),
+                commented: Mutex::new(HashSet::new()),
+                pictures: Mutex::new(Pictures::default()),
                 photos: dir.map(|d| d.join("wall-photos")),
                 guesses: Mutex::new(HashMap::new()),
                 slow: Mutex::new(()),
@@ -717,6 +777,27 @@ impl Remote {
 
     /// What the control window says is running (recording, stream,
     /// rehearsal, replay). Everyone connected is told when it changes.
+    /// The inputs whose pictures control surfaces asked for lately and the
+    /// unified engine doesn't draw (the control window draws these).
+    pub fn pictures_wanted(&self) -> Vec<String> {
+        lock(&self.shared.pictures).wanted(std::time::Instant::now())
+    }
+
+    /// An input's small picture (JPEG) from the control window. False if it
+    /// isn't a JPEG, is too big, or nobody asked for it.
+    pub fn put_picture(&self, id: &str, jpeg: Vec<u8>) -> bool {
+        if jpeg.len() > MAX_PICTURE || !jpeg.starts_with(&[0xFF, 0xD8, 0xFF]) {
+            return false;
+        }
+        let mut p = lock(&self.shared.pictures);
+        if !p.asked.contains_key(id) {
+            return false;
+        }
+        p.latest
+            .insert(id.to_owned(), (Arc::new(jpeg), std::time::Instant::now()));
+        true
+    }
+
     pub fn set_app_state(&self, state: &serde_json::Value) {
         if !state.is_object() {
             return;
@@ -961,7 +1042,9 @@ fn audience_path(path: &str) -> bool {
             | "/api/polls"
             | "/api/audience"
             | "/api/vote"
+            | "/api/word"
             | "/api/ask"
+            | "/api/ask/vote"
             | "/api/raffle"
             | "/api/pledge"
             | "/api/message"
@@ -1060,14 +1143,21 @@ fn handle(shared: &Shared, mut request: Request) {
                     })
                     .unwrap_or_default()
             };
+            let q = crate::control::parse_query(query);
+            let voter = q
+                .iter()
+                .find(|(k, _)| k == "voter")
+                .map(|(_, v)| v.as_str())
+                .unwrap_or_default();
             let body = serde_json::json!({
                 "polls": open_polls(&show),
                 "questions": show["qna"]["open"].as_bool().unwrap_or(false),
+                "qna": public_questions(&show, lock(&shared.question_votes).get(voter)),
                 "raffles": open("raffle", &["title", "prize"]),
                 "fundraisers": open("fundraiser", &["title", "currency"]),
                 "walls": open("wall", &["title", "prompt", "photos"]),
                 "auctions": open_auctions(&show),
-                "trivia": open_trivia(&show, &crate::control::parse_query(query)),
+                "trivia": open_trivia(&show, &q),
                 "seating": open("seating", &["title"]),
                 "now": now_ms(),
                 "event": show["event"]["name"],
@@ -1138,6 +1228,21 @@ fn handle(shared: &Shared, mut request: Request) {
             Ok(()) => json(request, 200, "{}"),
             Err(status) => json(request, status, r#"{"code":"notTakingVotes"}"#),
         },
+        (Method::Post, "/api/word") => match word(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingWords"}"#),
+        },
+        (Method::Post, "/api/ask/vote") => match question_vote(shared, &mut request) {
+            Ok(()) => json(request, 200, "{}"),
+            Err(status) => json(request, status, r#"{"code":"notTakingVotes"}"#),
+        },
+        // A small picture of an input, for the Stream Deck's input keys.
+        (Method::Get, "/api/picture") => {
+            if let Err(status) = check_full(shared, &request, query) {
+                return json(request, status, pin_refused(status));
+            }
+            picture(shared, request, query);
+        }
         (method, p) if p == "/api/tally" || p.starts_with("/api/do/") => {
             if let Err(status) = check_full(shared, &request, query) {
                 return json(request, status, pin_refused(status));
@@ -1575,11 +1680,168 @@ fn open_polls(show: &serde_json::Value) -> Vec<serde_json::Value> {
                         "round": s["kind"]["round"],
                         "question": s["kind"]["question"],
                         "options": s["kind"]["options"],
+                        "kind": s["kind"]["kind"].as_str().unwrap_or("choice"),
                     })
                 })
                 .collect()
         })
         .unwrap_or_default()
+}
+
+/// Most questions the audience page lists.
+const PUBLIC_QUESTIONS: usize = 60;
+
+/// The questions the audience may see (approved; most votes first), and
+/// which of them this phone voted up.
+fn public_questions(show: &serde_json::Value, mine: Option<&HashSet<u32>>) -> serde_json::Value {
+    let qna: lumora_engine::qna::Qna =
+        serde_json::from_value(show["qna"].clone()).unwrap_or_default();
+    let list: Vec<serde_json::Value> = qna
+        .public()
+        .into_iter()
+        .take(PUBLIC_QUESTIONS)
+        .map(|q| {
+            serde_json::json!({
+                "id": q.id,
+                "author": q.author,
+                "text": q.text,
+                "votes": q.votes,
+                "answered": q.shown,
+                "mine": mine.is_some_and(|m| m.contains(&q.id)),
+            })
+        })
+        .collect();
+    serde_json::json!({
+        "open": qna.open,
+        "moderate": qna.moderate,
+        "list": list,
+    })
+}
+
+#[derive(Deserialize)]
+struct QuestionVote {
+    question: u32,
+    up: bool,
+    voter: String,
+}
+
+/// A phone votes a question up (once), or takes its vote back.
+fn question_vote(shared: &Shared, request: &mut Request) -> Result<(), u16> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| 400u16)?;
+    let v: QuestionVote = serde_json::from_str(&body).map_err(|_| 400u16)?;
+    if v.voter.is_empty() || v.voter.len() > 64 {
+        return Err(400);
+    }
+    let mut all = lock(&shared.question_votes);
+    if !all.contains_key(&v.voter) && all.len() >= 100_000 {
+        return Err(429);
+    }
+    let mine = all.entry(v.voter).or_default();
+    if mine.contains(&v.question) == v.up {
+        // Already so: nothing to change.
+        return Ok(());
+    }
+    shared
+        .backend
+        .apply(Action::QnaVote {
+            question: v.question,
+            up: v.up,
+        })
+        .map_err(|_| 409u16)?;
+    if v.up {
+        mine.insert(v.question);
+    } else {
+        mine.remove(&v.question);
+    }
+    Ok(())
+}
+
+/// Words each phone may send to one word cloud round.
+pub const WORDS_PER_PHONE: u8 = 3;
+
+#[derive(Deserialize)]
+struct WordIn {
+    id: String,
+    round: u32,
+    text: String,
+    voter: String,
+}
+
+/// A word for a word cloud: up to three from each phone each round, one a second.
+fn word(shared: &Shared, request: &mut Request) -> Result<(), u16> {
+    let mut body = String::new();
+    request
+        .as_reader()
+        .take(4096)
+        .read_to_string(&mut body)
+        .map_err(|_| 400u16)?;
+    let w: WordIn = serde_json::from_str(&body).map_err(|_| 400u16)?;
+    if w.voter.is_empty() || w.voter.len() > 64 {
+        return Err(400);
+    }
+    if lumora_engine::poll::clean_word(&w.text).is_none() {
+        return Err(400);
+    }
+    let now = now_ms();
+    let mut words = lock(&shared.words);
+    let round = words.entry((w.id.clone(), w.round)).or_default();
+    let (sent, last) = round.get(&w.voter).copied().unwrap_or((0, 0));
+    if sent >= WORDS_PER_PHONE || now.saturating_sub(last) < 1000 {
+        return Err(429);
+    }
+    if sent == 0 && round.len() >= 100_000 {
+        return Err(429);
+    }
+    shared
+        .backend
+        .apply(Action::PollWord {
+            id: lumora_engine::model::SourceId::new(w.id),
+            round: w.round,
+            text: w.text,
+        })
+        .map_err(|_| 409u16)?;
+    round.insert(w.voter, (sent + 1, now));
+    Ok(())
+}
+
+/// An input's small picture (JPEG): from the unified engine, else the
+/// newest one the control window drew; 204 while there is none yet.
+fn picture(shared: &Shared, request: Request, query: &str) {
+    let q = crate::control::parse_query(query);
+    let Some(id) = q
+        .iter()
+        .find(|(k, _)| k == "id")
+        .map(|(_, v)| v.clone())
+        .filter(|v| !v.is_empty() && v.len() <= 200)
+    else {
+        return json(request, 400, r#"{"code":"noInput"}"#);
+    };
+    let jpeg = shared
+        .backend
+        .engine_picture(&id)
+        .map(Arc::new)
+        .or_else(|| {
+            let now = std::time::Instant::now();
+            let mut p = lock(&shared.pictures);
+            if p.asked.len() < 500 || p.asked.contains_key(&id) {
+                p.asked.insert(id.clone(), now);
+            }
+            p.fresh(&id, now)
+        });
+    match jpeg {
+        Some(bytes) => {
+            let response = Response::from_data(bytes.to_vec())
+                .with_header(header("Content-Type", "image/jpeg"))
+                .with_header(header("Cache-Control", "no-store"));
+            let _ = request.respond(response);
+        }
+        None => respond(request, 204, "text/plain; charset=utf-8", ""),
+    }
 }
 
 #[derive(Deserialize)]
@@ -1588,6 +1850,9 @@ struct Vote {
     round: u32,
     option: usize,
     voter: String,
+    /// A rating's comment (optional; one per phone each round).
+    #[serde(default)]
+    comment: String,
 }
 
 fn vote(shared: &Shared, request: &mut Request) -> Result<(), u16> {
@@ -1601,24 +1866,46 @@ fn vote(shared: &Shared, request: &mut Request) -> Result<(), u16> {
     if v.voter.is_empty() || v.voter.len() > 64 {
         return Err(400);
     }
-    let mut votes = lock(&shared.votes);
-    let round = votes.entry((v.id.clone(), v.round)).or_default();
-    let previous = round.get(&v.voter).copied();
-    if previous == Some(v.option) {
-        return Ok(());
+    {
+        let mut votes = lock(&shared.votes);
+        let round = votes.entry((v.id.clone(), v.round)).or_default();
+        let previous = round.get(&v.voter).copied();
+        if previous != Some(v.option) {
+            // Keep the memory small: a very big crowd still fits.
+            if previous.is_none() && round.len() >= 100_000 {
+                return Err(429);
+            }
+            let action = Action::PollVote {
+                id: lumora_engine::model::SourceId::new(v.id.clone()),
+                round: v.round,
+                option: v.option,
+                previous,
+            };
+            shared.backend.apply(action).map_err(|_| 409u16)?;
+            round.insert(v.voter.clone(), v.option);
+        }
     }
-    // Keep the memory small: a very big crowd still fits.
-    if previous.is_none() && round.len() >= 100_000 {
-        return Err(429);
+    // A rating may come with a comment: the first from each phone counts.
+    if !v.comment.trim().is_empty() {
+        let key = (v.id.clone(), v.round, v.voter);
+        let mut done = lock(&shared.commented);
+        if done.contains(&key) {
+            return Err(429);
+        }
+        if done.len() >= 200_000 {
+            done.clear();
+        }
+        shared
+            .backend
+            .apply(Action::PollComment {
+                id: lumora_engine::model::SourceId::new(v.id),
+                round: v.round,
+                stars: u8::try_from(v.option + 1).unwrap_or(0),
+                text: v.comment,
+            })
+            .map_err(|_| 409u16)?;
+        done.insert(key);
     }
-    let action = Action::PollVote {
-        id: lumora_engine::model::SourceId::new(v.id),
-        round: v.round,
-        option: v.option,
-        previous,
-    };
-    shared.backend.apply(action).map_err(|_| 409u16)?;
-    round.insert(v.voter, v.option);
     Ok(())
 }
 
@@ -1942,8 +2229,9 @@ mod tests {
             body.len()
         )
         .unwrap();
-        let mut text = String::new();
-        s.read_to_string(&mut text).unwrap();
+        let mut raw = Vec::new();
+        s.read_to_end(&mut raw).unwrap();
+        let text = String::from_utf8_lossy(&raw).into_owned();
         let status = text[9..12].parse().unwrap();
         let body = text
             .split_once("\r\n\r\n")
@@ -2074,6 +2362,162 @@ mod tests {
             lock(&fake.engine).show().qna.questions[0].text,
             "When is the break?"
         );
+    }
+
+    fn add_poll(fake: &Fake, kind: &str) {
+        let mut e = lock(&fake.engine);
+        e.apply(
+            Action::AddSource {
+                source: serde_json::from_value(serde_json::json!({
+                    "id": "p", "name": "Poll", "kind": {"type": "poll", "kind": kind}
+                }))
+                .unwrap(),
+            },
+            1,
+        )
+        .unwrap();
+        e.apply(
+            Action::PollOpen {
+                id: lumora_engine::model::SourceId::new("p"),
+                value: true,
+            },
+            2,
+        )
+        .unwrap();
+    }
+
+    fn the_poll(fake: &Fake) -> lumora_engine::poll::Poll {
+        match &lock(&fake.engine).show().sources[0].kind {
+            lumora_engine::SourceKind::Poll(p) => (**p).clone(),
+            _ => unreachable!(),
+        }
+    }
+
+    #[test]
+    fn phones_send_up_to_three_words_to_a_word_cloud() {
+        let (r, fake) = remote();
+        let port = r.set_enabled(true).port.unwrap();
+        add_poll(&fake, "words");
+        let round = the_poll(&fake).round;
+        let (_, list) = request(port, "GET", "/api/polls", "", "");
+        assert!(list.contains(r#""kind":"words""#), "{list}");
+        let send = |text: &str, voter: &str| {
+            let body = serde_json::json!({"id": "p", "round": round, "text": text, "voter": voter});
+            request(port, "POST", "/api/word", "", &body.to_string()).0
+        };
+        assert_eq!(send("Joy", "a"), 200);
+        assert_eq!(send("calm", "a"), 429, "one a second");
+        assert_eq!(send("  ", "b"), 400);
+        assert_eq!(send("joy", "b"), 200);
+        let p = the_poll(&fake);
+        assert_eq!((p.words.len(), p.words[0].count), (1, 2));
+        // The fourth word from one phone is refused.
+        let mut words = lock(&r.shared.words);
+        words
+            .get_mut(&("p".to_owned(), round))
+            .unwrap()
+            .insert("a".to_owned(), (WORDS_PER_PHONE, 0));
+        drop(words);
+        assert_eq!(send("more", "a"), 429);
+    }
+
+    #[test]
+    fn ratings_take_stars_and_one_comment_from_each_phone() {
+        let (r, fake) = remote();
+        let port = r.set_enabled(true).port.unwrap();
+        add_poll(&fake, "rating");
+        let round = the_poll(&fake).round;
+        let rate = |option: usize, voter: &str, comment: &str| {
+            let body = serde_json::json!({"id": "p", "round": round, "option": option, "voter": voter, "comment": comment});
+            request(port, "POST", "/api/vote", "", &body.to_string()).0
+        };
+        assert_eq!(rate(4, "a", "Great talk"), 200);
+        assert_eq!(rate(4, "a", "Again"), 429, "one comment each");
+        assert_eq!(rate(2, "b", ""), 200);
+        let p = the_poll(&fake);
+        assert_eq!(p.votes, vec![0, 0, 1, 0, 1]);
+        assert_eq!(p.comments.len(), 1);
+        assert_eq!(
+            (p.comments[0].stars, p.comments[0].text.as_str()),
+            (5, "Great talk")
+        );
+    }
+
+    #[test]
+    fn phones_vote_questions_up_once_and_see_only_approved_ones() {
+        let (r, fake) = remote();
+        let port = r.set_enabled(true).port.unwrap();
+        lock(&fake.engine)
+            .apply(Action::QnaOpen { value: true }, 1)
+            .unwrap();
+        let ask = r#"{"author":"Ana","text":"Will the slides be shared?","voter":"a"}"#;
+        assert_eq!(request(port, "POST", "/api/ask", "", ask).0, 200);
+        let aud = request(port, "GET", "/api/audience?voter=b", "", "").1;
+        assert!(aud.contains("Will the slides be shared?"), "{aud}");
+        let up = |voter: &str, up: bool| {
+            let body = serde_json::json!({"question": 1, "up": up, "voter": voter});
+            request(port, "POST", "/api/ask/vote", "", &body.to_string()).0
+        };
+        assert_eq!(up("b", true), 200);
+        assert_eq!(up("b", true), 200, "twice counts once");
+        assert_eq!(up("c", true), 200);
+        assert_eq!(lock(&fake.engine).show().qna.questions[0].votes, 2);
+        assert_eq!(up("c", false), 200, "taken back");
+        assert_eq!(lock(&fake.engine).show().qna.questions[0].votes, 1);
+        let mine = request(port, "GET", "/api/audience?voter=b", "", "").1;
+        assert!(mine.contains(r#""mine":true"#), "{mine}");
+
+        // Held for approval: nobody sees it, nobody can vote for it.
+        lock(&fake.engine)
+            .apply(Action::QnaModerate { value: true }, 2)
+            .unwrap();
+        let held = r#"{"author":"","text":"Something rude","voter":"d"}"#;
+        assert_eq!(request(port, "POST", "/api/ask", "", held).0, 200);
+        assert!(!request(port, "GET", "/api/audience", "", "")
+            .1
+            .contains("Something rude"));
+        let body = serde_json::json!({"question": 2, "up": true, "voter": "e"});
+        assert_eq!(
+            request(port, "POST", "/api/ask/vote", "", &body.to_string()).0,
+            409
+        );
+        lock(&fake.engine)
+            .apply(
+                Action::QnaApprove {
+                    question: 2,
+                    value: true,
+                },
+                3,
+            )
+            .unwrap();
+        assert!(request(port, "GET", "/api/audience", "", "")
+            .1
+            .contains("Something rude"));
+    }
+
+    #[test]
+    fn control_surfaces_get_input_pictures_from_the_control_window() {
+        let (r, _) = remote();
+        let port = r.set_enabled(true).port.unwrap();
+        let pin = r.status().pin;
+        assert_eq!(
+            request(port, "GET", "/api/picture?id=cam", "0000x", "").0,
+            401
+        );
+        assert!(r.pictures_wanted().is_empty());
+        assert!(
+            !r.put_picture("cam", vec![0xFF, 0xD8, 0xFF, 1]),
+            "nobody asked"
+        );
+        assert_eq!(request(port, "GET", "/api/picture?id=cam", &pin, "").0, 204);
+        assert_eq!(r.pictures_wanted(), ["cam"]);
+        assert!(!r.put_picture("cam", b"not a jpeg".to_vec()));
+        assert!(!r.put_picture("cam", vec![0xFF; MAX_PICTURE + 1]));
+        assert!(r.put_picture("cam", vec![0xFF, 0xD8, 0xFF, 1]));
+        let (status, body) = request(port, "GET", "/api/picture?id=cam", &pin, "");
+        assert_eq!(status, 200);
+        assert!(!body.is_empty());
+        assert_eq!(request(port, "GET", "/api/picture", &pin, "").0, 400);
     }
 
     #[test]

@@ -11,7 +11,7 @@ import { fromTemplate } from '../engine/graphic';
 import { fromTemplate as fromTitlerTemplate, starterTemplates } from '../../../titler/src/core/templates';
 import { titlerKind } from '../titler/titlerSource';
 import { newRoom } from '../engine/guest';
-import { defaultPoll } from '../engine/poll';
+import { defaultPoll, newPoll, POLL_QUESTION } from '../engine/poll';
 import { defaultLyrics, sections } from '../engine/lyrics';
 import { CapturePicker } from './CapturePicker';
 import { DeckLinkPicker } from './DeckLinkPicker';
@@ -41,7 +41,7 @@ import { defaultSplit } from '../engine/split';
 import type { Split } from '../engine/types/Split';
 
 /** What can be added; a sound file is stored as a video source that is never shown, a capture card as a stream input. */
-type Kind = SourceKind['type'] | 'sound' | 'decklink';
+type Kind = SourceKind['type'] | 'sound' | 'decklink' | 'wordcloud' | 'rating';
 
 const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'camera', name: 'Camera', hint: 'Webcam, capture card or phone' },
@@ -71,6 +71,8 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'comment', name: 'Chat comments', hint: 'Comments from the YouTube, Twitch or Facebook live chat, on screen' },
   { kind: 'drawing', name: 'Drawing on screen', hint: 'Draw lines and arrows over the picture, live (a telestrator)' },
   { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
+  { kind: 'wordcloud', name: 'Word cloud', hint: 'People send a word or two; the most sent are drawn biggest' },
+  { kind: 'rating', name: 'Rating', hint: 'One to five stars from phones, with comments; the average on screen' },
   { kind: 'lyrics', name: 'Song lyrics', hint: 'The words of a song, a verse at a time' },
   { kind: 'screen', name: 'Screen capture', hint: 'A display or one window of this computer' },
   { kind: 'scoreboard', name: 'Scoreboard', hint: 'Teams, scores, period and game clock' },
@@ -89,7 +91,7 @@ const GROUPS: { name: string; kinds: Kind[] }[] = [
     name: 'Text and titles',
     kinds: ['text', 'titler', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'drawing', 'pesukim', 'scripture', 'zmanim'],
   },
-  { name: 'The audience’s phones', kinds: ['poll', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
+  { name: 'The audience’s phones', kinds: ['poll', 'wordcloud', 'rating', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
   { name: 'Layouts and visuals', kinds: ['split', 'visuals', 'logo3d'] },
   { name: 'Sound', kinds: ['microphone', 'sound'] },
 ];
@@ -275,6 +277,10 @@ export function AddInput({
           ? { name: n || words.trim().slice(0, 40), kind: { type: 'poll', ...defaultPoll(), question: words.trim(), options, votes: options.map(() => 0) } }
           : null;
       }
+      case 'wordcloud':
+        return { name: n || 'Word cloud', kind: { type: 'poll', ...newPoll('words', words) } };
+      case 'rating':
+        return { name: n || 'Rating', kind: { type: 'poll', ...newPoll('rating', words) } };
       case 'lyrics':
         return sections(words).length
           ? { name: n || words.trim().split('\n')[0]!.slice(0, 40), kind: { type: 'lyrics', ...defaultLyrics(), title: n, text: words } }
@@ -517,6 +523,28 @@ export function AddInput({
                 <span className="field__note">
                   People vote from their phones on the venue Wi-Fi — the phone remote has to be on (Settings → Phone remote). The code to scan shows on screen
                   while voting is open.
+                </span>
+              </>
+            )}
+            {(kind === 'wordcloud' || kind === 'rating') && (
+              <>
+                <label className="field">
+                  <span className="field__label">Question</span>
+                  <input
+                    className="text"
+                    dir="auto"
+                    value={words}
+                    placeholder={POLL_QUESTION[kind === 'wordcloud' ? 'words' : 'rating']}
+                    onChange={(e) => setWords(e.target.value)}
+                    aria-label="Question"
+                    autoFocus
+                  />
+                </label>
+                <span className="field__note">
+                  {kind === 'wordcloud'
+                    ? 'Each phone sends up to three words or short phrases; the most sent are drawn biggest. You can take any word out of the cloud.'
+                    : 'Each phone gives one to five stars and may add a comment for you; the average and how the stars were given show on screen.'}{' '}
+                  The phone remote has to be on (Settings → Phone remote).
                 </span>
               </>
             )}

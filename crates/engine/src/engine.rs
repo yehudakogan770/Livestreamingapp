@@ -1203,6 +1203,30 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             }
             Ok(())
         }
+        Action::QnaModerate { value } => {
+            s.qna.moderate = value;
+            Ok(())
+        }
+        Action::QnaApprove { question, value } => {
+            let q = s
+                .qna
+                .questions
+                .iter_mut()
+                .find(|q| q.id == question)
+                .ok_or_else(|| ActionError::invalid("question", "there is no such question"))?;
+            q.approved = value;
+            Ok(())
+        }
+        Action::QnaVote { question, up } => {
+            if s.qna.vote(question, up) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid(
+                    "question",
+                    "that question is not taking votes",
+                ))
+            }
+        }
         Action::ReloadGuest { id } => {
             let src = s
                 .source_mut(&id)
@@ -1259,8 +1283,10 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
             let p = poll_mut(s, &id)?;
             let mut next = poll;
             next.repair();
-            let same = next.options == p.options;
+            let same = next.options == p.options && next.kind == p.kind;
             next.votes.clone_from(&p.votes);
+            next.words.clone_from(&p.words);
+            next.comments.clone_from(&p.comments);
             next.round = p.round;
             next.open = p.open;
             if !same {
@@ -1293,6 +1319,35 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 Err(ActionError::invalid(
                     "poll",
                     "this poll is not taking votes",
+                ))
+            }
+        }
+        Action::PollWord { id, round, text } => {
+            if poll_mut(s, &id)?.word(round, &text) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid(
+                    "poll",
+                    "this word cloud is not taking words",
+                ))
+            }
+        }
+        Action::PollWordRemove { id, word } => {
+            poll_mut(s, &id)?.remove_word(&word);
+            Ok(())
+        }
+        Action::PollComment {
+            id,
+            round,
+            stars,
+            text,
+        } => {
+            if poll_mut(s, &id)?.comment(round, stars, &text, now) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid(
+                    "poll",
+                    "this rating is not taking comments",
                 ))
             }
         }

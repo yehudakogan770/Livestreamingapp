@@ -739,22 +739,29 @@ pub fn live_engine_vision_result(
     r.vision(bytes)
 }
 
+impl Live {
+    /// A preview tile as JPEG (`program/live`, `next/back`, `source/<id>`), once the engine has drawn one.
+    pub(crate) fn preview_jpeg(&self, key: &str) -> Option<Vec<u8>> {
+        let p = self.runner()?.preview(key)?;
+        let (w, h) = (u16::try_from(p.width).ok()?, u16::try_from(p.height).ok()?);
+        let mut out = Vec::new();
+        jpeg_encoder::Encoder::new(&mut out, 80)
+            .encode(&p.rgba, w, h, jpeg_encoder::ColorType::Rgba)
+            .ok()?;
+        Some(out)
+    }
+
+    /// Input `id`'s small picture (control surfaces' input keys), while the
+    /// unified engine runs.
+    pub(crate) fn source_picture(&self, id: &str) -> Option<Vec<u8>> {
+        self.preview_jpeg(&format!("source/{id}"))
+    }
+}
+
 /// A preview tile as JPEG (`program/live`, `next/back`, `source/<id>`); empty when there is none yet.
 #[tauri::command]
 pub fn live_engine_preview(key: String, live: State<'_, Live>) -> tauri::ipc::Response {
-    let jpeg = live
-        .runner()
-        .and_then(|r| r.preview(&key))
-        .and_then(|p| {
-            let (w, h) = (u16::try_from(p.width).ok()?, u16::try_from(p.height).ok()?);
-            let mut out = Vec::new();
-            jpeg_encoder::Encoder::new(&mut out, 80)
-                .encode(&p.rgba, w, h, jpeg_encoder::ColorType::Rgba)
-                .ok()?;
-            Some(out)
-        })
-        .unwrap_or_default();
-    tauri::ipc::Response::new(jpeg)
+    tauri::ipc::Response::new(live.preview_jpeg(&key).unwrap_or_default())
 }
 
 /// Each input's health as the engine sees it (the backup lineup's watch in Unified mode).

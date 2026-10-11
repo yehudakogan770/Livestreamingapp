@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Download, Play, Square, ThumbsUp, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { audienceAddress } from './JoinSetup';
 import type { Show } from '../engine/types/Show';
@@ -7,6 +7,8 @@ import { setThanksOn, useThanksOn } from '../engine/chatThanks';
 import type { Act } from './act';
 import type { NewSource } from '../engine/types/NewSource';
 import type { EngineClient, RemoteStatus } from '../engine/client';
+import { sortQuestions, type QuestionOrder } from '../engine/questions';
+import { csvName, questionRows, toCsv } from '../engine/audienceExport';
 import './ChatPanel.css';
 
 const KEY_STORE = 'lumora.youtubeKey';
@@ -89,7 +91,7 @@ export function ChatPanel({
         </button>
       </header>
       {tab === 'questions' ? (
-        <Questions show={show} act={act} card={card?.id ?? null} remote={remote} onRemote={() => void client.setRemote(true)} />
+        <Questions show={show} act={act} card={card?.id ?? null} remote={remote} onRemote={() => void client.setRemote(true)} client={client} />
       ) : (
         <>
           <div className="chat__connect">
@@ -217,20 +219,66 @@ export function ChatPanel({
   );
 }
 
-/** Audience questions from phones: show one on screen, or let it go. */
-function Questions({ show, act, card, remote, onRemote }: { show: Show; act: Act; card: string | null; remote: RemoteStatus | null; onRemote: () => void }) {
-  const qna = show.qna ?? { open: false, questions: [], nextId: 0 };
-  const list = useRef<HTMLOListElement>(null);
+/** Audience questions from phones: approve them (when held), see the votes, show one on screen, or let it go. */
+function Questions({
+  show,
+  act,
+  card,
+  remote,
+  onRemote,
+  client,
+}: {
+  show: Show;
+  act: Act;
+  card: string | null;
+  remote: RemoteStatus | null;
+  onRemote: () => void;
+  client: EngineClient;
+}) {
+  const qna = show.qna ?? { open: false, questions: [], nextId: 0, moderate: false };
+  const [order, setOrder] = useState<QuestionOrder>('votes');
+  const [saved, setSaved] = useState<string | null>(null);
+  const list = sortQuestions(qna.questions, order);
+  const waiting = qna.questions.filter((q) => !q.approved).length;
+  const exportCsv = async () => {
+    try {
+      const where = await client.saveCsv(csvName('Questions'), toCsv(questionRows(qna)));
+      if (where) setSaved(`Saved to ${where}`);
+    } catch (e) {
+      setSaved(`Not saved: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
   return (
     <>
       <div className="chat__row">
         <button type="button" className={`btn btn--small${qna.open ? ' is-on' : ' btn--primary'}`} onClick={() => act({ type: 'qnaOpen', value: !qna.open })}>
-          {qna.open ? '■ Stop taking questions' : '▶ Take questions'}
+          {qna.open ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
+          {qna.open ? 'Stop taking questions' : 'Take questions'}
+        </button>
+        <span className="remote__spacer" />
+        <button
+          type="button"
+          className="btn btn--small"
+          disabled={!qna.questions.length}
+          onClick={() => void exportCsv()}
+          title="Save every question as a spreadsheet"
+        >
+          <Download aria-hidden="true" />
+          Export
         </button>
         <button type="button" className="btn btn--small" disabled={!qna.questions.length} onClick={() => act({ type: 'qnaRemove' })}>
           Clear all
         </button>
       </div>
+      <label className="check">
+        <input type="checkbox" checked={qna.moderate} onChange={(e) => act({ type: 'qnaModerate', value: e.target.checked })} /> Hold new questions until I
+        approve them
+      </label>
+      {saved && (
+        <p className="field__note" role="status">
+          {saved}
+        </p>
+      )}
       {!audienceAddress(remote) ? (
         <p className="field__note field__note--warn">
           Phones send questions through the phone remote, which is off.{' '}
@@ -240,28 +288,52 @@ function Questions({ show, act, card, remote, onRemote }: { show: Show; act: Act
         </p>
       ) : (
         <p className="field__note">
-          People send questions at <b>{audienceAddress(remote)?.voteUrl}</b> (the same page as polls; show its code with a poll input).
+          People ask and vote questions up at <b>{audienceAddress(remote)?.voteUrl}</b> (the same page as polls; show its code with a poll input).
         </p>
       )}
       {!card && <p className="field__note field__note--warn">Make a chat comments input (Live chat tab) to show questions on screen.</p>}
-      <ol ref={list} className="chat__list">
-        {qna.questions.length === 0 && <li className="chat__empty">{qna.open ? 'Waiting for questions…' : 'Press “Take questions” to start.'}</li>}
-        {[...qna.questions].reverse().map((q) => (
-          <li key={q.id} className={`chat__msg${q.shown ? ' is-shown' : ''}`}>
+      <div className="chat__row" role="radiogroup" aria-label="Order">
+        <span className="chat__label">{waiting ? `${waiting} waiting for approval` : `${qna.questions.length} questions`}</span>
+        {(['votes', 'newest'] as const).map((o) => (
+          <button key={o} type="button" role="radio" aria-checked={order === o} className="seg" onClick={() => setOrder(o)}>
+            {o === 'votes' ? 'Most votes' : 'Newest'}
+          </button>
+        ))}
+      </div>
+      <ol className="chat__list">
+        {list.length === 0 && <li className="chat__empty">{qna.open ? 'Waiting for questions…' : 'Press “Take questions” to start.'}</li>}
+        {list.map((q) => (
+          <li key={q.id} className={`chat__msg chat__msg--q${q.shown ? ' is-shown' : ''}${q.approved ? '' : ' is-held'}`}>
             <div className="chat__who" dir="auto">
               {q.author || 'No name'} <small>{new Date(q.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+              {!q.approved && <span className="chat__badge">Waiting</span>}
             </div>
             <div className="chat__text" dir="auto">
               {q.text}
             </div>
-            <span className="chat__show">
+            <div className="chat__qbar">
+              <span className="chat__votes" title="Phones that voted it up">
+                <ThumbsUp aria-hidden="true" /> {q.votes}
+              </span>
+              <span className="remote__spacer" />
+              {q.approved ? (
+                qna.moderate && (
+                  <button type="button" className="btn btn--small" onClick={() => act({ type: 'qnaApprove', question: q.id, value: false })}>
+                    Hide from phones
+                  </button>
+                )
+              ) : (
+                <button type="button" className="btn btn--small btn--primary" onClick={() => act({ type: 'qnaApprove', question: q.id, value: true })}>
+                  Approve
+                </button>
+              )}
               <button type="button" className="btn btn--small" disabled={!card} onClick={() => card && act({ type: 'qnaShow', question: q.id, id: card })}>
-                {q.shown ? 'Again' : 'Show'}
+                {q.shown ? 'Show again' : 'Show'}
               </button>
-              <button type="button" className="icon" aria-label="Let it go" onClick={() => act({ type: 'qnaRemove', question: q.id })}>
+              <button type="button" className="icon" aria-label="Let it go" title="Let it go" onClick={() => act({ type: 'qnaRemove', question: q.id })}>
                 <X aria-hidden="true" />
               </button>
-            </span>
+            </div>
           </li>
         ))}
       </ol>

@@ -153,6 +153,9 @@ export type Action =
   | { type: 'qnaAsk'; author: string; text: string }
   | { type: 'qnaShow'; question: number; id: SourceId }
   | { type: 'qnaRemove'; question?: number }
+  | { type: 'qnaModerate'; value: boolean }
+  | { type: 'qnaApprove'; question: number; value: boolean }
+  | { type: 'qnaVote'; question: number; up: boolean }
   | { type: 'reloadGuest'; id: SourceId }
   | { type: 'showComment'; id: SourceId; comment?: ChatComment }
   | { type: 'drawStroke'; id: SourceId; stroke: Stroke }
@@ -165,6 +168,9 @@ export type Action =
   | { type: 'pollShowResults'; id: SourceId; value: boolean }
   | { type: 'pollReset'; id: SourceId }
   | { type: 'pollVote'; id: SourceId; round: number; option: number; previous?: number }
+  | { type: 'pollWord'; id: SourceId; round: number; text: string }
+  | { type: 'pollWordRemove'; id: SourceId; word: string }
+  | { type: 'pollComment'; id: SourceId; round: number; stars: number; text: string }
   | { type: 'applyBrand'; brand: Brand }
   | { type: 'updateLyrics'; id: SourceId; lyrics: Lyrics }
   | { type: 'lyricsGo'; id: SourceId; index: number }
