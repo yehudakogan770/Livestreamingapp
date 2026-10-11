@@ -123,8 +123,10 @@ export function ShareDialog({
                         {initials(p.name || p.email)}
                       </span>
                       <span className="person__id">
-                        <b>{p.name || p.email}</b>
-                        {p.userId === me && <span className="muted"> (you)</span>}
+                        <span>
+                          <b>{p.name || p.email}</b>
+                          {p.userId === me && <span className="muted"> (you)</span>}
+                        </span>
                         <div className="muted small">{p.email}</div>
                       </span>
                     </span>
