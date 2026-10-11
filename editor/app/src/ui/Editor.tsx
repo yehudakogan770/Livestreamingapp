@@ -610,7 +610,7 @@ export function Editor({
         </button>
         <span className={`ed__saved${problemShown ? ' is-problem' : ''}`} title={savedText}>
           {problemShown ? <CircleAlert /> : savedText === 'Saved' ? <Check /> : <Save />}
-          {savedText}
+          <span>{savedText}</span>
         </span>
         <QueueChip ui={ui} />
         <button type="button" className="btn btn--primary ed__export" onClick={() => ui.set({ dialog: 'export' })} title="Make the finished film (Ctrl+M)">

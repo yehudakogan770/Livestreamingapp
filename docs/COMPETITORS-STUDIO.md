@@ -11,7 +11,7 @@ Blackmagic and Adobe forums, Trustpilot).
 The goal from the owner: **every meaningful tool any of them has, Studio has
 too, plus what none of them has**, polished, tested, and hidden until ready.
 
-Key: ✅ has it · ◐ partly · ❌ doesn't · **new** = built in this round.
+Key: ✅ has it · ◐ partly · ❌ doesn't · = built in this round.
 
 Columns: **St** Lumora Studio · **Re** DaVinci Resolve · **Pr** Premiere Pro ·
 **FC** Final Cut Pro · **Av** Avid Media Composer · **CC** CapCut desktop ·
@@ -23,58 +23,58 @@ Columns: **St** Lumora Studio · **Re** DaVinci Resolve · **Pr** Premiere Pro �
 
 ### Editing and the timeline
 
-| Tool                                                          | St  | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
-| ------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Many video and sound tracks, insert, overwrite, lift, extract | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ◐   | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
-| Source monitor, in and out marks, three-point editing         | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ◐   |
-| Ripple, roll, slip and slide trims                            | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ✅  | ✅  |
-| Nested sequences (compound clips)                             | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  | ✅  | ❌  |
-| Adjustment layers                                             | ✅  | ✅  | ✅  | ◐   | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  |
-| Keyframes with a curve (graph) editor                         | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ✅  | ✅  |
-| Speed ramps, freeze, reverse, optical-flow slow motion        | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ◐   | ✅  | ◐   | ✅  | ✅  |
-| Markers, chapters, undo history                               | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ✅  | ◐   | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
-| Your own keyboard shortcuts and workspaces                    | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ◐   | ❌  | ❌  | ◐   | ◐   | ◐   | ✅  | ❌  |
-| Magnetic (gapless) timeline                                   | ◐   | ◐   | ❌  | ✅  | ❌  | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ◐   | ❌  | ✅  |
+| Tool                                                          | St         | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
+| ------------------------------------------------------------- | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Many video and sound tracks, insert, overwrite, lift, extract | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ◐   | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Source monitor, in and out marks, three-point editing         | ✅         | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ◐   |
+| Ripple, roll, slip and slide trims                            | ✅         | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ✅  | ✅  |
+| Nested sequences (compound clips)                             | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  | ✅  | ❌  |
+| Adjustment layers                                             | ✅         | ✅  | ✅  | ◐   | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  |
+| Keyframes with a curve (graph) editor                         | ✅         | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ✅  | ✅  |
+| Speed ramps, freeze, reverse, optical-flow slow motion        | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ◐   | ✅  | ◐   | ✅  | ✅  |
+| Markers, chapters, undo history                               | ✅         | ✅  | ✅  | ✅  | ✅  | ◐   | ✅  | ◐   | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Your own keyboard shortcuts and workspaces                    | ✅         | ✅  | ✅  | ✅  | ✅  | ❌  | ◐   | ❌  | ❌  | ◐   | ◐   | ◐   | ✅  | ❌  |
+| Magnetic (gapless) timeline                                   | ✅ **new** | ◐   | ❌  | ✅  | ❌  | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ◐   | ❌  | ✅  |
 
 ### Multicam
 
-| Tool                                                                                      | St         | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
-| ----------------------------------------------------------------------------------------- | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Multicam clip with a camera wall to cut live                                              | ✅         | ✅  | ✅  | ✅  | ✅  | ❌  | ◐   | ◐   | ❌  | ❌  | ✅  | ❌  | ◐   | ✅  |
-| Line files up by their sound                                                              | ✅ **new** | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ✅  | ✅  |
-| Line files up by timecode (or recording time)                                             | ✅ **new** | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ❌  |
-| Cut between cameras by who is talking                                                     | ✅         | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
-| A whole recorded event opens as one edit (every camera, the live switch as the first cut) | ✅         | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| Tool                                                                                      | St  | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
+| ----------------------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Multicam clip with a camera wall to cut live                                              | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ◐   | ◐   | ❌  | ❌  | ✅  | ❌  | ◐   | ✅  |
+| Line files up by their sound                                                              | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ✅  | ✅  |
+| Line files up by timecode (or recording time)                                             | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ❌  |
+| Cut between cameras by who is talking                                                     | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| A whole recorded event opens as one edit (every camera, the live switch as the first cut) | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
 
 ### Speech, AI and text-based editing
 
-| Tool                                                                 | St                        | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
-| -------------------------------------------------------------------- | ------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Transcription on this computer (no upload, no credits)               | ✅                        | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  |
-| Edit by deleting words in the transcript                             | ✅                        | ✅  | ✅  | ❌  | ❌  | ◐   | ✅  | ✅  | ◐   | ❌  | ◐   | ❌  | ❌  | ❌  |
-| Who is speaking, named in the transcript                             | ◐ **new** (by microphone) | ✅  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  |
-| Remove filler words and silences                                     | ✅                        | ✅  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  |
-| Speech enhancement, voice isolation                                  | ◐                         | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ✅  | ◐   | ✅  | ✅  | ❌  | ◐   | ◐   |
-| Auto reframe to vertical or square, following people                 | ✅                        | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ❌  | ❌  | ❌  |
-| Scene (shot) detection                                               | ✅                        | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ❌  |
-| Search footage by what is said and what is seen                      | ✅                        | ✅  | ✅  | ◐   | ◐   | ❌  | ✅  | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  |
-| AI masks (person, object)                                            | ✅                        | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ❌  | ✅  | ✅  | ❌  | ◐   | ❌  |
-| Auto color match between shots                                       | ✅                        | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  |
-| Music: beats, cut to the beat, fit music to length                   | ✅                        | ✅  | ✅  | ◐   | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ◐   |
-| Translate captions                                                   | ✅ (offline)              | ✅  | ✅  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  |
-| Generative extend, text-to-video, AI voices and dubbing, eye contact | ❌                        | ◐   | ✅  | ❌  | ❌  | ✅  | ✅  | ✅  | ◐   | ✅  | ✅  | ❌  | ❌  | ❌  |
-| Rough cut from a written script, other takes kept                    | ✅ **new**                | ✅  | ◐   | ❌  | ✅  | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| Tool                                                                 | St                                          | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
+| -------------------------------------------------------------------- | ------------------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Transcription on this computer (no upload, no credits)               | ✅                                          | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  |
+| Edit by deleting words in the transcript                             | ✅                                          | ✅  | ✅  | ❌  | ❌  | ◐   | ✅  | ✅  | ◐   | ❌  | ◐   | ❌  | ❌  | ❌  |
+| Who is speaking, named in the transcript                             | ✅ **new** (by voice or microphone)         | ✅  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  |
+| Remove filler words and silences                                     | ✅                                          | ✅  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  |
+| Speech enhancement, voice isolation                                  | ✅ **new** (neural model, on this computer) | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ✅  | ◐   | ✅  | ✅  | ❌  | ◐   | ◐   |
+| Auto reframe to vertical or square, following people                 | ✅                                          | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ❌  | ❌  | ❌  |
+| Scene (shot) detection                                               | ✅                                          | ✅  | ✅  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ❌  |
+| Search footage by what is said and what is seen                      | ✅                                          | ✅  | ✅  | ◐   | ◐   | ❌  | ✅  | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  |
+| AI masks (person, object)                                            | ✅                                          | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ❌  | ✅  | ✅  | ❌  | ◐   | ❌  |
+| Auto color match between shots                                       | ✅                                          | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ❌  |
+| Music: beats, cut to the beat, fit music to length                   | ✅                                          | ✅  | ✅  | ◐   | ❌  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ◐   |
+| Translate captions                                                   | ✅ (offline)                                | ✅  | ✅  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  |
+| Generative extend, text-to-video, AI voices and dubbing, eye contact | ❌                                          | ◐   | ✅  | ❌  | ❌  | ✅  | ✅  | ✅  | ◐   | ✅  | ✅  | ❌  | ❌  | ❌  |
+| Rough cut from a written script, other takes kept                    | ✅                                          | ✅  | ◐   | ❌  | ✅  | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
 
 ### Short-form and social
 
-| Tool                                                                              | St         | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
-| --------------------------------------------------------------------------------- | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Find the best clips, ranked, on whole sentences                                   | ✅ **new** | ❌  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ❌  | ❌  | ❌  |
-| Captions that light up word by word (tasteful looks)                              | ✅ **new** | ✅  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  |
-| Each clip vertical, framed on the speaker, captioned, queued for export in one go | ✅ **new** | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ✅  | ✅  | ❌  | ✅  | ❌  | ❌  | ❌  |
-| Highlight reel                                                                    | ✅         | ❌  | ❌  | ❌  | ❌  | ◐   | ❌  | ◐   | ◐   | ❌  | ◐   | ❌  | ❌  | ❌  |
-| One click from a whole event to the edit, captions, chapters, reel and clips      | ✅ **new** | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  |
-| B-roll put in automatically                                                       | ❌         | ❌  | ❌  | ❌  | ❌  | ✅  | ◐   | ❌  | ✅  | ❌  | ◐   | ❌  | ❌  | ❌  |
+| Tool                                                                              | St                              | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
+| --------------------------------------------------------------------------------- | ------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Find the best clips, ranked, on whole sentences                                   | ✅                              | ❌  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ❌  | ❌  | ❌  |
+| Captions that light up word by word (tasteful looks)                              | ✅                              | ✅  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  |
+| Each clip vertical, framed on the speaker, captioned, queued for export in one go | ✅                              | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ✅  | ✅  | ❌  | ✅  | ❌  | ❌  | ❌  |
+| Highlight reel                                                                    | ✅                              | ❌  | ❌  | ❌  | ❌  | ◐   | ❌  | ◐   | ◐   | ❌  | ◐   | ❌  | ❌  | ❌  |
+| One click from a whole event to the edit, captions, chapters, reel and clips      | ✅                              | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ❌  |
+| B-roll put in automatically                                                       | ◐ **new** (from your own media) | ❌  | ❌  | ❌  | ❌  | ✅  | ◐   | ❌  | ✅  | ❌  | ◐   | ❌  | ❌  | ❌  |
 
 ### Captions
 
@@ -85,43 +85,43 @@ Columns: **St** Lumora Studio · **Re** DaVinci Resolve · **Pr** Premiere Pro �
 
 ### Sound (Fairlight-level basics)
 
-| Tool                                            | St         | Re  | Pr  | FC        | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
-| ----------------------------------------------- | ---------- | --- | --- | --------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Mixer with faders and meters                    | ✅         | ✅  | ✅  | ◐         | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ✅  | ✅  |
-| EQ and dynamics on each track, with curves      | ✅ **new** | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ✅  | ◐   |
-| Buses (submixes) and the whole mix's processing | ✅ **new** | ✅  | ✅  | ◐ (roles) | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
-| Loudness to a target with a measured report     | ✅         | ✅  | ✅  | ◐         | ✅  | ❌  | ✅  | ✅  | ❌  | ◐   | ◐   | ◐   | ◐   | ❌  |
-| Match loudness across clips                     | ✅ **new** | ✅  | ✅  | ◐         | ◐   | ❌  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  |
-| Music turns down under speech                   | ✅         | ✅  | ✅  | ❌        | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ✅  |
-| Noise, hum, sibilance clean-up                  | ✅         | ✅  | ✅  | ✅        | ◐   | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ◐   | ✅  | ◐   |
-| Stems (dialogue, music, effects)                | ✅         | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
-| Track volume automation (record fader moves)    | ✅ **new** | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ✅  | ✅  |
-| Record a voiceover onto the timeline            | ✅ **new** | ✅  | ✅  | ✅        | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ✅  | ✅  |
-| VST / Audio Unit plug-ins                       | ❌         | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  |
+| Tool                                            | St                                | Re  | Pr  | FC        | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
+| ----------------------------------------------- | --------------------------------- | --- | --- | --------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Mixer with faders and meters                    | ✅                                | ✅  | ✅  | ◐         | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ✅  | ✅  |
+| EQ and dynamics on each track, with curves      | ✅                                | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ✅  | ◐   |
+| Buses (submixes) and the whole mix's processing | ✅                                | ✅  | ✅  | ◐ (roles) | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| Loudness to a target with a measured report     | ✅                                | ✅  | ✅  | ◐         | ✅  | ❌  | ✅  | ✅  | ❌  | ◐   | ◐   | ◐   | ◐   | ❌  |
+| Match loudness across clips                     | ✅                                | ✅  | ✅  | ◐         | ◐   | ❌  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  |
+| Music turns down under speech                   | ✅                                | ✅  | ✅  | ❌        | ❌  | ✅  | ✅  | ❌  | ❌  | ❌  | ✅  | ❌  | ❌  | ✅  |
+| Noise, hum, sibilance clean-up                  | ✅                                | ✅  | ✅  | ✅        | ◐   | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ◐   | ✅  | ◐   |
+| Stems (dialogue, music, effects)                | ✅                                | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| Track volume automation (record fader moves)    | ✅                                | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ✅  | ✅  |
+| Record a voiceover onto the timeline            | ✅                                | ✅  | ✅  | ✅        | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ❌  | ✅  | ✅  |
+| VST / Audio Unit plug-ins                       | ◐ **new** (VST3 effects on clips) | ✅  | ✅  | ✅        | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  | ✅  | ❌  |
 
 ### Color
 
-| Tool                                                | St         | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
-| --------------------------------------------------- | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Wheels, curves, HSL qualifier, shape windows, nodes | ✅         | ✅  | ◐   | ◐   | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ◐   |
-| Scopes: waveform, parade, vectorscope, histogram    | ✅         | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ✅  |
-| LUTs in and out, camera log to Rec. 709             | ✅         | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ✅  | ✅  |
-| Stills and a reference wipe to match shots          | ✅ **new** | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
-| False color and zebra                               | ✅         | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  |
-| HDR grading and color management (ACES, Rec. 2020)  | ❌         | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   |
+| Tool                                                | St                                    | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
+| --------------------------------------------------- | ------------------------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Wheels, curves, HSL qualifier, shape windows, nodes | ✅                                    | ✅  | ◐   | ◐   | ◐   | ◐   | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   | ◐   |
+| Scopes: waveform, parade, vectorscope, histogram    | ✅                                    | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ✅  |
+| LUTs in and out, camera log to Rec. 709             | ✅                                    | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ◐   | ✅  | ✅  | ✅  | ✅  |
+| Stills and a reference wipe to match shots          | ✅                                    | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| False color and zebra                               | ✅                                    | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ✅  |
+| HDR grading and color management (ACES, Rec. 2020)  | ◐ **new** (Rec. 2020 PQ/HLG, no ACES) | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ◐   | ◐   | ◐   |
 
 ### Effects, compositing and titles
 
 | Tool                                                                                              | St         | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
 | ------------------------------------------------------------------------------------------------- | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Video transitions (Studio: 37 in six groups)                                                      | ✅ **new** | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ◐   | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
-| Picture effects (Studio: 42, all on the GPU)                                                      | ✅ **new** | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Video transitions (Studio: 37 in six groups)                                                      | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ◐   | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Picture effects (Studio: 42, all on the GPU)                                                      | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
 | Keying, shape masks (incl. rounded), track mattes                                                 | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  |
-| Hand-drawn masks and rotoscoping (Studio: straight-sided points, animated)                        | ✅ **new** | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ✅  | ❌  |
+| Hand-drawn masks and rotoscoping (Studio: straight-sided points, animated)                        | ✅         | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  | ✅  | ❌  | ✅  | ❌  |
 | Motion tracking (point, region), corner pin, stabilize                                            | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ❌  | ❌  | ✅  | ◐   | ✅  | ❌  |
-| Animated title designer with templates and data (Studio: 45 motion templates and the Titler's 24) | ✅ **new** | ✅  | ✅  | ✅  | ◐   | ✅  | ◐   | ◐   | ◐   | ✅  | ✅  | ◐   | ✅  | ✅  |
+| Animated title designer with templates and data (Studio: 45 motion templates and the Titler's 24) | ✅         | ✅  | ✅  | ✅  | ◐   | ✅  | ◐   | ◐   | ◐   | ✅  | ✅  | ◐   | ✅  | ✅  |
 | 3D layers, particles, generators                                                                  | ✅         | ✅  | ◐   | ✅  | ❌  | ◐   | ❌  | ❌  | ❌  | ❌  | ◐   | ❌  | ◐   | ❌  |
-| Node compositor (Fusion-like)                                                                     | ❌         | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
+| Node compositor (Fusion-like)                                                                     | ✅ **new** | ✅  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  | ❌  |
 
 ### Media, speed and reliability
 
@@ -138,31 +138,33 @@ Columns: **St** Lumora Studio · **Re** DaVinci Resolve · **Pr** Premiere Pro �
 
 ### Delivery, publishing and teams
 
-| Tool                                                                     | St         | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
-| ------------------------------------------------------------------------ | ---------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Presets for every platform and for masters                               | ✅         | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  |
-| Render queue in the background while editing                             | ✅         | ✅  | ✅  | ✅  | ◐   | ❌  | ✅  | ✅  | ✅  | ❌  | ◐   | ✅  | ✅  | ❌  |
-| Chapters, thumbnail and captions with the export                         | ✅         | ✅  | ✅  | ✅  | ◐   | ◐   | ✅  | ✅  | ◐   | ◐   | ◐   | ◐   | ◐   | ❌  |
-| Publish to YouTube from the app (resumable, with thumbnail and captions) | ✅ **new** | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  |
-| Publish to Vimeo, TikTok, Facebook (Studio: Vimeo)                       | ◐ **new**  | ✅  | ◐   | ◐   | ❌  | ✅  | ◐   | ✅  | ✅  | ◐   | ✅  | ❌  | ❌  | ◐   |
-| Shared projects, locks, version history                                  | ✅         | ✅  | ✅  | ❌  | ✅  | ◐   | ✅  | ✅  | ✅  | ❌  | ◐   | ❌  | ❌  | ❌  |
-| Frame-accurate comments for the team                                     | ✅         | ✅  | ✅  | ❌  | ◐   | ❌  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  |
-| Review links for clients in a browser                                    | ❌         | ✅  | ✅  | ◐   | ❌  | ◐   | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  |
+| Tool                                                                     | St  | Re  | Pr  | FC  | Av  | CC  | De  | Ri  | Op  | Ca  | Fi  | Sh  | Kd  | LF  |
+| ------------------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Presets for every platform and for masters                               | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Render queue in the background while editing                             | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ✅  | ✅  | ✅  | ❌  | ◐   | ✅  | ✅  | ❌  |
+| Chapters, thumbnail and captions with the export                         | ✅  | ✅  | ✅  | ✅  | ◐   | ◐   | ✅  | ✅  | ◐   | ◐   | ◐   | ◐   | ◐   | ❌  |
+| Publish to YouTube from the app (resumable, with thumbnail and captions) | ✅  | ✅  | ✅  | ✅  | ❌  | ✅  | ✅  | ✅  | ✅  | ✅  | ✅  | ❌  | ❌  | ✅  |
+| Publish to Vimeo, TikTok, Facebook (Studio: Vimeo)                       | ◐   | ✅  | ◐   | ◐   | ❌  | ✅  | ◐   | ✅  | ✅  | ◐   | ✅  | ❌  | ❌  | ◐   |
+| Shared projects, locks, version history                                  | ✅  | ✅  | ✅  | ❌  | ✅  | ◐   | ✅  | ✅  | ✅  | ❌  | ◐   | ❌  | ❌  | ❌  |
+| Frame-accurate comments for the team                                     | ✅  | ✅  | ✅  | ❌  | ◐   | ❌  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  | ❌  |
+| Review links for clients in a browser                                    | ❌  | ✅  | ✅  | ◐   | ❌  | ◐   | ✅  | ✅  | ✅  | ✅  | ◐   | ❌  | ❌  | ❌  |
 
 ### Counts for Studio (78 rows)
 
 |     | Before this round | After this round |
 | --- | ----------------- | ---------------- |
-| ✅  | 51                | 66               |
-| ◐   | 4                 | 6                |
-| ❌  | 23                | 6                |
+| ✅  | 66                | 70               |
+| ◐   | 6                 | 6                |
+| ❌  | 6                 | 2                |
 
-Still ❌: generative AI (extend, voices, dubbing, eye contact), automatic
-B-roll, VST plug-ins, HDR and color management, a node compositor, and client
-review links. Still ◐: publishing (YouTube and Vimeo; not TikTok or Facebook), a magnetic
-timeline (ripple tools instead), who is speaking (by microphone, not by voice
-on one microphone), voice isolation (filters, not a neural model), camera RAW
-(converted first) and the native GPU engine (offered, not the default). See "What is left" below.
+Still ❌: generative AI (extend, voices, dubbing, eye contact) and client
+review links. Still ◐: publishing (YouTube and Vimeo; not TikTok or Facebook),
+camera RAW (converted first), the native GPU engine (offered, not the default),
+HDR (Rec. 2020 PQ and HLG timelines, scopes in nits and HDR10/HLG export, but
+no ACES), plug-ins (VST3 effects on sound clips, run in a separate process so a
+crash can't take the edit down; no Audio Units, none on tracks or buses yet,
+and the plug-in's own window opens only on Windows) and automatic B-roll (from
+your own media, not a stock library). See "What is left" below.
 
 ### Only in Studio
 
@@ -206,12 +208,10 @@ on one microphone), voice isolation (filters, not a neural model), camera RAW
 | Tool                                                   | Why not yet                                                                                                                                      |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Generative AI (extend, voices, dubbing, eye contact)   | Needs cloud models and paid generation; Studio keeps every AI tool on the computer, free and private.                                            |
-| Automatic B-roll                                       | Needs a stock library, or a reliable index of what each of your own shots shows; media search is the start of it.                                |
-| Who is speaking on a single microphone                 | Needs a voice model to tell voices apart; today speakers are told apart by microphone or file.                                                   |
-| A neural voice isolation model                         | Voice isolation uses noise-following filters today; a bundled model (as Resolve and Premiere ship) would be cleaner on hard recordings.          |
+| B-roll from a stock library                            | B-roll comes from your own media, found by what is said; a stock library needs a licensed catalog and an account.                                |
 | Curved (bezier) mask edges, masks that follow a track  | Drawn masks use straight-sided points (many points make a curve) and are animated by hand; bezier handles and following a motion track are next. |
-| HDR grading and color management                       | HDR files are shown and exported as SDR today; a color-managed pipeline (Rec. 2020, PQ/HLG out) is a larger change to the compositor.            |
-| VST plug-ins, a node compositor                        | Large native projects (a plug-in host; a node graph and its viewer).                                                                             |
+| ACES color management                                  | HDR sequences work in Rec. 2020 PQ or HLG from end to end; ACES (and its camera input transforms) is a further step.                             |
+| VST3 on tracks and buses, Audio Units                  | VST3 effects run on clips today, rendered in a helper process; live effects on tracks need a real-time audio engine, Audio Units need macOS.     |
 | Publishing to TikTok and Facebook; client review links | Each platform needs its own app registration and review; client links need hosted video storage and a public review page.                        |
 | Native GPU engine as the default                       | It is offered on capable graphics cards and falls back to WebGL by itself; making it the default needs testing on real Windows machines.         |
 

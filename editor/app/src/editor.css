@@ -325,6 +325,7 @@
   min-width: 0;
 }
 .ed__logo {
+  flex: none;
   height: 22px;
   padding-right: 12px;
   margin-right: 4px;
@@ -333,8 +334,8 @@
 }
 .ed__menus {
   display: flex;
+  flex: none;
   gap: 0;
-  min-width: 0;
 }
 .ed__menu {
   height: 28px;
@@ -401,10 +402,26 @@
   font-size: 12px;
   white-space: nowrap;
   max-width: 280px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A narrow window: the menus keep their room; the project name and save note give way. */
+@media (max-width: 1240px) {
+  .ed__name {
+    max-width: 180px;
+  }
+  .ed__saved {
+    min-width: 30px;
+  }
+}
+.ed__saved > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ed__saved svg.lucide {
+  flex: none;
   width: 13px;
   height: 13px;
 }
@@ -1417,7 +1434,8 @@ svg.media__folder {
 }
 .fxlist__group > .btn,
 .fxlist__group > .fxlist__row,
-.fxlist__group > .tpresets {
+.fxlist__group > .tpresets,
+.fxlist__group > .ttpl__group {
   margin: 2px 8px;
 }
 .fxlist__item {
