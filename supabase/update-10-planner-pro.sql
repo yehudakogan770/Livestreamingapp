@@ -959,3 +959,6 @@ begin
   end if;
 end
 $$;
+
+-- Let the API see the new tables and functions right away.
+notify pgrst, 'reload schema';
