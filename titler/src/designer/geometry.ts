@@ -4,7 +4,7 @@
 import { tokensFor, valuesFor } from '../core/binding';
 import { isAnimated, setValue, valueAt, vec } from '../core/easing';
 import { apply, invert, mul, type Mat } from '../core/matrix';
-import { canvasMeasure, contentSize, fittedBox, groupOf, layerIndex, ownMatrix, textLayout, worldMatrix, type Ctx } from '../core/render';
+import { canvasMeasure, contentSize, fittedBox, groupOf, layerIndex, ownMatrix, textLayout, viewOfLayer, worldMatrix, type Ctx } from '../core/render';
 import type { Composition, Layer, TitleProject, Value, Values, BrandTokens, Vec2 } from '../core/types';
 import { boundsOf, type Box } from './ops';
 import { getProp, withProp } from './props';
@@ -87,7 +87,10 @@ export function layerCorners(look: Look, l: Layer): Vec2[] {
       [p[0] - 12, p[1] + 12],
     ];
   }
-  return [apply(m, [b.x, b.y]), apply(m, [b.x + b.w, b.y]), apply(m, [b.x + b.w, b.y + b.h]), apply(m, [b.x, b.y + b.h])];
+  const pts = [apply(m, [b.x, b.y]), apply(m, [b.x + b.w, b.y]), apply(m, [b.x + b.w, b.y + b.h]), apply(m, [b.x, b.y + b.h])];
+  // A 3D layer: where the camera sees its corners.
+  const seen = viewOfLayer(c, l, look.t);
+  return seen ? pts.map(seen) : pts;
 }
 
 export const layerBounds = (look: Look, l: Layer): Box | null => {

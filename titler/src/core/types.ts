@@ -165,6 +165,8 @@ export interface LayerBase {
   label?: string;
   /** How it is re-placed in another format of the title (16:9 → 9:16…); nearest edge when left out. */
   constraints?: Constraints;
+  /** Extruded in depth (a 3D layer with sides): how deep, px, and the sides' color (the layer's own colors, darker, when left out). */
+  extrude?: { depth: number; color?: ColorRef } | null;
 }
 
 /** Pinned to an edge or the middle, scaled with the frame, or stretched with it. */
@@ -316,6 +318,12 @@ export interface GroupLayer extends LayerBase {
 /** An invisible layer other layers are parented to. */
 export interface NullLayer extends LayerBase {
   type: 'null';
+  /**
+   * The composition's camera (the first one on screen): it looks at its
+   * position, orbits that point by its X and Y rotation, rolls by its
+   * rotation and moves away by its depth (Z). 3D layers are seen through it.
+   */
+  camera?: boolean;
 }
 
 /** Another composition placed as one layer (a precomp). */

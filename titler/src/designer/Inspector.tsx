@@ -29,7 +29,7 @@ import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields'
 import { askText } from './Modal';
 import { layerBox } from './geometry';
 import { lookOf } from './Viewport';
-import { compOf, findLayer, flatLayers, setParent, updateLayers } from './ops';
+import { compOf, findLayer, flatLayers, setParent, updateComp, updateLayers } from './ops';
 import { EFFECT_NAMES, getProp, withProp } from './props';
 import type { Store } from './store';
 import { useStore } from './store';
@@ -112,127 +112,201 @@ export function Inspector({ store }: { store: Store }) {
             ))}
           </select>
         </Row>
-        <Row label="Track matte" hint="Seen only through another layer">
-          <select
-            className="tt-select"
-            aria-label="Track matte layer"
-            value={l.matte?.layer ?? ''}
-            onChange={(e) => updOne('Track matte', (x) => ({ ...x, matte: e.target.value ? { layer: e.target.value, mode: x.matte?.mode ?? 'alpha' } : null }))}
-          >
-            <option value="">None</option>
-            {others.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.name}
-              </option>
-            ))}
-          </select>
-          {l.matte && (
-            <Select
-              label="Matte mode"
-              value={l.matte.mode}
-              options={[
-                ['alpha', 'Alpha'],
-                ['alphaInverted', 'Alpha inverted'],
-                ['luma', 'Luma'],
-                ['lumaInverted', 'Luma inverted'],
-              ]}
-              onChange={(mode) => updOne('Track matte', (x) => ({ ...x, matte: x.matte ? { ...x.matte, mode } : null }))}
-            />
-          )}
-        </Row>
-        <Row label="Constraints" hint="How the layer is placed in the title's other formats (9:16, 1:1, 4K): pinned, scaled or stretched">
-          <Select
-            label="Constraint across"
-            value={l.constraints?.h ?? 'auto'}
-            options={[
-              ['auto', 'Auto'],
-              ['left', 'Left'],
-              ['center', 'Center'],
-              ['right', 'Right'],
-              ['scale', 'Scale'],
-              ['stretch', 'Left and right'],
-            ]}
-            onChange={(h) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, h: h === 'auto' ? undefined : h } }))}
-          />
-          <Select
-            label="Constraint down"
-            value={l.constraints?.v ?? 'auto'}
-            options={[
-              ['auto', 'Auto'],
-              ['top', 'Top'],
-              ['center', 'Center'],
-              ['bottom', 'Bottom'],
-              ['scale', 'Scale'],
-              ['stretch', 'Top and bottom'],
-            ]}
-            onChange={(v) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, v: v === 'auto' ? undefined : v } }))}
-          />
-        </Row>
-        <Row label="Blend">
-          <Select
-            label="Blend mode"
-            value={l.blend ?? 'normal'}
-            options={[
-              ['normal', 'Normal'],
-              ['multiply', 'Multiply'],
-              ['screen', 'Screen'],
-              ['overlay', 'Overlay'],
-              ['darken', 'Darken'],
-              ['lighten', 'Lighten'],
-              ['add', 'Add'],
-            ]}
-            onChange={(blend) => upd('Blend mode', (x) => ({ ...x, blend }))}
-          />
-        </Row>
-      </Section>
-
-      <Section title="Transform">
-        {prop('transform.position', 'Position', [0, 0], 'px')}
-        {prop('transform.scale', 'Scale', [100, 100], '%')}
-        {prop('transform.rotation', 'Rotation', 0, '°')}
-        {prop('transform.opacity', 'Opacity', 100, '%', { min: 0, max: 100 })}
-        {prop('transform.anchor', 'Anchor point', [0, 0], 'px')}
-        <div className="tt-btnrow">
-          <button
-            onClick={() => {
-              const b = layerBox(lookOf(store.get()), l);
-              const a = vec(l.transform.anchor, time, [0, 0]);
-              const pos = vec(l.transform.position, time, [0, 0]);
-              const na: Vec2 = [b.x + b.w / 2, b.y + b.h / 2];
-              // Keep it where it is: the position moves by the same amount (unscaled, unturned).
-              updOne('Center anchor point', (x) => ({
-                ...x,
-                transform: {
-                  ...x.transform,
-                  anchor: { v: na },
-                  position: isAnimated(x.transform.position) ? x.transform.position : { v: [pos[0] + na[0] - a[0], pos[1] + na[1] - a[1]] },
-                },
-              }));
-            }}
-          >
-            Center anchor point
-          </button>
-        </div>
-        <Row label="3D" hint="Turn the layer in depth about its anchor point (center it for a card flip); the camera is in the Composition tab">
-          <Toggle
-            value={!!(l.transform.rotationX || l.transform.rotationY || l.transform.z)}
-            label="3D layer"
-            onChange={(on) =>
-              updOne(on ? 'Make 3D' : 'Make flat', (x) => {
-                const { rotationX: _x, rotationY: _y, z: _z, ...flat } = x.transform;
-                return { ...x, transform: on ? { ...flat, rotationX: { v: 0 }, rotationY: { v: 0 }, z: { v: 0 } } : flat };
-              })
-            }
-          />
-        </Row>
-        {(l.transform.rotationX || l.transform.rotationY || l.transform.z) && (
+        {l.type !== 'null' && (
           <>
-            {prop('transform.rotationX', 'X rotation', 0, '°')}
-            {prop('transform.rotationY', 'Y rotation', 0, '°')}
-            {prop('transform.z', 'Depth (Z)', 0, 'px')}
+          <Row label="Track matte" hint="Seen only through another layer">
+            <select
+              className="tt-select"
+              aria-label="Track matte layer"
+              value={l.matte?.layer ?? ''}
+              onChange={(e) => updOne('Track matte', (x) => ({ ...x, matte: e.target.value ? { layer: e.target.value, mode: x.matte?.mode ?? 'alpha' } : null }))}
+            >
+              <option value="">None</option>
+              {others.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
+                </option>
+              ))}
+            </select>
+            {l.matte && (
+              <Select
+                label="Matte mode"
+                value={l.matte.mode}
+                options={[
+                  ['alpha', 'Alpha'],
+                  ['alphaInverted', 'Alpha inverted'],
+                  ['luma', 'Luma'],
+                  ['lumaInverted', 'Luma inverted'],
+                ]}
+                onChange={(mode) => updOne('Track matte', (x) => ({ ...x, matte: x.matte ? { ...x.matte, mode } : null }))}
+              />
+            )}
+          </Row>
+          <Row label="Constraints" hint="How the layer is placed in the title's other formats (9:16, 1:1, 4K): pinned, scaled or stretched">
+            <Select
+              label="Constraint across"
+              value={l.constraints?.h ?? 'auto'}
+              options={[
+                ['auto', 'Auto'],
+                ['left', 'Left'],
+                ['center', 'Center'],
+                ['right', 'Right'],
+                ['scale', 'Scale'],
+                ['stretch', 'Left and right'],
+              ]}
+              onChange={(h) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, h: h === 'auto' ? undefined : h } }))}
+            />
+            <Select
+              label="Constraint down"
+              value={l.constraints?.v ?? 'auto'}
+              options={[
+                ['auto', 'Auto'],
+                ['top', 'Top'],
+                ['center', 'Center'],
+                ['bottom', 'Bottom'],
+                ['scale', 'Scale'],
+                ['stretch', 'Top and bottom'],
+              ]}
+              onChange={(v) => upd('Constraints', (x) => ({ ...x, constraints: { ...x.constraints, v: v === 'auto' ? undefined : v } }))}
+            />
+          </Row>
+          <Row label="Blend">
+            <Select
+              label="Blend mode"
+              value={l.blend ?? 'normal'}
+              options={[
+                ['normal', 'Normal'],
+                ['multiply', 'Multiply'],
+                ['screen', 'Screen'],
+                ['overlay', 'Overlay'],
+                ['darken', 'Darken'],
+                ['lighten', 'Lighten'],
+                ['add', 'Add'],
+              ]}
+              onChange={(blend) => upd('Blend mode', (x) => ({ ...x, blend }))}
+            />
+          </Row>
           </>
         )}
       </Section>
+
+      {l.type === 'null' && l.camera ? (
+        <Section title="Camera">
+          <div className="tt-dim tt-small">
+            3D layers are seen through this camera: it looks at a point, orbits around it and moves in or out. Animate it like any layer.
+          </div>
+          {prop('transform.position', 'Looks at', [c.width / 2, c.height / 2], 'px')}
+          {prop('transform.rotationY', 'Orbit across', 0, '°')}
+          {prop('transform.rotationX', 'Orbit vertical', 0, '°')}
+          {prop('transform.rotation', 'Roll', 0, '°')}
+          {prop('transform.z', 'Move away', 0, 'px')}
+          <Row label="Lens" hint="How far the camera is from the point it looks at (nearer: stronger perspective); the same for every camera of this composition">
+            <NumberField
+              value={c.perspective ?? 2000}
+              step={50}
+              min={200}
+              max={20000}
+              label="Camera distance"
+              unit="px"
+              onChange={(perspective) => store.edit('Camera distance', (p) => updateComp(p, c.id, (x) => ({ ...x, perspective: Math.round(perspective) })))}
+            />
+          </Row>
+        </Section>
+      ) : (
+        <Section title="Transform">
+          {prop('transform.position', 'Position', [0, 0], 'px')}
+          {prop('transform.scale', 'Scale', [100, 100], '%')}
+          {prop('transform.rotation', 'Rotation', 0, '°')}
+          {prop('transform.opacity', 'Opacity', 100, '%', { min: 0, max: 100 })}
+          {prop('transform.anchor', 'Anchor point', [0, 0], 'px')}
+          <div className="tt-btnrow">
+            <button
+              onClick={() => {
+                const b = layerBox(lookOf(store.get()), l);
+                const a = vec(l.transform.anchor, time, [0, 0]);
+                const pos = vec(l.transform.position, time, [0, 0]);
+                const na: Vec2 = [b.x + b.w / 2, b.y + b.h / 2];
+                // Keep it where it is: the position moves by the same amount (unscaled, unturned).
+                updOne('Center anchor point', (x) => ({
+                  ...x,
+                  transform: {
+                    ...x.transform,
+                    anchor: { v: na },
+                    position: isAnimated(x.transform.position) ? x.transform.position : { v: [pos[0] + na[0] - a[0], pos[1] + na[1] - a[1]] },
+                  },
+                }));
+              }}
+            >
+              Center anchor point
+            </button>
+          </div>
+          {l.type !== 'null' && (
+            <Row label="3D" hint="Turn the layer in depth about its anchor point (center it for a card flip) and see it through the composition's camera">
+              <Toggle
+                value={!!(l.transform.rotationX || l.transform.rotationY || l.transform.z)}
+                label="3D layer"
+                onChange={(on) =>
+                  updOne(on ? 'Make 3D' : 'Make flat', (x) => {
+                    const { rotationX: _x, rotationY: _y, z: _z, ...flat } = x.transform;
+                    return on
+                      ? { ...x, transform: { ...flat, rotationX: { v: 0 }, rotationY: { v: 0 }, z: { v: 0 } } }
+                      : { ...x, transform: flat, extrude: undefined };
+                  })
+                }
+              />
+            </Row>
+          )}
+          {(l.transform.rotationX || l.transform.rotationY || l.transform.z) && (
+            <>
+              {prop('transform.rotationX', 'X rotation', 0, '°')}
+              {prop('transform.rotationY', 'Y rotation', 0, '°')}
+              {prop('transform.z', 'Depth (Z)', 0, 'px')}
+              {(l.type === 'text' || l.type === 'shape' || l.type === 'image') && (
+                <>
+                  <Row label="Extrude" hint="Give the layer sides, this deep (0: flat); turn it to see them">
+                    <NumberField
+                      value={l.extrude?.depth ?? 0}
+                      min={0}
+                      max={400}
+                      step={1}
+                      label="Extrude depth"
+                      unit="px"
+                      onChange={(depth) =>
+                        updOne('Extrude', (x) => ({ ...x, extrude: depth > 0 ? { ...(x.extrude ?? {}), depth: Math.round(depth) } : undefined }))
+                      }
+                    />
+                  </Row>
+                  {(l.extrude?.depth ?? 0) > 0 && (
+                    <Row label="Sides" hint="The sides' color: the layer's own colors made darker, or one color">
+                      <Select
+                        label="Side color kind"
+                        value={l.extrude?.color ? 'color' : 'own'}
+                        options={[
+                          ['own', 'Own colors, darker'],
+                          ['color', 'One color'],
+                        ]}
+                        onChange={(v) =>
+                          updOne('Extrude color', (x) => (x.extrude ? { ...x, extrude: v === 'own' ? { depth: x.extrude.depth } : { ...x.extrude, color: '$boxAlt' } } : x))
+                        }
+                      />
+                      {l.extrude?.color && (
+                        <ColorField
+                          value={l.extrude.color}
+                          label="Side color"
+                          tokens={tokens}
+                          values={vals}
+                          fields={fieldKeys}
+                          onChange={(color) => updOne('Extrude color', (x) => (x.extrude ? { ...x, extrude: { ...x.extrude, color: color || '$boxAlt' } } : x))}
+                        />
+                      )}
+                    </Row>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </Section>
+      )}
 
       {l.type === 'text' && <TextSection store={store} l={l} compId={c.id} fieldKeys={fieldKeys} tokens={tokens} vals={vals} time={time} />}
       {l.type === 'text' && <AnimatorSection store={store} l={l} compId={c.id} />}
@@ -429,32 +503,36 @@ export function Inspector({ store }: { store: Store }) {
         </Section>
       )}
 
-      <Section title="Wipe and blur" open={!!l.reveal || !!l.blur}>
-        {l.reveal ? (
-          <>
-            {prop('reveal.left', 'From left', 0, '%', { min: 0, max: 100 })}
-            {prop('reveal.right', 'From right', 0, '%', { min: 0, max: 100 })}
-            {prop('reveal.top', 'From top', 0, '%', { min: 0, max: 100 })}
-            {prop('reveal.bottom', 'From bottom', 0, '%', { min: 0, max: 100 })}
-            <button className="tt-link" onClick={() => updOne('Remove wipe', (x) => ({ ...x, reveal: undefined }))}>
-              Remove wipe
+      {l.type !== 'null' && (
+        <>
+        <Section title="Wipe and blur" open={!!l.reveal || !!l.blur}>
+          {l.reveal ? (
+            <>
+              {prop('reveal.left', 'From left', 0, '%', { min: 0, max: 100 })}
+              {prop('reveal.right', 'From right', 0, '%', { min: 0, max: 100 })}
+              {prop('reveal.top', 'From top', 0, '%', { min: 0, max: 100 })}
+              {prop('reveal.bottom', 'From bottom', 0, '%', { min: 0, max: 100 })}
+              <button className="tt-link" onClick={() => updOne('Remove wipe', (x) => ({ ...x, reveal: undefined }))}>
+                Remove wipe
+              </button>
+            </>
+          ) : (
+            <button
+              className="tt-link"
+              onClick={() => updOne('Add wipe', (x) => ({ ...x, reveal: { left: { v: 0 }, right: { v: 0 }, top: { v: 0 }, bottom: { v: 0 } } }))}
+            >
+              Add a wipe (crop each side)
             </button>
-          </>
-        ) : (
-          <button
-            className="tt-link"
-            onClick={() => updOne('Add wipe', (x) => ({ ...x, reveal: { left: { v: 0 }, right: { v: 0 }, top: { v: 0 }, bottom: { v: 0 } } }))}
-          >
-            Add a wipe (crop each side)
-          </button>
-        )}
-        {prop('blur', 'Blur', 0, 'px', { min: 0 })}
-      </Section>
+          )}
+          {prop('blur', 'Blur', 0, 'px', { min: 0 })}
+        </Section>
 
-      <MotionPresets store={store} l={l} compId={c.id} />
-      <MaskSection store={store} l={l} compId={c.id} time={time} />
-      <EffectSection store={store} l={l} compId={c.id} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
-      <StyleSection store={store} l={l} compId={c.id} />
+        <MotionPresets store={store} l={l} compId={c.id} />
+        <MaskSection store={store} l={l} compId={c.id} time={time} />
+        <EffectSection store={store} l={l} compId={c.id} tokens={tokens} vals={vals} fieldKeys={fieldKeys} />
+        <StyleSection store={store} l={l} compId={c.id} />
+        </>
+      )}
     </div>
   );
 }

@@ -74,9 +74,21 @@ export function MenuCheck({ checked, onChange, children, hint }: { checked: bool
 }
 
 /** A menu item that does something (or picks one of a set: `chosen`). */
-export function MenuItem({ onClick, children, hint, chosen }: { onClick: () => void; children: ReactNode; hint?: string; chosen?: boolean }) {
+export function MenuItem({
+  onClick,
+  children,
+  hint,
+  chosen,
+  disabled,
+}: {
+  onClick: () => void;
+  children: ReactNode;
+  hint?: string;
+  chosen?: boolean;
+  disabled?: boolean;
+}) {
   return (
-    <button role={chosen === undefined ? 'menuitem' : 'menuitemradio'} aria-checked={chosen} className="tt-menu-item" onClick={onClick}>
+    <button role={chosen === undefined ? 'menuitem' : 'menuitemradio'} aria-checked={chosen} className="tt-menu-item" onClick={onClick} disabled={disabled}>
       <span className="tt-menu-tick">{chosen ? '•' : ''}</span>
       <span className="tt-menu-label">{children}</span>
       {hint && <kbd className="tt-menu-hint">{hint}</kbd>}

@@ -464,6 +464,8 @@ function layerJson(x: X, l: Layer, ind: number, w: number, h: number): J | null 
     base.masksProperties = masks;
   }
   if (l.transform.rotationX || l.transform.rotationY || l.transform.z) base.ddd = 1;
+  if (l.extrude && l.extrude.depth > 0) x.notes.add('Extruded layers are drawn flat (Lottie has no extrusion).');
+  if (l.type === 'null' && l.camera) x.notes.add('The camera is left out: 3D layers are seen straight on.');
   switch (l.type) {
     case 'null':
       return { ...base, ty: 3, ks: transform(x, l) };

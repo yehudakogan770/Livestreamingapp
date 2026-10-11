@@ -17,7 +17,7 @@ import type { EditorState, Store } from './store';
 import { useStore } from './store';
 import { worldMatrix } from '../core/render';
 import type { RamPreview } from './ramPreview';
-import { TextEditOverlay, withoutEdited } from './TextEditOverlay';
+import { TextEditOverlay } from './TextEditOverlay';
 
 /** The composition time and the take clock shown now (a "take" preview runs on its own clock). */
 export function shownTime(s: EditorState, now: number): { t: number; clock: number } {
@@ -122,7 +122,11 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     const kept = s.playing && ram ? ram.frameAt(t) : null;
     try {
       if (kept) ctx.drawImage(kept, 0, 0, c.width, c.height);
-      else renderFrame(ctx, withoutEdited(s), { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env });
+      else {
+        // A text layer being typed into is shown by its text box instead.
+        const editing = s.editingText;
+        renderFrame(ctx, s.project, { comp: c.id, time: t, clock, values: s.values, brand: s.brand ?? undefined, env, skip: editing ? (l) => l.id === editing : undefined });
+      }
     } catch {
       /* a frame that cannot be drawn leaves the checkerboard */
     }

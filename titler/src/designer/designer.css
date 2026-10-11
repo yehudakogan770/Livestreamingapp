@@ -135,6 +135,9 @@
   border-bottom: 1px solid var(--tt-line);
   min-width: 0;
 }
+.tt-top > * {
+  flex-shrink: 0;
+}
 .tt-brand {
   display: inline-flex;
   align-items: center;
@@ -175,6 +178,8 @@
   color: var(--tt-select-ink);
 }
 .tt-title {
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--tt-dim);
   max-width: 260px;
   overflow: hidden;
@@ -387,7 +392,7 @@
 }
 .tt-templates {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
   padding: 8px 10px 16px;
 }
@@ -409,6 +414,10 @@
   display: block;
   border-radius: 3px;
   border: 1px solid var(--tt-line);
+}
+.tt-template .tt-thumb {
+  width: 100% !important;
+  height: auto !important;
 }
 .tt-template:hover .tt-thumb {
   border-color: var(--tt-select);
@@ -1078,11 +1087,17 @@
   font-size: 11px;
 }
 
-@media (max-width: 1100px) {
-  .tt-main {
-    grid-template-columns: 200px minmax(0, 1fr) 280px;
+/* Narrower windows: the menu shows its icons, the workspace its name. */
+@media (max-width: 1480px) {
+  .tt-workspace .tt-dim {
+    display: none;
   }
-  .tt-check {
+}
+@media (max-width: 1360px) {
+  .tt-menu button {
+    padding: 0 6px;
+  }
+  .tt-menu button .tt-menu-text {
     display: none;
   }
 }
@@ -1965,8 +1980,12 @@
   flex: 1;
 }
 .tt-menu-hint {
+  margin-left: 18px;
   font: 10.5px var(--tt-mono);
   color: var(--tt-faint);
+}
+.tt-menu-item:disabled {
+  opacity: 0.4;
 }
 .tt-menu-sep {
   height: 1px;
@@ -1980,4 +1999,14 @@
   line-height: 1.4;
   color: var(--tt-faint);
   white-space: normal;
+}
+
+/* Menus opened from the top bar keep their own item look. */
+.tt-menu .tt-menu-pop .tt-menu-item {
+  display: flex;
+  height: auto;
+  padding: 5px 10px 5px 4px;
+}
+.tt-menu .tt-menubtn {
+  height: 28px;
 }

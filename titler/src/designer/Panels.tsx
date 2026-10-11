@@ -17,6 +17,7 @@ import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields'
 import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
+import { layerBounds } from './geometry';
 import { PackDialog } from './PackDialog';
 import { askConfirm } from './Modal';
 import { liveData, useLiveResults } from './liveData';
@@ -802,8 +803,33 @@ export function DataPanel({ store }: { store: Store }) {
   );
 }
 
+/**
+ * The part of the frame a thumbnail shows: the whole frame, or (for a small
+ * graphic) the part around it, the frame's shape, at least 40 % of its width.
+ */
+export function thumbCrop(project: TitleProject, t: number): { x: number; y: number; w: number; h: number } {
+  const c = compOf(project, project.main);
+  const whole = { x: 0, y: 0, w: c.width, h: c.height };
+  const look = { project, comp: c, t, values: {}, brand: null };
+  const boxes = c.layers.filter((l) => l.visible && t >= l.start && t < l.end).map((l) => layerBounds(look, l)).filter((b): b is NonNullable<typeof b> => !!b);
+  if (!boxes.length) return whole;
+  const x0 = Math.max(0, Math.min(...boxes.map((b) => b.x)));
+  const y0 = Math.max(0, Math.min(...boxes.map((b) => b.y)));
+  const x1 = Math.min(c.width, Math.max(...boxes.map((b) => b.x + b.w)));
+  const y1 = Math.min(c.height, Math.max(...boxes.map((b) => b.y + b.h)));
+  if (x1 <= x0 || y1 <= y0) return whole;
+  const aspect = c.width / c.height;
+  let w = Math.max((x1 - x0) * 1.3, ((y1 - y0) * 1.3) * aspect, c.width * 0.4);
+  if (w >= c.width * 0.8) return whole;
+  w = Math.min(w, c.width);
+  const h = w / aspect;
+  const x = Math.min(c.width - w, Math.max(0, (x0 + x1) / 2 - w / 2));
+  const y = Math.min(c.height - h, Math.max(0, (y0 + y1) / 2 - h / 2));
+  return { x, y, w, h };
+}
+
 /** A small picture of a project (its main composition at the end of IN). */
-export function Thumb({ project, env, width = 192, at }: { project: TitleProject; env: BrowserEnv; width?: number; at?: number }) {
+export function Thumb({ project, env, width = 192, at, crop = false }: { project: TitleProject; env: BrowserEnv; width?: number; at?: number; crop?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const c = compOf(project, project.main);
   const height = Math.round((width * c.height) / c.width);
@@ -815,17 +841,24 @@ export function Thumb({ project, env, width = 192, at }: { project: TitleProject
       const dpr = Math.min(2, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
       cv.width = width * dpr;
       cv.height = height * dpr;
-      ctx.fillStyle = '#5d6168';
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = '#55585e';
       ctx.fillRect(0, 0, cv.width, cv.height);
+      const time = at ?? c.markers.inEnd + 0.4;
+      // A small graphic (a bug, a lower third) is shown closer, so it can be told apart.
+      const r = crop ? thumbCrop(project, time) : { x: 0, y: 0, w: c.width, h: c.height };
+      const k = cv.width / r.w;
+      ctx.setTransform(k, 0, 0, k, -r.x * k, -r.y * k);
       try {
-        renderFrame(ctx, project, { time: at ?? c.markers.inEnd + 0.4, clock: 3, env, width: cv.width, height: cv.height });
+        renderFrame(ctx, project, { time, clock: 3, env });
       } catch {
         /* nothing drawn */
       }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
     };
     draw();
     return env.onReady(draw);
-  }, [project, env, width, height, at, c.markers.inEnd]);
+  }, [project, env, width, height, at, c.markers.inEnd, crop]);
   return <canvas ref={ref} className="tt-thumb" style={{ width, height }} aria-hidden />;
 }
 
@@ -1073,7 +1106,7 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
       <div className="tt-templates">
         {shown.map((t) => (
           <button key={t.id} className="tt-template" onClick={() => onOpen(fromTemplate(t))} title={t.description}>
-            <Thumb project={t} env={env} width={176} />
+            <Thumb project={t} env={env} width={176} crop />
             <span>{t.name}</span>
           </button>
         ))}

@@ -5,7 +5,7 @@
 
 import { useEffect, useRef } from 'react';
 import { resolveColor, resolveFont, tokensFor, valuesFor } from '../core/binding';
-import type { TextLayer, Vec2 } from '../core/types';
+import type { Vec2 } from '../core/types';
 import { layerCorners } from './geometry';
 import { compOf, findLayer, updateLayers } from './ops';
 import { useStore, type Store } from './store';
@@ -114,12 +114,4 @@ export function TextEditOverlay({ store, view }: { store: Store; view: ViewXf })
       onPointerDown={(e) => e.stopPropagation()}
     />
   );
-}
-
-/** The project as drawn while a layer is edited on the canvas (that layer left out). */
-export function withoutEdited<T extends { project: import('../core/types').TitleProject; compId: string; editingText: string | null }>(s: T) {
-  if (!s.editingText) return s.project;
-  const l = findLayer(compOf(s.project, s.compId), s.editingText);
-  if (l?.type !== 'text') return s.project;
-  return updateLayers(s.project, s.compId, [l.id], (x) => ({ ...x, visible: false }) as TextLayer);
 }
