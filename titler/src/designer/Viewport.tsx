@@ -370,11 +370,15 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
       drag.current = { kind: 'guide', axis, index: list.length - 1 };
       return;
     }
-    if (tool === 'hand' || e.button === 1 || spaceDown.current) {
+    if (tool === 'hand' || e.button === 1 || spaceHold.down) {
+      // Space held and dragged: the view moves, and letting go of Space does not play.
+      if (spaceHold.down) spaceHold.used = true;
       drag.current = { kind: 'pan', start: [e.clientX, e.clientY], pan: s.pan };
       return;
     }
     if (tool === 'note') {
+      // The note's card takes the typing (the canvas must not take the focus back).
+      e.preventDefault();
       const note: CanvasNote = { id: `n${Date.now().toString(36)}`, comp: c.id, x: Math.round(p[0]), y: Math.round(p[1]), text: '', at: Date.now() };
       store.edit('Add note', (pr) => ({ ...pr, notes: [...(pr.notes ?? []), note] }), { tool: 'select', editingNote: note.id });
       return;
@@ -385,6 +389,7 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
         (n) => n.comp === c.id && dist([n.x + 11 / view.current.scale, n.y - 11 / view.current.scale], p) * view.current.scale < 11,
       );
       if (hit) {
+        e.preventDefault();
         store.set({ editingNote: hit.id });
         return;
       }
@@ -665,7 +670,6 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
   };
 
   // The pen: Enter ends an open path, Escape drops it. Space held: the hand.
-  const spaceDown = useRef(false);
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       const typing = (e.target as HTMLElement | null)?.closest?.('input, textarea, select, [contenteditable]');
@@ -724,12 +728,6 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
           if (l?.type === 'text' && !l.locked) store.set({ selection: [l.id], editingText: l.id, tool: 'select' });
         }}
         onWheel={onWheel}
-        onKeyDown={(e) => {
-          if (e.key === ' ') spaceDown.current = true;
-        }}
-        onKeyUp={(e) => {
-          if (e.key === ' ') spaceDown.current = false;
-        }}
         tabIndex={0}
         aria-label="Composition canvas"
       />
@@ -737,6 +735,12 @@ export function Viewport({ store, env, ram }: { store: Store; env: BrowserEnv; r
     </div>
   );
 }
+
+/**
+ * Space: a tap plays or pauses; held while dragging on the canvas it moves
+ * the view (the designer plays only when Space comes up unused).
+ */
+export const spaceHold = { down: false, used: false };
 
 /** Where the composition sits in the view: its scale and top-left corner, px. */
 export function viewOf(s: EditorState, size: [number, number]): { scale: number; ox: number; oy: number } {

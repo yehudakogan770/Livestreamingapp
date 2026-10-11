@@ -41,7 +41,7 @@ import type { BrandTokens, Layer, TitleProject, Values } from '../core/types';
 import { Inspector } from './Inspector';
 import { CompositionPanel, DataPanel, FieldsPanel, LibraryPanel, LookPanel, ProjectPanel } from './Panels';
 import { Timeline, toggleOpen } from './Timeline';
-import { Viewport, lookOf } from './Viewport';
+import { Viewport, lookOf, spaceHold } from './Viewport';
 import { layerBounds } from './geometry';
 import { addLayers, align, compOf, distribute, duplicate, findLayer, group, precompose, removeLayers, restack, ungroup, updateLayers, nudge } from './ops';
 import { Store, useStore, type Tool } from './store';
@@ -383,8 +383,12 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
       if (mod) return;
       switch (e.key) {
         case ' ':
+          // Played when Space comes up (held and dragged, it moves the view instead).
           handled();
-          store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }));
+          if (!e.repeat) {
+            spaceHold.down = true;
+            spaceHold.used = false;
+          }
           return;
         case 'Delete':
         case 'Backspace':
@@ -493,8 +497,24 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
           return cmd.addText();
       }
     };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key !== ' ' || !spaceHold.down) return;
+      spaceHold.down = false;
+      const el = e.target as HTMLElement | null;
+      if (spaceHold.used || el?.closest?.('input, textarea, select, [contenteditable="true"]') || modalOpen()) return;
+      store.set((x) => ({ playing: !x.playing, rate: 1, cue: null }));
+    };
+    const onBlur = () => {
+      spaceHold.down = false;
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('blur', onBlur);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('blur', onBlur);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store, cmd]);
 
@@ -587,7 +607,7 @@ export function Designer({ host, initial, look = 'ink', brand = null, values = {
             <button onClick={() => void saveToLibrary()} title={`Save to the library: ${host.libraryName} (Ctrl+S)`}>
               <Save size={15} /> <span className="tt-menu-text">Save</span>
             </button>
-            <button onClick={() => void importFile()} title="Import a Lottie animation (After Effects, LottieFiles), a template pack or a .lumtitle file">
+            <button onClick={() => void importFile()} title="Import a Lottie animation (After Effects, LottieFiles), a Photoshop file, an SVG drawing, a template pack or a .lumtitle file">
               <FileInput size={15} /> <span className="tt-menu-text">Import</span>
             </button>
             <button onClick={() => setExportOpen(true)} title="Export: a .lumtitle file (Ctrl+Shift+S), an HTML template for other playout systems, or Lottie">

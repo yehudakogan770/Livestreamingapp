@@ -969,7 +969,43 @@
 .tt-graph {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-rows: minmax(0, 1fr);
   gap: 20px;
+  overflow: hidden;
+}
+.tt-graph-ease {
+  min-height: 0;
+  overflow: auto;
+}
+.tt-graph-values {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.tt-graph-plot {
+  flex: 1;
+  min-height: 120px;
+  overflow: hidden;
+  background: var(--tt-field);
+  border: 1px solid var(--tt-line);
+  border-radius: 3px;
+}
+.tt-graph .tt-graph-plot svg {
+  display: block;
+  border: 0;
+  background: none;
+}
+.tt-graph-grid {
+  stroke: var(--tt-line);
+  stroke-width: 1;
+}
+.tt-graph-axis {
+  stroke: var(--tt-line-2);
+}
+.tt-graph-label {
+  fill: var(--tt-faint);
+  font: 10px var(--tt-mono);
 }
 .tt-graph-title {
   font-weight: 600;
@@ -986,7 +1022,7 @@
 }
 .tt-graph-key {
   fill: var(--tt-key);
-  cursor: pointer;
+  cursor: move;
 }
 .tt-graph-key.sel {
   fill: var(--tt-select);
