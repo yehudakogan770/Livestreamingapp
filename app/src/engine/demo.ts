@@ -18,6 +18,7 @@ import { repairScoreboard, runClock, setClock } from './score';
 import { lyricsGo, sections } from './lyrics';
 import { applyBrand } from './brand';
 import { pollComment, pollWord, removeWord, repairPoll, resetPoll } from './poll';
+import { react, repairReactions } from './reactions';
 import { pledgeTo, raffleDraw, raffleEnter, withCelebration } from './audience';
 import { wallPost, wallRemove } from './wall';
 import { dataValues } from './data';
@@ -166,6 +167,12 @@ function fundIn(s: Show, id: string) {
 }
 
 /** The audience questions (an older saved show has none yet). */
+function reactionsIn(s: Show, id: string) {
+  const src = find(s, id);
+  if (src.kind.type !== 'reactions') throw new Refused({ code: 'invalidValue', field: 'id', reason: 'that input is not reactions' });
+  return src.kind;
+}
+
 function qnaOf(s: Show) {
   s.qna ??= { open: false, questions: [], nextId: 0, moderate: false };
   return s.qna;
@@ -924,6 +931,25 @@ function apply(s: Show, a: Action, now: number) {
     case 'pollWord':
       if (!pollWord(pollIn(s, a.id), a.round, a.text))
         throw new Refused({ code: 'invalidValue', field: 'poll', reason: 'this word cloud is not taking words' });
+      return;
+    case 'updateReactions': {
+      const r = reactionsIn(s, a.id);
+      const next = structuredClone(a.reactions);
+      repairReactions(next);
+      Object.assign(r, { ...next, counts: r.counts, floating: r.floating, nextSeed: r.nextSeed, open: r.open });
+      return;
+    }
+    case 'reactionsOpen':
+      reactionsIn(s, a.id).open = a.value;
+      return;
+    case 'reactionsReset': {
+      const r = reactionsIn(s, a.id);
+      r.counts = [0, 0, 0, 0];
+      r.floating = [];
+      return;
+    }
+    case 'react':
+      if (!react(reactionsIn(s, a.id), a.taps, now)) throw new Refused({ code: 'invalidValue', field: 'reactions', reason: 'reactions are closed' });
       return;
     case 'pollWordRemove':
       removeWord(pollIn(s, a.id), a.word);

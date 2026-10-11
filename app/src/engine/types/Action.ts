@@ -32,6 +32,7 @@ import type { Poll } from './Poll';
 import type { Preset } from './Preset';
 import type { Ptz } from './Ptz';
 import type { Raffle } from './Raffle';
+import type { Reactions } from './Reactions';
 import type { SceneRef } from './SceneRef';
 import type { Scoreboard } from './Scoreboard';
 import type { ScreenCapture } from './ScreenCapture';
@@ -168,6 +169,10 @@ export type Action =
   | { type: 'pollShowResults'; id: SourceId; value: boolean }
   | { type: 'pollReset'; id: SourceId }
   | { type: 'pollVote'; id: SourceId; round: number; option: number; previous?: number }
+  | { type: 'updateReactions'; id: SourceId; reactions: Reactions }
+  | { type: 'reactionsOpen'; id: SourceId; value: boolean }
+  | { type: 'reactionsReset'; id: SourceId }
+  | { type: 'react'; id: SourceId; taps: Array<number> }
   | { type: 'pollWord'; id: SourceId; round: number; text: string }
   | { type: 'pollWordRemove'; id: SourceId; word: string }
   | { type: 'pollComment'; id: SourceId; round: number; stars: number; text: string }

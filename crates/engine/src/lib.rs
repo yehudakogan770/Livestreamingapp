@@ -40,6 +40,7 @@ pub mod presets;
 pub mod prompter;
 pub mod ptz;
 pub mod qna;
+pub mod reactions;
 pub mod score;
 pub mod screen;
 pub mod scripture;

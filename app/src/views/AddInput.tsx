@@ -13,6 +13,7 @@ import { fromTemplate as fromTitlerTemplate, starterTemplates } from '../../../t
 import { titlerKind } from '../titler/titlerSource';
 import { newRoom } from '../engine/guest';
 import { defaultPoll, newPoll, POLL_QUESTION } from '../engine/poll';
+import { defaultReactions } from '../engine/reactions';
 import { defaultLyrics, sections } from '../engine/lyrics';
 import { CapturePicker } from './CapturePicker';
 import { DeckLinkPicker } from './DeckLinkPicker';
@@ -73,6 +74,7 @@ const KINDS: { kind: Kind; name: string; hint: string }[] = [
   { kind: 'drawing', name: 'Drawing on screen', hint: 'Draw lines and arrows over the picture, live (a telestrator)' },
   { kind: 'poll', name: 'Audience poll', hint: 'People vote from their phones; live results on screen' },
   { kind: 'wordcloud', name: 'Word cloud', hint: 'People send a word or two; the most sent are drawn biggest' },
+  { kind: 'reactions', name: 'Reactions', hint: 'Love, Haha, Wow and Yes tapped on phones, rising over the picture' },
   { kind: 'rating', name: 'Rating', hint: 'One to five stars from phones, with comments; the average on screen' },
   { kind: 'lyrics', name: 'Song lyrics', hint: 'The words of a song, a verse at a time' },
   { kind: 'screen', name: 'Screen capture', hint: 'A display or one window of this computer' },
@@ -93,7 +95,7 @@ const GROUPS: { name: string; kinds: Kind[] }[] = [
     name: 'Text and titles',
     kinds: ['text', 'titler', 'graphic', 'credits', 'lyrics', 'countdown', 'scoreboard', 'comment', 'drawing', 'pesukim', 'scripture', 'zmanim'],
   },
-  { name: 'The audience’s phones', kinds: ['poll', 'wordcloud', 'rating', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
+  { name: 'The audience’s phones', kinds: ['poll', 'wordcloud', 'rating', 'reactions', 'raffle', 'trivia', 'wall', 'fundraiser', 'auction', 'seating'] },
   { name: 'Layouts and visuals', kinds: ['split', 'visuals', 'logo3d'] },
   { name: 'Sound', kinds: ['microphone', 'computersound', 'sound'] },
 ];
@@ -308,6 +310,8 @@ export function AddInput({
         return { name: n || 'Word cloud', kind: { type: 'poll', ...newPoll('words', words) } };
       case 'rating':
         return { name: n || 'Rating', kind: { type: 'poll', ...newPoll('rating', words) } };
+      case 'reactions':
+        return { name: n || 'Reactions', kind: { type: 'reactions', ...defaultReactions() } };
       case 'lyrics':
         return sections(words).length
           ? { name: n || words.trim().split('\n')[0]!.slice(0, 40), kind: { type: 'lyrics', ...defaultLyrics(), title: n, text: words } }
@@ -584,6 +588,12 @@ export function AddInput({
                   while voting is open.
                 </span>
               </>
+            )}
+            {kind === 'reactions' && (
+              <span className="field__note">
+                Phones tap Love, Haha, Wow or Yes on the audience page and the reactions rise over the picture for a few seconds. Put it on an overlay over the
+                cameras. The phone remote has to be on (Settings → Phone remote).
+              </span>
             )}
             {(kind === 'wordcloud' || kind === 'rating') && (
               <>

@@ -389,6 +389,9 @@ pub fn group_of(action: &Action) -> Option<Group> {
         | A::QnaModerate { .. }
         | A::QnaApprove { .. }
         | A::PollWordRemove { .. }
+        | A::UpdateReactions { .. }
+        | A::ReactionsOpen { .. }
+        | A::ReactionsReset { .. }
         | A::UpdatePoll { .. }
         | A::PollOpen { .. }
         | A::PollShowResults { .. }
@@ -467,7 +470,8 @@ pub fn group_of(action: &Action) -> Option<Group> {
         | A::PollVote { .. }
         | A::PollWord { .. }
         | A::PollComment { .. }
-        | A::QnaVote { .. } => return None,
+        | A::QnaVote { .. }
+        | A::React { .. } => return None,
     })
 }
 

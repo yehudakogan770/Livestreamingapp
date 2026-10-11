@@ -654,6 +654,25 @@ pub enum Action {
         #[ts(optional)]
         previous: Option<usize>,
     },
+    /// Change how reactions look (where they rise, the totals, the code to scan).
+    UpdateReactions {
+        id: SourceId,
+        reactions: crate::reactions::Reactions,
+    },
+    /// Start or stop taking reactions from phones.
+    ReactionsOpen {
+        id: SourceId,
+        value: bool,
+    },
+    /// Start the reaction totals again.
+    ReactionsReset {
+        id: SourceId,
+    },
+    /// Reactions tapped on phones, gathered by the app's server (`taps[k]` of kind `k`).
+    React {
+        id: SourceId,
+        taps: Vec<u32>,
+    },
     /// A word for a word cloud from a phone (sent by the app's server).
     PollWord {
         id: SourceId,

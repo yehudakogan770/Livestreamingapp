@@ -115,6 +115,19 @@ describe('the audience page', () => {
     expect(section().textContent).toContain('Thank you for your rating and your comment.');
   });
 
+  it('sends reactions with each tap', async () => {
+    await open(audience({ reactions: [{ id: 'rx' }] }));
+    const buttons = [...app().querySelectorAll<HTMLButtonElement>('button.react')];
+    expect(buttons.map((b) => b.textContent)).toEqual(['Love', 'Haha', 'Wow', 'Yes']);
+    buttons[1]!.click();
+    buttons[3]!.click();
+    await vi.advanceTimersByTimeAsync(10);
+    expect(sent.filter((s) => s.url === '/api/react').map((s) => s.body)).toEqual([
+      expect.objectContaining({ id: 'rx', kind: 1 }),
+      expect.objectContaining({ id: 'rx', kind: 3 }),
+    ]);
+  });
+
   it('says when questions wait for the hosts', async () => {
     await open(audience({ qna: { open: true, moderate: true, list: [] } }));
     expect(app().textContent).toContain('The hosts read each question before it is listed here.');

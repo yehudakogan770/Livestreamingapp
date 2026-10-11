@@ -54,6 +54,7 @@ import { CELEBRATE_MS, confetti, drawAt, money, raised } from '../engine/audienc
 import { averageText, countText, ratingAverage, shares } from '../engine/poll';
 import { CLOUD_COLORS, CloudCache, cloudFont, starFill, starPoints } from '../engine/wordCloud';
 import { JOIN_LABEL } from '../components/PollView';
+import { drawReactions } from '../engine/reactions';
 import { joinShown } from '../engine/join';
 import { FrameDelay } from '../engine/frameDelay';
 import { dataValues, fill as fillData, withData } from '../engine/data';
@@ -2062,6 +2063,11 @@ export class ProgramCompositor {
       case 'poll':
         this.poll(k, w, h);
         return;
+      case 'reactions': {
+        const j = k.showJoin && k.open && k.joinQr ? joinShown(k.joinUrl, k.joinQr, 'Scan to react', this.show?.event.wifi, Date.now()) : null;
+        drawReactions(this.ctx, k, now, w, h, j ? { img: this.qr(j.qr), label: j.label } : null);
+        return;
+      }
       case 'comment':
         this.comment(k, now, w, h);
         return;

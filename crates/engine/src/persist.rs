@@ -133,6 +133,7 @@ fn repair_macros(s: &mut Show) {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub fn repair(mut s: Show) -> Show {
     repair_macros(&mut s);
     // Drop sources with duplicate or empty ids (keep the first).
@@ -178,6 +179,7 @@ pub fn repair(mut s: Show) -> Show {
             SourceKind::Screen(c) => c.repair(),
             SourceKind::Lyrics(l) => l.repair(),
             SourceKind::Poll(p) => p.repair(),
+            SourceKind::Reactions(r) => r.repair(),
             SourceKind::Comment(c) => c.repair(),
             SourceKind::Guest(g) => g.repair(),
             SourceKind::Pesukim(p) => {

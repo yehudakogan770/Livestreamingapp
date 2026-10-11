@@ -1332,6 +1332,32 @@ fn apply_to(s: &mut Show, action: Action, now: Millis) -> Result<()> {
                 ))
             }
         }
+        Action::UpdateReactions { id, reactions } => {
+            let r = reactions_mut(s, &id)?;
+            let mut next = reactions;
+            next.repair();
+            next.counts.clone_from(&r.counts);
+            next.floating.clone_from(&r.floating);
+            next.next_seed = r.next_seed;
+            next.open = r.open;
+            *r = next;
+            Ok(())
+        }
+        Action::ReactionsOpen { id, value } => {
+            reactions_mut(s, &id)?.open = value;
+            Ok(())
+        }
+        Action::ReactionsReset { id } => {
+            reactions_mut(s, &id)?.reset();
+            Ok(())
+        }
+        Action::React { id, taps } => {
+            if reactions_mut(s, &id)?.react(&taps, now) {
+                Ok(())
+            } else {
+                Err(ActionError::invalid("reactions", "reactions are closed"))
+            }
+        }
         Action::PollWordRemove { id, word } => {
             poll_mut(s, &id)?.remove_word(&word);
             Ok(())
@@ -2902,6 +2928,19 @@ fn comment_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::chat
     }
 }
 
+fn reactions_mut<'a>(
+    s: &'a mut Show,
+    id: &SourceId,
+) -> Result<&'a mut crate::reactions::Reactions> {
+    let src = s
+        .source_mut(id)
+        .ok_or_else(|| ActionError::UnknownSource { id: id.clone() })?;
+    match &mut src.kind {
+        SourceKind::Reactions(r) => Ok(r),
+        _ => Err(ActionError::invalid("id", "that input is not reactions")),
+    }
+}
+
 fn poll_mut<'a>(s: &'a mut Show, id: &SourceId) -> Result<&'a mut crate::poll::Poll> {
     let src = s
         .source_mut(id)
@@ -3276,6 +3315,11 @@ fn fresh(mut kind: SourceKind) -> SourceKind {
             p.repair();
             p.open = false;
             p.reset();
+        }
+        SourceKind::Reactions(r) => {
+            r.repair();
+            r.open = false;
+            r.reset();
         }
         SourceKind::Scoreboard(sb) => {
             sb.repair();
