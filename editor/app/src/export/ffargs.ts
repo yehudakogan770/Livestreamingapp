@@ -2,6 +2,7 @@
 // raw (RGBA) and leave in the preset's codec, size, pixel format and rate
 // control, with the right encoder options for software and hardware encoders.
 import { exactRate } from '../model/types';
+import { hdrTags, type ColorSpace } from '../render/hdr';
 import type { AudioSpec, DeliveryPreset, RateControl, VideoCodec, VideoSpec } from './presets';
 
 export interface FrameSize {
@@ -87,9 +88,11 @@ function rateArgs(enc: string, codec: VideoCodec, r: RateControl): string[] {
 }
 
 /** The encoder's own options (codec, profile, speed, rate control, pixel format, color tags). */
-export function encodeArgs(enc: string, v: VideoSpec, fps: number): string[] {
+export function encodeArgs(enc: string, v: VideoSpec, fps: number, space: ColorSpace = 'rec709'): string[] {
   const pix = pixelFormat(enc, v);
-  const bt709 = ['-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv'];
+  // HDR films carry Rec. 2020 and PQ or HLG (and, from x265, the HDR10 details); everything else Rec. 709.
+  const bt709 =
+    v.hdr && space !== 'rec709' ? hdrTags(space, enc) : ['-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv'];
   switch (v.codec) {
     case 'prores':
       return [
@@ -117,7 +120,7 @@ export function encodeArgs(enc: string, v: VideoSpec, fps: number): string[] {
         enc === 'libx264'
           ? ['-preset', 'medium', '-profile:v', ten ? 'high10' : 'high']
           : enc === 'libx265'
-            ? ['-preset', 'medium', '-profile:v', ten ? 'main10' : 'main', '-x265-params', 'log-level=error']
+            ? ['-preset', 'medium', '-profile:v', ten ? 'main10' : 'main', ...(v.hdr && space !== 'rec709' ? [] : ['-x265-params', 'log-level=error'])]
             : enc.endsWith('_nvenc')
               ? ['-preset', 'p5', '-tune', 'hq', ...(hevc ? ['-profile:v', ten ? 'main10' : 'main'] : ['-profile:v', 'high'])]
               : enc.endsWith('_qsv')
@@ -144,14 +147,14 @@ export function encodeArgs(enc: string, v: VideoSpec, fps: number): string[] {
 }
 
 /** The picture filters: frame rate, scaling into the finished frame (bars or crop), and color matrix. */
-export function filterChain(v: VideoSpec, render: FrameSize, out: FrameSize, seqFps: number): string {
+export function filterChain(v: VideoSpec, render: FrameSize, out: FrameSize, seqFps: number, space: ColorSpace = 'rec709'): string {
   const steps: string[] = [];
   if (v.fps !== null && Math.abs(v.fps - seqFps) > 0.01) steps.push(`fps=${rateText(v.fps)}`);
   const W = out.width;
   const H = out.height;
   const same = render.width === W && render.height === H;
   const yuv = v.codec !== 'png' && v.codec !== 'gif';
-  const color = yuv ? ':out_color_matrix=bt709:out_range=tv' : '';
+  const color = yuv ? `:out_color_matrix=${v.hdr && space !== 'rec709' ? 'bt2020' : 'bt709'}:out_range=tv` : '';
   if (same) steps.push(`scale=${W}:${H}:flags=lanczos${color}`);
   else if (v.fit === 'fit')
     steps.push(
@@ -170,14 +173,16 @@ export function pictureFile(p: DeliveryPreset): string {
 }
 
 /** Everything FFmpeg is told to turn raw frames into the preset's picture. */
-export function pictureArgs(p: DeliveryPreset, enc: string, seqFps: number, render: FrameSize, out: FrameSize): string[] {
+export function pictureArgs(p: DeliveryPreset, enc: string, seqFps: number, render: FrameSize, out: FrameSize, space: ColorSpace = 'rec709'): string[] {
   const v = p.video;
   if (!v) throw new Error('This preset makes no picture.');
+  const hdr = !!v.hdr && space !== 'rec709';
   return [
     '-f',
     'rawvideo',
     '-pix_fmt',
-    'rgba',
+    // HDR frames come 16 bits a channel.
+    hdr ? 'rgba64le' : 'rgba',
     '-s',
     `${render.width}x${render.height}`,
     '-framerate',
@@ -185,8 +190,8 @@ export function pictureArgs(p: DeliveryPreset, enc: string, seqFps: number, rend
     '-i',
     'pipe:0',
     '-vf',
-    filterChain(v, render, out, seqFps),
-    ...encodeArgs(enc, v, v.fps ?? seqFps),
+    filterChain(v, render, out, seqFps, space),
+    ...encodeArgs(enc, v, v.fps ?? seqFps, space),
     ...(p.container === 'png' ? ['-start_number', '0'] : []),
     pictureFile(p),
   ];
@@ -217,7 +222,7 @@ export function loudnormFilter(lufs: number, truePeak: number): string {
 export function needsFfmpegPicture(p: DeliveryPreset, seq: FrameSize): boolean {
   const v = p.video;
   if (!v) return false;
-  if (v.codec !== 'h264' || v.bitDepth !== 8 || v.alpha || v.fps !== null) return true;
+  if (v.codec !== 'h264' || v.bitDepth !== 8 || v.alpha || v.fps !== null || v.hdr) return true;
   if (v.hardware === 'software') return true;
   if (v.rate.mode === 'cbr') return true;
   const out = outputSize(seq, v);

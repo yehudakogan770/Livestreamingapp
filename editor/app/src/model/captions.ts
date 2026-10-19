@@ -35,6 +35,8 @@ export interface SeqWord {
   clip: string;
   media: string;
   index: number;
+  /** Who says it: the file (one person on each microphone), or `file#voice` when voices were told apart in one file. */
+  who: string;
 }
 
 const plain = (w: string): string => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
@@ -70,14 +72,14 @@ export function sequenceWords(p: Project, s: Sequence): SeqWord[] {
           if (mid < 0) return;
           const from = c.start + (a < 0 || a > mid ? mid : a);
           const to = Math.min(end(c), Math.max(from + 1, c.start + (b < mid ? c.length : b)));
-          all.push({ w: w.w, from, to, clip: c.id, media: m.id, index });
+          all.push({ w: w.w, from, to, clip: c.id, media: m.id, index, who: whoOf(m.id, w.v) });
           return;
         }
         const mid = (w.s + w.e) / 2;
         if (mid < src.in || mid >= outSec) return;
         const from = Math.max(c.start, c.start + Math.round(((w.s - src.in) * fps) / c.speed));
         const to = Math.min(end(c), Math.max(from + 1, c.start + Math.round(((w.e - src.in) * fps) / c.speed)));
-        all.push({ w: w.w, from, to, clip: c.id, media: m.id, index });
+        all.push({ w: w.w, from, to, clip: c.id, media: m.id, index, who: whoOf(m.id, w.v) });
       });
     }
   }
@@ -100,20 +102,37 @@ export function sequenceWords(p: Project, s: Sequence): SeqWord[] {
   return kept;
 }
 
-/** Who is heard on a file: the name given in the transcript, otherwise the file's name. */
-export function speakerName(p: Project, media: string): string {
+/** Who says a word: the file, or one of the voices told apart in it. */
+export const whoOf = (media: string, voice: number | undefined): string => (voice === undefined ? media : `${media}#${voice}`);
+const splitWho = (who: string): [string, number | null] => {
+  const i = who.lastIndexOf('#');
+  const v = i > 0 ? Number(who.slice(i + 1)) : NaN;
+  return Number.isInteger(v) && v >= 0 ? [who.slice(0, i), v] : [who, null];
+};
+
+/** Who is heard: the name given in the transcript, otherwise the file's name (or "Speaker 2" for a voice told apart in a file). */
+export function speakerName(p: Project, who: string): string {
+  const [media, voice] = splitWho(who);
   const m = p.media.find((x) => x.id === media);
+  if (voice !== null) return m?.voices?.[voice]?.trim() || `Speaker ${voice + 1}`;
   const named = m?.speaker?.trim();
   if (named) return named;
   return (m?.name ?? 'Speaker').replace(/\.[^.]+$/, '');
 }
 
-/** Give the person heard on a file a name (empty: back to the file's name). */
-export function nameSpeaker(p: Project, media: string, name: string): Project {
+/** Give the person heard on a file (or one of its voices) a name (empty: back to the default). */
+export function nameSpeaker(p: Project, who: string, name: string): Project {
+  const [media, voice] = splitWho(who);
   return {
     ...p,
     media: p.media.map((m) => {
       if (m.id !== media) return m;
+      if (voice !== null) {
+        const voices = [...(m.voices ?? [])];
+        while (voices.length <= voice) voices.push('');
+        voices[voice] = name.trim();
+        return { ...m, voices };
+      }
       const { speaker: _old, ...rest } = m;
       return name.trim() ? { ...rest, speaker: name.trim() } : rest;
     }),
@@ -125,7 +144,7 @@ export function transcriptParagraphs(words: SeqWord[], pause: number): number[][
   const out: number[][] = [];
   words.forEach((w, i) => {
     const prev = words[i - 1];
-    if (!prev || w.from - prev.to > pause || prev.media !== w.media) out.push([i]);
+    if (!prev || w.from - prev.to > pause || prev.who !== w.who) out.push([i]);
     else out[out.length - 1]?.push(i);
   });
   return out;

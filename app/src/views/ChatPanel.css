@@ -151,3 +151,29 @@
 .chat__thanks {
   font-size: 12px;
 }
+/* Audience questions: the votes and the buttons under each one. */
+.chat__msg--q {
+  padding-right: 8px;
+}
+.chat__msg.is-held {
+  outline: 1px dashed var(--warning);
+}
+.chat__qbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.chat__votes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.chat__votes svg {
+  width: 13px;
+  height: 13px;
+}

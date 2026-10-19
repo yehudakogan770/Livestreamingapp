@@ -5,8 +5,8 @@
 // a plan or the calendar opens). Account data (Supabase) is never cached here:
 // those requests go straight to the network, as if there were no service worker.
 
-const VERSION = '1be5f9e49a30';
-const FILES = ["./assets/Calendar-BEfBV6xZ.js","./assets/chevron-left-CEp6ZaIh.js","./assets/index-CJdLzq9s.js","./assets/index-ESDnKT5M.css","./assets/jsx-runtime-DLNB9Qsn.js","./assets/NewPlan-BN50ACb0.js","./assets/PlanView-CjhPjHAI.css","./assets/PlanView-D3naxJFf.js","./assets/pro-DcXI5vHo.js","./assets/pro-DH96Iu34.css","./assets/PublicView-B1fcrB5j.js","./assets/ShowView-CoqzwzXF.css","./assets/ShowView-MEjEIG3a.js","./assets/TwoStep-BCra3_R3.js","./index.html","./favicon-32.png","./fonts/plex-mono-400-latin.woff2","./fonts/plex-mono-500-latin.woff2","./fonts/plex-mono-600-latin.woff2","./fonts/plex-sans-latin.woff2","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
+const VERSION = '1adface0e8c1';
+const FILES = ["./assets/Calendar-BNtxzC8y.js","./assets/Calendar-CHcgR985.css","./assets/chevron-left-CKlJVi9s.js","./assets/index-C35JrhR0.js","./assets/index-CIJIO54N.css","./assets/jsx-runtime-DLNB9Qsn.js","./assets/NewPlan-Dlkwi-qU.js","./assets/PlanView-D77icOKe.js","./assets/PlanView-kWCLk82G.css","./assets/pro-BTB88urZ.js","./assets/pro-DH96Iu34.css","./assets/PublicView-BIOfVAWO.js","./assets/ShowView-B5vIBIrO.js","./assets/ShowView-s_ZI-e8O.css","./assets/TwoStep-CB0FxX5U.js","./index.html","./favicon-32.png","./fonts/plex-mono-400-latin.woff2","./fonts/plex-mono-500-latin.woff2","./fonts/plex-mono-600-latin.woff2","./fonts/plex-sans-latin.woff2","./icon-180.png","./icon-192.png","./icon-512.png","./icon-maskable-192.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest","./mark.svg"];
 const SHELL = `planner-shell-${VERSION}`;
 /** The fonts' other alphabets, kept once first used (their file names never change). */
 const FONTS = 'planner-fonts-2';

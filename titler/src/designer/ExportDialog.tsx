@@ -7,6 +7,7 @@ import { slug } from '../core/htmlTemplate';
 import type { Store } from './store';
 import { download, type Host } from './host';
 import { EXPORTERS, type ExportKind } from './exporters';
+import { Modal } from './Modal';
 
 export function ExportDialog({ store, host, onClose, onLumtitle }: { store: Store; host: Host; onClose: () => void; onLumtitle: () => void }) {
   const [kind, setKind] = useState<ExportKind>('template');
@@ -35,8 +36,7 @@ export function ExportDialog({ store, host, onClose, onLumtitle }: { store: Stor
     }
   };
   return (
-    <div className="tt-modal" role="dialog" aria-label="Export">
-      <div className="tt-modal-box tt-export">
+    <Modal label="Export" onClose={() => !busy && onClose()} outsideCloses={!busy} className="tt-export">
         <h2>Export</h2>
         {notes.length ? (
           <>
@@ -76,16 +76,14 @@ export function ExportDialog({ store, host, onClose, onLumtitle }: { store: Stor
             </div>
           </>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }
 
 /** A short report after an import or export: what came over differently. */
 export function NoticeDialog({ title, lead, items, onClose }: { title: string; lead: string; items: string[]; onClose: () => void }) {
   return (
-    <div className="tt-modal" role="dialog" aria-label={title}>
-      <div className="tt-modal-box tt-export">
+    <Modal label={title} onClose={onClose} className="tt-export">
         <h2>{title}</h2>
         <p>{lead}</p>
         {items.length > 0 && (
@@ -100,7 +98,6 @@ export function NoticeDialog({ title, lead, items, onClose }: { title: string; l
             OK
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

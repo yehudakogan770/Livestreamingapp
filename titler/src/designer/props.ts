@@ -139,6 +139,9 @@ export function layerKeyTimes(l: Layer): number[] {
     const p = getProp(l, pi.path);
     if (isAnimated(p)) for (const k of p.k) out.add(Math.round(k.t * 1000) / 1000);
   }
+  // Masks and paths changing form.
+  for (const m of l.masks ?? []) for (const k of m.morph ?? []) out.add(Math.round(k.t * 1000) / 1000);
+  if (l.type === 'shape') for (const k of l.morph ?? []) out.add(Math.round(k.t * 1000) / 1000);
   return [...out].sort((a, b) => a - b);
 }
 

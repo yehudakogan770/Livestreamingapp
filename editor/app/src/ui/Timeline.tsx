@@ -5,6 +5,7 @@ import {
   Eye,
   EyeOff,
   Film,
+  FoldHorizontal,
   Hand,
   Headphones,
   Link2,
@@ -67,7 +68,7 @@ export const METER_ZONES: [number, number, string][] = [
   [-18, -6, '#d6a93a'],
   [-6, 6, '#e0453a'],
 ];
-const HEAD = 190;
+const HEAD = 214;
 const EDGE = 7;
 /**
  * The view moves on in steps this wide (pixels): the clips on screen and the
@@ -642,6 +643,16 @@ export function Timeline({ doc, engine, ui, actions, collab = null }: { doc: Doc
         >
           <Link2 />
           Linked
+        </button>
+        <button
+          type="button"
+          className={`tl__toggle${s.magnetic ? ' is-on' : ''}`}
+          title="Magnetic timeline: V1 never has gaps, clips dragged along it reorder, and titles, cutaways and sound on a V1 clip move with it"
+          aria-pressed={!!s.magnetic}
+          onClick={actions.magnetic}
+        >
+          <FoldHorizontal />
+          Magnetic
         </button>
         <button type="button" className="tl__toggle" title="Add a marker (M)" onClick={actions.marker}>
           <Bookmark />

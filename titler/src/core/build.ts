@@ -107,6 +107,12 @@ export function newNull(comp: Composition | null, position: Vec2 = [960, 540]): 
   return { ...base('Null', comp, position), type: 'null' };
 }
 
+/** A camera for the composition's 3D layers, looking at its middle. */
+export function newCamera(comp: Composition): NullLayer {
+  const l = newNull(comp, [comp.width / 2, comp.height / 2]);
+  return { ...l, name: 'Camera', camera: true, transform: { ...l.transform, rotationX: still(0), rotationY: still(0), z: still(0) } };
+}
+
 export function newCompLayer(comp: Composition | null, inner: Composition): CompLayer {
   return { ...base(inner.name, comp, [0, 0]), type: 'comp', comp: inner.id, offset: 0 };
 }

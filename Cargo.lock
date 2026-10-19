@@ -2197,6 +2197,7 @@ dependencies = [
  "lumora-studio-engine",
  "lumora-syscheck",
  "lumora-titler-host",
+ "lumora-vst3-host",
  "raw-window-handle",
  "reqwest",
  "rustls",
@@ -2244,6 +2245,7 @@ dependencies = [
  "serde_json",
  "wgpu",
  "windows 0.62.2",
+ "windows-core 0.62.2",
  "windows-sys 0.61.2",
  "zune-jpeg",
 ]
@@ -2321,6 +2323,16 @@ dependencies = [
  "serde",
  "serde_json",
  "tauri",
+]
+
+[[package]]
+name = "lumora-vst3-host"
+version = "0.1.0"
+dependencies = [
+ "libloading 0.8.9",
+ "serde",
+ "serde_json",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

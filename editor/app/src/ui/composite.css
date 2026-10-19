@@ -1,0 +1,271 @@
+/* The Composite page: the node graph under the viewer, and the chosen
+   node's settings beside it. Neutral grays like the Color page's graph; the
+   chosen node and a new join take the Studio amber as a thin line. */
+
+.comp {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+}
+.comp--empty {
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.comp--empty > svg {
+  width: 28px;
+  height: 28px;
+  color: var(--text-faint);
+}
+.comp--empty p {
+  max-width: 440px;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.comp__bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bar);
+}
+.comp__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.comp__title svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+}
+.comp__title small {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+.comp__fill {
+  flex: 1;
+}
+.comp__hint {
+  color: var(--text-faint);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.comp__canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--well);
+  cursor: default;
+  outline: none;
+}
+.comp__canvas:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--focus);
+}
+.comp__plane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+}
+.comp__wires {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.comp__wires path {
+  fill: none;
+  stroke: #8a8a8a;
+  stroke-width: 1.5;
+}
+.comp__wires path.is-mask {
+  stroke: #6f8fb0;
+  stroke-dasharray: 4 3;
+}
+.comp__wires path.is-new {
+  stroke: var(--accent);
+}
+
+/* A node: a title to drag, its inputs down the left side, its output on the right. */
+.cnode {
+  position: absolute;
+  border: 1px solid #000;
+  border-radius: var(--radius);
+  background: #2c2c2c;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  font-size: 11.5px;
+  user-select: none;
+}
+.cnode.is-on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.cnode.is-off {
+  opacity: 0.55;
+}
+.cnode.is-off .cnode__name {
+  text-decoration: line-through;
+}
+.cnode__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 4px 0 8px;
+  border-bottom: 1px solid #000;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: #353535;
+  cursor: grab;
+}
+.cnode__head:active {
+  cursor: grabbing;
+}
+/* A thin colored edge says what kind of node it is. */
+.cnode--in .cnode__head,
+.cnode--under .cnode__head {
+  box-shadow: inset 3px 0 0 #5d7a8c;
+}
+.cnode--solid .cnode__head,
+.cnode--gradient .cnode__head {
+  box-shadow: inset 3px 0 0 #7a6a8c;
+}
+.cnode--merge .cnode__head,
+.cnode--transform .cnode__head,
+.cnode--mask .cnode__head {
+  box-shadow: inset 3px 0 0 #8c7a52;
+}
+.cnode--fx .cnode__head {
+  box-shadow: inset 3px 0 0 #5c8463;
+}
+.cnode--out .cnode__head {
+  box-shadow: inset 3px 0 0 #a6a6a6;
+}
+.cnode__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.cnode__eye {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+.cnode__eye svg {
+  width: 13px;
+  height: 13px;
+}
+.cnode__eye:hover {
+  background: var(--button-hover);
+  color: var(--text);
+}
+.cnode__eye.is-on {
+  color: var(--accent);
+}
+.cnode__row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  height: 20px;
+}
+.cnode__label {
+  padding-left: 10px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.cnode__src {
+  position: absolute;
+  left: 10px;
+  top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+.cnode__swatch {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #000;
+  border-radius: var(--radius-sm);
+}
+/* The ports: an input on the left edge, the output on the right. */
+.cnode__in,
+.cnode__out {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 1px solid #000;
+  border-radius: 50%;
+  background: #565656;
+  cursor: crosshair;
+}
+.cnode__in {
+  left: -6px;
+}
+.cnode__in.is-joined {
+  background: #b4b4b4;
+}
+.cnode__in.is-mask {
+  background: #4d6176;
+}
+.cnode__in.is-mask.is-joined {
+  background: #8fb0d0;
+}
+.cnode__out {
+  right: -6px;
+  background: #b4b4b4;
+}
+.cnode__in:hover,
+.cnode__out:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.nodeinsp {
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+}
+.nodeinsp .insp__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nodeinsp .insp__title svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+}
+.nodeinsp > .btn {
+  align-self: flex-start;
+}

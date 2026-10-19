@@ -1,0 +1,679 @@
+/* The calendar: month grid, week and day time grids, agenda, and the phone's
+   compact month. Ink on neutral grays like the rest of the Planner; red only
+   for the line at the time now. */
+
+.cal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.cal__bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.cal__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cal__arrows {
+  display: flex;
+  align-items: center;
+}
+.cal__title {
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+}
+.cal__note {
+  margin: 0;
+}
+.cal__zone {
+  color: var(--faint);
+  font-weight: 400;
+}
+.cal__empty {
+  max-width: 560px;
+}
+
+/* ---- Month ---- */
+.month {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.month__head,
+.month__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.month__head {
+  border-bottom: 1px solid var(--line);
+}
+.month__wd {
+  padding: 8px 10px;
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
+}
+.month__weeks {
+  display: grid;
+}
+.month__week + .month__week {
+  border-top: 1px solid var(--line);
+}
+.month__day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  min-height: 118px;
+  padding: 6px 6px 8px;
+  outline: none;
+}
+.month__day + .month__day {
+  border-left: 1px solid var(--line);
+}
+.month__day.is-new {
+  cursor: pointer;
+}
+.month__day.is-new:hover {
+  background: var(--surface-2);
+}
+.month__day.is-out {
+  background: var(--surface-2);
+}
+.month__day:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+.month__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 13px;
+  background: none;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.month__n:hover {
+  background: var(--sel);
+}
+.month__day.is-out .month__n {
+  color: var(--faint);
+}
+.month__day.is-today .month__n {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.month__plans {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.calchip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 22px;
+  text-align: left;
+  cursor: pointer;
+}
+.calchip::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text);
+  transform: translateY(-1px);
+}
+.calchip:hover {
+  background: var(--sel);
+}
+.calchip--allday {
+  background: var(--surface-3);
+}
+.calchip--allday::before {
+  display: none;
+}
+.calchip.is-past {
+  color: var(--dim);
+}
+.calchip.is-past::before {
+  background: var(--line-3);
+}
+.calchip__time {
+  flex: 0 0 auto;
+  color: var(--dim);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.calchip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.month__more {
+  align-self: flex-start;
+  height: 22px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.month__more:hover {
+  background: var(--sel);
+  color: var(--text);
+}
+
+/* ---- Week and day: a time grid ---- */
+.tgrid {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.tgrid__head,
+.tgrid__allday {
+  display: grid;
+  border-bottom: 1px solid var(--line);
+  /* Lines up with the scrolling grid below it. */
+  overflow-y: hidden;
+  scrollbar-gutter: stable;
+}
+.tgrid__dayhead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 4px 10px;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+.tgrid__dayhead:disabled {
+  cursor: default;
+}
+.tgrid__dayhead:hover:not(:disabled) .tgrid__n {
+  background: var(--sel);
+}
+.tgrid__wd {
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
+}
+.tgrid__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 6px;
+  border-radius: 17px;
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.tgrid__dayhead.is-today .tgrid__n {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.tgrid__dayhead.is-today:hover .tgrid__n {
+  background: var(--accent-hover);
+}
+.tgrid--day .tgrid__dayhead {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 10px;
+  padding-left: 12px;
+}
+.tgrid__gutter {
+  align-self: center;
+  padding: 0 8px;
+  color: var(--faint);
+  font-size: 11px;
+  text-align: right;
+}
+.tgrid__alldaycell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 4px;
+  border-left: 1px solid var(--line);
+}
+.tgrid__scroll {
+  height: clamp(420px, calc(100vh - 290px), 820px);
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.tgrid__body {
+  position: relative;
+  display: grid;
+  background-image: linear-gradient(var(--line), var(--line) 1px, transparent 1px);
+  background-size: 100% 48px;
+  background-position: 0 0;
+}
+.tgrid__hours {
+  position: relative;
+}
+.tgrid__hour {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  padding: 0 2px;
+  background: var(--surface);
+  color: var(--faint);
+  font-size: 11px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tgrid__col {
+  position: relative;
+  min-width: 0;
+  border-left: 1px solid var(--line);
+}
+.tgrid__col.is-new {
+  cursor: pointer;
+}
+.tgrid__col.is-new:hover {
+  background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+}
+.tgrid__now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--live);
+  pointer-events: none;
+}
+.tgrid__now span {
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--live);
+}
+.tevent {
+  position: absolute;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 3px 8px 3px 8px;
+  border: 1px solid var(--line-2);
+  border-left: 3px solid var(--text);
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+.tevent:hover {
+  background: var(--sel);
+  border-color: var(--line-3);
+  border-left-color: var(--text);
+}
+.tevent.is-past {
+  border-left-color: var(--line-3);
+  color: var(--dim);
+}
+.tevent--short {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.tevent__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.tevent__time,
+.tevent__meta {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.tevent--short .tevent__time {
+  flex: 0 0 auto;
+}
+.tevent--allday {
+  position: static;
+  width: 100%;
+  border-left-width: 1px;
+  padding: 2px 8px;
+}
+.tgrid--day .tevent {
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.tgrid--day .tevent__time,
+.tgrid--day .tevent__meta {
+  font-size: 12px;
+}
+
+/* ---- Agenda (and the plans under the phone's month) ---- */
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 760px;
+}
+.agenda__title {
+  margin: 0 2px 8px;
+  color: var(--dim);
+  font-size: 13px;
+  font-weight: 600;
+}
+.agenda__title.is-today {
+  color: var(--text);
+}
+.agenda__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.agenda__list li + li {
+  border-top: 1px solid var(--line);
+}
+.agenda__item {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 12px 16px;
+  color: var(--text);
+  text-decoration: none;
+}
+.agenda__item:hover {
+  background: var(--hover);
+}
+.agenda__time {
+  align-self: start;
+  padding-top: 1px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.agenda__date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.1;
+}
+.agenda__date b {
+  color: var(--text);
+  font-size: 17px;
+}
+.agenda__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.agenda__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.agenda__sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dim);
+  font-size: 12px;
+}
+.agenda__go {
+  color: var(--faint);
+}
+
+/* ---- Phones: a compact month, and the chosen day under it ---- */
+.mcal {
+  padding: 4px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.mcal__bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 4px 6px 12px;
+}
+.mcal__title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.mcal__bar .btn--icon {
+  width: 40px;
+  height: 40px;
+}
+.mcal__today {
+  height: 32px;
+  color: var(--text);
+}
+.mcal__row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.mcal__wd {
+  padding: 4px 0 6px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: center;
+}
+.mcal__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  height: 48px;
+  padding: 2px 0 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mcal__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.mcal__day.is-out .mcal__n {
+  color: var(--faint);
+}
+.mcal__day.is-today .mcal__n {
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1.5px var(--text);
+}
+.mcal__day.is-on .mcal__n {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  box-shadow: none;
+}
+.mcal__dots {
+  display: flex;
+  gap: 3px;
+  height: 5px;
+}
+.mcal__dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+.mcal__day.is-out .mcal__dots i {
+  background: var(--line-3);
+}
+.mday {
+  display: flex;
+  flex-direction: column;
+}
+.mday__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin: 10px 2px 8px;
+}
+.mday__title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.mday__title--next {
+  margin: 24px 2px 8px;
+  color: var(--dim);
+}
+.mday__new {
+  color: var(--text);
+}
+.mday__none {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px dashed var(--line-2);
+  border-radius: 10px;
+  text-align: center;
+}
+:where([data-device='phone']) .cal--phone .agenda__item {
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  min-height: 64px;
+  padding: 12px 12px 12px 14px;
+}
+:where([data-device='phone']) .cal--phone .agenda__name {
+  font-size: 16px;
+}
+:where([data-device='phone']) .cal--phone .agenda__sub {
+  font-size: 13px;
+}
+:where([data-device='phone']) .cal--phone .agenda__time {
+  font-size: 14px;
+}
+:where([data-device='phone']) .cal--phone .agenda__item--dated,
+.agenda__item--dated {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+}
+
+/* ---- Tablets: bigger targets for fingers; narrow windows: tighter days ---- */
+:where([data-device='tablet']) .month__day {
+  min-height: 132px;
+  padding: 8px;
+}
+:where([data-device='tablet']) .month__n {
+  min-width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+:where([data-device='tablet']) .month__more {
+  height: 30px;
+  line-height: 30px;
+  font-size: 13px;
+}
+/* Narrow days on tablets: the name on its own line, the time under it. */
+:where([data-device='tablet']) .calchip {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  height: auto;
+  min-height: 40px;
+  padding: 4px 8px;
+  background: var(--surface-3);
+  line-height: 16px;
+  font-size: 13px;
+}
+:where([data-device='tablet']) .calchip::before {
+  display: none;
+}
+:where([data-device='tablet']) .calchip__name {
+  order: -1;
+  max-width: 100%;
+}
+:where([data-device='tablet']) .cal__bar .btn,
+:where([data-device='tablet']) .cal__bar .seg__btn {
+  min-height: 40px;
+}
+:where([data-compact]) .calchip__time {
+  display: none;
+}
+:where([data-compact]) .month__day {
+  min-height: 96px;
+  padding: 4px;
+}

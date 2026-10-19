@@ -29,6 +29,8 @@ export interface VideoSpec {
   prores?: ProresProfile;
   dnxhr?: DnxhrProfile;
   hardware: HardwarePref;
+  /** HDR: made in the sequence's HDR space (PQ or HLG, Rec. 2020), 10-bit, with HDR tags (an HDR sequence only). */
+  hdr?: boolean;
 }
 
 export interface AudioSpec {
@@ -237,6 +239,28 @@ export const BUILT_IN: DeliveryPreset[] = [
     truePeak: -1,
   },
   {
+    id: 'hdr-web',
+    name: 'HDR for YouTube and Vimeo (H.265)',
+    group: 'web',
+    note: 'H.265 10-bit, Rec. 2020 with PQ (HDR10 details) or HLG, as the sequence is; −14 LUFS',
+    container: 'mp4',
+    video: web({ codec: 'hevc', height: null, bitDepth: 10, hdr: true, hardware: 'software', rate: { mode: 'quality', q: 88 } }),
+    audio: AAC,
+    loudness: -14,
+    truePeak: -1,
+  },
+  {
+    id: 'hdr-master',
+    name: 'Master: HDR ProRes 422 HQ',
+    group: 'master',
+    note: 'ProRes 422 HQ 10-bit .mov tagged Rec. 2020 PQ or HLG, as the sequence is; 24-bit sound',
+    container: 'mov',
+    video: web({ codec: 'prores', height: null, prores: 'hq', bitDepth: 10, hdr: true, hardware: 'software', rate: { mode: 'quality', q: 100 } }),
+    audio: PCM24,
+    loudness: null,
+    truePeak: -1,
+  },
+  {
     id: 'prores-hq',
     name: 'Broadcast: ProRes 422 HQ',
     group: 'broadcast',
@@ -384,6 +408,7 @@ export function presetProblems(p: DeliveryPreset): string[] {
     if (v.width !== null && (v.width < 16 || v.width > 8192)) out.push('The width must be between 16 and 8192.');
     if (v.height !== null && (v.height < 16 || v.height > 8192)) out.push('The height must be between 16 and 8192.');
     if (v.rate.mode !== 'quality' && !(v.rate.mbps > 0)) out.push('The bit rate must be more than zero.');
+    if (v.hdr && (v.bitDepth !== 10 || !(v.codec === 'hevc' || v.codec === 'prores'))) out.push('HDR films are 10-bit H.265 or ProRes.');
   } else if (p.container === 'mp4' || p.container === 'mov' || p.container === 'png' || p.container === 'gif') out.push('That file type needs a picture.');
   if (p.audio?.codec === 'mp3' && p.container !== 'mp3') out.push('MP3 sound goes in an .mp3 file.');
   if (p.container === 'mp3' && p.audio?.codec !== 'mp3') out.push('An .mp3 file needs MP3 sound.');

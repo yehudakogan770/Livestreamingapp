@@ -1,0 +1,28 @@
+/* The preview is a dark picture, so the reactions read as they will over a camera. */
+.rxc__stage {
+  background: #20242b;
+}
+.rxc__totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.rxc__totals li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rxc__totals b {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.rxc__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

@@ -51,10 +51,9 @@
   align-items: flex-end;
 }
 .show__facts dt {
-  color: var(--faint);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
 }
 .show__facts dd {
   margin: 0;
@@ -82,11 +81,9 @@
   overflow: auto;
 }
 .show__label {
-  color: var(--faint);
-  font-size: 11px;
+  color: var(--dim);
+  font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 .show__title {
   margin: 0;
@@ -451,8 +448,7 @@
   bottom: 4vh;
   color: #a3a39e;
   font-size: clamp(16px, 3.5vh, 40px);
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
+  font-weight: 600;
 }
 @media (prefers-reduced-motion: reduce) {
   .stage.is-flash .stage__msg {
@@ -527,8 +523,7 @@
   margin: 0 0 8px;
   font-size: 13px;
   color: var(--dim);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-weight: 600;
 }
 .public__sec h3 {
   margin: 12px 0 6px;

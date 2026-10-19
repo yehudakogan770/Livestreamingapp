@@ -2,12 +2,14 @@
 // composition used several times, each copy with its own field values).
 
 import { beforeAll, describe, expect, it } from 'vitest';
-import { newComposition, newCompLayer, newGroup, newProject, newShape } from './build';
+import { newComposition, newCompLayer, newGroup, newProject, newShape, newText } from './build';
+import { overrideLayer, withOverrides } from './components';
+import { parseProject } from './validate';
 import { renderFrame } from './render';
 import { toLottie } from './lottieExport';
 import { fromLottie } from './lottie';
 import { canvas, env, registerTestFont, TEST_FONT } from '../test/nodeCanvas';
-import type { GroupLayer, ShapeLayer, TitleProject } from './types';
+import type { CompLayer, GroupLayer, ShapeLayer, TitleProject } from './types';
 
 const brand = { font: TEST_FONT, fontSub: TEST_FONT };
 
@@ -97,5 +99,56 @@ describe('components', () => {
     // Lottie gets one precomp for each copy that has its own values.
     const json = toLottie(p).json as { assets: { id: string }[] };
     expect(json.assets.filter((x) => x.id.startsWith('comp_')).length).toBe(2);
+  });
+
+  it('each copy can change any layer inside: color, shown, moved, scaled, words; its animation still plays', () => {
+    const p = newProject('Panel', 400, 200);
+    const main = p.compositions[0]!;
+    const tag = newComposition('Tag', 200, 200);
+    const box = newShape(tag, 'rect', [0, 0], [200, 200], '#ff0000');
+    const dot = newShape(tag, 'rect', [0, 0], [20, 20], '#ffffff');
+    tag.layers = [dot, box];
+    p.compositions.push(tag);
+    const a = newCompLayer(main, tag);
+    const b: CompLayer = {
+      ...newCompLayer(main, tag),
+      overrides: { [box.id]: { fill: '#0000ff' }, [dot.id]: { move: [150, 150] } },
+      transform: { ...newCompLayer(main, tag).transform, position: { v: [200, 0] as [number, number] } },
+    };
+    main.layers = [a, b];
+    let c = draw(p, 400, 200);
+    expect(px(c, 100, 100).slice(0, 3)).toEqual([255, 0, 0]);
+    expect(px(c, 300, 100).slice(0, 3)).toEqual([0, 0, 255]);
+    // The first copy's dot is at its corner; the second's moved to the other corner.
+    expect(px(c, 10, 10).slice(0, 3)).toEqual([255, 255, 255]);
+    expect(px(c, 210, 10).slice(0, 3)).toEqual([0, 0, 255]);
+    expect(px(c, 360, 160).slice(0, 3)).toEqual([255, 255, 255]);
+    // Hidden in a copy.
+    b.overrides = { [box.id]: { visible: false } };
+    c = draw(p, 400, 200);
+    expect(px(c, 300, 100)[3]).toBe(0);
+    expect(px(c, 100, 100).slice(0, 3)).toEqual([255, 0, 0]);
+    // Kept through a file, and in Lottie as the copy's own precomp.
+    const back = parseProject(JSON.stringify(p)).project!.compositions[0]!.layers[1]!;
+    expect(back.type === 'comp' && back.overrides).toEqual({ [box.id]: { visible: false } });
+    const json = toLottie(p).json as { assets: { id: string }[] };
+    expect(json.assets.filter((x) => x.id.startsWith('comp_')).length).toBe(2);
+  });
+
+  it('a change is added to the layer’s own keyframes, and changes nothing when empty', () => {
+    const t = newText(null, 'Guest', [0, 0], [200, 60]);
+    t.transform.position = { k: [{ t: 0, v: [0, 100] }, { t: 1, v: [0, 0] }] };
+    t.transform.opacity = { v: 80 };
+    const o = overrideLayer(t, { text: 'Host', move: [10, 0], opacity: 50, scale: 200, rotate: 15 });
+    expect(o.type === 'text' && o.text).toBe('Host');
+    expect(o.transform.position).toEqual({ k: [{ t: 0, v: [10, 100] }, { t: 1, v: [10, 0] }] });
+    expect(o.transform.opacity).toEqual({ v: 40 });
+    expect(o.transform.scale).toEqual({ v: [200, 200] });
+    expect(o.transform.rotation).toEqual({ v: 15 });
+    const c = newComposition('C', 100, 100);
+    expect(withOverrides(c, {})).toBe(c);
+    expect(withOverrides(c, undefined)).toBe(c);
+    const ov = { x: { visible: false } };
+    expect(withOverrides(c, ov)).toBe(withOverrides(c, ov));
   });
 });

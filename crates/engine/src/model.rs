@@ -308,6 +308,8 @@ pub enum SourceKind {
     Drawing(Box<crate::drawing::Drawing>),
     /// An audience poll, voted from phones.
     Poll(Box<crate::poll::Poll>),
+    /// Reactions tapped on phones, floating up over the picture.
+    Reactions(Box<crate::reactions::Reactions>),
     /// Song lyrics, one slide at a time.
     Lyrics(Box<crate::lyrics::Lyrics>),
     /// A display or window of this computer.

@@ -378,6 +378,9 @@ export class Recorder {
         return run('wave', { uAmount: n('amount', 20) * k, uFreq: n('size', 30) / 10, uTime: time * (n('speed', 50) / 25) });
       case 'vhs':
         return run('vhs', { uAmount: n('amount', 50) / 100, uTime: time });
+      case 'nodes':
+        // Node composites are drawn by the WebGL compositor.
+        throw new Unsupported('a node composite');
       default: {
         const u = moreEffectUniforms(e.type, n, { k, time, d: e.d });
         return u && u !== 'skip' ? run(e.type, u) : input;

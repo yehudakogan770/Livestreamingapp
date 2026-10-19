@@ -49,10 +49,14 @@ export interface EditorState {
   path: string | null;
   /** A short message at the bottom ("Saved", "Copied 2 layers"). */
   status: string;
-  /** Pixels per second in the timeline. */
+  /** Pixels per second in the timeline; 0: the whole composition fits. */
   timelineZoom: number;
   /** The text layer being typed into on the canvas. */
   editingText: string | null;
+  /** The path shape whose points are being edited on the canvas (double-click it). */
+  editingPath: string | null;
+  /** The outline point chosen on the canvas (its handles are shown). */
+  outlinePoint: { ref: import('./outlines').OutlineRef; outline: number; vertex: number } | null;
 }
 
 const LIMIT = 200;
@@ -87,8 +91,10 @@ export class Store {
       dirty: false,
       path: null,
       status: '',
-      timelineZoom: 120,
+      timelineZoom: 0,
       editingText: null,
+      editingPath: null,
+      outlinePoint: null,
       ...extra,
     };
   }
@@ -142,6 +148,8 @@ export class Store {
       this.past.push({ project: g.project, label: g.label, selection: this.state.selection });
       if (this.past.length > LIMIT) this.past.shift();
       this.future = [];
+      // The undo button and the history show the step now.
+      this.emit();
     }
   }
 
@@ -217,6 +225,8 @@ export class Store {
       dirty: false,
       path: null,
       editingText: null,
+      editingPath: null,
+      outlinePoint: null,
       ...extra,
     };
     this.emit();

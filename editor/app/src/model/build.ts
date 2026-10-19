@@ -310,7 +310,7 @@ export function addSequence(p: Project, name: string, width: number, height: num
 
 export function updateSequence(
   p: Project,
-  change: Partial<Pick<Sequence, 'name' | 'width' | 'height' | 'fps' | 'background' | 'inPoint' | 'outPoint' | 'playhead'>>,
+  change: Partial<Pick<Sequence, 'name' | 'width' | 'height' | 'fps' | 'background' | 'inPoint' | 'outPoint' | 'playhead' | 'color'>>,
 ): Project {
   return editSeq(p, (s) => {
     if (change.fps && change.fps !== s.fps) {

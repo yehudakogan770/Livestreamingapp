@@ -1,6 +1,7 @@
 // The keyboard shortcuts, on one sheet (?).
 
 import { X } from 'lucide-react';
+import { Modal } from './Modal';
 
 const GROUPS: [string, [string, string][]][] = [
   [
@@ -10,9 +11,10 @@ const GROUPS: [string, [string, string][]][] = [
       ['T', 'Text'],
       ['R / Shift+R', 'Rectangle / ellipse'],
       ['G', 'Pen'],
-      ['H, or hold Space', 'Move the view'],
+      ['H, or hold Space and drag', 'Move the view'],
       ['M', 'Note on the canvas'],
       ['N', 'New text layer'],
+      ['Double-click text', 'Type on the canvas (Esc to finish)'],
     ],
   ],
   [
@@ -22,8 +24,10 @@ const GROUPS: [string, [string, string][]][] = [
       ['Ctrl+C, X, V', 'Copy, cut, paste (layers, or the keyframes selected)'],
       ['Ctrl+D', 'Duplicate'],
       ['Delete', 'Delete (layers, or the keyframes selected)'],
+      ['Ctrl+A', 'Select all layers'],
       ['Ctrl+G / Ctrl+Shift+G', 'Group / ungroup'],
       ['Ctrl+Shift+C', 'Precompose'],
+      ['Ctrl+] / Ctrl+[', 'Forward / backward (Shift: to front / back)'],
       ['Arrows (Shift: 10 px)', 'Nudge'],
       ['Ctrl+S / Ctrl+Shift+S', 'Save to the library / export a file'],
       ['Ctrl+O', 'Open a file'],
@@ -38,7 +42,7 @@ const GROUPS: [string, [string, string][]][] = [
       ['Page Up / Page Down', 'A frame back / on'],
       ['I / O', 'To the layer’s start / end (or the IN and OUT markers)'],
       ['[ / ]', 'The layer starts / ends at the playhead'],
-      ['Alt+P, S, R, T', 'A keyframe of position, scale, rotation, opacity'],
+      ['Alt+P, S, R, T, A', 'A keyframe of position, scale, rotation, opacity, anchor point'],
       ['U', 'Show the animated properties'],
       ['Alt+click ◆', 'An expression on the property (wiggle, loop, time, a link)'],
     ],
@@ -47,6 +51,10 @@ const GROUPS: [string, [string, string][]][] = [
     'View',
     [
       ['`', 'The canvas on its own'],
+      ['Ctrl+0', 'Fit the canvas'],
+      ['Ctrl+= / Ctrl+-', 'Zoom in / out (or Ctrl+wheel)'],
+      ['Ctrl+wheel on the timeline', 'Zoom in time'],
+      ['Esc', 'Deselect; close a dialog or menu'],
       ['?', 'This sheet'],
     ],
   ],
@@ -54,8 +62,7 @@ const GROUPS: [string, [string, string][]][] = [
 
 export function Shortcuts({ onClose }: { onClose: () => void }) {
   return (
-    <div className="tt-modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="tt-modal-box tt-shortcuts">
+    <Modal label="Keyboard shortcuts" onClose={onClose} className="tt-shortcuts">
         <header>
           <h2>Keyboard shortcuts</h2>
           <button className="tt-ico" aria-label="Close" onClick={onClose}>
@@ -79,7 +86,6 @@ export function Shortcuts({ onClose }: { onClose: () => void }) {
             </section>
           ))}
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

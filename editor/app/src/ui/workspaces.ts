@@ -15,6 +15,7 @@ export const BUILT_IN_WORKSPACES: Workspace[] = [
   { name: 'Big viewer', page: 'edit', left: 260, right: 300, bottom: 240 },
   { name: 'Big timeline', page: 'edit', left: 300, right: 300, bottom: 520 },
   { name: 'Color', page: 'color', left: 330, right: 330, bottom: 360 },
+  { name: 'Composite', page: 'composite', left: 330, right: 360, bottom: 360 },
   { name: 'Audio', page: 'audio', left: 330, right: 330, bottom: 420 },
 ];
 
@@ -24,7 +25,7 @@ const valid = (w: unknown): w is Workspace =>
   !!w &&
   typeof w === 'object' &&
   typeof (w as Workspace).name === 'string' &&
-  ['edit', 'color', 'audio'].includes((w as Workspace).page) &&
+  ['edit', 'composite', 'color', 'audio'].includes((w as Workspace).page) &&
   [(w as Workspace).left, (w as Workspace).right, (w as Workspace).bottom].every((n) => typeof n === 'number' && Number.isFinite(n));
 
 export function savedWorkspaces(): Workspace[] {

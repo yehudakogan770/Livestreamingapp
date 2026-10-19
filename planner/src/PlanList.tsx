@@ -2,7 +2,7 @@ import { useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronRight, LayoutTemplate, LoaderCircle, Plus } from 'lucide-react';
 import type { TemplateSummary } from './apiPro';
 import { Mark } from './Mark';
-import { isoDate, shortDate, showClock, type PlanSummary } from './model';
+import { isoDate, parseClock, shortDate, showClock, type PlanSummary } from './model';
 import { PULL_AT, usePullToRefresh } from './touch';
 
 const ROLE_NAME = { owner: 'Owner', editor: 'Editor', viewer: 'Viewer' } as const;
@@ -15,6 +15,12 @@ function ago(ms: number): string {
   if (s < 86_400) return `${Math.floor(s / 3600)} h ago`;
   return new Date(ms).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
+
+const weekday = (d: string): string => new Date(`${d}T12:00`).toLocaleDateString('en-US', { weekday: 'long' });
+const startOf = (p: PlanSummary): number => parseClock(p.startTime) ?? -1;
+/** By date, then start time; plans with no date after the rest. */
+const soonest = (a: PlanSummary, b: PlanSummary): number =>
+  (a.eventDate || '9999') < (b.eventDate || '9999') ? -1 : (a.eventDate || '9999') > (b.eventDate || '9999') ? 1 : startOf(a) - startOf(b);
 
 /** A page's title, with the List / Calendar switch on the plans pages (and the mark on phones). */
 export function PageHead({
@@ -40,7 +46,7 @@ export function PageHead({
         </div>
       </div>
       <div className="page__acts">
-        {mode && (
+        {mode && !phone && (
           <div className="seg" role="group" aria-label="Show plans as">
             <a className={`seg__btn${mode === 'list' ? ' is-on' : ''}`} href="#/" aria-current={mode === 'list' ? 'page' : undefined}>
               List
@@ -100,8 +106,9 @@ export function PlanList({
   };
 
   const today = isoDate(new Date());
-  const upcoming = (plans ?? []).filter((p) => !p.eventDate || p.eventDate >= today);
-  const past = (plans ?? []).filter((p) => p.eventDate && p.eventDate < today);
+  // Upcoming soonest first (no date yet last); past events latest first.
+  const upcoming = (plans ?? []).filter((p) => !p.eventDate || p.eventDate >= today).sort(soonest);
+  const past = (plans ?? []).filter((p) => p.eventDate && p.eventDate < today).sort((a, b) => soonest(b, a));
 
   const access = (p: PlanSummary) => (p.role === 'owner' ? 'Owner' : `${ROLE_NAME[p.role]} · ${p.ownerName}’s`);
 
@@ -117,7 +124,9 @@ export function PlanList({
             </span>
             <span className="plancard__main">
               <span className="plancard__name">{p.name}</span>
-              <span className="plancard__when">{[shortDate(p.eventDate) || 'No date yet', showClock(p.startTime), p.venue].filter(Boolean).join(' · ')}</span>
+              <span className="plancard__when">
+                {[p.eventDate ? weekday(p.eventDate) : 'No date yet', showClock(p.startTime), p.venue].filter(Boolean).join(' · ')}
+              </span>
               <span className="plancard__meta muted">
                 {p.cueCount} cue{p.cueCount === 1 ? '' : 's'} · {access(p)}
                 {p.updatedAt ? ` · ${ago(p.updatedAt)}` : ''}

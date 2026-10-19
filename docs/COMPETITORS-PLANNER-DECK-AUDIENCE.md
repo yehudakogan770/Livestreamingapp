@@ -136,13 +136,15 @@ Controller (LD) and X-keys (XK, through Companion or its own software).
 | Control a switcher on another computer, PIN-protected          |   ✅   | ✅  |  ◐  | ✅  | ✅  |  ◐  |  ◐  |
 | Keys gray out and say why when the switcher is unreachable     |   ✅   |  ◐  |  ◐  |  ◐  | ✅  | ❌  | ❌  |
 | Installed and kept up to date by the switcher app itself       |   ✅   | ❌  |  ◐  | ❌  | ❌  | ❌  | ❌  |
-| PTZ cameras                                                    |   ◐    | ✅  | ❌  |  ◐  | ✅  |  ◐  |  ◐  |
-| Picture of each input on its key                               |   ❌   | ❌  | ❌  | ❌  |  ◐  | ❌  | ❌  |
+| PTZ cameras: saved shots, home, move and zoom while held       |   ✅   | ✅  | ❌  |  ◐  | ✅  |  ◐  |  ◐  |
+| Picture of each input on its key, framed in tally colors       |   ✅   | ❌  | ❌  | ❌  |  ◐  | ❌  | ❌  |
 | Profiles switch by themselves with the app                     |   ❌   | ❌  |  ◐  | ❌  | ❌  | ✅  | ❌  |
 | Companion module of its own (X-keys, Loupedeck, any surface)   |   ✅   | ✅  | ✅  | ✅  | ✅  |  —  |  —  |
 
-**Lumora: 21 ✅, 1 ◐, 2 ❌** (of 24). PTZ is ◐ because it is in Lumora's
-Companion module (presets, move, zoom), not yet a Stream Deck key.
+**Lumora: 23 ✅, 0 ◐, 1 ❌** (of 24), up from 21 ✅, 1 ◐, 2 ❌: each input's
+live picture on its key (about once a second, framed red on air and green in
+Next) and PTZ keys (a saved shot or home with a press; pan, tilt and zoom
+while the key is held, stopping when it is let go).
 
 ### Complaints and answers
 
@@ -158,18 +160,16 @@ Companion module (presets, move, zoom), not yet a Stream Deck key.
 - The run of show's next cue, with its name, on a key.
 - Input keys that line up in Next and cut on a second press.
 - Installed and updated from the switcher app.
+- Input pictures that cost nothing when no key shows them: Lumora draws a
+  small picture only for the inputs a key asked for in the last few seconds.
 
 ### Left, and why
 
-- **Input pictures on keys**: Lumora's phone remote has no endpoint that sends
-  small JPEG frames of each input; it needs one in `src-tauri/src/remote.rs`
-  (Lumora core, Rust) before the plugin can draw them.
 - **Profiles switching by themselves**: needs ready-made `.streamDeckProfile`
   files bundled with the plugin, made and checked in the Stream Deck app on a
-  real device.
-- **PTZ keys**: Lumora's remote server has no PTZ action for the phone remote
-  protocol the plugin uses; the Companion module already does PTZ over the
-  control API.
+  real device (a profile file made by hand could fail to load).
+- **Input pictures, first check**: drawn into the key's SVG as an embedded
+  JPEG; worth one look on a real Stream Deck before an event.
 
 ## 3. The audience pages (join by QR on phones)
 
@@ -183,13 +183,14 @@ Vevox (VV).
 | Join by QR, no app or account for the audience          |   ✅   | ✅  | ✅  | ✅  | ✅  | ✅  |
 | Q&A: send questions (name optional)                     |   ✅   | ✅  | ✅  | ❌  | ✅  | ✅  |
 | Q&A: the operator picks what goes on screen             |   ✅   | ✅  | ✅  | ❌  | ✅  | ✅  |
-| Q&A: upvotes                                            |   ❌   | ✅  | ✅  | ❌  | ✅  | ✅  |
-| Q&A: approve before others see it                       |   ◐    | ✅  | ✅  | ❌  | ✅  | ✅  |
+| Q&A: upvotes (once per phone, can be taken back)        |   ✅   | ✅  | ✅  | ❌  | ✅  | ✅  |
+| Q&A: approve before others see it                       |   ✅   | ✅  | ✅  | ❌  | ✅  | ✅  |
 | Quiz with a timer and a leaderboard                     |   ✅   | ✅  | ✅  | ✅  | ✅  | ✅  |
-| Word cloud                                              |   ❌   | ✅  | ✅  | ✅  | ✅  | ✅  |
-| Ratings / feedback form                                 |   ❌   | ✅  | ✅  |  ◐  | ✅  | ✅  |
-| Emoji reactions on screen                               |   ❌   |  ◐  | ✅  | ❌  |  ◐  |  ◐  |
-| Results export                                          |   ❌   | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Word cloud (words can be taken out by the operator)     |   ✅   | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Ratings / feedback (stars and comments)                 |   ✅   | ✅  | ✅  |  ◐  | ✅  | ✅  |
+| Reactions on screen                                     |   ✅   |  ◐  | ✅  | ❌  |  ◐  |  ◐  |
+| Results export                                          |   ✅   | ✅  | ✅  | ✅  | ✅  | ✅  |
+| Opened and closed from Companion or the control API     |   ✅   | ❌  | ❌  | ❌  | ❌  | ❌  |
 | Raffle                                                  |   ✅   | ❌  | ❌  | ❌  | ❌  | ❌  |
 | Fundraising pledges with a live total                   |   ✅   | ❌  | ❌  | ❌  | ❌  | ❌  |
 | Live auction                                            |   ✅   | ❌  | ❌  | ❌  | ❌  | ❌  |
@@ -198,7 +199,7 @@ Vevox (VV).
 | Works on the venue's network with no internet           |   ✅   | ❌  | ❌  | ❌  | ❌  | ❌  |
 | No per-participant limits or plans                      |   ✅   |  ◐  |  ◐  |  ◐  |  ◐  |  ◐  |
 
-**Lumora: 13 ✅, 1 ◐, 5 ❌** (of 19).
+**Lumora: 20 ✅, 0 ◐, 0 ❌** (of 20), up from 13 ✅, 1 ◐, 5 ❌ (of 19).
 
 ### Complaints and answers
 
@@ -208,20 +209,22 @@ Vevox (VV).
 | Results live in a separate window or slide, not in the show        | Results are graphics on the live picture, styled like the rest of the show. |
 | Needs good venue internet                                          | Phones join the switcher over the venue network.                            |
 
-### Left, and why
+### Built in this round
 
-Upvotes and approval for Q&A, word clouds, ratings forms, reactions and
-results export all need new state in Lumora's engine (`crates/engine`) and
-endpoints in its remote server (`src-tauri/src/remote.rs`): Rust in Lumora
-core, which another team is working on now, and which can't be built here.
-The audience page (`src-tauri/remote/vote.html`) is ready to take them: each
-is a section like polls and Q&A, fed by `/api/audience`. Suggested shapes:
-
-- Q&A upvotes: `POST /api/ask/vote { id, voter }`; questions sorted by votes;
-  a "hold for approval" switch so only approved questions are listed to others.
-- Word cloud: a poll kind with free-text answers (one to three words each),
-  counted case-insensitively, drawn as a cloud graphic.
-- Ratings: a poll kind with 1–5 stars and an optional comment.
-- Reactions: `POST /api/react { emoji }`, rate-limited per phone, floating up
-  over the live picture for a few seconds.
-- Export: a CSV of each poll, Q&A and quiz from the control window.
+- **Q&A**: phones vote questions up (once each, and can take the vote back);
+  the list on the phones puts the most wanted first and answered ones last.
+  "Hold new questions until I approve them" keeps every new question off the
+  phones until the operator approves it (`POST /api/ask/vote`).
+- **Word cloud**: a poll kind; up to three words or short phrases from each
+  phone, counted whatever their letter case, the most sent drawn biggest;
+  the operator can take any word out (`POST /api/word`).
+- **Rating**: a poll kind; one to five stars, the average and how the stars
+  were given on screen, with an optional comment that only the operator sees.
+- **Reactions**: Love, Haha, Wow and Yes, tapped on phones, gathered by the
+  app's server four times a second so a crowd never floods the show, rising
+  over the picture as flat badges (`POST /api/react`).
+- **Export**: each poll, word cloud, rating and trivia game, and the
+  questions, save as a CSV that opens in Excel, Numbers or Google Sheets
+  (cells that would run as formulas are kept as text).
+- **Control**: the control API's `voting`, `questions` and `reactions`
+  commands, in Companion too.

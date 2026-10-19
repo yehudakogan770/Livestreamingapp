@@ -70,6 +70,48 @@ const FIELDS = {
       ],
     },
     SCREEN,
+    { name: 'Picture', key: 'picture', check: 'Show what the input shows', defaultOn: true },
+  ],
+  ptz: [
+    {
+      name: 'Camera',
+      key: 'input',
+      remember: 'inputName',
+      options: () =>
+        pick(
+          lists.inputs.filter((i) => i.ptz),
+          (i) => `${i.number}. ${i.name}`,
+          lists.inputs.some((i) => i.ptz) ? 'Choose a camera' : 'No PTZ cameras in this show',
+        ),
+    },
+    {
+      name: 'Does',
+      key: 'move',
+      options: [
+        ['', 'Go to a saved shot'],
+        ['home', 'Go home'],
+        ['up', 'Tilt up (hold)'],
+        ['down', 'Tilt down (hold)'],
+        ['left', 'Pan left (hold)'],
+        ['right', 'Pan right (hold)'],
+        ['zoomin', 'Zoom in (hold)'],
+        ['zoomout', 'Zoom out (hold)'],
+      ],
+    },
+    {
+      name: 'Shot',
+      key: 'shot',
+      options: Array.from({ length: 16 }, (_, i) => [i ? String(i + 1) : '', `Shot ${i + 1}`]),
+    },
+    {
+      name: 'Speed',
+      key: 'speed',
+      options: [
+        ['25', 'Slow'],
+        ['', 'Medium'],
+        ['100', 'Fast'],
+      ],
+    },
   ],
   overlay: [
     {
@@ -179,7 +221,8 @@ const HINTS = {
   cut: 'Sends what is in Next to air with a cut.',
   blank: 'Turns amber while the screen is black.',
   panic: 'Hold the key for one second to switch PANIC on (and again to switch it off). Everything goes black except the stage monitor.',
-  input: 'Red: on air. Green: in Next.',
+  input: 'Shows what the input shows, framed red while on air and green while in Next.',
+  ptz: 'Saved shots and home: press once. Moves and zoom: the camera moves while the key is held and stops when it is let go. Set cameras up as PTZ in Lumora (the input’s ⋯ menu → PTZ camera control).',
   overlay: 'Press to put the overlay on air or take it off. Red: on air.',
   preset: 'Lit while the preset is the one picked.',
   macro: 'Runs the macro’s steps one after another (set them up in Lumora: Cues → Macros).',

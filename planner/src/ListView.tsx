@@ -7,6 +7,7 @@ import { personName } from './usePeople';
 import type { Person } from './api';
 import type { ItemStore } from './useItems';
 import { downloadText, itemsToCsv } from './csv';
+import { Mark } from './Mark';
 import './lists.css';
 
 /** Money typed as "1,250" or "$1250.50"; saved when the field is left. */
@@ -437,9 +438,10 @@ export function ListView({
       </div>
       {store.error && <p className="warn">{store.error}</p>}
       {list.length === 0 && store.loaded ? (
-        <div className="lists__empty">
-          <p>{words.empty}</p>
-          {!canEdit && <p className="muted small">Nothing here yet.</p>}
+        <div className="empty empty--center lists__none">
+          <Mark size={32} />
+          <p>{kind === 'budget' ? 'No budget lines yet.' : `No ${words.name.toLowerCase()} yet.`}</p>
+          <p className="muted">{words.empty}</p>
         </div>
       ) : (
         <div className="lists__scroll">{table}</div>

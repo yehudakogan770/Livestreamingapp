@@ -75,3 +75,23 @@ test('a microphone that drops out comes back by itself', async () => {
   expect(sound.problems.has('mic')).toBe(false);
   sound.dispose();
 });
+
+test('this computer’s sound comes from the app, never from a microphone', async () => {
+  const show = demoApply(
+    emptyShow(),
+    {
+      type: 'addSource',
+      source: { id: 'pc', name: 'Computer sound', kind: { type: 'microphone', deviceId: 'lumora:computer', label: 'This computer’s sound' } },
+    },
+    0,
+  );
+  const sound = new SoundEngine(new DemoClient());
+  sound.setShow(show);
+  await vi.advanceTimersByTimeAsync(100);
+  expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+  expect(sound.problems.has('pc')).toBe(false);
+  // Never retried as a microphone that dropped out.
+  await vi.advanceTimersByTimeAsync(10_000);
+  expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+  sound.dispose();
+});

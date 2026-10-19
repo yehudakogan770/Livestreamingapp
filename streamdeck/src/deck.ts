@@ -1,10 +1,22 @@
 // The keys on the Stream Deck: each one's settings, presses and picture.
 // Kept apart from the Stream Deck SDK (see plugin.ts) so it can be tested.
 
-import { DOUBLE_MS, HOLD_MS, needsHold, request, type GlobalSettings, type KeySettings, type Kind, type Request } from './actions';
+import {
+  DOUBLE_MS,
+  findInput,
+  heldMove,
+  HOLD_MS,
+  needsHold,
+  ptzRequest,
+  request,
+  type GlobalSettings,
+  type KeySettings,
+  type Kind,
+  type Request,
+} from './actions';
 import { dataUrl, keyModel, renderSvg } from './keys';
 import { Gesture } from './press';
-import { DEFAULT_ADDRESS, type LumoraClient, type Timers, realTimers } from './protocol';
+import { DEFAULT_ADDRESS, type LumoraClient, type SendResult, type Timers, realTimers } from './protocol';
 import type { ScreenId } from './show';
 import { dialFeedback, dialPush, dialRotate, dialTouch, type DialKind, type DialSettings, type Feedback } from './dials';
 
@@ -46,13 +58,18 @@ interface Key {
 export interface Lists {
   connection: string;
   address: string;
-  inputs: { id: string; name: string; number: number }[];
+  inputs: { id: string; name: string; number: number; ptz: boolean }[];
   presets: { id: string; name: string; number: number }[];
   macros: { id: string; name: string; number: number }[];
   overlays: { channel: number; name: string | null }[];
   countdowns: { id: string; name: string }[];
   slideshows: { id: string; name: string }[];
 }
+
+/** How often input keys' pictures are fetched. */
+export const PICTURE_MS = 1000;
+/** A picture not refreshed for this long is dropped (the input went, or Lumora stopped drawing it). */
+export const PICTURE_STALE_MS = 6000;
 
 /** Keys whose request runs in Lumora's control window. */
 const APP_KINDS: ReadonlySet<Kind> = new Set(['record', 'golive', 'rehearsal', 'replay']);
@@ -62,6 +79,10 @@ export class Deck {
   private readonly dials = new Map<string, Dial>();
   private global: GlobalSettings = {};
   private ticker: unknown = null;
+  /** Each input's newest picture (a `data:` URL) and when it came. */
+  private readonly pictures = new Map<string, { url: string; at: number }>();
+  private pictureTimer: unknown = null;
+  private fetching = false;
   private readonly timers: Timers;
 
   constructor(
@@ -110,6 +131,7 @@ export class Deck {
       known.kind = kind;
       known.settings = { ...settings };
       this.draw(known);
+      this.tick();
       return;
     }
     const key: Key = { id, kind, settings: { ...settings }, hold: null, image: '', gesture: null as unknown as Gesture };
@@ -142,11 +164,90 @@ export class Deck {
   }
 
   keyDown(id: string): void {
-    this.keys.get(id)?.gesture.keyDown();
+    const k = this.keys.get(id);
+    if (!k) return;
+    // PTZ moves last while the key is held.
+    if (heldMove(k.kind, k.settings)) {
+      void this.sendKey(k, ptzRequest(k.settings, this.client.state, 'start'));
+      return;
+    }
+    k.gesture.keyDown();
   }
 
   keyUp(id: string): void {
-    this.keys.get(id)?.gesture.keyUp();
+    const k = this.keys.get(id);
+    if (!k) return;
+    if (heldMove(k.kind, k.settings)) {
+      void this.sendKey(k, ptzRequest(k.settings, this.client.state, 'stop'));
+      return;
+    }
+    k.gesture.keyUp();
+  }
+
+  /** Send a key's request now (PTZ moves); a refusal flashes the key. */
+  private async sendKey(k: Key, r: Request): Promise<void> {
+    if (r.to === 'none') {
+      this.surface.showAlert(k.id);
+      return;
+    }
+    const result = await this.dispatch(r);
+    if (result && !result.ok && !result.duplicate) this.surface.showAlert(k.id);
+  }
+
+  /** Send a request where it goes (null: nothing to send). */
+  private dispatch(r: Request): Promise<SendResult> | null {
+    if (r.to === 'action') return this.client.action(r.body);
+    if (r.to === 'app') return this.client.command(r.body);
+    if (r.to === 'do') return this.client.run(r.command, r.query);
+    return null;
+  }
+
+  // ---- input pictures ----
+
+  /** The inputs whose keys show their picture now. */
+  private pictureInputs(): string[] {
+    const state = this.client.state;
+    if (!state || this.client.connection !== 'online') return [];
+    const ids = new Set<string>();
+    for (const k of this.keys.values()) {
+      if (k.kind !== 'input' || k.settings.picture === false) continue;
+      const input = findInput(state, k.settings);
+      if (input) ids.add(input.id);
+    }
+    return [...ids];
+  }
+
+  /** Fetch the pictures every second while any key shows one (one round at a time). */
+  private picturesTick(): void {
+    const wanted = [...this.keys.values()].some((k) => k.kind === 'input' && k.settings.picture !== false);
+    if (wanted && this.pictureTimer === null) {
+      const loop = () => {
+        this.pictureTimer = this.timers.set(() => {
+          void this.fetchPictures().finally(loop);
+        }, PICTURE_MS);
+      };
+      loop();
+    } else if (!wanted && this.pictureTimer !== null) {
+      this.timers.clear(this.pictureTimer);
+      this.pictureTimer = null;
+      this.pictures.clear();
+    }
+  }
+
+  /** One round: each shown input's newest picture, then the keys redrawn. */
+  async fetchPictures(): Promise<void> {
+    if (this.fetching) return;
+    this.fetching = true;
+    try {
+      const ids = this.pictureInputs();
+      const now = this.timers.now();
+      const got = await Promise.all(ids.map(async (id) => [id, await this.client.picture(id)] as const));
+      for (const [id, url] of got) if (url) this.pictures.set(id, { url, at: now });
+      for (const [id, p] of this.pictures) if (!ids.includes(id) || now - p.at > PICTURE_STALE_MS) this.pictures.delete(id);
+      for (const k of this.keys.values()) if (k.kind === 'input') this.draw(k);
+    } finally {
+      this.fetching = false;
+    }
   }
 
   /** Redraw every key (Lumora's state changed). */
@@ -206,8 +307,8 @@ export class Deck {
       if (r.to === 'none') this.surface.showAlert(id);
       return;
     }
-    const result = r.to === 'action' ? await this.client.action(r.body) : await this.client.command(r.body);
-    if (!result.ok && !result.duplicate) this.surface.showAlert(id);
+    const result = await this.dispatch(r);
+    if (result && !result.ok && !result.duplicate) this.surface.showAlert(id);
   }
 
   private drawDial(d: Dial): void {
@@ -220,12 +321,15 @@ export class Deck {
   }
 
   private draw(k: Key): void {
+    const state = this.client.state;
+    const input = k.kind === 'input' && state ? findInput(state, k.settings) : undefined;
     const model = keyModel(k.kind, k.settings, {
-      state: this.client.state,
+      state,
       connection: this.client.connection,
       deck: this.screen,
       now: this.client.now(),
       hold: k.hold,
+      picture: input ? (this.pictures.get(input.id)?.url ?? null) : null,
     });
     const image = dataUrl(renderSvg(model));
     if (image === k.image) return;
@@ -235,6 +339,7 @@ export class Deck {
 
   /** Countdown keys count down by themselves: redraw them every second while any is shown. */
   private tick(): void {
+    this.picturesTick();
     const any = [...this.keys.values()].some((k) => k.kind === 'countdown');
     if (any && this.ticker === null) {
       const loop = () => {
@@ -263,8 +368,8 @@ export class Deck {
       this.surface.showAlert(key.id);
       return r;
     }
-    const result = r.to === 'action' ? await this.client.action(r.body) : await this.client.command(r.body);
-    if (result.duplicate) return r;
+    const result = await this.dispatch(r);
+    if (!result || result.duplicate) return r;
     if (!result.ok) this.surface.showAlert(key.id);
     return r;
   }
@@ -275,7 +380,7 @@ export class Deck {
     return {
       connection: this.client.connection,
       address: this.client.address,
-      inputs: s?.inputs.map(({ id, name, number }) => ({ id, name, number })) ?? [],
+      inputs: s?.inputs.map(({ id, name, number, ptz }) => ({ id, name, number, ptz })) ?? [],
       presets: s?.presets.map(({ id, name, number }) => ({ id, name, number })) ?? [],
       macros: s?.macros.map(({ id, name, number }) => ({ id, name, number })) ?? [],
       overlays: s?.overlays.map(({ channel, name }) => ({ channel, name })) ?? [1, 2, 3, 4].map((channel) => ({ channel, name: null })),

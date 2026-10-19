@@ -325,6 +325,7 @@
   min-width: 0;
 }
 .ed__logo {
+  flex: none;
   height: 22px;
   padding-right: 12px;
   margin-right: 4px;
@@ -333,8 +334,8 @@
 }
 .ed__menus {
   display: flex;
+  flex: none;
   gap: 0;
-  min-width: 0;
 }
 .ed__menu {
   height: 28px;
@@ -401,10 +402,26 @@
   font-size: 12px;
   white-space: nowrap;
   max-width: 280px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A narrow window: the menus keep their room; the project name and save note give way. */
+@media (max-width: 1240px) {
+  .ed__name {
+    max-width: 180px;
+  }
+  .ed__saved {
+    min-width: 30px;
+  }
+}
+.ed__saved > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ed__saved svg.lucide {
+  flex: none;
   width: 13px;
   height: 13px;
 }
@@ -527,7 +544,11 @@
 .page--audio .page__top {
   grid-template-columns: minmax(0, 1fr) minmax(320px, 40%);
 }
+.page--composite .page__top {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 30%);
+}
 .page--color .page__bottom,
+.page--composite .page__bottom,
 .page--audio .page__bottom {
   grid-template-columns: minmax(0, 1fr);
 }
@@ -1413,7 +1434,8 @@ svg.media__folder {
 }
 .fxlist__group > .btn,
 .fxlist__group > .fxlist__row,
-.fxlist__group > .tpresets {
+.fxlist__group > .tpresets,
+.fxlist__group > .ttpl__group {
   margin: 2px 8px;
 }
 .fxlist__item {
@@ -1613,6 +1635,13 @@ svg.media__folder {
   color: var(--text-dim);
   font-family: var(--mono);
   font-size: 11px;
+}
+.vmon__hdr {
+  cursor: pointer;
+  color: var(--text);
+}
+.vmon__hdr:hover {
+  border-color: var(--text-dim);
 }
 .vmon__fill {
   flex: 1;
@@ -2833,6 +2862,12 @@ button.tc:hover {
   font-size: 12px;
   font-weight: 600;
 }
+.scopes__space {
+  margin-right: 8px;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+}
 .scopes__canvas {
   flex: 1;
   min-height: 0;
@@ -3590,6 +3625,8 @@ button.tc:hover {
 .estrip__role {
   width: 100%;
   height: 22px;
+  padding: 0 2px;
+  text-overflow: ellipsis;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
   background: var(--well);

@@ -7,7 +7,6 @@ import { Copy, Film, Image as ImageIcon, Layers as LayersIcon, Music, Plus, Star
 import { DEFAULT_TOKENS, TOKEN_KEYS, TOKEN_LABELS, keyFrom, tokensFor, usedVariables, valuesFor } from '../core/binding';
 import { newComposition, newImage, newVideo, uid } from '../core/build';
 import type { BrowserEnv } from '../core/browserEnv';
-import { readSource, valuesFromRow, type Table } from '../core/data';
 import { renderFrame, type Ctx } from '../core/render';
 import { CATEGORIES, fromTemplate, starterTemplates } from '../core/templates';
 import { cleanMarkers } from '../core/timeline';
@@ -18,7 +17,10 @@ import { ColorField, NumberField, Row, Section, Select, Toggle } from './fields'
 import { CUE_MIXES, CUE_MIX_NAMES, cueMixes } from '../core/cues';
 import type { Host, LibraryEntry } from './host';
 import { addLayers, compOf, updateComp } from './ops';
+import { inkBounds } from './geometry';
 import { PackDialog } from './PackDialog';
+import { askConfirm } from './Modal';
+import { liveData, useLiveResults } from './liveData';
 import { parseClock } from '../core/timer';
 import type { Store } from './store';
 import { useStore } from './store';
@@ -73,8 +75,8 @@ function FormatsSection({ store }: { store: Store }) {
                 <button
                   className="tt-link"
                   title="Make it again from the main composition (changes made in this format are lost)"
-                  onClick={() => {
-                    if (!confirm(`Make “${c.name}” again from the main composition? Changes made in it are lost.`)) return;
+                  onClick={async () => {
+                    if (!(await askConfirm('Reset format', `Make “${c.name}” again from the main composition? Changes made in it are lost.`, 'Reset', true))) return;
                     store.edit('Reset format', (p) => {
                       const r = makeFormat(p, '', c.width, c.height, c.id).project;
                       return { ...r, compositions: r.compositions.map((x) => (x.id === c.id ? { ...x, follow: c.follow } : x)) };
@@ -397,8 +399,10 @@ export function FieldsPanel({ store, host }: { store: Store; host: Host }) {
                 <Trash2 size={13} />
               </button>
             </Row>
-            <Row label="Name">
+            <Row label="Written as" hint="Put this in a text, a color or a picture to use the field there">
               <code className="tt-code">{`{{${v.key}}}`}</code>
+            </Row>
+            <Row label="Kind">
               <Select
                 label="Field kind"
                 value={v.type}
@@ -589,21 +593,29 @@ function uniqueKey(k: string, vs: Variable[]) {
 function NewField({ onAdd }: { onAdd: (label: string, type: VariableType) => void }) {
   const [label, setLabel] = useState('');
   const [type, setType] = useState<VariableType>('text');
+  const add = () => {
+    if (!label.trim()) return;
+    onAdd(label.trim(), type);
+    setLabel('');
+  };
   return (
-    <Row label="New field">
-      <input className="tt-input" placeholder="Label, e.g. Guest name" value={label} onChange={(e) => setLabel(e.target.value)} aria-label="New field label" />
-      <Select label="New field kind" value={type} options={VAR_TYPES} onChange={setType} />
-      <button
-        className="tt-btn"
-        disabled={!label.trim()}
-        onClick={() => {
-          onAdd(label.trim(), type);
-          setLabel('');
-        }}
-      >
-        Add
-      </button>
-    </Row>
+    <div className="tt-newfield">
+      <div className="tt-newfield-head">New field</div>
+      <input
+        className="tt-input"
+        placeholder="Label, e.g. Guest name"
+        value={label}
+        onChange={(e) => setLabel(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && add()}
+        aria-label="New field label"
+      />
+      <div className="tt-newfield-row">
+        <Select label="New field kind" value={type} options={VAR_TYPES} onChange={setType} />
+        <button className="tt-btn" disabled={!label.trim()} onClick={add}>
+          <Plus size={13} /> Add field
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -702,29 +714,11 @@ export function LookPanel({ store, host }: { store: Store; host: Host }) {
 
 export function DataPanel({ store }: { store: Store }) {
   const project = useStore(store, (s) => s.project);
-  const [tables, setTables] = useState<Record<string, Table | string>>({});
   const list = project.data ?? [];
   const upd = (label: string, fn: (d: DataSource[]) => DataSource[]) => store.edit(label, (p) => ({ ...p, data: fn(p.data ?? []) }));
-  const keys = project.variables.map((v) => v.key);
-  const read = async (src: DataSource) => {
-    try {
-      const t = await readSource(src);
-      setTables((x) => ({ ...x, [src.id]: t }));
-      store.set((s) => ({ values: { ...s.values, ...valuesFromRow(src, t, keys, store.get().project.variables) } }));
-    } catch (e) {
-      setTables((x) => ({ ...x, [src.id]: e instanceof Error ? e.message : 'It could not be read.' }));
-    }
-  };
-  // Read again every few seconds while open.
-  const listRef = useRef(list);
-  listRef.current = list;
-  useEffect(() => {
-    const id = setInterval(() => {
-      for (const s of listRef.current) if (s.refresh > 0 && s.url) void read(s);
-    }, 5000);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const live = liveData(store);
+  const tables = useLiveResults(store);
+  const read = (src: DataSource) => live.read(src);
   return (
     <div className="tt-inspector">
       <Section title="Data sources">
@@ -732,7 +726,7 @@ export function DataPanel({ store }: { store: Store }) {
           A CSV file, a Google Sheet (shared with anyone with the link) or a JSON address. Columns named like a field fill it.
         </div>
         {list.map((src, i) => {
-          const t = tables[src.id];
+          const t = tables.get(src.id);
           return (
             <div key={src.id} className="tt-subcard">
               <Row label="Name">
@@ -767,19 +761,21 @@ export function DataPanel({ store }: { store: Store }) {
                   onChange={(e) => upd('Source address', (d) => d.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
                 />
               </Row>
-              <Row label="Row">
+              <Row label="Row" hint="The row whose columns fill the fields (1: the first row under the headings)">
                 <NumberField
                   value={src.row + 1}
                   min={1}
                   label="Row"
                   onChange={(r) => upd('Source row', (d) => d.map((x, j) => (j === i ? { ...x, row: Math.max(0, Math.round(r) - 1) } : x)))}
                 />
+              </Row>
+              <Row label="Read every" hint="Seconds between reads (0: only when Read now is clicked)">
                 <NumberField
                   value={src.refresh}
                   min={0}
                   label="Read every (seconds, 0: once)"
                   unit="s"
-                  onChange={(refresh) => upd('Source refresh', (d) => d.map((x, j) => (j === i ? { ...x, refresh } : x)))}
+                  onChange={(refresh) => upd('Source refresh', (d) => d.map((x, j) => (j === i ? { ...x, refresh: Math.max(0, refresh) } : x)))}
                 />
                 <button className="tt-btn" onClick={() => void read(src)} disabled={!src.url}>
                   Read now
@@ -807,8 +803,36 @@ export function DataPanel({ store }: { store: Store }) {
   );
 }
 
+/**
+ * The part of the frame a thumbnail shows: the whole frame, or (for a small
+ * graphic) the part around it, the frame's shape, at least 40 % of its width.
+ */
+export function thumbCrop(project: TitleProject, t: number, ctx?: Ctx | null): { x: number; y: number; w: number; h: number } {
+  const c = compOf(project, project.main);
+  const whole = { x: 0, y: 0, w: c.width, h: c.height };
+  const look = { project, comp: c, t, values: {}, brand: null };
+  const boxes = c.layers
+    .filter((l) => l.visible && t >= l.start && t < l.end)
+    .map((l) => inkBounds(look, l, ctx === undefined ? undefined : ctx))
+    .filter((b): b is NonNullable<typeof b> => !!b);
+  if (!boxes.length) return whole;
+  const x0 = Math.max(0, Math.min(...boxes.map((b) => b.x)));
+  const y0 = Math.max(0, Math.min(...boxes.map((b) => b.y)));
+  const x1 = Math.min(c.width, Math.max(...boxes.map((b) => b.x + b.w)));
+  const y1 = Math.min(c.height, Math.max(...boxes.map((b) => b.y + b.h)));
+  if (x1 <= x0 || y1 <= y0) return whole;
+  const aspect = c.width / c.height;
+  let w = Math.max((x1 - x0) * 1.3, ((y1 - y0) * 1.3) * aspect, c.width * 0.4);
+  if (w >= c.width * 0.8) return whole;
+  w = Math.min(w, c.width);
+  const h = w / aspect;
+  const x = Math.min(c.width - w, Math.max(0, (x0 + x1) / 2 - w / 2));
+  const y = Math.min(c.height - h, Math.max(0, (y0 + y1) / 2 - h / 2));
+  return { x, y, w, h };
+}
+
 /** A small picture of a project (its main composition at the end of IN). */
-export function Thumb({ project, env, width = 192, at }: { project: TitleProject; env: BrowserEnv; width?: number; at?: number }) {
+export function Thumb({ project, env, width = 192, at, crop = false }: { project: TitleProject; env: BrowserEnv; width?: number; at?: number; crop?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const c = compOf(project, project.main);
   const height = Math.round((width * c.height) / c.width);
@@ -820,17 +844,24 @@ export function Thumb({ project, env, width = 192, at }: { project: TitleProject
       const dpr = Math.min(2, typeof devicePixelRatio === 'number' ? devicePixelRatio : 1);
       cv.width = width * dpr;
       cv.height = height * dpr;
-      ctx.fillStyle = '#5d6168';
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.fillStyle = '#55585e';
       ctx.fillRect(0, 0, cv.width, cv.height);
+      const time = at ?? c.markers.inEnd + 0.4;
+      // A small graphic (a bug, a lower third) is shown closer, so it can be told apart.
+      const r = crop ? thumbCrop(project, time) : { x: 0, y: 0, w: c.width, h: c.height };
+      const k = cv.width / r.w;
+      ctx.setTransform(k, 0, 0, k, -r.x * k, -r.y * k);
       try {
-        renderFrame(ctx, project, { time: at ?? c.markers.inEnd + 0.4, clock: 3, env, width: cv.width, height: cv.height });
+        renderFrame(ctx, project, { time, clock: 3, env });
       } catch {
         /* nothing drawn */
       }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
     };
     draw();
     return env.onReady(draw);
-  }, [project, env, width, height, at, c.markers.inEnd]);
+  }, [project, env, width, height, at, c.markers.inEnd, crop]);
   return <canvas ref={ref} className="tt-thumb" style={{ width, height }} aria-hidden />;
 }
 
@@ -1044,7 +1075,8 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
       {mine.map((m) => (
         <div key={m.id} className="tt-side-item">
           <button
-            className="tt-link tt-grow"
+            className="tt-lib-item tt-grow"
+            title={`Open ${m.name}`}
             onClick={async () => {
               const r = await host.readLibrary(m.id);
               if (r.project) onOpen(r.project, m.id);
@@ -1058,7 +1090,7 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
             className="tt-ico"
             aria-label={`Delete ${m.name} from the library`}
             onClick={async () => {
-              if (!confirm(`Delete “${m.name}” from the library?`)) return;
+              if (!(await askConfirm('Delete title', `Delete “${m.name}” from the library? This cannot be undone.`, 'Delete', true))) return;
               await host.removeLibrary(m.id);
               void refresh();
             }}
@@ -1078,7 +1110,7 @@ export function LibraryPanel({ store, host, env, onOpen }: { store: Store; host:
       <div className="tt-templates">
         {shown.map((t) => (
           <button key={t.id} className="tt-template" onClick={() => onOpen(fromTemplate(t))} title={t.description}>
-            <Thumb project={t} env={env} width={176} />
+            <Thumb project={t} env={env} width={176} crop />
             <span>{t.name}</span>
           </button>
         ))}

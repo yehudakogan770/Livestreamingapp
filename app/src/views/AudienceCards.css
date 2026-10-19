@@ -131,3 +131,21 @@
   font-size: 12px;
   color: var(--text-faint);
 }
+.aud-card__count {
+  flex: none;
+  min-width: 2.2em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim, #a6a9af);
+}
+.aud-card__list li.aud-card__comment {
+  align-items: flex-start;
+}
+.aud-card__list li.aud-card__comment > b {
+  order: -1;
+  text-align: left;
+}
+.aud-card__list li.aud-card__comment > span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

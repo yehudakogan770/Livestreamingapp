@@ -19,6 +19,10 @@ import { BLEND_LIST } from '../model/blend';
 import { ProMotionSections } from './ProMotion';
 import type { Actions } from './actions';
 import { Choice, ColorField, ParamRow, Scrub, Section } from './controls';
+import { graphOf } from '../model/nodes';
+import { newPluginEffect, pluginOf } from '../model/plugins';
+import { uid, type Project } from '../model/types';
+import { PluginControls, PluginPicker } from './Plugins';
 import { usePlayhead } from './hooks';
 import type { Ui } from './state';
 import { CaptionSection } from './Speech';
@@ -90,6 +94,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
   const fps = rate(s);
   const t = usePlayhead(engine);
   const ids = selectedIds(selection);
+  const [picking, setPicking] = useState<string | null>(null);
 
   if (selection?.kind === 'marker') {
     const m = s.markers.find((x) => x.id === selection.id);
@@ -357,7 +362,21 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
                 + {effectDef(type)?.name}
               </button>
             ))}
+            {inApp() && (
+              <button type="button" className="btn btn--sm" title="An effect plug-in installed on this computer" onClick={() => setPicking(sound.id)}>
+                + VST3 plug-in…
+              </button>
+            )}
           </div>
+          {picking === sound.id && (
+            <PluginPicker
+              onClose={() => setPicking(null)}
+              onPick={(f) => {
+                setPicking(null);
+                upd(sound, `Add ${f.name}`, (c) => ({ ...c, effects: [...c.effects, newPluginEffect(f, uid('e'))] }));
+              }}
+            />
+          )}
         </Section>
       )}
       {sound &&
@@ -372,6 +391,7 @@ export function Inspector({ doc, engine, ui, actions }: { doc: Doc; engine: Engi
               onSeek={seek}
               upd={upd}
               ui={ui}
+              project={project}
             />
           ))}
       <div className="insp__foot">
@@ -541,6 +561,7 @@ function EffectSection({
   upd,
   ui,
   extra,
+  project,
 }: {
   clip: Clip;
   effect: Effect;
@@ -550,6 +571,8 @@ function EffectSection({
   ui: Ui;
   /** More rows (tracking, AI masks, "Limit to"). */
   extra?: React.ReactNode;
+  /** The project (for plug-in effects: where the clip's sound comes from). */
+  project?: Project;
 }) {
   const def = effectDef(effect.type);
   if (!def) return null;
@@ -613,7 +636,7 @@ function EffectSection({
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => set({ on: e.target.checked })}
           />{' '}
-          {def.name}
+          {effect.type === 'vst3' ? (pluginOf(effect)?.name ?? def.name) : def.name}
         </span>
       }
       actions={
@@ -637,6 +660,9 @@ function EffectSection({
       }
     >
       {def.previewNote && <p className="insp__note">{def.previewNote}</p>}
+      {effect.type === 'vst3' && project && (
+        <PluginControls project={project} clip={clip} effect={effect} onChange={(d) => set({ d: d as unknown as Record<string, unknown> }, true)} />
+      )}
       {effect.type === 'chromakey' && (
         <div className="insp__row">
           <span className="field__label">Key color</span>
@@ -700,6 +726,14 @@ function EffectSection({
           <span className="insp__note">{allNodes(gradeOf(effect)).length} node(s)</span>
           <button type="button" className="btn btn--sm" onClick={() => ui.set({ page: 'color' })}>
             Edit the nodes on the Color page
+          </button>
+        </div>
+      )}
+      {effect.type === 'nodes' && (
+        <div className="insp__row">
+          <span className="insp__note">{graphOf(effect).nodes.length} nodes</span>
+          <button type="button" className="btn btn--sm" onClick={() => ui.set({ page: 'composite' })}>
+            Edit the nodes on the Composite page
           </button>
         </div>
       )}
