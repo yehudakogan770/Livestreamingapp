@@ -1,0 +1,218 @@
+tint   8 app/src/components/PesukimView.css:60: rgba(6, 8, 14, 0.78)   | background: rgba(6, 8, 14, 0.78);
+tint  23 app/src/components/PollView.css:7: #1c2433   | background: #1c2433;
+SAT  190 app/src/components/PollView.css:51: #2f80ed   | background: #2f80ed;
+tint  16 app/src/components/PollView.css:72: #b8bec8   | color: #b8bec8;
+tint  16 app/src/components/PollView.css:86: #b8bec8   | color: #b8bec8;
+tint  46 app/src/components/TriviaView.css:7: #2a1f4d   | background: #2a1f4d;
+tint  32 app/src/components/TriviaView.css:55: #c8c0e0   | color: #c8c0e0;
+tint  32 app/src/components/TriviaView.css:78: #c8c0e0   | color: #c8c0e0;
+tint  32 app/src/components/TriviaView.css:117: #c8c0e0   | color: #c8c0e0;
+SAT  163 app/src/components/TriviaView.css:200: #7b5cff   | background: #7b5cff;
+tint   6 app/src/components/ScoreboardView.css:17: rgba(13, 15, 19, 0.92)   | background: rgba(13, 15, 19, 0.92);
+tint   9 app/src/components/ScoreboardView.css:75: #c9ccd2   | color: #c9ccd2;
+tint  19 app/src/components/ScoreboardView.css:78: #1d2430   | background: #1d2430;
+tint   9 app/src/components/ScoreboardView.css:86: #c9ccd2   | color: #c9ccd2;
+tint  23 app/src/components/AudienceViews.css:7: #1c2433   | background: #1c2433;
+tint   9 app/src/components/AudienceViews.css:27: #c9ccd2   | color: #c9ccd2;
+tint  16 app/src/components/AudienceViews.css:40: #b8bec8   | color: #b8bec8;
+tint   9 app/src/components/AudienceViews.css:89: #c9ccd2   | color: #c9ccd2;
+tint   9 app/src/components/AudienceViews.css:95: #c9ccd2   | color: #c9ccd2;
+tint  16 app/src/components/AudienceViews.css:127: #b8bec8   | color: #b8bec8;
+tint   9 app/src/components/AudienceViews.css:156: #c9ccd2   | color: #c9ccd2;
+tint  16 app/src/components/AudienceViews.css:191: #b8bec8   | color: #b8bec8;
+tint  20 app/src/components/AudienceViews.css:234: #8f96a3   | color: #8f96a3;
+tint   6 app/src/components/AudienceViews.css:355: rgba(10, 12, 16, 0.85)   | background: rgba(10, 12, 16, 0.85);
+SAT  190 app/src/components/AudienceViews.css:362: #2f80ed   | background: #2f80ed;
+tint   9 app/src/components/AudienceViews.css:438: #c9ccd2   | color: #c9ccd2;
+tint  24 app/src/components/AudienceViews.css:450: #9aa3b2   | color: #9aa3b2;
+tint   9 app/src/components/AudienceViews.css:474: #c9ccd2   | color: #c9ccd2;
+tint  24 app/src/components/AudienceViews.css:512: #9aa3b2   | color: #9aa3b2;
+tint   8 app/src/components/MonitorScreen.css:31: #8e9096   | color: #8e9096;
+tint   7 app/src/components/MonitorScreen.css:42: #a9abb0   | color: #a9abb0;
+tint   7 app/src/components/MonitorScreen.css:48: #a9abb0   | color: #a9abb0;
+tint  12 app/src/components/MonitorScreen.css:88: #2c3038   | border-top: 0.4cqh solid #2c3038;
+tint  12 app/src/components/MonitorScreen.css:115: #2c3038   | border-bottom: 0.4cqh solid #2c3038;
+tint  12 app/src/components/MonitorScreen.css:137: #2c3038   | border-right: 0.4cqh solid #2c3038;
+tint  14 app/src/components/MonitorScreen.css:159: #9aa0a8   | color: #9aa0a8;
+tint   6 app/src/components/CommentView.css:15: rgba(13, 15, 19, 0.92)   | background: rgba(13, 15, 19, 0.92);
+tint   9 app/src/components/CommentView.css:49: #dfe3e8   | color: #dfe3e8;
+tint  14 app/src/components/CommentView.css:53: #9aa0a8   | color: #9aa0a8;
+tint   6 app/src/components/Fader.css:56: #6a6a70   | background: #6a6a70;
+tint   3 app/src/components/Fader.css:67: #cfcfd2   | background: #cfcfd2;
+tint  15 app/src/components/ScreenSelector.css:30: #3f454e   | border-top-color: #3f454e;
+tint   9 app/src/components/ScreenSelector.css:31: #1d2026   | background: #1d2026;
+tint  13 app/src/components/ScreenSelector.css:43: #2b3038   | background: #2b3038;
+tint  13 app/src/components/ScreenSelector.css:53: #4a4f57   | background: #4a4f57;
+tint  10 app/src/components/ScreenSelector.css:56: #22262c   | background: #22262c;
+tint  40 app/src/components/ScreenSelector.css:60: #14363c   | background: #14363c;
+SAT   62 app/src/components/ScreenSelector.css:89: #8fc6cd   | color: #8fc6cd;
+tint  12 app/src/components/ScreenSelector.css:113: #2a2f36   | background: #2a2f36;
+tint  39 app/src/components/ScriptureView.css:10: #13233a   | background: #13233a;
+tint  12 app/src/components/ScriptureView.css:19: rgba(8, 12, 20, 0.88)   | background: rgba(8, 12, 20, 0.88);
+tint  11 app/src/components/ScriptureView.css:42: #e8ecf3   | color: #e8ecf3;
+tint  17 app/src/components/SeatingView.css:7: #2b2233   | background: #2b2233;
+tint  19 app/src/components/SeatingView.css:55: #cfc6d9   | color: #cfc6d9;
+tint  21 app/src/components/SeatingView.css:105: #a79fb4   | color: #a79fb4;
+tint  26 app/src/components/ZmanimView.css:16: #26203a   | background: #26203a;
+tint  16 app/src/components/ZmanimView.css:22: #b8bec8   | color: #b8bec8;
+tint  18 app/src/components/ZmanimView.css:44: #d6d2e4   | color: #d6d2e4;
+tint  19 app/src/components/ZmanimView.css:75: #c9c5d8   | color: #c9c5d8;
+tint  21 app/src/components/ZmanimView.css:103: #9a96ab   | color: #9a96ab;
+tint  18 app/src/components/ZmanimView.css:111: #d6d2e4   | color: #d6d2e4;
+tint  14 app/src/components/ZmanimView.css:141: rgba(14, 10, 24, 0.86)   | background: rgba(14, 10, 24, 0.86);
+tint   5 app/src/components/TitleBar.css:14: #0f1114   | background: #0f1114;
+tint   5 app/src/styles.css:8: #0e1013   | --bg: #0e1013; /* the workspace */
+tint   7 app/src/styles.css:9: #14171b   | --bar: #14171b; /* title bar, tabs strip, bottom bar, side columns */
+tint   8 app/src/styles.css:10: #181b20   | --panel: #181b20; /* panels and dialog bodies */
+tint  10 app/src/styles.css:11: #1f2329   | --raised: #1f2329; /* menus, dialog headers, popovers */
+tint  11 app/src/styles.css:12: #262a31   | --button: #262a31;
+tint  13 app/src/styles.css:13: #2f343c   | --button-hover: #2f343c;
+tint   8 app/src/styles.css:14: #1c1f24   | --button-active: #1c1f24;
+tint  11 app/src/styles.css:15: #252930   | --border: #252930; /* 1px hairlines */
+tint  14 app/src/styles.css:16: #353a43   | --border-strong: #353a43; /* control outlines */
+tint   3 app/src/styles.css:17: #08090b   | --well: #08090b; /* fields, meters, picture surrounds */
+tint   5 app/src/styles.css:18: #e9ebee   | --text: #e9ebee;
+tint  17 app/src/styles.css:19: #a0a7b1   | --text-dim: #a0a7b1;
+tint  18 app/src/styles.css:20: #6c737e   | --text-faint: #6c737e;
+SAT  112 app/src/styles.css:21: #4fb3bf   | --accent: #4fb3bf; /* the logo's teal: selection and focus */
+SAT  102 app/src/styles.css:22: #1d7783   | --accent-deep: #1d7783; /* the primary button */
+SAT  115 app/src/styles.css:23: #238896   | --accent-hover: #238896;
+tint  39 app/src/styles.css:24: #14363b   | --selected: #14363b;
+tint   3 app/src/styles.css:35: #0a0b0d   | --chrome: #0a0b0d; /* the multiviewer frame and title strip */
+tint  13 app/src/styles.css:36: #8f949c   | --brand-steel: #8f949c; /* the logo's grey blades */
+tint  12 app/src/styles.css:94: #aeb3ba   | --range-fill: #aeb3ba;
+tint   3 app/src/styles.css:95: #07080a   | --range-slot: #07080a;
+tint  12 app/src/styles.css:101: #2c3138   | border-bottom-color: #2c3138;
+tint  12 app/src/styles.css:107: #2c3138   | border-bottom-color: #2c3138;
+tint  13 app/src/styles.css:122: #4a4f57   | background: linear-gradient(90deg, transparent 4px, #4a4f57 4px 5px, transparent 5px), #d4d7dc;
+tint   8 app/src/styles.css:122: #d4d7dc   | background: linear-gradient(90deg, transparent 4px, #4a4f57 4px 5px, transparent 5px), #d4d7dc;
+tint   8 app/src/styles.css:130: #d4d7dc   | background: #d4d7dc;
+tint  13 app/src/styles.css:133: #4a4f57   | background: linear-gradient(90deg, transparent 4px, #4a4f57 4px 5px, transparent 5px), #eceef1;
+tint   5 app/src/styles.css:133: #eceef1   | background: linear-gradient(90deg, transparent 4px, #4a4f57 4px 5px, transparent 5px), #eceef1;
+tint  10 app/src/styles.css:136: #c4c8ce   | --range-fill: #c4c8ce;
+tint  13 app/src/styles.css:158: #4a4f57   | background: linear-gradient(transparent 4px, #4a4f57 4px 5px, transparent 5px), #d4d7dc;
+tint   8 app/src/styles.css:158: #d4d7dc   | background: linear-gradient(transparent 4px, #4a4f57 4px 5px, transparent 5px), #d4d7dc;
+tint  14 app/src/styles.css:162: #3a3f48   | scrollbar-color: #3a3f48 transparent;
+SAT  112 app/src/auth/Gate.css:10: rgba(79, 179, 191, 0.16)   | radial-gradient(700px 420px at 0% 100%, rgba(79, 179, 191, 0.16), transparent 70%),
+tint   5 app/src/auth/Gate.css:11: #0e1013   | radial-gradient(600px 380px at 100% 0%, rgba(224, 71, 59, 0.1), transparent 70%), #0e1013;
+SAT  112 app/src/auth/Gate.css:51: rgba(79, 179, 191, 0.12)   | background: rgba(79, 179, 191, 0.12);
+SAT   89 app/src/auth/Gate.css:190: #1f6f78   | background: #1f6f78;
+SAT  112 app/src/auth/Gate.css:191: #4fb3bf   | border-color: #4fb3bf;
+SAT  101 app/src/auth/Gate.css:195: #26808b   | background: #26808b;
+tint  17 app/src/views/ScriptureCard.css:59: #aab   | color: var(--text-dim, #aab);
+tint  16 app/src/views/ControlView.css:23: #424852   | border-top-color: #424852;
+tint  12 app/src/views/ControlView.css:24: #262b32   | background: #262b32;
+tint  13 app/src/views/ControlView.css:38: #2e343b   | background: #2e343b;
+tint   7 app/src/views/ControlView.css:62: #dde0e4   | background: #dde0e4;
+tint   7 app/src/views/ControlView.css:63: #dde0e4   | border-color: #dde0e4;
+tint   3 app/src/views/ControlView.css:64: #f2f3f5   | border-top-color: #f2f3f5;
+tint   5 app/src/views/ControlView.css:65: #0c0e11   | color: #0c0e11;
+tint   5 app/src/views/ControlView.css:69: #0c0e11   | color: #0c0e11;
+tint   5 app/src/views/ControlView.css:72: #eceef1   | background: #eceef1;
+tint   5 app/src/views/ControlView.css:73: #eceef1   | border-color: #eceef1;
+tint  10 app/src/views/ControlView.css:76: #c4c8ce   | background: #c4c8ce;
+tint  13 app/src/views/ControlView.css:140: #30353d   | border-top-color: #30353d;
+tint   8 app/src/views/ControlView.css:141: #1d2025   | background: #1d2025;
+SAT  112 app/src/views/ControlView.css:158: rgba(79, 179, 191, 0.25)   | box-shadow: inset 0 0 0 1px rgba(79, 179, 191, 0.25);
+tint   8 app/src/views/ControlView.css:211: #1a1e22   | background: #1a1e22;
+tint  10 app/src/views/ControlView.css:299: #23272d   | border: 1px solid #23272d;
+tint   5 app/src/views/ControlView.css:320: #101215   | background: #101215;
+tint  12 app/src/views/ControlView.css:532: #2a2f36   | border: 1px solid #2a2f36;
+tint   6 app/src/views/ControlView.css:534: #181a1e   | background: #181a1e;
+tint   9 app/src/views/ControlView.css:541: #1d2026   | background: #1d2026;
+tint   3 app/src/views/ControlView.css:616: #0b0c0e   | border: 1px solid #0b0c0e;
+tint  13 app/src/views/ControlView.css:617: #3a3f47   | border-top-color: #3a3f47;
+tint  10 app/src/views/ControlView.css:618: #282c32   | background: #282c32;
+tint  12 app/src/views/ControlView.css:639: #30343c   | background: #30343c;
+tint   3 app/src/views/ControlView.css:707: #0b0c0e   | border: 1px solid #0b0c0e;
+tint  15 app/src/views/ControlView.css:708: #4a5059   | border-top-color: #4a5059;
+tint  12 app/src/views/ControlView.css:709: #2b3037   | background: #2b3037;
+tint  14 app/src/views/ControlView.css:717: #323840   | background: #323840;
+tint  11 app/src/views/ControlView.css:924: #2a2e35   | background: linear-gradient(90deg, transparent 6px, #2a2e35 6px 8px, transparent 8px), #d6d8dc;
+tint   6 app/src/views/ControlView.css:924: #d6d8dc   | background: linear-gradient(90deg, transparent 6px, #2a2e35 6px 8px, transparent 8px), #d6d8dc;
+tint   6 app/src/views/ControlView.css:963: #121418   | background: #121418;
+tint  11 app/src/views/ControlView.css:964: #262a31   | border: 1px solid #262a31;
+tint  14 app/src/views/ControlView.css:968: #3a3f48   | border-color: #3a3f48;
+tint   3 app/src/views/ControlView.css:1099: rgba(10, 11, 13, 0.82)   | background: rgba(10, 11, 13, 0.82);
+tint   5 app/src/views/ControlView.css:1100: #e9ebee   | color: #e9ebee;
+SAT  112 app/src/views/ControlView.css:1164: rgba(79, 179, 191, 0.05)   | background: rgba(79, 179, 191, 0.05);
+tint   5 app/src/views/ControlView.css:1248: #101215   | background: #101215;
+tint  13 app/src/views/ControlView.css:1323: #30353d   | background: #30353d;
+tint   3 app/src/views/ControlView.css:1402: rgba(4, 5, 7, 0.68)   | background: rgba(4, 5, 7, 0.68);
+tint   9 app/src/views/ControlView.css:1426: #21252a   | background: #21252a;
+tint   7 app/src/views/ControlView.css:1456: #14171b   | background: #14171b;
+tint  12 app/src/views/ControlView.css:1484: #2c3138   | border-bottom-color: #2c3138;
+tint  16 app/src/views/ControlView.css:1513: #424852   | border-top-color: #424852;
+tint  12 app/src/views/ControlView.css:1517: #262b32   | #262b32;
+tint   7 app/src/views/ControlView.css:2077: #181a1f   | background: #181a1f;
+tint   3 app/src/views/ControlView.css:2078: #0b0c0e   | border-right: 1px solid #0b0c0e;
+tint  10 app/src/views/ControlView.css:2092: #1c2026   | background: #1c2026;
+tint   3 app/src/views/ControlView.css:2172: #0b0c0e   | border: 1px solid #0b0c0e;
+tint  13 app/src/views/ControlView.css:2173: #3a3f47   | border-top-color: #3a3f47;
+tint  10 app/src/views/ControlView.css:2174: #262a30   | background: #262a30;
+tint  12 app/src/views/ControlView.css:2888: #2a2f36   | border: 1px solid #2a2f36;
+tint   6 app/src/views/ControlView.css:2890: #181a1e   | background: #181a1e;
+tint  16 app/src/views/ControlView.css:2993: rgba(24, 30, 40, 0.85)   | background: rgba(24, 30, 40, 0.85);
+tint  28 app/src/views/ControlView.css:2999: rgba(34, 46, 62, 0.88)   | background: rgba(34, 46, 62, 0.88);
+tint  28 app/src/views/ControlView.css:3003: rgba(42, 54, 70, 0.9)   | background: rgba(42, 54, 70, 0.9);
+tint  28 app/src/views/ControlView.css:3008: rgba(42, 54, 70, 0.92)   | background: rgba(42, 54, 70, 0.92);
+tint  17 app/src/views/AudienceCards.css:81: #aab   | color: var(--text-dim, #aab);
+SAT  118 app/src/views/CameraBar.css:65: rgba(90, 143, 208, 0.25)   | box-shadow: 0 0 0 3px rgba(90, 143, 208, 0.25);
+tint  24 app/src/views/TextEditor.css:24: #34404c   | background: #34404c;
+tint  10 app/src/views/TextEditor.css:27: #d9dce3   | background: #d9dce3;
+SAT  190 app/src/views/DataDialog.css:54: rgba(47, 128, 237, 0.2)   | background: rgba(47, 128, 237, 0.2);
+tint   5 app/src/views/InputSettings.css:114: #6a6a6f   | background: #6a6a6f;
+tint  10 app/src/views/MultiviewView.css:80: #23272d   | border: 1px solid #23272d;
+tint   5 app/src/views/MultiviewView.css:105: #101215   | background: #101215;
+tint   9 app/src/views/VisualsPage.css:21: #21252a   | background: #21252a;
+tint  10 app/src/views/VisualsPage.css:112: #23272d   | border: 1px solid #23272d;
+tint   3 app/src/views/VisualsPage.css:161: #0b0c0e   | border: 1px solid #0b0c0e;
+tint  13 app/src/views/VisualsPage.css:162: #3a3f47   | border-top-color: #3a3f47;
+tint  10 app/src/views/VisualsPage.css:163: #282c32   | background: #282c32;
+tint  12 app/src/views/VisualsPage.css:173: #30343c   | background: #30343c;
+SAT   67 app/src/views/VisualsPage.css:182: #0f4a52   | border-color: #0f4a52;
+SAT   77 app/src/views/VisualsPage.css:183: #9be0e8   | border-top-color: #9be0e8;
+SAT  111 app/src/views/VisualsPage.css:184: #3ea1ad   | background: #3ea1ad;
+tint  23 app/src/views/VisualsPage.css:185: #04181b   | color: #04181b;
+tint  51 app/src/views/VisualsPage.css:188: #0d3a40   | color: #0d3a40;
+tint   8 app/src/problems/problems.css:60: #202328   | background: #202328;
+tint   5 src-tauri/remote/vote.html:6: #0f1114   | <meta name="theme-color" content="#0f1114" />
+tint   5 src-tauri/remote/vote.html:16: #0f1114   | --bg: #0f1114;
+tint   8 src-tauri/remote/vote.html:17: #1a1d22   | --card: #1a1d22;
+tint  13 src-tauri/remote/vote.html:18: #2b3038   | --line: #2b3038;
+tint   3 src-tauri/remote/vote.html:19: #f2f3f5   | --text: #f2f3f5;
+tint  14 src-tauri/remote/vote.html:20: #9aa0a8   | --dim: #9aa0a8;
+SAT  190 src-tauri/remote/vote.html:21: #2f80ed   | --accent: #2f80ed;
+tint  39 src-tauri/remote/vote.html:68: #16263d   | background: #16263d;
+SAT  112 src-tauri/remote/vote.html:197: #4fb3bf   | <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+tint   6 src-tauri/remote/vote.html:198: #d6d8dc   | <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+tint  13 src-tauri/remote/vote.html:199: #8f949c   | <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />
+SAT  190 src-tauri/remote/vote.html:339: #2f80ed   | ['#2f80ed', '◆'],
+tint   6 src-tauri/remote/remote.css:3: #15171b   | --bg: #15171b;
+tint   8 src-tauri/remote/remote.css:4: #1a1d22   | --bar: #1a1d22;
+tint   9 src-tauri/remote/remote.css:5: #1e2127   | --panel: #1e2127;
+tint  12 src-tauri/remote/remote.css:6: #2a2e36   | --button: #2a2e36;
+tint  12 src-tauri/remote/remote.css:7: #2c3038   | --border: #2c3038;
+tint   3 src-tauri/remote/remote.css:8: #e4e5e7   | --text: #e4e5e7;
+tint   7 src-tauri/remote/remote.css:9: #a9abb0   | --text-dim: #a9abb0;
+SAT  112 src-tauri/remote/remote.css:10: #4fb3bf   | --accent: #4fb3bf;
+SAT   90 src-tauri/remote/remote.css:11: #1f6f79   | --accent-deep: #1f6f79;
+tint  15 src-tauri/remote/remote.css:637: #3a3f49   | background: #3a3f49;
+tint   6 src-tauri/remote/slides.css:3: #15171b   | --bg: #15171b;
+tint   8 src-tauri/remote/slides.css:4: #1a1d22   | --bar: #1a1d22;
+tint   9 src-tauri/remote/slides.css:5: #1e2127   | --panel: #1e2127;
+tint  12 src-tauri/remote/slides.css:6: #2a2e36   | --button: #2a2e36;
+tint  12 src-tauri/remote/slides.css:7: #2c3038   | --border: #2c3038;
+tint   3 src-tauri/remote/slides.css:8: #e4e5e7   | --text: #e4e5e7;
+tint   7 src-tauri/remote/slides.css:9: #a9abb0   | --text-dim: #a9abb0;
+SAT  112 src-tauri/remote/slides.css:10: #4fb3bf   | --accent: #4fb3bf;
+SAT   90 src-tauri/remote/slides.css:11: #1f6f79   | --accent-deep: #1f6f79;
+tint  11 src-tauri/remote/slides.css:167: #6b6f76   | background: #6b6f76;
+tint   6 src-tauri/remote/index.html:6: #15171b   | <meta name="theme-color" content="#15171b" />
+SAT  112 src-tauri/remote/index.html:21: #4fb3bf   | <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+tint   6 src-tauri/remote/index.html:22: #d6d8dc   | <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+tint  13 src-tauri/remote/index.html:23: #8f949c   | <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />
+tint   6 src-tauri/remote/slides.html:6: #15171b   | <meta name="theme-color" content="#15171b" />
+SAT  112 src-tauri/remote/slides.html:20: #4fb3bf   | <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+tint   6 src-tauri/remote/slides.html:21: #d6d8dc   | <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+tint  13 src-tauri/remote/slides.html:22: #8f949c   | <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />

@@ -1,0 +1,37 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  const p = await b.newPage({ viewport: { width: 1600, height: 950 } });
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.locator('.titlebar__item', { hasText: /^Visuals$/ }).click();
+  await p.getByText('Stage visuals…').click();
+  await p.waitForTimeout(500);
+  await p.getByRole('button', { name: 'Back Screen', exact: true }).click();
+  await p.waitForTimeout(400);
+  await p.getByRole('tab', { name: /Electric/ }).click();
+  await p.getByRole('button', { name: 'Synthwave', exact: true }).click();
+  await p.waitForTimeout(1500);
+  const px = await p.evaluate(() => {
+    const c = document.querySelector('.vis__live canvas');
+    const t = document.createElement('canvas'); t.width = 64; t.height = 36; const g = t.getContext('2d'); g.drawImage(c, 0, 0, 64, 36);
+    const d = g.getImageData(0, 0, 64, 36).data; let lit = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 60) lit++; return lit;
+  });
+  console.log('lit pixels in preview (of 2304):', px);
+  await p.screenshot({ path: 'vis-page.png' });
+  await p.getByRole('tab', { name: 'Effects' }).click();
+  await p.getByRole('tab', { name: 'Layers' }).click();
+  await p.getByLabel('Words on the visuals').fill('Happy Chanukah');
+  await p.getByLabel('Show the text').check();
+  await p.getByRole('tab', { name: 'Look' }).click();
+  await p.getByRole('button', { name: 'Kaleido' }).click();
+  await p.waitForTimeout(1200);
+  await p.locator('.vis__live').screenshot({ path: 'vis-live.png' });
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(500);
+  await p.screenshot({ path: 'vis-main.png' });
+  console.log('back program has visuals canvas:', await p.locator('canvas[data-kind=visuals]').count());
+  console.log('errors', errs);
+  await b.close();
+})();

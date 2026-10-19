@@ -1,0 +1,339 @@
+/* ---- Chat: a messaging thread ---- */
+.chat {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  --bub-r: 18px;
+  --bub-r-tight: 5px;
+  --bub-mine: var(--accent);
+  --bub-mine-ink: var(--accent-ink);
+  --bub-theirs: var(--surface-3);
+  --bub-theirs-ink: var(--text);
+}
+.chat__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* Few messages sit at the bottom, next to the message box, as in any messaging app. */
+.chat__thread {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 12px 14px 10px;
+}
+.chat__note {
+  margin: 12px 0;
+  text-align: center;
+}
+.chat__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: auto 0;
+  padding: 40px 16px;
+  text-align: center;
+}
+.chat__empty .mark {
+  margin-bottom: 10px;
+}
+.chat__empty p {
+  margin: 0;
+  max-width: 300px;
+}
+.chat__empty p:first-of-type {
+  font-weight: 600;
+}
+.chat__day {
+  display: flex;
+  justify-content: center;
+  margin: 16px 0 8px;
+}
+.chat__day:first-child {
+  margin-top: 4px;
+}
+.chat__day span {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--dim);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+/* A message: someone else's on the left (initials, then the bubble), yours on the right. */
+.bub {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+.bub--first,
+.bub--single {
+  margin-top: 10px;
+}
+.chat__day + .bub {
+  margin-top: 0;
+}
+.bub--mine {
+  justify-content: flex-end;
+}
+.bub__avatar {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  align-self: flex-start;
+}
+.bub__avatar.avatar {
+  margin-top: 18px;
+  font-size: 10.5px;
+}
+.bub--theirs.bub--first .bub__avatar.avatar,
+.bub--theirs.bub--single .bub__avatar.avatar {
+  margin-top: 19px;
+}
+.bub__col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: min(78%, 520px);
+}
+.bub--theirs .bub__col {
+  align-items: flex-start;
+}
+.bub--mine .bub__col {
+  align-items: flex-end;
+}
+.bub__name {
+  margin: 0 0 3px 12px;
+  color: var(--dim);
+  font-size: 12px;
+  font-weight: 500;
+}
+.bub__line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+.bub--mine .bub__line {
+  flex-direction: row-reverse;
+}
+.bub__bubble {
+  min-width: 0;
+  padding: 7px 12px 8px;
+  border-radius: var(--bub-r);
+  background: var(--bub-theirs);
+  color: var(--bub-theirs-ink);
+  cursor: default;
+}
+.bub--mine .bub__bubble {
+  background: var(--bub-mine);
+  color: var(--bub-mine-ink);
+}
+/* One run of messages reads as one block: the corners on the sender's side close up. */
+.bub--theirs.bub--first .bub__bubble {
+  border-bottom-left-radius: var(--bub-r-tight);
+}
+.bub--theirs.bub--middle .bub__bubble {
+  border-top-left-radius: var(--bub-r-tight);
+  border-bottom-left-radius: var(--bub-r-tight);
+}
+.bub--theirs.bub--last .bub__bubble {
+  border-top-left-radius: var(--bub-r-tight);
+}
+.bub--mine.bub--first .bub__bubble {
+  border-bottom-right-radius: var(--bub-r-tight);
+}
+.bub--mine.bub--middle .bub__bubble {
+  border-top-right-radius: var(--bub-r-tight);
+  border-bottom-right-radius: var(--bub-r-tight);
+}
+.bub--mine.bub--last .bub__bubble {
+  border-top-right-radius: var(--bub-r-tight);
+}
+.bub__body {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.42;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.bub__body .mention__name {
+  font-weight: 600;
+}
+.bub__cue {
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: inherit;
+  font: 500 12.5px var(--mono);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 45%, transparent);
+  text-underline-offset: 2px;
+}
+.bub__cue:hover {
+  background: color-mix(in srgb, currentColor 20%, transparent);
+}
+.bub__time {
+  margin: 3px 12px 0;
+  color: var(--faint);
+  font-size: 11px;
+}
+.bub__del {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--faint);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.12s,
+    background-color 0.12s;
+}
+.bub__del:hover {
+  color: var(--live);
+  background: var(--hover);
+}
+.bub:hover .bub__del,
+.bub.is-picked .bub__del,
+.bub__del:focus-visible {
+  opacity: 1;
+}
+
+/* Back to the newest message, when scrolled up. */
+.chat__jump {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--compose-h, 64px) + 10px);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  transform: translateX(-50%);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+.chat__jump svg {
+  color: var(--dim);
+}
+.chat__jump.is-new {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.chat__jump.is-new svg {
+  color: inherit;
+}
+
+/* The message box, pinned under the thread. */
+.chat__compose {
+  flex: 0 0 auto;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+.chat__off {
+  margin: 0;
+  text-align: center;
+}
+.chat__field {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 3px 3px 3px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 20px;
+  background: var(--surface);
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+.chat__field:hover {
+  border-color: var(--line-3);
+}
+.chat__field:focus-within {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+.chat__field .mention {
+  flex: 1;
+  min-width: 0;
+}
+textarea.chat__input {
+  display: block;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  max-height: 160px;
+  margin: 0;
+  padding: 6px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  line-height: 20px;
+  resize: none;
+  field-sizing: content;
+}
+textarea.chat__input:focus-visible {
+  outline: none;
+}
+.chat__send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  transition:
+    background-color 0.12s,
+    opacity 0.12s;
+}
+.chat__send:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.chat__send:disabled {
+  background: var(--line-2);
+  color: var(--surface);
+  cursor: default;
+}
+.chat__err {
+  max-width: 760px;
+  margin: 0 auto 6px;
+}
+

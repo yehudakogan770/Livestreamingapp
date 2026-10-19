@@ -1,0 +1,27 @@
+<<<<
+    pub vision_lost: std::sync::atomic::AtomicBool,
+}
+====
+    pub vision_lost: std::sync::atomic::AtomicBool,
+    /// When each preview tile was last asked for (the Next previews' graphics
+    /// are drawn only while someone looks at them).
+    pub seen: Mutex<HashMap<String, Instant>>,
+}
+>>>>
+<<<<
+    pub fn preview(&self, key: &str) -> Option<Preview> {
+        lock(&self.shared.previews).get(key).cloned()
+    }
+====
+    pub fn preview(&self, key: &str) -> Option<Preview> {
+        lock(&self.shared.seen).insert(key.to_owned(), Instant::now());
+        lock(&self.shared.previews).get(key).cloned()
+    }
+
+    /// Preview tile `key` was asked for within `within`.
+    pub fn seen_recently(&self, key: &str, within: Duration) -> bool {
+        lock(&self.shared.seen)
+            .get(key)
+            .is_some_and(|t| t.elapsed() <= within)
+    }
+>>>>

@@ -1,0 +1,21 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  const p = await b.newPage({ viewport: { width: 1600, height: 950 } });
+  p.setDefaultTimeout(60000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  const fps = async (label) => console.log(label, await p.evaluate(() => new Promise((r) => { let n = 0; const t0 = performance.now(); const f = () => { n++; if (performance.now() - t0 < 2000) requestAnimationFrame(f); else r((n / 2).toFixed(1) + ' fps'); }; requestAnimationFrame(f); })));
+  await fps('empty show:');
+  await p.locator('.titlebar__item', { hasText: /^Visuals$/ }).click();
+  await p.getByText('Stage visuals…').click();
+  await p.getByRole('button', { name: 'Live Screen', exact: true }).click();
+  await fps('visuals page open:');
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(300);
+  await fps('visuals on Live, main screen:');
+  console.log('visuals canvases:', await p.locator('canvas[data-kind=visuals]').count());
+  console.log('errors', errs);
+  await b.close();
+})();

@@ -1,0 +1,8 @@
+<!doctype html><body style="margin:0;background:#222"><script type="module">
+import { VerticalFrame } from './vertical.js';
+const img = new Image(); img.src = 'wide.jpg'; await img.decode();
+const src = document.createElement('canvas'); src.width = 1920; src.height = 1080;
+src.getContext('2d').drawImage(img, 0, 0, 1920, 1080);
+const f = new VerticalFrame(); f.draw(src);
+f.canvas.style.height = '960px'; document.body.append(f.canvas); window.done = true;
+</script></body>

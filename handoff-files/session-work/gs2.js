@@ -1,0 +1,40 @@
+const { chromium } = require('playwright-core');
+const dir = process.cwd();
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
+  const p = await b.newPage({ viewport: { width: 1600, height: 950 } });
+  const errs = []; p.on('console', (m) => m.text().startsWith('DBG') && console.log(m.text())); p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  const addPic = async (file, name) => {
+    await p.getByRole('button', { name: 'Add input' }).first().click();
+    await p.getByRole('button', { name: /^Picture/ }).click();
+    const fc = p.waitForEvent('filechooser'); await p.getByRole('button', { name: 'Choose file…' }).click(); await (await fc).setFiles(`${dir}/${file}`);
+    await p.getByRole('dialog').locator('input.text').last().fill(name);
+    await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+    await p.waitForTimeout(200);
+  };
+  await addPic('pic2.png', 'Background'); await addPic('green.png', 'Presenter');
+  await p.locator('.tile').nth(1).locator('button:has-text("⋯")').first().click();
+  await p.getByRole('button', { name: /^Green screen/ }).click();
+  await p.waitForTimeout(800);
+  await p.screenshot({ path: 'gs-dialog.png' });
+  await p.getByRole('button', { name: 'Make a scene with this background' }).click();
+  await p.waitForTimeout(300);
+  await p.locator('.tile__pick').nth(process.env.PICK ? Number(process.env.PICK) : 2).click(); await p.keyboard.press('Shift+Enter');
+  await p.waitForTimeout(800);
+  await p.locator('.mon--pgm').screenshot({ path: 'gs-program.png' });
+  await p.getByRole('button', { name: 'REC' }).click(); await p.waitForTimeout(3000);
+  await p.locator('.bc-btn').first().click(); await p.getByRole('button', { name: 'Stop recording' }).click(); await p.waitForTimeout(900);
+  const url = await p.locator('.bc-saved a').getAttribute('href');
+  const px = await p.evaluate(async (url) => {
+    const v = document.createElement('video'); v.muted = true; v.src = url; document.body.appendChild(v);
+    await new Promise((r) => (v.onloadeddata = r)); v.currentTime = 2.2; await new Promise((r) => (v.onseeked = r));
+    const c = document.createElement('canvas'); c.width = 192; c.height = 108; const g = c.getContext('2d'); g.drawImage(v, 0, 0, 192, 108);
+    const at = (x, y) => Array.from(g.getImageData(x, y, 1, 1).data).slice(0, 3);
+    return { corner: at(10, 10), person: at(96, 60) };
+  }, url);
+  console.log('recording: corner (was green, should be background)', px.corner, '| person', px.person);
+  console.log('errors', errs);
+  await b.close();
+})();

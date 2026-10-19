@@ -1,0 +1,199 @@
+<<<<
+impl FfmpegFile {
+    /// Start decoding `file`. A still picture (`still`) is decoded once and kept.
+    pub fn start(ffmpeg: &Path, file: &Path, still: bool) -> Self {
+        let mailbox = Mailbox::new();
+        if still {
+            mailbox.set_still();
+        }
+        let child: Arc<Mutex<Option<Child>>> = Arc::default();
+        let (mb, ch) = (Arc::clone(&mailbox), Arc::clone(&child));
+        let (ffmpeg, file_owned) = (ffmpeg.to_owned(), file.to_owned());
+        let _ = thread::Builder::new()
+            .name("lumora-live-file".into())
+            .spawn(move || run_file(&ffmpeg, &file_owned, still, &mb, &ch));
+        FfmpegFile {
+            mailbox,
+            child,
+            path: file.to_owned(),
+        }
+    }
+}
+
+fn run_file(
+    ffmpeg: &Path,
+    file: &Path,
+    still: bool,
+    mb: &Mailbox,
+    child_slot: &Mutex<Option<Child>>,
+) {
+    let (w, h) = delivered_size(probe_size(ffmpeg, file));
+    let mut cmd = quiet(ffmpeg);
+    cmd.args(["-hide_banner", "-loglevel", "error", "-nostdin"]);
+    if !still {
+        // Decoded by the graphics card where it can (D3D11 on Windows); FFmpeg
+        // falls back to the processor by itself when it can't.
+        cmd.args(["-hwaccel", "auto", "-re", "-stream_loop", "-1"]);
+    }
+    cmd.arg("-i").arg(file);
+    if still {
+        cmd.args(["-frames:v", "1"]);
+    }
+    cmd.args([
+        "-an",
+        "-vf",
+        &format!("scale={w}:{h}:flags=bilinear"),
+        "-pix_fmt",
+        "rgba",
+        "-f",
+        "rawvideo",
+        "-",
+    ]);
+====
+/// How a video plays (from the show: its playback, speed and looping).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Clip {
+    /// Where it starts, seconds into the file.
+    pub start_s: f64,
+    /// 1 normal, below 1 slow motion (an instant replay), above 1 faster.
+    pub speed: f32,
+    /// Playing (false: paused, the picture at `start_s` held).
+    pub playing: bool,
+    /// Start again at the end (false: the last picture is held, as a video
+    /// element that ended).
+    pub looping: bool,
+}
+
+impl Clip {
+    /// The file from its start, looped, at its own speed (the engine's first way of playing files).
+    pub const LOOP: Clip = Clip {
+        start_s: 0.0,
+        speed: 1.0,
+        playing: true,
+        looping: true,
+    };
+}
+
+/// Frames a second a file playing at another speed is turned into (then
+/// paced here at that rate times the speed).
+const PACED_FPS: f64 = 30.0;
+
+/// FFmpeg's arguments to decode `file` as `clip` says, at `w` × `h` RGBA (`still`: a picture).
+pub fn file_args(file: &Path, still: bool, clip: Clip, w: u32, h: u32) -> Vec<String> {
+    let mut a: Vec<String> = ["-hide_banner", "-loglevel", "error", "-nostdin"]
+        .map(str::to_owned)
+        .to_vec();
+    let held = still || !clip.playing;
+    if !still && clip.start_s > 0.0 {
+        a.extend(["-ss".to_owned(), format!("{:.3}", clip.start_s)]);
+    }
+    if !held {
+        // Decoded by the graphics card where it can (D3D11 on Windows); FFmpeg
+        // falls back to the processor by itself when it can't.
+        a.extend(["-hwaccel", "auto"].map(str::to_owned));
+        // At its own speed FFmpeg paces it; at another, the engine does.
+        if (clip.speed - 1.0).abs() < 1e-3 {
+            a.push("-re".to_owned());
+        }
+        if clip.looping {
+            a.extend(["-stream_loop", "-1"].map(str::to_owned));
+        }
+    }
+    a.push("-i".to_owned());
+    a.push(file.to_string_lossy().into_owned());
+    if held {
+        a.extend(["-frames:v", "1"].map(str::to_owned));
+    }
+    let paced = !held && (clip.speed - 1.0).abs() >= 1e-3;
+    let fps = if paced {
+        format!("fps={PACED_FPS},")
+    } else {
+        String::new()
+    };
+    a.extend([
+        "-an".to_owned(),
+        "-vf".to_owned(),
+        format!("{fps}scale={w}:{h}:flags=bilinear"),
+        "-pix_fmt".to_owned(),
+        "rgba".to_owned(),
+        "-f".to_owned(),
+        "rawvideo".to_owned(),
+        "-".to_owned(),
+    ]);
+    a
+}
+
+impl FfmpegFile {
+    /// Start decoding `file`. A still picture (`still`) is decoded once and kept.
+    pub fn start(ffmpeg: &Path, file: &Path, still: bool) -> Self {
+        Self::play(ffmpeg, file, still, Clip::LOOP)
+    }
+
+    /// Start playing `file` as `clip` says (a paused video holds its picture
+    /// at the position; one that ends without looping holds its last).
+    pub fn play(ffmpeg: &Path, file: &Path, still: bool, clip: Clip) -> Self {
+        let mailbox = Mailbox::new();
+        if still || !clip.playing {
+            mailbox.set_still();
+        }
+        let child: Arc<Mutex<Option<Child>>> = Arc::default();
+        let (mb, ch) = (Arc::clone(&mailbox), Arc::clone(&child));
+        let (ffmpeg, file_owned) = (ffmpeg.to_owned(), file.to_owned());
+        let _ = thread::Builder::new()
+            .name("lumora-live-file".into())
+            .spawn(move || run_file(&ffmpeg, &file_owned, still, clip, &mb, &ch));
+        FfmpegFile {
+            mailbox,
+            child,
+            path: file.to_owned(),
+        }
+    }
+}
+
+fn run_file(
+    ffmpeg: &Path,
+    file: &Path,
+    still: bool,
+    clip: Clip,
+    mb: &Mailbox,
+    child_slot: &Mutex<Option<Child>>,
+) {
+    let (w, h) = delivered_size(probe_size(ffmpeg, file));
+    let mut cmd = quiet(ffmpeg);
+    cmd.args(file_args(file, still, clip, w, h));
+    // A file at another speed is paced here: frame n at its time.
+    let pace = (clip.playing && !still && (clip.speed - 1.0).abs() >= 1e-3)
+        .then(|| Duration::from_secs_f64(1.0 / (PACED_FPS * f64::from(clip.speed.max(0.05)))));
+    let t0 = Instant::now();
+>>>>
+<<<<
+    while !mb.stopped() {
+        let mut buf = pool.take(len);
+        if out.read_exact(buf.as_mut_slice()).is_err() {
+            break;
+        }
+        mb.put(VideoFrame {
+====
+    while !mb.stopped() {
+        let mut buf = pool.take(len);
+        if out.read_exact(buf.as_mut_slice()).is_err() {
+            break;
+        }
+        if let Some(p) = pace {
+            let due = t0 + p * u32::try_from(seq).unwrap_or(u32::MAX);
+            let now = Instant::now();
+            if due > now {
+                thread::sleep(due - now);
+            }
+        }
+        mb.put(VideoFrame {
+>>>>
+<<<<
+    if seq == 0 && !mb.stopped() {
+====
+    // Played to the end (not looping): its last picture stays, as a video that ended.
+    if seq > 0 {
+        mb.set_still();
+    }
+    if seq == 0 && !mb.stopped() {
+>>>>

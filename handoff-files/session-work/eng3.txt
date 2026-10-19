@@ -1,0 +1,48 @@
+<<<<
+        for (s, i, sc) in &program {
+            passes.push(Pass {
+                dest: Dest::Target(*i),
+                viewport: None,
+                paint: Paint::Scene {
+                    scene: sc,
+                    planes: (*s != ScreenId::Monitor).then_some(*i),
+                },
+            });
+        }
+====
+        for (s, i, sc) in &program {
+            passes.push(Pass {
+                dest: Dest::Target(*i),
+                viewport: None,
+                paint: Paint::Scene {
+                    scene: sc,
+                    planes: (*s != ScreenId::Monitor).then_some(*i),
+                },
+            });
+            if *s == ScreenId::Monitor {
+                // The stage monitor's words (clock, countdown, message,
+                // teleprompter…): the Live Screen's overlay renderer's plane
+                // `mon`, over the engine's own PANIC black.
+                passes.push(Pass {
+                    dest: Dest::Target(*i),
+                    viewport: Some([0, 0, self.config.width, self.config.height]),
+                    paint: Paint::Plane {
+                        slot: *i,
+                        name: overlay::MONITOR,
+                    },
+                });
+            }
+        }
+>>>>
+<<<<
+        let sc = show.screens.get(screen);
+        p.in_sync = sc.program.as_ref().map(&drawn);
+====
+        let sc = show.screens.get(screen);
+        p.in_sync = sc.program.as_ref().map(&drawn);
+        if screen == ScreenId::Monitor {
+            // All words: they are there once the renderer has sent them.
+            p.in_sync = Some(self.gpu.has_plane(slot, overlay::MONITOR));
+            return p;
+        }
+>>>>

@@ -1,0 +1,22 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 900 }, acceptDownloads: true });
+  p.setDefaultTimeout(20000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Test pattern/ }).first().click();
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+  await p.locator('.tile__pick').nth(0).dblclick();
+  await p.waitForTimeout(300);
+  const dl = p.waitForEvent('download');
+  await p.locator('.mon__snap').click();
+  const d = await dl;
+  console.log('file:', d.suggestedFilename());
+  await d.saveAs('snap.png');
+  console.log('toast:', await p.locator('.toast').first().textContent());
+  console.log('errors', errs);
+  await b.close();
+})();

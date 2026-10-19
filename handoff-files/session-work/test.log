@@ -1,0 +1,718 @@
+   Compiling lumora-engine v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-a3f0dde6c35a4aa8f/crates/engine)
+   Compiling lumora-selftest v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-a3f0dde6c35a4aa8f/crates/selftest)
+   Compiling lumora-crash v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-a3f0dde6c35a4aa8f/crates/crash)
+   Compiling lumora-studio-engine v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-a3f0dde6c35a4aa8f/crates/studio-engine)
+   Compiling lumora v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-a3f0dde6c35a4aa8f/src-tauri)
+   Compiling lumora-edit v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-a3f0dde6c35a4aa8f/editor/src-tauri)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 36s
+     Running unittests src/lib.rs (/home/user/Livestreamingapp/target/debug/deps/lumora_app-8e1ecb2e7a1b5a42)
+
+running 70 tests
+test browser::tests::labels_are_safe ... ok
+test browser::tests::frames_are_encoded_as_jpeg_or_png ... ok
+test captions::tests::a_captions_address_must_be_secure ... ok
+test browser::tests::page_sound_is_passed_to_listeners ... ok
+test captions::tests::a_youtube_caption_line_has_the_time_then_the_words ... ok
+test captions::tests::a_model_already_here_is_used_without_downloading ... ok
+test browser::tests::waiting_ends_when_a_new_frame_arrives ... ok
+test capture::tests::a_rehearsal_is_made_in_full_but_sent_nowhere ... ok
+test capture::tests::a_recording_is_written_as_it_arrives ... ok
+test capture::tests::a_session_that_cannot_keep_up_says_why ... ok
+test capture::tests::a_finished_h264_recording_becomes_an_mp4 ... ok
+test capture::tests::a_server_that_answers_but_refuses_the_stream_says_why ... ok
+test capture::tests::a_stream_that_cannot_connect_says_why ... ok
+test capture::tests::failures_at_the_same_time_are_all_kept ... ok
+test capture::tests::names_are_safe_and_never_overwrite ... ok
+test capture::tests::stream_addresses_point_somewhere ... ok
+test capture::tests::stream_keys_join_the_server_address ... ok
+test capture::tests::streaming_needs_ffmpeg_and_a_destination ... ok
+test capture::tests::the_live_screen_goes_out_over_ndi ... ignored, needs the NDI runtime
+test capture::tests::the_vertical_version_goes_only_where_it_is_wanted ... ok
+test control::tests::commands_become_engine_actions ... ok
+test control::tests::decodes_addresses ... ok
+test control::tests::ptz_commands_need_a_ptz_camera ... ok
+test control::tests::tally_says_what_is_on_air_and_next ... ok
+test events::tests::recent_list_keeps_newest_first_without_repeats ... ok
+test capture::tests::a_stream_goes_to_every_destination ... ok
+test events::tests::saving_then_opening_an_event_keeps_this_computers_settings ... ok
+test export::tests::a_cancelled_export_leaves_no_file ... ok
+test export::tests::no_ffmpeg_says_so ... ok
+test iso::tests::each_camera_gets_its_own_file ... ok
+test library::tests::saves_exports_and_imports ... ok
+test media::tests::a_missing_file_is_an_error ... ok
+test media::tests::an_imported_file_survives_the_original_being_deleted ... ok
+test media::tests::the_same_file_is_copied_once_and_a_different_one_never_overwrites ... ok
+test ndi::tests::a_picture_sent_over_ndi_comes_back ... ignored, needs the NDI runtime
+test ndi::tests::interleaved_sound_becomes_planes ... ok
+test ndi::tests::layouts_match_the_ndi_headers ... ok
+test ndi::tests::sound_becomes_48k_stereo ... ok
+test outputs::tests::labels_are_stable ... ok
+test perf::tests::measures_this_computer ... ok
+test perf::tests::reads_the_graphics_cards_counters ... ok
+test ptz::tests::commands_are_visca ... ok
+test ptz::tests::sends_to_a_camera_over_udp_and_tcp ... ok
+test remote::tests::a_phone_cannot_change_the_setup ... ok
+test remote::tests::a_phone_may_black_out_the_visuals_but_not_change_their_settings ... ok
+test remote::tests::a_phone_that_stopped_reading_is_let_go ... ok
+test export::tests::frames_become_a_video_in_each_format ... ok
+test remote::tests::off_until_switched_on ... ok
+test remote::tests::phones_bid_on_the_item_being_sold ... ok
+test remote::tests::phones_find_their_table_but_never_see_the_whole_list ... ok
+test browser::tests::the_server_hands_out_the_next_frame_and_streams ... ok
+test remote::tests::phones_get_changes_live_and_a_new_pin_disconnects_them ... ok
+test remote::tests::phones_play_trivia ... ok
+test remote::tests::serves_the_page_and_the_show ... ok
+test remote::tests::phones_send_messages_and_photos_to_an_open_wall ... ok
+test remote::tests::the_audience_votes_once_each_without_the_pin ... ok
+test remote::tests::the_internet_link_answers_only_the_audience_page ... ok
+test store::tests::a_corrupt_save_falls_back_to_the_backup ... ok
+test remote::tests::switching_off_frees_the_port ... ok
+test store::tests::starts_fresh_then_saves_and_reloads ... ok
+test store::tests::an_older_version_arriving_late_never_overwrites_a_newer_one ... ok
+test remote::tests::a_phone_with_the_pin_can_take_and_one_without_cannot ... ok
+test streams::tests::jpegs_are_split_however_the_bytes_arrive ... ok
+test streams::tests::problems_are_explained_plainly ... ok
+test streams::tests::rtsp_uses_tcp_and_small_buffers_ask_for_low_delay ... ok
+test tests::snapshot_names_are_plain_files ... ok
+test tunnel::tests::finds_the_public_address ... ok
+test streams::tests::a_live_source_becomes_pictures ... ok
+test streams::tests::a_live_source_becomes_sound ... ok
+test capture::tests::a_stream_stuck_on_a_silent_server_is_ended ... ok
+
+test result: ok. 68 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 3.36s
+
+     Running unittests src/main.rs (/home/user/Livestreamingapp/target/debug/deps/lumora-af699afbee71c58e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/home/user/Livestreamingapp/target/debug/deps/lumora_crash-3bc5143ba1af9c35)
+
+running 6 tests
+test tests::a_report_names_the_file_not_the_folder ... ok
+test tests::long_messages_are_cut_and_unknowns_named ... ok
+test tests::paths_of_every_kind_are_cleaned ... ok
+test tests::payloads_are_read_as_text ... ok
+test tests::notes_are_written_kept_few_and_taken_once ... ok
+test tests::the_hook_writes_a_note_when_a_thread_panics ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running unittests src/lib.rs (/home/user/Livestreamingapp/target/debug/deps/lumora_edit-f633736a1883ef67)
+
+running 47 tests
+test encode::tests::knows_hardware_encoders ... ok
+test encode::tests::reads_the_encoder_list ... ok
+test encode::tests::refuses_unreasonable_frames ... ok
+test export::tests::places_and_progress ... ok
+test formats::tests::frame_rates ... ok
+test export::tests::reads_the_plan_the_editor_sends ... ok
+test formats::tests::camera_codecs_get_copies_and_export_through_ffmpeg ... ok
+test formats::tests::interlaced_avchd_is_deinterlaced ... ok
+test formats::tests::heavy_files_get_playback_proxies ... ok
+test export::tests::writes_pieces_in_place ... ok
+test formats::tests::iphone_hdr_gets_a_tone_mapped_constant_rate_copy ... ok
+test formats::tests::ordinary_files_play_as_they_are ... ok
+test formats::tests::proxies_with_hardware_encoders ... ok
+test frames::tests::reads_frames_of_a_10_bit_file ... ignored, needs FFmpeg
+test formats::tests::sound_files ... ok
+test frames::tests::refuses_silly_sizes ... ok
+test formats::tests::reads_the_details ... ok
+test frames::tests::whole_frames_only ... ok
+test formats::tests::reading_frames_for_the_film ... ok
+test hwaccel::tests::a_file_problem_keeps_the_hardware ... ok
+test hwaccel::tests::decode_arguments ... ok
+test hwaccel::tests::falls_back_to_software ... ok
+test hwaccel::tests::knows_when_the_hardware_is_to_blame ... ok
+test hwaccel::tests::reads_the_method_list ... ok
+test hwaccel::tests::tries_methods_in_the_platform_order ... ok
+test manage::tests::reads_shot_changes ... ok
+test manage::tests::recovery_names_stay_in_the_folder ... ok
+test manage::tests::scene_arguments ... ok
+test media::tests::browser_recordings_get_an_index ... ok
+test media::tests::camera_files_get_edit_friendly_copies ... ignored, needs FFmpeg
+test media::tests::prepares_a_browser_recording ... ignored, needs FFmpeg
+test media::tests::reads_what_ffmpeg_says ... ok
+test library::tests::adds_and_replaces ... ok
+test mattes::tests::keeps_and_reads_back ... ok
+test media::tests::waveform_levels ... ok
+test rendercache::tests::keys_are_hex_names ... ok
+test rendercache::tests::all_intra_h264 ... ok
+test media::tests::what_files_need ... ok
+test rendercache::tests::makes_a_cache_file ... ignored, needs FFmpeg
+test manage::tests::collects_files ... ok
+test rendercache::tests::picks_a_hardware_encoder ... ok
+test speech::tests::progress_is_a_fraction ... ok
+test rendercache::tests::trims_the_oldest_first_but_keeps_what_is_in_use ... ok
+test speech::tests::translation_and_vision_models_are_known ... ok
+test rendercache::tests::lists_and_clears_only_cache_files ... ok
+test speech::tests::a_model_lumora_already_has_is_used_from_there ... ok
+test speech::tests::reads_sound_as_16k_samples ... ok
+
+test result: ok. 43 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running unittests src/main.rs (/home/user/Livestreamingapp/target/debug/deps/lumora_edit-ec632bc1d76aacd4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/home/user/Livestreamingapp/target/debug/deps/lumora_engine-4ceed6ac7aafc7c9)
+
+running 192 tests
+test action::export_bindings_actionerror ... ok
+test action::export_bindings_monitorpatch ... ok
+test action::export_bindings_countdownpatch ... ok
+test adjust::export_bindings_adjust ... ok
+test adjust::export_bindings_effect ... ok
+test auction::export_bindings_auction ... ok
+test auction::export_bindings_auctionitem ... ok
+test auction::export_bindings_bid ... ok
+test auction::tests::bids_must_beat_the_last_by_the_step ... ok
+test auction::tests::late_bids_add_time_and_time_up_stops_bids ... ok
+test auction::tests::removing_items_keeps_the_current_one ... ok
+test audience::export_bindings_draw ... ok
+test audience::export_bindings_entry ... ok
+test action::export_bindings_sourcepatch ... ok
+test audience::export_bindings_pledge ... ok
+test audience::export_bindings_fundraiser ... ok
+test audience::tests::fundraisers_count_approved_pledges_and_celebrate_quarters ... ok
+test audience::tests::raffles_draw_fairly_and_never_the_same_winner_twice ... ok
+test audio::export_bindings_audiofilters ... ok
+test audience::export_bindings_raffle ... ok
+test audio::export_bindings_audiomix ... ok
+test audio::export_bindings_audiooutputid ... ok
+test audio::export_bindings_audiooutputs ... ok
+test audio::export_bindings_bus ... ok
+test audio::export_bindings_buspatch ... ok
+test audio::export_bindings_busid ... ok
+test audio::export_bindings_sourceaudiopatch ... ok
+test audio::export_bindings_sourceaudio ... ok
+test browser::export_bindings_browserinput ... ok
+test browser::export_bindings_guest ... ok
+test cameras::export_bindings_autoswitch ... ok
+test cameras::export_bindings_camerashot ... ok
+test cameras::export_bindings_cameracontrols ... ok
+test cameras::tests::in_order_goes_round_and_random_never_repeats ... ok
+test cameras::tests::shots_last_between_the_times_chosen ... ok
+test cameras::export_bindings_cameravalue ... ok
+test captions::export_bindings_captionplace ... ok
+test captions::tests::settings_are_kept_sensible ... ok
+test chat::export_bindings_chatcomment ... ok
+test captions::export_bindings_captions ... ok
+test chat::export_bindings_chatplatform ... ok
+test chat::export_bindings_commentplace ... ok
+test chat::export_bindings_commentcard ... ok
+test credits::export_bindings_creditsmode ... ok
+test credits::export_bindings_credits ... ok
+test cues::export_bindings_cuetrigger ... ok
+test cues::export_bindings_cue ... ok
+test data::export_bindings_datafeed ... ok
+test data::export_bindings_scorelink ... ok
+test data::tests::values_come_from_the_chosen_row_and_scoreboards_follow ... ok
+test cues::export_bindings_runofshow ... ok
+test event::export_bindings_customfont ... ok
+test event::export_bindings_brand ... ok
+test event::export_bindings_eventinfo ... ok
+test event::export_bindings_eventpatch ... ok
+test event::export_bindings_guestwifi ... ok
+test event::export_bindings_safescreen ... ok
+test graphic::export_bindings_elementkind ... ok
+test graphic::export_bindings_entrance ... ok
+test graphic::export_bindings_element ... ok
+test graphic::export_bindings_textalign ... ok
+test graphic::tests::repairs_elements ... ok
+test graphic::export_bindings_graphic ... ok
+test logo3d::export_bindings_logobackground ... ok
+test logo3d::export_bindings_logo3d ... ok
+test logo3d::export_bindings_logomaterial ... ok
+test logo3d::export_bindings_logomotion ... ok
+test logo3d::export_bindings_swingends ... ok
+test action::export_bindings_newsource ... ok
+test lyrics::tests::blank_lines_make_slides ... ok
+test lyrics::export_bindings_lyricsplace ... ok
+test lyrics::export_bindings_lyrics ... ok
+test model::export_bindings_chromakey ... ok
+test model::export_bindings_fit ... ok
+test model::export_bindings_activetransition ... ok
+test model::export_bindings_multiview ... ok
+test model::export_bindings_perscreen ... ok
+test model::export_bindings_multiviewlayout ... ok
+test model::export_bindings_screenid ... ok
+test model::export_bindings_playback ... ok
+test model::export_bindings_screenstate ... ok
+test model::export_bindings_settings ... ok
+test model::export_bindings_sourceid ... ok
+test action::export_bindings_action ... ok
+test model::export_bindings_stinger ... ok
+test model::export_bindings_transition ... ok
+test model::export_bindings_transitionkind ... ok
+test overlays::export_bindings_frame ... ok
+test overlays::export_bindings_overlay ... ok
+test overlays::export_bindings_overlayanim ... ok
+test overlays::export_bindings_overlaypatch ... ok
+test pesukim::export_bindings_barwords ... ok
+test pesukim::export_bindings_pasuk ... ok
+test model::export_bindings_source ... ok
+test model::export_bindings_sourcekind ... ok
+test pesukim::export_bindings_pesukimmode ... ok
+test pesukim::export_bindings_pesukimlook ... ok
+test pesukim::export_bindings_pesukim ... ok
+test pesukim::export_bindings_pesukimplace ... ok
+test pesukim::export_bindings_wordchange ... ok
+test playlist::export_bindings_playlist ... ok
+test playlist::export_bindings_playlistitem ... ok
+test poll::tests::votes_count_only_while_open_and_in_this_round ... ok
+test poll::export_bindings_poll ... ok
+test presets::export_bindings_presetbutton ... ok
+test presets::export_bindings_preset ... ok
+test presets::export_bindings_runningsteps ... ok
+test presets::export_bindings_step ... ok
+test prompter::tests::scrolls_while_running_and_carries_on_smoothly ... ok
+test ptz::export_bindings_ptz ... ok
+test prompter::export_bindings_prompter ... ok
+test ptz::export_bindings_ptzprotocol ... ok
+test qna::export_bindings_qna ... ok
+test qna::export_bindings_question ... ok
+test score::export_bindings_gameclock ... ok
+test score::export_bindings_scoreboard ... ok
+test qna::tests::questions_come_in_only_while_open ... ok
+test score::export_bindings_scorestyle ... ok
+test score::export_bindings_side ... ok
+test score::tests::the_clock_runs_stops_and_counts_down ... ok
+test screen::export_bindings_capturetarget ... ok
+test score::export_bindings_team ... ok
+test screen::export_bindings_screencapture ... ok
+test scripture::export_bindings_scripturelook ... ok
+test scripture::export_bindings_scripturelang ... ok
+test scripture::export_bindings_scripture ... ok
+test scripture::tests::steps_stay_inside_the_passage ... ok
+test seating::export_bindings_seat ... ok
+test seating::export_bindings_seatinglook ... ok
+test seating::tests::guests_find_their_table ... ok
+test seating::export_bindings_seating ... ok
+test model::export_bindings_show ... ok
+test speakers::export_bindings_speaker ... ok
+test slideshow::export_bindings_slide ... ok
+test slideshow::export_bindings_slideshow ... ok
+test speakers::tests::people_on_microphones_that_are_gone_are_left_out ... ok
+test speakers::export_bindings_speakernames ... ok
+test split::export_bindings_split ... ok
+test split::export_bindings_splitbox ... ok
+test split::export_bindings_splitlayout ... ok
+test stage::export_bindings_atzero ... ok
+test stage::export_bindings_monitorlayout ... ok
+test stage::export_bindings_textsize ... ok
+test stage::export_bindings_countdown ... ok
+test stage::export_bindings_monitor ... ok
+test stage::export_bindings_timerformat ... ok
+test stream::export_bindings_streaminput ... ok
+test text::export_bindings_textalign ... ok
+test text::export_bindings_textdesign ... ok
+test text::export_bindings_textentrance ... ok
+test text::export_bindings_textlayout ... ok
+test text::export_bindings_textstyle ... ok
+test text::export_bindings_textinput ... ok
+test timing::tests::clock_going_backwards_never_panics ... ok
+test timing::tests::cuts_have_no_animation ... ok
+test timing::tests::looping_video_wraps_around ... ok
+test timing::tests::non_looping_video_stops_at_the_end ... ok
+test timing::tests::paused_video_stays_put ... ok
+test timing::tests::playing_video_advances_with_the_clock ... ok
+test timing::tests::slow_motion_moves_at_its_speed ... ok
+test timing::tests::transition_progress_runs_from_zero_to_one ... ok
+test trivia::export_bindings_player ... ok
+test triggers::export_bindings_when ... ok
+test trivia::export_bindings_triviaanswer ... ok
+test triggers::export_bindings_trigger ... ok
+test trivia::export_bindings_trivia ... ok
+test trivia::export_bindings_triviaphase ... ok
+test trivia::export_bindings_triviaquestion ... ok
+test trivia::tests::quick_right_answers_score_most_and_only_once ... ok
+test vision::export_bindings_autoframe ... ok
+test vision::export_bindings_background ... ok
+test vision::export_bindings_backgroundmode ... ok
+test vision::tests::a_picture_background_needs_a_picture ... ok
+test vision::export_bindings_framewho ... ok
+test visuals::export_bindings_quantize ... ok
+test visuals::export_bindings_logoplace ... ok
+test visuals::export_bindings_visualsfx ... ok
+test visuals::export_bindings_visuals ... ok
+test visuals::export_bindings_visualslogo ... ok
+test visuals::export_bindings_sceneref ... ok
+test vision::tests::settings_stay_in_range ... ok
+test visuals::export_bindings_visualslook ... ok
+test visuals::export_bindings_visualssettings ... ok
+test visuals::export_bindings_visualstext ... ok
+test wall::export_bindings_wallmessage ... ok
+test wall::export_bindings_wallstyle ... ok
+test wall::export_bindings_wall ... ok
+test visuals::export_bindings_visualspatch ... ok
+test zmanim::export_bindings_place ... ok
+test zmanim::export_bindings_zmanimcard ... ok
+test zmanim::export_bindings_zmanimstyle ... ok
+test wall::tests::messages_need_words_or_a_photo_and_are_kept_tidy ... ok
+
+test result: ok. 192 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+
+     Running tests/adjust.rs (/home/user/Livestreamingapp/target/debug/deps/adjust-fdb7f2c447c53659)
+
+running 2 tests
+test a_camera_is_adjusted_and_silly_values_are_kept_in_range ... ok
+test only_pictures_can_be_adjusted ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio.rs (/home/user/Livestreamingapp/target/debug/deps/audio-f5e6661d279e0319)
+
+running 7 tests
+test mixes_have_names_levels_and_mutes ... ok
+test microphones_are_always_live_and_videos_follow_the_picture ... ok
+test channel_settings_change_one_at_a_time ... ok
+test a_microphone_can_never_go_on_a_screen ... ok
+test solo_only_for_inputs_with_sound_and_forgotten_when_removed ... ok
+test older_show_files_get_sound_defaults ... ok
+test outputs_are_remembered_and_solo_is_not ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/browser.rs (/home/user/Livestreamingapp/target/debug/deps/browser-4605ab2acbb128ab)
+
+running 3 tests
+test addresses_are_cleaned_up_and_only_web_pages_are_allowed ... ok
+test stream_addresses ... ok
+test a_web_page_is_added_changed_and_goes_on_air ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cameras.rs (/home/user/Livestreamingapp/target/debug/deps/cameras-40dc84e0791b2838)
+
+running 1 test
+test switches_by_itself_only_while_one_of_its_cameras_is_on_air ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/credits.rs (/home/user/Livestreamingapp/target/debug/deps/credits-6ddd37c6e5b6578f)
+
+running 4 tests
+test blank_names_are_dropped_and_it_waits_until_on_air ... ok
+test editing_the_names_keeps_where_it_is ... ok
+test it_rolls_from_the_top_when_taken_to_air ... ok
+test pause_speed_and_restart_never_jump ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/cues.rs (/home/user/Livestreamingapp/target/debug/deps/cues-27b8d634322e9ae6)
+
+running 5 tests
+test clock_times_read_like_a_clock ... ok
+test clock_cues_use_the_computers_time_zone ... ok
+test clock_then_after_previous_then_waits_for_the_operator ... ok
+test paused_holds_everything_and_a_cue_can_be_run_by_hand ... ok
+test editing_the_cues_keeps_the_place ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/engine.rs (/home/user/Livestreamingapp/target/debug/deps/engine-98921e8e1c913d68)
+
+running 30 tests
+test actions_round_trip_through_json_the_way_the_ui_sends_them ... ok
+test bad_colours_are_refused_and_change_nothing ... ok
+test back_keeps_its_own_preview_and_blank_while_following ... ok
+test blank_and_panic_are_recorded_with_their_time ... ok
+test cut_to_goes_straight_to_air_and_keeps_the_preview ... ok
+test cutting_to_what_is_in_next_leaves_the_old_picture_in_next ... ok
+test duplicate_ids_are_refused ... ok
+test garbage_and_future_files_are_refused ... ok
+test moving_a_source_reorders_it ... ok
+test playback_actions_on_non_videos_are_refused ... ok
+test playing_a_finished_video_restarts_it ... ok
+test removing_a_source_clears_it_from_every_screen ... ok
+test screens_are_independent ... ok
+test sources_get_sequential_ids_and_clean_values ... ok
+test take_swaps_preview_and_program_and_records_the_transition ... ok
+test take_with_nothing_in_preview_is_refused ... ok
+test taking_a_video_starts_it_and_it_can_be_paused_and_seeked ... ok
+test damaged_save_files_are_repaired ... ok
+test taking_on_back_by_hand_stops_following ... ok
+test follow_setting_is_saved_with_the_show ... ok
+test tbar_moves_and_completes_the_take_at_the_end ... ok
+test tbar_rejects_nan_and_needs_a_preview ... ok
+test turning_follow_off_leaves_back_where_it_is ... ok
+test transition_durations_are_kept_in_range ... ok
+test the_monitor_never_shows_sources ... ok
+test turning_follow_on_moves_back_to_what_live_shows_with_a_transition ... ok
+test unchanged_actions_do_not_bump_the_revision ... ok
+test update_clamps_volume_and_rejects_nan ... ok
+test while_following_every_live_take_plays_on_back_in_sync ... ok
+test save_and_load_round_trip_resets_runtime_state ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/logo3d.rs (/home/user/Livestreamingapp/target/debug/deps/logo3d-f3ac07f49961fa42)
+
+running 4 tests
+test only_a_3d_logo_takes_3d_logo_settings ... ok
+test files_on_air_are_known_so_they_are_never_swapped_live ... ok
+test every_file_in_the_show_can_be_moved_to_the_apps_copy ... ok
+test a_3d_logo_is_added_repaired_and_changed ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/overlays.rs (/home/user/Livestreamingapp/target/debug/deps/overlays-1dbc9638283d564b)
+
+running 10 tests
+test a_new_show_has_four_empty_channels ... ok
+test a_video_overlay_turns_off_when_it_ends_unless_it_loops ... ok
+test an_empty_channel_or_a_microphone_cannot_go_on ... ok
+test an_overlay_goes_on_and_off_and_remembers_when ... ok
+test an_overlay_in_next_goes_on_air_with_the_camera_and_hides_by_itself ... ok
+test auto_hide_takes_it_off_by_itself ... ok
+test the_box_stays_on_screen_and_the_monitor_is_never_a_target ... ok
+test old_shows_without_overlays_get_four_channels ... ok
+test removing_the_input_empties_its_channel_and_saves_survive ... ok
+test it_can_be_set_up_in_next_then_sent_to_air ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/pesukim.rs (/home/user/Livestreamingapp/target/debug/deps/pesukim-b084ef6d6b26e0d0)
+
+running 9 tests
+test a_hyphen_joins_words_shown_together ... ok
+test auto_advance_moves_on_only_while_on_air ... ok
+test go_jumps_anywhere_and_the_end_stays_put ... ok
+test only_a_picture_can_go_behind_the_words_and_removing_it_clears_it ... ok
+test the_childs_name_comes_before_their_pasuk_only ... ok
+test whole_pasuk_and_blank_end_with_the_next_word ... ok
+test always_twelve_pesukim_and_saved_with_the_show ... ok
+test a_broken_save_is_repaired ... ok
+test next_goes_word_by_word_then_on_to_the_next_pasuk ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/presets.rs (/home/user/Livestreamingapp/target/debug/deps/presets-c9bab80c0a2d6b77)
+
+running 8 tests
+test bad_presets_are_refused ... ok
+test a_step_that_cannot_run_is_skipped_and_the_rest_still_run ... ok
+test a_button_runs_its_steps_in_order_with_waits ... ok
+test editing_and_reordering_presets ... ok
+test picking_a_preset_sets_its_transition_and_lines_up_its_first_input ... ok
+test next_and_previous_run_the_show_in_order ... ok
+test stop_cancels_running_buttons ... ok
+test removing_an_input_takes_it_out_of_presets_and_presets_are_saved ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/slideshow.rs (/home/user/Livestreamingapp/target/debug/deps/slideshow-601e1f76de38c0c9)
+
+running 4 tests
+test it_loops_or_stops_at_the_end ... ok
+test only_pictures_can_be_slides_and_removing_one_drops_its_slide ... ok
+test next_and_back_move_one_slide_and_a_video_slide_plays ... ok
+test auto_advance_only_while_on_air ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/soak.rs (/home/user/Livestreamingapp/target/debug/deps/soak-2834b67d70880d0f)
+
+running 1 test
+test hours_of_switching_never_stick_or_grow ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.37s
+
+     Running tests/split.rs (/home/user/Livestreamingapp/target/debug/deps/split-369038e2a7dbc010)
+
+running 4 tests
+test a_split_cannot_hold_a_microphone_or_another_split ... ok
+test a_ready_made_layout_places_its_boxes_and_keeps_the_inputs ... ok
+test removing_an_input_empties_its_box ... ok
+test custom_boxes_stay_where_they_are_put ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/stage.rs (/home/user/Livestreamingapp/target/debug/deps/stage-19bc643e3da1aeae)
+
+running 24 tests
+test a_countdown_waits_in_next_and_starts_when_taken_to_air ... ok
+test a_countdown_input_can_have_an_event_logo ... ok
+test adding_time_works_in_the_last_ten_seconds ... ok
+test at_zero_blanks_the_screens_the_countdown_is_on ... ok
+test at_zero_cuts_the_screen_it_is_on_once ... ok
+test bad_lengths_and_inputs_are_refused ... ok
+test at_zero_goes_to_what_is_in_next_by_default ... ok
+test adding_time_after_zero_restarts_the_count ... ok
+test count_down_to_a_clock_time ... ok
+test countdown_runs_pauses_and_resumes ... ok
+test jump_to_last_ten_seconds_keeps_running ... ok
+test monitor_message_and_options ... ok
+test cut_to_an_unknown_source_is_refused_and_removed_sources_are_forgotten ... ok
+test quick_messages_can_be_edited_but_there_are_only_eight ... ok
+test reset_returns_to_the_length ... ok
+test steps_without_a_countdown_named_use_the_main_one ... ok
+test old_show_files_get_a_default_monitor ... ok
+test old_shows_move_the_shared_countdown_into_their_countdown_inputs ... ok
+test a_running_countdown_survives_a_restart ... ok
+test taking_away_time_never_goes_below_zero ... ok
+test the_t_bar_and_cut_start_it_too_but_never_restart_a_running_one ... ok
+test the_main_countdown_is_the_one_on_air ... ok
+test two_countdowns_count_on_their_own ... ok
+test the_event_remembers_its_name_logo_and_emergency_plan ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/switching.rs (/home/user/Livestreamingapp/target/debug/deps/switching-ab2caf3ae0c9040b)
+
+running 3 tests
+test fade_to_black_takes_the_chosen_length_and_comes_back ... ok
+test favourite_transitions_are_four_and_can_be_changed ... ok
+test play_now_sends_an_input_to_air_and_keeps_next ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/text.rs (/home/user/Livestreamingapp/target/debug/deps/text-a8b6b9fd3bf26a4e)
+
+running 3 tests
+test text_can_be_an_overlay ... ok
+test only_text_inputs_take_text_and_it_is_saved ... ok
+test a_text_input_is_edited_and_kept_in_range ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/triggers.rs (/home/user/Livestreamingapp/target/debug/deps/triggers-86396d4f96ae11ae)
+
+running 4 tests
+test when_an_input_goes_on_air_something_else_happens ... ok
+test at_a_clock_time_once_a_day ... ok
+test switched_off_triggers_do_nothing_and_can_be_tried_by_hand ... ok
+test when_a_video_ends_cut_to_the_camera_once ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/visuals.rs (/home/user/Livestreamingapp/target/debug/deps/visuals-52be9eeed9332c0d)
+
+running 15 tests
+test a_new_music_type_brings_its_own_tempo ... ok
+test a_saved_show_with_broken_visuals_is_repaired ... ok
+test a_new_scene_waits_for_the_next_beat_and_fades_from_the_old_one ... ok
+test a_new_scene_starts_with_its_own_look ... ok
+test a_visuals_input_goes_on_air_and_behind_the_pesukim ... ok
+test favourites_are_kept_once_and_only_if_they_exist ... ok
+test auto_change_moves_on_every_few_bars_by_itself ... ok
+test freeze_holds_the_beat_and_auto_change ... ok
+test looks_keep_the_scene_and_effects ... ok
+test next_and_previous_wrap_round ... ok
+test on_the_bar_and_now ... ok
+test safe_mode_blocks_the_strobe ... ok
+test sync_makes_now_beat_one_of_a_bar ... ok
+test the_beat_follows_the_tempo_and_carries_on_through_a_change ... ok
+test the_music_types_are_all_there ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/home/user/Livestreamingapp/target/debug/deps/lumora_selftest-5b8b90a58d6e4e77)
+
+running 6 tests
+test tests::config_needs_the_results_path ... ok
+test tests::reads_ffmpeg ... ok
+test tests::nothing_works_outside_a_run ... ok
+test tests::timeout_setting ... ok
+test tests::finds_videos ... ok
+test tests::writes_only_json_objects ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (/home/user/Livestreamingapp/target/debug/deps/studio_engine-4d3cb17bd7a7d3c0)
+
+running 31 tests
+test blend::tests::normal_is_over ... ok
+test blend::tests::seventeen_modes_in_the_editors_order ... ok
+test blend::tests::opaque_layers_follow_the_formulas ... ok
+test blend::tests::see_through_layers_keep_the_base_where_they_are_clear ... ok
+test clock::tests::counts_frames_along ... ok
+test clock::tests::a_jump_lets_go_of_frames_for_elsewhere ... ok
+test clock::tests::plays_backwards_too ... ok
+test clock::tests::keeps_a_bounded_queue_and_takes_the_newest_version ... ok
+test clock::tests::shows_each_frame_at_its_moment ... ok
+test clock::tests::small_drift_is_taken_up_gently_and_big_jumps_at_once ... ok
+test decode::tests::a_late_frame_is_the_nearest_one_before ... ok
+test decode::tests::asks_ffmpeg_for_exact_nv12_frames ... ok
+test decode::tests::keeps_a_few_frames_behind_and_lets_older_ones_go ... ok
+test decode::tests::numbers_frames_from_where_the_run_starts ... ok
+test decode::tests::the_end_of_the_file_holds_its_last_frame ... ok
+test decode::tests::waits_for_frames_coming_and_hands_them_over ... ok
+test glsl::tests::std140_offsets ... ok
+test glsl::tests::puts_values_where_the_block_has_them ... ok
+test gpu::tests::premultiplies_like_webgl ... ok
+test gpu::tests::packs_each_pass_at_an_aligned_offset ... ok
+test plan::tests::reads_a_frame ... ok
+test plan::tests::refuses_what_cant_be_drawn ... ok
+test yuv::tests::black_white_and_gray_stay_neutral ... ok
+test plan::tests::texture_names ... ok
+test yuv::tests::bt601_limited_matches_the_published_numbers ... ok
+test yuv::tests::bt709_limited_matches_the_published_numbers ... ok
+test yuv::tests::guesses_by_size_and_counts_bytes ... ok
+test yuv::tests::primaries_come_out_right ... ok
+test yuv::tests::the_conversion_program_is_valid ... ok
+test glsl::tests::texture_reads_get_the_sampler ... ok
+test decode::tests::decodes_exact_frames_with_ffmpeg ... ok
+
+test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests/gpu.rs (/home/user/Livestreamingapp/target/debug/deps/gpu-7d30ca992cc9afd0)
+
+running 5 tests
+test places_a_picture_and_keeps_webgls_rows ... ok
+test every_blend_mode_matches_the_cpu ... ok
+test the_engine_decodes_converts_and_draws_a_video_frame ... ok
+test every_editor_program_builds_on_the_gpu ... ok
+test the_engine_shows_queued_frames_on_its_clock ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.91s
+
+     Running tests/shaders.rs (/home/user/Livestreamingapp/target/debug/deps/shaders-1249d7678bac63e6)
+
+running 2 tests
+test reads_a_frame_the_editor_wrote ... ok
+test every_editor_program_translates ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+   Doc-tests lumora_app
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests lumora_crash
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests lumora_edit
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests lumora_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests lumora_selftest
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests studio_engine
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+exit 0

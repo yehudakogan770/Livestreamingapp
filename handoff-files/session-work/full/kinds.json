@@ -1,0 +1,272 @@
+[
+ {
+  "kind": "Camera",
+  "ok": true,
+  "next": "fake_device_0",
+  "air": "fake_device_0",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Video file",
+  "ok": true,
+  "next": "sample",
+  "air": "sample",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Picture",
+  "ok": true,
+  "next": "sample",
+  "air": "sample",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Colour",
+  "ok": true,
+  "next": "Colour",
+  "air": "Colour",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Test pattern",
+  "ok": true,
+  "next": "Test pattern",
+  "air": "Test pattern",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Countdown",
+  "ok": true,
+  "next": "Countdown",
+  "air": "Countdown",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "12 Pesukim",
+  "ok": true,
+  "next": "Test pattern",
+  "air": "Test pattern",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Text / title",
+  "ok": true,
+  "next": "[Speaker name]",
+  "air": "[Speaker name]",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Credits / thank-you",
+  "ok": true,
+  "next": "Credits",
+  "air": "Credits",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Split screen",
+  "ok": true,
+  "next": "Split screen",
+  "air": "Split screen",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Slideshow",
+  "ok": true,
+  "next": "Slideshow",
+  "air": "Slideshow",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Stream / IP camera",
+  "ok": true,
+  "next": "example.com",
+  "air": "example.com",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Raffle",
+  "ok": true,
+  "next": "Raffle",
+  "air": "Raffle",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Fundraiser",
+  "ok": true,
+  "next": "Fundraiser",
+  "air": "Fundraiser",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Designed title",
+  "ok": true,
+  "next": "Designed title",
+  "air": "Designed title",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Table finder",
+  "ok": true,
+  "next": "Table finder",
+  "air": "Table finder",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Trivia game",
+  "ok": true,
+  "next": "Trivia",
+  "air": "Trivia",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Tanach & Tehillim",
+  "ok": true,
+  "next": "Tehillim",
+  "air": "Tehillim",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Hebrew date & zmanim",
+  "ok": true,
+  "next": "Zmanim",
+  "air": "Zmanim",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Live auction",
+  "ok": true,
+  "next": "Auction",
+  "air": "Auction",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Messages wall",
+  "ok": true,
+  "next": "Messages",
+  "air": "Messages",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Guest by link",
+  "ok": false,
+  "next": "Guest",
+  "air": "Guest",
+  "overlay": "",
+  "note": "",
+  "errs": [
+   "pageerror: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
+   "pageerror: Failed to read the 'localStorage' property from 'Window': Access is denied for this document.",
+   "pageerror: Failed to read the 'localStorage' property from 'Window': Access is denied for this document."
+  ]
+ },
+ {
+  "kind": "Chat comments",
+  "ok": false,
+  "next": "Chat comments",
+  "air": "Chat comments",
+  "overlay": "",
+  "note": "",
+  "errs": [
+   "pageerror: Failed to read the 'localStorage' property from 'Window': Access is denied for this document."
+  ]
+ },
+ {
+  "kind": "Audience poll",
+  "ok": false,
+  "note": "Add input stays greyed out; ",
+  "errs": []
+ },
+ {
+  "kind": "Song lyrics",
+  "ok": false,
+  "note": "Add input stays greyed out; ",
+  "errs": []
+ },
+ {
+  "kind": "Screen capture",
+  "ok": false,
+  "note": "Add input stays greyed out; ",
+  "errs": []
+ },
+ {
+  "kind": "Scoreboard",
+  "ok": true,
+  "next": "Scoreboard",
+  "air": "Scoreboard",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Web page",
+  "ok": false,
+  "note": "Add input stays greyed out; ",
+  "errs": []
+ },
+ {
+  "kind": "Stage visuals",
+  "ok": true,
+  "next": "Stage visuals",
+  "air": "Stage visuals",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ },
+ {
+  "kind": "Microphone",
+  "ok": false,
+  "note": "Add input stays greyed out; ",
+  "errs": []
+ },
+ {
+  "kind": "Sound / music file",
+  "ok": true,
+  "next": "Scoreboard",
+  "air": "Scoreboard",
+  "overlay": "",
+  "note": "",
+  "errs": []
+ }
+]

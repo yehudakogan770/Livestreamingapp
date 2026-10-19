@@ -1,0 +1,198 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../titler/playerPlugin" without a file extension (editor/vite.config.ts:6:30). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+3:04:47 PM [vite] (client) Re-optimizing dependencies because vite config has changed
+
+  VITE v8.3.1  ready in 462 ms
+
+  ➜  Local:   http://localhost:1421/
+  ➜  Network: use --host to e3:05:10 PM [vite] (client) hmr update /src/App.tsx, /src/Notices.tsx, /src/PlanView.tsx, /src/Dialogs.tsx, /src/Files.tsx, /src/ShowView.tsx, /src/ShareExtras.tsx, /src/ListView.tsx, /src/ShareDialog.tsx, /src/Chat.tsx
+3:05:13 PM [vite] (client) hmr update /src/App.tsx, /src/Notices.tsx, /src/PlanView.tsx, /src/Dialogs.tsx, /src/Files.tsx, /src/ShowView.tsx, /src/ShareExtras.tsx, /src/ListView.tsx, /src/ShareDialog.tsx, /src/Chat.tsx
+3:06:00 PM [vite] (client) hmr update /src/Chat.tsx
+3:06:10 PM [vite] (client) hmr update /src/Chat.tsx
+3:06:10 PM [vite] (client) hmr update /src/Chat.tsx
+3:06:14 PM [vite] (client) hmr update /src/Chat.tsx
+3:06:49 PM [vite] (client) hmr update /src/planner.css
+3:06:55 PM [vite] (client) hmr update /src/Chat.tsx
+3:06:55 PM [vite] (client) hmr update /src/planner.css
+3:07:02 PM [vite] (client) hmr update /src/Chat.tsx
+3:07:12 PM [vite] (client) hmr update /src/planner.css
+3:07:17 PM [vite] (client) hmr update /src/planner.css
+3:09:00 PM [vite] (client) hmr update /src/planner.css
+3:09:44 PM [vite] (client) hmr update /src/planner.css
+3:10:00 PM [vite] (client) hmr update /src/App.tsx, /src/Notices.tsx, /src/PlanView.tsx, /src/Dialogs.tsx, /src/Files.tsx, /src/ShowView.tsx, /src/ShareExtras.tsx, /src/ListView.tsx, /src/ShareDialog.tsx, /src/Calendar.tsx, /src/PlanList.tsx, /src/PrintSheet.tsx, /src/PhonePlan.tsx, /src/Schedule.tsx, /src/Prompter.tsx, /src/fields.tsx, /src/Inspector.tsx, /src/MentionBox.tsx, /src/Chat.tsx
+3:10:22 PM [vite] (client) hmr update /src/App.tsx, /src/Calendar.tsx
+3:12:14 PM [vite] (client) hmr update /src/Calendar.tsx
+3:12:22 PM [vite] (client) hmr update /src/Calendar.tsx
+3:13:19 PM [vite] (client) hmr update /src/Calendar.tsx
+3:14:20 PM [vite] (client) hmr update /src/PlanList.tsx
+3:14:20 PM [vite] (client) hmr update /src/App.tsx
+3:14:21 PM [vite] (client) Pre-transform error: [postcss] /home/user/Livestreamingapp/.claude/worktrees/agent-a0a835d466d10d8ca/planner/src/planner.css:3736:1: Unexpected }
+  Plugin: vite:css
+  File: /home/user/Livestreamingapp/.claude/worktrees/agent-a0a835d466d10d8ca/planner/src/planner.css:3736:0
+  3734 |  }
+  3735 |    grid-template-columns: 1fr 1fr;
+  3736 |  }
+       |  ^
+  3737 |  :where([data-device='phone']) .grid3 > :first-child {
+  3738 |    grid-column: 1 / -1;
+3:14:22 PM [vite] Internal server error: [postcss] /home/user/Livestreamingapp/.claude/worktrees/agent-a0a835d466d10d8ca/planner/src/planner.css:3736:1: Unexpected }
+  Plugin: vite:css
+  File: /home/user/Livestreamingapp/.claude/worktrees/agent-a0a835d466d10d8ca/planner/src/planner.css:3736:0
+  3734 |  }
+  3735 |    grid-template-columns: 1fr 1fr;
+  3736 |  }
+       |  ^
+  3737 |  :where([data-device='phone']) .grid3 > :first-child {
+  3738 |    grid-column: 1 / -1;
+      at Input.error (/home/user/Livestreamingapp/node_modules/postcss/lib/input.js:135:16)
+      at Parser.unexpectedClose (/home/user/Livestreamingapp/node_modules/postcss/lib/parser.js:597:22)
+      at Parser.end (/home/user/Livestreamingapp/node_modules/postcss/lib/parser.js:337:12)
+      at Parser.parse (/home/user/Livestreamingapp/node_modules/postcss/lib/parser.js:466:16)
+      at parse (/home/user/Livestreamingapp/node_modules/postcss/lib/parse.js:11:12)
+      at new LazyResult (/home/user/Livestreamingapp/node_modules/postcss/lib/lazy-result.js:171:16)
+      at Processor.process (/home/user/Livestreamingapp/node_modules/postcss/lib/processor.js:53:14)
+      at runPostCSS (file:///home/user/Livestreamingapp/node_modules/vite/dist/node/chunks/node.js:30251:66)
+      at async compilePostCSS (file:///home/user/Livestreamingapp/node_modules/vite/dist/node/chunks/node.js:30235:6)
+      at async compileCSS (file:///home/user/Livestreamin3:15:22 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx
+3:16:29 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx
+3:16:29 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:16:29 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:18:23 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:19:22 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:20:54 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:21:37 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:21:37 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:25:10 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:26:53 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx
+3:26:53 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+3:28:03 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:28:03 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:29:59 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /main.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ExportDialog.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/PackDialog.tsx
+3:31:50 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx and 6 more
+3:31:50 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx and 7 more
+3:33:21 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx and 6 more
+3:34:50 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+3:36:22 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx
+3:37:38 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx
+3:39:21 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx and 6 more
+3:39:21 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:40:35 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:41:29 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:41:29 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx
+3:43:04 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx
+3:43:04 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:43:04 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:44:36 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ExportDialog.tsx
+3:46:56 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+3:47:20 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+3:47:20 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:48:52 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/GraphEditor.tsx
+3:48:52 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:50:02 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/GraphEditor.tsx
+3:50:02 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:51:41 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+3:52:02 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/GraphEditor.tsx
+3:54:28 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:54:28 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:56:46 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+3:59:24 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx and 7 more
+3:59:24 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx and 6 more
+4:00:47 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx
+4:02:19 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ExportDialog.tsx
+4:04:52 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Shortcuts.tsx
+4:04:59 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+4:06:58 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+4:06:58 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx
+4:06:58 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx
+4:06:58 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+4:16:58 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/fields.tsx
+4:19:59 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx and 4 more
+4:20:55 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+4:20:55 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+4:21:55 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+4:22:00 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+4:22:33 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx
+4:23:41 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx and 1 more
+4:23:41 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx
+4:25:46 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx and 4 more
+4:29:23 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+4:29:23 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx
+4:31:05 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+4:37:14 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx and 6 more
+4:40:47 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx and 6 more
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Inspector.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Viewport.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ExportDialog.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/PackDialog.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Mark.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Designer.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ExportDialog.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/keyframes.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/importing.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/frameCache.ts
+5:24:48 PM [vite] (client) hmr update /main.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ExportDialog.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/PackDialog.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Splitter.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/FontPicker.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ExportDialog.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/previewCues.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/props.ts
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/designer.css
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/HistoryPanel.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/cueAudio.ts
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/HistoryPanel.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ramPreview.ts
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ColorPicker.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/GraphEditor.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/workspace.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/geometry.ts
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/PackDialog.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/controlPanel.css
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx, /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Notes.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/styles.ts
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Timeline.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Shortcuts.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/fields.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ops.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/textStyles.ts
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Panels.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/fields.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/ControlPanel.tsx
+5:24:48 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/designer/Notes.tsx
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/htmlTemplate.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/lottie.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/timeline.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/templates.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/cues.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/package.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/matrix.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/validate.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/motion.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/browserEnv.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/expr.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/binding.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/unzip.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/render.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/formats.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/data.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/lottieExport.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/svgImport.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/exactVideo.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/easing.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/layout.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/timer.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/paths.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/zip.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/build.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/titlePack.ts
+5:24:48 PM [vite] (client) page reload /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/src/core/types.ts
+5:24:48 PM [vite] (client) page reload index.html
+5:24:48 PM [vite] (client) hmr update /main.tsx
+5:24:48 PM [vite] titler/vite.config.ts changed, restarting server...
+5:24:48 PM [vite] titler/playerPlugin.ts changed, restarting server...
+failed to load config from /home/user/Livestreamingapp/.claude/worktrees/agent-a627d341a263cc12b/titler/vite.config.ts
+5:24:48 PM [vite] Build failed with 1 error:
+
+[31m[UNRESOLVED_ENTRY] [0mCannot resolve entry module titler/vite.config.ts.
+
+5:24:48 PM [vite] server restart failed

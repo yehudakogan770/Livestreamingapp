@@ -1,0 +1,30 @@
+<<<<
+        if (unifiedOn())
+          for (const o of ['live', 'back'] as const) {
+====
+        if (unifiedOn())
+          for (const o of ['live', 'back', 'monitor'] as const) {
+>>>>
+<<<<
+              await act({ type: 'cutTo', screen: 'live', sourceId: nextPic(id) });
+              note('the last 5 seconds were replayed');
+              break;
+====
+              await act({ type: 'cutTo', screen: 'live', sourceId: nextPic(id) });
+              note(unifiedOn() ? 'the last 5 seconds were replayed (kept, encoded and played by the engine)' : 'the last 5 seconds were replayed');
+              break;
+>>>>
+<<<<
+              await act({ type: 'updateSource', id: cam.id, patch });
+              try {
+                await sleep(s.seconds * 1000 - 3000);
+              } finally {
+====
+              await act({ type: 'updateSource', id: cam.id, patch });
+              try {
+                await sleep(s.seconds * 1000 - 3000);
+                // The engine runs the models in its vision worker: say how it did.
+                const v = unifiedOn() ? (await refreshEngineInfo().catch(() => null))?.stats?.vision : null;
+                if (v) note(`engine: ${v.frames} frames to the person-finding models, ${v.answers} answers, ${v.masks ? 'a person mask in use' : 'no person mask yet'}`);
+              } finally {
+>>>>

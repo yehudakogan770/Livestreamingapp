@@ -1,0 +1,12 @@
+const {chromium}=require('playwright-core');
+(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+const p=await b.newPage({viewport:{width:1920,height:1020}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://localhost:1420/');await p.waitForTimeout(600);await p.getByRole('button',{name:'Skip for now'}).click();
+await p.getByRole('button',{name:'Make one and put it in Next'}).click();await p.waitForTimeout(200);
+await p.getByRole('button',{name:/^TAKE/}).click();await p.waitForTimeout(1200);
+console.log('after first TAKE — next:',await p.locator('.mon--pvw .mon__head em').innerText(),'| on air:',await p.locator('.mon--pgm .mon__head em').innerText());
+await p.getByRole('button',{name:'Put in Next'}).click();await p.waitForTimeout(200);
+await p.getByRole('button',{name:'More…'}).click();const d=p.getByRole('dialog');await d.getByLabel('Length').fill('10');await d.getByPlaceholder('e.g. Starting soon').fill('Break ends');await d.getByRole('button',{name:'Done'}).click();await p.waitForTimeout(1500);
+await p.screenshot({path:'shots/cd-two.png'});
+console.log('next shows:',await p.locator('.mon--pvw [data-countdown]').innerText(),'| on air shows:',await p.locator('.mon--pgm [data-countdown]').innerText());
+console.log('errors',errs);await b.close();})();

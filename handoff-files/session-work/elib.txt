@@ -1,0 +1,436 @@
+3:
+4:mod delivery;
+5:mod encode;
+6:mod export;
+7:mod formats;
+8:mod frames;
+9:mod hwaccel;
+10:mod library;
+11:mod manage;
+12:mod mattes;
+13:mod media;
+14:mod native_view;
+15:mod rendercache;
+16:mod selftest;
+17:mod speech;
+18:
+19:use std::path::{Path, PathBuf};
+20:use std::sync::Arc;
+21:
+22:use tauri::{Emitter, Manager, State};
+23:
+24:struct AppState {
+25:    ffmpeg: Option<PathBuf>,
+27:    cache: PathBuf,
+28:    exports: export::Exports,
+30:    frames: frames::Readers,
+32:    encoders: Arc<encode::Encoders>,
+33:}
+34:
+35:const NO_FFMPEG: &str =
+36:    "FFmpeg was not found. It comes with Lumora Studio: install Lumora Studio again from the website.";
+37:
+38:impl AppState {
+39:    fn ffmpeg(&self) -> Result<PathBuf, String> {
+40:        self.ffmpeg.clone().ok_or_else(|| NO_FFMPEG.to_owned())
+41:    }
+42:}
+43:
+45:#[tauri::command]
+46:fn app_ready() {}
+47:
+48:#[tauri::command]
+49:fn ffmpeg_found(state: State<'_, AppState>) -> bool {
+50:    state.ffmpeg.is_some()
+51:}
+52:
+54:#[tauri::command]
+55:fn initial_file() -> Option<String> {
+56:    std::env::args().skip(1).find(|a| {
+57:        let lower = a.to_ascii_lowercase();
+58:        lower.ends_with(".lumora") || lower.ends_with(".lumoraedit")
+59:    })
+60:}
+61:
+62:#[tauri::command]
+63:fn read_text(path: String) -> Result<String, String> {
+64:    std::fs::read_to_string(&path).map_err(|e| format!("Could not open {path}: {e}"))
+65:}
+66:
+68:#[tauri::command]
+69:fn write_text(path: String, text: String) -> Result<(), String> {
+70:    let path = PathBuf::from(path);
+71:    let temp = path.with_extension("saving");
+72:    std::fs::write(&temp, text).map_err(|e| format!("Could not save: {e}"))?;
+73:    std::fs::rename(&temp, &path).map_err(|e| format!("Could not save: {e}"))
+74:}
+75:
+76:#[tauri::command]
+77:fn file_exists(path: String) -> bool {
+78:    Path::new(&path).is_file()
+79:}
+80:
+81:#[tauri::command]
+82:async fn prepare_media(
+83:    state: State<'_, AppState>,
+84:    path: String,
+85:) -> Result<media::Prepared, String> {
+86:    let ffmpeg = state.ffmpeg()?;
+87:    tauri::async_runtime::spawn_blocking(move || media::prepare(&ffmpeg, Path::new(&path)))
+88:        .await
+89:        .map_err(|e| e.to_string())?
+90:}
+91:
+92:#[tauri::command]
+93:async fn peaks(state: State<'_, AppState>, path: String) -> Result<tauri::ipc::Response, String> {
+94:    let ffmpeg = state.ffmpeg()?;
+95:    let cache = state.cache.clone();
+96:    let bytes = tauri::async_runtime::spawn_blocking(move || {
+97:        media::peaks(&ffmpeg, Path::new(&path), &cache.join("waveforms"))
+98:    })
+99:    .await
+100:    .map_err(|e| e.to_string())??;
+101:    Ok(tauri::ipc::Response::new(bytes))
+102:}
+103:
+105:#[tauri::command]
+106:async fn import_media(
+107:    app: tauri::AppHandle,
+108:    state: State<'_, AppState>,
+109:    path: String,
+110:) -> Result<media::Prepared, String> {
+111:    let ffmpeg = state.ffmpeg()?;
+112:    let cache = state.cache.join("optimized");
+113:    tauri::async_runtime::spawn_blocking(move || {
+114:        let p = path.clone();
+115:        media::import(&ffmpeg, Path::new(&path), &cache, &move |done| {
+116:            let _ = app.emit("import-progress", (p.clone(), done));
+117:        })
+118:    })
+119:    .await
+120:    .map_err(|e| e.to_string())?
+121:}
+122:
+124:#[tauri::command]
+125:async fn probe_media(state: State<'_, AppState>, path: String) -> Result<media::Prepared, String> {
+126:    let ffmpeg = state.ffmpeg()?;
+127:    tauri::async_runtime::spawn_blocking(move || media::look(&ffmpeg, Path::new(&path)))
+128:        .await
+129:        .map_err(|e| e.to_string())?
+130:}
+131:
+135:#[tauri::command]
+136:async fn make_proxy(
+137:    app: tauri::AppHandle,
+138:    state: State<'_, AppState>,
+139:    path: String,
+140:    threads: Option<u32>,
+141:    hardware: Option<bool>,
+142:) -> Result<String, String> {
+143:    let ffmpeg = state.ffmpeg()?;
+144:    let cache = state.cache.join("proxies");
+145:    let enc = Arc::clone(&state.encoders);
+146:    tauri::async_runtime::spawn_blocking(move || {
+147:        let p = path.clone();
+148:        let encoder = if hardware.unwrap_or(true) {
+149:            rendercache::hardware_h264(&enc.available(&ffmpeg))
+150:        } else {
+151:            None
+152:        };
+153:        let how = formats::CopyEncoding {
+154:            encoder,
+155:            threads: threads.map(|t| t.clamp(1, 64)),
+156:            decode: Vec::new(),
+157:        };
+158:        media::playback_proxy_with(
+159:            &ffmpeg,
+160:            Path::new(&path),
+161:            &cache,
+162:            &move |done| {
+163:                let _ = app.emit("proxy-progress", (p.clone(), done));
+164:            },
+165:            &how,
+166:        )
+167:    })
+168:    .await
+169:    .map_err(|e| e.to_string())?
+170:}
+171:
+173:#[tauri::command]
+174:async fn frames_open(
+175:    state: State<'_, AppState>,
+176:    path: String,
+177:    from: f64,
+178:    rate: f64,
+179:    width: u32,
+180:    height: u32,
+181:) -> Result<u32, String> {
+182:    let ffmpeg = state.ffmpeg()?;
+183:    state
+184:        .frames
+185:        .open(&ffmpeg, Path::new(&path), from, rate, width, height)
+186:}
+187:
+189:#[tauri::command]
+190:async fn frames_next(state: State<'_, AppState>, id: u32) -> Result<tauri::ipc::Response, String> {
+191:    state.frames.next(id).map(tauri::ipc::Response::new)
+192:}
+193:
+194:#[tauri::command]
+195:fn frames_close(state: State<'_, AppState>, id: u32) {
+196:    state.frames.close(id);
+197:}
+198:
+199:#[tauri::command]
+200:async fn strip(
+201:    state: State<'_, AppState>,
+202:    path: String,
+203:    seconds: f64,
+204:) -> Result<media::Strip, String> {
+205:    let ffmpeg = state.ffmpeg()?;
+206:    let cache = state.cache.join("strips");
+207:    tauri::async_runtime::spawn_blocking(move || {
+208:        media::strip(&ffmpeg, Path::new(&path), seconds, &cache)
+209:    })
+210:    .await
+211:    .map_err(|e| e.to_string())?
+212:}
+213:
+216:#[tauri::command]
+217:async fn speech_model(app: tauri::AppHandle, name: String) -> Result<String, String> {
+218:    let ours = app.path().app_data_dir().map_err(|e| e.to_string())?;
+219:    let lumora = ours.parent().map(|d| d.join("app.lumora.desktop"));
+220:    tauri::async_runtime::spawn_blocking(move || {
+221:        let n = name.clone();
+222:        speech::model(&ours, lumora.as_deref(), &name, &move |done| {
+223:            let _ = app.emit("speech-progress", (n.clone(), done));
+224:        })
+225:    })
+226:    .await
+227:    .map_err(|e| e.to_string())?
+228:    .map(|p| p.to_string_lossy().into_owned())
+229:}
+230:
+232:#[tauri::command]
+233:async fn speech_audio(
+234:    state: State<'_, AppState>,
+235:    path: String,
+236:    from: f64,
+237:    seconds: f64,
+238:) -> Result<tauri::ipc::Response, String> {
+239:    let ffmpeg = state.ffmpeg()?;
+240:    let bytes = tauri::async_runtime::spawn_blocking(move || {
+241:        speech::audio(&ffmpeg, Path::new(&path), from, seconds)
+242:    })
+243:    .await
+244:    .map_err(|e| e.to_string())??;
+245:    Ok(tauri::ipc::Response::new(bytes))
+246:}
+247:
+249:#[tauri::command]
+250:async fn matte_read(
+251:    state: State<'_, AppState>,
+252:    media: String,
+253:    kind: String,
+254:) -> Result<tauri::ipc::Response, String> {
+255:    let cache = state.cache.clone();
+256:    let bytes = tauri::async_runtime::spawn_blocking(move || mattes::read(&cache, &media, &kind))
+257:        .await
+258:        .map_err(|e| e.to_string())?;
+259:    Ok(tauri::ipc::Response::new(bytes))
+260:}
+261:
+263:#[tauri::command]
+264:fn matte_write(state: State<'_, AppState>, request: tauri::ipc::Request<'_>) -> Result<(), String> {
+265:    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+266:        return Err("Nothing to write.".into());
+267:    };
+268:    let header = |k: &str| {
+269:        request
+270:            .headers()
+271:            .get(k)
+272:            .and_then(|v| v.to_str().ok())
+273:            .map(decode)
+274:    };
+275:    let media = header("x-media").ok_or("No file given.")?;
+276:    let kind = header("x-kind").ok_or("No kind given.")?;
+277:    mattes::write(&state.cache, &media, &kind, bytes)
+278:}
+279:
+281:#[tauri::command]
+282:fn export_folder(out: String) -> Result<String, String> {
+283:    export::work_folder(Path::new(&out)).map(|p| p.to_string_lossy().into_owned())
+284:}
+285:
+286:fn is_work_file(path: &Path) -> bool {
+287:    path.ancestors().any(|a| {
+288:        a.file_name()
+289:            .and_then(|n| n.to_str())
+290:            .is_some_and(|n| n.starts_with(".lumora-edit-"))
+291:    })
+292:}
+293:
+295:#[tauri::command]
+296:fn write_chunk(request: tauri::ipc::Request<'_>) -> Result<(), String> {
+297:    let tauri::ipc::InvokeBody::Raw(bytes) = request.body() else {
+298:        return Err("Nothing to write.".into());
+299:    };
+300:    let header = |k: &str| {
+301:        request
+302:            .headers()
+303:            .get(k)
+304:            .and_then(|v| v.to_str().ok())
+305:            .map(str::to_owned)
+306:    };
+307:    let path = header("x-path").ok_or("No file given.")?;
+308:    let path = PathBuf::from(decode(&path));
+309:    if !is_work_file(&path) {
+310:        return Err("Only the film's work folder can be written.".into());
+311:    }
+312:    let position: u64 = header("x-position")
+313:        .and_then(|v| v.parse().ok())
+314:        .unwrap_or(0);
+315:    export::write_at(&path, position, bytes)
+316:}
+317:
+319:fn decode(s: &str) -> String {
+320:    let bytes = s.as_bytes();
+321:    let mut out = Vec::with_capacity(bytes.len());
+322:    let mut i = 0;
+323:    while i < bytes.len() {
+324:        if bytes[i] == b'%' && i + 2 < bytes.len() {
+325:            if let Ok(v) = u8::from_str_radix(&s[i + 1..i + 3], 16) {
+326:                out.push(v);
+327:                i += 3;
+328:                continue;
+329:            }
+330:        }
+331:        out.push(bytes[i]);
+332:        i += 1;
+333:    }
+334:    String::from_utf8_lossy(&out).into_owned()
+335:}
+336:
+337:#[tauri::command]
+338:fn export_start(
+339:    app: tauri::AppHandle,
+340:    state: State<'_, AppState>,
+341:    plan: export::Plan,
+342:    out: String,
+343:    tmp: String,
+344:) -> Result<(), String> {
+345:    let ffmpeg = state.ffmpeg()?;
+346:    let tmp = PathBuf::from(tmp);
+347:    if !is_work_file(&tmp) {
+348:        return Err("That is not a work folder.".into());
+349:    }
+350:    state
+351:        .exports
+352:        .start(ffmpeg, plan, PathBuf::from(out), tmp, move |p| {
+353:            let _ = app.emit("export-progress", p);
+354:        })
+355:}
+356:
+358:#[tauri::command]
+359:fn export_abandon(tmp: String) {
+360:    let tmp = PathBuf::from(tmp);
+361:    if is_work_file(&tmp) {
+362:        let _ = std::fs::remove_dir_all(tmp);
+363:    }
+364:}
+365:
+367:#[tauri::command]
+368:fn send_to_lumora(
+369:    app: tauri::AppHandle,
+370:    path: String,
+371:    name: String,
+372:    seconds: f64,
+373:) -> Result<(), String> {
+375:    let ours = app.path().app_data_dir().map_err(|e| e.to_string())?;
+376:    let dir = ours
+377:        .parent()
+378:        .map(|d| d.join("app.lumora.desktop"))
+379:        .ok_or("Lumora's folder was not found.")?;
+380:    library::add_video(&dir, &path, &name, seconds)
+381:}
+382:
+384:#[tauri::command]
+385:async fn find_by_name(folder: String, name: String) -> Option<String> {
+386:    tauri::async_runtime::spawn_blocking(move || {
+387:        let mut stack = vec![(PathBuf::from(folder), 0)];
+388:        while let Some((dir, depth)) = stack.pop() {
+389:            let Ok(entries) = std::fs::read_dir(&dir) else {
+390:                continue;
+391:            };
+392:            for e in entries.flatten() {
+393:                let p = e.path();
+394:                if p.is_dir() {
+395:                    if depth < 4 {
+396:                        stack.push((p, depth + 1));
+397:                    }
+398:                } else if p.file_name().and_then(|n| n.to_str()) == Some(name.as_str()) {
+399:                    return Some(p.to_string_lossy().into_owned());
+400:                }
+401:            }
+402:        }
+403:        None
+404:    })
+405:    .await
+406:    .ok()
+407:    .flatten()
+408:}
+409:
+410:#[tauri::command]
+411:fn export_cancel(state: State<'_, AppState>) {
+412:    state.exports.cancel();
+413:}
+414:
+416:#[tauri::command]
+417:fn reveal(path: String) {
+418:    #[cfg(windows)]
+419:    {
+420:        use std::os::windows::process::CommandExt;
+421:        let _ = std::process::Command::new("explorer")
+422:            .raw_arg(format!("/select,\"{path}\""))
+423:            .spawn();
+424:    }
+425:    #[cfg(not(windows))]
+426:    {
+427:        if let Some(dir) = Path::new(&path).parent() {
+428:            let _ = std::process::Command::new("xdg-open").arg(dir).spawn();
+429:        }
+430:    }
+431:}
+432:
+435:#[tauri::command]
+436:fn take_crash_reports(app: tauri::AppHandle) -> Vec<lumora_crash::CrashReport> {
+437:    app.path()
+438:        .app_data_dir()
+439:        .map(|dir| lumora_crash::take(&dir))
+440:        .unwrap_or_default()
+441:}
+442:
+445:pub fn run() {
+446:    tauri::Builder::default()
+447:        .plugin(tauri_plugin_dialog::init())
+448:        .plugin(tauri_plugin_updater::Builder::new().build())
+449:        .plugin(tauri_plugin_process::init())
+450:        .setup(|app| {
+452:            if let Ok(dir) = app.path().app_data_dir() {
+453:                lumora_crash::install(dir, app.package_info().version.to_string());
+454:            }
+455:            let cache = app
+456:                .path()
+457:                .app_cache_dir()
+458:                .unwrap_or_else(|_| std::env::temp_dir());
+459:            let ffmpeg = media::find_ffmpeg();
+460:            eprintln!("lumora-edit: ffmpeg {ffmpeg:?}");
+461:            app.manage(AppState {
+462:                ffmpeg,
+463:                cache,
+464:                exports: export::Exports::default(),
+465:                frames: frames::Readers::default(),
+466:                encoders: Arc::default(),
+467:            });
+468:            app.manage(native_view::NativeView::default());
+470:            let quit = app.handle().clone();

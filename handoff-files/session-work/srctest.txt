@@ -1,0 +1,105 @@
+<<<<
+    fn files_are_delivered_at_their_own_size_up_to_4k() {
+====
+    fn videos_play_as_the_show_says() {
+        let f = Path::new("clip.mkv");
+        let args = |c: Clip| file_args(f, false, c, 64, 36).join(" ");
+        // Playing at its own speed from 2.5 s, looping: FFmpeg paces it.
+        let a = args(Clip {
+            start_s: 2.5,
+            ..Clip::LOOP
+        });
+        assert!(a.contains("-ss 2.500 -hwaccel auto -re -stream_loop -1 -i clip.mkv"), "{a}");
+        assert!(a.contains("-vf scale=64:36"), "{a}");
+        // Slow motion, once through: turned into 30 frames a second, paced by the engine.
+        let a = args(Clip {
+            speed: 0.5,
+            looping: false,
+            ..Clip::LOOP
+        });
+        assert!(!a.contains("-re") && !a.contains("-stream_loop"), "{a}");
+        assert!(a.contains("-vf fps=30,scale=64:36"), "{a}");
+        // Paused at 4 s: that one picture, held.
+        let a = args(Clip {
+            start_s: 4.0,
+            playing: false,
+            ..Clip::LOOP
+        });
+        assert!(a.contains("-ss 4.000 -i clip.mkv -frames:v 1"), "{a}");
+        assert!(!a.contains("-re"));
+        // A picture: once, no seeking.
+        let a = file_args(Path::new("p.png"), true, Clip::LOOP, 64, 36).join(" ");
+        assert!(a.contains("-i p.png -frames:v 1") && !a.contains("-ss"), "{a}");
+    }
+
+    #[test]
+    fn slow_motion_is_paced_and_a_video_that_ends_holds_its_last_picture() {
+        if quiet("ffmpeg").arg("-version").output().is_err() {
+            eprintln!("no FFmpeg here; skipped");
+            return;
+        }
+        // One second of 30 fps test picture.
+        let dir = std::env::temp_dir().join(format!("lumora-clip-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let file = dir.join("one-second.mkv");
+        let made = quiet("ffmpeg")
+            .args(["-y", "-loglevel", "error", "-f", "lavfi", "-i"])
+            .arg("testsrc=size=64x36:rate=30:duration=1")
+            .args(["-c:v", "ffv1"])
+            .arg(&file)
+            .status();
+        if !made.is_ok_and(|s| s.success()) {
+            eprintln!("FFmpeg could not make the test file; skipped");
+            return;
+        }
+        let ff = Path::new("ffmpeg");
+        // At half speed one second takes two.
+        let src = FfmpegFile::play(
+            ff,
+            &file,
+            false,
+            Clip {
+                speed: 0.5,
+                looping: false,
+                ..Clip::LOOP
+            },
+        );
+        let t0 = Instant::now();
+        let deadline = t0 + Duration::from_secs(10);
+        while src.health().frames < 30 && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        let took = t0.elapsed();
+        assert!(src.health().frames >= 30, "{:?}", src.health());
+        assert!(
+            took >= Duration::from_millis(1800),
+            "30 frames at half speed take two seconds, not {took:?}"
+        );
+        // It ends (no loop) and holds its last picture without going "no signal".
+        thread::sleep(Duration::from_millis(2000));
+        assert_eq!(src.health().state, SourceState::Live);
+        assert!(src.latest().is_some());
+        // Paused: one picture, held.
+        let paused = FfmpegFile::play(
+            ff,
+            &file,
+            false,
+            Clip {
+                start_s: 0.5,
+                playing: false,
+                ..Clip::LOOP
+            },
+        );
+        let deadline = Instant::now() + Duration::from_secs(10);
+        while paused.latest().is_none() && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(20));
+        }
+        thread::sleep(Duration::from_millis(1800));
+        assert_eq!(paused.health().frames, 1);
+        assert_eq!(paused.health().state, SourceState::Live);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn files_are_delivered_at_their_own_size_up_to_4k() {
+>>>>

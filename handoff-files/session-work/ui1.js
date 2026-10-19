@@ -1,0 +1,30 @@
+const {chromium}=require('playwright-core');
+(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
+const p=await b.newPage({viewport:{width:1440,height:900}});const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+await p.goto('http://localhost:1420/');await p.waitForTimeout(800);
+await p.screenshot({path:'shots/app-empty.png'});
+const add=async(kind,fn)=>{await p.getByRole('button',{name:'Add input'}).first().click();await p.getByRole('button',{name:new RegExp('^'+kind)}).click();await p.waitForTimeout(600);if(fn)await fn();await p.getByRole('dialog').getByRole('button',{name:'Add input'}).click();await p.waitForTimeout(300);};
+await add('Colour',async()=>{await p.getByRole('button',{name:'#c7372f'}).click();await p.locator('.field input.text').fill('Red');});
+await add('Test pattern');
+await add('Camera',async()=>{await p.waitForTimeout(800);await p.locator('.addinput__list .seg').first().click();await p.waitForTimeout(500);await p.screenshot({path:'shots/app-addcam.png'});});
+await add('Colour',async()=>{await p.getByRole('button',{name:'#1f6f79'}).click();await p.locator('.field input.text').fill('Teal');});
+console.log('tiles:',await p.locator('.tile__name').allInnerTexts());
+// line up Red, take
+await p.getByRole('button',{name:'1 Red'}).click(); await p.getByRole('button',{name:/^TAKE/}).click(); await p.waitForTimeout(400);
+await p.screenshot({path:'shots/app-mid-take.png'});
+await p.waitForTimeout(700);
+const onair=()=>p.locator('.mon--pgm .mon__head em').innerText();
+console.log('on air after take:',await onair(), '| next:', await p.locator('.mon--pvw .mon__head em').innerText());
+await p.getByRole('button',{name:'2 Test pattern'}).click(); await p.keyboard.press('Shift+Enter'); await p.waitForTimeout(200);
+console.log('after cut:',await onair());
+// T-bar
+await p.getByRole('button',{name:'3 Camera'}).click().catch(()=>{});
+const names=await p.locator('.tile__pick').evaluateAll(e=>e.map(x=>x.getAttribute('aria-label')));console.log(names);
+await p.locator('.tile__pick').nth(2).click();
+const t=await p.locator('.tbar__track').boundingBox();
+await p.mouse.move(t.x+3,t.y+t.height/2);await p.mouse.down();await p.mouse.move(t.x+t.width*0.5,t.y+t.height/2,{steps:5});await p.waitForTimeout(300);
+await p.screenshot({path:'shots/app-tbar-half.png'});
+await p.mouse.move(t.x+t.width-1,t.y+t.height/2,{steps:5});await p.mouse.up();await p.waitForTimeout(300);
+console.log('after tbar:',await onair(),'| tbar labels',await p.locator('.tbar__labels').innerText());
+await p.screenshot({path:'shots/app-after.png'});
+console.log('errors',errs);await b.close();})();

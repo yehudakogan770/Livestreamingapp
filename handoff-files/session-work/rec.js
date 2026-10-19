@@ -1,0 +1,25 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const ctx = await b.newContext({ viewport: { width: 1280, height: 760 }, acceptDownloads: true });
+  const p = await ctx.newPage();
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message)); p.on('console', (m) => m.type() === 'error' && errs.push(m.text()));
+  p.on('download', (d) => console.log('DOWNLOAD', d.suggestedFilename()));
+  await p.addInitScript(() => { try { localStorage.setItem('lumora.textSize', 'normal'); } catch {} });
+  await p.goto('http://localhost:1420');
+  await p.waitForTimeout(1500);
+  await p.getByText('Skip for now').click().catch(() => {});
+  const rec = p.locator('button', { hasText: /^\s*●?\s*REC/ }).first();
+  await rec.click(); await p.waitForTimeout(3000);
+  console.log('while recording:', await rec.textContent());
+  await rec.click(); await p.waitForTimeout(800);
+  await p.screenshot({ path: 'full/rec-stop.png' });
+  console.log('dialog:', await p.locator('.modal h2, [role=alertdialog], [role=dialog]').allTextContents());
+  const stop = p.getByRole('button', { name: /stop/i });
+  console.log('stop buttons:', await stop.allTextContents());
+  if (await stop.count()) await stop.last().click();
+  await p.waitForTimeout(4000);
+  await p.screenshot({ path: 'full/rec-after.png' });
+  console.log('after:', await rec.textContent(), errs);
+  await b.close();
+})();

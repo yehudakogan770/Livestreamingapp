@@ -1,0 +1,11 @@
+const { chromium } = require('playwright-core');
+(async () => { const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+p.on('console', m => console.log('console:', m.text())); p.on('pageerror', e => console.log('err', e.message));
+await p.goto('http://localhost:8765/Main.dc.html'); await p.waitForTimeout(2500);
+const tb = p.getByRole('slider', { name: 'T-bar' }); const r = await tb.boundingBox(); console.log(r);
+const top = await p.evaluate(([x,y]) => { const el = document.elementFromPoint(x,y); return el.tagName + ' ' + (el.getAttribute('style')||'').slice(0,60) + ' role=' + el.getAttribute('role'); }, [r.x + r.width/2, r.y + r.height/2]);
+console.log('top element:', top);
+await p.mouse.move(r.x + r.width*0.3, r.y + r.height/2); await p.mouse.down(); await p.waitForTimeout(200);
+console.log('after down', await tb.getAttribute('aria-valuenow'));
+await b.close(); })();

@@ -1,0 +1,27 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 900 } });
+  p.setDefaultTimeout(15000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Song lyrics/ }).first().click();
+  await p.getByLabel('Song words').fill('Amazing grace how sweet the sound\nThat saved a wretch like me\n\nI once was lost but now am found\nWas blind but now I see\n\nThird slide here');
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+  await p.locator('.tile__pick').nth(0).dblclick();
+  await p.getByRole('button', { name: /Options for / }).first().click();
+  await p.getByRole('button', { name: 'Run the song…' }).click();
+  await p.keyboard.press('ArrowRight');
+  await p.waitForTimeout(400);
+  await p.screenshot({ path: 'song1.png' });
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(200);
+  await p.keyboard.press('F3');
+  await p.waitForTimeout(400);
+  await p.screenshot({ path: 'song2.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

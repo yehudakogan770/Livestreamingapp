@@ -1,0 +1,280 @@
+import json
+data=open('svdata.json').read()
+polish=open('lumora/project/Pesukim.dc.html').read()
+polish=polish[polish.index('/* lumora-polish:start */'):polish.index('/* lumora-polish:end */')+len('/* lumora-polish:end */')]
+SEG="display: flex; gap: 2px; padding: 2px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;"
+LBL="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: #8e9096;"
+html=f'''<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Stage visuals</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+{polish}
+
+button{{cursor:pointer;background-image:none;box-shadow:none}}
+body{{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}}
+a{{color:#4fb3bf}}a:hover{{color:#8fd3db}}
+button,select,input{{font-family:inherit}}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+
+  <!-- Header: output, beat clock, keyboard -->
+  <div style="height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <a href="Main.dc.html" style="height: 32px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 13px; display: flex; align-items: center; text-decoration: none; box-sizing: border-box; white-space: nowrap;">‹ Main screen</a>
+    <span style="font-size: 18px; font-weight: 600; white-space: nowrap;">Stage visuals</span>
+    <div style="{SEG}">
+      <sc-for list="{{{{outs}}}}" as="o" hint-placeholder-count="3"><button onClick="{{{{o.pick}}}}" style="{{{{o.style}}}}">{{{{o.name}}}}</button></sc-for>
+    </div>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 10px; border-radius: 8px; background: #101216; border: 1px solid #2c3038;">
+      <button onClick="{{{{bpmDown}}}}" aria-label="Slower" style="width: 28px; height: 28px; padding: 0; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 16px;">−</button>
+      <span style="display: flex; flex-direction: column; align-items: center; width: 52px;"><span style="font-family: Consolas, monospace; font-size: 22px; font-weight: 700; color: #ffffff; line-height: 1;">{{{{bpm}}}}</span><span style="font-size: 9px; color: #8e9096;">BPM</span></span>
+      <button onClick="{{{{bpmUp}}}}" aria-label="Faster" style="width: 28px; height: 28px; padding: 0; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 16px;">+</button>
+      <button onClick="{{{{tap}}}}" style="height: 28px; padding: 0 12px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600;">Tap</button>
+      <button onClick="{{{{sync}}}}" style="height: 28px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Sync to 1</button>
+      <span style="display: flex; gap: 5px; padding: 0 4px;"><sc-for list="{{{{dots}}}}" as="d" hint-placeholder-count="4"><span style="{{{{d}}}}"></span></sc-for></span>
+    </div>
+    <div style="{SEG}">
+      <sc-for list="{{{{clockSrc}}}}" as="c" hint-placeholder-count="3"><button onClick="{{{{c.pick}}}}" title="{{{{c.tip}}}}" style="{{{{c.style}}}}">{{{{c.name}}}}</button></sc-for>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2px;">
+      <span style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #e4e5e7; white-space: nowrap;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3fbf5a;"></span>Yamaha PSR-SX720</span>
+      <button onClick="{{{{toggleLearn}}}}" style="{{{{learnStyle}}}}">{{{{learnLabel}}}}</button>
+    </div>
+  </div>
+
+  <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: 440px minmax(0, 1fr) 290px; gap: 12px; padding: 12px; box-sizing: border-box;">
+
+    <!-- Left: what is showing, pads, looks -->
+    <div style="display: flex; flex-direction: column; gap: 10px; min-height: 0;">
+      <div style="position: relative; aspect-ratio: 16 / 9; flex-shrink: 0; border-radius: 6px; overflow: hidden; border: 2px solid #c7372f;">
+        <div style="{{{{liveBg}}}}"></div>
+        <sc-if value="{{{{logoOn}}}}" hint-placeholder-val="{{{{true}}}}"><div style="{{{{logoStyle}}}}"><svg width="100%" height="100%" viewBox="0 0 48 48" aria-hidden="true" style="display: block;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#ffffff"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#ffffff" opacity="0.8"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#ffffff" opacity="0.5"></path></svg></div></sc-if>
+        <sc-if value="{{{{textOn}}}}" hint-placeholder-val="{{{{false}}}}"><div style="position: absolute; left: 0; right: 0; bottom: 18%; text-align: center; font-size: 30px; font-weight: 800; letter-spacing: 0.04em; color: #ffffff; text-shadow: 0 2px 16px rgba(0,0,0,0.6);">{{{{textVal}}}}</div></sc-if>
+        <sc-if value="{{{{dark}}}}" hint-placeholder-val="{{{{false}}}}"><div style="position: absolute; inset: 0; background: #000;"></div></sc-if>
+        <span style="position: absolute; left: 8px; top: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: #c7372f; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; line-height: 18px; color: #fff;">ON AIR · {{{{outName}}}}</span>
+        <span style="position: absolute; left: 8px; bottom: 8px; height: 20px; padding: 0 8px; border-radius: 3px; background: rgba(10,11,13,0.7); font-size: 12px; line-height: 20px; color: #fff;">{{{{liveName}}}}</span>
+        <span style="position: absolute; right: 8px; bottom: 8px; height: 20px; padding: 0 8px; border-radius: 3px; background: rgba(10,11,13,0.7); font-size: 11px; line-height: 20px; color: #d4d5d8;">{{{{nextInfo}}}}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; flex-shrink: 0;">
+        <sc-for list="{{{{pads}}}}" as="p" hint-placeholder-count="10">
+          <button onClick="{{{{p.press}}}}" title="{{{{p.tip}}}}" style="{{{{p.style}}}}"><span style="font-size: 13px; font-weight: 700;">{{{{p.name}}}}</span><span style="font-family: Consolas, monospace; font-size: 10px; color: #8e9096;">{{{{p.key}}}}</span></button>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 12px; font-weight: 600; width: 58px;">Energy</span>
+          <input type="range" min="0" max="100" value="{{{{energy}}}}" onInput="{{{{onEnergy}}}}" aria-label="Energy" style="flex-grow: 1;">
+          <span style="font-size: 11px; color: #a9abb0; width: 70px; text-align: right;">{{{{energyLabel}}}}</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button onClick="{{{{toggleAuto}}}}" style="{{{{autoStyle}}}}">Autopilot</button>
+          <span style="font-size: 11px; color: #a9abb0;">change every</span>
+          <div style="{SEG}"><sc-for list="{{{{autoBars}}}}" as="a" hint-placeholder-count="4"><button onClick="{{{{a.pick}}}}" style="{{{{a.style}}}}">{{{{a.name}}}}</button></sc-for></div>
+          <div style="flex-grow: 1;"></div>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; white-space: nowrap;" title="Limits strobe and flashes for audiences"><input type="checkbox" checked="{{{{safe}}}}" onChange="{{{{toggleSafe}}}}"> Safe mode</label>
+        </div>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px;">
+        <div style="display: flex; align-items: center;"><span style="{LBL} flex-grow: 1;">SAVED LOOKS</span><button onClick="{{{{toggleSaving}}}}" style="{{{{saveBtn}}}}">{{{{saveLabel}}}}</button></div>
+        <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 6px;">
+          <sc-for list="{{{{looks}}}}" as="l" hint-placeholder-count="8">
+            <button onClick="{{{{l.press}}}}" style="{{{{l.style}}}}"><span style="font-size: 12px; font-weight: 700;">{{{{l.name}}}}</span><span style="font-size: 10px; color: #a9abb0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{{{l.sub}}}}</span></button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle: music types and scenes -->
+    <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0;">
+      <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; flex-shrink: 0;">
+        <sc-for list="{{{{banks}}}}" as="b" hint-placeholder-count="14">
+          <button onClick="{{{{b.pick}}}}" style="{{{{b.style}}}}"><span style="font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{{{b.name}}}}</span><span style="font-size: 10px; color: #8e9096;">~{{{{b.bpm}}}} BPM</span></button>
+        </sc-for>
+      </div>
+      <div style="height: 28px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <span style="font-size: 12px; color: #a9abb0; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{{{bankDesc}}}}</span>
+        <button onClick="{{{{toggleFavOnly}}}}" style="{{{{favOnlyStyle}}}}">★ Favourites</button>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: 6px;">
+        <sc-for list="{{{{scenes}}}}" as="s" hint-placeholder-count="20">
+          <div style="{{{{s.box}}}}">
+            <button onClick="{{{{s.pick}}}}" aria-label="{{{{s.name}}}}" style="position: absolute; inset: 0; padding: 0; border: 0; background: transparent;"></button>
+            <sc-if value="{{{{s.live}}}}" hint-placeholder-val="{{{{false}}}}"><span style="position: absolute; left: 5px; top: 5px; height: 15px; padding: 0 5px; border-radius: 3px; background: #c7372f; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; line-height: 15px; color: #fff; pointer-events: none;">LIVE</span></sc-if>
+            <button onClick="{{{{s.fav}}}}" aria-label="Favourite" style="{{{{s.favStyle}}}}">★</button>
+            <span style="position: absolute; left: 6px; right: 6px; bottom: 5px; display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #ffffff; text-shadow: 0 1px 4px rgba(0,0,0,0.8); pointer-events: none;"><span style="flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{{{s.name}}}}</span><span style="font-family: Consolas, monospace; font-size: 10px; opacity: 0.8;">{{{{s.num}}}}</span></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="height: 34px; display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
+        <span title="Keys: Space next · ← back · 1–0 scenes · Z strobe · X flash · B blackout" style="{LBL} white-space: nowrap;">CHANGE SCENE</span>
+        <div style="{SEG}"><sc-for list="{{{{quant}}}}" as="q" hint-placeholder-count="3"><button onClick="{{{{q.pick}}}}" style="{{{{q.style}}}}">{{{{q.name}}}}</button></sc-for></div>
+        <span style="{LBL} padding-left: 6px;">FADE</span>
+        <div style="{SEG}"><sc-for list="{{{{fades}}}}" as="f" hint-placeholder-count="4"><button onClick="{{{{f.pick}}}}" style="{{{{f.style}}}}">{{{{f.name}}}}</button></sc-for></div>
+
+      </div>
+    </div>
+
+    <!-- Right: look and effects -->
+    <div style="display: flex; flex-direction: column; gap: 8px; min-height: 0; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; padding: 10px; box-sizing: border-box;">
+      <div style="{SEG} flex-shrink: 0;">
+        <sc-for list="{{{{tabs}}}}" as="t" hint-placeholder-count="4"><button onClick="{{{{t.pick}}}}" style="{{{{t.style}}}}">{{{{t.name}}}}</button></sc-for>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 2px;">
+        <sc-for list="{{{{groups}}}}" as="g" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <span style="{LBL}">{{{{g.title}}}}</span>
+            <sc-if value="{{{{g.hasSeg}}}}" hint-placeholder-val="{{{{false}}}}"><div style="{SEG}"><sc-for list="{{{{g.seg}}}}" as="o" hint-placeholder-count="4"><button onClick="{{{{o.pick}}}}" style="{{{{o.style}}}}">{{{{o.name}}}}</button></sc-for></div></sc-if>
+            <sc-if value="{{{{g.hasSelect}}}}" hint-placeholder-val="{{{{false}}}}"><select aria-label="{{{{g.title}}}}" value="{{{{g.selVal}}}}" onChange="{{{{g.onSel}}}}" style="height: 30px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; padding: 0 8px;"><sc-for list="{{{{g.options}}}}" as="op" hint-placeholder-count="3"><option value="{{{{op.v}}}}">{{{{op.n}}}}</option></sc-for></select></sc-if>
+            <sc-if value="{{{{g.hasText}}}}" hint-placeholder-val="{{{{false}}}}"><input aria-label="Text on screen" value="{{{{textVal}}}}" onInput="{{{{onText}}}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px;"></sc-if>
+            <sc-for list="{{{{g.sliders}}}}" as="sl" hint-placeholder-count="3">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><span style="width: 84px; flex-shrink: 0;">{{{{sl.name}}}}</span><input type="range" min="0" max="100" value="{{{{sl.val}}}}" onInput="{{{{sl.onInput}}}}" aria-label="{{{{sl.name}}}}" style="flex-grow: 1; min-width: 0;"><span style="width: 34px; text-align: right; font-family: Consolas, monospace; font-size: 11px; color: #a9abb0;">{{{{sl.val}}}}</span></label>
+            </sc-for>
+            <sc-for list="{{{{g.toggles}}}}" as="tg" hint-placeholder-count="1">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{{{tg.on}}}}" onChange="{{{{tg.toggle}}}}"> {{{{tg.name}}}}</label>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{{"$preview":{{"width":1440,"height":900}}}}'>
+const SV = {data};
+class Component extends DCLogic {{
+  componentDidMount() {{ this.__fill(); this.__onRange = (e) => {{ if (e.target && e.target.type === 'range') this.__fill(); }}; document.addEventListener('input', this.__onRange, true); this._beat = setInterval(() => this.setState((s) => ({{ beat: s.beat + 1 }})), 60000 / 118); }}
+  componentDidUpdate() {{ this.__fill(); }}
+  componentWillUnmount() {{ clearInterval(this._beat); clearTimeout(this._flashT); document.removeEventListener('input', this.__onRange, true); }}
+  __fill() {{ document.querySelectorAll('input[type=range]').forEach((el) => {{ const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }}); }}
+  constructor(props) {{
+    super(props);
+    this.state = {{
+      bank: 13, live: {{ b: 13, i: 0 }}, beat: 0, bpm: 118, out: 'back', clock: 'tap', learn: false, energy: 60, auto: false, autoBars: 16, safe: true,
+      pads: {{}}, flash: false, looks: [{{ n: 'Menorah', b: 13, i: 0 }}, {{ n: 'Opening', b: 12, i: 0 }}, null, null, {{ n: 'Dance', b: 2, i: 0 }}, null, null, null], saving: false,
+      favs: {{ '13:0': true, '13:3': true, '0:0': true }}, favOnly: false, quant: 'beat', fade: 'auto', tab: 'look',
+      fx: {{ zoom: 50, spin: 20, kick: 30, pan: 50, hue: 0, sat: 55, con: 50, glow: 35, trails: 20, rgb: 0, pixel: 0, tv: 0, vig: 40, kal: 6, logoSize: 30, textSize: 50, pulse: 30, speed: 50, react: 60, bright: 100 }},
+      mirror: 'off', colours: 'scene', overlay: 'none', blend: 'add', text: 'Happy Chanukah', textOn: false, logo: true, logoPos: 'corner'
+    }};
+  }}
+  renderVals() {{
+    const st = this.state;
+    const set = (p) => this.setState(p);
+    const P = SV.pal;
+    const grad = (key) => {{ const c = P[key] || P.afterhours; return `radial-gradient(circle at 50% 45%, ${{c[1]}} 0%, ${{c[0]}} 32%, ${{c[2]}} 68%, #05050a 100%)`; }};
+    const seg = (on) => `height: 28px; padding: 0 10px; border: 0; border-radius: 4px; background: ${{on ? '#243039' : 'transparent'}}; color: ${{on ? '#ffffff' : '#a9abb0'}}; font-size: 12px; font-weight: 600; white-space: nowrap; box-shadow: ${{on ? 'inset 0 0 0 1px #4fb3bf' : 'none'}};`;
+    const bank = SV.banks[st.bank];
+    const liveScene = SV.banks[st.live.b].s[st.live.i];
+    const beatIn = st.beat % 4;
+    const fxOn = (id) => !!st.pads[id];
+    const dark = fxOn('black');
+    const segList = (key, opts) => opts.map(([id, name]) => ({{ name, pick: () => set({{ [key]: id }}), style: seg(st[key] === id) }}));
+    const fxSlider = (id, name) => ({{ name, val: String(st.fx[id]), onInput: (e) => set({{ fx: {{ ...st.fx, [id]: Number(e.target.value) }} }}) }});
+
+    const PADS = [['strobe', 'Strobe', 'Z hold', 'Fast white flashes while held'], ['flash', 'Flash', 'X', 'One white flash'], ['black', 'Blackout', 'B', 'Fade to black'], ['freeze', 'Freeze', 'Q', 'Stop all movement'], ['invert', 'Invert', 'I', 'Swap the colours'],
+      ['text', 'Text', 'L', 'Show your text on the visuals'], ['random', 'Randomize', 'R', 'Pick random effects'], ['reset', 'Reset effects', 'E', 'Back to the scene as designed'], ['colours', 'Colours', 'C', 'Cycle colour sets'], ['next', 'Next scene', 'Space', 'Go to the next scene']];
+    const pads = PADS.map(([id, name, key, tip]) => {{
+      const toggles = ['strobe', 'black', 'freeze', 'invert', 'text'].includes(id);
+      const on = id === 'text' ? st.textOn : toggles && fxOn(id);
+      const blocked = st.safe && id === 'strobe';
+      return {{ name, key, tip: blocked ? 'Turned off by Safe mode' : tip,
+        press: () => {{
+          if (blocked) return;
+          if (id === 'text') return set({{ textOn: !st.textOn }});
+          if (toggles) return set({{ pads: {{ ...st.pads, [id]: !st.pads[id] }} }});
+          if (id === 'next') {{ const n = SV.banks[st.live.b].s.length; return set({{ live: {{ b: st.live.b, i: (st.live.i + 1) % n }} }}); }}
+          if (id === 'reset') return set({{ pads: {{}}, mirror: 'off', fx: {{ ...st.fx, hue: 0, trails: 0, rgb: 0, pixel: 0, tv: 0 }} }});
+          if (id === 'random') return set({{ fx: {{ ...st.fx, hue: Math.round(Math.random() * 100), glow: Math.round(Math.random() * 100), trails: Math.round(Math.random() * 60) }}, mirror: ['off', '2', '4', 'kal'][Math.floor(Math.random() * 4)] }});
+          if (id === 'colours') {{ const keys = ['scene', ...Object.keys(P)]; return set({{ colours: keys[(keys.indexOf(st.colours) + 1) % keys.length] }}); }}
+          if (id === 'flash') {{ set({{ flash: true }}); clearTimeout(this._flashT); this._flashT = setTimeout(() => this.setState({{ flash: false }}), 180); }}
+        }},
+        style: `height: 48px; padding: 0 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 6px; border: 1px solid ${{on ? '#4fb3bf' : '#2c3038'}}; background: ${{on ? '#243039' : (id === 'flash' && st.flash) ? '#e4e5e7' : '#2a2e36'}}; color: ${{(id === 'flash' && st.flash) ? '#15171b' : '#ffffff'}}; opacity: ${{blocked ? 0.4 : 1}};` }};
+    }});
+
+    const scenes = bank.s.map(([name, pal], i) => ({{ name, pal, i }})).filter((x) => !st.favOnly || st.favs[st.bank + ':' + x.i]).map(({{ name, pal, i }}) => {{
+      const live = st.live.b === st.bank && st.live.i === i;
+      const fav = !!st.favs[st.bank + ':' + i];
+      return {{ name, num: String(i + 1), live,
+        pick: () => set({{ live: {{ b: st.bank, i }} }}),
+        fav: () => set({{ favs: {{ ...st.favs, [st.bank + ':' + i]: !fav }} }}),
+        favStyle: `position: absolute; right: 4px; top: 3px; width: 20px; height: 20px; padding: 0; border: 0; background: transparent; font-size: 13px; color: ${{fav ? '#ffd166' : 'rgba(255,255,255,0.35)'}}; text-shadow: 0 1px 3px rgba(0,0,0,0.7);`,
+        box: `position: relative; min-height: 0; border-radius: 6px; overflow: hidden; background: ${{grad(st.colours === 'scene' ? pal : st.colours)}}; border: 2px solid ${{live ? '#c7372f' : 'rgba(255,255,255,0.08)'}};` }};
+    }});
+
+    const liveKey = st.colours === 'scene' ? liveScene[1] : st.colours;
+    const fxz = 1 + (st.fx.kick / 100) * (beatIn === 0 ? 0.06 : 0);
+    const TABS = [['look', 'Look'], ['effects', 'Effects'], ['layers', 'Layers'], ['logo', 'Logo']];
+    const colourOpts = [{{ v: 'scene', n: "Scene's own colours" }}, ...Object.keys(P).map((k) => ({{ v: k, n: SV.palNames[k] }}))];
+    const G = {{
+      look: [
+        {{ title: 'COLOURS', hasSelect: true, options: colourOpts, selVal: st.colours, onSel: (e) => set({{ colours: e.target.value }}), sliders: [fxSlider('hue', 'Hue shift'), fxSlider('sat', 'Saturation'), fxSlider('con', 'Contrast'), fxSlider('glow', 'Glow')] }},
+        {{ title: 'CAMERA', sliders: [fxSlider('zoom', 'Zoom'), fxSlider('spin', 'Spin'), fxSlider('pan', 'Pan'), fxSlider('kick', 'Zoom on beat')] }},
+        {{ title: 'MIRROR', hasSeg: true, seg: segList('mirror', [['off', 'Off'], ['2', '2-way'], ['4', '4-way'], ['kal', 'Kaleido']]), sliders: st.mirror === 'kal' ? [fxSlider('kal', 'Pieces')] : [] }},
+        {{ title: 'MOTION & OUTPUT', sliders: [fxSlider('speed', 'Speed'), fxSlider('react', 'Beat reaction'), fxSlider('bright', 'Brightness')] }}
+      ],
+      effects: [
+        {{ title: 'TRAILS', sliders: [fxSlider('trails', 'Trails'), fxSlider('rgb', 'RGB split')] }},
+        {{ title: 'RETRO', sliders: [fxSlider('pixel', 'Pixelate'), fxSlider('tv', 'TV lines'), fxSlider('vig', 'Vignette')] }},
+        {{ title: 'REACT TO', toggles: [{{ name: 'Flash when I play notes', on: true, toggle: () => {{}} }}, {{ name: 'Follow the room volume', on: st.clock === 'room', toggle: () => set({{ clock: st.clock === 'room' ? 'tap' : 'room' }}) }}] }}
+      ],
+      layers: [
+        {{ title: 'OVERLAY SCENE', hasSelect: true, options: [{{ v: 'none', n: 'None' }}, ...SV.banks[st.bank].s.slice(0, 10).map(([n], i) => ({{ v: String(i), n }}))], selVal: st.overlay, onSel: (e) => set({{ overlay: e.target.value }}) }},
+        {{ title: 'BLEND', hasSeg: true, seg: segList('blend', [['add', 'Add'], ['screen', 'Screen'], ['lighten', 'Lighten'], ['mask', 'Mask']]) }},
+        {{ title: 'TEXT ON SCREEN', hasText: true, sliders: [fxSlider('textSize', 'Size'), fxSlider('pulse', 'Pulse on beat')], toggles: [{{ name: 'Show text', on: st.textOn, toggle: () => set({{ textOn: !st.textOn }}) }}] }}
+      ],
+      logo: [
+        {{ title: 'EVENT LOGO', toggles: [{{ name: 'Show the logo on the visuals', on: st.logo, toggle: () => set({{ logo: !st.logo }}) }}] }},
+        {{ title: 'POSITION', hasSeg: true, seg: segList('logoPos', [['corner', 'Corner'], ['centre', 'Centre'], ['bottom', 'Bottom']]), sliders: [fxSlider('logoSize', 'Size'), fxSlider('pulse', 'Pulse on beat')] }}
+      ]
+    }};
+    const groups = G[st.tab].map((g) => ({{ title: g.title, hasSeg: !!g.seg, seg: g.seg || [], hasSelect: !!g.options, options: g.options || [], selVal: g.selVal || '', onSel: g.onSel || (() => {{}}), hasText: !!g.hasText, sliders: g.sliders || [], toggles: g.toggles || [] }}));
+    const lp = {{ corner: 'right: 12px; top: 12px;', centre: 'left: 50%; top: 50%; transform: translate(-50%, -50%);', bottom: 'left: 50%; bottom: 36px; transform: translateX(-50%);' }}[st.logoPos];
+    const logoPx = Math.round(20 + st.fx.logoSize * 1.4 * (beatIn === 0 ? 1 + st.fx.pulse / 400 : 1));
+    return {{
+      outs: segList('out', [['back', 'Back Screen'], ['live', 'Live Screen'], ['both', 'Both']]),
+      outName: {{ back: 'BACK SCREEN', live: 'LIVE SCREEN', both: 'BACK + LIVE' }}[st.out],
+      bpm: String(st.bpm), bpmDown: () => set({{ bpm: Math.max(40, st.bpm - 1) }}), bpmUp: () => set({{ bpm: Math.min(220, st.bpm + 1) }}),
+      tap: () => {{ const t = performance.now(); const taps = (this._taps || []).filter((x) => t - x < 2500).concat(t); this._taps = taps; if (taps.length > 1) {{ const avg = (taps[taps.length - 1] - taps[0]) / (taps.length - 1); set({{ bpm: Math.round(60000 / avg), clock: 'tap' }}); }} }},
+      sync: () => set({{ beat: 0 }}),
+      dots: [0, 1, 2, 3].map((i) => `width: 10px; height: 10px; border-radius: 50%; background: ${{i === beatIn ? '#4fb3bf' : '#2c3038'}}; box-shadow: ${{i === beatIn ? '0 0 8px #4fb3bf' : 'none'}};`),
+      clockSrc: [['tap', 'Tap', 'Set the tempo with Tap and + / −'], ['keys', 'Keys clock', 'Follow the tempo sent by the keyboard'], ['room', 'Listen', 'Hear the music and follow its beat automatically']].map(([id, name, tip]) => ({{ name, tip, pick: () => set({{ clock: id }}), style: seg(st.clock === id) }})),
+      toggleLearn: () => set({{ learn: !st.learn }}), learnLabel: st.learn ? 'Press a key on the keyboard…' : 'Assign keys',
+      learnStyle: `height: 20px; padding: 0 8px; border-radius: 4px; border: 1px solid ${{st.learn ? '#4fb3bf' : '#2c3038'}}; background: ${{st.learn ? '#243039' : 'transparent'}}; color: ${{st.learn ? '#ffffff' : '#a9abb0'}}; font-size: 11px; white-space: nowrap;`,
+      liveBg: `position: absolute; inset: -6%; background: ${{grad(liveKey)}}; transform: scale(${{(0.9 + st.fx.zoom / 500) * fxz}}) rotate(${{(st.beat * st.fx.spin) / 8}}deg); filter: brightness(${{st.fx.bright / 100}}) saturate(${{0.4 + st.fx.sat / 50}}) contrast(${{0.6 + st.fx.con / 60}}) hue-rotate(${{st.fx.hue * 3.6}}deg) ${{fxOn('invert') ? 'invert(1)' : ''}}; transition: transform ${{fxOn('freeze') ? '0s' : '0.35s'}} ease;`,
+      liveName: SV.banks[st.live.b].n + ' · ' + liveScene[0], nextInfo: st.auto ? `Autopilot · every ${{st.autoBars}} bars` : 'Manual',
+      dark, logoOn: st.logo, logoStyle: `position: absolute; ${{lp}} width: ${{logoPx}}px; height: ${{logoPx}}px; opacity: 0.9;`,
+      textOn: st.textOn, textVal: st.text, onText: (e) => set({{ text: e.target.value }}),
+      pads,
+      energy: String(st.energy), onEnergy: (e) => set({{ energy: Number(e.target.value) }}), energyLabel: st.energy < 30 ? 'Calm' : st.energy < 70 ? 'Lively' : 'Full power',
+      toggleAuto: () => set({{ auto: !st.auto }}),
+      autoStyle: `height: 30px; padding: 0 12px; border-radius: 6px; border: 1px solid ${{st.auto ? '#4fb3bf' : '#3a3f48'}}; background: ${{st.auto ? '#1f6f79' : '#2a2e36'}}; color: #ffffff; font-size: 12px; font-weight: 700;`,
+      autoBars: [8, 16, 32, 64].map((n) => ({{ name: String(n), pick: () => set({{ autoBars: n }}), style: seg(st.autoBars === n) }})),
+      safe: st.safe, toggleSafe: () => set({{ safe: !st.safe, pads: {{ ...st.pads, strobe: false }} }}),
+      toggleSaving: () => set({{ saving: !st.saving }}), saveLabel: st.saving ? 'Choose a slot…' : 'Save look',
+      saveBtn: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${{st.saving ? '#4fb3bf' : '#3a3f48'}}; background: ${{st.saving ? '#243039' : '#2a2e36'}}; color: #e4e5e7; font-size: 11px; font-weight: 600;`,
+      looks: st.looks.map((l, i) => ({{ name: 'Look ' + (i + 1), sub: l ? l.n + ' · ' + SV.banks[l.b].s[l.i][0] : 'Empty',
+        press: () => {{ if (st.saving) {{ const looks = st.looks.slice(); looks[i] = {{ n: SV.banks[st.live.b].n, b: st.live.b, i: st.live.i }}; return set({{ looks, saving: false }}); }} if (l) set({{ live: {{ b: l.b, i: l.i }}, bank: l.b }}); }},
+        style: `min-height: 0; padding: 4px 8px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; border-radius: 6px; border: 1px ${{l ? 'solid' : 'dashed'}} ${{st.saving ? '#4fb3bf' : '#2c3038'}}; background: ${{l ? '#2a2e36' : 'transparent'}}; color: ${{l ? '#ffffff' : '#8e9096'}}; text-align: left;` }})),
+      banks: SV.banks.map((b, i) => ({{ name: b.n, bpm: String(b.bpm), pick: () => set({{ bank: i }}),
+        style: `height: 44px; padding: 0 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border-radius: 6px; border: 1px solid ${{st.bank === i ? '#4fb3bf' : '#2c3038'}}; background: ${{st.bank === i ? '#243039' : '#1e2127'}}; color: #ffffff; min-width: 0;` }})),
+      bankDesc: bank.d, toggleFavOnly: () => set({{ favOnly: !st.favOnly }}), favOnlyStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${{st.favOnly ? '#ffd166' : '#3a3f48'}}; background: ${{st.favOnly ? '#3a2f12' : '#2a2e36'}}; color: ${{st.favOnly ? '#ffd166' : '#e4e5e7'}}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
+      scenes,
+      quant: segList('quant', [['now', 'Now'], ['beat', 'Next beat'], ['bar', 'Next bar']]),
+      fades: segList('fade', [['auto', 'Auto'], ['0', 'Cut'], ['1', '1 beat'], ['4', '4 beats']]),
+      tabs: TABS.map(([id, name]) => ({{ name, pick: () => set({{ tab: id }}), style: seg(st.tab === id) + ' flex: 1 1 0;' }})),
+      groups
+    }};
+  }}
+}}
+</script>
+</body>
+</html>
+'''
+open('lumora/project/BackLoops.dc.html','w').write(html)

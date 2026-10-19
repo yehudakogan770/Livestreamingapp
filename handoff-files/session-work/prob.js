@@ -1,0 +1,13 @@
+const {chromium}=require('playwright-core');
+(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+const p=await b.newPage({viewport:{width:1920,height:1020}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://localhost:1420/');await p.waitForTimeout(600);await p.getByRole('button',{name:'Skip for now'}).click();
+console.log('light:',await p.locator('.plight__btn').innerText());
+await p.getByRole('button',{name:'Add input'}).first().click();await p.getByRole('button',{name:/^Picture/}).click();
+const [fc]=await Promise.all([p.waitForEvent('filechooser'),p.getByRole('button',{name:'Choose file…'}).click()]);await fc.setFiles('tone.wav');
+await p.locator('.field input.text').fill('Sponsor logo');await p.getByRole('dialog').getByRole('button',{name:'Add input'}).click();await p.waitForTimeout(600);
+await p.evaluate(()=>0);console.log('containers',await p.locator('.ptoasts').count(),'toasts',await p.locator('.ptoast').count());console.log('light:',await p.locator('.plight__btn').innerText(),'| message:',await p.locator('.ptoast').allInnerTexts(),'| tile mark:',await p.locator('.tile__warn').count());
+await p.screenshot({path:'shots/problem.png'});
+await p.locator('.plight__btn').click();await p.waitForTimeout(200);await p.screenshot({path:'shots/problem-list.png'});
+console.log('list:',(await p.locator('.plist').innerText()).replace(/\n/g,' | '));
+console.log('errors',errs);await b.close();})();

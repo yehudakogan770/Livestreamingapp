@@ -1,0 +1,23 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
+  const ctx = await b.newContext({ viewport: { width: 1600, height: 900 }, permissions: ['camera', 'microphone'] });
+  const p = await ctx.newPage();
+  p.setDefaultTimeout(15000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Camera/ }).first().click();
+  await p.waitForTimeout(1500);
+  await p.getByRole('button', { name: 'fake_device_0' }).click();
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click({ timeout: 3000 });
+  await p.getByRole('button', { name: /Options for / }).first().click();
+  await p.getByRole('button', { name: /PTZ camera control/ }).click();
+  await p.getByLabel('Camera address').fill('192.168.1.50');
+  await p.waitForTimeout(500);
+  await p.screenshot({ path: 'ptz1.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

@@ -1,0 +1,5 @@
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - import "../../vite.config" without a file extension (scripts/perf/vite.perf.config.ts:12:18). Add the file extension
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+  ➜  Local:   http://localhost:1450/
+  ➜  Network: use --host to expose

@@ -1,0 +1,2 @@
+    Checking lumora-vst3-host v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-a53b9f061dc9b1bdf/crates/vst3-host)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.33s

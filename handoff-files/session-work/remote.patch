@@ -1,0 +1,15 @@
+<<<<
+/// How often phones are told the time (and dead connections noticed).
+const PING: Duration = Duration::from_secs(10);
+====
+/// How often phones are told the time (and dead connections noticed).
+const PING: Duration = Duration::from_secs(10);
+/// Updates waiting for one phone; a phone this far behind has stopped
+/// reading (asleep, out of range) and is let go, so memory never piles up.
+const PHONE_QUEUE: usize = 32;
+>>>>
+<<<<
+            phones.retain(|p| p.tx.send(message.to_owned()).is_ok());
+====
+            phones.retain(|p| p.tx.try_send(message.to_owned()).is_ok());
+>>>>

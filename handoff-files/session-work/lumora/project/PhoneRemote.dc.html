@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Phone remote</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+/* lumora-polish:start */
+*{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+::selection{background:#243039;color:#ffffff}
+button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
+button:hover,a[href]:hover{filter:brightness(1.14)}
+button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #4fb3bf;outline-offset:1px}
+input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:#4fb3bf !important;box-shadow:0 0 0 3px rgba(79,179,191,.18)}
+input::placeholder,textarea::placeholder{color:#6f737b}
+select{appearance:none;-webkit-appearance:none;padding-right:26px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a9abb0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 9px center !important;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f333b;border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:#3d424c}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:30px !important;height:17px !important;margin:0;flex-shrink:0;border-radius:9px;border:1px solid #3a3f48;background:#262a31;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#aeb2ba;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:transform .15s ease,background-color .15s ease}
+input[type=checkbox]:checked{background:#2a7f89;border-color:#4fb3bf}
+input[type=checkbox]:checked::before{transform:translateX(13px);background:#ffffff}
+input[type=range]:not(.vrange){appearance:none;-webkit-appearance:none;height:20px;margin:0;cursor:pointer;border-radius:2px;background:linear-gradient(to right,#4fb3bf 0 var(--fill,0%),#0c0d10 var(--fill,0%) 100%) center / 100% 4px no-repeat}
+input[type=range]:not(.vrange)::-webkit-slider-runnable-track{height:20px;background:transparent;border-radius:2px}
+input[type=range]:not(.vrange)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:20px;border-radius:3px;border:1px solid #0c0d10;background:linear-gradient(to right,transparent 4.5px,#6f737c 4.5px 5.5px,transparent 5.5px),linear-gradient(#f3f4f6,#c3c6cd);box-shadow:0 1px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+input[type=range]:not(.vrange):hover::-webkit-slider-thumb{background:linear-gradient(to right,transparent 4.5px,#4fb3bf 4.5px 5.5px,transparent 5.5px),linear-gradient(#ffffff,#d3d6dc)}
+input[type=range]:disabled{opacity:.35;cursor:default}
+/* lumora-polish:end */
+
+input[type=range],input[type=checkbox],input[type=radio]{accent-color:#4fb3bf}
+button{cursor:pointer;background-image:none;box-shadow:none}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button,select{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background-color: #15171b; display: flex; flex-direction: column; padding: 16px 14px 18px; gap: 12px; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden; position: relative;">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0; transition: none;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="{{logo.c0}}" opacity="{{logo.o0}}"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="{{logo.c1}}" opacity="{{logo.o1}}"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="{{logo.c2}}" opacity="{{logo.o2}}"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg><span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 17px; color: #ffffff;">Lumora</span>
+    <span style="width: 8px; height: 8px; border-radius: 6px; background-color: #2f8f4e;"></span>
+    <span style="font-size: 12px; color: #8e9096;">Connected</span>
+    <div style="flex-grow: 1;"></div>
+    <button onDoubleClick="{{togglePanic}}" style="{{panicStyle}}">{{panicText}}</button>
+  </div>
+
+  <div style="display: flex; gap: 4px; padding: 3px; border-radius: 6px; background-color: #262a31;">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+      <button onClick="{{t.pick}}" style="{{t.style}}">{{t.name}}</button>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; gap: 8px;">
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 12px; font-weight: 600; color: #3fbf5a;">Preview</span>
+      <div style="{{pvStyle}}"><dc-import name="Scene" kind="{{pvScene}}" hint-size="100%,100%"></dc-import><span style="position: absolute; left: 6px; bottom: 5px; height: 16px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 11px; line-height: 16px; color: #ffffff;">{{pvName}}</span></div>
+    </div>
+    <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 4px;">
+      <span style="font-size: 12px; font-weight: 600; color: #e0473b;">Live</span>
+      <div style="{{pgStyle}}"><dc-import name="Scene" kind="{{pgScene}}" hint-size="100%,100%"></dc-import><span style="position: absolute; left: 6px; bottom: 5px; height: 16px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 11px; line-height: 16px; color: #ffffff;">{{pgName}}</span></div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 6px; align-items: center;">
+    <button onClick="{{prevPreset}}" aria-label="Previous preset" style="width: 48px; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 18px;">‹</button>
+    <label style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; height: 48px; padding: 4px 12px; box-sizing: border-box; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; justify-content: center;">
+      <span style="font-size: 10px; color: #8e9096;">Preset</span>
+      <select aria-label="Preset" style="background: transparent; border: 0; color: #ffffff; font-size: 15px; font-weight: 600; padding: 0; outline: none;"><option>{{presetName}}</option></select>
+    </label>
+    <button onClick="{{nextPreset}}" aria-label="Next preset" style="width: 48px; height: 48px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 18px;">›</button>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+    <sc-for list="{{sources}}" as="s" hint-placeholder-count="9">
+      <button onClick="{{s.pick}}" style="{{s.style}}"><span style="position: relative; display: block; align-self: stretch; height: 30px; border-radius: 3px; overflow: hidden;"><dc-import name="Scene" kind="{{s.scene}}" hint-size="100%,100%"></dc-import></span><span style="font-size: 13px; font-weight: 600;">{{s.name}}</span></button>
+    </sc-for>
+  </div>
+
+  <div style="display: flex; gap: 8px;">
+    <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
+      <button onClick="{{b.pick}}" style="{{b.style}}">{{b.name}}</button>
+    </sc-for>
+  </div>
+
+  <div style="flex-grow: 1;"></div>
+
+  <div style="display: flex; gap: 8px;">
+    <button onClick="{{toggleBlank}}" style="{{blankStyle}}">{{blankText}}</button>
+    <button onClick="{{take}}" style="flex-grow: 1; height: 64px; border-radius: 6px; border: 0; background-color: #c7372f; color: #fff; font-size: 18px; font-weight: 600; letter-spacing: 0.04em;">TAKE · Fade</button>
+  </div>
+  <button onClick="{{toggleMore}}" style="height: 44px; border-radius: 6px; border: 1px solid #2c3038; background-color: #262a31; color: #d4d5d8; font-size: 14px; font-weight: 600;">More controls</button>
+
+  <sc-if value="{{more}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 16px 14px 22px; border-radius: 18px 18px 0 0; background-color: #2a2e36; border-top: 1px solid #2c3038; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.5);">
+      <div style="display: flex; align-items: center;"><span style="font-size: 15px; font-weight: 600; flex-grow: 1;">More controls</span><button onClick="{{toggleMore}}" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #1a1d22; color: #e4e5e7;">✕</button></div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{moreItems}}" as="m" hint-placeholder-count="8">
+          <button style="height: 48px; border-radius: 6px; border: 1px solid #2c3038; background-color: #1a1d22; color: #e4e5e7; font-size: 13px; font-weight: 600;">{{m}}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidUpdate() { this.__fill(); }
+  componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
+  __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
+  constructor(props) { super(props); this.state = { tab: 'live', pv: 'cam2', pg: 'cam1', preset: 0, blank: false, panic: false, more: false }; }
+  logoVals() {
+    const a = { live: 0, back: 1, monitor: 2 }[this.state.tab] || 0;
+    const c = (i) => i === a ? '#4fb3bf' : '#ffffff', o = (i) => i === a ? '1' : String([0.8, 0.5][(i - a + 2) % 3] || 0.8);
+    return { c0: c(0), c1: c(1), c2: c(2), o0: o(0), o1: o(1), o2: o(2) };
+  }
+  renderVals() { return { ...this._rv(), logo: this.logoVals() }; }
+  _rv() {
+    const st = this.state;
+    const SRC = { cam1: ['CAMERA', 'Cam 1', '#26313d'], cam2: ['CAMERA', 'Cam 2', '#2e2a3a'], phone: ['PHONE', 'Phone', '#223329'], vid1: ['VIDEO', 'Vid 1', '#3b2e22'], vid2: ['VIDEO', 'Vid 2', '#2a3040'], vid3: ['VIDEO', 'Vid 3', '#35263a'], ov1: ['OVERLAY', 'Logo', '#2a2230'], split1: ['SPLIT', 'Split 1', '#2a323b'], slides: ['SLIDES', 'Slides', '#33301f'] };
+    const PRESETS = ['Opening', 'Welcome', 'Speaker', '12 Pesukim', 'Video break', 'Closing'];
+    const tabs = [['live', 'Live'], ['back', 'Back'], ['monitor', 'Monitor']].map(([id, name]) => {
+      const on = st.tab === id;
+      return { name, pick: () => this.setState({ tab: id }), style: `flex-grow: 1; height: 38px; border-radius: 6px; border: 0; background-color: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 14px; font-weight: 600;` };
+    });
+    const SCN = { cam1: 'stage', cam2: 'closeup', phone: 'crowd', vid1: 'opening', vid2: 'sponsors', vid3: 'tribute', ov1: 'overlay', split1: 'split', slides: 'slides' };
+    const sources = Object.entries(SRC).map(([id, [kind, name]]) => {
+      const border = st.pg === id ? '#c7372f' : st.pv === id ? '#3fbf5a' : '#2c3038';
+      return { kind, name, scene: SCN[id] || 'stage', pick: () => this.setState({ pv: id }), style: `height: 64px; padding: 4px 4px 6px; border-radius: 6px; border: 2px solid ${border}; background-color: #262a31; color: #e4e5e7; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; text-align: left;` };
+    });
+    const mon = (id, color) => `position: relative; overflow: hidden; height: 94px; border-radius: 6px; border: 2px solid ${color}; background-color: ${(SRC[id] || SRC.cam1)[2]}; display: flex; align-items: center; justify-content: center; box-sizing: border-box;`;
+    return {
+      tabs, sources,
+      pvName: SRC[st.pv][1], pgName: st.blank || st.panic ? 'BLANK' : SRC[st.pg][1],
+      pvStyle: mon(st.pv, '#2f8f4e'),
+      pgScene: st.blank || st.panic ? 'black' : SCN[st.pg], pvScene: SCN[st.pv],
+      pgStyle: st.blank || st.panic ? 'position: relative; overflow: hidden; height: 94px; border-radius: 6px; border: 2px solid #c7372f; background: #000; display: flex; align-items: center; justify-content: center; box-sizing: border-box; color: #8e9096;' : mon(st.pg, '#c7372f'),
+      presetName: PRESETS[st.preset],
+      prevPreset: () => this.setState({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
+      nextPreset: () => this.setState({ preset: (st.preset + 1) % PRESETS.length }),
+      presetButtons: ['Button 1', 'Button 2', 'Button 3'].map((name, i) => ({ name, pick: () => this.setState({ pbtn: st.pbtn === i ? null : i }), style: `flex-grow: 1; height: 44px; border-radius: 6px; border: 1px solid ${st.pbtn === i ? '#4fb3bf' : '#2c3038'}; background-color: ${st.pbtn === i ? '#2a7f89' : '#243039'}; color: #ffffff; font-size: 12px; font-weight: 600;` })),
+      take: () => this.setState({ pg: st.pv, pv: st.pg }),
+      toggleBlank: () => this.setState({ blank: !st.blank }),
+      blankText: st.blank ? 'Unblank' : 'Blank',
+      blankStyle: `width: 110px; height: 64px; border-radius: 6px; border: 1px solid ${st.blank ? '#8e9096' : '#2c3038'}; background-color: ${st.blank ? '#e4e5e7' : '#2a2e36'}; color: ${st.blank ? '#15171b' : '#e4e5e7'}; font-size: 16px; font-weight: 600;`,
+      togglePanic: () => this.setState({ panic: !st.panic }),
+      panicText: st.panic ? 'Restore' : 'Panic',
+      panicStyle: `height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #c7372f; background-color: ${st.panic ? '#c7372f' : '#3a1a18'}; color: ${st.panic ? '#fff' : '#ff9a9d'}; font-size: 12px; font-weight: 600;`,
+      more: st.more,
+      toggleMore: () => this.setState({ more: !st.more }),
+      moreItems: ['Transitions', 'Audio mixer', 'Monitor message', 'Flash stage', 'Overlays', 'Timer', '12 Pesukim', 'Cues']
+    };
+  }
+}
+</script>
+</body>
+</html>

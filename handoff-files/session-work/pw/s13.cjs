@@ -1,0 +1,22 @@
+const { start } = require('./lib.cjs');
+(async () => {
+  const url = process.argv[2] || 'http://localhost:1532/titler/';
+  const { b, p, shot, flush } = await start(url, { width: 1280, height: 720 });
+  await p.click('text=Breaking banner');
+  await p.waitForTimeout(500);
+  const clip = { x: 400, y: 260, width: 420, height: 80 };
+  await p.screenshot({ path: __dirname + '/m-before.png', clip });
+  await p.click('.tt-timeline .tt-name:text-is("Banner")');
+  const insp = p.locator('[data-testid=titler-inspector]');
+  const s = insp.locator('.tt-section-title', { hasText: 'Masks' }).first();
+  if ((await s.getAttribute('aria-expanded')) === 'false') await s.click();
+  await insp.getByRole('button', { name: /Rectangle mask/ }).click();
+  await p.waitForTimeout(300);
+  await p.keyboard.press('Escape');
+  await p.waitForTimeout(300);
+  await p.screenshot({ path: __dirname + '/m-after.png', clip });
+  const proj = await p.evaluate(() => localStorage.length);
+  void proj;
+  flush('mask');
+  await b.close();
+})();

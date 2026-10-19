@@ -1,0 +1,40 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 950 } });
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Test pattern/ }).click();
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Text \/ title/ }).click();
+  await p.getByLabel('Text', { exact: true }).fill('Rabbi Cohen');
+  await p.getByLabel('Second line').fill('Head of School');
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+  await p.locator('.tile__pick').nth(0).click(); await p.keyboard.press('Shift+Enter');
+  await p.getByRole('button', { name: 'Edit overlay 2' }).click();
+  await p.getByLabel('Overlay input').selectOption({ label: 'Rabbi Cohen' });
+  await p.getByLabel('Comes in').selectOption('slideLeft');
+  await p.getByRole('button', { name: 'Save and put on air' }).click();
+  await p.waitForTimeout(900);
+  await p.locator('.mon--pgm').screenshot({ path: 'txt-program.png' });
+  // Edit the text: Hebrew title, centred
+  await p.locator('.tile').nth(1).locator('button[aria-label^="Options"], .tile__menu, button:has-text("⋯")').first().click();
+  await p.getByRole('button', { name: 'Edit text…' }).click();
+  await p.getByRole('dialog', { name: 'Text' }).getByLabel('Text', { exact: true }).fill('ברוכים הבאים');
+  await p.screenshot({ path: 'txt-editor.png' });
+  await p.getByRole('button', { name: 'Done' }).click();
+  await p.waitForTimeout(400);
+  await p.getByRole('button', { name: 'REC' }).click(); await p.waitForTimeout(1500);
+  await p.locator('.bc-btn').first().click(); await p.getByRole('button', { name: 'Stop recording' }).click(); await p.waitForTimeout(900);
+  const url = await p.locator('.bc-saved a').getAttribute('href');
+  await p.evaluate(async (url) => {
+    const v = document.createElement('video'); v.muted = true; v.src = url; v.style.cssText = 'position:fixed;left:0;top:0;width:960px;height:540px;z-index:99999';
+    document.body.appendChild(v); await new Promise((r) => (v.onloadeddata = r)); v.currentTime = 0.8; await new Promise((r) => (v.onseeked = r));
+  }, url);
+  await p.screenshot({ path: 'txt-rec.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

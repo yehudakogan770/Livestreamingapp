@@ -1,0 +1,34 @@
+Lumora Edit: transcribe, captions, text-based editing and voice cleanup
+
+Transcribe (offline): selected clips or the whole sequence are written
+down by Lumora's own Whisper code (shared from app/src/captions, run in a
+worker), base or small model, any language or worked out from what is
+said first. The editor downloads the model once with progress (or uses
+Lumora's copy) and reads each file's sound at 16 kHz through FFmpeg.
+Speech is cut into stretches at pauses; word times are shared out over
+the talking moments. Transcripts are kept on the media files.
+
+Captions: a captions track (a video track that holds caption blocks and
+one look: font, size, weight, color, outline, box, shadow, place, letters
+a line, lines). Blocks are made from the transcript, edited in the
+inspector, split at the playhead and joined; drawn by the compositor in
+playback and export (burn-in can be turned off), and saved as .srt and
+.vtt from the Captions menu or next to an exported film.
+
+Transcript panel: the words with timecodes; click to go there; select
+words and press Delete to cut that range out of every unlocked track and
+close up (extractRange).
+
+Voice cleanup effects (Voice cleanup group): Reduce noise (afftdn on
+export, gate and low cut preview), Voice isolation (no arnndn model is
+bundled: afftdn, voice band, presence and compressor), Remove hum (50/60
+Hz and harmonics, the same peaking cuts in both), De-ess (deesser on
+export, split-band compressor preview), Loudness normalize (EBU R128
+loudnorm on export, estimated while playing), and Duck under speech:
+tracks marked Speech or Music; music ducks with sidechaincompress against
+a speech stem on export and follows the speech tracks' level while
+editing. Keyframed noise and hum amounts follow their keyframes on export
+through asendcmd.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_015kLno7PFHPq4PGcGyYFnDV

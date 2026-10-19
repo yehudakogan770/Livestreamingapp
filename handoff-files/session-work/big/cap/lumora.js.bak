@@ -1,0 +1,108 @@
+// Builds the Northwind Summit demo event in Lumora (browser demo engine) and
+// takes the website's screenshots.  node lumora.js [scale] [only]
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const D = __dirname;
+const SCALE = Number(process.argv[2] || 1);
+const ONLY = process.argv[3] || '';
+(async () => {
+  const b = await chromium.launch({
+    executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    args: ['--autoplay-policy=no-user-gesture-required', '--disable-dev-shm-usage', '--use-fake-ui-for-media-stream', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
+  });
+  const ctx = await b.newContext({ viewport: { width: Number(process.env.VW || 1600), height: Number(process.env.VH || 900) }, deviceScaleFactor: SCALE });
+  await ctx.grantPermissions(['camera', 'microphone'], { origin: 'http://localhost:1420' });
+  await ctx.addInitScript({ path: D + '/fake-devices.js' });
+  const p = await ctx.newPage();
+  p.setDefaultTimeout(30000);
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(e.message));
+  p.on('console', (m) => m.type() === 'error' && errs.push('console: ' + m.text()));
+  await p.goto('http://localhost:1420/?shots');
+  await p.waitForTimeout(2500);
+  await p.getByText('Skip for now').click({ timeout: 2000 }).catch(() => {});
+  await p.waitForFunction(() => !!window.__demo, null, { timeout: 15000 });
+
+  await p.evaluate(async () => {
+    const d = window.__demo;
+    const A = (a) => d.dispatch(a).catch((e) => console.warn('refused', a.type, e?.message ?? e));
+    const { TEXT_TEMPLATES } = await import('/src/engine/text.ts');
+    await A({ type: 'updateEvent', patch: { name: 'Northwind Summit 2026', setUp: true } });
+    for (const [id, label] of window.__CAMS) await A({ type: 'addSource', source: { id, name: label, kind: { type: 'camera', deviceId: id, label } } });
+    await A({ type: 'addSource', source: { id: 'slides', name: 'Keynote slides', kind: { type: 'image', path: '/real/real/media/slides.png#Keynote slides.png' } } });
+    const lt = TEXT_TEMPLATES[0].make();
+    await A({ type: 'addSource', source: { id: 'lt', name: 'Daniel Brooks', kind: { type: 'text', ...lt, text: 'Daniel Brooks', sub: 'Chief Product Officer' } } });
+    for (const [id, label] of window.__MICS) await A({ type: 'addSource', source: { id, name: label, kind: { type: 'microphone', deviceId: id, label } } });
+    const preset = (id, name, sources) => A({ type: 'addPreset', preset: { id, name, category: '', screen: 'live', sources, transition: null, loadFirst: true, buttons: [] } });
+    await preset('p-open', 'Opening', ['cam-wide', 'slides']);
+    await preset('p-key', 'Keynote', ['cam-close', 'cam-left', 'slides', 'lt']);
+    await preset('p-panel', 'Panel', ['cam-wide', 'cam-left', 'cam-aud']);
+    await preset('p-qa', 'Q&A', ['cam-aud', 'cam-wide']);
+    await preset('p-break', 'Break', ['slides']);
+    await A({ type: 'pickPreset', id: 'p-key' });
+    await A({ type: 'setOverlaySource', channel: 1, sourceId: 'lt' });
+    // Back screen: the slides on the projector.
+    await A({ type: 'setPreview', screen: 'back', sourceId: 'slides' });
+    await A({ type: 'cutTo', screen: 'back', sourceId: 'slides' });
+    await A({ type: 'setPreview', screen: 'live', sourceId: 'cam-close' });
+    await A({ type: 'take', screen: 'live', transition: 'cut' });
+    await A({ type: 'setPreview', screen: 'live', sourceId: 'cam-wide' });
+  });
+  await p.waitForTimeout(800);
+  await p.evaluate(async () => {
+    const d = window.__demo;
+    await d.dispatch({ type: 'setOverlayInNext', channel: 1, value: false }).catch(() => {});
+    await d.dispatch({ type: 'setOverlayOn', channel: 1, value: true }).catch((e) => console.warn('ovl', e?.message));
+  });
+
+  await p.waitForTimeout(500);
+  await p.evaluate(() => {
+    const d = window.__demo;
+    d.captureChanged({ recording: { session: 98, startedAt: Date.now() - (42 * 60 + 31) * 1000, path: 'Northwind Summit 2026.mp4', destinations: [], bytes: 2.2e9, speed: 1 } });
+    d.captureChanged({ streaming: { session: 99, startedAt: Date.now() - (42 * 60 + 18) * 1000, path: null, destinations: ['YouTube', 'Vimeo'], bytes: 1.31e9, speed: 1 } });
+  });
+  await p.waitForTimeout(3000);
+  console.log(await p.evaluate(() => JSON.stringify([...document.querySelectorAll('video')].map((v) => [v.src.slice(-30), v.readyState, v.paused, v.videoWidth, v.srcObject ? v.srcObject.getVideoTracks().map((t) => t.readyState + ':' + JSON.stringify(t.getSettings())) : null]))));
+  await p.addStyleTag({ content: '.demo-flag{display:none!important}' });
+  const tidy = () =>
+    p.evaluate(() => {
+      for (const el of document.querySelectorAll('button, span, div')) {
+        const t = el.textContent.trim();
+        if (!/^\d+\s*fps$/.test(t) || [...el.children].some((c) => /^\d+\s*fps$/.test(c.textContent.trim()))) continue;
+        const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        let n;
+        while ((n = w.nextNode())) if (/\d/.test(n.nodeValue)) n.nodeValue = n.nodeValue.replace(/\d+/, '60');
+      }
+    });
+  const shot = async (name) => {
+    await tidy();
+    for (let i = 0; i < 4; i++) { try { await p.screenshot({ path: D + '/out/' + name + '.png', timeout: 60000 }); break; } catch (e) { console.log('retry', name); await p.waitForTimeout(2000); } }
+    console.log('shot', name);
+  };
+  if (!ONLY || ONLY === 'main') await shot('main');
+  const menu = async (top, item, name, before) => {
+    if (ONLY && ONLY !== name) return;
+    try {
+      await p.evaluate((top) => [...document.querySelectorAll('.titlebar__item')].find((b) => b.textContent.trim() === top)?.click(), top);
+      await p.waitForTimeout(500);
+      await p.evaluate((src) => [...document.querySelectorAll('[role=menuitem]')].find((b) => new RegExp(src, 'i').test(b.textContent))?.click(), item.source);
+      await p.waitForTimeout(1500);
+      if (before) await before();
+      await shot(name);
+      await p.keyboard.press('Escape');
+      await p.waitForTimeout(600);
+    } catch (e) {
+      console.log('menu', top, e.message.split('\n')[0]); await p.screenshot({ path: D + '/out/fail.png', timeout: 60000 });
+      await p.keyboard.press('Escape');
+    }
+  };
+  await p.addStyleTag({
+    content: ".brd__stage, .brd__mini { background: url('/real/big/feeds/speaker-still.jpg') center / cover !important; }",
+  });
+  await menu('Event', /look/i, 'look', async () => {
+    if (process.env.LOOK) await p.evaluate((n) => [...document.querySelectorAll('.brd__look')].find((b) => b.textContent.includes(n))?.click(), process.env.LOOK);
+    await p.waitForTimeout(3500);
+  });
+  await menu('Help', /How to use/i, 'manual');
+  console.log('errors', errs.slice(0, 10));
+  await b.close();
+})();

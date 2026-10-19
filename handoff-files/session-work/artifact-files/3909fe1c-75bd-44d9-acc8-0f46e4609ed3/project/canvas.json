@@ -1,0 +1,399 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "AddInput.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Add input",
+      "w": 1160,
+      "x": 0,
+      "y": 1320
+    },
+    "AddPreset.dc.html": {
+      "h": 920,
+      "is_interactive": true,
+      "title": "Create preset",
+      "w": 1160,
+      "x": 0,
+      "y": 5280
+    },
+    "BackLoops.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Back-screen loops & mood",
+      "w": 1160,
+      "x": 3040,
+      "y": 3960
+    },
+    "Brand.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Lumora brand — final logo",
+      "w": 1440,
+      "x": 9520,
+      "y": 0
+    },
+    "BrowserSource.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Browser tab control",
+      "w": 1160,
+      "x": 2760,
+      "y": 1320
+    },
+    "Credits.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Thank-you list / credits",
+      "w": 1160,
+      "x": 4280,
+      "y": 3960
+    },
+    "Cues.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Run of show / cues",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "Devices.dc.html": {
+      "h": 740,
+      "is_interactive": true,
+      "title": "Connected devices",
+      "w": 1000,
+      "x": 3560,
+      "y": 5280
+    },
+    "EventEnd.dc.html": {
+      "h": 560,
+      "is_interactive": true,
+      "title": "After the event",
+      "w": 760,
+      "x": 4115,
+      "y": -18
+    },
+    "FontOptions.dc.html": {
+      "h": 1120,
+      "is_interactive": true,
+      "title": "Lumora font — pick one",
+      "w": 1440,
+      "x": 11040,
+      "y": 0
+    },
+    "FontRound2.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "title": "Lumora font — round 2 (more character)",
+      "w": 1440,
+      "x": 12560,
+      "y": 0
+    },
+    "GoLive.dc.html": {
+      "h": 760,
+      "is_interactive": true,
+      "title": "Go Live popup",
+      "w": 880,
+      "x": 3040,
+      "y": 0
+    },
+    "GreenScreen.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Green screen & scenes",
+      "w": 1440,
+      "x": 0,
+      "y": 3960
+    },
+    "InputSettings.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Input settings (colour, audio…)",
+      "w": 1440,
+      "x": 1240,
+      "y": 1320
+    },
+    "Library.dc.html": {
+      "h": 780,
+      "is_interactive": true,
+      "title": "Library",
+      "w": 1160,
+      "x": 1240,
+      "y": 5280
+    },
+    "LogoMaker.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "3D logo maker",
+      "w": 1160,
+      "x": 5520,
+      "y": 3960
+    },
+    "LogoOptions.dc.html": {
+      "h": 1060,
+      "is_interactive": true,
+      "title": "Lumora logo options — pick one",
+      "w": 1440,
+      "x": 4960,
+      "y": 0
+    },
+    "LogoRound2.dc.html": {
+      "h": 1160,
+      "is_interactive": true,
+      "title": "Lumora logo — round 2 (from 2 + 5)",
+      "w": 1440,
+      "x": 6480,
+      "y": 0
+    },
+    "LogoRound3.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "title": "Lumora logo — round 3 (Tally + Iris)",
+      "w": 1440,
+      "x": 8000,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Main event screen",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Manual.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "How-to-use manual",
+      "w": 1280,
+      "x": 1360,
+      "y": 7824
+    },
+    "MonitorLayout.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Monitor layout (several things at once)",
+      "w": 1440,
+      "x": 1520,
+      "y": 6560
+    },
+    "MonitorOutput.dc.html": {
+      "h": 810,
+      "is_interactive": true,
+      "title": "Stage monitor output",
+      "w": 1440,
+      "x": 0,
+      "y": 6560
+    },
+    "OverlayEditor.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Overlays",
+      "w": 1440,
+      "x": 0,
+      "y": 2640
+    },
+    "Pesukim.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "12 Pesukim control",
+      "w": 1440,
+      "x": 4560,
+      "y": 2640
+    },
+    "PhoneCamera.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Phone as camera",
+      "w": 390,
+      "x": 4770,
+      "y": 6560
+    },
+    "PhoneRemote.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Phone remote",
+      "w": 390,
+      "x": 4300,
+      "y": 6560
+    },
+    "Scene.dc.html": {
+      "h": 360,
+      "title": "Picture placeholders (shared)",
+      "w": 640,
+      "x": 4080,
+      "y": 7824
+    },
+    "Settings.dc.html": {
+      "h": 740,
+      "is_interactive": true,
+      "title": "Settings",
+      "w": 1000,
+      "x": 2480,
+      "y": 5280
+    },
+    "Slideshow.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Slideshow",
+      "w": 1440,
+      "x": 3040,
+      "y": 2640
+    },
+    "SplitScreen.dc.html": {
+      "h": 800,
+      "is_interactive": true,
+      "title": "Split screen",
+      "w": 1160,
+      "x": 4000,
+      "y": 1320
+    },
+    "StreamPage.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Branded stream page",
+      "w": 1280,
+      "x": 0,
+      "y": 7824
+    },
+    "TabletRemote.dc.html": {
+      "h": 820,
+      "is_interactive": true,
+      "title": "Tablet remote",
+      "w": 1180,
+      "x": 3040,
+      "y": 6560
+    },
+    "TextEditor.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Text & titles",
+      "w": 1440,
+      "x": 1520,
+      "y": 2640
+    },
+    "Timer.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "Hype countdown (big screens)",
+      "w": 1440,
+      "x": 1520,
+      "y": 3960
+    },
+    "Website.dc.html": {
+      "h": 2600,
+      "is_interactive": true,
+      "title": "Product website",
+      "w": 1280,
+      "x": 2720,
+      "y": 7824
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-23T01:45:42Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "row0": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "Running the event",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row1": {
+      "kind": "title1",
+      "maxW": 5160,
+      "text": "Inputs & sources",
+      "w": 240,
+      "x": 0,
+      "y": 1020
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 6000,
+      "text": "Graphics & content",
+      "w": 240,
+      "x": 0,
+      "y": 2340
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 6680,
+      "text": "Scenes, timer, loops, credits & 3D logo",
+      "w": 240,
+      "x": 0,
+      "y": 3660
+    },
+    "row4": {
+      "kind": "title1",
+      "maxW": 4560,
+      "text": "Presets, library & settings",
+      "w": 240,
+      "x": 0,
+      "y": 4980
+    },
+    "row5": {
+      "kind": "title1",
+      "maxW": 5160,
+      "text": "Outputs & remote control",
+      "w": 240,
+      "x": 0,
+      "y": 6260
+    },
+    "row6": {
+      "kind": "title1",
+      "maxW": 4000,
+      "text": "Online: stream page, manual & website",
+      "w": 240,
+      "x": 0,
+      "y": 7524
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Cues.dc.html",
+    "GoLive.dc.html",
+    "EventEnd.dc.html",
+    "AddInput.dc.html",
+    "InputSettings.dc.html",
+    "BrowserSource.dc.html",
+    "SplitScreen.dc.html",
+    "OverlayEditor.dc.html",
+    "TextEditor.dc.html",
+    "Slideshow.dc.html",
+    "Pesukim.dc.html",
+    "GreenScreen.dc.html",
+    "Timer.dc.html",
+    "BackLoops.dc.html",
+    "Credits.dc.html",
+    "LogoMaker.dc.html",
+    "AddPreset.dc.html",
+    "Library.dc.html",
+    "Settings.dc.html",
+    "Devices.dc.html",
+    "MonitorOutput.dc.html",
+    "MonitorLayout.dc.html",
+    "TabletRemote.dc.html",
+    "PhoneRemote.dc.html",
+    "PhoneCamera.dc.html",
+    "StreamPage.dc.html",
+    "Manual.dc.html",
+    "Website.dc.html",
+    "Scene.dc.html",
+    "LogoOptions.dc.html",
+    "LogoRound2.dc.html",
+    "LogoRound3.dc.html",
+    "Brand.dc.html",
+    "FontOptions.dc.html",
+    "FontRound2.dc.html"
+  ],
+  "pages": [],
+  "title": "Lumora — System Design"
+}

@@ -1,0 +1,4 @@
+    Blocking waiting for file lock on build directory
+   Compiling lumora v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-ae2e4fb2496ef2830/src-tauri)
+   Compiling lumora-edit v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-ae2e4fb2496ef2830/editor/src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.29s

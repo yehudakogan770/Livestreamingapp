@@ -1,0 +1,119 @@
+<<<<
+    /// A screen as drawn (the recording, the stream); `vertical`: the 9:16
+    /// version (the whole picture across the middle, a soft copy of it behind).
+    Screen { screen: ScreenId, vertical: bool },
+====
+    /// A screen as drawn (the recording, the stream); `vertical`: the 9:16
+    /// version (the whole picture across the middle, a soft copy of it behind);
+    /// `captions`: the live captions written in the picture (the stream and
+    /// its vertical version, when asked: the screen's `cap` plane; the
+    /// recording stays clean).
+    Screen {
+        screen: ScreenId,
+        vertical: bool,
+        captions: bool,
+    },
+>>>>
+<<<<
+    /// Drawn at its own size (and the vertical's small copy).
+    target: Option<usize>,
+    small: Option<usize>,
+====
+    /// Drawn at its own size (and the vertical's small copy).
+    target: Option<usize>,
+    small: Option<usize>,
+    /// The screen with the captions written on it (the screen's size).
+    captioned: Option<usize>,
+>>>>
+<<<<
+            target: None,
+            small: None,
+            nv12: None,
+====
+            target: None,
+            small: None,
+            captioned: None,
+            nv12: None,
+>>>>
+<<<<
+            FeedSource::Screen { vertical, .. } => {
+                let (w, h) = f.size;
+                if *vertical || (w, h) != screen_size {
+                    f.target = Some(self.target(gpu, w, h));
+                }
+====
+            FeedSource::Screen {
+                vertical, captions, ..
+            } => {
+                let (w, h) = f.size;
+                if *vertical || (w, h) != screen_size {
+                    f.target = Some(self.target(gpu, w, h));
+                }
+                if *captions {
+                    f.captioned = Some(self.target(gpu, screen_size.0, screen_size.1));
+                }
+>>>>
+<<<<
+        let f = self.feeds.remove(&id)?;
+        for t in [f.target, f.small, f.nv12].into_iter().flatten() {
+====
+        let f = self.feeds.remove(&id)?;
+        for t in [f.target, f.small, f.captioned, f.nv12]
+            .into_iter()
+            .flatten()
+        {
+>>>>
+<<<<
+    /// A new graphics device: the feeds' targets are made again on it.
+    pub fn renew(&mut self, gpu: &mut Compositor) {
+        for f in self.feeds.values() {
+====
+    /// A new graphics device: the feeds' targets are made again on it.
+    pub fn renew(&mut self, gpu: &mut Compositor, screen_size: (u32, u32)) {
+        for f in self.feeds.values() {
+            if let Some(t) = f.captioned {
+                gpu.ensure_target(t, screen_size.0, screen_size.1);
+            }
+>>>>
+<<<<
+            let (FeedSource::Screen { screen, .. }, Some(enc)) = (&f.spec.source, f.enc.as_mut())
+            else {
+                continue;
+            };
+            let n = enc.due(now);
+            if n == 0 {
+                continue;
+            }
+            let src = program(*screen);
+====
+            let (FeedSource::Screen { screen, .. }, Some(enc)) = (&f.spec.source, f.enc.as_mut())
+            else {
+                continue;
+            };
+            let n = enc.due(now);
+            if n == 0 {
+                continue;
+            }
+            let mut src = program(*screen);
+            // Captions on the screen's picture first (only while there are some).
+            if let Some(c) = f
+                .captioned
+                .filter(|_| gpu.has_plane(src, crate::overlay::CAPTIONS))
+            {
+                let size = gpu.target_size(c).unwrap_or((1, 1));
+                passes.push(Pass {
+                    dest: Dest::Target(c),
+                    viewport: None,
+                    paint: Paint::Target(src),
+                });
+                passes.push(Pass {
+                    dest: Dest::Target(c),
+                    viewport: Some([0, 0, size.0, size.1]),
+                    paint: Paint::Plane {
+                        slot: src,
+                        name: crate::overlay::CAPTIONS,
+                    },
+                });
+                src = c;
+            }
+>>>>

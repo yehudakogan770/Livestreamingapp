@@ -1,0 +1,21 @@
+const {chromium}=require('playwright-core');
+(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});const p=await b.newPage({viewport:{width:1440,height:900}});
+const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+await p.goto('http://localhost:8765/BackLoops.dc.html');await p.waitForTimeout(1500);
+const txt=async()=>p.evaluate(()=>document.body.innerText);
+const click=async t=>{await p.locator('button').filter({hasText:new RegExp('^'+t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))}).first().click({timeout:3000});await p.waitForTimeout(150);};
+await click('Rock'); console.log('rock bank:', /Rock/.test(await txt()));
+await p.getByRole('button',{name:/Scene 3|Guitar|.+/}).nth(0); 
+const scenes=p.locator('button[aria-label]:not([aria-label=Favourite])');
+const before=await p.evaluate(()=>document.querySelector('span[style*="bottom: 8px"]')?.innerText);
+await scenes.nth(4).click();await p.waitForTimeout(700);
+const after=await p.evaluate(()=>document.querySelector('span[style*="bottom: 8px"]')?.innerText);
+console.log('scene change:',before,'->',after);
+for(const t of ['Flash','Blackout','Freeze','Invert','Next scene','Randomize','Reset effects','Autopilot','Tap','Sync to 1','Both','Live Screen','Effects','Layers','Logo','Look','Save look','★ Favourites','Keys clock','Listen','Now','Next bar','Cut','4 beats','Assign keys']) {await click(t);}
+await click('Blackout');
+const bpm0=await p.evaluate(()=>document.body.innerText.match(/(\d+)\s*BPM\n/)?.[1]);
+await p.getByLabel('Faster').click();await p.waitForTimeout(100);
+const bpm1=await p.evaluate(()=>document.body.innerText.match(/(\d+)\s*BPM\n/)?.[1]);
+console.log('bpm',bpm0,'->',bpm1);
+await p.keyboard.press('Space');await p.waitForTimeout(700);
+console.log('errors:',errs);await b.close();})();

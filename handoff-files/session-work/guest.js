@@ -1,0 +1,22 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await (await b.newContext({ viewport: { width: 1280, height: 760 } })).newPage();
+  p.on('pageerror', (e) => console.log('ERR', e.message, '\n', (e.stack || '').split('\n').slice(0, 6).join('\n')));
+  p.on('frameattached', (f) => console.log('frame', f.url()));
+  p.on('framenavigated', (f) => f !== p.mainFrame() && console.log('frame nav', f.url().slice(0, 100)));
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.waitForTimeout(1500);
+  await p.getByText('Skip for now').click().catch(() => {});
+  await p.getByRole('button', { name: /Add input/ }).first().click();
+  const d = p.getByRole('dialog', { name: 'Add input' });
+  await d.getByRole('button', { name: 'Guest by link' }).click();
+  await p.waitForTimeout(2000);
+  await d.getByRole('button', { name: 'Add input', exact: true }).click();
+  await p.waitForTimeout(3000);
+  await p.getByRole('button', { name: /problem/ }).click().catch(() => {});
+  await p.waitForTimeout(500);
+  console.log('problems:', await p.locator('.plist').textContent().catch(() => 'none'));
+  await b.close();
+})();

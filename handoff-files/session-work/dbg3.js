@@ -1,0 +1,14 @@
+const { chromium } = require('playwright-core');
+(async () => { const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+const errs=[]; p.on('pageerror', e => errs.push(e.message));
+await p.goto('http://localhost:8765/Main.dc.html'); await p.waitForTimeout(2000);
+const hdr = () => p.evaluate(() => [...document.querySelectorAll('span')].filter(x=>(x.textContent==='Preview'||x.textContent==='Program')&&x.previousElementSibling).map(x=>x.textContent+':'+(x.nextElementSibling||{}).textContent).join(' | '));
+const tb = p.getByRole('slider', { name: 'T-bar' });
+const pull = async (from, to) => { const r = await tb.boundingBox(); const X=f=>r.x+12+(r.width-24)*f; await p.mouse.move(X(from), r.y+r.height/2); await p.mouse.down(); await p.mouse.move(X((from+to)/2), r.y+r.height/2,{steps:5}); console.log(' mid', await tb.getAttribute('aria-valuenow')); await p.mouse.move(X(to), r.y+r.height/2,{steps:5}); await p.mouse.up(); await p.waitForTimeout(200); console.log(' after', await tb.getAttribute('aria-valuenow'), await hdr()); };
+console.log(await hdr()); await pull(0,1.02); await pull(1,-0.02);
+await p.getByRole('button', { name: /Back Screen/ }).first().click(); await p.waitForTimeout(200);
+const t = () => p.evaluate(() => [...document.querySelectorAll('span')].map(s=>s.textContent).filter(x=>/^\d\d:\d\d$/.test(x)).join(' '));
+console.log('back times', await t()); await p.waitForTimeout(2100); console.log('back times +2s', await t());
+await p.screenshot({ path: 'shots/back-fixed.png' });
+console.log('errors', errs); await b.close(); })();

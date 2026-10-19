@@ -1,0 +1,28 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 900 } });
+  p.setDefaultTimeout(15000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  p.on('dialog', (d) => d.accept());
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Trivia game/ }).click();
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+  await p.locator('.tile__pick').nth(0).dblclick();
+  await p.getByRole('button', { name: /Options for / }).first().click();
+  await p.getByRole('button', { name: 'Run the game…' }).click();
+  await p.getByRole('button', { name: 'Start with sample questions' }).click();
+  await p.waitForTimeout(400);
+  await p.screenshot({ path: 'trv1.png' });
+  await p.getByRole('button', { name: '▶ Ask question 1' }).click();
+  await p.waitForTimeout(1200);
+  await p.screenshot({ path: 'trv2.png' });
+  await p.getByRole('button', { name: 'Show the answer' }).click();
+  await p.waitForTimeout(600);
+  await p.screenshot({ path: 'trv3.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

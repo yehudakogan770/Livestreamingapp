@@ -1,0 +1,5 @@
+    Checking lumora-engine v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-ac0904ea439c0efa9/crates/engine)
+   Compiling lumora v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-ac0904ea439c0efa9/src-tauri)
+   Compiling lumora-edit v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-ac0904ea439c0efa9/editor/src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 40.10s
+exit 0

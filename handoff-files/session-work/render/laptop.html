@@ -1,0 +1,399 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { margin: 0; background: #000; }
+    </style>
+    <script type="importmap">
+      { "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+    </script>
+  </head>
+  <body>
+    <canvas id="out"></canvas>
+    <script type="module">
+      import * as THREE from 'three';
+      import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+      import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+      import { RectAreaLightUniformsLib } from 'three/addons/lights/RectAreaLightUniformsLib.js';
+
+      const P = Object.fromEntries(new URLSearchParams(location.search));
+      const W = Number(P.w || 2400);
+      const H = Number(P.h || 1350);
+      const screenSrc = P.screen || 'main.jpg';
+      const seedStart = Number(P.seed || 7);
+      let seed = seedStart;
+      const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+      const img = (src) => new Promise((ok) => { const i = new Image(); i.onload = () => ok(i); i.src = src; });
+
+      // ---------- The venue behind, out of focus (like a real lens at f/1.8) ----------
+      function venue(c, shot) {
+        const g = c.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, '#06070a');
+        g.addColorStop(0.55, '#0b0c10');
+        g.addColorStop(1, '#050506');
+        c.fillStyle = g;
+        c.fillRect(0, 0, W, H);
+        // The big screen on stage, far away and soft.
+        c.save();
+        c.filter = `blur(${W * 0.012}px)`;
+        const sx = W * Number(P.scrx || 0.2), sy = H * 0.07, sw = W * 0.34, sh = sw * 9 / 16;
+        c.globalAlpha = 0.85;
+        c.drawImage(shot, sx, sy, sw, sh);
+        c.globalAlpha = 1;
+        c.restore();
+        // Its light spilling into the room.
+        c.globalCompositeOperation = 'lighter';
+        let r = c.createRadialGradient(sx + sw / 2, sy + sh / 2, 0, sx + sw / 2, sy + sh / 2, sw);
+        r.addColorStop(0, 'rgba(60,150,165,0.22)');
+        r.addColorStop(1, 'rgba(0,0,0,0)');
+        c.fillStyle = r;
+        c.fillRect(0, 0, W, H);
+        // Stage lights: bokeh discs.
+        c.filter = 'blur(1.5px)';
+        const cols = ['255,184,107', '255,214,170', '255,90,70', '90,200,215', '255,240,220'];
+        c.filter = `blur(${W * 0.0022}px)`;
+        for (let i = 0; i < 34; i++) {
+          const x = rnd() * W;
+          const y = H * (0.01 + rnd() * rnd() * 0.42);
+          if (x > sx - 20 && x < sx + sw + 20 && y > sy - 20 && y < sy + sh + 20 && rnd() < 0.85) continue;
+          const big = rnd() < 0.35;
+          const rad = W * (big ? 0.012 + rnd() * 0.012 : 0.003 + rnd() * 0.006);
+          const col = cols[Math.floor(rnd() * cols.length)];
+          const a = big ? 0.06 + rnd() * 0.16 : 0.2 + rnd() * 0.4;
+          const d = c.createRadialGradient(x, y, 0, x, y, rad);
+          d.addColorStop(0, `rgba(${col},${a * 0.8})`);
+          d.addColorStop(0.82, `rgba(${col},${a})`);
+          d.addColorStop(0.92, `rgba(${col},${a * 1.15})`);
+          d.addColorStop(1, `rgba(${col},0)`);
+          c.fillStyle = d;
+          c.beginPath();
+          c.arc(x, y, rad, 0, Math.PI * 2);
+          c.fill();
+        }
+        // Haze in the beams.
+        c.filter = `blur(${W * 0.03}px)`;
+        for (let i = 0; i < 5; i++) {
+          const x = W * (0.1 + 0.2 * i + rnd() * 0.05);
+          c.fillStyle = `rgba(${cols[i % cols.length]},0.05)`;
+          c.beginPath();
+          c.moveTo(x - W * 0.01, 0);
+          c.lineTo(x + W * 0.01, 0);
+          c.lineTo(x + W * 0.09, H * 0.55);
+          c.lineTo(x - W * 0.09, H * 0.55);
+          c.fill();
+        }
+        c.globalCompositeOperation = 'source-over';
+        // The audience: soft dark shapes, lit at the edges by the screen.
+        c.filter = `blur(${W * 0.006}px)`;
+        for (let row = 0; row < 3; row++) {
+          const y = H * (0.42 + row * 0.055);
+          const s = W * (0.012 + row * 0.006);
+          for (let x = -s; x < W + s; x += s * (2.2 + rnd() * 0.8)) {
+            const hy = y - rnd() * s * 0.3;
+            c.fillStyle = `rgba(4,4,6,${0.92 - row * 0.05})`;
+            c.beginPath();
+            c.ellipse(x, hy, s * 0.62, s * 0.78, 0, 0, Math.PI * 2);
+            c.fill();
+            c.beginPath();
+            c.ellipse(x, hy + s * 1.6, s * 1.35, s * 1.1, 0, 0, Math.PI * 2);
+            c.fill();
+            c.strokeStyle = 'rgba(110,190,200,0.10)';
+            c.lineWidth = s * 0.12;
+            c.beginPath();
+            c.arc(x, hy, s * 0.66, Math.PI * 1.15, Math.PI * 1.85);
+            c.stroke();
+          }
+        }
+        // The table, close to us.
+        c.filter = 'none';
+        const ty = H * Number(P.table || 0.6);
+        const tg = c.createLinearGradient(0, ty, 0, H);
+        tg.addColorStop(0, '#1a1a1d');
+        tg.addColorStop(0.08, '#121214');
+        tg.addColorStop(1, '#070708');
+        c.fillStyle = tg;
+        c.fillRect(0, ty, W, H - ty);
+        c.fillStyle = 'rgba(255,255,255,0.05)';
+        c.fillRect(0, ty, W, 2);
+        // Lights reflected in the table, smeared.
+        c.globalCompositeOperation = 'lighter';
+        c.filter = `blur(${W * 0.01}px)`;
+        for (let i = 0; i < 10; i++) {
+          const x = rnd() * W;
+          c.fillStyle = `rgba(${cols[i % cols.length]},0.05)`;
+          c.fillRect(x, ty + 4, W * 0.02, H * 0.18);
+        }
+        c.globalCompositeOperation = 'source-over';
+        c.filter = 'none';
+      }
+
+      function grade(c) {
+        // Lens vignette and film grain.
+        const v = c.createRadialGradient(W / 2, H * 0.5, H * 0.5, W / 2, H * 0.5, W * 0.72);
+        v.addColorStop(0, 'rgba(0,0,0,0)');
+        v.addColorStop(1, 'rgba(0,0,0,0.5)');
+        c.fillStyle = v;
+        c.fillRect(0, 0, W, H);
+        const id = c.getImageData(0, 0, W, H);
+        const d = id.data;
+        for (let i = 0; i < d.length; i += 4) {
+          const n = (rnd() - 0.5) * 9;
+          d[i] += n; d[i + 1] += n; d[i + 2] += n;
+        }
+        c.putImageData(id, 0, 0);
+      }
+
+      // ---------- The laptop, in 3D ----------
+      async function laptop(screenImg) {
+        RectAreaLightUniformsLib.init();
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+        renderer.setSize(W, H);
+        renderer.setPixelRatio(1);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        const scene = new THREE.Scene();
+        const pm = new THREE.PMREMGenerator(renderer);
+        scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+        scene.environmentIntensity = 0.32;
+
+        const alu = new THREE.MeshPhysicalMaterial({ color: 0x2a2c30, metalness: 0.9, roughness: 0.34, clearcoat: 0.15, clearcoatRoughness: 0.4 });
+        const dark = new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.75, metalness: 0.1 });
+        const keyMat = new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: 0.5, metalness: 0.05 });
+        const glass = new THREE.MeshPhysicalMaterial({ color: 0x050506, roughness: 0.06, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.03 });
+
+        const lap = new THREE.Group();
+        scene.add(lap);
+        const BW = 31.2, BD = 21.8, BT = 1.45;
+        const base = new THREE.Mesh(new RoundedBoxGeometry(BW, BT, BD, 6, 0.7), alu);
+        base.position.y = BT / 2;
+        base.castShadow = true;
+        base.receiveShadow = true;
+        lap.add(base);
+        // Keyboard well and keys.
+        const well = new THREE.Mesh(new THREE.PlaneGeometry(27.6, 11.6), dark);
+        well.rotation.x = -Math.PI / 2;
+        well.position.set(0, BT + 0.005, -3.2);
+        lap.add(well);
+        const keys = new THREE.InstancedMesh(new RoundedBoxGeometry(1.55, 0.14, 1.45, 2, 0.14), keyMat, 6 * 14);
+        const m = new THREE.Matrix4();
+        let k = 0;
+        for (let r = 0; r < 6; r++)
+          for (let cI = 0; cI < 14; cI++) {
+            m.makeTranslation(-12.35 + cI * 1.9, BT + 0.08, -8.2 + r * 1.9);
+            keys.setMatrixAt(k++, m);
+          }
+        keys.castShadow = true;
+        lap.add(keys);
+        const pad = new THREE.Mesh(
+          new THREE.PlaneGeometry(12, 7.4),
+          new THREE.MeshPhysicalMaterial({ color: 0x1c1d20, roughness: 0.35, metalness: 0.7, clearcoat: 0.3 }),
+        );
+        pad.rotation.x = -Math.PI / 2;
+        pad.position.set(0, BT + 0.004, 6.1);
+        lap.add(pad);
+
+        // The lid, open on its hinge.
+        const LT = 0.55, LH = 20.4;
+        const hinge = new THREE.Group();
+        hinge.position.set(0, BT, -BD / 2 + 0.35);
+        hinge.rotation.x = -THREE.MathUtils.degToRad(Number(P.open || 108)) + Math.PI / 2;
+        lap.add(hinge);
+        const lid = new THREE.Mesh(new RoundedBoxGeometry(BW, LH, LT, 6, 0.27), alu);
+        lid.position.set(0, LH / 2, -LT / 2);
+        lid.castShadow = true;
+        hinge.add(lid);
+        const bezel = new THREE.Mesh(new THREE.PlaneGeometry(BW - 0.6, LH - 0.6), glass);
+        bezel.position.set(0, LH / 2, 0.006);
+        hinge.add(bezel);
+        const tex = new THREE.Texture(screenImg);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 8;
+        tex.needsUpdate = true;
+        const sw = BW - 1.6, sh = sw * screenImg.height / screenImg.width;
+        const disp = new THREE.Mesh(new THREE.PlaneGeometry(sw, sh), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
+        disp.position.set(0, LH / 2 + 0.25, 0.012);
+        hinge.add(disp);
+        // A little reflection on the screen glass.
+        const sheen = new THREE.Mesh(
+          new THREE.PlaneGeometry(sw, sh),
+          new THREE.MeshPhysicalMaterial({ color: 0x000000, transparent: true, opacity: 0.18, roughness: 0.05, metalness: 0, clearcoat: 1 }),
+        );
+        sheen.position.set(0, LH / 2 + 0.25, 0.02);
+        hinge.add(sheen);
+        // The screen's own light on the keyboard.
+        const glow = new THREE.RectAreaLight(0xbfe6f0, Number(P.glow || 0.9), sw, sh);
+        glow.position.set(0, LH / 2, 0.4);
+        glow.lookAt(0, LH / 2, 20);
+        hinge.add(glow);
+
+        lap.rotation.y = Number(P.rot || 0.38);
+        lap.position.x = Number(P.x || 0);
+
+        // Shadow on the table.
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.ShadowMaterial({ opacity: 0.6 }));
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Stage light from behind (rim), a soft fill, and the room.
+        const rim = new THREE.DirectionalLight(0xffcf9e, Number(P.rim || 2.4));
+        rim.position.set(Number(P.rimx || -30), 50, -80);
+        rim.castShadow = true;
+        rim.shadow.mapSize.set(2048, 2048);
+        rim.shadow.camera.left = -40; rim.shadow.camera.right = 40; rim.shadow.camera.top = 40; rim.shadow.camera.bottom = -40;
+        rim.shadow.radius = 6;
+        scene.add(rim);
+        const key = new THREE.DirectionalLight(0x9fd8e0, 0.6);
+        key.position.set(30, 40, 60);
+        key.castShadow = true;
+        key.shadow.mapSize.set(2048, 2048);
+        key.shadow.camera.left = -40; key.shadow.camera.right = 40; key.shadow.camera.top = 40; key.shadow.camera.bottom = -40;
+        key.shadow.radius = 12;
+        scene.add(key);
+        scene.add(new THREE.HemisphereLight(0x8090a0, 0x080808, 0.25));
+
+        const cam = new THREE.PerspectiveCamera(Number(P.fov || 26), W / H, 1, 1000);
+        cam.position.set(Number(P.cx || -26), Number(P.cy || 34), Number(P.cz || 74));
+        cam.lookAt(Number(P.lx || 0), Number(P.ly || 8), Number(P.lz || 0));
+        renderer.render(scene, cam);
+        // Where the laptop sits in the picture (for the light it throws on the table).
+        const v = new THREE.Vector3(0, BT, 6).applyMatrix4(lap.matrixWorld).project(cam);
+        window.spot = [(v.x + 1) / 2 * W, (1 - v.y) / 2 * H];
+        return renderer.domElement;
+      }
+
+      function audience(c, shot) {
+        const g = c.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, '#05060a');
+        g.addColorStop(1, '#0a0b0f');
+        c.fillStyle = g;
+        c.fillRect(0, 0, W, H);
+        // The stage lights behind and above, soft.
+        c.globalCompositeOperation = 'lighter';
+        const cols = ['255,184,107', '255,214,170', '255,90,70', '90,200,215', '255,240,220'];
+        c.filter = `blur(${W * 0.0025}px)`;
+        for (let i = 0; i < 30; i++) {
+          const x = rnd() * W, y = H * (0.02 + rnd() * 0.2), rad = W * (0.003 + rnd() * 0.01);
+          const col = cols[Math.floor(rnd() * cols.length)], a = 0.25 + rnd() * 0.4;
+          const d = c.createRadialGradient(x, y, 0, x, y, rad);
+          d.addColorStop(0, `rgba(${col},${a})`);
+          d.addColorStop(0.85, `rgba(${col},${a})`);
+          d.addColorStop(1, `rgba(${col},0)`);
+          c.fillStyle = d;
+          c.beginPath();
+          c.arc(x, y, rad, 0, Math.PI * 2);
+          c.fill();
+        }
+        // Beams through haze.
+        c.filter = `blur(${W * 0.02}px)`;
+        for (let i = 0; i < 6; i++) {
+          const x = W * (0.05 + i * 0.18);
+          c.fillStyle = `rgba(${cols[i % cols.length]},0.06)`;
+          c.beginPath();
+          c.moveTo(x - 6, 0);
+          c.lineTo(x + 6, 0);
+          c.lineTo(x + (i - 2.5) * W * 0.05 + W * 0.08, H * 0.75);
+          c.lineTo(x + (i - 2.5) * W * 0.05 - W * 0.08, H * 0.75);
+          c.fill();
+        }
+        c.globalCompositeOperation = 'source-over';
+        c.filter = 'none';
+        // The big screen, in focus, with its glow.
+        const sw = W * 0.56, sh = sw * 9 / 16, sx = (W - sw) / 2, sy = H * 0.12;
+        c.save();
+        c.shadowColor = 'rgba(70,170,185,0.55)';
+        c.shadowBlur = W * 0.06;
+        c.drawImage(shot, sx, sy, sw, sh);
+        c.restore();
+        c.strokeStyle = 'rgba(0,0,0,0.6)';
+        c.lineWidth = 3;
+        c.strokeRect(sx, sy, sw, sh);
+        // The stage under it, and someone at a lectern, lit.
+        c.fillStyle = '#100d0b';
+        c.fillRect(0, H * 0.7, W, H * 0.06);
+        c.fillStyle = 'rgba(255,200,150,0.25)';
+        c.fillRect(0, H * 0.7, W, 2);
+        // The audience in front of us: dark and out of focus.
+        for (let row = 0; row < 3; row++) {
+          c.filter = `blur(${W * (0.004 + row * 0.006)}px)`;
+          const y = H * (0.78 + row * 0.1);
+          const s = W * (0.022 + row * 0.018);
+          for (let x = -s * rnd(); x < W + s; x += s * (2 + rnd() * 0.9)) {
+            const hy = y - rnd() * s * 0.25;
+            c.fillStyle = '#030304';
+            c.beginPath();
+            c.ellipse(x, hy, s * 0.6, s * 0.75, 0, 0, Math.PI * 2);
+            c.fill();
+            c.beginPath();
+            c.ellipse(x, hy + s * 1.7, s * 1.4, s * 1.2, 0, 0, Math.PI * 2);
+            c.fill();
+            c.strokeStyle = 'rgba(110,190,200,0.16)';
+            c.lineWidth = s * 0.08;
+            c.beginPath();
+            c.arc(x, hy, s * 0.63, Math.PI * 1.2, Math.PI * 1.8);
+            c.stroke();
+          }
+          // A phone held up, filming the screen.
+          if (row === 1) {
+            const px = W * 0.68, py = y - s * 1.2, pw = s * 0.85, ph = pw * 1.9;
+            c.filter = `blur(${W * 0.0025}px)`;
+            c.fillStyle = '#050506';
+            c.beginPath();
+            c.roundRect(px - pw / 2 - 4, py - 4, pw + 8, ph + 8, 10);
+            c.fill();
+            c.drawImage(shot, shot.width * 0.22, 0, shot.width * 0.56, shot.height, px - pw / 2, py, pw, ph);
+          }
+        }
+        c.filter = 'none';
+      }
+
+      (async () => {
+        if (P.scene === 'audience') {
+          const shot = await img(P.stage || 'stage.jpg');
+          const out = document.getElementById('out');
+          out.width = W;
+          out.height = H;
+          const c = out.getContext('2d', { willReadFrequently: true });
+          audience(c, shot);
+          grade(c);
+          window.done = out.toDataURL('image/jpeg', 0.9);
+          return;
+        }
+        const [screenImg, stageImg] = await Promise.all([img(screenSrc), img(P.stage || 'stage.jpg')]);
+        const out = document.getElementById('out');
+        out.width = W;
+        out.height = H;
+        const c = out.getContext('2d', { willReadFrequently: true });
+        venue(c, stageImg);
+        if (P.nolap) {
+          grade(c);
+          window.done = out.toDataURL('image/jpeg', 0.9);
+          return;
+        }
+        const gl = await laptop(screenImg);
+        // The screen's light on the table in front of the laptop.
+        if (window.spot) {
+          const [x, y] = window.spot;
+          c.save();
+          c.globalCompositeOperation = 'lighter';
+          c.translate(x, y);
+          c.scale(1, 0.32);
+          const r = c.createRadialGradient(0, 0, 0, 0, 0, W * 0.3);
+          r.addColorStop(0, 'rgba(120,190,205,0.10)');
+          r.addColorStop(1, 'rgba(0,0,0,0)');
+          c.fillStyle = r;
+          c.fillRect(-W, -W, 2 * W, 2 * W);
+          c.restore();
+        }
+        c.drawImage(gl, 0, 0);
+        grade(c);
+        window.done = out.toDataURL('image/jpeg', 0.9);
+      })().catch((e) => (window.failed = String(e && e.stack || e)));
+    </script>
+  </body>
+</html>

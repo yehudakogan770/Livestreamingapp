@@ -1,0 +1,13 @@
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await p.goto('file:///home/user/Livestreamingapp/.claude/worktrees/agent-a59d26fde936f61dd/docs/index.html');
+await p.evaluate(() => document.querySelectorAll('img[loading=lazy]').forEach((i) => (i.loading = 'eager')));
+const out = '/tmp/claude-0/-home-user-Livestreamingapp/afbb1772-1200-52da-905a-12b6de33f858/scratchpad/';
+await p.locator('#photo').scrollIntoViewIfNeeded();
+await p.waitForTimeout(800);
+await p.locator('#photo').screenshot({ path: out + 'site-photo.png' });
+await p.locator('#download').screenshot({ path: out + 'site-download.png' });
+await b.close();

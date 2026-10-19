@@ -1,0 +1,31 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 950 } });
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Text \/ title/ }).click();
+  await p.getByLabel('Text', { exact: true }).fill('Rabbi Cohen');
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+  await p.locator('.tile').first().locator('button:has-text("⋯")').first().click();
+  await p.getByRole('button', { name: 'Save to library…' }).click();
+  await p.getByLabel('Category').fill('Lower thirds');
+  await p.getByRole('dialog', { name: 'Save to library' }).getByRole('button', { name: 'Save' }).click();
+  // A new event: empty, then take it from the library
+  await p.locator('.titlebar__item', { hasText: 'Event' }).click();
+  await p.getByText('New event').click();
+  await p.getByRole('button', { name: 'Start a new event' }).click();
+  await p.getByRole('button', { name: 'Skip for now' }).click().catch(() => {});
+  console.log('tiles in new event:', await p.locator('.tile:not(.tile--add)').count());
+  await p.locator('.titlebar__item', { hasText: 'Library' }).click();
+  await p.getByText('Open the library…').click();
+  await p.screenshot({ path: 'lib.png' });
+  await p.getByRole('button', { name: 'Use in this event' }).click();
+  console.log('notice:', await p.locator('.lib__main [role=status]').textContent());
+  await p.getByRole('dialog', { name: 'Library' }).getByRole('button', { name: 'Close' }).click();
+  console.log('tiles after using it:', await p.locator('.tile:not(.tile--add)').count(), await p.locator('.tile [data-kind="text"]').first().textContent());
+  console.log('errors', errs);
+  await b.close();
+})();

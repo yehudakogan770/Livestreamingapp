@@ -1,0 +1,15 @@
+const { chromium } = require('playwright-core');
+(async () => { const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } }); const errs=[]; p.on('pageerror', e => errs.push(e.message));
+await p.goto('http://localhost:8765/Main.dc.html'); await p.waitForTimeout(2000);
+const has = async (t) => (await p.locator('text=' + t).count());
+console.log('before, timer controls:', await has('Timer ↗'));
+await p.locator('button[aria-label="Hype countdown"]').dblclick(); await p.waitForTimeout(1500);
+console.log('timer on air, controls:', await has('Timer ↗'));
+await p.screenshot({ path: 'shots/ctx-timer.png' });
+await p.getByRole('button', { name: '+1 min' }).first().click(); await p.waitForTimeout(200);
+await p.locator('button[aria-label="12 Pesukim"]').dblclick(); await p.waitForTimeout(400);
+console.log('pesukim on air:', await has('Pesukim ↗'), 'timer gone:', await has('Timer ↗') === 0);
+await p.getByRole('button', { name: 'Next word ›' }).click(); await p.waitForTimeout(200);
+await p.screenshot({ path: 'shots/ctx-pes.png' });
+console.log('errors', errs); await b.close(); })();

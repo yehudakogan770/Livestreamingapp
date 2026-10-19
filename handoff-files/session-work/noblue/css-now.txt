@@ -1,0 +1,64 @@
+tint   8 app/src/components/PesukimView.css:60: rgba(6, 8, 14, 0.78)   | background: rgba(6, 8, 14, 0.78);
+tint  23 app/src/components/PollView.css:7: #1c2433   | background: #1c2433;
+SAT  190 app/src/components/PollView.css:51: #2f80ed   | background: #2f80ed;
+tint  16 app/src/components/PollView.css:72: #b8bec8   | color: #b8bec8;
+tint  16 app/src/components/PollView.css:86: #b8bec8   | color: #b8bec8;
+tint  46 app/src/components/TriviaView.css:7: #2a1f4d   | background: #2a1f4d;
+tint  32 app/src/components/TriviaView.css:55: #c8c0e0   | color: #c8c0e0;
+tint  32 app/src/components/TriviaView.css:78: #c8c0e0   | color: #c8c0e0;
+tint  32 app/src/components/TriviaView.css:117: #c8c0e0   | color: #c8c0e0;
+SAT  163 app/src/components/TriviaView.css:200: #7b5cff   | background: #7b5cff;
+tint   6 app/src/components/ScoreboardView.css:17: rgba(13, 15, 19, 0.92)   | background: rgba(13, 15, 19, 0.92);
+tint   9 app/src/components/ScoreboardView.css:75: #c9ccd2   | color: #c9ccd2;
+tint  19 app/src/components/ScoreboardView.css:78: #1d2430   | background: #1d2430;
+tint   9 app/src/components/ScoreboardView.css:86: #c9ccd2   | color: #c9ccd2;
+tint  23 app/src/components/AudienceViews.css:7: #1c2433   | background: #1c2433;
+tint   9 app/src/components/AudienceViews.css:27: #c9ccd2   | color: #c9ccd2;
+tint  16 app/src/components/AudienceViews.css:40: #b8bec8   | color: #b8bec8;
+tint   9 app/src/components/AudienceViews.css:89: #c9ccd2   | color: #c9ccd2;
+tint   9 app/src/components/AudienceViews.css:95: #c9ccd2   | color: #c9ccd2;
+tint  16 app/src/components/AudienceViews.css:127: #b8bec8   | color: #b8bec8;
+tint   9 app/src/components/AudienceViews.css:156: #c9ccd2   | color: #c9ccd2;
+tint  16 app/src/components/AudienceViews.css:191: #b8bec8   | color: #b8bec8;
+tint  20 app/src/components/AudienceViews.css:234: #8f96a3   | color: #8f96a3;
+tint   6 app/src/components/AudienceViews.css:355: rgba(10, 12, 16, 0.85)   | background: rgba(10, 12, 16, 0.85);
+SAT  190 app/src/components/AudienceViews.css:362: #2f80ed   | background: #2f80ed;
+tint   9 app/src/components/AudienceViews.css:438: #c9ccd2   | color: #c9ccd2;
+tint  24 app/src/components/AudienceViews.css:450: #9aa3b2   | color: #9aa3b2;
+tint   9 app/src/components/AudienceViews.css:474: #c9ccd2   | color: #c9ccd2;
+tint  24 app/src/components/AudienceViews.css:512: #9aa3b2   | color: #9aa3b2;
+tint   8 app/src/components/MonitorScreen.css:31: #8e9096   | color: #8e9096;
+tint   7 app/src/components/MonitorScreen.css:42: #a9abb0   | color: #a9abb0;
+tint   7 app/src/components/MonitorScreen.css:48: #a9abb0   | color: #a9abb0;
+tint  12 app/src/components/MonitorScreen.css:88: #2c3038   | border-top: 0.4cqh solid #2c3038;
+tint  12 app/src/components/MonitorScreen.css:115: #2c3038   | border-bottom: 0.4cqh solid #2c3038;
+tint  12 app/src/components/MonitorScreen.css:137: #2c3038   | border-right: 0.4cqh solid #2c3038;
+tint  14 app/src/components/MonitorScreen.css:159: #9aa0a8   | color: #9aa0a8;
+tint   6 app/src/components/CommentView.css:15: rgba(13, 15, 19, 0.92)   | background: rgba(13, 15, 19, 0.92);
+tint   9 app/src/components/CommentView.css:49: #dfe3e8   | color: #dfe3e8;
+tint  14 app/src/components/CommentView.css:53: #9aa0a8   | color: #9aa0a8;
+tint  39 app/src/components/ScriptureView.css:10: #13233a   | background: #13233a;
+tint  12 app/src/components/ScriptureView.css:19: rgba(8, 12, 20, 0.88)   | background: rgba(8, 12, 20, 0.88);
+tint  11 app/src/components/ScriptureView.css:42: #e8ecf3   | color: #e8ecf3;
+tint  17 app/src/components/SeatingView.css:7: #2b2233   | background: #2b2233;
+tint  19 app/src/components/SeatingView.css:55: #cfc6d9   | color: #cfc6d9;
+tint  21 app/src/components/SeatingView.css:105: #a79fb4   | color: #a79fb4;
+tint  26 app/src/components/ZmanimView.css:16: #26203a   | background: #26203a;
+tint  16 app/src/components/ZmanimView.css:22: #b8bec8   | color: #b8bec8;
+tint  18 app/src/components/ZmanimView.css:44: #d6d2e4   | color: #d6d2e4;
+tint  19 app/src/components/ZmanimView.css:75: #c9c5d8   | color: #c9c5d8;
+tint  21 app/src/components/ZmanimView.css:103: #9a96ab   | color: #9a96ab;
+tint  18 app/src/components/ZmanimView.css:111: #d6d2e4   | color: #d6d2e4;
+tint  14 app/src/components/ZmanimView.css:141: rgba(14, 10, 24, 0.86)   | background: rgba(14, 10, 24, 0.86);
+SAT  112 app/src/styles.css:29: #4fb3bf   | --signal: #4fb3bf; /* the logo's teal: only the "controlling" screen marker */
+tint  13 app/src/styles.css:41: #8f949c   | --brand-steel: #8f949c; /* the logo's grey blades */
+SAT  112 src-tauri/remote/vote.html:198: #4fb3bf   | <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+tint   6 src-tauri/remote/vote.html:199: #d6d8dc   | <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+tint  13 src-tauri/remote/vote.html:200: #8f949c   | <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />
+SAT  190 src-tauri/remote/vote.html:340: #2f80ed   | ['#2f80ed', '◆'],
+SAT  112 src-tauri/remote/index.html:21: #4fb3bf   | <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+tint   6 src-tauri/remote/index.html:22: #d6d8dc   | <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+tint  13 src-tauri/remote/index.html:23: #8f949c   | <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />
+SAT  112 src-tauri/remote/slides.html:20: #4fb3bf   | <path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="#4fb3bf" />
+tint   6 src-tauri/remote/slides.html:21: #d6d8dc   | <path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="#d6d8dc" />
+tint  13 src-tauri/remote/slides.html:22: #8f949c   | <path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="#8f949c" />

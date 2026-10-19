@@ -1,0 +1,20 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 900 } });
+  p.setDefaultTimeout(15000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.locator('.selector__name', { hasText: 'Monitor' }).click();
+  await p.getByRole('button', { name: /Teleprompter/ }).click();
+  await p.getByLabel('Script', { exact: true }).fill('Good evening, and welcome to our annual dinner.\n\nTonight we celebrate twenty years of learning, growth and friendship. Thank you all for being here with us.\n\nFirst, please join me in thanking our wonderful volunteers.');
+  await p.getByLabel('Script', { exact: true }).blur();
+  await p.getByText('Show on the stage monitor').click();
+  await p.getByRole('button', { name: '▶ Scroll' }).click();
+  await p.waitForTimeout(3000);
+  await p.screenshot({ path: 'pr1.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

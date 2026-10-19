@@ -1,0 +1,54 @@
+<<<<
+            SourceKind::Video { path, .. } => format!("video:{path}"),
+====
+            // A video plays as the show says (playing or paused, where, how
+            // fast, looping): a change opens it again from there.
+            SourceKind::Video { path, playback, .. } => {
+                let speed = src.speed.unwrap_or(1.0);
+                if playback.playing {
+                    format!(
+                        "video:{path}|play:{}:{}:{speed}:{}",
+                        playback.pos_s, playback.at, src.looping
+                    )
+                } else {
+                    format!("video:{path}|pause:{}", playback.pos_s)
+                }
+            }
+>>>>
+<<<<
+            SourceKind::Video { path, .. } | SourceKind::Image { path } => match &self.ffmpeg {
+                Some(ff) => Box::new(FfmpegFile::start(
+                    ff,
+                    &(self.resolve)(path),
+                    matches!(src.kind, SourceKind::Image { .. }),
+                )),
+====
+            SourceKind::Video { path, playback, .. } => match &self.ffmpeg {
+                Some(ff) => Box::new(FfmpegFile::play(
+                    ff,
+                    &(self.resolve)(path),
+                    false,
+                    Clip {
+                        start_s: lumora_engine::timing::source_position(src, now_ms()),
+                        speed: src.speed.unwrap_or(1.0).clamp(0.05, 16.0),
+                        playing: playback.playing,
+                        looping: src.looping,
+                    },
+                )),
+                None => Box::new(Unavailable::new(
+                    "FFmpeg is needed to play files in the unified engine.",
+                )),
+            },
+            SourceKind::Image { path } => match &self.ffmpeg {
+                Some(ff) => Box::new(FfmpegFile::start(ff, &(self.resolve)(path), true)),
+>>>>
+<<<<
+use crate::source::{
+    EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable, VideoSource,
+};
+====
+use crate::source::{
+    Clip, EncodedFrames, EncodedSource, FfmpegFile, SourceHealth, TestPattern, Unavailable,
+    VideoSource,
+};
+>>>>

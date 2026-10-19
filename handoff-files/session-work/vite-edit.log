@@ -1,0 +1,18 @@
+
+  VITE v8.3.1  ready in 963 ms
+
+  ➜  Local:   http://localhost:1421/
+  ➜  Network: use --host to expose
+8:07:06 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/app/src/views/ControlView.css
+8:08:55 PM [vite] (client) hmr update /src/ui/Editor.tsx, /src/ui/Dialogs.tsx
+8:09:58 PM [vite] (client) hmr update /src/ui/Dialogs.tsx
+8:09:58 PM [vite] (client) hmr update /src/App.tsx, /src/ui/Getting.tsx, /src/ui/Editor.tsx, /src/ui/Dialogs.tsx, /src/ui/ProjectPanel.tsx, /src/ui/Monitors.tsx, /src/ui/Inspector.tsx, /src/ui/Timeline.tsx
+8:09:59 PM [vite] (client) hmr update /src/App.tsx, /src/ui/Getting.tsx, /src/ui/Editor.tsx, /src/ui/Dialogs.tsx, /src/ui/ProjectPanel.tsx, /src/ui/Monitors.tsx, /src/ui/Inspector.tsx, /src/ui/Timeline.tsx, /src/ui/Mixer.tsx
+8:09:59 PM [vite] (client) hmr update /src/ui/Editor.tsx, /src/ui/ColorPage.tsx, /src/ui/ProjectPanel.tsx, /src/ui/Inspector.tsx, /src/ui/Timeline.tsx
+8:09:59 PM [vite] (client) hmr update /src/ui/Editor.tsx, /src/ui/Dialogs.tsx
+8:10:00 PM [vite] (client) hmr update /src/ui/Inspector.tsx
+8:10:00 PM [vite] (client) hmr update /src/ui/Timeline.tsx
+8:39:54 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/app/src/views/ControlView.css
+8:46:34 PM [vite] (client) hmr update /src/ui/Timeline.tsx
+8:46:34 PM [vite] (client) hmr update /src/ui/ProjectPanel.tsx
+9:01:14 PM [vite] (client) hmr update /@fs/home/user/Livestreamingapp/app/src/views/ControlView.css

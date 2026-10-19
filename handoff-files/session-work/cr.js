@@ -1,0 +1,34 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 950 } });
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Credits \/ thank-you/ }).click();
+  const names = Array.from({ length: 30 }, (_, i) => (i % 3 === 0 ? `Family ${i + 1}\tSponsor` : `Guest ${i + 1}`)).join('\n');
+  await p.getByLabel('Names').fill(names);
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click();
+  await p.locator('.tile__pick').nth(0).click();
+  await p.getByRole('button', { name: /^TAKE/ }).click();
+  await p.waitForTimeout(3000);
+  console.log('card:', await p.locator('.pk').textContent());
+  await p.locator('.mon--pgm').screenshot({ path: 'cr-roll.png' });
+  await p.getByRole('button', { name: 'Edit…' }).click();
+  await p.getByRole('button', { name: 'Wall of names' }).click();
+  await p.screenshot({ path: 'cr-editor.png' });
+  await p.getByRole('button', { name: 'Done' }).click();
+  await p.waitForTimeout(700);
+  await p.locator('.mon--pgm').screenshot({ path: 'cr-wall.png' });
+  await p.getByRole('button', { name: 'REC' }).click(); await p.waitForTimeout(1200);
+  await p.locator('.bc-btn').first().click(); await p.getByRole('button', { name: 'Stop recording' }).click(); await p.waitForTimeout(900);
+  const url = await p.locator('.bc-saved a').getAttribute('href');
+  await p.evaluate(async (url) => {
+    const v = document.createElement('video'); v.muted = true; v.src = url; v.style.cssText = 'position:fixed;left:0;top:0;width:960px;height:540px;z-index:99999';
+    document.body.appendChild(v); await new Promise((r) => (v.onloadeddata = r)); v.currentTime = 0.5; await new Promise((r) => (v.onseeked = r));
+  }, url);
+  await p.screenshot({ path: 'cr-rec.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

@@ -1,0 +1,35 @@
+74a75,106
+>   // Lumora Titler graphics (take them in and out with Overlay or Input on air).
+>   titlerfield: {
+>     name: 'Titler: set a field',
+>     cmd: 'titler',
+>     options: [
+>       { ...INPUT, label: 'Titler graphic (input number or name)' },
+>       { type: 'textinput', id: 'field', label: 'Field (its {{name}})', default: 'name' },
+>       { type: 'textinput', id: 'value', label: 'Value', default: '', useVariables: true },
+>     ],
+>   },
+>   titlerdo: {
+>     name: 'Titler: data row or timer',
+>     cmd: 'titler',
+>     options: [
+>       { ...INPUT, label: 'Titler graphic (input number or name)' },
+>       {
+>         type: 'dropdown',
+>         id: 'do',
+>         label: 'Do',
+>         default: 'next',
+>         choices: [
+>           { id: 'next', label: 'Next data row' },
+>           { id: 'previous', label: 'Previous data row' },
+>           { id: 'toggle', label: 'Timer start / stop' },
+>           { id: 'start', label: 'Timer start' },
+>           { id: 'stop', label: 'Timer stop' },
+>           { id: 'reset', label: 'Timer reset' },
+>         ],
+>       },
+>       { type: 'textinput', id: 'field', label: 'Timer field (empty: the first timer)', default: '' },
+>     ],
+>   },
+136a169
+>     else if (o.id === 'field' && actionId === 'titlerdo' && !String(v).trim()) continue;

@@ -1,0 +1,18 @@
+const {chromium}=require('playwright-core');
+(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+const p=await b.newPage({viewport:{width:1920,height:1020}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://localhost:1420/');await p.waitForTimeout(600);await p.getByRole('button',{name:'Skip for now'}).click();
+console.log('zoom',await p.evaluate(()=>document.documentElement.style.zoom));
+const add=async(kind,sw)=>{await p.getByRole('button',{name:'Add input'}).first().click();await p.getByRole('button',{name:new RegExp('^'+kind)}).click();if(sw)await p.getByRole('button',{name:sw}).click();await p.getByRole('dialog').getByRole('button',{name:'Add input'}).click();await p.waitForTimeout(100);};
+await add('Colour','#0b2545');await add('Test pattern');
+await p.locator('.tile__pick').nth(0).dblclick();await p.locator('.tile__pick').nth(1).click();
+const t=await p.locator('.tbar__track').boundingBox();await p.mouse.move(t.x+3,t.y+t.height/2);await p.mouse.down();await p.mouse.move(t.x+t.width*0.5,t.y+t.height/2,{steps:5});
+console.log('tbar at half drag:',await p.locator('.tbar__track').getAttribute('aria-valuenow'));
+await p.mouse.move(t.x+t.width+5,t.y+t.height/2,{steps:5});await p.mouse.up();await p.waitForTimeout(200);
+console.log('on air after full drag:',await p.locator('.mon--pgm .mon__head em').innerText());
+const over=await p.evaluate(()=>[...document.querySelectorAll('button')].filter(e=>e.offsetWidth>0&&e.scrollWidth>e.clientWidth+1&&!e.closest('.tile,.titlebar__menu')).map(e=>e.textContent.trim()).slice(0,10));
+console.log('cut-off buttons:',over);
+await p.screenshot({path:'shots/zoom-1920.png'});
+await p.getByRole('button',{name:'Settings'}).click();await p.getByRole('menuitem',{name:/Normal/}).click();await p.waitForTimeout(200);
+console.log('after Normal zoom:',await p.evaluate(()=>document.documentElement.style.zoom));
+console.log('errors',errs);await b.close();})();

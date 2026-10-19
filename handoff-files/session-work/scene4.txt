@@ -1,0 +1,52 @@
+<<<<
+        SourceKind::Slideshow(k) => {
+            let mut out = vec![full(Content::Color(color(&k.background)))];
+            let other = |id: &Option<SourceId>| {
+                id.as_ref()
+                    .and_then(|i| show.source(i))
+                    .filter(|s| is_video_kind(&s.kind))
+            };
+            if let Some(b) = other(&k.behind) {
+                out.extend(video(b));
+            }
+====
+        SourceKind::Slideshow(k) => {
+            let mut out = vec![full(Content::Color(color(&k.background)))];
+            let other = |id: &Option<SourceId>| {
+                id.as_ref()
+                    .and_then(|i| show.source(i))
+                    .filter(|s| is_video_kind(&s.kind))
+            };
+            if let Some(b) = k.behind.as_ref().and_then(|i| show.source(i)) {
+                out.extend(behind(b));
+            }
+>>>>
+<<<<
+            if let Some(b) = p
+                .look
+                .behind
+                .as_ref()
+                .and_then(|i| show.source(i))
+                .filter(|s| is_video_kind(&s.kind))
+            {
+                out.extend(video(b));
+            }
+====
+            if let Some(b) = p.look.behind.as_ref().and_then(|i| show.source(i)) {
+                out.extend(behind(b));
+            }
+>>>>
+<<<<
+    match &src.kind {
+        k if is_video_kind(k) => video(src),
+====
+    // What is behind slides or the Pesukim words, when the engine draws it
+    // (a camera, a file, a picture, a color; graphics behind are in the plane).
+    let behind = |b: &Source| match &b.kind {
+        k if is_video_kind(k) => video(b),
+        SourceKind::Color { color: c } => vec![full(Content::Color(color(c)))],
+        _ => Vec::new(),
+    };
+    match &src.kind {
+        k if is_video_kind(k) => video(src),
+>>>>

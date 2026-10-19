@@ -1,0 +1,168 @@
+SAT  190 app/src/components/TextView.tsx:76: #2f80ed   | const accent = s.accent ?? '#2f80ed';
+tint   6 app/src/components/BrowserView.tsx:43: #101216   | if (!info || blank) return <div style={{ ...fill, background: audience ? 'transparent' : '#101216' }} data-kin
+tint   6 app/src/components/BrowserView.tsx:49: #101216   | style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', colo
+tint   7 app/src/components/BrowserView.tsx:49: #a9abb0   | style={{ ...fill, background: '#101216', display: 'flex', alignItems: 'center', justifyContent: 'center', colo
+tint   8 app/src/components/BrowserView.tsx:85: #8e9096   | info && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#8e9096'
+SAT  112 app/src/components/Logo.tsx:16: #4fb3bf   | lumora: { blades: ['#4fb3bf', '#d6d8dc', '#8f949c'], light: '#e0473b' },
+tint   6 app/src/components/Logo.tsx:16: #d6d8dc   | lumora: { blades: ['#4fb3bf', '#d6d8dc', '#8f949c'], light: '#e0473b' },
+tint  13 app/src/components/Logo.tsx:16: #8f949c   | lumora: { blades: ['#4fb3bf', '#d6d8dc', '#8f949c'], light: '#e0473b' },
+tint  15 app/src/components/Logo3dView.tsx:107: #3a3f49   | ? 'repeating-conic-gradient(#3a3f49 0 25%, #2a2e36 0 50%) 0 0 / 24px 24px'
+tint  12 app/src/components/Logo3dView.tsx:107: #2a2e36   | ? 'repeating-conic-gradient(#3a3f49 0 25%, #2a2e36 0 50%) 0 0 / 24px 24px'
+tint   6 app/src/components/Logo3dView.tsx:109: #101216   | if (broken) return <div style={{ ...fill, background: audience ? 'transparent' : '#101216' }} />;
+tint   3 app/src/components/SafeBoundary.tsx:31: #e4e5e7   | <div style={{ margin: 'auto', padding: 24, textAlign: 'center', color: '#e4e5e7' }} data-crashed>
+tint   7 app/src/components/SafeBoundary.tsx:34: #a9abb0   | <p style={{ margin: 0, color: '#a9abb0' }}>Reloading it now. Your show is safe and nothing on the outputs chan
+SAT  192 app/src/components/SourceView.tsx:52: #00c0c0   | const PATTERN = 'linear-gradient(90deg,#c0c0c0 0 14.28%,#c0c000 0 28.57%,#00c0c0 0 42.85%,#00c000 0 57.14%,#c0
+SAT  192 app/src/components/SourceView.tsx:52: #0000c0   | const PATTERN = 'linear-gradient(90deg,#c0c0c0 0 14.28%,#c0c000 0 28.57%,#00c0c0 0 42.85%,#00c000 0 57.14%,#c0
+SAT  192 app/src/components/SourceView.tsx:150: #0000c0   | 'linear-gradient(90deg,#0000c0 0 14.28%,#131313 0 28.57%,#c000c0 0 42.85%,#131313 0 57.14%,#00c0c0 0 71.42%,#1
+SAT  192 app/src/components/SourceView.tsx:150: #00c0c0   | 'linear-gradient(90deg,#0000c0 0 14.28%,#131313 0 28.57%,#c000c0 0 42.85%,#131313 0 57.14%,#00c0c0 0 71.42%,#1
+tint   6 app/src/components/SourceView.tsx:226: #101216   | background: '#101216',
+tint   8 app/src/components/SourceView.tsx:230: #8e9096   | color: '#8e9096',
+tint   6 app/src/components/SourceView.tsx:402: #101216   | background: logo.background === 'colour' ? logo.bgColor : '#101216',
+tint  16 app/src/components/SourceView.tsx:418: #b8c0c8   | <b style={{ color: '#b8c0c8', transform: 'rotateY(-25deg)', fontSize: 14 }}>3D LOGO</b>
+tint   5 app/src/components/VisualsView.tsx:47: #e9ebee   | color: '#e9ebee',
+SAT  190 app/src/App.tsx:78: #2f80ed   | setSetLook(snapshot?.show.event.brand.accent ?? '#2f80ed', snapshot?.show.event.name ?? '');
+tint  35 app/src/visuals/sets.ts:74: #0b1a2e   | wall.addColorStop(0, '#0b1a2e');
+tint  15 app/src/visuals/sets.ts:75: #050b14   | wall.addColorStop(1, '#050b14');
+SAT   95 app/src/visuals/sets.ts:98: rgba(160,210,255,0.5)   | l.addColorStop(0, 'rgba(160,210,255,0.5)');
+SAT   95 app/src/visuals/sets.ts:99: rgba(160,210,255,0)   | l.addColorStop(1, 'rgba(160,210,255,0)');
+tint  34 app/src/visuals/sets.ts:112: #1d2b3f   | desk.addColorStop(0, '#1d2b3f');
+tint  19 app/src/visuals/sets.ts:113: #0a121d   | desk.addColorStop(1, '#0a121d');
+tint  12 app/src/visuals/sets.ts:127: #2a3036   | wall.addColorStop(0, '#2a3036');
+tint   8 app/src/visuals/sets.ts:128: #14181c   | wall.addColorStop(1, '#14181c');
+tint  14 app/src/visuals/sets.ts:139: #3a4048   | g.fillStyle = '#3a4048';
+tint   6 app/src/visuals/sets.ts:186: #e9ecef   | wall.addColorStop(0, '#e9ecef');
+tint  15 app/src/visuals/sets.ts:187: #b8bfc7   | wall.addColorStop(1, '#b8bfc7');
+tint  11 app/src/visuals/sets.ts:208: #2b2f36   | pod.addColorStop(0, '#2b2f36');
+tint  16 app/src/visuals/sets.ts:209: #454b55   | pod.addColorStop(0.5, '#454b55');
+tint  11 app/src/visuals/sets.ts:210: #2b2f36   | pod.addColorStop(1, '#2b2f36');
+tint  11 app/src/visuals/sets.ts:226: #04060f   | sky.addColorStop(0, '#04060f');
+tint  30 app/src/visuals/sets.ts:227: #151a33   | sky.addColorStop(1, '#151a33');
+SAT  105 app/src/visuals/sets.ts:239: rgba(150,190,255,0.5)   | g.fillStyle = rnd() > 0.7 ? 'rgba(255,214,140,0.7)' : 'rgba(150,190,255,0.5)';
+tint   4 app/src/visuals/sets.ts:255: #07080b   | bg.addColorStop(1, '#07080b');
+SAT  190 app/src/visuals/sets.ts:296: #2f80ed   | let look = { accent: '#2f80ed', title: '' };
+SAT  187 app/src/views/GreenScreenDialog.tsx:14: #0047bb   | { name: 'Blue screen', color: '#0047bb' },
+tint  16 app/src/views/LogoMaker.tsx:25: #b8c0c8   | ['#b8c0c8', 'Silver'],
+tint   3 app/src/views/LogoMaker.tsx:27: #e4e5e7   | ['#e4e5e7', 'White'],
+SAT  112 app/src/views/LogoMaker.tsx:28: #4fb3bf   | ['#4fb3bf', 'Teal'],
+SAT  135 app/src/views/LogoMaker.tsx:29: #4a6fd1   | ['#4a6fd1', 'Blue'],
+tint  17 app/src/views/LogoMaker.tsx:31: #2f3440   | ['#2f3440', 'Charcoal'],
+SAT  107 app/src/views/LogoMaker.tsx:32: #8a5cc7   | ['#8a5cc7', 'Purple'],
+tint   6 app/src/views/LogoMaker.tsx:35: #101216   | ['#101216', 'Black'],
+tint  47 app/src/views/LogoMaker.tsx:36: #1b2a4a   | ['#1b2a4a', 'Navy'],
+tint  25 app/src/views/LogoMaker.tsx:37: #27403f   | ['#27403f', 'Deep teal'],
+tint   3 app/src/views/LogoMaker.tsx:38: #e4e5e7   | ['#e4e5e7', 'White'],
+tint  11 app/src/views/AddInput.tsx:100: #2b2f36   | const SWATCHES = ['#000000', '#ffffff', '#2b2f36', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
+tint  58 app/src/views/AddInput.tsx:100: #0b2545   | const SWATCHES = ['#000000', '#ffffff', '#2b2f36', '#0b2545', '#3b1c32', '#c7372f', '#d4a017', '#2f8f4e'];
+tint  11 app/src/views/AddInput.tsx:145: #2b2f36   | const [color, setColor] = useState('#2b2f36');
+SAT  190 app/src/views/AddInput.tsx:250: #2f80ed   | return { name: n || 'Chat comments', kind: { type: 'comment', comment: null, changedAt: 0, place: 'low', accen
+SAT   96 app/src/views/PesukimEditor.tsx:27: #9fe0ff   | { name: 'Light blue', color: '#9fe0ff' },
+SAT  190 app/src/views/OutputView.tsx:27: #2f80ed   | setSetLook(snapshot?.show.event.brand.accent ?? '#2f80ed', snapshot?.show.event.name ?? '');
+tint  11 app/src/views/ControlView.tsx:173: #2b2f36   | kind: { type: 'countdown', background: like?.background ?? '#2b2f36', logo: like?.logo, timer },
+SAT  190 app/src/views/TextEditor.tsx:163: #2f80ed   | <input type="color" value={s.accent ?? '#2f80ed'} onChange={(e) => style({ accent: e.target.value })} aria-lab
+SAT  190 app/src/views/ChatPanel.tsx:153: #2f80ed   | onClick={() => onAdd({ name: 'Chat comments', kind: { type: 'comment', comment: null, changedAt: 0, place: 'lo
+tint  58 app/src/views/CountdownDialog.tsx:13: #0b2545   | const BACKGROUNDS = ['#0b2545', '#2b2f36', '#3b1c32', '#1a1d22', '#000000', '#5a1f1a'];
+tint  11 app/src/views/CountdownDialog.tsx:13: #2b2f36   | const BACKGROUNDS = ['#0b2545', '#2b2f36', '#3b1c32', '#1a1d22', '#000000', '#5a1f1a'];
+tint   8 app/src/views/CountdownDialog.tsx:13: #1a1d22   | const BACKGROUNDS = ['#0b2545', '#2b2f36', '#3b1c32', '#1a1d22', '#000000', '#5a1f1a'];
+tint  16 app/src/engine/logo3d.ts:10: #b8c0c8   | color: '#b8c0c8',
+tint   6 app/src/engine/logo3d.ts:21: #101216   | bgColor: '#101216',
+SAT  190 app/src/engine/brand.ts:22: #2f80ed   | accent: '#2f80ed',
+tint   6 app/src/engine/brand.ts:23: #101216   | boxColor: '#101216',
+SAT  194 app/src/engine/brand.ts:76: #00c2a8   | accent: '#00c2a8',
+tint  29 app/src/engine/brand.ts:77: #0d1b2a   | boxColor: '#0d1b2a',
+tint  22 app/src/engine/brand.ts:90: #dfe8f5   | look: { font: 'Heebo', design: 'glass', weight: 600, radius: 18, padding: 28, border: 0, subColor: '#dfe8f5', 
+tint   8 app/src/engine/brand.ts:113: #15181d   | textColor: '#15181d',
+SAT  190 app/src/engine/brand.ts:114: #2f80ed   | accent: '#2f80ed',
+tint  25 app/src/engine/brand.ts:120: #4a5563   | subColor: '#4a5563',
+tint  37 app/src/engine/brand.ts:141: #0b1530   | boxColor: '#0b1530',
+tint   6 app/src/engine/text.ts:19: #101216   | boxColor: '#101216',
+SAT  190 app/src/engine/text.ts:27: #2f80ed   | accent: '#2f80ed',
+SAT  190 app/src/engine/text.ts:56: #2f80ed   | export const ACCENTS = ['#2f80ed', '#e0473b', '#f2b233', '#27ae60', '#9b51e0', '#ffffff'];
+SAT  143 app/src/engine/text.ts:56: #9b51e0   | export const ACCENTS = ['#2f80ed', '#e0473b', '#f2b233', '#27ae60', '#9b51e0', '#ffffff'];
+tint  37 app/src/engine/pesukim.ts:39: #15213a   | background: '#15213a',
+SAT  114 app/src/engine/pesukim.ts:112: #1d3f8f   | { id: 'royal', name: 'Royal blue', top: '#1d3f8f', bottom: '#0b1d4a', edge: '#ffffff', frame: false, radius: 0
+SAT   63 app/src/engine/pesukim.ts:112: #0b1d4a   | { id: 'royal', name: 'Royal blue', top: '#1d3f8f', bottom: '#0b1d4a', edge: '#ffffff', frame: false, radius: 0
+SAT   63 app/src/engine/pesukim.ts:112: #0b1d4a   | { id: 'royal', name: 'Royal blue', top: '#1d3f8f', bottom: '#0b1d4a', edge: '#ffffff', frame: false, radius: 0
+tint  37 app/src/engine/pesukim.ts:122: #15213a   | badgeText: '#15213a',
+SAT   61 app/src/engine/pesukim.ts:124: #2a1552   | { id: 'night', name: 'Night sky', top: '#2a1552', bottom: '#0b0620', edge: '#b894ff', frame: false, radius: 1.
+tint  26 app/src/engine/pesukim.ts:124: #0b0620   | { id: 'night', name: 'Night sky', top: '#2a1552', bottom: '#0b0620', edge: '#b894ff', frame: false, radius: 1.
+SAT  107 app/src/engine/pesukim.ts:124: #b894ff   | { id: 'night', name: 'Night sky', top: '#2a1552', bottom: '#0b0620', edge: '#b894ff', frame: false, radius: 1.
+SAT  107 app/src/engine/pesukim.ts:124: #b894ff   | { id: 'night', name: 'Night sky', top: '#2a1552', bottom: '#0b0620', edge: '#b894ff', frame: false, radius: 1.
+tint  34 app/src/engine/pesukim.ts:124: #140a2c   | { id: 'night', name: 'Night sky', top: '#2a1552', bottom: '#0b0620', edge: '#b894ff', frame: false, radius: 1.
+tint  12 app/src/engine/pesukim.ts:139: rgba(8,12,20,0.9)   | top: 'rgba(8,12,20,0.9)',
+tint  12 app/src/engine/pesukim.ts:140: rgba(8,12,20,0.9)   | bottom: 'rgba(8,12,20,0.9)',
+tint  18 app/src/engine/pesukim.ts:145: #0a0f1c   | badgeText: '#0a0f1c',
+tint   6 app/src/engine/split.ts:63: #101216   | return applyLayout({ layout: 'sideBySide', boxes: [], gap: 2, background: '#101216', border: false, borderColo
+SAT  190 app/src/engine/demo.ts:831: #2f80ed   | c.accent = /^#[0-9a-fA-F]{6}$/.test(a.accent) ? a.accent : '#2f80ed';
+SAT  190 app/src/engine/score.ts:8: #2f80ed   | home: { name: 'Home', short: 'HOM', color: '#2f80ed', score: 0 },
+SAT  190 app/src/engine/score.ts:46: #2f80ed   | [sb.home, '#2f80ed'],
+tint  21 app/src/engine/credits.ts:14: #0b1020   | background: '#0b1020',
+SAT  190 app/src/engine/trivia.ts:11: #2f80ed   | { color: '#2f80ed', shape: '◆' },
+SAT  190 app/src/engine/graphic.ts:34: #2f80ed   | if (kind === 'box') return { ...base, text: '', color: '#2f80ed', x: 8, y: 72, w: 45, h: 12, radius: 1, opacit
+tint  11 app/src/engine/graphic.ts:46: #11151c   | { kind: 'box', x: 6, y: 73, w: 44, h: 9, color: '#11151c', opacity: 0.92, radius: 0.8, entrance: 'slideLeft' }
+SAT  190 app/src/engine/graphic.ts:49: #2f80ed   | { kind: 'box', x: 6, y: 82, w: 34, h: 6, color: '#2f80ed', opacity: 0.95, radius: 0.8, entrance: 'slideLeft', 
+tint  58 app/src/engine/graphic.ts:84: #0b2545   | { kind: 'box', x: 0, y: 86, w: 100, h: 9, color: '#0b2545', opacity: 0.92, entrance: 'rise' },
+tint  58 app/src/testevent/runner.ts:1028: #0b2545   | return { ...base, kind: { type: 'color', color: '#0b2545' } };
+tint  58 app/src/testevent/runner.ts:1056: #0b2545   | kind: { type: 'countdown', background: '#0b2545', timer: { ...defaultCountdown(), lengthMs: 4000, remainingMs:
+SAT  192 app/src/broadcast/compositor.ts:77: #00c0c0   | const BARS = ['#c0c0c0', '#c0c000', '#00c0c0', '#00c000', '#c000c0', '#c00000', '#0000c0'];
+SAT  192 app/src/broadcast/compositor.ts:77: #0000c0   | const BARS = ['#c0c0c0', '#c0c000', '#00c0c0', '#00c000', '#c000c0', '#c00000', '#0000c0'];
+SAT  192 app/src/broadcast/compositor.ts:78: #0000c0   | const LOW_BARS = ['#0000c0', '#131313', '#c000c0', '#131313', '#00c0c0', '#131313', '#c0c0c0'];
+SAT  192 app/src/broadcast/compositor.ts:78: #00c0c0   | const LOW_BARS = ['#0000c0', '#131313', '#c000c0', '#131313', '#00c0c0', '#131313', '#c0c0c0'];
+tint  23 app/src/broadcast/compositor.ts:368: #1c2433   | g.addColorStop(0, '#1c2433');
+tint   4 app/src/broadcast/compositor.ts:369: #07080b   | g.addColorStop(1, '#07080b');
+SAT  190 app/src/broadcast/compositor.ts:401: #2f80ed   | bg.addColorStop(0, '#2f80ed');
+SAT  169 app/src/broadcast/compositor.ts:402: #56a0ff   | bg.addColorStop(1, '#56a0ff');
+tint  16 app/src/broadcast/compositor.ts:418: #b8bec8   | ctx.fillStyle = '#b8bec8';
+tint  16 app/src/broadcast/compositor.ts:434: #b8bec8   | ctx.fillStyle = '#b8bec8';
+tint  23 app/src/broadcast/compositor.ts:446: #1c2433   | g.addColorStop(0, '#1c2433');
+tint   4 app/src/broadcast/compositor.ts:447: #07080b   | g.addColorStop(1, '#07080b');
+tint   9 app/src/broadcast/compositor.ts:456: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint  16 app/src/broadcast/compositor.ts:477: #b8bec8   | ctx.fillStyle = '#b8bec8';
+tint   9 app/src/broadcast/compositor.ts:505: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint   9 app/src/broadcast/compositor.ts:529: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint  16 app/src/broadcast/compositor.ts:540: #b8bec8   | ctx.fillStyle = '#b8bec8';
+tint   9 app/src/broadcast/compositor.ts:575: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint  17 app/src/broadcast/compositor.ts:696: #2b2233   | g.addColorStop(0, '#2b2233');
+tint   6 app/src/broadcast/compositor.ts:697: #0c0a10   | g.addColorStop(1, '#0c0a10');
+tint  21 app/src/broadcast/compositor.ts:730: #a79fb4   | ctx.fillStyle = '#a79fb4';
+tint  19 app/src/broadcast/compositor.ts:745: #cfc6d9   | ctx.fillStyle = '#cfc6d9';
+tint  46 app/src/broadcast/compositor.ts:763: #2a1f4d   | g.addColorStop(0, '#2a1f4d');
+tint  16 app/src/broadcast/compositor.ts:764: #0b0818   | g.addColorStop(1, '#0b0818');
+tint  32 app/src/broadcast/compositor.ts:784: #c8c0e0   | ctx.fillStyle = '#c8c0e0';
+SAT  163 app/src/broadcast/compositor.ts:820: #7b5cff   | gr.addColorStop(0, '#7b5cff');
+tint  32 app/src/broadcast/compositor.ts:836: #c8c0e0   | ctx.fillStyle = '#c8c0e0';
+tint  32 app/src/broadcast/compositor.ts:854: #c8c0e0   | ctx.fillStyle = '#c8c0e0';
+tint  39 app/src/broadcast/compositor.ts:905: #13233a   | g.addColorStop(0, '#13233a');
+tint   7 app/src/broadcast/compositor.ts:906: #04060b   | g.addColorStop(1, '#04060b');
+tint  12 app/src/broadcast/compositor.ts:915: rgba(8,12,20,0.88)   | ctx.fillStyle = 'rgba(8,12,20,0.88)';
+tint  11 app/src/broadcast/compositor.ts:947: #e8ecf3   | block(t.en, L.en, fitSize(t.en.length, L.width, L.en.h, L.lower ? 3.6 : 5.2), '400 SIZE Georgia, "Times New Ro
+tint  26 app/src/broadcast/compositor.ts:969: #26203a   | g.addColorStop(0, '#26203a');
+tint   5 app/src/broadcast/compositor.ts:970: #09080d   | g.addColorStop(1, '#09080d');
+tint  16 app/src/broadcast/compositor.ts:976: #b8bec8   | ctx.fillStyle = '#b8bec8';
+tint  14 app/src/broadcast/compositor.ts:987: rgba(14,10,24,0.86)   | ctx.fillStyle = 'rgba(14,10,24,0.86)';
+tint  18 app/src/broadcast/compositor.ts:1024: #d6d2e4   | ctx.fillStyle = '#d6d2e4';
+tint  18 app/src/broadcast/compositor.ts:1041: #d6d2e4   | ctx.fillStyle = '#d6d2e4';
+tint  19 app/src/broadcast/compositor.ts:1058: #c9c5d8   | ctx.fillStyle = '#c9c5d8';
+tint  21 app/src/broadcast/compositor.ts:1094: #9a96ab   | ctx.fillStyle = '#9a96ab';
+tint  20 app/src/broadcast/compositor.ts:1117: #8f96a3   | ctx.fillStyle = '#8f96a3';
+tint   9 app/src/broadcast/compositor.ts:1164: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint  24 app/src/broadcast/compositor.ts:1172: #9aa3b2   | ctx.fillStyle = sold ? '#ff5a4e' : '#9aa3b2';
+tint   9 app/src/broadcast/compositor.ts:1201: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint  24 app/src/broadcast/compositor.ts:1252: #9aa3b2   | ctx.fillStyle = '#9aa3b2';
+tint   6 app/src/broadcast/compositor.ts:1274: rgba(10,12,16,0.85)   | ctx.fillStyle = 'rgba(10,12,16,0.85)';
+SAT  190 app/src/broadcast/compositor.ts:1279: #2f80ed   | ctx.fillStyle = '#2f80ed';
+tint  20 app/src/broadcast/compositor.ts:1308: #8f96a3   | ctx.fillStyle = '#8f96a3';
+tint   6 app/src/broadcast/compositor.ts:1460: rgba(13,15,19,0.92)   | ctx.fillStyle = 'rgba(13,15,19,0.92)';
+tint   9 app/src/broadcast/compositor.ts:1479: #dfe3e8   | ctx.fillStyle = '#dfe3e8';
+tint  14 app/src/broadcast/compositor.ts:1485: #9aa0a8   | ctx.fillStyle = '#9aa0a8';
+tint  19 app/src/broadcast/compositor.ts:1567: #1d2430   | g.addColorStop(0, '#1d2430');
+tint   4 app/src/broadcast/compositor.ts:1568: #07080b   | g.addColorStop(1, '#07080b');
+tint   9 app/src/broadcast/compositor.ts:1572: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint   9 app/src/broadcast/compositor.ts:1594: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint   6 app/src/broadcast/compositor.ts:1627: rgba(13,15,19,0.92)   | ctx.fillStyle = 'rgba(13,15,19,0.92)';
+tint   9 app/src/broadcast/compositor.ts:1664: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint   9 app/src/broadcast/compositor.ts:1676: #c9ccd2   | ctx.fillStyle = '#c9ccd2';
+tint   6 app/src/broadcast/compositor.ts:1760: #101216   | ctx.fillStyle = '#101216';
+SAT  112 app/src/broadcast/compositor.ts:2171: rgba(79,179,191,0.55)   | ctx.shadowColor = final ? 'rgba(255,196,120,0.8)' : 'rgba(79,179,191,0.55)';
+SAT  112 app/src/broadcast/compositor.ts:2180: rgba(79,179,191,0.55)   | ctx.shadowColor = 'rgba(79,179,191,0.55)';
+SAT  190 app/src/broadcast/compositor.ts:2356: #2f80ed   | const accent = s.accent ?? '#2f80ed';
+tint   8 app/src/broadcast/compositor.ts:2922: rgba(6,8,14,0.78)   | ctx.fillStyle = 'rgba(6,8,14,0.78)';

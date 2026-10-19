@@ -1,0 +1,21 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await (await b.newContext({ viewport: { width: 1280, height: 760 } })).newPage();
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.waitForTimeout(1500);
+  await p.getByText('Skip for now').click().catch(() => {});
+  await p.getByRole('button', { name: '12 Pesukim', exact: true }).click();
+  await p.getByText('Add 12 Pesukim and put it in Next').click();
+  await p.waitForTimeout(800);
+  await p.screenshot({ path: 'pesui-1.png' });
+  await p.keyboard.press('Space'); await p.waitForTimeout(300);
+  await p.screenshot({ path: 'pesui-2.png' });
+  await p.locator('.pk__edit').click(); await p.waitForTimeout(500);
+  console.log(await p.evaluate(() => [JSON.stringify(document.querySelector('.pked').getBoundingClientRect()), JSON.stringify(document.querySelector('.modal').getBoundingClientRect()), (() => { const s = getComputedStyle(document.querySelector('.pked')); return [s.height, s.minHeight, s.width, s.boxSizing, s.padding, s.zoom, s.transform, document.querySelector('.pked').className]; })()]));
+  await p.screenshot({ path: 'pesui-3.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

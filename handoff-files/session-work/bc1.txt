@@ -1,0 +1,122 @@
+<<<<
+      try {
+        if (on) broadcaster.startReplay();
+        else broadcaster.stopReplay();
+        setReplayOn(broadcaster.replaying);
+      } catch (e) {
+        setStartError({ kind: 'record', message: e instanceof Error ? e.message : String(e) });
+      }
+    },
+    [broadcaster],
+  );
+====
+      const failed = (e: unknown) => {
+        setStartError({ kind: 'record', message: e instanceof Error ? e.message : String(e) });
+        setReplayOn(broadcaster.replaying);
+      };
+      try {
+        // With the unified engine it starts there (a moment later).
+        const started = on ? broadcaster.startReplay() : broadcaster.stopReplay();
+        setReplayOn(broadcaster.replaying);
+        if (started) started.catch(failed);
+      } catch (e) {
+        failed(e);
+      }
+    },
+    [broadcaster],
+  );
+  useEffect(() => {
+    if (!broadcaster) return;
+    broadcaster.onReplayLost = (message) => {
+      setReplayOn(broadcaster.replaying);
+      setStartError({ kind: 'record', message });
+    };
+    return () => {
+      broadcaster.onReplayLost = null;
+    };
+  }, [broadcaster]);
+  /** The last `seconds` as files in the replays folder (`<prefix>-<tag>-<n>`), named as `label` says. */
+  const replayItems = useCallback(
+    async (seconds: number, prefix: string, tag: string, label: (i: number) => string) => {
+      if (!broadcaster) return [];
+      // The unified engine keeps them on disk already.
+      if (broadcaster.replayInEngine) {
+        const files = await broadcaster.takeReplayFiles(seconds, `${prefix}-${tag}`);
+        return files.map((f, i) => ({ path: f.path, name: label(i), durationS: f.durationS }));
+      }
+      const pieces = await broadcaster.takeReplay(seconds);
+      return Promise.all(
+        pieces.map(async (p, i) => ({
+          path: await client.saveReplay(p.blob, `${prefix}-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
+          name: label(i),
+          durationS: (p.end - p.start) / 1000,
+        })),
+      );
+    },
+    [broadcaster, client],
+  );
+>>>>
+<<<<
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const pieces = await broadcaster.takeReplay(seconds);
+      if (!pieces.length) throw new Error('Nothing to replay yet: wait a few seconds.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await Promise.all(
+        pieces.map(async (p, i) => ({
+          path: await client.saveReplay(p.blob, `replay-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
+          name: `Replay ${stamp} (${i + 1})`,
+          durationS: (p.end - p.start) / 1000,
+        })),
+      );
+      const id = `replay-${tag}`;
+====
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await replayItems(seconds, 'replay', tag, (i) => `Replay ${stamp} (${i + 1})`);
+      if (!items.length) throw new Error('Nothing to replay yet: wait a few seconds.');
+      const id = `replay-${tag}`;
+>>>>
+<<<<
+      return id;
+    },
+    [broadcaster, client],
+  );
+====
+      return id;
+    },
+    [broadcaster, client, replayItems],
+  );
+>>>>
+<<<<
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const pieces = await broadcaster.takeReplay(seconds);
+      if (!pieces.length) throw new Error('Nothing to keep yet: wait a few seconds.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await Promise.all(
+        pieces.map(async (p, i) => ({
+          path: await client.saveReplay(p.blob, `highlight-${tag}-${i + 1}.${replayExt(p.blob.type)}`),
+          name: `Highlight ${stamp}`,
+          durationS: (p.end - p.start) / 1000,
+        })),
+      );
+====
+      if (!broadcaster?.replaying) throw new Error('Turn on instant replay first.');
+      const stamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const tag = Date.now().toString(36);
+      const items = await replayItems(seconds, 'highlight', tag, () => `Highlight ${stamp}`);
+      if (!items.length) throw new Error('Nothing to keep yet: wait a few seconds.');
+>>>>
+<<<<
+      return new Set(all.map((x) => x.name)).size;
+    },
+    [broadcaster, client],
+  );
+====
+      return new Set(all.map((x) => x.name)).size;
+    },
+    [broadcaster, client, replayItems],
+  );
+>>>>

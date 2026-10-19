@@ -1,0 +1,24 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
+  const ctx = await b.newContext({ viewport: { width: 1600, height: 900 }, permissions: ['microphone', 'camera'] });
+  const p = await ctx.newPage();
+  p.setDefaultTimeout(15000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Add input' }).first().click();
+  await p.getByRole('button', { name: /^Microphone/ }).first().click();
+  await p.waitForTimeout(800);
+  await p.screenshot({ path: 'mixadd.png' });
+  await p.getByRole('dialog').getByRole('button', { name: 'Add input' }).click({ timeout: 4000 });
+  await p.waitForTimeout(500);
+  await p.locator('.strip').first().screenshot({ path: 'strip.png' });
+  const more = p.locator('.strip__name').first();
+  await more.click();
+  await p.getByText('Noise gate').click();
+  await p.screenshot({ path: 'mix1.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

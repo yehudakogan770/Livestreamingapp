@@ -1,0 +1,112 @@
+<<<<
+    const overlays = overlaysOn(show.overlays, this.screen, now);
+    this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
+    if (now - this.lastSync > 150) {
+      this.lastSync = now;
+      for (const [id, m] of this.media) {
+        const src = show.sources.find((s) => s.id === id);
+        if (src && m.el instanceof HTMLVideoElement && src.kind.type === 'video') syncMedia(m.el, src, now);
+      }
+    }
+
+    for (const l of [...layers].sort((a, b) => Number(!!a.top) - Number(!!b.top))) {
+      const src = show.sources.find((s) => s.id === l.id);
+      if (!src || l.opacity <= 0) continue;
+      ctx.save();
+      ctx.globalAlpha = clamp01(l.opacity);
+====
+    const overlays = overlaysOn(show.overlays, this.screen, now);
+    this.safely('media', () => {
+      this.keep(show, [...layers.map((l) => l.id), sc.preview, ...behind, ...overlays.map(({ o }) => o.sourceId)]);
+      if (now - this.lastSync > 150) {
+        this.lastSync = now;
+        for (const [id, m] of this.media) {
+          const src = show.sources.find((s) => s.id === id);
+          if (src && m.el instanceof HTMLVideoElement && src.kind.type === 'video') syncMedia(m.el, src, now);
+        }
+      }
+    });
+
+    for (const l of [...layers].sort((a, b) => Number(!!a.top) - Number(!!b.top))) {
+      const src = show.sources.find((s) => s.id === l.id);
+      if (!src || l.opacity <= 0) continue;
+      this.safely(src.id, () => this.drawLayer(l, src, show, now, w, h));
+    }
+    this.overlay('#000', black, w, h);
+    this.overlay('#fff', white, w, h);
+    for (const { o } of overlays) this.safely(`overlay:${o.sourceId}`, () => this.drawOverlay(o, show, now, w, h));
+    this.safely('stinger', () => this.drawSting(stinger, now, w, h));
+    // Blank and PANIC always end up on top, whatever happened above.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
+    ctx.globalAlpha = 1;
+    this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), w, h);
+    const panic = fadeAmount(show.panic, show.panicChangedAt, now);
+    if (panic > 0) {
+      ctx.save();
+      ctx.globalAlpha = panic;
+      this.safeScreen(show.event, 'panic', w, h);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Inputs that failed to draw (each is said once). */
+  private readonly broken = new Set<string>();
+
+  /**
+   * Draw one part of the picture. If it fails, it is left out and the rest
+   * (overlays, blank, PANIC) is still drawn: the output never freezes or
+   * keeps a half-applied clip or fade from it.
+   */
+  private safely(what: string, draw: () => void) {
+    const ctx = this.ctx;
+    const depth = this.saves;
+    ctx.save();
+    try {
+      draw();
+    } catch (e) {
+      if (!this.broken.has(what) && this.broken.size < 100) {
+        this.broken.add(what);
+        console.error(`Lumora: could not draw ${what}`, e);
+      }
+    } finally {
+      ctx.restore();
+      this.saves = depth;
+    }
+  }
+
+  private saves = 0;
+
+  /** One layer of the picture (a source with its transition's fade, shape, move and blur). */
+  private drawLayer(l: ReturnType<typeof programLayers>['layers'][number], src: Source, show: Show, now: number, w: number, h: number) {
+    const ctx = this.ctx;
+    {
+      ctx.globalAlpha = clamp01(l.opacity);
+>>>>
+<<<<
+        main.drawImage(off, 0, 0);
+      } else this.drawSource(src, show.event, now, w, h);
+      ctx.restore();
+    }
+    this.overlay('#000', black, w, h);
+    this.overlay('#fff', white, w, h);
+    for (const { o } of overlays) this.drawOverlay(o, show, now, w, h);
+    this.drawSting(stinger, now, w, h);
+    this.overlay('#000', fadeAmount(sc.blank, sc.blankChangedAt, now, sc.blankFadeMs), w, h);
+    const panic = fadeAmount(show.panic, show.panicChangedAt, now);
+    if (panic > 0) {
+      ctx.save();
+      ctx.globalAlpha = panic;
+      this.safeScreen(show.event, 'panic', w, h);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+====
+        main.drawImage(off, 0, 0);
+      } else this.drawSource(src, show.event, now, w, h);
+    }
+  }
+>>>>

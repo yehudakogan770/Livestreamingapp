@@ -1,0 +1,73 @@
+<<<<
+        SourceKind::Split(_) | SourceKind::Microphone { .. } => Vec::new(),
+        _ => vec![full(Content::Graphic(src.id.clone()))],
+    }
+}
+====
+        SourceKind::Split(_) | SourceKind::Microphone { .. } => Vec::new(),
+        // Slides with a camera or video behind them (or one as a slide):
+        // the engine draws the background color and the pictures, the
+        // overlay renderer the slides over them (its plane is see-through
+        // where the pictures are).
+        SourceKind::Slideshow(k) => {
+            let mut out = vec![full(Content::Color(color(&k.background)))];
+            let other = |id: &Option<SourceId>| {
+                id.as_ref()
+                    .and_then(|i| show.source(i))
+                    .filter(|s| is_video_kind(&s.kind))
+            };
+            if let Some(b) = other(&k.behind) {
+                out.extend(video(b));
+            }
+            if let (false, Some(Slide::Input { source_id, .. })) = (k.black, k.slides.get(k.current))
+            {
+                if let Some(inner) = other(&Some(source_id.clone())) {
+                    let [fx0, fy0, fx1, fy1] = frame;
+                    let (fw, fh) = (fx1 - fx0, fy1 - fy0);
+                    let a = &k.area;
+                    let r = [
+                        fx0 + fw * a.x / 100.0,
+                        fy0 + fh * a.y / 100.0,
+                        fx0 + fw * (a.x + a.w) / 100.0,
+                        fy0 + fh * (a.y + a.h) / 100.0,
+                    ];
+                    out.push(Picture {
+                        content: Content::Video(inner.id.clone()),
+                        placement: placement_of(inner, r),
+                    });
+                }
+            }
+            out.push(full(Content::Graphic(src.id.clone())));
+            out
+        }
+        // The 12 Pesukim with a camera or video behind the words: the same.
+        SourceKind::Pesukim(p) => {
+            let mut out = Vec::new();
+            if p.look.mode != PesukimMode::Bar {
+                out.push(full(Content::Color(color(&p.look.background))));
+            }
+            if let Some(b) = p
+                .look
+                .behind
+                .as_ref()
+                .and_then(|i| show.source(i))
+                .filter(|s| is_video_kind(&s.kind))
+            {
+                out.extend(video(b));
+            }
+            out.push(full(Content::Graphic(src.id.clone())));
+            out
+        }
+        _ => vec![full(Content::Graphic(src.id.clone()))],
+    }
+}
+>>>>
+<<<<
+use lumora_engine::{
+    overlays::{Overlay, OverlayAnim},
+====
+use lumora_engine::{
+    overlays::{Overlay, OverlayAnim},
+    pesukim::PesukimMode,
+    slideshow::Slide,
+>>>>

@@ -1,0 +1,16 @@
+editor/app/src/export/audioplan.ts
+editor/app/src/export/exporter.ts
+editor/app/src/export/ffargs.ts
+editor/app/src/export/voice.test.ts
+editor/app/src/model/effects.ts
+editor/app/src/model/magnetic.test.ts
+editor/app/src/model/nodes.test.ts
+editor/app/src/model/nodes.ts
+editor/app/src/player/hdrcopy.ts
+editor/app/src/render/compositor.ts
+editor/app/src/render/hdr.ts
+editor/app/src/speech/voices.test.ts
+editor/app/src/speech/voices.ts
+editor/app/src/ui/CompositePage.tsx
+editor/app/src/ui/Dialogs.tsx
+editor/app/src/ui/Speech.tsx

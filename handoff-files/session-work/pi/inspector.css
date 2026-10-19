@@ -1,0 +1,167 @@
+/* Matches the Stream Deck app's own settings panel: dark, compact, a label column and a field column. */
+:root {
+  --bg: #2d2d2d;
+  --field: #3d3d3d;
+  --field-hover: #454545;
+  --border: #4a4a4a;
+  --text: #d8d8d8;
+  --muted: #9a9a9a;
+  --accent: #4b8bf5;
+  --ok: #3fb950;
+  --bad: #e5534b;
+  --warn: #d29922;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    9pt -apple-system,
+    'Segoe UI',
+    Roboto,
+    Arial,
+    sans-serif;
+}
+
+body {
+  padding: 4px 12px 12px 0;
+}
+
+.group + .group {
+  margin-top: 6px;
+  border-top: 1px solid var(--border);
+  padding-top: 4px;
+}
+
+h2 {
+  margin: 6px 0 6px 12px;
+  font-size: 9pt;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  margin: 2px 0;
+}
+
+.name {
+  flex: 0 0 34%;
+  padding: 0 10px 0 12px;
+  text-align: right;
+  color: var(--text);
+}
+
+.row > input,
+.row > select,
+.row > .status,
+.row > .check {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+input[type='text'],
+select {
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--field);
+  color: var(--text);
+  font: inherit;
+  outline: none;
+}
+
+input[type='text']:hover,
+select:hover {
+  background: var(--field-hover);
+}
+
+input[type='text']:focus,
+select:focus {
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+input::placeholder {
+  color: var(--muted);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  flex: 1 1 auto;
+  padding-left: 14px;
+  position: relative;
+  color: var(--muted);
+}
+
+.badge::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  margin-top: -3.5px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.badge[data-state='online'] {
+  color: var(--text);
+}
+.badge[data-state='online']::before {
+  background: var(--ok);
+}
+.badge[data-state='offline']::before,
+.badge[data-state='wrongPin']::before {
+  background: var(--bad);
+}
+.badge[data-state='connecting']::before {
+  background: var(--warn);
+}
+
+button {
+  height: 26px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 3px;
+  background: var(--field);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--field-hover);
+}
+
+.note {
+  margin: 6px 0 4px 12px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.note:empty {
+  display: none;
+}

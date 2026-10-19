@@ -1,0 +1,15 @@
+    Blocking waiting for file lock on build directory
+    Checking lumora-seats v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-ac09cd1932df14aee/crates/seats)
+   Compiling lumora v0.1.0 (/home/user/Livestreamingapp/.claude/worktrees/agent-ac09cd1932df14aee/src-tauri)
+error: very complex type used. Consider factoring parts into `type` definitions
+   --> src-tauri/src/remote.rs:404:12
+    |
+404 |     words: Mutex<HashMap<(String, u32), HashMap<String, (u8, u64)>>>,
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#type_complexity
+    = note: `-D clippy::type-complexity` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::type_complexity)]`
+
+error: could not compile `lumora` (lib) due to 1 previous error
+exit 101

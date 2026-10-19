@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; }
+  body {
+    font-family: 'Inter', 'Segoe UI', 'DejaVu Sans', sans-serif;
+    background: radial-gradient(120% 90% at 85% 10%, #3a2a14 0%, #17130e 45%, #0d0c0b 100%);
+    color: #f5efe6;
+    position: relative;
+  }
+  .glow { position: absolute; right: -200px; top: -260px; width: 900px; height: 900px; border-radius: 50%; background: radial-gradient(circle, rgba(232, 170, 70, 0.35), rgba(232, 170, 70, 0) 65%); }
+  .top { position: absolute; left: 130px; top: 100px; right: 130px; display: flex; justify-content: space-between; align-items: center; font-size: 26px; letter-spacing: 0.16em; text-transform: uppercase; color: #c9b9a2; font-weight: 600; }
+  .brand { display: flex; align-items: center; gap: 18px; color: #f5efe6; letter-spacing: 0.1em; }
+  .brand i { width: 0; height: 0; border-left: 17px solid transparent; border-right: 17px solid transparent; border-bottom: 34px solid #e8aa46; display: inline-block; }
+  h1 { position: absolute; left: 126px; top: 210px; margin: 0; font-size: 150px; line-height: 1; font-weight: 800; letter-spacing: -0.03em; }
+  h1 span { color: #e8aa46; }
+  .sub { position: absolute; left: 132px; top: 390px; font-size: 38px; color: #c9b9a2; }
+  .list { position: absolute; left: 130px; right: 130px; bottom: 110px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 36px; }
+  .it { border-top: 4px solid #5a4a36; padding-top: 24px; }
+  .it b { display: block; font-size: 64px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .it span { display: block; margin-top: 8px; font-size: 32px; font-weight: 600; }
+  .it em { display: block; margin-top: 6px; font-style: normal; font-size: 24px; color: #a8998a; }
+  .it.now { border-color: #e8aa46; }
+  .it.now b { color: #e8aa46; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="top"><span class="brand"><i></i>Northwind Live 2026</span><span>Arena · Main stage</span></div>
+  <h1>Tonight<span>.</span></h1>
+  <p class="sub">One night, one stage. Welcome to Northwind Live.</p>
+  <div class="list">
+    <div class="it"><b>18:30</b><span>Doors</span><em>Arena opens</em></div>
+    <div class="it"><b>19:30</b><span>Opening</span><em>Lights down</em></div>
+    <div class="it now"><b>19:45</b><span>Marco Reyes</span><em>Host</em></div>
+    <div class="it"><b>20:00</b><span>Main set</span><em>Full band</em></div>
+    <div class="it"><b>22:15</b><span>Encore</span><em>Until late</em></div>
+  </div>
+</body>
+</html>

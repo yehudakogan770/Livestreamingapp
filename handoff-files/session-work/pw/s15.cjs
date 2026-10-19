@@ -1,0 +1,25 @@
+const { start } = require('./lib.cjs');
+(async () => {
+  const url = process.argv[2] || 'http://localhost:1532/titler/';
+  const { b, p, shot, flush } = await start(url, { width: 1600, height: 950 });
+  await shot('v0-home');
+  await p.click('text=Scoreboard bar');
+  await p.waitForTimeout(600);
+  await p.click('.tt-timeline .tt-name >> nth=0');
+  await p.waitForTimeout(300);
+  await shot('v1-main');
+  await p.click('.tt-workspace .tt-menubtn');
+  await p.click('text=Animate');
+  await p.waitForTimeout(300);
+  await shot('v2-animate');
+  await p.click('.tt-workspace .tt-menubtn');
+  await p.click('.tt-menu-pop >> text=Data');
+  await p.waitForTimeout(300);
+  await shot('v3-data');
+  await p.click('.tt-workspace .tt-menubtn');
+  await p.click('text=Operator');
+  await p.waitForTimeout(300);
+  await shot('v4-operator');
+  flush('ws');
+  await b.close();
+})();

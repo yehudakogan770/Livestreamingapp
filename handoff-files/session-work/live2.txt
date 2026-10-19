@@ -1,0 +1,63 @@
+<<<<
+/// The screens the engine draws in its own windows (the stage monitor is all words: still a WebView).
+fn native_screen(screen: ScreenId) -> bool {
+    cfg!(windows) && matches!(screen, ScreenId::Live | ScreenId::Back)
+}
+====
+/// The screens the engine draws in its own windows: Live and Back, and the
+/// stage monitor (its words are the Live Screen's overlay renderer's plane `mon`).
+fn native_screen(screen: ScreenId) -> bool {
+    cfg!(windows)
+}
+>>>>
+<<<<
+/// The engine's multiview layout while it shows the multiview (for its
+/// words, drawn by the Live Screen's overlay renderer); None otherwise.
+====
+/// What a screen's overlay renderer is asked to draw besides its screen's graphics.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RendererWants {
+    /// The multiview's words (the Live Screen's renderer, while the engine shows it).
+    pub multiview: Option<live_engine::multiview::Layout>,
+    /// The Next preview's graphics (while the control window or the multiview shows it).
+    pub next: bool,
+    /// The stage monitor's words (the Live Screen's renderer, while the engine shows the Monitor).
+    pub monitor: bool,
+}
+
+/// Next previews looked at within this long count as seen.
+const NEXT_SEEN: std::time::Duration = std::time::Duration::from_millis(2500);
+
+/// What `screen`'s overlay renderer draws now besides the screen's own graphics.
+#[tauri::command]
+pub fn live_engine_renderer_wants(screen: ScreenId, live: State<'_, Live>) -> RendererWants {
+    let Some(r) = live.runner() else {
+        return RendererWants {
+            multiview: None,
+            next: false,
+            monitor: false,
+        };
+    };
+    let multiview = live.multiview_open().then(|| r.multiview_layout()).flatten();
+    let in_multiview = multiview.as_ref().is_some_and(|l| {
+        l.tiles.iter().any(|t| {
+            matches!(&t.content, live_engine::multiview::TileContent::Next(s) if *s == screen)
+        })
+    });
+    let next = in_multiview
+        || r.seen_recently(
+            &live_engine::engine::PreviewId::Next(screen).key(),
+            NEXT_SEEN,
+        );
+    let live_screen = screen == ScreenId::Live;
+    RendererWants {
+        multiview: multiview.filter(|_| live_screen),
+        next,
+        monitor: live_screen && live.open_screens().contains(&ScreenId::Monitor),
+    }
+}
+
+/// The engine's multiview layout while it shows the multiview (for its
+/// words, drawn by the Live Screen's overlay renderer); None otherwise.
+>>>>

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+/* lumora-polish:start */
+*{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+::selection{background:#243039;color:#ffffff}
+button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
+button:hover,a[href]:hover{filter:brightness(1.14)}
+button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #4fb3bf;outline-offset:1px}
+input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:#4fb3bf !important;box-shadow:0 0 0 3px rgba(79,179,191,.18)}
+input::placeholder,textarea::placeholder{color:#6f737b}
+select{appearance:none;-webkit-appearance:none;padding-right:26px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a9abb0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 9px center !important;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f333b;border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:#3d424c}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:30px !important;height:17px !important;margin:0;flex-shrink:0;border-radius:9px;border:1px solid #3a3f48;background:#262a31;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#aeb2ba;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:transform .15s ease,background-color .15s ease}
+input[type=checkbox]:checked{background:#2a7f89;border-color:#4fb3bf}
+input[type=checkbox]:checked::before{transform:translateX(13px);background:#ffffff}
+input[type=range]:not(.vrange){appearance:none;-webkit-appearance:none;height:20px;margin:0;cursor:pointer;border-radius:2px;background:linear-gradient(to right,#4fb3bf 0 var(--fill,0%),#0c0d10 var(--fill,0%) 100%) center / 100% 4px no-repeat}
+input[type=range]:not(.vrange)::-webkit-slider-runnable-track{height:20px;background:transparent;border-radius:2px}
+input[type=range]:not(.vrange)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:20px;border-radius:3px;border:1px solid #0c0d10;background:linear-gradient(to right,transparent 4.5px,#6f737c 4.5px 5.5px,transparent 5.5px),linear-gradient(#f3f4f6,#c3c6cd);box-shadow:0 1px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+input[type=range]:not(.vrange):hover::-webkit-slider-thumb{background:linear-gradient(to right,transparent 4.5px,#4fb3bf 4.5px 5.5px,transparent 5.5px),linear-gradient(#ffffff,#d3d6dc)}
+input[type=range]:disabled{opacity:.35;cursor:default}
+/* lumora-polish:end */
+
+button{cursor:pointer;background-image:none;box-shadow:none}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button,select,input,textarea{font-family:inherit}
+input[type=checkbox],input[type=radio],input[type=range]{accent-color:#4fb3bf}
+</style>
+</helmet>
+<div style="width: 1000px; height: 740px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Settings</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+  <div style="flex-grow: 1; display: flex; min-height: 0;">
+    <div style="width: 230px; flex-shrink: 0; border-right: 1px solid #2c3038; padding: 14px 10px; display: flex; flex-direction: column; gap: 2px; box-sizing: border-box; background-color: #1a1d22;">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="7">
+        <button onClick="{{n.pick}}" style="{{n.style}}">{{n.name}}</button>
+      </sc-for>
+    </div>
+    <div style="flex-grow: 1; min-width: 0; padding: 22px 26px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box; overflow: hidden;">
+
+      <sc-if value="{{is.mode}}" hint-placeholder-val="{{true}}">
+        <span style="font-size: 17px; font-weight: 600;">Mode &amp; layout</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+          <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+            <button onClick="{{m.pick}}" style="{{m.style}}">
+              <span style="font-size: 16px; font-weight: 600;">{{m.name}}</span>
+              <span style="font-size: 13px; color: #a9abb0; line-height: 1.45;">{{m.desc}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Don't cover the Windows taskbar (recommended)</label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox"> Start in full screen (F11 switches any time)</label>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">Layout <select style="height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>Standard (ready-made)</option><option>Custom layout 1</option></select><button style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Customize layout…</button></div>
+      </sc-if>
+
+      <sc-if value="{{is.screens}}" hint-placeholder-val="{{false}}">
+        <span style="font-size: 17px; font-weight: 600;">Screens &amp; displays</span>
+        <span style="font-size: 13px; color: #a9abb0;">Set this once. Lumora remembers which physical screen is which for every event.</span>
+        <sc-for list="{{screenRows}}" as="r" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 6px; background-color: #2a2e36; border: 1px solid #2c3038;">
+            <span style="width: 130px; font-size: 14px; font-weight: 600;">{{r.name}}</span>
+            <select style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>{{r.display}}</option></select>
+            <button style="height: 34px; padding: 0 12px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Identify</button>
+          </div>
+        </sc-for>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Panic: Monitor dims instead of going black</label>
+      </sc-if>
+
+      <sc-if value="{{is.quality}}" hint-placeholder-val="{{false}}">
+        <span style="font-size: 17px; font-weight: 600;">Video quality</span>
+        <span style="font-size: 13px; color: #a9abb0;">Highest quality by default. Lower it only if the computer struggles.</span>
+        <sc-for list="{{qualityRows}}" as="q" hint-placeholder-count="4">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="width: 180px; font-size: 14px;">{{q.name}}</span>
+            <select style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>{{q.value}}</option></select>
+          </div>
+        </sc-for>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Use the graphics card for encoding (NVIDIA / AMD / Intel)</label>
+      </sc-if>
+
+      <sc-if value="{{is.devices}}" hint-placeholder-val="{{false}}">
+        <span style="font-size: 17px; font-weight: 600;">Devices &amp; security</span>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> New phones/tablets must be approved on this computer</label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Require a 6-digit PIN to connect</label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Screens keep playing if a controller disconnects</label>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">Network <select style="height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>Lumora router (offline, recommended)</option><option>This PC's hotspot</option><option>Venue network</option></select></div>
+        <a href="Devices.dc.html" style="align-self: flex-start; font-size: 14px;">Manage connected devices →</a>
+      </sc-if>
+
+      <sc-if value="{{is.recording}}" hint-placeholder-val="{{false}}">
+        <span style="font-size: 17px; font-weight: 600;">Recording &amp; export</span>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Automatically record every event</label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Ask after the event: keep or delete</label>
+        <sc-for list="{{recRows}}" as="q" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="width: 180px; font-size: 14px;">{{q.name}}</span>
+            <select style="flex-grow: 1; height: 34px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; padding: 0 8px;"><option>{{q.value}}</option></select>
+          </div>
+        </sc-for>
+      </sc-if>
+
+      <sc-if value="{{is.sync}}" hint-placeholder-val="{{false}}">
+        <span style="font-size: 17px; font-weight: 600;">Account, sync &amp; updates</span>
+        <span style="font-size: 13px; color: #a9abb0;">Everything works offline. When online, presets sync and updates install.</span>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 6px; background-color: #2a2e36; border: 1px solid #2c3038;">
+          <div style="width: 40px; height: 40px; border-radius: 6px; background-color: #243039; color: #4fb3bf; display: flex; align-items: center; justify-content: center; font-weight: 600;">Y</div>
+          <div style="display: flex; flex-direction: column; flex-grow: 1;"><span style="font-size: 14px; font-weight: 600;">Signed in</span><span style="font-size: 12px; color: #8e9096;">Presets &amp; settings sync to your other computers</span></div>
+          <span style="font-size: 12px; color: #6fe0a8;">Synced 2 min ago</span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Install updates automatically when online</label>
+        <label style="display: flex; align-items: center; gap: 10px; font-size: 14px;"><input type="checkbox" checked="{{true}}"> Never update during an event (wait until it ends)</label>
+        <div style="display: flex; gap: 8px;"><button style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Export presets &amp; settings…</button><button style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Import…</button></div>
+        <span style="font-family: Consolas, monospace; font-size: 12px; color: #8e9096;">Lumora 1.0.0 · up to date</span>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":740}}'>
+class Component extends DCLogic {
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidUpdate() { this.__fill(); }
+  componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
+  __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
+  constructor(props) { super(props); this.state = { sec: 'mode', mode: 'simple' }; }
+  renderVals() {
+    const st = this.state;
+    const NAV = [['mode', 'Mode & layout'], ['screens', 'Screens & displays'], ['quality', 'Video quality'], ['devices', 'Devices & security'], ['recording', 'Recording & export'], ['sync', 'Account, sync & updates']];
+    const nav = NAV.map(([id, name]) => {
+      const on = st.sec === id;
+      return { name, pick: () => this.setState({ sec: id }), style: `height: 38px; padding: 0 12px; border-radius: 6px; border: 0; background-color: ${on ? '#243039' : 'transparent'}; color: ${on ? '#ffffff' : '#d4d5d8'}; font-size: 13px; font-weight: ${on ? 600 : 400}; text-align: left;` };
+    });
+    const modes = [
+      ['simple', 'Simple mode', 'Big buttons, only the essentials: presets, preview/live, take, blank. Great for volunteers.'],
+      ['advanced', 'Advanced mode', 'Everything: mixer, per-source colour and audio, green screen, cues, custom buttons, shortcuts.']
+    ].map(([id, name, desc]) => {
+      const on = st.mode === id;
+      return { name, desc, pick: () => this.setState({ mode: id }), style: `padding: 16px; border-radius: 6px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background-color: ${on ? '#243039' : '#2a2e36'}; color: #e4e5e7; display: flex; flex-direction: column; gap: 6px; text-align: left;` };
+    });
+    return {
+      nav, modes,
+      is: Object.fromEntries(NAV.map(([id]) => [id, st.sec === id])),
+      screenRows: [{ name: 'Live Screen', display: 'Display 2 · 1920×1080 · HDMI' }, { name: 'Back Screen', display: 'Display 3 · 1920×1080 · Projector' }, { name: 'Monitor', display: 'Display 4 · 1280×720 · Stage TV' }],
+      qualityRows: [{ name: 'Output resolution', value: '1920×1080 (Full HD)' }, { name: 'Frame rate', value: '60 fps' }, { name: 'Stream bitrate', value: '6,000 kbps (auto-adjust)' }, { name: 'Camera input', value: 'Best the camera offers' }],
+      recRows: [{ name: 'Format', value: 'MP4 (H.264)' }, { name: 'Quality', value: 'High · 1080p60' }, { name: 'Save to', value: 'Videos\\Lumora Recordings' }]
+    };
+  }
+}
+</script>
+</body>
+</html>

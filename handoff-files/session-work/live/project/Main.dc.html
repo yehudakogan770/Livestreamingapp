@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Main event screen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600&amp;display=swap" rel="stylesheet">
+<style>
+/* lumora-polish:start */
+*{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+::selection{background:#243039;color:#ffffff}
+button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
+button:hover,a[href]:hover{filter:brightness(1.14)}
+button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #4fb3bf;outline-offset:1px}
+input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:#4fb3bf !important;box-shadow:0 0 0 3px rgba(79,179,191,.18)}
+input::placeholder,textarea::placeholder{color:#6f737b}
+select{appearance:none;-webkit-appearance:none;padding-right:26px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a9abb0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 9px center !important;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f333b;border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:#3d424c}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:30px !important;height:17px !important;margin:0;flex-shrink:0;border-radius:9px;border:1px solid #3a3f48;background:#262a31;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#aeb2ba;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:transform .15s ease,background-color .15s ease}
+input[type=checkbox]:checked{background:#2a7f89;border-color:#4fb3bf}
+input[type=checkbox]:checked::before{transform:translateX(13px);background:#ffffff}
+input[type=range]:not(.vrange){appearance:none;-webkit-appearance:none;height:20px;margin:0;cursor:pointer;border-radius:2px;background:linear-gradient(to right,#4fb3bf 0 var(--fill,0%),#0c0d10 var(--fill,0%) 100%) center / 100% 4px no-repeat}
+input[type=range]:not(.vrange)::-webkit-slider-runnable-track{height:20px;background:transparent;border-radius:2px}
+input[type=range]:not(.vrange)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:20px;border-radius:3px;border:1px solid #0c0d10;background:linear-gradient(to right,transparent 4.5px,#6f737c 4.5px 5.5px,transparent 5.5px),linear-gradient(#f3f4f6,#c3c6cd);box-shadow:0 1px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+input[type=range]:not(.vrange):hover::-webkit-slider-thumb{background:linear-gradient(to right,transparent 4.5px,#4fb3bf 4.5px 5.5px,transparent 5.5px),linear-gradient(#ffffff,#d3d6dc)}
+input[type=range]:disabled{opacity:.35;cursor:default}
+/* lumora-polish:end */
+
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+input[type=checkbox]{accent-color:#4fb3bf}
+.vrange{writing-mode:vertical-lr;direction:rtl;position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:ns-resize}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #15171b; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; position: relative; overflow: hidden;">
+
+  <!-- ===== Menu bar ===== -->
+  <div style="height: 34px; flex-shrink: 0; display: flex; align-items: center; gap: 2px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <div style="display: flex; align-items: center; gap: 8px; padding-right: 14px;">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style="flex-shrink: 0; transition: none;"><path d="M25.65 3.06 A21 21 0 0 1 42.95 33.04 L29.01 33.23 A10.5 10.5 0 0 0 30.82 16.02 Z" fill="{{logo.c0}}" opacity="{{logo.o0}}"></path><path d="M41.31 35.89 A21 21 0 0 1 6.69 35.89 L13.50 23.73 A10.5 10.5 0 0 0 27.50 33.90 Z" fill="{{logo.c1}}" opacity="{{logo.o1}}"></path><path d="M5.05 33.04 A21 21 0 0 1 22.35 3.06 L29.49 15.05 A10.5 10.5 0 0 0 13.68 22.09 Z" fill="{{logo.c2}}" opacity="{{logo.o2}}"></path><circle cx="24" cy="24" r="5.6" fill="#e5483c"></circle></svg>
+      <span style="font-family: 'Sora', 'Segoe UI', sans-serif; font-weight: 600; letter-spacing: -0.015em; font-size: 14px; color: #ffffff;">Lumora</span>
+    </div>
+    <button style="height: 26px; padding: 0 8px; border: 0; border-radius: 4px; background: transparent; color: #d4d5d8; font-size: 12px;">Event</button>
+    <a href="AddPreset.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Presets</a>
+    <a href="Cues.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Cues</a>
+    <a href="Library.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Library</a>
+    <a href="AddInput.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Inputs</a>
+    <a href="OverlayEditor.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Overlays</a>
+    <a href="TextEditor.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Text</a>
+    <a href="Slideshow.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Slideshow</a>
+    <a href="Pesukim.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">12 Pesukim</a>
+    <a href="GreenScreen.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Green screen</a>
+    <a href="Timer.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Timer</a>
+    <a href="BackLoops.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Loops</a>
+    <a href="Credits.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Credits</a>
+    <a href="LogoMaker.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">3D logo</a>
+    <a href="Settings.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Settings</a>
+    <a href="Manual.dc.html" style="height: 26px; padding: 0 8px; color: #d4d5d8; font-size: 12px; display: flex; align-items: center; text-decoration: none;">Help</a>
+    <div style="flex-grow: 1;"></div>
+    <span style="font-size: 12px; color: #a9abb0;">[Event name]</span>
+    <span style="width: 1px; height: 16px; background: #343944; margin: 0 12px;"></span>
+    <span style="font-family: Consolas, monospace; font-size: 13px; color: #e4e5e7;">19:42:05</span>
+  </div>
+
+  <!-- ===== Screen selector: pick which screen you are controlling ===== -->
+  <div style="height: 60px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1a1d22; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 12px; color: #8e9096; padding-right: 4px;">Controlling</span>
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+      <button onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="{{t.style}}">
+        <span style="{{t.thumb}}"><dc-import name="Scene" kind="{{t.scene}}" hint-size="100%,100%"></dc-import><sc-if value="{{t.isText}}" hint-placeholder-val="{{false}}"><span style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 600; color: #ffffff; text-align: center; padding: 2px; box-sizing: border-box;">{{t.monText}}</span></sc-if><sc-if value="{{t.dark}}" hint-placeholder-val="{{false}}"><span style="position: absolute; inset: 0; background: rgba(0,0,0,0.78);"></span></sc-if></span>
+        <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
+          <span style="font-size: 14px; font-weight: 600;">{{t.name}}</span>
+          <span style="display: flex; align-items: center; gap: 6px;"><span style="{{t.badge}}">{{t.status}}</span><span style="font-size: 11px; color: #a9abb0;">{{t.where}}</span><span style="height: 15px; padding: 0 4px; border-radius: 3px; border: 1px solid #3a3f48; font-size: 9px; line-height: 13px; color: #a9abb0; box-sizing: border-box;">{{t.key}}</span></span>
+        </span>
+      </button>
+    </sc-for>
+    <button onClick="{{pickAll}}" aria-pressed="{{allView}}" title="See and control all three screens at once (F4)" style="{{allTabStyle}}"><svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true"><rect x="1" y="2" width="6" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"></rect><rect x="8" y="2" width="6" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"></rect><rect x="15" y="2" width="6" height="12" rx="1.5" stroke="currentColor" stroke-width="1.5"></rect></svg><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15;"><span style="font-size: 13px; font-weight: 600;">All three</span><span style="font-size: 10px; opacity: 0.75;">at once · F4</span></span></button>
+    <button onClick="{{toggleBackLive}}" aria-pressed="{{backLive}}" title="When on, whatever is on the Live Screen also plays on the Back Screen" style="{{backLiveStyle}}"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6.5 9.5l3-3M5 11a2.5 2.5 0 0 1 0-3.5l1.5-1.5M11 5a2.5 2.5 0 0 1 0 3.5L9.5 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg><span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15;"><span style="font-size: 12px; font-weight: 600;">Back = Live</span><span style="font-size: 10px; opacity: 0.75;">{{backLiveLabel}}</span></span></button>
+    <div style="flex-grow: 1;"></div>
+    <div style="display: flex; align-items: center; gap: 10px; height: 36px;">
+      <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096; white-space: nowrap;">60 fps · 0 dropped</span>
+      <a href="Devices.dc.html" style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; display: flex; align-items: center; gap: 6px; text-decoration: none; box-sizing: border-box; white-space: nowrap;"><span style="width: 7px; height: 7px; border-radius: 4px; background: #3fbf5a;"></span>3 devices</a>
+      <div style="display: flex; border: 1px solid #2c3038; border-radius: 4px; overflow: hidden;">
+        <button onClick="{{setSimple}}" style="{{simpleStyle}}">Simple</button>
+        <button onClick="{{setAdvanced}}" style="{{advancedStyle}}">Advanced</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Body ===== -->
+  <div style="flex-grow: 1; min-height: 0; display: flex;">
+
+    <!-- Presets -->
+    <div style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; background: #1a1d22; border-right: 1px solid #2c3038;">
+      <div style="padding: 12px 10px 8px; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Presets</span>
+          <a href="AddPreset.dc.html" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">+ Add preset</a>
+        </div>
+        <div style="display: flex; gap: 4px;">
+          <input aria-label="Search presets" placeholder="Search…" style="flex-grow: 1; min-width: 0; height: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #101216; color: #e4e5e7; font-size: 12px; outline: none;">
+          <select aria-label="Category" style="width: 74px; height: 26px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px;"><option>All</option><option>Concert</option><option>Speeches</option><option>Built-in</option></select>
+        </div>
+      </div>
+      <div style="flex-grow: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; padding: 0 6px; gap: 2px;">
+        <sc-for list="{{presets}}" as="p" hint-placeholder-count="14">
+          <button onClick="{{p.pick}}" style="{{p.style}}">
+            <span style="font-family: Consolas, monospace; font-size: 11px; width: 18px; color: #8e9096;">{{p.num}}</span>
+            <span style="flex-grow: 1; font-size: 13px;">{{p.name}}</span>
+            <span style="font-size: 10px; color: #8e9096;">{{p.count}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; gap: 6px; padding: 8px 10px 10px;">
+        <button onClick="{{prevPreset}}" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">◀ Prev</button>
+        <button onClick="{{nextPreset}}" style="flex-grow: 1; height: 32px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Next ▶</button>
+      </div>
+    </div>
+
+    <!-- Center: one screen at a time -->
+    <sc-if value="{{notAll}}" hint-placeholder-val="{{true}}">
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding: 12px; box-sizing: border-box;">
+
+      <!-- Monitors row -->
+      <div style="display: flex; gap: 12px; flex-shrink: 0;">
+        <!-- Preview -->
+        <div style="width: 455px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 2px; background: #3fbf5a;"></span>
+            <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Preview</span>
+            <span style="font-size: 12px; color: #8e9096;">{{pv.title}}</span>
+          </div>
+          <div style="{{pv.frame}}">
+            <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"><span style="font-size: 28px; font-weight: 700; color: #ffffff; text-align: center; line-height: 1.2;">{{monitorPreviewText}}</span></div>
+              <span style="position: absolute; right: 12px; top: 10px; font-family: Consolas, monospace; font-size: 14px; color: #a9abb0;">19:42</span>
+            </sc-if>
+            <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{pv.scene}}" hint-size="100%,100%"></dc-import></div><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
+            </sc-if>
+          </div>
+          <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="position: relative; height: 20px;">
+              <input type="range" min="0" max="1000" value="{{pvT.pos}}" onInput="{{pvT.onSeek}}" disabled="{{pvT.live}}" aria-label="Seek" style="position: absolute; left: 0; top: 0; width: 100%; margin: 0;">
+              <sc-for list="{{pvT.marks}}" as="m" hint-placeholder-count="3"><span style="{{m}}"></span></sc-for>
+            </div>
+            <div style="height: 26px; display: flex; align-items: center; gap: 3px;">
+              <button onClick="{{pvT.restart}}" aria-label="Restart" title="Restart" style="{{pvT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M10 2v8L4.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pvT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pvT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 600;">10</span></button>
+              <button onClick="{{pvT.toggle}}" aria-label="Play or pause" title="Play / pause" style="{{pvT.playBtn}}"><sc-if value="{{pvT.playing}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect><rect x="7.1" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect></svg></sc-if><sc-if value="{{pvT.paused}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"></path></svg></sc-if></button>
+              <button onClick="{{pvT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pvT.btnWide}}"><span style="font-size: 9px; font-weight: 600;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pvT.end}}" aria-label="Jump to end" title="Jump to end" style="{{pvT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="8.4" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M2 2v8l5.5-4z" fill="currentColor"></path></svg></button>
+              <span style="width: 6px;"></span>
+              <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; white-space: nowrap;">{{pvT.elapsed}}<span style="color: #8e9096;">{{pvT.total}}</span></span>
+              <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096; padding-left: 6px; white-space: nowrap;">{{pvT.remain}}</span>
+              <div style="flex-grow: 1;"></div>
+              <button onClick="{{pvT.toggleLoop}}" aria-label="Loop" title="Loop" style="{{pvT.loopStyle}}">Loop</button>
+              <select aria-label="Playback speed" disabled="{{pvT.live}}" style="height: 24px; width: 58px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; padding-left: 6px;"><option>1×</option><option>0.5×</option><option>0.75×</option><option>1.25×</option><option>1.5×</option><option>2×</option></select>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <!-- Transitions -->
+        <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 24px;">
+          <button onClick="{{autoTake}}" title="Take with the chosen transition (Space)" style="height: 46px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 14px; font-weight: 600; letter-spacing: 0.06em;">TAKE</button>
+          <button onClick="{{take}}" title="Cut straight across, no transition (Enter)" style="height: 32px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600; letter-spacing: 0.06em;">CUT</button>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
+            <sc-for list="{{transitions}}" as="tr" hint-placeholder-count="4">
+              <button onClick="{{tr.pick}}" style="{{tr.style}}"><span style="font-size: 12px; font-weight: 600;">{{tr.name}}</span><span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{tr.dur}}</span></button>
+            </sc-for>
+          </div>
+          <div style="flex-grow: 1;"></div>
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #8e9096;"><span>{{tbarLeft}}</span><span style="font-family: Consolas, monospace; color: #d4d5d8;">{{tbarPct}}</span><span>{{tbarRight}}</span></div>
+            <div onPointerDown="{{tbDown}}" onPointerMove="{{tbMove}}" onPointerUp="{{tbUp}}" onPointerCancel="{{tbUp}}" role="slider" tabindex="0" aria-label="T-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{tbar}}" style="position: relative; width: 100%; box-sizing: border-box; height: 44px; border-radius: 6px; background: #101216; border: 1px solid #2c3038; cursor: ew-resize; touch-action: none; user-select: none;">
+              <div style="position: absolute; left: 12px; right: 12px; top: 8px; bottom: 8px; background: repeating-linear-gradient(to right, #2c3038 0 1px, transparent 1px 10%); pointer-events: none;"></div>
+              <div style="position: absolute; left: 12px; right: 12px; top: 50%; height: 4px; margin-top: -2px; border-radius: 2px; background: #0c0d10; pointer-events: none;"></div>
+              <div style="{{tbarFill}}"></div>
+              <div style="{{tbarCap}}"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Program -->
+        <div style="width: 455px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="height: 18px; display: flex; align-items: center; gap: 8px;">
+            <span style="width: 8px; height: 8px; border-radius: 2px; background: #e0473b;"></span>
+            <span style="font-size: 12px; font-weight: 600; color: #d4d5d8;">Program</span>
+            <span style="font-size: 12px; color: #8e9096;">{{pg.title}}</span>
+            <div style="flex-grow: 1;"></div>
+            <span style="{{outBadge}}">{{outState}}</span>
+          </div>
+          <div style="{{pg.frame}}">
+            <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
+              <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box;"><span style="{{monTextStyle}}">{{monitorLiveText}}</span></div>
+              <sc-if value="{{clockOn}}" hint-placeholder-val="{{true}}"><span style="position: absolute; right: 12px; top: 10px; font-family: Consolas, monospace; font-size: 14px; color: #a9abb0;">19:42</span></sc-if>
+              <sc-if value="{{countdownOn}}" hint-placeholder-val="{{true}}"><span style="position: absolute; left: 0; right: 0; bottom: 12px; text-align: center; font-family: Consolas, monospace; font-size: 24px; font-weight: 700; color: #ffffff;">{{countdown}}</span></sc-if>
+              <sc-if value="{{flashing}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: rgba(255,255,255,0.85);"></div></sc-if>
+            </sc-if>
+            <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{pg.scene}}" hint-size="100%,100%"></dc-import></div>
+              <sc-if value="{{tbarActive}}" hint-placeholder-val="{{false}}"><div style="{{tbarOverlay}}"><dc-import name="Scene" kind="{{pv.scene}}" hint-size="100%,100%"></dc-import></div><div style="{{tbarDip}}"></div></sc-if><span style="position: absolute; left: 10px; bottom: 8px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.6); font-family: Consolas, monospace; font-size: 10px; line-height: 18px; color: rgba(255,255,255,0.7);">1920×1080 · 60 fps</span>
+              <sc-for list="{{overlayLayers}}" as="o" hint-placeholder-count="1"><div style="{{o.style}}">{{o.label}}</div></sc-for>
+            </sc-if>
+            <sc-if value="{{pgBlank}}" hint-placeholder-val="{{false}}">
+              <div style="{{blankLayer}}"><span style="font-size: 12px; font-weight: 600; letter-spacing: 0.12em; color: #8e9096;">{{blankText}}</span></div>
+            </sc-if>
+          </div>
+          <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="position: relative; height: 20px;">
+              <input type="range" min="0" max="1000" value="{{pgT.pos}}" onInput="{{pgT.onSeek}}" disabled="{{pgT.live}}" aria-label="Seek" style="position: absolute; left: 0; top: 0; width: 100%; margin: 0;">
+              <sc-for list="{{pgT.marks}}" as="m" hint-placeholder-count="3"><span style="{{m}}"></span></sc-for>
+            </div>
+            <div style="height: 26px; display: flex; align-items: center; gap: 3px;">
+              <button onClick="{{pgT.restart}}" aria-label="Restart" title="Restart" style="{{pgT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M10 2v8L4.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pgT.back}}" aria-label="Back 10 seconds" title="Back 10 seconds" style="{{pgT.btnWide}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2.5v7L1.5 6zM11 2.5v7L6.5 6z" fill="currentColor"></path></svg><span style="font-size: 9px; font-weight: 600;">10</span></button>
+              <button onClick="{{pgT.toggle}}" aria-label="Play or pause" title="Play / pause" style="{{pgT.playBtn}}"><sc-if value="{{pgT.playing}}" hint-placeholder-val="{{false}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect><rect x="7.1" y="2" width="2.4" height="8" rx="0.6" fill="currentColor"></rect></svg></sc-if><sc-if value="{{pgT.paused}}" hint-placeholder-val="{{true}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4L10 6z" fill="currentColor"></path></svg></sc-if></button>
+              <button onClick="{{pgT.fwd}}" aria-label="Forward 10 seconds" title="Forward 10 seconds" style="{{pgT.btnWide}}"><span style="font-size: 9px; font-weight: 600;">10</span><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2.5v7L5.5 6zM6 2.5v7L10.5 6z" fill="currentColor"></path></svg></button>
+              <button onClick="{{pgT.end}}" aria-label="Jump to end" title="Jump to end" style="{{pgT.btn}}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="8.4" y="2" width="1.6" height="8" rx="0.5" fill="currentColor"></rect><path d="M2 2v8l5.5-4z" fill="currentColor"></path></svg></button>
+              <span style="width: 6px;"></span>
+              <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; white-space: nowrap;">{{pgT.elapsed}}<span style="color: #8e9096;">{{pgT.total}}</span></span>
+              <span style="font-family: Consolas, monospace; font-size: 11px; color: #8e9096; padding-left: 6px; white-space: nowrap;">{{pgT.remain}}</span>
+              <div style="flex-grow: 1;"></div>
+              <button onClick="{{pgT.toggleLoop}}" aria-label="Loop" title="Loop" style="{{pgT.loopStyle}}">Loop</button>
+              <select aria-label="Playback speed" disabled="{{pgT.live}}" style="height: 24px; width: 58px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #d4d5d8; font-size: 11px; padding-left: 6px;"><option>1×</option><option>0.5×</option><option>0.75×</option><option>1.25×</option><option>1.5×</option><option>2×</option></select>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- Lower row -->
+      <div style="flex-grow: 1; min-height: 0; display: flex; gap: 12px;">
+        <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+
+          <!-- Back-screen loop strip (only on Back Screen) -->
+          <sc-if value="{{isBack}}" hint-placeholder-val="{{false}}">
+            <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 10px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; white-space: nowrap;">Back-screen loop</span>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Energy<input type="range" min="0" max="100" value="55" aria-label="Loop energy" style="width: 90px;"></label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Speed<input type="range" min="0" max="100" value="40" aria-label="Loop speed" style="width: 90px;"></label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: #a9abb0; white-space: nowrap;">Brightness<input type="range" min="0" max="100" value="70" aria-label="Loop brightness" style="width: 90px;"></label>
+              <button onClick="{{toggleFollow}}" style="{{followStyle}}">Follow the music</button>
+              <div style="flex-grow: 1;"></div>
+              <a href="BackLoops.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">More…</a>
+            </div>
+          </sc-if>
+          <!-- Quick action strip -->
+          <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+            <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding-right: 2px;">Preset</span>
+              <sc-for list="{{presetButtons}}" as="b" hint-placeholder-count="3">
+                <button style="height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid #3a3f48; background: #262a31; color: #e4e5e7; font-size: 12px; font-weight: 500; white-space: nowrap;">{{b}}</button>
+              </sc-for>
+              <div style="flex-grow: 1;"></div>
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; padding-right: 2px;">Overlays</span>
+              <sc-for list="{{ovlChannels}}" as="o" hint-placeholder-count="4">
+                <button onClick="{{o.clear}}" title="Click to take this overlay off" style="{{o.style}}">{{o.label}}</button>
+              </sc-for>
+            </sc-if>
+            <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
+              <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Stage monitor</span>
+              <span style="font-size: 12px; color: #a9abb0;">Text only — for communicating with the people on stage</span>
+            </sc-if>
+          </div>
+
+          <!-- Auto controls for what is on air -->
+          <sc-if value="{{ctx.show}}" hint-placeholder-val="{{true}}">
+            <div style="{{ctx.box}}">
+              <div style="width: 118px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="{{ctx.badge}}">{{ctx.where}}</span>
+                <span style="font-size: 13px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ctx.name}}</span>
+              </div>
+              <span style="width: 1px; align-self: stretch; background: #2c3038;"></span>
+              <sc-if value="{{ctx.isTimer}}" hint-placeholder-val="{{true}}">
+                <span style="font-family: Consolas, monospace; font-size: 28px; font-weight: 700; color: {{ctx.timeColor}}; min-width: 92px;">{{ctx.time}}</span>
+                <button onClick="{{ctx.sub1}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">−1 min</button>
+                <button onClick="{{ctx.add1}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">+1 min</button>
+                <button onClick="{{ctx.add5}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">+5 min</button>
+                <button onClick="{{ctx.toggleRun}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap;">{{ctx.runLabel}}</button>
+                <button onClick="{{ctx.last10}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Last 10 s</button>
+                <button onClick="{{ctx.reset}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Reset</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="Timer.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Timer ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isPesukim}}" hint-placeholder-val="{{false}}">
+                <span style="display: flex; flex-direction: column; gap: 1px; min-width: 100px;"><span style="font-size: 11px; color: #8e9096; white-space: nowrap;">{{ctx.pesPos}}</span><span dir="rtl" lang="he" style="font-family: 'Frank Ruhl Libre', David, serif; font-size: 22px; font-weight: 700; color: #ffe39e; text-align: left;">{{ctx.word}}</span></span>
+                <button onClick="{{ctx.prevWord}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">‹ Back a word</button>
+                <button onClick="{{ctx.nextWord}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap; min-width: 130px;">{{ctx.nextLabel}}</button>
+                <button onClick="{{ctx.nextPasuk}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Next pasuk ⏭</button>
+                <span style="font-size: 12px; color: #8e9096; white-space: nowrap;">Next: <span dir="rtl" lang="he" style="font-family: 'Frank Ruhl Libre', David, serif; font-size: 16px; color: #d4d5d8;">{{ctx.upNext}}</span></span>
+                <div style="flex-grow: 1;"></div>
+                <a href="Pesukim.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Pesukim ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isSlides}}" hint-placeholder-val="{{false}}">
+                <button onClick="{{ctx.prevSlide}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">‹ Previous</button>
+                <span style="font-family: Consolas, monospace; font-size: 18px; font-weight: 700; color: #ffffff; min-width: 80px; text-align: center;">{{ctx.slidePos}}</span>
+                <button onClick="{{ctx.nextSlide}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap;">Next slide ›</button>
+                <button onClick="{{ctx.firstSlide}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Back to first</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="Slideshow.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Slideshow ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isCredits}}" hint-placeholder-val="{{false}}">
+                <button onClick="{{ctx.toggleRoll}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 700; white-space: nowrap;">{{ctx.rollLabel}}</button>
+                <button onClick="{{ctx.slower}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Slower</button>
+                <span style="font-family: Consolas, monospace; font-size: 14px; color: #ffffff; min-width: 44px; text-align: center;">{{ctx.speed}}</span>
+                <button onClick="{{ctx.faster}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Faster</button>
+                <button onClick="{{ctx.restartRoll}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Restart</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="Credits.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Edit list ↗</a>
+              </sc-if>
+              <sc-if value="{{ctx.isBrowser}}" hint-placeholder-val="{{false}}">
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">‹ Back</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Reload</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Scroll up</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Scroll down</button>
+                <button style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap;">Full screen</button>
+                <div style="flex-grow: 1;"></div>
+                <a href="BrowserSource.dc.html" style="font-size: 11px; text-decoration: none; white-space: nowrap;">Browser ↗</a>
+              </sc-if>
+              <button onClick="{{ctx.hide}}" aria-label="Close these controls" title="Close (they open again next time it goes on air)" style="width: 28px; height: 28px; flex-shrink: 0; padding: 0; border-radius: 4px; border: 0; background: transparent; color: #8e9096; font-size: 16px;">×</button>
+            </div>
+          </sc-if>
+
+          <!-- Inputs -->
+          <sc-if value="{{notMonitor}}" hint-placeholder-val="{{true}}">
+            <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 8px;">
+              <sc-for list="{{inputs}}" as="s" hint-placeholder-count="15">
+                <div style="{{s.box}}">
+                  <button onClick="{{s.pick}}" onDoubleClick="{{s.air}}" aria-label="{{s.name}}" style="{{s.thumb}}">
+                    <span style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{s.scene}}" hint-size="100%,100%"></dc-import></span>
+                    <span style="position: absolute; left: 5px; top: 5px; min-width: 18px; height: 16px; padding: 0 4px; box-sizing: border-box; border-radius: 3px; background: rgba(10,11,13,0.72); font-family: Consolas, monospace; font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; color: #ffffff;">{{s.num}}</span>
+                  </button>
+                  <div style="{{s.strip}}"><span style="overflow: hidden; text-overflow: ellipsis;">{{s.name}}</span></div>
+                  <div style="display: flex; gap: 2px; padding: 0 3px 3px;">
+                    <button onClick="{{s.air}}" style="flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: #2a2e36; color: #d4d5d8; font-size: 10px;">Cut</button>
+                    <button onClick="{{s.toggleLoop}}" style="{{s.loopStyle}}">Loop</button>
+                    <sc-for list="{{s.ovl}}" as="o" hint-placeholder-count="4">
+                      <button onClick="{{o.toggle}}" aria-label="{{o.label}}" style="{{o.style}}">{{o.n}}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- Monitor panel -->
+          <sc-if value="{{isMonitor}}" hint-placeholder-val="{{false}}">
+            <div style="flex-grow: 1; min-height: 0; display: flex; gap: 12px;">
+              <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+                <textarea aria-label="Message to the stage" value="{{draft}}" onInput="{{onDraft}}" placeholder="Type a message for the stage…" style="height: 62px; resize: none; padding: 8px 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 16px; outline: none;"></textarea>
+                <div style="display: flex; gap: 6px;">
+                  <button onClick="{{sendMsg}}" style="height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: #c7372f; color: #fff; font-size: 12px; font-weight: 600;">Show on monitor</button>
+                  <button onClick="{{clearMsg}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Clear</button>
+                  <button onClick="{{flash}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px;">Flash to get attention</button>
+                  <div style="flex-grow: 1;"></div>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #a9abb0;">Text size <select value="{{textSize}}" onChange="{{onTextSize}}" style="height: 28px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 12px;"><option value="m">Medium</option><option value="l">Large</option><option value="xl">Extra large</option></select></label>
+                </div>
+                <span style="font-size: 10px; font-weight: 600; color: #8e9096; letter-spacing: 0.08em; padding-top: 4px;">READY-MADE &amp; SAVED MESSAGES</span>
+                <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px;">
+                  <sc-for list="{{quick}}" as="q" hint-placeholder-count="8">
+                    <button onClick="{{q.pick}}" style="height: 34px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 12px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.text}}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038; box-sizing: border-box;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Monitor layout</span>
+                  <a href="MonitorLayout.dc.html" style="font-size: 11px; text-decoration: none;">Edit layout…</a>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;">
+                  <sc-for list="{{monLayouts}}" as="l" hint-placeholder-count="3">
+                    <button onClick="{{l.pick}}" aria-label="{{l.name}}" style="{{l.style}}"><span style="{{l.thumb}}"></span><span style="font-size: 10px; white-space: nowrap;">{{l.name}}</span></button>
+                  </sc-for>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px;">
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{true}}"> Message</label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{clockOn}}" onChange="{{toggleClock}}"> Clock</label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox" checked="{{countdownOn}}" onChange="{{toggleCountdown}}"> Timer</label>
+                  <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #d4d5d8;"><input type="checkbox"> Next up</label>
+                </div>
+                <div style="height: 1px; background: #2c3038;"></div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Timer – time left</span>
+                  <span style="font-family: Consolas, monospace; font-size: 26px; font-weight: 700; color: #ffffff;">{{countdown}}</span>
+                </div>
+                <div style="display: flex; gap: 4px;">
+                  <button onClick="{{subMinute}}" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">−1 min</button>
+                  <button onClick="{{addMinute}}" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px;">+1 min</button>
+                  <a href="Timer.dc.html" style="flex-grow: 1; height: 30px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box;">Timer…</a>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <!-- Audio mixer -->
+        <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+          <div style="height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #2c3038;">
+            <span style="font-size: 12px; font-weight: 600; color: #b4b8bf; ">Audio mixer</span>
+            <a href="InputSettings.dc.html" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 11px; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">EQ / Advanced…</a>
+          </div>
+          <div style="flex-grow: 1; min-height: 0; display: flex; gap: 2px; padding: 8px 6px;">
+            <sc-for list="{{channels}}" as="c" hint-placeholder-count="6">
+              <div style="{{c.strip}}">
+                <span style="font-size: 10px; font-weight: 600; color: #e4e5e7; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">{{c.name}}</span>
+                <div style="flex-grow: 1; min-height: 0; display: flex; gap: 3px; justify-content: center; width: 100%;">
+                  <div onPointerDown="{{c.down}}" onPointerMove="{{c.move}}" onPointerUp="{{c.up}}" onPointerCancel="{{c.up}}" role="slider" tabindex="0" aria-label="{{c.name}} volume" aria-valuenow="{{c.vol}}" style="position: relative; width: 18px; border-radius: 3px; background: #101216; border: 1px solid #2c3038; cursor: ns-resize; touch-action: none; user-select: none;">
+                    <div style="position: absolute; left: 50%; top: 6px; bottom: 6px; width: 2px; margin-left: -1px; background: #0c0d10;"></div>
+                    <div style="position: absolute; left: 2px; right: 2px; top: 6px; bottom: 6px; background: repeating-linear-gradient(to bottom, #3a3f48 0 1px, transparent 1px 12.5%); pointer-events: none;"></div><div style="{{c.cap}}"></div>
+                  </div>
+                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask}}"></div><div style="position: absolute; inset: 0; background: repeating-linear-gradient(to top, transparent 0 3px, #1e2127 3px 4px); pointer-events: none;"></div></div>
+                  <div style="position: relative; width: 4px; border-radius: 1px; background: linear-gradient(to top, #2fae4a 0%, #2fae4a 70%, #b7b24a 85%, #d9433a 100%);"><div style="{{c.meterMask2}}"></div><div style="position: absolute; inset: 0; background: repeating-linear-gradient(to top, transparent 0 3px, #1e2127 3px 4px); pointer-events: none;"></div></div>
+                </div>
+                <span style="font-family: Consolas, monospace; font-size: 9px; color: #a9abb0;">{{c.db}}</span>
+                <div style="display: flex; gap: 2px;">
+                  <button onClick="{{c.toggleMute}}" aria-label="Mute {{c.name}}" title="Mute" style="{{c.muteStyle}}">M</button>
+                  <button onClick="{{c.toggleAfv}}" aria-label="Audio follows video" title="Audio follows video" style="{{c.afvStyle}}">A</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- Center: all three screens at once -->
+    <sc-if value="{{isAll}}" hint-placeholder-val="{{false}}">
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px; box-sizing: border-box;">
+      <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start;">
+        <sc-for list="{{allCards}}" as="c" hint-placeholder-count="2">
+          <div style="{{c.box}}">
+            <div style="height: 26px; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 14px; font-weight: 600; color: #ffffff;">{{c.name}}</span>
+              <span style="{{c.badge}}">{{c.status}}</span>
+              <div style="flex-grow: 1;"></div>
+              <button onClick="{{c.open}}" title="Open this screen with all its controls" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px;">Full controls ›</button>
+            </div>
+            <div style="position: relative; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #c7372f; background: #000;">
+              <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{c.pgScene}}" hint-size="100%,100%"></dc-import></div>
+              <sc-if value="{{c.fading}}" hint-placeholder-val="{{false}}"><div style="{{c.fadeStyle}}"><dc-import name="Scene" kind="{{c.pvScene}}" hint-size="100%,100%"></dc-import></div></sc-if>
+              <sc-if value="{{c.dark}}" hint-placeholder-val="{{false}}"><div style="position: absolute; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: #6f737b;">BLANK</div></sc-if>
+              <span style="position: absolute; left: 6px; bottom: 6px; height: 18px; padding: 0 6px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 11px; line-height: 18px; color: #ffffff;">{{c.pgName}}</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: stretch;">
+              <div style="position: relative; width: 150px; flex-shrink: 0; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; border: 2px solid #2f8f4e; background: #000;">
+                <div style="position: absolute; inset: 0;"><dc-import name="Scene" kind="{{c.pvScene}}" hint-size="100%,100%"></dc-import></div>
+                <span style="position: absolute; left: 4px; bottom: 4px; height: 15px; padding: 0 5px; border-radius: 3px; background: rgba(10,11,13,0.72); font-size: 10px; line-height: 15px; color: #ffffff;">Next: {{c.pvName}}</span>
+              </div>
+              <div style="flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px;">
+                <button onClick="{{c.take}}" style="grid-column: 1 / 3; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 13px; font-weight: 700; letter-spacing: 0.06em;">TAKE · {{c.trans}}</button>
+                <button onClick="{{c.cut}}" style="border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #ffffff; font-size: 12px; font-weight: 600;">CUT</button>
+                <button onClick="{{c.toggleBlank}}" style="{{c.blankStyle}}">{{c.blankLabel}}</button>
+              </div>
+            </div>
+            <div style="height: 30px; display: flex; align-items: center; gap: 4px; padding: 0 6px; border-radius: 6px; background: #101216; border: 1px solid #2c3038;">
+              <button onClick="{{c.tp.restart}}" aria-label="Back to start" style="{{c.tp.btn}}">⏮</button>
+              <button onClick="{{c.tp.back}}" aria-label="Back 10 seconds" style="{{c.tp.btnWide}}">−10</button>
+              <button onClick="{{c.tp.toggle}}" aria-label="Play or pause" style="{{c.tp.playBtn}}">{{c.tp.playGlyph}}</button>
+              <button onClick="{{c.tp.fwd}}" aria-label="Forward 10 seconds" style="{{c.tp.btnWide}}">+10</button>
+              <div style="flex-grow: 1;"></div>
+              <span style="font-family: Consolas, monospace; font-size: 11px; color: #e4e5e7; white-space: nowrap;">{{c.tp.elapsed}}<span style="color: #8e9096;">{{c.tp.total}}</span></span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;">
+              <sc-for list="{{c.chips}}" as="ch" hint-placeholder-count="15">
+                <button onClick="{{ch.pick}}" onDoubleClick="{{ch.air}}" title="Click: line up next · Double-click: straight to air" style="{{ch.style}}">{{ch.name}}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{c.isBack}}" hint-placeholder-val="{{false}}">
+              <button onClick="{{toggleBackLive}}" style="{{c.followStyle}}">{{c.followLabel}}</button>
+            </sc-if>
+          </div>
+        </sc-for>
+        <div style="{{allMon.box}}">
+          <div style="height: 26px; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 14px; font-weight: 600; color: #ffffff;">Monitor</span>
+            <span style="{{allMon.badge}}">{{allMon.status}}</span>
+            <div style="flex-grow: 1;"></div>
+            <button onClick="{{allMon.open}}" title="Open the Monitor with all its controls" style="height: 24px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 11px;">Full controls ›</button>
+          </div>
+          <div style="{{allMon.screen}}">
+            <span style="position: absolute; left: 8px; top: 6px; font-family: Consolas, monospace; font-size: 13px; color: #a9abb0;">{{allMon.clock}}</span>
+            <span style="position: absolute; right: 8px; top: 6px; font-family: Consolas, monospace; font-size: 13px; color: #ffe39e;">{{allMon.countdown}}</span>
+            <span style="font-size: 26px; font-weight: 700; color: #ffffff; text-align: center; padding: 0 16px; line-height: 1.2;">{{allMon.text}}</span>
+          </div>
+          <input aria-label="Message for the stage" value="{{draft}}" onInput="{{onDraftInput}}" placeholder="Type a message for the stage…" style="height: 32px; padding: 0 10px; border-radius: 6px; border: 1px solid #2c3038; background: #101216; color: #ffffff; font-size: 13px; outline: none;">
+          <div style="display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 6px;">
+            <button onClick="{{sendMsg}}" style="height: 34px; border-radius: 6px; border: 0; background: #c7372f; color: #ffffff; font-size: 12px; font-weight: 700;">Show on monitor</button>
+            <button onClick="{{clearMsg}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 34px;">Clear</button>
+            <button onClick="{{flash}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 34px;">Flash</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
+            <sc-for list="{{allMon.quick}}" as="q" hint-placeholder-count="4">
+              <button onClick="{{q.pick}}" style="height: 28px; padding: 0 8px; border-radius: 4px; border: 1px solid #2c3038; background: #1e2127; color: #e4e5e7; font-size: 11px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{q.text}}</button>
+            </sc-for>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 11px; color: #a9abb0; flex-grow: 1;">Timer on the monitor</span>
+            <button onClick="{{subMinute}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 28px;">−1 min</button>
+            <button onClick="{{addMinute}}" style="height: 30px; padding: 0 10px; border-radius: 6px; border: 1px solid #3a3f48; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; white-space: nowrap; height: 28px;">+1 min</button>
+          </div>
+        </div>
+      </div>
+      <div style="height: 44px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-radius: 6px; background: #1e2127; border: 1px solid #2c3038;">
+        <span style="font-size: 12px; font-weight: 600; color: #b4b8bf;">Master volume</span>
+        <input type="range" min="0" max="100" value="{{masterVal}}" onInput="{{onMaster}}" aria-label="Master volume" style="width: 260px;">
+        <span style="font-family: Consolas, monospace; font-size: 12px; color: #e4e5e7; width: 40px;">{{masterVal}}%</span>
+        <div style="flex-grow: 1;"></div>
+        <span style="font-size: 12px; color: #8e9096;">Click a source to line it up, double-click to send it straight to air · F1–F3 open one screen with every control</span>
+      </div>
+    </div>
+    </sc-if>
+  </div>
+
+  <!-- ===== Bottom bar ===== -->
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: #1a1d22; border-top: 1px solid #2c3038;">
+    <a href="AddInput.dc.html" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">+ Add input</a>
+    <span style="width: 1px; height: 24px; background: #2c3038; margin: 0 4px;"></span>
+    <button onClick="{{toggleRec}}" style="{{recStyle}}"><span style="{{recDot}}"></span>Record <span style="font-family: Consolas, monospace; font-weight: 400; color: #d4d5d8;">{{recTime}}</span></button>
+    <a href="GoLive.dc.html" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: #2a2e36; color: #e4e5e7; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; text-decoration: none; box-sizing: border-box;"><span style="width: 8px; height: 8px; border-radius: 4px; background: #3fbf5a;"></span>Streaming · 3 sites</a>
+    <a href="GoLive.dc.html" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background: #4fb3bf; color: #0e2a2e; font-size: 12px; font-weight: 600; display: flex; align-items: center; text-decoration: none; box-sizing: border-box;">Go Live / Outputs</a>
+    <div style="flex-grow: 1;"></div>
+    <span style="font-size: 11px; color: #8e9096;">Blank</span>
+    <div style="display: flex; border: 1px solid #2c3038; border-radius: 6px; overflow: hidden;">
+      <sc-for list="{{blankOpts}}" as="b" hint-placeholder-count="3">
+        <button onClick="{{b.toggle}}" style="{{b.style}}">{{b.label}}</button>
+      </sc-for>
+    </div>
+    <button onDoubleClick="{{togglePanic}}" title="Double-click: Live and Back go black, Monitor dims" style="{{panicBtnStyle}}"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.6l6 10.8H1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"></path><path d="M7 5.6v3M7 10.4v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path></svg>{{panicLabel}}<span style="font-size: 9px; font-weight: 600; opacity: 0.7; letter-spacing: 0;">double-click</span></button>
+  </div>
+
+  <sc-if value="{{panic}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 50%; top: 86px; transform: translateX(-50%); padding: 8px 16px; border-radius: 6px; background: #3a1a18; border: 1px solid #c7372f; color: #ffe1de; font-size: 12px; font-weight: 600;">PANIC — Live and Back are black, Monitor is dimmed. Double-click again to restore.</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); this._tick = setInterval(() => this.tick(), 1000); }
+  componentDidUpdate() { this.__fill(); }
+  componentWillUnmount() { clearInterval(this._allAnim); clearInterval(this._anim); clearInterval(this._tick); clearTimeout(this._ft); document.removeEventListener('input', this.__onRange, true); }
+  tick() {
+    const DUR = { vid1: 130, vid2: 45, vid3: 252, loop1: 30, loop2: 40 };
+    this.setState((st) => {
+      const onAir = [st.screens.live.pg, st.screens.back.pg];
+      const play = { ...st.play };
+      onAir.forEach((id) => {
+        const p = play[id], d = DUR[id];
+        if (!p || !p.playing || !d) return;
+        const next = p.pos + 1;
+        play[id] = next < d ? { ...p, pos: next } : st.loops[id] ? { ...p, pos: 0 } : { ...p, pos: d, playing: false };
+      });
+      const hype = st.hype.running && st.hype.secs > 0 ? { ...st.hype, secs: st.hype.secs - 1 } : st.hype;
+      return { play, hype, countdown: st.countdownOn ? Math.max(0, st.countdown - 1) : st.countdown };
+    });
+  }
+  __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: 'live', mode: 'advanced',
+      screens: { live: { pv: 'cam2', pg: 'vid1', blank: false }, back: { pv: 'vid2', pg: 'loop1', blank: false }, monitor: { blank: false } },
+      trans: 'fade', tbar: 0, preset: 0, panic: false, rec: true,
+      loops: { vid2: true, loop1: true, loop2: true },
+      ovl: { 1: 'logo', 2: null, 3: null, 4: null },
+      vol: { master: 82, cam1: 70, cam2: 60, vid1: 78, vid2: 74, phone: 50 },
+      muted: { phone: true }, afv: { vid1: true, vid2: true },
+      play: { vid1: { pos: 72, playing: true }, vid2: { pos: 0, playing: false }, loop1: { pos: 12, playing: true }, loop2: { pos: 0, playing: true } }, tbarHome: 0, hype: { secs: 298, total: 300, running: true }, pes: { p: 1, w: 2 }, slide: 4, roll: { on: true, speed: 1 }, ctxHidden: {}, monLayout: 'full', draft: 'Please wrap up', monitorText: '5 minutes left', countdown: 300, countdownOn: true, clockOn: true, textSize: 'l', flashing: false, follow: true
+    };
+  }
+  drag(key, vertical, apply, done) {
+    const calc = (e) => { const r = e.currentTarget.getBoundingClientRect(); const f = vertical ? (r.bottom - 6 - e.clientY) / (r.height - 12) : (e.clientX - r.left - 12) / (r.width - 24); return Math.round(Math.max(0, Math.min(1, f)) * 100); };
+    return {
+      down: (e) => { e.preventDefault(); if (key === 'tbar' && this._anim) { clearInterval(this._anim); this._anim = null; } try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} this._dragKey = key; apply(calc(e)); },
+      move: (e) => { if (this._dragKey === key) apply(calc(e)); },
+      up: (e) => { if (this._dragKey === key) { this._dragKey = null; if (done) done(calc(e)); } }
+    };
+  }
+  logoVals() {
+    const a = { live: 0, back: 1, monitor: 2 }[this.state.tab] || 0;
+    const c = (i) => i === a ? '#4fb3bf' : '#ffffff', o = (i) => i === a ? '1' : String([0.8, 0.5][(i - a + 2) % 3] || 0.8);
+    return { c0: c(0), c1: c(1), c2: c(2), o0: o(0), o1: o(1), o2: o(2) };
+  }
+  view(state) {
+    if (!state.backLive) return state;
+    return { ...state, screens: { ...state.screens, back: { ...state.screens.back, pg: state.screens.live.pg } } };
+  }
+  allSwap(id) {
+    const st = this.view(this.state);
+    const sc = st.screens[id];
+    this.setState({ screens: { ...st.screens, [id]: { ...sc, pg: sc.pv, pv: sc.pg } }, allFx: null, ...(id === 'back' ? { backLive: false } : {}) });
+  }
+  allTake(id) {
+    if (this._allAnim) return;
+    const dur = { fade: 800, merge: 1200, dip: 1000, wipe: 600 }[this.state.trans] || 800;
+    const t0 = performance.now();
+    this._allAnim = setInterval(() => {
+      const f = Math.min(1, (performance.now() - t0) / dur);
+      if (f >= 1) { clearInterval(this._allAnim); this._allAnim = null; this.allSwap(id); }
+      else this.setState({ allFx: { id, t: f } });
+    }, 30);
+  }
+  takeNow() {
+    const st = this.view(this.state);
+    if (st.tab === 'monitor') { this.setState({ monitorText: st.draft, tbar: 0 }); return; }
+    const sc = st.screens[st.tab];
+    this.setState({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100, ...(st.tab === 'back' ? { backLive: false } : {}) });
+  }
+  renderVals() { return { ...this._rv(), logo: this.logoVals() }; }
+  _rv() {
+    const st = this.view(this.state);
+    const set = (p) => this.setState(p);
+    const SRC = {
+      cam1: { name: 'Camera 1', sub: 'HDMI · Stage wide', kind: 'CAM', tone: '#34404c' },
+      cam2: { name: 'Camera 2', sub: 'USB · Close-up', kind: 'CAM', tone: '#3a3746' },
+      cam3: { name: 'Camera 3', sub: 'HDMI · Side', kind: 'CAM', tone: '#2f3a44' },
+      phone: { name: 'Phone cam', sub: 'Wireless · Crowd', kind: 'PHONE', tone: '#2e3d34' },
+      vid1: { name: 'Opening.mp4', sub: 'Video · 02:10', kind: 'VIDEO', tone: '#473a2c', video: true, dur: 130 },
+      vid2: { name: 'Sponsors.mp4', sub: 'Video · 00:45', kind: 'VIDEO', tone: '#343b4b', video: true, dur: 45 },
+      vid3: { name: 'Tribute.mp4', sub: 'Video · 04:12', kind: 'VIDEO', tone: '#403143', video: true, dur: 252 },
+      split1: { name: 'Split: Cam 1 + 2', sub: 'Side by side', kind: 'SPLIT', tone: '#353d46' },
+      slides: { name: 'Slideshow', sub: '12 slides · camera behind', kind: 'SLIDES', tone: '#3f3b2a' },
+      pesukim: { name: '12 Pesukim', sub: 'Slide 1 of 12', kind: 'PRESET', tone: '#3b3222' },
+      browser: { name: 'Browser tab', sub: 'Chrome · controlled', kind: 'WEB', tone: '#30363f' },
+      logo: { name: 'Logo bug', sub: 'Overlay', kind: 'OVERLAY', tone: '#3a3240' },
+      lower: { name: 'Lower third', sub: 'Name + title', kind: 'TITLE', tone: '#3a3240' },
+      timer: { name: 'Hype countdown', sub: 'Countdown · 04:58 left', kind: 'TIMER', tone: '#1c2440' },
+      black: { name: 'Black', sub: 'Solid colour', kind: 'COLOUR', tone: '#0c0d10' },
+      loop1: { name: 'Aurora loop', sub: 'Back-screen loop · 00:30', kind: 'LOOP', tone: '#27403f', dur: 30 },
+      loop2: { name: 'Particles loop', sub: 'Back-screen loop · 00:40', kind: 'LOOP', tone: '#2c3450', dur: 40 },
+      loop3: { name: 'Warm glow loop', sub: 'Back-screen loop', kind: 'LOOP', tone: '#4a3626' },
+      eventlogo: { name: 'Event logo', sub: 'Image', kind: 'IMAGE', tone: '#3b3326' },
+      thanks: { name: 'Thank-you list', sub: 'Credits roll', kind: 'CREDITS', tone: '#2f2f38' }
+    };
+    const SCENE = { cam1: 'stage', cam2: 'closeup', cam3: 'side', phone: 'crowd', vid1: 'opening', vid2: 'sponsors', vid3: 'tribute', split1: 'split', slides: 'slides', pesukim: 'pesukim', browser: 'browser', logo: 'overlay', lower: 'lower', timer: 'timer', black: 'black', loop1: 'aurora', loop2: 'particles', loop3: 'warm', eventlogo: 'eventlogo', thanks: 'credits' };
+    Object.keys(SRC).forEach((k) => { SRC[k].scene = SCENE[k] || 'stage'; });
+    const TAB_INPUTS = {
+      live: ['cam1', 'cam2', 'cam3', 'phone', 'split1', 'vid1', 'vid2', 'vid3', 'slides', 'pesukim', 'browser', 'logo', 'lower', 'timer', 'black'],
+      back: ['loop1', 'loop2', 'loop3', 'vid1', 'vid2', 'vid3', 'cam1', 'cam2', 'split1', 'slides', 'pesukim', 'eventlogo', 'thanks', 'timer', 'black']
+    };
+    const isMon = st.tab === 'monitor';
+    const sc = st.screens[st.tab];
+    const updScreen = (p) => set({ screens: { ...st.screens, [st.tab]: { ...sc, ...p } } });
+
+    const TONES = { cam1: '#34404c', cam2: '#3a3746', cam3: '#2f3a44', phone: '#2e3d34', vid1: '#473a2c', vid2: '#343b4b', vid3: '#403143', loop1: '#27403f', loop2: '#2c3450' };
+    const tabs = [['live', 'Live Screen', 'Stream', 'F1'], ['back', 'Back Screen', 'Projector', 'F2'], ['monitor', 'Monitor', 'Stage', 'F3']].map(([id, name, where, key]) => {
+      const on = id === st.tab && !st.allView;
+      const scr = st.screens[id];
+      const dark = scr.blank || st.panic;
+      const dimmed = id === 'monitor' && st.panic && !scr.blank;
+      const onAirName = id === 'monitor' ? (st.monitorText ? 'TEXT' : '') : ((SRC[scr.pg] || {}).kind || '');
+      return {
+        name, where, key, on, onAirName: dark && !dimmed ? '' : onAirName,
+        scene: id === 'monitor' ? 'black' : ((SRC[scr.pg] || {}).scene || 'black'), isText: id === 'monitor', monText: st.monitorText, dark: dark,
+        pick: () => { clearInterval(this._anim); this._anim = null; set({ tab: id, tbar: 0, allView: false }); },
+        status: dark ? (dimmed ? 'DIMMED' : 'BLANK') : (id === 'back' && st.backLive ? 'FOLLOWS LIVE' : 'ON AIR'),
+        badge: `height: 15px; padding: 0 5px; white-space: nowrap; border-radius: 3px; font-size: 9px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${dark ? '#343944' : id === 'back' && st.backLive ? '#1f6f79' : '#c7372f'}; color: #ffffff;`,
+        thumb: `position: relative; width: 64px; height: 36px; flex-shrink: 0; border-radius: 3px; overflow: hidden; display: block; box-shadow: 0 0 0 1px ${dark ? '#3a3f48' : '#c7372f'};`,
+        style: `height: 48px; min-width: 214px; padding: 0 14px 0 6px; display: flex; align-items: center; gap: 10px; border-radius: 8px; border: 2px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
+      };
+    });
+
+    const PRESETS = [['Opening', 6], ['Welcome', 4], ['Speaker', 5], ['12 Pesukim', 7], ['Video break', 4], ['Concert', 8], ['Split view', 3], ['Slideshow', 4], ['Sponsors', 3], ['Tribute', 4], ['Thank you', 3], ['Closing', 5], ['Timer break', 2], ['Emergency', 1]];
+    const presets = PRESETS.map(([name, n], i) => {
+      const on = st.preset === i;
+      return {
+        num: String(i + 1), name, count: String(n),
+        pick: () => set({ preset: i }),
+        style: `height: 32px; flex-shrink: 0; padding: 0 8px; display: flex; align-items: center; gap: 6px; border: 0; border-radius: 6px; background: ${on ? '#243039' : 'transparent'}; box-shadow: ${on ? 'inset 3px 0 0 #4fb3bf' : 'none'}; color: ${on ? '#ffffff' : '#d4d5d8'}; text-align: left;`
+      };
+    });
+
+    const transitions = [['fade', 'Fade', '0.8s'], ['merge', 'Merge', '1.2s'], ['dip', 'Dip', '1.0s'], ['wipe', 'Wipe', '0.6s']].map(([id, name, dur]) => {
+      const on = st.trans === id;
+      return {
+        name, dur, pick: () => set({ trans: id }),
+        style: `height: 34px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; border-radius: 6px; border: 1px solid ${on ? '#4fb3bf' : '#2c3038'}; background: ${on ? '#243039' : '#2a2e36'}; color: #ffffff;`
+      };
+    });
+
+    const tbPos = st.tbarHome ? 100 - st.tbar : st.tbar;
+    const CTX = { timer: 'timer', pesukim: 'pesukim', slides: 'slides', thanks: 'credits', browser: 'browser' };
+    const PES = { 1: 'תּוֹרָה צִוָּה לָנוּ מֹשֶׁה מוֹרָשָׁה קְהִלַּת יַעֲקֹב', 2: 'שְׁמַע יִשְׂרָאֵל ה׳ אֱלֹקֵינוּ ה׳ אֶחָד', 3: 'וְהָיוּ הַדְּבָרִים הָאֵלֶּה אֲשֶׁר אָנֹכִי מְצַוְּךָ הַיּוֹם עַל לְבָבֶךָ', 4: 'כִּי קָרוֹב אֵלֶיךָ הַדָּבָר מְאֹד בְּפִיךָ וּבִלְבָבְךָ לַעֲשֹׂתוֹ' };
+    const ctxSrc = !isMon && CTX[sc.pg] ? sc.pg : !isMon && CTX[sc.pv] ? sc.pv : null;
+    const ctxKind = ctxSrc ? CTX[ctxSrc] : null;
+    const ctxOnAir = ctxSrc === sc.pg;
+    const pw = (PES[st.pes.p] || '').split(' ').filter(Boolean);
+    const pAtEnd = st.pes.w >= pw.length - 1;
+    const hs = st.hype.secs, hfmt = String(Math.floor(hs / 60)).padStart(2, '0') + ':' + String(hs % 60).padStart(2, '0');
+    const setHype = (p) => set({ hype: { ...st.hype, ...p } });
+    const ctx = {
+      show: !!ctxKind && !st.ctxHidden[ctxSrc + ':' + st.tab],
+      hide: () => set({ ctxHidden: { ...st.ctxHidden, [ctxSrc + ':' + st.tab]: true } }),
+      name: ctxSrc ? ({ timer: 'Countdown', thanks: 'Thank-you list' }[ctxSrc] || SRC[ctxSrc].name) : '', where: ctxOnAir ? 'ON AIR · ' + ({ live: 'LIVE', back: 'BACK SCREEN' }[st.tab] || '') : 'IN PREVIEW',
+      badge: `align-self: flex-start; height: 16px; padding: 0 6px; border-radius: 3px; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; line-height: 16px; color: #ffffff; background: ${ctxOnAir ? '#c7372f' : '#2f8f4e'};`,
+      box: `height: 56px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 0 8px 0 12px; border-radius: 6px; background: #1b2229; border: 1px solid ${ctxOnAir ? '#7a2a25' : '#2f5a3e'}; box-shadow: inset 3px 0 0 ${ctxOnAir ? '#c7372f' : '#2f8f4e'};`,
+      isTimer: ctxKind === 'timer', isPesukim: ctxKind === 'pesukim', isSlides: ctxKind === 'slides', isCredits: ctxKind === 'credits', isBrowser: ctxKind === 'browser',
+      time: hfmt, timeColor: hs <= 10 ? '#e0473b' : '#ffffff',
+      sub1: () => setHype({ secs: Math.max(0, hs - 60) }), add1: () => setHype({ secs: hs + 60, total: st.hype.total + 60 }), add5: () => setHype({ secs: hs + 300, total: st.hype.total + 300 }),
+      toggleRun: () => setHype({ running: !st.hype.running }), runLabel: st.hype.running ? 'Pause' : 'Resume',
+      last10: () => setHype({ secs: 10, running: true }), reset: () => setHype({ secs: st.hype.total, running: false }),
+      pesPos: 'Pasuk ' + st.pes.p + '/12 · word ' + (st.pes.w + 1) + '/' + (pw.length || 1), word: pw[st.pes.w] || 'Add words',
+      upNext: pAtEnd ? '(pasuk ' + Math.min(12, st.pes.p + 1) + ')' : pw[st.pes.w + 1],
+      nextLabel: pAtEnd ? 'Next pasuk ›' : 'Next word ›',
+      nextWord: () => set({ pes: pAtEnd ? { p: Math.min(12, st.pes.p + 1), w: 0 } : { ...st.pes, w: st.pes.w + 1 } }),
+      prevWord: () => set({ pes: st.pes.w > 0 ? { ...st.pes, w: st.pes.w - 1 } : st.pes }),
+      nextPasuk: () => set({ pes: { p: Math.min(12, st.pes.p + 1), w: 0 } }),
+      slidePos: st.slide + ' / 12', prevSlide: () => set({ slide: Math.max(1, st.slide - 1) }), nextSlide: () => set({ slide: Math.min(12, st.slide + 1) }), firstSlide: () => set({ slide: 1 }),
+      toggleRoll: () => set({ roll: { ...st.roll, on: !st.roll.on } }), rollLabel: st.roll.on ? 'Pause roll' : 'Play roll', speed: st.roll.speed.toFixed(2).replace(/0$/, '') + '×',
+      slower: () => set({ roll: { ...st.roll, speed: Math.max(0.25, st.roll.speed - 0.25) } }), faster: () => set({ roll: { ...st.roll, speed: Math.min(3, st.roll.speed + 0.25) } }), restartRoll: () => set({ roll: { ...st.roll, on: true } })
+    };
+    const doTake = () => {
+      clearInterval(this._anim); this._anim = null;
+      if (isMon) { set({ monitorText: st.draft, tbar: 0 }); return; }
+      set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: sc.pv, pv: sc.pg } }, tbar: 0, tbarHome: st.tbarHome ? 0 : 100, ...(st.tab === 'back' ? { backLive: false } : {}) });
+    };
+
+    const onAir = new Set([st.screens.live.pg, st.screens.back.pg]);
+    const ovlOf = (id) => Object.keys(st.ovl).filter((k) => st.ovl[k] === id);
+    const inputs = isMon ? [] : TAB_INPUTS[st.tab].map((id, i) => {
+      const s = SRC[id];
+      const isPg = sc.pg === id, isPv = sc.pv === id;
+      const looping = !!st.loops[id];
+      const inOvl = ovlOf(id);
+      return {
+        ...s, num: String(i + 1),
+        pick: () => updScreen({ pv: id }),
+        air: () => set({ screens: { ...st.screens, [st.tab]: { ...sc, pg: id } }, ...(st.tab === 'back' ? { backLive: false } : {}) }),
+        toggleLoop: () => set({ loops: { ...st.loops, [id]: !looping } }),
+        box: `min-height: 0; display: flex; flex-direction: column; gap: 3px; border-radius: 6px; overflow: hidden; background: #1e2127; border: 1px solid ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#2c3038'};`,
+        thumb: `position: relative; flex-grow: 1; min-height: 0; padding: 0; border: 0; border-radius: 0; background: ${s.tone}; box-shadow: inset 0 0 28px rgba(0,0,0,0.35);`,
+        hasTally: isPg || isPv,
+        tally: isPg ? 'ON AIR' : 'PREVIEW',
+        tallyStyle: `position: absolute; left: 5px; bottom: 5px; height: 15px; padding: 0 5px; border-radius: 3px; background: ${isPg ? '#c7372f' : '#2f8f4e'}; font-size: 8.5px; font-weight: 600; letter-spacing: 0.08em; line-height: 15px; color: #ffffff;`,
+        strip: `display: flex; align-items: center; height: 20px; margin: 0 3px; padding: 0 6px; border-radius: 3px; background: ${isPg ? '#b3342c' : isPv ? '#2a7d45' : 'transparent'}; font-size: 12px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden;`,
+        loopStyle: `flex-grow: 1; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${looping ? '#243039' : '#2a2e36'}; color: ${looping ? '#8fd3db' : '#d4d5d8'}; font-size: 10px;`,
+        ovl: [1, 2, 3, 4].map((n) => {
+          const on = inOvl.includes(String(n));
+          return {
+            n: String(n), label: 'Overlay channel ' + n,
+            toggle: () => set({ ovl: { ...st.ovl, [n]: on ? null : id } }),
+            style: `width: 20px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${on ? '#4fb3bf' : '#2a2e36'}; color: ${on ? '#0e2a2e' : '#a9abb0'}; font-size: 10px; font-weight: 600;`
+          };
+        })
+      };
+    });
+
+    const frame = (tone, color) => `position: relative; height: 256px; background: ${tone}; border: 1px solid ${color}; border-radius: 6px; overflow: hidden;`;
+    const pvSrc = isMon ? null : (SRC[sc.pv] || SRC.black);
+    const pgSrc = isMon ? null : (SRC[sc.pg] || SRC.black);
+
+    const overlayLayers = st.tab === 'live' ? Object.entries(st.ovl).filter(([, v]) => v).map(([n, v]) => {
+      const pos = { 1: 'right: 12px; top: 10px;', 2: 'left: 14px; bottom: 16px;', 3: 'left: 14px; top: 10px;', 4: 'right: 12px; bottom: 16px;' }[n];
+      return { label: SRC[v].name, style: `position: absolute; ${pos} height: 22px; padding: 0 10px; border-radius: 4px; background: rgba(10,12,14,0.72); color: #ffffff; font-size: 11px; font-weight: 600; display: flex; align-items: center;` };
+    }) : [];
+
+    const CH = [['master', 'Master', 0], ['cam1', 'Mic', 62], ['vid1', 'Vid 1', 70], ['vid2', 'Vid 2', 70], ['cam2', 'Cam 2', 40], ['phone', 'Phone', 40]];
+    const channels = CH.map(([id, name, base]) => {
+      const vol = st.vol[id] ?? 70;
+      const m = !!st.muted[id];
+      const isMaster = id === 'master';
+      const lvl = m ? 0 : isMaster ? Math.round(vol * 0.72) : onAir.has(id) ? Math.round(base * vol / 100) : 0;
+      const top = 100 - vol;
+      return {
+        name, vol,
+        db: vol === 0 ? '-∞' : ((vol - 80) / 4).toFixed(1),
+        onVol: (e) => set({ vol: { ...st.vol, [id]: Number(e.target.value) } }),
+        ...(() => { const d = this.drag('vol-' + id, true, (v) => this.setState((p) => ({ vol: { ...p.vol, [id]: v } }))); return { down: d.down, move: d.move, up: d.up }; })(),
+        toggleMute: () => set({ muted: { ...st.muted, [id]: !m } }),
+        toggleAfv: () => set({ afv: { ...st.afv, [id]: !st.afv[id] } }),
+        strip: `flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 2px; border-radius: 6px; background: ${isMaster ? '#262a31' : 'transparent'};`,
+        cap: `position: absolute; left: -3px; right: -3px; height: 14px; top: calc(${top}% - ${top * 0.14}px); border-radius: 4px; background: linear-gradient(#eceef2, #c9ccd3); border: 1px solid #0c0d10; box-shadow: 0 2px 4px rgba(0,0,0,0.55), inset 0 -2px 0 rgba(0,0,0,0.12); pointer-events: none;`,
+        meterMask: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - lvl}%; background: #101216;`,
+        meterMask2: `position: absolute; left: 0; right: 0; top: 0; height: ${100 - Math.max(0, lvl - 5)}%; background: #101216;`,
+        muteStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${m ? '#c7372f' : '#2a2e36'}; color: #ffffff; font-size: 10px; font-weight: 600;`,
+        afvStyle: `width: 22px; height: 20px; padding: 0; border-radius: 4px; border: 0; background: ${st.afv[id] ? '#243039' : '#2a2e36'}; color: ${st.afv[id] ? '#8fd3db' : '#ffffff'}; font-size: 10px; font-weight: 600; visibility: ${isMaster ? 'hidden' : 'visible'};`
+      };
+    });
+
+    const ovlChannels = [1, 2, 3, 4].map((n) => {
+      const v = st.ovl[n];
+      return {
+        label: v ? `${n} · ${SRC[v].name}` : String(n),
+        clear: () => set({ ovl: { ...st.ovl, [n]: null } }),
+        style: `height: 26px; min-width: 26px; padding: 0 8px; border-radius: 4px; border: 1px solid ${v ? '#4fb3bf' : '#2c3038'}; background: ${v ? '#243039' : '#2a2e36'}; color: ${v ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`
+      };
+    });
+
+    const blankOpts = [['back', 'Back'], ['backlive', 'Back + Live'], ['all', 'All']].map(([id, label]) => {
+      const targets = id === 'back' ? ['back'] : id === 'backlive' ? ['back', 'live'] : ['back', 'live', 'monitor'];
+      const on = targets.every((t) => st.screens[t].blank);
+      return {
+        label,
+        toggle: () => {
+          const screens = { ...st.screens };
+          for (const t of ['back', 'live', 'monitor']) screens[t] = { ...screens[t], blank: on ? false : targets.includes(t) };
+          set({ screens });
+        },
+        style: `height: 32px; padding: 0 12px; border: 0; border-radius: 0; background: ${on ? '#d9dce3' : '#2a2e36'}; color: ${on ? '#15171b' : '#e4e5e7'}; font-size: 12px; font-weight: 600;`
+      };
+    });
+
+    const fmt = (t) => { t = Math.max(0, Math.round(t)); return String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); };
+    const tport = (id, src) => {
+      const dur = src && src.dur ? src.dur : 0;
+      const live = !dur;
+      const p = { pos: 0, playing: false, ...(st.play[id] || {}), loop: !!st.loops[id] };
+      const pos = Math.min(p.pos, dur);
+      const upd = (patch) => set({ play: { ...st.play, [id]: { pos: p.pos, playing: p.playing, ...patch } } });
+      const base = (w) => `width: ${w}px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; gap: 1px; border-radius: 4px; border: 1px solid #2c3038; background: #262a31; color: #e4e5e7; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`;
+      return {
+        live, pos: live ? 0 : Math.round(pos / dur * 1000), playing: !live && p.playing, paused: live || !p.playing, playGlyph: !live && p.playing ? '❚❚' : '▶',
+        onSeek: (e) => upd({ pos: Number(e.target.value) / 1000 * dur }),
+        restart: () => upd({ pos: 0 }),
+        back: () => upd({ pos: Math.max(0, pos - 10) }),
+        fwd: () => upd({ pos: Math.min(dur, pos + 10) }),
+        end: () => upd({ pos: Math.max(0, dur - 1) }),
+        toggle: () => upd({ playing: !p.playing, pos: p.pos >= dur ? 0 : p.pos }),
+        toggleLoop: () => set({ loops: { ...st.loops, [id]: !p.loop } }),
+        btn: base(26), btnWide: base(34),
+        playBtn: `width: 34px; height: 24px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid ${!live && p.playing ? '#4fb3bf' : '#2c3038'}; background: ${!live && p.playing ? '#243039' : '#343944'}; color: #ffffff; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
+        loopStyle: `height: 24px; padding: 0 9px; border-radius: 4px; border: 1px solid ${p.loop ? '#4fb3bf' : '#2c3038'}; background: ${p.loop ? '#243039' : '#262a31'}; color: ${p.loop ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; opacity: ${live ? 0.35 : 1}; pointer-events: ${live ? 'none' : 'auto'};`,
+        elapsed: live ? 'LIVE' : fmt(pos), total: live ? '' : ' / ' + fmt(dur), remain: live ? 'camera / live source' : '−' + fmt(dur - pos),
+        marks: live ? [] : [0.18, 0.46, 0.77].map((f) => `position: absolute; top: 1px; left: calc(${f * 100}% - 1px); width: 2px; height: 5px; border-radius: 1px; background: #8e9096; pointer-events: none;`)
+      };
+    };
+    const pgBlank = !!sc.blank || st.panic;
+    const dimOnly = isMon && st.panic && !sc.blank;
+    const mm = Math.floor(st.countdown / 60), ss = st.countdown % 60;
+    const tabName = { live: 'Live Screen', back: 'Back Screen', monitor: 'Monitor' }[st.tab];
+    const seg = (on) => `height: 26px; padding: 0 12px; border: 0; border-radius: 0; background: ${on ? '#243039' : '#1e2127'}; color: ${on ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600;`;
+
+    return {
+      tabs, presets, transitions, inputs, channels, ovlChannels, overlayLayers, blankOpts,
+      monLayouts: [['full', 'Message'], ['stack', 'Msg + time'], ['split', 'Side by side']].map(([id, name]) => ({
+        name, pick: () => set({ monLayout: id }),
+        style: `padding: 5px; display: flex; flex-direction: column; align-items: center; gap: 4px; border-radius: 4px; border: 1px solid ${st.monLayout === id ? '#4fb3bf' : '#2c3038'}; background: ${st.monLayout === id ? '#243039' : '#262a31'}; color: ${st.monLayout === id ? '#ffffff' : '#d4d5d8'};`,
+        thumb: `width: 100%; height: 30px; border-radius: 2px; background: #000; box-shadow: ${id === 'full' ? 'inset 0 0 0 7px #000, inset 0 0 0 9px #555' : id === 'stack' ? 'inset 0 -9px 0 #444, inset 0 0 0 1px #333' : 'inset -26px 0 0 #444, inset 0 0 0 1px #333'};`
+      })),
+      pvT: tport(sc.pv, pvSrc), pgT: tport(sc.pg, pgSrc),
+      isMonitor: isMon, notMonitor: !isMon, isBack: st.tab === 'back', tabNameUpper: tabName.toUpperCase(),
+      toggleFollow: () => set({ follow: !st.follow }),
+      backLive: !!st.backLive,
+      toggleBackLive: () => set({ backLive: !st.backLive }),
+      backLiveLabel: st.backLive ? 'On · Back plays Live' : 'Off · separate',
+      backLiveStyle: `height: 48px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: 8px; border: 2px solid ${st.backLive ? '#4fb3bf' : '#2c3038'}; background: ${st.backLive ? '#1f6f79' : '#1e2127'}; color: ${st.backLive ? '#ffffff' : '#d4d5d8'}; white-space: nowrap;`,
+      followStyle: `height: 26px; padding: 0 10px; border-radius: 4px; border: 1px solid ${st.follow ? '#4fb3bf' : '#2c3038'}; background: ${st.follow ? '#243039' : '#2a2e36'}; color: ${st.follow ? '#ffffff' : '#a9abb0'}; font-size: 11px; font-weight: 600; white-space: nowrap;`,
+      onQuickPick: (e) => { if (e.target.value) set({ draft: e.target.value }); },
+      miniMon: `position: relative; height: 118px; border-radius: 4px; background: #000; border: 1px solid ${st.flashing ? '#ffffff' : '#c7372f'}; display: flex; align-items: center; justify-content: center; opacity: ${st.panic ? 0.35 : 1};`,
+      setSimple: () => set({ mode: 'simple' }), setAdvanced: () => set({ mode: 'advanced' }),
+      simpleStyle: seg(st.mode === 'simple'), advancedStyle: seg(st.mode === 'advanced'),
+      presetButtons: ['Vid 2 + Logo (fade)', 'Cam 1 + Lower third', 'Blank back screen'],
+      prevPreset: () => set({ preset: (st.preset + PRESETS.length - 1) % PRESETS.length }),
+      nextPreset: () => set({ preset: (st.preset + 1) % PRESETS.length }),
+      pv: isMon ? { title: 'Next message', frame: frame('#000', '#2f8f4e'), time: '', scene: 'black' } : { ...pvSrc, title: pvSrc.name, frame: frame(pvSrc.tone, '#2f8f4e'), time: pvSrc.video ? '00:00 / 00:45' : 'LIVE' },
+      pg: isMon
+        ? { title: 'On the monitor now', frame: frame('#000', '#c7372f'), time: '', bar: '', scene: 'black' }
+        : { ...pgSrc, title: pgSrc.name, frame: frame(pgSrc.tone, '#c7372f'), time: pgSrc.video ? '01:12 / 02:10' : 'LIVE', bar: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pgSrc.video ? 55 : 0}%; background: #e0473b;` },
+      outState: pgBlank ? 'BLANK' : 'ON AIR · ' + tabName.toUpperCase(),
+      outBadge: `height: 18px; padding: 0 8px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; display: flex; align-items: center; background: ${pgBlank ? '#343944' : '#c7372f'}; color: #ffffff;`,
+      monitorPreviewText: st.draft || ' ',
+      monitorLiveText: st.monitorText || ' ',
+      monTextStyle: `font-size: ${{ m: 22, l: 28, xl: 36 }[st.textSize]}px; font-weight: 600; color: #ffffff; text-align: center; line-height: 1.2;`,
+      textSize: st.textSize, onTextSize: (e) => set({ textSize: e.target.value }),
+      countdownOn: st.countdownOn, clockOn: st.clockOn,
+      countdown: `${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`,
+      toggleCountdown: () => set({ countdownOn: !st.countdownOn }),
+      toggleClock: () => set({ clockOn: !st.clockOn }),
+      addMinute: () => set({ countdown: st.countdown + 60 }),
+      subMinute: () => set({ countdown: Math.max(0, st.countdown - 60) }),
+      flashing: st.flashing,
+      draft: st.draft, onDraft: (e) => set({ draft: e.target.value }),
+      sendMsg: () => set({ monitorText: st.draft }),
+      clearMsg: () => set({ monitorText: '' }),
+      quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Speak louder', 'Look at camera 2', 'Next: video', 'Stand by', 'Thank you!'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
+      flash: () => { set({ flashing: true }); clearTimeout(this._ft); this._ft = setTimeout(() => this.setState({ flashing: false }), 900); },
+      take: doTake,
+      ctx,
+      ...(() => {
+        const allView = !!st.allView;
+        const TR = { fade: 'Fade', merge: 'Merge', dip: 'Dip', wipe: 'Wipe' };
+        const badge = (bg) => `height: 16px; padding: 0 6px; border-radius: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; line-height: 16px; color: #ffffff; background: ${bg}; white-space: nowrap;`;
+        const card = 'display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: 8px; background: #1e2127; border: 1px solid #2c3038; min-width: 0;';
+        const allCards = ['live', 'back'].map((id) => {
+          const scr = st.screens[id];
+          const dark = !!scr.blank || st.panic;
+          const following = id === 'back' && !!st.backLive;
+          const fx = st.allFx && st.allFx.id === id ? st.allFx.t : 0;
+          const setScr = (patch, breakFollow) => set({ screens: { ...st.screens, [id]: { ...scr, ...patch } }, ...(breakFollow && id === 'back' ? { backLive: false } : {}) });
+          return {
+            name: id === 'live' ? 'Live Screen' : 'Back Screen', isBack: id === 'back',
+            status: dark ? 'BLANK' : following ? 'FOLLOWS LIVE' : 'ON AIR',
+            badge: badge(dark ? '#343944' : following ? '#1f6f79' : '#c7372f'),
+            box: card,
+            pgScene: (SRC[scr.pg] || {}).scene || 'black', pvScene: (SRC[scr.pv] || {}).scene || 'black',
+            pgName: (SRC[scr.pg] || {}).name || 'Nothing on air', pvName: (SRC[scr.pv] || {}).name || '—',
+            dark, fading: fx > 0, fadeStyle: `position: absolute; inset: 0; opacity: ${fx};`,
+            trans: TR[st.trans] || 'Fade',
+            take: () => this.allTake(id),
+            cut: () => { clearInterval(this._allAnim); this._allAnim = null; this.allSwap(id); },
+            toggleBlank: () => setScr({ blank: !scr.blank }, false),
+            blankLabel: scr.blank ? 'Unblank' : 'Blank',
+            blankStyle: `border-radius: 6px; border: 1px solid ${scr.blank ? '#8e9096' : '#3a3f48'}; background: ${scr.blank ? '#e4e5e7' : '#2a2e36'}; color: ${scr.blank ? '#15171b' : '#ffffff'}; font-size: 12px; font-weight: 600;`,
+            chips: TAB_INPUTS[id].map((x) => {
+              const isPg = scr.pg === x, isPv = scr.pv === x;
+              return {
+                name: SRC[x].name,
+                pick: () => setScr({ pv: x }, false),
+                air: () => setScr({ pg: x }, true),
+                style: `height: 28px; padding: 0 6px; border-radius: 4px; border: 1px solid ${isPg ? '#c7372f' : isPv ? '#2f8f4e' : '#2c3038'}; background: ${isPg ? '#3a1a18' : isPv ? '#16301f' : '#262a31'}; color: #e4e5e7; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`
+              };
+            }),
+            followLabel: following ? 'Back = Live · on (tap to control the Back Screen separately)' : 'Back = Live · off (tap to mirror the Live Screen)',
+            followStyle: `height: 30px; border-radius: 6px; border: 1px solid ${following ? '#4fb3bf' : '#2c3038'}; background: ${following ? '#1f6f79' : '#262a31'}; color: #ffffff; font-size: 11px; font-weight: 600;`,
+            open: () => set({ allView: false, tab: id, tbar: 0 }),
+            tp: tport(scr.pg, SRC[scr.pg])
+          };
+        });
+        const mon = st.screens.monitor;
+        const monDark = !!mon.blank;
+        const now = new Date();
+        const cm = Math.floor(st.countdown / 60), cs = st.countdown % 60;
+        return {
+          allView, isAll: allView, notAll: !allView,
+          pickAll: () => { clearInterval(this._anim); this._anim = null; set({ allView: !allView, tbar: 0 }); },
+          allTabStyle: `height: 48px; padding: 0 12px; display: flex; align-items: center; gap: 8px; border-radius: 8px; border: 2px solid ${allView ? '#4fb3bf' : '#2c3038'}; background: ${allView ? '#243039' : '#1e2127'}; color: ${allView ? '#ffffff' : '#d4d5d8'}; white-space: nowrap;`,
+          allCards,
+          allMon: {
+            status: st.panic ? 'DIMMED' : monDark ? 'BLANK' : 'ON AIR',
+            badge: badge(st.panic || monDark ? '#343944' : '#c7372f'),
+            box: card,
+            screen: `position: relative; aspect-ratio: 16 / 9; border-radius: 4px; border: 2px solid #c7372f; background: #000; display: flex; align-items: center; justify-content: center; opacity: ${st.panic ? 0.35 : monDark ? 0.15 : 1};`,
+            clock: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
+            countdown: st.countdownOn ? `${String(cm).padStart(2, '0')}:${String(cs).padStart(2, '0')}` : '',
+            text: st.monitorText || ' ',
+            quick: ['Please wrap up', '5 minutes left', '2 minutes left', 'Stand by'].map((t) => ({ text: t, pick: () => set({ draft: t }) })),
+            open: () => set({ allView: false, tab: 'monitor', tbar: 0 })
+          },
+          onDraftInput: (e) => set({ draft: e.target.value }),
+          masterVal: String(st.vol.master),
+          onMaster: (e) => set({ vol: { ...st.vol, master: Number(e.target.value) } })
+        };
+      })(),
+      tbar: String(tbPos),
+      ...(() => { const prog = (x) => Math.abs(x - st.tbarHome); const d = this.drag('tbar', false, (x) => { if (prog(x) >= 100) { this._dragKey = null; doTake(); } else this.setState({ tbar: prog(x) }); }, (x) => { if (prog(x) >= 97) doTake(); else this.setState({ tbar: 0 }); }); return { tbDown: d.down, tbMove: d.move, tbUp: d.up }; })(),
+      tbarLeft: st.tbarHome ? 'Preview' : 'Program', tbarRight: st.tbarHome ? 'Program' : 'Preview',
+      tbarPct: st.tbar ? st.tbar + '%' : 'drag to take',
+      tbarFill: `position: absolute; left: calc(12px + (100% - 24px) * ${Math.min(tbPos, st.tbarHome) / 100}); top: 50%; height: 4px; margin-top: -2px; width: calc((100% - 24px) * ${st.tbar / 100}); border-radius: 2px; background: #c7372f; pointer-events: none;`,
+      tbarCap: `position: absolute; top: 5px; bottom: 5px; width: 18px; left: calc(12px + (100% - 24px) * ${tbPos / 100} - 9px); border-radius: 4px; background: linear-gradient(to right, transparent 8px, #6f737c 8px 10px, transparent 10px), linear-gradient(#f3f4f6, #c3c6cd); border: 1px solid #0c0d10; box-shadow: 0 2px 6px rgba(0,0,0,0.6); pointer-events: none;`,
+      tbarActive: st.tbar > 0 && !isMon,
+      tbarOverlay: (() => { const t = st.tbar / 100; const base = 'position: absolute; inset: 0; pointer-events: none;';
+        if (st.trans === 'dip') return base + ` opacity: ${t >= 0.5 ? 1 : 0};`;
+        if (st.trans === 'wipe') return base + ` clip-path: inset(0 ${Math.round((1 - t) * 100)}% 0 0); box-shadow: 2px 0 0 #ffffff;`;
+        return base + ` opacity: ${t};`; })(),
+      tbarDip: `position: absolute; inset: 0; pointer-events: none; background: #000; opacity: ${st.trans === 'dip' ? (1 - Math.abs(st.tbar / 50 - 1)).toFixed(2) : 0};`,
+      autoTake: () => {
+        if (isMon || this._anim) { if (isMon) doTake(); return; }
+        const dur = { fade: 800, merge: 1200, dip: 1000, wipe: 600 }[st.trans] || 800;
+        const t0 = performance.now();
+        this._anim = setInterval(() => {
+          const f = Math.min(1, (performance.now() - t0) / dur);
+          if (f >= 1) { clearInterval(this._anim); this._anim = null; this.takeNow(); }
+          else this.setState({ tbar: Math.round(f * 100) });
+        }, 30);
+      },
+      taking: !!this._anim,
+      pgBlank,
+      blankLayer: `position: absolute; inset: 0; background: ${dimOnly ? 'rgba(0,0,0,0.72)' : '#000'}; display: flex; align-items: center; justify-content: center;`,
+      blankText: dimOnly ? 'DIMMED' : 'BLANK',
+      panic: st.panic,
+      togglePanic: () => set({ panic: !st.panic }),
+      panicLabel: st.panic ? 'RESTORE' : 'PANIC',
+      panicBtnStyle: `height: 34px; padding: 0 18px; border-radius: 6px; border: 0; background: ${st.panic ? '#e0473b' : '#5a1f1b'}; color: #ffffff; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; display: flex; align-items: center; gap: 8px;`,
+      toggleRec: () => set({ rec: !st.rec }),
+      recTime: st.rec ? '00:42:17' : 'off',
+      recDot: `width: 8px; height: 8px; border-radius: 4px; background: ${st.rec ? '#e0473b' : '#6b6d72'};`,
+      recStyle: `height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background: ${st.rec ? '#3a1a18' : '#2a2e36'}; color: #ffffff; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;`
+    };
+  }
+}
+</script>
+</body>
+</html>

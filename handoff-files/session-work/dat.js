@@ -1,0 +1,28 @@
+const { chromium } = require('playwright-core');
+(async () => {
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+  const p = await b.newPage({ viewport: { width: 1600, height: 900 } });
+  p.setDefaultTimeout(15000);
+  const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+  await p.addInitScript(() => localStorage.setItem('lumora.textSize', 'normal'));
+  await p.goto('http://localhost:1420');
+  await p.getByRole('button', { name: 'Skip for now' }).click();
+  await p.getByRole('button', { name: 'Text', exact: true }).click();
+  await p.getByText('Data file (spreadsheet)…').click();
+  const fc = p.waitForEvent('filechooser');
+  await p.getByRole('button', { name: 'Choose a file…' }).click();
+  await (await fc).setFiles('speakers.csv');
+  await p.waitForTimeout(1500);
+  await p.getByRole('button', { name: 'Next row ▶' }).click();
+  await p.waitForTimeout(400);
+  await p.screenshot({ path: 'dat1.png' });
+  await p.keyboard.press('Escape');
+  await p.getByRole('button', { name: 'Text', exact: true }).click();
+  await p.getByText(/^Add a lower third/).click();
+  await p.getByLabel('Text', { exact: true }).fill('{Name}');
+  await p.getByLabel('Second line').fill('{Role}');
+  await p.waitForTimeout(500);
+  await p.screenshot({ path: 'dat2.png' });
+  console.log('errors', errs);
+  await b.close();
+})();

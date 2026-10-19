@@ -1,0 +1,25 @@
+const {chromium}=require('playwright-core');
+(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
+const p=await b.newPage({viewport:{width:1440,height:900}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.goto('http://localhost:1420/');await p.waitForTimeout(600);
+const d=p.getByRole('dialog',{name:'Event setup'});
+await d.getByPlaceholder(/Chanukah Rally/).fill('Chanukah Rally 2026');
+const [fc]=await Promise.all([p.waitForEvent('filechooser'),d.getByRole('button',{name:'Choose picture…'}).click()]);await fc.setFiles('logo.svg');await p.waitForTimeout(300);
+await p.screenshot({path:'shots/evs1.png'});
+await d.getByRole('button',{name:'Next'}).click();await d.getByRole('button',{name:/The event logo/}).nth(0).click();await d.getByRole('button',{name:/The event logo/}).nth(1).click();
+await p.screenshot({path:'shots/evs2.png'});
+await d.getByRole('button',{name:'Next'}).click();await p.screenshot({path:'shots/evs3.png'});
+await d.getByRole('button',{name:'Done'}).click();await p.waitForTimeout(300);
+console.log('title shows:',await p.locator('.titlebar__event').innerText());
+// countdown: put in next, take, jump to 3 s and start
+await p.getByRole('button',{name:'Put in Next'}).click();await p.waitForTimeout(200);await p.getByRole('button',{name:/^TAKE/}).click();await p.waitForTimeout(900);
+await p.getByRole('button',{name:'Last 10s'}).isVisible().catch(()=>{});
+await p.getByRole('button',{name:'10 s',exact:true}).click();await p.waitForTimeout(500);
+await p.locator('.mon--pgm .mon__screen').screenshot({path:'shots/cd-10.png'});
+await p.waitForTimeout(9800);console.log('just after zero: text',await p.locator('.mon--pgm .hype__time').first().innerText(),'| numbers faded?',await p.locator('.mon--pgm .hype__stack.is-gone').count(),'| logo?',await p.locator('.mon--pgm .hype__logo').count());await p.locator('.mon--pgm .mon__screen').screenshot({path:'shots/cd-zero.png'});await p.waitForTimeout(2600);
+console.log('after zero: numbers shown?',await p.locator('.mon--pgm .hype__time').count(),'| logo shown?',await p.locator('.mon--pgm .hype__logo').count());
+await p.locator('.mon--pgm .mon__screen').screenshot({path:'shots/cd-end.png'});
+await p.getByRole('button',{name:'PANIC'}).dblclick();await p.waitForTimeout(500);
+console.log('panic shows logo?',await p.locator('.mon--pgm [data-panic] img').count());
+await p.locator('.mon--pgm .mon__screen').screenshot({path:'shots/panic-logo.png'});
+console.log('errors',errs);await b.close();})();

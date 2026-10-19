@@ -1,0 +1,221 @@
+[
+ {
+  "menu": "Event",
+  "item": "Event setup…",
+  "window": "Set up the event",
+  "problems": []
+ },
+ {
+  "menu": "Event",
+  "item": "Event look (branding)…",
+  "window": "Event look",
+  "problems": []
+ },
+ {
+  "menu": "Event",
+  "item": "Zmanim and Shabbos…",
+  "window": "Zmanim and Shabbos",
+  "problems": []
+ },
+ {
+  "menu": "Presets",
+  "item": "Add a preset…",
+  "window": "New preset",
+  "problems": []
+ },
+ {
+  "menu": "Presets",
+  "item": "Next preset",
+  "window": null,
+  "problems": [
+   "click failed locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
+  ]
+ },
+ {
+  "menu": "Presets",
+  "item": "Previous preset",
+  "window": null,
+  "problems": [
+   "click failed locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
+  ]
+ },
+ {
+  "menu": "Cues",
+  "item": "Run of show…",
+  "window": "Run of show",
+  "problems": []
+ },
+ {
+  "menu": "Cues",
+  "item": "Triggers (when this happens, do that)…",
+  "window": "Triggers",
+  "problems": []
+ },
+ {
+  "menu": "Cues",
+  "item": "Next cue (N)",
+  "window": null,
+  "problems": [
+   "click failed locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
+  ]
+ },
+ {
+  "menu": "Cues",
+  "item": "Start the show",
+  "window": null,
+  "problems": [
+   "click failed locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
+  ]
+ },
+ {
+  "menu": "Library",
+  "item": "Open the library…",
+  "window": "Library",
+  "problems": []
+ },
+ {
+  "menu": "Inputs",
+  "item": "Add input…",
+  "window": "Add input",
+  "problems": []
+ },
+ {
+  "menu": "Inputs",
+  "item": "3D logo maker…",
+  "window": "3D logo maker",
+  "problems": [
+   "scrolls: .lm__left 734/591",
+   "scrolls: .lm__right 644/591"
+  ]
+ },
+ {
+  "menu": "Overlays",
+  "item": "Set up overlays…",
+  "window": "Overlays",
+  "problems": []
+ },
+ {
+  "menu": "Overlays",
+  "item": "Take every overlay off",
+  "window": null,
+  "problems": [
+   "click failed locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('"
+  ]
+ },
+ {
+  "menu": "Text",
+  "item": "Add a lower third…",
+  "window": "Add input",
+  "problems": []
+ },
+ {
+  "menu": "Text",
+  "item": "Add a title…",
+  "window": "Add input",
+  "problems": []
+ },
+ {
+  "menu": "Text",
+  "item": "Add a ticker…",
+  "window": "Add input",
+  "problems": []
+ },
+ {
+  "menu": "Text",
+  "item": "Add a full-screen message…",
+  "window": "Add input",
+  "problems": []
+ },
+ {
+  "menu": "Text",
+  "item": "Live chat and audience questions…",
+  "window": null,
+  "problems": []
+ },
+ {
+  "menu": "Text",
+  "item": "Data file (spreadsheet)…",
+  "window": "Data file",
+  "problems": []
+ },
+ {
+  "menu": "Slideshow",
+  "item": "Add a slideshow…",
+  "window": "Add input",
+  "problems": [
+   "scrolls: .addinput__body 683/591"
+  ]
+ },
+ {
+  "menu": "12 Pesukim",
+  "item": "Add the 12 Pesukim bar (ready in Next)",
+  "window": null,
+  "problems": []
+ },
+ {
+  "menu": "Timer",
+  "item": "Add a countdown…",
+  "window": "Add input",
+  "problems": []
+ },
+ {
+  "menu": "Visuals",
+  "item": "Stage visuals…",
+  "window": "Stage visuals",
+  "problems": [
+   "button too small: \"RandomizeR\""
+  ]
+ },
+ {
+  "menu": "Visuals",
+  "item": "Next scene",
+  "window": null,
+  "problems": []
+ },
+ {
+  "menu": "Visuals",
+  "item": "One flash",
+  "window": null,
+  "problems": []
+ },
+ {
+  "menu": "Visuals",
+  "item": "Visuals to black",
+  "window": null,
+  "problems": []
+ },
+ {
+  "menu": "Settings",
+  "item": "Recording and streaming…",
+  "window": "Recording and streaming",
+  "problems": []
+ },
+ {
+  "menu": "Settings",
+  "item": "Phone remote…",
+  "window": "Phone remote",
+  "problems": []
+ },
+ {
+  "menu": "Settings",
+  "item": "MIDI controller…",
+  "window": "MIDI controller",
+  "problems": [
+   "scrolls: .midi__body 1017/591"
+  ]
+ },
+ {
+  "menu": "Help",
+  "item": "How to use Lumora",
+  "window": "How to use Lumora",
+  "problems": [
+   "scrolls: .hlp__nav 674/648"
+  ]
+ },
+ {
+  "menu": "Help",
+  "item": "Keyboard shortcuts",
+  "window": "Keyboard shortcuts",
+  "problems": []
+ }
+]

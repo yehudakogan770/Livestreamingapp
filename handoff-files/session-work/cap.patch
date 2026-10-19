@@ -1,0 +1,287 @@
+<<<<
+/// More than this waiting to be written means the disk or network can't keep up.
+const MAX_QUEUED: u64 = 64 * 1024 * 1024;
+====
+/// More than this waiting to be written means the disk or network can't keep up.
+const MAX_QUEUED: u64 = 64 * 1024 * 1024;
+/// FFmpeg reports its progress every second; this long without a report means
+/// it is stuck (the network went silent): it is ended so the stream can reconnect.
+const STALL: Duration = Duration::from_secs(20);
+/// After stop, how long FFmpeg gets to take the last chunks before it is ended.
+const STOP_GRACE: Duration = Duration::from_secs(10);
+/// How many recent failures the status keeps (several can happen at once).
+const FAILURES_KEPT: usize = 8;
+>>>>
+<<<<
+            if slot.as_ref().is_some_and(|r| r.session == session) {
+                *slot = None;
+                s.failure = Some(Failure {
+                    kind,
+                    session,
+                    message,
+                    never_started,
+                });
+            }
+====
+            if slot.as_ref().is_some_and(|r| r.session == session) {
+                *slot = None;
+                let f = Failure {
+                    kind,
+                    session,
+                    message,
+                    never_started,
+                };
+                // Kept in a list too: the stream and its vertical version often
+                // fail together, and each must be seen to be retried.
+                s.failures.push(f.clone());
+                let extra = s.failures.len().saturating_sub(FAILURES_KEPT);
+                s.failures.drain(..extra);
+                s.failure = Some(f);
+            }
+>>>>
+<<<<
+    pub finishing: bool,
+    pub failure: Option<Failure>,
+}
+====
+    pub finishing: bool,
+    pub failure: Option<Failure>,
+    /// The last few failures, oldest first (`failure` is the newest).
+    pub failures: Vec<Failure>,
+}
+>>>>
+<<<<
+    /// Set when the operator stops it (so the end is not a failure).
+    stopping: Arc<AtomicBool>,
+}
+====
+    /// Set when the operator stops it (so the end is not a failure).
+    stopping: Arc<AtomicBool>,
+    /// The FFmpegs it feeds (ended if they are stuck after stop).
+    pids: Vec<u32>,
+    /// Set once everything has finished.
+    done: Arc<AtomicBool>,
+}
+>>>>
+<<<<
+    next: AtomicU64,
+    ffmpeg: Option<PathBuf>,
+}
+====
+    next: AtomicU64,
+    ffmpeg: Option<PathBuf>,
+    max_queued: u64,
+    stall: Duration,
+}
+>>>>
+<<<<
+            next: AtomicU64::new(1),
+            ffmpeg,
+        }
+====
+            next: AtomicU64::new(1),
+            ffmpeg,
+            max_queued: MAX_QUEUED,
+            stall: STALL,
+        }
+>>>>
+<<<<
+        let (tx, rx) = mpsc::channel::<Vec<u8>>();
+        let queued = Arc::new(AtomicU64::new(0));
+        {
+            let shared = Arc::clone(&self.shared);
+            let queued = Arc::clone(&queued);
+            let ffmpeg = self.ffmpeg.clone();
+            let mime = mime.to_owned();
+            thread::Builder::new()
+                .name(format!("lumora-{kind:?}-{session}").to_lowercase())
+                .spawn(move || {
+                    write_loop(&shared, kind, session, out, &rx, &queued);
+                    finish.run(&shared, ffmpeg.as_deref(), &mime);
+                })
+                .map_err(|e| e.to_string())?;
+        }
+        lock(&self.sessions).insert(
+            session,
+            Session {
+                kind,
+                tx,
+                queued,
+                stopping,
+            },
+        );
+====
+        let (tx, rx) = mpsc::channel::<Vec<u8>>();
+        let queued = Arc::new(AtomicU64::new(0));
+        let pids = finish.pids();
+        let done = Arc::new(AtomicBool::new(false));
+        {
+            let shared = Arc::clone(&self.shared);
+            let queued = Arc::clone(&queued);
+            let ffmpeg = self.ffmpeg.clone();
+            let mime = mime.to_owned();
+            let done = Arc::clone(&done);
+            thread::Builder::new()
+                .name(format!("lumora-{kind:?}-{session}").to_lowercase())
+                .spawn(move || {
+                    write_loop(&shared, kind, session, out, &rx, &queued);
+                    finish.run(&shared, ffmpeg.as_deref(), &mime);
+                    done.store(true, Ordering::SeqCst);
+                })
+                .map_err(|e| e.to_string())?;
+        }
+        lock(&self.sessions).insert(
+            session,
+            Session {
+                kind,
+                tx,
+                queued,
+                stopping,
+                pids,
+                done,
+            },
+        );
+>>>>
+<<<<
+        let len = bytes.len() as u64;
+        if s.queued.fetch_add(len, Ordering::SeqCst) + len > MAX_QUEUED {
+            let kind = s.kind;
+            drop(sessions);
+            self.stop(session);
+            self.shared.fail(
+====
+        let len = bytes.len() as u64;
+        if s.queued.fetch_add(len, Ordering::SeqCst) + len > self.max_queued {
+            let kind = s.kind;
+            drop(sessions);
+            // Say why first: once stopped, the session is no longer there to fail.
+            self.shared.fail(
+>>>>
+<<<<
+                    Kind::Ndi => "The computer can't keep up with the NDI output.".to_owned(),
+                },
+            );
+            return Err("too slow".to_owned());
+====
+                    Kind::Ndi => "The computer can't keep up with the NDI output.".to_owned(),
+                },
+            );
+            self.stop(session);
+            return Err("too slow".to_owned());
+>>>>
+<<<<
+        // Dropping the sender ends the write loop; the file is closed or
+        // FFmpeg finishes sending.
+        drop(s.tx);
+====
+        // Dropping the sender ends the write loop; the file is closed or
+        // FFmpeg finishes sending.
+        drop(s.tx);
+        // An FFmpeg stuck on a dead connection never takes the last chunks:
+        // end it, so neither it nor the write loop is left behind.
+        if !s.pids.is_empty() {
+            let (pids, done) = (s.pids, s.done);
+            thread::spawn(move || {
+                let deadline = Instant::now() + STOP_GRACE;
+                while Instant::now() < deadline && !done.load(Ordering::SeqCst) {
+                    thread::sleep(Duration::from_millis(100));
+                }
+                if !done.load(Ordering::SeqCst) {
+                    pids.into_iter().for_each(kill_pid);
+                }
+            });
+        }
+>>>>
+<<<<
+        if let Some(out) = child.stdout.take() {
+            let shared = Arc::clone(&self.shared);
+            let errors = Arc::clone(&errors);
+            let stopping = Arc::clone(stopping);
+            thread::spawn(move || {
+                let sent = read_progress(out, &shared, session);
+====
+        if let Some(out) = child.stdout.take() {
+            let shared = Arc::clone(&self.shared);
+            let errors = Arc::clone(&errors);
+            let stopping = Arc::clone(stopping);
+            let heard = Arc::new(AtomicU64::new(now_ms()));
+            let ended = Arc::new(AtomicBool::new(false));
+            watch_for_stall(pid, self.stall, &heard, &ended, &stopping);
+            thread::spawn(move || {
+                let sent = read_progress(out, &shared, kind, session, &heard);
+                ended.store(true, Ordering::SeqCst);
+>>>>
+<<<<
+/// FFmpeg's progress report: keep the speed up to date. Says whether anything was sent.
+fn read_progress(out: impl Read, shared: &Shared, session: u64) -> bool {
+    let mut sent = false;
+    for line in BufReader::new(out).lines().map_while(Result::ok) {
+====
+/// End FFmpeg when it stops reporting progress (stuck on a connection that
+/// went silent), so the failure is reported and the stream can reconnect.
+fn watch_for_stall(
+    pid: u32,
+    stall: Duration,
+    heard: &Arc<AtomicU64>,
+    ended: &Arc<AtomicBool>,
+    stopping: &Arc<AtomicBool>,
+) {
+    let (heard, ended, stopping) = (Arc::clone(heard), Arc::clone(ended), Arc::clone(stopping));
+    let limit = u64::try_from(stall.as_millis()).unwrap_or(u64::MAX);
+    thread::spawn(move || loop {
+        thread::sleep(Duration::from_millis(250).min(stall));
+        if ended.load(Ordering::SeqCst) || stopping.load(Ordering::SeqCst) {
+            return;
+        }
+        if now_ms().saturating_sub(heard.load(Ordering::SeqCst)) > limit {
+            eprintln!("lumora: FFmpeg {pid} stopped reporting progress: ending it");
+            kill_pid(pid);
+            return;
+        }
+    });
+}
+
+/// FFmpeg's progress report: keep the speed up to date. Says whether anything was sent.
+fn read_progress(
+    out: impl Read,
+    shared: &Shared,
+    kind: Kind,
+    session: u64,
+    heard: &AtomicU64,
+) -> bool {
+    let mut sent = false;
+    for line in BufReader::new(out).lines().map_while(Result::ok) {
+        heard.store(now_ms(), Ordering::SeqCst);
+>>>>
+<<<<
+            shared.update(|s| {
+                if let Some(r) = s.streaming.as_mut().filter(|r| r.session == session) {
+                    r.speed = speed;
+                }
+            });
+====
+            shared.update(|s| {
+                if let Some(r) = Shared::slot(s, kind)
+                    .as_mut()
+                    .filter(|r| r.session == session)
+                {
+                    r.speed = speed;
+                }
+            });
+>>>>
+<<<<
+impl Finish {
+    fn run(
+====
+impl Finish {
+    /// The FFmpegs being fed.
+    fn pids(&self) -> Vec<u32> {
+        match self {
+            Finish::Recording(_) => Vec::new(),
+            Finish::Stream(child) => vec![child.id()],
+            Finish::Ndi(children) => children.iter().map(Child::id).collect(),
+        }
+    }
+
+    fn run(
+>>>>

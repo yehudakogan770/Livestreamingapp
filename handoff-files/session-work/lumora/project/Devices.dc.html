@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lumora — Connected devices</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+/* lumora-polish:start */
+*{-webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+::selection{background:#243039;color:#ffffff}
+button,a{transition:background-color .12s ease,border-color .12s ease,color .12s ease,filter .12s ease,transform .06s ease}
+button:hover,a[href]:hover{filter:brightness(1.14)}
+button:active,a[href]:active{transform:translateY(1px);filter:brightness(.94)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #4fb3bf;outline-offset:1px}
+input:not([type=range]):not([type=checkbox]):not([type=radio]):focus,select:focus,textarea:focus{border-color:#4fb3bf !important;box-shadow:0 0 0 3px rgba(79,179,191,.18)}
+input::placeholder,textarea::placeholder{color:#6f737b}
+select{appearance:none;-webkit-appearance:none;padding-right:26px !important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23a9abb0' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;background-repeat:no-repeat !important;background-position:right 9px center !important;cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2f333b;border-radius:4px;border:2px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:#3d424c}
+input[type=checkbox]{appearance:none;-webkit-appearance:none;position:relative;width:30px !important;height:17px !important;margin:0;flex-shrink:0;border-radius:9px;border:1px solid #3a3f48;background:#262a31;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+input[type=checkbox]::before{content:"";position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#aeb2ba;box-shadow:0 1px 2px rgba(0,0,0,.5);transition:transform .15s ease,background-color .15s ease}
+input[type=checkbox]:checked{background:#2a7f89;border-color:#4fb3bf}
+input[type=checkbox]:checked::before{transform:translateX(13px);background:#ffffff}
+input[type=range]:not(.vrange){appearance:none;-webkit-appearance:none;height:20px;margin:0;cursor:pointer;border-radius:2px;background:linear-gradient(to right,#4fb3bf 0 var(--fill,0%),#0c0d10 var(--fill,0%) 100%) center / 100% 4px no-repeat}
+input[type=range]:not(.vrange)::-webkit-slider-runnable-track{height:20px;background:transparent;border-radius:2px}
+input[type=range]:not(.vrange)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:20px;border-radius:3px;border:1px solid #0c0d10;background:linear-gradient(to right,transparent 4.5px,#6f737c 4.5px 5.5px,transparent 5.5px),linear-gradient(#f3f4f6,#c3c6cd);box-shadow:0 1px 4px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.6)}
+input[type=range]:not(.vrange):hover::-webkit-slider-thumb{background:linear-gradient(to right,transparent 4.5px,#4fb3bf 4.5px 5.5px,transparent 5.5px),linear-gradient(#ffffff,#d3d6dc)}
+input[type=range]:disabled{opacity:.35;cursor:default}
+/* lumora-polish:end */
+
+input[type=range],input[type=checkbox],input[type=radio]{accent-color:#4fb3bf}
+button{cursor:pointer;background-image:none;box-shadow:none}
+body{margin:0;background:#15171b;font-family:'Segoe UI',system-ui,sans-serif;color:#e4e5e7}
+a{color:#4fb3bf}a:hover{color:#8fd3db}
+button,select{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 1000px; height: 740px; box-sizing: border-box; background-color: #1e2127; border: 1px solid #2c3038; border-radius: 6px; display: flex; flex-direction: column; font-family: 'Segoe UI', system-ui, sans-serif; color: #e4e5e7; overflow: hidden;">
+  <div style="height: 52px; flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid #2c3038;">
+    <span style="font-size: 16px; font-weight: 600;">Connected devices</span>
+    <div style="flex-grow: 1;"></div>
+    <a href="Main.dc.html" aria-label="Close" style="width: 36px; height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; display: flex; align-items: center; justify-content: center; text-decoration: none;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2.5 2.5l9 9M11.5 2.5l-9 9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></path></svg></a>
+  </div>
+
+  <sc-if value="{{pending}}" hint-placeholder-val="{{true}}">
+    <div style="margin: 16px 24px 0; padding: 12px 16px; border-radius: 6px; background-color: #243039; border: 1px solid #4fb3bf; display: flex; align-items: center; gap: 12px;">
+      <span style="width: 10px; height: 10px; border-radius: 6px; background-color: #4fb3bf;"></span>
+      <span style="font-size: 14px; flex-grow: 1;"><b>iPad</b> wants to connect as <b>Controller</b> · entered the correct PIN</span>
+      <button onClick="{{deny}}" style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #2c3038; background-color: #2a2e36; color: #e4e5e7; font-size: 13px;">Deny</button>
+      <button onClick="{{approve}}" style="height: 34px; padding: 0 16px; border-radius: 6px; border: 0; background-color: #4fb3bf; color: #0e2a2e; font-size: 13px; font-weight: 600;">Approve</button>
+    </div>
+  </sc-if>
+
+  <div style="flex-grow: 1; display: flex; gap: 20px; padding: 18px 24px 24px; min-height: 0;">
+    <div style="width: 330px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; padding: 18px; border-radius: 6px; background-color: #2a2e36; border: 1px solid #2c3038; box-sizing: border-box;">
+      <span style="font-size: 15px; font-weight: 600;">Connect a new device</span>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #a9abb0; line-height: 1.5;">
+        <span>1. Join Wi-Fi <b style="color: #e4e5e7;">Lumora-Stage</b></span>
+        <span>2. Scan the code (or open <span style="font-family: Consolas, monospace; color: #e4e5e7;">lumora.local</span>)</span>
+        <span>3. Enter the PIN, then approve here</span>
+      </div>
+      <div style="align-self: center; width: 180px; height: 180px; border-radius: 6px; background-color: #f3f3f1; padding: 14px; box-sizing: border-box; display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 3px;">
+        <sc-for list="{{qr}}" as="q" hint-placeholder-count="81"><span style="{{q}}"></span></sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+        <span style="font-size: 12px; color: #8e9096;">PIN</span>
+        <span style="font-family: Consolas, monospace; font-size: 28px; font-weight: 600; letter-spacing: 0.12em;">482 913</span>
+      </div>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: #a9abb0;">Join as
+        <select style="height: 36px; border-radius: 6px; border: 1px solid #2c3038; background-color: #101216; color: #e4e5e7; font-size: 13px; padding: 0 8px;"><option>Controller (full)</option><option>Controller (simple)</option><option>Camera</option><option>Output screen</option></select>
+      </label>
+    </div>
+
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: center; padding: 0 4px 4px; font-size: 12px; font-weight: 600; color: #b4b8bf;">
+        <span style="flex-grow: 1;">Device</span><span style="width: 130px;">Role</span><span style="width: 90px;">Signal</span><span style="width: 80px;"></span>
+      </div>
+      <sc-for list="{{devices}}" as="d" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; min-height: 56px; padding: 0 12px; border-radius: 6px; background-color: #2a2e36; border: 1px solid #2c3038;">
+          <div style="flex-grow: 1; display: flex; align-items: center; gap: 10px; min-width: 0;">
+            <span style="{{d.dot}}"></span>
+            <div style="display: flex; flex-direction: column; min-width: 0;"><span style="font-size: 14px; font-weight: 600;">{{d.name}}</span><span style="font-size: 12px; color: #8e9096;">{{d.meta}}</span></div>
+          </div>
+          <span style="width: 130px; font-size: 13px; color: #d4d5d8;">{{d.role}}</span>
+          <span style="width: 90px; font-family: Consolas, monospace; font-size: 12px; color: #6fe0a8;">{{d.signal}}</span>
+          <button style="width: 80px; height: 30px; border-radius: 6px; border: 1px solid #2c3038; background: transparent; color: #a9abb0; font-size: 12px;">Remove</button>
+        </div>
+      </sc-for>
+      <div style="flex-grow: 1;"></div>
+      <div style="padding: 12px 14px; border-radius: 6px; background-color: #111e17; border: 1px solid #234a36; font-size: 13px; color: #a8e9c7; line-height: 1.5;">If a phone or tablet drops, it reconnects by itself and catches up. The screens never depend on it — the show keeps running.</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1000,"height":740}}'>
+class Component extends DCLogic {
+  componentDidMount() { this.__fill(); this.__onRange = (e) => { if (e.target && e.target.type === 'range') this.__fill(); }; document.addEventListener('input', this.__onRange, true); }
+  componentDidUpdate() { this.__fill(); }
+  componentWillUnmount() { document.removeEventListener('input', this.__onRange, true); }
+  __fill() { document.querySelectorAll('input[type=range]').forEach((el) => { const min = Number(el.min) || 0, max = el.max === '' ? 100 : Number(el.max), v = Number(el.value); el.style.setProperty('--fill', (max > min ? ((v - min) / (max - min)) * 100 : 0) + '%'); }); }
+  constructor(props) { super(props); this.state = { pending: true, approved: false }; }
+  renderVals() {
+    const st = this.state;
+    const dot = (c) => `width: 10px; height: 10px; border-radius: 6px; background-color: ${c}; flex-shrink: 0;`;
+    const devices = [
+      { name: 'Control PC 2', meta: 'Second control window', role: 'Controller (full)', signal: 'Wired', dot: dot('#2f8f4e') },
+      { name: 'iPhone', meta: 'Battery 81%', role: 'Controller (simple)', signal: '12 ms', dot: dot('#2f8f4e') },
+      { name: 'Phone cam — Crowd', meta: '1080p30 · Battery 64%', role: 'Camera', signal: '18 ms', dot: dot('#2f8f4e') },
+      { name: 'Laptop by the door', meta: 'Showing Back Screen copy', role: 'Output screen', signal: '9 ms', dot: dot('#2f8f4e') }
+    ];
+    if (st.approved) devices.push({ name: 'iPad', meta: 'Just connected', role: 'Controller (full)', signal: '14 ms', dot: dot('#4fb3bf') });
+    const pattern = '111101111100101001101111011000100001010110101011010101000011011100111101101111110';
+    const qr = pattern.split('').map((b) => `display: block; aspect-ratio: 1; background-color: ${b === '1' ? '#141413' : 'transparent'}; border-radius: 1px;`);
+    return {
+      devices, qr,
+      pending: st.pending,
+      approve: () => this.setState({ pending: false, approved: true }),
+      deny: () => this.setState({ pending: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

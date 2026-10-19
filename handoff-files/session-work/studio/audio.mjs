@@ -1,0 +1,20 @@
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const { chromium } = require('/opt/node22/lib/node_modules/playwright');
+const dir = '/tmp/claude-0/-home-user-Livestreamingapp/afbb1772-1200-52da-905a-12b6de33f858/scratchpad/studio';
+const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] });
+const page = await browser.newPage({ viewport: { width: 1600, height: 950 } });
+const logs = [];
+page.on('console', (m) => {
+  if ((m.type() === 'error' || m.type() === 'warning') && !m.text().includes('GPU stall')) logs.push(`${m.type()}: ${m.text()}`);
+});
+page.on('pageerror', (e) => logs.push(`pageerror: ${e.message}`));
+await page.goto('http://127.0.0.1:1471/?demo');
+await page.waitForTimeout(5000);
+await page.getByRole('tab', { name: 'Audio' }).click();
+await page.waitForTimeout(4000);
+await page.screenshot({ path: `${dir}/audio-page.png` });
+console.log(await page.locator('.page--audio .page__top').innerHTML().then((h) => h.length));
+console.log(await page.locator('.page--audio .page__top > *').count());
+console.log(logs.join('\n'));
+await browser.close();
