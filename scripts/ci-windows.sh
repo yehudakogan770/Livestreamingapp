@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Gets a Windows build ready (run by CI before `tauri build`):
-#   scripts/ci-windows.sh <tauri.conf.json> <its src-tauri folder>
+#   scripts/ci-windows.sh <tauri.conf.json> <its src-tauri folder> [--no-ffmpeg]
 # - the version (LUMORA_VERSION), so the Update button sees each build;
 # - update signing from the TAURI_SIGNING_PRIVATE_KEY secret (or no update files);
-# - FFmpeg (in ffmpeg-cache/) shipped next to the program.
+# - FFmpeg (in ffmpeg-cache/) shipped next to the program (not with
+#   --no-ffmpeg: Lumora Photo has no use for it).
 set -uo pipefail
 conf="$1"
 dir="$2"
+ffmpeg=1
+[ "${3:-}" = "--no-ffmpeg" ] && ffmpeg=0
 
 # Spaces, line breaks or quotes picked up when pasting the key are removed;
 # a key that still can't be read builds without signing.
@@ -27,6 +30,7 @@ else
 fi
 
 # FFmpeg, as the sidecar Tauri puts next to the program (ffmpeg.exe).
+if [ "$ffmpeg" = 1 ]; then
 mkdir -p "$dir/binaries"
 if [ ! -f ffmpeg-cache/ffmpeg.exe ]; then
   mkdir -p ffmpeg-cache
@@ -47,14 +51,17 @@ cp ffmpeg-cache/ffmpeg.exe "$dir/binaries/ffmpeg-x86_64-pc-windows-msvc.exe"
 license=$(ls ffmpeg-cache/LICENSE* 2>/dev/null | head -1)
 cp "${license:-/dev/null}" "$dir/binaries/FFmpeg-license.txt" 2>/dev/null || echo "FFmpeg (https://ffmpeg.org), GPL." > "$dir/binaries/FFmpeg-license.txt"
 "$dir/binaries/ffmpeg-x86_64-pc-windows-msvc.exe" -hide_banner -version | head -1
+fi
 
-CONF="$conf" SIGNING="$signing" node -e "
+CONF="$conf" SIGNING="$signing" FFMPEG="$ffmpeg" node -e "
   const fs = require('fs');
   const f = process.env.CONF;
   const c = JSON.parse(fs.readFileSync(f, 'utf8'));
   c.version = process.env.LUMORA_VERSION;
-  c.bundle.externalBin = ['binaries/ffmpeg'];
-  c.bundle.resources = { 'binaries/FFmpeg-license.txt': 'FFmpeg-license.txt' };
+  if (process.env.FFMPEG === '1') {
+    c.bundle.externalBin = ['binaries/ffmpeg'];
+    c.bundle.resources = { 'binaries/FFmpeg-license.txt': 'FFmpeg-license.txt' };
+  }
   if (process.env.SIGNING !== '1') c.bundle.createUpdaterArtifacts = false;
   fs.writeFileSync(f, JSON.stringify(c, null, 2));
 "

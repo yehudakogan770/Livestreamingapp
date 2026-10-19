@@ -1783,7 +1783,7 @@ section {
 /* Download: the products side by side */
 .dlcards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
   max-width: 1140px;
   margin: 0 auto;
@@ -1804,6 +1804,9 @@ section {
 }
 .dlcard--titler {
   border-top-color: var(--violet);
+}
+.dlcard--photo {
+  border-top-color: var(--blue);
 }
 .dlcard img {
   margin: 0 0 16px;
@@ -1909,6 +1912,31 @@ section {
   border-top-color: var(--violet);
 }
 .titler .studio__cta .fine a {
+  color: #fff;
+}
+
+/* Lumora Photo: its own blue (from its mark), used as sparingly as the others. */
+:root {
+  --blue: #3b72d9;
+  --blue-2: #7ea6ee;
+}
+.btn--blue {
+  background: var(--blue);
+  color: #fff;
+}
+.btn--blue:hover {
+  background: #4a80e4;
+}
+.photo {
+  background: var(--ink);
+}
+.photo__verbs span:nth-child(3) {
+  color: var(--blue-2);
+}
+.pages--photo li:first-child {
+  border-top-color: var(--blue);
+}
+.photo .studio__cta .fine a {
   color: #fff;
 }
 .dl__more {
