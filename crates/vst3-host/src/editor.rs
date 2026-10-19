@@ -163,12 +163,7 @@ mod win {
                 );
             }));
             (v.set_frame)(view.as_ptr(), frame);
-            if (v.attached)(
-                view.as_ptr(),
-                hwnd,
-                c"HWND".as_ptr() as *const u8,
-            ) != results::OK
-            {
+            if (v.attached)(view.as_ptr(), hwnd, c"HWND".as_ptr() as *const u8) != results::OK {
                 (v.set_frame)(view.as_ptr(), std::ptr::null_mut());
                 objects::release(frame);
                 DestroyWindow(hwnd);
