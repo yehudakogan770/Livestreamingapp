@@ -67,7 +67,7 @@ export default defineConfig(({ mode }) => {
       outDir: desktop ? '../../dist-photo' : '../../docs/photo',
       emptyOutDir: true,
       target: 'es2022',
-      sourcemap: false,
+      sourcemap: !!process.env.PHOTO_SOURCEMAP,
       chunkSizeWarningLimit: 2000,
     },
   };

@@ -4,7 +4,7 @@
 
 import { GPU } from './context';
 import { Compositor } from './compositor';
-import { makeTexture } from './gl';
+import { makeTexture, scratchUnit } from './gl';
 import { decodeTable, rgbToRgb, DISPLAY_P3, SRGB, sameProfile, type ColorProfile } from '../core/color';
 import { TILE, keyX, keyY, type Raster } from '../core/raster';
 import type { Session } from '../app/session';
@@ -83,10 +83,12 @@ export class View {
       t = { tex: makeTexture(gl, doc.width, doc.height, gl.R8, gl.RED, gl.UNSIGNED_BYTE, gl.NEAREST, null), w: doc.width, h: doc.height, raster: null, uploaded: new Map() };
       // Start clear.
       const zero = new Uint8Array(doc.width * Math.min(doc.height, 256));
+      scratchUnit(gl);
       gl.bindTexture(gl.TEXTURE_2D, t.tex);
       for (let y = 0; y < doc.height; y += 256) gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, y, doc.width, Math.min(256, doc.height - y), gl.RED, gl.UNSIGNED_BYTE, zero);
       this.sel.set(s, t);
     }
+    scratchUnit(gl);
     gl.bindTexture(gl.TEXTURE_2D, t.tex);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     const zero = new Uint8Array(TILE * TILE);

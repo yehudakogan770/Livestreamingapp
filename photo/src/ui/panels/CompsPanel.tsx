@@ -7,7 +7,7 @@ import { current, useApp, bump, openDialog } from '../../app/state';
 import { allLayers, updateLayer, uid } from '../../core/layers';
 import { shiftedLayer } from '../../app/tools/transform';
 import { layerBounds } from '../../core/layers';
-import type { Doc, LayerComp, LayerCompState } from '../../core/types';
+import type { Doc, Layer, LayerComp, LayerCompState } from '../../core/types';
 
 function capture(doc: Doc): Record<string, LayerCompState> {
   const out: Record<string, LayerCompState> = {};
@@ -25,7 +25,7 @@ function applyComp(c: LayerComp): void {
   for (const l of allLayers(s.doc.layers)) {
     const st = c.layers[l.id];
     if (!st) continue;
-    let next = { ...l, visible: st.visible, styles: st.styles };
+    let next: Layer = { ...l, visible: st.visible, styles: st.styles };
     const b = layerBounds(l, s.doc);
     if (b && st.x !== undefined && st.y !== undefined && (b.x !== st.x || b.y !== st.y) && l.kind !== 'group') next = { ...shiftedLayer(next, st.x - b.x, st.y - b.y) };
     layers = updateLayer(layers, l.id, () => next);

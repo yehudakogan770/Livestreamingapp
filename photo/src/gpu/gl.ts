@@ -109,8 +109,17 @@ export interface Target {
   internal: number;
 }
 
+/**
+ * Make and upload textures on a unit no program uses, so a draw's bindings
+ * (set unit by unit while its uniforms are filled) are never replaced.
+ */
+export function scratchUnit(gl: WebGL2RenderingContext): void {
+  gl.activeTexture(gl.TEXTURE15);
+}
+
 export function makeTexture(gl: WebGL2RenderingContext, w: number, h: number, internal: number, format: number, type: number, filter: number = gl.NEAREST, data: ArrayBufferView | null = null): WebGLTexture {
   const t = gl.createTexture()!;
+  scratchUnit(gl);
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter === gl.LINEAR_MIPMAP_LINEAR ? gl.LINEAR : filter);

@@ -1,0 +1,28 @@
+[package]
+name = "lumora-photo"
+description = "Lumora Photo: photo editing and design"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+name = "lumora_photo"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde.workspace = true
+serde_json.workspace = true
+tauri-plugin-dialog = "2"
+tauri-plugin-updater = "2"
+tauri-plugin-process = "2"
+lumora-crash = { path = "../../crates/crash" }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

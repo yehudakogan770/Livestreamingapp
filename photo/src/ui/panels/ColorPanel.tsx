@@ -175,7 +175,7 @@ export function ColorPanel() {
           ))}
         </div>
       </div>
-      <HsbPicker color={color} onChange={(c, f) => set(c, f)} height={120} />
+      <HsbPicker color={color} onChange={(c, f) => set(c, f)} height={96} />
       <RgbFields color={color} onChange={(c) => set(c)} />
     </div>
   );

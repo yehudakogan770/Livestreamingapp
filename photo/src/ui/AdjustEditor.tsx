@@ -19,7 +19,7 @@ const CH_OPTS: [Ch, string][] = [
 ];
 
 export function AdjustEditor({ type, params, onChange, hist }: { type: AdjustmentType; params: AdjustmentParams; onChange: (p: AdjustmentParams, final: boolean) => void; hist?: Uint32Array[] | null }) {
-  const set = <T extends AdjustmentType>(patch: Partial<ParamsMap[T]>, final = false) => onChange({ ...(params as object), ...patch } as AdjustmentParams, final);
+  const set = <T extends AdjustmentType>(patch: Partial<ParamsMap[T]>, final = false) => onChange({ ...(params as object), ...patch } as unknown as AdjustmentParams, final);
   switch (type) {
     case 'brightnessContrast': {
       const p = params as ParamsMap['brightnessContrast'];

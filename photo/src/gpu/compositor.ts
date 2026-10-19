@@ -10,7 +10,7 @@
 // pair per nesting level (groups, clipping groups).
 
 import { GPU } from './context';
-import { Program, makeTarget, freeTarget, drawInto, clearTarget, makeTexture, type Target } from './gl';
+import { Program, makeTarget, freeTarget, drawInto, clearTarget, makeTexture, scratchUnit, type Target } from './gl';
 import { Raster, TILE, keyX, keyY, intersect, union, expand } from '../core/raster';
 import { blendIndex } from '../core/blend';
 import { compile, isIdentity, type Compiled } from '../core/adjust';
@@ -192,6 +192,7 @@ export class Compositor {
     }
     if (!rt.tex) return { rt, changed: null };
     const [, format, type] = this.format(r.depth, r.channels);
+    scratchUnit(gl);
     gl.bindTexture(gl.TEXTURE_2D, rt.tex);
     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     for (const [k, t] of r.tiles) {
@@ -365,6 +366,7 @@ export class Compositor {
   ensureMips(): void {
     if (!this.comp || !this.mipsStale) return;
     const gl = this.gl;
+    scratchUnit(gl);
     gl.bindTexture(gl.TEXTURE_2D, this.comp.tex);
     gl.generateMipmap(gl.TEXTURE_2D);
     this.mipsStale = false;
@@ -407,7 +409,13 @@ export class Compositor {
     p.tex('uSrc', this.comp.tex).v2('uSrcSize', this.w, this.h).f('uRatio', 1 / s).i('uChan', 2);
     drawInto(gl, t, 0, 0, w, h);
     const data = new Uint8Array(w * h * 4);
-    gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    if (t.internal === gl.RGBA8) gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    else {
+      // Float targets read back as floats (the only float read WebGL2 allows).
+      const f = new Float32Array(w * h * 4);
+      gl.readPixels(0, 0, w, h, gl.RGBA, gl.FLOAT, f);
+      for (let i = 0; i < f.length; i++) data[i] = Math.round(Math.min(1, Math.max(0, f[i]!)) * 255);
+    }
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     return { w, h, data };
   }

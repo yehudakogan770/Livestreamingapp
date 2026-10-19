@@ -25,6 +25,12 @@ import './photo.css';
 
 registerCommands();
 
+// For the end-to-end checks (e2e/photo-smoke.mjs): a few handles on ?debug.
+if (typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug'))
+  void Promise.all([import('../app/ops/common'), import('../core/composite'), import('../app/commands'), import('../app/files'), import('../core/io/psd'), import('../core/layers')]).then(([common, comp, cmds, files, psd, layers]) => {
+    (window as unknown as Record<string, unknown>).__photo = { app, current, flatten: common.flatten, compositeRect: comp.compositeRect, run: cmds.run, openPicked: files.openPicked, writePSD: psd.writePSD, allLayers: layers.allLayers };
+  });
+
 function isTyping(t: EventTarget | null): boolean {
   const el = t as HTMLElement | null;
   if (!el) return false;

@@ -61,7 +61,7 @@
 .lp *::after {
   box-sizing: border-box;
 }
-.lp button {
+:where(.lp) button {
   font: inherit;
   color: inherit;
   background: none;
@@ -69,7 +69,7 @@
   padding: 0;
   cursor: pointer;
 }
-.lp button:disabled {
+:where(.lp) button:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -316,6 +316,7 @@
   color: var(--text);
 }
 .lp-slider {
+  margin-bottom: 8px;
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
@@ -573,6 +574,9 @@
 .lp-group-tabs {
   display: flex;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
   height: 28px;
   padding: 0 2px 0 0;
   background: var(--bar);
@@ -580,6 +584,7 @@
   flex: none;
 }
 .lp-group-tab {
+  flex: none;
   height: 100%;
   padding: 0 10px;
   color: var(--dim);

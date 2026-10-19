@@ -55,14 +55,14 @@ interface Layout {
   groups: Group[];
 }
 
-const KEY = 'lumora.photo.dock';
+const KEY = 'lumora.photo.dock2';
 
 const ESSENTIALS = (): Layout => ({
   width: 300,
   groups: [
-    { tabs: ['color', 'swatches', 'navigator', 'histogram', 'info'], active: 'color', size: 0.9, collapsed: false },
+    { tabs: ['color', 'swatches', 'navigator', 'histogram', 'info'], active: 'color', size: 1.15, collapsed: false },
     { tabs: ['properties', 'adjustments', 'history', 'brushes', 'character', 'paragraph', 'actions', 'comps'], active: 'properties', size: 1, collapsed: false },
-    { tabs: ['layers', 'channels', 'paths'], active: 'layers', size: 1.5, collapsed: false },
+    { tabs: ['layers', 'channels', 'paths'], active: 'layers', size: 1.35, collapsed: false },
   ],
 });
 
